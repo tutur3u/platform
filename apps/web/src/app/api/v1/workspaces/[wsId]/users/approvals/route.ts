@@ -21,6 +21,50 @@ import {
 
 type ApprovalStatus = Database['public']['Enums']['approval_status'];
 
+type PostApprovalRow = {
+  post_id: string;
+  user_id: string;
+  notes: string | null;
+  is_completed: boolean | null;
+  approval_status: ApprovalStatus | null;
+  rejection_reason: string | null;
+  approved_at: string | null;
+  rejected_at: string | null;
+  approved_by: string | null;
+  post: {
+    id: string;
+    title: string | null;
+    content: string | null;
+    notes: string | null;
+    created_at: string | null;
+    updated_by: string | null;
+    group_id: string | null;
+    modifier: {
+      display_name: string | null;
+      full_name: string | null;
+      email: string | null;
+    } | null;
+    workspace_user_groups: {
+      name: string | null;
+      ws_id: string | null;
+    } | null;
+  } | null;
+  user: {
+    full_name: string | null;
+    display_name: string | null;
+    email: string | null;
+  } | null;
+};
+
+type PostApprovalCheckWithGroup = {
+  post_id: string;
+  user_id: string;
+  approval_status?: ApprovalStatus | null;
+  user_group_posts: {
+    group_id?: string | null;
+  } | null;
+};
+
 function buildPostApprovalItemId(postId: string, userId: string) {
   return `${postId}:${userId}`;
 }
@@ -191,6 +235,7 @@ export async function GET(request: Request, { params }: Params) {
     } else {
       // Posts
       let countQuery = sbAdmin
+        .schema('private')
         .from('user_group_post_checks')
         .select(
           'post_id, user_id, user_group_posts!inner(group_id, workspace_user_groups!inner(ws_id))',
@@ -215,6 +260,7 @@ export async function GET(request: Request, { params }: Params) {
       if (countError) throw countError;
 
       let dataQuery = sbAdmin
+        .schema('private')
         .from('user_group_post_checks')
         .select(
           'post_id, user_id, notes, is_completed, approval_status, rejection_reason, approved_at, rejected_at, approved_by, post:user_group_posts!inner(id, title, content, notes, created_at, updated_by, group_id, modifier:workspace_users!updated_by(display_name, full_name, email), workspace_user_groups!inner(name, ws_id)), user:workspace_users!user_id!inner(full_name, display_name, email)'
@@ -240,7 +286,8 @@ export async function GET(request: Request, { params }: Params) {
 
       if (error) throw error;
 
-      const postIds = (data ?? []).map((row) => row.post_id);
+      const postApprovalRows = (data ?? []) as unknown as PostApprovalRow[];
+      const postIds = postApprovalRows.map((row) => row.post_id);
       const queueRows = await getPostEmailQueueRows(sbAdmin, postIds);
       const queueRowsByRecipient = new Map<
         string,
@@ -254,7 +301,7 @@ export async function GET(request: Request, { params }: Params) {
         );
       }
 
-      const recipientPairs = (data ?? []).map((row) => ({
+      const recipientPairs = postApprovalRows.map((row) => ({
         postId: row.post_id,
         userId: row.user_id,
       }));
@@ -281,7 +328,7 @@ export async function GET(request: Request, { params }: Params) {
           .map((row) => buildPostApprovalItemId(row.post_id!, row.receiver_id))
       );
 
-      const items = (data ?? []).map((row) => {
+      const items = postApprovalRows.map((row) => {
         const modifier = row.post?.modifier as unknown as {
           display_name: string | null;
           full_name: string | null;
@@ -443,6 +490,7 @@ export async function PUT(request: Request, { params }: Params) {
         }
 
         const { data: check, error: fetchError } = await sbAdmin
+          .schema('private')
           .from('user_group_post_checks')
           .select(
             'post_id, user_id, approval_status, user_group_posts!inner(group_id, workspace_user_groups!inner(ws_id))'
@@ -459,8 +507,10 @@ export async function PUT(request: Request, { params }: Params) {
             { status: 404 }
           );
         }
+        const checkWithGroup = check as unknown as PostApprovalCheckWithGroup;
 
         const { error } = await sbAdmin
+          .schema('private')
           .from('user_group_post_checks')
           .update({
             approval_status: 'APPROVED' as ApprovalStatus,
@@ -477,7 +527,7 @@ export async function PUT(request: Request, { params }: Params) {
         await enqueueApprovedPostEmails(sbAdmin, {
           wsId,
           postId: parsedItem.postId,
-          groupId: check.user_group_posts?.group_id,
+          groupId: checkWithGroup.user_group_posts?.group_id ?? undefined,
           senderPlatformUserId: user.id,
           userIds: [parsedItem.userId],
         });
@@ -534,6 +584,7 @@ export async function PUT(request: Request, { params }: Params) {
         }
 
         const { data: check, error: fetchError } = await sbAdmin
+          .schema('private')
           .from('user_group_post_checks')
           .select(
             'post_id, user_id, user_group_posts!inner(workspace_user_groups!inner(ws_id))'
@@ -552,6 +603,7 @@ export async function PUT(request: Request, { params }: Params) {
         }
 
         const { error } = await sbAdmin
+          .schema('private')
           .from('user_group_post_checks')
           .update({
             approval_status: 'REJECTED' as ApprovalStatus,
@@ -595,6 +647,7 @@ export async function PUT(request: Request, { params }: Params) {
           .filter((id): id is string => typeof id === 'string');
       } else {
         let q = sbAdmin
+          .schema('private')
           .from('user_group_post_checks')
           .select(
             'post_id, user_id, user_group_posts!inner(group_id, workspace_user_groups!inner(ws_id))'
@@ -608,15 +661,23 @@ export async function PUT(request: Request, { params }: Params) {
 
         const { data, error } = await q;
         if (error) throw error;
-        allPendingIds = (data ?? []).map((item) =>
+        const pendingRows = (data ??
+          []) as unknown as PostApprovalCheckWithGroup[];
+        allPendingIds = pendingRows.map((item) =>
           buildPostApprovalItemId(item.post_id, item.user_id)
         );
         pendingPostGroups.push(
-          ...(data ?? []).map((item) => ({
-            post_id: item.post_id,
-            group_id: item.user_group_posts.group_id,
-            user_id: item.user_id,
-          }))
+          ...pendingRows.flatMap((item) => {
+            const groupId = item.user_group_posts?.group_id;
+            if (!groupId) return [];
+            return [
+              {
+                post_id: item.post_id,
+                group_id: groupId,
+                user_id: item.user_id,
+              },
+            ];
+          })
         );
       }
 
@@ -643,6 +704,7 @@ export async function PUT(request: Request, { params }: Params) {
               .filter(Boolean);
             for (const item of parsedBatch) {
               const { error } = await sbAdmin
+                .schema('private')
                 .from('user_group_post_checks')
                 .update({
                   approval_status: 'APPROVED' as ApprovalStatus,
@@ -695,6 +757,7 @@ export async function PUT(request: Request, { params }: Params) {
       }
 
       const { data: check, error: fetchError } = await sbAdmin
+        .schema('private')
         .from('user_group_post_checks')
         .select(
           'post_id, user_id, approval_status, user_group_posts!inner(workspace_user_groups!inner(ws_id))'
@@ -734,6 +797,7 @@ export async function PUT(request: Request, { params }: Params) {
       }
 
       const { error } = await sbAdmin
+        .schema('private')
         .from('user_group_post_checks')
         .update({
           approval_status: 'PENDING' as ApprovalStatus,

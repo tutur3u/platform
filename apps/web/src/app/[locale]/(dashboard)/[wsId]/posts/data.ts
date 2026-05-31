@@ -78,10 +78,10 @@ interface PostEmailSummaryRpcRow {
 }
 
 type PostEmailRowsRpcArgs =
-  Database['public']['Functions']['get_workspace_post_review_rows']['Args'];
+  Database['private']['Functions']['get_workspace_post_review_rows']['Args'];
 
 type PostEmailSummaryRpcArgs =
-  Database['public']['Functions']['get_workspace_post_review_summary']['Args'];
+  Database['private']['Functions']['get_workspace_post_review_summary']['Args'];
 
 function normalizeQueueStatus(
   value?: string | null
@@ -240,8 +240,10 @@ export async function getPostsPageData(
   };
 
   const [rowsResult, summaryResult] = await Promise.all([
-    sbAdmin.rpc('get_workspace_post_review_rows', rowsArgs),
-    sbAdmin.rpc('get_workspace_post_review_summary', summaryArgs),
+    sbAdmin.schema('private').rpc('get_workspace_post_review_rows', rowsArgs),
+    sbAdmin
+      .schema('private')
+      .rpc('get_workspace_post_review_summary', summaryArgs),
   ]);
 
   if (rowsResult.error) {

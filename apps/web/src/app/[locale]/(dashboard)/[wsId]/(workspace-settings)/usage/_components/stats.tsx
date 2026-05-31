@@ -188,6 +188,7 @@ export async function PostsUsageStats({ wsId }: { wsId: string }) {
   const userGroupIds = userGroups?.map((group) => group.id) || [];
 
   const { count } = await sbAdmin
+    .schema('private')
     .from('user_group_posts')
     .select('*', { count: 'exact', head: true })
     .in('group_id', userGroupIds);

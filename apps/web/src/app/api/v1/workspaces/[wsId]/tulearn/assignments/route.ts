@@ -82,6 +82,7 @@ export const PATCH = withSessionAuth<Params>(
       });
 
       const { data: post, error: postError } = await sbAdmin
+        .schema('private')
         .from('user_group_posts')
         .select('id, group_id')
         .eq('id', parsed.data.postId)
@@ -97,6 +98,7 @@ export const PATCH = withSessionAuth<Params>(
       }
 
       const { error: updateError } = await sbAdmin
+        .schema('private')
         .from('user_group_post_checks')
         .upsert(
           {

@@ -28,6 +28,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const supabase = await createAdminClient();
   const { error } = await supabase
+    .schema('private')
     .from('user_group_posts')
     .update(data)
     .eq('id', postId);
@@ -61,6 +62,7 @@ export async function DELETE(req: Request, { params }: Params) {
 
   const supabase = await createAdminClient();
   const { error } = await supabase
+    .schema('private')
     .from('user_group_posts')
     .delete()
     .eq('id', postId);

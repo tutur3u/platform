@@ -92,6 +92,8 @@ const TABLE_COLUMN_PAIRS = [
 const PRIVATE_TABLES = new Set([
   'external_user_monthly_report_logs',
   'external_user_monthly_reports',
+  'user_group_post_logs',
+  'user_group_posts',
 ]);
 
 // Phases 2-5 handle composite PKs, custom fields, and final cleanup

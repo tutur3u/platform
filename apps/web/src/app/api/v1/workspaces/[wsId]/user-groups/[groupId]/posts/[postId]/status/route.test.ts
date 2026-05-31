@@ -25,6 +25,7 @@ describe('group post status route', () => {
 
     createAdminClientMock.mockResolvedValue({
       rpc: rpcMock,
+      schema: () => ({ rpc: rpcMock }),
     });
 
     getPermissionsMock.mockResolvedValue({

@@ -18,6 +18,7 @@ export async function GET(req: Request) {
   }
 
   const { data, error, count } = await sbAdmin
+    .schema('private')
     .from('user_group_posts')
     .select('*, workspace_user_groups!inner(ws_id)', { count: 'exact' })
     .eq('workspace_user_groups.ws_id', wsId)

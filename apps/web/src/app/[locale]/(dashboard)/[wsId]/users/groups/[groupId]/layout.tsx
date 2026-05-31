@@ -187,6 +187,7 @@ async function getRejectedCount(
 
   if (canApprovePosts) {
     const { count: postCount } = await sbAdmin
+      .schema('private')
       .from('user_group_posts')
       .select('id, workspace_user_groups!inner(ws_id)', {
         count: 'exact',

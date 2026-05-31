@@ -21,6 +21,7 @@ async function getExistingPostIds(postIds: string[]): Promise<Set<string>> {
   for (let i = 0; i < postIds.length; i += IN_QUERY_BATCH_SIZE) {
     const batch = postIds.slice(i, i + IN_QUERY_BATCH_SIZE);
     const { data, error } = await supabase
+      .schema('private')
       .from('user_group_posts')
       .select('id')
       .in('id', batch);

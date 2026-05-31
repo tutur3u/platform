@@ -1062,6 +1062,13 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: 'external_user_monthly_report_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
             foreignKeyName: 'external_user_monthly_report_logs_report_id_fkey';
             columns: ['report_id'];
             isOneToOne: false;
@@ -1138,7 +1145,15 @@ export type Database = {
           updated_by?: string | null;
           user_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'external_user_monthly_reports_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+        ];
       };
       field_types: {
         Row: {
@@ -4589,7 +4604,15 @@ export type Database = {
           updated_by?: string | null;
           ws_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+        ];
       };
       topic_announcements: {
         Row: {
@@ -4681,6 +4704,13 @@ export type Database = {
             referencedRelation: 'topic_announcement_batches';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'topic_announcements_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
         ];
       };
       user_group_metric_categories: {
@@ -4733,6 +4763,198 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'user_group_metric_categories';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_group_post_checks: {
+        Row: {
+          approval_status: Database['public']['Enums']['approval_status'];
+          approved_at: string | null;
+          approved_by: string | null;
+          created_at: string;
+          email_id: string | null;
+          is_completed: boolean;
+          notes: string | null;
+          post_id: string;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          user_id: string;
+        };
+        Insert: {
+          approval_status?: Database['public']['Enums']['approval_status'];
+          approved_at?: string | null;
+          approved_by?: string | null;
+          created_at?: string;
+          email_id?: string | null;
+          is_completed: boolean;
+          notes?: string | null;
+          post_id: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          user_id: string;
+        };
+        Update: {
+          approval_status?: Database['public']['Enums']['approval_status'];
+          approved_at?: string | null;
+          approved_by?: string | null;
+          created_at?: string;
+          email_id?: string | null;
+          is_completed?: boolean;
+          notes?: string | null;
+          post_id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_post_checks_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['post_id_full'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_group_post_logs: {
+        Row: {
+          approved_at: string | null;
+          approved_by: string | null;
+          content: string;
+          created_at: string;
+          creator_id: string | null;
+          group_id: string;
+          id: string;
+          notes: string;
+          post_approval_status: Database['public']['Enums']['approval_status'];
+          post_id: string;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          title: string;
+        };
+        Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          content?: string;
+          created_at?: string;
+          creator_id?: string | null;
+          group_id: string;
+          id?: string;
+          notes?: string;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          post_id: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          title?: string;
+        };
+        Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          content?: string;
+          created_at?: string;
+          creator_id?: string | null;
+          group_id?: string;
+          id?: string;
+          notes?: string;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          post_id?: string;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_post_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['post_id_full'];
+          },
+          {
+            foreignKeyName: 'user_group_post_logs_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_group_posts: {
+        Row: {
+          approved_at: string | null;
+          approved_by: string | null;
+          content: string | null;
+          created_at: string;
+          creator_id: string | null;
+          group_id: string;
+          id: string;
+          notes: string | null;
+          post_approval_status: Database['public']['Enums']['approval_status'];
+          rejected_at: string | null;
+          rejected_by: string | null;
+          rejection_reason: string | null;
+          title: string | null;
+          updated_by: string | null;
+        };
+        Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          content?: string | null;
+          created_at?: string;
+          creator_id?: string | null;
+          group_id: string;
+          id?: string;
+          notes?: string | null;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          title?: string | null;
+          updated_by?: string | null;
+        };
+        Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          content?: string | null;
+          created_at?: string;
+          creator_id?: string | null;
+          group_id?: string;
+          id?: string;
+          notes?: string | null;
+          post_approval_status?: Database['public']['Enums']['approval_status'];
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          rejection_reason?: string | null;
+          title?: string | null;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_posts_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
           },
         ];
       };
@@ -5111,7 +5333,15 @@ export type Database = {
           updated_at?: string;
           ws_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+        ];
       };
     };
     Views: {
@@ -5148,6 +5378,13 @@ export type Database = {
           user_ws_id: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
           {
             foreignKeyName: 'external_user_monthly_report_logs_report_id_fkey';
             columns: ['report_id'];
@@ -5202,7 +5439,54 @@ export type Database = {
           user_note: string | null;
           user_ws_id: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'external_user_monthly_reports_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+        ];
+      };
+      posts_dashboard_view: {
+        Row: {
+          created_at: string | null;
+          display_name: string | null;
+          email_id: string | null;
+          email_sent_at: string | null;
+          email_subject: string | null;
+          full_name: string | null;
+          group_id: string | null;
+          group_name: string | null;
+          is_completed: boolean | null;
+          notes: string | null;
+          post_content: string | null;
+          post_created_at: string | null;
+          post_id: string | null;
+          post_id_full: string | null;
+          post_title: string | null;
+          recipient: string | null;
+          user_email: string | null;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_post_checks_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['post_id_full'];
+          },
+          {
+            foreignKeyName: 'user_group_post_checks_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+        ];
       };
     };
     Functions: {
@@ -6034,6 +6318,7 @@ export type Database = {
           total_count: number;
         }[];
       };
+      get_post_workspace_id: { Args: { p_post_id: string }; Returns: string };
       get_rate_limit_trust_decision: {
         Args: { p_api_key_id?: string; p_ip?: unknown; p_user_id?: string };
         Returns: {
@@ -6081,6 +6366,76 @@ export type Database = {
         Args: { p_ws_id: string };
         Returns: number;
       };
+      get_user_group_post_recipient_rows: {
+        Args: {
+          p_group_id: string;
+          p_post_id: string;
+          p_q?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approval_rejection_reason: string;
+          approval_status: Database['public']['Enums']['approval_status'];
+          can_remove_approval: boolean;
+          check_created_at: string;
+          delivery_issue_reason: string;
+          email: string;
+          email_id: string;
+          group_id: string;
+          group_name: string;
+          has_check: boolean;
+          is_completed: boolean;
+          notes: string;
+          post_content: string;
+          post_created_at: string;
+          post_id: string;
+          post_title: string;
+          queue_attempt_count: number;
+          queue_last_error: string;
+          queue_sent_at: string;
+          queue_status: string;
+          recipient: string;
+          review_stage: string;
+          row_key: string;
+          subject: string;
+          user_avatar_url: string;
+          user_display_name: string;
+          user_full_name: string;
+          user_id: string;
+          user_phone: string;
+          ws_id: string;
+        }[];
+      };
+      get_user_group_post_status_summary: {
+        Args: { p_group_id: string; p_post_id: string; p_ws_id: string };
+        Returns: {
+          approved_awaiting_delivery_count: number;
+          approved_count: number;
+          blocked_count: number;
+          cancelled_count: number;
+          completed_count: number;
+          delivery_failed_count: number;
+          failed_count: number;
+          incomplete_count: number;
+          missing_check_count: number;
+          pending_approval_count: number;
+          pending_approval_stage_count: number;
+          processing_count: number;
+          processing_stage_count: number;
+          queue_skipped_count: number;
+          queued_count: number;
+          queued_stage_count: number;
+          rejected_count: number;
+          rejected_stage_count: number;
+          sent_count: number;
+          sent_stage_count: number;
+          skipped_approval_count: number;
+          skipped_stage_count: number;
+          total_count: number;
+          unchecked_count: number;
+          undeliverable_count: number;
+        }[];
+      };
       get_wallet_interest_initial_balance: {
         Args: {
           _actor_id: string;
@@ -6103,6 +6458,213 @@ export type Database = {
       get_wallet_interest_summary: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
+      };
+      get_workspace_post_email_rows: {
+        Args: {
+          p_approval_status?: Database['public']['Enums']['approval_status'];
+          p_cutoff?: string;
+          p_excluded_group_ids?: string[];
+          p_included_group_ids?: string[];
+          p_limit?: number;
+          p_offset?: number;
+          p_queue_status?: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approval_rejection_reason: string;
+          approval_status: Database['public']['Enums']['approval_status'];
+          can_remove_approval: boolean;
+          check_created_at: string;
+          email: string;
+          email_id: string;
+          group_id: string;
+          group_name: string;
+          is_completed: boolean;
+          notes: string;
+          post_content: string;
+          post_created_at: string;
+          post_id: string;
+          post_title: string;
+          queue_attempt_count: number;
+          queue_last_error: string;
+          queue_sent_at: string;
+          queue_status: string;
+          recipient: string;
+          row_key: string;
+          subject: string;
+          total_count: number;
+          user_id: string;
+          ws_id: string;
+        }[];
+      };
+      get_workspace_post_email_status_summary: {
+        Args: {
+          p_cutoff?: string;
+          p_excluded_group_ids?: string[];
+          p_included_group_ids?: string[];
+          p_queue_status?: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approved_count: number;
+          blocked_count: number;
+          cancelled_count: number;
+          failed_count: number;
+          pending_approval_count: number;
+          processing_count: number;
+          queued_count: number;
+          rejected_count: number;
+          sent_count: number;
+          skipped_count: number;
+          total_count: number;
+        }[];
+      };
+      get_workspace_post_review_base_rows: {
+        Args: {
+          p_cutoff?: string;
+          p_end_date?: string;
+          p_excluded_group_ids?: string[];
+          p_group_id?: string;
+          p_included_group_ids?: string[];
+          p_post_id?: string;
+          p_q?: string;
+          p_start_date?: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approval_rejection_reason: string;
+          approval_status: Database['public']['Enums']['approval_status'];
+          can_remove_approval: boolean;
+          check_created_at: string;
+          delivery_issue_reason: string;
+          email: string;
+          email_id: string;
+          group_id: string;
+          group_name: string;
+          has_check: boolean;
+          is_completed: boolean;
+          notes: string;
+          post_content: string;
+          post_created_at: string;
+          post_id: string;
+          post_title: string;
+          queue_attempt_count: number;
+          queue_last_error: string;
+          queue_sent_at: string;
+          queue_status: string;
+          recipient: string;
+          review_stage: string;
+          row_key: string;
+          subject: string;
+          user_avatar_url: string;
+          user_display_name: string;
+          user_full_name: string;
+          user_id: string;
+          user_phone: string;
+          ws_id: string;
+        }[];
+      };
+      get_workspace_post_review_filter_options: {
+        Args: {
+          p_cutoff?: string;
+          p_included_group_ids?: string[];
+          p_ws_id: string;
+        };
+        Returns: {
+          amount: number;
+          id: string;
+          label: string;
+          option_scope: string;
+        }[];
+      };
+      get_workspace_post_review_rows: {
+        Args: {
+          p_approval_status?: Database['public']['Enums']['approval_status'];
+          p_cutoff?: string;
+          p_end_date?: string;
+          p_excluded_group_ids?: string[];
+          p_included_group_ids?: string[];
+          p_limit?: number;
+          p_offset?: number;
+          p_queue_status?: string;
+          p_stage?: string[];
+          p_start_date?: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approval_rejection_reason: string;
+          approval_status: Database['public']['Enums']['approval_status'];
+          can_remove_approval: boolean;
+          check_created_at: string;
+          delivery_issue_reason: string;
+          email: string;
+          email_id: string;
+          group_id: string;
+          group_name: string;
+          has_check: boolean;
+          is_completed: boolean;
+          notes: string;
+          post_content: string;
+          post_created_at: string;
+          post_id: string;
+          post_title: string;
+          queue_attempt_count: number;
+          queue_last_error: string;
+          queue_sent_at: string;
+          queue_status: string;
+          recipient: string;
+          review_stage: string;
+          row_key: string;
+          subject: string;
+          total_count: number;
+          user_avatar_url: string;
+          user_display_name: string;
+          user_full_name: string;
+          user_id: string;
+          user_phone: string;
+          ws_id: string;
+        }[];
+      };
+      get_workspace_post_review_summary: {
+        Args: {
+          p_approval_status?: Database['public']['Enums']['approval_status'];
+          p_cutoff?: string;
+          p_end_date?: string;
+          p_excluded_group_ids?: string[];
+          p_included_group_ids?: string[];
+          p_queue_status?: string;
+          p_start_date?: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          approved_awaiting_delivery_count: number;
+          approved_count: number;
+          blocked_count: number;
+          cancelled_count: number;
+          delivery_failed_count: number;
+          failed_count: number;
+          missing_check_count: number;
+          pending_approval_count: number;
+          pending_approval_stage_count: number;
+          processing_count: number;
+          processing_stage_count: number;
+          queue_skipped_count: number;
+          queued_count: number;
+          queued_stage_count: number;
+          rejected_count: number;
+          rejected_stage_count: number;
+          sent_count: number;
+          sent_stage_count: number;
+          skipped_approval_count: number;
+          skipped_stage_count: number;
+          total_count: number;
+          undeliverable_count: number;
+        }[];
       };
       list_task_source_filter_ids: {
         Args: {
@@ -6287,6 +6849,34 @@ export type Database = {
         Args: { p_retry_after: number };
         Returns: undefined;
       };
+      reconcile_orphaned_approved_post_email_queue: {
+        Args: {
+          p_cutoff?: string;
+          p_max_posts?: number;
+          p_skip_posts?: number;
+          p_ws_id?: string;
+        };
+        Returns: {
+          already_sent: number;
+          checked: number;
+          covered_by_existing_queue: number;
+          covered_by_sent_email: number;
+          eligible_recipients: number;
+          enqueued: number;
+          existing_processing: number;
+          existing_queued: number;
+          existing_skipped: number;
+          missing_completion: number;
+          missing_email: number;
+          missing_sender_platform_user: number;
+          missing_user_record: number;
+          not_approved: number;
+          orphaned: number;
+          processed_posts: number;
+          remaining_posts: number;
+          upserted: number;
+        }[];
+      };
       record_ai_memory_audit: {
         Args: {
           p_action: string;
@@ -6309,6 +6899,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      refresh_posts_dashboard_view: { Args: never; Returns: undefined };
       resolve_user_groups_table_timezone: {
         Args: { p_ws_id: string };
         Returns: string;
@@ -6442,6 +7033,41 @@ export type Database = {
         };
         Returns: Json;
       };
+      workspace_user_groups: {
+        Args: { '': Database['private']['Tables']['user_group_posts']['Row'] };
+        Returns: Database['public']['Tables']['workspace_user_groups']['Row'];
+        SetofOptions: {
+          from: 'private.user_group_posts';
+          to: 'workspace_user_groups';
+          isOneToOne: true;
+          isSetofReturn: true;
+        };
+      };
+      workspace_users:
+        | {
+            Args: {
+              '': Database['private']['Tables']['user_group_post_checks']['Row'];
+            };
+            Returns: Database['public']['Tables']['workspace_users']['Row'];
+            SetofOptions: {
+              from: 'private.user_group_post_checks';
+              to: 'workspace_users';
+              isOneToOne: true;
+              isSetofReturn: true;
+            };
+          }
+        | {
+            Args: {
+              '': Database['private']['Tables']['user_group_posts']['Row'];
+            };
+            Returns: Database['public']['Tables']['workspace_users']['Row'];
+            SetofOptions: {
+              from: 'private.user_group_posts';
+              to: 'workspace_users';
+              isOneToOne: true;
+              isSetofReturn: true;
+            };
+          };
     };
     Enums: {
       [_ in never]: never;
@@ -8185,13 +8811,6 @@ export type Database = {
             foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -8792,13 +9411,6 @@ export type Database = {
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'course_certificates_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
             referencedColumns: ['group_id'];
           },
           {
@@ -9753,13 +10365,6 @@ export type Database = {
             columns: ['user_group_id'];
             isOneToOne: false;
             referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'finance_invoice_user_groups_user_group_id_fkey';
-            columns: ['user_group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
             referencedColumns: ['group_id'];
           },
           {
@@ -14333,13 +14938,6 @@ export type Database = {
             foreignKeyName: 'post_email_queue_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'post_email_queue_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -14362,20 +14960,6 @@ export type Database = {
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_guest';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'post_email_queue_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['post_id_full'];
-          },
-          {
-            foreignKeyName: 'post_email_queue_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_group_posts';
             referencedColumns: ['id'];
           },
           {
@@ -15087,20 +15671,6 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'sent_emails_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['post_id_full'];
-          },
-          {
-            foreignKeyName: 'sent_emails_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_group_posts';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'sent_emails_receiver_id_fkey';
             columns: ['receiver_id'];
@@ -19534,13 +20104,6 @@ export type Database = {
             foreignKeyName: 'user_feedbacks_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'user_feedbacks_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -19640,13 +20203,6 @@ export type Database = {
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'user_group_attendance_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
             referencedColumns: ['group_id'];
           },
           {
@@ -19755,13 +20311,6 @@ export type Database = {
             foreignKeyName: 'user_group_linked_products_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'user_group_linked_products_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -19845,13 +20394,6 @@ export type Database = {
             foreignKeyName: 'user_group_metrics_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'user_group_metrics_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -19902,499 +20444,6 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      user_group_post_checks: {
-        Row: {
-          approval_status: Database['public']['Enums']['approval_status'];
-          approved_at: string | null;
-          approved_by: string | null;
-          created_at: string;
-          email_id: string | null;
-          is_completed: boolean;
-          notes: string | null;
-          post_id: string;
-          rejected_at: string | null;
-          rejected_by: string | null;
-          rejection_reason: string | null;
-          user_id: string;
-        };
-        Insert: {
-          approval_status?: Database['public']['Enums']['approval_status'];
-          approved_at?: string | null;
-          approved_by?: string | null;
-          created_at?: string;
-          email_id?: string | null;
-          is_completed: boolean;
-          notes?: string | null;
-          post_id: string;
-          rejected_at?: string | null;
-          rejected_by?: string | null;
-          rejection_reason?: string | null;
-          user_id: string;
-        };
-        Update: {
-          approval_status?: Database['public']['Enums']['approval_status'];
-          approved_at?: string | null;
-          approved_by?: string | null;
-          created_at?: string;
-          email_id?: string | null;
-          is_completed?: boolean;
-          notes?: string | null;
-          post_id?: string;
-          rejected_at?: string | null;
-          rejected_by?: string | null;
-          rejection_reason?: string | null;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_group_post_checks_approved_by_fkey';
-            columns: ['approved_by'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_approved_by_fkey';
-            columns: ['approved_by'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_approved_by_fkey';
-            columns: ['approved_by'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_approved_by_fkey';
-            columns: ['approved_by'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_approved_by_fkey';
-            columns: ['approved_by'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_email_id_fkey';
-            columns: ['email_id'];
-            isOneToOne: true;
-            referencedRelation: 'sent_emails';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['post_id_full'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_group_posts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_rejected_by_fkey';
-            columns: ['rejected_by'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_rejected_by_fkey';
-            columns: ['rejected_by'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_rejected_by_fkey';
-            columns: ['rejected_by'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_rejected_by_fkey';
-            columns: ['rejected_by'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_rejected_by_fkey';
-            columns: ['rejected_by'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      user_group_post_logs: {
-        Row: {
-          approved_at: string | null;
-          approved_by: string | null;
-          content: string;
-          created_at: string;
-          creator_id: string | null;
-          group_id: string;
-          id: string;
-          notes: string;
-          post_approval_status: Database['public']['Enums']['approval_status'];
-          post_id: string;
-          rejected_at: string | null;
-          rejected_by: string | null;
-          rejection_reason: string | null;
-          title: string;
-        };
-        Insert: {
-          approved_at?: string | null;
-          approved_by?: string | null;
-          content?: string;
-          created_at?: string;
-          creator_id?: string | null;
-          group_id: string;
-          id?: string;
-          notes?: string;
-          post_approval_status?: Database['public']['Enums']['approval_status'];
-          post_id: string;
-          rejected_at?: string | null;
-          rejected_by?: string | null;
-          rejection_reason?: string | null;
-          title?: string;
-        };
-        Update: {
-          approved_at?: string | null;
-          approved_by?: string | null;
-          content?: string;
-          created_at?: string;
-          creator_id?: string | null;
-          group_id?: string;
-          id?: string;
-          notes?: string;
-          post_approval_status?: Database['public']['Enums']['approval_status'];
-          post_id?: string;
-          rejected_at?: string | null;
-          rejected_by?: string | null;
-          rejection_reason?: string | null;
-          title?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_group_post_logs_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_users_with_post_checks';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_groups_with_tags';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_amount';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_guest';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['post_id_full'];
-          },
-          {
-            foreignKeyName: 'user_group_post_logs_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_group_posts';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      user_group_posts: {
-        Row: {
-          approved_at: string | null;
-          approved_by: string | null;
-          content: string | null;
-          created_at: string;
-          creator_id: string | null;
-          group_id: string;
-          id: string;
-          notes: string | null;
-          post_approval_status: Database['public']['Enums']['approval_status'];
-          rejected_at: string | null;
-          rejected_by: string | null;
-          rejection_reason: string | null;
-          title: string | null;
-          updated_by: string | null;
-        };
-        Insert: {
-          approved_at?: string | null;
-          approved_by?: string | null;
-          content?: string | null;
-          created_at?: string;
-          creator_id?: string | null;
-          group_id: string;
-          id?: string;
-          notes?: string | null;
-          post_approval_status?: Database['public']['Enums']['approval_status'];
-          rejected_at?: string | null;
-          rejected_by?: string | null;
-          rejection_reason?: string | null;
-          title?: string | null;
-          updated_by?: string | null;
-        };
-        Update: {
-          approved_at?: string | null;
-          approved_by?: string | null;
-          content?: string | null;
-          created_at?: string;
-          creator_id?: string | null;
-          group_id?: string;
-          id?: string;
-          notes?: string | null;
-          post_approval_status?: Database['public']['Enums']['approval_status'];
-          rejected_at?: string | null;
-          rejected_by?: string | null;
-          rejection_reason?: string | null;
-          title?: string | null;
-          updated_by?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_group_posts_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_users_with_post_checks';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_groups_with_tags';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_amount';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_guest';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_posts_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
           },
         ];
@@ -22688,13 +22737,6 @@ export type Database = {
             foreignKeyName: 'workspace_course_module_groups_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'workspace_course_module_groups_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -22774,13 +22816,6 @@ export type Database = {
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'workspace_course_modules_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
             referencedColumns: ['group_id'];
           },
           {
@@ -23249,13 +23284,6 @@ export type Database = {
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'workspace_default_included_user_groups_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
             referencedColumns: ['group_id'];
           },
           {
@@ -25002,13 +25030,6 @@ export type Database = {
             columns: ['resource_id'];
             isOneToOne: false;
             referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'workspace_guest_permissions_resource_id_fkey';
-            columns: ['resource_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
             referencedColumns: ['group_id'];
           },
           {
@@ -27555,13 +27576,6 @@ export type Database = {
             foreignKeyName: 'public_workspace_user_group_tag_groups_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'public_workspace_user_group_tag_groups_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -27788,13 +27802,6 @@ export type Database = {
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'workspace_user_roles_users_role_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
             referencedColumns: ['group_id'];
           },
           {
@@ -29013,20 +29020,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'user_group_post_checks_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['post_id_full'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_group_posts';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'workspace_user_roles_users_role_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
@@ -29038,13 +29031,6 @@ export type Database = {
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'workspace_user_roles_users_role_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
             referencedColumns: ['group_id'];
           },
           {
@@ -29091,20 +29077,6 @@ export type Database = {
           ws_id: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: 'user_group_post_checks_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['post_id_full'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_group_posts';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
             columns: ['user_id'];
@@ -29493,115 +29465,6 @@ export type Database = {
           user_id: string | null;
         };
         Relationships: [];
-      };
-      posts_dashboard_view: {
-        Row: {
-          created_at: string | null;
-          display_name: string | null;
-          email_id: string | null;
-          email_sent_at: string | null;
-          email_subject: string | null;
-          full_name: string | null;
-          group_id: string | null;
-          group_name: string | null;
-          is_completed: boolean | null;
-          notes: string | null;
-          post_content: string | null;
-          post_created_at: string | null;
-          post_id: string | null;
-          post_id_full: string | null;
-          post_title: string | null;
-          recipient: string | null;
-          user_email: string | null;
-          user_id: string | null;
-          ws_id: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_group_post_checks_email_id_fkey';
-            columns: ['email_id'];
-            isOneToOne: true;
-            referencedRelation: 'sent_emails';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['post_id_full'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_post_id_fkey';
-            columns: ['post_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_group_posts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_post_checks_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_users_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_users_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'workspace_users_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_users_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
       };
       shortened_links_creator_stats: {
         Row: {
@@ -32237,7 +32100,6 @@ export type Database = {
         };
         Returns: string;
       };
-      get_post_workspace_id: { Args: { p_post_id: string }; Returns: string };
       get_power_users: {
         Args: { limit_count?: number };
         Returns: {
@@ -32672,76 +32534,6 @@ export type Database = {
         Args: { ws_id: string };
         Returns: number;
       };
-      get_user_group_post_recipient_rows: {
-        Args: {
-          p_group_id: string;
-          p_post_id: string;
-          p_q?: string;
-          p_ws_id: string;
-        };
-        Returns: {
-          approval_rejection_reason: string;
-          approval_status: Database['public']['Enums']['approval_status'];
-          can_remove_approval: boolean;
-          check_created_at: string;
-          delivery_issue_reason: string;
-          email: string;
-          email_id: string;
-          group_id: string;
-          group_name: string;
-          has_check: boolean;
-          is_completed: boolean;
-          notes: string;
-          post_content: string;
-          post_created_at: string;
-          post_id: string;
-          post_title: string;
-          queue_attempt_count: number;
-          queue_last_error: string;
-          queue_sent_at: string;
-          queue_status: string;
-          recipient: string;
-          review_stage: string;
-          row_key: string;
-          subject: string;
-          user_avatar_url: string;
-          user_display_name: string;
-          user_full_name: string;
-          user_id: string;
-          user_phone: string;
-          ws_id: string;
-        }[];
-      };
-      get_user_group_post_status_summary: {
-        Args: { p_group_id: string; p_post_id: string; p_ws_id: string };
-        Returns: {
-          approved_awaiting_delivery_count: number;
-          approved_count: number;
-          blocked_count: number;
-          cancelled_count: number;
-          completed_count: number;
-          delivery_failed_count: number;
-          failed_count: number;
-          incomplete_count: number;
-          missing_check_count: number;
-          pending_approval_count: number;
-          pending_approval_stage_count: number;
-          processing_count: number;
-          processing_stage_count: number;
-          queue_skipped_count: number;
-          queued_count: number;
-          queued_stage_count: number;
-          rejected_count: number;
-          rejected_stage_count: number;
-          sent_count: number;
-          sent_stage_count: number;
-          skipped_approval_count: number;
-          skipped_stage_count: number;
-          total_count: number;
-          unchecked_count: number;
-          undeliverable_count: number;
-        }[];
-      };
       get_user_growth_comparison: {
         Args: never;
         Returns: {
@@ -33101,213 +32893,6 @@ export type Database = {
           with_multiple_subscriptions: number;
           with_single_subscription: number;
           with_zero_subscriptions: number;
-        }[];
-      };
-      get_workspace_post_email_rows: {
-        Args: {
-          p_approval_status?: Database['public']['Enums']['approval_status'];
-          p_cutoff?: string;
-          p_excluded_group_ids?: string[];
-          p_included_group_ids?: string[];
-          p_limit?: number;
-          p_offset?: number;
-          p_queue_status?: string;
-          p_user_id?: string;
-          p_ws_id: string;
-        };
-        Returns: {
-          approval_rejection_reason: string;
-          approval_status: Database['public']['Enums']['approval_status'];
-          can_remove_approval: boolean;
-          check_created_at: string;
-          email: string;
-          email_id: string;
-          group_id: string;
-          group_name: string;
-          is_completed: boolean;
-          notes: string;
-          post_content: string;
-          post_created_at: string;
-          post_id: string;
-          post_title: string;
-          queue_attempt_count: number;
-          queue_last_error: string;
-          queue_sent_at: string;
-          queue_status: string;
-          recipient: string;
-          row_key: string;
-          subject: string;
-          total_count: number;
-          user_id: string;
-          ws_id: string;
-        }[];
-      };
-      get_workspace_post_email_status_summary: {
-        Args: {
-          p_cutoff?: string;
-          p_excluded_group_ids?: string[];
-          p_included_group_ids?: string[];
-          p_queue_status?: string;
-          p_user_id?: string;
-          p_ws_id: string;
-        };
-        Returns: {
-          approved_count: number;
-          blocked_count: number;
-          cancelled_count: number;
-          failed_count: number;
-          pending_approval_count: number;
-          processing_count: number;
-          queued_count: number;
-          rejected_count: number;
-          sent_count: number;
-          skipped_count: number;
-          total_count: number;
-        }[];
-      };
-      get_workspace_post_review_base_rows: {
-        Args: {
-          p_cutoff?: string;
-          p_end_date?: string;
-          p_excluded_group_ids?: string[];
-          p_group_id?: string;
-          p_included_group_ids?: string[];
-          p_post_id?: string;
-          p_q?: string;
-          p_start_date?: string;
-          p_user_id?: string;
-          p_ws_id: string;
-        };
-        Returns: {
-          approval_rejection_reason: string;
-          approval_status: Database['public']['Enums']['approval_status'];
-          can_remove_approval: boolean;
-          check_created_at: string;
-          delivery_issue_reason: string;
-          email: string;
-          email_id: string;
-          group_id: string;
-          group_name: string;
-          has_check: boolean;
-          is_completed: boolean;
-          notes: string;
-          post_content: string;
-          post_created_at: string;
-          post_id: string;
-          post_title: string;
-          queue_attempt_count: number;
-          queue_last_error: string;
-          queue_sent_at: string;
-          queue_status: string;
-          recipient: string;
-          review_stage: string;
-          row_key: string;
-          subject: string;
-          user_avatar_url: string;
-          user_display_name: string;
-          user_full_name: string;
-          user_id: string;
-          user_phone: string;
-          ws_id: string;
-        }[];
-      };
-      get_workspace_post_review_filter_options: {
-        Args: {
-          p_cutoff?: string;
-          p_included_group_ids?: string[];
-          p_ws_id: string;
-        };
-        Returns: {
-          amount: number;
-          id: string;
-          label: string;
-          option_scope: string;
-        }[];
-      };
-      get_workspace_post_review_rows: {
-        Args: {
-          p_approval_status?: Database['public']['Enums']['approval_status'];
-          p_cutoff?: string;
-          p_end_date?: string;
-          p_excluded_group_ids?: string[];
-          p_included_group_ids?: string[];
-          p_limit?: number;
-          p_offset?: number;
-          p_queue_status?: string;
-          p_stage?: string[];
-          p_start_date?: string;
-          p_user_id?: string;
-          p_ws_id: string;
-        };
-        Returns: {
-          approval_rejection_reason: string;
-          approval_status: Database['public']['Enums']['approval_status'];
-          can_remove_approval: boolean;
-          check_created_at: string;
-          delivery_issue_reason: string;
-          email: string;
-          email_id: string;
-          group_id: string;
-          group_name: string;
-          has_check: boolean;
-          is_completed: boolean;
-          notes: string;
-          post_content: string;
-          post_created_at: string;
-          post_id: string;
-          post_title: string;
-          queue_attempt_count: number;
-          queue_last_error: string;
-          queue_sent_at: string;
-          queue_status: string;
-          recipient: string;
-          review_stage: string;
-          row_key: string;
-          subject: string;
-          total_count: number;
-          user_avatar_url: string;
-          user_display_name: string;
-          user_full_name: string;
-          user_id: string;
-          user_phone: string;
-          ws_id: string;
-        }[];
-      };
-      get_workspace_post_review_summary: {
-        Args: {
-          p_approval_status?: Database['public']['Enums']['approval_status'];
-          p_cutoff?: string;
-          p_end_date?: string;
-          p_excluded_group_ids?: string[];
-          p_included_group_ids?: string[];
-          p_queue_status?: string;
-          p_start_date?: string;
-          p_user_id?: string;
-          p_ws_id: string;
-        };
-        Returns: {
-          approved_awaiting_delivery_count: number;
-          approved_count: number;
-          blocked_count: number;
-          cancelled_count: number;
-          delivery_failed_count: number;
-          failed_count: number;
-          missing_check_count: number;
-          pending_approval_count: number;
-          pending_approval_stage_count: number;
-          processing_count: number;
-          processing_stage_count: number;
-          queue_skipped_count: number;
-          queued_count: number;
-          queued_stage_count: number;
-          rejected_count: number;
-          rejected_stage_count: number;
-          sent_count: number;
-          sent_stage_count: number;
-          skipped_approval_count: number;
-          skipped_stage_count: number;
-          total_count: number;
-          undeliverable_count: number;
         }[];
       };
       get_workspace_products_count: {
@@ -34001,34 +33586,6 @@ export type Database = {
         Args: { p_target_table: string };
         Returns: undefined;
       };
-      reconcile_orphaned_approved_post_email_queue: {
-        Args: {
-          p_cutoff?: string;
-          p_max_posts?: number;
-          p_skip_posts?: number;
-          p_ws_id?: string;
-        };
-        Returns: {
-          already_sent: number;
-          checked: number;
-          covered_by_existing_queue: number;
-          covered_by_sent_email: number;
-          eligible_recipients: number;
-          enqueued: number;
-          existing_processing: number;
-          existing_queued: number;
-          existing_skipped: number;
-          missing_completion: number;
-          missing_email: number;
-          missing_sender_platform_user: number;
-          missing_user_record: number;
-          not_approved: number;
-          orphaned: number;
-          processed_posts: number;
-          remaining_posts: number;
-          upserted: number;
-        }[];
-      };
       record_abuse_activity_signal: {
         Args: {
           p_api_key_id?: string;
@@ -34103,7 +33660,6 @@ export type Database = {
         };
         Returns: string;
       };
-      refresh_posts_dashboard_view: { Args: never; Returns: undefined };
       release_fixed_ai_credit_reservation: {
         Args: { p_metadata?: Json; p_reservation_id: string };
         Returns: {

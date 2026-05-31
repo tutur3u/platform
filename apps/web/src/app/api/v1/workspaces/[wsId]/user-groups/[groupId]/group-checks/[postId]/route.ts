@@ -36,6 +36,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   // Ensure resource belongs to this workspace and group
   const { data: post, error: postErr } = await sbAdmin
+    .schema('private')
     .from('user_group_posts')
     .select(`
       id,
@@ -71,6 +72,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   if (multiple) {
     const { error } = await sbAdmin
+      .schema('private')
       .from('user_group_post_checks')
       .upsert(
         (
@@ -123,6 +125,7 @@ export async function PUT(req: Request, { params }: Params) {
     };
 
     const { error } = await sbAdmin
+      .schema('private')
       .from('user_group_post_checks')
       .upsert({
         post_id: postId,

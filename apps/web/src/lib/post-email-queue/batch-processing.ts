@@ -174,6 +174,7 @@ async function linkSentEmailToCheck(
   }
 ): Promise<void> {
   const { error: checkUpdateError } = await sbAdmin
+    .schema('private')
     .from('user_group_post_checks')
     .update({ email_id: sentEmailId })
     .eq('post_id', postId)
@@ -230,6 +231,7 @@ async function prefetchBatchData(
   const postRows: PrefetchPostRow[] = [];
   for (const postChunk of chunkArray(postIds, PREFETCH_QUERY_CHUNK_SIZE)) {
     const { data, error } = await sbAdmin
+      .schema('private')
       .from('user_group_posts')
       .select(
         'id, group_id, title, content, created_at, workspace_user_groups!inner(ws_id, name)'
@@ -237,13 +239,14 @@ async function prefetchBatchData(
       .in('id', postChunk);
 
     if (error) throw error;
-    postRows.push(...((data ?? []) as PrefetchPostRow[]));
+    postRows.push(...((data ?? []) as unknown as PrefetchPostRow[]));
   }
 
   const checkRows: PrefetchCheckRow[] = [];
   for (const postChunk of chunkArray(postIds, PREFETCH_QUERY_CHUNK_SIZE)) {
     for (const userChunk of chunkArray(userIds, PREFETCH_QUERY_CHUNK_SIZE)) {
       const { data, error } = await sbAdmin
+        .schema('private')
         .from('user_group_post_checks')
         .select(
           'post_id, user_id, notes, is_completed, approval_status, user:workspace_users!user_id!inner(id, email, full_name, display_name)'
@@ -252,7 +255,7 @@ async function prefetchBatchData(
         .in('user_id', userChunk);
 
       if (error) throw error;
-      checkRows.push(...((data ?? []) as PrefetchCheckRow[]));
+      checkRows.push(...((data ?? []) as unknown as PrefetchCheckRow[]));
     }
   }
 

@@ -7,6 +7,24 @@ interface Params {
   params: Promise<{ wsId: string }>;
 }
 
+interface PostReviewFilterOption {
+  amount: number | null;
+  id: string;
+  label: string;
+  option_scope: string;
+}
+
+type PostReviewFilterOptionsRpcArgs = {
+  p_cutoff: string;
+  p_included_group_ids?: string[];
+  p_ws_id: string;
+};
+
+type PostReviewFilterOptionsRpc = (
+  fn: 'get_workspace_post_review_filter_options',
+  args: PostReviewFilterOptionsRpcArgs
+) => Promise<{ data: PostReviewFilterOption[] | null; error: unknown }>;
+
 export async function GET(request: Request, { params }: Params) {
   const supabase = await createClient(request);
   const { wsId } = await params;
@@ -18,7 +36,9 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const userGroupsPromise = supabase.rpc(
+  const privateRpc = supabase.schema('private')
+    .rpc as unknown as PostReviewFilterOptionsRpc;
+  const userGroupsPromise = privateRpc(
     'get_workspace_post_review_filter_options',
     {
       p_cutoff: getPostEmailMaxAgeCutoff(),

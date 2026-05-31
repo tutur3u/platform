@@ -88,6 +88,7 @@ export async function GET(request: Request, { params }: Params) {
       }
 
       const { data, error } = await sbAdmin
+        .schema('private')
         .from('user_group_post_logs')
         .select('*')
         .eq('post_id', postId)

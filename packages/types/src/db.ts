@@ -275,7 +275,7 @@ export type AIWhitelistEmail = Tables<
 >;
 export type WorkspaceAIExecution = Tables<'workspace_ai_executions'>;
 export type WorkspaceDocument = Tables<'workspace_documents'>;
-export type GroupPostCheck = Tables<'user_group_post_checks'>;
+export type GroupPostCheck = PrivateTable<'user_group_post_checks'>;
 export type NotificationBatch = Tables<
   { schema: 'private' },
   'notification_batches'
@@ -293,7 +293,7 @@ export type HiveWorkflow = Tables<'hive_workflows'>;
 export type HiveWorkflowRun = Tables<'hive_workflow_runs'>;
 export type HiveWorldEvent = Tables<'hive_world_events'>;
 export type HiveWorldState = Tables<'hive_world_states'>;
-export type UserGroupPost = Tables<'user_group_posts'> & {
+export type UserGroupPost = PrivateTable<'user_group_posts'> & {
   group_name?: string | null;
 };
 export interface WorkspaceUserGroupTableRow {
@@ -1421,7 +1421,7 @@ export type PostApprovalItem = PostApprovalQueryResult & {
  * Post log entry for comparison view
  * Represents a snapshot of a post from the logs table
  */
-export type PostLogEntry = Tables<'user_group_post_logs'>;
+export type PostLogEntry = PrivateTable<'user_group_post_logs'>;
 
 export type WorkspaceCalendarGoogleToken = Tables<'calendar_auth_tokens'>;
 export type WorkspaceCalendarGoogleTokenClient = Pick<

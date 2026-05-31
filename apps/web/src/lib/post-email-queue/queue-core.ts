@@ -119,7 +119,7 @@ function callReconcileOrphanedApprovedPostsRpc(
   args: ReconcileOrphanedApprovedPostsRpcArgs
 ): Promise<ReconcileOrphanedApprovedPostsRpcResponse> {
   return (
-    client.rpc as unknown as (
+    client.schema('private').rpc as unknown as (
       fn: string,
       rpcArgs: ReconcileOrphanedApprovedPostsRpcArgs
     ) => Promise<ReconcileOrphanedApprovedPostsRpcResponse>
@@ -140,6 +140,7 @@ function shouldFallbackToAppRpc(error: unknown, rpcName: string): boolean {
   return (
     message.includes('Could not find the function') ||
     message.includes(`function public.${rpcName}`) ||
+    message.includes(`function private.${rpcName}`) ||
     message.includes('does not exist')
   );
 }
@@ -301,6 +302,7 @@ async function getPostIdsOlderThanCutoff(
 
   for (const postChunk of chunkArray([...new Set(postIds)])) {
     const { data, error } = await sbAdmin
+      .schema('private')
       .from('user_group_posts')
       .select('id')
       .in('id', postChunk)
@@ -325,6 +327,7 @@ async function getPostIdsAtOrAfterCutoff(
 
   for (const postChunk of chunkArray([...new Set(postIds)])) {
     const { data, error } = await sbAdmin
+      .schema('private')
       .from('user_group_posts')
       .select('id')
       .in('id', postChunk)
@@ -487,6 +490,7 @@ async function getEligibleRecipients(
 
   for (const userIdChunk of userIdChunks) {
     let query = sbAdmin
+      .schema('private')
       .from('user_group_post_checks')
       .select(
         'user_id, is_completed, approval_status, approved_by, user:workspace_users!user_id(id, email, ws_id)'
@@ -500,11 +504,12 @@ async function getEligibleRecipients(
 
     const { data, error } = await query;
     if (error) throw error;
-    rows.push(...((data ?? []) as EligibleRecipientCheckRow[]));
+    rows.push(...((data ?? []) as unknown as EligibleRecipientCheckRow[]));
   }
 
   for (const userIdChunk of userIdChunks) {
     let allChecksQuery = sbAdmin
+      .schema('private')
       .from('user_group_post_checks')
       .select('user_id, is_completed, approval_status, approved_by')
       .eq('post_id', postId);
@@ -648,6 +653,7 @@ export async function enqueueApprovedPostEmails(
   const emptyDiagnostics = createEmptyEnqueueDiagnostics();
 
   const { data: post, error: postError } = await sbAdmin
+    .schema('private')
     .from('user_group_posts')
     .select('id, group_id, created_at, workspace_user_groups!inner(ws_id)')
     .eq('id', postId)
@@ -942,8 +948,9 @@ export async function autoSkipOldApprovedPostChecks(
 ): Promise<number> {
   const cutoff = getPostEmailMaxAgeCutoff();
   const oldChecks = await fetchAllPaginatedRows<OldApprovedCheckRow>(
-    (from, to) => {
+    async (from, to) => {
       let checksQuery = sbAdmin
+        .schema('private')
         .from('user_group_post_checks')
         .select(
           'post_id, user_id, user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(id, ws_id))'
@@ -959,10 +966,15 @@ export async function autoSkipOldApprovedPostChecks(
         );
       }
 
-      return checksQuery
+      const { data, error } = await checksQuery
         .order('post_id', { ascending: true })
         .order('user_id', { ascending: true })
         .range(from, to);
+
+      return {
+        data: (data ?? []) as unknown as OldApprovedCheckRow[],
+        error,
+      };
     }
   );
   if (oldChecks.length === 0) return 0;
@@ -1061,6 +1073,7 @@ export async function autoSkipOldApprovedPostChecks(
     if (!pairFilter) continue;
 
     const { data, error: updateError } = await sbAdmin
+      .schema('private')
       .from('user_group_post_checks')
       .update({ approval_status: 'SKIPPED' })
       .eq('approval_status', 'APPROVED')
@@ -1103,6 +1116,7 @@ export async function autoSkipRejectedPosts(
     Pick<GroupPostCheck, 'post_id' | 'user_id'>
   >((from, to) =>
     sbAdmin
+      .schema('private')
       .from('user_group_post_checks')
       .select('post_id, user_id')
       .eq('approval_status', 'REJECTED')
@@ -1156,8 +1170,9 @@ async function reconcileOrphanedApprovedPostsInApp(
 ): Promise<ReconcileOrphanedApprovedPostsResult> {
   const cutoff = getPostEmailMaxAgeCutoff();
   const checks = await fetchAllPaginatedRows<OrphanedApprovedCheckRow>(
-    (from, to) =>
-      sbAdmin
+    async (from, to) => {
+      const { data, error } = await sbAdmin
+        .schema('private')
         .from('user_group_post_checks')
         .select(
           'post_id, user_id, approved_by, is_completed, user:workspace_users!user_id(id, email), user_group_posts!inner(id, group_id, created_at, workspace_user_groups!inner(ws_id))'
@@ -1167,7 +1182,13 @@ async function reconcileOrphanedApprovedPostsInApp(
         .gte('user_group_posts.created_at', cutoff)
         .order('post_id', { ascending: true })
         .order('user_id', { ascending: true })
-        .range(from, to)
+        .range(from, to);
+
+      return {
+        data: (data ?? []) as unknown as OrphanedApprovedCheckRow[],
+        error,
+      };
+    }
   );
 
   debugLog('[reconcileOrphanedApprovedPosts] Found checks', {
@@ -1313,7 +1334,7 @@ async function reconcileOrphanedApprovedPostsInApp(
   const byPost = new Map<
     string,
     {
-      group_id: Database['public']['Tables']['user_group_posts']['Row']['group_id'];
+      group_id: Database['private']['Tables']['user_group_posts']['Row']['group_id'];
       ws_id: WorkspaceUser['ws_id'];
       userIds: Array<GroupPostCheck['user_id']>;
     }
@@ -1447,6 +1468,7 @@ async function getEligibleReenqueuePairs(
     [];
   for (const postChunk of chunkArray(candidatePostIds)) {
     let checksQuery = sbAdmin
+      .schema('private')
       .from('user_group_post_checks')
       .select(
         'post_id, user_id, is_completed, approval_status, user:workspace_users!user_id(id, email, ws_id)'
@@ -1462,7 +1484,7 @@ async function getEligibleReenqueuePairs(
     const { data, error } = await checksQuery;
     if (error) throw error;
 
-    for (const check of (data ?? []) as CheckEligibilityRow[]) {
+    for (const check of (data ?? []) as unknown as CheckEligibilityRow[]) {
       const pairId = `${check.post_id}:${check.user_id}`;
       if (candidatePairIds.has(pairId)) {
         eligibleCheckRows.push({

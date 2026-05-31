@@ -55,6 +55,7 @@ export async function GET(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
 
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('user_group_post_checks')
     .select(
       'post_id, user_id, is_completed, notes, created_at, email_id, approval_status, approved_at, rejected_at, rejection_reason'
@@ -129,6 +130,7 @@ export async function POST(req: Request, { params }: Params) {
 
   // Ensure resource belongs to this workspace and group
   const { data: post, error: postErr } = await sbAdmin
+    .schema('private')
     .from('user_group_posts')
     .select(`
       id,
@@ -157,6 +159,7 @@ export async function POST(req: Request, { params }: Params) {
       ];
 
   const { error } = await sbAdmin
+    .schema('private')
     .from('user_group_post_checks')
     .insert(insertPayload);
 

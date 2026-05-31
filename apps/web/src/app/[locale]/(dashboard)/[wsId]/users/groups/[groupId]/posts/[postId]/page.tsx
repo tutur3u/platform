@@ -15,6 +15,27 @@ import { CheckAll } from './check-all';
 import type { GroupPostRecipientRow, GroupPostStatusSummaryRow } from './types';
 import { UsersList } from './users-list';
 
+type PostStatusRpcArgs = {
+  p_group_id: string;
+  p_post_id: string;
+  p_ws_id: string;
+};
+
+type RecipientRowsRpcArgs = PostStatusRpcArgs & {
+  p_q?: string;
+};
+
+type PrivateUserGroupPostRpc = {
+  (
+    fn: 'get_user_group_post_status_summary',
+    args: PostStatusRpcArgs
+  ): Promise<{ data: GroupPostStatusSummaryRow[] | null; error: unknown }>;
+  (
+    fn: 'get_user_group_post_recipient_rows',
+    args: RecipientRowsRpcArgs
+  ): Promise<{ data: GroupPostRecipientRow[] | null; error: unknown }>;
+};
+
 export const metadata: Metadata = {
   title: 'Postid Details',
   description:
@@ -246,6 +267,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
 async function getPostData(postId: string) {
   const sbAdmin = await createAdminClient();
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('user_group_posts')
     .select('*')
     .eq('id', postId)
@@ -270,7 +292,9 @@ async function getGroupData(wsId: string, groupId: string) {
 
 async function getPostStatus(wsId: string, groupId: string, postId: string) {
   const sbAdmin = await createAdminClient();
-  const { data, error } = await sbAdmin.rpc(
+  const privateRpc = sbAdmin.schema('private')
+    .rpc as unknown as PrivateUserGroupPostRpc;
+  const { data, error } = await privateRpc(
     'get_user_group_post_status_summary',
     {
       p_group_id: groupId,
@@ -310,7 +334,9 @@ async function getRecipientRows(
   { q }: SearchParams = {}
 ) {
   const sbAdmin = await createAdminClient();
-  const { data, error } = await sbAdmin.rpc(
+  const privateRpc = sbAdmin.schema('private')
+    .rpc as unknown as PrivateUserGroupPostRpc;
+  const { data, error } = await privateRpc(
     'get_user_group_post_recipient_rows',
     {
       p_group_id: groupId,

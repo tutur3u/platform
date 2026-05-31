@@ -43,6 +43,7 @@ export async function PUT(req: Request) {
   const result = await batchUpsert({
     table: 'user_group_posts',
     data: normalizeLessonPayload(json?.data),
+    schema: 'private',
   });
   return createMigrationResponse(result, 'lessons');
 }

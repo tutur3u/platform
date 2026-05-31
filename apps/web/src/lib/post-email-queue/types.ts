@@ -137,7 +137,7 @@ export type QueueSkipTarget = Pick<
 >;
 
 export type PostScopeRow = Pick<
-  Database['public']['Tables']['user_group_posts']['Row'],
+  Database['private']['Tables']['user_group_posts']['Row'],
   'id' | 'group_id' | 'created_at'
 > & {
   workspace_user_groups: Pick<WorkspaceUserGroupRow, 'ws_id'> | null;

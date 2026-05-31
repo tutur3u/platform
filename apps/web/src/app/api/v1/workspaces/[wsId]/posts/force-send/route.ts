@@ -84,6 +84,7 @@ export async function POST(request: Request, { params }: Params) {
     const [{ data: check, error: checkError }, alreadySent] = await Promise.all(
       [
         sbAdmin
+          .schema('private')
           .from('user_group_post_checks')
           .select(
             'post_id, user_id, is_completed, user:workspace_users!user_id(id, email, ws_id), user_group_posts!inner(group_id, workspace_user_groups!inner(ws_id))'
@@ -165,7 +166,7 @@ export async function POST(request: Request, { params }: Params) {
     if (workspaceUserLinkError) throw workspaceUserLinkError;
 
     const now = new Date().toISOString();
-    const approvalPatch: Database['public']['Tables']['user_group_post_checks']['Update'] =
+    const approvalPatch: Database['private']['Tables']['user_group_post_checks']['Update'] =
       {
         approval_status: 'APPROVED' as ApprovalStatus,
         approved_at: now,
@@ -176,6 +177,7 @@ export async function POST(request: Request, { params }: Params) {
       };
 
     const { error: approvalError } = await sbAdmin
+      .schema('private')
       .from('user_group_post_checks')
       .update(approvalPatch)
       .eq('post_id', postId)

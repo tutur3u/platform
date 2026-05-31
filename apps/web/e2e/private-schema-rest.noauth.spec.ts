@@ -107,6 +107,18 @@ const PRIVATE_TABLES = [
     select: 'category_id',
   },
   {
+    name: 'user_group_post_checks',
+    select: 'post_id',
+  },
+  {
+    name: 'user_group_post_logs',
+    select: 'id',
+  },
+  {
+    name: 'user_group_posts',
+    select: 'id',
+  },
+  {
     name: 'workspace_education_access_requests',
     select: 'id',
   },

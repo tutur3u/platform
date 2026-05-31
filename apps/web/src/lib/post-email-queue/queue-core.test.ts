@@ -188,6 +188,9 @@ function createMockAdminClient(userIds: string[]) {
   return {
     sbAdmin: {
       from: (table: string) => createMockQueryBuilder(table, state, userIds),
+      schema: () => ({
+        from: (table: string) => createMockQueryBuilder(table, state, userIds),
+      }),
     },
     state,
   };
@@ -300,6 +303,7 @@ describe('enqueueApprovedPostEmails', () => {
       {
         from: () => createMockQueryBuilder('unexpected', {} as never, []),
         rpc,
+        schema: () => ({ rpc }),
       } as never,
       {
         maxPosts: 25,

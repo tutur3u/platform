@@ -4,6 +4,9 @@ const { adminClientMock, autoSkipOldPostEmailsMock, createAdminClientMock } =
   vi.hoisted(() => {
     const adminClient = {
       rpc: vi.fn(),
+      schema: vi.fn(() => ({
+        rpc: adminClient.rpc,
+      })),
     };
 
     return {
@@ -118,6 +121,7 @@ describe('getPostsPageData', () => {
     });
 
     expect(autoSkipOldPostEmailsMock).not.toHaveBeenCalled();
+    expect(adminClientMock.schema).toHaveBeenCalledWith('private');
     expect(adminClientMock.rpc).toHaveBeenCalledWith(
       'get_workspace_post_review_rows',
       expect.objectContaining({

@@ -261,6 +261,7 @@ function createSbAdminMock({
       })),
       error: null,
     })),
+    schema: () => sbAdmin,
     from: (table: string) => {
       switch (table) {
         case 'post_email_queue':

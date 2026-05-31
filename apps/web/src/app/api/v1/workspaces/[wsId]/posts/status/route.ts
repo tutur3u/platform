@@ -29,6 +29,7 @@ export async function GET(
   const cutoff = getPostEmailMaxAgeCutoff();
 
   const queryBuilder = sbAdmin
+    .schema('private')
     .from('user_group_post_checks')
     .select(
       'user_id, user_group_posts!inner(id, group_id, created_at), workspace_users!user_id!inner(ws_id)',

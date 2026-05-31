@@ -6,20 +6,12 @@ set local search_path = public, extensions;
 
 select plan(16);
 
+set local session_replication_role = replica;
 insert into public.users (id)
-values ('00000000-0000-0000-0000-00000000010A')
+values
+  ('00000000-0000-0000-0000-00000000010A'),
+  ('00000000-0000-0000-0000-000000000111')
 on conflict (id) do nothing;
-
-insert into public.user_private_details (user_id, email, new_email)
-values (
-  '00000000-0000-0000-0000-00000000010A',
-  'review-owner@example.com',
-  null
-)
-on conflict (user_id) do update
-set
-  email = excluded.email,
-  new_email = excluded.new_email;
 
 insert into auth.users (
   id,
@@ -40,7 +32,20 @@ values (
   now()
 )
 on conflict (id) do nothing;
+set local session_replication_role = origin;
 
+insert into public.user_private_details (user_id, email, new_email)
+values (
+  '00000000-0000-0000-0000-00000000010A',
+  'review-owner@example.com',
+  null
+)
+on conflict (user_id) do update
+set
+  email = excluded.email,
+  new_email = excluded.new_email;
+
+set local session_replication_role = replica;
 insert into public.workspaces (id, name, personal, creator_id)
 values (
   '00000000-0000-0000-0000-00000000010B',
@@ -49,6 +54,7 @@ values (
   '00000000-0000-0000-0000-00000000010A'
 )
 on conflict (id) do nothing;
+set local session_replication_role = origin;
 
 insert into public.workspace_users (id, ws_id, full_name, display_name, email)
 values
@@ -94,7 +100,7 @@ values
   ('00000000-0000-0000-0000-00000000010C', '00000000-0000-0000-0000-000000000120', 'USER')
 on conflict do nothing;
 
-insert into public.user_group_posts (
+insert into private.user_group_posts (
   id,
   group_id,
   title,
@@ -144,7 +150,7 @@ values (
 )
 on conflict (id) do nothing;
 
-insert into public.user_group_post_checks (
+insert into private.user_group_post_checks (
   post_id,
   user_id,
   is_completed,
@@ -216,7 +222,7 @@ set status = excluded.status;
 select is(
   (
     select review_stage
-    from public.get_workspace_post_review_rows(
+    from private.get_workspace_post_review_rows(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_limit => 20
     )
@@ -229,7 +235,7 @@ select is(
 select is(
   (
     select review_stage
-    from public.get_workspace_post_review_rows(
+    from private.get_workspace_post_review_rows(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_limit => 20
     )
@@ -242,7 +248,7 @@ select is(
 select is(
   (
     select review_stage
-    from public.get_workspace_post_review_rows(
+    from private.get_workspace_post_review_rows(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_limit => 20
     )
@@ -255,7 +261,7 @@ select is(
 select is(
   (
     select review_stage
-    from public.get_workspace_post_review_rows(
+    from private.get_workspace_post_review_rows(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_limit => 20
     )
@@ -268,7 +274,7 @@ select is(
 select is(
   (
     select review_stage
-    from public.get_workspace_post_review_rows(
+    from private.get_workspace_post_review_rows(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_limit => 20
     )
@@ -281,7 +287,7 @@ select is(
 select is(
   (
     select review_stage
-    from public.get_workspace_post_review_rows(
+    from private.get_workspace_post_review_rows(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_limit => 20
     )
@@ -294,7 +300,7 @@ select is(
 select is(
   (
     select review_stage
-    from public.get_workspace_post_review_rows(
+    from private.get_workspace_post_review_rows(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_limit => 20
     )
@@ -307,7 +313,7 @@ select is(
 select is(
   (
     select review_stage
-    from public.get_workspace_post_review_rows(
+    from private.get_workspace_post_review_rows(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_limit => 20
     )
@@ -320,7 +326,7 @@ select is(
 select is(
   (
     select total_count
-    from public.get_workspace_post_review_summary(
+    from private.get_workspace_post_review_summary(
       p_ws_id => '00000000-0000-0000-0000-00000000010B'
     )
   ),
@@ -341,7 +347,7 @@ select is(
       + delivery_failed_count
       + skipped_stage_count
       + rejected_stage_count
-    from public.get_workspace_post_review_summary(
+    from private.get_workspace_post_review_summary(
       p_ws_id => '00000000-0000-0000-0000-00000000010B'
     )
   ),
@@ -352,7 +358,7 @@ select is(
 select is(
   (
     select total_count
-    from public.get_user_group_post_status_summary(
+    from private.get_user_group_post_status_summary(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_group_id => '00000000-0000-0000-0000-00000000010C',
       p_post_id => '00000000-0000-0000-0000-00000000010D'
@@ -365,7 +371,7 @@ select is(
 select is(
   (
     select unchecked_count
-    from public.get_user_group_post_status_summary(
+    from private.get_user_group_post_status_summary(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_group_id => '00000000-0000-0000-0000-00000000010C',
       p_post_id => '00000000-0000-0000-0000-00000000010D'
@@ -378,7 +384,7 @@ select is(
 select is(
   (
     select undeliverable_count
-    from public.get_workspace_post_review_summary(
+    from private.get_workspace_post_review_summary(
       p_ws_id => '00000000-0000-0000-0000-00000000010B'
     )
   ),
@@ -389,7 +395,7 @@ select is(
 select is(
   (
     select coalesce(max(total_count), 0)
-    from public.get_workspace_post_review_rows(
+    from private.get_workspace_post_review_rows(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_start_date => now() + interval '1 day',
       p_limit => 20
@@ -402,7 +408,7 @@ select is(
 select is(
   (
     select total_count
-    from public.get_workspace_post_review_summary(
+    from private.get_workspace_post_review_summary(
       p_ws_id => '00000000-0000-0000-0000-00000000010B',
       p_end_date => now() - interval '1 day'
     )
@@ -414,7 +420,7 @@ select is(
 select ok(
   exists (
     select 1
-    from public.get_workspace_post_review_filter_options(
+    from private.get_workspace_post_review_filter_options(
       p_ws_id => '00000000-0000-0000-0000-00000000010B'
     )
     where option_scope = 'user'

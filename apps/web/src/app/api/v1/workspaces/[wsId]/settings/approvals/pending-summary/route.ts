@@ -76,6 +76,7 @@ export async function GET(request: Request, { params }: Params) {
         .eq('user_ws_id', wsId)
         .eq('report_approval_status', 'PENDING'),
       sbAdmin
+        .schema('private')
         .from('user_group_post_checks')
         .select(
           'post_id, user_group_posts!inner(workspace_user_groups!inner(ws_id))',

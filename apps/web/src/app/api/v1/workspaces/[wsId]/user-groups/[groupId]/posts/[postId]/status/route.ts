@@ -11,6 +11,17 @@ interface Params {
   }>;
 }
 
+type PostStatusRpcArgs = {
+  p_group_id: string;
+  p_post_id: string;
+  p_ws_id: string;
+};
+
+type PostStatusRpc = (
+  fn: 'get_user_group_post_status_summary',
+  args: PostStatusRpcArgs
+) => Promise<{ data: GroupPostStatusSummaryRow[] | null; error: unknown }>;
+
 export async function GET(req: Request, { params }: Params) {
   const { wsId, groupId, postId } = await params;
 
@@ -28,7 +39,8 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
-  const { data, error } = await sbAdmin.rpc(
+  const privateRpc = sbAdmin.schema('private').rpc as unknown as PostStatusRpc;
+  const { data, error } = await privateRpc(
     'get_user_group_post_status_summary',
     {
       p_group_id: groupId,

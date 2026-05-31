@@ -72,6 +72,7 @@ export const GET = withSessionAuth(
     const cursor = request.nextUrl.searchParams.get('cursor');
 
     let query = access.sbAdmin
+      .schema('private')
       .from('user_group_posts')
       .select('*', { count: 'exact' })
       .eq('group_id', parsedParams.data.courseId)
@@ -184,6 +185,7 @@ export const POST = withSessionAuth(
 
     const enablePostApproval = (approvalConfig?.value ?? 'true') === 'true';
     const { data, error } = await access.sbAdmin
+      .schema('private')
       .from('user_group_posts')
       .insert({
         ...parsedBody.data,

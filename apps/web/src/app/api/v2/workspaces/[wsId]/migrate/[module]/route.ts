@@ -122,10 +122,17 @@ const PRIVATE_REPORT_TABLES: Set<string> = new Set([
   'external_user_monthly_reports',
 ]);
 
+const PRIVATE_USER_GROUP_POST_TABLES: Set<string> = new Set([
+  'user_group_post_checks',
+  'user_group_post_logs',
+  'user_group_posts',
+]);
+
 function isPrivateMigrationTable(tableName: string) {
   return (
     PRIVATE_INVENTORY_TABLES.has(tableName) ||
-    PRIVATE_REPORT_TABLES.has(tableName)
+    PRIVATE_REPORT_TABLES.has(tableName) ||
+    PRIVATE_USER_GROUP_POST_TABLES.has(tableName)
   );
 }
 
@@ -689,6 +696,7 @@ export const GET = withApiAuth<Params>(
 
         for (let postOffset = 0; ; postOffset += ID_FETCH_PAGE_SIZE) {
           const { data: posts, error: postsError } = await supabase
+            .schema('private')
             .from('user_group_posts')
             .select('id')
             .in('group_id', batchGroupIds)
@@ -726,7 +734,7 @@ export const GET = withApiAuth<Params>(
         data,
         error,
       } = await batchedInQuery(
-        supabase,
+        privateInventory,
         'user_group_post_checks',
         'post_id',
         postIds,

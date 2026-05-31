@@ -533,7 +533,7 @@ describe('readObservabilityLogs', () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'observability-fallback-logs-')
     );
-    const now = Date.now();
+    const now = Math.floor(Date.now() / 60_000) * 60_000 - 15_000;
 
     try {
       fs.mkdirSync(path.join(tempDir, 'watch'), { recursive: true });

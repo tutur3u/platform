@@ -54,6 +54,7 @@ export async function GET(req: Request, { params }: Params) {
 
   const supabase = await createAdminClient();
   let query = supabase
+    .schema('private')
     .from('user_group_posts')
     .select('*', { count: 'exact' })
     .eq('group_id', groupId)
@@ -197,22 +198,25 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase.from('user_group_posts').insert({
-    ...data,
-    group_id: groupId,
-    creator_id: workspaceUser.virtual_user_id,
-    updated_by: workspaceUser.virtual_user_id,
-    ...(enablePostApproval
-      ? {}
-      : {
-          post_approval_status: 'APPROVED',
-          approved_by: workspaceUser.virtual_user_id,
-          approved_at: new Date().toISOString(),
-          rejected_by: null,
-          rejected_at: null,
-          rejection_reason: null,
-        }),
-  });
+  const { error } = await supabase
+    .schema('private')
+    .from('user_group_posts')
+    .insert({
+      ...data,
+      group_id: groupId,
+      creator_id: workspaceUser.virtual_user_id,
+      updated_by: workspaceUser.virtual_user_id,
+      ...(enablePostApproval
+        ? {}
+        : {
+            post_approval_status: 'APPROVED',
+            approved_by: workspaceUser.virtual_user_id,
+            approved_at: new Date().toISOString(),
+            rejected_by: null,
+            rejected_at: null,
+            rejection_reason: null,
+          }),
+    });
 
   if (error) {
     console.log(error);

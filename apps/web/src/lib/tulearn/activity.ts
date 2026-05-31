@@ -67,6 +67,7 @@ export async function getLearnerAssignments({
 
   const [postsResult, checksResult] = await Promise.all([
     sbAdmin
+      .schema('private')
       .from('user_group_posts')
       .select(
         'id, title, content, created_at, group_id, workspace_user_groups!inner(id, name, ws_id)'
@@ -76,6 +77,7 @@ export async function getLearnerAssignments({
       .order('created_at', { ascending: false })
       .limit(12),
     sbAdmin
+      .schema('private')
       .from('user_group_post_checks')
       .select('post_id, is_completed, approval_status')
       .eq('user_id', studentWorkspaceUserId),
@@ -88,7 +90,7 @@ export async function getLearnerAssignments({
     (checksResult.data ?? []).map((check) => [check.post_id, check])
   );
 
-  const rows = (postsResult.data ?? []) as UserGroupPostRow[];
+  const rows = (postsResult.data ?? []) as unknown as UserGroupPostRow[];
   return rows.map((post) => {
     const course = firstOf(post.workspace_user_groups);
     const check = checksByPost.get(post.id);

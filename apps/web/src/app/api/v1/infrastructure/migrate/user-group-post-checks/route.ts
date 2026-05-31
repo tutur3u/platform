@@ -45,6 +45,7 @@ export async function GET(req: Request) {
   for (let i = 0; i < groupIds.length; i += BATCH_SIZE) {
     const batchGroupIds = groupIds.slice(i, i + BATCH_SIZE);
     const { data: posts, error: postsError } = await supabase
+      .schema('private')
       .from('user_group_posts')
       .select('id')
       .in('group_id', batchGroupIds);
@@ -70,7 +71,7 @@ export async function GET(req: Request) {
     offset,
     limit,
     inBatchSize: 100,
-    supabase,
+    supabase: supabase.schema('private') as unknown as typeof supabase,
   });
 
   return createFetchResponse(result, 'user-group-post-checks');
@@ -85,6 +86,7 @@ export async function PUT(req: Request) {
     table: 'user_group_post_checks',
     data: json?.data || [],
     onConflict: 'post_id,user_id',
+    schema: 'private',
   });
   return createMigrationResponse(result, 'user-group-post-checks');
 }
