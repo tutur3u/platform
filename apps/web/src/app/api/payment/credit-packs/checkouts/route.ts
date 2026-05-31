@@ -1,6 +1,9 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { BASE_URL } from '@/constants/common';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
@@ -35,6 +38,7 @@ export async function POST(request: NextRequest) {
   const normalizedWsId = await normalizeWorkspaceId(wsId);
 
   const supabase = await createClient(request);
+  const sbAdmin = await createAdminClient();
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
@@ -81,7 +85,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
   }
 
-  const { data: creditPack, error: packError } = await supabase
+  const privateAdmin = sbAdmin.schema('private');
+
+  const { data: creditPack, error: packError } = await privateAdmin
     .from('workspace_credit_packs')
     .select('id, archived')
     .eq('id', creditPackId)

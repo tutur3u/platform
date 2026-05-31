@@ -5,6 +5,10 @@ import {
   parseWorkspaceProductTier,
 } from '@/utils/polar-product-metadata';
 
+function privateSchema(supabase: TypedSupabaseClient) {
+  return supabase.schema('private');
+}
+
 export async function fetchProducts(polar: Polar) {
   try {
     const res = await polar.products.list({ isArchived: false });
@@ -32,7 +36,7 @@ export interface CreditPackListItem {
 
 export async function fetchCreditPacks(supabase: TypedSupabaseClient) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await privateSchema(supabase)
       .from('workspace_credit_packs')
       .select('*')
       .eq('archived', false)
@@ -66,9 +70,7 @@ export async function fetchWorkspaceOrders(
   try {
     const { data: orders, error } = await supabase
       .from('workspace_orders')
-      .select(
-        '*, workspace_subscription_products (name, price), workspace_credit_packs (name, price)'
-      )
+      .select('*, workspace_subscription_products (name, price)')
       .eq('ws_id', wsId)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -78,22 +80,56 @@ export async function fetchWorkspaceOrders(
       return [];
     }
 
-    return orders.map((order) => ({
-      id: order.id,
-      createdAt: order.created_at,
-      billingReason: order.billing_reason ?? 'unknown',
-      totalAmount: order.total_amount ?? 0,
-      originalAmount:
-        order.workspace_subscription_products?.price ??
-        order.workspace_credit_packs?.price ??
-        0,
-      currency: order.currency ?? 'usd',
-      status: order.status,
-      productName:
-        order.workspace_subscription_products?.name ??
-        order.workspace_credit_packs?.name ??
-        'N/A',
-    }));
+    const orderRows = orders ?? [];
+    const creditPackIds = [
+      ...new Set(
+        orderRows
+          .map((order) => order.credit_pack_id)
+          .filter((id): id is string => Boolean(id))
+      ),
+    ];
+
+    const { data: creditPacks, error: creditPacksError } =
+      creditPackIds.length > 0
+        ? await privateSchema(supabase)
+            .from('workspace_credit_packs')
+            .select('id, name, price')
+            .in('id', creditPackIds)
+        : { data: [], error: null };
+
+    if (creditPacksError) {
+      console.error('Error fetching workspace order credit packs:', {
+        error: creditPacksError,
+      });
+      return [];
+    }
+
+    const creditPacksById = new Map(
+      (creditPacks ?? []).map((creditPack) => [creditPack.id, creditPack])
+    );
+
+    return orderRows.map((order) => {
+      const creditPack = order.credit_pack_id
+        ? creditPacksById.get(order.credit_pack_id)
+        : null;
+
+      return {
+        id: order.id,
+        createdAt: order.created_at,
+        billingReason: order.billing_reason ?? 'unknown',
+        totalAmount: order.total_amount ?? 0,
+        originalAmount:
+          order.workspace_subscription_products?.price ??
+          creditPack?.price ??
+          0,
+        currency: order.currency ?? 'usd',
+        status: order.status,
+        productName:
+          order.workspace_subscription_products?.name ??
+          creditPack?.name ??
+          'N/A',
+      };
+    });
   } catch (error) {
     console.error('Error fetching workspace orders:', error);
     return [];

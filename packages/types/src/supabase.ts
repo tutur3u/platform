@@ -5242,6 +5242,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_credit_packs: {
+        Row: {
+          archived: boolean;
+          created_at: string;
+          currency: string;
+          description: string | null;
+          expiry_days: number;
+          id: string;
+          name: string;
+          price: number;
+          tokens: number;
+          updated_at: string;
+        };
+        Insert: {
+          archived?: boolean;
+          created_at?: string;
+          currency?: string;
+          description?: string | null;
+          expiry_days: number;
+          id: string;
+          name: string;
+          price?: number;
+          tokens: number;
+          updated_at?: string;
+        };
+        Update: {
+          archived?: boolean;
+          created_at?: string;
+          currency?: string;
+          description?: string | null;
+          expiry_days?: number;
+          id?: string;
+          name?: string;
+          price?: number;
+          tokens?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       workspace_debt_loan_transactions: {
         Row: {
           amount: number;
@@ -22853,13 +22892,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'workspace_credit_pack_purchases_credit_pack_id_fkey';
-            columns: ['credit_pack_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_credit_packs';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'workspace_credit_pack_purchases_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -22888,45 +22920,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      workspace_credit_packs: {
-        Row: {
-          archived: boolean;
-          created_at: string;
-          currency: string;
-          description: string | null;
-          expiry_days: number;
-          id: string;
-          name: string;
-          price: number;
-          tokens: number;
-          updated_at: string;
-        };
-        Insert: {
-          archived?: boolean;
-          created_at?: string;
-          currency?: string;
-          description?: string | null;
-          expiry_days: number;
-          id: string;
-          name: string;
-          price?: number;
-          tokens: number;
-          updated_at?: string;
-        };
-        Update: {
-          archived?: boolean;
-          created_at?: string;
-          currency?: string;
-          description?: string | null;
-          expiry_days?: number;
-          id?: string;
-          name?: string;
-          price?: number;
-          tokens?: number;
-          updated_at?: string;
-        };
-        Relationships: [];
       };
       workspace_cron_executions: {
         Row: {
@@ -26182,13 +26175,6 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'workspace_orders_credit_pack_id_fkey';
-            columns: ['credit_pack_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_credit_packs';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'workspace_orders_polar_subscription_id_fkey';
             columns: ['polar_subscription_id'];

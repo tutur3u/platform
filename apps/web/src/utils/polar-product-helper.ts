@@ -10,6 +10,10 @@ const CREDIT_PACK_EXPIRY_DAYS = 60;
 
 type PolarPrice = Product['prices'][number];
 
+function privateSchema(supabase: TypedSupabaseClient) {
+  return supabase.schema('private');
+}
+
 function isPolarPrice(value: unknown): value is PolarPrice {
   if (!value || typeof value !== 'object') return false;
   return (
@@ -40,7 +44,9 @@ export async function resolveWorkspaceOrderProduct(
     };
   }
 
-  const { data: creditPack, error: creditPackError } = await supabase
+  const { data: creditPack, error: creditPackError } = await privateSchema(
+    supabase
+  )
     .from('workspace_credit_packs')
     .select('id')
     .eq('id', polarProductId)
@@ -178,7 +184,7 @@ async function upsertCreditPackProduct(
     archived: product.isArchived ?? false,
   };
 
-  const { error: upsertError } = await supabase
+  const { error: upsertError } = await privateSchema(supabase)
     .from('workspace_credit_packs')
     .upsert([creditPackData], {
       onConflict: 'id',
