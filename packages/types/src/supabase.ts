@@ -3200,6 +3200,81 @@ export type Database = {
           },
         ];
       };
+      mira_accessories: {
+        Row: {
+          category: Database['public']['Enums']['mira_accessory_category'];
+          code: string;
+          created_at: string;
+          description: string | null;
+          id: string;
+          is_premium: boolean;
+          name: string;
+          sort_order: number;
+          unlock_condition: Json | null;
+        };
+        Insert: {
+          category: Database['public']['Enums']['mira_accessory_category'];
+          code: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_premium?: boolean;
+          name: string;
+          sort_order?: number;
+          unlock_condition?: Json | null;
+        };
+        Update: {
+          category?: Database['public']['Enums']['mira_accessory_category'];
+          code?: string;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_premium?: boolean;
+          name?: string;
+          sort_order?: number;
+          unlock_condition?: Json | null;
+        };
+        Relationships: [];
+      };
+      mira_achievements: {
+        Row: {
+          category: Database['public']['Enums']['mira_achievement_category'];
+          code: string;
+          created_at: string;
+          description: string;
+          icon: string;
+          id: string;
+          name: string;
+          sort_order: number;
+          unlock_condition: Json | null;
+          xp_reward: number;
+        };
+        Insert: {
+          category: Database['public']['Enums']['mira_achievement_category'];
+          code: string;
+          created_at?: string;
+          description: string;
+          icon: string;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          unlock_condition?: Json | null;
+          xp_reward?: number;
+        };
+        Update: {
+          category?: Database['public']['Enums']['mira_achievement_category'];
+          code?: string;
+          created_at?: string;
+          description?: string;
+          icon?: string;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          unlock_condition?: Json | null;
+          xp_reward?: number;
+        };
+        Relationships: [];
+      };
       notification_batches: {
         Row: {
           channel: string;
@@ -11503,81 +11578,6 @@ export type Database = {
           },
         ];
       };
-      mira_accessories: {
-        Row: {
-          category: Database['public']['Enums']['mira_accessory_category'];
-          code: string;
-          created_at: string;
-          description: string | null;
-          id: string;
-          is_premium: boolean;
-          name: string;
-          sort_order: number;
-          unlock_condition: Json | null;
-        };
-        Insert: {
-          category: Database['public']['Enums']['mira_accessory_category'];
-          code: string;
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_premium?: boolean;
-          name: string;
-          sort_order?: number;
-          unlock_condition?: Json | null;
-        };
-        Update: {
-          category?: Database['public']['Enums']['mira_accessory_category'];
-          code?: string;
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          is_premium?: boolean;
-          name?: string;
-          sort_order?: number;
-          unlock_condition?: Json | null;
-        };
-        Relationships: [];
-      };
-      mira_achievements: {
-        Row: {
-          category: Database['public']['Enums']['mira_achievement_category'];
-          code: string;
-          created_at: string;
-          description: string;
-          icon: string;
-          id: string;
-          name: string;
-          sort_order: number;
-          unlock_condition: Json | null;
-          xp_reward: number;
-        };
-        Insert: {
-          category: Database['public']['Enums']['mira_achievement_category'];
-          code: string;
-          created_at?: string;
-          description: string;
-          icon: string;
-          id?: string;
-          name: string;
-          sort_order?: number;
-          unlock_condition?: Json | null;
-          xp_reward?: number;
-        };
-        Update: {
-          category?: Database['public']['Enums']['mira_achievement_category'];
-          code?: string;
-          created_at?: string;
-          description?: string;
-          icon?: string;
-          id?: string;
-          name?: string;
-          sort_order?: number;
-          unlock_condition?: Json | null;
-          xp_reward?: number;
-        };
-        Relationships: [];
-      };
       mira_daily_stats: {
         Row: {
           created_at: string;
@@ -11972,13 +11972,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'mira_user_accessories_accessory_id_fkey';
-            columns: ['accessory_id'];
-            isOneToOne: false;
-            referencedRelation: 'mira_accessories';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'mira_user_accessories_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
@@ -12028,13 +12021,6 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'mira_user_achievements_achievement_id_fkey';
-            columns: ['achievement_id'];
-            isOneToOne: false;
-            referencedRelation: 'mira_achievements';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'mira_user_achievements_user_id_fkey';
             columns: ['user_id'];

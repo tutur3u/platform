@@ -11,6 +11,14 @@ const SUPABASE_PUBLISHABLE_KEY =
 
 const PRIVATE_TABLES = [
   {
+    name: 'mira_accessories',
+    select: 'id',
+  },
+  {
+    name: 'mira_achievements',
+    select: 'id',
+  },
+  {
     name: 'workspace_education_access_requests',
     select: 'id',
   },

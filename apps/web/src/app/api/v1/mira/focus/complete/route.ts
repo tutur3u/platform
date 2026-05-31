@@ -4,10 +4,17 @@
  */
 
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  getPrivateMiraCatalogClient,
+  type MiraAchievementRow,
+} from '../../private-catalog';
 
 const completeFocusSchema = z.object({
   session_id: z.guid(),
@@ -35,6 +42,8 @@ export async function POST(request: Request) {
     }
 
     const { session_id, notes } = parsed.data;
+    const sbAdmin = await createAdminClient();
+    const privateCatalog = getPrivateMiraCatalogClient(sbAdmin);
 
     // Get the session
     const { data: session, error: sessionError } = await supabase
@@ -83,16 +92,31 @@ export async function POST(request: Request) {
       .single();
 
     // Get user's achievement status
-    const { data: unlockedAchievements } = await supabase
+    const { data: unlockedAchievementRows } = await supabase
       .from('mira_user_achievements')
-      .select('achievement:mira_achievements(code)')
+      .select('achievement_id')
       .eq('user_id', user.id);
 
-    const unlockedCodes = new Set(
-      (unlockedAchievements || []).map(
-        (ua) => (ua.achievement as { code: string })?.code
-      )
-    );
+    const unlockedAchievementIds = [
+      ...new Set(
+        (unlockedAchievementRows || []).map((row) => row.achievement_id)
+      ),
+    ];
+    const unlockedCodes = new Set<string>();
+
+    if (unlockedAchievementIds.length > 0) {
+      const { data: achievementRows } = await privateCatalog
+        .from('mira_achievements')
+        .select('id, code')
+        .in('id', unlockedAchievementIds);
+
+      for (const achievement of (achievementRows || []) as Pick<
+        MiraAchievementRow,
+        'code' | 'id'
+      >[]) {
+        unlockedCodes.add(achievement.code);
+      }
+    }
 
     // Get focus session count
     const { count: totalSessions } = await supabase
@@ -115,7 +139,7 @@ export async function POST(request: Request) {
 
     const checkAndUnlock = async (code: string, condition: boolean) => {
       if (condition && !unlockedCodes.has(code)) {
-        const { data: achievement } = await supabase
+        const { data: achievement } = await privateCatalog
           .from('mira_achievements')
           .select('id')
           .eq('code', code)
@@ -155,7 +179,7 @@ export async function POST(request: Request) {
     // Get full achievement details for newly unlocked
     let unlockedAchievementDetails: unknown[] = [];
     if (newlyUnlocked.length > 0) {
-      const { data: achievements } = await supabase
+      const { data: achievements } = await privateCatalog
         .from('mira_achievements')
         .select('*')
         .in('code', newlyUnlocked);

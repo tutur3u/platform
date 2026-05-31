@@ -4,10 +4,14 @@
  */
 
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getPrivateMiraCatalogClient } from '../../private-catalog';
 
 const unlockAchievementSchema = z.object({
   achievement_code: z.string().max(MAX_LONG_TEXT_LENGTH).min(1),
@@ -36,7 +40,9 @@ export async function POST(request: Request) {
     const { achievement_code } = parsed.data;
 
     // Get achievement by code
-    const { data: achievement, error: achievementError } = await supabase
+    const sbAdmin = await createAdminClient();
+    const privateCatalog = getPrivateMiraCatalogClient(sbAdmin);
+    const { data: achievement, error: achievementError } = await privateCatalog
       .from('mira_achievements')
       .select('*')
       .eq('code', achievement_code)

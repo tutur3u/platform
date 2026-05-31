@@ -94,8 +94,8 @@ describe('Supabase Server Client', () => {
       expect(cookieHandler.getAll()).toEqual([
         { name: 'test-cookie', value: 'test-value' },
       ]);
-      expect(() => client.from('mira_accessories')).toThrow(
-        getProxyOnlyPublicTableError('mira_accessories')
+      expect(() => client.from('topic_announcements')).toThrow(
+        getProxyOnlyPublicTableError('topic_announcements')
       );
       expect(client.from('workspace_boards')).toEqual({
         client: 'user',
@@ -253,9 +253,9 @@ describe('Supabase Server Client', () => {
         })
       );
 
-      expect(client.from('mira_accessories')).toEqual({
+      expect(client.from('topic_announcements')).toEqual({
         client: 'admin',
-        table: 'mira_accessories',
+        table: 'topic_announcements',
       });
       expect(client.from('workspace_calendars')).toEqual({
         client: 'admin',
@@ -270,10 +270,10 @@ describe('Supabase Server Client', () => {
         table: 'workspace_boards',
       });
       expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
-      expect(client.schema('public').from('mira_accessories')).toEqual({
+      expect(client.schema('public').from('topic_announcements')).toEqual({
         client: 'admin',
         schema: 'public',
-        table: 'mira_accessories',
+        table: 'topic_announcements',
       });
       expect(client.schema('private').from('inventory_units')).toEqual({
         client: 'admin',
@@ -323,9 +323,9 @@ describe('Supabase Server Client', () => {
         client: 'user',
         table: 'workspace_boards',
       });
-      expect(client.from('mira_accessories')).toEqual({
+      expect(client.from('topic_announcements')).toEqual({
         client: 'admin',
-        table: 'mira_accessories',
+        table: 'topic_announcements',
       });
       expect(client.from('workspace_tutoring_sessions')).toEqual({
         client: 'admin',
@@ -398,19 +398,19 @@ describe('Supabase Server Client', () => {
         })
       );
 
-      expect(client.from('mira_accessories')).toEqual({
+      expect(client.from('topic_announcements')).toEqual({
         client: 'admin',
-        table: 'mira_accessories',
+        table: 'topic_announcements',
       });
       expect(client.from('workspace_boards')).toEqual({
         client: 'user',
         table: 'workspace_boards',
       });
       expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
-      expect(client.schema('public').from('mira_accessories')).toEqual({
+      expect(client.schema('public').from('topic_announcements')).toEqual({
         client: 'admin',
         schema: 'public',
-        table: 'mira_accessories',
+        table: 'topic_announcements',
       });
       expect(client.schema('private').from('inventory_units')).toEqual({
         client: 'admin',
@@ -470,8 +470,8 @@ describe('Supabase Server Client', () => {
         client: 'user',
         table: 'workspace_boards',
       });
-      expect(() => client.from('mira_accessories')).toThrow(
-        getProxyOnlyPublicTableError('mira_accessories')
+      expect(() => client.from('topic_announcements')).toThrow(
+        getProxyOnlyPublicTableError('topic_announcements')
       );
     });
   });

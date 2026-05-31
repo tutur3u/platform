@@ -4,8 +4,15 @@
  */
 
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import {
+  getPrivateMiraCatalogClient,
+  type MiraAchievementRow,
+} from '../private-catalog';
 
 export async function GET() {
   try {
@@ -17,11 +24,14 @@ export async function GET() {
     }
 
     // Get all achievements
-    const { data: achievements, error: achievementsError } = await supabase
-      .from('mira_achievements')
-      .select('*')
-      .order('category')
-      .order('sort_order');
+    const sbAdmin = await createAdminClient();
+    const privateCatalog = getPrivateMiraCatalogClient(sbAdmin);
+    const { data: achievements, error: achievementsError } =
+      await privateCatalog
+        .from('mira_achievements')
+        .select('*')
+        .order('category')
+        .order('sort_order');
 
     if (achievementsError) {
       console.error('Error getting achievements:', achievementsError);
@@ -47,8 +57,10 @@ export async function GET() {
       (userAchievements || []).map((ua) => [ua.achievement_id, ua.unlocked_at])
     );
 
+    const achievementRows = (achievements || []) as MiraAchievementRow[];
+
     // Merge achievements with unlock status
-    const achievementsWithStatus = (achievements || []).map((achievement) => ({
+    const achievementsWithStatus = achievementRows.map((achievement) => ({
       ...achievement,
       is_unlocked: unlockedMap.has(achievement.id),
       unlocked_at: unlockedMap.get(achievement.id) || null,
@@ -68,12 +80,12 @@ export async function GET() {
     );
 
     // Calculate stats
-    const totalAchievements = achievements?.length || 0;
+    const totalAchievements = achievementRows.length;
     const unlockedCount = userAchievements?.length || 0;
     const totalXpFromAchievements = (userAchievements || []).reduce(
       (sum, ua) => {
-        const achievement = achievements?.find(
-          (a) => a.id === ua.achievement_id
+        const achievement = achievementRows.find(
+          (row) => row.id === ua.achievement_id
         );
         return sum + (achievement?.xp_reward || 0);
       },
@@ -87,9 +99,10 @@ export async function GET() {
         total: totalAchievements,
         unlocked: unlockedCount,
         total_xp_earned: totalXpFromAchievements,
-        completion_percentage: Math.round(
-          (unlockedCount / totalAchievements) * 100
-        ),
+        completion_percentage:
+          totalAchievements > 0
+            ? Math.round((unlockedCount / totalAchievements) * 100)
+            : 0,
       },
     });
   } catch (error) {

@@ -12,6 +12,10 @@ import {
 import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  getPrivateMiraCatalogClient,
+  type MiraAccessoryRow,
+} from '../private-catalog';
 
 const updatePetSchema = z.object({
   name: z.string().min(1).max(MAX_COLOR_LENGTH).optional(),
@@ -28,6 +32,7 @@ export async function GET() {
 
     // Get or create pet using database function
     const sbAdmin = await createAdminClient();
+    const privateCatalog = getPrivateMiraCatalogClient(sbAdmin);
     const { data: pet, error: petError } = await sbAdmin.rpc(
       'get_or_create_mira_pet',
       { p_user_id: user.id }
@@ -42,22 +47,42 @@ export async function GET() {
     }
 
     // Get equipped accessories
-    const { data: equippedAccessories, error: accessoriesError } =
+    const { data: equippedAccessoryRows, error: accessoriesError } =
       await supabase
         .from('mira_user_accessories')
-        .select(
-          `
-        is_equipped,
-        unlocked_at,
-        accessory:mira_accessories(*)
-      `
-        )
+        .select('accessory_id, is_equipped, unlocked_at')
         .eq('user_id', user.id)
         .eq('is_equipped', true);
 
     if (accessoriesError) {
       console.error('Error getting accessories:', accessoriesError);
     }
+
+    const accessoryIds = [
+      ...new Set((equippedAccessoryRows ?? []).map((row) => row.accessory_id)),
+    ];
+    const accessoryById = new Map<string, MiraAccessoryRow>();
+
+    if (accessoryIds.length > 0) {
+      const { data: accessories, error: catalogError } = await privateCatalog
+        .from('mira_accessories')
+        .select('*')
+        .in('id', accessoryIds);
+
+      if (catalogError) {
+        console.error('Error getting accessory catalog:', catalogError);
+      }
+
+      for (const accessory of (accessories ?? []) as MiraAccessoryRow[]) {
+        accessoryById.set(accessory.id, accessory);
+      }
+    }
+
+    const equippedAccessories = (equippedAccessoryRows ?? []).map((row) => ({
+      is_equipped: row.is_equipped,
+      unlocked_at: row.unlocked_at,
+      accessory: accessoryById.get(row.accessory_id) ?? null,
+    }));
 
     // Get today's stats
     const today = new Date().toISOString().split('T')[0] ?? '';
@@ -70,7 +95,7 @@ export async function GET() {
 
     return NextResponse.json({
       pet,
-      equipped_accessories: equippedAccessories || [],
+      equipped_accessories: equippedAccessories,
       daily_stats: dailyStats,
     });
   } catch (error) {

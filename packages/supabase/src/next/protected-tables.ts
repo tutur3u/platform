@@ -7,8 +7,6 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'form_sections',
   'forms',
   'user_group_metric_categories',
-  'mira_accessories',
-  'mira_achievements',
   'nova_challenge_criteria',
   'nova_challenges',
   'nova_problem_test_cases',

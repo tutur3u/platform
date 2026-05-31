@@ -95,8 +95,8 @@ describe('Supabase Client', () => {
         browserAuthOptions
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(() => client.from('mira_accessories')).toThrow(
-        getProxyOnlyPublicTableError('mira_accessories')
+      expect(() => client.from('topic_announcements')).toThrow(
+        getProxyOnlyPublicTableError('topic_announcements')
       );
       expect(() => client.from('workspace_tutoring_sessions')).toThrow(
         getProxyOnlyPublicTableError('workspace_tutoring_sessions')
@@ -105,8 +105,8 @@ describe('Supabase Client', () => {
         table: 'workspace_boards',
       });
       expect(client.from('users')).toEqual({ table: 'users' });
-      expect(() => client.schema('public').from('mira_accessories')).toThrow(
-        getProxyOnlyPublicTableError('mira_accessories')
+      expect(() => client.schema('public').from('topic_announcements')).toThrow(
+        getProxyOnlyPublicTableError('topic_announcements')
       );
     });
 
