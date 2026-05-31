@@ -16,6 +16,8 @@ interface Params {
 
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
+  const privateFinance = sbAdmin.schema('private');
   const { wsId, debtId } = await params;
   const permissions = await getPermissions({ wsId });
 
@@ -39,7 +41,7 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   // Verify the debt/loan belongs to this workspace
-  const { data: debtLoan, error: debtLoanError } = await supabase
+  const { data: debtLoan, error: debtLoanError } = await privateFinance
     .from('workspace_debt_loans')
     .select('id')
     .eq('id', debtId)
@@ -54,7 +56,7 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   // Fetch linked transactions with transaction details
-  const { data, error } = await supabase
+  const { data, error } = await privateFinance
     .from('workspace_debt_loan_transactions')
     .select(
       `
@@ -92,6 +94,7 @@ export async function GET(_: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const sbAdmin = await createAdminClient();
+  const privateFinance = sbAdmin.schema('private');
   const { wsId, debtId } = await params;
   const permissions = await getPermissions({ wsId });
 
@@ -132,7 +135,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Verify the debt/loan belongs to this workspace
-  const { data: debtLoan, error: debtLoanError } = await supabase
+  const { data: debtLoan, error: debtLoanError } = await privateFinance
     .from('workspace_debt_loans')
     .select('id, ws_id')
     .eq('id', debtId)
@@ -189,7 +192,7 @@ export async function POST(req: Request, { params }: Params) {
 
   if (body.note) insertData.note = body.note;
 
-  const { data, error } = await supabase
+  const { data, error } = await privateFinance
     .from('workspace_debt_loan_transactions')
     .insert(insertData)
     .select()
@@ -215,6 +218,8 @@ export async function POST(req: Request, { params }: Params) {
 
 export async function DELETE(req: Request, { params }: Params) {
   const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
+  const privateFinance = sbAdmin.schema('private');
   const { wsId, debtId } = await params;
   const permissions = await getPermissions({ wsId });
 
@@ -247,7 +252,7 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   // Verify the debt/loan belongs to this workspace
-  const { data: debtLoan, error: debtLoanError } = await supabase
+  const { data: debtLoan, error: debtLoanError } = await privateFinance
     .from('workspace_debt_loans')
     .select('id')
     .eq('id', debtId)
@@ -261,7 +266,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
+  const { error } = await privateFinance
     .from('workspace_debt_loan_transactions')
     .delete()
     .eq('debt_loan_id', debtId)

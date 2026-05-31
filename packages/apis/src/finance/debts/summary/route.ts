@@ -23,7 +23,7 @@ export async function GET(
     return access.response;
   }
 
-  const { normalizedWsId, permissions, supabase } = access.context;
+  const { normalizedWsId, permissions, sbAdmin, user } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_finance')) {
@@ -34,9 +34,12 @@ export async function GET(
   }
 
   // Use the RPC function to get summary
-  const { data, error } = await supabase.rpc('get_debt_loan_summary', {
-    p_ws_id: normalizedWsId,
-  });
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .rpc('get_debt_loan_summary', {
+      _actor_id: user.id,
+      _ws_id: normalizedWsId,
+    });
 
   if (error) {
     console.error('Error fetching debt/loan summary:', error);

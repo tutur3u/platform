@@ -13,10 +13,13 @@ interface Params {
 }
 
 type DebtLoanDetail =
-  Database['public']['Tables']['workspace_debt_loans']['Row'] & {
+  Database['private']['Tables']['workspace_debt_loans']['Row'] & {
     progress_percentage: number;
     remaining_balance: number;
   };
+
+type DebtLoanUpdate =
+  Database['private']['Tables']['workspace_debt_loans']['Update'];
 
 type PrivateDebtLoanRpcClient = {
   rpc: (
@@ -95,7 +98,7 @@ export async function PUT(
     return access.response;
   }
 
-  const { normalizedWsId, permissions, supabase } = access.context;
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_finance')) {
@@ -108,8 +111,7 @@ export async function PUT(
   const body = await req.json();
 
   // Build the update data - only include fields that are provided
-  const updateData: Database['public']['Tables']['workspace_debt_loans']['Update'] =
-    {};
+  const updateData: DebtLoanUpdate = {};
 
   if (body.name !== undefined) updateData.name = body.name;
   if (body.description !== undefined) updateData.description = body.description;
@@ -152,7 +154,8 @@ export async function PUT(
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
+    .schema('private')
     .from('workspace_debt_loans')
     .update(updateData)
     .eq('id', debtId)
@@ -189,7 +192,7 @@ export async function DELETE(
     return access.response;
   }
 
-  const { normalizedWsId, permissions, supabase } = access.context;
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_finance')) {
@@ -199,7 +202,8 @@ export async function DELETE(
     );
   }
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
+    .schema('private')
     .from('workspace_debt_loans')
     .delete()
     .eq('id', debtId)

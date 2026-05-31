@@ -1,3 +1,4 @@
+import type { Database } from '@tuturuuu/types';
 import type {
   DebtLoanStatus,
   DebtLoanType,
@@ -8,6 +9,9 @@ import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
 } from '../request-access';
+
+type DebtLoanInsert =
+  Database['private']['Tables']['workspace_debt_loans']['Insert'];
 
 interface Params {
   params: Promise<{
@@ -27,7 +31,7 @@ export async function GET(
     return access.response;
   }
 
-  const { normalizedWsId, permissions, supabase } = access.context;
+  const { normalizedWsId, permissions, sbAdmin, user } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_finance')) {
@@ -43,11 +47,14 @@ export async function GET(
   const statusParam = url.searchParams.get('status') as DebtLoanStatus | null;
 
   // Use the RPC function to get debts/loans with calculated fields
-  const { data, error } = await supabase.rpc('get_debt_loans_with_balance', {
-    p_ws_id: normalizedWsId,
-    p_type: typeParam ?? undefined,
-    p_status: statusParam ?? undefined,
-  });
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .rpc('get_debt_loans_with_balance', {
+      _actor_id: user.id,
+      _status: statusParam ?? undefined,
+      _type: typeParam ?? undefined,
+      _ws_id: normalizedWsId,
+    });
 
   if (error) {
     console.error('Error fetching debt/loans:', error);
@@ -72,7 +79,7 @@ export async function POST(
     return access.response;
   }
 
-  const { normalizedWsId, permissions, supabase, user } = access.context;
+  const { normalizedWsId, permissions, sbAdmin, user } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_finance')) {
@@ -109,34 +116,35 @@ export async function POST(
   }
 
   // Build the insert data
-  const { data, error } = await supabase
+  const insertData: DebtLoanInsert = {
+    ws_id: normalizedWsId,
+    name: body.name as string,
+    type: body.type as 'debt' | 'loan',
+    principal_amount: body.principal_amount as number,
+    currency: (body.currency as string) || 'VND',
+    start_date:
+      (body.start_date as string) || new Date().toISOString().split('T')[0],
+    status: (body.status || 'active') as
+      | 'active'
+      | 'paid'
+      | 'defaulted'
+      | 'cancelled',
+    creator_id: user.id,
+    description: (body.description as string) || null,
+    counterparty: (body.counterparty as string) || null,
+    interest_rate:
+      body.interest_rate !== undefined ? (body.interest_rate as number) : null,
+    interest_type: body.interest_type
+      ? (body.interest_type as 'simple' | 'compound')
+      : null,
+    due_date: (body.due_date as string) || null,
+    wallet_id: (body.wallet_id as string) || null,
+  };
+
+  const { data, error } = await sbAdmin
+    .schema('private')
     .from('workspace_debt_loans')
-    .insert({
-      ws_id: normalizedWsId,
-      name: body.name as string,
-      type: body.type as 'debt' | 'loan',
-      principal_amount: body.principal_amount as number,
-      currency: (body.currency as string) || 'VND',
-      start_date:
-        (body.start_date as string) || new Date().toISOString().split('T')[0],
-      status: (body.status || 'active') as
-        | 'active'
-        | 'paid'
-        | 'defaulted'
-        | 'cancelled',
-      creator_id: user.id,
-      description: (body.description as string) || null,
-      counterparty: (body.counterparty as string) || null,
-      interest_rate:
-        body.interest_rate !== undefined
-          ? (body.interest_rate as number)
-          : null,
-      interest_type: body.interest_type
-        ? (body.interest_type as 'simple' | 'compound')
-        : null,
-      due_date: (body.due_date as string) || null,
-      wallet_id: (body.wallet_id as string) || null,
-    })
+    .insert(insertData)
     .select()
     .single();
 

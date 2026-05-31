@@ -3756,6 +3756,116 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_debt_loan_transactions: {
+        Row: {
+          amount: number;
+          created_at: string;
+          debt_loan_id: string;
+          id: string;
+          is_interest: boolean;
+          note: string | null;
+          transaction_id: string;
+        };
+        Insert: {
+          amount: number;
+          created_at?: string;
+          debt_loan_id: string;
+          id?: string;
+          is_interest?: boolean;
+          note?: string | null;
+          transaction_id: string;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          debt_loan_id?: string;
+          id?: string;
+          is_interest?: boolean;
+          note?: string | null;
+          transaction_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_debt_loan_transactions_debt_loan_id_fkey';
+            columns: ['debt_loan_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_debt_loans';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_debt_loans: {
+        Row: {
+          counterparty: string | null;
+          created_at: string;
+          creator_id: string;
+          currency: string;
+          description: string | null;
+          due_date: string | null;
+          id: string;
+          interest_rate: number | null;
+          interest_type:
+            | Database['public']['Enums']['interest_calculation_type']
+            | null;
+          name: string;
+          principal_amount: number;
+          start_date: string;
+          status: Database['public']['Enums']['debt_loan_status'];
+          total_interest_paid: number;
+          total_paid: number;
+          type: Database['public']['Enums']['debt_loan_type'];
+          updated_at: string;
+          wallet_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          counterparty?: string | null;
+          created_at?: string;
+          creator_id: string;
+          currency?: string;
+          description?: string | null;
+          due_date?: string | null;
+          id?: string;
+          interest_rate?: number | null;
+          interest_type?:
+            | Database['public']['Enums']['interest_calculation_type']
+            | null;
+          name: string;
+          principal_amount: number;
+          start_date?: string;
+          status?: Database['public']['Enums']['debt_loan_status'];
+          total_interest_paid?: number;
+          total_paid?: number;
+          type: Database['public']['Enums']['debt_loan_type'];
+          updated_at?: string;
+          wallet_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          counterparty?: string | null;
+          created_at?: string;
+          creator_id?: string;
+          currency?: string;
+          description?: string | null;
+          due_date?: string | null;
+          id?: string;
+          interest_rate?: number | null;
+          interest_type?:
+            | Database['public']['Enums']['interest_calculation_type']
+            | null;
+          name?: string;
+          principal_amount?: number;
+          start_date?: string;
+          status?: Database['public']['Enums']['debt_loan_status'];
+          total_interest_paid?: number;
+          total_paid?: number;
+          type?: Database['public']['Enums']['debt_loan_type'];
+          updated_at?: string;
+          wallet_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_education_access_requests: {
         Row: {
           admin_notes: string | null;
@@ -4546,8 +4656,51 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      get_debt_loan_summary: {
+        Args: { _actor_id: string; _ws_id: string };
+        Returns: {
+          active_debt_count: number;
+          active_loan_count: number;
+          net_position: number;
+          total_debt_remaining: number;
+          total_debts: number;
+          total_loan_remaining: number;
+          total_loans: number;
+        }[];
+      };
       get_debt_loan_with_balance: {
         Args: { _actor_id: string; _debt_id: string; _ws_id: string };
+        Returns: {
+          counterparty: string;
+          created_at: string;
+          creator_id: string;
+          currency: string;
+          description: string;
+          due_date: string;
+          id: string;
+          interest_rate: number;
+          interest_type: Database['public']['Enums']['interest_calculation_type'];
+          name: string;
+          principal_amount: number;
+          progress_percentage: number;
+          remaining_balance: number;
+          start_date: string;
+          status: Database['public']['Enums']['debt_loan_status'];
+          total_interest_paid: number;
+          total_paid: number;
+          type: Database['public']['Enums']['debt_loan_type'];
+          updated_at: string;
+          wallet_id: string;
+          ws_id: string;
+        }[];
+      };
+      get_debt_loans_with_balance: {
+        Args: {
+          _actor_id: string;
+          _status?: Database['public']['Enums']['debt_loan_status'];
+          _type?: Database['public']['Enums']['debt_loan_type'];
+          _ws_id: string;
+        };
         Returns: {
           counterparty: string;
           created_at: string;
@@ -23896,166 +24049,6 @@ export type Database = {
           },
         ];
       };
-      workspace_debt_loan_transactions: {
-        Row: {
-          amount: number;
-          created_at: string;
-          debt_loan_id: string;
-          id: string;
-          is_interest: boolean;
-          note: string | null;
-          transaction_id: string;
-        };
-        Insert: {
-          amount: number;
-          created_at?: string;
-          debt_loan_id: string;
-          id?: string;
-          is_interest?: boolean;
-          note?: string | null;
-          transaction_id: string;
-        };
-        Update: {
-          amount?: number;
-          created_at?: string;
-          debt_loan_id?: string;
-          id?: string;
-          is_interest?: boolean;
-          note?: string | null;
-          transaction_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_debt_loan_transactions_debt_loan_id_fkey';
-            columns: ['debt_loan_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_debt_loans';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_debt_loan_transactions_transaction_id_fkey';
-            columns: ['transaction_id'];
-            isOneToOne: false;
-            referencedRelation: 'wallet_transactions';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_debt_loan_transactions_transaction_id_fkey';
-            columns: ['transaction_id'];
-            isOneToOne: false;
-            referencedRelation: 'wallet_transactions_secure';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      workspace_debt_loans: {
-        Row: {
-          counterparty: string | null;
-          created_at: string;
-          creator_id: string;
-          currency: string;
-          description: string | null;
-          due_date: string | null;
-          id: string;
-          interest_rate: number | null;
-          interest_type:
-            | Database['public']['Enums']['interest_calculation_type']
-            | null;
-          name: string;
-          principal_amount: number;
-          start_date: string;
-          status: Database['public']['Enums']['debt_loan_status'];
-          total_interest_paid: number;
-          total_paid: number;
-          type: Database['public']['Enums']['debt_loan_type'];
-          updated_at: string;
-          wallet_id: string | null;
-          ws_id: string;
-        };
-        Insert: {
-          counterparty?: string | null;
-          created_at?: string;
-          creator_id: string;
-          currency?: string;
-          description?: string | null;
-          due_date?: string | null;
-          id?: string;
-          interest_rate?: number | null;
-          interest_type?:
-            | Database['public']['Enums']['interest_calculation_type']
-            | null;
-          name: string;
-          principal_amount: number;
-          start_date?: string;
-          status?: Database['public']['Enums']['debt_loan_status'];
-          total_interest_paid?: number;
-          total_paid?: number;
-          type: Database['public']['Enums']['debt_loan_type'];
-          updated_at?: string;
-          wallet_id?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          counterparty?: string | null;
-          created_at?: string;
-          creator_id?: string;
-          currency?: string;
-          description?: string | null;
-          due_date?: string | null;
-          id?: string;
-          interest_rate?: number | null;
-          interest_type?:
-            | Database['public']['Enums']['interest_calculation_type']
-            | null;
-          name?: string;
-          principal_amount?: number;
-          start_date?: string;
-          status?: Database['public']['Enums']['debt_loan_status'];
-          total_interest_paid?: number;
-          total_paid?: number;
-          type?: Database['public']['Enums']['debt_loan_type'];
-          updated_at?: string;
-          wallet_id?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_debt_loans_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_wallets';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_debt_loans_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_debt_loans_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'workspace_debt_loans_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_debt_loans_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       workspace_default_included_user_groups: {
         Row: {
           created_at: string;
@@ -32493,47 +32486,6 @@ export type Database = {
         }[];
       };
       get_dau_count: { Args: never; Returns: number };
-      get_debt_loan_summary: {
-        Args: { p_ws_id: string };
-        Returns: {
-          active_debt_count: number;
-          active_loan_count: number;
-          net_position: number;
-          total_debt_remaining: number;
-          total_debts: number;
-          total_loan_remaining: number;
-          total_loans: number;
-        }[];
-      };
-      get_debt_loans_with_balance: {
-        Args: {
-          p_status?: Database['public']['Enums']['debt_loan_status'];
-          p_type?: Database['public']['Enums']['debt_loan_type'];
-          p_ws_id: string;
-        };
-        Returns: {
-          counterparty: string;
-          created_at: string;
-          creator_id: string;
-          currency: string;
-          description: string;
-          due_date: string;
-          id: string;
-          interest_rate: number;
-          interest_type: Database['public']['Enums']['interest_calculation_type'];
-          name: string;
-          principal_amount: number;
-          progress_percentage: number;
-          remaining_balance: number;
-          start_date: string;
-          status: Database['public']['Enums']['debt_loan_status'];
-          total_interest_paid: number;
-          total_paid: number;
-          type: Database['public']['Enums']['debt_loan_type'];
-          updated_at: string;
-          wallet_id: string;
-        }[];
-      };
       get_default_ai_pricing: { Args: never; Returns: Json };
       get_default_calendar_for_event: {
         Args: {
