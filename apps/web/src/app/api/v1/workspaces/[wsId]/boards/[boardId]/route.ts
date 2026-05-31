@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -41,17 +42,42 @@ interface BoardParams {
   boardId: string;
 }
 
-async function verifyWorkspaceAccess(
-  supabase: Parameters<Parameters<typeof withSessionAuth>[0]>[1]['supabase'],
+type SessionAuthContext = Parameters<Parameters<typeof withSessionAuth>[0]>[1];
+
+async function requireBoardManagementAccess(
+  supabase: SessionAuthContext['supabase'],
   wsId: string,
-  userId: string
+  user: SessionAuthContext['user']
 ) {
-  const member = await verifyWorkspaceMembershipType({
+  const memberCheck = await verifyWorkspaceMembershipType({
     wsId,
-    userId,
+    userId: user.id,
     supabase,
   });
-  return member.ok;
+
+  if (memberCheck.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace access' },
+      { status: 500 }
+    );
+  }
+
+  if (!memberCheck.ok) {
+    return NextResponse.json(
+      { error: "You don't have access to this workspace" },
+      { status: 403 }
+    );
+  }
+
+  const permissions = await getPermissions({ wsId, user });
+  if (!permissions?.containsPermission('manage_projects')) {
+    return NextResponse.json(
+      { error: "You don't have permission to perform this operation" },
+      { status: 403 }
+    );
+  }
+
+  return null;
 }
 
 // DELETE handler for permanent deletion
@@ -62,12 +88,12 @@ export const DELETE = withSessionAuth<BoardParams>(
       const { boardId } = paramsSchema.parse(rawParams);
       const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-      if (!(await verifyWorkspaceAccess(supabase, wsId, user.id))) {
-        return NextResponse.json(
-          { error: "You don't have access to this workspace" },
-          { status: 403 }
-        );
-      }
+      const accessError = await requireBoardManagementAccess(
+        supabase,
+        wsId,
+        user
+      );
+      if (accessError) return accessError;
 
       const sbAdmin = await createAdminClient();
 
@@ -92,7 +118,8 @@ export const DELETE = withSessionAuth<BoardParams>(
       const { error: deleteError } = await sbAdmin
         .from('workspace_boards')
         .delete()
-        .eq('id', boardId);
+        .eq('id', boardId)
+        .eq('ws_id', wsId);
 
       if (deleteError) {
         console.error('Error permanently deleting board:', deleteError);
@@ -125,12 +152,12 @@ export const PATCH = withSessionAuth<BoardParams>(
       const { boardId } = paramsSchema.parse(rawParams);
       const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-      if (!(await verifyWorkspaceAccess(supabase, wsId, user.id))) {
-        return NextResponse.json(
-          { error: "You don't have access to this workspace" },
-          { status: 403 }
-        );
-      }
+      const accessError = await requireBoardManagementAccess(
+        supabase,
+        wsId,
+        user
+      );
+      if (accessError) return accessError;
 
       const body = await req.json();
       const { restore } = restoreBodySchema.parse(body);
@@ -162,7 +189,8 @@ export const PATCH = withSessionAuth<BoardParams>(
       const { error: restoreError } = await sbAdmin
         .from('workspace_boards')
         .update({ deleted_at: null })
-        .eq('id', boardId);
+        .eq('id', boardId)
+        .eq('ws_id', wsId);
 
       if (restoreError) {
         if (isUniqueViolation(restoreError)) {
@@ -195,12 +223,12 @@ export const PUT = withSessionAuth<BoardParams>(
       const { boardId } = paramsSchema.parse(rawParams);
       const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-      if (!(await verifyWorkspaceAccess(supabase, wsId, user.id))) {
-        return NextResponse.json(
-          { error: "You don't have access to this workspace" },
-          { status: 403 }
-        );
-      }
+      const accessError = await requireBoardManagementAccess(
+        supabase,
+        wsId,
+        user
+      );
+      if (accessError) return accessError;
 
       const sbAdmin = await createAdminClient();
 
@@ -225,7 +253,8 @@ export const PUT = withSessionAuth<BoardParams>(
       const { error: softDeleteError } = await sbAdmin
         .from('workspace_boards')
         .update({ deleted_at: new Date().toISOString() })
-        .eq('id', boardId);
+        .eq('id', boardId)
+        .eq('ws_id', wsId);
 
       if (softDeleteError) {
         console.error('Error moving board to trash:', softDeleteError);

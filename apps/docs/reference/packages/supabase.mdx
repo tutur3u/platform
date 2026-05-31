@@ -544,20 +544,49 @@ export async function downloadFile(path: string) {
    const tasks = await sbAdmin.from('workspace_tasks').select();
    ```
 
-2. **Don't expose service role key**
+2. **If you must use `createAdminClient()`, enforce membership and RBAC before the admin-backed operation**
+   ```typescript
+   const member = await verifyWorkspaceMembershipType({
+     wsId,
+     userId: user.id,
+     supabase: requestScopedSupabase,
+   });
+   if (!member.ok) {
+     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+   }
+
+   const permissions = await getPermissions({ wsId, user });
+   if (!permissions?.containsPermission('manage_projects')) {
+     return NextResponse.json(
+       { error: "You don't have permission" },
+       { status: 403 }
+     );
+   }
+   ```
+
+3. **Keep workspace-scoped admin mutations filtered by workspace ID**
+   ```typescript
+   await sbAdmin
+     .from('workspace_boards')
+     .update({ deleted_at: new Date().toISOString() })
+     .eq('id', boardId)
+     .eq('ws_id', wsId);
+   ```
+
+4. **Don't expose service role key**
    ```typescript
    // ❌ Bad: Never do this
    const client = createClient(process.env.SUPABASE_SECRET_KEY);
    ```
 
-3. **Don't ignore errors**
+5. **Don't ignore errors**
    ```typescript
    // ❌ Bad: Silent failure
    const { data } = await supabase.from('table').select();
    return data; // Could be null!
    ```
 
-4. **Don't fetch unnecessary data**
+6. **Don't fetch unnecessary data**
    ```typescript
    // ❌ Bad: Over-fetching
    .select('*')
