@@ -1,10 +1,10 @@
 import { createVerify } from 'node:crypto';
 import type { SesNotification, SnsEnvelope } from './types';
 
-const SNS_SIGNING_CERT_HOST_REGEX =
-  /^sns\.[a-z0-9-]+\.amazonaws\.com(?:\.cn)?$/iu;
 const SNS_SIGNING_CERT_PATH_REGEX =
-  /^\/SimpleNotificationService-[A-Za-z0-9]+\.pem$/u;
+  /^\/SimpleNotificationService-([A-Za-z0-9]+)\.pem$/u;
+const SNS_TOPIC_ARN_REGEX =
+  /^arn:(aws|aws-cn|aws-us-gov):sns:([a-z0-9-]+):\d{12}:[A-Za-z0-9-_]+$/u;
 
 function getSigningPayload(envelope: SnsEnvelope) {
   const entries =
@@ -33,30 +33,59 @@ function getSigningPayload(envelope: SnsEnvelope) {
     .join('');
 }
 
-function isTrustedSigningCertUrl(value: string) {
+function getConfiguredTopicArn() {
+  const value = process.env.MAIL_SES_INBOUND_TOPIC_ARN?.trim();
+  return value || null;
+}
+
+function getSigningCertOriginFromTopicArn(topicArn: string) {
+  const match = SNS_TOPIC_ARN_REGEX.exec(topicArn);
+  if (!match) {
+    return null;
+  }
+
+  const [, partition, region] = match;
+  if (!partition || !region) {
+    return null;
+  }
+
+  const domain = partition === 'aws-cn' ? 'amazonaws.com.cn' : 'amazonaws.com';
+
+  return `https://sns.${region}.${domain}`;
+}
+
+function getTrustedSigningCertUrl(value: string, expectedTopicArn: string) {
+  const expectedOrigin = getSigningCertOriginFromTopicArn(expectedTopicArn);
+  if (!expectedOrigin) {
+    return null;
+  }
+
   try {
     const url = new URL(value);
-    const isTrustedSnsHost =
-      url.hostname === 'sns.amazonaws.com' ||
-      SNS_SIGNING_CERT_HOST_REGEX.test(url.hostname);
+    const pathMatch = SNS_SIGNING_CERT_PATH_REGEX.exec(url.pathname);
 
-    return (
-      url.protocol === 'https:' &&
-      url.username === '' &&
-      url.password === '' &&
-      url.port === '' &&
-      url.search === '' &&
-      url.hash === '' &&
-      isTrustedSnsHost &&
-      SNS_SIGNING_CERT_PATH_REGEX.test(url.pathname)
+    if (
+      url.origin !== expectedOrigin ||
+      url.username !== '' ||
+      url.password !== '' ||
+      url.search !== '' ||
+      url.hash !== '' ||
+      !pathMatch?.[1]
+    ) {
+      return null;
+    }
+
+    return new URL(
+      `/SimpleNotificationService-${encodeURIComponent(pathMatch[1])}.pem`,
+      expectedOrigin
     );
   } catch {
-    return false;
+    return null;
   }
 }
 
 export async function verifySnsEnvelope(envelope: SnsEnvelope) {
-  const expectedTopicArn = process.env.MAIL_SES_INBOUND_TOPIC_ARN;
+  const expectedTopicArn = getConfiguredTopicArn();
   if (expectedTopicArn && envelope.TopicArn !== expectedTopicArn) {
     return false;
   }
@@ -65,12 +94,21 @@ export async function verifySnsEnvelope(envelope: SnsEnvelope) {
     return true;
   }
 
-  if (!isTrustedSigningCertUrl(envelope.SigningCertURL)) {
+  if (!expectedTopicArn) {
     return false;
   }
 
-  const certificate = await fetch(envelope.SigningCertURL).then((response) =>
-    response.ok ? response.text() : null
+  const signingCertUrl = getTrustedSigningCertUrl(
+    envelope.SigningCertURL,
+    expectedTopicArn
+  );
+
+  if (!signingCertUrl) {
+    return false;
+  }
+
+  const certificate = await fetch(signingCertUrl, { redirect: 'error' }).then(
+    (response) => (response.ok ? response.text() : null)
   );
 
   if (!certificate) {

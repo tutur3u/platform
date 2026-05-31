@@ -6,6 +6,10 @@ import type { SesNotification, SnsEnvelope } from './types';
 const originalTopicArn = process.env.MAIL_SES_INBOUND_TOPIC_ARN;
 const originalSignatureVerification =
   process.env.MAIL_SES_SNS_SIGNATURE_VERIFICATION;
+const TEST_TOPIC_ARN =
+  'arn:aws:sns:us-west-2:123456789012:tuturuuu-mail-inbound';
+const TEST_SIGNING_CERT_URL =
+  'https://sns.us-west-2.amazonaws.com/SimpleNotificationService-f3ecfb7224c7233fe7bb5f59f96de52f.pem';
 
 const { privateKey, publicKey } = generateKeyPairSync('rsa', {
   modulusLength: 2048,
@@ -70,7 +74,7 @@ function createSignedEnvelope(signingCertURL: string): SnsEnvelope {
     SignatureVersion: '2',
     SigningCertURL: signingCertURL,
     Timestamp: '2026-05-28T15:00:00.000Z',
-    TopicArn: 'arn:aws:sns:us-west-2:123456789012:tuturuuu-mail-inbound',
+    TopicArn: TEST_TOPIC_ARN,
     Type: 'Notification',
   };
 
@@ -79,6 +83,10 @@ function createSignedEnvelope(signingCertURL: string): SnsEnvelope {
   envelope.Signature = signer.sign(privateKey, 'base64');
 
   return envelope;
+}
+
+function configureExpectedTopicArn(topicArn = TEST_TOPIC_ARN) {
+  process.env.MAIL_SES_INBOUND_TOPIC_ARN = topicArn;
 }
 
 function stubCertificateFetch() {
@@ -117,6 +125,7 @@ describe('verifySnsEnvelope', () => {
   });
 
   it('rejects attacker-controlled S3 PEM URLs before fetching them', async () => {
+    configureExpectedTopicArn();
     const fetchMock = stubCertificateFetch();
     const envelope = createSignedEnvelope(
       'https://s3.amazonaws.com/attacker-bucket/attacker-cert.pem'
@@ -133,6 +142,7 @@ describe('verifySnsEnvelope', () => {
     'https://sns.us-west-2.amazonaws.com/SimpleNotificationService-f3ecfb7224c7233fe7bb5f59f96de52f.pem?bucket=attacker',
     'https://sns.us-west-2.amazonaws.com/SimpleNotificationService-f3ecfb7224c7233fe7bb5f59f96de52f.pem#attacker',
   ])('rejects non-SNS signing certificate URL %s', async (signingCertURL) => {
+    configureExpectedTopicArn();
     const fetchMock = stubCertificateFetch();
     const envelope = createSignedEnvelope(signingCertURL);
 
@@ -140,20 +150,38 @@ describe('verifySnsEnvelope', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('accepts the current AWS SNS signing certificate URL shape', async () => {
+  it('rejects certificate verification when the expected SNS topic is not configured', async () => {
+    const fetchMock = stubCertificateFetch();
+    const envelope = createSignedEnvelope(TEST_SIGNING_CERT_URL);
+
+    await expect(verifySnsEnvelope(envelope)).resolves.toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects signing certificate URLs from a region other than the expected SNS topic region', async () => {
+    configureExpectedTopicArn();
     const fetchMock = stubCertificateFetch();
     const envelope = createSignedEnvelope(
-      'https://sns.us-west-2.amazonaws.com/SimpleNotificationService-f3ecfb7224c7233fe7bb5f59f96de52f.pem'
+      'https://sns.us-east-1.amazonaws.com/SimpleNotificationService-f3ecfb7224c7233fe7bb5f59f96de52f.pem'
     );
 
+    await expect(verifySnsEnvelope(envelope)).resolves.toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('accepts the current AWS SNS signing certificate URL shape', async () => {
+    configureExpectedTopicArn();
+    const fetchMock = stubCertificateFetch();
+    const envelope = createSignedEnvelope(TEST_SIGNING_CERT_URL);
+
     await expect(verifySnsEnvelope(envelope)).resolves.toBe(true);
-    expect(fetchMock).toHaveBeenCalledWith(envelope.SigningCertURL);
+    expect(fetchMock).toHaveBeenCalledWith(new URL(TEST_SIGNING_CERT_URL), {
+      redirect: 'error',
+    });
   });
 
   it('keeps parsing the SES notification from the SNS envelope message', () => {
-    const envelope = createSignedEnvelope(
-      'https://sns.us-west-2.amazonaws.com/SimpleNotificationService-f3ecfb7224c7233fe7bb5f59f96de52f.pem'
-    );
+    const envelope = createSignedEnvelope(TEST_SIGNING_CERT_URL);
 
     expect(parseSnsEnvelope(JSON.stringify(envelope))).toEqual({
       envelope,
