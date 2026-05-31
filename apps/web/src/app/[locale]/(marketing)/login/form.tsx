@@ -70,6 +70,18 @@ import { PasskeyLoginButton } from './passkey-login-button';
 import { SocialLoginButton } from './social-login-button';
 
 const CAPTCHA_ERROR_RETRY_DELAY = 3000;
+const INVALID_LOCAL_RETURN_URL = '__invalid_local_return_url__';
+
+function getSafeLocalReturnPath(returnUrl: string | null | undefined) {
+  const normalizedReturnUrl = normalizeClientRedirectPath(
+    returnUrl,
+    INVALID_LOCAL_RETURN_URL
+  );
+
+  return normalizedReturnUrl === INVALID_LOCAL_RETURN_URL
+    ? null
+    : normalizedReturnUrl;
+}
 
 const authStepVariants = {
   enter: (direction: number) => ({
@@ -172,12 +184,16 @@ export default function LoginForm() {
     switchAccount,
   } = useAccountSwitcher();
   const returnUrl = searchParams.get('returnUrl');
+  const localReturnPath = useMemo(
+    () => getSafeLocalReturnPath(returnUrl),
+    [returnUrl]
+  );
   const staticReturnApp = useMemo(() => {
     if (!returnUrl) return null;
-    return returnUrl.startsWith('/') ? 'web' : mapUrlToApp(returnUrl);
-  }, [returnUrl]);
+    return localReturnPath ? 'web' : mapUrlToApp(returnUrl);
+  }, [localReturnPath, returnUrl]);
   const shouldResolveReturnApp = Boolean(
-    returnUrl && !returnUrl.startsWith('/') && !staticReturnApp
+    returnUrl && !localReturnPath && !staticReturnApp
   );
   const {
     data: resolvedReturnApp,
@@ -510,7 +526,7 @@ export default function LoginForm() {
   const prepareReturnAppConfirmation = useCallback(async () => {
     const returnUrl = searchParams.get('returnUrl');
 
-    if (!returnUrl || returnUrl.startsWith('/')) {
+    if (!returnUrl || getSafeLocalReturnPath(returnUrl)) {
       return false;
     }
 
@@ -573,14 +589,19 @@ export default function LoginForm() {
     }
 
     if (returnUrl) {
-      const isRelativePath = returnUrl.startsWith('/');
-      const returnApp = isRelativePath ? 'web' : mapUrlToApp(returnUrl);
-      const canonicalReturnUrl = isRelativePath
-        ? returnUrl
-        : (getAppDomainByUrl(returnUrl)?.canonicalUrl ?? returnUrl);
+      const localReturnPath = getSafeLocalReturnPath(returnUrl);
+      const returnApp = localReturnPath ? 'web' : mapUrlToApp(returnUrl);
 
       if (returnApp === 'web' || returnApp === 'platform') {
-        const redirectUrl = new URL(canonicalReturnUrl, window.location.origin);
+        if (localReturnPath) {
+          router.push(localReturnPath);
+          router.refresh();
+          return;
+        }
+
+        const canonicalReturnUrl =
+          getAppDomainByUrl(returnUrl)?.canonicalUrl ?? returnUrl;
+        const redirectUrl = new URL(canonicalReturnUrl);
 
         if (redirectUrl.origin !== window.location.origin) {
           window.location.assign(redirectUrl.toString());
@@ -684,7 +705,7 @@ export default function LoginForm() {
             navError
           );
 
-          if (returnUrl && !returnUrl.startsWith('/')) {
+          if (returnUrl && !getSafeLocalReturnPath(returnUrl)) {
             markReturnUrlValidationFailure(returnUrl, navError);
             return;
           }
@@ -719,7 +740,7 @@ export default function LoginForm() {
       console.error('[login] Failed to continue to internal app:', error);
       const returnUrl = searchParams.get('returnUrl');
 
-      if (returnUrl && !returnUrl.startsWith('/')) {
+      if (returnUrl && !getSafeLocalReturnPath(returnUrl)) {
         markReturnUrlValidationFailure(returnUrl, error);
       }
 
@@ -1317,7 +1338,7 @@ export default function LoginForm() {
           );
           const returnUrl = searchParams.get('returnUrl');
 
-          if (returnUrl && !returnUrl.startsWith('/')) {
+          if (returnUrl && !getSafeLocalReturnPath(returnUrl)) {
             markReturnUrlValidationFailure(returnUrl, error);
             return;
           }

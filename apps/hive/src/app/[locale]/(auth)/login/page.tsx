@@ -2,6 +2,7 @@ import {
   getAppSessionClaimsFromRequest,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
+import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { ArrowRight, Bot, Box, Radio, ShieldCheck } from '@tuturuuu/icons';
 import { headers } from 'next/headers';
 import Image from 'next/image';
@@ -10,11 +11,18 @@ import { getTranslations } from 'next-intl/server';
 import { HIVE_APP_URL, WEB_APP_URL } from '@/constants/common';
 import { HiveLandingWorld } from './landing-world';
 
+const DEFAULT_HIVE_PATH = '/';
+
 type Props = {
   searchParams: Promise<{
-    next?: string;
+    next?: string | string[];
   }>;
 };
+
+function normalizeNextPath(value: string | string[] | undefined) {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  return normalizeAuthRedirectPath(rawValue, HIVE_APP_URL, DEFAULT_HIVE_PATH);
+}
 
 export default async function LoginPage({ searchParams }: Props) {
   const params = await searchParams;
@@ -28,7 +36,7 @@ export default async function LoginPage({ searchParams }: Props) {
     headers: requestHeaders,
   });
 
-  const nextPath = params.next?.startsWith('/') ? params.next : '/';
+  const nextPath = normalizeNextPath(params.next);
 
   if (appSession && hasWebAppSession) {
     redirect(nextPath);
