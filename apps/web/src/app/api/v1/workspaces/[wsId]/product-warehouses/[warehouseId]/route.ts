@@ -1,7 +1,19 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+
+const WarehouseUpdateSchema = z.object({
+  name: z.string().trim().min(1).max(MAX_NAME_LENGTH).optional(),
+});
 
 interface Params {
   params: Promise<{
@@ -11,10 +23,12 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const { wsId, warehouseId: id } = await params;
+  const { wsId: rawWsId, warehouseId: id } = await params;
+  const supabase = await createClient(req);
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -26,14 +40,23 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const inventory = (await createAdminClient()).schema('private');
-  const data = await req.json();
+  const parsed = WarehouseUpdateSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request body', errors: parsed.error.issues },
+      { status: 400 }
+    );
+  }
 
-  const { error } = await inventory
+  const inventory = (await createAdminClient()).schema('private');
+
+  const { data: warehouse, error } = await inventory
     .from('inventory_warehouses')
-    .update(data)
+    .update(parsed.data)
     .eq('id', id)
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .select('id')
+    .maybeSingle();
 
   if (error) {
     serverLogger.error('Error updating product warehouse', error);
@@ -43,14 +66,23 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  if (!warehouse) {
+    return NextResponse.json(
+      { message: 'Warehouse not found' },
+      { status: 404 }
+    );
+  }
+
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const { wsId, warehouseId: id } = await params;
+export async function DELETE(req: Request, { params }: Params) {
+  const { wsId: rawWsId, warehouseId: id } = await params;
+  const supabase = await createClient(req);
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -64,17 +96,26 @@ export async function DELETE(_: Request, { params }: Params) {
 
   const inventory = (await createAdminClient()).schema('private');
 
-  const { error } = await inventory
+  const { data: warehouse, error } = await inventory
     .from('inventory_warehouses')
     .delete()
     .eq('id', id)
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .select('id')
+    .maybeSingle();
 
   if (error) {
     serverLogger.error('Error deleting product warehouse', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
+    );
+  }
+
+  if (!warehouse) {
+    return NextResponse.json(
+      { message: 'Warehouse not found' },
+      { status: 404 }
     );
   }
 
