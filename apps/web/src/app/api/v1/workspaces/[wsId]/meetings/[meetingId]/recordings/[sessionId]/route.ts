@@ -1,5 +1,8 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -163,7 +166,9 @@ export async function PATCH(
         );
       }
 
-      const { error: transcriptError } = await supabase
+      const sbAdmin = await createAdminClient();
+      const { error: transcriptError } = await sbAdmin
+        .schema('private')
         .from('recording_transcripts')
         .upsert({
           session_id: sessionId,

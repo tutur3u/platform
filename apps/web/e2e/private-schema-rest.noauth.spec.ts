@@ -19,6 +19,10 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'recording_transcripts',
+    select: 'id',
+  },
+  {
     name: 'workspace_education_access_requests',
     select: 'id',
   },

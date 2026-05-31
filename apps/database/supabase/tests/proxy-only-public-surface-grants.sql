@@ -25,7 +25,6 @@ values
   ('nova_problems'),
   ('nova_submission_test_cases'),
   ('nova_teams'),
-  ('recording_transcripts'),
   ('topic_announcement_batches'),
   ('topic_announcement_contact_verifications'),
   ('topic_announcement_contacts'),

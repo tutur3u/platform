@@ -3511,6 +3511,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      recording_transcripts: {
+        Row: {
+          created_at: string;
+          duration_in_seconds: number;
+          id: string;
+          language: string;
+          segments: Json | null;
+          session_id: string;
+          text: string;
+        };
+        Insert: {
+          created_at?: string;
+          duration_in_seconds?: number;
+          id?: string;
+          language?: string;
+          segments?: Json | null;
+          session_id: string;
+          text: string;
+        };
+        Update: {
+          created_at?: string;
+          duration_in_seconds?: number;
+          id?: string;
+          language?: string;
+          segments?: Json | null;
+          session_id?: string;
+          text?: string;
+        };
+        Relationships: [];
+      };
       task_reminder_sent: {
         Row: {
           id: string;
@@ -14517,44 +14547,6 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      recording_transcripts: {
-        Row: {
-          created_at: string;
-          duration_in_seconds: number;
-          id: string;
-          language: string;
-          segments: Json | null;
-          session_id: string;
-          text: string;
-        };
-        Insert: {
-          created_at?: string;
-          duration_in_seconds?: number;
-          id?: string;
-          language?: string;
-          segments?: Json | null;
-          session_id: string;
-          text: string;
-        };
-        Update: {
-          created_at?: string;
-          duration_in_seconds?: number;
-          id?: string;
-          language?: string;
-          segments?: Json | null;
-          session_id?: string;
-          text?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'recording_transcripts_session_id_fkey';
-            columns: ['session_id'];
-            isOneToOne: true;
-            referencedRelation: 'recording_sessions';
             referencedColumns: ['id'];
           },
         ];

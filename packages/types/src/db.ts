@@ -1550,7 +1550,7 @@ export type WorkspaceEducationAccessRequest = Tables<
 >;
 
 export type RecordingStatus = Database['public']['Enums']['recording_status'];
-export type RecordingTranscript = Tables<'recording_transcripts'>;
+export type RecordingTranscript = PrivateTable<'recording_transcripts'>;
 export type MeetStreamEvent = Tables<
   { schema: 'private' },
   'meet_stream_events'

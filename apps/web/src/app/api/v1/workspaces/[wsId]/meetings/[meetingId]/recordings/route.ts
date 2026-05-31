@@ -1,6 +1,9 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { RecordingStatus } from '@tuturuuu/types';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -106,15 +109,7 @@ export async function GET(
     // Build query
     let query = supabase
       .from('recording_sessions')
-      .select(
-        `
-        id,
-        status,
-        created_at,
-        updated_at,
-        transcript: recording_transcripts(*)
-      `
-      )
+      .select('id, status, created_at, updated_at')
       .eq('meeting_id', meetingId)
       .not('status', 'eq', 'recording')
       .order('created_at', { ascending: false });
@@ -140,9 +135,39 @@ export async function GET(
       );
     }
 
+    const sessionIds = (sessions ?? []).map((session) => session.id);
+    const transcriptsBySessionId = new Map<string, RecordingTranscript>();
+
+    if (sessionIds.length > 0) {
+      const sbAdmin = await createAdminClient();
+      const { data: transcripts, error: transcriptsError } = await sbAdmin
+        .schema('private')
+        .from('recording_transcripts')
+        .select('*')
+        .in('session_id', sessionIds);
+
+      if (transcriptsError) {
+        console.error(
+          'Error fetching recording transcripts:',
+          transcriptsError
+        );
+        return NextResponse.json(
+          { error: 'Failed to fetch recording transcripts' },
+          { status: 500 }
+        );
+      }
+
+      for (const transcript of transcripts ?? []) {
+        transcriptsBySessionId.set(transcript.session_id, transcript);
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      sessions: sessions || [],
+      sessions: (sessions ?? []).map((session) => ({
+        ...session,
+        transcript: transcriptsBySessionId.get(session.id) ?? null,
+      })),
     });
   } catch (error) {
     console.error('Error in recording sessions API:', error);
