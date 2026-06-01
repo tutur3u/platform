@@ -35,6 +35,22 @@ function isLikelyBareFileName(value: string): boolean {
   return Boolean(value) && !value.includes('/') && !value.includes(':');
 }
 
+function parseUserGroupStoragePath(value: string, wsId: string) {
+  const prefix = `${wsId}/user-groups/`;
+  if (!value.startsWith(prefix)) return null;
+
+  const remainingPath = value.slice(prefix.length);
+  const firstSlashIndex = remainingPath.indexOf('/');
+  if (firstSlashIndex <= 0 || firstSlashIndex === remainingPath.length - 1) {
+    return null;
+  }
+
+  return {
+    groupId: remainingPath.slice(0, firstSlashIndex),
+    storagePath: value,
+  };
+}
+
 function getStoragePathFileName(value: string): string {
   return value.split('/').pop() ?? value;
 }
@@ -366,16 +382,39 @@ export async function executeConvertFileToMarkdown(
     };
   }
 
-  const sbAdmin = await createAdminClient();
-
   if (!sourceUrl && targetPath) {
     if (isUnsafeStoragePath(targetPath)) {
       return { ok: false, error: 'Invalid storagePath for current workspace.' };
     }
 
+    const userGroupStoragePath = parseUserGroupStoragePath(
+      targetPath,
+      ctx.wsId
+    );
+
     if (chatFolder && targetPath.startsWith(`${chatFolder}/`)) {
       selectedFileName = getStoragePathFileName(targetPath);
-    } else if (targetPath.startsWith(`${ctx.wsId}/user-groups/`)) {
+    } else if (userGroupStoragePath) {
+      let canReadUserGroupStorage = false;
+      try {
+        canReadUserGroupStorage = Boolean(
+          await ctx.canReadUserGroupStorage?.({
+            groupId: userGroupStoragePath.groupId,
+            storagePath: userGroupStoragePath.storagePath,
+            wsId: ctx.wsId,
+          })
+        );
+      } catch {
+        canReadUserGroupStorage = false;
+      }
+
+      if (!canReadUserGroupStorage) {
+        return {
+          ok: false,
+          error: 'You do not have permission to read this user-group file.',
+        };
+      }
+
       selectedFileName = getStoragePathFileName(targetPath);
     } else if (isLikelyBareFileName(targetPath)) {
       selectedFileName = targetPath;
@@ -392,6 +431,8 @@ export async function executeConvertFileToMarkdown(
   } else if (!sourceUrl) {
     selectedFileName = fileNameArg;
   }
+
+  const sbAdmin = await createAdminClient();
 
   if (!sourceUrl && !targetPath) {
     if (!ctx.chatId) {

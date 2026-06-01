@@ -24,13 +24,16 @@ vi.mock('../../credits/reservations', () => ({
   reserveFixedAiCredits: reserveFixedAiCreditsMock,
 }));
 
-function createContext(): MiraToolContext {
+function createContext(
+  overrides: Partial<MiraToolContext> = {}
+): MiraToolContext {
   return {
     userId: 'user-1',
     wsId: 'workspace-1',
     chatId: 'chat-1',
     supabase: {} as MiraToolContext['supabase'],
     timezone: 'UTC',
+    ...overrides,
   };
 }
 
@@ -166,6 +169,79 @@ describe('executeConvertFileToMarkdown', () => {
     expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
   });
 
+  it('denies user-group files when the caller did not prove group read access', async () => {
+    const result = (await executeConvertFileToMarkdown(
+      {
+        storagePath: 'workspace-1/user-groups/group-1/syllabus.pdf',
+      },
+      createContext()
+    )) as Record<string, unknown>;
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'You do not have permission to read this user-group file.',
+    });
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+    expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
+  });
+
+  it('converts user-group files only after caller-provided storage authorization', async () => {
+    const createSignedUrl = vi.fn().mockResolvedValue({
+      data: { signedUrl: 'https://storage.test/signed-syllabus' },
+      error: null,
+    });
+    const canReadUserGroupStorage = vi.fn().mockResolvedValue(true);
+    createAdminClientMock.mockResolvedValue({
+      rpc: vi.fn(),
+      storage: {
+        from: vi.fn().mockReturnValue({
+          createSignedUrl,
+          list: vi.fn(),
+        }),
+      },
+    });
+
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          markdown: '# Converted syllabus',
+          title: 'Syllabus',
+        }),
+        { status: 200 }
+      )
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = (await executeConvertFileToMarkdown(
+      {
+        storagePath: 'workspace-1/user-groups/group-1/syllabus.pdf',
+      },
+      createContext({ canReadUserGroupStorage })
+    )) as Record<string, unknown>;
+
+    expect(result.ok).toBe(true);
+    expect(result.storagePath).toBe(
+      'workspace-1/user-groups/group-1/syllabus.pdf'
+    );
+    expect(canReadUserGroupStorage).toHaveBeenCalledWith({
+      groupId: 'group-1',
+      storagePath: 'workspace-1/user-groups/group-1/syllabus.pdf',
+      wsId: 'workspace-1',
+    });
+    expect(createSignedUrl).toHaveBeenCalledWith(
+      'workspace-1/user-groups/group-1/syllabus.pdf',
+      120
+    );
+    expect(reserveFixedAiCreditsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amount: 100,
+        wsId: 'workspace-1',
+      }),
+      expect.any(Object)
+    );
+  });
+
   it('treats a YouTube URL passed as storagePath as a direct URL', async () => {
     createAdminClientMock.mockResolvedValue({
       rpc: vi.fn(),
@@ -236,6 +312,7 @@ describe('executeConvertFileToMarkdown', () => {
       ok: false,
       error: 'Invalid storagePath for current workspace.',
     });
+    expect(createAdminClientMock).not.toHaveBeenCalled();
     expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
   });
 });

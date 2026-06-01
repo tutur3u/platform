@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   deductAiCredits: vi.fn(),
   gateway: vi.fn(),
+  getPermissions: vi.fn(),
   google: vi.fn(),
   performCreditPreflight: vi.fn(),
   prepareProcessedMessages: vi.fn(),
@@ -42,6 +43,8 @@ vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
+    mocks.getPermissions(...args),
   normalizeWorkspaceId: vi.fn(async (wsId: string) => wsId),
   verifyWorkspaceMembershipType: vi.fn(async () => ({ ok: true })),
 }));
@@ -136,6 +139,9 @@ describe('mind route payload validation', () => {
       modelId,
       provider: 'google',
     }));
+    mocks.getPermissions.mockResolvedValue({
+      withoutPermission: vi.fn(() => false),
+    });
     mocks.performCreditPreflight.mockResolvedValue({ cappedMaxOutput: null });
     mocks.prepareProcessedMessages.mockResolvedValue({
       processedMessages: [{ content: 'plan this', role: 'user' }],

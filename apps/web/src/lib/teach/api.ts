@@ -26,7 +26,7 @@ export async function requireTeachWorkspaceAccess({
   wsId,
 }: {
   context: SessionAuthContext;
-  permission: PermissionId;
+  permission: PermissionId | PermissionId[];
   wsId: string;
 }): Promise<TeachAccessResult> {
   const normalizedWsId = await normalizeWorkspaceId(wsId, context.supabase);
@@ -59,7 +59,15 @@ export async function requireTeachWorkspaceAccess({
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (permissions.withoutPermission(permission)) {
+  const requiredPermissions = Array.isArray(permission)
+    ? permission
+    : [permission];
+
+  if (
+    requiredPermissions.some((required) =>
+      permissions.withoutPermission(required)
+    )
+  ) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }

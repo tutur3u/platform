@@ -264,7 +264,7 @@ export const POST = withSessionAuth(
       // Require teach workspace access consistent with other Teach routes
       const access = await requireTeachWorkspaceAccess({
         context,
-        permission: 'update_user_groups',
+        permission: ['update_user_groups', 'view_user_groups'],
         wsId,
       });
       if (access instanceof NextResponse) return access;
@@ -357,6 +357,9 @@ export const POST = withSessionAuth(
           wsId: normalizedWsId,
           userId: access.userId,
           supabase,
+          canReadUserGroupStorage: (input) =>
+            input.groupId === groupId &&
+            isGroupStoragePath(input.storagePath, normalizedWsId, groupId),
         }
       );
 

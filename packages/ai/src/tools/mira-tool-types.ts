@@ -9,4 +9,9 @@ export interface MiraToolContext {
   chatId?: string;
   supabase: TypedSupabaseClient;
   timezone?: string;
+  canReadUserGroupStorage?: (input: {
+    groupId: string;
+    storagePath: string;
+    wsId: string;
+  }) => boolean | Promise<boolean>;
 }

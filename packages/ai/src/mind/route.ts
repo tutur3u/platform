@@ -1,6 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -483,9 +484,46 @@ export function createPOST(callbacks: MindRouteCallbacks) {
         },
         callbacks
       );
+      const permissions = await getPermissions({
+        user: auth.user,
+        wsId: access.wsId,
+      });
+      const userGroupStorageAccessCache = new Map<string, boolean>();
       const miraFileTools = createMiraStreamTools({
         chatId: threadId,
         creditWsId: billingWsId ?? access.wsId,
+        canReadUserGroupStorage: async ({ groupId, storagePath, wsId }) => {
+          if (wsId !== access.wsId || storagePath.includes('..')) {
+            return false;
+          }
+
+          if (
+            !permissions ||
+            permissions.withoutPermission('view_user_groups')
+          ) {
+            return false;
+          }
+
+          const expectedPrefix = `${access.wsId}/user-groups/${groupId}/`;
+          if (!storagePath.startsWith(expectedPrefix)) {
+            return false;
+          }
+
+          const cachedAccess = userGroupStorageAccessCache.get(groupId);
+          if (cachedAccess !== undefined) {
+            return cachedAccess;
+          }
+
+          const { data, error } = await sbAdmin
+            .from('workspace_user_groups')
+            .select('id')
+            .eq('ws_id', access.wsId)
+            .eq('id', groupId)
+            .maybeSingle();
+          const allowed = !error && Boolean(data);
+          userGroupStorageAccessCache.set(groupId, allowed);
+          return allowed;
+        },
         supabase: sbAdmin as never,
         timezone: parsedBody.timezone,
         userId: auth.user.id,
