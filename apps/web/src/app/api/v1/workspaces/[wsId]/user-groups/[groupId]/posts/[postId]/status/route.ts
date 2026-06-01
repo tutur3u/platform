@@ -1,7 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import type { GroupPostStatusSummaryRow } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/types';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -23,7 +27,8 @@ type PostStatusRpc = (
 ) => Promise<{ data: GroupPostStatusSummaryRow[] | null; error: unknown }>;
 
 export async function GET(req: Request, { params }: Params) {
-  const { wsId, groupId, postId } = await params;
+  const { wsId: id, groupId, postId } = await params;
+  const wsId = await normalizeWorkspaceId(id);
 
   const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
@@ -50,7 +55,12 @@ export async function GET(req: Request, { params }: Params) {
   );
 
   if (error) {
-    console.error('Error fetching group post status summary:', error);
+    serverLogger.error('Error fetching group post status summary', {
+      error,
+      groupId,
+      postId,
+      wsId,
+    });
     return NextResponse.json(
       { message: 'Error fetching group post status summary' },
       { status: 500 }

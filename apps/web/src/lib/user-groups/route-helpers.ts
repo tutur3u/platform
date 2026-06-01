@@ -40,3 +40,34 @@ export async function hasUserGroupInWorkspace({
 
   return Boolean(data);
 }
+
+export async function hasUserGroupPostInWorkspace({
+  sbAdmin,
+  wsId,
+  groupId,
+  postId,
+}: {
+  groupId: string;
+  postId: string;
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}) {
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .from('user_group_posts')
+    .select(`
+      id,
+      group_id,
+      workspace_user_groups!inner(ws_id)
+    `)
+    .eq('id', postId)
+    .eq('workspace_user_groups.ws_id', wsId)
+    .eq('group_id', groupId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(data);
+}

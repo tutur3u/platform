@@ -6,7 +6,9 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { enqueueApprovedPostEmails } from '@/lib/post-email-queue';
+import { hasUserGroupPostInWorkspace } from '@/lib/user-groups/route-helpers';
 
 interface Params {
   params: Promise<{
@@ -25,7 +27,7 @@ const SingleSchema = z.object({
 const MultipleSchema = z.array(SingleSchema);
 
 export async function GET(req: Request, { params }: Params) {
-  const { wsId: id } = await params;
+  const { groupId, wsId: id } = await params;
   const { searchParams } = new URL(req.url);
   const postId = searchParams.get('postId');
 
@@ -53,6 +55,30 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  let postExists = false;
+  try {
+    postExists = await hasUserGroupPostInWorkspace({
+      sbAdmin,
+      wsId,
+      groupId,
+      postId,
+    });
+  } catch (error) {
+    serverLogger.error('Error resolving user group post workspace', {
+      error,
+      groupId,
+      postId,
+      wsId,
+    });
+    return NextResponse.json(
+      { message: 'Error resolving user group post workspace' },
+      { status: 500 }
+    );
+  }
+
+  if (!postExists) {
+    return NextResponse.json({ message: 'Post not found' }, { status: 404 });
+  }
 
   const { data, error } = await sbAdmin
     .schema('private')
@@ -63,7 +89,12 @@ export async function GET(req: Request, { params }: Params) {
     .eq('post_id', postId);
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error fetching group checks', {
+      error,
+      groupId,
+      postId,
+      wsId,
+    });
     return NextResponse.json(
       { message: 'Error fetching group checks' },
       { status: 500 }
@@ -164,7 +195,12 @@ export async function POST(req: Request, { params }: Params) {
     .insert(insertPayload);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error inserting data into user_group_post_checks', {
+      error,
+      groupId,
+      postId,
+      wsId,
+    });
     return NextResponse.json(
       { message: 'Error inserting data into user_group_post_checks' },
       { status: 500 }

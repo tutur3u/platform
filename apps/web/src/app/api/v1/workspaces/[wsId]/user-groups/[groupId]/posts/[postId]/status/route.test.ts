@@ -1,13 +1,17 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { createAdminClientMock, getPermissionsMock, rpcMock } = vi.hoisted(
-  () => ({
-    createAdminClientMock: vi.fn(),
-    getPermissionsMock: vi.fn(),
-    rpcMock: vi.fn(),
-  })
-);
+const {
+  createAdminClientMock,
+  getPermissionsMock,
+  normalizeWorkspaceIdMock,
+  rpcMock,
+} = vi.hoisted(() => ({
+  createAdminClientMock: vi.fn(),
+  getPermissionsMock: vi.fn(),
+  normalizeWorkspaceIdMock: vi.fn(),
+  rpcMock: vi.fn(),
+}));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: createAdminClientMock,
@@ -15,6 +19,13 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: getPermissionsMock,
+  normalizeWorkspaceId: normalizeWorkspaceIdMock,
+}));
+
+vi.mock('@/lib/infrastructure/log-drain', () => ({
+  serverLogger: {
+    error: vi.fn(),
+  },
 }));
 
 import { GET } from './route';
@@ -31,6 +42,7 @@ describe('group post status route', () => {
     getPermissionsMock.mockResolvedValue({
       withoutPermission: vi.fn().mockReturnValue(false),
     });
+    normalizeWorkspaceIdMock.mockResolvedValue('normalized-ws-1');
   });
 
   it('returns summary counts from the unified recipient status RPC', async () => {
@@ -94,7 +106,7 @@ describe('group post status route', () => {
     expect(rpcMock).toHaveBeenCalledWith('get_user_group_post_status_summary', {
       p_group_id: 'group-1',
       p_post_id: 'post-1',
-      p_ws_id: 'ws-1',
+      p_ws_id: 'normalized-ws-1',
     });
   });
 });

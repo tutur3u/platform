@@ -15,6 +15,8 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { hasUserGroupInWorkspace } from '@/lib/user-groups/route-helpers';
 
 const CreateGroupPostSchema = z.object({
   title: z.string().max(MAX_NAME_LENGTH).nullable().optional(),
@@ -34,7 +36,19 @@ interface Params {
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const { groupId, wsId } = await params;
+  const { groupId, wsId: id } = await params;
+  const pathParamsParse = GroupUuidSchema.safeParse({ groupId });
+  if (!pathParamsParse.success) {
+    return NextResponse.json(
+      {
+        message: 'Invalid path params',
+        errors: pathParamsParse.error.issues,
+      },
+      { status: 400 }
+    );
+  }
+
+  const wsId = await normalizeWorkspaceId(id);
   const { searchParams } = new URL(req.url);
   const cursor = searchParams.get('cursor');
   const limit = Number.parseInt(searchParams.get('limit') ?? '10', 10);
@@ -53,6 +67,32 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const supabase = await createAdminClient();
+  let groupExists = false;
+  try {
+    groupExists = await hasUserGroupInWorkspace({
+      sbAdmin: supabase,
+      wsId,
+      groupId,
+    });
+  } catch (error) {
+    serverLogger.error('Error resolving user group workspace', {
+      error,
+      groupId,
+      wsId,
+    });
+    return NextResponse.json(
+      { message: 'Error resolving user group workspace' },
+      { status: 500 }
+    );
+  }
+
+  if (!groupExists) {
+    return NextResponse.json(
+      { message: 'User group not found' },
+      { status: 404 }
+    );
+  }
+
   let query = supabase
     .schema('private')
     .from('user_group_posts')
@@ -68,7 +108,11 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error, count } = await query;
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching user group posts', {
+      error,
+      groupId,
+      wsId,
+    });
     return NextResponse.json(
       { message: 'Error fetching user group posts' },
       { status: 500 }
@@ -219,7 +263,11 @@ export async function POST(req: Request, { params }: Params) {
     });
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error creating group post', {
+      error,
+      groupId,
+      wsId,
+    });
     return NextResponse.json(
       { message: 'Error creating group post' },
       { status: 500 }
