@@ -40,7 +40,7 @@ export async function FinanceOverviewMetrics({
   searchParams,
   wsId,
 }: FinanceOverviewMetricsProps) {
-  if (!permissions.containsPermission('manage_finance')) return null;
+  if (!permissions.containsPermission('view_finance_stats')) return null;
 
   const t = await getTranslations();
   const metrics = await getFinanceOverviewMetrics(

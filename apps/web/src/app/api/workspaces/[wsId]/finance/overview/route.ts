@@ -75,7 +75,7 @@ export async function GET(request: Request, { params }: Params) {
 
     const { normalizedWsId, permissions, sbAdmin, user } = access.context;
 
-    if (permissions.withoutPermission('manage_finance')) {
+    if (permissions.withoutPermission('view_finance_stats')) {
       return NextResponse.json(
         { message: 'Insufficient permissions' },
         { status: 403 }

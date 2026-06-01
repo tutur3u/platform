@@ -261,6 +261,66 @@ test.describe('Finance permission boundaries', () => {
 
         expect(response.status()).toBe(403);
       }
+
+      const statsPermissionResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspace_role_permissions`,
+        {
+          data: {
+            enabled: true,
+            permission: 'view_finance_stats',
+            role_id: roleId,
+            ws_id: workspaceId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      expect(statsPermissionResponse.status()).toBe(201);
+
+      const overviewResponse = await lowPrivPage.request.get(
+        `${origin}/api/workspaces/${workspaceId}/finance/overview?includeConfidential=true`,
+        {
+          failOnStatusCode: false,
+          headers,
+        }
+      );
+      expect(overviewResponse.status()).toBe(200);
+      await expect(overviewResponse.json()).resolves.toEqual(
+        expect.objectContaining({
+          categoryCount: 1,
+          invoiceCount: 0,
+          transactionCount: 0,
+          walletCount: 1,
+        })
+      );
+
+      const balanceTrendResponse = await lowPrivPage.request.get(
+        `${origin}/api/workspaces/${workspaceId}/finance/charts/balance-trend?includeConfidential=true&maxPoints=60`,
+        {
+          failOnStatusCode: false,
+          headers,
+        }
+      );
+      expect(balanceTrendResponse.status()).toBe(200);
+      await expect(balanceTrendResponse.json()).resolves.toEqual({
+        data: expect.any(Array),
+      });
+
+      const incomeExpenseResponse = await lowPrivPage.request.get(
+        `${origin}/api/workspaces/${workspaceId}/finance/charts/income-expense-summary?includeConfidential=true&interval=daily`,
+        {
+          failOnStatusCode: false,
+          headers,
+        }
+      );
+      expect(incomeExpenseResponse.status()).toBe(200);
+      await expect(incomeExpenseResponse.json()).resolves.toEqual(
+        expect.objectContaining({
+          data: expect.any(Array),
+          total_expense: expect.any(Number),
+          total_income: expect.any(Number),
+        })
+      );
     } finally {
       await request.delete(
         `${SUPABASE_URL}/rest/v1/transaction_categories?id=eq.${categoryId}`,

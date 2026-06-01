@@ -22,6 +22,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 
 describe('finance overview metrics route', () => {
   beforeEach(() => {
+    vi.resetModules();
     vi.clearAllMocks();
     mocks.resolveFinanceRouteAuthContext.mockResolvedValue({ auth: 'context' });
   });
@@ -54,7 +55,9 @@ describe('finance overview metrics route', () => {
       context: {
         normalizedWsId: 'ws-1',
         permissions: {
-          withoutPermission: vi.fn(() => false),
+          withoutPermission: vi.fn(
+            (permission: string) => permission !== 'view_finance_stats'
+          ),
         },
         sbAdmin: { schema },
         user: { id: 'user-1' },
@@ -94,6 +97,35 @@ describe('finance overview metrics route', () => {
       totalIncome: 100,
       transactionCount: 5,
       walletCount: 2,
+    });
+  });
+
+  it('rejects users without finance statistics access before calling the RPC', async () => {
+    const schema = vi.fn();
+
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: {
+          withoutPermission: vi.fn(
+            (permission: string) => permission === 'view_finance_stats'
+          ),
+        },
+        sbAdmin: { schema },
+        user: { id: 'user-1' },
+      },
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new Request('http://localhost/api/workspaces/ws-1/finance/overview'),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(403);
+    expect(schema).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: 'Insufficient permissions',
     });
   });
 });
