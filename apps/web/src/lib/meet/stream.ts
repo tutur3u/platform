@@ -70,6 +70,13 @@ export type MeetStreamResponse = {
   updatedAt: string;
 };
 
+type MeetStreamWriteError = {
+  code?: string | null;
+  details?: string | null;
+  hint?: string | null;
+  message: string;
+};
+
 function trimTrailingSlash(value: string) {
   return value.replace(/\/+$/, '');
 }
@@ -243,6 +250,41 @@ function requireStreamUrls(liveInput: CloudflareStreamLiveInput) {
   return { whepUrl, whipUrl };
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isMeetStreamMeetingInsertConflict(error: MeetStreamWriteError) {
+  if (error.code !== '23505') {
+    return false;
+  }
+
+  const message = [error.message, error.details, error.hint]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    message.includes('meeting_id') ||
+    message.includes('meet_stream_live_inputs_meeting_id_key')
+  );
+}
+
+async function disableCreatedCloudflareLiveInput({
+  cloudflare,
+  liveInputUid,
+  reason,
+}: {
+  cloudflare: CloudflareStreamClient;
+  liveInputUid: string;
+  reason: string;
+}) {
+  try {
+    await cloudflare.updateLiveInput(liveInputUid, { enabled: false });
+  } catch (error) {
+    throw new Error(`${reason}:${getErrorMessage(error)}`);
+  }
+}
+
 export function serializeMeetStreamLiveInput(
   stream: MeetStreamLiveInput,
   options: { includePublishUrl?: boolean } = {}
@@ -307,7 +349,7 @@ export async function recordMeetStreamEvent({
 export async function ensureMeetStreamLiveInput({
   actorId,
   admin,
-  cloudflare = new CloudflareStreamClient(),
+  cloudflare,
   meetingId,
   meetingName,
   wsId,
@@ -325,8 +367,10 @@ export async function ensureMeetStreamLiveInput({
     return { created: false, stream: existing };
   }
 
+  const streamCloudflare = cloudflare ?? new CloudflareStreamClient();
+
   if (existing) {
-    const liveInput = await cloudflare.updateLiveInput(
+    const liveInput = await streamCloudflare.updateLiveInput(
       existing.cloudflare_live_input_uid,
       {
         actorId,
@@ -378,13 +422,24 @@ export async function ensureMeetStreamLiveInput({
     return { created: false, stream: data };
   }
 
-  const liveInput = await cloudflare.createLiveInput({
+  const liveInput = await streamCloudflare.createLiveInput({
     actorId,
     meetingId,
     meetingName,
     wsId,
   });
-  const urls = requireStreamUrls(liveInput);
+  let urls: ReturnType<typeof requireStreamUrls>;
+
+  try {
+    urls = requireStreamUrls(liveInput);
+  } catch (error) {
+    await disableCreatedCloudflareLiveInput({
+      cloudflare: streamCloudflare,
+      liveInputUid: liveInput.uid,
+      reason: 'meet_stream_url_cleanup_failed',
+    });
+    throw error;
+  }
 
   const { data, error } = await admin
     .schema('private')
@@ -407,6 +462,35 @@ export async function ensureMeetStreamLiveInput({
     .single();
 
   if (error) {
+    const isMeetingConflict = isMeetStreamMeetingInsertConflict(error);
+
+    await disableCreatedCloudflareLiveInput({
+      cloudflare: streamCloudflare,
+      liveInputUid: liveInput.uid,
+      reason: isMeetingConflict
+        ? 'meet_stream_insert_conflict_cleanup_failed'
+        : 'meet_stream_insert_cleanup_failed',
+    });
+
+    if (isMeetingConflict) {
+      const winner = await getMeetStreamLiveInput({ admin, meetingId, wsId });
+
+      if (winner?.cloudflare_live_input_enabled && winner.status !== 'ended') {
+        return { created: false, stream: winner };
+      }
+
+      if (winner) {
+        return ensureMeetStreamLiveInput({
+          actorId,
+          admin,
+          cloudflare: streamCloudflare,
+          meetingId,
+          meetingName,
+          wsId,
+        });
+      }
+    }
+
     throw new Error(`meet_stream_insert_failed:${error.message}`);
   }
 
@@ -430,7 +514,7 @@ export async function ensureMeetStreamLiveInput({
 export async function stopMeetStreamLiveInput({
   actorId,
   admin,
-  cloudflare = new CloudflareStreamClient(),
+  cloudflare,
   meetingId,
   wsId,
 }: {
@@ -446,7 +530,9 @@ export async function stopMeetStreamLiveInput({
     return null;
   }
 
-  await cloudflare.updateLiveInput(existing.cloudflare_live_input_uid, {
+  const streamCloudflare = cloudflare ?? new CloudflareStreamClient();
+
+  await streamCloudflare.updateLiveInput(existing.cloudflare_live_input_uid, {
     enabled: false,
   });
 
