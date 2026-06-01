@@ -77,25 +77,20 @@ export async function fetchOtpCodeFromMailpit(
 }
 
 /**
- * Authenticates via the password login form and saves browser state.
+ * Authenticates via local dev-session and saves browser state.
  *
  * Strategy:
- *  1. Disable web OTP to ensure the password form appears directly
- *  2. Reset auth rate limits
- *  3. Navigate to the login page
- *  4. Fill in the email, advance past the identify step
- *  5. Fill in the password form with seed test credentials
- *  6. Submit — the app's Supabase browser client stores the session in cookies
- *  7. Wait for the post-login redirect (middleware redirects authenticated users)
- *  8. Restore OTP to its original setting
- *  9. Save storageState so subsequent tests skip login entirely
+ *  1. Reset auth rate limits
+ *  2. Navigate to a same-origin page and POST to dev-session from browser fetch
+ *  3. Verify both browser-readable and server-readable session state
+ *  4. Fall back to the password form if dev-session is unavailable
+ *  5. Save storageState so subsequent tests skip login entirely
  *
- * Why UI-based login instead of API-based:
- *  - The app's createBrowserClient stores sessions in cookies (not localStorage).
- *  - A standalone createClient from @supabase/supabase-js uses localStorage instead,
- *    so page.evaluate() with a fresh client won't set the right cookies.
- *  - Server-side auth callbacks set HttpOnly cookies that storageState() can't capture.
- *  - The UI form uses the correctly configured client, so cookies persist properly.
+ * Why browser fetch instead of page.request:
+ *  - The dev-session response sets the same Supabase cookies the app reads.
+ *  - Chromium handles same-origin Set-Cookie behavior directly.
+ *  - Playwright's API request context can reject local TLS or relative Set-Cookie
+ *    response URLs before those cookies reach the browser context.
  */
 export async function authenticateTestUser(page: Page): Promise<void> {
   await resetDbRateLimits();
@@ -118,18 +113,36 @@ export async function authenticateTestUser(page: Page): Promise<void> {
 }
 
 async function authenticateViaDevSession(page: Page): Promise<void> {
-  const response = await page.request.post(DEV_SESSION_URL, {
-    data: {
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
+
+  const response = await page.evaluate(
+    async ({ email, locale, url }) => {
+      const response = await fetch(url, {
+        body: JSON.stringify({
+          completeOnboarding: true,
+          email,
+          locale,
+        }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      });
+
+      return {
+        body: await response.text(),
+        ok: response.ok,
+        status: response.status,
+      };
+    },
+    {
       email: TEST_USER.email,
       locale: DEFAULT_LOCALE,
-    },
-    failOnStatusCode: false,
-  });
+      url: DEV_SESSION_URL,
+    }
+  );
 
-  if (!response.ok()) {
-    const errorBody = await response.text().catch(() => '');
+  if (!response.ok) {
     throw new Error(
-      `Dev session failed with status ${response.status()}: ${errorBody}`
+      `Dev session failed with status ${response.status}: ${response.body}`
     );
   }
   await verifyAuthenticatedSession(page);

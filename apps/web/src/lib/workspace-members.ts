@@ -299,7 +299,7 @@ export async function getWorkspaceMembers({
   )
     .from('task_board_shares')
     .select(
-      'id, shared_with_user_id, shared_with_email, permission, created_at, workspace_boards!inner(id, name, ws_id), users(id, display_name, handle, avatar_url)'
+      'id, shared_with_user_id, shared_with_email, permission, created_at, workspace_boards!inner(id, name, ws_id), users:shared_with_user_id(id, display_name, handle, avatar_url)'
     )
     .eq('workspace_boards.ws_id', wsId)
     .order('created_at', { ascending: false });
