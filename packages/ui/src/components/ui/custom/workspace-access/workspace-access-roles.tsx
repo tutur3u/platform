@@ -60,7 +60,7 @@ export function WorkspaceAccessRoles({
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <CardTitle>{t('ws-roles.plural')}</CardTitle>
+              <CardTitle>{labels.accessLevelsLabel}</CardTitle>
               <CardDescription>{t('ws-roles.description')}</CardDescription>
             </div>
             {canManageRoles ? (

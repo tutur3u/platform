@@ -42,12 +42,11 @@ export function WorkspaceAccessMembers({
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border p-4">
-        <div className="space-y-3">
-          <Skeleton className="h-20 rounded-lg" />
-          <Skeleton className="h-20 rounded-lg" />
-          <Skeleton className="h-20 rounded-lg" />
-        </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Skeleton className="h-52 rounded-lg" />
+        <Skeleton className="h-52 rounded-lg" />
+        <Skeleton className="h-52 rounded-lg" />
+        <Skeleton className="h-52 rounded-lg" />
       </div>
     );
   }
@@ -65,23 +64,21 @@ export function WorkspaceAccessMembers({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border">
-      <div className="divide-y">
-        {members.map((member) => (
-          <WorkspaceAccessMemberRow
-            key={`${member.id ?? member.email ?? member.handle}`}
-            canManageMembers={canManageMembers}
-            canManageRoles={canManageRoles}
-            isMutating={isMutating}
-            labels={labels}
-            member={member}
-            onAssignRole={onAssignRole}
-            onRemoveMember={onRemoveMember}
-            onRemoveRole={onRemoveRole}
-            roles={roles}
-          />
-        ))}
-      </div>
+    <div className="grid gap-4 lg:grid-cols-2">
+      {members.map((member) => (
+        <WorkspaceAccessMemberRow
+          key={`${member.id ?? member.email ?? member.handle}`}
+          canManageMembers={canManageMembers}
+          canManageRoles={canManageRoles}
+          isMutating={isMutating}
+          labels={labels}
+          member={member}
+          onAssignRole={onAssignRole}
+          onRemoveMember={onRemoveMember}
+          onRemoveRole={onRemoveRole}
+          roles={roles}
+        />
+      ))}
     </div>
   );
 }

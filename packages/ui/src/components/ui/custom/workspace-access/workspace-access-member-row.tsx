@@ -1,6 +1,11 @@
 'use client';
 
-import { ShieldUser, UserMinus } from '@tuturuuu/icons';
+import {
+  Crown,
+  ShieldUser,
+  User as UserIcon,
+  UserMinus,
+} from '@tuturuuu/icons';
 import type { InternalApiEnhancedWorkspaceMember } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -13,6 +18,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import moment from 'moment';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   getAvailableRolesForMember,
@@ -46,93 +52,151 @@ export function WorkspaceAccessMemberRow({
   onRemoveRole,
   roles,
 }: Props) {
-  const t = useTranslations() as (key: string) => string;
+  const t = useTranslations();
   const locale = useLocale();
   const memberId = member.id ?? null;
   const availableRoles = getAvailableRolesForMember(member, roles);
   const memberName = getMemberDisplayName(member, t('common.unknown'));
+  const guestContext = member as InternalApiEnhancedWorkspaceMember & {
+    direct_board_guest?: boolean;
+    guest_board_count?: number;
+    guest_board_names?: string[];
+    guest_highest_permission?: 'edit' | 'view' | null;
+  };
 
   return (
-    <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto]">
-      <div className="flex min-w-0 items-start gap-3">
-        <Avatar className="h-10 w-10">
+    <article
+      className={`relative rounded-lg border p-4 transition-colors ${
+        member.pending
+          ? 'border-dashed bg-transparent'
+          : 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <Avatar>
           <AvatarImage src={member.avatar_url ?? undefined} />
-          <AvatarFallback className="font-medium">
-            {getInitials(memberName)}
+          <AvatarFallback className="font-semibold">
+            {member.display_name ? (
+              getInitials(member.display_name)
+            ) : (
+              <UserIcon className="h-5 w-5" />
+            )}
           </AvatarFallback>
         </Avatar>
 
         <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="truncate font-medium">{memberName}</div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="truncate font-semibold lg:text-lg">{memberName}</p>
             {member.is_creator ? (
-              <Badge variant="secondary" className="rounded-full">
+              <Badge className="h-5 gap-1 border-dynamic-yellow/50 bg-dynamic-yellow/10 px-1.5 text-dynamic-yellow text-xs">
+                <Crown className="h-3 w-3" />
                 {t('ws-members.creator_badge')}
               </Badge>
             ) : null}
             {member.pending ? (
-              <Badge variant="outline" className="rounded-full">
+              <Badge variant="outline" className="h-5 px-1.5 text-xs">
                 {t('ws-members.invited')}
               </Badge>
             ) : null}
             {member.workspace_member_type === 'GUEST' ? (
-              <Badge variant="outline" className="rounded-full">
-                {t('ws-members.guest_badge')}
+              <Badge className="h-5 border-foreground/20 bg-foreground/5 px-1.5 text-foreground/80 text-xs">
+                {guestContext.direct_board_guest
+                  ? t('ws-members.direct_board_guest_badge')
+                  : t('ws-members.guest_badge')}
+              </Badge>
+            ) : null}
+            {guestContext.direct_board_guest ? (
+              <Badge className="h-5 border-dynamic-blue/50 bg-dynamic-blue/10 px-1.5 text-dynamic-blue text-xs">
+                {guestContext.guest_highest_permission === 'edit'
+                  ? t('ws-members.board_guest_can_edit')
+                  : t('ws-members.board_guest_can_view')}
               </Badge>
             ) : null}
           </div>
 
-          <div className="truncate text-muted-foreground text-sm">
+          <p className="truncate font-semibold text-muted-foreground text-sm">
             {member.email ||
               (member.handle ? `@${member.handle}` : t('common.unknown'))}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {member.roles.length > 0 ? (
-              member.roles.map((role) => (
-                <Badge
-                  key={`${member.id}-${role.id}`}
-                  variant="secondary"
-                  className="gap-1 rounded-full"
-                >
-                  <span>{role.name}</span>
-                  {canManageRoles && memberId && !member.pending ? (
-                    <button
-                      type="button"
-                      className="rounded-full px-1 hover:bg-foreground/10"
-                      onClick={() =>
-                        onRemoveRole({
-                          roleId: role.id,
-                          userId: memberId,
-                        })
-                      }
-                      aria-label={t('common.delete')}
-                    >
-                      x
-                    </button>
-                  ) : null}
-                </Badge>
-              ))
-            ) : (
-              <Badge variant="outline" className="rounded-full">
-                {labels.noRolesLabel}
-              </Badge>
-            )}
-          </div>
+          </p>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 lg:min-w-[250px] lg:items-end">
-        <div className="text-muted-foreground text-xs">
-          {member.created_at
-            ? new Intl.DateTimeFormat(locale, {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-              }).format(new Date(member.created_at))
-            : ''}
-        </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {member.roles.length > 0 ? (
+          member.roles.map((role) => (
+            <Badge
+              key={`${member.id ?? member.email}-${role.id}`}
+              className="h-5 gap-1 border-dynamic-purple/50 bg-dynamic-purple/10 px-1.5 text-dynamic-purple text-xs"
+            >
+              <span>{role.name}</span>
+              {canManageRoles && memberId && !member.pending ? (
+                <button
+                  type="button"
+                  className="rounded-full px-1 hover:bg-foreground/10"
+                  onClick={() =>
+                    onRemoveRole({
+                      roleId: role.id,
+                      userId: memberId,
+                    })
+                  }
+                  aria-label={t('common.delete')}
+                >
+                  x
+                </button>
+              ) : null}
+            </Badge>
+          ))
+        ) : (
+          <Badge variant="outline" className="h-5 px-1.5 text-xs">
+            {labels.noRolesLabel}
+          </Badge>
+        )}
+      </div>
 
-        <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+      {guestContext.direct_board_guest ? (
+        <div className="mt-3 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/5 p-3 text-sm">
+          <div className="font-medium text-dynamic-blue">
+            {t('ws-members.direct_board_guest_scope_title')}
+          </div>
+          <p className="mt-1 text-muted-foreground">
+            {t('ws-members.direct_board_guest_scope_description', {
+              count: guestContext.guest_board_count ?? 0,
+            })}
+          </p>
+          {guestContext.guest_board_names?.length ? (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {guestContext.guest_board_names.slice(0, 4).map((name) => (
+                <Badge key={name} variant="outline" className="text-xs">
+                  {name}
+                </Badge>
+              ))}
+              {guestContext.guest_board_names.length > 4 ? (
+                <Badge variant="outline" className="text-xs">
+                  +{guestContext.guest_board_names.length - 4}
+                </Badge>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="mt-3 flex flex-col gap-3 border-t pt-3 text-sm md:flex-row md:items-center md:justify-between">
+        {member.created_at ? (
+          <div className="text-muted-foreground">
+            <span>
+              {t(
+                member.pending
+                  ? 'ws-members.invited'
+                  : 'ws-members.member_since'
+              )}
+            </span>{' '}
+            <span className="font-semibold text-foreground">
+              {moment(member.created_at).locale(locale).fromNow()}
+            </span>
+          </div>
+        ) : null}
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {canManageRoles && memberId && !member.pending ? (
             <Select
               onValueChange={(roleId) =>
@@ -180,6 +244,6 @@ export function WorkspaceAccessMemberRow({
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }

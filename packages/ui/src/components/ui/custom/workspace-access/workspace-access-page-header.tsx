@@ -1,6 +1,6 @@
 'use client';
 
-import { Users } from '@tuturuuu/icons';
+import { ShieldCheck, Users } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 import type { WorkspaceAccessContext, WorkspaceAccessMode } from './types';
@@ -23,15 +23,15 @@ export function WorkspaceAccessPageHeader({
   const t = useTranslations() as (key: string) => string;
 
   return (
-    <section className="rounded-lg border bg-background p-5 shadow-sm">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+    <section className="overflow-hidden rounded-xl border border-border bg-linear-to-br from-background via-background to-foreground/[0.02] p-6 shadow-sm">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-foreground text-background">
-              <Users className="h-5 w-5" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-blue to-dynamic-purple shadow-lg">
+              <Users className="h-6 w-6 text-background" />
             </div>
-            <div>
-              <h1 className="font-semibold text-2xl tracking-tight">
+            <div className="min-w-0">
+              <h1 className="bg-linear-to-br from-foreground to-foreground/70 bg-clip-text font-bold text-3xl text-transparent tracking-tight">
                 {mode === 'cms'
                   ? t('external-projects.settings.members_title')
                   : t('workspace-settings-layout.members')}
@@ -51,7 +51,7 @@ export function WorkspaceAccessPageHeader({
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 lg:justify-end">
           <Badge variant="outline" className="rounded-full">
             {t('common.total')}: {totalCount}
           </Badge>
@@ -60,6 +60,10 @@ export function WorkspaceAccessPageHeader({
           </Badge>
           <Badge variant="outline" className="rounded-full">
             {t('ws-members.pending_invitations')}: {invitedCount}
+          </Badge>
+          <Badge variant="secondary" className="gap-1 rounded-full">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            {t('ws-roles.plural')}
           </Badge>
         </div>
       </div>

@@ -246,6 +246,7 @@ export function WorkspaceAccessPage({
       >
         <WorkspaceAccessTabsToolbar
           activeTab={activeTab}
+          accessLevelsLabel={labels.accessLevelsLabel}
           canInvite={canInvite}
           canManageRoles={canManageRoles}
           disableInvite={disableInvite}
@@ -254,36 +255,39 @@ export function WorkspaceAccessPage({
           search={search}
         />
 
-        <TabsContent value="people" className="mt-4 space-y-4">
-          <WorkspaceAccessPeopleFilters
-            filterOptions={filterOptions}
-            filters={filters}
-            labels={labels}
-            onFiltersChange={setFilters}
-            onStatusChange={setStatus}
-            status={status}
-          />
+        <TabsContent value="people" className="mt-4">
+          <div className="rounded-xl border border-border bg-background p-6 shadow-sm">
+            <WorkspaceAccessPeopleFilters
+              filterOptions={filterOptions}
+              filters={filters}
+              labels={labels}
+              onFiltersChange={setFilters}
+              onStatusChange={setStatus}
+              status={status}
+            />
 
-          <WorkspaceAccessMembers
-            canManageMembers={canManageMembers}
-            canManageRoles={canManageRoles}
-            isLoading={membersQuery.isPending}
-            isMutating={
-              removeMemberMutation.isPending || roleMembershipMutation.isPending
-            }
-            labels={labels}
-            members={visibleMembers}
-            onAssignRole={(payload) =>
-              roleMembershipMutation.mutate({ ...payload, action: 'add' })
-            }
-            onRemoveMember={(payload) => removeMemberMutation.mutate(payload)}
-            onRemoveRole={(payload) =>
-              roleMembershipMutation.mutate({ ...payload, action: 'remove' })
-            }
-            roles={roles}
-            searchTerm={search}
-            status={status}
-          />
+            <WorkspaceAccessMembers
+              canManageMembers={canManageMembers}
+              canManageRoles={canManageRoles}
+              isLoading={membersQuery.isPending}
+              isMutating={
+                removeMemberMutation.isPending ||
+                roleMembershipMutation.isPending
+              }
+              labels={labels}
+              members={visibleMembers}
+              onAssignRole={(payload) =>
+                roleMembershipMutation.mutate({ ...payload, action: 'add' })
+              }
+              onRemoveMember={(payload) => removeMemberMutation.mutate(payload)}
+              onRemoveRole={(payload) =>
+                roleMembershipMutation.mutate({ ...payload, action: 'remove' })
+              }
+              roles={roles}
+              searchTerm={search}
+              status={status}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="roles" className="mt-4">
