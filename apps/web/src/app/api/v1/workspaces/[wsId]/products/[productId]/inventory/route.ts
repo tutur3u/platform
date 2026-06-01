@@ -11,6 +11,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { validateInventoryItemWorkspaceRelations } from '@/lib/inventory/relation-validation';
 import { getStockChangeAmount } from '@/lib/inventory/stock-change';
 
 const InventoryItemSchema = z.object({
@@ -55,9 +56,10 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
   const inventoryClient = sbAdmin.schema('private');
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -68,8 +70,6 @@ export async function POST(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
-
-  const wsId = await normalizeWorkspaceId(id, supabase);
 
   const parsed = BodySchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -113,6 +113,21 @@ export async function POST(req: Request, { params }: Params) {
 
   if (!product) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+  }
+
+  const inventoryRelations = await validateInventoryItemWorkspaceRelations({
+    inventory,
+    inventoryClient,
+    wsId,
+  });
+  if (!inventoryRelations.ok) {
+    if (inventoryRelations.status === 500) {
+      serverLogger.error(inventoryRelations.message, inventoryRelations.error);
+    }
+    return NextResponse.json(
+      { message: inventoryRelations.message },
+      { status: inventoryRelations.status }
+    );
   }
 
   // Insert inventory items
@@ -167,9 +182,10 @@ export async function PATCH(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
   const inventoryClient = sbAdmin.schema('private');
+  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -180,8 +196,6 @@ export async function PATCH(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
-
-  const wsId = await normalizeWorkspaceId(id, supabase);
 
   const { user } = await resolveAuthenticatedSessionUser(supabase);
   if (!user) {
@@ -218,6 +232,21 @@ export async function PATCH(req: Request, { params }: Params) {
 
   if (productError || !product) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+  }
+
+  const inventoryRelations = await validateInventoryItemWorkspaceRelations({
+    inventory,
+    inventoryClient,
+    wsId,
+  });
+  if (!inventoryRelations.ok) {
+    if (inventoryRelations.status === 500) {
+      serverLogger.error(inventoryRelations.message, inventoryRelations.error);
+    }
+    return NextResponse.json(
+      { message: inventoryRelations.message },
+      { status: inventoryRelations.status }
+    );
   }
 
   // Get existing inventory to compare
@@ -474,7 +503,8 @@ export async function GET(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
   const inventoryClient = sbAdmin.schema('private');
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const wsId = await normalizeWorkspaceId(id, supabase);
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -483,7 +513,6 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
-  const wsId = await normalizeWorkspaceId(id, supabase);
   const { data: product, error: productError } = await sbAdmin
     .from('workspace_products')
     .select('id')
@@ -517,8 +546,9 @@ export async function DELETE(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
   const inventoryClient = sbAdmin.schema('private');
+  const wsId = await normalizeWorkspaceId(id, supabase);
   // Check permissions
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -529,8 +559,6 @@ export async function DELETE(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
-
-  const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check worksapce product exists
   const { data: product, error: productError } = await sbAdmin

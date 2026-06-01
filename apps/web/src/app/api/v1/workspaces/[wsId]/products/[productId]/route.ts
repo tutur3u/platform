@@ -27,6 +27,7 @@ import {
   canViewInventoryStock,
 } from '@/lib/inventory/permissions';
 import { getInventoryCatalogProducts } from '@/lib/inventory/product-rpc';
+import { validateInventoryItemWorkspaceRelations } from '@/lib/inventory/relation-validation';
 
 const RouteParamsSchema = z.object({
   wsId: z.string().max(MAX_NAME_LENGTH).min(1),
@@ -114,7 +115,7 @@ export async function GET(req: Request, { params }: Params) {
   const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -242,7 +243,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -281,6 +282,33 @@ export async function PATCH(req: Request, { params }: Params) {
   });
   if (relationError) {
     return NextResponse.json({ message: relationError }, { status: 400 });
+  }
+
+  if (inventory && Array.isArray(inventory)) {
+    if (!canUpdateStockQuantity) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions to update stock quantities' },
+        { status: 403 }
+      );
+    }
+
+    const inventoryRelations = await validateInventoryItemWorkspaceRelations({
+      inventory,
+      inventoryClient,
+      wsId,
+    });
+    if (!inventoryRelations.ok) {
+      if (inventoryRelations.status === 500) {
+        serverLogger.error(
+          inventoryRelations.message,
+          inventoryRelations.error
+        );
+      }
+      return NextResponse.json(
+        { message: inventoryRelations.message },
+        { status: inventoryRelations.status }
+      );
+    }
   }
 
   const { data: existingProduct, error: existingProductError } = await sbAdmin
@@ -332,12 +360,6 @@ export async function PATCH(req: Request, { params }: Params) {
 
   // Update inventory if provided
   if (inventory && Array.isArray(inventory)) {
-    if (!canUpdateStockQuantity) {
-      return NextResponse.json(
-        { message: 'Insufficient permissions to update stock quantities' },
-        { status: 403 }
-      );
-    }
     // First, delete existing inventory for this product
     const { error: deleteError } = await inventoryClient
       .from('inventory_products')
@@ -430,7 +452,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const wsId = await normalizeWorkspaceId(id, supabase);
 
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }

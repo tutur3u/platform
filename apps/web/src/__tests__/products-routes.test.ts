@@ -171,6 +171,21 @@ const mocks = vi.hoisted(() => {
       };
     }
 
+    if (table === 'inventory_units' || table === 'inventory_warehouses') {
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            in: vi.fn((_column: string, ids: string[]) =>
+              Promise.resolve({
+                data: ids.map((id) => ({ id })),
+                error: null,
+              })
+            ),
+          }),
+        }),
+      };
+    }
+
     throw new Error(`Unexpected admin table: ${table}`);
   });
 

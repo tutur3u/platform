@@ -22,6 +22,7 @@ import {
   canAdjustInventoryStock,
   canManageInventoryCatalog,
 } from '@/lib/inventory/permissions';
+import { validateInventoryItemWorkspaceRelations } from '@/lib/inventory/relation-validation';
 import { getStockChangeAmount } from '@/lib/inventory/stock-change';
 
 const InventoryItemSchema = z.object({
@@ -186,7 +187,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Check permissions
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -267,6 +268,24 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json(
         { message: 'Insufficient permissions to update stock quantities' },
         { status: 403 }
+      );
+    }
+
+    const inventoryRelations = await validateInventoryItemWorkspaceRelations({
+      inventory,
+      inventoryClient,
+      wsId,
+    });
+    if (!inventoryRelations.ok) {
+      if (inventoryRelations.status === 500) {
+        serverLogger.error(
+          inventoryRelations.message,
+          inventoryRelations.error
+        );
+      }
+      return NextResponse.json(
+        { message: inventoryRelations.message },
+        { status: inventoryRelations.status }
       );
     }
 
