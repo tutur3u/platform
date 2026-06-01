@@ -1,7 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { withSessionAuth } from '@/lib/api-auth';
+import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
 import {
+  canAccessAiChatConversation,
   getAiChatId,
   isAiChatConversationId,
 } from '@/lib/chat/agent-discovery';
@@ -68,6 +69,7 @@ export const GET = withSessionAuth<RouteParams>(
         actorUserId: auth.user.id,
         conversationId: params.conversationId,
         normalizedWsId: context.context.normalizedWsId,
+        supabase: auth.supabase,
       });
 
       if (!chatId) {
@@ -116,13 +118,24 @@ async function resolveObservableAiChatId({
   actorUserId,
   conversationId,
   normalizedWsId,
+  supabase,
 }: {
   actorUserId: string;
   conversationId: string;
   normalizedWsId: string;
+  supabase: SessionAuthContext['supabase'];
 }) {
   if (isAiChatConversationId(conversationId)) {
-    return getAiChatId(conversationId);
+    const chatId = getAiChatId(conversationId);
+    if (!chatId) return null;
+
+    const canAccess = await canAccessAiChatConversation({
+      conversationId,
+      supabase,
+      userId: actorUserId,
+    });
+
+    return canAccess ? chatId : null;
   }
 
   const conversation = await callPrivateChatRpc<ChatConversation>(
