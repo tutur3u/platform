@@ -861,6 +861,13 @@ function validateDockerProdCompose(composeContent) {
       '}',
     '    - HIVE_REALTIME_TOKEN_SECRET',
     '    - MEET_REALTIME_TOKEN_SECRET',
+    '    - MEET_REALTIME_URL=${' +
+      'MEET_REALTIME_URL:-wss://meet.tuturuuu.com/realtime' +
+      '}',
+    '    - NEXT_PUBLIC_MEET_REALTIME_URL=${' +
+      'NEXT_PUBLIC_MEET_REALTIME_URL:-wss://meet.tuturuuu.com/realtime' +
+      '}',
+    '    - CLOUDFLARE_REALTIME_API_BASE_URL',
     '    - CLOUDFLARE_REALTIME_APP_ID',
     '    - CLOUDFLARE_REALTIME_APP_SECRET',
     '    - INTERNAL_WEB_API_ORIGIN=${' +

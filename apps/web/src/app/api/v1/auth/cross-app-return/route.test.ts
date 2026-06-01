@@ -101,6 +101,29 @@ describe('cross-app return route', () => {
     expect(returnUrl.searchParams.get('token')).toBe('cross-app-token');
   });
 
+  it('routes Meet production login returns to the local verifier', async () => {
+    const response = await POST(
+      createRequest(
+        'https://meet.tuturuuu.com/login?nextUrl=/workspace/personal/plans'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      returnUrl: string;
+      targetApp: string;
+    };
+    const returnUrl = new URL(body.returnUrl);
+
+    expect(body.targetApp).toBe('meet');
+    expect(returnUrl.origin).toBe('https://meet.tuturuuu.com');
+    expect(returnUrl.pathname).toBe('/verify-token');
+    expect(returnUrl.searchParams.get('nextUrl')).toBe(
+      '/workspace/personal/plans'
+    );
+    expect(returnUrl.searchParams.get('token')).toBe('cross-app-token');
+  });
+
   it('resolves the root platform URL when supplied over http', async () => {
     const response = await POST(
       createRequest('http://tuturuuu.com', { generateToken: false })

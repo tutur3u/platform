@@ -100,6 +100,8 @@ describe('Meet realtime token route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.MEET_REALTIME_TOKEN_SECRET = TOKEN_SECRET;
+    delete process.env.MEET_REALTIME_URL;
+    delete process.env.NEXT_PUBLIC_MEET_REALTIME_URL;
     mocks = createRouteMocks();
     const supabase = createSupabaseClient();
 
@@ -133,6 +135,12 @@ describe('Meet realtime token route', () => {
     });
     expect(payload?.scopes).not.toContain('sfu:publish');
     expect(payload && canMeetRealtimePublish(payload, 'audio')).toBe(false);
+    expect(mocks.resolveSessionAuthContext).toHaveBeenCalledWith(
+      expect.any(Request),
+      {
+        allowAppSessionAuth: { targetApp: 'meet' },
+      }
+    );
   });
 
   it('defaults non-creators to viewer tokens even when no role is requested', async () => {
@@ -172,5 +180,17 @@ describe('Meet realtime token route', () => {
       expect.arrayContaining(['stream:control', 'sfu:publish'])
     );
     expect(payload && canMeetRealtimePublish(payload, 'video')).toBe(true);
+  });
+
+  it('returns the configured public Meet realtime URL', async () => {
+    process.env.MEET_REALTIME_URL = 'wss://internal.example/realtime';
+    process.env.NEXT_PUBLIC_MEET_REALTIME_URL =
+      'wss://meet.example.com/realtime';
+
+    const response = await requestToken({ mode: 'call', role: 'viewer' });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.realtimeUrl).toBe('wss://meet.example.com/realtime');
   });
 });

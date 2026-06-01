@@ -1,11 +1,9 @@
-import { BASE_URL, DEV_MODE } from '@/constants/common';
-
-const APP_URL = DEV_MODE ? BASE_URL : 'https://tumeet.me';
+import { BASE_URL } from '@/constants/common';
 
 export const siteConfig = {
   name: 'Tuturuuu Meet',
-  url: APP_URL,
-  ogImage: DEV_MODE ? `${APP_URL}/api/og` : 'https://tumeet.me/api/og',
+  url: BASE_URL,
+  ogImage: `${BASE_URL}/api/og`,
   links: {
     twitter: 'https://twitter.com/tutur3u',
     github: 'https://github.com/tutur3u/platform',

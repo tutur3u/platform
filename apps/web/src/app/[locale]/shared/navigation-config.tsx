@@ -82,7 +82,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       // href: '/meet-together',
       href: DEV_MODE
         ? getTuturuuuPortlessAppOrigin('meet')
-        : 'https://tumeet.me',
+        : 'https://meet.tuturuuu.com',
       label: t(`landing.features.apps.tumeet.title`),
       description: t(`landing.features.apps.tumeet.description`),
       icon: <Users className="h-4 w-4" />,

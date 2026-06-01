@@ -70,6 +70,13 @@ describe('resolveInternalAppUrl', () => {
         fallback: 'http://localhost:7803',
       })
     ).toBe('https://tuturuuu.com');
+    expect(
+      resolveInternalAppUrl({
+        appName: 'meet',
+        candidates: ['http://meet.tuturuuu.com/'],
+        fallback: 'http://localhost:7807',
+      })
+    ).toBe('https://meet.tuturuuu.com');
   });
 
   it('falls back when every configured URL points at another internal app', () => {
@@ -129,6 +136,7 @@ describe('getLocalInternalAppUrl', () => {
     ['track', 'https://track.tuturuuu.localhost'],
     ['learn', 'https://learn.tuturuuu.localhost'],
     ['mail', 'https://mail.tuturuuu.localhost'],
+    ['meet', 'https://meet.tuturuuu.localhost'],
     ['teach', 'https://teach.tuturuuu.localhost'],
     ['hive', 'https://hive.tuturuuu.localhost'],
     ['mind', 'https://mind.tuturuuu.localhost'],

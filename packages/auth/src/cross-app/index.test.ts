@@ -90,6 +90,9 @@ describe('mapUrlToApp', () => {
     expect(mapUrlToApp('http://localhost:7820/verify-token?nextUrl=%2F')).toBe(
       'mail'
     );
+    expect(
+      mapUrlToApp('https://meet.tuturuuu.com/verify-token?nextUrl=%2F')
+    ).toBe('meet');
   });
 
   it.each([
@@ -114,6 +117,7 @@ describe('mapUrlToApp', () => {
     ['track', 'https://track.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['learn', 'https://learn.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['mail', 'https://mail.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    ['meet', 'https://meet.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['teach', 'https://teach.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['hive', 'https://hive.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['mind', 'https://mind.tuturuuu.localhost/verify-token?nextUrl=%2F'],

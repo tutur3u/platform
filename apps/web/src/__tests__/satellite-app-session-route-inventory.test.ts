@@ -38,6 +38,7 @@ const satelliteAppApiRoots = [
   'apps/inventory/src/app/api',
   'apps/drive/src/app/api',
   'apps/mail/src/app/api',
+  'apps/meet/src/app/api',
   'apps/mind/src/app/api',
 ];
 
@@ -88,6 +89,9 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/mail/src/app/api/auth/logout/route.ts',
   'apps/mail/src/app/api/auth/refresh-app-session/route.ts',
   'apps/mail/src/app/api/auth/verify-app-token/route.ts',
+  'apps/meet/src/app/api/auth/logout/route.ts',
+  'apps/meet/src/app/api/auth/refresh-app-session/route.ts',
+  'apps/meet/src/app/api/auth/verify-app-token/route.ts',
   'apps/mind/src/app/api/auth/logout/route.ts',
   'apps/mind/src/app/api/auth/refresh-app-session/route.ts',
   'apps/mind/src/app/api/auth/verify-app-token/route.ts',

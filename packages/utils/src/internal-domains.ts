@@ -30,6 +30,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://mail.tuturuuu.com',
   },
   {
+    name: 'meet',
+    url: 'https://meet.tuturuuu.com',
+  },
+  {
     name: 'qr',
     url: 'https://qr.tuturuuu.com',
   },
@@ -109,6 +113,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('mail'),
   },
   {
+    name: 'meet',
+    url: getTuturuuuPortlessAppOrigin('meet'),
+  },
+  {
     name: 'qr',
     url: getTuturuuuPortlessAppOrigin('qr'),
   },
@@ -178,6 +186,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'mail',
     url: 'http://localhost:7820',
+  },
+  {
+    name: 'meet',
+    url: 'http://localhost:7807',
   },
   {
     name: 'qr',

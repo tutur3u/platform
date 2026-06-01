@@ -1,12 +1,23 @@
 import { match } from '@formatjs/intl-localematcher';
-import { clearSupabaseAuthCookies } from '@tuturuuu/auth/app-session';
+import {
+  clearSupabaseAuthCookies,
+  getAppSessionClaimsFromRequest,
+  hasWebAppSessionTokenFromRequest,
+} from '@tuturuuu/auth/app-session';
 import {
   consumeVerifyTokenRequest,
   createCentralizedAuthProxy,
+  getRequestHeadersWithResponseCookies,
+  normalizeAuthRedirectPath,
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
+import {
+  getCurrentUserDefaultWorkspace,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -14,14 +25,53 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
+const AUTH_PUBLIC_PATHS = [
+  ...PUBLIC_PATHS,
+  '/login',
+  ...supportedLocales.map((locale) => `/${locale}/login`),
+];
+const LEGACY_PLAN_ID_PATTERN = /^[0-9a-f]{32}$/iu;
+
+function getPathSegments(pathname: string) {
+  return pathname.split('/').filter(Boolean);
+}
+
+function isLocaleSegment(segment: string | undefined): segment is Locale {
+  return Boolean(segment && supportedLocales.includes(segment as Locale));
+}
+
+function getPathSegmentsWithoutLocale(pathname: string) {
+  const segments = getPathSegments(pathname);
+  return isLocaleSegment(segments[0]) ? segments.slice(1) : segments;
+}
+
+function isPublicLegacyPlanPath(pathname: string) {
+  const segments = getPathSegmentsWithoutLocale(pathname);
+  return (
+    segments.length === 1 &&
+    typeof segments[0] === 'string' &&
+    LEGACY_PLAN_ID_PATTERN.test(segments[0])
+  );
+}
+
+function isRootPathOrLocaleRoot(pathname: string) {
+  const segments = getPathSegments(pathname);
+  return (
+    segments.length === 0 ||
+    (segments.length === 1 && isLocaleSegment(segments[0]))
+  );
+}
+
 // Create the centralized auth middleware
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
   appSession: { targetApp: 'meet' },
   webAppUrl: TTR_URL,
-  publicPaths: PUBLIC_PATHS,
+  publicPaths: AUTH_PUBLIC_PATHS,
   skipApiRoutes: true,
+  excludeRootPath: true,
+  isPublicPath: isPublicLegacyPlanPath,
   mfa: { enabled: false },
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
@@ -73,6 +123,51 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // If the auth middleware returned a redirect response, return it
   if (authRes.headers.has('Location')) {
     return authRes;
+  }
+
+  const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
+  const authRequest = { headers: authRequestHeaders };
+  const appSession = getAppSessionClaimsFromRequest(authRequest, {
+    targetApp: 'meet',
+  });
+  const hasWebAppSession = hasWebAppSessionTokenFromRequest(authRequest);
+  const pathSegments = getPathSegments(req.nextUrl.pathname);
+  const loginSegmentIndex = isLocaleSegment(pathSegments[0]) ? 1 : 0;
+  const isLoginPath = pathSegments[loginSegmentIndex] === 'login';
+
+  if (isLoginPath && appSession && hasWebAppSession) {
+    const nextPath = normalizeAuthRedirectPath(
+      req.nextUrl.searchParams.get('next') ??
+        req.nextUrl.searchParams.get('nextUrl'),
+      req.nextUrl.origin,
+      '/'
+    );
+    const loginRedirect = clearSupabaseAuthCookies(
+      req,
+      NextResponse.redirect(new URL(nextPath, req.nextUrl))
+    );
+    propagateAuthCookies(authRes, loginRedirect);
+    return loginRedirect;
+  }
+
+  if (isRootPathOrLocaleRoot(req.nextUrl.pathname) && appSession) {
+    try {
+      const defaultWorkspace = await getCurrentUserDefaultWorkspace(
+        withForwardedInternalApiAuth(authRequestHeaders)
+      );
+      const target = defaultWorkspace?.personal
+        ? 'personal'
+        : defaultWorkspace?.id === ROOT_WORKSPACE_ID
+          ? 'internal'
+          : (defaultWorkspace?.id ?? 'personal');
+      const wsRedirect = NextResponse.redirect(
+        new URL(`/workspace/${target}/plans`, req.nextUrl)
+      );
+      propagateAuthCookies(authRes, wsRedirect);
+      return wsRedirect;
+    } catch (error) {
+      console.error('Error handling Meet root path redirect:', error);
+    }
   }
 
   // Continue with locale handling

@@ -40,6 +40,12 @@ describe('launchable apps', () => {
     expect(getLaunchableAppOrigin(app!, { environment: 'localhost' })).toBe(
       'http://localhost:7806'
     );
+
+    const meet = getLaunchableApp('meet');
+    expect(meet).not.toBeNull();
+    expect(getLaunchableAppOrigin(meet!, { environment: 'production' })).toBe(
+      'https://meet.tuturuuu.com'
+    );
   });
 
   it('detects Portless dev from the current origin', () => {
