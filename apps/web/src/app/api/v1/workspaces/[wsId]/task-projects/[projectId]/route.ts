@@ -1,3 +1,4 @@
+import { partitionTaskProjectLinks } from '@tuturuuu/internal-api/tasks';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -297,8 +298,13 @@ async function updateProject(
             id,
             name,
             completed,
+            completed_at,
+            closed_at,
+            deleted_at,
+            priority,
             task_lists(
-              name
+              name,
+              status
             )
           )
         )
@@ -317,6 +323,10 @@ async function updateProject(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
+    const linkedItems = partitionTaskProjectLinks(
+      updatedProject.task_project_tasks
+    );
+
     return NextResponse.json({
       id: updatedProject.id,
       name: updatedProject.name,
@@ -332,20 +342,7 @@ async function updateProject(
       created_at: updatedProject.created_at,
       updated_at: updatedProject.updated_at,
       creator_id: updatedProject.creator_id,
-      tasksCount: updatedProject.task_project_tasks?.length ?? 0,
-      linkedTasks:
-        updatedProject.task_project_tasks?.flatMap((link) =>
-          link.task
-            ? [
-                {
-                  id: link.task.id,
-                  name: link.task.name,
-                  completed: link.task.completed,
-                  listName: link.task.task_lists?.name ?? null,
-                },
-              ]
-            : []
-        ) ?? [],
+      ...linkedItems,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -1,3 +1,4 @@
+export { DocumentsTab } from './documents-tab';
 export { OverviewTab } from './overview-tab';
 export { ProjectConfiguration } from './project-configuration';
 export { ProjectHeader } from './project-header';

@@ -12082,6 +12082,14 @@
       "status_label": "Trạng thái",
       "title": "Cấu hình dự án"
     },
+    "documents_tab": {
+      "description": "{count} mục tham khảo được liên kết qua danh sách tài liệu.",
+      "document_list": "Danh sách tài liệu",
+      "documents": "tài liệu",
+      "empty_description": "Các nhiệm vụ trong danh sách tài liệu được liên kết vào dự án sẽ xuất hiện tại đây, tách khỏi công việc thực thi.",
+      "empty_title": "Chưa có tài liệu liên kết",
+      "title": "Tài liệu đã liên kết"
+    },
     "header": {
       "cancel": "Hủy",
       "edit_name_aria": "Chỉnh sửa tên dự án",
@@ -12099,18 +12107,27 @@
       "no_tasks_found": "Không tìm thấy công việc nào phù hợp với \"{query}\"",
       "search_placeholder": "Tìm kiếm công việc theo tiêu đề...",
       "start_typing": "Bắt đầu nhập để tìm kiếm công việc",
-      "tip": "💡 Mẹo: Bạn cũng có thể tạo công việc mới trực tiếp trong tab Công việc và chúng sẽ tự động được liên kết vào dự án này",
+      "tip": "Mẹo: Tạo công việc mới trực tiếp trong tab Công việc và chúng sẽ tự động được liên kết vào dự án này.",
       "title": "Liên kết công việc vào dự án"
+    },
+    "metadata": {
+      "page_description": "Xem và quản lý chi tiết dự án nhiệm vụ.",
+      "page_title": "Dự Án Nhiệm Vụ"
     },
     "overview": {
       "describe_placeholder": "Mô tả dự án của bạn...",
       "description": "Mô tả",
+      "document": "Tài liệu",
+      "document_list": "Danh sách tài liệu",
       "done": "Hoàn thành",
       "edit_description_aria": "Chỉnh sửa mô tả dự án",
       "hide_configuration": "Ẩn cấu hình",
       "link_tasks": "Liên kết công việc",
+      "linked_documents": "Tài Liệu Đã Liên Kết",
+      "linked_documents_description": "Mục tham khảo được tách khỏi số lượng nhiệm vụ.",
       "linked_tasks": "Công việc đã liên kết",
       "no_description": "Chưa có mô tả. Nhấp vào biểu tượng chỉnh sửa để thêm.",
+      "no_documents_linked": "Chưa liên kết tài liệu nào",
       "no_tasks_linked": "Chưa liên kết công việc nào",
       "no_updates_yet": "Chưa có cập nhật nào. Hãy chia sẻ cập nhật đầu tiên!",
       "post_update": "Đăng cập nhật",
@@ -12139,6 +12156,7 @@
       "unknown": "Không xác định"
     },
     "tabs": {
+      "documents": "Tài liệu",
       "overview": "Tổng quan",
       "tasks": "Công việc",
       "updates": "Cập nhật"
@@ -12321,20 +12339,39 @@
       "title": "Quản Lý Nhiệm Vụ Đã Liên Kết",
       "unassigned_list": "Danh sách chưa được gán"
     },
+    "metrics": {
+      "active_projects": "{count} đang hoạt động",
+      "clear": "Không có rủi ro dự án",
+      "completed_tasks": "{count} đã hoàn thành",
+      "linked_documents": "Tài liệu đã liên kết",
+      "linked_tasks": "Nhiệm vụ đã liên kết",
+      "needs_attention": "{count} cần chú ý",
+      "projects": "Dự án",
+      "reference_materials": "Tài liệu tham khảo",
+      "risk_watch": "Theo dõi rủi ro"
+    },
     "page_description": "Quản lý và theo dõi các dự án nhiệm vụ trong không gian làm việc của bạn.",
     "page_heading": "Dự Án Nhiệm Vụ",
+    "page_kicker": "Vận hành dự án",
     "page_subheading": "Quản lý và theo dõi các dự án nhiệm vụ liên chức năng trong không gian làm việc của bạn.",
     "page_title": "Dự Án Nhiệm Vụ",
     "project_card": {
+      "actions": "Hành động dự án",
       "complete": "Hoàn Thành",
       "completed": "hoàn thành",
+      "completion": "Tiến độ",
+      "completion_ratio": "{completed}/{total} · {value}%",
       "delete": "Xóa",
+      "documents": "Tài liệu",
       "edit": "Chỉnh Sửa",
       "linked": "Đã Liên Kết",
       "linked_tasks": "Nhiệm Vụ Đã Liên Kết",
       "manage": "Quản Lý",
       "manage_tasks": "Quản Lý Nhiệm Vụ",
       "more": "thêm",
+      "no_description": "Chưa có mô tả.",
+      "no_due_date": "Chưa có ngày kết thúc",
+      "open": "Mở",
       "project_lead": "Trưởng Dự Án",
       "task": "nhiệm vụ",
       "task_progress": "Tiến Độ Nhiệm Vụ",
@@ -12357,10 +12394,14 @@
     "toolbar": {
       "all_projects": "Tất Cả Dự Án",
       "clear_all_filters": "Xóa tất cả bộ lọc",
+      "clear_search": "Xóa tìm kiếm",
+      "command_center": "Trung tâm điều phối",
       "filter_health": "Sức Khỏe",
       "filter_priority": "Độ Ưu Tiên",
       "filter_status": "Trạng Thái",
       "filters": "Bộ Lọc",
+      "grid_view": "Chế độ lưới",
+      "list_view": "Chế độ danh sách",
       "new_project": "Dự Án Mới",
       "project_count": "{count} trong {total} dự án",
       "project_count_plural": "{count} trong {total} dự án",

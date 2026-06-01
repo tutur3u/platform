@@ -1,3 +1,4 @@
+import { partitionTaskProjectLinks } from '@tuturuuu/internal-api/tasks';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -120,7 +121,8 @@ export async function GET(
             deleted_at,
             priority,
             task_lists(
-              name
+              name,
+              status
             )
           )
         )
@@ -144,33 +146,12 @@ export async function GET(
     }
 
     const formattedProjects = (projects ?? []).map((project) => {
-      // Filter out soft-deleted tasks
-      const activeTasks =
-        project.task_project_tasks?.filter(
-          (link) => link.task && link.task.deleted_at === null
-        ) ?? [];
+      const linkedItems = partitionTaskProjectLinks(project.task_project_tasks);
 
       return {
         ...project,
         created_at: project.created_at ?? new Date().toISOString(),
-        tasksCount: activeTasks.length,
-        completedTasksCount: activeTasks.filter(
-          (link) =>
-            link.task?.completed_at !== null || link.task?.closed_at !== null
-        ).length,
-        linkedTasks: activeTasks.flatMap(({ task }) =>
-          task
-            ? [
-                {
-                  id: task.id,
-                  name: task.name,
-                  completed_at: task.completed_at,
-                  priority: task.priority,
-                  listName: task.task_lists?.name ?? null,
-                },
-              ]
-            : []
-        ),
+        ...linkedItems,
       };
     });
 
@@ -264,7 +245,9 @@ export async function POST(
         creator_id: project.creator_id,
         creator: null,
         tasksCount: 0,
+        completedTasksCount: 0,
         linkedTasks: [],
+        linkedDocuments: [],
       },
       { status: 201 }
     );

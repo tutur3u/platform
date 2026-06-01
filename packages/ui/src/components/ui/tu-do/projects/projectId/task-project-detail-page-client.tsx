@@ -17,7 +17,7 @@ interface Props {
   currentUserId: string;
   workspace: Workspace;
   initialProject: TaskProjectWithRelations;
-  initialProjectData: { tasks: Task[]; lists: TaskList[] };
+  initialProjectData: { tasks: Task[]; documents: Task[]; lists: TaskList[] };
 }
 
 export default function TaskProjectDetailPageClient({
@@ -76,6 +76,7 @@ export default function TaskProjectDetailPageClient({
         created_at: project.created_at ?? new Date().toISOString(),
       }}
       tasks={projectData.tasks ?? []}
+      documents={projectData.documents ?? []}
       lists={lists}
       currentUserId={currentUserId}
       wsId={wsId}

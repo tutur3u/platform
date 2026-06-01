@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, Target } from '@tuturuuu/icons';
+import { CheckCircle2, ChevronRight, Target } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -18,16 +18,19 @@ export function OverviewLinkedTasks() {
 
   return (
     <motion.div {...fadeInViewVariant(0.3)}>
-      <Card className="border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-6">
+      <Card className="border-dynamic-blue/20 bg-background p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="bg-linear-to-r from-dynamic-blue to-dynamic-cyan bg-clip-text font-bold text-lg text-transparent">
-            {t('linked_tasks')}
-          </h2>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-dynamic-blue/10 text-dynamic-blue">
+              <Target className="h-4 w-4" />
+            </div>
+            <h2 className="font-semibold text-base">{t('linked_tasks')}</h2>
+          </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setActiveTab('tasks')}
-            className="gap-1 text-dynamic-blue hover:text-dynamic-blue"
+            className="gap-1"
           >
             {t('view_all')}
             <ChevronRight className="h-4 w-4" />
@@ -39,7 +42,7 @@ export function OverviewLinkedTasks() {
             {recentTasks.map((task) => (
               <div
                 key={task.id}
-                className="flex items-center justify-between rounded-lg border border-dynamic-blue/20 bg-background/50 p-3 transition-all hover:-translate-y-0.5 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/5"
+                className="flex items-center justify-between rounded-md border bg-dynamic-surface/20 p-3 transition-colors hover:border-dynamic-blue/30 hover:bg-dynamic-blue/5"
               >
                 <div className="flex-1">
                   <h4 className="font-medium text-sm">{task.name}</h4>
@@ -48,9 +51,10 @@ export function OverviewLinkedTasks() {
                 {task.closed_at && (
                   <Badge
                     variant="outline"
-                    className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
+                    className="gap-1 border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
                   >
-                    ✓ {t('done')}
+                    <CheckCircle2 className="h-3 w-3" />
+                    {t('done')}
                   </Badge>
                 )}
               </div>
@@ -69,7 +73,7 @@ export function OverviewLinkedTasks() {
                 setActiveTab('tasks');
                 setShowLinkTaskDialog(true);
               }}
-              className="mt-2 text-dynamic-blue hover:text-dynamic-blue"
+              className="mt-2"
             >
               {t('link_tasks')}
             </Button>

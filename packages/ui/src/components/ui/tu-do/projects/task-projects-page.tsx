@@ -1,3 +1,4 @@
+import { partitionTaskProjectLinks } from '@tuturuuu/internal-api/tasks';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { TaskProjectsClient } from '@tuturuuu/ui/tu-do/projects/task-projects-client';
 import type {
@@ -54,7 +55,7 @@ export default async function TaskProjectsPage({ params }: Props) {
       task_project_tasks(
         task:tasks!inner(
           id, name, completed, completed_at, closed_at, deleted_at, priority,
-          task_lists(name)
+          task_lists(name, status)
         )
       )
     `)
@@ -67,10 +68,7 @@ export default async function TaskProjectsPage({ params }: Props) {
   }
 
   const formattedProjects: TaskProject[] = (projects ?? []).map((project) => {
-    const activeTasks =
-      project.task_project_tasks?.filter(
-        (link) => link.task && link.task.deleted_at === null
-      ) ?? [];
+    const linkedItems = partitionTaskProjectLinks(project.task_project_tasks);
 
     return {
       ...project,
@@ -78,32 +76,20 @@ export default async function TaskProjectsPage({ params }: Props) {
       priority: project.priority as ProjectPriority | null,
       health_status: project.health_status as ProjectHealth | null,
       created_at: project.created_at ?? new Date().toISOString(),
-      tasksCount: activeTasks.length,
-      completedTasksCount: activeTasks.filter(
-        (link) =>
-          link.task?.completed_at !== null || link.task?.closed_at !== null
-      ).length,
-      linkedTasks: activeTasks.flatMap(({ task }) =>
-        task
-          ? [
-              {
-                id: task.id,
-                name: task.name,
-                completed_at: task.completed_at,
-                priority: task.priority as ProjectPriority | null,
-                listName: task.task_lists?.name ?? null,
-              },
-            ]
-          : []
-      ),
+      ...linkedItems,
     };
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-bold text-2xl">{t('page_heading')}</h1>
-        <p className="text-muted-foreground">{t('page_subheading')}</p>
+    <div className="space-y-5">
+      <div className="rounded-lg border border-dynamic-surface/60 bg-background p-5">
+        <p className="font-medium text-muted-foreground text-xs">
+          {t('page_kicker')}
+        </p>
+        <h1 className="mt-1 font-semibold text-2xl">{t('page_heading')}</h1>
+        <p className="mt-2 max-w-3xl text-muted-foreground text-sm">
+          {t('page_subheading')}
+        </p>
       </div>
       <TaskProjectsClient wsId={wsId} initialProjects={formattedProjects} />
     </div>

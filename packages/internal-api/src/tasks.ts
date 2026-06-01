@@ -26,6 +26,57 @@ export interface InternalApiTaskProjectSummary {
   status: string | null;
 }
 
+export interface TaskProjectLinkedSourceTask {
+  id: string;
+  name?: string | null;
+  completed?: boolean | null;
+  completed_at?: string | null;
+  closed_at?: string | null;
+  deleted_at?: string | null;
+  priority?: string | null;
+  task_lists?: {
+    name?: string | null;
+    status?: string | null;
+  } | null;
+}
+
+export interface TaskProjectLinkedSourceRow<
+  TTask extends TaskProjectLinkedSourceTask = TaskProjectLinkedSourceTask,
+> {
+  task?: TTask | null;
+}
+
+export interface TaskProjectLinkedItem {
+  id: string;
+  name: string;
+  completed: boolean | null;
+  completed_at: string | null;
+  closed_at: string | null;
+  priority: TaskPriority | null;
+  listName: string | null;
+  listStatus: string | null;
+}
+
+export interface TaskProjectLinkedPartition {
+  linkedTasks: TaskProjectLinkedItem[];
+  linkedDocuments: TaskProjectLinkedItem[];
+  tasksCount: number;
+  completedTasksCount: number;
+}
+
+export type WorkspaceTaskProject = TaskProjectWithRelations & {
+  tasksCount: number;
+  completedTasksCount: number;
+  linkedTasks: TaskProjectLinkedItem[];
+  linkedDocuments: TaskProjectLinkedItem[];
+};
+
+export interface WorkspaceTaskProjectTasksResponse {
+  tasks: Task[];
+  documents: Task[];
+  lists: TaskList[];
+}
+
 export interface InternalApiWorkspaceLabel {
   id: string;
   name: string;
@@ -469,6 +520,49 @@ interface TaskProjectApiRow {
   status?: string | null;
 }
 
+function mapTaskProjectLinkedItem(
+  task: TaskProjectLinkedSourceTask
+): TaskProjectLinkedItem {
+  return {
+    id: task.id,
+    name: task.name?.trim() || 'Untitled task',
+    completed: task.completed ?? null,
+    completed_at: task.completed_at ?? null,
+    closed_at: task.closed_at ?? null,
+    priority: (task.priority as TaskPriority | null | undefined) ?? null,
+    listName: task.task_lists?.name ?? null,
+    listStatus: task.task_lists?.status ?? null,
+  };
+}
+
+export function partitionTaskProjectLinks<
+  TTask extends TaskProjectLinkedSourceTask,
+>(
+  links?: TaskProjectLinkedSourceRow<TTask>[] | null
+): TaskProjectLinkedPartition {
+  const activeItems = (links ?? []).flatMap((link) => {
+    const task = link.task;
+    if (!task || task.deleted_at) return [];
+    return [mapTaskProjectLinkedItem(task)];
+  });
+
+  const linkedDocuments = activeItems.filter(
+    (item) => item.listStatus === 'documents'
+  );
+  const linkedTasks = activeItems.filter(
+    (item) => item.listStatus !== 'documents'
+  );
+
+  return {
+    linkedTasks,
+    linkedDocuments,
+    tasksCount: linkedTasks.length,
+    completedTasksCount: linkedTasks.filter(
+      (task) => task.completed_at !== null || task.closed_at !== null
+    ).length,
+  };
+}
+
 export async function listWorkspaceTaskProjects(
   workspaceId: string,
   options?: InternalApiClientOptions
@@ -497,6 +591,19 @@ export async function listWorkspaceTaskProjects(
           status: project.status ?? null,
         },
       ];
+    }
+  );
+}
+
+export async function listWorkspaceTaskProjectDetails(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskProject[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects`,
+    {
+      cache: 'no-store',
     }
   );
 }
@@ -1273,6 +1380,87 @@ export async function createWorkspaceTaskProject(
   );
 }
 
+export async function updateWorkspaceTaskProject(
+  workspaceId: string,
+  projectId: string,
+  payload: {
+    name?: string;
+    description?: string | null;
+    priority?: string | null;
+    health_status?: string | null;
+    status?: string | null;
+    lead_id?: string | null;
+    start_date?: string | null;
+    end_date?: string | null;
+    archived?: boolean | null;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskProject>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceTaskProject(
+  workspaceId: string,
+  projectId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success?: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function linkWorkspaceTaskProjectTask(
+  workspaceId: string,
+  projectId: string,
+  taskId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ linkedTask: TaskProjectLinkedItem }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}/tasks`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ taskId }),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function unlinkWorkspaceTaskProjectTask(
+  workspaceId: string,
+  projectId: string,
+  taskId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}/tasks/${encodePathSegment(taskId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function createWorkspaceTaskWithRelationship(
   workspaceId: string,
   payload: CreateWorkspaceTaskWithRelationshipPayload,
@@ -1338,7 +1526,7 @@ export async function getWorkspaceTaskProjectTasks(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ tasks: Task[]; lists: TaskList[] }>(
+  return client.json<WorkspaceTaskProjectTasksResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}/tasks`,
     {
       cache: 'no-store',

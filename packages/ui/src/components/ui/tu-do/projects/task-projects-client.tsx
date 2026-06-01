@@ -1,13 +1,13 @@
 'use client';
 
-import { Loader2 } from '@tuturuuu/icons';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTasksHref } from '../tasks-route-context';
 import {
   ProjectGridCard,
   ProjectListItem,
   ProjectsEmptyState,
+  ProjectsLoadingState,
   ProjectsToolbar,
 } from './components';
 import {
@@ -43,6 +43,37 @@ export function TaskProjectsClient({
   });
 
   const filters = useProjectFilters(taskProjects.projects);
+
+  const stats = useMemo(
+    () =>
+      taskProjects.projects.reduce(
+        (acc, project) => {
+          acc.totalProjects += 1;
+          acc.linkedTasks += project.linkedTasks.length;
+          acc.linkedDocuments += project.linkedDocuments.length;
+          acc.completedTasks += project.completedTasksCount;
+          if (!['completed', 'cancelled'].includes(project.status ?? '')) {
+            acc.activeProjects += 1;
+          }
+          if (
+            project.health_status === 'at_risk' ||
+            project.health_status === 'off_track'
+          ) {
+            acc.atRiskProjects += 1;
+          }
+          return acc;
+        },
+        {
+          totalProjects: 0,
+          activeProjects: 0,
+          linkedTasks: 0,
+          linkedDocuments: 0,
+          completedTasks: 0,
+          atRiskProjects: 0,
+        }
+      ),
+    [taskProjects.projects]
+  );
 
   // Handlers
   const handleEditProject = (project: TaskProject) => {
@@ -115,13 +146,12 @@ export function TaskProjectsClient({
         clearFilters={filters.clearFilters}
         projectCount={taskProjects.projects.length}
         filteredCount={filters.filteredProjects.length}
+        stats={stats}
         onCreateClick={() => setIsCreateDialogOpen(true)}
       />
 
       {taskProjects.projectsLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-dynamic-purple" />
-        </div>
+        <ProjectsLoadingState />
       ) : filters.filteredProjects.length === 0 ? (
         <ProjectsEmptyState
           hasFilters={filters.hasActiveFilters || !!filters.searchQuery}

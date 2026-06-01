@@ -2,38 +2,26 @@
 
 import {
   Calendar,
-  Edit3,
   ExternalLink,
-  Link,
-  MoreVertical,
+  FileText,
+  Link2,
   Target,
-  Trash2,
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
+import { Card } from '@tuturuuu/ui/card';
 import NextLink from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
+import type { ComponentType } from 'react';
 import { useTasksHref } from '../../tasks-route-context';
 import type { TaskProject } from '../types';
+import { ProjectActionsMenu } from './project-actions-menu';
 import {
   HealthStatusBadge,
   PriorityBadge,
   StatusBadge,
 } from './project-badges';
+import { ProjectProgressMeter } from './project-progress-meter';
 
 interface ProjectGridCardProps {
   project: TaskProject;
@@ -63,197 +51,132 @@ export function ProjectGridCard({
   const t = useTranslations('task-projects.project_card');
   const tasksHref = useTasksHref();
   const { dateTime } = useFormatter();
+  const timeline = formatTimeline(project, dateTime);
 
   return (
     <Card
-      className="group flex cursor-pointer flex-col border-dynamic-purple/20 bg-dynamic-purple/5 transition-all hover:border-dynamic-purple/30 hover:shadow-md"
-      onClick={(e) => {
-        e.stopPropagation();
-        onNavigate(project.id);
-      }}
+      className="group flex min-h-[360px] cursor-pointer flex-col rounded-lg border-dynamic-surface/70 bg-background p-4 shadow-none transition-colors hover:border-dynamic-blue/40 hover:bg-dynamic-blue/5"
+      onClick={() => onNavigate(project.id)}
     >
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <CardTitle className="text-base">{project.name}</CardTitle>
-            {project.description && (
-              <CardDescription className="mt-2 line-clamp-3 leading-relaxed">
-                {project.description}
-              </CardDescription>
-            )}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-wrap gap-1.5">
+            <StatusBadge status={project.status} />
+            <PriorityBadge priority={project.priority} />
+            <HealthStatusBadge health={project.health_status} />
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={isUpdating || isDeleting}
-                className="h-8 w-8 shrink-0 p-0 opacity-0 group-hover:opacity-100"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(project);
-                }}
-                disabled={isUpdating}
-              >
-                <Edit3 className="mr-2 h-4 w-4 text-dynamic-blue" />
-                {t('edit')}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(project.id);
-                }}
-                disabled={isDeleting}
-                className="text-dynamic-red focus:text-dynamic-red"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t('delete')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <h3 className="line-clamp-2 font-semibold text-lg leading-tight">
+            {project.name}
+          </h3>
         </div>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col space-y-3 pt-0">
-        {/* Status Badges */}
-        <div className="flex flex-wrap gap-2">
-          <StatusBadge status={project.status} />
-          <PriorityBadge priority={project.priority} />
-          <HealthStatusBadge health={project.health_status} />
+        <ProjectActionsMenu
+          project={project}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          disabled={isUpdating || isDeleting}
+        />
+      </div>
+
+      <p className="mt-3 line-clamp-3 min-h-[60px] text-muted-foreground text-sm">
+        {project.description || t('no_description')}
+      </p>
+
+      <div className="mt-4 space-y-4">
+        <ProjectProgressMeter
+          completed={project.completedTasksCount}
+          total={project.tasksCount}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <Signal icon={Target} label={t('tasks')} value={project.tasksCount} />
+          <Signal
+            icon={FileText}
+            label={t('documents')}
+            value={project.linkedDocuments.length}
+          />
         </div>
+      </div>
 
-        {/* Info Cards */}
-        <div className="space-y-2">
-          {/* Project Lead */}
-          {project.lead && (
-            <div className="flex items-center gap-2.5 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/10 p-2.5">
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={project.lead.avatar_url || undefined} />
-                <AvatarFallback className="bg-dynamic-blue/20 text-dynamic-blue text-xs">
-                  {project.lead.display_name?.[0]?.toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="text-muted-foreground text-xs">
-                  {t('project_lead')}
-                </p>
-                <p className="truncate font-medium text-sm">
-                  {project.lead.display_name || t('unknown')}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Task Progress */}
-          <div className="flex items-center gap-2.5 rounded-lg border border-dynamic-indigo/20 bg-dynamic-indigo/10 p-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-indigo/20">
-              <Target className="h-3.5 w-3.5 text-dynamic-indigo" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-muted-foreground text-xs">
-                {t('task_progress')}
-              </p>
-              <p className="font-medium text-sm">
-                {project.completedTasksCount}/{project.tasksCount}{' '}
-                {t('completed')}
-              </p>
-            </div>
+      <div className="mt-4 space-y-2 border-t pt-4">
+        {project.lead ? (
+          <div className="flex items-center gap-2">
+            <Avatar className="h-7 w-7 rounded-md">
+              <AvatarImage src={project.lead.avatar_url || undefined} />
+              <AvatarFallback className="rounded-md text-xs">
+                {project.lead.display_name?.[0]?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <span className="truncate text-sm">
+              {project.lead.display_name || t('unknown')}
+            </span>
           </div>
-
-          {/* Timeline */}
-          {(project.start_date || project.end_date) && (
-            <div className="flex items-center gap-2.5 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 p-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-purple/20">
-                <Calendar className="h-3.5 w-3.5 text-dynamic-purple" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-muted-foreground text-xs">{t('timeline')}</p>
-                <p className="truncate font-medium text-sm">
-                  {project.start_date &&
-                    dateTime(new Date(project.start_date), {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  {project.start_date && project.end_date && ' → '}
-                  {project.end_date &&
-                    dateTime(new Date(project.end_date), {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Linked Tasks Preview */}
-        {project.linkedTasks.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="font-medium text-sm">{t('linked_tasks')}</p>
-              <Badge
-                variant="outline"
-                className="border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan text-xs"
-              >
-                {project.linkedTasks.length}
-              </Badge>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {project.linkedTasks.slice(0, 3).map((task) => (
-                <Badge
-                  key={task.id}
-                  variant="outline"
-                  className="border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan text-xs"
-                >
-                  {task.name}
-                </Badge>
-              ))}
-              {project.linkedTasks.length > 3 && (
-                <Badge
-                  variant="outline"
-                  className="border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan text-xs"
-                >
-                  +{project.linkedTasks.length - 3} {t('more')}
-                </Badge>
-              )}
-            </div>
+        ) : null}
+        {timeline ? (
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <Calendar className="h-4 w-4" />
+            <span className="truncate">{timeline}</span>
           </div>
-        )}
+        ) : null}
+      </div>
 
-        {/* Actions */}
-        <div className="mt-auto flex flex-col gap-2 pt-2">
-          <NextLink
-            href={`/${wsId}${tasksHref(`/projects/${project.id}`)}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Button size="sm" variant="default" className="w-full">
-              <ExternalLink className="mr-2 h-4 w-4" />
-              {t('view_details')}
-            </Button>
-          </NextLink>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              onManageTasks(project);
-            }}
-            disabled={isLinking || isUnlinking}
-            className="w-full"
-          >
-            <Link className="mr-2 h-4 w-4" />
-            {t('manage_tasks')}
+      <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={(event) => {
+            event.stopPropagation();
+            onManageTasks(project);
+          }}
+          disabled={isLinking || isUnlinking}
+          className="gap-2"
+        >
+          <Link2 className="h-4 w-4" />
+          {t('manage')}
+        </Button>
+        <NextLink
+          href={`/${wsId}${tasksHref(`/projects/${project.id}`)}`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Button size="sm" className="w-full gap-2">
+            <ExternalLink className="h-4 w-4" />
+            {t('open')}
           </Button>
-        </div>
-      </CardContent>
+        </NextLink>
+      </div>
     </Card>
   );
+}
+
+function Signal({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-md border bg-dynamic-surface/20 p-3">
+      <div className="flex items-center gap-2 text-muted-foreground text-xs">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <p className="mt-1 font-semibold text-lg tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+function formatTimeline(
+  project: TaskProject,
+  dateTime: ReturnType<typeof useFormatter>['dateTime']
+) {
+  if (!project.start_date && !project.end_date) return null;
+  const options = { day: 'numeric', month: 'short', year: 'numeric' } as const;
+  const start = project.start_date
+    ? dateTime(new Date(project.start_date), options)
+    : null;
+  const end = project.end_date
+    ? dateTime(new Date(project.end_date), options)
+    : null;
+  return [start, end].filter(Boolean).join(' -> ');
 }

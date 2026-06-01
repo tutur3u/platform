@@ -1,6 +1,10 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  linkWorkspaceTaskProjectTask,
+  listWorkspaceTasks,
+} from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
@@ -11,6 +15,14 @@ interface UseTaskLinkingOptions {
   projectId: string;
   linkedTasks: Task[];
 }
+
+const PROJECT_TASK_LIST_STATUSES = [
+  'not_started',
+  'active',
+  'review',
+  'done',
+  'closed',
+];
 
 export function useTaskLinking({
   wsId,
@@ -26,12 +38,10 @@ export function useTaskLinking({
   const { data: availableTasks = [] } = useQuery({
     queryKey: ['workspace-tasks', wsId],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch tasks');
-      }
-      const data = await response.json();
-      return (data.tasks || []) as Task[];
+      const data = await listWorkspaceTasks(wsId, {
+        listStatuses: PROJECT_TASK_LIST_STATUSES,
+      });
+      return data.tasks;
     },
     enabled: showLinkTaskDialog,
     staleTime: 60000, // 1 minute
@@ -50,21 +60,7 @@ export function useTaskLinking({
   // Mutation for linking task to project
   const linkTaskMutation = useMutation({
     mutationFn: async (taskId: string) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/tasks`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ taskId }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to link task');
-      }
-
-      return response.json();
+      return linkWorkspaceTaskProjectTask(wsId, projectId, taskId);
     },
     onSuccess: () => {
       toast.success('Task linked successfully');

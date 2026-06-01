@@ -5,14 +5,20 @@ import {
   createWorkspaceTaskJournal,
   deleteWorkspaceLabel,
   deleteWorkspaceTaskBoard,
+  deleteWorkspaceTaskProject,
   getWorkspaceBoardsData,
   getWorkspaceTaskBoard,
+  getWorkspaceTaskProjectTasks,
+  linkWorkspaceTaskProjectTask,
   listWorkspaceBoardsWithLists,
   listWorkspaceLabels,
   listWorkspaceTaskBoards,
   listWorkspaceTaskLists,
+  listWorkspaceTaskProjectDetails,
   listWorkspaceTasks,
+  partitionTaskProjectLinks,
   removeCurrentUserTaskPersonalPlacement,
+  unlinkWorkspaceTaskProjectTask,
   updateWorkspaceLabel,
   updateWorkspaceTaskBoard,
   updateWorkspaceTaskBoardEstimation,
@@ -284,6 +290,123 @@ describe('workspace board internal-api helpers', () => {
       expect.objectContaining({
         cache: 'no-store',
       })
+    );
+  });
+
+  it('lists workspace tasks with non-document project link statuses', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ tasks: [] }));
+
+    await listWorkspaceTasks(
+      'ws-1',
+      {
+        limit: 200,
+        listStatuses: ['not_started', 'active', 'review', 'done', 'closed'],
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks?listStatuses=not_started%2Cactive%2Creview%2Cdone%2Cclosed&limit=200',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('partitions task project links into work tasks and documents', () => {
+    const result = partitionTaskProjectLinks([
+      {
+        task: {
+          id: 'task-1',
+          name: 'Ship milestone',
+          completed_at: '2026-01-01T00:00:00.000Z',
+          closed_at: null,
+          deleted_at: null,
+          priority: 'high',
+          task_lists: { name: 'Doing', status: 'active' },
+        },
+      },
+      {
+        task: {
+          id: 'doc-1',
+          name: 'Launch notes',
+          completed_at: null,
+          closed_at: null,
+          deleted_at: null,
+          priority: 'normal',
+          task_lists: { name: 'Docs', status: 'documents' },
+        },
+      },
+      {
+        task: {
+          id: 'deleted-1',
+          name: 'Removed',
+          deleted_at: '2026-01-02T00:00:00.000Z',
+          task_lists: { name: 'Done', status: 'done' },
+        },
+      },
+    ]);
+
+    expect(result.linkedTasks.map((task) => task.id)).toEqual(['task-1']);
+    expect(result.linkedDocuments.map((task) => task.id)).toEqual(['doc-1']);
+    expect(result.tasksCount).toBe(1);
+    expect(result.completedTasksCount).toBe(1);
+  });
+
+  it('uses task project detail helpers for project data and linking', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        createJsonResponse({ tasks: [], documents: [], lists: [] })
+      );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await listWorkspaceTaskProjectDetails('ws-1', options);
+    await getWorkspaceTaskProjectTasks('ws-1', 'project-1', options);
+    await linkWorkspaceTaskProjectTask('ws-1', 'project-1', 'task-1', options);
+    await unlinkWorkspaceTaskProjectTask(
+      'ws-1',
+      'project-1',
+      'task-1',
+      options
+    );
+    await deleteWorkspaceTaskProject('ws-1', 'project-1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-projects',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-projects/project-1/tasks',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-projects/project-1/tasks',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ taskId: 'task-1' }),
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-projects/project-1/tasks/task-1',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-projects/project-1',
+      expect.objectContaining({ method: 'DELETE' })
     );
   });
 

@@ -15,12 +15,13 @@ export type { ProjectUpdate, WorkspaceMember };
 
 export type TaskPriority = Database['public']['Enums']['task_priority'];
 export type HealthStatus = 'on_track' | 'at_risk' | 'off_track';
-export type ActiveTab = 'overview' | 'updates' | 'tasks';
+export type ActiveTab = 'overview' | 'updates' | 'tasks' | 'documents';
 
 export interface TaskProjectDetailProps {
   workspace: Workspace;
   project: TaskProjectWithRelations;
   tasks: Task[];
+  documents: Task[];
   lists: TaskList[];
   currentUserId: string;
   wsId: string;

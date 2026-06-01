@@ -1,10 +1,19 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  createWorkspaceTaskProject,
+  deleteWorkspaceTaskProject,
+  linkWorkspaceTaskProjectTask,
+  listWorkspaceTaskProjectDetails,
+  listWorkspaceTasks,
+  unlinkWorkspaceTaskProjectTask,
+  updateWorkspaceTaskProject,
+} from '@tuturuuu/internal-api/tasks';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { z } from 'zod';
-import type { LinkedTask, TaskOption, TaskProject } from '../types';
+import type { TaskOption, TaskProject } from '../types';
 
 interface UseTaskProjectsParams {
   wsId: string;
@@ -12,26 +21,15 @@ interface UseTaskProjectsParams {
   managingProject: TaskProject | null;
 }
 
-const taskSchema = z.object({
-  id: z.string(),
-  name: z.string().optional().default('Untitled task'),
-  completed_at: z.string().optional().nullable(),
-  list_name: z.string().optional().nullable(),
-});
-
-const payloadSchema = z.union([
-  z.array(taskSchema),
-  z.object({
-    tasks: z.array(taskSchema),
-  }),
-]);
-
 const linkedTaskSchema = z.object({
   id: z.string(),
   name: z.string(),
+  completed: z.boolean().nullable().optional(),
   completed_at: z.string().nullable(),
+  closed_at: z.string().nullable().optional(),
   priority: z.string().nullable(),
   listName: z.string().nullable(),
+  listStatus: z.string().nullable().optional(),
 });
 
 const relatedUserSchema = z.object({
@@ -59,7 +57,16 @@ const projectSchema = z.object({
   tasksCount: z.number(),
   completedTasksCount: z.number(),
   linkedTasks: z.array(linkedTaskSchema),
+  linkedDocuments: z.array(linkedTaskSchema),
 });
+
+const PROJECT_TASK_LIST_STATUSES = [
+  'not_started',
+  'active',
+  'review',
+  'done',
+  'closed',
+];
 
 export function useTaskProjects({
   wsId,
@@ -75,14 +82,7 @@ export function useTaskProjects({
   } = useQuery<TaskProject[]>({
     queryKey: ['workspace', wsId, 'task-projects'],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/task-projects`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error(t('errors.fetch_projects'));
-      }
-
-      const payload = await response.json();
+      const payload = await listWorkspaceTaskProjectDetails(wsId);
       const result = z.array(projectSchema).safeParse(payload);
 
       if (!result.success) {
@@ -101,29 +101,20 @@ export function useTaskProjects({
   } = useQuery<TaskOption[]>({
     queryKey: ['workspace', wsId, 'tasks-for-projects'],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks?limit=200`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) {
-        throw new Error(t('errors.fetch_tasks'));
-      }
-
-      const payload = await response.json();
-      const result = payloadSchema.safeParse(payload);
-
-      if (!result.success) {
-        throw new Error(t('errors.fetch_tasks'));
-      }
-
-      const data = result.data;
-      const tasks = Array.isArray(data) ? data : data.tasks;
+      const { tasks } = await listWorkspaceTasks(wsId, {
+        limit: 200,
+        listStatuses: PROJECT_TASK_LIST_STATUSES,
+      });
 
       return tasks.map((task) => ({
         id: task.id,
         name: task.name || 'Untitled task',
         completed_at: task.completed_at ?? null,
-        listName: task.list_name ?? null,
+        listName:
+          (task as typeof task & { task_lists?: { name?: string | null } })
+            .task_lists?.name ??
+          task.source_list_name ??
+          null,
       }));
     },
     enabled: Boolean(managingProject),
@@ -138,16 +129,7 @@ export function useTaskProjects({
       name: string;
       description?: string;
     }) => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/task-projects`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || t('errors.create_project'));
-      }
-      return response.json();
+      return createWorkspaceTaskProject(wsId, { name, description });
     },
     onSuccess: () => {
       toast.success(t('success.project_created'));
@@ -168,19 +150,7 @@ export function useTaskProjects({
       name: string;
       description?: string;
     }) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-projects/${projectId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, description }),
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || t('errors.update_project'));
-      }
-      return response.json();
+      return updateWorkspaceTaskProject(wsId, projectId, { name, description });
     },
     onSuccess: () => {
       toast.success(t('success.project_updated'));
@@ -193,16 +163,7 @@ export function useTaskProjects({
 
   const deleteProjectMutation = useMutation({
     mutationFn: async (projectId: string) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-projects/${projectId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || t('errors.delete_project'));
-      }
+      await deleteWorkspaceTaskProject(wsId, projectId);
     },
     onSuccess: () => {
       toast.success(t('success.project_deleted'));
@@ -221,19 +182,7 @@ export function useTaskProjects({
       projectId: string;
       taskId: string;
     }) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/tasks`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ taskId }),
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || t('errors.link_task'));
-      }
-      return response.json() as Promise<{ linkedTask: LinkedTask }>;
+      return linkWorkspaceTaskProjectTask(wsId, projectId, taskId);
     },
     onSuccess: () => {
       toast.success(t('success.task_linked'));
@@ -252,17 +201,7 @@ export function useTaskProjects({
       projectId: string;
       taskId: string;
     }) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/tasks/${taskId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || t('errors.unlink_task'));
-      }
-      return response.json();
+      return unlinkWorkspaceTaskProjectTask(wsId, projectId, taskId);
     },
     onSuccess: () => {
       toast.success(t('success.task_unlinked'));

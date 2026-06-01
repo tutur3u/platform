@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { updateWorkspaceTaskProject } from '@tuturuuu/internal-api/tasks';
 import type { TaskProjectWithRelations } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
 import dayjs from 'dayjs';
@@ -111,23 +112,7 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
   // React Query mutation for updating project
   const updateProjectMutation = useMutation({
     mutationFn: async (data: UpdateProjectData) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-projects/${project.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage =
-          errorData.error || `Failed to update project (${response.status})`;
-        throw new Error(errorMessage);
-      }
-
-      return response.json();
+      return updateWorkspaceTaskProject(wsId, project.id, data);
     },
     onSuccess: () => {
       toast.success('Project updated successfully');

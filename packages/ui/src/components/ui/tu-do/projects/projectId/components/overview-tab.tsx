@@ -1,6 +1,7 @@
 'use client';
 
 import { OverviewDescription } from './overview/description-card';
+import { OverviewLinkedDocuments } from './overview/linked-documents-card';
 import { OverviewLinkedTasks } from './overview/linked-tasks-card';
 import { OverviewUpdates } from './overview/updates-card';
 import { ProjectConfiguration } from './project-configuration';
@@ -22,6 +23,9 @@ export function OverviewTab() {
 
         {/* Recent Tasks */}
         <OverviewLinkedTasks />
+
+        {/* Linked Documents */}
+        <OverviewLinkedDocuments />
       </div>
 
       {/* Metadata sidebar */}

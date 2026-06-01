@@ -44,26 +44,23 @@ export function ProjectHeader({
   return (
     <motion.div
       {...fadeInUpVariant(0)}
-      className="relative rounded-xl border border-dynamic-gray/20 bg-dynamic-gray/10 bg-linear-to-r p-2 md:p-4"
+      className="relative rounded-lg border border-dynamic-surface/60 bg-background p-4"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 space-y-4">
-          {/* Project name - editable */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1 space-y-3">
           {isEditingName ? (
             <div className="flex items-center gap-2">
               <Input
                 value={editedName}
                 onChange={(e) => setEditedName(e.target.value)}
-                className="font-bold text-3xl md:text-4xl"
+                className="h-12 font-semibold text-2xl"
                 placeholder={t('project_name_placeholder')}
                 autoFocus
               />
             </div>
           ) : (
             <div className="group flex items-center gap-2">
-              <h1 className="pb-2 font-bold text-3xl md:text-4xl">
-                {projectName}
-              </h1>
+              <h1 className="truncate font-semibold text-2xl">{projectName}</h1>
               <Button
                 variant="ghost"
                 size="icon"
@@ -76,19 +73,17 @@ export function ProjectHeader({
             </div>
           )}
 
-          {/* Status badges */}
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={editedStatus} />
             <HealthStatusBadge health={editedHealthStatus} />
           </div>
         </div>
 
-        {/* Save/Cancel buttons */}
         {hasUnsavedChanges && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-2"
+            className="flex flex-wrap items-center gap-2"
           >
             <Button
               variant="outline"
@@ -99,12 +94,7 @@ export function ProjectHeader({
               <X className="mr-2 h-4 w-4" />
               {t('cancel')}
             </Button>
-            <Button
-              size="sm"
-              onClick={onSave}
-              disabled={isSaving}
-              className="bg-linear-to-r from-dynamic-purple to-dynamic-pink shadow-lg transition-all hover:shadow-xl"
-            >
+            <Button size="sm" onClick={onSave} disabled={isSaving}>
               {isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

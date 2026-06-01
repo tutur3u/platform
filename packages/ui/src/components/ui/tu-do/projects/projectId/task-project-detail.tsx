@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Sparkles, Target, TrendingUp } from '@tuturuuu/icons';
+import { FileText, Sparkles, Target, TrendingUp } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -14,7 +14,13 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 
-import { OverviewTab, ProjectHeader, TasksTab, UpdatesTab } from './components';
+import {
+  DocumentsTab,
+  OverviewTab,
+  ProjectHeader,
+  TasksTab,
+  UpdatesTab,
+} from './components';
 import { ProjectOverviewProvider } from './components/project-overview-context';
 import { LinkTaskDialog } from './dialogs';
 import {
@@ -29,6 +35,7 @@ export function TaskProjectDetail({
   workspace,
   project,
   tasks,
+  documents,
   lists,
   currentUserId,
   wsId,
@@ -186,15 +193,9 @@ export function TaskProjectDetail({
       onUpdate={handleUpdate}
       isPersonalWorkspace={workspace.personal}
     >
-      <div className="relative flex h-full flex-col overflow-x-hidden">
+      <div className="flex h-full flex-col overflow-x-hidden">
         {/* Task Dialog Manager for centralized task editing */}
         <TaskDialogManager wsId={wsId} />
-
-        {/* Background */}
-        <div className="pointer-events-none fixed inset-0 -z-10">
-          <div className="absolute top-0 -left-1/4 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-transparent blur-3xl" />
-          <div className="absolute top-1/3 -right-1/4 h-160 w-160 rounded-full bg-linear-to-br from-dynamic-blue/10 via-dynamic-purple/5 to-transparent blur-3xl" />
-        </div>
 
         {/* Header */}
         <ProjectHeader
@@ -218,7 +219,7 @@ export function TaskProjectDetail({
           onValueChange={(value) => setActiveTab(value as ActiveTab)}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          <TabsList className="mt-4 mb-2">
+          <TabsList className="my-4 w-fit rounded-md border bg-background p-1">
             <TabsTrigger value="overview" className="gap-2">
               <Sparkles className="h-4 w-4" />
               {t('overview')}
@@ -231,6 +232,10 @@ export function TaskProjectDetail({
               <Target className="h-4 w-4" />
               {t('tasks')} ({tasks.length})
             </TabsTrigger>
+            <TabsTrigger value="documents" className="gap-2">
+              <FileText className="h-4 w-4" />
+              {t('documents')} ({documents.length})
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -239,6 +244,7 @@ export function TaskProjectDetail({
               value={{
                 project,
                 tasks,
+                documents,
                 recentUpdates: projectUpdates.recentUpdates,
                 isLoadingUpdates: projectUpdates.isLoadingUpdates,
                 setActiveTab,
@@ -318,6 +324,13 @@ export function TaskProjectDetail({
               onTaskPartialUpdate={handleTaskPartialUpdate}
               isMultiSelectMode={isMultiSelectMode}
               setIsMultiSelectMode={setIsMultiSelectMode}
+            />
+          </TabsContent>
+
+          <TabsContent value="documents" className="mt-0 flex-1 overflow-auto">
+            <DocumentsTab
+              documents={documents}
+              fadeInViewVariant={fadeInViewVariant}
             />
           </TabsContent>
         </Tabs>

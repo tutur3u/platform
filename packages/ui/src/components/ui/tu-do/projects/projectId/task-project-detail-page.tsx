@@ -47,7 +47,11 @@ export default async function TaskProjectDetailPage({ params }: Props) {
   const internalApiOptions = withForwardedInternalApiAuth(requestHeaders);
 
   let initialProject: TaskProjectWithRelations;
-  let initialProjectData: { tasks: Task[]; lists: TaskList[] };
+  let initialProjectData: {
+    tasks: Task[];
+    documents: Task[];
+    lists: TaskList[];
+  };
   try {
     [initialProject, initialProjectData] = await Promise.all([
       getWorkspaceTaskProject(wsId, projectId, internalApiOptions),

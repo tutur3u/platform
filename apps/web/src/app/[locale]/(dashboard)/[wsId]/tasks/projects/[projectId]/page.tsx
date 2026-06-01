@@ -1,10 +1,14 @@
 import TaskProjectDetailPage from '@tuturuuu/ui/tu-do/projects/projectId/task-project-detail-page';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
-export const metadata: Metadata = {
-  title: 'Task Project',
-  description: 'View and manage task project details.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('task_project_detail.metadata');
+  return {
+    title: t('page_title'),
+    description: t('page_description'),
+  };
+}
 
 interface Props {
   params: Promise<{

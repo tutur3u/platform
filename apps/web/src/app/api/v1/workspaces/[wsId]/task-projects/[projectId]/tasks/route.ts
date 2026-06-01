@@ -113,6 +113,8 @@ export async function GET(
         task:tasks!inner(
           *,
           task_lists(
+            name,
+            status,
             workspace_boards(
               ws_id
             )
@@ -145,9 +147,16 @@ export async function GET(
         return boardWorkspaceId === normalizedWorkspaceId;
       });
 
+    const workTasks = rawTasks.filter(
+      (task) => task.task_lists?.status !== 'documents'
+    );
+    const documentTasks = rawTasks.filter(
+      (task) => task.task_lists?.status === 'documents'
+    );
+
     const listIds = [
       ...new Set(
-        rawTasks
+        workTasks
           .map((t) => t.list_id)
           .filter((lid): lid is string => lid !== null)
       ),
@@ -186,7 +195,7 @@ export async function GET(
       );
     }
 
-    const formattedTasks: Task[] = rawTasks.map((task) => {
+    const formatTask = (task: (typeof rawTasks)[number]): Task => {
       const normalizedLabels =
         (task.labels as TaskLabelEntry[] | null | undefined)
           ?.map((entry) => entry.label)
@@ -212,11 +221,16 @@ export async function GET(
 
       return {
         ...task,
+        source_list_name: task.task_lists?.name ?? null,
+        source_list_status: task.task_lists?.status ?? null,
         assignees: normalizedAssignees,
         labels: normalizedLabels,
         projects: normalizedProjects,
       } as Task;
-    });
+    };
+
+    const formattedTasks: Task[] = workTasks.map(formatTask);
+    const formattedDocuments: Task[] = documentTasks.map(formatTask);
 
     const formattedLists: TaskList[] = (lists ?? []).map((list) => ({
       ...list,
@@ -233,6 +247,7 @@ export async function GET(
 
     return NextResponse.json({
       tasks: formattedTasks,
+      documents: formattedDocuments,
       lists: formattedLists,
     });
   } catch (error) {
@@ -321,7 +336,11 @@ export async function POST(
           id,
           name,
           completed,
+          completed_at,
+          closed_at,
+          priority,
           task_lists(
+            status,
             workspace_boards(ws_id),
             name
           )
@@ -335,6 +354,13 @@ export async function POST(
       taskRecord.task_lists?.workspace_boards?.ws_id !== normalizedWorkspaceId
     ) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    if (taskRecord.task_lists?.status === 'documents') {
+      return NextResponse.json(
+        { error: 'Document-list tasks cannot be linked as project tasks' },
+        { status: 400 }
+      );
     }
 
     const linkProjectPayload: TaskActorRpcArgs<'link_task_project_with_actor'> =
@@ -368,7 +394,11 @@ export async function POST(
         id: taskRecord.id,
         name: taskRecord.name,
         completed: taskRecord.completed,
+        completed_at: taskRecord.completed_at,
+        closed_at: taskRecord.closed_at,
+        priority: taskRecord.priority,
         listName: taskRecord.task_lists?.name ?? null,
+        listStatus: taskRecord.task_lists?.status ?? null,
       },
     });
   } catch (error) {

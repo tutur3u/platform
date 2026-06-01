@@ -1,3 +1,4 @@
+import type { TaskProjectLinkedItem } from '@tuturuuu/internal-api/tasks';
 import type { TaskProjectWithRelations } from '@tuturuuu/types';
 
 export type ProjectStatus =
@@ -14,13 +15,7 @@ export type ProjectPriority = 'critical' | 'high' | 'normal' | 'low';
 
 export type ProjectHealth = 'on_track' | 'at_risk' | 'off_track';
 
-export interface LinkedTask {
-  id: string;
-  name: string;
-  completed_at: string | null;
-  priority: ProjectPriority | null;
-  listName: string | null;
-}
+export type LinkedTask = TaskProjectLinkedItem;
 
 export interface TaskProject extends TaskProjectWithRelations {
   status: ProjectStatus | null;
@@ -29,6 +24,7 @@ export interface TaskProject extends TaskProjectWithRelations {
   tasksCount: number;
   completedTasksCount: number;
   linkedTasks: LinkedTask[];
+  linkedDocuments: LinkedTask[];
 }
 
 export interface TaskProjectsClientProps {
@@ -52,3 +48,12 @@ export type SortBy =
   | 'health_status'
   | 'tasks_count';
 export type SortOrder = 'asc' | 'desc';
+
+export interface ProjectOperationsStats {
+  totalProjects: number;
+  activeProjects: number;
+  linkedTasks: number;
+  linkedDocuments: number;
+  completedTasks: number;
+  atRiskProjects: number;
+}

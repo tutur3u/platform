@@ -14,6 +14,7 @@ import type {
 interface ProjectOverviewContextType {
   project: TaskProjectWithRelations;
   tasks: Task[];
+  documents: Task[];
   recentUpdates: ProjectUpdate[];
   isLoadingUpdates: boolean;
   setActiveTab: (tab: ActiveTab) => void;
