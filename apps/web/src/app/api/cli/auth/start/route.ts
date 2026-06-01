@@ -232,7 +232,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing state' }, { status: 400 });
   }
 
-  const supabase = await createClient(request);
+  const supabase = await createClient();
   const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {

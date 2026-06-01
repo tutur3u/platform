@@ -162,4 +162,28 @@ describe('CLI auth start route', () => {
       token: 'cli-token',
     });
   });
+
+  it('does not forward bearer authorization headers into the browser login flow', async () => {
+    vi.mocked(resolveAuthenticatedSessionUser).mockResolvedValue({
+      authError: null,
+      user: null,
+    } as never);
+
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.com/api/cli/auth/start?state=s1&mode=copy',
+        {
+          headers: {
+            accept: 'application/json',
+            authorization: 'Bearer valid-but-not-browser-session-token',
+          },
+        }
+      )
+    );
+
+    expect(createClient).toHaveBeenCalledWith();
+    expect(generateCrossAppToken).not.toHaveBeenCalled();
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toContain('/login');
+  });
 });
