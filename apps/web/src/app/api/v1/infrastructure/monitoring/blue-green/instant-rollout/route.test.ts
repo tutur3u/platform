@@ -2,15 +2,15 @@ import type { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
-  authorizeInfrastructureViewerMock,
+  authorizeInfrastructureOperatorMock,
   queueBlueGreenInstantRolloutRequestMock,
 } = vi.hoisted(() => ({
-  authorizeInfrastructureViewerMock: vi.fn(),
+  authorizeInfrastructureOperatorMock: vi.fn(),
   queueBlueGreenInstantRolloutRequestMock: vi.fn(),
 }));
 
 vi.mock('../authorization', () => ({
-  authorizeInfrastructureViewer: authorizeInfrastructureViewerMock,
+  authorizeInfrastructureOperator: authorizeInfrastructureOperatorMock,
 }));
 
 vi.mock('@/lib/infrastructure/blue-green-monitoring-controls', () => ({
@@ -34,7 +34,7 @@ describe('blue-green instant-rollout route', () => {
   });
 
   it('returns the authorization response when access is denied', async () => {
-    authorizeInfrastructureViewerMock.mockResolvedValue({
+    authorizeInfrastructureOperatorMock.mockResolvedValue({
       ok: false,
       response: new Response(JSON.stringify({ message: 'Forbidden' }), {
         status: 403,
@@ -47,8 +47,8 @@ describe('blue-green instant-rollout route', () => {
     await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
   });
 
-  it('queues an instant standby sync request for authorized viewers', async () => {
-    authorizeInfrastructureViewerMock.mockResolvedValue({
+  it('queues an instant standby sync request for authorized operators', async () => {
+    authorizeInfrastructureOperatorMock.mockResolvedValue({
       ok: true,
       user: {
         email: 'ops@platform.test',

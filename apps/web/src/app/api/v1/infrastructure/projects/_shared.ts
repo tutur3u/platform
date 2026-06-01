@@ -1,14 +1,24 @@
 import { NextResponse } from 'next/server';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
-import { authorizeInfrastructureViewer } from '../monitoring/blue-green/authorization';
+import {
+  authorizeInfrastructureOperator,
+  authorizeInfrastructureViewer,
+} from '../monitoring/blue-green/authorization';
+
+type InfrastructureProjectAccess = 'operator' | 'viewer';
 
 export async function handleInfrastructureProjectRequest<T>(
   request: Request,
   route: string,
-  handler: () => Promise<T>
+  handler: () => Promise<T>,
+  options: { access?: InfrastructureProjectAccess } = {}
 ) {
   return withRequestLogDrain({ request, route }, async () => {
-    const authorization = await authorizeInfrastructureViewer(request);
+    const authorization =
+      options.access === 'operator'
+        ? await authorizeInfrastructureOperator(request)
+        : await authorizeInfrastructureViewer(request);
+
     if (!authorization.ok) {
       return authorization.response;
     }

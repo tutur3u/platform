@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { queueBlueGreenInstantRolloutRequest } from '@/lib/infrastructure/blue-green-monitoring-controls';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInfrastructureViewer } from '../authorization';
+import { authorizeInfrastructureOperator } from '../authorization';
 
 export async function POST(request: Request) {
-  const authorization = await authorizeInfrastructureViewer(request);
+  const authorization = await authorizeInfrastructureOperator(request);
   if (!authorization.ok) {
     return authorization.response;
   }

@@ -2,19 +2,19 @@ import type { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
-  authorizeInfrastructureViewerMock,
+  authorizeInfrastructureOperatorMock,
   clearBlueGreenDeploymentPinMock,
   readBlueGreenMonitoringSnapshotMock,
   writeBlueGreenDeploymentPinMock,
 } = vi.hoisted(() => ({
-  authorizeInfrastructureViewerMock: vi.fn(),
+  authorizeInfrastructureOperatorMock: vi.fn(),
   clearBlueGreenDeploymentPinMock: vi.fn(),
   readBlueGreenMonitoringSnapshotMock: vi.fn(),
   writeBlueGreenDeploymentPinMock: vi.fn(),
 }));
 
 vi.mock('../authorization', () => ({
-  authorizeInfrastructureViewer: authorizeInfrastructureViewerMock,
+  authorizeInfrastructureOperator: authorizeInfrastructureOperatorMock,
 }));
 
 vi.mock('@/lib/infrastructure/blue-green-monitoring', () => ({
@@ -51,7 +51,7 @@ describe('blue-green deployment-pin route', () => {
   });
 
   it('returns the authorization response when access is denied', async () => {
-    authorizeInfrastructureViewerMock.mockResolvedValue({
+    authorizeInfrastructureOperatorMock.mockResolvedValue({
       ok: false,
       response: new Response(JSON.stringify({ message: 'Forbidden' }), {
         status: 403,
@@ -65,7 +65,7 @@ describe('blue-green deployment-pin route', () => {
   });
 
   it('requires a usable commit hash', async () => {
-    authorizeInfrastructureViewerMock.mockResolvedValue({
+    authorizeInfrastructureOperatorMock.mockResolvedValue({
       ok: true,
       user: {
         email: 'ops@platform.test',
@@ -80,7 +80,7 @@ describe('blue-green deployment-pin route', () => {
   });
 
   it('pins a successful deployment by full commit hash', async () => {
-    authorizeInfrastructureViewerMock.mockResolvedValue({
+    authorizeInfrastructureOperatorMock.mockResolvedValue({
       ok: true,
       user: {
         email: 'ops@platform.test',
@@ -131,7 +131,7 @@ describe('blue-green deployment-pin route', () => {
   });
 
   it('does not pin failed deployments', async () => {
-    authorizeInfrastructureViewerMock.mockResolvedValue({
+    authorizeInfrastructureOperatorMock.mockResolvedValue({
       ok: true,
       user: {
         email: 'ops@platform.test',
@@ -155,7 +155,7 @@ describe('blue-green deployment-pin route', () => {
   });
 
   it('clears the current deployment pin', async () => {
-    authorizeInfrastructureViewerMock.mockResolvedValue({
+    authorizeInfrastructureOperatorMock.mockResolvedValue({
       ok: true,
       user: {
         email: 'ops@platform.test',

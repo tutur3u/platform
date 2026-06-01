@@ -6,7 +6,7 @@ import {
   writeBlueGreenDeploymentPin,
 } from '@/lib/infrastructure/blue-green-monitoring-controls';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInfrastructureViewer } from '../authorization';
+import { authorizeInfrastructureOperator } from '../authorization';
 
 function normalizeCommitHash(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
@@ -36,7 +36,7 @@ function findRollbackTarget(
 }
 
 export async function POST(request: Request) {
-  const authorization = await authorizeInfrastructureViewer(request);
+  const authorization = await authorizeInfrastructureOperator(request);
   if (!authorization.ok) {
     return authorization.response;
   }
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authorization = await authorizeInfrastructureViewer(request);
+  const authorization = await authorizeInfrastructureOperator(request);
   if (!authorization.ok) {
     return authorization.response;
   }

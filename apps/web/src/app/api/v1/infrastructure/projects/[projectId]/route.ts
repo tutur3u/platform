@@ -45,7 +45,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
               : undefined,
         }),
       };
-    }
+    },
+    { access: 'operator' }
   );
 }
 
@@ -57,6 +58,7 @@ export async function DELETE(request: Request, { params }: { params: Params }) {
     `/api/v1/infrastructure/projects/${projectId}`,
     async () => ({
       project: await deleteInfrastructureProject(projectId),
-    })
+    }),
+    { access: 'operator' }
   );
 }

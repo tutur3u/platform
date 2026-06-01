@@ -11,6 +11,7 @@ export async function POST(request: Request, { params }: { params: Params }) {
     `/api/v1/infrastructure/projects/${projectId}/deploy`,
     async () => ({
       project: await queueInfrastructureProjectDeployment(projectId),
-    })
+    }),
+    { access: 'operator' }
   );
 }
