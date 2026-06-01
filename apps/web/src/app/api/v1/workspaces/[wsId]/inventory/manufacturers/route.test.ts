@@ -105,6 +105,72 @@ describe('inventory manufacturers API route', () => {
     });
   });
 
+  it('allows manufacturer creation for update_inventory to match setup insert policy', async () => {
+    const insertClient = createInsertClient({
+      id: 'manufacturer-1',
+      name: 'Acme',
+      ws_id: 'ws-1',
+    });
+
+    mocks.createAdminClient.mockResolvedValue(insertClient.client);
+    mocks.authorizeInventoryWorkspace.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: permissionsWith(['update_inventory']),
+        wsId: 'ws-1',
+      },
+    });
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/inventory/manufacturers/route'
+    );
+    const response = await POST(
+      new Request('https://app.example.com/api', {
+        body: JSON.stringify({ name: 'Acme' }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(insertClient.insert).toHaveBeenCalledWith({
+      name: 'Acme',
+      ws_id: 'ws-1',
+    });
+  });
+
+  it('rejects manufacturer creation for delete-only inventory users', async () => {
+    const insertClient = createInsertClient({
+      id: 'manufacturer-1',
+      name: 'Acme',
+      ws_id: 'ws-1',
+    });
+
+    mocks.createAdminClient.mockResolvedValue(insertClient.client);
+    mocks.authorizeInventoryWorkspace.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: permissionsWith(['delete_inventory']),
+        wsId: 'ws-1',
+      },
+    });
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/inventory/manufacturers/route'
+    );
+    const response = await POST(
+      new Request('https://app.example.com/api', {
+        body: JSON.stringify({ name: 'Acme' }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
+    expect(insertClient.insert).not.toHaveBeenCalled();
+  });
+
   it('returns 403 for users without setup permissions instead of feature-flag 404', async () => {
     const insertClient = createInsertClient({
       id: 'manufacturer-1',

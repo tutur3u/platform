@@ -12,6 +12,7 @@ import {
 import { createInventoryAuditLog } from '@/lib/inventory/audit';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import {
+  canCreateInventorySetup,
   canManageInventorySetup,
   canViewInventoryCatalog,
 } from '@/lib/inventory/permissions';
@@ -92,7 +93,7 @@ export async function POST(req: Request, { params }: Params) {
   const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
-  if (!canManageInventorySetup(permissions)) {
+  if (!canCreateInventorySetup(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to create units' },
       { status: 403 }

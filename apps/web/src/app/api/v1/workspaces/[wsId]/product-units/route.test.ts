@@ -106,6 +106,74 @@ describe('product units API route', () => {
     });
   });
 
+  it('rejects unit creation for update-only inventory users', async () => {
+    const insertClient = createInsertClient({
+      id: 'unit-1',
+      name: 'Box',
+      ws_id: 'ws-1',
+    });
+
+    mocks.createAdminClient.mockResolvedValue(insertClient.client);
+    mocks.authorizeInventoryWorkspace.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: permissionsWith(['update_inventory']),
+        wsId: 'ws-1',
+      },
+    });
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/product-units/route'
+    );
+    const response = await POST(
+      new Request('https://app.example.com/api', {
+        body: JSON.stringify({ name: 'Box' }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Insufficient permissions to create units',
+    });
+    expect(insertClient.insert).not.toHaveBeenCalled();
+  });
+
+  it('rejects unit creation for delete-only inventory users', async () => {
+    const insertClient = createInsertClient({
+      id: 'unit-1',
+      name: 'Box',
+      ws_id: 'ws-1',
+    });
+
+    mocks.createAdminClient.mockResolvedValue(insertClient.client);
+    mocks.authorizeInventoryWorkspace.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: permissionsWith(['delete_inventory']),
+        wsId: 'ws-1',
+      },
+    });
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/product-units/route'
+    );
+    const response = await POST(
+      new Request('https://app.example.com/api', {
+        body: JSON.stringify({ name: 'Box' }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Insufficient permissions to create units',
+    });
+    expect(insertClient.insert).not.toHaveBeenCalled();
+  });
+
   it('returns 403 for users without setup permissions instead of feature-flag 404', async () => {
     const insertClient = createInsertClient({
       id: 'unit-1',

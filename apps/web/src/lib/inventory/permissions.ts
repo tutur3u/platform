@@ -70,6 +70,35 @@ export function canManageInventorySetup(
   ]);
 }
 
+export function canCreateInventorySetup(
+  permissions: Pick<PermissionsResult, 'containsPermission'>,
+  options: { allowUpdateInventory?: boolean } = {}
+) {
+  return hasAnyPermission(permissions, [
+    'manage_inventory_setup',
+    'create_inventory',
+    ...(options.allowUpdateInventory ? (['update_inventory'] as const) : []),
+  ]);
+}
+
+export function canUpdateInventorySetup(
+  permissions: Pick<PermissionsResult, 'containsPermission'>
+) {
+  return hasAnyPermission(permissions, [
+    'manage_inventory_setup',
+    'update_inventory',
+  ]);
+}
+
+export function canDeleteInventorySetup(
+  permissions: Pick<PermissionsResult, 'containsPermission'>
+) {
+  return hasAnyPermission(permissions, [
+    'manage_inventory_setup',
+    'delete_inventory',
+  ]);
+}
+
 export function canViewInventorySales(
   permissions: Pick<PermissionsResult, 'containsPermission'>
 ) {

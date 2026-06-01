@@ -9,7 +9,10 @@ import {
   diffInventoryAuditFields,
 } from '@/lib/inventory/audit';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { canManageInventorySetup } from '@/lib/inventory/permissions';
+import {
+  canDeleteInventorySetup,
+  canUpdateInventorySetup,
+} from '@/lib/inventory/permissions';
 
 const UnitUpdateSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH).optional(),
@@ -31,7 +34,7 @@ export async function PUT(req: Request, { params }: Params) {
   const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
-  if (!canManageInventorySetup(permissions)) {
+  if (!canUpdateInventorySetup(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update units' },
       { status: 403 }
@@ -106,7 +109,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
-  if (!canManageInventorySetup(permissions)) {
+  if (!canDeleteInventorySetup(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to delete units' },
       { status: 403 }
