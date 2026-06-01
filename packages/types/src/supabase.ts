@@ -5589,6 +5589,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_subscription_products: {
+        Row: {
+          archived: boolean;
+          created_at: string;
+          description: string | null;
+          id: string;
+          max_seats: number | null;
+          min_seats: number | null;
+          name: string | null;
+          price: number | null;
+          price_per_seat: number | null;
+          pricing_model: Database['public']['Enums']['workspace_pricing_model'];
+          recurring_interval: string | null;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+        };
+        Insert: {
+          archived?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id: string;
+          max_seats?: number | null;
+          min_seats?: number | null;
+          name?: string | null;
+          price?: number | null;
+          price_per_seat?: number | null;
+          pricing_model?: Database['public']['Enums']['workspace_pricing_model'];
+          recurring_interval?: string | null;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+        };
+        Update: {
+          archived?: boolean;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          max_seats?: number | null;
+          min_seats?: number | null;
+          name?: string | null;
+          price?: number | null;
+          price_per_seat?: number | null;
+          pricing_model?: Database['public']['Enums']['workspace_pricing_model'];
+          recurring_interval?: string | null;
+          tier?: Database['public']['Enums']['workspace_product_tier'];
+        };
+        Relationships: [];
+      };
       workspace_tutoring_sessions: {
         Row: {
           attendance_status: string;
@@ -26192,13 +26237,6 @@ export type Database = {
             referencedColumns: ['polar_subscription_id'];
           },
           {
-            foreignKeyName: 'workspace_orders_product_id_fkey';
-            columns: ['product_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_subscription_products';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'workspace_orders_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -26950,51 +26988,6 @@ export type Database = {
           },
         ];
       };
-      workspace_subscription_products: {
-        Row: {
-          archived: boolean;
-          created_at: string;
-          description: string | null;
-          id: string;
-          max_seats: number | null;
-          min_seats: number | null;
-          name: string | null;
-          price: number | null;
-          price_per_seat: number | null;
-          pricing_model: Database['public']['Enums']['workspace_pricing_model'];
-          recurring_interval: string | null;
-          tier: Database['public']['Enums']['workspace_product_tier'];
-        };
-        Insert: {
-          archived?: boolean;
-          created_at?: string;
-          description?: string | null;
-          id: string;
-          max_seats?: number | null;
-          min_seats?: number | null;
-          name?: string | null;
-          price?: number | null;
-          price_per_seat?: number | null;
-          pricing_model?: Database['public']['Enums']['workspace_pricing_model'];
-          recurring_interval?: string | null;
-          tier: Database['public']['Enums']['workspace_product_tier'];
-        };
-        Update: {
-          archived?: boolean;
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          max_seats?: number | null;
-          min_seats?: number | null;
-          name?: string | null;
-          price?: number | null;
-          price_per_seat?: number | null;
-          pricing_model?: Database['public']['Enums']['workspace_pricing_model'];
-          recurring_interval?: string | null;
-          tier?: Database['public']['Enums']['workspace_product_tier'];
-        };
-        Relationships: [];
-      };
       workspace_subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null;
@@ -27036,13 +27029,6 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'workspace_subscription_product_id_fkey';
-            columns: ['product_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_subscription_products';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'workspace_subscription_ws_id_fkey';
             columns: ['ws_id'];

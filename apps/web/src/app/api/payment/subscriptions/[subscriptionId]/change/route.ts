@@ -1,5 +1,8 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -99,7 +102,9 @@ export async function POST(
   }
 
   // Verify the target product exists in our database
-  const { data: targetProduct, error: targetProductError } = await supabase
+  const sbAdmin = await createAdminClient();
+  const { data: targetProduct, error: targetProductError } = await sbAdmin
+    .schema('private')
     .from('workspace_subscription_products')
     .select('*')
     .eq('id', productId)

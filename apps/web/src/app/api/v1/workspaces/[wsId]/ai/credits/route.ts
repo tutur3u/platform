@@ -95,28 +95,11 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const sbAdmin = await createAdminClient();
 
       // Resolve workspace tier
-      const { data: tierData } = await sbAdmin
-        .from('workspaces')
-        .select(
-          'id, workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
-        )
-        .eq('id', normalizedWsId)
-        .maybeSingle();
-
-      let tier: ProductTier = 'FREE';
-      const subs = tierData?.workspace_subscriptions;
-      if (Array.isArray(subs)) {
-        const activeSub = subs
-          .filter((s: any) => s?.status === 'active')
-          .sort(
-            (a: any, b: any) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime()
-          )[0];
-        if (activeSub?.workspace_subscription_products?.tier) {
-          tier = activeSub.workspace_subscription_products.tier as ProductTier;
-        }
-      }
+      const { data: resolvedTier } = await sbAdmin.rpc(
+        '_resolve_workspace_tier',
+        { p_ws_id: normalizedWsId }
+      );
+      const tier = (resolvedTier ?? 'FREE') as ProductTier;
 
       const balanceScope: 'user' | 'workspace' =
         tier === 'FREE' ? 'user' : 'workspace';

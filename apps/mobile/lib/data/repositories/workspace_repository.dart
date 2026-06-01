@@ -27,11 +27,6 @@ class WorkspaceRepository {
 
   static const _workspaceBaseSelect =
       'id, name, personal, avatar_url, created_at';
-  static const _workspaceSubscriptionTierSelect =
-      'workspace_subscriptions!left(created_at, status, '
-      'workspace_subscription_products(tier))';
-  static const _workspaceWithTierSelect =
-      '$_workspaceBaseSelect, $_workspaceSubscriptionTierSelect';
   static const CachePolicy _workspacesCachePolicy = CachePolicies.metadata;
   static const _workspacesCacheTag = 'workspace:list';
 
@@ -242,7 +237,7 @@ class WorkspaceRepository {
     try {
       response = await supabase
           .from('workspaces')
-          .select(_workspaceWithTierSelect)
+          .select(_workspaceBaseSelect)
           .eq('id', wsId)
           .maybeSingle();
     } on Object {

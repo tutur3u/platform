@@ -2,6 +2,34 @@ import type { Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { SEAT_ACTIVE_STATUSES } from './subscription-constants';
 
+function privateSchema(supabase: TypedSupabaseClient) {
+  return supabase.schema('private');
+}
+
+async function getActiveSeatSubscription(
+  supabase: TypedSupabaseClient,
+  wsId: string
+) {
+  const { data: subscription } = await supabase
+    .from('workspace_subscriptions')
+    .select('polar_subscription_id, product_id')
+    .eq('ws_id', wsId)
+    .in('status', SEAT_ACTIVE_STATUSES)
+    .single();
+
+  if (!subscription?.product_id) return null;
+
+  const { data: product } = await privateSchema(supabase)
+    .from('workspace_subscription_products')
+    .select('pricing_model')
+    .eq('id', subscription.product_id)
+    .maybeSingle();
+
+  if (product?.pricing_model !== 'seat_based') return null;
+
+  return subscription;
+}
+
 /**
  * Ensures a personal Polar customer exists for a user
  * Personal customers use externalId = userId (not workspace_${wsId})
@@ -78,20 +106,10 @@ export async function assignSeatToMember(
   wsId: string,
   userId: string
 ): Promise<SeatAssignmentResult> {
-  // Fetch active subscription with its product (1:1 relationship)
-  const { data: subscription } = await supabase
-    .from('workspace_subscriptions')
-    .select(
-      'polar_subscription_id, workspace_subscription_products!inner(pricing_model)'
-    )
-    .eq('ws_id', wsId)
-    .in('status', SEAT_ACTIVE_STATUSES)
-    .single();
+  const subscription = await getActiveSeatSubscription(supabase, wsId);
 
   // No active subscription or not seat-based
-  if (
-    subscription?.workspace_subscription_products.pricing_model !== 'seat_based'
-  ) {
+  if (!subscription) {
     return { required: false };
   }
 
@@ -131,20 +149,10 @@ export async function revokeSeatFromMember(
   wsId: string,
   userId: string
 ): Promise<void> {
-  // Fetch active subscription with its product (1:1 relationship)
-  const { data: subscription } = await supabase
-    .from('workspace_subscriptions')
-    .select(
-      'polar_subscription_id, workspace_subscription_products!inner(pricing_model)'
-    )
-    .eq('ws_id', wsId)
-    .in('status', SEAT_ACTIVE_STATUSES)
-    .single();
+  const subscription = await getActiveSeatSubscription(supabase, wsId);
 
   // No active subscription or not seat-based
-  if (
-    subscription?.workspace_subscription_products.pricing_model !== 'seat_based'
-  ) {
+  if (!subscription) {
     return; // Skip for non-seat-based subscriptions
   }
 

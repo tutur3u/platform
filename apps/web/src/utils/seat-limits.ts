@@ -1,6 +1,10 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { SEAT_ACTIVE_STATUSES } from './subscription-constants';
 
+function privateSchema(supabase: TypedSupabaseClient) {
+  return supabase.schema('private');
+}
+
 /**
  * Seat status information for a workspace subscription
  */
@@ -44,9 +48,7 @@ export async function getSeatStatus(
   // Get active subscription info
   const { data: subscription, error } = await supabase
     .from('workspace_subscriptions')
-    .select(
-      'seat_count, workspace_subscription_products(pricing_model, price_per_seat)'
-    )
+    .select('seat_count, product_id')
     .eq('ws_id', wsId)
     .in('status', SEAT_ACTIVE_STATUSES)
     .order('created_at', { ascending: false })
@@ -65,7 +67,25 @@ export async function getSeatStatus(
     };
   }
 
-  const product = subscription?.workspace_subscription_products;
+  const { data: product, error: productError } = subscription?.product_id
+    ? await privateSchema(supabase)
+        .from('workspace_subscription_products')
+        .select('pricing_model, price_per_seat')
+        .eq('id', subscription.product_id)
+        .maybeSingle()
+    : { data: null, error: null };
+
+  if (productError) {
+    console.error('Error fetching seat product:', productError.message);
+    return {
+      isSeatBased: true,
+      seatCount: 0,
+      memberCount: 0,
+      availableSeats: 0,
+      canAddMember: false,
+      pricePerSeat: null,
+    };
+  }
 
   // Always count current workspace members (needed for upgrade estimates)
   const { count: memberCount } = await supabase

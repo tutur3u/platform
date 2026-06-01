@@ -654,13 +654,13 @@ Workspace subscription status.
 
 **Key Fields:**
 - `ws_id` (text, PK, FK → workspaces)
-- `product_id` (text, FK → workspace_subscription_products)
+- `product_id` (text, FK → private.workspace_subscription_products)
 - `status` (text) - active, canceled, expired
 - `started_at` (timestamptz)
 - `expires_at` (timestamptz)
 
-#### `workspace_subscription_products`
-Available subscription tiers.
+#### `private.workspace_subscription_products`
+Private subscription tiers managed through billing and Polar server helpers.
 
 **Key Fields:**
 - `id` (text, PK)

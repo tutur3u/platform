@@ -9,12 +9,16 @@ import {
 
 const CREDIT_PACK_EXPIRY_DAYS = 60;
 
+function privateSchema(supabase: TypedSupabaseClient) {
+  return supabase.schema('private');
+}
+
 async function upsertSubscription(
   supabase: TypedSupabaseClient,
   wsId: string,
   subscription: Subscription
 ) {
-  const { data: product, error: productError } = await supabase
+  const { data: product, error: productError } = await privateSchema(supabase)
     .from('workspace_subscription_products')
     .select('pricing_model, price_per_seat')
     .eq('id', subscription.product.id)

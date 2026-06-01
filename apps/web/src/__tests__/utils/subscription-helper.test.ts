@@ -397,6 +397,9 @@ describe('subscription-helper', () => {
           if (callCount === 2) return mockWorkspaceChain2; // createFreeSubscription workspace fetch
           return mockProductChain; // product fetch
         }),
+        schema: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue(mockProductChain),
+        }),
       } as unknown as TypedSupabaseClient;
 
       const result = await createFreeSubscription(
@@ -461,6 +464,9 @@ describe('subscription-helper', () => {
           if (callCount === 1) return mockWorkspaceChain1; // hasActiveSubscription check
           if (callCount === 2) return mockWorkspaceChain2; // createFreeSubscription workspace fetch
           return mockProductChain; // product fetch
+        }),
+        schema: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue(mockProductChain),
         }),
       } as unknown as TypedSupabaseClient;
 
@@ -535,6 +541,9 @@ describe('subscription-helper', () => {
           if (callCount === 2) return mockWorkspaceChain2; // createFreeSubscription workspace fetch
           return mockProductChain; // product fetch
         }),
+        schema: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue(mockProductChain),
+        }),
       } as unknown as TypedSupabaseClient;
 
       const result = await createFreeSubscription(
@@ -601,6 +610,9 @@ describe('subscription-helper', () => {
           if (callCount === 2) return mockWorkspaceChain2; // createFreeSubscription workspace fetch
           return mockProductChain; // product fetch
         }),
+        schema: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue(mockProductChain),
+        }),
       } as unknown as TypedSupabaseClient;
 
       const result = await createFreeSubscription(
@@ -658,6 +670,9 @@ describe('subscription-helper', () => {
           if (callCount === 1) return mockWorkspaceChain1; // hasActiveSubscription check
           if (callCount === 2) return mockWorkspaceChain2; // createFreeSubscription workspace fetch
           return mockProductChain; // product fetch
+        }),
+        schema: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue(mockProductChain),
         }),
       } as unknown as TypedSupabaseClient;
 

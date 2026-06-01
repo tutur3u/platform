@@ -1,6 +1,10 @@
 import type { Polar, Subscription } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 
+function privateSchema(supabase: TypedSupabaseClient) {
+  return supabase.schema('private');
+}
+
 export type CreateFreeSubscriptionResult =
   | {
       status: 'created';
@@ -105,7 +109,9 @@ export async function createFreeSubscription(
     externalCustomerId = `workspace_${wsId}`;
   }
 
-  const { data: freeProduct, error: productError } = await supabase
+  const { data: freeProduct, error: productError } = await privateSchema(
+    supabase
+  )
     .from('workspace_subscription_products')
     .select('*')
     .eq('archived', false)

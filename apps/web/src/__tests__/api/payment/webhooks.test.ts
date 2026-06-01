@@ -33,16 +33,6 @@ const mockCreditPackUpsert = vi.fn<() => MockUpsertResult>();
 
 const mockSupabase = {
   from: vi.fn().mockImplementation((table) => {
-    if (table === 'workspace_subscription_products') {
-      const chainable = {
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            single: mockSingle,
-          }),
-        }),
-      };
-      return chainable;
-    }
     if (table === 'workspace_subscriptions') {
       return {
         upsert: mockUpsert,
@@ -59,6 +49,25 @@ const mockSupabase = {
       };
     }
     return {};
+  }),
+  schema: vi.fn().mockImplementation((schemaName) => {
+    if (schemaName !== 'private') return {};
+
+    return {
+      from: vi.fn().mockImplementation((table) => {
+        if (table === 'workspace_subscription_products') {
+          const chainable = {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: mockSingle,
+              }),
+            }),
+          };
+          return chainable;
+        }
+        return {};
+      }),
+    };
   }),
 } as unknown as TypedSupabaseClient;
 

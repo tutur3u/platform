@@ -57,9 +57,7 @@ export async function GET(req: Request) {
     // Get subscription and member count
     const { data: subscription } = await sbAdmin
       .from('workspace_subscriptions')
-      .select(
-        '*, workspace_subscription_products(pricing_model, price_per_seat)'
-      )
+      .select('*')
       .eq('ws_id', wsId)
       .in('status', SEAT_ACTIVE_STATUSES)
       .order('created_at', { ascending: false })
@@ -71,7 +69,14 @@ export async function GET(req: Request) {
       .select('*', { count: 'exact', head: true })
       .eq('ws_id', wsId);
 
-    const product = subscription?.workspace_subscription_products;
+    const { data: product } = subscription?.product_id
+      ? await sbAdmin
+          .schema('private')
+          .from('workspace_subscription_products')
+          .select('pricing_model, price_per_seat')
+          .eq('id', subscription.product_id)
+          .maybeSingle()
+      : { data: null };
 
     const isSeatBased = product?.pricing_model === 'seat_based';
     const currentMembers = memberCount ?? 0;
@@ -138,21 +143,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get current seat-based subscription with product limits
-    // pricing_model lives on workspace_subscription_products, not workspace_subscriptions
+    // Get current subscription, then resolve private product limits.
     const { data: subscription } = await sbAdmin
       .from('workspace_subscriptions')
-      .select(
-        '*, workspace_subscription_products!inner(pricing_model, max_seats, min_seats, price_per_seat)'
-      )
+      .select('*')
       .eq('ws_id', wsId)
       .in('status', SEAT_ACTIVE_STATUSES)
-      .eq('workspace_subscription_products.pricing_model', 'seat_based')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (!subscription) {
+    const { data: product } = subscription?.product_id
+      ? await sbAdmin
+          .schema('private')
+          .from('workspace_subscription_products')
+          .select('pricing_model, max_seats, min_seats, price_per_seat')
+          .eq('id', subscription.product_id)
+          .maybeSingle()
+      : { data: null };
+
+    if (!subscription || product?.pricing_model !== 'seat_based') {
       return NextResponse.json(
         { error: 'No active seat-based subscription found' },
         { status: 400 }
@@ -168,12 +178,12 @@ export async function POST(req: Request) {
     const currentMembers = memberCount ?? 0;
 
     // Validate new seat count against constraints
-    const product = subscription.workspace_subscription_products as Pick<
+    const seatProduct = product as Pick<
       WorkspaceSubscriptionProduct,
       'pricing_model' | 'min_seats' | 'max_seats' | 'price_per_seat'
     > | null;
-    const minSeats = Math.max(1, currentMembers, product?.min_seats ?? 0);
-    const maxSeats = product?.max_seats ?? Infinity;
+    const minSeats = Math.max(1, currentMembers, seatProduct?.min_seats ?? 0);
+    const maxSeats = seatProduct?.max_seats ?? Infinity;
 
     if (newSeatCount < minSeats) {
       return NextResponse.json(

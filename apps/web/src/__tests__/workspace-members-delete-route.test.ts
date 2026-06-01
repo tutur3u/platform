@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => {
   );
 
   const workspaceSubscriptionSingle = vi.fn();
+  const subscriptionProductMaybeSingle = vi.fn();
   const inviteDeleteByUserId = vi.fn();
   const memberDeleteByUserId = vi.fn();
   const getExternalCustomer = vi.fn();
@@ -60,6 +61,27 @@ const mocks = vi.hoisted(() => {
 
       throw new Error(`Unexpected admin table: ${table}`);
     }),
+    schema: vi.fn((schemaName: string) => {
+      if (schemaName !== 'private') {
+        throw new Error(`Unexpected admin schema: ${schemaName}`);
+      }
+
+      return {
+        from: vi.fn((table: string) => {
+          if (table !== 'workspace_subscription_products') {
+            throw new Error(`Unexpected private admin table: ${table}`);
+          }
+
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: subscriptionProductMaybeSingle,
+              })),
+            })),
+          };
+        }),
+      };
+    }),
   };
 
   const polarClient = {
@@ -83,6 +105,7 @@ const mocks = vi.hoisted(() => {
     polarClient,
     revokeSeat,
     sessionSupabase,
+    subscriptionProductMaybeSingle,
     workspaceSubscriptionSingle,
   };
 });
@@ -112,9 +135,13 @@ describe('workspace members delete route', () => {
     mocks.workspaceSubscriptionSingle.mockResolvedValue({
       data: {
         polar_subscription_id: 'sub-1',
-        workspace_subscription_products: {
-          pricing_model: 'seat_based',
-        },
+        product_id: 'product-1',
+      },
+      error: null,
+    });
+    mocks.subscriptionProductMaybeSingle.mockResolvedValue({
+      data: {
+        pricing_model: 'seat_based',
       },
       error: null,
     });

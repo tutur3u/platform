@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { format } from 'date-fns';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -13,7 +16,7 @@ export async function GET(
     // Fetch subscription data
     const { data: subscription, error } = await supabase
       .from('workspace_subscriptions')
-      .select('*, workspace_subscription_products(price)')
+      .select('*')
       .eq('ws_id', wsId)
       .single();
 
@@ -24,7 +27,20 @@ export async function GET(
       );
     }
 
-    const invoiceHtml = generateInvoiceHtml(subscription);
+    const sbAdmin = await createAdminClient();
+    const { data: product } = subscription.product_id
+      ? await sbAdmin
+          .schema('private')
+          .from('workspace_subscription_products')
+          .select('price')
+          .eq('id', subscription.product_id)
+          .maybeSingle()
+      : { data: null };
+
+    const invoiceHtml = generateInvoiceHtml({
+      ...subscription,
+      workspace_subscription_products: product,
+    });
 
     return new NextResponse(invoiceHtml, {
       headers: {
@@ -43,7 +59,7 @@ export async function GET(
 
 function generateInvoiceHtml(subscription: any): string {
   const price = subscription.workspace_subscription_products?.price;
-  const amount = price ? `$${price.toFixed(2)}` : '--';
+  const amount = price != null ? `$${price.toFixed(2)}` : '--';
   const date = subscription.created_at
     ? format(new Date(subscription.created_at), 'MMMM d, yyyy')
     : format(new Date(), 'MMMM d, yyyy');
@@ -407,7 +423,7 @@ function generateInvoiceHtml(subscription: any): string {
               </div>
               <div class="summary-item">
                 <span class="summary-label">Amount:</span>
-                <span class="summary-value">${subscription.workspace_subscription_products.price.toFixed(2)}</span>
+                <span class="summary-value">${amount}</span>
               </div>
               <div class="summary-item">
                 <span class="summary-label">Invoice ID:</span>

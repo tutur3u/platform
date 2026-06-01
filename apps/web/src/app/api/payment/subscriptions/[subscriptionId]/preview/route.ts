@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -64,21 +67,7 @@ export async function POST(
   // Get subscription from database with product details
   const { data: subscription, error: subscriptionError } = await supabase
     .from('workspace_subscriptions')
-    .select(
-      `
-      *,
-      workspace_subscription_products (
-        id,
-        name,
-        price,
-        recurring_interval,
-        pricing_model,
-        price_per_seat,
-        min_seats,
-        max_seats
-      )
-    `
-    )
+    .select('*')
     .eq('id', subscriptionId)
     .maybeSingle();
 
@@ -130,8 +119,30 @@ export async function POST(
     );
   }
 
+  const sbAdmin = await createAdminClient();
+  const { data: currentProduct, error: currentProductError } =
+    subscription.product_id
+      ? await sbAdmin
+          .schema('private')
+          .from('workspace_subscription_products')
+          .select(
+            'id, name, price, recurring_interval, pricing_model, price_per_seat, min_seats, max_seats'
+          )
+          .eq('id', subscription.product_id)
+          .maybeSingle()
+      : { data: null, error: null };
+
+  if (currentProductError) {
+    console.error('Error fetching current product:', currentProductError);
+    return NextResponse.json(
+      { error: 'An error occurred while fetching the current product' },
+      { status: 500 }
+    );
+  }
+
   // Get target product details
-  const { data: targetProduct, error: targetProductError } = await supabase
+  const { data: targetProduct, error: targetProductError } = await sbAdmin
+    .schema('private')
     .from('workspace_subscription_products')
     .select('*')
     .eq('id', productId)
@@ -151,8 +162,6 @@ export async function POST(
       { status: 404 }
     );
   }
-
-  const currentProduct = subscription.workspace_subscription_products;
 
   if (!currentProduct) {
     return NextResponse.json(

@@ -70,7 +70,7 @@ export async function fetchWorkspaceOrders(
   try {
     const { data: orders, error } = await supabase
       .from('workspace_orders')
-      .select('*, workspace_subscription_products (name, price)')
+      .select('*')
       .eq('ws_id', wsId)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -81,6 +81,13 @@ export async function fetchWorkspaceOrders(
     }
 
     const orderRows = orders ?? [];
+    const subscriptionProductIds = [
+      ...new Set(
+        orderRows
+          .map((order) => order.product_id)
+          .filter((id): id is string => Boolean(id))
+      ),
+    ];
     const creditPackIds = [
       ...new Set(
         orderRows
@@ -89,6 +96,13 @@ export async function fetchWorkspaceOrders(
       ),
     ];
 
+    const { data: subscriptionProducts, error: productsError } =
+      subscriptionProductIds.length > 0
+        ? await privateSchema(supabase)
+            .from('workspace_subscription_products')
+            .select('id, name, price')
+            .in('id', subscriptionProductIds)
+        : { data: [], error: null };
     const { data: creditPacks, error: creditPacksError } =
       creditPackIds.length > 0
         ? await privateSchema(supabase)
@@ -97,6 +111,13 @@ export async function fetchWorkspaceOrders(
             .in('id', creditPackIds)
         : { data: [], error: null };
 
+    if (productsError) {
+      console.error('Error fetching workspace order subscription products:', {
+        error: productsError,
+      });
+      return [];
+    }
+
     if (creditPacksError) {
       console.error('Error fetching workspace order credit packs:', {
         error: creditPacksError,
@@ -104,6 +125,9 @@ export async function fetchWorkspaceOrders(
       return [];
     }
 
+    const subscriptionProductsById = new Map(
+      (subscriptionProducts ?? []).map((product) => [product.id, product])
+    );
     const creditPacksById = new Map(
       (creditPacks ?? []).map((creditPack) => [creditPack.id, creditPack])
     );
@@ -112,22 +136,19 @@ export async function fetchWorkspaceOrders(
       const creditPack = order.credit_pack_id
         ? creditPacksById.get(order.credit_pack_id)
         : null;
+      const subscriptionProduct = order.product_id
+        ? subscriptionProductsById.get(order.product_id)
+        : null;
 
       return {
         id: order.id,
         createdAt: order.created_at,
         billingReason: order.billing_reason ?? 'unknown',
         totalAmount: order.total_amount ?? 0,
-        originalAmount:
-          order.workspace_subscription_products?.price ??
-          creditPack?.price ??
-          0,
+        originalAmount: subscriptionProduct?.price ?? creditPack?.price ?? 0,
         currency: order.currency ?? 'usd',
         status: order.status,
-        productName:
-          order.workspace_subscription_products?.name ??
-          creditPack?.name ??
-          'N/A',
+        productName: subscriptionProduct?.name ?? creditPack?.name ?? 'N/A',
       };
     });
   } catch (error) {
@@ -162,22 +183,7 @@ export async function fetchSubscription(
 ) {
   const { data: dbSub, error } = await supabase
     .from('workspace_subscriptions')
-    .select(
-      `
-      *,
-      workspace_subscription_products (
-        id,
-        name,
-        description,
-        price,
-        recurring_interval,
-        tier,
-        pricing_model,
-        price_per_seat,
-        max_seats
-      )
-    `
-    )
+    .select('*')
     .eq('ws_id', wsId)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -193,7 +199,22 @@ export async function fetchSubscription(
     return null;
   }
 
-  if (!dbSub.workspace_subscription_products) return null;
+  if (!dbSub.product_id) return null;
+
+  const { data: product, error: productError } = await privateSchema(supabase)
+    .from('workspace_subscription_products')
+    .select(
+      'id, name, description, price, recurring_interval, tier, pricing_model, price_per_seat, max_seats'
+    )
+    .eq('id', dbSub.product_id)
+    .maybeSingle();
+
+  if (productError) {
+    console.error('Error fetching subscription product:', productError);
+    return null;
+  }
+
+  if (!product) return null;
 
   let seatList: CustomerSeat[] = [];
 
@@ -214,7 +235,7 @@ export async function fetchSubscription(
     currentPeriodStart: dbSub.current_period_start,
     currentPeriodEnd: dbSub.current_period_end,
     cancelAtPeriodEnd: dbSub.cancel_at_period_end,
-    product: dbSub.workspace_subscription_products,
+    product,
     // Seat-based pricing fields
     seatCount: dbSub.seat_count,
     seatList,

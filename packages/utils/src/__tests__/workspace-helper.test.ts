@@ -49,9 +49,12 @@ describe('workspace-helper tier lookup', () => {
       {
         ws_id: workspaceOneId,
         created_at: '2026-03-10T00:00:00.000Z',
+        product_id: 'product-pro',
         status: 'active',
-        workspace_subscription_products: { tier: 'PRO' },
       },
+    ]);
+    const productQuery = createSubscriptionProductLookupQuery([
+      { id: 'product-pro', tier: 'PRO' },
     ]);
 
     mockCreateClient.mockResolvedValue(
@@ -61,7 +64,7 @@ describe('workspace-helper tier lookup', () => {
       })
     );
     mockCreateAdminClient.mockResolvedValue(
-      createAdminClient({ subscriptionQuery })
+      createAdminClient({ productQuery, subscriptionQuery })
     );
 
     const workspace = await getWorkspace(workspaceOneId);
@@ -73,8 +76,9 @@ describe('workspace-helper tier lookup', () => {
       '*, workspace_members!inner(user_id)'
     );
     expect(subscriptionQuery.select).toHaveBeenCalledWith(
-      'ws_id, created_at, status, workspace_subscription_products(tier)'
+      'ws_id, created_at, status, product_id'
     );
+    expect(productQuery.in).toHaveBeenCalledWith('id', ['product-pro']);
   });
 
   it('hydrates workspace list tiers from the subscription lookup query', async () => {
@@ -102,15 +106,19 @@ describe('workspace-helper tier lookup', () => {
       {
         ws_id: workspaceOneId,
         created_at: '2026-03-10T00:00:00.000Z',
+        product_id: 'product-plus',
         status: 'active',
-        workspace_subscription_products: { tier: 'PLUS' },
       },
       {
         ws_id: workspaceTwoId,
         created_at: '2026-03-11T00:00:00.000Z',
+        product_id: 'product-enterprise',
         status: 'canceled',
-        workspace_subscription_products: { tier: 'ENTERPRISE' },
       },
+    ]);
+    const productQuery = createSubscriptionProductLookupQuery([
+      { id: 'product-plus', tier: 'PLUS' },
+      { id: 'product-enterprise', tier: 'ENTERPRISE' },
     ]);
 
     mockCreateClient.mockResolvedValue(
@@ -120,7 +128,7 @@ describe('workspace-helper tier lookup', () => {
       })
     );
     mockCreateAdminClient.mockResolvedValue(
-      createAdminClient({ subscriptionQuery })
+      createAdminClient({ productQuery, subscriptionQuery })
     );
 
     const workspaces = await getWorkspaces();
@@ -136,6 +144,10 @@ describe('workspace-helper tier lookup', () => {
       workspaceOneId,
       workspaceTwoId,
     ]);
+    expect(productQuery.in).toHaveBeenCalledWith('id', [
+      'product-plus',
+      'product-enterprise',
+    ]);
   });
 
   it('resolves workspace handles through direct lookup', async () => {
@@ -146,6 +158,7 @@ describe('workspace-helper tier lookup', () => {
       workspace_members: [{ user_id: 'user-1' }],
     });
     const subscriptionQuery = createSubscriptionLookupQuery([]);
+    const productQuery = createSubscriptionProductLookupQuery([]);
 
     mockCreateClient.mockResolvedValue(
       createUserClient({
@@ -154,7 +167,7 @@ describe('workspace-helper tier lookup', () => {
       })
     );
     mockCreateAdminClient.mockResolvedValue(
-      createAdminClient({ subscriptionQuery })
+      createAdminClient({ productQuery, subscriptionQuery })
     );
 
     const workspace = await getWorkspace('traffic-advice');
@@ -172,6 +185,7 @@ describe('workspace-helper tier lookup', () => {
       workspace_members: [{ user_id: 'user-1' }],
     });
     const subscriptionQuery = createSubscriptionLookupQuery([]);
+    const productQuery = createSubscriptionProductLookupQuery([]);
 
     mockCreateClient.mockResolvedValue(
       createUserClient({
@@ -180,7 +194,7 @@ describe('workspace-helper tier lookup', () => {
       })
     );
     mockCreateAdminClient.mockResolvedValue(
-      createAdminClient({ subscriptionQuery })
+      createAdminClient({ productQuery, subscriptionQuery })
     );
 
     const workspace = await getWorkspace(fixtureWorkspaceId);
@@ -675,8 +689,10 @@ function createUserClient({
 }
 
 function createAdminClient({
+  productQuery,
   subscriptionQuery,
 }: {
+  productQuery: ReturnType<typeof createSubscriptionProductLookupQuery>;
   subscriptionQuery: ReturnType<typeof createSubscriptionLookupQuery>;
 }) {
   return {
@@ -686,6 +702,21 @@ function createAdminClient({
       }
 
       return subscriptionQuery;
+    }),
+    schema: vi.fn((schemaName: string) => {
+      if (schemaName !== 'private') {
+        throw new Error(`Unexpected admin schema lookup: ${schemaName}`);
+      }
+
+      return {
+        from: vi.fn((table: string) => {
+          if (table !== 'workspace_subscription_products') {
+            throw new Error(`Unexpected private table lookup: ${table}`);
+          }
+
+          return productQuery;
+        }),
+      };
     }),
   };
 }
@@ -717,6 +748,20 @@ function createWorkspacesQuery(data: Array<Record<string, unknown>>) {
 }
 
 function createSubscriptionLookupQuery(data: Array<Record<string, unknown>>) {
+  const query = {
+    select: vi.fn(),
+    in: vi.fn(),
+  };
+
+  query.select.mockReturnValue(query);
+  query.in.mockResolvedValue({ data, error: null });
+
+  return query;
+}
+
+function createSubscriptionProductLookupQuery(
+  data: Array<Record<string, unknown>>
+) {
   const query = {
     select: vi.fn(),
     in: vi.fn(),

@@ -15,6 +15,10 @@ interface Params {
   }>;
 }
 
+function privateSchema(supabase: TypedSupabaseClient) {
+  return supabase.schema('private');
+}
+
 export async function GET(req: NextRequest, { params }: Params) {
   const { wsId: id } = await params;
   const supabase = await createClient(req);
@@ -269,23 +273,21 @@ async function revokeSeatFromMember(
   // Fetch active subscription
   const { data: subscription } = await supabase
     .from('workspace_subscriptions')
-    .select(
-      `
-      polar_subscription_id,
-      workspace_subscription_products (
-        pricing_model
-      )
-    `
-    )
+    .select('polar_subscription_id, product_id')
     .eq('ws_id', wsId)
     .eq('status', 'active')
     .single();
 
+  const { data: product } = subscription?.product_id
+    ? await privateSchema(supabase)
+        .from('workspace_subscription_products')
+        .select('pricing_model')
+        .eq('id', subscription.product_id)
+        .maybeSingle()
+    : { data: null };
+
   // No active subscription or not seat-based
-  if (
-    subscription?.workspace_subscription_products?.pricing_model !==
-    'seat_based'
-  ) {
+  if (!subscription || product?.pricing_model !== 'seat_based') {
     return; // Skip for non-seat-based subscriptions
   }
 

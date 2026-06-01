@@ -30,16 +30,67 @@ function normalizeWorkspaceTier(
   }
 }
 
-function resolveWorkspaceTier(workspace: {
-  workspace_subscriptions?: Array<{
-    created_at?: string | null;
-    status?: string | null;
-    workspace_subscription_products?:
-      | { tier?: string | null }
-      | Array<{ tier?: string | null }>
-      | null;
-  }> | null;
-}) {
+type WorkspaceSubscriptionTierData = {
+  created_at?: string | null;
+  product_id?: string | null;
+  status?: string | null;
+  workspace_subscription_products?:
+    | { tier?: string | null }
+    | Array<{ tier?: string | null }>
+    | null;
+};
+
+function collectSubscriptionProductIds(
+  workspace:
+    | {
+        workspace_subscriptions?: WorkspaceSubscriptionTierData[] | null;
+      }
+    | null
+    | undefined,
+  productIds: Set<string>
+) {
+  for (const subscription of workspace?.workspace_subscriptions ?? []) {
+    if (subscription?.product_id) {
+      productIds.add(subscription.product_id);
+    }
+  }
+}
+
+async function fetchSubscriptionProductTierMap(
+  supabase: TypedSupabaseClient,
+  productIds: string[]
+) {
+  const tierByProductId = new Map<
+    string,
+    InternalApiWorkspaceSummary['tier']
+  >();
+
+  if (productIds.length === 0) return tierByProductId;
+
+  const { data, error } = await supabase
+    .schema('private')
+    .from('workspace_subscription_products')
+    .select('id, tier')
+    .in('id', productIds);
+
+  if (error) return tierByProductId;
+
+  for (const product of (data ?? []) as Array<{
+    id: string;
+    tier?: string | null;
+  }>) {
+    tierByProductId.set(product.id, normalizeWorkspaceTier(product.tier));
+  }
+
+  return tierByProductId;
+}
+
+function resolveWorkspaceTier(
+  workspace: {
+    workspace_subscriptions?: WorkspaceSubscriptionTierData[] | null;
+  },
+  productTiersById: Map<string, InternalApiWorkspaceSummary['tier']>
+) {
   const activeSubscriptions =
     workspace.workspace_subscriptions
       ?.filter((subscription) => subscription?.status === 'active')
@@ -50,6 +101,14 @@ function resolveWorkspaceTier(workspace: {
       ) ?? [];
 
   for (const subscription of activeSubscriptions) {
+    if (subscription.product_id) {
+      const tier = productTiersById.get(subscription.product_id);
+
+      if (tier) {
+        return tier;
+      }
+    }
+
     const product = subscription.workspace_subscription_products;
 
     if (product && !Array.isArray(product) && product.tier) {
@@ -163,7 +222,7 @@ export async function fetchWorkspaceSummaries({
   const { data: workspaces, error } = await sbAdmin
     .from('workspaces')
     .select(
-      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
+      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, product_id)'
     )
     .eq('workspace_members.user_id', userId);
 
@@ -229,6 +288,7 @@ export async function fetchWorkspaceSummaries({
             personal?: boolean | null;
             workspace_subscriptions?: Array<{
               created_at?: string | null;
+              product_id?: string | null;
               status?: string | null;
               workspace_subscription_products?:
                 | { tier?: string | null }
@@ -245,6 +305,7 @@ export async function fetchWorkspaceSummaries({
             personal?: boolean | null;
             workspace_subscriptions?: Array<{
               created_at?: string | null;
+              product_id?: string | null;
               status?: string | null;
               workspace_subscription_products?:
                 | { tier?: string | null }
@@ -272,9 +333,7 @@ export async function fetchWorkspaceSummaries({
         workspace_subscriptions!left (
           created_at,
           status,
-          workspace_subscription_products (
-            tier
-          )
+          product_id
         )
       )
     )
@@ -304,6 +363,22 @@ export async function fetchWorkspaceSummaries({
       );
     }
   }
+
+  const subscriptionProductIds = new Set<string>();
+  for (const workspace of workspaces) {
+    collectSubscriptionProductIds(workspace, subscriptionProductIds);
+  }
+  for (const share of guestShareRows) {
+    const board = share.workspace_boards;
+    const workspace = Array.isArray(board?.workspaces)
+      ? board?.workspaces[0]
+      : board?.workspaces;
+    collectSubscriptionProductIds(workspace, subscriptionProductIds);
+  }
+  const productTiersById = await fetchSubscriptionProductTierMap(
+    sbAdmin as TypedSupabaseClient,
+    [...subscriptionProductIds]
+  );
 
   for (const share of guestShareRows) {
     const board = share.workspace_boards;
@@ -337,7 +412,7 @@ export async function fetchWorkspaceSummaries({
         : workspace?.avatar_url || null,
       logo_url: workspace?.logo_url || null,
       created_by_me: workspace?.creator_id === userId,
-      tier: resolveWorkspaceTier(workspace ?? {}),
+      tier: resolveWorkspaceTier(workspace ?? {}, productTiersById),
       access_type: 'guest',
       guest_products: ['tasks'],
       guest_board_count: guestBoardIds.size,
@@ -362,7 +437,7 @@ export async function fetchWorkspaceSummaries({
       avatar_url: ws.personal ? userAvatarUrl || ws.avatar_url : ws.avatar_url,
       logo_url: ws.logo_url,
       created_by_me: ws.creator_id === userId,
-      tier: resolveWorkspaceTier(ws),
+      tier: resolveWorkspaceTier(ws, productTiersById),
       access_type: 'member' as const,
     };
   });

@@ -67,7 +67,7 @@ export async function resolveWorkspaceOrderProduct(
   }
 
   const { data: subscriptionProduct, error: subscriptionProductError } =
-    await supabase
+    await privateSchema(supabase)
       .from('workspace_subscription_products')
       .select('id')
       .eq('id', polarProductId)
@@ -136,7 +136,7 @@ async function upsertSubscriptionProduct(
     max_seats: maxSeats,
   };
 
-  const { error: upsertError } = await supabase
+  const { error: upsertError } = await privateSchema(supabase)
     .from('workspace_subscription_products')
     .upsert([productData], {
       onConflict: 'id',

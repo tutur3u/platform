@@ -17,7 +17,6 @@ values
   ('nova_problems'),
   ('nova_submission_test_cases'),
   ('nova_teams'),
-  ('workspace_subscription_products'),
   ('workspace_wallets');
 
 select ok(

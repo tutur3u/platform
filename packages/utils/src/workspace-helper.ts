@@ -140,6 +140,8 @@ async function resolveAuthenticatedPrincipal(
  */
 interface WorkspaceSubscriptionData {
   created_at: string;
+  product_id?: string | null;
+  product_tier?: WorkspaceProductTier | null;
   status?: string | null;
   workspace_subscription_products?: {
     tier?: WorkspaceProductTier | null;
@@ -148,6 +150,11 @@ interface WorkspaceSubscriptionData {
 
 interface WorkspaceSubscriptionTierLookupRow extends WorkspaceSubscriptionData {
   ws_id: string;
+}
+
+interface WorkspaceSubscriptionProductTierRow {
+  id: string;
+  tier: WorkspaceProductTier | null;
 }
 
 /**
@@ -173,7 +180,9 @@ export function extractTierFromSubscriptions(
     );
 
   return (
-    activeSubscriptions?.[0]?.workspace_subscription_products?.tier || null
+    activeSubscriptions?.[0]?.product_tier ??
+    activeSubscriptions?.[0]?.workspace_subscription_products?.tier ??
+    null
   );
 }
 
@@ -185,7 +194,7 @@ async function getWorkspaceTierMap(
   const sbAdmin = await createAdminClient();
   const { data, error } = await sbAdmin
     .from('workspace_subscriptions')
-    .select('ws_id, created_at, status, workspace_subscription_products(tier)')
+    .select('ws_id, created_at, status, product_id')
     .in('ws_id', workspaceIds);
 
   if (error) {
@@ -199,6 +208,43 @@ async function getWorkspaceTierMap(
     );
   }
 
+  const productIds = [
+    ...new Set(
+      ((data ?? []) as WorkspaceSubscriptionTierLookupRow[])
+        .map((subscription) => subscription.product_id)
+        .filter((productId): productId is string => Boolean(productId))
+    ),
+  ];
+  const productTiersById = new Map<string, WorkspaceProductTier | null>();
+
+  if (productIds.length > 0) {
+    const { data: products, error: productsError } = await sbAdmin
+      .schema('private')
+      .from('workspace_subscription_products')
+      .select('id, tier')
+      .in('id', productIds);
+
+    if (productsError) {
+      logWorkspaceError(
+        'Failed to fetch workspace subscription products',
+        productsError,
+        {
+          productIds,
+          errorCode: productsError.code,
+          errorDetails: productsError.details,
+        }
+      );
+      return new Map(
+        workspaceIds.map((workspaceId) => [workspaceId, null] as const)
+      );
+    }
+
+    for (const product of (products ??
+      []) as WorkspaceSubscriptionProductTierRow[]) {
+      productTiersById.set(product.id, product.tier);
+    }
+  }
+
   const subscriptionsByWorkspace = new Map<
     string,
     WorkspaceSubscriptionData[]
@@ -207,7 +253,12 @@ async function getWorkspaceTierMap(
   for (const subscription of (data ??
     []) as WorkspaceSubscriptionTierLookupRow[]) {
     const current = subscriptionsByWorkspace.get(subscription.ws_id) ?? [];
-    current.push(subscription);
+    current.push({
+      ...subscription,
+      product_tier: subscription.product_id
+        ? (productTiersById.get(subscription.product_id) ?? null)
+        : null,
+    });
     subscriptionsByWorkspace.set(subscription.ws_id, current);
   }
 

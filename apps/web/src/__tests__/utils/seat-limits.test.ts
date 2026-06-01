@@ -14,6 +14,13 @@ describe('seat-limits utils', () => {
     memberCount: number,
     invites: { workspace: number; email: number } = { workspace: 0, email: 0 }
   ) => {
+    const product = subscription?.workspace_subscription_products ?? null;
+    const dbSubscription = subscription
+      ? {
+          ...subscription,
+          product_id: subscription.product_id ?? 'product-1',
+        }
+      : null;
     const mockQuery: any = {
       from: vi.fn().mockImplementation((table) => {
         if (table === 'workspace_subscriptions') {
@@ -23,7 +30,7 @@ describe('seat-limits utils', () => {
             in: vi.fn().mockReturnThis(),
             order: vi.fn().mockReturnThis(),
             limit: vi.fn().mockReturnThis(),
-            maybeSingle: vi.fn().mockResolvedValue({ data: subscription }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: dbSubscription }),
           };
         }
         if (table === 'workspace_members') {
@@ -45,6 +52,24 @@ describe('seat-limits utils', () => {
           };
         }
         return {};
+      }),
+      schema: vi.fn().mockImplementation((schemaName) => {
+        if (schemaName !== 'private') return {};
+
+        return {
+          from: vi.fn().mockImplementation((table) => {
+            if (table !== 'workspace_subscription_products') return {};
+
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: product,
+                error: null,
+              }),
+            };
+          }),
+        };
       }),
     };
     return mockQuery;
