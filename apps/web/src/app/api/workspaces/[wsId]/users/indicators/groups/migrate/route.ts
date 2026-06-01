@@ -1,7 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { VitalGroup } from '@tuturuuu/types/primitives/VitalGroup';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resolveUserGroupRouteWorkspaceId } from '@/lib/user-groups/route-helpers';
 
 interface Params {
@@ -10,8 +11,41 @@ interface Params {
   }>;
 }
 
+const migrateCategorySchema = z.object({
+  created_at: z.string().min(1).nullable().optional(),
+  description: z.string().nullable().optional(),
+  id: z.string().uuid(),
+  name: z.string().trim().min(1),
+  note: z.string().nullable().optional(),
+});
+
+const migrateRequestSchema = z.object({
+  groups: z.array(migrateCategorySchema).optional().default([]),
+});
+
+type MetricCategoryMigrationPayload = z.infer<typeof migrateCategorySchema>;
+
+function findDuplicateCategoryId(categories: MetricCategoryMigrationPayload[]) {
+  const seenIds = new Set<string>();
+
+  for (const category of categories) {
+    const id = category.id.toLowerCase();
+    if (seenIds.has(id)) return category.id;
+    seenIds.add(id);
+  }
+
+  return null;
+}
+
+async function readJsonBody(req: Request) {
+  try {
+    return await req.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function PUT(req: Request, { params }: Params) {
-  const data = await req.json();
   const { wsId } = await params;
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
@@ -28,24 +62,55 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  const data = await readJsonBody(req);
+  const parsedData = migrateRequestSchema.safeParse(data);
+
+  if (!parsedData.success) {
+    return NextResponse.json(
+      { message: 'Invalid metric category migration payload' },
+      { status: 400 }
+    );
+  }
+
+  const duplicateId = findDuplicateCategoryId(parsedData.data.groups);
+
+  if (duplicateId) {
+    return NextResponse.json(
+      { message: 'Duplicate metric category id', id: duplicateId },
+      { status: 400 }
+    );
+  }
+
+  const categories = parsedData.data.groups.map((category) => ({
+    created_at: category.created_at ?? null,
+    description: category.description ?? null,
+    id: category.id,
+    name: category.name,
+    note: category.note ?? null,
+  }));
+
   const supabase = await createAdminClient();
   const { error } = await supabase
     .schema('private')
-    // .from('workspace_indicators')
-    .from('user_group_metric_categories')
-    .upsert(
-      (data?.groups || []).map((u: VitalGroup) => ({
-        ...u,
-        ws_id: normalizedWsId,
-      }))
-    )
-    .eq('id', data.id);
+    .rpc('admin_upsert_user_group_metric_categories_for_workspace', {
+      p_categories: categories,
+      p_ws_id: normalizedWsId,
+    });
 
-  if (error)
+  if (error?.code === 'P0002') {
+    return NextResponse.json(
+      { message: 'Metric category not found' },
+      { status: 404 }
+    );
+  }
+
+  if (error) {
+    serverLogger.error('Error migrating workspace indicator groups:', error);
     return NextResponse.json(
       { message: 'Error migrating workspace indicator groups' },
       { status: 500 }
     );
+  }
 
   return NextResponse.json({ message: 'success' });
 }

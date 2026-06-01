@@ -7701,6 +7701,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      admin_upsert_user_group_metric_categories_for_workspace: {
+        Args: { p_categories: Json; p_ws_id: string };
+        Returns: number;
+      };
       admin_upsert_user_indicator_values_with_audit_actor: {
         Args: {
           p_actor_auth_uid?: string;

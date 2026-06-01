@@ -1,11 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { authorizeInfrastructureMigrationExport } from '../migration-export-auth';
 
 export async function GET(req: Request) {
-  const sbAdmin = await createAdminClient();
-  const privateDb = sbAdmin.schema('private');
-
   const { searchParams } = new URL(req.url);
   const wsId = searchParams.get('ws_id');
   const limit = searchParams.get('limit') || '1000';
@@ -18,10 +16,16 @@ export async function GET(req: Request) {
     );
   }
 
+  const authorization = await authorizeInfrastructureMigrationExport(req, wsId);
+  if (!authorization.ok) return authorization.response;
+
+  const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
+
   const { data, error, count } = await privateDb
     .from('external_user_monthly_reports_workspace_view')
     .select('*', { count: 'exact' })
-    .eq('user_ws_id', wsId)
+    .eq('user_ws_id', authorization.value.wsId)
     .range(
       Number.parseInt(offset, 10),
       Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1

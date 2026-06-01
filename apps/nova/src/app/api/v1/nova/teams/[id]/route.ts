@@ -1,35 +1,38 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  authorizeNovaEnabledUser,
+  authorizeNovaRoleManager,
+  authorizeNovaTeamProfileEditor,
+} from '@/lib/nova-team-api-auth';
 import { withNovaTeamCounts } from '@/lib/nova-teams';
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sbAdmin = (await createAdminClient({
-      noCookie: true,
-    })) as TypedSupabaseClient;
+    const authorization = await authorizeNovaEnabledUser(request);
+    if (!authorization.ok) return authorization.response;
 
     const { id } = await params;
 
-    const { data, error } = await sbAdmin
-      .schema('private')
+    const { data, error } = await authorization.value.privateDb
       .from('nova_teams')
-      .select('*')
+      .select('id, name, description, goals, created_at')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     }
 
-    const [transformedData] = await withNovaTeamCounts(sbAdmin, [data]);
+    const [transformedData] = await withNovaTeamCounts(
+      authorization.value.sbAdmin,
+      [data]
+    );
 
     return NextResponse.json({ data: transformedData });
   } catch (error: any) {
-    console.error('Error fetching team:', error);
     return NextResponse.json(
       {
         error: error.message || 'Failed to fetch team',
@@ -44,11 +47,6 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sbAdmin = (await createAdminClient({
-      noCookie: true,
-    })) as TypedSupabaseClient;
-    const privateDb = sbAdmin.schema('private');
-
     const { id } = await params;
     const payload = (await request.json()) as {
       description?: string | null;
@@ -63,7 +61,16 @@ export async function PATCH(
     } = {};
 
     if (typeof payload.name === 'string') {
-      updatePayload.name = payload.name;
+      const name = payload.name.trim();
+
+      if (!name) {
+        return NextResponse.json(
+          { error: 'Team name is required' },
+          { status: 400 }
+        );
+      }
+
+      updatePayload.name = name;
     }
 
     if ('description' in payload) {
@@ -80,19 +87,29 @@ export async function PATCH(
         { status: 400 }
       );
     }
+
+    const authorization =
+      'name' in updatePayload
+        ? await authorizeNovaRoleManager(request)
+        : await authorizeNovaTeamProfileEditor(request, id);
+
+    if (!authorization.ok) return authorization.response;
+
+    const { privateDb } = authorization.value;
+
     const { data, error } = await privateDb
       .from('nova_teams')
       .update(updatePayload)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      throw error;
+    if (error || !data) {
+      return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     }
+
     return NextResponse.json({ data });
   } catch (error: any) {
-    console.error('Error updating team:', error);
     return NextResponse.json(
       {
         error: error.message || 'Unknown error occurred',
@@ -103,21 +120,28 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const sbAdmin = (await createAdminClient({
-      noCookie: true,
-    })) as TypedSupabaseClient;
+    const authorization = await authorizeNovaRoleManager(request);
+    if (!authorization.ok) return authorization.response;
+
+    const { privateDb } = authorization.value;
 
     const { id } = await params;
 
-    const { error } = await sbAdmin
-      .schema('private')
+    const { data: existingTeam, error: teamError } = await privateDb
       .from('nova_teams')
-      .delete()
-      .eq('id', id);
+      .select('id')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (teamError || !existingTeam) {
+      return NextResponse.json({ error: 'Team not found' }, { status: 404 });
+    }
+
+    const { error } = await privateDb.from('nova_teams').delete().eq('id', id);
 
     if (error) {
       throw error;
@@ -125,7 +149,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Error deleting team:', error);
     return NextResponse.json(
       {
         error: error.message || 'Failed to delete team',

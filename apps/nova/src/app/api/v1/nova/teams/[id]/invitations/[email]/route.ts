@@ -1,21 +1,15 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
+import { authorizeNovaRoleManager } from '@/lib/nova-team-api-auth';
 
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string; email: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const privateDb = (
-      (await createAdminClient({
-        noCookie: true,
-      })) as TypedSupabaseClient
-    ).schema('private');
+    const authorization = await authorizeNovaRoleManager(request);
+    if (!authorization.ok) return authorization.response;
+
+    const { privateDb } = authorization.value;
 
     const { id, email } = await params;
     const decodedEmail = decodeURIComponent(email);
@@ -32,8 +26,7 @@ export async function DELETE(
     }
 
     // Delete the invitation
-    const { error } = await supabase
-      .schema('private')
+    const { error } = await privateDb
       .from('nova_team_emails')
       .delete()
       .eq('team_id', id)
@@ -44,8 +37,7 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error removing team invitation:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to remove team invitation' },
       { status: 500 }

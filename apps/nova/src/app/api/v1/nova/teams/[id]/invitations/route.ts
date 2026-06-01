@@ -1,25 +1,20 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
+import { authorizeNovaRoleManager } from '@/lib/nova-team-api-auth';
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const sbAdmin = (await createAdminClient({
-      noCookie: true,
-    })) as TypedSupabaseClient;
+    const authorization = await authorizeNovaRoleManager(request);
+    if (!authorization.ok) return authorization.response;
+
+    const { privateDb } = authorization.value;
 
     const { id } = await params;
 
     // First, check if the team exists
-    const { error: teamError } = await sbAdmin
-      .schema('private')
+    const { error: teamError } = await privateDb
       .from('nova_teams')
       .select('*')
       .eq('id', id)
@@ -30,8 +25,7 @@ export async function GET(
     }
 
     // Get team invitations
-    const { data, error, count } = await supabase
-      .schema('private')
+    const { data, error, count } = await privateDb
       .from('nova_team_emails')
       .select('*', { count: 'exact' })
       .eq('team_id', id)
@@ -42,8 +36,7 @@ export async function GET(
     }
 
     return NextResponse.json({ data, count });
-  } catch (error) {
-    console.error('Error fetching team invitations:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch team invitations' },
       { status: 500 }
@@ -56,12 +49,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const privateDb = (
-      (await createAdminClient({
-        noCookie: true,
-      })) as TypedSupabaseClient
-    ).schema('private');
+    const authorization = await authorizeNovaRoleManager(request);
+    if (!authorization.ok) return authorization.response;
+
+    const { privateDb, sbAdmin } = authorization.value;
 
     const { id } = await params;
     const { email } = await request.json();
@@ -82,13 +73,16 @@ export async function POST(
     }
 
     // Check if invitation already exists
-    const { data: existingInvitation } = await supabase
-      .schema('private')
+    const { data: existingInvitation, error: invitationError } = await privateDb
       .from('nova_team_emails')
       .select('*')
       .eq('team_id', id)
       .eq('email', email)
-      .single();
+      .maybeSingle();
+
+    if (invitationError) {
+      throw invitationError;
+    }
 
     if (existingInvitation) {
       return NextResponse.json(
@@ -98,8 +92,7 @@ export async function POST(
     }
 
     // Add invitation
-    const { data, error } = await supabase
-      .schema('private')
+    const { data, error } = await privateDb
       .from('nova_team_emails')
       .insert([{ team_id: id, email }])
       .select()
@@ -108,8 +101,6 @@ export async function POST(
     if (error) {
       throw error;
     }
-
-    const sbAdmin = await createAdminClient();
 
     // Check if a user with this email exists and add them to the team
     const { data: user } = await sbAdmin
@@ -120,26 +111,27 @@ export async function POST(
 
     if (user) {
       // Check if they're already a team member
-      const { data: existingMember } = await supabase
-        .schema('private')
+      const { data: existingMember, error: memberError } = await privateDb
         .from('nova_team_members')
         .select('*')
         .eq('team_id', id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (memberError) {
+        throw memberError;
+      }
 
       if (!existingMember) {
         // Add them to the team
-        await supabase
-          .schema('private')
+        await privateDb
           .from('nova_team_members')
           .insert([{ team_id: id, user_id: user.id }]);
       }
     }
 
     return NextResponse.json({ data });
-  } catch (error) {
-    console.error('Error adding team invitation:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to add team invitation' },
       { status: 500 }

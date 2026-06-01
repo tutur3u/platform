@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(35);
+select plan(42);
 
 select ok(
   to_regclass('public.user_group_metric_categories') is null,
@@ -249,6 +249,11 @@ select ok(
 );
 
 select ok(
+  to_regprocedure('private.admin_upsert_user_group_metric_categories_for_workspace(uuid, jsonb)') is not null,
+  'private metric category workspace-bound upsert function exists'
+);
+
+select ok(
   not has_function_privilege(
     'authenticated',
     'private.get_user_group_metric_categories_count(uuid)',
@@ -272,6 +277,7 @@ select ok(
     from (
       values
         ('private.ensure_user_group_metric_category_ids(uuid, uuid[])'::regprocedure),
+        ('private.admin_upsert_user_group_metric_categories_for_workspace(uuid, jsonb)'::regprocedure),
         ('private.admin_create_user_group_metric_with_audit_actor(uuid, uuid, jsonb, uuid[], uuid)'::regprocedure),
         ('private.admin_update_user_group_metric_with_audit_actor(uuid, uuid, jsonb, uuid[], uuid)'::regprocedure)
     ) as functions(signature)
@@ -286,6 +292,7 @@ select ok(
     from (
       values
         ('private.ensure_user_group_metric_category_ids(uuid, uuid[])'::regprocedure),
+        ('private.admin_upsert_user_group_metric_categories_for_workspace(uuid, jsonb)'::regprocedure),
         ('private.admin_create_user_group_metric_with_audit_actor(uuid, uuid, jsonb, uuid[], uuid)'::regprocedure),
         ('private.admin_update_user_group_metric_with_audit_actor(uuid, uuid, jsonb, uuid[], uuid)'::regprocedure)
     ) as functions(signature)
@@ -295,6 +302,22 @@ select ok(
 );
 
 set local role service_role;
+
+insert into public.handles (value)
+values ('pgtap-metric-category-victim')
+on conflict do nothing;
+
+insert into public.workspaces (
+  id,
+  name,
+  handle,
+  creator_id
+) values (
+  '10000000-0000-0000-0000-000000000209',
+  'pgTAP metric category victim workspace',
+  'pgtap-metric-category-victim',
+  '00000000-0000-0000-0000-000000000001'
+) on conflict (id) do nothing;
 
 insert into public.workspace_user_groups (
   id,
@@ -316,6 +339,119 @@ insert into private.user_group_metric_categories (
   '00000000-0000-0000-0000-000000000000',
   'pgTAP metric category',
   'private metric category test'
+);
+
+insert into private.user_group_metric_categories (
+  id,
+  ws_id,
+  name,
+  description
+) values (
+  '10000000-0000-0000-0000-000000000203',
+  '00000000-0000-0000-0000-000000000000',
+  'pgTAP metric category before upsert',
+  'private metric category upsert test'
+);
+
+insert into private.user_group_metric_categories (
+  id,
+  ws_id,
+  name,
+  description
+) values (
+  '10000000-0000-0000-0000-000000000205',
+  '10000000-0000-0000-0000-000000000209',
+  'pgTAP victim metric category',
+  'victim row must remain unchanged'
+);
+
+select lives_ok(
+  $$
+    select private.admin_upsert_user_group_metric_categories_for_workspace(
+      '00000000-0000-0000-0000-000000000000',
+      '[
+        {
+          "id": "10000000-0000-0000-0000-000000000203",
+          "name": "pgTAP metric category after upsert",
+          "description": "same workspace update",
+          "note": "same workspace note",
+          "ws_id": "10000000-0000-0000-0000-000000000209"
+        },
+        {
+          "id": "10000000-0000-0000-0000-000000000204",
+          "name": "pgTAP inserted metric category",
+          "description": "same workspace insert"
+        }
+      ]'::jsonb
+    )
+  $$,
+  'service role can insert and update same-workspace metric categories through the guarded RPC'
+);
+
+select is(
+  (
+    select name
+    from private.user_group_metric_categories
+    where id = '10000000-0000-0000-0000-000000000203'
+  ),
+  'pgTAP metric category after upsert',
+  'guarded RPC updates same-workspace metric categories'
+);
+
+select is(
+  (
+    select ws_id::text
+    from private.user_group_metric_categories
+    where id = '10000000-0000-0000-0000-000000000204'
+  ),
+  '00000000-0000-0000-0000-000000000000',
+  'guarded RPC forces inserted metric categories into the target workspace'
+);
+
+select throws_ok(
+  $$
+    select private.admin_upsert_user_group_metric_categories_for_workspace(
+      '00000000-0000-0000-0000-000000000000',
+      '[{
+        "id": "10000000-0000-0000-0000-000000000205",
+        "name": "attempted attacker overwrite"
+      }]'::jsonb
+    )
+  $$,
+  'P0002',
+  'metric_category_not_found',
+  'guarded RPC rejects category IDs owned by a different workspace'
+);
+
+select is(
+  (
+    select ws_id::text || ':' || name
+    from private.user_group_metric_categories
+    where id = '10000000-0000-0000-0000-000000000205'
+  ),
+  '10000000-0000-0000-0000-000000000209:pgTAP victim metric category',
+  'foreign workspace category row remains unchanged after rejected guarded RPC call'
+);
+
+select throws_ok(
+  $$
+    select private.admin_upsert_user_group_metric_categories_for_workspace(
+      '00000000-0000-0000-0000-000000000000',
+      '[
+        {
+          "id": "10000000-0000-0000-0000-000000000204",
+          "name": "duplicate one"
+        },
+        {
+          "id": "10000000-0000-0000-0000-000000000204",
+          "name": "duplicate two"
+        }
+      ]'::jsonb
+    )
+  $$,
+  '22023',
+  'duplicate_metric_category',
+  'guarded RPC rejects duplicate category IDs'
 );
 
 do $$

@@ -1,16 +1,15 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { authorizeNovaRoleManager } from '@/lib/nova-team-api-auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createAdminClient({ noCookie: true });
-    const privateDb = (supabase as TypedSupabaseClient).schema('private');
-    const user = getNovaAppSessionUserFromRequest(request);
+    const authorization = await authorizeNovaRoleManager(request);
+    if (!authorization.ok) return authorization.response;
+
+    const { privateDb } = authorization.value;
 
     const { id } = await params;
 
@@ -25,26 +24,8 @@ export async function GET(
       return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     }
 
-    if (!user?.email) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    const { error: roleError } = await supabase
-      .from('platform_user_roles')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('allow_role_management', true)
-      .single();
-
-    if (roleError) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    const sbAdmin = await createAdminClient({ noCookie: true });
-
     // Get team members with user information
-    const { data, error, count } = await sbAdmin
-      .schema('private')
+    const { data, error, count } = await privateDb
       .from('nova_team_members')
       .select(
         `
@@ -62,8 +43,7 @@ export async function GET(
     }
 
     return NextResponse.json({ data, count });
-  } catch (error) {
-    console.error('Error fetching team members:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch team members' },
       { status: 500 }
@@ -76,13 +56,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createAdminClient({ noCookie: true });
-    const privateDb = (supabase as TypedSupabaseClient).schema('private');
-    const user = getNovaAppSessionUserFromRequest(request);
+    const authorization = await authorizeNovaRoleManager(request);
+    if (!authorization.ok) return authorization.response;
 
-    if (!user?.id) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    const { privateDb } = authorization.value;
 
     const { id } = await params;
     const { user_id } = await request.json();
@@ -106,13 +83,12 @@ export async function POST(
     }
 
     // Check if member already exists in the team
-    const { data: existingMember, error: memberError } = await supabase
-      .schema('private')
+    const { data: existingMember, error: memberError } = await privateDb
       .from('nova_team_members')
       .select('*')
       .eq('team_id', id)
       .eq('user_id', user_id)
-      .single();
+      .maybeSingle();
 
     if (memberError) {
       throw memberError;
@@ -126,8 +102,7 @@ export async function POST(
     }
 
     // Add user to team
-    const { data, error } = await supabase
-      .schema('private')
+    const { data, error } = await privateDb
       .from('nova_team_members')
       .insert({ team_id: id, user_id })
       .select('*')
@@ -138,8 +113,7 @@ export async function POST(
     }
 
     return NextResponse.json({ data });
-  } catch (error) {
-    console.error('Error adding team member:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to add team member' },
       { status: 500 }
