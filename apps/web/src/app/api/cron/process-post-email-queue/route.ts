@@ -22,8 +22,12 @@ const RECONCILIATION_MAX_POSTS_WHEN_QUEUE_ACTIVE = 50;
 const RECONCILIATION_EMPTY_PAGE_SCAN_BUDGET_MS = 10_000;
 const RECONCILIATION_MAX_EMPTY_PAGES = 20;
 
-type RpcCapableSupabaseClient = TypedSupabaseClient & {
+type QueueStatusSummaryRpcClient = {
   rpc?: TypedSupabaseClient['rpc'];
+};
+
+type PrivateSchemaRpcCapableSupabaseClient = TypedSupabaseClient & {
+  schema?: (schema: 'private') => QueueStatusSummaryRpcClient;
 };
 
 type QueueStatusSummary = {
@@ -49,7 +53,7 @@ type QueueStatusSummaryRpcResponse = {
 };
 
 function callQueueStatusSummaryRpc(
-  client: RpcCapableSupabaseClient,
+  client: QueueStatusSummaryRpcClient,
   args: QueueStatusSummaryRpcArgs
 ): Promise<QueueStatusSummaryRpcResponse> {
   return (
@@ -76,8 +80,13 @@ function createEmptyQueueStatusSummary(): QueueStatusSummary {
 async function getQueueStatusSummary(
   sbAdmin: TypedSupabaseClient
 ): Promise<QueueStatusSummary> {
-  const rpcClient = sbAdmin as RpcCapableSupabaseClient;
-  if (typeof rpcClient.rpc === 'function') {
+  const privateSchemaClient = sbAdmin as PrivateSchemaRpcCapableSupabaseClient;
+  const rpcClient =
+    typeof privateSchemaClient.schema === 'function'
+      ? privateSchemaClient.schema('private')
+      : null;
+
+  if (rpcClient && typeof rpcClient.rpc === 'function') {
     const { data, error } = await callQueueStatusSummaryRpc(rpcClient, {
       p_ws_id: null,
     });

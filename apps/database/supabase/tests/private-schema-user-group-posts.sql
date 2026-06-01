@@ -20,6 +20,7 @@ on commit drop;
 
 insert into migrated_rpcs(function_name)
 values
+  ('get_post_email_queue_status_summary'),
   ('get_user_group_post_recipient_rows'),
   ('get_user_group_post_status_summary'),
   ('get_workspace_post_email_rows'),
@@ -294,7 +295,7 @@ select is(
     where proc_ns.nspname = 'private'
       and proc_row.prokind = 'f'
   ),
-  9,
+  10,
   'post review and email queue RPCs exist in private'
 );
 

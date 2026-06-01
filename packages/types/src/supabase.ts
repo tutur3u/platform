@@ -8437,6 +8437,19 @@ export type Database = {
           total_count: number;
         }[];
       };
+      get_post_email_queue_status_summary: {
+        Args: { p_ws_id?: string };
+        Returns: {
+          blocked: number;
+          cancelled: number;
+          failed: number;
+          processing: number;
+          queued: number;
+          sent: number;
+          skipped: number;
+          total: number;
+        }[];
+      };
       get_post_workspace_id: { Args: { p_post_id: string }; Returns: string };
       get_rate_limit_trust_decision: {
         Args: { p_api_key_id?: string; p_ip?: unknown; p_user_id?: string };
@@ -30323,19 +30336,6 @@ export type Database = {
           id: string;
           name: string;
           ws_id: string;
-        }[];
-      };
-      get_post_email_queue_status_summary: {
-        Args: { p_ws_id?: string };
-        Returns: {
-          blocked: number;
-          cancelled: number;
-          failed: number;
-          processing: number;
-          queued: number;
-          sent: number;
-          skipped: number;
-          total: number;
         }[];
       };
       get_post_review_stage: {

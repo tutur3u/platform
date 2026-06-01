@@ -10,11 +10,14 @@ const {
   createAdminClientMock,
   mergeReconciliationResultsMock,
   processPostEmailQueueBatchMock,
+  privateRpcMock,
   reconcileOrphanedApprovedPostsMock,
   reEnqueueSkippedPostEmailsMock,
 } = vi.hoisted(() => {
+  const privateRpc = vi.fn();
   const adminClient = {
     from: vi.fn(),
+    schema: vi.fn((_schema?: string) => ({ rpc: privateRpc })),
   };
 
   return {
@@ -67,6 +70,7 @@ const {
       remainingPosts: next.remainingPosts,
     })),
     processPostEmailQueueBatchMock: vi.fn(),
+    privateRpcMock: privateRpc,
     reconcileOrphanedApprovedPostsMock: vi.fn(),
     reEnqueueSkippedPostEmailsMock: vi.fn(),
   };
@@ -130,6 +134,38 @@ function makeQueueRows(summary: {
   ];
 }
 
+function makeQueueSummaryRow(summary: {
+  blocked?: number;
+  cancelled?: number;
+  failed?: number;
+  processing?: number;
+  queued?: number;
+  sent?: number;
+  skipped?: number;
+}) {
+  const row = {
+    blocked: summary.blocked ?? 0,
+    cancelled: summary.cancelled ?? 0,
+    failed: summary.failed ?? 0,
+    processing: summary.processing ?? 0,
+    queued: summary.queued ?? 0,
+    sent: summary.sent ?? 0,
+    skipped: summary.skipped ?? 0,
+    total: 0,
+  };
+
+  row.total =
+    row.blocked +
+    row.cancelled +
+    row.failed +
+    row.processing +
+    row.queued +
+    row.sent +
+    row.skipped;
+
+  return row;
+}
+
 function mockQueueStatusSnapshots(
   queueSnapshots: Array<Array<{ id: string; status: string }>>
 ) {
@@ -175,6 +211,94 @@ describe('process-post-email-queue cron route', () => {
       results: [],
       timedOut: false,
     });
+    adminClientMock.schema.mockImplementation((schema?: string) => {
+      expect(schema).toBe('private');
+      return { rpc: privateRpcMock };
+    });
+    privateRpcMock.mockResolvedValue({
+      data: null,
+      error: {
+        message:
+          'Could not find the function private.get_post_email_queue_status_summary',
+      },
+    });
+  });
+
+  it('uses the private queue status summary RPC when it exists', async () => {
+    privateRpcMock
+      .mockResolvedValueOnce({
+        data: [makeQueueSummaryRow({ processing: 1, queued: 2 })],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [makeQueueSummaryRow({ processing: 1, sent: 1 })],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [makeQueueSummaryRow({ processing: 1, sent: 1 })],
+        error: null,
+      });
+    reconcileOrphanedApprovedPostsMock.mockResolvedValue({
+      checked: 2,
+      diagnostics: {
+        alreadySent: 0,
+        checked: 2,
+        coveredByExistingQueue: 2,
+        coveredBySentEmail: 0,
+        eligibleRecipients: 0,
+        existingProcessing: 0,
+        existingQueued: 0,
+        existingSkipped: 0,
+        missingCompletion: 0,
+        missingEmail: 0,
+        missingSenderPlatformUser: 0,
+        missingUserRecord: 0,
+        notApproved: 0,
+        orphaned: 0,
+        upserted: 0,
+      },
+      enqueued: 0,
+      processedPosts: 2,
+      remainingPosts: 0,
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/cron/process-post-email-queue?debug=1',
+        {
+          headers: {
+            Authorization: 'Bearer cron-secret',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: true,
+      diagnostics: {
+        queueBefore: {
+          processing: 1,
+          queued: 2,
+          total: 3,
+        },
+        queueAfterReconciliation: {
+          processing: 1,
+          queued: 0,
+          sent: 1,
+          total: 2,
+        },
+      },
+    });
+
+    expect(adminClientMock.schema).toHaveBeenCalledWith('private');
+    expect(privateRpcMock).toHaveBeenCalledWith(
+      'get_post_email_queue_status_summary',
+      {
+        p_ws_id: null,
+      }
+    );
+    expect(adminClientMock.from).not.toHaveBeenCalledWith('post_email_queue');
   });
 
   it('returns reconciliation diagnostics and skips phase 4 only when queued and failed rows are zero after reconciliation', async () => {

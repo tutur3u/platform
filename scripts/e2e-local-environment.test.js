@@ -6,6 +6,7 @@ const {
   LOCAL_E2E_APP_COORDINATION_SECRET,
   LOCAL_E2E_AUTH_BYPASS,
   LOCAL_E2E_BASE_URL,
+  LOCAL_E2E_CRON_SECRET,
   LOCAL_E2E_DOCKER_SUPABASE_URL,
   LOCAL_E2E_SUPERMEMORY_ENABLED,
   LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD,
@@ -71,6 +72,7 @@ test('createLocalE2EEnvFileContent is pinned to local Docker E2E values', () => 
   const content = createLocalE2EEnvFileContent();
 
   assert.match(content, new RegExp(`BASE_URL=${LOCAL_E2E_BASE_URL}`));
+  assert.match(content, new RegExp(`CRON_SECRET=${LOCAL_E2E_CRON_SECRET}`));
   assert.match(
     content,
     new RegExp(`NEXT_PUBLIC_APP_URL=${LOCAL_E2E_BASE_URL}`)
@@ -128,6 +130,7 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
   );
 
   assert.equal(env.BASE_URL, LOCAL_E2E_BASE_URL);
+  assert.equal(env.CRON_SECRET, LOCAL_E2E_CRON_SECRET);
   assert.equal(env.NEXT_PUBLIC_APP_URL, LOCAL_E2E_BASE_URL);
   assert.equal(env.NEXT_PUBLIC_WEB_APP_URL, LOCAL_E2E_BASE_URL);
   assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, LOCAL_E2E_SUPABASE_URL);
@@ -143,6 +146,7 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
     LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD
   );
   assert.equal(env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS, LOCAL_E2E_AUTH_BYPASS);
+  assert.equal(env.VERCEL_CRON_SECRET, LOCAL_E2E_CRON_SECRET);
   assert.equal(env.DATABASE_URL, '');
   assert.equal(env.DIRECT_URL, '');
   assert.equal(env.POSTGRES_URL, '');

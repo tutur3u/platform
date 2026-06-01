@@ -1,10 +1,13 @@
 export const LOCAL_E2E_BASE_URL = 'https://tuturuuu.localhost';
 export const LOCAL_E2E_SUPABASE_URL = 'http://127.0.0.1:8001';
 export const LOCAL_E2E_DOCKER_SUPABASE_URL = 'http://host.docker.internal:8001';
+export const LOCAL_E2E_SUPABASE_PUBLISHABLE_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 export const LOCAL_E2E_SUPABASE_SECRET_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
 export const LOCAL_E2E_APP_COORDINATION_SECRET =
   'local-e2e-app-coordination-secret';
+export const LOCAL_E2E_CRON_SECRET = 'local-e2e-cron-secret';
 
 export const SAFE_LOCAL_WEB_ORIGINS = new Set([
   'http://127.0.0.1:7803',
