@@ -14,6 +14,7 @@ import {
   getPermissions,
   getWorkspace,
   getWorkspaces,
+  isPersonalWorkspace,
   isWorkspaceUuidLiteral,
   normalizeWorkspaceId,
 } from '../workspace-helper';
@@ -27,6 +28,90 @@ describe('isWorkspaceUuidLiteral', () => {
       true
     );
     expect(isWorkspaceUuidLiteral('workspace-slug')).toBe(false);
+  });
+});
+
+describe('isPersonalWorkspace', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns false for non-UUID literals without querying or logging', async () => {
+    const query = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    query.maybeSingle.mockResolvedValue({
+      data: null,
+      error: {
+        code: '22P02',
+        message: 'invalid input syntax for type uuid',
+      },
+    });
+
+    const fromMock = vi.fn(() => query);
+    const errorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    mockCreateClient.mockResolvedValue({
+      from: fromMock,
+    });
+
+    try {
+      for (const workspaceId of [
+        '[locale]',
+        '~',
+        'personal',
+        'workspace-slug',
+      ]) {
+        await expect(isPersonalWorkspace(workspaceId)).resolves.toBe(false);
+      }
+
+      expect(mockCreateClient).not.toHaveBeenCalled();
+      expect(fromMock).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
+  it('queries the personal flag for valid workspace UUID literals', async () => {
+    const workspaceId = '11111111-1111-4111-8111-111111111111';
+    const query = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    query.maybeSingle.mockResolvedValue({
+      data: { personal: true },
+      error: null,
+    });
+
+    const fromMock = vi.fn((table: string) => {
+      if (table !== 'workspaces') {
+        throw new Error(`Unexpected table lookup: ${table}`);
+      }
+
+      return query;
+    });
+
+    mockCreateClient.mockResolvedValue({
+      from: fromMock,
+    });
+
+    await expect(isPersonalWorkspace(workspaceId)).resolves.toBe(true);
+
+    expect(mockCreateClient).toHaveBeenCalledTimes(1);
+    expect(fromMock).toHaveBeenCalledWith('workspaces');
+    expect(query.select).toHaveBeenCalledWith('personal');
+    expect(query.eq).toHaveBeenCalledWith('id', workspaceId);
+    expect(query.maybeSingle).toHaveBeenCalledTimes(1);
   });
 });
 

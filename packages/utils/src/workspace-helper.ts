@@ -1018,9 +1018,13 @@ export async function getWorkspaceUser(
 export async function isPersonalWorkspace(
   workspaceId: string
 ): Promise<boolean> {
-  const supabase = await createClient();
+  const resolvedWorkspaceId = resolveWorkspaceId(workspaceId).trim();
 
-  const resolvedWorkspaceId = resolveWorkspaceId(workspaceId);
+  if (!isWorkspaceUuidLiteral(resolvedWorkspaceId)) {
+    return false;
+  }
+
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('workspaces')

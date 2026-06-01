@@ -95,6 +95,19 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 - The Docker web flow does not start local Supabase unless you explicitly choose `bun devx:web:docker` or `bun devrs:web:docker`.
 - By default the Docker container uses the Supabase URL already configured in `.env.local`, falling back to `apps/web/.env.local`. It should stay pointed at the cloud project for normal Tuturuuu work.
 - If that configured URL explicitly points at host-run local Supabase, the helper rewrites the server-side Supabase URL to `host.docker.internal` while leaving `NEXT_PUBLIC_SUPABASE_URL` alone for browsers.
+- Dockerized web services set `__NEXT_PRIVATE_ORIGIN` from
+  `DOCKER_WEB_NEXT_PRIVATE_ORIGIN`, defaulting to
+  `http://127.0.0.1:7803`. This keeps Next.js Server Action forwarding on the
+  in-container web listener even when nginx preserves an external `Host`.
+  If logs show `failed to forward action response` or
+  `UND_ERR_HEADERS_TIMEOUT`, verify the running web container has
+  `__NEXT_PRIVATE_ORIGIN=http://127.0.0.1:7803` or an intentional internal
+  override. Do not use `serverActions.allowedOrigins` as the primary fix for
+  this symptom; that setting controls Server Action origin/host validation, not
+  the forwarded-action fetch URL.
+- If logs still show `Error checking if workspace is personal` with `[locale]`,
+  verify the running image includes commit `b30d7e2b07` or newer plus the shared
+  `@tuturuuu/utils` UUID guard.
 - Dockerized web commands auto-enable the local Redis companion stack and inject `UPSTASH_REDIS_REST_URL` plus a generated `UPSTASH_REDIS_REST_TOKEN` into the web container.
 - Dockerized production commands generate `BACKEND_INTERNAL_TOKEN` when one is
   not provided and inject `BACKEND_INTERNAL_URL=http://backend:7820` for the

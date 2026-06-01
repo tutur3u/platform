@@ -57,6 +57,7 @@ services:
       - NEXT_TELEMETRY_DISABLED=1
       - NODE_ENV=development
       - PORT=7803
+      - __NEXT_PRIVATE_ORIGIN=${DOCKER_WEB_NEXT_PRIVATE_ORIGIN:-http://127.0.0.1:7803}
       - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain
       - PLATFORM_LOG_DRAIN_ENABLED=${PLATFORM_LOG_DRAIN_ENABLED:-true}
       - PLATFORM_LOG_DRAIN_RAW_RETENTION_DAYS=${PLATFORM_LOG_DRAIN_RAW_RETENTION_DAYS:-30}

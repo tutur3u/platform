@@ -809,6 +809,7 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
       env.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE,
       '../apps/web/.env.local'
     );
+    assert.equal(env.DOCKER_WEB_NEXT_PRIVATE_ORIGIN, 'http://127.0.0.1:7803');
     assert.equal(env.MARKITDOWN_ENDPOINT_URL, undefined);
     assert.equal(env.DRIVE_AUTO_EXTRACT_PROXY_URL, undefined);
     assert.equal(env.INTERNAL_WEB_API_ORIGIN, undefined);
@@ -959,6 +960,33 @@ test('getComposeEnvironment preserves an explicit Buildx attestation override', 
     });
 
     assert.equal(env.BUILDX_NO_DEFAULT_ATTESTATIONS, '0');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getComposeEnvironment reads Docker web Next private origin override from env file', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-private-origin-env-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      [
+        'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co',
+        'DOCKER_WEB_NEXT_PRIVATE_ORIGIN=http://web:7803',
+      ].join('\n')
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.equal(env.DOCKER_WEB_NEXT_PRIVATE_ORIGIN, 'http://web:7803');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
