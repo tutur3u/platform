@@ -10,6 +10,7 @@ import { FriendRequestsButton } from '@tuturuuu/ui/chat/friend-requests-button';
 import {
   CHAT_CONVERSATION_TYPE_FILTERS,
   type ChatConversationArchiveFilter,
+  type ChatConversationScope,
   normalizeChatConversationScope,
 } from '@tuturuuu/ui/chat/utils';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
@@ -27,6 +28,7 @@ interface StructureProps {
   actions: ReactNode;
   children: ReactNode;
   currentUserId: string;
+  defaultConversationScope: ChatConversationScope;
   defaultCollapsed: boolean;
   disableCreateNewWorkspace?: boolean;
   links: (NavLink | null)[];
@@ -39,6 +41,7 @@ export function Structure({
   actions,
   children,
   currentUserId,
+  defaultConversationScope,
   defaultCollapsed = false,
   userPopover,
   workspace,
@@ -82,6 +85,7 @@ export function Structure({
           <ChatHeaderActions
             archiveFilter={archiveFilter}
             currentUserId={currentUserId}
+            defaultConversationScope={defaultConversationScope}
             onArchiveFilterChange={setArchiveFilter}
             onCreate={() => setCreateOpen(true)}
             onSearchChange={setSearchValue}
@@ -125,18 +129,24 @@ export function Structure({
           <ChatContextRail
             collapsed
             closeOnMobile={closeOnMobile}
+            defaultConversationScope={defaultConversationScope}
             onExpand={expandSidebar}
             wsId={wsId}
           />
         ) : (
           <div className="flex min-h-0 flex-1 overflow-hidden">
-            <ChatContextRail closeOnMobile={closeOnMobile} wsId={wsId} />
+            <ChatContextRail
+              closeOnMobile={closeOnMobile}
+              defaultConversationScope={defaultConversationScope}
+              wsId={wsId}
+            />
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
               <ChatSidebarPanel
                 archiveFilter={archiveFilter}
                 closeOnMobile={closeOnMobile}
                 createOpen={createOpen}
                 currentUserId={currentUserId}
+                defaultConversationScope={defaultConversationScope}
                 isCollapsed={isCollapsed}
                 onCreateOpenChange={setCreateOpen}
                 onSearchChange={setSearchValue}
@@ -167,6 +177,7 @@ export function Structure({
 function ChatHeaderActions({
   archiveFilter,
   currentUserId,
+  defaultConversationScope,
   onArchiveFilterChange,
   onCreate,
   onSearchChange,
@@ -177,6 +188,7 @@ function ChatHeaderActions({
 }: {
   archiveFilter: ChatConversationArchiveFilter;
   currentUserId: string;
+  defaultConversationScope: ChatConversationScope;
   onArchiveFilterChange: (filter: ChatConversationArchiveFilter) => void;
   onCreate: () => void;
   onSearchChange: (value: string) => void;
@@ -189,7 +201,7 @@ function ChatHeaderActions({
   const searchParams = useSearchParams();
   const [searchOpen, setSearchOpen] = useState(false);
   const conversationScope = normalizeChatConversationScope(
-    searchParams.get('scope')
+    searchParams.get('scope') ?? defaultConversationScope
   );
 
   return (

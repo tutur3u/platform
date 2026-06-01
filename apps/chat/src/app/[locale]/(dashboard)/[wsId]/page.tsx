@@ -2,6 +2,7 @@ import { ChatWorkspace } from '@tuturuuu/ui/chat/chat-workspace';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import { requireChatUser } from '@/lib/access';
+import { getDefaultChatConversationScope } from './chat-default-scope';
 
 export default async function ChatWorkspacePage({
   params,
@@ -18,7 +19,7 @@ export default async function ChatWorkspacePage({
     <div className="-m-2 h-[calc(100dvh-4.25rem)] md:-m-4 md:h-dvh">
       <ChatWorkspace
         currentUserId={user.id}
-        defaultConversationScope="personal"
+        defaultConversationScope={getDefaultChatConversationScope(workspace)}
         showSidebar={false}
         variant="standalone"
         wsId={workspace.id}

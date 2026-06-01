@@ -6,6 +6,7 @@ import { Hash, LoaderCircle, MessageCircle } from '@tuturuuu/icons';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import type { ChatConversationScope } from '@tuturuuu/ui/chat/utils';
 import { TUTURUUU_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID, toWorkspaceSlug } from '@tuturuuu/utils/constants';
@@ -15,10 +16,15 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, type UIEvent, useMemo, useRef } from 'react';
 import { fetchWorkspacesPage } from './actions';
+import {
+  getChatRailWorkspaces,
+  getPersonalChatWorkspace,
+} from './chat-default-scope';
 
 interface ChatContextRailProps {
   closeOnMobile?: () => void;
   collapsed?: boolean;
+  defaultConversationScope: ChatConversationScope;
   onExpand?: () => void;
   wsId: string;
 }
@@ -31,6 +37,7 @@ interface ChatWorkspacesPage {
 export function ChatContextRail({
   closeOnMobile,
   collapsed = false,
+  defaultConversationScope,
   onExpand,
   wsId,
 }: ChatContextRailProps) {
@@ -39,8 +46,11 @@ export function ChatContextRail({
   const router = useRouter();
   const searchParams = useSearchParams();
   const railScrollRef = useRef<HTMLDivElement | null>(null);
-  const activeScope =
-    searchParams.get('scope') === 'workspaces' ? 'workspaces' : 'personal';
+  const requestedScope = searchParams.get('scope');
+  const activeScope: ChatConversationScope =
+    requestedScope === 'personal' || requestedScope === 'workspaces'
+      ? requestedScope
+      : defaultConversationScope;
   const workspacesQuery = useInfiniteQuery<
     ChatWorkspacesPage,
     Error,
@@ -61,13 +71,17 @@ export function ChatContextRail({
       ),
     [workspacesQuery.data]
   );
-  const personalWorkspace = workspaces.find((workspace) => workspace.personal);
+  const personalWorkspace = getPersonalChatWorkspace(workspaces);
+  const railWorkspaces = useMemo(
+    () => getChatRailWorkspaces(workspaces),
+    [workspaces]
+  );
   const workspaceCount =
-    workspaces.length + (workspacesQuery.hasNextPage ? 1 : 0);
+    railWorkspaces.length + (workspacesQuery.hasNextPage ? 1 : 0);
   const workspaceVirtualizer = useVirtualizer({
     count: workspaceCount,
     estimateSize: () => 48,
-    getItemKey: (index) => workspaces[index]?.id ?? 'loader',
+    getItemKey: (index) => railWorkspaces[index]?.id ?? 'loader',
     getScrollElement: () => railScrollRef.current,
     overscan: 8,
   });
@@ -144,7 +158,7 @@ export function ChatContextRail({
 
       <div className="my-1 h-px w-8 bg-border" />
 
-      {workspacesQuery.isLoading && workspaces.length === 0 ? (
+      {workspacesQuery.isLoading && railWorkspaces.length === 0 ? (
         <LoaderCircle className="mt-2 size-4 animate-spin text-muted-foreground" />
       ) : (
         <div
@@ -157,7 +171,7 @@ export function ChatContextRail({
             style={{ height: `${workspaceVirtualizer.getTotalSize()}px` }}
           >
             {virtualWorkspaces.map((virtualWorkspace) => {
-              const workspace = workspaces[virtualWorkspace.index];
+              const workspace = railWorkspaces[virtualWorkspace.index];
 
               return (
                 <div

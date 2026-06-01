@@ -44,8 +44,16 @@ export function useChatRealtime(wsId: string) {
     source.onmessage = (event) => {
       const parsed = parseChatRealtimeEvent(event.data);
       if (!parsed || parsed.type === 'ping' || parsed.type === 'ready') return;
+      if (parsed.type === 'error') {
+        source.close();
+        return;
+      }
 
       applyChatRealtimeEvent(queryClient, wsId, parsed);
+    };
+
+    source.onerror = () => {
+      source.close();
     };
 
     return () => source.close();
@@ -66,8 +74,6 @@ function applyChatRealtimeEvent(
   wsId: string,
   event: ChatRealtimeEvent
 ) {
-  if (event.type === 'error') return;
-
   if (
     event.type === 'conversation.created' ||
     event.type === 'conversation.updated'

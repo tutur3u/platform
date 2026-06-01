@@ -132,6 +132,9 @@ export function ChatWorkspace({
     [conversationIds, conversations, selectedConversationId]
   );
   const activeConversationId = selectedConversation?.id ?? null;
+  const activeNativeConversationId = isPostgresUuid(activeConversationId)
+    ? activeConversationId
+    : null;
   const selectedReadOnly = isReadOnlyChatConversation(selectedConversation);
   const selectedAiConversation = selectedConversation?.type === 'ai';
   const selectedAgentReadOnly =
@@ -242,10 +245,10 @@ export function ChatWorkspace({
   useEffect(() => {
     if (selectedReadOnly) return;
     if (!selectedMembership) return;
-    if (!activeConversationId || !latestPersistedMessageId) return;
+    if (!activeNativeConversationId || !latestPersistedMessageId) return;
     markConversationRead(latestPersistedMessageId);
   }, [
-    activeConversationId,
+    activeNativeConversationId,
     latestPersistedMessageId,
     markConversationRead,
     selectedMembership,

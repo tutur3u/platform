@@ -11,6 +11,41 @@ type RouteParams = {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+const encoder = new TextEncoder();
+const realtimeUnavailableEvent = `event: message\ndata: ${JSON.stringify({
+  type: 'error',
+  error: 'realtime_unavailable',
+})}\n\n`;
+const realtimeHeaders = {
+  'Cache-Control': 'no-store, no-transform',
+  Connection: 'keep-alive',
+  'Content-Type': 'text/event-stream; charset=utf-8',
+  'X-Accel-Buffering': 'no',
+};
+
+function createRealtimeResponse(stream: ReadableStream<Uint8Array>) {
+  return new NextResponse(stream, {
+    headers: realtimeHeaders,
+  });
+}
+
+function enqueueRealtimeUnavailable(
+  controller: ReadableStreamDefaultController<Uint8Array>
+) {
+  controller.enqueue(encoder.encode(realtimeUnavailableEvent));
+}
+
+function createRealtimeUnavailableResponse() {
+  return createRealtimeResponse(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        enqueueRealtimeUnavailable(controller);
+        controller.close();
+      },
+    })
+  );
+}
+
 export const GET = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
     const context = await resolveChatRouteContext({
@@ -20,11 +55,19 @@ export const GET = withSessionAuth<RouteParams>(
     });
     if (!context.ok) return context.response;
 
-    const encoder = new TextEncoder();
-    const upstream = getChatRealtimeSubscribeUrl({
-      userId: auth.user.id,
-      wsId: context.context.normalizedWsId,
-    });
+    let upstreamUrl: URL;
+    try {
+      upstreamUrl = getChatRealtimeSubscribeUrl({
+        userId: auth.user.id,
+        wsId: context.context.normalizedWsId,
+      }).url;
+    } catch (error) {
+      serverLogger.error('Chat realtime subscribe URL failed', {
+        error,
+        wsId: context.context.normalizedWsId,
+      });
+      return createRealtimeUnavailableResponse();
+    }
 
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
@@ -34,12 +77,16 @@ export const GET = withSessionAuth<RouteParams>(
           if (closed) return;
           closed = true;
           abort.abort();
-          controller.close();
+          try {
+            controller.close();
+          } catch {
+            // The stream may already be closed by the client aborting.
+          }
         };
         request.signal.addEventListener('abort', close, { once: true });
 
         try {
-          const response = await fetch(upstream.url, {
+          const response = await fetch(upstreamUrl, {
             cache: 'no-store',
             headers: { Accept: 'text/event-stream' },
             signal: abort.signal,
@@ -50,14 +97,7 @@ export const GET = withSessionAuth<RouteParams>(
               status: response.status,
               wsId: context.context.normalizedWsId,
             });
-            controller.enqueue(
-              encoder.encode(
-                `event: message\ndata: ${JSON.stringify({
-                  type: 'error',
-                  error: 'realtime_unavailable',
-                })}\n\n`
-              )
-            );
+            enqueueRealtimeUnavailable(controller);
             close();
             return;
           }
@@ -70,18 +110,11 @@ export const GET = withSessionAuth<RouteParams>(
           }
         } catch (error) {
           if (!abort.signal.aborted) {
-            serverLogger.error('Chat realtime stream failed', error);
-            serverLogger.error('Chat realtime stream context', {
+            serverLogger.error('Chat realtime stream failed', {
+              error,
               wsId: context.context.normalizedWsId,
             });
-            controller.enqueue(
-              encoder.encode(
-                `event: message\ndata: ${JSON.stringify({
-                  type: 'error',
-                  error: 'realtime_unavailable',
-                })}\n\n`
-              )
-            );
+            enqueueRealtimeUnavailable(controller);
           }
         } finally {
           request.signal.removeEventListener('abort', close);
@@ -90,14 +123,7 @@ export const GET = withSessionAuth<RouteParams>(
       },
     });
 
-    return new NextResponse(stream, {
-      headers: {
-        'Cache-Control': 'no-store, no-transform',
-        Connection: 'keep-alive',
-        'Content-Type': 'text/event-stream; charset=utf-8',
-        'X-Accel-Buffering': 'no',
-      },
-    });
+    return createRealtimeResponse(stream);
   },
   { allowAppSessionAuth: true, rateLimitKind: 'read' }
 );

@@ -12,6 +12,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 import { requireChatUser } from '@/lib/access';
+import { getDefaultChatConversationScope } from './chat-default-scope';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
 
@@ -34,6 +35,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!workspace.joined) redirect('/');
 
   const wsId = workspace.id;
+  const defaultConversationScope = getDefaultChatConversationScope(workspace);
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,
   });
@@ -57,6 +59,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           </Suspense>
         }
         currentUserId={user.id}
+        defaultConversationScope={defaultConversationScope}
         defaultCollapsed={defaultCollapsed}
         links={await getNavigationLinks({ personalOrWsId: workspaceSlug })}
         userPopover={
