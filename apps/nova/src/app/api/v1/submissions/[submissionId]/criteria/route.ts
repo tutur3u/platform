@@ -24,6 +24,7 @@ export async function GET(request: Request, { params }: Params) {
   try {
     // Check if submission belongs to user
     const { error: submissionError } = await sbAdmin
+      .schema('private')
       .from('nova_submissions')
       .select('*')
       .eq('id', submissionId)
@@ -39,6 +40,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     let query = sbAdmin
+      .schema('private')
       .from('nova_submission_criteria')
       .select('*')
       .eq('submission_id', submissionId);
@@ -97,6 +99,7 @@ export async function PUT(request: Request, { params }: Params) {
 
     // Check if submission belongs to user
     const { error: submissionError } = await sbAdmin
+      .schema('private')
       .from('nova_submissions')
       .select('*')
       .eq('id', submissionId)
@@ -112,6 +115,7 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const { data, error } = await sbAdmin
+      .schema('private')
       .from('nova_submission_criteria')
       .upsert({
         submission_id: submissionId,
@@ -154,6 +158,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
   try {
     let query = supabase
+      .schema('private')
       .from('nova_submission_criteria')
       .delete()
       .eq('submission_id', submissionId);

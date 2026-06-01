@@ -6,6 +6,7 @@ export const GET = withSessionAuth(
   async (_request, { supabase, user }) => {
     try {
       const { data, error } = await supabase
+        .schema('private')
         .from('nova_team_members')
         .select('team_id')
         .eq('user_id', user.id)

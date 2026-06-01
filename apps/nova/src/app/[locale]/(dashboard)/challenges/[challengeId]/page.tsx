@@ -79,6 +79,7 @@ async function getSession(challengeId: string): Promise<NovaSession | null> {
   try {
     // Fetch sessions for this challenge
     const { data: session, error } = await supabase
+      .schema('private')
       .from('nova_sessions')
       .select('*')
       .eq('challenge_id', challengeId)

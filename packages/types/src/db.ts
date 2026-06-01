@@ -1492,7 +1492,7 @@ export type AuroraForecast = {
 export type NovaChallengeCriteria = PrivateTable<'nova_challenge_criteria'>;
 export type NovaChallenge = PrivateTable<'nova_challenges'>;
 export type NovaChallengeWhitelistedEmail =
-  Tables<'nova_challenge_whitelisted_emails'>;
+  PrivateTable<'nova_challenge_whitelisted_emails'>;
 export type NovaProblemTestCase = PrivateTable<'nova_problem_test_cases'>;
 export type NovaProblem = PrivateTable<'nova_problems'>;
 export type NovaRole = Tables<'platform_email_roles'>;
@@ -1500,16 +1500,21 @@ export type NovaRoleBasic = Pick<
   Tables<'platform_email_roles'>,
   'email' | 'enabled' | 'created_at'
 >;
-export type NovaSession = Tables<'nova_sessions'>;
-export type NovaSubmission = Tables<'nova_submissions'>;
-export type NovaSubmissionCriteria = Tables<'nova_submission_criteria'>;
+export type NovaSession = PrivateTable<'nova_sessions'>;
+export type NovaSubmission = PrivateTable<'nova_submissions'>;
+export type NovaSubmissionCriteria = PrivateTable<'nova_submission_criteria'>;
 export type NovaSubmissionTestCase = PrivateTable<'nova_submission_test_cases'>;
 export type NovaTeam = PrivateTable<'nova_teams'>;
-export type NovaSubmissionWithScores = Tables<'nova_submissions_with_scores'>;
-export type NovaSubmissionWithScoresAndCriteria =
-  Tables<'nova_submissions_with_scores'> & {
-    criteria: NovaChallengeCriteria[];
-  };
+export type NovaSubmissionWithScores = Tables<
+  { schema: 'private' },
+  'nova_submissions_with_scores'
+>;
+export type NovaSubmissionWithScoresAndCriteria = Tables<
+  { schema: 'private' },
+  'nova_submissions_with_scores'
+> & {
+  criteria: NovaChallengeCriteria[];
+};
 
 export type ExtendedNovaProblem = NovaProblem & {
   test_cases?: NovaProblemTestCase[];

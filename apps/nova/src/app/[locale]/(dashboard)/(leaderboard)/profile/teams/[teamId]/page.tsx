@@ -36,6 +36,7 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
     // Fetch team from leaderboard to get score
     const { data: teamLeaderboardEntry, error: teamLeaderboardError } =
       await sbAdmin
+        .schema('private')
         .from('nova_team_leaderboard')
         .select('*')
         .eq('team_id', id)
@@ -50,6 +51,7 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
 
     // Fetch all teams to calculate rank
     const { data: allTeams, error: allTeamsError } = await sbAdmin
+      .schema('private')
       .from('nova_team_leaderboard')
       .select('team_id, score')
       .order('score', { ascending: false });
@@ -82,15 +84,12 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
 
     // Fetch team members
     const { data: teamMembers, error: teamMembersError } = await sbAdmin
+      .schema('private')
       .from('nova_team_members')
       .select(
         `
         user_id,
-        created_at,
-        users!inner (
-          display_name,
-          avatar_url
-        )
+        created_at
       `
       )
       .eq('team_id', id);
@@ -100,9 +99,34 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
       return null;
     }
 
+    const memberIds = teamMembers
+      .map((member) => member.user_id)
+      .filter(Boolean) as string[];
+
+    const { data: memberUsers = [], error: memberUsersError } =
+      memberIds.length > 0
+        ? await sbAdmin
+            .from('users')
+            .select('id, display_name, avatar_url')
+            .in('id', memberIds)
+        : { data: [], error: null };
+
+    if (memberUsersError) {
+      console.error(
+        'Error fetching team member users:',
+        memberUsersError.message
+      );
+      return null;
+    }
+
+    const memberUserById = new Map(
+      (memberUsers ?? []).map((user) => [user.id, user])
+    );
+
     // Fetch team challenge scores
     const { data: teamChallengeScores, error: challengeScoresError } =
       await sbAdmin
+        .schema('private')
         .from('nova_team_challenge_leaderboard')
         .select('challenge_id, score')
         .eq('team_id', id);
@@ -143,14 +167,14 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
     }
 
     // Get individual member scores from user leaderboard
-    const memberIds = teamMembers
-      .map((member) => member.user_id)
-      .filter(Boolean) as string[];
-
-    const { data: memberScores, error: memberScoresError } = await sbAdmin
-      .from('nova_user_leaderboard')
-      .select('user_id, score')
-      .in('user_id', memberIds);
+    const { data: memberScores, error: memberScoresError } =
+      memberIds.length > 0
+        ? await sbAdmin
+            .schema('private')
+            .from('nova_user_leaderboard')
+            .select('user_id, score')
+            .in('user_id', memberIds)
+        : { data: [], error: null };
 
     if (memberScoresError) {
       console.error('Error fetching member scores:', memberScoresError.message);
@@ -172,11 +196,12 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
       const individualScore = userScoresMap.get(member.user_id) || 0;
       const contributionPercentage =
         totalScore > 0 ? (individualScore / totalScore) * 100 : 0;
+      const memberUser = memberUserById.get(member.user_id);
 
       return {
         user_id: member.user_id,
-        display_name: member.users.display_name || '',
-        avatar_url: member.users.avatar_url,
+        display_name: memberUser?.display_name || '',
+        avatar_url: memberUser?.avatar_url || null,
         individual_score: individualScore,
         contribution_percentage: parseFloat(contributionPercentage.toFixed(1)),
         join_date: member.created_at,
@@ -220,6 +245,7 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
 
     const { data: recentSubmissions, error: recentSubmissionsError } =
       await sbAdmin
+        .schema('private')
         .from('nova_submissions_with_scores')
         .select('total_score, user_id, created_at')
         .in('user_id', memberIds)

@@ -27,24 +27,27 @@ export default async function SessionPage({ params: futureParams }: Props) {
     return notFound();
   }
 
-  // Fetch the session with public related data
+  // Fetch the private session first, then resolve public user data separately.
   const { data: session, error } = await sbAdmin
+    .schema('private')
     .from('nova_sessions')
-    .select(
-      `
-      *,
-      user:users (
-        id,
-        display_name,
-        avatar_url
-      )
-    `
-    )
+    .select('*')
     .eq('id', params.sessionId)
     .single();
 
   if (error || !session) {
     console.error('Error fetching session:', error);
+    return notFound();
+  }
+
+  const { data: sessionUser, error: sessionUserError } = await sbAdmin
+    .from('users')
+    .select('id, display_name, avatar_url')
+    .eq('id', session.user_id)
+    .single();
+
+  if (sessionUserError || !sessionUser) {
+    console.error('Error fetching session user:', sessionUserError);
     return notFound();
   }
 
@@ -64,11 +67,12 @@ export default async function SessionPage({ params: futureParams }: Props) {
   const { data: userPrivateDetails } = await sbAdmin
     .from('user_private_details')
     .select('email')
-    .eq('user_id', session.user.id)
+    .eq('user_id', session.user_id)
     .single();
 
   // Fetch submissions related to this session
   const { data: submissions, error: submissionsError } = await sbAdmin
+    .schema('private')
     .from('nova_submissions_with_scores')
     .select(
       `
@@ -78,7 +82,7 @@ export default async function SessionPage({ params: futureParams }: Props) {
       created_at
     `
     )
-    .eq('user_id', session.user.id)
+    .eq('user_id', session.user_id)
     .eq('session_id', session.id)
     .gte('created_at', session.start_time)
     .lte('created_at', session.end_time || new Date().toISOString())
@@ -131,9 +135,9 @@ export default async function SessionPage({ params: futureParams }: Props) {
     endTime: session.end_time ? new Date(session.end_time).toISOString() : null,
     createdAt: new Date(session.created_at).toISOString(),
     user: {
-      id: session.user.id,
-      displayName: session.user.display_name || 'Unknown User',
-      avatarUrl: session.user.avatar_url || '',
+      id: sessionUser.id,
+      displayName: sessionUser.display_name || 'Unknown User',
+      avatarUrl: sessionUser.avatar_url || '',
       email: userPrivateDetails?.email || null,
     },
     challenge: {

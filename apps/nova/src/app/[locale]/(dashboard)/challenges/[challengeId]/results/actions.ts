@@ -30,6 +30,7 @@ export async function fetchSessionDetails(
 
     // Step 1: Get the owned session through the app-session actor.
     const { data: session, error: sessionError } = await sbAdmin
+      .schema('private')
       .from('nova_sessions')
       .select('*')
       .eq('id', sessionId)
@@ -56,6 +57,7 @@ export async function fetchSessionDetails(
 
     // Step 3: Get all submissions for this session (user has permissions)
     const { data: submissions, error: submissionsError } = await sbAdmin
+      .schema('private')
       .from('nova_submissions_with_scores')
       .select('*')
       .eq('session_id', sessionId)
@@ -89,6 +91,7 @@ export async function fetchSessionDetails(
       [];
     const { data: criteriaResults, error: resultsError } = submissionIds.length
       ? await sbAdmin
+          .schema('private')
           .from('nova_submission_criteria')
           .select('*')
           .in('submission_id', submissionIds)
@@ -199,6 +202,7 @@ export async function fetchAllProblems(
 
     // Step 2: Get the user's sessions for this challenge using the verified actor id.
     const { data: sessions, error: sessionsError } = await sbAdmin
+      .schema('private')
       .from('nova_sessions')
       .select('id')
       .eq('challenge_id', challengeId)
@@ -219,6 +223,7 @@ export async function fetchAllProblems(
     // Step 3: Get all submissions for these sessions
     const sessionIds = sessions.map((s) => s.id);
     const { data: allSubmissions, error: submissionsError } = await sbAdmin
+      .schema('private')
       .from('nova_submissions_with_scores')
       .select('*')
       .in('session_id', sessionIds);
@@ -253,6 +258,7 @@ export async function fetchAllProblems(
       [];
     const { data: criteriaResults, error: resultsError } = submissionIds.length
       ? await sbAdmin
+          .schema('private')
           .from('nova_submission_criteria')
           .select('*')
           .in('submission_id', submissionIds)

@@ -71,6 +71,10 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'nova_challenge_whitelisted_emails',
+    select: 'challenge_id',
+  },
+  {
     name: 'nova_challenge_criteria',
     select: 'id',
   },
@@ -89,6 +93,46 @@ const PRIVATE_TABLES = [
   {
     name: 'nova_submission_test_cases',
     select: 'submission_id',
+  },
+  {
+    name: 'nova_sessions',
+    select: 'id',
+  },
+  {
+    name: 'nova_submission_criteria',
+    select: 'submission_id',
+  },
+  {
+    name: 'nova_submissions',
+    select: 'id',
+  },
+  {
+    name: 'nova_team_emails',
+    select: 'team_id',
+  },
+  {
+    name: 'nova_team_members',
+    select: 'team_id',
+  },
+  {
+    name: 'nova_submissions_with_scores',
+    select: 'id',
+  },
+  {
+    name: 'nova_user_leaderboard',
+    select: 'user_id',
+  },
+  {
+    name: 'nova_user_challenge_leaderboard',
+    select: 'user_id',
+  },
+  {
+    name: 'nova_team_leaderboard',
+    select: 'team_id',
+  },
+  {
+    name: 'nova_team_challenge_leaderboard',
+    select: 'team_id',
   },
   {
     name: 'recording_transcripts',

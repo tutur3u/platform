@@ -80,6 +80,7 @@ export default async function UserProfilePage({
 
   // Fetch user from leaderboard for ranking and total score
   const { data: leaderboardEntry, error: leaderboardError } = await sbAdmin
+    .schema('private')
     .from('nova_user_leaderboard')
     .select('*')
     .eq('user_id', userId)
@@ -94,6 +95,7 @@ export default async function UserProfilePage({
 
   // Get user's rank by querying all users ordered by score
   const { data: allUsers, error: allUsersError } = await sbAdmin
+    .schema('private')
     .from('nova_user_leaderboard')
     .select('user_id, score')
     .order('score', { ascending: false });
@@ -176,6 +178,7 @@ export default async function UserProfilePage({
   // Fetch problem scores for the user across all challenges
   const { data: challengeScoresRaw, error: challengeScoresError } =
     await sbAdmin
+      .schema('private')
       .from('nova_user_challenge_leaderboard')
       .select('challenge_id, problem_scores')
       .eq('user_id', userId);
@@ -212,6 +215,7 @@ export default async function UserProfilePage({
 
   // Fetch recent activity
   const { data: recentActivityRaw, error: activityError } = await sbAdmin
+    .schema('private')
     .from('nova_submissions_with_scores')
     .select(
       `

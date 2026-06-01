@@ -23,6 +23,7 @@ export async function GET(request: Request) {
   try {
     // Get total sessions count for this challenge and user
     const { count: totalCount, error: totalError } = await supabase
+      .schema('private')
       .from('nova_sessions')
       .select('*', { count: 'exact', head: true })
       .eq('challenge_id', challengeId)
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
     today.setHours(0, 0, 0, 0);
 
     const { count: dailyCount, error: dailyError } = await supabase
+      .schema('private')
       .from('nova_sessions')
       .select('*', { count: 'exact', head: true })
       .eq('challenge_id', challengeId)

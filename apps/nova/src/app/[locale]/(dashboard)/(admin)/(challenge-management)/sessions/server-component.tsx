@@ -77,21 +77,19 @@ export default async function SessionsList({
     .order('title');
 
   // Begin sessions query
-  let query = sbAdmin.from('nova_sessions').select(
-    `
+  let query = sbAdmin
+    .schema('private')
+    .from('nova_sessions')
+    .select(
+      `
       *,
       challenge:nova_challenges (
         id,
         title
-      ),
-      user:users (
-        id,
-        display_name,
-        avatar_url
       )
     `,
-    { count: 'exact' }
-  );
+      { count: 'exact' }
+    );
 
   // Apply search if provided (search user display_name)
   if (searchQuery) {
@@ -140,14 +138,27 @@ export default async function SessionsList({
   const totalPages = Math.ceil((totalCount || 0) / pageSize);
 
   // Fetch user emails from user_private_details
-  const userIds = sessionsData?.map((s) => s.user?.id).filter(Boolean) || [];
-  const { data: userPrivateDetails = [] } = await sbAdmin
-    .from('user_private_details')
-    .select('user_id, email')
-    .in('user_id', userIds.filter((id) => id !== null) as string[]);
+  const userIds = sessionsData?.map((s) => s.user_id).filter(Boolean) || [];
+
+  const { data: users = [] } =
+    userIds.length > 0
+      ? await sbAdmin
+          .from('users')
+          .select('id, display_name, avatar_url')
+          .in('id', userIds)
+      : { data: [] };
+
+  const { data: userPrivateDetails = [] } =
+    userIds.length > 0
+      ? await sbAdmin
+          .from('user_private_details')
+          .select('user_id, email')
+          .in('user_id', userIds)
+      : { data: [] };
 
   // Create email lookup map
-  const emailMap = new Map();
+  const userMap = new Map(users?.map((user) => [user.id, user]));
+  const emailMap = new Map<string, string | null>();
   userPrivateDetails?.forEach((detail) => {
     emailMap.set(detail.user_id, detail.email);
   });
@@ -156,11 +167,10 @@ export default async function SessionsList({
   const sessions: SessionWithDetails[] = (sessionsData?.map((session) => ({
     ...session,
     user: {
-      ...session.user,
-      id: session.user?.id || '',
-      display_name: session.user?.display_name || '',
-      avatar_url: session.user?.avatar_url || '',
-      email: session.user?.id ? emailMap.get(session.user.id) || null : null,
+      id: session.user_id || '',
+      display_name: userMap.get(session.user_id)?.display_name || '',
+      avatar_url: userMap.get(session.user_id)?.avatar_url || '',
+      email: emailMap.get(session.user_id) || null,
     },
   })) || []) as unknown as SessionWithDetails[];
 

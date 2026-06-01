@@ -33,6 +33,7 @@ export async function GET(
     // Fetch user's total score
     const { data: submissionsData = [], error: submissionsError } =
       await sbAdmin
+        .schema('private')
         .from('nova_submissions_with_scores')
         .select('total_score')
         .eq('user_id', userId);
@@ -48,6 +49,7 @@ export async function GET(
 
     // Get challenge count
     const { count: challengeCount } = await sbAdmin
+      .schema('private')
       .from('nova_sessions')
       .select('challenge_id', { count: 'exact', head: true })
       .eq('user_id', userId)

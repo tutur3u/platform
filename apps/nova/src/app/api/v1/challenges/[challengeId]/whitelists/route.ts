@@ -27,6 +27,7 @@ export async function GET(request: Request, { params }: Params) {
 
   try {
     let query = sbAdmin
+      .schema('private')
       .from('nova_challenge_whitelisted_emails')
       .select('*')
       .eq('challenge_id', challengeId);
@@ -81,6 +82,7 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     const { data, error } = await sbAdmin
+      .schema('private')
       .from('nova_challenge_whitelisted_emails')
       .upsert({
         challenge_id: challengeId,
@@ -132,6 +134,7 @@ export async function DELETE(request: Request, { params }: Params) {
     }
 
     const { error } = await sbAdmin
+      .schema('private')
       .from('nova_challenge_whitelisted_emails')
       .delete()
       .eq('challenge_id', challengeId)

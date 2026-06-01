@@ -103,20 +103,45 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
 
   // Fetch team members for avatar display and member details
   const { data: teamMembersData, error: teamMembersError } = await sbAdmin
+    .schema('private')
     .from('nova_team_members')
     .select(`
       team_id,
-      user_id,
-      users (
-        display_name,
-        avatar_url
-      )
+      user_id
     `);
 
   if (teamMembersError) {
     console.error('Error fetching team members:', teamMembersError.message);
     return defaultData;
   }
+
+  const memberUserIds = [
+    ...new Set(
+      (teamMembersData || []).flatMap((member) =>
+        member.user_id ? [member.user_id] : []
+      )
+    ),
+  ];
+
+  const { data: memberUsers = [], error: memberUsersError } =
+    memberUserIds.length > 0
+      ? await sbAdmin
+          .from('users')
+          .select('id, display_name, avatar_url')
+          .in('id', memberUserIds)
+      : { data: [], error: null };
+
+  if (memberUsersError) {
+    console.error(
+      'Error fetching team member users:',
+      memberUsersError.message
+    );
+    return defaultData;
+  }
+
+  const memberUserById = new Map(
+    (memberUsers ?? []).map((user) => [user.id, user])
+  );
 
   // Group team members by team
   const teamMembersMap = new Map<
@@ -140,11 +165,12 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
     const team = teamMembersMap.get(member.team_id);
     if (!team) continue;
 
-    const avatar = member.users?.avatar_url || null;
+    const memberUser = memberUserById.get(member.user_id);
+    const avatar = memberUser?.avatar_url || null;
 
     team.members.push({
       id: member.user_id,
-      name: member.users?.display_name || '',
+      name: memberUser?.display_name || '',
       avatar: avatar || '',
       role: 'member',
     });
@@ -159,6 +185,7 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
   if (challengeId === 'all') {
     // Fetch team data from the team leaderboard view
     const { data: leaderboardData, error: leaderboardError } = await sbAdmin
+      .schema('private')
       .from('nova_team_leaderboard')
       .select('*')
       .order('score', { ascending: false });
@@ -193,6 +220,7 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
     // Fetch team data for a specific challenge
     const { data: challengeLeaderboardData, error: challengeLeaderboardError } =
       await sbAdmin
+        .schema('private')
         .from('nova_team_challenge_leaderboard')
         .select('*')
         .eq('challenge_id', challengeId)
@@ -256,6 +284,7 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
 
   if (user?.id) {
     const { data: teamMember } = await sbAdmin
+      .schema('private')
       .from('nova_team_members')
       .select('team_id')
       .eq('user_id', user.id)

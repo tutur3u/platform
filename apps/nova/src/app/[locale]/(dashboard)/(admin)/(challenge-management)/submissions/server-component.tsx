@@ -91,7 +91,7 @@ export default async function SubmissionsList({
       : problems || [];
 
   // Fetch users for filtering
-  const { data: users = [] } = await sbAdmin
+  const { data: filterUsers = [] } = await sbAdmin
     .from('users')
     .select(
       `
@@ -104,14 +104,17 @@ export default async function SubmissionsList({
     )
     .order('display_name');
 
-  const userOptions = (users || []).map((user) => ({
+  const userOptions = (filterUsers || []).map((user) => ({
     id: user.id,
     display_name: user.display_name || 'Unknown User',
     email: user.user_private_details?.email || '',
   }));
 
-  let query = sbAdmin.from('nova_submissions_with_scores').select(
-    `
+  let query = sbAdmin
+    .schema('private')
+    .from('nova_submissions_with_scores')
+    .select(
+      `
       *,
       problem:nova_problems (
         id,
@@ -120,15 +123,10 @@ export default async function SubmissionsList({
           id,
           title
         )
-      ),
-      user:users (
-        id,
-        display_name,
-        avatar_url
       )
     `,
-    { count: 'exact' }
-  );
+      { count: 'exact' }
+    );
 
   if (searchQuery) {
     query = query.or(
@@ -218,27 +216,47 @@ export default async function SubmissionsList({
   // Calculate total pages
   const totalPages = Math.ceil((totalCount || 0) / pageSize);
 
-  const userIds = submissionsData?.map((s) => s.user?.id).filter(Boolean) || [];
-  const { data: userPrivateDetails = [] } = await sbAdmin
-    .from('user_private_details')
-    .select('user_id, email')
-    .in('user_id', userIds.filter((id) => id !== null) as string[]);
+  const userIds =
+    submissionsData
+      ?.map((s) => s.user_id)
+      .filter((userId): userId is string => Boolean(userId)) || [];
 
-  const emailMap = new Map();
+  const { data: submissionUsers = [] } =
+    userIds.length > 0
+      ? await sbAdmin
+          .from('users')
+          .select('id, display_name, avatar_url')
+          .in('id', userIds)
+      : { data: [] };
+
+  const { data: userPrivateDetails = [] } =
+    userIds.length > 0
+      ? await sbAdmin
+          .from('user_private_details')
+          .select('user_id, email')
+          .in('user_id', userIds)
+      : { data: [] };
+
+  const userMap = new Map(submissionUsers?.map((user) => [user.id, user]));
+  const emailMap = new Map<string, string | null>();
   userPrivateDetails?.forEach((detail) => {
     emailMap.set(detail.user_id, detail.email);
   });
 
-  const submissions: SubmissionWithDetails[] = (submissionsData?.map((sub) => ({
-    ...sub,
-    user: {
-      ...sub.user,
-      id: sub.user?.id || '',
-      display_name: sub.user?.display_name || '',
-      avatar_url: sub.user?.avatar_url || '',
-      email: sub.user?.id ? emailMap.get(sub.user.id) || null : null,
-    },
-  })) || []) as unknown as SubmissionWithDetails[];
+  const submissions: SubmissionWithDetails[] = (submissionsData?.map((sub) => {
+    const userId = sub.user_id || '';
+    const submissionUser = userMap.get(userId);
+
+    return {
+      ...sub,
+      user: {
+        id: userId,
+        display_name: submissionUser?.display_name || '',
+        avatar_url: submissionUser?.avatar_url || '',
+        email: emailMap.get(userId) || null,
+      },
+    };
+  }) || []) as unknown as SubmissionWithDetails[];
 
   return (
     <div className="w-full space-y-2">

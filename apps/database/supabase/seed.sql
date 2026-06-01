@@ -1321,7 +1321,7 @@ values
 
 -- Populate nova_team_members
 insert into
-    public.nova_team_members (team_id, user_id)
+    private.nova_team_members (team_id, user_id)
 values
     (
         '00000000-0000-0000-0000-000000000001',
@@ -1897,7 +1897,7 @@ values
 -- Populate nova_sessions
 -- Each user has 2 sessions for each of the 3 challenges (total of 24 sessions)
 INSERT INTO
-    public.nova_sessions (id, user_id, challenge_id, status, start_time, end_time)
+    private.nova_sessions (id, user_id, challenge_id, status, start_time, end_time)
 VALUES
     -- User 1 (00000000-0000-0000-0000-000000000002) sessions for Challenge 1
     ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'ENDED', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days' + INTERVAL '30 minutes'),
@@ -1951,7 +1951,7 @@ VALUES
 -- Each session has 2 submissions (total of 48 submissions)
 -- Using problems from the corresponding challenges
 INSERT INTO
-    public.nova_submissions (id, prompt, session_id, problem_id, user_id)
+    private.nova_submissions (id, prompt, session_id, problem_id, user_id)
 VALUES
     -- User 1 submissions for Challenge 1 (Sessions 1-2)
     ('20000000-0000-0000-0000-000000000001', 'Given a list of fruits, provide the color of each fruit in the same order.', '10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002'),
@@ -2149,7 +2149,7 @@ VALUES
     ('20000000-0000-0000-0000-000000000048', '00000000-0000-0000-0000-000000007002', '50', true);
 
 INSERT INTO
-    public.nova_submission_criteria (submission_id, criteria_id, score, feedback)
+    private.nova_submission_criteria (submission_id, criteria_id, score, feedback)
 VALUES
     -- User 1 submissions for Challenge 1 (Submissions 1-4)
     ('20000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000101', 8.5, 'Good clarity in prompt structure, but could be more explicit with instructions.'),

@@ -32,6 +32,7 @@ export async function DELETE(
 
     // Remove user from team
     const { error } = await supabase
+      .schema('private')
       .from('nova_team_members')
       .delete()
       .eq('team_id', id)

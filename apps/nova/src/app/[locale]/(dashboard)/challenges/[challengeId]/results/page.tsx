@@ -28,6 +28,7 @@ export default async function Page({ params }: Props) {
     }
 
     const { data: sessionSummaries, error: sessionsError } = await sbAdmin
+      .schema('private')
       .from('nova_sessions')
       .select('*')
       .eq('challenge_id', challengeId)

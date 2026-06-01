@@ -79,6 +79,7 @@ async function getTeamMembersData(id: string) {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('nova_team_members')
     .select(
       `
@@ -102,6 +103,7 @@ async function getTeamInvitationsData(id: string) {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('nova_team_emails')
     .select('*')
     .eq('team_id', id)

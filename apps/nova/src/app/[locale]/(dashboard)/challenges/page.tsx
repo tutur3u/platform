@@ -69,8 +69,9 @@ async function fetchChallenges(
     const isSuperAdmin = isAdmin && userRole.allow_manage_all_challenges;
 
     // Fetch all challenges with user stats
-    const { data: challengesWithStats, error: challengesError } =
-      await sbAdmin.rpc('nova_get_all_challenges_with_user_stats', {
+    const { data: challengesWithStats, error: challengesError } = await sbAdmin
+      .schema('private')
+      .rpc('nova_get_all_challenges_with_user_stats', {
         user_id: user.id,
       });
 
@@ -83,6 +84,7 @@ async function fetchChallenges(
 
     // Fetch user's whitelisted challenges
     const { data: allWhitelists, error: whitelistsError } = await sbAdmin
+      .schema('private')
       .from('nova_challenge_whitelisted_emails')
       .select('*')
       .in(

@@ -138,6 +138,7 @@ async function getSubmissions(
   }
 
   const { data: submissions, error } = await sbAdmin
+    .schema('private')
     .from('nova_submissions_with_scores')
     .select('*')
     .eq('problem_id', problemId)

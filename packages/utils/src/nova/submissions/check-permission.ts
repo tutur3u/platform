@@ -46,6 +46,7 @@ export async function checkPermission({
 
   // Check if the session is in progress
   const { data: sessionData, error: sessionError } = await sbAdmin
+    .schema('private')
     .from('nova_sessions')
     .select('*')
     .eq('id', sessionId)
@@ -95,6 +96,7 @@ export async function checkPermission({
 
   // Check submission count
   const { error: countError, count } = await sbAdmin
+    .schema('private')
     .from('nova_submissions')
     .select('*', { count: 'exact', head: true })
     .eq('problem_id', problemId)

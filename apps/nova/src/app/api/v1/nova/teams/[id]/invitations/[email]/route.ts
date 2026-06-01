@@ -33,6 +33,7 @@ export async function DELETE(
 
     // Delete the invitation
     const { error } = await supabase
+      .schema('private')
       .from('nova_team_emails')
       .delete()
       .eq('team_id', id)

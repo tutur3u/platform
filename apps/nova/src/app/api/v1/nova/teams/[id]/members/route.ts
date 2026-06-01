@@ -44,6 +44,7 @@ export async function GET(
 
     // Get team members with user information
     const { data, error, count } = await sbAdmin
+      .schema('private')
       .from('nova_team_members')
       .select(
         `
@@ -106,6 +107,7 @@ export async function POST(
 
     // Check if member already exists in the team
     const { data: existingMember, error: memberError } = await supabase
+      .schema('private')
       .from('nova_team_members')
       .select('*')
       .eq('team_id', id)
@@ -125,6 +127,7 @@ export async function POST(
 
     // Add user to team
     const { data, error } = await supabase
+      .schema('private')
       .from('nova_team_members')
       .insert({ team_id: id, user_id })
       .select('*')

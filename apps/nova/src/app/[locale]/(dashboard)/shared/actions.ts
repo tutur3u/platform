@@ -34,6 +34,7 @@ export const getFullSubmission = async (
   }
 
   const { data: submissionCriteriaScores, error: errorCriteria } = await sbAdmin
+    .schema('private')
     .from('nova_submission_criteria')
     .select('*')
     .eq('submission_id', submissionId);

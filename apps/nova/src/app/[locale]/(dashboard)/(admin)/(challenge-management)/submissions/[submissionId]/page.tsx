@@ -31,30 +31,44 @@ export default async function Page({ params }: Props) {
 
   try {
     const { data: submission, error } = await sbAdmin
+      .schema('private')
       .from('nova_submissions_with_scores')
-      .select(
-        `
-        *,
-        user:users!inner(
-          id,
-          display_name,
-          avatar_url
-        ),
-        session:nova_sessions!left(
-          *
-        )
-      `
-      )
+      .select('*')
       .eq('id', submissionId)
       .single();
 
-    if (error || !submission || !submission.problem_id) {
+    if (error || !submission || !submission.problem_id || !submission.user_id) {
       console.error('Error fetching submission:', error);
       return notFound();
     }
 
+    const { data: submissionUser, error: submissionUserError } = await sbAdmin
+      .from('users')
+      .select('id, display_name, avatar_url')
+      .eq('id', submission.user_id)
+      .single();
+
+    if (submissionUserError || !submissionUser) {
+      console.error('Error fetching submission user:', submissionUserError);
+      return notFound();
+    }
+
+    const { data: session, error: sessionError } = submission.session_id
+      ? await sbAdmin
+          .schema('private')
+          .from('nova_sessions')
+          .select('*')
+          .eq('id', submission.session_id)
+          .maybeSingle()
+      : { data: null, error: null };
+
+    if (sessionError) {
+      console.error('Error fetching submission session:', sessionError);
+    }
+
     const { data: submissionCriteriaScores, error: errorCriteria } =
       await sbAdmin
+        .schema('private')
         .from('nova_submission_criteria')
         .select('*')
         .eq('submission_id', submissionId);
@@ -144,9 +158,10 @@ export default async function Page({ params }: Props) {
       ...submission,
       criteria: submissionCriteria,
       test_cases: testCases,
-      session: submission.session,
+      session,
       problem,
       challenge,
+      user: submissionUser,
     };
 
     return <SubmissionClient submission={submissionData} />;

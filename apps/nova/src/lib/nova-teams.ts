@@ -29,8 +29,16 @@ export async function withNovaTeamCounts(
   }
 
   const [membersResult, invitationsResult] = await Promise.all([
-    sbAdmin.from('nova_team_members').select('team_id').in('team_id', teamIds),
-    sbAdmin.from('nova_team_emails').select('team_id').in('team_id', teamIds),
+    sbAdmin
+      .schema('private')
+      .from('nova_team_members')
+      .select('team_id')
+      .in('team_id', teamIds),
+    sbAdmin
+      .schema('private')
+      .from('nova_team_emails')
+      .select('team_id')
+      .in('team_id', teamIds),
   ]);
 
   if (membersResult.error) {

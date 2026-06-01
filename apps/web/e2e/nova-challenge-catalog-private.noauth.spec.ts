@@ -124,7 +124,6 @@ test.describe('Nova challenge catalog private schema API', () => {
           failOnStatusCode: false,
           headers: serviceHeaders({
             prefer: 'return=minimal',
-            schema: 'public',
           }),
         }
       );

@@ -18,6 +18,7 @@ export async function GET(request: Request) {
 
   try {
     let query = supabase
+      .schema('private')
       .from('nova_submissions')
       .select('*')
       .eq('user_id', user.id)
@@ -89,6 +90,7 @@ export async function POST(request: Request) {
     };
 
     const { data: submission, error: submissionError } = await supabase
+      .schema('private')
       .from('nova_submissions')
       .insert(submissionData)
       .select('*')

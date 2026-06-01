@@ -124,6 +124,7 @@ async function getChallenge(
 
     // Fetch highest scores for each problem in this session
     const { data: submissions, error: submissionsError } = await sbAdmin
+      .schema('private')
       .from('nova_submissions_with_scores')
       .select('*')
       .eq('session_id', sessionId);
@@ -198,6 +199,7 @@ async function getSession(challengeId: string): Promise<NovaSession | null> {
   try {
     // Fetch sessions for this challenge
     const { data: session, error } = await sbAdmin
+      .schema('private')
       .from('nova_sessions')
       .select('*')
       .eq('challenge_id', challengeId)
@@ -228,6 +230,7 @@ async function getSubmissions(
   }
 
   const { data: submissions, error } = await sbAdmin
+    .schema('private')
     .from('nova_submissions_with_scores')
     .select('*')
     .eq('problem_id', problemId)

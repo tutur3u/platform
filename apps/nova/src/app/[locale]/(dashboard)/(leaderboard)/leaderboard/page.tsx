@@ -123,6 +123,7 @@ async function fetchLeaderboard(
   }
 
   const { data: userWhitelists, error: userWhitelistsError } = await sbAdmin
+    .schema('private')
     .from('nova_challenge_whitelisted_emails')
     .select('challenge_id')
     .eq('email', user.email);
@@ -199,6 +200,7 @@ async function fetchLeaderboard(
   if (challengeId === 'all') {
     // Fetch user data from the user leaderboard view
     const { data: leaderboardData, error: leaderboardError } = await sbAdmin
+      .schema('private')
       .from('nova_user_leaderboard')
       .select('*')
       .order('score', { ascending: false });
@@ -232,6 +234,7 @@ async function fetchLeaderboard(
     // Fetch user data for a specific challenge
     const { data: challengeLeaderboardData, error: challengeLeaderboardError } =
       await sbAdmin
+        .schema('private')
         .from('nova_user_challenge_leaderboard')
         .select('*')
         .eq('challenge_id', challengeId)

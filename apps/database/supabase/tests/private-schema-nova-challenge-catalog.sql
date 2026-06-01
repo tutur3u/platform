@@ -156,7 +156,7 @@ values
     'private.nova_challenges'::regclass
   ),
   (
-    'public.nova_challenge_whitelisted_emails'::regclass,
+    'private.nova_challenge_whitelisted_emails'::regclass,
     'nova_challenge_whitelisted_emails_challenge_id_fkey',
     'private.nova_challenges'::regclass
   ),
@@ -166,7 +166,7 @@ values
     'private.nova_challenges'::regclass
   ),
   (
-    'public.nova_sessions'::regclass,
+    'private.nova_sessions'::regclass,
     'nova_sessions_challenge_id_fkey',
     'private.nova_challenges'::regclass
   ),
@@ -176,19 +176,19 @@ values
     'private.nova_problems'::regclass
   ),
   (
-    'public.nova_submissions'::regclass,
+    'private.nova_submissions'::regclass,
     'nova_submissions_problem_id_fkey',
     'private.nova_problems'::regclass
   ),
   (
-    'public.nova_submission_criteria'::regclass,
+    'private.nova_submission_criteria'::regclass,
     'nova_submission_criteria_criteria_id_fkey',
     'private.nova_challenge_criteria'::regclass
   ),
   (
     'private.nova_submission_test_cases'::regclass,
     'nova_submission_test_cases_submission_id_fkey',
-    'public.nova_submissions'::regclass
+    'private.nova_submissions'::regclass
   ),
   (
     'private.nova_submission_test_cases'::regclass,
@@ -218,7 +218,7 @@ select ok(
     join pg_rewrite rewrite_rule
       on rewrite_rule.oid = dependency.objid
     where rewrite_rule.ev_class =
-      'public.nova_submissions_with_scores'::regclass
+      'private.nova_submissions_with_scores'::regclass
       and dependency.refobjid = 'private.nova_problem_test_cases'::regclass
   ),
   'Nova submission score view resolves private problem test cases'
@@ -231,7 +231,7 @@ select ok(
     join pg_rewrite rewrite_rule
       on rewrite_rule.oid = dependency.objid
     where rewrite_rule.ev_class =
-      'public.nova_submissions_with_scores'::regclass
+      'private.nova_submissions_with_scores'::regclass
       and dependency.refobjid = 'private.nova_submission_test_cases'::regclass
   ),
   'Nova submission score view resolves private submission test cases'
@@ -244,7 +244,7 @@ select ok(
     join pg_rewrite rewrite_rule
       on rewrite_rule.oid = dependency.objid
     where rewrite_rule.ev_class =
-      'public.nova_team_challenge_leaderboard'::regclass
+      'private.nova_team_challenge_leaderboard'::regclass
       and dependency.refobjid = 'private.nova_challenges'::regclass
   ),
   'Nova team challenge leaderboard resolves private challenges'
@@ -257,7 +257,7 @@ select ok(
     join pg_rewrite rewrite_rule
       on rewrite_rule.oid = dependency.objid
     where rewrite_rule.ev_class =
-      'public.nova_user_challenge_leaderboard'::regclass
+      'private.nova_user_challenge_leaderboard'::regclass
       and dependency.refobjid = 'private.nova_challenges'::regclass
   ),
   'Nova user challenge leaderboard resolves private challenges'
@@ -364,7 +364,7 @@ select lives_ok(
 
 select lives_ok(
   $$
-    insert into public.nova_submissions (
+    insert into private.nova_submissions (
       id,
       problem_id,
       user_id,
@@ -376,7 +376,7 @@ select lives_ok(
       'solve it'
     )
   $$,
-  'service role can insert public submissions for private problems'
+  'service role can insert private submissions for private problems'
 );
 
 select lives_ok(

@@ -123,10 +123,10 @@ select ok(
     select 1
     from pg_constraint
     where conname = 'nova_team_members_team_id_fkey'
-      and conrelid = 'public.nova_team_members'::regclass
+      and conrelid = 'private.nova_team_members'::regclass
       and confrelid = 'private.nova_teams'::regclass
   ),
-  'public Nova team members reference private Nova teams'
+  'private Nova team members reference private Nova teams'
 );
 
 select ok(
@@ -134,10 +134,10 @@ select ok(
     select 1
     from pg_constraint
     where conname = 'nova_team_emails_team_id_fkey'
-      and conrelid = 'public.nova_team_emails'::regclass
+      and conrelid = 'private.nova_team_emails'::regclass
       and confrelid = 'private.nova_teams'::regclass
   ),
-  'public Nova team invitations reference private Nova teams'
+  'private Nova team invitations reference private Nova teams'
 );
 
 select ok(
@@ -146,7 +146,7 @@ select ok(
     from pg_depend dependency
     join pg_rewrite rewrite_rule
       on rewrite_rule.oid = dependency.objid
-    where rewrite_rule.ev_class = 'public.nova_team_leaderboard'::regclass
+    where rewrite_rule.ev_class = 'private.nova_team_leaderboard'::regclass
       and dependency.refobjid = 'private.nova_teams'::regclass
   ),
   'Nova team leaderboard resolves private Nova teams'
@@ -159,7 +159,7 @@ select ok(
     join pg_rewrite rewrite_rule
       on rewrite_rule.oid = dependency.objid
     where rewrite_rule.ev_class =
-      'public.nova_team_challenge_leaderboard'::regclass
+      'private.nova_team_challenge_leaderboard'::regclass
       and dependency.refobjid = 'private.nova_teams'::regclass
   ),
   'Nova team challenge leaderboard resolves private Nova teams'

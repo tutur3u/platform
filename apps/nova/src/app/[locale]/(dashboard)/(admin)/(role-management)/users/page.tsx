@@ -158,12 +158,9 @@ async function getUserData({
     // Regular query for when there's no search
     const queryBuilder = sbAdmin
       .from('platform_user_roles')
-      .select(
-        '*,...users!inner(*, ...user_private_details!inner(*), nova_team_members(team_id))',
-        {
-          count: 'exact',
-        }
-      )
+      .select('*,...users!inner(*, ...user_private_details!inner(*))', {
+        count: 'exact',
+      })
       .contains('users.services', ['NOVA'])
       .order('created_at', { ascending: false })
       .order('user_id');
@@ -208,15 +205,38 @@ async function getUserData({
       return { userData: [], userCount: 0 };
     }
 
-    const teamIds = Array.from(
-      new Set(
-        data.flatMap(({ nova_team_members }) =>
-          (nova_team_members ?? [])
-            .map((member) => member.team_id)
-            .filter((teamId): teamId is string => Boolean(teamId))
-        )
-      )
-    );
+    const userIds = data
+      .map((user) => user.user_id || user.id)
+      .filter((userId): userId is string => Boolean(userId));
+
+    const { data: novaTeamMembers, error: novaTeamMembersError } =
+      userIds.length > 0
+        ? await sbAdmin
+            .schema('private')
+            .from('nova_team_members')
+            .select('user_id, team_id')
+            .in('user_id', userIds)
+        : { data: [], error: null };
+
+    if (novaTeamMembersError) {
+      console.error(
+        'Error fetching user team memberships:',
+        novaTeamMembersError
+      );
+      return { userData: [], userCount: 0 };
+    }
+
+    const teamIdsByUserId = new Map<string, string[]>();
+
+    for (const member of novaTeamMembers ?? []) {
+      if (!member.user_id || !member.team_id) continue;
+
+      const teamIds = teamIdsByUserId.get(member.user_id) ?? [];
+      teamIds.push(member.team_id);
+      teamIdsByUserId.set(member.user_id, teamIds);
+    }
+
+    const teamIds = Array.from(new Set([...teamIdsByUserId.values()].flat()));
 
     const teamNameById = new Map<string, string>();
 
@@ -239,14 +259,12 @@ async function getUserData({
 
     return {
       userData:
-        data.map(({ nova_team_members, ...user }) => ({
+        data.map((user) => ({
           ...user,
           services: user.services || [],
-          team_name:
-            nova_team_members
-              ?.map((member) => teamNameById.get(member.team_id))
-              .filter((teamName): teamName is string => Boolean(teamName)) ||
-            [],
+          team_name: (teamIdsByUserId.get(user.user_id || user.id) ?? [])
+            .map((teamId) => teamNameById.get(teamId))
+            .filter((teamName): teamName is string => Boolean(teamName)),
         })) || [],
       userCount: count || 0,
     };

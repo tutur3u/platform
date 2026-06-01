@@ -24,6 +24,7 @@ export async function GET(request: Request, { params }: Params) {
   try {
     // Check if submission belongs to user
     const { error: submissionError } = await sbAdmin
+      .schema('private')
       .from('nova_submissions')
       .select('*')
       .eq('id', submissionId)
@@ -102,6 +103,7 @@ export async function PUT(request: Request, { params }: Params) {
 
     // Check if submission belongs to user
     const { error: submissionError } = await sbAdmin
+      .schema('private')
       .from('nova_submissions')
       .select('*')
       .eq('id', submissionId)

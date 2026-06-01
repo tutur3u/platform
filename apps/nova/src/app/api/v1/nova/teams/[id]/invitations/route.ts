@@ -31,6 +31,7 @@ export async function GET(
 
     // Get team invitations
     const { data, error, count } = await supabase
+      .schema('private')
       .from('nova_team_emails')
       .select('*', { count: 'exact' })
       .eq('team_id', id)
@@ -82,6 +83,7 @@ export async function POST(
 
     // Check if invitation already exists
     const { data: existingInvitation } = await supabase
+      .schema('private')
       .from('nova_team_emails')
       .select('*')
       .eq('team_id', id)
@@ -97,6 +99,7 @@ export async function POST(
 
     // Add invitation
     const { data, error } = await supabase
+      .schema('private')
       .from('nova_team_emails')
       .insert([{ team_id: id, email }])
       .select()
@@ -118,6 +121,7 @@ export async function POST(
     if (user) {
       // Check if they're already a team member
       const { data: existingMember } = await supabase
+        .schema('private')
         .from('nova_team_members')
         .select('*')
         .eq('team_id', id)
@@ -127,6 +131,7 @@ export async function POST(
       if (!existingMember) {
         // Add them to the team
         await supabase
+          .schema('private')
           .from('nova_team_members')
           .insert([{ team_id: id, user_id: user.id }]);
       }

@@ -19,6 +19,7 @@ export async function GET(request: Request, { params }: Params) {
 
   try {
     const { data: submission, error } = await supabase
+      .schema('private')
       .from('nova_submissions')
       .select('*')
       .eq('id', submissionId)
@@ -85,6 +86,7 @@ export async function PUT(request: Request, { params }: Params) {
     updateData.user_id = user.id;
 
     const { data: updatedSubmission, error: updateError } = await supabase
+      .schema('private')
       .from('nova_submissions')
       .update(updateData)
       .eq('id', submissionId)
@@ -126,6 +128,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
   try {
     const { error: deleteError } = await supabase
+      .schema('private')
       .from('nova_submissions')
       .delete()
       .eq('id', submissionId);
