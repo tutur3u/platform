@@ -47,6 +47,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     const { data: testcase, error } = await sbAdmin
+      .schema('private')
       .from('nova_problem_test_cases')
       .select('*')
       .eq('id', testCaseId)
@@ -165,6 +166,7 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.hidden !== undefined) updateData.hidden = body.hidden;
 
     const { data: updatedTestcase, error: updateError } = await sbAdmin
+      .schema('private')
       .from('nova_problem_test_cases')
       .update(updateData)
       .eq('id', testCaseId)
@@ -229,6 +231,7 @@ export async function DELETE(request: Request, { params }: Params) {
     }
 
     const { error: deleteError } = await sbAdmin
+      .schema('private')
       .from('nova_problem_test_cases')
       .delete()
       .eq('id', testCaseId);

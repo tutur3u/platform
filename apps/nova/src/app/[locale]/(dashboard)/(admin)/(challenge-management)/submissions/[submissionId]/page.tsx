@@ -53,17 +53,57 @@ export default async function Page({ params }: Props) {
       return notFound();
     }
 
-    const { data: submissionCriteria, error: errorCriteria } = await sbAdmin
-      .from('nova_submission_criteria')
-      .select('*, ...nova_challenge_criteria!inner(name, description)')
-      .eq('submission_id', submissionId);
+    const { data: submissionCriteriaScores, error: errorCriteria } =
+      await sbAdmin
+        .from('nova_submission_criteria')
+        .select('*')
+        .eq('submission_id', submissionId);
 
-    if (errorCriteria || !submissionCriteria) {
+    if (errorCriteria || !submissionCriteriaScores) {
       console.error('Error fetching submission criteria:', errorCriteria);
       return notFound();
     }
 
+    const criterionIds = submissionCriteriaScores.map(
+      (criterion) => criterion.criteria_id
+    );
+    const criterionDefinitionById = new Map<
+      string,
+      { description: string | null; name: string }
+    >();
+
+    if (criterionIds.length > 0) {
+      const { data: criterionDefinitions, error: criterionDefinitionsError } =
+        await sbAdmin
+          .schema('private')
+          .from('nova_challenge_criteria')
+          .select('id, name, description')
+          .in('id', criterionIds);
+
+      if (criterionDefinitionsError || !criterionDefinitions) {
+        console.error(
+          'Error fetching criterion definitions:',
+          criterionDefinitionsError
+        );
+        return notFound();
+      }
+
+      for (const criterion of criterionDefinitions) {
+        criterionDefinitionById.set(criterion.id, criterion);
+      }
+    }
+    const submissionCriteria = submissionCriteriaScores.map((criterion) => {
+      const definition = criterionDefinitionById.get(criterion.criteria_id);
+
+      return {
+        ...criterion,
+        name: definition?.name || '',
+        description: definition?.description || '',
+      };
+    });
+
     const { data: testCases, error: errorTestCases } = await sbAdmin
+      .schema('private')
       .from('nova_submission_test_cases')
       .select(
         '*, ...nova_problem_test_cases!inner(input, expected_output:output)'
@@ -76,6 +116,7 @@ export default async function Page({ params }: Props) {
     }
 
     const { data: problem, error: errorProblem } = await sbAdmin
+      .schema('private')
       .from('nova_problems')
       .select('*')
       .eq('id', submission.problem_id)
@@ -87,6 +128,7 @@ export default async function Page({ params }: Props) {
     }
 
     const { data: challenge, error: errorChallenge } = await sbAdmin
+      .schema('private')
       .from('nova_challenges')
       .select('*')
       .eq('id', problem.challenge_id)

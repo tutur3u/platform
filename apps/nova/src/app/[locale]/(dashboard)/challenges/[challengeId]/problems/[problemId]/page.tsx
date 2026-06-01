@@ -99,6 +99,7 @@ async function getChallenge(
   try {
     // Fetch challenge details
     const { data: challenge, error: challengeError } = await sbAdmin
+      .schema('private')
       .from('nova_challenges')
       .select('*, criteria:nova_challenge_criteria(*)')
       .eq('id', challengeId)
@@ -111,6 +112,7 @@ async function getChallenge(
 
     // Fetch problems linked to this challenge
     const { data: problems, error: problemError } = await sbAdmin
+      .schema('private')
       .from('nova_problems')
       .select('id, title')
       .eq('challenge_id', challengeId);
@@ -170,6 +172,7 @@ async function getFullProblem(
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   const { data: problem, error: problemError } = await sbAdmin
+    .schema('private')
     .from('nova_problems')
     .select('*, test_cases:nova_problem_test_cases(*)')
     .eq('test_cases.hidden', false)

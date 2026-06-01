@@ -47,7 +47,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
-    let query = sbAdmin.from('nova_problem_test_cases').select('*');
+    let query = sbAdmin
+      .schema('private')
+      .from('nova_problem_test_cases')
+      .select('*');
     if (problemId) {
       query = query.eq('problem_id', problemId);
     }
@@ -123,6 +126,7 @@ export async function POST(request: Request) {
     };
 
     const { data: testcase, error: testcaseError } = await sbAdmin
+      .schema('private')
       .from('nova_problem_test_cases')
       .insert(testcaseData)
       .select()

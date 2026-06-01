@@ -16,6 +16,7 @@ export default async function Page({ params }: Props) {
 
   try {
     const { data: challenge, error: challengeError } = await sbAdmin
+      .schema('private')
       .from('nova_challenges')
       .select('*')
       .eq('id', challengeId)
@@ -55,6 +56,7 @@ export default async function Page({ params }: Props) {
 
     // Get problem count using the count parameter (more efficient)
     const { count: problemCount, error: countError } = await sbAdmin
+      .schema('private')
       .from('nova_problems')
       .select('*', { count: 'exact', head: true })
       .eq('challenge_id', challengeId);

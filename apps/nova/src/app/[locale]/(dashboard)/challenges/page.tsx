@@ -102,6 +102,7 @@ async function fetchChallenges(
 
     if (isAdmin) {
       const { data: allCriteria, error: criteriaError } = await sbAdmin
+        .schema('private')
         .from('nova_challenge_criteria')
         .select('*')
         .in(

@@ -27,17 +27,12 @@ export default async function SessionPage({ params: futureParams }: Props) {
     return notFound();
   }
 
-  // Fetch the session with related data
+  // Fetch the session with public related data
   const { data: session, error } = await sbAdmin
     .from('nova_sessions')
     .select(
       `
       *,
-      challenge:nova_challenges (
-        id,
-        title,
-        description
-      ),
       user:users (
         id,
         display_name,
@@ -50,6 +45,18 @@ export default async function SessionPage({ params: futureParams }: Props) {
 
   if (error || !session) {
     console.error('Error fetching session:', error);
+    return notFound();
+  }
+
+  const { data: challenge, error: challengeError } = await sbAdmin
+    .schema('private')
+    .from('nova_challenges')
+    .select('id, title, description')
+    .eq('id', session.challenge_id)
+    .single();
+
+  if (challengeError || !challenge) {
+    console.error('Error fetching challenge:', challengeError);
     return notFound();
   }
 
@@ -67,10 +74,6 @@ export default async function SessionPage({ params: futureParams }: Props) {
       `
       id,
       problem_id,
-      problem:nova_problems (
-        id,
-        title
-      ),
       total_score,
       created_at
     `
@@ -85,12 +88,38 @@ export default async function SessionPage({ params: futureParams }: Props) {
     console.error('Error fetching submissions:', submissionsError);
   }
 
+  const problemIds = [
+    ...new Set(
+      (submissions || []).flatMap((submission) =>
+        submission.problem_id ? [submission.problem_id] : []
+      )
+    ),
+  ];
+  const problemTitleById = new Map<string, string>();
+
+  if (problemIds.length > 0) {
+    const { data: problems, error: problemsError } = await sbAdmin
+      .schema('private')
+      .from('nova_problems')
+      .select('id, title')
+      .in('id', problemIds);
+
+    if (problemsError) {
+      console.error('Error fetching submission problems:', problemsError);
+    }
+
+    for (const problem of problems || []) {
+      problemTitleById.set(problem.id, problem.title);
+    }
+  }
+
   // Map submissions to the expected format
   const mappedSubmissions =
     submissions?.map((sub) => ({
       id: sub.id,
       problemId: sub.problem_id,
-      problemTitle: sub.problem?.title || 'Unknown Problem',
+      problemTitle:
+        problemTitleById.get(sub.problem_id || '') || 'Unknown Problem',
       score: sub.total_score || 0,
       createdAt: sub.created_at ? new Date(sub.created_at).toISOString() : null,
     })) || [];
@@ -108,9 +137,9 @@ export default async function SessionPage({ params: futureParams }: Props) {
       email: userPrivateDetails?.email || null,
     },
     challenge: {
-      id: session.challenge.id,
-      title: session.challenge.title,
-      description: session.challenge.description || '',
+      id: challenge.id,
+      title: challenge.title,
+      description: challenge.description || '',
     },
     submissions: mappedSubmissions as SessionSubmission[],
   };

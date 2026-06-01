@@ -26,6 +26,7 @@ export async function GET(request: Request, { params }: Params) {
 
   try {
     const { data: challenge, error } = await sbAdmin
+      .schema('private')
       .from('nova_challenges')
       .select(
         'id, title, description, enabled, open_at, close_at, previewable_at, duration, max_attempts, max_daily_attempts'
@@ -133,6 +134,7 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.closeAt !== undefined) updateData.close_at = body.closeAt;
 
     const { data: updatedChallenge, error: updateError } = await sbAdmin
+      .schema('private')
       .from('nova_challenges')
       .update(updateData)
       .eq('id', challengeId)
@@ -179,6 +181,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
   try {
     const { error: deleteError } = await sbAdmin
+      .schema('private')
       .from('nova_challenges')
       .delete()
       .eq('id', challengeId);

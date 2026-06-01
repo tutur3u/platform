@@ -73,6 +73,7 @@ export async function getNovaCriterionChallengeId(
   sbAdmin: TypedSupabaseClient
 ) {
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('nova_challenge_criteria')
     .select('challenge_id')
     .eq('id', criterionId)
@@ -86,6 +87,7 @@ export async function getNovaProblemChallengeId(
   sbAdmin: TypedSupabaseClient
 ) {
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('nova_problems')
     .select('challenge_id')
     .eq('id', problemId)
@@ -99,6 +101,7 @@ export async function getNovaTestCaseChallengeId(
   sbAdmin: TypedSupabaseClient
 ) {
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('nova_problem_test_cases')
     .select('problem_id')
     .eq('id', testCaseId)

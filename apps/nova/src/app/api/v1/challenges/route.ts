@@ -20,6 +20,7 @@ export async function GET(request: Request) {
 
   try {
     let query = sbAdmin
+      .schema('private')
       .from('nova_challenges')
       .select('*')
       .order('created_at', { ascending: false });
@@ -107,6 +108,7 @@ export async function POST(request: Request) {
     };
 
     const { data: challenge, error: challengeError } = await sbAdmin
+      .schema('private')
       .from('nova_challenges')
       .insert(challengeData)
       .select()

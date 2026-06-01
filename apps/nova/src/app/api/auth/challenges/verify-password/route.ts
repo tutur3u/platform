@@ -35,6 +35,7 @@ export async function POST(request: Request) {
     }
 
     const { data: challenge, error } = await sbAdmin
+      .schema('private')
       .from('nova_challenges')
       .select('*')
       .eq('id', challengeId)

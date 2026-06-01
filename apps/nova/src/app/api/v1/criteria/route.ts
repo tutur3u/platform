@@ -17,7 +17,10 @@ export async function GET(request: Request) {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
-    let query = sbAdmin.from('nova_challenge_criteria').select('*');
+    let query = sbAdmin
+      .schema('private')
+      .from('nova_challenge_criteria')
+      .select('*');
     if (challengeId) {
       query = query.eq('challenge_id', challengeId);
     }
@@ -75,6 +78,7 @@ export async function POST(request: Request) {
     };
 
     const { data: criterion, error: criterionError } = await sbAdmin
+      .schema('private')
       .from('nova_challenge_criteria')
       .insert(criterionData)
       .select()

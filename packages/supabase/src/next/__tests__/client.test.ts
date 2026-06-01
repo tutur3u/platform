@@ -8,10 +8,7 @@ import {
   createDynamicClient,
   switchClientSession,
 } from '../client';
-import {
-  getProxyOnlyPublicTableError,
-  isProxyOnlyPublicTable,
-} from '../protected-tables';
+import { isProxyOnlyPublicTable } from '../protected-tables';
 
 vi.mock('@supabase/ssr', () => ({
   createBrowserClient: vi.fn(),
@@ -79,8 +76,9 @@ describe('Supabase Client', () => {
     expect(isProxyOnlyPublicTable('topic_announcements')).toBe(false);
   });
 
-  it('does not treat migrated wallets as proxy-only', () => {
+  it('does not treat migrated private tables as proxy-only', () => {
     expect(isProxyOnlyPublicTable('workspace_wallets')).toBe(false);
+    expect(isProxyOnlyPublicTable('nova_challenges')).toBe(false);
   });
 
   describe('createClient', () => {
@@ -95,9 +93,9 @@ describe('Supabase Client', () => {
         browserAuthOptions
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(() => client.from('nova_challenges')).toThrow(
-        getProxyOnlyPublicTableError('nova_challenges')
-      );
+      expect(client.from('nova_challenges')).toEqual({
+        table: 'nova_challenges',
+      });
       expect(client.from('workspace_boards')).toEqual({
         table: 'workspace_boards',
       });
@@ -138,9 +136,9 @@ describe('Supabase Client', () => {
         browserAuthOptions
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(() => client.from('nova_challenges')).toThrow(
-        getProxyOnlyPublicTableError('nova_challenges')
-      );
+      expect(client.from('nova_challenges')).toEqual({
+        table: 'nova_challenges',
+      });
       expect(client.from('workspace_boards')).toEqual({
         table: 'workspace_boards',
       });
@@ -174,9 +172,9 @@ describe('Supabase Client', () => {
         refresh_token: 'test-refresh-token',
       });
       expect(client.from('users')).toEqual({ table: 'users' });
-      expect(() => client.from('nova_challenges')).toThrow(
-        getProxyOnlyPublicTableError('nova_challenges')
-      );
+      expect(client.from('nova_challenges')).toEqual({
+        table: 'nova_challenges',
+      });
     });
 
     it('creates separate clients for multiple sessions', async () => {

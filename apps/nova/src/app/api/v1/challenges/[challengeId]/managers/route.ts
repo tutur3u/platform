@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
 
     // Verify the challenge exists
     const { data: challengeExists, error: challengeError } = await sbAdmin
+      .schema('private')
       .from('nova_challenges')
       .select('id')
       .eq('id', challengeId)

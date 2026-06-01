@@ -72,12 +72,14 @@ export default async function SubmissionsList({
 
   // Fetch challenges for filtering
   const { data: challenges = [] } = await sbAdmin
+    .schema('private')
     .from('nova_challenges')
     .select('id, title')
     .order('title');
 
   // Fetch problems for filtering
   const { data: problems = [] } = await sbAdmin
+    .schema('private')
     .from('nova_problems')
     .select('id, title, challenge_id')
     .order('title');
@@ -136,6 +138,7 @@ export default async function SubmissionsList({
 
   if (selectedChallenge) {
     const { data: matchingProblemIds } = await sbAdmin
+      .schema('private')
       .from('nova_problems')
       .select('id')
       .eq('challenge_id', selectedChallenge);

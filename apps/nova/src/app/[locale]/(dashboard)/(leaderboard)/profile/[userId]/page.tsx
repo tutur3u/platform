@@ -134,6 +134,7 @@ export default async function UserProfilePage({
   const challengeIds = Object.keys(challengeScores);
 
   const { data: challengesRaw, error: challengesError } = await sbAdmin
+    .schema('private')
     .from('nova_challenges')
     .select('id, title, description')
     .in('id', challengeIds.length > 0 ? challengeIds : ['none']);
@@ -146,14 +147,18 @@ export default async function UserProfilePage({
 
   // Fetch problems to calculate completion percentages
   const { data: problemsRaw, error: problemsError } = await sbAdmin
+    .schema('private')
     .from('nova_problems')
-    .select('id, challenge_id');
+    .select('id, challenge_id, title');
 
   if (problemsError) {
     console.error('Error fetching problems:', problemsError.message);
   }
 
   const problemsData = problemsRaw || [];
+  const problemTitleById = new Map(
+    problemsData.map((problem) => [problem.id, problem.title])
+  );
 
   // Map problems to challenges for completion stats
   const problemsByChallenge = problemsData.reduce(
@@ -213,11 +218,7 @@ export default async function UserProfilePage({
       id,
       problem_id,
       total_score,
-      created_at,
-      nova_problems(
-        id,
-        title
-      )
+      created_at
     `
     )
     .eq('user_id', userId)
@@ -273,7 +274,8 @@ export default async function UserProfilePage({
     recentActivity: recentActivity.map((activity) => ({
       id: activity.id || '',
       problemId: activity.problem_id || '',
-      problemTitle: activity.nova_problems?.title || 'Unknown Problem',
+      problemTitle:
+        problemTitleById.get(activity.problem_id || '') || 'Unknown Problem',
       score: activity.total_score || 0,
       date: activity.created_at || '',
     })),

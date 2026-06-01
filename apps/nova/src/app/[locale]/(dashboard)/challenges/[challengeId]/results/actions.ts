@@ -44,6 +44,7 @@ export async function fetchSessionDetails(
 
     // Step 2: Get problems using admin client (users can't directly query problems)
     const { data: problems, error: problemsError } = await sbAdmin
+      .schema('private')
       .from('nova_problems')
       .select('*')
       .eq('challenge_id', challengeId);
@@ -72,6 +73,7 @@ export async function fetchSessionDetails(
 
     // Step 4: Get criteria data for the challenge
     const { data: criteria, error: criteriaError } = await sbAdmin
+      .schema('private')
       .from('nova_challenge_criteria')
       .select('*')
       .eq('challenge_id', challengeId);
@@ -185,6 +187,7 @@ export async function fetchAllProblems(
   try {
     // Step 1: Get all problems for this challenge using admin client
     const { data: problems, error: problemsError } = await sbAdmin
+      .schema('private')
       .from('nova_problems')
       .select('*')
       .eq('challenge_id', challengeId);
@@ -234,6 +237,7 @@ export async function fetchAllProblems(
 
     // Step 4: Get criteria data for the challenge
     const { data: criteria, error: criteriaError } = await sbAdmin
+      .schema('private')
       .from('nova_challenge_criteria')
       .select('*')
       .eq('challenge_id', challengeId);

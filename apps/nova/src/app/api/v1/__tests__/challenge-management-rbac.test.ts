@@ -232,7 +232,7 @@ describe('Nova challenge-management API RBAC', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(operations).toContain('nova_challenges.update');
+    expect(operations).toContain('private.nova_challenges.update');
   });
 
   it('allows an enabled role manager to update infrastructure whitelist rows', async () => {

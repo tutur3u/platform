@@ -80,6 +80,7 @@ async function getChallenges() {
   const supabase = await createClient();
 
   const { data, error } = await supabase
+    .schema('private')
     .from('nova_challenges')
     .select('id, title')
     .order('title');
@@ -106,6 +107,7 @@ async function getProblemsData({
   const supabase = await createClient();
 
   const queryBuilder = supabase
+    .schema('private')
     .from('nova_problems')
     .select(
       `*,

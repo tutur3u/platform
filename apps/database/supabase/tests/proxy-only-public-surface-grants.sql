@@ -10,12 +10,8 @@ create temporary table proxy_only_public_tables(table_name text primary key)
 on commit drop;
 
 insert into proxy_only_public_tables(table_name)
-values
-  ('nova_challenge_criteria'),
-  ('nova_challenges'),
-  ('nova_problem_test_cases'),
-  ('nova_problems'),
-  ('nova_submission_test_cases');
+select null::text
+where false;
 
 select ok(
   not exists (

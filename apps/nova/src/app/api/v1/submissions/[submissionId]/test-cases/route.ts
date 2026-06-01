@@ -39,6 +39,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     let query = sbAdmin
+      .schema('private')
       .from('nova_submission_test_cases')
       .select('*')
       .eq('submission_id', submissionId);
@@ -116,6 +117,7 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const { data, error } = await sbAdmin
+      .schema('private')
       .from('nova_submission_test_cases')
       .upsert({
         submission_id: submissionId,
@@ -158,6 +160,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
   try {
     let query = supabase
+      .schema('private')
       .from('nova_submission_test_cases')
       .delete()
       .eq('submission_id', submissionId);

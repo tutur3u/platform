@@ -94,6 +94,7 @@ async function getProblem(
   try {
     // Fetch problem details
     const { data: problem, error: problemError } = await sbAdmin
+      .schema('private')
       .from('nova_problems')
       .select('*')
       .eq('id', problemId)
@@ -106,6 +107,7 @@ async function getProblem(
 
     // Fetch test cases for the problem
     const { data: testCases, error: testcaseError } = await sbAdmin
+      .schema('private')
       .from('nova_problem_test_cases')
       .select('*')
       .eq('problem_id', problemId);

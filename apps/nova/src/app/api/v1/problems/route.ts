@@ -33,6 +33,7 @@ export async function GET(request: Request) {
     }
 
     let query = sbAdmin
+      .schema('private')
       .from('nova_problems')
       .select(selectQuery)
       .order('created_at', { ascending: false });
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
     };
 
     const { data: problem, error: problemError } = await sbAdmin
+      .schema('private')
       .from('nova_problems')
       .insert(problemData)
       .select()

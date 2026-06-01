@@ -104,7 +104,7 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
     const { data: teamChallengeScores, error: challengeScoresError } =
       await sbAdmin
         .from('nova_team_challenge_leaderboard')
-        .select('challenge_id, score, nova_challenges(id, title)')
+        .select('challenge_id, score')
         .eq('team_id', id);
 
     if (challengeScoresError) {
@@ -112,6 +112,34 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
         'Error fetching challenge scores:',
         challengeScoresError.message
       );
+    }
+
+    const challengeIds = [
+      ...new Set(
+        (teamChallengeScores || []).flatMap((challenge) =>
+          challenge.challenge_id ? [challenge.challenge_id] : []
+        )
+      ),
+    ];
+    const challengeTitleById = new Map<string, string>();
+
+    if (challengeIds.length > 0) {
+      const { data: challengeRows, error: challengeRowsError } = await sbAdmin
+        .schema('private')
+        .from('nova_challenges')
+        .select('id, title')
+        .in('id', challengeIds);
+
+      if (challengeRowsError) {
+        console.error(
+          'Error fetching team challenge titles:',
+          challengeRowsError.message
+        );
+      }
+
+      for (const challenge of challengeRows || []) {
+        challengeTitleById.set(challenge.id, challenge.title);
+      }
     }
 
     // Get individual member scores from user leaderboard
@@ -162,7 +190,9 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
     const challengeDetails =
       teamChallengeScores?.map((challenge) => ({
         id: challenge.challenge_id || '',
-        title: challenge.nova_challenges?.title || 'Unknown Challenge',
+        title:
+          challengeTitleById.get(challenge.challenge_id || '') ||
+          'Unknown Challenge',
         score: challenge.score || 0,
       })) || [];
 

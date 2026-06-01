@@ -50,6 +50,7 @@ async function getChallenge(challengeId: string) {
   try {
     // Fetch challenge details
     const { data: challenge, error: challengeError } = await sbAdmin
+      .schema('private')
       .from('nova_challenges')
       .select('*')
       .eq('id', challengeId)
@@ -102,6 +103,7 @@ async function getFirstProblemId(challengeId: string) {
 
   try {
     const { data: problem, error: problemError } = await sbAdmin
+      .schema('private')
       .from('nova_problems')
       .select('id')
       .eq('challenge_id', challengeId)

@@ -1342,7 +1342,7 @@ values
 
 -- Populate nova_challenges
 insert into
-    public.nova_challenges (id, title, description, duration, enabled, previewable_at, open_at, close_at, max_attempts, max_daily_attempts)
+    private.nova_challenges (id, title, description, duration, enabled, previewable_at, open_at, close_at, max_attempts, max_daily_attempts)
 values
     (
         '00000000-0000-0000-0000-000000000001',
@@ -1383,7 +1383,7 @@ values
 
 -- Populate nova_challenge_criteria (4 criteria per challenge)
 insert into
-    public.nova_challenge_criteria (id, name, description, challenge_id)
+    private.nova_challenge_criteria (id, name, description, challenge_id)
 values
     -- Challenge 1 Criteria
     (
@@ -1465,7 +1465,7 @@ values
 
 -- Populate nova_problems
 insert into
-    public.nova_problems (
+    private.nova_problems (
         id,
         title,
         description,
@@ -1559,7 +1559,7 @@ values
 
 -- Populate nova_problem_test_cases (10 test cases per problem)
 insert into
-    public.nova_problem_test_cases (id, problem_id, input, output, hidden)
+    private.nova_problem_test_cases (id, problem_id, input, output, hidden)
 values
     -- Problem 1 Test Cases (Color the fruits)
     (
@@ -2026,7 +2026,7 @@ VALUES
     ('20000000-0000-0000-0000-000000000048', 'What is the largest number in the sequence?', '10000000-0000-0000-0000-000000000024', '00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000005');
 
 INSERT INTO
-    public.nova_submission_test_cases (submission_id, test_case_id, output, matched)
+    private.nova_submission_test_cases (submission_id, test_case_id, output, matched)
 VALUES
     -- User 1 submissions for Challenge 1 (Submissions 1-4)
     ('20000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000001001', 'Red, Yellow, Green', false),

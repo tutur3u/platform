@@ -1,7 +1,6 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getProxyOnlyPublicTableError } from '../protected-tables';
 import {
   createAdminClient,
   createAnonClient,
@@ -259,11 +258,7 @@ describe('Supabase Server Client', () => {
         table: 'topic_announcements',
       });
       expect(client.from('nova_challenges')).toEqual({
-        client: 'admin',
-        table: 'nova_challenges',
-      });
-      expect(client.from('nova_challenges')).toEqual({
-        client: 'admin',
+        client: 'user',
         table: 'nova_challenges',
       });
       expect(client.from('workspace_boards')).toEqual({
@@ -329,7 +324,7 @@ describe('Supabase Server Client', () => {
         table: 'topic_announcements',
       });
       expect(client.from('nova_challenges')).toEqual({
-        client: 'admin',
+        client: 'user',
         table: 'nova_challenges',
       });
       expect(client.schema('private').from('inventory_units')).toEqual({
@@ -464,9 +459,10 @@ describe('Supabase Server Client', () => {
           cookies: expect.any(Object),
         })
       );
-      expect(() => client.from('nova_challenges')).toThrow(
-        getProxyOnlyPublicTableError('nova_challenges')
-      );
+      expect(client.from('nova_challenges')).toEqual({
+        client: 'user',
+        table: 'nova_challenges',
+      });
       expect(client.from('workspace_boards')).toEqual({
         client: 'user',
         table: 'workspace_boards',

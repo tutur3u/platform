@@ -91,6 +91,7 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
 
   // Fetch all challenges for filter options
   const { data: challenges, error: challengesError } = await sbAdmin
+    .schema('private')
     .from('nova_challenges')
     .select('id, title')
     .order('title', { ascending: true });

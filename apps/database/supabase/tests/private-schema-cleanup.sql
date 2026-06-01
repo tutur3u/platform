@@ -216,9 +216,9 @@ select ok(
     from pg_constraint
     where conname = 'nova_challenge_manager_emails_challenge_id_fkey'
       and conrelid = 'private.nova_challenge_manager_emails'::regclass
-      and confrelid = 'public.nova_challenges'::regclass
+      and confrelid = 'private.nova_challenges'::regclass
   ),
-  'Nova challenge manager emails still reference public challenges'
+  'Nova challenge manager emails still reference private challenges'
 );
 
 select ok(

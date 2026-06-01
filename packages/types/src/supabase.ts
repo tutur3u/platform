@@ -4137,6 +4137,38 @@ export type Database = {
         };
         Relationships: [];
       };
+      nova_challenge_criteria: {
+        Row: {
+          challenge_id: string;
+          created_at: string;
+          description: string;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          challenge_id: string;
+          created_at?: string;
+          description: string;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          challenge_id?: string;
+          created_at?: string;
+          description?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_challenge_criteria_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenges';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nova_challenge_manager_emails: {
         Row: {
           challenge_id: string;
@@ -4153,7 +4185,180 @@ export type Database = {
           created_at?: string;
           email?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_challenge_manager_emails_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenges';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_challenges: {
+        Row: {
+          close_at: string | null;
+          created_at: string;
+          description: string;
+          duration: number;
+          enabled: boolean;
+          id: string;
+          max_attempts: number;
+          max_daily_attempts: number;
+          open_at: string | null;
+          password_hash: string | null;
+          password_salt: string | null;
+          previewable_at: string | null;
+          title: string;
+          whitelisted_only: boolean;
+        };
+        Insert: {
+          close_at?: string | null;
+          created_at?: string;
+          description: string;
+          duration: number;
+          enabled?: boolean;
+          id?: string;
+          max_attempts?: number;
+          max_daily_attempts?: number;
+          open_at?: string | null;
+          password_hash?: string | null;
+          password_salt?: string | null;
+          previewable_at?: string | null;
+          title: string;
+          whitelisted_only?: boolean;
+        };
+        Update: {
+          close_at?: string | null;
+          created_at?: string;
+          description?: string;
+          duration?: number;
+          enabled?: boolean;
+          id?: string;
+          max_attempts?: number;
+          max_daily_attempts?: number;
+          open_at?: string | null;
+          password_hash?: string | null;
+          password_salt?: string | null;
+          previewable_at?: string | null;
+          title?: string;
+          whitelisted_only?: boolean;
+        };
         Relationships: [];
+      };
+      nova_problem_test_cases: {
+        Row: {
+          created_at: string;
+          hidden: boolean;
+          id: string;
+          input: string;
+          output: string;
+          problem_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          hidden?: boolean;
+          id?: string;
+          input: string;
+          output: string;
+          problem_id: string;
+        };
+        Update: {
+          created_at?: string;
+          hidden?: boolean;
+          id?: string;
+          input?: string;
+          output?: string;
+          problem_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_problem_testcases_problem_id_fkey';
+            columns: ['problem_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_problems';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_problems: {
+        Row: {
+          challenge_id: string;
+          created_at: string;
+          description: string;
+          example_input: string;
+          example_output: string;
+          id: string;
+          max_prompt_length: number;
+          title: string;
+        };
+        Insert: {
+          challenge_id: string;
+          created_at?: string;
+          description: string;
+          example_input: string;
+          example_output: string;
+          id?: string;
+          max_prompt_length: number;
+          title: string;
+        };
+        Update: {
+          challenge_id?: string;
+          created_at?: string;
+          description?: string;
+          example_input?: string;
+          example_output?: string;
+          id?: string;
+          max_prompt_length?: number;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_problems_challenge_id_fkey';
+            columns: ['challenge_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_challenges';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      nova_submission_test_cases: {
+        Row: {
+          confidence: number | null;
+          created_at: string;
+          matched: boolean;
+          output: string;
+          reasoning: string | null;
+          submission_id: string;
+          test_case_id: string;
+        };
+        Insert: {
+          confidence?: number | null;
+          created_at?: string;
+          matched?: boolean;
+          output: string;
+          reasoning?: string | null;
+          submission_id: string;
+          test_case_id: string;
+        };
+        Update: {
+          confidence?: number | null;
+          created_at?: string;
+          matched?: boolean;
+          output?: string;
+          reasoning?: string | null;
+          submission_id?: string;
+          test_case_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nova_submission_test_cases_test_case_id_fkey';
+            columns: ['test_case_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_problem_test_cases';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       nova_teams: {
         Row: {
@@ -14063,45 +14268,6 @@ export type Database = {
           },
         ];
       };
-      nova_challenge_criteria: {
-        Row: {
-          challenge_id: string;
-          created_at: string;
-          description: string;
-          id: string;
-          name: string;
-        };
-        Insert: {
-          challenge_id: string;
-          created_at?: string;
-          description: string;
-          id?: string;
-          name: string;
-        };
-        Update: {
-          challenge_id?: string;
-          created_at?: string;
-          description?: string;
-          id?: string;
-          name?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'nova_challenge_criteria_challenge_id_fkey';
-            columns: ['challenge_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_challenges';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'nova_challenge_criteria_challenge_id_fkey';
-            columns: ['challenge_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['challenge_id'];
-          },
-        ];
-      };
       nova_challenge_whitelisted_emails: {
         Row: {
           challenge_id: string;
@@ -14121,147 +14287,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'nova_challenge_whitelisted_emails_challenge_id_fkey';
-            columns: ['challenge_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_challenges';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'nova_challenge_whitelisted_emails_challenge_id_fkey';
-            columns: ['challenge_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['challenge_id'];
-          },
-        ];
-      };
-      nova_challenges: {
-        Row: {
-          close_at: string | null;
-          created_at: string;
-          description: string;
-          duration: number;
-          enabled: boolean;
-          id: string;
-          max_attempts: number;
-          max_daily_attempts: number;
-          open_at: string | null;
-          password_hash: string | null;
-          password_salt: string | null;
-          previewable_at: string | null;
-          title: string;
-          whitelisted_only: boolean;
-        };
-        Insert: {
-          close_at?: string | null;
-          created_at?: string;
-          description: string;
-          duration: number;
-          enabled?: boolean;
-          id?: string;
-          max_attempts?: number;
-          max_daily_attempts?: number;
-          open_at?: string | null;
-          password_hash?: string | null;
-          password_salt?: string | null;
-          previewable_at?: string | null;
-          title: string;
-          whitelisted_only?: boolean;
-        };
-        Update: {
-          close_at?: string | null;
-          created_at?: string;
-          description?: string;
-          duration?: number;
-          enabled?: boolean;
-          id?: string;
-          max_attempts?: number;
-          max_daily_attempts?: number;
-          open_at?: string | null;
-          password_hash?: string | null;
-          password_salt?: string | null;
-          previewable_at?: string | null;
-          title?: string;
-          whitelisted_only?: boolean;
-        };
-        Relationships: [];
-      };
-      nova_problem_test_cases: {
-        Row: {
-          created_at: string;
-          hidden: boolean;
-          id: string;
-          input: string;
-          output: string;
-          problem_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          hidden?: boolean;
-          id?: string;
-          input: string;
-          output: string;
-          problem_id: string;
-        };
-        Update: {
-          created_at?: string;
-          hidden?: boolean;
-          id?: string;
-          input?: string;
-          output?: string;
-          problem_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'nova_problem_testcases_problem_id_fkey';
-            columns: ['problem_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_problems';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      nova_problems: {
-        Row: {
-          challenge_id: string;
-          created_at: string;
-          description: string;
-          example_input: string;
-          example_output: string;
-          id: string;
-          max_prompt_length: number;
-          title: string;
-        };
-        Insert: {
-          challenge_id: string;
-          created_at?: string;
-          description: string;
-          example_input: string;
-          example_output: string;
-          id?: string;
-          max_prompt_length: number;
-          title: string;
-        };
-        Update: {
-          challenge_id?: string;
-          created_at?: string;
-          description?: string;
-          example_input?: string;
-          example_output?: string;
-          id?: string;
-          max_prompt_length?: number;
-          title?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'nova_problems_challenge_id_fkey';
-            columns: ['challenge_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_challenges';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'nova_problems_challenge_id_fkey';
             columns: ['challenge_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_challenge_leaderboard';
@@ -14298,13 +14323,6 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'nova_sessions_challenge_id_fkey';
-            columns: ['challenge_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_challenges';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'nova_sessions_challenge_id_fkey';
             columns: ['challenge_id'];
@@ -14372,13 +14390,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'nova_submission_criteria_criteria_id_fkey';
-            columns: ['criteria_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_challenge_criteria';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'nova_submission_criteria_submission_id_fkey';
             columns: ['submission_id'];
             isOneToOne: false;
@@ -14390,58 +14401,6 @@ export type Database = {
             columns: ['submission_id'];
             isOneToOne: false;
             referencedRelation: 'nova_submissions_with_scores';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      nova_submission_test_cases: {
-        Row: {
-          confidence: number | null;
-          created_at: string;
-          matched: boolean;
-          output: string;
-          reasoning: string | null;
-          submission_id: string;
-          test_case_id: string;
-        };
-        Insert: {
-          confidence?: number | null;
-          created_at?: string;
-          matched?: boolean;
-          output: string;
-          reasoning?: string | null;
-          submission_id: string;
-          test_case_id: string;
-        };
-        Update: {
-          confidence?: number | null;
-          created_at?: string;
-          matched?: boolean;
-          output?: string;
-          reasoning?: string | null;
-          submission_id?: string;
-          test_case_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'nova_submission_test_cases_submission_id_fkey';
-            columns: ['submission_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_submissions';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'nova_submission_test_cases_submission_id_fkey';
-            columns: ['submission_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_submissions_with_scores';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'nova_submission_test_cases_test_case_id_fkey';
-            columns: ['test_case_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_problem_test_cases';
             referencedColumns: ['id'];
           },
         ];
@@ -14475,13 +14434,6 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'nova_submissions_problem_id_fkey';
-            columns: ['problem_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_problems';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'nova_submissions_session_id_fkey';
             columns: ['session_id'];
@@ -29038,13 +28990,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'nova_submissions_problem_id_fkey';
-            columns: ['problem_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_problems';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'nova_submissions_session_id_fkey';
             columns: ['session_id'];
             isOneToOne: false;
@@ -29090,13 +29035,6 @@ export type Database = {
           team_id: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: 'nova_problems_challenge_id_fkey';
-            columns: ['challenge_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_challenges';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'nova_problems_challenge_id_fkey';
             columns: ['challenge_id'];

@@ -1489,12 +1489,12 @@ export type AuroraForecast = {
   ml_forecast: AuroraMLForecast[];
 };
 
-export type NovaChallengeCriteria = Tables<'nova_challenge_criteria'>;
-export type NovaChallenge = Tables<'nova_challenges'>;
+export type NovaChallengeCriteria = PrivateTable<'nova_challenge_criteria'>;
+export type NovaChallenge = PrivateTable<'nova_challenges'>;
 export type NovaChallengeWhitelistedEmail =
   Tables<'nova_challenge_whitelisted_emails'>;
-export type NovaProblemTestCase = Tables<'nova_problem_test_cases'>;
-export type NovaProblem = Tables<'nova_problems'>;
+export type NovaProblemTestCase = PrivateTable<'nova_problem_test_cases'>;
+export type NovaProblem = PrivateTable<'nova_problems'>;
 export type NovaRole = Tables<'platform_email_roles'>;
 export type NovaRoleBasic = Pick<
   Tables<'platform_email_roles'>,
@@ -1503,7 +1503,7 @@ export type NovaRoleBasic = Pick<
 export type NovaSession = Tables<'nova_sessions'>;
 export type NovaSubmission = Tables<'nova_submissions'>;
 export type NovaSubmissionCriteria = Tables<'nova_submission_criteria'>;
-export type NovaSubmissionTestCase = Tables<'nova_submission_test_cases'>;
+export type NovaSubmissionTestCase = PrivateTable<'nova_submission_test_cases'>;
 export type NovaTeam = PrivateTable<'nova_teams'>;
 export type NovaSubmissionWithScores = Tables<'nova_submissions_with_scores'>;
 export type NovaSubmissionWithScoresAndCriteria =

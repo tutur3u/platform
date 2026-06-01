@@ -1,10 +1,4 @@
-export const PROXY_ONLY_PUBLIC_TABLES = [
-  'nova_challenge_criteria',
-  'nova_challenges',
-  'nova_problem_test_cases',
-  'nova_problems',
-  'nova_submission_test_cases',
-] as const;
+export const PROXY_ONLY_PUBLIC_TABLES = [] as const;
 
 const proxyOnlyPublicTableSet = new Set<string>(PROXY_ONLY_PUBLIC_TABLES);
 

@@ -71,6 +71,7 @@ export default async function SessionsList({
 
   // Fetch challenges for filtering
   const { data: challenges = [] } = await sbAdmin
+    .schema('private')
     .from('nova_challenges')
     .select('id, title')
     .order('title');

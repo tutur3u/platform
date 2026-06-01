@@ -71,6 +71,26 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'nova_challenge_criteria',
+    select: 'id',
+  },
+  {
+    name: 'nova_challenges',
+    select: 'id',
+  },
+  {
+    name: 'nova_problem_test_cases',
+    select: 'id',
+  },
+  {
+    name: 'nova_problems',
+    select: 'id',
+  },
+  {
+    name: 'nova_submission_test_cases',
+    select: 'submission_id',
+  },
+  {
     name: 'recording_transcripts',
     select: 'id',
   },
