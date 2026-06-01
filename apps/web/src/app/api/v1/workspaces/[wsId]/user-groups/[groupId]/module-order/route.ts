@@ -1,11 +1,13 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const ModuleOrderSchema = z.object({
   moduleIds: z.array(z.string().uuid()).min(1).max(500),
@@ -52,6 +54,17 @@ export const PATCH = withSessionAuth(
     if (!membership.ok) {
       return NextResponse.json(
         { message: "You don't have access to this workspace" },
+        { status: 403 }
+      );
+    }
+
+    const permissions = await getPermissions({
+      user: context.user,
+      wsId: normalizedWsId,
+    });
+    if (!permissions?.containsPermission('manage_users')) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
         { status: 403 }
       );
     }
@@ -148,7 +161,7 @@ export const PATCH = withSessionAuth(
         name: reorderError.name,
         stack: reorderError.stack?.split('\n').slice(0, 5).join('\n'),
       };
-      console.error('Failed to reorder modules', {
+      serverLogger.error('Failed to reorder modules', {
         groupId,
         modulesPreview: moduleIds.slice(0, 10),
         modulesTotal: moduleIds.length,
