@@ -44,8 +44,8 @@ select has_function('public', 'get_task_board_workspace_id', array['uuid'], 'boa
 select has_function('public', 'is_task_board_workspace_member', array['uuid'], 'board membership helper exists');
 
 select ok(
-  has_table_privilege('authenticated', 'public.task_board_shares', 'select'),
-  'authenticated can select task board shares through RLS'
+  not has_table_privilege('authenticated', 'public.task_board_shares', 'select'),
+  'authenticated cannot select task board shares directly'
 );
 
 select ok(
@@ -69,9 +69,9 @@ select ok(
     from pg_policies
     where schemaname = 'public'
       and tablename = 'task_board_shares'
-      and cmd in ('INSERT', 'UPDATE', 'DELETE')
+      and cmd in ('SELECT', 'INSERT', 'UPDATE', 'DELETE')
   ),
-  'task board share writes have no direct authenticated RLS policies'
+  'task board shares have no direct authenticated RLS policies'
 );
 
 select ok(
@@ -95,12 +95,12 @@ select ok(
 );
 
 select ok(
-  has_function_privilege(
+  not has_function_privilege(
     'authenticated',
     'public.get_task_board_workspace_id(uuid)',
     'execute'
   ),
-  'authenticated can execute task board workspace helper'
+  'authenticated cannot execute task board workspace helper directly'
 );
 
 select ok(
@@ -113,12 +113,12 @@ select ok(
 );
 
 select ok(
-  has_function_privilege(
+  not has_function_privilege(
     'authenticated',
     'public.is_task_board_workspace_member(uuid)',
     'execute'
   ),
-  'authenticated can execute task board membership helper'
+  'authenticated cannot execute task board membership helper directly'
 );
 
 select ok(
