@@ -20,10 +20,14 @@ import {
   hasAuthenticatedApiSession,
   isTrustedProxyBypassRequest,
 } from '@tuturuuu/utils/api-proxy-guard';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import {
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import {
   isPersonalWorkspace,
+  isWorkspaceUuidLiteral,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -315,11 +319,14 @@ async function hasWorkspaceEmailRateLimitOverrides(
 ): Promise<boolean> {
   const match = pathname.match(EMAIL_ROUTE_WORKSPACE_PATTERN);
   const wsId = match?.[1];
+  const resolvedWsId = wsId ? resolveWorkspaceId(wsId) : null;
 
   if (
     !wsId ||
+    !resolvedWsId ||
     wsId.startsWith(RESERVED_ROOT_SEGMENT_PREFIX) ||
-    (await isPersonalWorkspace(wsId))
+    !isWorkspaceUuidLiteral(resolvedWsId) ||
+    (await isPersonalWorkspace(resolvedWsId))
   ) {
     return false;
   }
@@ -329,7 +336,7 @@ async function hasWorkspaceEmailRateLimitOverrides(
     const { count, error } = await sbAdmin
       .from('workspace_secrets')
       .select('name', { count: 'exact', head: true })
-      .eq('ws_id', wsId)
+      .eq('ws_id', resolvedWsId)
       .in('name', [...EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES]);
 
     if (error) {

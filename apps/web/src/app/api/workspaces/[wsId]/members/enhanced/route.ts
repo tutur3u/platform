@@ -3,10 +3,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
-  PERSONAL_WORKSPACE_SLUG,
-  resolveWorkspaceId,
-} from '@tuturuuu/utils/constants';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+  getPermissions,
+  isWorkspaceUuidLiteral,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getWorkspaceMembers } from '@/lib/workspace-members';
 
@@ -16,27 +16,23 @@ interface Params {
   }>;
 }
 
-const normalizeWorkspaceId = async (wsId: string): Promise<string | null> => {
-  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
-    const workspace = await getWorkspace(wsId);
-    if (!workspace) return null;
-    return workspace.id;
-  }
-
-  return resolveWorkspaceId(wsId);
-};
-
 export async function GET(request: NextRequest, { params }: Params) {
   const { wsId: id } = await params;
   const supabase = await createClient(request);
   const sbAdmin = await createAdminClient();
 
-  const wsId = await normalizeWorkspaceId(id);
-  if (!wsId) {
+  let wsId: string;
+  try {
+    wsId = await normalizeWorkspaceId(id, supabase, request);
+  } catch {
     return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
   }
 
-  const permissions = await getPermissions({ wsId });
+  if (!isWorkspaceUuidLiteral(wsId)) {
+    return NextResponse.json({ error: 'Workspace not found' }, { status: 404 });
+  }
+
+  const permissions = await getPermissions({ request, wsId });
   if (
     !permissions ||
     (permissions.withoutPermission('manage_workspace_members') &&
@@ -50,7 +46,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   const status = searchParams.get('status');
   try {
     const members = await getWorkspaceMembers({
-      supabase,
+      supabase: sbAdmin,
       sbAdmin,
       wsId,
       status,

@@ -14,6 +14,11 @@ const mocks = vi.hoisted(() => ({
   recordMalformedAuthCookieEdge: vi.fn(),
   recordSuspiciousApiRequestEdge: vi.fn(),
   isPersonalWorkspace: vi.fn(),
+  isWorkspaceUuidLiteral: vi.fn((value: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value
+    )
+  ),
   normalizeWorkspaceId: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
   getUserDefaultWorkspace: vi.fn(),
@@ -65,6 +70,9 @@ vi.mock('@tuturuuu/utils/abuse-protection/edge', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  isWorkspaceUuidLiteral: (
+    ...args: Parameters<typeof mocks.isWorkspaceUuidLiteral>
+  ) => mocks.isWorkspaceUuidLiteral(...args),
   isPersonalWorkspace: (
     ...args: Parameters<typeof mocks.isPersonalWorkspace>
   ) => mocks.isPersonalWorkspace(...args),
@@ -343,6 +351,27 @@ describe('web proxy api handling', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('ignores literal placeholder workspace API segments before personal workspace checks', async () => {
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/workspaces/[locale]/mail/send', {
+        method: 'POST',
+        body: '{}',
+        headers: {
+          'user-agent': 'Mozilla/5.0',
+        },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.isWorkspaceUuidLiteral).toHaveBeenCalledWith('[locale]');
+    expect(mocks.isPersonalWorkspace).not.toHaveBeenCalled();
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });

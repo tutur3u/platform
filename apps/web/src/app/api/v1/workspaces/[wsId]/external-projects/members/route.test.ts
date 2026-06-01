@@ -145,6 +145,10 @@ describe('external project team access routes', () => {
     await expect(membersResponse.json()).resolves.toEqual([
       { email: 'editor@example.com', id: 'user-1', pending: false },
     ]);
+    expect(mocks.listExternalProjectTeamMembers).toHaveBeenCalledWith({
+      access,
+      status: null,
+    });
     await expect(rolesResponse.json()).resolves.toEqual([
       { id: 'role-1', name: 'Publisher', permissions: [] },
     ]);
