@@ -145,7 +145,7 @@ export const POST = withSessionAuth<RouteParams>(
             error: null,
             failed_at: null,
             fetched_at: new Date().toISOString(),
-            image_url: preview.imageUrl,
+            image_url: null,
             normalized_url: normalizedUrl,
             site_name: preview.siteName,
             title: preview.title,
@@ -204,7 +204,7 @@ function toPreviewPayload(row: LinkPreviewRow) {
   return {
     description: row.description,
     error: row.error,
-    imageUrl: row.image_url,
+    imageUrl: null,
     siteName: row.site_name,
     title: row.title,
     url: row.url,

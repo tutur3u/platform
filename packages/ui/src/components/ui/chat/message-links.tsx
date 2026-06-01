@@ -59,12 +59,7 @@ export function MessageLinkPreviews({
   );
   const visibleUrls = urls.filter((url) => {
     const preview = previewByUrl.get(url);
-    return (
-      getYouTubeEmbedUrl(url) ||
-      preview?.title ||
-      preview?.description ||
-      preview?.imageUrl
-    );
+    return getYouTubeEmbedUrl(url) || preview?.title || preview?.description;
   });
 
   const visibleUniqueUrls = Array.from(new Set(visibleUrls));
@@ -132,22 +127,13 @@ function LinkPreviewCard({
     <a
       className={cn(
         'grid overflow-hidden rounded-md border bg-background/70 text-left transition-colors hover:bg-accent/60',
-        preview.imageUrl ? 'grid-cols-[5.5rem_minmax(0,1fr)]' : 'grid-cols-1',
+        'grid-cols-1',
         isOwnMessage && 'bg-background/80'
       )}
       href={preview.url}
       rel="noreferrer noopener"
       target="_blank"
     >
-      {preview.imageUrl ? (
-        <span
-          aria-hidden="true"
-          className="h-full min-h-24 w-full bg-center bg-cover"
-          style={{
-            backgroundImage: `url(${JSON.stringify(preview.imageUrl)})`,
-          }}
-        />
-      ) : null}
       <LinkPreviewMetadata preview={preview} />
     </a>
   );

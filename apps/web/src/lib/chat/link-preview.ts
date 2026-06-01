@@ -304,13 +304,9 @@ function parsePreviewHtml(html: string, url: URL): ChatLinkPreviewResult {
     getMetaContent(html, 'name', 'twitter:description');
   const siteName =
     getMetaContent(html, 'property', 'og:site_name') || url.hostname;
-  const image =
-    getMetaContent(html, 'property', 'og:image') ||
-    getMetaContent(html, 'name', 'twitter:image');
-
   return {
     description: cleanText(description, 800),
-    imageUrl: image ? toSafeAbsoluteUrl(image, url) : null,
+    imageUrl: null,
     siteName: cleanText(siteName, 120),
     title: cleanText(title, 300),
     url: url.toString(),
@@ -343,16 +339,6 @@ function cleanText(value: string | null, maxLength: number) {
 
   const normalized = value.replace(/\s+/gu, ' ').trim();
   return normalized ? normalized.slice(0, maxLength) : null;
-}
-
-function toSafeAbsoluteUrl(value: string, baseUrl: URL) {
-  try {
-    const url = new URL(value, baseUrl);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
-    return normalizeChatPreviewUrl(url.toString());
-  } catch {
-    return null;
-  }
 }
 
 function decodeHtmlEntities(value: string) {

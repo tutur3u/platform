@@ -86,4 +86,35 @@ describe('chat link preview', () => {
       url: 'https://safe.example/final',
     });
   });
+
+  it('does not expose remote preview image URLs to chat clients', async () => {
+    const preview = await fetchChatLinkPreviewWithDependencies(
+      'https://example.com/article',
+      {
+        createDispatcher: (record) => dispatcherForAddress(record.address),
+        fetchImpl: vi.fn(async () => {
+          return new Response(
+            `<html>
+              <head>
+                <meta property="og:title" content="Remote Image Article">
+                <meta property="og:image" content="https://tracker.example/pixel.png">
+              </head>
+            </html>`,
+            {
+              headers: { 'content-type': 'text/html; charset=utf-8' },
+            }
+          );
+        }),
+        resolveHost: vi.fn(async () => [
+          { address: '93.184.216.34', family: 4 },
+        ]),
+      }
+    );
+
+    expect(preview).toMatchObject({
+      imageUrl: null,
+      title: 'Remote Image Article',
+      url: 'https://example.com/article',
+    });
+  });
 });
