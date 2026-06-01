@@ -9,6 +9,8 @@ export function areTaskCardPropsEqual(
   if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
   if (prev.boardId !== next.boardId) return false;
   if (prev.workspaceId !== next.workspaceId) return false;
+  if (prev.dragDisabled !== next.dragDisabled) return false;
+  if (prev.sortableId !== next.sortableId) return false;
   if (prev.suppressSortableTransform !== next.suppressSortableTransform) {
     return false;
   }

@@ -146,6 +146,8 @@ export interface TaskCardProps {
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
+  dragDisabled?: boolean;
+  sortableId?: string;
   suppressSortableTransform?: boolean;
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>; // For bulk operations
@@ -166,6 +168,8 @@ function TaskCardInner({
   isPersonalWorkspace = false,
   onSelect,
   onClearSelection,
+  dragDisabled: dragDisabledProp = false,
+  sortableId: sortableIdProp,
   suppressSortableTransform = false,
   optimisticUpdateInProgress,
   selectedTasks,
@@ -660,6 +664,7 @@ function TaskCardInner({
     tTasks('external_task');
 
   const dragDisabled =
+    dragDisabledProp ||
     dialogState.editDialogOpen ||
     dialogState.deleteDialogOpen ||
     dialogState.customDateDialogOpen ||
@@ -684,7 +689,9 @@ function TaskCardInner({
   }
 
   const sortableDisabled = dragDisabled || isOverlay;
-  const sortableId = isOverlay ? `${task.id}:drag-overlay` : task.id;
+  const sortableId = isOverlay
+    ? `${task.id}:drag-overlay`
+    : (sortableIdProp ?? task.id);
   const {
     setNodeRef,
     attributes,

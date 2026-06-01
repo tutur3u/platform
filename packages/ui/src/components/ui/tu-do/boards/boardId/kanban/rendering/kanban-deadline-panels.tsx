@@ -1,14 +1,11 @@
 'use client';
 
-import {
-  AlertTriangle,
-  CalendarClock,
-  CheckCircle2,
-  Clock,
-} from '@tuturuuu/icons';
+import { AlertTriangle, CalendarClock } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
+import { TaskCard } from '../../task';
 import type { KanbanDeadlineSections } from './kanban-deadline-tasks';
 
 export interface KanbanDeadlineLabels {
@@ -17,13 +14,19 @@ export interface KanbanDeadlineLabels {
 }
 
 interface KanbanDeadlinePanelsProps {
+  availableLists: TaskList[];
+  boardId: string;
+  bulkUpdateCustomDueDate: (date: Date | null) => Promise<void>;
+  isPersonalWorkspace: boolean;
   labels: KanbanDeadlineLabels;
+  onClearSelection: () => void;
+  onTaskSelect: (taskId: string, event: React.MouseEvent) => void;
+  onUpdate: () => void;
+  optimisticUpdateInProgress: Set<string>;
   sections: KanbanDeadlineSections;
   selectedTasks: Set<string>;
   isMultiSelectMode: boolean;
-  ticketPrefix?: string | null;
-  onOpenTask: (task: Task) => void;
-  onTaskSelect: (taskId: string, event: React.MouseEvent) => void;
+  workspaceId: string;
 }
 
 interface DeadlineSectionConfig {
@@ -34,122 +37,49 @@ interface DeadlineSectionConfig {
   titleClassName: string;
 }
 
-function getTaskTicketPrefix(task: Task, fallback?: string | null) {
-  if ('ticket_prefix' in task && typeof task.ticket_prefix === 'string') {
-    return task.ticket_prefix;
-  }
-
-  return fallback;
-}
-
-function getTicketIdentifier(
-  prefix: string | null | undefined,
-  displayNumber: number
-) {
-  const effectivePrefix = prefix?.trim() || 'TASK';
-  return `${effectivePrefix}-${displayNumber}`.toUpperCase();
-}
-
-function formatDeadlineDate(value: string | null | undefined) {
-  if (!value) return null;
-
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return null;
-
-  return new Intl.DateTimeFormat(undefined, {
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    month: 'short',
-  }).format(date);
-}
-
-function DeadlineTaskCard({
-  isMultiSelectMode,
-  onOpenTask,
-  onTaskSelect,
-  selected,
-  task,
-  ticketPrefix,
-}: {
-  isMultiSelectMode: boolean;
-  onOpenTask: (task: Task) => void;
-  onTaskSelect: (taskId: string, event: React.MouseEvent) => void;
-  selected: boolean;
-  task: Task;
-  ticketPrefix?: string | null;
-}) {
-  const ticketIdentifier = getTicketIdentifier(
-    getTaskTicketPrefix(task, ticketPrefix),
-    task.display_number
-  );
-  const formattedDeadline = formatDeadlineDate(task.end_date);
-
+function getFallbackTaskList(lists: TaskList[]) {
   return (
-    <button
-      aria-pressed={selected}
-      className={cn(
-        'group w-full rounded-md border bg-background/80 p-2 text-left shadow-xs transition-colors',
-        'hover:border-foreground/30 hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        selected && 'border-primary bg-primary/10 text-primary'
-      )}
-      onClick={(event) => {
-        const isShiftOnlyHeld =
-          event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey;
+    lists.find((list) => list.status === 'active') ??
+    lists.find((list) => list.status === 'not_started') ??
+    lists[0]
+  );
+}
 
-        if (isMultiSelectMode || isShiftOnlyHeld) {
-          onTaskSelect(task.id, event);
-          return;
-        }
-
-        onOpenTask(task);
-      }}
-      type="button"
-    >
-      <div className="flex items-start gap-2">
-        <span className="mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded border border-border bg-muted text-muted-foreground">
-          {selected && <CheckCircle2 className="size-3" />}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex min-w-0 items-center gap-1.5">
-            <Badge
-              className="h-5 border-dynamic-cyan/25 bg-dynamic-cyan/10 px-1.5 font-semibold text-[10px] text-dynamic-cyan"
-              variant="outline"
-            >
-              {ticketIdentifier}
-            </Badge>
-            {formattedDeadline && (
-              <span className="inline-flex min-w-0 items-center gap-1 truncate text-muted-foreground text-xs">
-                <Clock className="size-3 shrink-0" />
-                <span className="truncate">{formattedDeadline}</span>
-              </span>
-            )}
-          </span>
-          <span className="mt-1 line-clamp-2 block font-medium text-foreground text-sm leading-snug">
-            {task.name}
-          </span>
-        </span>
-      </div>
-    </button>
+function getTaskListForDeadlineTask(task: Task, lists: TaskList[]) {
+  return (
+    lists.find((list) => String(list.id) === String(task.list_id)) ??
+    getFallbackTaskList(lists)
   );
 }
 
 function DeadlineSection({
+  availableLists,
+  boardId,
+  bulkUpdateCustomDueDate,
   config,
   isMultiSelectMode,
-  onOpenTask,
+  isPersonalWorkspace,
+  onClearSelection,
   onTaskSelect,
+  onUpdate,
+  optimisticUpdateInProgress,
   selectedTasks,
   tasks,
-  ticketPrefix,
+  workspaceId,
 }: {
+  availableLists: TaskList[];
+  boardId: string;
+  bulkUpdateCustomDueDate: (date: Date | null) => Promise<void>;
   config: DeadlineSectionConfig;
   isMultiSelectMode: boolean;
-  onOpenTask: (task: Task) => void;
+  isPersonalWorkspace: boolean;
+  onClearSelection: () => void;
   onTaskSelect: (taskId: string, event: React.MouseEvent) => void;
+  onUpdate: () => void;
+  optimisticUpdateInProgress: Set<string>;
   selectedTasks: Set<string>;
   tasks: Task[];
-  ticketPrefix?: string | null;
+  workspaceId: string;
 }) {
   if (tasks.length === 0) return null;
 
@@ -187,30 +117,50 @@ function DeadlineSection({
       </div>
 
       <div className="scrollbar-thin flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2">
-        {tasks.map((task) => (
-          <DeadlineTaskCard
-            key={task.id}
-            isMultiSelectMode={isMultiSelectMode}
-            onOpenTask={onOpenTask}
-            onTaskSelect={onTaskSelect}
-            selected={selectedTasks.has(task.id)}
-            task={task}
-            ticketPrefix={ticketPrefix}
-          />
-        ))}
+        {tasks.map((task) => {
+          const taskList = getTaskListForDeadlineTask(task, availableLists);
+
+          return (
+            <TaskCard
+              key={task.id}
+              availableLists={availableLists}
+              boardId={boardId}
+              bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+              dragDisabled
+              isMultiSelectMode={isMultiSelectMode}
+              isPersonalWorkspace={isPersonalWorkspace}
+              isSelected={selectedTasks.has(task.id)}
+              onClearSelection={onClearSelection}
+              onSelect={onTaskSelect}
+              onUpdate={onUpdate}
+              optimisticUpdateInProgress={optimisticUpdateInProgress}
+              selectedTasks={selectedTasks}
+              sortableId={`deadline-${config.section}-${task.id}`}
+              task={task}
+              taskList={taskList}
+              workspaceId={workspaceId}
+            />
+          );
+        })}
       </div>
     </div>
   );
 }
 
 export function KanbanDeadlinePanels({
+  availableLists,
+  boardId,
+  bulkUpdateCustomDueDate,
   isMultiSelectMode,
+  isPersonalWorkspace,
   labels,
-  onOpenTask,
+  onClearSelection,
   onTaskSelect,
+  onUpdate,
+  optimisticUpdateInProgress,
   sections,
   selectedTasks,
-  ticketPrefix,
+  workspaceId,
 }: KanbanDeadlinePanelsProps) {
   if (sections.overdue.length === 0 && sections.upcoming.length === 0) {
     return null;
@@ -241,13 +191,19 @@ export function KanbanDeadlinePanels({
       {configs.map((config) => (
         <DeadlineSection
           key={config.section}
+          availableLists={availableLists}
+          boardId={boardId}
+          bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
           config={config}
           isMultiSelectMode={isMultiSelectMode}
-          onOpenTask={onOpenTask}
+          isPersonalWorkspace={isPersonalWorkspace}
+          onClearSelection={onClearSelection}
           onTaskSelect={onTaskSelect}
+          onUpdate={onUpdate}
+          optimisticUpdateInProgress={optimisticUpdateInProgress}
           selectedTasks={selectedTasks}
           tasks={sections[config.section]}
-          ticketPrefix={ticketPrefix}
+          workspaceId={workspaceId}
         />
       ))}
     </aside>

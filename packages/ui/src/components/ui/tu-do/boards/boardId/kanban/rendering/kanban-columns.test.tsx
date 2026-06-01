@@ -3,9 +3,13 @@ import { render, screen } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_KANBAN_COLUMN_WIDTH } from './kanban-column-width';
 import { KanbanColumns } from './kanban-columns';
+
+const { taskCardMock } = vi.hoisted(() => ({
+  taskCardMock: vi.fn(),
+}));
 
 vi.mock('@dnd-kit/sortable', () => ({
   horizontalListSortingStrategy: vi.fn(),
@@ -22,6 +26,18 @@ vi.mock('../../board-column', () => ({
 
 vi.mock('../../task-list-form', () => ({
   TaskListForm: () => null,
+}));
+
+vi.mock('../../task', () => ({
+  TaskCard: (props: Record<string, any>) => {
+    taskCardMock(props);
+
+    return (
+      <article data-testid={`shared-task-card-${props.task.id}`}>
+        {props.task.name}
+      </article>
+    );
+  },
 }));
 
 vi.mock('../../../../shared/cursor-overlay-multi-wrapper', () => ({
@@ -67,6 +83,10 @@ function task(overrides: Partial<Task>): Task {
 }
 
 describe('KanbanColumns', () => {
+  beforeEach(() => {
+    taskCardMock.mockClear();
+  });
+
   it('keeps filtered columns at the standard Kanban width', () => {
     const { container } = render(
       <KanbanColumns
@@ -216,24 +236,44 @@ describe('KanbanColumns', () => {
               display_number: 42,
               end_date: '2026-05-06T00:00:00.000Z',
               id: 'overdue-task',
+              list_id: 'list-1',
               name: 'Overdue task',
             }),
           ],
           upcoming: [],
         }}
-        deadlineTicketPrefix="WEB"
-        onOpenDeadlineTask={vi.fn()}
       />
     );
 
     const deadlinePanels = screen.getByTestId('kanban-deadline-panels');
     const firstColumn = screen.getByTestId('column-list-1');
+    const sharedTaskCard = screen.getByTestId('shared-task-card-overdue-task');
 
     expect(deadlinePanels).toHaveTextContent('Overdue');
-    expect(deadlinePanels).toHaveTextContent('Overdue task');
+    expect(sharedTaskCard).toHaveTextContent('Overdue task');
     expect(deadlinePanels.compareDocumentPosition(firstColumn)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
+
+    const overdueCardProps = taskCardMock.mock.calls.find(
+      ([props]) => props.task.id === 'overdue-task'
+    )?.[0];
+
+    expect(overdueCardProps).toEqual(
+      expect.objectContaining({
+        boardId: 'board-1',
+        dragDisabled: true,
+        isMultiSelectMode: false,
+        isPersonalWorkspace: false,
+        isSelected: false,
+        sortableId: 'deadline-overdue-overdue-task',
+        taskList: lists[0],
+        workspaceId: 'ws-1',
+      })
+    );
+    expect(
+      overdueCardProps.availableLists.map((list: TaskList) => list.id)
+    ).toEqual(['list-1', 'list-2']);
   });
 
   it('omits deadline panels when both deadline sections are empty', () => {
@@ -262,7 +302,6 @@ describe('KanbanColumns', () => {
           upcoming: 'Upcoming',
         }}
         deadlineSections={{ overdue: [], upcoming: [] }}
-        onOpenDeadlineTask={vi.fn()}
       />
     );
 

@@ -122,7 +122,7 @@ export function KanbanBoard({
     !wsPresence.isBoardOverLimit(boardId);
 
   const reorderTaskMutation = useReorderTask(boardId ?? '', workspaceId);
-  const { createTask, openTask } = useTaskDialog();
+  const { createTask } = useTaskDialog();
   const { weekStartsOn } = useCalendarPreferences();
 
   const { data: boardConfig } = useBoardConfig(boardId, workspaceId);
@@ -180,26 +180,6 @@ export function KanbanBoard({
       upcoming: tTasks('upcoming'),
     }),
     [tTasks]
-  );
-  const handleOpenDeadlineTask = useCallback(
-    (task: Task) => {
-      const targetBoardId = task.source_board_id ?? boardId;
-      if (!targetBoardId) return;
-
-      openTask(
-        task,
-        targetBoardId,
-        task.source_board_id ? undefined : orderedRealColumns,
-        false,
-        {
-          taskWorkspacePersonal: task.source_workspace_id
-            ? false
-            : workspace.personal,
-          taskWsId: task.source_workspace_id ?? workspaceId,
-        }
-      );
-    },
-    [boardId, openTask, orderedRealColumns, workspace.personal, workspaceId]
   );
 
   // Selection Hook
@@ -459,8 +439,6 @@ export function KanbanBoard({
             columnsId={columnsId}
             deadlineLabels={deadlineLabels}
             deadlineSections={deadlineSections}
-            deadlineTicketPrefix={boardConfig?.ticket_prefix ?? null}
-            onOpenDeadlineTask={handleOpenDeadlineTask}
             onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
           />
 

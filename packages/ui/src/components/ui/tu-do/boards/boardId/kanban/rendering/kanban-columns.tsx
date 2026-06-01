@@ -52,8 +52,6 @@ interface KanbanColumnsProps {
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
   deadlineLabels?: KanbanDeadlineLabels;
   deadlineSections?: KanbanDeadlineSections;
-  deadlineTicketPrefix?: string | null;
-  onOpenDeadlineTask?: (task: Task) => void;
 }
 
 export function KanbanColumns({
@@ -83,8 +81,6 @@ export function KanbanColumns({
   onExternalTasksCollapsedChange,
   deadlineLabels,
   deadlineSections,
-  deadlineTicketPrefix,
-  onOpenDeadlineTask,
 }: KanbanColumnsProps) {
   const realColumns = columns.filter((column) => !column.is_external_staging);
   const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
@@ -123,15 +119,21 @@ export function KanbanColumns({
             paddingRight: 'var(--kanban-snap-right-padding)',
           }}
         >
-          {deadlineSections && deadlineLabels && onOpenDeadlineTask && (
+          {deadlineSections && deadlineLabels && (
             <KanbanDeadlinePanels
+              availableLists={realColumns}
+              boardId={boardId}
+              bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
               isMultiSelectMode={isMultiSelectMode}
+              isPersonalWorkspace={isPersonalWorkspace}
               labels={deadlineLabels}
-              onOpenTask={onOpenDeadlineTask}
+              onClearSelection={onClearSelection}
               onTaskSelect={onTaskSelect}
+              onUpdate={onUpdate}
+              optimisticUpdateInProgress={optimisticUpdateInProgress}
               sections={deadlineSections}
               selectedTasks={selectedTasks}
-              ticketPrefix={deadlineTicketPrefix}
+              workspaceId={workspaceId}
             />
           )}
 
