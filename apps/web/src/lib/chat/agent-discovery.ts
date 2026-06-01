@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { createHash } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { listAiAgents } from '@/lib/ai-agents/registry';
@@ -78,13 +79,8 @@ function buildVirtualAgentMessage({
     id: `${conversationId}-status`,
     kind: 'system',
     metadata: {
-      adapter: channel.adapter,
-      agentId: agent.id,
-      channelId: channel.id,
       readOnly: true,
       source: 'ai-agent',
-      status: channel.status,
-      webhookUrl: channel.webhookUrl,
     },
     reactions: [],
     replyToMessageId: null,
@@ -113,7 +109,7 @@ export async function listRootAiAgentDiscoveryConversations({
     return agent.channels
       .filter((channel) => channel.enabled)
       .map((channel): ChatConversation => {
-        const id = `ai-agent-${agent.id}-${channel.id}`;
+        const id = toVirtualAiAgentConversationId(agent.id, channel.id);
         const timestamp = agentChannelTimestamp(agent, channel);
         const latestMessage = buildVirtualAgentMessage({
           agent,
@@ -126,20 +122,14 @@ export async function listRootAiAgentDiscoveryConversations({
           archivedAt: null,
           createdAt: agent.createdAt || timestamp,
           createdBy: null,
-          description: `${channel.adapter} channel ${channel.id}`,
+          description: `${channel.adapter} agent channel`,
           id,
           latestMessage,
           memberCount: 0,
           members: [],
           metadata: {
-            adapter: channel.adapter,
-            agentId: agent.id,
-            channelId: channel.id,
             readOnly: true,
             source: 'ai-agent',
-            status: channel.status,
-            webhookUrl: channel.webhookUrl,
-            workspaceId: channel.workspaceId,
           },
           title: `${agent.name} / ${channel.displayName}`,
           type: 'ai',
@@ -149,6 +139,14 @@ export async function listRootAiAgentDiscoveryConversations({
         };
       });
   });
+}
+
+function toVirtualAiAgentConversationId(agentId: string, channelId: string) {
+  const digest = createHash('sha256')
+    .update(`${agentId}:${channelId}`)
+    .digest('hex')
+    .slice(0, 32);
+  return `ai-agent-${digest}`;
 }
 
 export function isAiChatConversationId(conversationId: string) {
