@@ -82,6 +82,53 @@ test.describe('Workspace members enhanced API', () => {
     }
   });
 
+  test('does not reveal existing workspace handles to unauthenticated probes', async ({
+    request,
+  }) => {
+    const workspaceId = randomUUID();
+    const handle = `e2e-members-private-${workspaceId.slice(0, 8)}`;
+    const appRequest = await createAppRequestContext();
+
+    try {
+      const workspaceResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspaces`,
+        {
+          data: {
+            creator_id: TEST_USER.id,
+            handle,
+            id: workspaceId,
+            name: 'E2E Private Members Handle Workspace',
+            personal: false,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders('return=minimal'),
+        }
+      );
+      expect(workspaceResponse.status()).toBe(201);
+
+      for (const workspaceHandle of [handle, `${handle}-missing`]) {
+        const response = await appRequest.get(
+          `/api/workspaces/${workspaceHandle}/members/enhanced`,
+          { failOnStatusCode: false }
+        );
+
+        expect(response.status()).toBe(404);
+        await expect(response.json()).resolves.toEqual({
+          error: 'Workspace not found',
+        });
+      }
+    } finally {
+      await appRequest.dispose();
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/workspaces?id=eq.${workspaceId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders('return=minimal'),
+        }
+      );
+    }
+  });
+
   test('loads enhanced members through the CMS app-session route', async ({
     request,
   }) => {

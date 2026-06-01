@@ -9,13 +9,24 @@ const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
   getPermissions: vi.fn(),
   getWorkspaceMembers: vi.fn(),
+  handleQuery: {
+    eq: vi.fn(),
+    maybeSingle: vi.fn(),
+  },
+  handleSelect: vi.fn(),
   isWorkspaceUuidLiteral: vi.fn((value: string) =>
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
       value
     )
   ),
   normalizeWorkspaceId: vi.fn(),
-  requestSupabase: { client: 'request' },
+  requestSupabase: {
+    auth: {
+      getUser: vi.fn(),
+    },
+    client: 'request',
+    from: vi.fn(),
+  },
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -34,6 +45,11 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: (
     ...args: Parameters<typeof mocks.normalizeWorkspaceId>
   ) => mocks.normalizeWorkspaceId(...args),
+  PERSONAL_WORKSPACE_SLUG: 'personal',
+  resolveWorkspaceId: (value: string) =>
+    value.toLowerCase() === 'internal'
+      ? '00000000-0000-0000-0000-000000000000'
+      : value,
 }));
 
 vi.mock('@/lib/workspace-members', () => ({
@@ -49,6 +65,24 @@ describe('workspace members enhanced route', () => {
 
     mocks.createClient.mockResolvedValue(mocks.requestSupabase);
     mocks.createAdminClient.mockResolvedValue(mocks.adminSupabase);
+    mocks.handleQuery.eq.mockReturnValue(mocks.handleQuery);
+    mocks.handleQuery.maybeSingle.mockResolvedValue({
+      data: { id: WORKSPACE_ID },
+      error: null,
+    });
+    mocks.handleSelect.mockReturnValue(mocks.handleQuery);
+    mocks.requestSupabase.auth = {
+      getUser: vi.fn().mockResolvedValue({
+        data: {
+          user: {
+            id: 'user-1',
+          },
+        },
+      }),
+    };
+    mocks.requestSupabase.from = vi.fn().mockReturnValue({
+      select: mocks.handleSelect,
+    });
     mocks.normalizeWorkspaceId.mockResolvedValue(WORKSPACE_ID);
     mocks.getPermissions.mockResolvedValue({
       withoutPermission: vi.fn(() => false),
@@ -63,11 +97,11 @@ describe('workspace members enhanced route', () => {
       '@/app/api/workspaces/[wsId]/members/enhanced/route'
     );
     const request = new NextRequest(
-      'http://localhost/api/workspaces/team-handle/members/enhanced?status=joined'
+      `http://localhost/api/workspaces/${WORKSPACE_ID}/members/enhanced?status=joined`
     );
 
     const response = await GET(request, {
-      params: Promise.resolve({ wsId: 'team-handle' }),
+      params: Promise.resolve({ wsId: WORKSPACE_ID }),
     });
 
     expect(response.status).toBe(200);
@@ -75,7 +109,7 @@ describe('workspace members enhanced route', () => {
       { email: 'member@example.com', id: 'user-1', pending: false },
     ]);
     expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
-      'team-handle',
+      WORKSPACE_ID,
       mocks.requestSupabase,
       request
     );
@@ -89,6 +123,88 @@ describe('workspace members enhanced route', () => {
       supabase: mocks.adminSupabase,
       wsId: WORKSPACE_ID,
     });
+  });
+
+  it('resolves workspace handles only through the caller membership-bound query', async () => {
+    const { GET } = await import(
+      '@/app/api/workspaces/[wsId]/members/enhanced/route'
+    );
+    const request = new NextRequest(
+      'http://localhost/api/workspaces/Team-Handle/members/enhanced?status=joined'
+    );
+
+    const response = await GET(request, {
+      params: Promise.resolve({ wsId: 'Team-Handle' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+    expect(mocks.requestSupabase.auth.getUser).toHaveBeenCalled();
+    expect(mocks.requestSupabase.from).toHaveBeenCalledWith('workspaces');
+    expect(mocks.handleSelect).toHaveBeenCalledWith(
+      'id, workspace_members!inner(user_id)'
+    );
+    expect(mocks.handleQuery.eq).toHaveBeenCalledWith('handle', 'team-handle');
+    expect(mocks.handleQuery.eq).toHaveBeenCalledWith(
+      'workspace_members.user_id',
+      'user-1'
+    );
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      request,
+      wsId: WORKSPACE_ID,
+    });
+    expect(mocks.createAdminClient).toHaveBeenCalled();
+  });
+
+  it('returns 404 for unresolved workspace handles before permissions or admin access', async () => {
+    mocks.handleQuery.maybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    const { GET } = await import(
+      '@/app/api/workspaces/[wsId]/members/enhanced/route'
+    );
+    const request = new NextRequest(
+      'http://localhost/api/workspaces/unknown-team/members/enhanced'
+    );
+
+    const response = await GET(request, {
+      params: Promise.resolve({ wsId: 'unknown-team' }),
+    });
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Workspace not found',
+    });
+    expect(mocks.getPermissions).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.getWorkspaceMembers).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 for unauthenticated handle probes before handle lookup', async () => {
+    mocks.requestSupabase.auth.getUser.mockResolvedValue({
+      data: { user: null },
+    });
+
+    const { GET } = await import(
+      '@/app/api/workspaces/[wsId]/members/enhanced/route'
+    );
+    const request = new NextRequest(
+      'http://localhost/api/workspaces/team-handle/members/enhanced'
+    );
+
+    const response = await GET(request, {
+      params: Promise.resolve({ wsId: 'team-handle' }),
+    });
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Workspace not found',
+    });
+    expect(mocks.requestSupabase.from).not.toHaveBeenCalled();
+    expect(mocks.getPermissions).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('rejects unresolved non-UUID workspace placeholders before member queries', async () => {
