@@ -20,6 +20,7 @@ export default defineConfig({
 
   use: {
     baseURL: BASE_URL,
+    ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     navigationTimeout: 60_000,

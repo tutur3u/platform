@@ -39,13 +39,9 @@ export async function fetchOtpCodeFromMailpit(
         }>;
       };
 
-      // Find the most recent OTP email to the target address
+      // Find the most recent auth email to the target address.
       const otpEmails = data.messages
-        .filter(
-          (m) =>
-            m.To.some((a) => a.Address === email) &&
-            m.Subject.includes('Verification Code')
-        )
+        .filter((m) => m.To.some((a) => a.Address === email))
         .sort(
           (a, b) =>
             new Date(b.Created).getTime() - new Date(a.Created).getTime()
@@ -59,8 +55,11 @@ export async function fetchOtpCodeFromMailpit(
         const msgResponse = await fetch(`${MAILPIT_API_URL}/message/${msg.ID}`);
         if (!msgResponse.ok) continue;
 
-        const msgData = (await msgResponse.json()) as { Text?: string };
-        const text = msgData.Text || '';
+        const msgData = (await msgResponse.json()) as {
+          HTML?: string;
+          Text?: string;
+        };
+        const text = `${msgData.Text || ''}\n${msgData.HTML || ''}`;
         const codeMatch = text.match(/\b(\d{6})\b/);
         if (codeMatch) {
           return codeMatch[1];

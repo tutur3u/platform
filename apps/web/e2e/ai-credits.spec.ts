@@ -1,4 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { DEFAULT_LOCALE } from './helpers/constants';
+import {
+  e2eClientHeaders,
+  e2eClientIpForTest,
+  resetAppRateLimitStateWithNewContextForTests,
+  resetDbRateLimits,
+} from './helpers/rate-limits';
 
 const BASE_URL = process.env.BASE_URL || 'https://tuturuuu.localhost';
 
@@ -50,11 +57,22 @@ test.describe('AI Credits API', () => {
 
   test('GET /api/v1/workspaces/{wsId}/ai/credits returns 401/403 for unauthenticated request', async ({
     playwright,
-  }) => {
+  }, testInfo) => {
+    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 211));
+
+    await resetDbRateLimits();
+    await resetAppRateLimitStateWithNewContextForTests(playwright.request, {
+      email: `e2e-ai-credits-reset-${testInfo.workerIndex}-${testInfo.retry}-${Date.now()}@tuturuuu.com`,
+      headers,
+      locale: DEFAULT_LOCALE,
+    });
+
     // Create a fresh API context with no cookies/storageState so the request
     // is truly unauthenticated.
     const unauthCtx = await playwright.request.newContext({
       baseURL: BASE_URL,
+      extraHTTPHeaders: headers,
+      ignoreHTTPSErrors: true,
       storageState: { cookies: [], origins: [] },
     });
     try {

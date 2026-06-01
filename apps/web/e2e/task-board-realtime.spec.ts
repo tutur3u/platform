@@ -5,7 +5,13 @@ import {
   type Page,
   test,
 } from '@playwright/test';
-import { DEFAULT_LOCALE } from './helpers/constants';
+import { DEFAULT_LOCALE, TEST_USER } from './helpers/constants';
+import {
+  e2eClientHeaders,
+  e2eClientIpForTest,
+  resetAppRateLimitStateForTests,
+  resetDbRateLimits,
+} from './helpers/rate-limits';
 
 type TaskBoard = {
   archived_at?: string | null;
@@ -47,7 +53,8 @@ async function getPersonalBoard(request: APIRequestContext) {
 
 async function getOrCreatePersonalBoardList(
   request: APIRequestContext,
-  boardId: string
+  boardId: string,
+  headers: Record<string, string>
 ) {
   const listsResponse = await request.get(
     `/api/v1/workspaces/personal/task-boards/${boardId}/lists`
@@ -69,6 +76,7 @@ async function getOrCreatePersonalBoardList(
         name: `E2E Realtime ${Date.now()}`,
         status: 'not_started',
       },
+      headers,
     }
   );
 
@@ -80,13 +88,15 @@ async function getOrCreatePersonalBoardList(
 async function createPersonalTask(
   request: APIRequestContext,
   listId: string,
-  name: string
+  name: string,
+  headers: Record<string, string>
 ) {
   const response = await request.post('/api/v1/workspaces/personal/tasks', {
     data: {
       listId,
       name,
     },
+    headers,
   });
 
   expect(response.status()).toBe(201);
@@ -151,11 +161,23 @@ test.describe('Task board realtime and task mutations', () => {
     context,
     page,
     request,
-  }) => {
+  }, testInfo) => {
+    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 213));
+
+    await resetDbRateLimits();
+    await resetAppRateLimitStateForTests(request, {
+      completeOnboarding: true,
+      email: TEST_USER.email,
+      headers,
+      locale: DEFAULT_LOCALE,
+    });
+    await context.setExtraHTTPHeaders(headers);
+
     const board = await getPersonalBoard(request);
     const { created: createdList, list } = await getOrCreatePersonalBoardList(
       request,
-      board.id
+      board.id,
+      headers
     );
     const boardPath = `/${DEFAULT_LOCALE}/personal/tasks/boards/${board.id}`;
     const secondPage = await context.newPage();
@@ -235,6 +257,7 @@ test.describe('Task board realtime and task mutations', () => {
       for (const taskId of createdTaskIds) {
         await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
           failOnStatusCode: false,
+          headers,
         });
       }
 
@@ -244,6 +267,7 @@ test.describe('Task board realtime and task mutations', () => {
           {
             data: { deleted: true },
             failOnStatusCode: false,
+            headers,
           }
         );
       }
@@ -254,14 +278,31 @@ test.describe('Task board realtime and task mutations', () => {
     context,
     page,
     request,
-  }) => {
+  }, testInfo) => {
+    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 213));
+
+    await resetDbRateLimits();
+    await resetAppRateLimitStateForTests(request, {
+      completeOnboarding: true,
+      email: TEST_USER.email,
+      headers,
+      locale: DEFAULT_LOCALE,
+    });
+    await context.setExtraHTTPHeaders(headers);
+
     const board = await getPersonalBoard(request);
     const { created: createdList, list } = await getOrCreatePersonalBoardList(
       request,
-      board.id
+      board.id,
+      headers
     );
     const taskName = `E2E realtime description ${Date.now()}`;
-    const taskId = await createPersonalTask(request, list.id, taskName);
+    const taskId = await createPersonalTask(
+      request,
+      list.id,
+      taskName,
+      headers
+    );
     const taskPath = `/${DEFAULT_LOCALE}/personal/tasks/${taskId}`;
     const secondPage = await context.newPage();
     const firstLine = `Inserted realtime line one ${Date.now()}`;
@@ -318,6 +359,7 @@ test.describe('Task board realtime and task mutations', () => {
 
       await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
         failOnStatusCode: false,
+        headers,
       });
 
       if (createdList) {
@@ -326,6 +368,7 @@ test.describe('Task board realtime and task mutations', () => {
           {
             data: { deleted: true },
             failOnStatusCode: false,
+            headers,
           }
         );
       }

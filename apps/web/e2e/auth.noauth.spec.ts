@@ -5,11 +5,25 @@ import {
   openPasswordStage,
 } from './helpers/auth';
 import { DEFAULT_LOCALE, TEST_USER } from './helpers/constants';
-import { resetDbRateLimits, setWebOtpEnabled } from './helpers/rate-limits';
+import {
+  e2eClientHeaders,
+  e2eClientIpForTest,
+  resetAppRateLimitStateWithNewContextForTests,
+  resetDbRateLimits,
+  setWebOtpEnabled,
+} from './helpers/rate-limits';
 
 test.describe('Authentication (unauthenticated)', () => {
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ page, playwright }, testInfo) => {
+    const clientHeaders = e2eClientHeaders(e2eClientIpForTest(testInfo, 210));
+
+    await page.setExtraHTTPHeaders(clientHeaders);
     await resetDbRateLimits();
+    await resetAppRateLimitStateWithNewContextForTests(playwright.request, {
+      email: `e2e-auth-reset-${testInfo.workerIndex}-${testInfo.retry}-${Date.now()}@tuturuuu.com`,
+      headers: clientHeaders,
+      locale: DEFAULT_LOCALE,
+    });
   });
 
   test('login page renders with email input and primary auth button', async ({
@@ -216,6 +230,8 @@ test.describe('Authentication (unauthenticated)', () => {
     const previousOtpState = await setWebOtpEnabled(true);
 
     try {
+      const otpEmail = `otp-login-${Date.now()}@tuturuuu.com`;
+
       await page.goto(`/${DEFAULT_LOCALE}/login`, {
         waitUntil: 'domcontentloaded',
       });
@@ -225,7 +241,7 @@ test.describe('Authentication (unauthenticated)', () => {
         .first();
       await expect(emailInput).toBeVisible({ timeout: 30_000 });
       await emailInput.clear();
-      await emailInput.fill(TEST_USER.email);
+      await emailInput.fill(otpEmail);
 
       const continueButton = page
         .locator('form button[type="submit"]')
@@ -239,7 +255,7 @@ test.describe('Authentication (unauthenticated)', () => {
       await expect(otpInput).toBeVisible({ timeout: 15_000 });
 
       // Retrieve the OTP code from Mailpit and enter it
-      await completeOtpStage(page, TEST_USER.email);
+      await completeOtpStage(page, otpEmail);
 
       // After OTP verification, we should be authenticated
       await page.waitForFunction(

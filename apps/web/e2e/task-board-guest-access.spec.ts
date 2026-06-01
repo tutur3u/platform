@@ -1,5 +1,11 @@
 import { type APIRequestContext, expect, test } from '@playwright/test';
-import { DEFAULT_LOCALE } from './helpers/constants';
+import { DEFAULT_LOCALE, TEST_USER } from './helpers/constants';
+import {
+  e2eClientHeaders,
+  e2eClientIpForTest,
+  resetAppRateLimitStateForTests,
+  resetDbRateLimits,
+} from './helpers/rate-limits';
 
 type TaskBoard = {
   id: string;
@@ -35,7 +41,8 @@ async function getPersonalBoard(request: APIRequestContext) {
 
 async function getOrCreateBoardList(
   request: APIRequestContext,
-  boardId: string
+  boardId: string,
+  headers: Record<string, string>
 ) {
   const listsResponse = await request.get(
     `/api/v1/workspaces/personal/task-boards/${boardId}/lists`
@@ -55,6 +62,7 @@ async function getOrCreateBoardList(
         name: `E2E Guest Access ${Date.now()}`,
         status: 'active',
       },
+      headers,
     }
   );
 
@@ -68,15 +76,28 @@ test.describe('Task board guest access', () => {
     baseURL,
     browser,
     request,
-  }) => {
+  }, testInfo) => {
     const origin = baseURL ?? 'https://tuturuuu.localhost';
+    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 212));
+
+    await resetDbRateLimits();
+    await resetAppRateLimitStateForTests(request, {
+      completeOnboarding: true,
+      email: TEST_USER.email,
+      headers,
+      locale: DEFAULT_LOCALE,
+    });
+
     const board = await getPersonalBoard(request);
     const { created: createdList, list } = await getOrCreateBoardList(
       request,
-      board.id
+      board.id,
+      headers
     );
     const guestEmail = `e2e-board-guest-${Date.now()}@tuturuuu.com`;
-    const guestContext = await browser.newContext();
+    const guestContext = await browser.newContext({
+      extraHTTPHeaders: headers,
+    });
     const guestPage = await guestContext.newPage();
     const createdTaskIds: string[] = [];
     let shareId: string | null = null;
@@ -89,6 +110,7 @@ test.describe('Task board guest access', () => {
             email: guestEmail,
             permission: 'view',
           },
+          headers,
         }
       );
       expect(shareResponse.status()).toBe(200);
@@ -106,6 +128,7 @@ test.describe('Task board guest access', () => {
             email: guestEmail,
             locale: DEFAULT_LOCALE,
           },
+          headers,
         }
       );
       expect(sessionResponse.ok()).toBeTruthy();
@@ -116,6 +139,7 @@ test.describe('Task board guest access', () => {
           params: {
             status: 'active',
           },
+          headers,
         }
       );
       expect(guestBoardsResponse.status()).toBe(200);
@@ -137,6 +161,7 @@ test.describe('Task board guest access', () => {
             name: 'View-only guest should not create this',
           },
           failOnStatusCode: false,
+          headers,
         }
       );
       expect(deniedCreateResponse.status()).toBe(403);
@@ -148,6 +173,7 @@ test.describe('Task board guest access', () => {
             permission: 'edit',
             shareId,
           },
+          headers,
         }
       );
       expect(updateShareResponse.ok()).toBeTruthy();
@@ -159,6 +185,7 @@ test.describe('Task board guest access', () => {
             listId: list.id,
             name: `E2E guest-created task ${Date.now()}`,
           },
+          headers,
         }
       );
       expect(createTaskResponse.status()).toBe(201);
@@ -170,7 +197,7 @@ test.describe('Task board guest access', () => {
 
       const deniedDeleteResponse = await guestPage.request.delete(
         `${origin}/api/v1/workspaces/${board.ws_id}/tasks/${createTaskBody.task!.id}`,
-        { failOnStatusCode: false }
+        { failOnStatusCode: false, headers }
       );
       expect(deniedDeleteResponse.status()).toBe(403);
 
@@ -204,13 +231,14 @@ test.describe('Task board guest access', () => {
       for (const taskId of createdTaskIds) {
         await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
           failOnStatusCode: false,
+          headers,
         });
       }
 
       if (shareId) {
         await request.delete(
           `/api/v1/workspaces/personal/task-boards/${board.id}/shares?shareId=${shareId}`,
-          { failOnStatusCode: false }
+          { failOnStatusCode: false, headers }
         );
       }
 
@@ -220,6 +248,7 @@ test.describe('Task board guest access', () => {
           {
             data: { deleted: true },
             failOnStatusCode: false,
+            headers,
           }
         );
       }
