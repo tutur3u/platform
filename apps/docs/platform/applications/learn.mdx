@@ -92,6 +92,8 @@ Learn has dedicated Vercel workflows:
 
 Both workflows are registered in `tuturuuu.ts` and use the shared `ci-check.yml` switchboard. They require environment-scoped Vercel credentials plus `VERCEL_LEARN_PROJECT_ID`; production Supabase values should live in the Vercel project environment rather than GitHub Actions.
 
-Deployment credentials must stay environment-scoped in GitHub Actions. The preview job is bound to the `vercel-preview-learn` GitHub Environment, and the production job is bound to `vercel-production-learn`. Store `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_LEARN_PROJECT_ID` in those environments instead of repository-wide or organization-wide secrets. Do not add `TURBO_TOKEN`, `TURBO_TEAM`, or production Supabase service keys to workflow-level `env`; Learn deploys should rely on Vercel project environment variables pulled by `vercel pull`. Manual production dispatch is only valid from `refs/heads/production`.
+Deployment credentials must stay environment-scoped in GitHub Actions. The preview job is bound to the `vercel-preview-learn` GitHub Environment, and the production job is bound to `vercel-production-learn`. Store `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_LEARN_PROJECT_ID` in those environments instead of repository-wide or organization-wide secrets. Do not add `TURBO_TOKEN`, `TURBO_TEAM`, or production Supabase service keys to workflow-level `env`; Learn deploys should rely on Vercel project environment variables pulled by `vercel pull`.
+
+Preview dispatch is manual-only. Run `vercel-preview-learn.yaml` from `main`, set `preview_ref` to the reviewed branch, tag, or SHA, and keep `TRUSTED_PREVIEW_DEPLOY_ACTORS` limited to maintainers approved to run secret-backed preview builds. Manual production dispatch is only valid from `refs/heads/production`.
 
 `apps/learn/vercel.json` disables Vercel Git deployments and GitHub integration so preview and production deploys only happen through the CI workflows.

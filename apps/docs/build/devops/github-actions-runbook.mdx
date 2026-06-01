@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-05-31"
+updatedAt: "2026-06-02"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -25,9 +25,9 @@ The changed-file resolver must evaluate the full effective change range:
 
 - Manual `workflow_dispatch` runs bypass affected-app gating when the workflow is
   enabled.
-- Vercel push workflows first look for the latest successful GitHub Deployment
-  marker for the same Vercel workflow and branch, then diff that marker SHA to
-  the current `GITHUB_SHA`.
+- Vercel production push workflows first look for the latest successful GitHub
+  Deployment marker for the same workflow and branch, then diff that marker SHA
+  to the current `GITHUB_SHA`.
 - If no marker is available, push events use the GitHub event payload's complete
   commit file list instead of falling back to only the latest commit.
 - Pull request events diff the PR base SHA to the PR head SHA.
@@ -105,8 +105,11 @@ These workflows:
 - run with default `contents: read` permissions
 - bind deploy jobs to `vercel-preview-<app>` or `vercel-production-<app>`
   GitHub Environments
-- reject manual dispatches from the wrong branch before install/build/deploy work
-  starts
+- run preview deployments only through manual dispatch from `main`, with a
+  required `preview_ref` input and an actor present in the
+  `TRUSTED_PREVIEW_DEPLOY_ACTORS` repository variable
+- reject production manual dispatches from non-production branches before
+  install/build/deploy work starts
 - install Bun and Node 24
 - install dependencies
 - build selected shared workspace dependencies before Vercel resolves package exports:
@@ -114,10 +117,11 @@ These workflows:
 - run `vercel pull`
 - run `vercel build`
 - deploy prebuilt artifacts
-- skip work when a newer commit already exists on the target branch
+- skip production push work when a newer commit already exists on the target
+  branch
 - record a non-blocking GitHub Deployment marker after a successful Vercel
-  build/deploy so the next push can evaluate every change since the last
-  successful run
+  build/deploy so the next production push can evaluate every change since the
+  last successful run
 
 ### Database automation
 
@@ -164,6 +168,13 @@ the Vercel project environment. The regression test
 `bun test scripts/ci/release-workflows.test.js` enforces this for every
 `vercel-preview-*.yaml` and `vercel-production-*.yaml` workflow.
 
+Preview deploy credentials must not be exposed to arbitrary branch push code.
+Preview Vercel workflows are manual-only: run the workflow from `main`, provide
+the branch, tag, or SHA in `preview_ref`, and keep `TRUSTED_PREVIEW_DEPLOY_ACTORS`
+limited to maintainers who can approve secret-backed preview builds. The workflow
+still checks out and builds the requested `preview_ref`, so reviewers should
+treat that ref as code that can execute during install/build.
+
 ### Other delivery surfaces
 
 - `discord-modal-deploy.yml`
@@ -186,6 +197,11 @@ Use `workflow_dispatch` when:
 Manual dispatch bypasses affected-app gating when the workflow is enabled in
 `tuturuuu.ts`. Disabled `ci` entries still skip, even for manual dispatch.
 
+For preview Vercel deployments, dispatch the workflow from `main`, set
+`preview_ref` to the branch, tag, or SHA to deploy, and confirm the actor is in
+`TRUSTED_PREVIEW_DEPLOY_ACTORS`. Do not reintroduce preview `push` triggers for
+secret-backed Vercel workflows.
+
 Package release workflows that expose production secrets or trusted publishing
 authority must add their own ref guard before dependency installation or publish
 jobs. For the SDK release workflow, manual dispatch is only valid with the
@@ -194,8 +210,9 @@ package or publish jobs can start.
 
 ### Newer-commit guards
 
-Vercel workflows intentionally skip if the branch already has a newer commit than the
-current run. A skipped deployment may be correct rather than broken.
+Production Vercel push workflows intentionally skip if the branch already has a
+newer commit than the current run. A skipped deployment may be correct rather
+than broken.
 
 The deployment marker closes the gap created by these stale-run skips. When a
 later push reaches the latest commit, affected-app gating compares against the

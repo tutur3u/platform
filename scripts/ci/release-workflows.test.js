@@ -261,7 +261,7 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
     const jobName = isPreview ? 'Deploy-Preview' : 'Deploy-Production';
     const expectedEnvironment = `vercel-${target}-${app}`;
     const expectedRefGuard = isPreview
-      ? /github\.ref != 'refs\/heads\/production'/
+      ? /github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/main'/
       : /github\.ref == 'refs\/heads\/production'/;
     const projectSecret = projectSecretsByApp[app];
 
@@ -292,6 +292,27 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
     assert.match(header, /\npermissions:\n {2}contents: read\n/);
     assert.match(deployJob, expectedRefGuard);
     assert.match(deployJob, new RegExp(`environment: ${expectedEnvironment}`));
+
+    if (isPreview) {
+      assert.doesNotMatch(
+        header,
+        /\n {2}push:/,
+        `${workflowName} must not expose deployment secrets to branch push workflows`
+      );
+      assert.match(header, /\n {2}workflow_dispatch:\n/);
+      assert.match(header, /\n {6}preview_ref:\n/);
+      assert.match(
+        deployJob,
+        /vars\.TRUSTED_PREVIEW_DEPLOY_ACTORS/,
+        `${workflowName} must require a trusted manual preview deploy actor`
+      );
+      assert.match(
+        deployJob,
+        /ref: \$\{\{ inputs\.preview_ref \}\}/,
+        `${workflowName} must check out the manually approved preview ref`
+      );
+    }
+
     assert.doesNotMatch(
       workflow.slice(0, installIndex),
       /\bsecrets\./,
