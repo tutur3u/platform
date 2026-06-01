@@ -1376,6 +1376,7 @@ export async function createWorkspaceStorageUploadPayload(
       new PutObjectCommand({
         Bucket: config.bucket,
         Key: fullPath,
+        ContentType: options?.contentType,
       }),
       { expiresIn: R2_SIGNED_URL_TTL_SECONDS }
     );
@@ -1388,6 +1389,11 @@ export async function createWorkspaceStorageUploadPayload(
       fullPath,
       filename: sanitizedFilename,
       contentType: options?.contentType,
+      headers: options?.contentType
+        ? {
+            'Content-Type': options.contentType,
+          }
+        : undefined,
       provider: WORKSPACE_STORAGE_PROVIDER_R2,
     };
   }
@@ -1432,6 +1438,11 @@ export async function createWorkspaceStorageUploadPayload(
     fullPath,
     filename: sanitizedFilename,
     contentType: options?.contentType,
+    headers: options?.contentType
+      ? {
+          'Content-Type': options.contentType,
+        }
+      : undefined,
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   };
 }

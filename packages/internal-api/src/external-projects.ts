@@ -679,6 +679,7 @@ export async function createWorkspaceExternalProjectAssetUploadUrl(
   payload: {
     adapter?: string | null;
     collectionType: string;
+    contentType?: string;
     entrySlug: string;
     filename: string;
     size?: number;
@@ -691,6 +692,7 @@ export async function createWorkspaceExternalProjectAssetUploadUrl(
     payload.filename,
     {
       path: buildExternalProjectAssetStoragePath(payload),
+      contentType: payload.contentType,
       size: payload.size,
       upsert: payload.upsert,
     },

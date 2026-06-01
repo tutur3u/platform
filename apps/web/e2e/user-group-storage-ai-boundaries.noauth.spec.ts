@@ -183,6 +183,23 @@ test.describe('User-group storage AI boundaries', () => {
       );
       expect(groupResponse.status()).toBe(201);
 
+      const uploadUrlResponse = await lowPrivPage.request.post(
+        `${origin}/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/storage`,
+        {
+          data: {
+            contentType: 'application/pdf',
+            filename: 'empty-syllabus.pdf',
+            size: 0,
+          },
+          failOnStatusCode: false,
+          headers,
+        }
+      );
+      expect(uploadUrlResponse.status()).toBe(400);
+      await expect(uploadUrlResponse.json()).resolves.toEqual({
+        message: 'File is empty',
+      });
+
       const courseResponse = await lowPrivPage.request.post(
         `${origin}/api/ai/course`,
         {

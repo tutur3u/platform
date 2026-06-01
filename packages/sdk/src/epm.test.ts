@@ -407,6 +407,13 @@ describe('EpmClient', () => {
     expect(mockFetch.mock.calls[0]?.[0]).toBe(
       'https://example.com/api/v1/workspaces/ws_123/external-projects/assets/upload-url'
     );
+    expect(JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string)).toEqual({
+      collectionType: 'artworks',
+      contentType: 'image/png',
+      entrySlug: 'entry',
+      filename: 'file.png',
+      size: 5,
+    });
     expect(mockFetch.mock.calls[1]?.[0]).toBe(
       'https://upload.example.com/object'
     );

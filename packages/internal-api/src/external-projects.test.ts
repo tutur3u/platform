@@ -129,6 +129,7 @@ describe('external project upload helpers', () => {
           filename: 'cover.png',
           path: 'external-projects/yoola/artworks/mine',
           size: file.size,
+          contentType: 'image/png',
         }),
         cache: 'no-store',
         method: 'POST',

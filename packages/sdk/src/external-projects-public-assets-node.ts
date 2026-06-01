@@ -109,14 +109,16 @@ export async function uploadExternalProjectPublicFolderAssets(
       continue;
     }
 
+    const contentType = contentTypeForPath(publicPath);
     const uploadUrl = await client.createAssetUploadUrl(workspaceId, {
       collectionType: entry.collectionSlug,
+      contentType,
       entrySlug: entry.slug,
       filename: upload.filename,
+      size: file.byteLength,
       upsert: options.upsert ?? true,
     });
 
-    const contentType = contentTypeForPath(publicPath);
     let uploadResponse = await fetchImpl(uploadUrl.signedUrl, {
       body: new Blob([new Uint8Array(file)], { type: contentType }),
       cache: 'no-store',

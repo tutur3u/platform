@@ -12,6 +12,7 @@ import {
   listWorkspaceStorageDirectory,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
+import { validateWorkspaceStorageUploadMetadata } from '@/lib/workspace-storage-upload-policy';
 
 const routeParamsSchema = z.object({
   wsId: z.string().min(1),
@@ -121,6 +122,7 @@ export const GET = withSessionAuth<{
 );
 
 const uploadUrlSchema = z.object({
+  contentType: z.string().max(255).optional(),
   filename: z.string().min(1).max(255),
   upsert: z.boolean().optional(),
   size: z.number().int().min(0).optional(),
@@ -196,18 +198,35 @@ export const POST = withSessionAuth<{
         }
       }
 
-      const filenameWithSuffix =
-        parsed.data.upsert === true
-          ? sanitizedFilename
-          : `${generateRandomUUID()}-${sanitizedFilename}`;
+      const uploadValidation = validateWorkspaceStorageUploadMetadata({
+        contentType: parsed.data.contentType,
+        filename: sanitizedFilename,
+        size: parsed.data.size,
+      });
+      if (!uploadValidation.ok) {
+        return NextResponse.json(
+          { message: uploadValidation.message },
+          { status: uploadValidation.status }
+        );
+      }
+
+      if (parsed.data.upsert === true) {
+        return NextResponse.json(
+          { message: 'Upload overwrite is not allowed for this path' },
+          { status: 403 }
+        );
+      }
+
+      const filenameWithSuffix = `${generateRandomUUID()}-${sanitizedFilename}`;
 
       const uploadPayload = await createWorkspaceStorageUploadPayload(
         prepared.normalizedWsId,
         filenameWithSuffix,
         {
           path: `user-groups/${prepared.groupId}`,
-          upsert: parsed.data.upsert ?? false,
+          upsert: false,
           size: parsed.data.size,
+          contentType: uploadValidation.contentType,
         }
       );
 
@@ -217,6 +236,7 @@ export const POST = withSessionAuth<{
         headers: uploadPayload.headers,
         path: uploadPayload.path,
         fullPath: uploadPayload.fullPath,
+        contentType: uploadPayload.contentType,
       });
     } catch (error) {
       return mapStorageError(error);

@@ -6,58 +6,11 @@ import {
   uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
+import { validateWorkspaceStorageUploadMetadata } from '@/lib/workspace-storage-upload-policy';
 import {
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,
 } from '../route-auth';
-
-const ALLOWED_MIME_TYPES = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/jpg',
-  'image/gif',
-  'image/webp',
-  'image/svg+xml',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'text/plain',
-  'text/csv',
-  'text/markdown',
-  'application/zip',
-  'application/x-zip-compressed',
-  'application/json',
-]);
-
-const GENERIC_ALLOWED_MIME_TYPES = new Set([
-  'application/octet-stream',
-  'binary/octet-stream',
-]);
-
-const ALLOWED_EXTENSIONS = new Set([
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.webp',
-  '.svg',
-  '.pdf',
-  '.doc',
-  '.docx',
-  '.xls',
-  '.xlsx',
-  '.ppt',
-  '.pptx',
-  '.txt',
-  '.csv',
-  '.md',
-  '.zip',
-  '.json',
-]);
 
 export async function POST(
   request: Request,
@@ -87,35 +40,15 @@ export async function POST(
       return NextResponse.json({ message: 'Missing file' }, { status: 400 });
     }
 
-    if (file.size > 100 * 1024 * 1024) {
+    const uploadValidation = validateWorkspaceStorageUploadMetadata({
+      contentType: file.type,
+      filename: file.name,
+      size: file.size,
+    });
+    if (!uploadValidation.ok) {
       return NextResponse.json(
-        { message: 'File size exceeds 100 MB limit' },
-        { status: 413 }
-      );
-    }
-
-    const lastDotIndex = file.name.lastIndexOf('.');
-    const fileExtension =
-      lastDotIndex === -1
-        ? ''
-        : file.name.substring(lastDotIndex).toLowerCase();
-
-    const hasAllowedExtension =
-      !!fileExtension && ALLOWED_EXTENSIONS.has(fileExtension);
-    const hasAllowedMimeType = !!file.type && ALLOWED_MIME_TYPES.has(file.type);
-    const hasGenericMimeType =
-      !!file.type && GENERIC_ALLOWED_MIME_TYPES.has(file.type);
-    const hasExplicitMimeType = !!file.type;
-
-    const isValid =
-      (hasAllowedExtension && (hasAllowedMimeType || hasGenericMimeType)) ||
-      (!fileExtension && hasAllowedMimeType) ||
-      (!hasExplicitMimeType && hasAllowedExtension);
-
-    if (!isValid) {
-      return NextResponse.json(
-        { message: 'File type not allowed' },
-        { status: 415 }
+        { message: uploadValidation.message },
+        { status: uploadValidation.status }
       );
     }
 
@@ -144,7 +77,7 @@ export async function POST(
       storagePath,
       buffer,
       {
-        contentType: file.type || 'application/octet-stream',
+        contentType: uploadValidation.contentType || 'application/octet-stream',
         upsert,
       }
     );
@@ -154,7 +87,7 @@ export async function POST(
     try {
       autoExtract = await triggerWorkspaceStorageAutoExtract(normalizedWsId, {
         path: data.path,
-        contentType: file.type || 'application/octet-stream',
+        contentType: uploadValidation.contentType || 'application/octet-stream',
         originalFilename: sanitizedFilename,
         requestOrigin: new URL(request.url).origin,
       });

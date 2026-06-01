@@ -349,6 +349,7 @@ export async function uploadWorkspaceStorageFile(
     file.name,
     {
       ...uploadOptions,
+      contentType: file.type || 'application/octet-stream',
       size: file.size,
     },
     clientOptions
@@ -409,6 +410,7 @@ export async function uploadWorkspaceUserGroupStorageFile(
     groupId,
     file.name,
     {
+      contentType: file.type || 'application/octet-stream',
       size: file.size,
       upsert,
     },
@@ -528,6 +530,7 @@ export async function createWorkspaceUserGroupStorageUploadUrl(
   groupId: string,
   filename: string,
   options?: {
+    contentType?: string;
     upsert?: boolean;
     size?: number;
   },
@@ -545,6 +548,7 @@ export async function createWorkspaceUserGroupStorageUploadUrl(
       },
       body: JSON.stringify({
         filename,
+        contentType: options?.contentType,
         upsert: options?.upsert,
         size: options?.size,
       }),

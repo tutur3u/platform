@@ -724,7 +724,9 @@ export class EpmClient {
   ) {
     const uploadUrl = await this.createAssetUploadUrl(workspaceId, {
       ...options,
+      contentType: file.type || 'application/octet-stream',
       filename: file.name,
+      size: file.size,
     });
 
     return uploadExternalProjectFileWithSignedUrl(

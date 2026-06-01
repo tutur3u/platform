@@ -7,6 +7,7 @@ import {
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
+import { validateWorkspaceStorageUploadMetadata } from '@/lib/workspace-storage-upload-policy';
 import {
   resolveTopicAnnouncementsAccess,
   TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES,
@@ -54,6 +55,17 @@ function canCreateUploadUrlForPath(
   }
 
   return (
+    path.startsWith('external-projects/') &&
+    permissions.containsPermission('manage_external_projects')
+  );
+}
+
+function canOverwriteUploadUrlForPath(
+  permissions: WorkspaceStorageRouteAuthContext['permissions'],
+  path: string
+) {
+  return (
+    !!permissions &&
     path.startsWith('external-projects/') &&
     permissions.containsPermission('manage_external_projects')
   );
@@ -238,6 +250,22 @@ export async function POST(
 
     if (topicUploadAccess?.allowed) {
       uploadContentType = topicUploadAccess.contentType;
+    } else {
+      const uploadValidation = validateWorkspaceStorageUploadMetadata({
+        allowExternalProjectAssets:
+          sanitizedPath.startsWith('external-projects/'),
+        contentType: parsed.data.contentType,
+        filename: sanitizedFilename,
+        size: parsed.data.size,
+      });
+      if (!uploadValidation.ok) {
+        return NextResponse.json(
+          { message: uploadValidation.message },
+          { status: uploadValidation.status }
+        );
+      }
+
+      uploadContentType = uploadValidation.contentType;
     }
 
     const canCreateUploadUrl =
@@ -254,6 +282,16 @@ export async function POST(
     if (!canCreateUploadUrl) {
       return NextResponse.json(
         { message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
+    if (
+      parsed.data.upsert === true &&
+      !canOverwriteUploadUrlForPath(permissions, sanitizedPath)
+    ) {
+      return NextResponse.json(
+        { message: 'Upload overwrite is not allowed for this path' },
         { status: 403 }
       );
     }

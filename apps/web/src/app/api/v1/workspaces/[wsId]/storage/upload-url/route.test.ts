@@ -63,12 +63,12 @@ function permissions({
   };
 }
 
-function setupAuth() {
+function setupAuth(permissionOptions: Parameters<typeof permissions>[0] = {}) {
   mocks.resolveWorkspaceStorageRouteAuth.mockResolvedValue({
     ok: true,
     context: {
       normalizedWsId: 'workspace-1',
-      permissions: permissions(),
+      permissions: permissions(permissionOptions),
       user: { id: 'user-1' },
       userId: 'user-1',
     },
@@ -253,5 +253,159 @@ describe('workspace storage upload-url route', () => {
       expect(response.status).toBe(expectedStatus);
     }
     expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('creates generic Drive signed upload URLs only after validating upload metadata', async () => {
+    setupAuth({ manageDrive: true });
+    mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
+      contentType: 'text/plain',
+      filename: 'upload-id-notes.txt',
+      fullPath: 'workspace-1/documents/upload-id-notes.txt',
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+      path: 'documents/upload-id-notes.txt',
+      provider: 'supabase',
+      signedUrl: 'https://storage.example.com/upload',
+      token: 'upload-token',
+    });
+
+    const response = await postUploadUrl({
+      contentType: 'text/plain',
+      filename: 'notes.txt',
+      path: 'documents',
+      size: 128,
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      contentType: 'text/plain',
+      filename: 'upload-id-notes.txt',
+      fullPath: 'workspace-1/documents/upload-id-notes.txt',
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+      path: 'documents/upload-id-notes.txt',
+      provider: 'supabase',
+      signedUrl: 'https://storage.example.com/upload',
+      token: 'upload-token',
+    });
+    expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
+      'workspace-1',
+      'upload-id-notes.txt',
+      {
+        contentType: 'text/plain',
+        path: 'documents',
+        size: 128,
+        upsert: false,
+      }
+    );
+  });
+
+  it('rejects generic Drive signed upload URLs for empty, oversized, or disallowed files', async () => {
+    setupAuth({ manageDrive: true });
+
+    const cases = [
+      {
+        expectedStatus: 400,
+        payload: {
+          contentType: 'application/pdf',
+          filename: 'empty.pdf',
+          path: 'documents',
+          size: 0,
+        },
+      },
+      {
+        expectedStatus: 413,
+        payload: {
+          contentType: 'application/pdf',
+          filename: 'large.pdf',
+          path: 'documents',
+          size: 100 * 1024 * 1024 + 1,
+        },
+      },
+      {
+        expectedStatus: 415,
+        payload: {
+          contentType: 'application/octet-stream',
+          filename: 'script.sh',
+          path: 'documents',
+          size: 128,
+        },
+      },
+    ];
+
+    for (const { expectedStatus, payload } of cases) {
+      const response = await postUploadUrl(payload);
+      expect(response.status).toBe(expectedStatus);
+    }
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('rejects overwrite signing outside external-project asset paths', async () => {
+    setupAuth({ manageDrive: true });
+
+    const response = await postUploadUrl({
+      contentType: 'image/png',
+      filename: 'logo.png',
+      path: 'logos',
+      size: 128,
+      upsert: true,
+    });
+
+    expect(response.status).toBe(403);
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('requires external-project management before signing external-project overwrites', async () => {
+    setupAuth({ manageDrive: true });
+
+    const response = await postUploadUrl({
+      contentType: 'audio/wav',
+      filename: 'voice.wav',
+      path: 'external-projects/yoola/voice-reels/demo',
+      size: 128,
+      upsert: true,
+    });
+
+    expect(response.status).toBe(403);
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('allows managed external-project asset overwrites with media metadata', async () => {
+    setupAuth({ manageExternalProjects: true });
+    mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
+      contentType: 'audio/wav',
+      filename: 'voice.wav',
+      fullPath:
+        'workspace-1/external-projects/yoola/voice-reels/demo/voice.wav',
+      headers: {
+        'Content-Type': 'audio/wav',
+      },
+      path: 'external-projects/yoola/voice-reels/demo/voice.wav',
+      provider: 'supabase',
+      signedUrl: 'https://storage.example.com/upload',
+      token: 'upload-token',
+    });
+
+    const response = await postUploadUrl({
+      contentType: 'audio/wav',
+      filename: 'voice.wav',
+      path: 'external-projects/yoola/voice-reels/demo',
+      size: 128,
+      upsert: true,
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
+      'workspace-1',
+      'voice.wav',
+      {
+        contentType: 'audio/wav',
+        path: 'external-projects/yoola/voice-reels/demo',
+        size: 128,
+        upsert: true,
+      }
+    );
   });
 });

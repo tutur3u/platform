@@ -165,7 +165,9 @@ export interface EpmEntryListOptions {
 
 export interface EpmAssetUploadOptions {
   collectionType: string;
+  contentType?: string;
   entrySlug: string;
+  size?: number;
   upsert?: boolean;
 }
 

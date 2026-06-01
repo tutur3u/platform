@@ -123,8 +123,10 @@ describe('external project public folder assets', () => {
       );
       expect(JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string)).toEqual({
         collectionType: 'artworks',
+        contentType: 'image/png',
         entrySlug: 'starter-signal',
         filename: 'starter-signal.png',
+        size: 9,
         upsert: true,
       });
 

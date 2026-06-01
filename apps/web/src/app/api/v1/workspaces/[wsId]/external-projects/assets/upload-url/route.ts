@@ -1,15 +1,22 @@
 import { posix } from 'node:path';
-import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  createWorkspaceStorageUploadPayload,
+  WorkspaceStorageError,
+} from '@/lib/workspace-storage-provider';
+import { validateWorkspaceStorageUploadMetadata } from '@/lib/workspace-storage-upload-policy';
 
 const uploadUrlSchema = z.object({
   collectionType: z.string().min(1).max(120),
+  contentType: z.string().max(255).optional(),
   entrySlug: z.string().min(1).max(120),
   filename: z.string().min(1).max(255),
+  size: z.number().int().min(0).optional(),
   upsert: z.boolean().optional(),
 });
 
@@ -38,46 +45,59 @@ export async function POST(
       );
     }
 
+    const uploadValidation = validateWorkspaceStorageUploadMetadata({
+      allowExternalProjectAssets: true,
+      contentType: payload.contentType,
+      filename,
+      size: payload.size,
+    });
+    if (!uploadValidation.ok) {
+      return NextResponse.json(
+        { error: uploadValidation.message },
+        { status: uploadValidation.status }
+      );
+    }
+
     const filenameWithSuffix =
       payload.upsert === true
         ? filename
         : `${generateRandomUUID()}-${filename}`;
     const storagePath = posix.join(
-      access.normalizedWorkspaceId,
       'external-projects',
       access.binding.adapter ?? 'shared',
       collectionType,
-      entrySlug,
-      filenameWithSuffix
+      entrySlug
     );
 
-    const admin = await createDynamicAdminClient();
-    const { data, error } = await admin.storage
-      .from('workspaces')
-      .createSignedUploadUrl(storagePath, {
+    const uploadPayload = await createWorkspaceStorageUploadPayload(
+      access.normalizedWorkspaceId,
+      filenameWithSuffix,
+      {
+        contentType: uploadValidation.contentType,
+        path: storagePath,
+        size: payload.size,
         upsert: payload.upsert ?? false,
-      });
+      }
+    );
 
-    if (error || !data?.signedUrl || !data?.token) {
-      console.error('Error creating external project upload URL:', error);
+    return NextResponse.json({
+      contentType: uploadPayload.contentType,
+      filename: uploadPayload.filename,
+      fullPath: uploadPayload.fullPath,
+      headers: uploadPayload.headers,
+      path: uploadPayload.path,
+      provider: uploadPayload.provider,
+      signedUrl: uploadPayload.signedUrl,
+      token: uploadPayload.token,
+    });
+  } catch (error) {
+    if (error instanceof WorkspaceStorageError) {
       return NextResponse.json(
-        { error: 'Failed to generate upload URL' },
-        { status: 500 }
+        { error: error.message },
+        { status: error.status }
       );
     }
 
-    const prefix = `${access.normalizedWorkspaceId}/`;
-    const relativePath = storagePath.startsWith(prefix)
-      ? storagePath.substring(prefix.length)
-      : storagePath;
-
-    return NextResponse.json({
-      fullPath: storagePath,
-      path: relativePath,
-      signedUrl: data.signedUrl,
-      token: data.token,
-    });
-  } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid payload', details: error.flatten() },
@@ -85,7 +105,9 @@ export async function POST(
       );
     }
 
-    console.error('Failed to create external project upload URL', error);
+    serverLogger.error('Failed to create external project upload URL', {
+      error,
+    });
     return NextResponse.json(
       { error: 'Failed to create external project upload URL' },
       { status: 500 }
