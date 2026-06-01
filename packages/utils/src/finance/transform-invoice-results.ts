@@ -61,7 +61,8 @@ export interface PlatformCreator {
 }
 
 export interface WalletTransaction {
-  wallet: {
+  wallet_id?: string | null;
+  wallet?: {
     name: string | null;
   } | null;
 }

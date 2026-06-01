@@ -20,21 +20,32 @@ async function verifyTransactionWorkspace(
 
   const { data, error } = await sbClient
     .from('wallet_transactions')
-    .select(`
-      id,
-      workspace_wallets!wallet_id!inner (
-        ws_id
-      )
-    `)
+    .select('id, wallet_id')
     .eq('id', transactionId)
-    .eq('workspace_wallets.ws_id', wsId)
     .single();
 
-  if (error || !data || data.workspace_wallets?.ws_id !== wsId) {
+  if (error || !data) {
     console.error('Error verifying transaction workspace:', {
       transactionId,
       wsId,
       error: error?.message,
+    });
+    return null;
+  }
+
+  const { data: wallet, error: walletError } = await sbClient
+    .schema('private')
+    .from('workspace_wallets')
+    .select('id')
+    .eq('id', data.wallet_id)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (walletError || !wallet) {
+    console.error('Error verifying transaction wallet workspace:', {
+      transactionId,
+      wsId,
+      error: walletError?.message,
     });
     return null;
   }
@@ -300,6 +311,7 @@ export async function PUT(
   // Verify new wallet belongs to workspace if being changed
   if (newData.wallet_id) {
     const { data: walletCheck } = await sbAdmin
+      .schema('private')
       .from('workspace_wallets')
       .select('id')
       .eq('id', newData.wallet_id)

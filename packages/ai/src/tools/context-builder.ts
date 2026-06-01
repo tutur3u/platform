@@ -129,6 +129,7 @@ export async function buildMiraContext(
     // Wallets with balances
     canReadFinance
       ? supabase
+          .schema('private')
           .from('workspace_wallets')
           .select('name, currency, balance')
           .eq('ws_id', wsId)

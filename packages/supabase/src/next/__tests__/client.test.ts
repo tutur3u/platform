@@ -79,8 +79,8 @@ describe('Supabase Client', () => {
     expect(isProxyOnlyPublicTable('topic_announcements')).toBe(false);
   });
 
-  it('treats wallets as proxy-only', () => {
-    expect(isProxyOnlyPublicTable('workspace_wallets')).toBe(true);
+  it('does not treat migrated wallets as proxy-only', () => {
+    expect(isProxyOnlyPublicTable('workspace_wallets')).toBe(false);
   });
 
   describe('createClient', () => {
@@ -95,8 +95,8 @@ describe('Supabase Client', () => {
         browserAuthOptions
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(() => client.from('workspace_wallets')).toThrow(
-        getProxyOnlyPublicTableError('workspace_wallets')
+      expect(() => client.from('nova_challenges')).toThrow(
+        getProxyOnlyPublicTableError('nova_challenges')
       );
       expect(client.from('workspace_boards')).toEqual({
         table: 'workspace_boards',
@@ -138,8 +138,8 @@ describe('Supabase Client', () => {
         browserAuthOptions
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(() => client.from('workspace_wallets')).toThrow(
-        getProxyOnlyPublicTableError('workspace_wallets')
+      expect(() => client.from('nova_challenges')).toThrow(
+        getProxyOnlyPublicTableError('nova_challenges')
       );
       expect(client.from('workspace_boards')).toEqual({
         table: 'workspace_boards',
@@ -174,8 +174,8 @@ describe('Supabase Client', () => {
         refresh_token: 'test-refresh-token',
       });
       expect(client.from('users')).toEqual({ table: 'users' });
-      expect(() => client.from('workspace_wallets')).toThrow(
-        getProxyOnlyPublicTableError('workspace_wallets')
+      expect(() => client.from('nova_challenges')).toThrow(
+        getProxyOnlyPublicTableError('nova_challenges')
       );
     });
 

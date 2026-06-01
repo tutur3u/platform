@@ -4,7 +4,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
-import { transformInvoiceSearchResults } from '@tuturuuu/utils/finance/transform-invoice-results';
+import {
+  type FullInvoiceData,
+  transformInvoiceSearchResults,
+} from '@tuturuuu/utils/finance/transform-invoice-results';
 import {
   getPermissions,
   getWorkspace,
@@ -30,6 +33,67 @@ type DeleteInvoiceAction = (
   wsId: string,
   invoiceId: string
 ) => Promise<{ success: boolean; message?: string }>;
+
+async function attachWalletNames(
+  sbAdmin: unknown,
+  invoices: FullInvoiceData[]
+) {
+  const walletIds = [
+    ...new Set(
+      invoices
+        .map((invoice) => invoice.wallet_transactions?.wallet_id)
+        .filter((id): id is string => typeof id === 'string')
+    ),
+  ];
+
+  if (walletIds.length === 0) {
+    return invoices;
+  }
+
+  const privateClient = (
+    sbAdmin as {
+      schema: (schema: 'private') => {
+        from: (table: 'workspace_wallets') => {
+          select: (columns: 'id, name') => {
+            in: (
+              column: 'id',
+              values: string[]
+            ) => Promise<{
+              data: Array<{ id: string; name: string | null }> | null;
+            }>;
+          };
+        };
+      };
+    }
+  ).schema('private');
+
+  const { data: wallets } = await privateClient
+    .from('workspace_wallets')
+    .select('id, name')
+    .in('id', walletIds);
+
+  const walletNames = new Map(
+    (wallets ?? []).map((wallet) => [wallet.id, wallet.name])
+  );
+
+  return invoices.map((invoice) => {
+    const walletId = invoice.wallet_transactions?.wallet_id;
+
+    if (!walletId) {
+      return invoice;
+    }
+
+    return {
+      ...invoice,
+      wallet_transactions: {
+        ...invoice.wallet_transactions,
+        wallet: {
+          name: walletNames.get(walletId) ?? null,
+        },
+      },
+    };
+  });
+}
 
 /**
  * Fetches the first day of week preference for a user/workspace
@@ -301,21 +365,26 @@ async function getInitialData(
         `*, 
          legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), 
          platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)),
-         wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))`
+         wallet_transactions!finance_invoices_transaction_id_fkey(wallet_id)`
       )
       .in('id', invoiceIds);
+
+    const invoicesWithWallets = await attachWalletNames(
+      sbAdmin,
+      fullInvoices || []
+    );
 
     // Transform search results using shared utility
     const data = transformInvoiceSearchResults(
       searchResults,
-      fullInvoices || []
+      invoicesWithWallets
     );
 
     return { data, count } as { data: Invoice[]; count: number };
   }
 
   // No search query - use regular query builder
-  const selectQuery = `*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)), wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))`;
+  const selectQuery = `*, customer:workspace_users!customer_id(full_name, avatar_url), legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)), wallet_transactions!finance_invoices_transaction_id_fkey(wallet_id)`;
 
   const startRange = (parsedPage - 1) * parsedSize;
   const endRange = startRange + parsedSize - 1;
@@ -335,7 +404,9 @@ async function getInitialData(
     .limit(parsedSize);
   if (error) throw error;
 
-  const data = rawData.map(
+  const invoicesWithWallets = await attachWalletNames(sbAdmin, rawData ?? []);
+
+  const data = invoicesWithWallets.map(
     ({
       customer,
       legacy_creator,

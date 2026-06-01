@@ -314,8 +314,7 @@ class FinanceRepository {
         .from('wallet_transactions')
         .select('''
           *,
-          category:transaction_categories(name),
-          wallet:workspace_wallets(name, currency)
+          category:transaction_categories(name)
         ''')
         .inFilter('wallet_id', walletIds)
         .order('taken_at', ascending: false)
@@ -385,8 +384,7 @@ class FinanceRepository {
         .from('wallet_transactions')
         .select('''
           *,
-          category:transaction_categories(name),
-          wallet:workspace_wallets(name, currency)
+          category:transaction_categories(name)
         ''')
         .inFilter('wallet_id', walletIds);
 

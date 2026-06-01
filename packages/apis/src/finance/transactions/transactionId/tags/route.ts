@@ -35,17 +35,26 @@ export async function GET(
 
   const { data: transaction, error: transactionError } = await sbAdmin
     .from('wallet_transactions')
-    .select(`
-      id,
-      workspace_wallets!wallet_id!inner (
-        ws_id
-      )
-    `)
+    .select('id, wallet_id')
     .eq('id', transactionId)
-    .eq('workspace_wallets.ws_id', normalizedWsId)
     .maybeSingle();
 
   if (transactionError || !transaction) {
+    return NextResponse.json(
+      { message: 'Transaction not found' },
+      { status: 404 }
+    );
+  }
+
+  const { data: wallet, error: walletError } = await sbAdmin
+    .schema('private')
+    .from('workspace_wallets')
+    .select('id')
+    .eq('id', transaction.wallet_id)
+    .eq('ws_id', normalizedWsId)
+    .maybeSingle();
+
+  if (walletError || !wallet) {
     return NextResponse.json(
       { message: 'Transaction not found' },
       { status: 404 }

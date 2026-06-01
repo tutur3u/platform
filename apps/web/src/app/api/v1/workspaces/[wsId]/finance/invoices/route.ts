@@ -1,4 +1,7 @@
-import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import {
+  type FinanceRouteContext,
+  getFinanceRouteContext,
+} from '@tuturuuu/apis/finance/request-access';
 import {
   MAX_COLOR_LENGTH,
   MAX_MEDIUM_TEXT_LENGTH,
@@ -90,6 +93,51 @@ export interface CalculatedValues {
   rounding_applied: number;
   allowPromotions: boolean;
   promotion?: CalculatedPromotion;
+}
+
+async function attachWalletNames(
+  sbAdmin: FinanceRouteContext['sbAdmin'],
+  invoices: FullInvoiceData[]
+) {
+  const walletIds = [
+    ...new Set(
+      invoices
+        .map((invoice) => invoice.wallet_transactions?.wallet_id)
+        .filter((id): id is string => typeof id === 'string')
+    ),
+  ];
+
+  if (walletIds.length === 0) {
+    return invoices;
+  }
+
+  const { data: wallets } = await sbAdmin
+    .schema('private')
+    .from('workspace_wallets')
+    .select('id, name')
+    .in('id', walletIds);
+
+  const walletNames = new Map(
+    (wallets ?? []).map((wallet) => [wallet.id, wallet.name])
+  );
+
+  return invoices.map((invoice) => {
+    const walletId = invoice.wallet_transactions?.wallet_id;
+
+    if (!walletId) {
+      return invoice;
+    }
+
+    return {
+      ...invoice,
+      wallet_transactions: {
+        ...invoice.wallet_transactions,
+        wallet: {
+          name: walletNames.get(walletId) ?? null,
+        },
+      },
+    };
+  });
 }
 
 interface InvoiceCalculationRpcRow {
@@ -296,12 +344,12 @@ export async function GET(request: Request, { params }: Params) {
             `*, 
              legacy_creator:workspace_users!creator_id(id, full_name, display_name, email, avatar_url), 
              platform_creator:users!platform_creator_id(id, display_name, avatar_url, user_private_details(full_name, email)),
-             wallet_transactions!finance_invoices_transaction_id_fkey(wallet:workspace_wallets(name))`
+             wallet_transactions!finance_invoices_transaction_id_fkey(wallet_id)`
           )
           .in('id', invoiceIds);
         fullInvoices = transformInvoiceSearchResults(
           searchResults,
-          invoicesData || []
+          await attachWalletNames(sbAdmin, invoicesData || [])
         );
       }
 
@@ -313,7 +361,7 @@ export async function GET(request: Request, { params }: Params) {
 
     // Join wallet_transactions, using !inner if walletIds filter is present
     const walletJoinType = sp.walletIds.length > 0 ? '!inner' : '';
-    selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet:workspace_wallets(name))`;
+    selectQuery += `, wallet_transactions!finance_invoices_transaction_id_fkey${walletJoinType}(wallet_id)`;
 
     let queryBuilder = supabase
       .from('finance_invoices')
@@ -369,7 +417,9 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     // Transform data to match expected Invoice type
-    const data = transformInvoiceData(rawData || []);
+    const data = transformInvoiceData(
+      await attachWalletNames(sbAdmin, rawData || [])
+    );
 
     return NextResponse.json({
       data,

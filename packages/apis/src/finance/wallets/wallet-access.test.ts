@@ -12,7 +12,32 @@ const mocks = vi.hoisted(() => {
     },
   };
 
+  const privateSupabase = {
+    from: vi.fn((table: string) => {
+      if (table === 'workspace_wallets') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: walletMaybeSingle,
+              }),
+            }),
+          }),
+        };
+      }
+
+      throw new Error(`Unexpected private table: ${table}`);
+    }),
+  };
+
   const adminSupabase = {
+    schema: vi.fn((schema: string) => {
+      if (schema !== 'private') {
+        throw new Error(`Unexpected admin schema: ${schema}`);
+      }
+
+      return privateSupabase;
+    }),
     from: vi.fn((table: string) => {
       if (table === 'workspace_role_members') {
         return {
@@ -29,18 +54,6 @@ const mocks = vi.hoisted(() => {
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               in: whitelistIn,
-            }),
-          }),
-        };
-      }
-
-      if (table === 'workspace_wallets') {
-        return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                maybeSingle: walletMaybeSingle,
-              }),
             }),
           }),
         };

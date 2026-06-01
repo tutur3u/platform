@@ -11,6 +11,7 @@ export async function PUT(req: Request) {
   const json = await req.json();
   const result = await batchUpsert({
     table: 'workspace_wallets',
+    schema: 'private',
     data: json?.data || [],
   });
   return createMigrationResponse(result, 'wallets');

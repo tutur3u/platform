@@ -3,6 +3,7 @@ import InvoiceDetailsPage from './invoice-details-page.js';
 
 type QueryOperation = {
   eqs: Array<{ column: string; value: unknown }>;
+  schema?: string;
   select?: string;
   table: string;
 };
@@ -64,11 +65,20 @@ function resultForTable(table: string) {
     };
   }
 
+  if (table === 'workspace_wallets') {
+    return {
+      data: {
+        name: 'Private Wallet',
+      },
+      error: null,
+    };
+  }
+
   return { data: [], error: null };
 }
 
-function createQueryBuilder(table: string) {
-  const operation: QueryOperation = { eqs: [], table };
+function createQueryBuilder(table: string, schema?: string) {
+  const operation: QueryOperation = { eqs: [], schema, table };
   mocks.operations.push(operation);
 
   const builder = {
@@ -148,6 +158,9 @@ describe('InvoiceDetailsPage', () => {
     };
     mocks.createAdminClient.mockResolvedValue({
       from: (table: string) => createQueryBuilder(table),
+      schema: (schema: string) => ({
+        from: (table: string) => createQueryBuilder(table, schema),
+      }),
     });
   });
 
@@ -182,6 +195,15 @@ describe('InvoiceDetailsPage', () => {
           ]),
           select: '*, finance_invoices!inner(ws_id)',
           table: 'finance_invoice_promotions',
+        }),
+        expect.objectContaining({
+          eqs: expect.arrayContaining([
+            { column: 'id', value: 'wallet-1' },
+            { column: 'ws_id', value: 'workspace-1' },
+          ]),
+          schema: 'private',
+          select: 'name',
+          table: 'workspace_wallets',
         }),
       ])
     );

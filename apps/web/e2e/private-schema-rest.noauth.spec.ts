@@ -167,6 +167,10 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'workspace_wallets',
+    select: 'id',
+  },
+  {
     name: 'workspace_tutoring_sessions',
     select: 'id',
   },

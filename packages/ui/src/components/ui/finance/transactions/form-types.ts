@@ -4,7 +4,7 @@ import type { TransactionFormValues } from './form-schema';
 type DbTransaction = Database['public']['Tables']['wallet_transactions']['Row'];
 type DbTransactionCategory =
   Database['public']['Tables']['transaction_categories']['Row'];
-type DbWallet = Database['public']['Tables']['workspace_wallets']['Row'];
+type DbWallet = Database['private']['Tables']['workspace_wallets']['Row'];
 type DbTag = Database['public']['Tables']['transaction_tags']['Row'];
 
 export type Transaction = DbTransaction & {

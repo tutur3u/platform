@@ -40,6 +40,88 @@ type AccessibleWalletResult =
     }
   | { context?: never; wallet?: never; response: NextResponse };
 
+type WalletCreditRow = {
+  limit: number;
+  payment_date: number;
+  statement_date: number;
+  wallet_id: string;
+};
+
+const CREDIT_WALLET_RELATION_SELECT =
+  'credit_wallets(limit, statement_date, payment_date)';
+
+export function selectIncludesWalletCreditData(select: string) {
+  return select.includes('credit_wallets(');
+}
+
+export function stripWalletCreditSelect(select: string) {
+  if (!selectIncludesWalletCreditData(select)) {
+    return select;
+  }
+
+  const stripped = select
+    .replace(
+      /,\s*credit_wallets\(limit,\s*statement_date,\s*payment_date\)/u,
+      ''
+    )
+    .replace(
+      /credit_wallets\(limit,\s*statement_date,\s*payment_date\),\s*/u,
+      ''
+    )
+    .replace(CREDIT_WALLET_RELATION_SELECT, '')
+    .trim();
+
+  return stripped.length > 0 ? stripped : '*';
+}
+
+export async function attachWalletCreditData<T extends Record<string, unknown>>(
+  sbAdmin: WalletSupabaseClient,
+  wallets: T[]
+): Promise<{ data: T[]; error: unknown | null }> {
+  const walletIds = [
+    ...new Set(
+      wallets
+        .map((wallet) => wallet.id)
+        .filter((id): id is string => typeof id === 'string')
+    ),
+  ];
+
+  if (walletIds.length === 0) {
+    return { data: wallets, error: null };
+  }
+
+  const { data: creditRows, error } = await sbAdmin
+    .from('credit_wallets')
+    .select('wallet_id, limit, statement_date, payment_date')
+    .in('wallet_id', walletIds);
+
+  if (error) {
+    return { data: wallets, error };
+  }
+
+  const creditByWalletId = new Map(
+    ((creditRows ?? []) as WalletCreditRow[]).map((row) => [
+      row.wallet_id,
+      {
+        limit: row.limit,
+        payment_date: row.payment_date,
+        statement_date: row.statement_date,
+      },
+    ])
+  );
+
+  return {
+    data: wallets.map((wallet) => ({
+      ...wallet,
+      credit_wallets:
+        typeof wallet.id === 'string'
+          ? (creditByWalletId.get(wallet.id) ?? null)
+          : null,
+    })),
+    error: null,
+  };
+}
+
 export function flattenWalletCreditData<T extends Record<string, unknown>>(
   wallet: T
 ) {
@@ -134,6 +216,8 @@ export async function getAccessibleWallet({
 
   const hasManageFinance =
     !context.permissions.withoutPermission('manage_finance');
+  const shouldAttachCreditData = selectIncludesWalletCreditData(select);
+  const walletSelect = stripWalletCreditSelect(select);
 
   if (!hasManageFinance) {
     const { data: memberships, error: membershipsError } = await context.sbAdmin
@@ -192,8 +276,9 @@ export async function getAccessibleWallet({
   }
 
   const { data: wallet, error: walletError } = await context.sbAdmin
+    .schema('private')
     .from('workspace_wallets')
-    .select(select)
+    .select(walletSelect)
     .eq('id', walletId)
     .eq('ws_id', context.normalizedWsId)
     .maybeSingle();
@@ -214,6 +299,28 @@ export async function getAccessibleWallet({
         { message: 'Wallet not found' },
         { status: 404 }
       ),
+    };
+  }
+
+  if (shouldAttachCreditData) {
+    const { data: walletsWithCreditData, error: creditWalletError } =
+      await attachWalletCreditData(context.sbAdmin, [
+        wallet as Record<string, unknown>,
+      ]);
+
+    if (creditWalletError) {
+      console.error('Error fetching wallet credit data', creditWalletError);
+      return {
+        response: NextResponse.json(
+          { message: 'Error fetching workspace wallets' },
+          { status: 500 }
+        ),
+      };
+    }
+
+    return {
+      context,
+      wallet: walletsWithCreditData[0] ?? (wallet as Record<string, unknown>),
     };
   }
 
@@ -328,10 +435,14 @@ export async function getAccessibleWallets({
     };
   }
 
+  const shouldAttachCreditData = selectIncludesWalletCreditData(select);
+  const walletSelect = stripWalletCreditSelect(select);
+
   const { data: wallets, error: walletsError } =
     await contextResult.context.sbAdmin
+      .schema('private')
       .from('workspace_wallets')
-      .select(select)
+      .select(walletSelect)
       .eq('ws_id', contextResult.context.normalizedWsId)
       .in('id', allowedWalletIds);
 
@@ -342,6 +453,29 @@ export async function getAccessibleWallets({
         { message: 'Error fetching workspace wallets' },
         { status: 500 }
       ),
+    };
+  }
+
+  if (shouldAttachCreditData) {
+    const { data: walletsWithCreditData, error: creditWalletError } =
+      await attachWalletCreditData(
+        contextResult.context.sbAdmin,
+        (wallets ?? []) as Array<Record<string, unknown>>
+      );
+
+    if (creditWalletError) {
+      console.error('Error fetching wallet credit data', creditWalletError);
+      return {
+        response: NextResponse.json(
+          { message: 'Error fetching workspace wallets' },
+          { status: 500 }
+        ),
+      };
+    }
+
+    return {
+      context: contextResult.context,
+      wallets: walletsWithCreditData,
     };
   }
 

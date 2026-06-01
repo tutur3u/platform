@@ -37,13 +37,26 @@ export default async function TransactionsStatistics({
   const sbAdmin = await createAdminClient();
 
   const getData = async () => {
+    const { data: wallets, error: walletError } = await sbAdmin
+      .schema('private')
+      .from('workspace_wallets')
+      .select('id')
+      .eq('ws_id', wsId);
+
+    if (walletError || !wallets?.length) {
+      return { count: 0 };
+    }
+
     const query = sbAdmin
       .from('wallet_transactions')
-      .select('*, workspace_wallets!inner(ws_id)', {
+      .select('*', {
         count: 'exact',
         head: true,
       })
-      .eq('workspace_wallets.ws_id', wsId);
+      .in(
+        'wallet_id',
+        wallets.map((wallet) => wallet.id)
+      );
 
     if (startDate && view)
       query.gte(

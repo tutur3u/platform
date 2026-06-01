@@ -6,24 +6,12 @@ const mocks = vi.hoisted(() => {
   const linkedTransactionMaybeSingle = vi.fn();
   const walletMaybeSingle = vi.fn();
   const transactionTagsIn = vi.fn();
-  const walletTransactionsSelect = vi.fn((query: string) => {
-    if (query.includes('workspace_wallets!wallet_id')) {
-      return {
-        eq: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: verifyWorkspaceSingle,
-          })),
-        })),
-      };
-    }
-
-    return {
-      eq: vi.fn(() => ({
-        single: confidentialSingle,
-        maybeSingle: linkedTransactionMaybeSingle,
-      })),
-    };
-  });
+  const walletTransactionsSelect = vi.fn((_query: string) => ({
+    eq: vi.fn(() => ({
+      single: confidentialSingle,
+      maybeSingle: linkedTransactionMaybeSingle,
+    })),
+  }));
   const deleteEq = vi.fn();
   const updateEq = vi.fn();
   const tagDeleteEq = vi.fn();
@@ -40,7 +28,7 @@ const mocks = vi.hoisted(() => {
     rpc: transactionRpc,
   };
 
-  const adminSupabase = {
+  const privateSupabase = {
     from: vi.fn((table: string) => {
       if (table === 'workspace_wallets') {
         return {
@@ -54,6 +42,23 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'wallet_transaction_tags') {
+        throw new Error(`Unexpected private table: ${table}`);
+      }
+
+      throw new Error(`Unexpected private table: ${table}`);
+    }),
+  };
+
+  const adminSupabase = {
+    schema: vi.fn((schema: string) => {
+      if (schema !== 'private') {
+        throw new Error(`Unexpected admin schema: ${schema}`);
+      }
+
+      return privateSupabase;
+    }),
+    from: vi.fn((table: string) => {
       if (table === 'wallet_transaction_tags') {
         return {
           select: vi.fn(() => ({
@@ -71,7 +76,18 @@ const mocks = vi.hoisted(() => {
       }
 
       return {
-        select: walletTransactionsSelect,
+        select: vi.fn((query: string) => {
+          if (query === 'id, wallet_id') {
+            return {
+              eq: vi.fn(() => ({
+                maybeSingle: linkedTransactionMaybeSingle,
+                single: verifyWorkspaceSingle,
+              })),
+            };
+          }
+
+          return walletTransactionsSelect(query);
+        }),
         delete: vi.fn(() => ({
           eq: deleteEq,
         })),
@@ -160,9 +176,7 @@ describe('transaction detail route', () => {
     mocks.verifyWorkspaceSingle.mockResolvedValue({
       data: {
         id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
-        workspace_wallets: {
-          ws_id: '00000000-0000-0000-0000-000000000000',
-        },
+        wallet_id: 'wallet-1',
       },
       error: null,
     });
@@ -419,7 +433,7 @@ describe('transaction detail route', () => {
     });
   });
 
-  it('uses an inner wallet join when verifying transaction workspace', async () => {
+  it('uses a private wallet lookup when verifying transaction workspace', async () => {
     const { PUT } = await import('./route.js');
 
     const response = await PUT(
@@ -441,21 +455,15 @@ describe('transaction detail route', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(
-      mocks.walletTransactionsSelect.mock.calls.some(([query]) =>
-        query.includes('workspace_wallets!wallet_id!inner')
-      )
-    ).toBe(true);
+    expect(mocks.adminSupabase.schema).toHaveBeenCalledWith('private');
+    expect(mocks.walletMaybeSingle).toHaveBeenCalled();
   });
 
   it('returns 404 when transaction wallet is outside the requested workspace', async () => {
     const { PUT } = await import('./route.js');
 
-    mocks.verifyWorkspaceSingle.mockResolvedValueOnce({
-      data: {
-        id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
-        workspace_wallets: null,
-      },
+    mocks.walletMaybeSingle.mockResolvedValueOnce({
+      data: null,
       error: null,
     });
 

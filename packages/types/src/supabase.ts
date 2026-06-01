@@ -5422,7 +5422,15 @@ export type Database = {
           wallet_id?: string | null;
           ws_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_debt_loans_wallet_id_fkey';
+            columns: ['wallet_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_wallets';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       workspace_education_access_requests: {
         Row: {
@@ -5702,6 +5710,56 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'posts_dashboard_view';
             referencedColumns: ['group_id'];
+          },
+        ];
+      };
+      workspace_wallets: {
+        Row: {
+          balance: number | null;
+          created_at: string | null;
+          currency: string;
+          description: string | null;
+          icon: Database['public']['Enums']['platform_icon'] | null;
+          id: string;
+          image_src: string | null;
+          name: string | null;
+          report_opt_in: boolean;
+          type: string;
+          ws_id: string;
+        };
+        Insert: {
+          balance?: number | null;
+          created_at?: string | null;
+          currency?: string;
+          description?: string | null;
+          icon?: Database['public']['Enums']['platform_icon'] | null;
+          id?: string;
+          image_src?: string | null;
+          name?: string | null;
+          report_opt_in?: boolean;
+          type?: string;
+          ws_id: string;
+        };
+        Update: {
+          balance?: number | null;
+          created_at?: string | null;
+          currency?: string;
+          description?: string | null;
+          icon?: Database['public']['Enums']['platform_icon'] | null;
+          id?: string;
+          image_src?: string | null;
+          name?: string | null;
+          report_opt_in?: boolean;
+          type?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_wallets_currency_fkey';
+            columns: ['currency'];
+            isOneToOne: false;
+            referencedRelation: 'currencies';
+            referencedColumns: ['code'];
           },
         ];
       };
@@ -10283,15 +10341,7 @@ export type Database = {
           statement_date?: number;
           wallet_id?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'credit_wallets_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: true;
-            referencedRelation: 'workspace_wallets';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       currency_exchange_rates: {
         Row: {
@@ -10721,13 +10771,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'finance_budgets_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_wallets';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'finance_budgets_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -11102,13 +11145,6 @@ export type Database = {
             columns: ['transaction_id'];
             isOneToOne: true;
             referencedRelation: 'wallet_transactions_secure';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'finance_invoices_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_wallets';
             referencedColumns: ['id'];
           },
           {
@@ -16126,13 +16162,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'recurring_transactions_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_wallets';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'recurring_transactions_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -16406,13 +16435,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'sepay_wallet_links_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_wallets';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'sepay_wallet_links_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -16483,13 +16505,6 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'sepay_webhook_endpoints_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_wallets';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'sepay_webhook_endpoints_ws_id_fkey';
             columns: ['ws_id'];
@@ -16592,13 +16607,6 @@ export type Database = {
             columns: ['endpoint_id'];
             isOneToOne: false;
             referencedRelation: 'sepay_webhook_endpoints';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'sepay_webhook_events_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_wallets';
             referencedColumns: ['id'];
           },
           {
@@ -20997,15 +21005,7 @@ export type Database = {
           wallet_id?: string;
           zalopay_tier?: Database['public']['Enums']['zalopay_tier'] | null;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'wallet_interest_configs_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: true;
-            referencedRelation: 'workspace_wallets';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       wallet_interest_rates: {
         Row: {
@@ -21207,13 +21207,6 @@ export type Database = {
             columns: ['platform_creator_id'];
             isOneToOne: false;
             referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'wallet_transactions_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_wallets';
             referencedColumns: ['id'];
           },
         ];
@@ -26802,13 +26795,6 @@ export type Database = {
             referencedRelation: 'workspace_roles';
             referencedColumns: ['id'];
           },
-          {
-            foreignKeyName: 'workspace_role_wallet_whitelist_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_wallets';
-            referencedColumns: ['id'];
-          },
         ];
       };
       workspace_roles: {
@@ -28187,84 +28173,6 @@ export type Database = {
           },
         ];
       };
-      workspace_wallets: {
-        Row: {
-          balance: number | null;
-          created_at: string | null;
-          currency: string;
-          description: string | null;
-          icon: Database['public']['Enums']['platform_icon'] | null;
-          id: string;
-          image_src: string | null;
-          name: string | null;
-          report_opt_in: boolean;
-          type: string;
-          ws_id: string;
-        };
-        Insert: {
-          balance?: number | null;
-          created_at?: string | null;
-          currency?: string;
-          description?: string | null;
-          icon?: Database['public']['Enums']['platform_icon'] | null;
-          id?: string;
-          image_src?: string | null;
-          name?: string | null;
-          report_opt_in?: boolean;
-          type?: string;
-          ws_id: string;
-        };
-        Update: {
-          balance?: number | null;
-          created_at?: string | null;
-          currency?: string;
-          description?: string | null;
-          icon?: Database['public']['Enums']['platform_icon'] | null;
-          id?: string;
-          image_src?: string | null;
-          name?: string | null;
-          report_opt_in?: boolean;
-          type?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_wallets_type_fkey';
-            columns: ['type'];
-            isOneToOne: false;
-            referencedRelation: 'wallet_types';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_wallets_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_wallets_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'workspace_wallets_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_wallets_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       workspace_whiteboards: {
         Row: {
           archived_at: string | null;
@@ -29605,13 +29513,6 @@ export type Database = {
             columns: ['invoice_id'];
             isOneToOne: true;
             referencedRelation: 'finance_invoices';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'wallet_transactions_wallet_id_fkey';
-            columns: ['wallet_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_wallets';
             referencedColumns: ['id'];
           },
         ];

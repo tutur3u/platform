@@ -99,7 +99,10 @@ test.describe('Workspace debt loans private schema API', () => {
             ws_id: ROOT_WORKSPACE_ID,
           },
           failOnStatusCode: false,
-          headers: serviceHeaders({ prefer: 'return=minimal' }),
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
         }
       );
 
@@ -252,7 +255,7 @@ test.describe('Workspace debt loans private schema API', () => {
         `${SUPABASE_URL}/rest/v1/workspace_wallets?id=eq.${walletId}`,
         {
           failOnStatusCode: false,
-          headers: serviceHeaders(),
+          headers: serviceHeaders({ schema: 'private' }),
         }
       );
     }

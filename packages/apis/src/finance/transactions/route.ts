@@ -253,6 +253,7 @@ export async function POST(
 
   // Ensure wallet is in this workspace
   const { data: walletCheck, error: walletErr } = await sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .select('id')
     .eq('id', data.origin_wallet_id)

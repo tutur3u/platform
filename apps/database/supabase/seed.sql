@@ -562,7 +562,7 @@ values
 
 -- Populate wallets
 insert into
-    public.workspace_wallets (id, name, ws_id)
+    private.workspace_wallets (id, name, ws_id)
 values
     (
         '00000000-0000-0000-0000-000000000001',

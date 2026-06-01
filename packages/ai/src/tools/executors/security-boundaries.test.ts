@@ -24,6 +24,10 @@ class MockSupabase {
     >
   ) {}
 
+  schema(_schema: string) {
+    return this;
+  }
+
   from(table: string) {
     const state: QueryState = { filters: [] };
     const respond = async () => {

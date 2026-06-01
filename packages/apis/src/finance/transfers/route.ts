@@ -246,6 +246,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const { data: wallets, error: walletsErr } = await sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .select('id, currency')
     .eq('ws_id', normalizedWsId)
@@ -530,6 +531,7 @@ export async function POST(req: Request, { params }: Params) {
 
   // Validate both wallets belong to this workspace
   const { data: wallets, error: walletsErr } = await sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .select('id, currency')
     .eq('ws_id', normalizedWsId)

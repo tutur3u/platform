@@ -5,6 +5,10 @@ import { buildMiraContext } from './context-builder';
 class ContextBuilderSupabaseMock {
   public readonly queriedTables: string[] = [];
 
+  schema(_schema: string) {
+    return this;
+  }
+
   from(table: string) {
     this.queriedTables.push(table);
 

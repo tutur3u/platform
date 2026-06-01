@@ -41,13 +41,22 @@ export async function canAccessFinanceTransactionStoragePath({
   const sbAdmin = await createAdminClient();
   const { data: transaction } = await sbAdmin
     .from('wallet_transactions')
-    .select('creator_id, workspace_wallets!wallet_id(ws_id)')
+    .select('creator_id, wallet_id')
     .eq('id', transactionId)
     .maybeSingle();
 
-  const transactionWorkspaceId = (
-    transaction?.workspace_wallets as { ws_id?: string } | null | undefined
-  )?.ws_id;
+  if (!transaction?.wallet_id) {
+    return false;
+  }
+
+  const { data: wallet } = await sbAdmin
+    .schema('private')
+    .from('workspace_wallets')
+    .select('ws_id')
+    .eq('id', transaction.wallet_id)
+    .maybeSingle();
+
+  const transactionWorkspaceId = wallet?.ws_id;
 
   if (transactionWorkspaceId !== normalizedWsId) {
     return false;

@@ -91,6 +91,7 @@ export async function executeLogTransaction(
 
   if (!walletId) {
     const { data: wallet } = await ctx.supabase
+      .schema('private')
       .from('workspace_wallets')
       .select('id')
       .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
@@ -155,6 +156,7 @@ export async function executeGetSpendingSummary(
   since.setDate(since.getDate() - days);
 
   const { data: wallets } = await ctx.supabase
+    .schema('private')
     .from('workspace_wallets')
     .select('id, name, currency, balance')
     .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
@@ -200,6 +202,7 @@ export async function executeListWallets(
   ctx: MiraToolContext
 ) {
   const { data, error } = await ctx.supabase
+    .schema('private')
     .from('workspace_wallets')
     .select('id, name, currency, balance, type, created_at')
     .eq('ws_id', getWorkspaceContextWorkspaceId(ctx))
@@ -219,7 +222,7 @@ export async function executeCreateWallet(
   }
 
   const validated = parsed.data;
-  const insertData: TablesInsert<'workspace_wallets'> = {
+  const insertData: TablesInsert<{ schema: 'private' }, 'workspace_wallets'> = {
     name: validated.name,
     ws_id: getWorkspaceContextWorkspaceId(ctx),
   };
@@ -228,6 +231,7 @@ export async function executeCreateWallet(
   if (validated.type) insertData.type = validated.type;
 
   const { data, error } = await ctx.supabase
+    .schema('private')
     .from('workspace_wallets')
     .insert(insertData)
     .select('id, name, currency, balance')
@@ -252,7 +256,7 @@ export async function executeUpdateWallet(
 
   const validated = parsed.data;
   const walletId = validated.walletId;
-  const updates: TablesUpdate<'workspace_wallets'> = {};
+  const updates: TablesUpdate<{ schema: 'private' }, 'workspace_wallets'> = {};
 
   if (validated.name !== undefined) updates.name = validated.name;
   if (validated.currency !== undefined) updates.currency = validated.currency;
@@ -260,6 +264,7 @@ export async function executeUpdateWallet(
   if (validated.type !== undefined) updates.type = validated.type;
 
   const { error } = await ctx.supabase
+    .schema('private')
     .from('workspace_wallets')
     .update(updates)
     .eq('id', walletId)
@@ -276,6 +281,7 @@ export async function executeDeleteWallet(
   const walletId = args.walletId as string;
 
   const { error } = await ctx.supabase
+    .schema('private')
     .from('workspace_wallets')
     .delete()
     .eq('id', walletId)
@@ -293,6 +299,7 @@ export async function executeListTransactions(
 
   // Get all wallet IDs in workspace to scope query
   const { data: wallets } = await ctx.supabase
+    .schema('private')
     .from('workspace_wallets')
     .select('id')
     .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
@@ -330,6 +337,7 @@ export async function executeGetTransaction(
   const transactionId = args.transactionId as string;
 
   const { data: wallets } = await ctx.supabase
+    .schema('private')
     .from('workspace_wallets')
     .select('id')
     .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
@@ -409,6 +417,7 @@ export async function executeUpdateTransaction(
   }
 
   const { data: wallets } = await ctx.supabase
+    .schema('private')
     .from('workspace_wallets')
     .select('id')
     .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));
@@ -433,6 +442,7 @@ export async function executeDeleteTransaction(
   const transactionId = args.transactionId as string;
 
   const { data: wallets } = await ctx.supabase
+    .schema('private')
     .from('workspace_wallets')
     .select('id')
     .eq('ws_id', getWorkspaceContextWorkspaceId(ctx));

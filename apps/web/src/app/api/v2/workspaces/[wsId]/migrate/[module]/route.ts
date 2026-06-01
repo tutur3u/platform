@@ -133,12 +133,15 @@ const PRIVATE_PROMOTION_TABLES: Set<string> = new Set([
   'user_linked_promotions',
 ]);
 
+const PRIVATE_WALLET_TABLES: Set<string> = new Set(['workspace_wallets']);
+
 function isPrivateMigrationTable(tableName: string) {
   return (
     PRIVATE_INVENTORY_TABLES.has(tableName) ||
     PRIVATE_REPORT_TABLES.has(tableName) ||
     PRIVATE_USER_GROUP_POST_TABLES.has(tableName) ||
-    PRIVATE_PROMOTION_TABLES.has(tableName)
+    PRIVATE_PROMOTION_TABLES.has(tableName) ||
+    PRIVATE_WALLET_TABLES.has(tableName)
   );
 }
 
@@ -609,6 +612,7 @@ export const GET = withApiAuth<Params>(
     // wallet_transactions needs join via workspace_wallets
     if (tableName === 'wallet_transactions') {
       const { data: wallets, error: walletError } = await supabase
+        .schema('private')
         .from('workspace_wallets')
         .select('id')
         .eq('ws_id', wsId);
@@ -767,6 +771,7 @@ export const GET = withApiAuth<Params>(
     if (tableName === 'wallet_transaction_tags') {
       // First get wallet IDs for this workspace
       const { data: wallets, error: walletError } = await supabase
+        .schema('private')
         .from('workspace_wallets')
         .select('id')
         .eq('ws_id', wsId);
@@ -846,6 +851,7 @@ export const GET = withApiAuth<Params>(
     if (tableName === 'workspace_wallet_transfers') {
       // First get wallet IDs for this workspace
       const { data: wallets, error: walletError } = await supabase
+        .schema('private')
         .from('workspace_wallets')
         .select('id')
         .eq('ws_id', wsId);

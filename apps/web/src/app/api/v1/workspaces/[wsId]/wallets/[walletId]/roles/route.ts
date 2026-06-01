@@ -102,6 +102,7 @@ export async function POST(req: Request, { params }: Params) {
 
   // Validate wallet belongs to workspace
   const { data: wallet, error: walletError } = await sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .select('id, ws_id')
     .eq('id', walletId)

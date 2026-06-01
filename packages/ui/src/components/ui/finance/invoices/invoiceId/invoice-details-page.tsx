@@ -258,8 +258,7 @@ async function getInvoiceDetails(wsId: string, invoiceId: string) {
       `*,
       ...workspace_users!customer_id(customer_display_name:display_name, customer_full_name:full_name, customer_avatar_url:avatar_url),
       legacy_creator:workspace_users!creator_id(display_name, full_name),
-      platform_creator:users!platform_creator_id(display_name, user_private_details(full_name, email)),
-      wallet:workspace_wallets(name)`
+      platform_creator:users!platform_creator_id(display_name, user_private_details(full_name, email))`
     )
     .eq('id', invoiceId)
     .eq('ws_id', wsId)
@@ -267,6 +266,18 @@ async function getInvoiceDetails(wsId: string, invoiceId: string) {
 
   if (invoiceError) throw invoiceError;
   if (!invoice) return null;
+
+  const wallet = invoice.wallet_id
+    ? (
+        await sbAdmin
+          .schema('private')
+          .from('workspace_wallets')
+          .select('name')
+          .eq('id', invoice.wallet_id)
+          .eq('ws_id', wsId)
+          .maybeSingle()
+      ).data
+    : null;
 
   // Extract platform and legacy creator data
   const platformCreator = invoice.platform_creator as {
@@ -299,6 +310,7 @@ async function getInvoiceDetails(wsId: string, invoiceId: string) {
   return {
     ...invoice,
     creator,
+    wallet,
     // Remove the intermediate fields to keep the response clean
     legacy_creator: undefined,
     platform_creator: undefined,

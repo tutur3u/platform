@@ -607,6 +607,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const { data: wallet, error: walletError } = await sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .select('id')
     .eq('id', nextWalletId)

@@ -257,9 +257,9 @@ select ok(
     from pg_constraint
     where conname = 'workspace_debt_loans_wallet_id_fkey'
       and conrelid = 'private.workspace_debt_loans'::regclass
-      and confrelid = 'public.workspace_wallets'::regclass
+      and confrelid = 'private.workspace_wallets'::regclass
   ),
-  'private workspace debt loans still reference public workspace wallets'
+  'private workspace debt loans reference private workspace wallets'
 );
 
 select ok(
@@ -455,7 +455,7 @@ select ok(
 
 set local role service_role;
 
-insert into public.workspace_wallets (
+insert into private.workspace_wallets (
   id,
   ws_id,
   name,

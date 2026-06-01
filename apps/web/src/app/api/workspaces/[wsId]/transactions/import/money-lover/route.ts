@@ -123,6 +123,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const { data: existingWallets, error: walletsError } = await sbAdmin
+      .schema('private')
       .from('workspace_wallets')
       .select('id, name')
       .eq('ws_id', wsId);
@@ -178,6 +179,7 @@ export async function POST(req: Request, { params }: Params) {
         wsId,
       });
       const { data: newWallets, error: walletCreateError } = await sbAdmin
+        .schema('private')
         .from('workspace_wallets')
         .insert(
           walletsToCreate.map((wallet) => ({

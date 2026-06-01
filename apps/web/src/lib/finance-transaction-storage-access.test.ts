@@ -3,8 +3,32 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const linkedUserMaybeSingle = vi.fn();
   const transactionMaybeSingle = vi.fn();
+  const walletMaybeSingle = vi.fn();
+
+  const privateSupabase = {
+    from: vi.fn((table: string) => {
+      if (table === 'workspace_wallets') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              maybeSingle: walletMaybeSingle,
+            })),
+          })),
+        };
+      }
+
+      throw new Error(`Unexpected private table: ${table}`);
+    }),
+  };
 
   const adminSupabase = {
+    schema: vi.fn((schema: string) => {
+      if (schema !== 'private') {
+        throw new Error(`Unexpected admin schema: ${schema}`);
+      }
+
+      return privateSupabase;
+    }),
     from: vi.fn((table: string) => {
       if (table === 'wallet_transactions') {
         return {
@@ -36,6 +60,7 @@ const mocks = vi.hoisted(() => {
     adminSupabase,
     linkedUserMaybeSingle,
     transactionMaybeSingle,
+    walletMaybeSingle,
   };
 });
 
@@ -62,9 +87,13 @@ describe('finance transaction storage access', () => {
     mocks.transactionMaybeSingle.mockResolvedValue({
       data: {
         creator_id: 'virtual-user-1',
-        workspace_wallets: {
-          ws_id: 'ws-1',
-        },
+        wallet_id: 'wallet-1',
+      },
+      error: null,
+    });
+    mocks.walletMaybeSingle.mockResolvedValue({
+      data: {
+        ws_id: 'ws-1',
       },
       error: null,
     });
@@ -132,9 +161,13 @@ describe('finance transaction storage access', () => {
     mocks.transactionMaybeSingle.mockResolvedValue({
       data: {
         creator_id: 'virtual-user-1',
-        workspace_wallets: {
-          ws_id: 'ws-2',
-        },
+        wallet_id: 'wallet-2',
+      },
+      error: null,
+    });
+    mocks.walletMaybeSingle.mockResolvedValue({
+      data: {
+        ws_id: 'ws-2',
       },
       error: null,
     });

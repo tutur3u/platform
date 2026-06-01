@@ -211,6 +211,7 @@ async function createWalletForSepayAccount(input: {
     : `SePay ${gateway}`;
 
   const { data, error } = await input.sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .insert({
       currency: 'VND',
@@ -288,6 +289,7 @@ export async function syncSepayBankAccounts(input: {
 
     if (linkError) {
       const { error: deleteWalletError } = await input.sbAdmin
+        .schema('private')
         .from('workspace_wallets')
         .delete()
         .eq('id', walletId)

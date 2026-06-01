@@ -24,6 +24,7 @@ export async function GET(req: Request) {
 
   // Get wallet IDs for this workspace
   const { data: wallets, error: walletError } = await supabase
+    .schema('private')
     .from('workspace_wallets')
     .select('id')
     .eq('ws_id', wsId);

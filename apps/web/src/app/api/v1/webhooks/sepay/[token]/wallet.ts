@@ -159,6 +159,7 @@ export async function resolveOrCreateWallet(input: {
 }) {
   if (input.endpointWalletId) {
     const { data, error } = await input.sbAdmin
+      .schema('private')
       .from('workspace_wallets')
       .select('id')
       .eq('id', input.endpointWalletId)
@@ -211,6 +212,7 @@ export async function resolveOrCreateWallet(input: {
   });
 
   const { data: createdWallet, error: createWalletError } = await input.sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .insert({
       currency: 'VND',
@@ -250,6 +252,7 @@ export async function resolveOrCreateWallet(input: {
     }
 
     const { error: deleteWalletError } = await input.sbAdmin
+      .schema('private')
       .from('workspace_wallets')
       .delete()
       .eq('id', createdWallet.id)

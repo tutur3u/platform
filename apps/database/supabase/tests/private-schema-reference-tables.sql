@@ -135,7 +135,7 @@ select ok(
     select 1
     from pg_constraint
     where conname = 'workspace_wallets_currency_fkey'
-      and conrelid = 'public.workspace_wallets'::regclass
+      and conrelid = 'private.workspace_wallets'::regclass
       and confrelid = 'private.currencies'::regclass
   ),
   'workspace wallets still reference private currencies'

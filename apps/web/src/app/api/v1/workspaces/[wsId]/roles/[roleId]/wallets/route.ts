@@ -37,22 +37,13 @@ export async function GET(req: Request, { params }: Params) {
 
   const { data, error } = await sbAdmin
     .from('workspace_role_wallet_whitelist')
-    .select(
-      `
+    .select(`
       id,
       wallet_id,
       viewing_window,
       custom_days,
-      created_at,
-      workspace_wallets:wallet_id (
-        id,
-        name,
-        balance,
-        currency,
-        type
-      )
-    `
-    )
+      created_at
+    `)
     .eq('role_id', roleId)
     .order('created_at', { ascending: false });
 
@@ -64,7 +55,40 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(data);
+  const walletIds = [
+    ...new Set(
+      (data ?? [])
+        .map((row) => row.wallet_id)
+        .filter((id): id is string => typeof id === 'string')
+    ),
+  ];
+  const { data: wallets, error: walletsError } =
+    walletIds.length > 0
+      ? await sbAdmin
+          .schema('private')
+          .from('workspace_wallets')
+          .select('id, name, balance, currency, type')
+          .in('id', walletIds)
+      : { data: [], error: null };
+
+  if (walletsError) {
+    serverLogger.error('Error fetching role wallet details:', walletsError);
+    return NextResponse.json(
+      { message: 'Error fetching wallet whitelist' },
+      { status: 500 }
+    );
+  }
+
+  const walletsById = new Map(
+    (wallets ?? []).map((wallet) => [wallet.id, wallet])
+  );
+
+  return NextResponse.json(
+    (data ?? []).map((row) => ({
+      ...row,
+      workspace_wallets: walletsById.get(row.wallet_id) ?? null,
+    }))
+  );
 }
 
 // POST - Add wallet to role whitelist
@@ -148,6 +172,7 @@ export async function POST(req: Request, { params }: Params) {
 
   // Validate wallet belongs to workspace
   const { data: wallet, error: walletError } = await sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .select('id, ws_id')
     .eq('id', wallet_id)

@@ -258,13 +258,13 @@ describe('Supabase Server Client', () => {
         client: 'user',
         table: 'topic_announcements',
       });
-      expect(client.from('workspace_wallets')).toEqual({
+      expect(client.from('nova_challenges')).toEqual({
         client: 'admin',
-        table: 'workspace_wallets',
+        table: 'nova_challenges',
       });
-      expect(client.from('workspace_wallets')).toEqual({
+      expect(client.from('nova_challenges')).toEqual({
         client: 'admin',
-        table: 'workspace_wallets',
+        table: 'nova_challenges',
       });
       expect(client.from('workspace_boards')).toEqual({
         client: 'user',
@@ -328,9 +328,9 @@ describe('Supabase Server Client', () => {
         client: 'user',
         table: 'topic_announcements',
       });
-      expect(client.from('workspace_wallets')).toEqual({
+      expect(client.from('nova_challenges')).toEqual({
         client: 'admin',
-        table: 'workspace_wallets',
+        table: 'nova_challenges',
       });
       expect(client.schema('private').from('inventory_units')).toEqual({
         client: 'admin',
@@ -464,8 +464,8 @@ describe('Supabase Server Client', () => {
           cookies: expect.any(Object),
         })
       );
-      expect(() => client.from('workspace_wallets')).toThrow(
-        getProxyOnlyPublicTableError('workspace_wallets')
+      expect(() => client.from('nova_challenges')).toThrow(
+        getProxyOnlyPublicTableError('nova_challenges')
       );
       expect(client.from('workspace_boards')).toEqual({
         client: 'user',

@@ -40,6 +40,7 @@ export async function GET(req: Request) {
   }
 
   const { data, error, count } = await sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .select('*', { count: 'exact' })
     .eq('ws_id', normalizedWsId)

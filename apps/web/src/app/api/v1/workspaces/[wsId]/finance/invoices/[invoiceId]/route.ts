@@ -84,6 +84,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   if (payload.wallet_id) {
     const { data: wallet, error: walletError } = await sbAdmin
+      .schema('private')
       .from('workspace_wallets')
       .select('id')
       .eq('id', payload.wallet_id)

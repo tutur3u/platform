@@ -6,7 +6,12 @@ import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
 } from '../request-access';
-import { flattenWalletCreditList } from './wallet-access';
+import {
+  attachWalletCreditData,
+  flattenWalletCreditList,
+  selectIncludesWalletCreditData,
+  stripWalletCreditSelect,
+} from './wallet-access';
 
 const FULL_WALLET_SELECT =
   '*, credit_wallets(limit, statement_date, payment_date)';
@@ -30,9 +35,15 @@ async function loadWorkspaceWallets({
   sbAdmin: any;
   walletIds?: string[];
 }) {
+  const select = invoiceSafeOnly
+    ? INVOICE_SAFE_WALLET_SELECT
+    : FULL_WALLET_SELECT;
+  const shouldAttachCreditData = selectIncludesWalletCreditData(select);
+
   let query = sbAdmin
+    .schema('private')
     .from('workspace_wallets')
-    .select(invoiceSafeOnly ? INVOICE_SAFE_WALLET_SELECT : FULL_WALLET_SELECT)
+    .select(stripWalletCreditSelect(select))
     .eq('ws_id', normalizedWsId);
 
   if (walletIds) {
@@ -41,9 +52,18 @@ async function loadWorkspaceWallets({
 
   const { data, error } = await query.order('name', { ascending: true });
 
+  if (error || !shouldAttachCreditData) {
+    return {
+      data: data ?? [],
+      error,
+    };
+  }
+
+  const creditResult = await attachWalletCreditData(sbAdmin, data ?? []);
+
   return {
-    data: invoiceSafeOnly ? (data ?? []) : flattenWalletCreditList(data ?? []),
-    error,
+    data: flattenWalletCreditList(creditResult.data),
+    error: creditResult.error,
   };
 }
 
@@ -314,6 +334,7 @@ export async function POST(
   if (data.type) walletData.type = data.type;
 
   const { data: upsertedWallet, error } = await sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .upsert([walletData as never])
     .select('id')

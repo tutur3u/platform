@@ -37,6 +37,7 @@ export type MailRawMessage = PrivateTable<'mail_raw_messages'>;
 export type MailRecipient = PrivateTable<'mail_recipients'>;
 export type MailThread = PrivateTable<'mail_threads'>;
 export type AIGatewayModel = PrivateTable<'ai_gateway_models'>;
+export type WorkspaceWallet = PrivateTable<'workspace_wallets'>;
 export type MindBoardStatus = 'active' | 'archived';
 export type MindHorizon =
   | 'day'

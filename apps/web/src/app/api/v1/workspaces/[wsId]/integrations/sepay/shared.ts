@@ -153,6 +153,7 @@ export async function ensureWalletBelongsToWorkspace(input: {
   wsId: string;
 }) {
   const { data, error } = await input.sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .select('id')
     .eq('id', input.walletId)

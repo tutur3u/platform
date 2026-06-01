@@ -122,6 +122,7 @@ export async function hasWalletAccess(
   walletId: string
 ): Promise<boolean> {
   const { data, error } = await ctx.supabase
+    .schema('private')
     .from('workspace_wallets')
     .select('id')
     .eq('id', walletId)

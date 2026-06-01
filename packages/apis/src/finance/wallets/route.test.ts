@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   getFinanceRouteContext: vi.fn(),
   getWorkspaceConfig: vi.fn(),
+  creditWalletIn: vi.fn(),
+  creditWalletSelect: vi.fn(),
   roleMembersEq: vi.fn(),
   roleMembersWorkspaceEq: vi.fn(),
   walletEq: vi.fn(),
@@ -30,6 +32,28 @@ describe('wallets route', () => {
   });
 
   const createAdminClient = () => ({
+    schema: vi.fn((schema: string) => {
+      if (schema !== 'private') {
+        throw new Error(`Unexpected schema: ${schema}`);
+      }
+
+      return {
+        from: vi.fn((table: string) => {
+          if (table === 'workspace_wallets') {
+            return {
+              select: vi.fn((columns: string) => {
+                mocks.walletSelect(columns);
+                return {
+                  eq: mocks.walletEq,
+                };
+              }),
+            };
+          }
+
+          throw new Error(`Unexpected private table: ${table}`);
+        }),
+      };
+    }),
     from: vi.fn((table: string) => {
       if (table === 'workspace_role_members') {
         return {
@@ -39,12 +63,12 @@ describe('wallets route', () => {
         };
       }
 
-      if (table === 'workspace_wallets') {
+      if (table === 'credit_wallets') {
         return {
           select: vi.fn((columns: string) => {
-            mocks.walletSelect(columns);
+            mocks.creditWalletSelect(columns);
             return {
-              eq: mocks.walletEq,
+              in: mocks.creditWalletIn,
             };
           }),
         };
@@ -62,6 +86,17 @@ describe('wallets route', () => {
     });
     mocks.roleMembersWorkspaceEq.mockResolvedValue({
       data: [],
+      error: null,
+    });
+    mocks.creditWalletIn.mockResolvedValue({
+      data: [
+        {
+          limit: 5000,
+          payment_date: 15,
+          statement_date: 1,
+          wallet_id: 'wallet-default',
+        },
+      ],
       error: null,
     });
     mocks.walletEq.mockReturnValue({
@@ -90,11 +125,6 @@ describe('wallets route', () => {
             : [
                 {
                   balance: 1200,
-                  credit_wallets: {
-                    limit: 5000,
-                    payment_date: 15,
-                    statement_date: 1,
-                  },
                   currency: 'USD',
                   id: 'wallet-default',
                   name: 'Default Wallet',
@@ -211,8 +241,12 @@ describe('wallets route', () => {
         statement_date: 1,
       }),
     ]);
-    expect(mocks.walletSelect).toHaveBeenCalledWith(
-      '*, credit_wallets(limit, statement_date, payment_date)'
+    expect(mocks.walletSelect).toHaveBeenCalledWith('*');
+    expect(mocks.creditWalletSelect).toHaveBeenCalledWith(
+      'wallet_id, limit, statement_date, payment_date'
     );
+    expect(mocks.creditWalletIn).toHaveBeenCalledWith('wallet_id', [
+      'wallet-default',
+    ]);
   });
 });

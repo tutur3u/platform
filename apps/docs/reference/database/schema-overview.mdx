@@ -301,7 +301,7 @@ through centralized `apps/web` APIs.
 
 #### `private.currencies`
 Finance reference data retained for foreign-key compatibility with
-`workspace_wallets` and `currency_exchange_rates`. Runtime consumers should use
+`private.workspace_wallets` and `currency_exchange_rates`. Runtime consumers should use
 centralized app APIs or package currency constants instead of Supabase REST.
 
 #### `private.field_types`
@@ -387,8 +387,10 @@ access.
 
 ### Finance Management
 
-#### `workspace_wallets`
-Primary wallet for workspace financial tracking.
+#### `private.workspace_wallets`
+Primary wallet for workspace financial tracking. Wallet rows are owned by
+server-side finance APIs that verify workspace permissions before using
+service-role private schema access.
 
 **Key Fields:**
 - `id` (uuid, PK)
@@ -411,7 +413,7 @@ Financial transaction history.
 
 **Key Fields:**
 - `id` (uuid, PK)
-- `wallet_id` (uuid, FK → workspace_wallets)
+- `wallet_id` (uuid, FK → private.workspace_wallets)
 - `amount` (numeric)
 - `description` (text)
 - `type` (text) - income, expense, transfer
@@ -426,7 +428,7 @@ Role-based wallet access control with time-bounded viewing windows.
 **Key Fields:**
 - `id` (uuid, PK)
 - `role_id` (uuid, FK → workspace_roles) - the role granted access
-- `wallet_id` (uuid, FK → workspace_wallets) - the wallet being accessed
+- `wallet_id` (uuid, FK → private.workspace_wallets) - the wallet being accessed
 - `viewing_window` (text) - allowed values: `1_day`, `3_days`, `7_days`, `2_weeks`, `1_month`, `1_quarter`, `1_year`, `custom`
 - `custom_days` (integer) - required when `viewing_window = 'custom'`; must be > 0; must be NULL otherwise
 - `created_at` (timestamptz)

@@ -43,6 +43,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const { error } = await sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .upsert(
       (data?.wallets || []).map((p: Wallet) => ({

@@ -55,6 +55,7 @@ export async function PUT(
   const { limit, statement_date, payment_date, ...walletData } = data;
 
   const { data: updatedWallet, error } = await access.context.sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .update(walletData)
     .select('id')
@@ -135,6 +136,7 @@ export async function DELETE(
   }
 
   const { error } = await access.context.sbAdmin
+    .schema('private')
     .from('workspace_wallets')
     .delete()
     .eq('id', id)
