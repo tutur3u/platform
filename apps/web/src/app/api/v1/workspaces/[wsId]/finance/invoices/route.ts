@@ -21,6 +21,7 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getInventoryActorContext } from '@/lib/inventory/actor';
 import { createInventoryAuditLog } from '@/lib/inventory/audit';
 import { canCreateInventorySales } from '@/lib/inventory/permissions';
+import { validateInventoryItemWorkspaceRelations } from '@/lib/inventory/relation-validation';
 
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).default(''),
@@ -74,6 +75,43 @@ interface CreateInvoiceRequest {
   frontend_subtotal?: number;
   frontend_discount_amount?: number;
   frontend_total?: number;
+}
+
+async function validateInvoiceWallet({
+  sbAdmin,
+  walletId,
+  wsId,
+}: {
+  sbAdmin: FinanceRouteContext['sbAdmin'];
+  walletId: string;
+  wsId: string;
+}) {
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .from('workspace_wallets')
+    .select('id')
+    .eq('id', walletId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (error) {
+    return {
+      ok: false as const,
+      status: 500 as const,
+      message: 'Failed to validate invoice wallet',
+      error,
+    };
+  }
+
+  if (!data) {
+    return {
+      ok: false as const,
+      status: 400 as const,
+      message: 'Invalid invoice wallet',
+    };
+  }
+
+  return { ok: true as const };
 }
 
 export interface CalculatedPromotion {
@@ -494,6 +532,21 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
+    const walletValidation = await validateInvoiceWallet({
+      sbAdmin,
+      walletId: wallet_id,
+      wsId,
+    });
+    if (!walletValidation.ok) {
+      if (walletValidation.status === 500) {
+        serverLogger.error(walletValidation.message, walletValidation.error);
+      }
+      return NextResponse.json(
+        { message: walletValidation.message },
+        { status: walletValidation.status }
+      );
+    }
+
     // Get user workspace ID
     const { data: workspaceUser } = await sbAdmin
       .from('workspace_user_linked_users')
@@ -583,6 +636,40 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
+    const productMap = new Map<string, InvoiceProduct>();
+
+    products.forEach((product) => {
+      const key = `${product.product_id}-${product.unit_id}-${product.warehouse_id}-${product.price}`;
+      if (productMap.has(key)) {
+        const existing = productMap.get(key);
+        if (existing) {
+          existing.quantity += product.quantity;
+        }
+      } else {
+        productMap.set(key, { ...product });
+      }
+    });
+
+    const productValues = Array.from(productMap.values());
+    const inventory = sbAdmin.schema('private');
+    const inventoryRelations = await validateInventoryItemWorkspaceRelations({
+      inventory: productValues,
+      inventoryClient: inventory,
+      wsId,
+    });
+    if (!inventoryRelations.ok) {
+      if (inventoryRelations.status === 500) {
+        serverLogger.error(
+          inventoryRelations.message,
+          inventoryRelations.error
+        );
+      }
+      return NextResponse.json(
+        { message: inventoryRelations.message },
+        { status: inventoryRelations.status }
+      );
+    }
+
     // Calculate values through the private database RPC
     let calculatedValues: CalculatedValues;
     try {
@@ -661,25 +748,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const invoiceId = invoice.id;
 
-    // Insert invoice products with correct field mapping
-    // First, deduplicate products by creating a unique key and combining quantities if duplicates exist
-    const productMap = new Map<string, InvoiceProduct>();
-
-    products.forEach((product) => {
-      const key = `${product.product_id}-${product.unit_id}-${product.warehouse_id}-${product.price}`;
-      if (productMap.has(key)) {
-        // If duplicate exists, combine quantities
-        const existing = productMap.get(key);
-        if (existing) {
-          existing.quantity += product.quantity;
-        }
-      } else {
-        productMap.set(key, { ...product });
-      }
-    });
-
     // Get product name  from workspace_products
-    const productValues = Array.from(productMap.values());
     const { data: productsData, error: productsError } = await sbAdmin
       .from('workspace_products')
       .select('name, id, owner_id')
@@ -709,7 +778,6 @@ export async function POST(req: Request, { params }: Params) {
           .filter((value): value is string => !!value)
       ),
     ];
-    const inventory = sbAdmin.schema('private');
 
     // Get unit from inventory_units
     const [
