@@ -165,7 +165,7 @@ describe('buildKanbanDeadlineSections', () => {
     expect(sections.upcoming.map((item) => item.id)).toEqual(['valid-date']);
   });
 
-  it('excludes deleted, resolved, completed, and closed tasks', () => {
+  it('excludes deleted, resolved, completed, closed, and missing-list tasks', () => {
     const sections = buildKanbanDeadlineSections({
       deadlineTasks: [
         task({ id: 'kept', end_date: '2026-06-01T00:00:00.000Z' }),
@@ -205,11 +205,6 @@ describe('buildKanbanDeadlineSections', () => {
           list_id: 'closed-list',
         }),
         task({
-          id: 'external-list-task',
-          end_date: '2026-06-01T00:00:00.000Z',
-          list_id: 'external-list',
-        }),
-        task({
           id: 'missing-list-task',
           end_date: '2026-06-01T00:00:00.000Z',
           list_id: 'missing-list',
@@ -221,6 +216,33 @@ describe('buildKanbanDeadlineSections', () => {
     });
 
     expect(sections.upcoming.map((item) => item.id)).toEqual(['kept']);
+  });
+
+  it('includes due-dated open external staging tasks', () => {
+    const sections = buildKanbanDeadlineSections({
+      deadlineTasks: [
+        task({
+          id: 'external-overdue',
+          end_date: '2026-05-30T00:00:00.000Z',
+          list_id: 'external-list',
+        }),
+        task({
+          id: 'external-upcoming',
+          end_date: '2026-06-01T00:00:00.000Z',
+          list_id: 'external-list',
+        }),
+      ],
+      lists,
+      now: NOW,
+      visibleTasks: [],
+    });
+
+    expect(sections.overdue.map((item) => item.id)).toEqual([
+      'external-overdue',
+    ]);
+    expect(sections.upcoming.map((item) => item.id)).toEqual([
+      'external-upcoming',
+    ]);
   });
 
   it('lets currently visible optimistic tasks override fetched deadline tasks', () => {

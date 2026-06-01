@@ -71,6 +71,20 @@ const lists: TaskList[] = [
   },
 ];
 
+const externalList: TaskList = {
+  archived: false,
+  board_id: 'board-1',
+  color: 'CYAN',
+  created_at: '2026-05-07T00:00:00.000Z',
+  creator_id: 'user-1',
+  deleted: false,
+  id: 'external-list',
+  is_external_staging: true,
+  name: 'External tasks',
+  position: 2,
+  status: 'active',
+};
+
 function task(overrides: Partial<Task>): Task {
   return {
     created_at: '2026-05-07T00:00:00.000Z',
@@ -273,6 +287,64 @@ describe('KanbanColumns', () => {
     );
     expect(
       overdueCardProps.availableLists.map((list: TaskList) => list.id)
+    ).toEqual(['list-1', 'list-2']);
+  });
+
+  it('renders external deadline cards with their staging list context without exposing the staging list as a move target', () => {
+    render(
+      <KanbanColumns
+        columns={[...lists, externalList]}
+        tasks={[]}
+        boardId="board-1"
+        workspaceId="ws-1"
+        isPersonalWorkspace
+        disableSort={false}
+        selectedTasks={new Set()}
+        isMultiSelectMode={false}
+        setIsMultiSelectMode={vi.fn()}
+        onTaskSelect={vi.fn()}
+        onClearSelection={vi.fn()}
+        onUpdate={vi.fn()}
+        createTask={vi.fn()}
+        taskHeightsRef={{ current: new Map() }}
+        optimisticUpdateInProgress={new Set()}
+        bulkUpdateCustomDueDate={vi.fn()}
+        boardRef={{ current: null }}
+        columnsId={[...lists, externalList].map((list) => list.id)}
+        deadlineLabels={{
+          overdue: 'Overdue',
+          upcoming: 'Upcoming',
+        }}
+        deadlineSections={{
+          overdue: [],
+          upcoming: [
+            task({
+              display_number: 99,
+              end_date: '2026-06-01T00:00:00.000Z',
+              id: 'external-deadline',
+              list_id: 'external-list',
+              name: 'External deadline task',
+            }),
+          ],
+        }}
+      />
+    );
+
+    expect(
+      screen.getByTestId('kanban-deadline-task-card-external-deadline')
+    ).toHaveClass('shrink-0');
+
+    const externalCardProps = taskCardMock.mock.calls.find(
+      ([props]) => props.task.id === 'external-deadline'
+    )?.[0];
+
+    expect(externalCardProps).toEqual(
+      expect.objectContaining({
+        taskList: externalList,
+      })
+    );
+    expect(
+      externalCardProps.availableLists.map((list: TaskList) => list.id)
     ).toEqual(['list-1', 'list-2']);
   });
 

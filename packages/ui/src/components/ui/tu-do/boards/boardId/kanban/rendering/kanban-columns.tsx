@@ -133,6 +133,7 @@ export function KanbanColumns({
               optimisticUpdateInProgress={optimisticUpdateInProgress}
               sections={deadlineSections}
               selectedTasks={selectedTasks}
+              taskLists={columns}
               workspaceId={workspaceId}
             />
           )}

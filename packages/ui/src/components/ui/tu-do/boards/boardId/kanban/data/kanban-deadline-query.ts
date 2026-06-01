@@ -20,12 +20,14 @@ export async function listKanbanDeadlineTasks({
       boardId,
       closed: 'exclude',
       completed: 'exclude',
+      externalSortBy: 'due-asc',
       hasDueDate: true,
       includeCount: true,
       includeRelationshipSummary: false,
       limit: KANBAN_DEADLINE_TASK_PAGE_SIZE,
       listStatuses: ['not_started', 'active'],
       offset,
+      sourceScope: 'all_visible',
     });
 
     tasks.push(...response.tasks);

@@ -25,6 +25,7 @@ interface KanbanDeadlinePanelsProps {
   optimisticUpdateInProgress: Set<string>;
   sections: KanbanDeadlineSections;
   selectedTasks: Set<string>;
+  taskLists: TaskList[];
   isMultiSelectMode: boolean;
   workspaceId: string;
 }
@@ -64,6 +65,7 @@ function DeadlineSection({
   onUpdate,
   optimisticUpdateInProgress,
   selectedTasks,
+  taskLists,
   tasks,
   workspaceId,
 }: {
@@ -78,6 +80,7 @@ function DeadlineSection({
   onUpdate: () => void;
   optimisticUpdateInProgress: Set<string>;
   selectedTasks: Set<string>;
+  taskLists: TaskList[];
   tasks: Task[];
   workspaceId: string;
 }) {
@@ -116,30 +119,35 @@ function DeadlineSection({
         </Badge>
       </div>
 
-      <div className="scrollbar-thin flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2">
+      <div className="scrollbar-thin min-h-0 flex-1 space-y-2 overflow-y-auto p-2">
         {tasks.map((task) => {
-          const taskList = getTaskListForDeadlineTask(task, availableLists);
+          const taskList = getTaskListForDeadlineTask(task, taskLists);
 
           return (
-            <TaskCard
+            <div
               key={task.id}
-              availableLists={availableLists}
-              boardId={boardId}
-              bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
-              dragDisabled
-              isMultiSelectMode={isMultiSelectMode}
-              isPersonalWorkspace={isPersonalWorkspace}
-              isSelected={selectedTasks.has(task.id)}
-              onClearSelection={onClearSelection}
-              onSelect={onTaskSelect}
-              onUpdate={onUpdate}
-              optimisticUpdateInProgress={optimisticUpdateInProgress}
-              selectedTasks={selectedTasks}
-              sortableId={`deadline-${config.section}-${task.id}`}
-              task={task}
-              taskList={taskList}
-              workspaceId={workspaceId}
-            />
+              className="shrink-0"
+              data-testid={`kanban-deadline-task-card-${task.id}`}
+            >
+              <TaskCard
+                availableLists={availableLists}
+                boardId={boardId}
+                bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+                dragDisabled
+                isMultiSelectMode={isMultiSelectMode}
+                isPersonalWorkspace={isPersonalWorkspace}
+                isSelected={selectedTasks.has(task.id)}
+                onClearSelection={onClearSelection}
+                onSelect={onTaskSelect}
+                onUpdate={onUpdate}
+                optimisticUpdateInProgress={optimisticUpdateInProgress}
+                selectedTasks={selectedTasks}
+                sortableId={`deadline-${config.section}-${task.id}`}
+                task={task}
+                taskList={taskList}
+                workspaceId={workspaceId}
+              />
+            </div>
           );
         })}
       </div>
@@ -160,6 +168,7 @@ export function KanbanDeadlinePanels({
   optimisticUpdateInProgress,
   sections,
   selectedTasks,
+  taskLists,
   workspaceId,
 }: KanbanDeadlinePanelsProps) {
   if (sections.overdue.length === 0 && sections.upcoming.length === 0) {
@@ -202,6 +211,7 @@ export function KanbanDeadlinePanels({
           onUpdate={onUpdate}
           optimisticUpdateInProgress={optimisticUpdateInProgress}
           selectedTasks={selectedTasks}
+          taskLists={taskLists}
           tasks={sections[config.section]}
           workspaceId={workspaceId}
         />

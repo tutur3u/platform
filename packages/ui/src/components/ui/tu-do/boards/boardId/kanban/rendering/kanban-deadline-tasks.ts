@@ -74,7 +74,6 @@ export function buildKanbanDeadlineSections({
         (list) =>
           !list.deleted &&
           !list.archived &&
-          !list.is_external_staging &&
           OPEN_DEADLINE_LIST_STATUSES.has(list.status)
       )
       .map((list) => list.id)
