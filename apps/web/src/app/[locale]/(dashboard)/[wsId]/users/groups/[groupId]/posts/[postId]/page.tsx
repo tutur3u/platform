@@ -4,6 +4,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
@@ -350,5 +351,8 @@ async function getRecipientRows(
     throw error;
   }
 
-  return (data ?? []) as GroupPostRecipientRow[];
+  return (data ?? []).map((recipient) => ({
+    ...recipient,
+    user_avatar_url: normalizeAvatarImageSrc(recipient.user_avatar_url) ?? null,
+  })) as GroupPostRecipientRow[];
 }

@@ -1,4 +1,5 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -36,6 +37,15 @@ interface Params {
   params: Promise<{
     wsId: string;
   }>;
+}
+
+export function sanitizePendingInvoiceAvatarRows<
+  T extends { user_avatar_url?: string | null },
+>(rows: T[] | null | undefined) {
+  return (rows ?? []).map((row) => ({
+    ...row,
+    user_avatar_url: normalizeAvatarImageSrc(row.user_avatar_url) ?? null,
+  }));
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -156,7 +166,7 @@ export async function GET(request: Request, { params }: Params) {
     if (totalCountError) throw totalCountError;
 
     return NextResponse.json({
-      data: data || [],
+      data: sanitizePendingInvoiceAvatarRows(data || []),
       count: totalCount || 0,
     });
   } catch (error) {

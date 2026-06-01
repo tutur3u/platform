@@ -1,6 +1,7 @@
 'use client';
 
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
+import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 
@@ -22,12 +23,14 @@ function Avatar({
 
 function AvatarImage({
   className,
+  src,
   ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
       className={cn('aspect-square size-full object-cover', className)}
+      src={typeof src === 'string' ? normalizeAvatarImageSrc(src) : src}
       {...props}
     />
   );
