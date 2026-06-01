@@ -26,6 +26,10 @@ const invoicePrivateRpcRepairMigrationPath = resolve(
   repoRoot,
   'apps/database/supabase/migrations/20260529182005_repair_private_invoice_value_rpc.sql'
 );
+const pendingInvoicePrivateInventoryMigrationPath = resolve(
+  repoRoot,
+  'apps/database/supabase/migrations/20260601101948_fix_pending_invoice_private_inventory.sql'
+);
 const bundleRepositoryPath = resolve(
   repoRoot,
   'apps/web/src/lib/inventory/commerce/bundles.ts'
@@ -191,6 +195,30 @@ describe('inventory commerce migration contract', () => {
     expect(source).toContain(
       'grant execute on function private.calculate_invoice_values'
     );
+    expect(source).toContain("notify pgrst, 'reload schema'");
+  });
+
+  it('repairs pending invoice RPC inventory joins after inventory table moves', () => {
+    expect(existsSync(pendingInvoicePrivateInventoryMigrationPath)).toBe(true);
+
+    const source = readFileSync(
+      pendingInvoicePrivateInventoryMigrationPath,
+      'utf8'
+    );
+    const functionDeclarations =
+      source.match(/create or replace function public\./g) ?? [];
+    const privateInventoryJoins =
+      source.match(/left join private\.inventory_products ip/g) ?? [];
+
+    expect(functionDeclarations).toHaveLength(2);
+    expect(source).toContain(
+      'create or replace function public.get_pending_invoices'
+    );
+    expect(source).toContain(
+      'create or replace function public.get_pending_invoices_grouped_by_user'
+    );
+    expect(privateInventoryJoins).toHaveLength(2);
+    expect(source).not.toContain('left join inventory_products ip');
     expect(source).toContain("notify pgrst, 'reload schema'");
   });
 });
