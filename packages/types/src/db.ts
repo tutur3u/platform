@@ -1504,6 +1504,7 @@ export type NovaSession = Tables<'nova_sessions'>;
 export type NovaSubmission = Tables<'nova_submissions'>;
 export type NovaSubmissionCriteria = Tables<'nova_submission_criteria'>;
 export type NovaSubmissionTestCase = Tables<'nova_submission_test_cases'>;
+export type NovaTeam = PrivateTable<'nova_teams'>;
 export type NovaSubmissionWithScores = Tables<'nova_submissions_with_scores'>;
 export type NovaSubmissionWithScoresAndCriteria =
   Tables<'nova_submissions_with_scores'> & {

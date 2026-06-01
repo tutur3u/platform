@@ -1,5 +1,4 @@
 import { ScrollText, Target } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -33,7 +32,6 @@ export function TeamActionDialog({
   isEditing,
 }: DialogProps) {
   const params = useParams();
-  const supabase = createClient();
 
   const { toast } = useToast();
 
@@ -48,15 +46,20 @@ export function TeamActionDialog({
   const handleSave = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('nova_teams')
-        .update({
+      const response = await fetch(`/api/v1/nova/teams/${teamId}`, {
+        body: JSON.stringify({
           description: formData.description,
           goals: formData.goals,
-        })
-        .eq('id', teamId);
+        }),
+        headers: {
+          'content-type': 'application/json',
+        },
+        method: 'PATCH',
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to update team information');
+      }
 
       toast({
         title: 'Success',

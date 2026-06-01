@@ -15,8 +15,7 @@ values
   ('nova_challenges'),
   ('nova_problem_test_cases'),
   ('nova_problems'),
-  ('nova_submission_test_cases'),
-  ('nova_teams');
+  ('nova_submission_test_cases');
 
 select ok(
   not exists (

@@ -1,25 +1,27 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
+import { withNovaTeamCounts } from '@/lib/nova-teams';
 
 export async function GET(_: NextRequest) {
   try {
-    const supabase = await createClient();
+    const sbAdmin = (await createAdminClient({
+      noCookie: true,
+    })) as TypedSupabaseClient;
 
-    const { data, error, count } = await supabase
+    const { data, error, count } = await sbAdmin
+      .schema('private')
       .from('nova_teams')
-      .select('*, nova_team_members(count), nova_team_emails(count)', {
+      .select('*', {
         count: 'exact',
-      });
+      })
+      .order('created_at', { ascending: false });
 
     if (error) {
       throw error;
     }
 
-    const transformedData = data.map((team) => ({
-      ...team,
-      member_count: team.nova_team_members?.[0]?.count || 0,
-      invitation_count: team.nova_team_emails?.[0]?.count || 0,
-    }));
+    const transformedData = await withNovaTeamCounts(sbAdmin, data ?? []);
 
     return NextResponse.json({ data: transformedData, count });
   } catch (error) {
@@ -33,7 +35,10 @@ export async function GET(_: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const sbAdmin = (await createAdminClient({
+      noCookie: true,
+    })) as TypedSupabaseClient;
+    const privateDb = sbAdmin.schema('private');
 
     const { name } = (await request.json()) as {
       name: string;
@@ -46,7 +51,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: existingTeam, error: checkError } = await supabase
+    const { data: existingTeam, error: checkError } = await privateDb
       .from('nova_teams')
       .select('id')
       .eq('name', name.trim())
@@ -69,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     // If team already exists, return conflict error
-    const { data: team, error: teamError } = await supabase
+    const { data: team, error: teamError } = await privateDb
       .from('nova_teams')
       .insert({ name })
       .select()

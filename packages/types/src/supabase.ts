@@ -4155,6 +4155,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      nova_teams: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          goals: string | null;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          goals?: string | null;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          goals?: string | null;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
       personal_notes: {
         Row: {
           content: string | null;
@@ -14526,13 +14550,6 @@ export type Database = {
             referencedRelation: 'nova_team_leaderboard';
             referencedColumns: ['team_id'];
           },
-          {
-            foreignKeyName: 'nova_team_emails_team_id_fkey';
-            columns: ['team_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_teams';
-            referencedColumns: ['id'];
-          },
         ];
       };
       nova_team_members: {
@@ -14567,13 +14584,6 @@ export type Database = {
             referencedColumns: ['team_id'];
           },
           {
-            foreignKeyName: 'nova_team_members_team_id_fkey';
-            columns: ['team_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_teams';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'nova_team_members_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
@@ -14602,30 +14612,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      nova_teams: {
-        Row: {
-          created_at: string;
-          description: string | null;
-          goals: string | null;
-          id: string;
-          name: string;
-        };
-        Insert: {
-          created_at?: string;
-          description?: string | null;
-          goals?: string | null;
-          id?: string;
-          name: string;
-        };
-        Update: {
-          created_at?: string;
-          description?: string | null;
-          goals?: string | null;
-          id?: string;
-          name?: string;
-        };
-        Relationships: [];
       };
       onboarding_progress: {
         Row: {

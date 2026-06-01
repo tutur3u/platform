@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -10,11 +11,15 @@ export async function GET(
 ) {
   try {
     const supabase = await createClient();
+    const sbAdmin = (await createAdminClient({
+      noCookie: true,
+    })) as TypedSupabaseClient;
 
     const { id } = await params;
 
     // First, check if the team exists
-    const { error: teamError } = await supabase
+    const { error: teamError } = await sbAdmin
+      .schema('private')
       .from('nova_teams')
       .select('*')
       .eq('id', id)
@@ -51,6 +56,11 @@ export async function POST(
 ) {
   try {
     const supabase = await createClient();
+    const privateDb = (
+      (await createAdminClient({
+        noCookie: true,
+      })) as TypedSupabaseClient
+    ).schema('private');
 
     const { id } = await params;
     const { email } = await request.json();
@@ -60,7 +70,7 @@ export async function POST(
     }
 
     // Check if the team exists
-    const { error: teamError } = await supabase
+    const { error: teamError } = await privateDb
       .from('nova_teams')
       .select('*')
       .eq('id', id)

@@ -1304,7 +1304,7 @@ set
 where user_id = '00000000-0000-0000-0000-000000000001';
 
 insert into
-    public.nova_teams (id, name, description, goals)
+    private.nova_teams (id, name, description, goals)
 values
     (
         '00000000-0000-0000-0000-000000000001',

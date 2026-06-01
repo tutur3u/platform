@@ -159,7 +159,7 @@ async function getUserData({
     const queryBuilder = sbAdmin
       .from('platform_user_roles')
       .select(
-        '*,...users!inner(*, ...user_private_details!inner(*), nova_team_members(...nova_teams!inner(team_name:name)))',
+        '*,...users!inner(*, ...user_private_details!inner(*), nova_team_members(team_id))',
         {
           count: 'exact',
         }
@@ -208,6 +208,35 @@ async function getUserData({
       return { userData: [], userCount: 0 };
     }
 
+    const teamIds = Array.from(
+      new Set(
+        data.flatMap(({ nova_team_members }) =>
+          (nova_team_members ?? [])
+            .map((member) => member.team_id)
+            .filter((teamId): teamId is string => Boolean(teamId))
+        )
+      )
+    );
+
+    const teamNameById = new Map<string, string>();
+
+    if (teamIds.length > 0) {
+      const { data: teams, error: teamsError } = await sbAdmin
+        .schema('private')
+        .from('nova_teams')
+        .select('id,name')
+        .in('id', teamIds);
+
+      if (teamsError) {
+        console.error('Error fetching user teams:', teamsError);
+        return { userData: [], userCount: 0 };
+      }
+
+      for (const team of teams ?? []) {
+        teamNameById.set(team.id, team.name);
+      }
+    }
+
     return {
       userData:
         data.map(({ nova_team_members, ...user }) => ({
@@ -215,8 +244,9 @@ async function getUserData({
           services: user.services || [],
           team_name:
             nova_team_members
-              ?.map((member) => member.team_name)
-              .filter(Boolean) || [],
+              ?.map((member) => teamNameById.get(member.team_id))
+              .filter((teamName): teamName is string => Boolean(teamName)) ||
+            [],
         })) || [],
       userCount: count || 0,
     };

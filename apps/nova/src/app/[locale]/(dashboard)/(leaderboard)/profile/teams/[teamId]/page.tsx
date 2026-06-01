@@ -69,6 +69,7 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
 
     // Fetch team details
     const { data: teamDetails, error: teamDetailsError } = await sbAdmin
+      .schema('private')
       .from('nova_teams')
       .select('id, name, description, goals, created_at')
       .eq('id', id)

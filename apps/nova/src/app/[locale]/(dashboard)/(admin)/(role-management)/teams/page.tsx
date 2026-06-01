@@ -1,8 +1,10 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { withNovaTeamCounts } from '@/lib/nova-teams';
 import TeamClient from './client-page';
 import { getTeamColumns } from './columns';
 
@@ -56,11 +58,14 @@ async function getTeamsData({
   pageSize?: string;
   retry?: boolean;
 } = {}) {
-  const supabase = await createClient();
+  const sbAdmin = (await createAdminClient({
+    noCookie: true,
+  })) as TypedSupabaseClient;
 
-  const queryBuilder = supabase
+  const queryBuilder = sbAdmin
+    .schema('private')
     .from('nova_teams')
-    .select('*, nova_team_members(count), nova_team_emails(count)', {
+    .select('*', {
       count: 'exact',
     })
     .order('created_at', { ascending: false });
@@ -82,13 +87,7 @@ async function getTeamsData({
     return getTeamsData({ q, pageSize, retry: false });
   }
 
-  const transformedData = data.map((team) => ({
-    ...team,
-    member_count: team.nova_team_members?.[0]?.count || 0,
-    invitation_count: team.nova_team_emails?.[0]?.count || 0,
-    nova_team_members: undefined,
-    nova_team_emails: undefined,
-  }));
+  const transformedData = await withNovaTeamCounts(sbAdmin, data ?? []);
 
   return {
     teamData: transformedData,

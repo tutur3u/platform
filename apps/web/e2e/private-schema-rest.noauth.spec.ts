@@ -67,6 +67,10 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'nova_teams',
+    select: 'id',
+  },
+  {
     name: 'recording_transcripts',
     select: 'id',
   },

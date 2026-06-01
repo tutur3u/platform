@@ -1,18 +1,23 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
+import { withNovaTeamCounts } from '@/lib/nova-teams';
 
 export async function GET(
   _: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
+    const sbAdmin = (await createAdminClient({
+      noCookie: true,
+    })) as TypedSupabaseClient;
 
     const { id } = await params;
 
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
+      .schema('private')
       .from('nova_teams')
-      .select('*, nova_team_members(count), nova_team_emails(count)')
+      .select('*')
       .eq('id', id)
       .single();
 
@@ -20,11 +25,7 @@ export async function GET(
       return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     }
 
-    const transformedData = {
-      ...data,
-      member_count: data.nova_team_members?.[0]?.count || 0,
-      invitation_count: data.nova_team_emails?.[0]?.count || 0,
-    };
+    const [transformedData] = await withNovaTeamCounts(sbAdmin, [data]);
 
     return NextResponse.json({ data: transformedData });
   } catch (error: any) {
@@ -43,20 +44,45 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
+    const sbAdmin = (await createAdminClient({
+      noCookie: true,
+    })) as TypedSupabaseClient;
+    const privateDb = sbAdmin.schema('private');
 
     const { id } = await params;
-    const { name } = await request.json();
+    const payload = (await request.json()) as {
+      description?: string | null;
+      goals?: string | null;
+      name?: string;
+    };
 
-    if (!name) {
+    const updatePayload: {
+      description?: string | null;
+      goals?: string | null;
+      name?: string;
+    } = {};
+
+    if (typeof payload.name === 'string') {
+      updatePayload.name = payload.name;
+    }
+
+    if ('description' in payload) {
+      updatePayload.description = payload.description ?? null;
+    }
+
+    if ('goals' in payload) {
+      updatePayload.goals = payload.goals ?? null;
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
       return NextResponse.json(
-        { error: 'Team name is required' },
+        { error: 'No team fields were provided' },
         { status: 400 }
       );
     }
-    const { data, error } = await supabase
+    const { data, error } = await privateDb
       .from('nova_teams')
-      .update({ name })
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single();
@@ -81,11 +107,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
+    const sbAdmin = (await createAdminClient({
+      noCookie: true,
+    })) as TypedSupabaseClient;
 
     const { id } = await params;
 
-    const { error } = await supabase.from('nova_teams').delete().eq('id', id);
+    const { error } = await sbAdmin
+      .schema('private')
+      .from('nova_teams')
+      .delete()
+      .eq('id', id);
 
     if (error) {
       throw error;

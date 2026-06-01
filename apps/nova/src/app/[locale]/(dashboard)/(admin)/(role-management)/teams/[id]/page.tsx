@@ -54,6 +54,7 @@ async function getTeamData(id: string) {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('nova_teams')
     .select('*')
     .eq('id', id)

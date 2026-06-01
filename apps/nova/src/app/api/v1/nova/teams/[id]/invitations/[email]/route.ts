@@ -1,4 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function DELETE(
@@ -7,12 +11,17 @@ export async function DELETE(
 ) {
   try {
     const supabase = await createClient();
+    const privateDb = (
+      (await createAdminClient({
+        noCookie: true,
+      })) as TypedSupabaseClient
+    ).schema('private');
 
     const { id, email } = await params;
     const decodedEmail = decodeURIComponent(email);
 
     // Check if the team exists
-    const { error: teamError } = await supabase
+    const { error: teamError } = await privateDb
       .from('nova_teams')
       .select('*')
       .eq('id', id)
