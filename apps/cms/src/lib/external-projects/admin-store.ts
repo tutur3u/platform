@@ -3,7 +3,11 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   CanonicalExternalProject,
   ExternalProjectWorkspaceBindingSummary,
+  Json,
+  WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { resolveWorkspaceExternalProjectBinding } from './access';
 import {
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
   EXTERNAL_PROJECT_ENABLED_SECRET,
@@ -11,6 +15,16 @@ import {
 
 type AdminDb = TypedSupabaseClient;
 const WORKSPACE_SECRET_QUERY_CHUNK_SIZE = 100;
+
+export class CmsExternalProjectAdminError extends Error {
+  constructor(
+    message: string,
+    public readonly status = 500
+  ) {
+    super(message);
+    this.name = 'CmsExternalProjectAdminError';
+  }
+}
 
 function chunkValues<T>(values: T[], chunkSize: number) {
   const chunks: T[][] = [];
@@ -80,6 +94,192 @@ export async function listWorkspaceExternalProjectBindingAudits(db?: AdminDb) {
   }
 
   return data ?? [];
+}
+
+export async function createCanonicalExternalProject(
+  payload: {
+    actorId: string;
+    adapter: CanonicalExternalProject['adapter'];
+    allowed_collections: CanonicalExternalProject['allowed_collections'];
+    allowed_features: CanonicalExternalProject['allowed_features'];
+    delivery_profile: Json;
+    display_name: string;
+    id: string;
+    is_active: boolean;
+    metadata: Json;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { actorId, ...values } = payload;
+  const { data, error } = await admin
+    .from('canonical_external_projects')
+    .insert({
+      ...values,
+      created_by: actorId,
+      updated_by: actorId,
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new CmsExternalProjectAdminError(error.message);
+  }
+
+  return data;
+}
+
+export async function updateCanonicalExternalProject(
+  canonicalId: string,
+  payload: Partial<{
+    adapter: CanonicalExternalProject['adapter'];
+    allowed_collections: CanonicalExternalProject['allowed_collections'];
+    allowed_features: CanonicalExternalProject['allowed_features'];
+    delivery_profile: Json;
+    display_name: string;
+    is_active: boolean;
+    metadata: Json;
+  }> & {
+    actorId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { actorId, ...values } = payload;
+  const { data, error } = await admin
+    .from('canonical_external_projects')
+    .update({
+      ...values,
+      updated_by: actorId,
+    })
+    .eq('id', canonicalId)
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new CmsExternalProjectAdminError(error.message);
+  }
+
+  return data;
+}
+
+export async function updateWorkspaceExternalProjectBinding({
+  actorId,
+  canonicalId,
+  db,
+  workspaceId,
+}: {
+  actorId: string;
+  canonicalId: string | null;
+  db?: AdminDb;
+  workspaceId: string;
+}): Promise<WorkspaceExternalProjectBinding> {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+
+  if (workspaceId === ROOT_WORKSPACE_ID) {
+    throw new CmsExternalProjectAdminError(
+      'Root workspace cannot be used as a destination site project',
+      400
+    );
+  }
+
+  const { data: workspace, error: workspaceError } = await admin
+    .from('workspaces')
+    .select('id')
+    .eq('id', workspaceId)
+    .maybeSingle();
+
+  if (workspaceError) {
+    throw new CmsExternalProjectAdminError(workspaceError.message);
+  }
+
+  if (!workspace) {
+    throw new CmsExternalProjectAdminError('Workspace not found', 404);
+  }
+
+  if (canonicalId) {
+    const { data: project, error: projectError } = await admin
+      .from('canonical_external_projects')
+      .select('id')
+      .eq('id', canonicalId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (projectError) {
+      throw new CmsExternalProjectAdminError(projectError.message);
+    }
+
+    if (!project) {
+      throw new CmsExternalProjectAdminError(
+        'Site template is missing or inactive',
+        400
+      );
+    }
+  }
+
+  const { data: previousSecret, error: previousError } = await admin
+    .from('workspace_secrets')
+    .select('value')
+    .eq('ws_id', workspaceId)
+    .eq('name', EXTERNAL_PROJECT_CANONICAL_ID_SECRET)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (previousError) {
+    throw new CmsExternalProjectAdminError(previousError.message);
+  }
+
+  const previousCanonicalId = previousSecret?.value ?? null;
+  const { error: deleteError } = await admin
+    .from('workspace_secrets')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .in('name', [
+      EXTERNAL_PROJECT_ENABLED_SECRET,
+      EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
+    ]);
+
+  if (deleteError) {
+    throw new CmsExternalProjectAdminError(deleteError.message);
+  }
+
+  if (canonicalId) {
+    const { error: insertSecretsError } = await admin
+      .from('workspace_secrets')
+      .insert([
+        {
+          name: EXTERNAL_PROJECT_ENABLED_SECRET,
+          value: 'true',
+          ws_id: workspaceId,
+        },
+        {
+          name: EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
+          value: canonicalId,
+          ws_id: workspaceId,
+        },
+      ]);
+
+    if (insertSecretsError) {
+      throw new CmsExternalProjectAdminError(insertSecretsError.message);
+    }
+  }
+
+  const { error: auditError } = await admin
+    .from('workspace_external_project_binding_audits')
+    .insert({
+      actor_user_id: actorId,
+      destination_ws_id: workspaceId,
+      next_canonical_id: canonicalId,
+      previous_canonical_id: previousCanonicalId,
+      source_ws_id: ROOT_WORKSPACE_ID,
+    });
+
+  if (auditError) {
+    throw new CmsExternalProjectAdminError(auditError.message);
+  }
+
+  return resolveWorkspaceExternalProjectBinding(workspaceId, admin);
 }
 
 export async function listExternalProjectWorkspaceBindingSummaries(
