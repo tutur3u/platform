@@ -364,6 +364,10 @@
       "types": "./src/components/ui/custom/settings-dialog-shell.tsx",
       "import": "./src/components/ui/custom/settings-dialog-shell.tsx"
     },
+    "./custom/workspace-access": {
+      "types": "./src/components/ui/custom/workspace-access/index.ts",
+      "import": "./src/components/ui/custom/workspace-access/index.ts"
+    },
     "./custom/version-badge": {
       "types": "./src/components/ui/custom/version-badge.tsx",
       "import": "./src/components/ui/custom/version-badge.tsx"

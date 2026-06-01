@@ -57,6 +57,11 @@
       "import": "./dist/education.js",
       "require": "./dist/education.js"
     },
+    "./external-project-team": {
+      "types": "./dist/external-project-team.d.ts",
+      "import": "./dist/external-project-team.js",
+      "require": "./dist/external-project-team.js"
+    },
     "./finance": {
       "types": "./dist/finance.d.ts",
       "import": "./dist/finance.js",

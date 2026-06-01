@@ -1,3 +1,4 @@
+import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getPermissions,
@@ -6,7 +7,6 @@ import {
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import MembersClientShell from './_components/members-client-shell';
 
 export const metadata: Metadata = {
   title: 'Members',
@@ -39,14 +39,18 @@ export default async function WorkspaceMembersPage({ params }: Props) {
         const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
 
         const canManageMembers = !withoutPermission('manage_workspace_members');
+        const canManageRoles = !withoutPermission('manage_workspace_roles');
 
         return (
-          <MembersClientShell
-            workspace={workspace}
-            wsId={wsId}
-            currentUser={user}
-            canManageMembers={canManageMembers}
+          <StandardWorkspaceAccessPage
             disableInvite={disableInvite}
+            initialContext={{
+              canManageMembers,
+              canManageRoles,
+              currentUserEmail: user?.email ?? null,
+              workspaceId: wsId,
+            }}
+            initialTab="people"
           />
         );
       }}

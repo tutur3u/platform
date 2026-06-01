@@ -1,11 +1,11 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { WorkspaceRolesClient } from './roles-client';
 
 const REQUIRED_PERMISSION = 'manage_workspace_roles';
 
@@ -37,7 +37,12 @@ async function getRolesPageContext(wsId: string) {
     redirect(`/${wsId}/settings`);
   }
 
-  return { user };
+  return {
+    canManageMembers: !workspacePermissions.withoutPermission(
+      'manage_workspace_members'
+    ),
+    user,
+  };
 }
 
 export default async function WorkspaceRolesPage({ params }: Props) {
@@ -48,11 +53,19 @@ export default async function WorkspaceRolesPage({ params }: Props) {
           redirect(`/${wsId}/settings`);
         }
 
-        const { user } = await getRolesPageContext(wsId);
+        const { canManageMembers, user } = await getRolesPageContext(wsId);
 
         return (
           <Suspense fallback={<RolesPageFallback />}>
-            <WorkspaceRolesClient user={user} wsId={wsId} />
+            <StandardWorkspaceAccessPage
+              initialContext={{
+                canManageMembers,
+                canManageRoles: true,
+                currentUserEmail: user?.email ?? null,
+                workspaceId: wsId,
+              }}
+              initialTab="roles"
+            />
           </Suspense>
         );
       }}
@@ -63,7 +76,8 @@ export default async function WorkspaceRolesPage({ params }: Props) {
 function RolesPageFallback() {
   return (
     <div className="space-y-4">
-      <div className="grid h-10 w-full grid-cols-1 gap-2 rounded-lg bg-muted p-1 md:grid-cols-3">
+      <div className="grid h-10 w-full grid-cols-1 gap-2 rounded-lg bg-muted p-1 md:grid-cols-4">
+        <div className="animate-pulse rounded-md bg-background" />
         <div className="animate-pulse rounded-md bg-background" />
         <div className="animate-pulse rounded-md bg-background" />
         <div className="animate-pulse rounded-md bg-background" />

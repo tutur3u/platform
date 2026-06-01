@@ -1,5 +1,5 @@
+import { ExternalProjectWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
 import { redirect } from 'next/navigation';
-import { CmsMembersSection } from '@/features/settings/cms-members-section';
 import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
 
 interface Props {
@@ -35,5 +35,29 @@ export default async function CmsMembersPage({ params }: Props) {
     redirect('/no-access');
   }
 
-  return <CmsMembersSection workspaceSlug={wsId} />;
+  const normalizedWorkspaceId = access.normalizedWorkspaceId;
+
+  return (
+    <ExternalProjectWorkspaceAccessPage
+      initialContext={{
+        boundProjectName:
+          access.binding?.canonical_project?.display_name ?? null,
+        canManageMembers:
+          access.isRootAdmin ||
+          Boolean(
+            access.workspacePermissions?.containsPermission(
+              'manage_workspace_members'
+            )
+          ),
+        canManageRoles:
+          access.isRootAdmin ||
+          Boolean(
+            access.workspacePermissions?.containsPermission(
+              'manage_workspace_roles'
+            )
+          ),
+        workspaceId: normalizedWorkspaceId,
+      }}
+    />
+  );
 }
