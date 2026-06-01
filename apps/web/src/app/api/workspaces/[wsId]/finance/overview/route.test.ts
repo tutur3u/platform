@@ -128,4 +128,21 @@ describe('finance overview metrics route', () => {
       message: 'Insufficient permissions',
     });
   });
+
+  it('rejects oversized daily ranges before resolving finance auth context', async () => {
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new Request(
+        'http://localhost/api/workspaces/ws-1/finance/overview?view=date&startDate=2000-01-01&endDate=2026-06-01'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.resolveFinanceRouteAuthContext).not.toHaveBeenCalled();
+    expect(mocks.getFinanceRouteContext).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: 'Date range cannot exceed 366 days',
+    });
+  });
 });

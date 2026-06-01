@@ -7818,6 +7818,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      assert_finance_chart_date_range: {
+        Args: { _end_date: string; _max_days: number; _start_date: string };
+        Returns: undefined;
+      };
       build_rate_limit_dblink_connstr: { Args: never; Returns: string };
       calculate_invoice_values: {
         Args: {

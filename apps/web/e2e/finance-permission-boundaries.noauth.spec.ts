@@ -262,6 +262,22 @@ test.describe('Finance permission boundaries', () => {
         expect(response.status()).toBe(403);
       }
 
+      for (const path of [
+        `/api/workspaces/${workspaceId}/finance/charts/balance-trend?includeConfidential=true&startDate=2000-01-01&endDate=2026-06-01`,
+        `/api/workspaces/${workspaceId}/finance/charts/income-expense-summary?includeConfidential=true&interval=daily&startDate=2000-01-01&endDate=2026-06-01`,
+        `/api/workspaces/${workspaceId}/finance/overview?view=date&startDate=2000-01-01&endDate=2026-06-01`,
+      ]) {
+        const response = await lowPrivPage.request.get(`${origin}${path}`, {
+          failOnStatusCode: false,
+          headers,
+        });
+
+        expect(response.status()).toBe(400);
+        await expect(response.json()).resolves.toEqual({
+          message: 'Date range cannot exceed 366 days',
+        });
+      }
+
       const statsPermissionResponse = await request.post(
         `${SUPABASE_URL}/rest/v1/workspace_role_permissions`,
         {

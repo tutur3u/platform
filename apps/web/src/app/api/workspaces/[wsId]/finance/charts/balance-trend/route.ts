@@ -2,6 +2,7 @@ import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { validateFinanceDateRange } from '../../date-range';
 import { requireFinanceStatsAccess } from '../access';
 
 const querySchema = z.object({
@@ -68,6 +69,17 @@ export async function GET(
     }
 
     const { startDate, endDate, includeConfidential, maxPoints } = parsed.data;
+    const dateRangeValidation = validateFinanceDateRange({
+      endDate,
+      startDate,
+    });
+
+    if (!dateRangeValidation.ok) {
+      return NextResponse.json(
+        { message: dateRangeValidation.message },
+        { status: 400 }
+      );
+    }
 
     const access = await requireFinanceStatsAccess(req, wsId);
     if (access.response) return access.response;

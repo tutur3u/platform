@@ -5,6 +5,11 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  MAX_FINANCE_DAILY_DATE_RANGE_DAYS,
+  MAX_FINANCE_EXTENDED_DATE_RANGE_DAYS,
+  validateFinanceDateRange,
+} from '../../date-range';
 import { requireFinanceStatsAccess } from '../access';
 
 const querySchema = z.object({
@@ -103,6 +108,21 @@ export async function GET(
       anchorToLatest,
       timezone,
     } = parsed.data;
+    const dateRangeValidation = validateFinanceDateRange({
+      endDate,
+      maxDays:
+        interval === 'daily'
+          ? MAX_FINANCE_DAILY_DATE_RANGE_DAYS
+          : MAX_FINANCE_EXTENDED_DATE_RANGE_DAYS,
+      startDate,
+    });
+
+    if (!dateRangeValidation.ok) {
+      return NextResponse.json(
+        { message: dateRangeValidation.message },
+        { status: 400 }
+      );
+    }
 
     const access = await requireFinanceStatsAccess(req, wsId);
     if (access.response) return access.response;

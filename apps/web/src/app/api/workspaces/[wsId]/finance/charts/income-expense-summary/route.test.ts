@@ -114,4 +114,25 @@ describe('finance income expense chart summary route', () => {
 
     expect(response.status).toBe(403);
   });
+
+  it('rejects oversized daily date ranges before authorization or RPC work', async () => {
+    const { GET } = await import('./route');
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/workspaces/ws-1/finance/charts/income-expense-summary?includeConfidential=true&interval=daily&startDate=2000-01-01&endDate=2026-06-01'
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    expect(requireFinanceStatsAccessMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: 'Date range cannot exceed 366 days',
+    });
+  });
 });

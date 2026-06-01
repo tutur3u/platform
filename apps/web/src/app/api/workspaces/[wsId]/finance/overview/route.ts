@@ -5,6 +5,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  MAX_FINANCE_DAILY_DATE_RANGE_DAYS,
+  MAX_FINANCE_EXTENDED_DATE_RANGE_DAYS,
+  validateFinanceDateRange,
+} from '../date-range';
 
 const querySchema = z.object({
   view: z.enum(['date', 'month', 'year']).optional().default('date'),
@@ -63,6 +68,37 @@ const toNumber = (value: number | string | null | undefined) =>
 export async function GET(request: Request, { params }: Params) {
   try {
     const { wsId } = await params;
+    const { searchParams } = new URL(request.url);
+    const parsed = querySchema.safeParse({
+      endDate: searchParams.get('endDate'),
+      includeConfidential: searchParams.get('includeConfidential') ?? undefined,
+      startDate: searchParams.get('startDate'),
+      view: searchParams.get('view') ?? undefined,
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: 'Invalid query parameters' },
+        { status: 400 }
+      );
+    }
+
+    const dateRangeValidation = validateFinanceDateRange({
+      endDate: parsed.data.endDate,
+      maxDays:
+        parsed.data.view === 'date'
+          ? MAX_FINANCE_DAILY_DATE_RANGE_DAYS
+          : MAX_FINANCE_EXTENDED_DATE_RANGE_DAYS,
+      startDate: parsed.data.startDate,
+    });
+
+    if (!dateRangeValidation.ok) {
+      return NextResponse.json(
+        { message: dateRangeValidation.message },
+        { status: 400 }
+      );
+    }
+
     const access = await getFinanceRouteContext(
       request,
       wsId,
@@ -79,21 +115,6 @@ export async function GET(request: Request, { params }: Params) {
       return NextResponse.json(
         { message: 'Insufficient permissions' },
         { status: 403 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
-    const parsed = querySchema.safeParse({
-      endDate: searchParams.get('endDate'),
-      includeConfidential: searchParams.get('includeConfidential') ?? undefined,
-      startDate: searchParams.get('startDate'),
-      view: searchParams.get('view') ?? undefined,
-    });
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        { message: 'Invalid query parameters' },
-        { status: 400 }
       );
     }
 
