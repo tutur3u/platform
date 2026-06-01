@@ -95,7 +95,10 @@ import {
   serializeTaskDescriptionContent,
   shouldPreserveNativeContextMenu,
 } from './task-edit-dialog/utils';
-import { resolveInlineTaskTargetList } from './task-edit-dialog/utils/inline-task-target-list';
+import {
+  resolveInlineTaskTargetList,
+  resolveInlineTaskTargetWorkspaceId,
+} from './task-edit-dialog/utils/inline-task-target-list';
 import { TaskShareDialog } from './task-share-dialog';
 import type { TaskFilters } from './types';
 import { UnsavedChangesWarningDialog } from './unsaved-changes-warning-dialog';
@@ -1060,6 +1063,7 @@ export function TaskEditDialog({
       closeSlashMenu: suggestionMenus.closeSlashMenu,
       closeMentionMenu: suggestionMenus.closeMentionMenu,
       handleConvertToTaskRef,
+      mentionWorkspaceId: boardConfig?.ws_id ?? effectiveTaskWsId,
     });
 
   // Convert to task handler
@@ -1078,6 +1082,11 @@ export function TaskEditDialog({
       return;
     }
 
+    const inlineTaskWorkspaceId = resolveInlineTaskTargetWorkspaceId({
+      boardWorkspaceId: boardConfig?.ws_id,
+      fallbackWorkspaceId: effectiveTaskWsId,
+    });
+
     // Store the created task to add to cache later
     let createdTask: Task | null = null;
 
@@ -1093,7 +1102,7 @@ export function TaskEditDialog({
         name: string;
         listId: string;
       }) => {
-        const response = await createWorkspaceTask(effectiveTaskWsId, {
+        const response = await createWorkspaceTask(inlineTaskWorkspaceId, {
           name,
           listId,
         });
@@ -1116,6 +1125,7 @@ export function TaskEditDialog({
           display_number: newTask.display_number ?? undefined,
           priority: newTask.priority || undefined,
           listColor: targetList.color || undefined,
+          workspaceId: inlineTaskWorkspaceId,
         };
       },
     });
@@ -1165,6 +1175,7 @@ export function TaskEditDialog({
     task?.list_id,
     queryClient,
     effectiveTaskWsId,
+    boardConfig?.ws_id,
   ]);
 
   // Save handler

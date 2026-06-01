@@ -38,6 +38,7 @@ interface MentionAttributes {
   priority?: string;
   listColor?: string;
   assignees?: string;
+  workspaceId?: string | null;
 }
 
 export interface UseEditorCommandsProps {
@@ -62,6 +63,7 @@ export interface UseEditorCommandsProps {
   closeSlashMenu: () => void;
   closeMentionMenu: () => void;
   handleConvertToTaskRef: React.MutableRefObject<(() => void) | null>;
+  mentionWorkspaceId?: string | null;
 }
 
 export interface UseEditorCommandsReturn {
@@ -94,6 +96,7 @@ export function useEditorCommands({
   closeSlashMenu,
   closeMentionMenu,
   handleConvertToTaskRef,
+  mentionWorkspaceId,
 }: UseEditorCommandsProps): UseEditorCommandsReturn {
   const executeSlashCommand = useCallback(
     (command: SlashCommandDefinition) => {
@@ -203,6 +206,9 @@ export function useEditorCommands({
         if (task.assignees) {
           attributes.assignees = JSON.stringify(task.assignees);
         }
+        if (mentionWorkspaceId) {
+          attributes.workspaceId = mentionWorkspaceId;
+        }
       }
 
       chain
@@ -222,6 +228,7 @@ export function useEditorCommands({
       mentionState.range,
       closeMentionMenu,
       setShowCustomDatePicker,
+      mentionWorkspaceId,
     ]
   );
 

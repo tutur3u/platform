@@ -141,6 +141,7 @@ interface TaskMentionChipProps {
   displayNumber: string;
   avatarUrl?: string | null;
   subtitle?: string | null;
+  workspaceId?: string | null;
   className?: string;
   editor?: Editor | null;
   onResolvedTaskMention?: (attrs: {
@@ -149,6 +150,7 @@ interface TaskMentionChipProps {
     entityId: string;
     priority?: string | null;
     subtitle?: string | null;
+    workspaceId?: string | null;
   }) => void;
   /** Optional translations for dialogs (for use in isolated React roots) */
   translations?: {
@@ -184,6 +186,7 @@ export function TaskMentionChip({
   displayNumber,
   avatarUrl,
   subtitle,
+  workspaceId,
   className,
   editor: editorProp,
   onResolvedTaskMention,
@@ -210,6 +213,8 @@ export function TaskMentionChip({
 
     return getRouteTaskBoardIdFromPathname(window.location.pathname);
   }, []);
+  const mentionWorkspaceId = workspaceId?.trim() || undefined;
+  const resolutionWorkspaceId = mentionWorkspaceId ?? routeWsId;
   const isDark = useDomResolvedTheme() === 'dark';
 
   // Dialog states
@@ -225,13 +230,13 @@ export function TaskMentionChip({
     isLoading: taskLoading,
     error: taskError,
   } = useQuery({
-    queryKey: ['task', entityId],
+    queryKey: ['task', entityId, resolutionWorkspaceId],
     queryFn: async () => {
       return resolveTaskMentionPayload({
         displayNumber,
         entityId,
         routeBoardId,
-        routeWorkspaceId: routeWsId,
+        routeWorkspaceId: resolutionWorkspaceId,
         subtitle,
       });
     },
@@ -244,48 +249,51 @@ export function TaskMentionChip({
   const resolvedTaskId = task?.id ?? entityId;
   const taskWorkspaceId = taskPayload?.taskWsId;
   const taskWorkspacePersonal = taskPayload?.taskWorkspacePersonal;
-  const boardWorkspaceId = routeWsId ?? taskWorkspaceId;
+  const canonicalWorkspaceId =
+    mentionWorkspaceId ?? taskWorkspaceId ?? routeWsId;
+  const boardWorkspaceId = canonicalWorkspaceId;
 
   // Get board config - only fetch when menu opens and we have task data
   const { data: boardConfig } = useBoardConfig(
     task?.board_id,
     boardWorkspaceId
   );
+  const actionWorkspaceId = boardConfig?.ws_id ?? canonicalWorkspaceId;
 
   // Fetch workspace labels
   const { data: workspaceLabels = [], isLoading: labelsLoading } =
-    useWorkspaceLabels(boardConfig?.ws_id);
+    useWorkspaceLabels(actionWorkspaceId);
 
   // Fetch workspace projects
   const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery(
     {
-      queryKey: ['task_projects', boardConfig?.ws_id],
+      queryKey: ['task_projects', actionWorkspaceId],
       queryFn: async () => {
-        if (!boardConfig?.ws_id) return [];
-        const data = await listWorkspaceTaskProjects(boardConfig.ws_id);
+        if (!actionWorkspaceId) return [];
+        const data = await listWorkspaceTaskProjects(actionWorkspaceId);
         return data.filter((project) => project.status !== 'deleted');
       },
-      enabled: !!boardConfig?.ws_id && menuOpen,
+      enabled: !!actionWorkspaceId && menuOpen,
       staleTime: 10 * 60 * 1000,
     }
   );
 
   // Fetch workspace members
   const { data: workspaceMembers = [], isLoading: membersLoading } =
-    useWorkspaceMembers(boardConfig?.ws_id, {
-      enabled: !!boardConfig?.ws_id && menuOpen, // Only needed for editing
+    useWorkspaceMembers(actionWorkspaceId, {
+      enabled: !!actionWorkspaceId && menuOpen, // Only needed for editing
     });
 
   // Fetch available task lists - enable when we have task data to get current list color
   const { data: availableLists = [] } = useQuery({
-    queryKey: ['task_lists', task?.board_id],
+    queryKey: ['task_lists', task?.board_id, actionWorkspaceId],
     queryFn: async () => {
       if (taskPayload?.availableLists?.length) {
         return taskPayload.availableLists as TaskList[];
       }
-      if (!task?.board_id || !boardConfig?.ws_id) return [];
+      if (!task?.board_id || !actionWorkspaceId) return [];
       const payload = await listWorkspaceTaskLists(
-        boardConfig.ws_id,
+        actionWorkspaceId,
         task.board_id
       );
       return payload.lists as TaskList[];
@@ -325,7 +333,7 @@ export function TaskMentionChip({
     task: task ?? placeholderTask,
     boardId: task?.board_id || '',
     workspaceLabels,
-    workspaceId: boardConfig?.ws_id,
+    workspaceId: actionWorkspaceId,
     selectedTasks: undefined,
     isMultiSelectMode: false,
     onClearSelection: undefined,
@@ -343,7 +351,7 @@ export function TaskMentionChip({
     task: task ?? placeholderTask,
     boardId: task?.board_id || '',
     workspaceProjects,
-    workspaceId: boardConfig?.ws_id,
+    workspaceId: actionWorkspaceId,
     selectedTasks: undefined,
     isMultiSelectMode: false,
     onClearSelection: undefined,
@@ -370,7 +378,7 @@ export function TaskMentionChip({
   } = useTaskCardRelationships({
     taskId: task?.id || '',
     boardId: task?.board_id || '',
-    wsId: boardConfig?.ws_id,
+    wsId: actionWorkspaceId,
   });
 
   const targetCompletionList = useMemo(() => {
@@ -436,7 +444,7 @@ export function TaskMentionChip({
   } = useTaskActions({
     task: task || undefined,
     boardId: task?.board_id || '',
-    workspaceId: boardConfig?.ws_id,
+    workspaceId: actionWorkspaceId,
     targetCompletionList,
     targetClosedList,
     availableLists,
@@ -503,15 +511,15 @@ export function TaskMentionChip({
     }
 
     // Phase 2: Clean up mentions from all other tasks (non-blocking background operation)
-    if (boardConfig?.ws_id) {
-      cleanupTaskMentionsGlobally(taskId, boardConfig.ws_id, queryClient).catch(
+    if (actionWorkspaceId) {
+      cleanupTaskMentionsGlobally(taskId, actionWorkspaceId, queryClient).catch(
         (error) => {
           console.error('Failed to clean up task mentions globally:', error);
           // Don't show error to user - this is background cleanup
         }
       );
     }
-  }, [baseHandleDelete, task, queryClient, boardConfig, editorProp]);
+  }, [actionWorkspaceId, baseHandleDelete, task, queryClient, editorProp]);
 
   const handleMoveToList = useCallback(
     async (targetListId: string) => {
@@ -680,8 +688,10 @@ export function TaskMentionChip({
       entityId: task.id,
       priority: task.priority ?? null,
       subtitle: task.name ?? subtitle ?? null,
+      workspaceId: actionWorkspaceId ?? null,
     });
   }, [
+    actionWorkspaceId,
     actualDisplayNumber,
     avatarUrl,
     entityId,
@@ -708,7 +718,7 @@ export function TaskMentionChip({
   );
 
   const getTaskUrl = () => {
-    const wsId = routeWsId ?? taskWorkspaceId ?? boardConfig?.ws_id;
+    const wsId = actionWorkspaceId;
     const boardId = task?.board_id ?? currentTaskList?.board_id ?? null;
     if (!wsId || !boardId || typeof window === 'undefined') return null;
     return buildWorkspaceTaskUrl({
@@ -779,6 +789,7 @@ export function TaskMentionChip({
       data-subtitle={subtitle ?? ''}
       data-priority={task?.priority ?? ''}
       data-list-color={currentTaskList?.color ?? ''}
+      data-workspace-id={actionWorkspaceId ?? ''}
       title={title}
       aria-disabled={!canOpenTaskMention}
       contentEditable={false}
@@ -1030,10 +1041,10 @@ export function TaskMentionChip({
       <DropdownMenuSeparator />
 
       {/* Task Relationships Section */}
-      {boardConfig?.ws_id && (
+      {actionWorkspaceId && (
         <>
           <TaskParentMenu
-            wsId={boardConfig.ws_id}
+            wsId={actionWorkspaceId}
             taskId={task.id}
             parentTask={parentTask}
             childTaskIds={childTasks.map((t) => t.id)}
@@ -1051,7 +1062,7 @@ export function TaskMentionChip({
           />
 
           <TaskBlockingMenu
-            wsId={boardConfig.ws_id}
+            wsId={actionWorkspaceId}
             taskId={task.id}
             blockingTasks={blockingTasks}
             blockedByTasks={blockedByTasks}
@@ -1079,7 +1090,7 @@ export function TaskMentionChip({
           />
 
           <TaskRelatedMenu
-            wsId={boardConfig.ws_id}
+            wsId={actionWorkspaceId}
             taskId={task.id}
             relatedTasks={relatedTasks}
             isSaving={relationshipSaving}
@@ -1102,7 +1113,7 @@ export function TaskMentionChip({
       )}
 
       {/* Move Menu */}
-      {availableLists.length > 0 && boardConfig?.ws_id && task?.board_id && (
+      {availableLists.length > 0 && actionWorkspaceId && task?.board_id && (
         <TaskMoveMenu
           currentListId={task.list_id}
           availableLists={availableLists}
@@ -1117,7 +1128,7 @@ export function TaskMentionChip({
       )}
 
       {/* Assignee Menu */}
-      {boardConfig?.ws_id && (
+      {actionWorkspaceId && (
         <TaskAssigneesMenu
           taskAssignees={task.assignees || []}
           availableMembers={workspaceMembers}
@@ -1179,7 +1190,7 @@ export function TaskMentionChip({
         open={popoverOpen}
         onOpenChange={setPopoverOpen}
         blockedBy={blockedByTasks as Task[]}
-        workspaceId={boardConfig?.ws_id}
+        workspaceId={actionWorkspaceId}
         hiddenLabelsLabel={translations?.hidden_labels}
       >
         {chipContent}
@@ -1291,12 +1302,12 @@ export function TaskMentionChip({
             }
           />
 
-          {boardConfig?.ws_id && task?.board_id && (
+          {actionWorkspaceId && task?.board_id && (
             <CreateListDialog
               open={showCreateListDialog}
               onOpenChange={setShowCreateListDialog}
               boardId={task.board_id}
-              wsId={boardConfig.ws_id}
+              wsId={actionWorkspaceId}
               initialStatus="active"
               onSuccess={(listId) => {
                 handleMoveToList(listId);

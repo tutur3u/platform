@@ -420,6 +420,7 @@ describe('deriveTaskDescriptionYjsState', () => {
                   priority: null,
                   listColor: null,
                   assignees: null,
+                  workspaceId: 'ws-1',
                 },
               },
             ],

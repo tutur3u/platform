@@ -11,6 +11,7 @@ export interface ConvertToTaskOptions {
     priority?: string;
     listColor?: string;
     assignees?: string;
+    workspaceId?: string | null;
   }>;
   wrapInParagraph?: boolean;
 }
@@ -98,6 +99,7 @@ export async function convertListItemToTask(
           priority: newTask.priority || null,
           listColor: newTask.listColor || null,
           assignees: newTask.assignees || null,
+          workspaceId: newTask.workspaceId ?? null,
         });
 
         // Insert mention at the selection start position
@@ -225,6 +227,7 @@ export async function convertListItemToTask(
         priority: newTask.priority || null,
         listColor: newTask.listColor || null,
         assignees: newTask.assignees || null,
+        workspaceId: newTask.workspaceId ?? null,
       });
 
       // Wrap in paragraph if requested and paragraph node exists

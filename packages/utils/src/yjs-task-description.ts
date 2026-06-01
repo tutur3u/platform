@@ -120,6 +120,7 @@ export const taskDescriptionSchema = new Schema({
         priority: { default: null },
         listColor: { default: null },
         assignees: { default: null },
+        workspaceId: { default: null },
       },
     },
     text: {

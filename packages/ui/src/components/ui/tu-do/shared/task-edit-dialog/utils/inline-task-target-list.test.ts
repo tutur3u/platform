@@ -1,6 +1,9 @@
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { describe, expect, it } from 'vitest';
-import { resolveInlineTaskTargetList } from './inline-task-target-list';
+import {
+  resolveInlineTaskTargetList,
+  resolveInlineTaskTargetWorkspaceId,
+} from './inline-task-target-list';
 
 function createList(overrides: Partial<TaskList> = {}): TaskList {
   return {
@@ -71,5 +74,25 @@ describe('resolveInlineTaskTargetList', () => {
         preferredListId: 'deleted-list',
       })
     ).toBeNull();
+  });
+});
+
+describe('resolveInlineTaskTargetWorkspaceId', () => {
+  it('prefers the target board workspace over the current route workspace', () => {
+    expect(
+      resolveInlineTaskTargetWorkspaceId({
+        boardWorkspaceId: 'source-ws',
+        fallbackWorkspaceId: 'route-ws',
+      })
+    ).toBe('source-ws');
+  });
+
+  it('falls back to the current workspace when the board workspace is unavailable', () => {
+    expect(
+      resolveInlineTaskTargetWorkspaceId({
+        boardWorkspaceId: null,
+        fallbackWorkspaceId: 'route-ws',
+      })
+    ).toBe('route-ws');
   });
 });

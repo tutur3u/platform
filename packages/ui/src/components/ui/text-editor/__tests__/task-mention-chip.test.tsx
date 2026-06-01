@@ -216,4 +216,64 @@ describe('TaskMentionChip', () => {
     ).toBe('live-task-id');
     expect(screen.getByText('Complete Team Charter V1.0')).toBeInTheDocument();
   });
+
+  it('uses the mention workspace when repairing a task from another workspace', async () => {
+    const resolvedTask = {
+      assignees: [],
+      board_id: 'board-1',
+      display_number: 7,
+      id: 'source-task-id',
+      labels: [],
+      list_id: 'list-1',
+      name: 'Cross workspace task',
+      projects: [],
+      ticket_prefix: null,
+    };
+    const onResolvedTaskMention = vi.fn();
+
+    window.history.pushState({}, '', '/route-ws/tasks/boards/board-1');
+    mocks.getCurrentUserTask.mockImplementation(async (taskId: string) => {
+      if (taskId === 'stale-task-id') {
+        throw new Error('Task not found');
+      }
+
+      return {
+        availableLists: [],
+        task: resolvedTask,
+        taskWorkspacePersonal: false,
+        taskWorkspaceTier: 'FREE',
+        taskWsId: 'source-ws',
+      };
+    });
+    mocks.listWorkspaceTasks.mockResolvedValue({ tasks: [resolvedTask] });
+
+    renderWithQueryClient(
+      <TaskMentionChip
+        entityId="stale-task-id"
+        displayNumber="7"
+        subtitle="Cross workspace task"
+        workspaceId="source-ws"
+        onResolvedTaskMention={onResolvedTaskMention}
+      />
+    );
+
+    await waitFor(() => {
+      expect(mocks.listWorkspaceTasks).toHaveBeenCalledWith(
+        'source-ws',
+        expect.objectContaining({
+          boardId: 'board-1',
+          identifier: '7',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(onResolvedTaskMention).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entityId: 'source-task-id',
+          workspaceId: 'source-ws',
+        })
+      );
+    });
+  });
 });

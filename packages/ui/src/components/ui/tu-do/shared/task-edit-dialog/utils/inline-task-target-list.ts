@@ -5,6 +5,11 @@ interface ResolveInlineTaskTargetListOptions {
   preferredListId?: string | null;
 }
 
+interface ResolveInlineTaskTargetWorkspaceIdOptions {
+  boardWorkspaceId?: string | null;
+  fallbackWorkspaceId: string;
+}
+
 function isWritableInlineTaskList(list: TaskList) {
   return !list.deleted && !list.is_external_staging;
 }
@@ -24,4 +29,11 @@ export function resolveInlineTaskTargetList({
   }
 
   return lists.find(isWritableInlineTaskList) ?? null;
+}
+
+export function resolveInlineTaskTargetWorkspaceId({
+  boardWorkspaceId,
+  fallbackWorkspaceId,
+}: ResolveInlineTaskTargetWorkspaceIdOptions) {
+  return boardWorkspaceId?.trim() || fallbackWorkspaceId;
 }

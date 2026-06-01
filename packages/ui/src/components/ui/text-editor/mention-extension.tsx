@@ -199,6 +199,9 @@ export const Mention = Node.create({
       assignees: {
         default: null,
       },
+      workspaceId: {
+        default: null,
+      },
     };
   },
 
@@ -227,6 +230,7 @@ export const Mention = Node.create({
             priority: element.dataset.priority ?? null,
             listColor: element.dataset.listColor ?? null,
             assignees: element.dataset.assignees ?? null,
+            workspaceId: element.dataset.workspaceId ?? null,
           };
         },
       },
@@ -244,6 +248,7 @@ export const Mention = Node.create({
     const priority = (attrs.priority as string | null) ?? null;
     const listColor = (attrs.listColor as string | null) ?? null;
     const assignees = (attrs.assignees as string | null) ?? null;
+    const workspaceId = (attrs.workspaceId as string | null) ?? null;
 
     delete attrs.userId;
     delete attrs.entityId;
@@ -254,6 +259,7 @@ export const Mention = Node.create({
     delete attrs.priority;
     delete attrs.listColor;
     delete attrs.assignees;
+    delete attrs.workspaceId;
 
     const displayName = (displayNameRaw || 'Member').trim();
     const visuals = getMentionVisualMeta(entityType);
@@ -280,6 +286,7 @@ export const Mention = Node.create({
       if (priority) baseAttributes['data-priority'] = priority;
       if (listColor) baseAttributes['data-list-color'] = listColor;
       if (assignees) baseAttributes['data-assignees'] = assignees;
+      if (workspaceId) baseAttributes['data-workspace-id'] = workspaceId;
       // Use display-number for tasks
       baseAttributes['data-display-number'] = displayName;
     }
@@ -354,6 +361,8 @@ export const Mention = Node.create({
       let currentEntityType =
         (node.attrs.entityType as string | null) ?? 'user';
       let currentSubtitle = (node.attrs.subtitle as string | null) ?? null;
+      let currentWorkspaceId =
+        (node.attrs.workspaceId as string | null) ?? null;
       let visuals = getMentionVisualMeta(currentEntityType);
 
       const dom = document.createElement('span');
@@ -376,6 +385,7 @@ export const Mention = Node.create({
                 displayNumber={currentDisplayName}
                 avatarUrl={currentAvatarUrl}
                 subtitle={currentSubtitle}
+                workspaceId={currentWorkspaceId}
                 translations={this.options.translations}
                 editor={editor}
                 onResolvedTaskMention={(attrs) => {
@@ -397,6 +407,7 @@ export const Mention = Node.create({
                       entityId: attrs.entityId,
                       priority: attrs.priority ?? null,
                       subtitle: attrs.subtitle ?? null,
+                      workspaceId: attrs.workspaceId ?? null,
                     })
                   );
                 }}
@@ -427,18 +438,22 @@ export const Mention = Node.create({
               null;
             const nextSubtitle =
               (updatedNode.attrs.subtitle as string | null) ?? null;
+            const nextWorkspaceId =
+              (updatedNode.attrs.workspaceId as string | null) ?? null;
 
             // Update state and re-render if changed
             if (
               nextDisplayName !== currentDisplayName ||
               nextAvatarUrl !== currentAvatarUrl ||
               nextEntityId !== currentEntityId ||
-              nextSubtitle !== currentSubtitle
+              nextSubtitle !== currentSubtitle ||
+              nextWorkspaceId !== currentWorkspaceId
             ) {
               currentDisplayName = nextDisplayName;
               currentAvatarUrl = nextAvatarUrl;
               currentEntityId = nextEntityId ?? '';
               currentSubtitle = nextSubtitle;
+              currentWorkspaceId = nextWorkspaceId;
               renderTaskChip();
             }
 
