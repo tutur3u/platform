@@ -65,6 +65,34 @@ test('Vercel workflows generate shared build metadata before building', () => {
   }
 });
 
+test('mail deployment workflows do not persist checkout credentials', () => {
+  for (const workflowName of [
+    'vercel-preview-mail.yaml',
+    'vercel-production-mail.yaml',
+  ]) {
+    const workflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', workflowName),
+      'utf8'
+    );
+    const jobName = workflowName.startsWith('vercel-preview-')
+      ? 'Deploy-Preview'
+      : 'Deploy-Production';
+    const deployJob = readWorkflowJobBlock(workflowName, jobName);
+
+    assert.match(
+      deployJob,
+      /persist-credentials:\s*false/,
+      `${workflowName} must not leave the GitHub token in local Git config`
+    );
+    assert.doesNotMatch(
+      deployJob,
+      /persist-credentials:\s*true/,
+      `${workflowName} must not persist checkout credentials`
+    );
+    assert.match(workflow, /GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
+  }
+});
+
 test('CI workflows use main instead of retired staging branch filters', () => {
   const workflowsWithoutStagingBranchFilters = [
     'branch-name-check.yaml',
