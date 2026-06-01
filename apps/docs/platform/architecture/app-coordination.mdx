@@ -189,7 +189,13 @@ CLI-only APIs.
    enabled external-project binding, that the binding's canonical adapter
    matches the registered external app ID, and that the user has the required
    EPM permission in that workspace. Root EPM admins remain an override.
-7. Tuturuuu validates the app secret and cross-app token, then returns a
+7. If the user is not yet a workspace member but has a pending
+   `workspace_invites` or `workspace_email_invites` row for the requested
+   workspace, the exchange returns `403` with
+   `code: "PENDING_WORKSPACE_INVITE"`, `workspaceId`, and `invitationUrl`.
+   External apps must handle this code before showing generic no-access copy so
+   the user can accept or reject the invitation in Tuturuuu first.
+8. Tuturuuu validates the app secret and cross-app token, then returns a
    short-lived bearer token for Tuturuuu APIs plus the normalized authorized
    `workspaceId`.
 

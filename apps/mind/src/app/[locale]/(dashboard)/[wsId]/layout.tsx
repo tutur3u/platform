@@ -1,6 +1,10 @@
+import {
+  getPendingWorkspaceInvitation,
+  SatelliteWorkspaceInvitationCard,
+} from '@tuturuuu/satellite/workspace-invitation';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 import { SIDEBAR_BEHAVIOR_COOKIE_NAME } from '@/constants/common';
@@ -20,12 +24,30 @@ export default async function MindWorkspaceLayout({
   children,
   params,
 }: LayoutProps) {
-  const [{ wsId }, user, cookieStore] = await Promise.all([
+  const [{ wsId }, user, cookieStore, requestHeaders] = await Promise.all([
     params,
     requireMindUser(),
     cookies(),
+    headers(),
   ]);
   const workspace = await getWorkspace(wsId, { useAdmin: true, user });
+
+  if (!workspace?.joined) {
+    const invitation = await getPendingWorkspaceInvitation(
+      wsId,
+      requestHeaders
+    );
+
+    if (invitation) {
+      return (
+        <SatelliteWorkspaceInvitationCard
+          afterDeclineHref="/dashboard"
+          invitation={invitation}
+          workspaceHref={`/${invitation.workspace.id}`}
+        />
+      );
+    }
+  }
 
   if (!workspace) redirect('/dashboard');
   if (!workspace.joined) redirect('/dashboard');

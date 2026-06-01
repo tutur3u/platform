@@ -2,6 +2,10 @@ import {
   getTeachBootstrap,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import {
+  getPendingWorkspaceInvitation,
+  SatelliteWorkspaceInvitationCard,
+} from '@tuturuuu/satellite/workspace-invitation';
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import { TeachWorkspaceShell } from '@/components/teach-workspace-shell';
@@ -29,6 +33,21 @@ export default async function TeachWorkspaceLayout({
   );
 
   if (!workspace) {
+    const invitation = await getPendingWorkspaceInvitation(
+      wsId,
+      requestHeaders
+    );
+
+    if (invitation) {
+      return (
+        <SatelliteWorkspaceInvitationCard
+          afterDeclineHref="/dashboard"
+          invitation={invitation}
+          workspaceHref={`/${invitation.workspace.id}`}
+        />
+      );
+    }
+
     const fallbackId = bootstrap.workspaces[0]?.id;
     return redirect({
       href: fallbackId ? `/${fallbackId}` : '/dashboard',

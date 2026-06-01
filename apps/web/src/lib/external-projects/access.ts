@@ -31,6 +31,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
+import { getWorkspaceInviteStatus } from '@/lib/workspace-invitations/status';
 import {
   DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
@@ -444,6 +445,8 @@ type ExternalProjectAppTokenExchangeAuthorization =
     }
   | {
       error: string;
+      code?: 'PENDING_WORKSPACE_INVITE';
+      normalizedWorkspaceId?: string;
       ok: false;
       status: 400 | 403 | 404;
     };
@@ -583,12 +586,14 @@ export function getExternalProjectModeForScopes(
 export async function authorizeExternalProjectAppTokenExchange({
   admin,
   appId,
+  authEmail,
   scopes,
   userId,
   workspaceId,
 }: {
   admin: AdminDb;
   appId: string;
+  authEmail?: string | null;
   scopes: string[];
   userId: string;
   workspaceId?: string;
@@ -666,6 +671,22 @@ export async function authorizeExternalProjectAppTokenExchange({
     hasRootExternalProjectsAdminPermission(rootPermissions);
 
   if (!allowed) {
+    const inviteStatus = await getWorkspaceInviteStatus(admin, {
+      authEmail: authEmail ?? null,
+      userId,
+      workspaceId: normalizedWorkspaceId,
+    });
+
+    if (inviteStatus.status === 'pending_invite') {
+      return {
+        code: 'PENDING_WORKSPACE_INVITE',
+        error: 'Pending workspace invitation',
+        normalizedWorkspaceId,
+        ok: false,
+        status: 403,
+      };
+    }
+
     return {
       error: 'Forbidden',
       ok: false,

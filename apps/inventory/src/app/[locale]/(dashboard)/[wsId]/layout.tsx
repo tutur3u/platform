@@ -1,4 +1,8 @@
 import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  getPendingWorkspaceInvitation,
+  SatelliteWorkspaceInvitationCard,
+} from '@tuturuuu/satellite/workspace-invitation';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
@@ -29,6 +33,20 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!user?.id) redirect('/login');
 
   const workspace = await getWorkspace(id, { useAdmin: true, user });
+
+  if (!workspace?.joined) {
+    const invitation = await getPendingWorkspaceInvitation(id, requestHeaders);
+
+    if (invitation) {
+      return (
+        <SatelliteWorkspaceInvitationCard
+          afterDeclineHref="/dashboard"
+          invitation={invitation}
+          workspaceHref={`/${invitation.workspace.id}`}
+        />
+      );
+    }
+  }
 
   if (!workspace) redirect('/dashboard');
   if (!workspace.joined) redirect('/dashboard');

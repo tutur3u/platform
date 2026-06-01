@@ -20,6 +20,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 
 vi.mock('@tuturuuu/utils/internal-domains', () => ({
   getAppDomainMap: () => mocks.getAppDomainMap(),
+  getLocalInternalAppUrl: (_app: string, fallback: string) => fallback,
 }));
 
 vi.mock('@/lib/app-coordination/external-apps', async (importOriginal) => {
@@ -59,6 +60,10 @@ type AdminState = {
   appAdapter?: string;
   bindingEnabled?: boolean;
   canonicalActive?: boolean;
+  pendingDirectInvite?: boolean;
+  pendingEmailInvite?: boolean;
+  privateEmail?: string | null;
+  workspacePersonal?: boolean;
   workspaceMember?: boolean;
   workspacePermissions?: PermissionId[];
   rootPermissions?: PermissionId[];
@@ -76,7 +81,11 @@ function createAdminClientMock(state: AdminState = {}) {
     appAdapter: 'yoola',
     bindingEnabled: true,
     canonicalActive: true,
+    pendingDirectInvite: false,
+    pendingEmailInvite: false,
+    privateEmail: 'victim@example.com',
     rootPermissions: [],
+    workspacePersonal: false,
     workspaceMember: true,
     workspacePermissions: ['manage_external_projects'],
     ...state,
@@ -108,10 +117,21 @@ function createAdminClientMock(state: AdminState = {}) {
     }
 
     if (table === 'workspace_members') {
-      const isKnownWorkspace =
-        wsId === workspaceId || wsId === ROOT_WORKSPACE_ID;
+      const requestedWorkspaceIds = Array.isArray(wsId) ? wsId : [wsId];
+      const isKnownWorkspace = requestedWorkspaceIds.some(
+        (id) => id === workspaceId || id === ROOT_WORKSPACE_ID
+      );
       const isKnownUser = userId === victimUserId;
       const isMember = wsId === ROOT_WORKSPACE_ID || adminState.workspaceMember;
+
+      if (Array.isArray(wsId)) {
+        return createQueryResult(
+          isKnownWorkspace && isKnownUser && isMember
+            ? [{ ws_id: workspaceId }]
+            : []
+        );
+      }
+
       return createQueryResult(
         isKnownWorkspace && isKnownUser && isMember ? { type: 'MEMBER' } : null
       );
@@ -139,7 +159,52 @@ function createAdminClientMock(state: AdminState = {}) {
     }
 
     if (table === 'workspaces') {
-      return createQueryResult({ creator_id: 'workspace-creator' });
+      return createQueryResult({
+        avatar_url: null,
+        creator_id: 'workspace-creator',
+        handle: 'linked-workspace',
+        id: workspaceId,
+        logo_url: null,
+        name: 'Linked Workspace',
+        personal: adminState.workspacePersonal,
+      });
+    }
+
+    if (table === 'user_private_details') {
+      return createQueryResult(
+        adminState.privateEmail === null
+          ? null
+          : { email: adminState.privateEmail }
+      );
+    }
+
+    if (table === 'workspace_invites') {
+      return createQueryResult(
+        adminState.pendingDirectInvite
+          ? [
+              {
+                created_at: '2026-06-01T00:00:00.000Z',
+                type: 'MEMBER',
+                ws_id: workspaceId,
+              },
+            ]
+          : []
+      );
+    }
+
+    if (table === 'workspace_email_invites') {
+      return createQueryResult(
+        adminState.pendingEmailInvite
+          ? [
+              {
+                created_at: '2026-06-01T00:00:00.000Z',
+                email: 'victim@example.com',
+                type: 'MEMBER',
+                ws_id: workspaceId,
+              },
+            ]
+          : []
+      );
     }
 
     if (table === 'workspace_default_permissions') {
@@ -156,7 +221,10 @@ function createAdminClientMock(state: AdminState = {}) {
         filters[field] = value;
         return builder;
       }),
-      in: vi.fn(() => builder),
+      in: vi.fn((field: string, value: unknown) => {
+        filters[field] = value;
+        return builder;
+      }),
       maybeSingle: vi.fn(() => Promise.resolve(resolveTable(table, filters))),
       select: vi.fn(() => builder),
       single: vi.fn(() => Promise.resolve(resolveTable(table, filters))),
@@ -193,16 +261,19 @@ function createAdminClientMock(state: AdminState = {}) {
   };
 }
 
-function mockRegisteredApp(allowedScopes = ['external-projects:read']) {
+function mockRegisteredApp(
+  allowedScopes = ['external-projects:read'],
+  appId = 'yoola'
+) {
   mocks.verifyExternalAppSecret.mockResolvedValue({
     app: {
       allowedScopes,
       createdAt: null,
       createdBy: null,
-      displayName: 'Yoola',
+      displayName: appId,
       enabled: true,
-      id: 'yoola',
-      origins: ['https://yoola.example.com'],
+      id: appId,
+      origins: [`https://${appId}.example.com`],
       secretIssuedAt: null,
       secretLastFour: 'test',
       updatedAt: null,
@@ -351,6 +422,43 @@ describe('app token exchange route', () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({ error: 'Forbidden' });
+  });
+
+  it.each([
+    'yoola',
+    'shiraoki',
+  ])('returns pending invite details for %s workspace-scoped app exchange', async (appId) => {
+    mockRegisteredApp(['external-projects:*'], appId);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({
+        appAdapter: appId,
+        pendingDirectInvite: true,
+        workspaceMember: false,
+        workspacePermissions: [],
+      })
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId,
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:*'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(403);
+    const body = (await response.json()) as {
+      code?: string;
+      invitationUrl?: string;
+      workspaceId?: string;
+    };
+    expect(body).toMatchObject({
+      code: 'PENDING_WORKSPACE_INVITE',
+      workspaceId,
+    });
+    expect(body.invitationUrl).toContain(encodeURIComponent(workspaceId));
   });
 
   it('rejects external-project app exchanges when the app does not match the workspace adapter', async () => {

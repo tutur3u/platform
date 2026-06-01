@@ -97,6 +97,13 @@ The exchange succeeds only when:
 - the workspace binding's canonical adapter is `shiraoki`
 - the user has the permission required by the requested external-project scope
 
+If the user is invited to the bound workspace but has not accepted yet, the
+exchange returns `403` with `code: "PENDING_WORKSPACE_INVITE"`, the normalized
+`workspaceId`, and an `invitationUrl`. Shiraoki should route the user to that
+URL, or show an action that opens it, before displaying generic no-access copy.
+After the invitation is accepted, Shiraoki should retry the exchange; normal
+workspace and external-project permission checks still apply.
+
 Shiraoki should store the returned bearer token in its own HttpOnly session
 cookie and call Tuturuuu APIs with that token. Do not give Shiraoki production
 Supabase service-role credentials.

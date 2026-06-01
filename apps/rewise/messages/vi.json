@@ -10026,6 +10026,22 @@
     "units": "Đơn vị",
     "warehouses": "Kho hàng"
   },
+  "workspace-invitation": {
+    "accept": "Chấp nhận lời mời",
+    "accept-error": "Không thể chấp nhận lời mời",
+    "accept-success": "Đã chấp nhận lời mời vào không gian làm việc",
+    "accepting": "Đang chấp nhận...",
+    "decline-error": "Không thể từ chối lời mời",
+    "decline-success": "Đã từ chối lời mời vào không gian làm việc",
+    "description": "Chấp nhận lời mời này để tham gia không gian làm việc. Quyền truy cập ứng dụng sẽ được kiểm tra sau khi bạn tham gia.",
+    "direct-invite": "Lời mời trực tiếp",
+    "email-invite": "Lời mời qua email",
+    "list-eyebrow": "Lời mời đang chờ",
+    "list-title": "Chọn lời mời vào không gian làm việc",
+    "reject": "Từ chối",
+    "rejecting": "Đang từ chối...",
+    "title": "Tham gia {workspace}"
+  },
   "workspace-mail": {
     "emails": "Lịch sử gửi thư",
     "history": "Lịch sử",

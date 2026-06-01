@@ -2,13 +2,17 @@ import NavbarActions from '@tuturuuu/satellite/navbar-actions';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import { UserNav } from '@tuturuuu/satellite/user-nav';
 import {
+  getPendingWorkspaceInvitation,
+  SatelliteWorkspaceInvitationCard,
+} from '@tuturuuu/satellite/workspace-invitation';
+import {
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 import { requireChatUser } from '@/lib/access';
@@ -24,12 +28,27 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
-  const [{ wsId: id }, user, cookieStore] = await Promise.all([
+  const [{ wsId: id }, user, cookieStore, requestHeaders] = await Promise.all([
     params,
     requireChatUser(),
     cookies(),
+    headers(),
   ]);
   const workspace = await getWorkspace(id, { useAdmin: true, user });
+
+  if (!workspace?.joined) {
+    const invitation = await getPendingWorkspaceInvitation(id, requestHeaders);
+
+    if (invitation) {
+      return (
+        <SatelliteWorkspaceInvitationCard
+          afterDeclineHref="/"
+          invitation={invitation}
+          workspaceHref={`/${invitation.workspace.id}`}
+        />
+      );
+    }
+  }
 
   if (!workspace) redirect('/');
   if (!workspace.joined) redirect('/');

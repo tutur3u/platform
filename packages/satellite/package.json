@@ -27,6 +27,7 @@
     "./auth-layout": "./src/layouts/auth-layout.tsx",
     "./verify-token-page": "./src/pages/verify-token-page.tsx",
     "./version-badge": "./src/components/version-badge-gate.tsx",
+    "./workspace-invitation": "./src/components/workspace-invitation/index.ts",
     "./i18n": "./src/i18n/routing.ts",
     "./constants": "./src/constants/common.ts",
     "./sidebar-context": "./src/context/sidebar-context.tsx",

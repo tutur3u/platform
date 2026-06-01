@@ -8,6 +8,10 @@ import {
   InternalApiError,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import {
+  getPendingWorkspaceInvitations,
+  SatelliteWorkspaceInvitationList,
+} from '@tuturuuu/satellite/workspace-invitation';
 import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from '@/i18n/navigation';
@@ -69,6 +73,17 @@ export default async function DashboardEntryPage({
 
   const workspaceId = bootstrap?.workspaces[0]?.id;
   if (!workspaceId) {
+    const invitations = await getPendingWorkspaceInvitations(requestHeaders);
+
+    if (invitations.length > 0) {
+      return (
+        <SatelliteWorkspaceInvitationList
+          afterDeclineHref="/dashboard"
+          invitations={invitations}
+        />
+      );
+    }
+
     return <NoTeachWorkspaceState />;
   }
 

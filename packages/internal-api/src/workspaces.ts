@@ -16,6 +16,46 @@ type InternalApiErrorPayload = {
   message?: string;
 };
 
+export type WorkspaceInvitationStatus = 'member' | 'pending_invite' | 'none';
+export type WorkspaceInvitationSource = 'direct' | 'email';
+export type WorkspaceInvitationMemberType = 'MEMBER' | 'GUEST';
+
+export type WorkspaceInvitationWorkspace = {
+  avatar_url: string | null;
+  handle: string | null;
+  id: string;
+  logo_url: string | null;
+  name: string | null;
+  personal: boolean;
+};
+
+export type WorkspaceInvitationRecord = {
+  createdAt: string | null;
+  matchedEmail: string | null;
+  source: WorkspaceInvitationSource;
+  type: WorkspaceInvitationMemberType;
+  workspace: WorkspaceInvitationWorkspace;
+};
+
+export type WorkspaceInviteStatusResponse =
+  | {
+      status: 'member';
+      workspace: WorkspaceInvitationWorkspace;
+    }
+  | {
+      invitation: WorkspaceInvitationRecord;
+      status: 'pending_invite';
+      workspace: WorkspaceInvitationWorkspace;
+    }
+  | {
+      status: 'none';
+      workspace: WorkspaceInvitationWorkspace | null;
+    };
+
+export type WorkspaceInvitationsResponse = {
+  invitations: WorkspaceInvitationRecord[];
+};
+
 export type ListWorkspacesParams = {
   limit?: number;
   q?: string;
@@ -89,6 +129,31 @@ export async function getWorkspace(
   const client = getInternalApiClient(options);
   return client.json<Workspace>(
     `/api/workspaces/${encodePathSegment(workspaceId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceInviteStatus(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceInviteStatusResponse>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/invite-status`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceInvitations(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceInvitationsResponse>(
+    '/api/workspaces/invitations',
     {
       cache: 'no-store',
     }

@@ -360,5 +360,21 @@
     "select": "chọn",
     "title": "Trình mở lệnh",
     "workspaces": "Workspace"
+  },
+  "workspace-invitation": {
+    "accept": "Chấp nhận lời mời",
+    "accept-error": "Không thể chấp nhận lời mời",
+    "accept-success": "Đã chấp nhận lời mời vào không gian làm việc",
+    "accepting": "Đang chấp nhận...",
+    "description": "Chấp nhận lời mời này để tham gia không gian làm việc. Quyền truy cập ứng dụng sẽ được kiểm tra sau khi bạn tham gia.",
+    "direct-invite": "Lời mời trực tiếp",
+    "email-invite": "Lời mời qua email",
+    "reject": "Từ chối",
+    "decline-error": "Không thể từ chối lời mời",
+    "decline-success": "Đã từ chối lời mời vào không gian làm việc",
+    "rejecting": "Đang từ chối...",
+    "list-eyebrow": "Lời mời đang chờ",
+    "list-title": "Chọn lời mời vào không gian làm việc",
+    "title": "Tham gia {workspace}"
   }
 }

@@ -3,6 +3,10 @@ import NavbarActions from '@tuturuuu/satellite/navbar-actions';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import { UserNav } from '@tuturuuu/satellite/user-nav';
 import {
+  getPendingWorkspaceInvitation,
+  SatelliteWorkspaceInvitationCard,
+} from '@tuturuuu/satellite/workspace-invitation';
+import {
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
@@ -25,8 +29,9 @@ interface LayoutProps {
 
 export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
+  const requestHeaders = await headers();
   const user = getAppSessionUserFromRequest(
-    { headers: await headers() },
+    { headers: requestHeaders },
     { targetApp: 'mail' }
   );
 
@@ -34,6 +39,20 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!isExactTuturuuuDotComEmail(user.email)) redirect('/not-available');
 
   const workspace = await getWorkspace(id, { useAdmin: true, user });
+
+  if (!workspace?.joined) {
+    const invitation = await getPendingWorkspaceInvitation(id, requestHeaders);
+
+    if (invitation) {
+      return (
+        <SatelliteWorkspaceInvitationCard
+          afterDeclineHref="/"
+          invitation={invitation}
+          workspaceHref={`/${invitation.workspace.id}`}
+        />
+      );
+    }
+  }
 
   if (!workspace) redirect('/onboarding');
   if (!workspace.joined) redirect('/');

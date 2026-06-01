@@ -2,11 +2,15 @@ import NavbarActions from '@tuturuuu/satellite/navbar-actions';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import { UserNav } from '@tuturuuu/satellite/user-nav';
 import {
+  getPendingWorkspaceInvitation,
+  SatelliteWorkspaceInvitationCard,
+} from '@tuturuuu/satellite/workspace-invitation';
+import {
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { type ReactNode, Suspense } from 'react';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
@@ -20,7 +24,23 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
-  const [{ wsId: id }, cookieStore] = await Promise.all([params, cookies()]);
+  const [{ wsId: id }, cookieStore, requestHeaders] = await Promise.all([
+    params,
+    cookies(),
+    headers(),
+  ]);
+  const invitation = await getPendingWorkspaceInvitation(id, requestHeaders);
+
+  if (invitation) {
+    return (
+      <SatelliteWorkspaceInvitationCard
+        afterDeclineHref="/"
+        invitation={invitation}
+        workspaceHref={`/workspace/${invitation.workspace.id}`}
+      />
+    );
+  }
+
   const { user, workspace, workspaceSlug, wsId } =
     await getMeetWorkspaceContext(id);
   const sidebarBehavior = parseSidebarBehavior(cookieStore);

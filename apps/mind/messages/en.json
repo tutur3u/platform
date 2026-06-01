@@ -511,6 +511,22 @@
     "trigger_label": "Open version details",
     "version": "Version"
   },
+  "workspace-invitation": {
+    "accept": "Accept invitation",
+    "accept-error": "Failed to accept invitation",
+    "accept-success": "Workspace invitation accepted",
+    "accepting": "Accepting...",
+    "decline-error": "Failed to reject invitation",
+    "decline-success": "Workspace invitation rejected",
+    "description": "Accept this invitation to join the workspace. App permissions will be checked after you join.",
+    "direct-invite": "Direct invitation",
+    "email-invite": "Email invitation",
+    "list-eyebrow": "Pending invitations",
+    "list-title": "Choose a workspace invitation",
+    "reject": "Reject",
+    "rejecting": "Rejecting...",
+    "title": "Join {workspace}"
+  },
   "ws-debt-loan": {
     "amount_positive": "Amount must be greater than 0",
     "counterparty_too_long": "Counterparty must be 255 characters or fewer",

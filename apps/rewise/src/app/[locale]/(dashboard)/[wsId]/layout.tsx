@@ -1,4 +1,8 @@
 import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  getPendingWorkspaceInvitation,
+  SatelliteWorkspaceInvitationCard,
+} from '@tuturuuu/satellite/workspace-invitation';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -25,9 +29,10 @@ interface LayoutProps {
 
 export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
+  const requestHeaders = await headers();
 
   const user = getAppSessionUserFromRequest(
-    { headers: await headers() },
+    { headers: requestHeaders },
     { targetApp: 'rewise' }
   );
   if (!user?.id) redirect('/login');
@@ -40,6 +45,20 @@ export default async function Layout({ children, params }: LayoutProps) {
   }
 
   const workspace = await getWorkspace(id, { useAdmin: true, user });
+
+  if (!workspace?.joined) {
+    const invitation = await getPendingWorkspaceInvitation(id, requestHeaders);
+
+    if (invitation) {
+      return (
+        <SatelliteWorkspaceInvitationCard
+          afterDeclineHref="/"
+          invitation={invitation}
+          workspaceHref={`/${invitation.workspace.id}`}
+        />
+      );
+    }
+  }
 
   if (!workspace) redirect('/onboarding');
   if (!workspace?.joined) redirect('/');

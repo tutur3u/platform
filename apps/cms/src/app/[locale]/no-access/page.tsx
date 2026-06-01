@@ -1,14 +1,31 @@
 import { AlertTriangle } from '@tuturuuu/icons';
 import {
+  getPendingWorkspaceInvitations,
+  SatelliteWorkspaceInvitationList,
+} from '@tuturuuu/satellite/workspace-invitation';
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 
 export default async function CmsNoAccessPage() {
+  const requestHeaders = await headers();
+  const invitations = await getPendingWorkspaceInvitations(requestHeaders);
+
+  if (invitations.length > 0) {
+    return (
+      <SatelliteWorkspaceInvitationList
+        afterDeclineHref="/no-access"
+        invitations={invitations}
+      />
+    );
+  }
+
   const tCommon = await getTranslations('common');
   const tRoot = await getTranslations('external-projects.root');
 

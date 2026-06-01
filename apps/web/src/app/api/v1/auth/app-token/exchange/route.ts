@@ -7,6 +7,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { BASE_URL } from '@/constants/common';
 import {
   getAllowedAppTokenScopes,
   verifyExternalAppSecret,
@@ -148,6 +149,18 @@ async function getUserEmail({
   return data.user.email;
 }
 
+function buildInvitationUrl(request: NextRequest, workspaceId: string) {
+  const path = `/${encodeURIComponent(workspaceId)}`;
+
+  for (const baseUrl of [BASE_URL, request.nextUrl.origin]) {
+    try {
+      return new URL(path, baseUrl).toString();
+    } catch {}
+  }
+
+  return path;
+}
+
 async function exchangeAppToken(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = exchangeSchema.safeParse(body);
@@ -225,26 +238,43 @@ async function exchangeAppToken(request: NextRequest) {
   }
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const email = await getUserEmail({
+    sbAdmin,
+    sessionData: validationRow.session_data ?? null,
+    userId,
+  });
   const exchangeAuthorization = await authorizeExternalProjectAppTokenExchange({
     admin: sbAdmin,
     appId: resolvedTarget.targetApp,
+    authEmail: email,
     scopes: resolvedTarget.scopes,
     userId,
     workspaceId,
   });
 
   if (!exchangeAuthorization.ok) {
+    if (exchangeAuthorization.code === 'PENDING_WORKSPACE_INVITE') {
+      const normalizedWorkspaceId = exchangeAuthorization.normalizedWorkspaceId;
+      return NextResponse.json(
+        {
+          code: 'PENDING_WORKSPACE_INVITE',
+          error: exchangeAuthorization.error,
+          invitationUrl: buildInvitationUrl(
+            request,
+            normalizedWorkspaceId ?? workspaceId ?? ''
+          ),
+          workspaceId: normalizedWorkspaceId ?? workspaceId ?? null,
+        },
+        { status: exchangeAuthorization.status }
+      );
+    }
+
     return NextResponse.json(
       { error: exchangeAuthorization.error },
       { status: exchangeAuthorization.status }
     );
   }
 
-  const email = await getUserEmail({
-    sbAdmin,
-    sessionData: validationRow.session_data ?? null,
-    userId,
-  });
   const {
     claims,
     expiresAt,

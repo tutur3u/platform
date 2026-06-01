@@ -2,6 +2,10 @@ import {
   getTulearnBootstrap,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import {
+  getPendingWorkspaceInvitation,
+  SatelliteWorkspaceInvitationCard,
+} from '@tuturuuu/satellite/workspace-invitation';
 import { headers } from 'next/headers';
 import { LearnerShell, NoWorkspaceState } from '@/components/learner-shell';
 
@@ -19,7 +23,39 @@ export default async function DashboardLayout({
   );
 
   if (!bootstrap.workspaces.length) {
+    const invitation = await getPendingWorkspaceInvitation(
+      wsId,
+      requestHeaders
+    );
+
+    if (invitation) {
+      return (
+        <SatelliteWorkspaceInvitationCard
+          afterDeclineHref="/dashboard"
+          invitation={invitation}
+          workspaceHref={`/${invitation.workspace.id}`}
+        />
+      );
+    }
+
     return <NoWorkspaceState />;
+  }
+
+  if (!bootstrap.workspaces.some((workspace) => workspace.id === wsId)) {
+    const invitation = await getPendingWorkspaceInvitation(
+      wsId,
+      requestHeaders
+    );
+
+    if (invitation) {
+      return (
+        <SatelliteWorkspaceInvitationCard
+          afterDeclineHref="/dashboard"
+          invitation={invitation}
+          workspaceHref={`/${invitation.workspace.id}`}
+        />
+      );
+    }
   }
 
   return (
