@@ -124,7 +124,7 @@ export async function GET(request: Request, { params }: Params) {
 
     const { containsPermission } = permissions;
     const canApproveReports = containsPermission('approve_reports');
-    const canApprovePosts = containsPermission('send_user_group_post_emails');
+    const canApprovePosts = containsPermission('approve_posts');
 
     const { searchParams } = new URL(request.url);
     const parsed = SearchParamsSchema.safeParse(
@@ -402,7 +402,7 @@ export async function PUT(request: Request, { params }: Params) {
 
     const { containsPermission } = permissions;
     const canApproveReports = containsPermission('approve_reports');
-    const canApprovePosts = containsPermission('send_user_group_post_emails');
+    const canApprovePosts = containsPermission('approve_posts');
 
     const body = await request.json();
     const parsed = MutationSchema.safeParse(body);

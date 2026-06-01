@@ -15,8 +15,7 @@ export async function GET(req: Request, { params }: Params) {
   ]);
 
   return NextResponse.json({
-    canApprovePosts:
-      permissions?.containsPermission('send_user_group_post_emails') ?? false,
+    canApprovePosts: permissions?.containsPermission('approve_posts') ?? false,
     canForceSendPosts:
       rootPermissions?.containsPermission('manage_workspace_roles') ?? false,
   });

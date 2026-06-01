@@ -19,9 +19,7 @@ export default async function GroupRequestsPage({
         if (!permissions) notFound();
         const { containsPermission } = permissions;
         const canApproveReports = containsPermission('approve_reports');
-        const canApprovePosts = containsPermission(
-          'send_user_group_post_emails'
-        );
+        const canApprovePosts = containsPermission('approve_posts');
 
         if (!canApproveReports && !canApprovePosts) {
           notFound();

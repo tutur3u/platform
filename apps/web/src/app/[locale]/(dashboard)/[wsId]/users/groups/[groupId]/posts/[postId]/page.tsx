@@ -100,9 +100,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         const canUpdateUserGroupsPosts = containsPermission(
           'update_user_groups_posts'
         );
-        const canApprovePosts = containsPermission(
-          'send_user_group_post_emails'
-        );
+        const canApprovePosts = containsPermission('approve_posts');
 
         return (
           <div>
