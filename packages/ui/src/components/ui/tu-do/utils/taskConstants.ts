@@ -1,10 +1,16 @@
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import { getRandomLabelColor } from './label-colors';
 
 /**
- * Default color for new labels
+ * Legacy default color for new labels. New create-label flows should call
+ * getRandomNewLabelColor so repeated creates do not reuse the same swatch.
  */
 export const NEW_LABEL_COLOR = '#3b82f6';
+
+export function getRandomNewLabelColor(previousColor?: string) {
+  return getRandomLabelColor(previousColor);
+}
 
 /**
  * Priority labels for display

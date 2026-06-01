@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from '@tuturuuu/icons';
+import { Loader2, Shuffle } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { ColorPicker } from '@tuturuuu/ui/color-picker';
@@ -15,7 +15,10 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useDomResolvedTheme } from '../../../../../../hooks/use-dom-resolved-theme';
-import { computeAccessibleLabelStyles } from '../../../utils/label-colors';
+import {
+  computeAccessibleLabelStyles,
+  getRandomLabelColor,
+} from '../../../utils/label-colors';
 
 // Default translations for when component is rendered outside NextIntlClientProvider
 const defaultTranslations = {
@@ -28,6 +31,7 @@ const defaultTranslations = {
   cancel: 'Cancel',
   creating: 'Creating...',
   create_label: 'Create Label',
+  randomize_color: 'Randomize color',
 };
 
 interface TaskNewLabelDialogProps {
@@ -49,6 +53,7 @@ interface TaskNewLabelDialogProps {
     cancel?: string;
     creating?: string;
     create_label?: string;
+    randomize_color?: string;
   };
 }
 
@@ -77,6 +82,8 @@ export function TaskNewLabelDialog({
     creating: translations?.creating ?? defaultTranslations.creating,
     create_label:
       translations?.create_label ?? defaultTranslations.create_label,
+    randomize_color:
+      translations?.randomize_color ?? defaultTranslations.randomize_color,
   };
 
   const isDark = useDomResolvedTheme() === 'dark';
@@ -108,6 +115,18 @@ export function TaskNewLabelDialog({
             <Label>{t.color}</Label>
             <div className="flex items-center gap-3">
               <ColorPicker value={newLabelColor} onChange={onColorChange} />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() =>
+                  onColorChange(getRandomLabelColor(newLabelColor))
+                }
+                title={t.randomize_color}
+              >
+                <Shuffle className="h-4 w-4" />
+                <span className="sr-only">{t.randomize_color}</span>
+              </Button>
               <Badge
                 style={(() => {
                   const styles = computeAccessibleLabelStyles(

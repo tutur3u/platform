@@ -32,7 +32,7 @@ import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelD
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
-import { NEW_LABEL_COLOR } from '../utils/taskConstants';
+import { getRandomNewLabelColor } from '../utils/taskConstants';
 import {
   type BoardBroadcastFn,
   getActiveBroadcast,
@@ -459,7 +459,9 @@ export function TaskEditDialog({
     []
   );
   const [newLabelName, setNewLabelName] = useState('');
-  const [newLabelColor, setNewLabelColor] = useState(NEW_LABEL_COLOR);
+  const [newLabelColor, setNewLabelColor] = useState(() =>
+    getRandomNewLabelColor()
+  );
   const previousWorkspaceLabelsRef = useRef<string>('');
 
   useEffect(() => {
@@ -1751,7 +1753,12 @@ export function TaskEditDialog({
                     onListChange={updateList}
                     onAssigneeToggle={toggleAssignee}
                     onQuickDueDate={handleQuickDueDate}
-                    onShowNewLabelDialog={() => setShowNewLabelDialog(true)}
+                    onShowNewLabelDialog={() => {
+                      setNewLabelColor((previousColor) =>
+                        getRandomNewLabelColor(previousColor)
+                      );
+                      setShowNewLabelDialog(true);
+                    }}
                     onShowNewProjectDialog={() => setShowNewProjectDialog(true)}
                     onShowEstimationConfigDialog={() =>
                       setShowEstimationConfigDialog(true)
@@ -2076,7 +2083,14 @@ export function TaskEditDialog({
         newLabelName={newLabelName}
         newLabelColor={newLabelColor}
         creatingLabel={creatingLabel}
-        onOpenChange={setShowNewLabelDialog}
+        onOpenChange={(open) => {
+          if (open) {
+            setNewLabelColor((previousColor) =>
+              getRandomNewLabelColor(previousColor)
+            );
+          }
+          setShowNewLabelDialog(open);
+        }}
         onNameChange={setNewLabelName}
         onColorChange={setNewLabelColor}
         onConfirm={handleCreateLabel}
@@ -2089,6 +2103,7 @@ export function TaskEditDialog({
           cancel: t('cancel'),
           creating: t('creating'),
           create_label: t('create_label'),
+          randomize_color: t('randomize_color'),
         }}
       />
 

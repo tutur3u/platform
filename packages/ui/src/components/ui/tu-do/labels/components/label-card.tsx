@@ -1,14 +1,7 @@
-import { Edit2, MoreVertical, Palette, Trash2 } from '@tuturuuu/icons';
+import { Edit2, Palette, Trash2 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { computeAccessibleLabelStyles } from '@tuturuuu/ui/tu-do/utils/label-colors';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -35,68 +28,57 @@ export function LabelCard({ label, onEdit, onDelete }: LabelCardProps) {
     : undefined;
 
   return (
-    <Card
-      className="group relative cursor-pointer overflow-hidden transition-all hover:scale-[1.02] hover:shadow-md"
-      onClick={() => onEdit(label)}
-    >
-      <div className="p-3">
-        <div className="mb-3 flex items-center justify-between gap-2">
+    <Card className="group relative overflow-hidden transition-colors hover:border-foreground/30">
+      <button
+        type="button"
+        className="w-full p-4 text-left"
+        onClick={() => onEdit(label)}
+      >
+        <div
+          className="mb-4 h-10 rounded-md border"
+          style={{
+            backgroundColor: label.color,
+            borderColor: label.color,
+          }}
+        />
+        <div className="mb-5 flex min-h-8 items-start justify-between gap-3">
           <Badge
             variant="outline"
             style={badgeStyle}
-            className="font-semibold text-sm"
+            className="max-w-full truncate font-semibold text-sm"
           >
             {label.name}
           </Badge>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="h-3.5 w-3.5" />
-                <span className="sr-only">{t('open_menu')}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(label);
-                }}
-              >
-                <Edit2 className="mr-2 h-4 w-4" />
-                {t('edit')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(label);
-                }}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t('delete')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
-
         <div className="flex items-center gap-2 text-muted-foreground text-xs">
           <Palette className="h-3 w-3 shrink-0" />
           <span className="truncate font-mono">
             {label.color.toUpperCase()}
           </span>
         </div>
+      </button>
+      <div className="absolute right-3 bottom-3 flex items-center gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 bg-background/80"
+          onClick={() => onEdit(label)}
+        >
+          <Edit2 className="h-3.5 w-3.5" />
+          <span className="sr-only">{t('edit')}</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 bg-background/80 text-destructive hover:text-destructive"
+          onClick={() => onDelete(label)}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          <span className="sr-only">{t('delete')}</span>
+        </Button>
       </div>
       <div
-        className="absolute bottom-0 left-0 h-1 w-full transition-all group-hover:h-1.5"
+        className="absolute bottom-0 left-0 h-1 w-full"
         style={{ backgroundColor: label.color }}
       />
     </Card>

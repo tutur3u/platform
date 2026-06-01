@@ -1,6 +1,5 @@
 import { Plus, Search, Tag } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
 import type { TaskLabel } from '../types';
 import { LabelCard } from './label-card';
@@ -28,32 +27,32 @@ export function LabelList({
 
   if (labels.length === 0) {
     return (
-      <Card className="p-12 text-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="rounded-full bg-muted p-6">
-            <Tag className="h-10 w-10 text-muted-foreground" />
+      <div className="rounded-lg border bg-background p-10 text-center">
+        <div className="mx-auto flex max-w-md flex-col items-center gap-5">
+          <div className="rounded-md border bg-muted p-4">
+            <Tag className="h-8 w-8 text-muted-foreground" />
           </div>
           <div className="space-y-2">
             <h3 className="font-semibold text-xl">{t('no_labels')}</h3>
-            <p className="max-w-sm text-muted-foreground">
+            <p className="text-muted-foreground">
               {t('no_labels_description')}
             </p>
           </div>
-          <Button onClick={onCreateClick} size="lg" className="mt-2">
+          <Button onClick={onCreateClick} size="lg">
             <Plus className="mr-2 h-4 w-4" />
             {t('create_first_label')}
           </Button>
         </div>
-      </Card>
+      </div>
     );
   }
 
   if (filteredLabels.length === 0) {
     return (
-      <Card className="p-12 text-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="rounded-full bg-muted p-6">
-            <Search className="h-10 w-10 text-muted-foreground" />
+      <div className="rounded-lg border bg-background p-10 text-center">
+        <div className="mx-auto flex max-w-md flex-col items-center gap-5">
+          <div className="rounded-md border bg-muted p-4">
+            <Search className="h-8 w-8 text-muted-foreground" />
           </div>
           <div className="space-y-2">
             <h3 className="font-semibold text-xl">{t('no_results')}</h3>
@@ -65,12 +64,12 @@ export function LabelList({
             {t('clear_search')}
           </Button>
         </div>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
       {filteredLabels.map((label) => (
         <LabelCard
           key={label.id}

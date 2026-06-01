@@ -2,8 +2,13 @@ import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
-import { useCallback, useState } from 'react';
-import { NEW_LABEL_COLOR } from '../../../utils/taskConstants';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useState,
+} from 'react';
+import { getRandomNewLabelColor } from '../../../utils/taskConstants';
 import {
   type BoardBroadcastFn,
   getActiveBroadcast,
@@ -53,7 +58,7 @@ export interface UseTaskRelationshipsProps {
       | ((prev: WorkspaceTaskLabel[]) => WorkspaceTaskLabel[])
   ) => void;
   setNewLabelName: (value: string) => void;
-  setNewLabelColor: (value: string) => void;
+  setNewLabelColor: Dispatch<SetStateAction<string>>;
   setNewProjectName: (value: string) => void;
   setShowNewLabelDialog: (value: boolean) => void;
   setShowNewProjectDialog: (value: boolean) => void;
@@ -416,7 +421,9 @@ export function useTaskRelationships({
       }
 
       setNewLabelName('');
-      setNewLabelColor(NEW_LABEL_COLOR);
+      setNewLabelColor((previousColor) =>
+        getRandomNewLabelColor(previousColor)
+      );
       setShowNewLabelDialog(false);
     } catch (error: unknown) {
       toast.error('Label created but not linked', {

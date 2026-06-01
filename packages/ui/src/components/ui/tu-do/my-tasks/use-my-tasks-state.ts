@@ -24,6 +24,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getRandomNewLabelColor } from '../utils/taskConstants';
 import type { TaskOptions } from './command-bar';
 import type { JournalTaskResponse } from './task-preview-dialog';
 import {
@@ -151,10 +152,20 @@ export function useMyTasksState({
   });
 
   // Label creation dialog state
-  const [newLabelDialogOpen, setNewLabelDialogOpen] = useState(false);
+  const [newLabelDialogOpen, setNewLabelDialogOpenState] = useState(false);
   const [newLabelName, setNewLabelName] = useState('');
-  const [newLabelColor, setNewLabelColor] = useState('#3b82f6');
+  const [newLabelColor, setNewLabelColor] = useState(() =>
+    getRandomNewLabelColor()
+  );
   const [creatingLabel, setCreatingLabel] = useState(false);
+  const setNewLabelDialogOpen = useCallback((open: boolean) => {
+    if (open) {
+      setNewLabelColor((previousColor) =>
+        getRandomNewLabelColor(previousColor)
+      );
+    }
+    setNewLabelDialogOpenState(open);
+  }, []);
 
   // Project creation dialog state
   const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
@@ -823,9 +834,11 @@ export function useMyTasksState({
       });
       queryClient.invalidateQueries({ queryKey: ['workspaceLabels'] });
       toast.success(t('ws-tasks.label_created'));
-      setNewLabelDialogOpen(false);
+      setNewLabelDialogOpenState(false);
       setNewLabelName('');
-      setNewLabelColor('#3b82f6');
+      setNewLabelColor((previousColor) =>
+        getRandomNewLabelColor(previousColor)
+      );
     } catch (error: any) {
       console.error('Error creating label:', error);
       toast.error(error.message || t('ws-tasks.errors.failed_create_label'));

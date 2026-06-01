@@ -7,6 +7,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { LABEL_COLOR_PRESETS } from '../../utils/label-colors';
 import { useTaskLabelManagement } from '../useTaskLabelManagement';
 
 // Mock modules with proper hoisting
@@ -112,7 +113,7 @@ describe('useTaskLabelManagement', () => {
       );
 
       expect(result.current.newLabelName).toBe('');
-      expect(result.current.newLabelColor).toBe('#3b82f6');
+      expect(LABEL_COLOR_PRESETS).toContain(result.current.newLabelColor);
       expect(result.current.creatingLabel).toBe(false);
     });
   });
@@ -272,7 +273,8 @@ describe('useTaskLabelManagement', () => {
 
       // Verify form was reset
       expect(result.current.newLabelName).toBe('');
-      expect(result.current.newLabelColor).toBe('#3b82f6');
+      expect(LABEL_COLOR_PRESETS).toContain(result.current.newLabelColor);
+      expect(result.current.newLabelColor.toLowerCase()).not.toBe('#8b5cf6');
     });
 
     it('should not create label with empty name', async () => {

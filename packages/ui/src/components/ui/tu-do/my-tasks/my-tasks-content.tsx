@@ -275,6 +275,19 @@ export default function MyTasksContent({
         onNameChange={state.setNewLabelName}
         onColorChange={state.setNewLabelColor}
         onConfirm={state.handleCreateNewLabel}
+        translations={{
+          create_new_label: taskBoardT('common.create_new_label'),
+          create_new_label_description: taskBoardT(
+            'common.create_new_label_description'
+          ),
+          label_name: taskBoardT('common.label_name'),
+          color: taskBoardT('common.color'),
+          preview: taskBoardT('common.preview'),
+          cancel: taskBoardT('common.cancel'),
+          creating: taskBoardT('common.creating'),
+          create_label: taskBoardT('common.create_label'),
+          randomize_color: taskBoardT('common.randomize_color'),
+        }}
       />
 
       {/* Project Creation Dialog */}

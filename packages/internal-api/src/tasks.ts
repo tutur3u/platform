@@ -32,6 +32,7 @@ export interface InternalApiWorkspaceLabel {
   color: string;
   created_at: string;
   ws_id: string;
+  creator_id: string | null;
 }
 
 export interface WorkspaceTaskUpdatePayload {
@@ -531,6 +532,41 @@ export async function createWorkspaceLabel(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceLabel(
+  workspaceId: string,
+  labelId: string,
+  payload: { name: string; color: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<InternalApiWorkspaceLabel>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/labels/${encodePathSegment(labelId)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceLabel(
+  workspaceId: string,
+  labelId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/labels/${encodePathSegment(labelId)}`,
+    {
+      method: 'DELETE',
       cache: 'no-store',
     }
   );

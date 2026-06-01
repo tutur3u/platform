@@ -10,7 +10,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
 import { useBoardBroadcast } from '../shared/board-broadcast-context';
-import { NEW_LABEL_COLOR } from '../utils/taskConstants';
+import { getRandomNewLabelColor } from '../utils/taskConstants';
 
 type WorkspaceTaskLabel = Pick<
   DbTaskLabel,
@@ -42,7 +42,9 @@ export function useTaskLabelManagement({
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
   const [newLabelName, setNewLabelName] = useState('');
-  const [newLabelColor, setNewLabelColor] = useState(NEW_LABEL_COLOR);
+  const [newLabelColor, setNewLabelColor] = useState(() =>
+    getRandomNewLabelColor()
+  );
   const [creatingLabel, setCreatingLabel] = useState(false);
 
   const getLabelCacheWorkspaceIds = () =>
@@ -382,7 +384,9 @@ export function useTaskLabelManagement({
 
         // Reset form and close dialog
         setNewLabelName('');
-        setNewLabelColor(NEW_LABEL_COLOR);
+        setNewLabelColor((previousColor) =>
+          getRandomNewLabelColor(previousColor)
+        );
 
         toast.success(
           `"${newLabel.name}" label created and applied to this task`

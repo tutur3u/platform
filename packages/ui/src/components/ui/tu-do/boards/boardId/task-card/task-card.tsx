@@ -103,7 +103,10 @@ import {
   getListTextColorClass,
   getTicketBadgeColorClasses,
 } from '../../../utils/taskColorUtils';
-import { DESTINATION_TONE_COLORS } from '../../../utils/taskConstants';
+import {
+  DESTINATION_TONE_COLORS,
+  getRandomNewLabelColor,
+} from '../../../utils/taskConstants';
 import { formatSmartDate } from '../../../utils/taskDateUtils';
 import { getPriorityIndicator } from '../../../utils/taskPriorityUtils';
 import { sortByDisplayName } from '../board-text-utils';
@@ -255,6 +258,11 @@ function TaskCardInner({
       task.source_workspace_id ?? undefined,
     ],
   });
+
+  const openNewLabelDialog = () => {
+    setNewLabelColor((previousColor) => getRandomNewLabelColor(previousColor));
+    dialogActions.openNewLabelDialog();
+  };
 
   // Fetch workspace projects
   const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery(
@@ -1882,7 +1890,7 @@ function TaskCardInner({
                     isLoading={labelsLoading}
                     onToggleLabel={toggleTaskLabel}
                     onCreateNewLabel={() => {
-                      dialogActions.openNewLabelDialog();
+                      openNewLabelDialog();
                       setMenuOpen(false);
                     }}
                     onMenuItemSelect={handleMenuItemSelect}
@@ -2444,9 +2452,7 @@ function TaskCardInner({
         onNameChange={setNewLabelName}
         onColorChange={setNewLabelColor}
         onOpenChange={(open) =>
-          open
-            ? dialogActions.openNewLabelDialog()
-            : dialogActions.closeNewLabelDialog()
+          open ? openNewLabelDialog() : dialogActions.closeNewLabelDialog()
         }
         onConfirm={async () => {
           const result = await createNewLabel();
@@ -2461,6 +2467,7 @@ function TaskCardInner({
           cancel: t('cancel'),
           creating: t('creating'),
           create_label: t('create_label'),
+          randomize_color: t('randomize_color'),
         }}
       />
 

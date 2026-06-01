@@ -1,4 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  createWorkspaceLabel,
+  deleteWorkspaceLabel,
+  listWorkspaceLabels,
+  updateWorkspaceLabel,
+} from '@tuturuuu/internal-api/tasks';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import type { TaskLabel } from '../types';
@@ -8,6 +14,12 @@ interface UseTaskLabelsProps {
   initialLabels: TaskLabel[];
 }
 
+function getBrowserInternalApiOptions() {
+  return typeof window !== 'undefined'
+    ? { baseUrl: window.location.origin }
+    : undefined;
+}
+
 export function useTaskLabels({ wsId, initialLabels }: UseTaskLabelsProps) {
   const t = useTranslations('ws-tasks-labels');
   const queryClient = useQueryClient();
@@ -15,28 +27,22 @@ export function useTaskLabels({ wsId, initialLabels }: UseTaskLabelsProps) {
 
   const { data: labels = initialLabels } = useQuery({
     queryKey,
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/labels`);
-      if (!response.ok) throw new Error('Failed to fetch labels');
-      return response.json() as Promise<TaskLabel[]>;
-    },
+    queryFn: async () =>
+      listWorkspaceLabels(wsId, getBrowserInternalApiOptions()),
     initialData: initialLabels,
   });
 
   const { mutateAsync: createLabelMutation, isPending: isCreating } =
     useMutation({
       mutationFn: async (data: { name: string; color: string }) => {
-        const response = await fetch(`/api/v1/workspaces/${wsId}/labels`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        return createWorkspaceLabel(
+          wsId,
+          {
             name: data.name.trim(),
             color: data.color,
-          }),
-        });
-
-        if (!response.ok) throw new Error('Failed to create label');
-        return response.json() as Promise<TaskLabel>;
+          },
+          getBrowserInternalApiOptions()
+        );
       },
       onMutate: async (newLabel) => {
         await queryClient.cancelQueries({ queryKey });
@@ -82,20 +88,15 @@ export function useTaskLabels({ wsId, initialLabels }: UseTaskLabelsProps) {
         name: string;
         color: string;
       }) => {
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/labels/${id}`,
+        return updateWorkspaceLabel(
+          wsId,
+          id,
           {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: data.name.trim(),
-              color: data.color,
-            }),
-          }
+            name: data.name.trim(),
+            color: data.color,
+          },
+          getBrowserInternalApiOptions()
         );
-
-        if (!response.ok) throw new Error('Failed to update label');
-        return response.json() as Promise<TaskLabel>;
       },
       onMutate: async ({ id, ...data }) => {
         await queryClient.cancelQueries({ queryKey });
@@ -128,14 +129,11 @@ export function useTaskLabels({ wsId, initialLabels }: UseTaskLabelsProps) {
   const { mutateAsync: deleteLabelMutation, isPending: isDeleting } =
     useMutation({
       mutationFn: async (labelId: string) => {
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/labels/${labelId}`,
-          {
-            method: 'DELETE',
-          }
+        await deleteWorkspaceLabel(
+          wsId,
+          labelId,
+          getBrowserInternalApiOptions()
         );
-
-        if (!response.ok) throw new Error('Failed to delete label');
       },
       onMutate: async (labelId) => {
         await queryClient.cancelQueries({ queryKey });

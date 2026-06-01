@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { LABEL_COLOR_PRESETS } from '../../utils/label-colors';
 
 // ── Hoisted mocks ──────────────────────────────────────────────────────────
 const {
@@ -866,9 +867,9 @@ describe('useMyTasksState', () => {
       const { result } = renderHook(() => useMyTasksState(DEFAULT_PROPS));
 
       act(() => {
+        result.current.setNewLabelDialogOpen(true);
         result.current.setNewLabelName('Bug');
         result.current.setNewLabelColor('#ff0000');
-        result.current.setNewLabelDialogOpen(true);
       });
 
       await act(async () => {
@@ -885,7 +886,7 @@ describe('useMyTasksState', () => {
       expect(mockToastSuccess).toHaveBeenCalledWith('ws-tasks.label_created');
       expect(result.current.newLabelDialogOpen).toBe(false);
       expect(result.current.newLabelName).toBe('');
-      expect(result.current.newLabelColor).toBe('#3b82f6'); // reset to default
+      expect(LABEL_COLOR_PRESETS).toContain(result.current.newLabelColor);
     });
 
     it('shows error toast on failure', async () => {

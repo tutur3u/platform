@@ -4,7 +4,6 @@ import type { TaskLabel } from '@tuturuuu/ui/tu-do/labels/types';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: Promise<{
@@ -34,8 +33,6 @@ export default async function TaskLabelsPage({ params }: Props) {
   if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
 
   const supabase = await createClient();
-  const t = await getTranslations('ws-tasks-labels');
-
   const { data: labels, error } = await supabase
     .from('workspace_task_labels')
     .select('*')
@@ -48,15 +45,9 @@ export default async function TaskLabelsPage({ params }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="font-bold text-2xl tracking-tight">{t('header')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
-      <TaskLabelsClient
-        wsId={wsId}
-        initialLabels={(labels ?? []) as TaskLabel[]}
-      />
-    </div>
+    <TaskLabelsClient
+      wsId={wsId}
+      initialLabels={(labels ?? []) as TaskLabel[]}
+    />
   );
 }

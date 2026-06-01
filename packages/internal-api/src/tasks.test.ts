@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createWorkspaceLabel,
   createWorkspaceTaskBoard,
   createWorkspaceTaskJournal,
+  deleteWorkspaceLabel,
   deleteWorkspaceTaskBoard,
   getWorkspaceBoardsData,
   getWorkspaceTaskBoard,
@@ -11,6 +13,7 @@ import {
   listWorkspaceTaskLists,
   listWorkspaceTasks,
   removeCurrentUserTaskPersonalPlacement,
+  updateWorkspaceLabel,
   updateWorkspaceTaskBoard,
   updateWorkspaceTaskBoardEstimation,
   upsertCurrentUserTaskPersonalPlacement,
@@ -437,7 +440,7 @@ describe('workspace board internal-api helpers', () => {
     );
   });
 
-  it('lists workspace labels through the backend labels route', async () => {
+  it('manages workspace labels through backend label routes', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse([
         {
@@ -450,14 +453,55 @@ describe('workspace board internal-api helpers', () => {
       ])
     );
 
-    await listWorkspaceLabels('internal', {
+    const options = {
       baseUrl: 'https://internal.example.com',
       fetch: fetchMock as unknown as typeof fetch,
-    });
+    };
 
-    expect(fetchMock).toHaveBeenCalledWith(
+    await listWorkspaceLabels('internal', options);
+    await createWorkspaceLabel(
+      'internal',
+      { name: 'Feature', color: '#3B82F6' },
+      options
+    );
+    await updateWorkspaceLabel(
+      'internal',
+      'label-1',
+      { name: 'Bug', color: '#EF4444' },
+      options
+    );
+    await deleteWorkspaceLabel('internal', 'label-1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
       'https://internal.example.com/api/v1/workspaces/internal/labels',
       expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/internal/labels',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ name: 'Feature', color: '#3B82F6' }),
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/internal/labels/label-1',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ name: 'Bug', color: '#EF4444' }),
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/internal/labels/label-1',
+      expect.objectContaining({
+        method: 'DELETE',
         cache: 'no-store',
       })
     );
