@@ -1,5 +1,4 @@
 import { formatForDisplay } from '@tanstack/react-hotkeys';
-import type { QueryClient } from '@tanstack/react-query';
 import type { Editor } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import {
@@ -31,15 +30,11 @@ import {
   Workflow,
   YoutubeIcon,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Toggle } from '@tuturuuu/ui/toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -187,10 +182,7 @@ interface ToolBarProps {
   savedButtonLabel?: string;
   workspaceId?: string;
   onImageUpload?: (file: File) => Promise<string>;
-  boardId?: string;
-  availableLists?: TaskList[];
-  queryClient?: QueryClient;
-  onFlushChanges?: () => void;
+  onConvertToTask?: () => void | Promise<void>;
   /** When true, the BubbleMenu is hidden because the fixed toolbar is visible */
   fixedToolbarVisible?: boolean;
 }
@@ -200,10 +192,7 @@ export function ToolBar({
   fixedToolbarVisible,
   workspaceId,
   onImageUpload,
-  boardId,
-  availableLists,
-  queryClient,
-  onFlushChanges,
+  onConvertToTask,
 }: ToolBarProps) {
   const [linkEditorContext, setLinkEditorContext] =
     useState<LinkEditorContext>(null);
@@ -594,99 +583,6 @@ export function ToolBar({
     toast.success('YouTube video added');
   }, [editor, youtubeUrl]);
 
-  const handleConvertToTask = useCallback(async () => {
-    if (!editor || !boardId || !availableLists || !queryClient) return;
-
-    // Get the first available list
-    const firstList = availableLists[0];
-    if (!firstList) {
-      toast.error('No lists available', {
-        description: 'Create a list first before converting items to tasks',
-      });
-      return;
-    }
-
-    // Store the created task to add to cache later
-    let createdTask: Task | null = null;
-
-    // Use shared conversion helper
-    const result = await convertListItemToTask({
-      editor,
-      listId: firstList.id,
-      listName: firstList.name,
-      wrapInParagraph: true,
-      createTask: async ({
-        name,
-        listId,
-      }: {
-        name: string;
-        listId: string;
-      }) => {
-        const supabase = createClient();
-        // Select all fields needed for the Task type to add to cache
-        const { data: newTask, error } = await supabase
-          .from('tasks')
-          .insert({
-            name,
-            list_id: listId,
-          })
-          .select('*')
-          .single();
-
-        if (error || !newTask) throw error;
-
-        // Store full task for cache update
-        createdTask = {
-          ...newTask,
-          assignees: [],
-          labels: [],
-          projects: [],
-        } as Task;
-
-        return {
-          id: newTask.id,
-          name: newTask.name,
-          display_number: newTask.display_number ?? undefined,
-          // Pass task list color and priority for mention node
-          priority: newTask.priority || undefined,
-          listColor: firstList.color || undefined,
-          entityType: 'task',
-        };
-      },
-    });
-
-    if (!result.success) {
-      toast.error(result.error!.message, {
-        description: result.error!.description,
-      });
-      return;
-    }
-
-    // CRITICAL: Flush the debounced editor change immediately after inserting the mention.
-    onFlushChanges?.();
-
-    // Add the new task to the cache directly instead of invalidating
-    if (createdTask) {
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return [createdTask];
-          if (old.some((t) => t.id === createdTask!.id)) return old;
-          return [...old, createdTask];
-        }
-      );
-    }
-
-    // Only invalidate time tracking data since task availability affects it
-    await queryClient.invalidateQueries({
-      queryKey: ['time-tracking-data'],
-    });
-
-    toast.success('Task created', {
-      description: `Created task "${result.taskName}" and added mention`,
-    });
-  }, [editor, boardId, availableLists, queryClient, onFlushChanges]);
-
   // -----------------------------------------------------------------------
   // Render helpers
   // -----------------------------------------------------------------------
@@ -755,14 +651,14 @@ export function ToolBar({
         />
 
         {/* Convert to task */}
-        {boardId && availableLists && queryClient && (
+        {onConvertToTask && (
           <>
             <ToolbarSeparator />
             <ToolbarButton
               id="convert-to-task"
               icon={<CirclePlus className="size-4" />}
               pressed={false}
-              onClick={handleConvertToTask}
+              onClick={onConvertToTask}
             />
           </>
         )}
@@ -780,10 +676,7 @@ export function ToolBar({
       triggerVideoUpload,
       isUploadingVideo,
       showYoutubeInput,
-      boardId,
-      availableLists,
-      queryClient,
-      handleConvertToTask,
+      onConvertToTask,
     ]
   );
 
@@ -1075,10 +968,7 @@ interface FixedToolbarProps {
   editor: Editor | null;
   workspaceId?: string;
   onImageUpload?: (file: File) => Promise<string>;
-  boardId?: string;
-  availableLists?: TaskList[];
-  queryClient?: QueryClient;
-  onFlushChanges?: () => void;
+  onConvertToTask?: () => void | Promise<void>;
   className?: string;
   ref?: React.Ref<HTMLDivElement>;
 }
@@ -1087,10 +977,7 @@ export function FixedToolbar({
   editor,
   workspaceId,
   onImageUpload,
-  boardId,
-  availableLists,
-  queryClient,
-  onFlushChanges,
+  onConvertToTask,
   className,
   ref,
 }: FixedToolbarProps) {
@@ -1312,71 +1199,6 @@ export function FixedToolbar({
     [editor, onImageUpload]
   );
 
-  // Convert to task handler
-  const handleConvertToTask = useCallback(async () => {
-    if (!editor || !boardId || !availableLists || !queryClient) return;
-    const firstList = availableLists[0];
-    if (!firstList) {
-      toast.error('No lists available');
-      return;
-    }
-    let createdTask: Task | null = null;
-    const result = await convertListItemToTask({
-      editor,
-      listId: firstList.id,
-      listName: firstList.name,
-      wrapInParagraph: true,
-      createTask: async ({
-        name,
-        listId,
-      }: {
-        name: string;
-        listId: string;
-      }) => {
-        const supabase = createClient();
-        const { data: newTask, error } = await supabase
-          .from('tasks')
-          .insert({ name, list_id: listId })
-          .select('*')
-          .single();
-        if (error || !newTask) throw error;
-        createdTask = {
-          ...newTask,
-          assignees: [],
-          labels: [],
-          projects: [],
-        } as Task;
-        return {
-          id: newTask.id,
-          name: newTask.name,
-          display_number: newTask.display_number ?? undefined,
-          priority: newTask.priority || undefined,
-          listColor: firstList.color || undefined,
-          entityType: 'task',
-        };
-      },
-    });
-    if (!result.success) {
-      toast.error(result.error!.message);
-      return;
-    }
-    onFlushChanges?.();
-    if (createdTask) {
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return [createdTask];
-          if (old.some((t) => t.id === createdTask!.id)) return old;
-          return [...old, createdTask];
-        }
-      );
-    }
-    await queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
-    toast.success('Task created', {
-      description: `Created "${result.taskName}"`,
-    });
-  }, [editor, boardId, availableLists, queryClient, onFlushChanges]);
-
   if (!editor) return null;
 
   return (
@@ -1456,14 +1278,14 @@ export function FixedToolbar({
       )}
 
       {/* Convert to task */}
-      {boardId && availableLists && queryClient && (
+      {onConvertToTask && (
         <>
           <ToolbarSeparator />
           <ToolbarButton
             id="convert-to-task"
             icon={<CirclePlus className="size-4" />}
             pressed={false}
-            onClick={handleConvertToTask}
+            onClick={onConvertToTask}
           />
         </>
       )}

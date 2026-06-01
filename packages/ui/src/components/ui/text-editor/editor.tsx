@@ -67,6 +67,7 @@ interface RichTextEditorProps {
   boardId?: string;
   availableLists?: TaskList[];
   queryClient?: QueryClient;
+  onConvertToTask?: () => void | Promise<void>;
   allowCollaboration?: boolean;
   /** Translations for mention chip dialogs */
   mentionTranslations?: {
@@ -109,9 +110,7 @@ export function RichTextEditor({
   editorRef: externalEditorRef,
   initialCursorOffset,
   onEditorReady,
-  boardId,
-  availableLists,
-  queryClient,
+  onConvertToTask,
   yjsDoc,
   yjsProvider,
   collaborationUser,
@@ -658,17 +657,6 @@ export function RichTextEditor({
     };
   }, [editor, flushPendingRef, allowCollaboration]);
 
-  // Create a flush callback for immediate synchronization after programmatic changes
-  const flushEditorChanges = useCallback(() => {
-    // Mark that we're doing a programmatic update to skip content sync
-    isProgrammaticUpdateRef.current = true;
-
-    if (debouncedOnChangeRef.current) {
-      // Flush the debounce to execute onChange immediately
-      debouncedOnChangeRef.current.flush();
-    }
-  }, []);
-
   // Track whether the fixed toolbar is visible in the viewport.
   // When it is, we suppress the floating BubbleMenu to avoid duplication.
   const fixedToolbarRef = useRef<HTMLDivElement>(null);
@@ -697,10 +685,7 @@ export function RichTextEditor({
           editor={editor}
           workspaceId={workspaceId}
           onImageUpload={onImageUpload}
-          boardId={boardId}
-          availableLists={availableLists}
-          queryClient={queryClient}
-          onFlushChanges={flushEditorChanges}
+          onConvertToTask={onConvertToTask}
         />
       )}
       {!readOnly && (
@@ -711,10 +696,7 @@ export function RichTextEditor({
           savedButtonLabel={savedButtonLabel}
           workspaceId={workspaceId}
           onImageUpload={onImageUpload}
-          boardId={boardId}
-          availableLists={availableLists}
-          queryClient={queryClient}
-          onFlushChanges={flushEditorChanges}
+          onConvertToTask={onConvertToTask}
         />
       )}
       {/* Temporarily hide drag handle to resolve 'removeChild' error until finding a more robust solution

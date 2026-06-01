@@ -95,6 +95,7 @@ import {
   serializeTaskDescriptionContent,
   shouldPreserveNativeContextMenu,
 } from './task-edit-dialog/utils';
+import { resolveInlineTaskTargetList } from './task-edit-dialog/utils/inline-task-target-list';
 import { TaskShareDialog } from './task-share-dialog';
 import type { TaskFilters } from './types';
 import { UnsavedChangesWarningDialog } from './unsaved-changes-warning-dialog';
@@ -1061,9 +1062,14 @@ export function TaskEditDialog({
 
   // Convert to task handler
   const handleConvertToTask = useCallback(async () => {
-    if (!editorInstance || !boardId || !availableLists) return;
-    const firstList = availableLists[0];
-    if (!firstList) {
+    if (!editorInstance || !boardId) return;
+
+    const targetList = resolveInlineTaskTargetList({
+      availableLists,
+      preferredListId: formState.selectedListId || task?.list_id,
+    });
+
+    if (!targetList) {
       toast.error('No lists available', {
         description: 'Create a list first before converting items to tasks',
       });
@@ -1075,8 +1081,8 @@ export function TaskEditDialog({
 
     const result = await convertListItemToTask({
       editor: editorInstance,
-      listId: firstList.id,
-      listName: firstList.name,
+      listId: targetList.id,
+      listName: targetList.name,
       wrapInParagraph: false,
       createTask: async ({
         name,
@@ -1106,6 +1112,8 @@ export function TaskEditDialog({
           id: newTask.id,
           name: newTask.name,
           display_number: newTask.display_number ?? undefined,
+          priority: newTask.priority || undefined,
+          listColor: targetList.color || undefined,
         };
       },
     });
@@ -1147,7 +1155,15 @@ export function TaskEditDialog({
     toast('Task created', {
       description: `Created task "${result.taskName}" and added mention`,
     });
-  }, [editorInstance, boardId, availableLists, queryClient, effectiveTaskWsId]);
+  }, [
+    editorInstance,
+    boardId,
+    availableLists,
+    formState.selectedListId,
+    task?.list_id,
+    queryClient,
+    effectiveTaskWsId,
+  ]);
 
   // Save handler
   // Transform user for save hook (ensure id is string if present)
@@ -1868,6 +1884,7 @@ export function TaskEditDialog({
                   }
                   onImageUpload={imageUploadHandler}
                   onEditorReady={handleEditorReady}
+                  onConvertToTask={handleConvertToTask}
                   onDescriptionStorageLengthChange={
                     handleDescriptionStorageLengthChange
                   }

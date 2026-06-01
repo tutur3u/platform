@@ -52,6 +52,7 @@ export interface TaskDescriptionEditorProps {
   // Callbacks
   onImageUpload?: (file: File) => Promise<string>;
   onEditorReady: (editor: Editor) => void;
+  onConvertToTask?: () => void | Promise<void>;
   onDescriptionStorageLengthChange: (storageLength: number) => void;
   descriptionStorageLength: number;
   descriptionPercentLeft: number;
@@ -106,6 +107,7 @@ export function TaskDescriptionEditor({
   collaborationUser,
   onImageUpload,
   onEditorReady,
+  onConvertToTask,
   onDescriptionStorageLengthChange,
   descriptionStorageLength,
   descriptionPercentLeft,
@@ -302,6 +304,7 @@ export function TaskDescriptionEditor({
           flushPendingRef={flushEditorPendingRef}
           initialCursorOffset={targetEditorCursorRef.current}
           onEditorReady={handleEditorReady}
+          onConvertToTask={onConvertToTask}
           boardId={boardId}
           availableLists={availableLists}
           queryClient={queryClient}
