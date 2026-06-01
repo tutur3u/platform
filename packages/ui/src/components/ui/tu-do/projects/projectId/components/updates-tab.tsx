@@ -49,19 +49,17 @@ export function UpdatesTab({
 }: UpdatesTabProps) {
   const t = useTranslations('task_project_detail.updates_tab');
   return (
-    <div className="mx-auto space-y-6">
+    <div className="mx-auto space-y-4">
       {/* Post Update Form */}
       <motion.div {...fadeInViewVariant(0)}>
-        <Card className="border-2 border-dynamic-purple/20 bg-dynamic-purple/5 p-6">
-          <h3 className="mb-4 bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text font-semibold text-lg text-transparent">
-            {t('share_update')}
-          </h3>
+        <Card className="rounded-lg bg-background p-5 shadow-none">
+          <h3 className="mb-4 font-semibold text-base">{t('share_update')}</h3>
           <div className="space-y-3">
             <Textarea
               value={newUpdateContent}
               onChange={(e) => setNewUpdateContent(e.target.value)}
               placeholder={t('share_placeholder')}
-              className="min-h-30 resize-none border-dynamic-purple/30"
+              className="min-h-30 resize-none"
               disabled={isPostingUpdate}
             />
             <div className="flex items-center justify-between">
@@ -71,7 +69,6 @@ export function UpdatesTab({
               <Button
                 onClick={postUpdate}
                 disabled={isPostingUpdate || !newUpdateContent.trim()}
-                className="bg-linear-to-r from-dynamic-purple to-dynamic-pink shadow-lg transition-all hover:shadow-xl"
               >
                 {isPostingUpdate ? (
                   <>
@@ -93,7 +90,7 @@ export function UpdatesTab({
       {/* Updates Feed */}
       {isLoadingUpdates ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-dynamic-purple" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : updates.length > 0 ? (
         <div className="space-y-4">
@@ -116,7 +113,7 @@ export function UpdatesTab({
         </div>
       ) : (
         <motion.div {...fadeInViewVariant(0.1)}>
-          <Card className="border-2 border-muted/20 p-12 text-center">
+          <Card className="rounded-lg p-12 text-center shadow-none">
             <Sparkles className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
             <h3 className="mb-2 font-semibold text-lg">
               {t('no_updates_title')}

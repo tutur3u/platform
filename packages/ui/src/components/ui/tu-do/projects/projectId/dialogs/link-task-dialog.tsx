@@ -40,31 +40,26 @@ export function LinkTaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text text-transparent">
-            {t('title')}
-          </DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Search Input */}
           <div className="relative">
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('search_placeholder')}
-              className="border-dynamic-purple/30"
             />
           </div>
 
-          {/* Results */}
           <div className="max-h-100 space-y-2 overflow-auto">
             {searchQuery ? (
               filteredTasks.length > 0 ? (
                 filteredTasks.map((task) => (
                   <Card
                     key={task.id}
-                    className="group cursor-pointer border-2 border-muted/20 p-4 transition-all hover:border-dynamic-purple/30 hover:bg-dynamic-purple/5 hover:shadow-md"
+                    className="group cursor-pointer rounded-lg p-4 shadow-none transition-colors hover:bg-muted/30"
                     onClick={() => onLinkTask(task.id)}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -84,7 +79,7 @@ export function LinkTaskDialog({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="opacity-0 transition-opacity group-hover:opacity-100"
+                        className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
                         disabled={isLinking}
                       >
                         <Link2 className="h-4 w-4" />
@@ -109,8 +104,7 @@ export function LinkTaskDialog({
             )}
           </div>
 
-          {/* Info */}
-          <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-3">
+          <div className="rounded-lg border bg-muted/30 p-3">
             <p className="text-foreground/70 text-xs">{t('tip')}</p>
           </div>
         </div>

@@ -35,11 +35,11 @@ export function ProjectSidebar() {
     <div className="space-y-4">
       {/* Project Lead */}
       <motion.div {...fadeInViewVariant(0.2)}>
-        <Card className="group border-2 border-dynamic-pink/20 bg-dynamic-pink/5 p-4 transition-all hover:border-dynamic-pink/30 hover:shadow-lg">
+        <Card className="group rounded-lg bg-background p-4 shadow-none">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-pink to-dynamic-red">
-                <User className="h-4 w-4 text-white" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                <User className="h-4 w-4" />
               </div>
               <h3 className="font-semibold text-sm">{t('project_lead')}</h3>
             </div>
@@ -81,7 +81,7 @@ export function ProjectSidebar() {
                     undefined
                   }
                 />
-                <AvatarFallback className="bg-linear-to-br from-dynamic-pink to-dynamic-purple text-white text-xs">
+                <AvatarFallback className="text-xs">
                   {(workspaceMembers.find((m) => m.id === editedLeadId)
                     ?.display_name ||
                     project.lead?.display_name ||
@@ -99,7 +99,7 @@ export function ProjectSidebar() {
             <button
               type="button"
               onClick={() => setShowLeadSelector(true)}
-              className="w-full rounded-lg border border-dynamic-pink/30 border-dashed p-3 text-center text-muted-foreground text-sm italic transition-colors hover:border-dynamic-pink/50 hover:bg-dynamic-pink/5"
+              className="w-full rounded-md border border-dashed p-3 text-center text-muted-foreground text-sm italic transition-colors hover:bg-muted/40"
             >
               {t('click_assign_lead')}
             </button>
@@ -109,11 +109,11 @@ export function ProjectSidebar() {
 
       {/* Timeline */}
       <motion.div {...fadeInViewVariant(0.3)}>
-        <Card className="group border-2 border-dynamic-green/20 bg-dynamic-green/5 p-4 transition-all hover:border-dynamic-green/30 hover:shadow-lg">
+        <Card className="group rounded-lg bg-background p-4 shadow-none">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-green to-dynamic-cyan">
-                <Calendar className="h-4 w-4 text-white" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                <Calendar className="h-4 w-4" />
               </div>
               <h3 className="font-semibold text-sm">{t('timeline')}</h3>
             </div>
@@ -138,7 +138,7 @@ export function ProjectSidebar() {
                   type="date"
                   value={editedStartDate}
                   onChange={(e) => setEditedStartDate(e.target.value)}
-                  className="h-9 border-dynamic-green/30 bg-background/50 text-sm"
+                  className="h-9 bg-background text-sm"
                 />
               </div>
               <div className="space-y-1.5">
@@ -149,7 +149,7 @@ export function ProjectSidebar() {
                   type="date"
                   value={editedEndDate}
                   onChange={(e) => setEditedEndDate(e.target.value)}
-                  className="h-9 border-dynamic-green/30 bg-background/50 text-sm"
+                  className="h-9 bg-background text-sm"
                 />
               </div>
             </div>
@@ -175,7 +175,7 @@ export function ProjectSidebar() {
                 <button
                   type="button"
                   onClick={() => setShowTimelineEditor(true)}
-                  className="w-full rounded-lg border border-dynamic-green/30 border-dashed p-3 text-center text-muted-foreground text-sm italic transition-colors hover:border-dynamic-green/50 hover:bg-dynamic-green/5"
+                  className="w-full rounded-md border border-dashed p-3 text-center text-muted-foreground text-sm italic transition-colors hover:bg-muted/40"
                 >
                   {t('click_set_timeline')}
                 </button>
@@ -187,10 +187,10 @@ export function ProjectSidebar() {
 
       {/* Stats */}
       <motion.div {...fadeInViewVariant(0.4)}>
-        <Card className="group border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-4 transition-all hover:border-dynamic-blue/30 hover:shadow-lg">
+        <Card className="group rounded-lg bg-background p-4 shadow-none">
           <div className="mb-3 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-blue to-dynamic-purple">
-              <Target className="h-4 w-4 text-white" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
+              <Target className="h-4 w-4" />
             </div>
             <h3 className="font-semibold text-sm">{t('project_stats')}</h3>
           </div>
@@ -200,8 +200,8 @@ export function ProjectSidebar() {
                 <span className="text-foreground/60">{t('total_tasks')}</span>
                 <span className="font-bold text-lg">{tasks.length}</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-dynamic-blue/10">
-                <div className="h-full rounded-full bg-linear-to-r from-dynamic-blue to-dynamic-cyan" />
+              <div className="h-2 w-full rounded-full bg-muted">
+                <div className="h-full rounded-full bg-primary/60" />
               </div>
             </div>
 
@@ -212,9 +212,9 @@ export function ProjectSidebar() {
                   {tasks.filter((t) => t.closed_at).length}
                 </span>
               </div>
-              <div className="h-2 w-full rounded-full bg-dynamic-green/10">
+              <div className="h-2 w-full rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-linear-to-r from-dynamic-green to-dynamic-cyan"
+                  className="h-full rounded-full bg-dynamic-green/70"
                   style={{
                     width: `${tasks.length > 0 ? (tasks.filter((t) => t.closed_at).length / tasks.length) * 100 : 0}%`,
                   }}
@@ -229,9 +229,9 @@ export function ProjectSidebar() {
                   {tasks.filter((t) => !t.closed_at).length}
                 </span>
               </div>
-              <div className="h-2 w-full rounded-full bg-dynamic-orange/10">
+              <div className="h-2 w-full rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-linear-to-r from-dynamic-orange to-dynamic-red"
+                  className="h-full rounded-full bg-dynamic-orange/70"
                   style={{
                     width: `${tasks.length > 0 ? (tasks.filter((t) => !t.closed_at).length / tasks.length) * 100 : 0}%`,
                   }}

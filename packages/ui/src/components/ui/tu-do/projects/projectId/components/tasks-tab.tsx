@@ -127,6 +127,9 @@ export function TasksTab({
             tasks={tasks}
             lists={lists}
             isLoading={false}
+            disableSort={!!filters.sortBy}
+            listStatusFilter={listStatusFilter}
+            filters={filters}
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}
           />
@@ -139,6 +142,8 @@ export function TasksTab({
             tasks={tasks}
             lists={lists}
             isPersonalWorkspace={workspace.personal}
+            preserveTaskOrder={!!filters.sortBy}
+            searchQuery={filters.searchQuery}
           />
         );
       case 'timeline':
@@ -160,6 +165,9 @@ export function TasksTab({
             tasks={tasks}
             lists={lists}
             isLoading={false}
+            disableSort={!!filters.sortBy}
+            listStatusFilter={listStatusFilter}
+            filters={filters}
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}
           />
@@ -169,29 +177,25 @@ export function TasksTab({
 
   if (tasks.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-        <Target className="h-16 w-16 text-muted-foreground/50" />
-        <div>
-          <p className="mb-2 font-semibold text-lg">{t('no_tasks_title')}</p>
-          <p className="text-muted-foreground text-sm">
-            {t('no_tasks_description')}
-          </p>
-        </div>
-        <Button
-          onClick={() => setShowLinkTaskDialog(true)}
-          className="bg-linear-to-r from-dynamic-blue to-dynamic-purple shadow-lg transition-all hover:shadow-xl"
-        >
-          <Link2 className="mr-2 h-4 w-4" />
-          {t('link_tasks')}
-        </Button>
-      </div>
+      <ProjectTasksEmptyState
+        onLinkTasks={() => setShowLinkTaskDialog(true)}
+        description={t('no_tasks_description')}
+        linkTasksLabel={t('link_tasks')}
+        title={t('no_tasks_title')}
+      />
     );
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b px-6 py-3">
-        <div className="flex-1">
+    <div
+      className="flex h-full min-h-0 flex-col overflow-hidden"
+      data-testid="task-project-tasks-tab"
+    >
+      <div
+        className="flex shrink-0 items-start gap-2 bg-background"
+        data-testid="task-project-tasks-header"
+      >
+        <div className="min-w-0 flex-1">
           <BoardHeader
             workspaceId={wsId}
             board={virtualBoard}
@@ -212,18 +216,49 @@ export function TasksTab({
         <Button
           onClick={() => setShowLinkTaskDialog(true)}
           variant="outline"
-          size="sm"
-          className="border-dynamic-purple/30 transition-all hover:border-dynamic-purple/50 hover:bg-dynamic-purple/10"
+          size="xs"
+          className="mt-2 mr-2 shrink-0 gap-2"
         >
-          <Link2 className="mr-2 h-4 w-4" />
+          <Link2 className="h-3.5 w-3.5" />
           {t('link_tasks')}
         </Button>
       </div>
-      <div className="h-full overflow-hidden">
+      <div
+        className="min-h-0 flex-1 overflow-hidden"
+        data-testid="task-project-tasks-view"
+      >
         <ProgressiveLoaderProvider value={progressiveLoader}>
           {renderView()}
         </ProgressiveLoaderProvider>
       </div>
+    </div>
+  );
+}
+
+interface ProjectTasksEmptyStateProps {
+  title: string;
+  description: string;
+  linkTasksLabel: string;
+  onLinkTasks: () => void;
+}
+
+function ProjectTasksEmptyState({
+  title,
+  description,
+  linkTasksLabel,
+  onLinkTasks,
+}: ProjectTasksEmptyStateProps) {
+  return (
+    <div className="flex h-full min-h-0 flex-col items-center justify-center gap-4 p-8 text-center">
+      <Target className="h-14 w-14 text-muted-foreground/50" />
+      <div>
+        <p className="mb-2 font-semibold text-lg">{title}</p>
+        <p className="text-muted-foreground text-sm">{description}</p>
+      </div>
+      <Button onClick={onLinkTasks}>
+        <Link2 className="mr-2 h-4 w-4" />
+        {linkTasksLabel}
+      </Button>
     </div>
   );
 }

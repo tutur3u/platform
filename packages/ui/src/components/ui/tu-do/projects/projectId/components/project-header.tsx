@@ -44,27 +44,27 @@ export function ProjectHeader({
   return (
     <motion.div
       {...fadeInUpVariant(0)}
-      className="relative rounded-lg border border-dynamic-surface/60 bg-background p-4"
+      className="relative rounded-lg border bg-card p-3 shadow-sm"
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 flex-1 space-y-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1 space-y-2">
           {isEditingName ? (
             <div className="flex items-center gap-2">
               <Input
                 value={editedName}
                 onChange={(e) => setEditedName(e.target.value)}
-                className="h-12 font-semibold text-2xl"
+                className="h-10 font-semibold text-xl"
                 placeholder={t('project_name_placeholder')}
                 autoFocus
               />
             </div>
           ) : (
             <div className="group flex items-center gap-2">
-              <h1 className="truncate font-semibold text-2xl">{projectName}</h1>
+              <h1 className="truncate font-semibold text-xl">{projectName}</h1>
               <Button
                 variant="ghost"
                 size="icon"
-                className="opacity-0 transition-opacity group-hover:opacity-100"
+                className="h-8 w-8 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
                 onClick={() => setIsEditingName(true)}
                 aria-label={t('edit_name_aria')}
               >

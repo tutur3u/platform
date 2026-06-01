@@ -18,10 +18,10 @@ export function OverviewLinkedTasks() {
 
   return (
     <motion.div {...fadeInViewVariant(0.3)}>
-      <Card className="border-dynamic-blue/20 bg-background p-5">
-        <div className="mb-4 flex items-center justify-between">
+      <Card className="rounded-lg bg-background p-5 shadow-none">
+        <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-dynamic-blue/10 text-dynamic-blue">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
               <Target className="h-4 w-4" />
             </div>
             <h2 className="font-semibold text-base">{t('linked_tasks')}</h2>
@@ -42,9 +42,9 @@ export function OverviewLinkedTasks() {
             {recentTasks.map((task) => (
               <div
                 key={task.id}
-                className="flex items-center justify-between rounded-md border bg-dynamic-surface/20 p-3 transition-colors hover:border-dynamic-blue/30 hover:bg-dynamic-blue/5"
+                className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 p-3 transition-colors hover:bg-muted/50"
               >
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <h4 className="font-medium text-sm">{task.name}</h4>
                   {task.priority && <PriorityBadge priority={task.priority} />}
                 </div>

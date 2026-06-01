@@ -15,16 +15,14 @@ export function OverviewUpdates() {
 
   return (
     <motion.div {...fadeInViewVariant(0.2)}>
-      <Card className="border-2 border-dynamic-pink/20 bg-dynamic-pink/5 p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="bg-linear-to-r from-dynamic-pink to-dynamic-purple bg-clip-text font-bold text-lg text-transparent">
-            {t('recent_updates')}
-          </h2>
+      <Card className="rounded-lg bg-background p-5 shadow-none">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-semibold text-base">{t('recent_updates')}</h2>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setActiveTab('updates')}
-            className="gap-1 text-dynamic-pink hover:text-dynamic-pink"
+            className="gap-1"
           >
             {t('view_all')}
             <ChevronRight className="h-4 w-4" />
@@ -33,14 +31,14 @@ export function OverviewUpdates() {
 
         {isLoadingUpdates ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-dynamic-pink" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : recentUpdates.length > 0 ? (
           <div className="space-y-3">
             {recentUpdates.map((update) => (
               <div
                 key={update.id}
-                className="cursor-pointer rounded-lg border border-dynamic-pink/20 bg-background/50 p-3 transition-all hover:-translate-y-0.5 hover:border-dynamic-pink/30 hover:bg-dynamic-pink/5"
+                className="cursor-pointer rounded-md border bg-muted/30 p-3 transition-colors hover:bg-muted/50"
                 onClick={() => setActiveTab('updates')}
               >
                 <div className="mb-2 flex items-center gap-2">
@@ -75,7 +73,7 @@ export function OverviewUpdates() {
               variant="ghost"
               size="sm"
               onClick={() => setActiveTab('updates')}
-              className="mt-2 text-dynamic-pink hover:text-dynamic-pink"
+              className="mt-2"
             >
               {t('post_update')}
             </Button>

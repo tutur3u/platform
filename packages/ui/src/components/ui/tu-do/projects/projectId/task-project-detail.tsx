@@ -193,53 +193,60 @@ export function TaskProjectDetail({
       onUpdate={handleUpdate}
       isPersonalWorkspace={workspace.personal}
     >
-      <div className="flex h-full flex-col overflow-x-hidden">
-        {/* Task Dialog Manager for centralized task editing */}
+      <div
+        className="-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] min-h-0 flex-1 flex-col overflow-hidden md:-mx-4"
+        data-testid="task-project-detail-shell"
+      >
         <TaskDialogManager wsId={wsId} />
 
-        {/* Header */}
-        <ProjectHeader
-          projectName={project.name}
-          editedName={projectForm.editedName}
-          setEditedName={projectForm.setEditedName}
-          isEditingName={projectForm.isEditingName}
-          setIsEditingName={projectForm.setIsEditingName}
-          editedStatus={projectForm.editedStatus}
-          editedHealthStatus={projectForm.editedHealthStatus}
-          hasUnsavedChanges={projectForm.hasUnsavedChanges}
-          isSaving={projectForm.isSaving}
-          onSave={projectForm.saveProject}
-          onCancel={projectForm.cancelEdits}
-          fadeInUpVariant={fadeInUpVariant}
-        />
-
-        {/* Tabs */}
         <Tabs
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as ActiveTab)}
-          className="flex flex-1 flex-col overflow-hidden"
+          className="min-h-0 flex-1 gap-0 overflow-hidden"
         >
-          <TabsList className="my-4 w-fit rounded-md border bg-background p-1">
-            <TabsTrigger value="overview" className="gap-2">
-              <Sparkles className="h-4 w-4" />
-              {t('overview')}
-            </TabsTrigger>
-            <TabsTrigger value="updates" className="gap-2">
-              <TrendingUp className="h-4 w-4" />
-              {t('updates')}
-            </TabsTrigger>
-            <TabsTrigger value="tasks" className="gap-2">
-              <Target className="h-4 w-4" />
-              {t('tasks')} ({tasks.length})
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="gap-2">
-              <FileText className="h-4 w-4" />
-              {t('documents')} ({documents.length})
-            </TabsTrigger>
-          </TabsList>
+          <div className="shrink-0 border-b bg-background px-2 py-2 md:px-4">
+            <ProjectHeader
+              projectName={project.name}
+              editedName={projectForm.editedName}
+              setEditedName={projectForm.setEditedName}
+              isEditingName={projectForm.isEditingName}
+              setIsEditingName={projectForm.setIsEditingName}
+              editedStatus={projectForm.editedStatus}
+              editedHealthStatus={projectForm.editedHealthStatus}
+              hasUnsavedChanges={projectForm.hasUnsavedChanges}
+              isSaving={projectForm.isSaving}
+              onSave={projectForm.saveProject}
+              onCancel={projectForm.cancelEdits}
+              fadeInUpVariant={fadeInUpVariant}
+            />
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="mt-0 flex-1 overflow-auto">
+            <div className="mt-2 overflow-x-auto">
+              <TabsList className="w-max rounded-md border bg-muted/50 p-1">
+                <TabsTrigger value="overview" className="gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  {t('overview')}
+                </TabsTrigger>
+                <TabsTrigger value="updates" className="gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  {t('updates')}
+                </TabsTrigger>
+                <TabsTrigger value="tasks" className="gap-2">
+                  <Target className="h-4 w-4" />
+                  {t('tasks')} ({tasks.length})
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  {t('documents')} ({documents.length})
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
+
+          <TabsContent
+            value="overview"
+            className="mt-0 min-h-0 flex-1 overflow-y-auto px-2 py-4 md:px-4"
+            data-testid="task-project-tab-overview"
+          >
             <ProjectOverviewProvider
               value={{
                 project,
@@ -282,8 +289,10 @@ export function TaskProjectDetail({
             </ProjectOverviewProvider>
           </TabsContent>
 
-          {/* Updates Tab */}
-          <TabsContent value="updates" className="mt-0 flex-1 overflow-auto">
+          <TabsContent
+            value="updates"
+            className="mt-0 min-h-0 flex-1 overflow-y-auto px-2 py-4 md:px-4"
+          >
             <UpdatesTab
               updates={projectUpdates.updates}
               isLoadingUpdates={projectUpdates.isLoadingUpdates}
@@ -304,8 +313,11 @@ export function TaskProjectDetail({
             />
           </TabsContent>
 
-          {/* Tasks Tab */}
-          <TabsContent value="tasks" className="mt-0 flex-1 overflow-hidden">
+          <TabsContent
+            value="tasks"
+            className="mt-0 min-h-0 flex-1 overflow-hidden"
+            data-testid="task-project-tab-tasks"
+          >
             <TasksTab
               workspace={workspace}
               wsId={wsId}
@@ -327,7 +339,10 @@ export function TaskProjectDetail({
             />
           </TabsContent>
 
-          <TabsContent value="documents" className="mt-0 flex-1 overflow-auto">
+          <TabsContent
+            value="documents"
+            className="mt-0 min-h-0 flex-1 overflow-y-auto px-2 py-4 md:px-4"
+          >
             <DocumentsTab
               documents={documents}
               fadeInViewVariant={fadeInViewVariant}
@@ -335,7 +350,6 @@ export function TaskProjectDetail({
           </TabsContent>
         </Tabs>
 
-        {/* Link Tasks Dialog */}
         <LinkTaskDialog
           open={taskLinking.showLinkTaskDialog}
           onOpenChange={taskLinking.setShowLinkTaskDialog}

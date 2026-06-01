@@ -16,10 +16,10 @@ export function OverviewLinkedDocuments() {
 
   return (
     <motion.div {...fadeInViewVariant(0.35)}>
-      <Card className="border-dynamic-cyan/20 bg-background p-5">
+      <Card className="rounded-lg bg-background p-5 shadow-none">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-dynamic-cyan/10 text-dynamic-cyan">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
               <FileText className="h-4 w-4" />
             </div>
             <div>
@@ -47,7 +47,7 @@ export function OverviewLinkedDocuments() {
             {recentDocuments.map((document) => (
               <div
                 key={document.id}
-                className="flex items-center justify-between gap-3 rounded-md border bg-dynamic-surface/20 p-3"
+                className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 p-3"
               >
                 <div className="min-w-0 flex-1">
                   <h4 className="truncate font-medium text-sm">

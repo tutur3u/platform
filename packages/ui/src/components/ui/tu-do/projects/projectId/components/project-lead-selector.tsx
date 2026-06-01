@@ -25,12 +25,7 @@ export function ProjectLeadSelector({
       value={leadId || 'none'}
       onValueChange={(value) => onChange(value === 'none' ? null : value)}
     >
-      <SelectTrigger
-        className={cn(
-          'border-dynamic-purple/30 bg-background/50',
-          compact && 'h-9'
-        )}
-      >
+      <SelectTrigger className={cn('bg-background', compact && 'h-9')}>
         <SelectValue
           placeholder={isLoading ? t('loading') : t('select_lead')}
         />

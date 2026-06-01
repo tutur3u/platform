@@ -22,16 +22,14 @@ export function OverviewDescription() {
 
   return (
     <motion.div {...fadeInViewVariant(0)}>
-      <Card className="group relative border-2 border-dynamic-purple/20 bg-dynamic-purple/5 p-6 transition-all hover:border-dynamic-purple/30 hover:shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="bg-linear-to-r from-dynamic-purple to-dynamic-pink bg-clip-text font-bold text-lg text-transparent">
-            {t('description')}
-          </h2>
+      <Card className="group relative rounded-lg bg-background p-5 shadow-none">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-semibold text-base">{t('description')}</h2>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="opacity-0 transition-opacity group-hover:opacity-100"
+              className="h-8 w-8 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
               onClick={() => setIsEditingDescription(true)}
               aria-label={t('edit_description_aria')}
             >
@@ -41,9 +39,9 @@ export function OverviewDescription() {
               variant="outline"
               size="sm"
               onClick={() => setShowConfiguration(!showConfiguration)}
-              className="border-dynamic-purple/30 transition-all hover:border-dynamic-purple/50 hover:bg-dynamic-purple/10"
+              className="gap-2"
             >
-              <Settings className="mr-2 h-4 w-4" />
+              <Settings className="h-4 w-4" />
               {showConfiguration
                 ? t('hide_configuration')
                 : t('show_configuration')}

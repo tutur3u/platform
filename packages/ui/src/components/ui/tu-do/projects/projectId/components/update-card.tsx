@@ -42,11 +42,11 @@ export function UpdateCard({
 
   return (
     <motion.div {...fadeInVariant}>
-      <Card className="group relative border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-6 transition-all hover:border-dynamic-blue/30 hover:shadow-lg">
+      <Card className="group relative rounded-lg bg-background p-5 shadow-none">
         <div className="mb-3 flex items-start gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={update.creator?.avatar_url || undefined} />
-            <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple text-white">
+            <AvatarFallback>
               {update.creator?.display_name?.[0]?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
@@ -79,7 +79,7 @@ export function UpdateCard({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="h-8 w-8 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
                       disabled={isDeleting}
                       aria-label={t('actions_aria')}
                     >
@@ -112,12 +112,7 @@ export function UpdateCard({
                   autoFocus
                 />
                 <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={onSave}
-                    className="bg-linear-to-r from-dynamic-blue to-dynamic-purple"
-                  >
+                  <Button type="button" size="sm" onClick={onSave}>
                     <Check className="mr-2 h-4 w-4" />
                     {t('save')}
                   </Button>
@@ -148,7 +143,7 @@ export function UpdateCard({
                 <Badge
                   key={idx}
                   variant="outline"
-                  className="cursor-pointer border-dynamic-pink/30 bg-dynamic-pink/10 transition-all hover:border-dynamic-pink/50"
+                  className="cursor-pointer transition-colors hover:bg-muted/50"
                 >
                   {group.emoji} {group.count}
                 </Badge>
@@ -158,7 +153,7 @@ export function UpdateCard({
 
         {isDeleting && (
           <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
-            <Loader2 className="h-6 w-6 animate-spin text-dynamic-red" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         )}
       </Card>

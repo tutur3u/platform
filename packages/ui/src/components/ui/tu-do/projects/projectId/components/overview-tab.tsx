@@ -9,9 +9,9 @@ import { ProjectSidebar } from './project-sidebar';
 
 export function OverviewTab() {
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       {/* Main content area */}
-      <div className="space-y-6 lg:col-span-2">
+      <div className="space-y-4 lg:col-span-2">
         {/* Description Card */}
         <OverviewDescription />
 

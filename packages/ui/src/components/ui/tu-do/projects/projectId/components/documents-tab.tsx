@@ -24,7 +24,7 @@ export function DocumentsTab({
     return (
       <motion.div
         {...fadeInViewVariant(0.1)}
-        className="flex min-h-[360px] flex-col items-center justify-center gap-4 rounded-lg border border-dashed bg-dynamic-surface/20 p-8 text-center"
+        className="flex min-h-[360px] flex-col items-center justify-center gap-4 rounded-lg border border-dashed bg-muted/20 p-8 text-center"
       >
         <div className="flex h-14 w-14 items-center justify-center rounded-lg border bg-background">
           <FileText className="h-6 w-6 text-muted-foreground" />
@@ -57,10 +57,10 @@ export function DocumentsTab({
         {documents.map((document) => (
           <Card
             key={document.id}
-            className="group border-dynamic-surface/60 bg-background p-4 transition-colors hover:border-dynamic-cyan/40 hover:bg-dynamic-cyan/5"
+            className="group rounded-lg bg-background p-4 shadow-none transition-colors hover:bg-muted/30"
           >
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-dynamic-cyan/10 text-dynamic-cyan">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-muted text-muted-foreground">
                 <FileText className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1 space-y-2">

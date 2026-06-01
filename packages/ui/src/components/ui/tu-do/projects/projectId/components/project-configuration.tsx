@@ -48,12 +48,10 @@ export function ProjectConfiguration() {
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="border-2 border-dynamic-blue/20 bg-dynamic-blue/5 p-6 transition-all hover:border-dynamic-blue/30 hover:shadow-xl">
-        <h2 className="mb-6 bg-linear-to-r from-dynamic-blue to-dynamic-cyan bg-clip-text font-bold text-lg text-transparent">
-          {t('title')}
-        </h2>
+      <Card className="rounded-lg bg-background p-5 shadow-none">
+        <h2 className="mb-5 font-semibold text-base">{t('title')}</h2>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
           {/* Status */}
           <div className="space-y-2">
             <Label className="text-foreground/70 text-sm">
@@ -63,7 +61,7 @@ export function ProjectConfiguration() {
               value={editedStatus || undefined}
               onValueChange={(value) => setEditedStatus(value)}
             >
-              <SelectTrigger className="border-dynamic-purple/30 bg-background/50">
+              <SelectTrigger className="bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -101,7 +99,7 @@ export function ProjectConfiguration() {
                 setEditedPriority(value as TaskPriority)
               }
             >
-              <SelectTrigger className="border-dynamic-purple/30 bg-background/50">
+              <SelectTrigger className="bg-background">
                 <SelectValue placeholder={t('priority_placeholder')} />
               </SelectTrigger>
               <SelectContent>
@@ -144,7 +142,7 @@ export function ProjectConfiguration() {
                 setEditedHealthStatus(value as HealthStatus)
               }
             >
-              <SelectTrigger className="border-dynamic-purple/30 bg-background/50">
+              <SelectTrigger className="bg-background">
                 <SelectValue placeholder={t('health_status_placeholder')} />
               </SelectTrigger>
               <SelectContent>
@@ -192,7 +190,7 @@ export function ProjectConfiguration() {
               type="date"
               value={editedStartDate}
               onChange={(e) => setEditedStartDate(e.target.value)}
-              className="border-dynamic-purple/30 bg-background/50"
+              className="bg-background"
             />
           </div>
 
@@ -205,12 +203,12 @@ export function ProjectConfiguration() {
               type="date"
               value={editedEndDate}
               onChange={(e) => setEditedEndDate(e.target.value)}
-              className="border-dynamic-purple/30 bg-background/50"
+              className="bg-background"
             />
           </div>
 
           {/* Archived */}
-          <div className="flex items-center justify-between rounded-lg border border-dynamic-purple/30 bg-background/50 p-3">
+          <div className="flex items-center justify-between rounded-md border bg-muted/30 p-3">
             <div className="space-y-0.5">
               <Label className="text-foreground/70 text-sm">
                 {t('archive_project')}
