@@ -1,5 +1,5 @@
 import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog-content';
-import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
+import { TransactionsCreateSummary } from '@tuturuuu/ui/finance/transactions/transactions-create-summary';
 import { TransactionsInfinitePage } from '@tuturuuu/ui/finance/transactions/transactions-infinite-page';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
@@ -10,7 +10,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { CreateDialogFeatureSummary } from '../shared/create-dialog-feature-summary';
 
 interface Props {
   currency?: string;
@@ -76,26 +75,18 @@ export default async function TransactionsPage({
 
   return (
     <>
-      <CreateDialogFeatureSummary
+      <TransactionsCreateSummary
         pluralTitle={t('ws-transactions.plural')}
         singularTitle={t('ws-transactions.singular')}
         description={t('ws-transactions.description')}
         createTitle={t('ws-transactions.create')}
         createDescription={t('ws-transactions.create_description')}
         defaultOpen={openCreateDialog}
-        form={
-          canCreateTransactions ? (
-            <TransactionForm
-              wsId={wsId}
-              canCreateTransactions={canCreateTransactions}
-              canChangeFinanceWallets={canChangeFinanceWallets}
-              canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
-              canCreateConfidentialTransactions={
-                canCreateConfidentialTransactions
-              }
-            />
-          ) : undefined
-        }
+        wsId={wsId}
+        canCreateTransactions={canCreateTransactions}
+        canChangeFinanceWallets={canChangeFinanceWallets}
+        canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
+        canCreateConfidentialTransactions={canCreateConfidentialTransactions}
       />
       <Separator className="my-4" />
       <TransactionsInfinitePage

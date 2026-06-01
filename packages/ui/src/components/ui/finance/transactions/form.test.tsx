@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateDialogFeatureSummary } from '../shared/create-dialog-feature-summary';
 import { TransactionForm } from './form';
+import { TransactionsCreateSummary } from './transactions-create-summary';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -111,6 +112,36 @@ describe('TransactionForm', () => {
           singularTitle="Transaction"
           createTitle="Create"
           form={<TransactionForm wsId="ws-1" canCreateTransactions />}
+        />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByText('transaction-data-table.tab_basic')).toBeVisible();
+  });
+
+  it('renders through the transaction create summary client boundary', () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TransactionsCreateSummary
+          canChangeFinanceWallets
+          canCreateConfidentialTransactions
+          canCreateTransactions
+          canSetFinanceWalletsOnCreate
+          createDescription="Create description"
+          createTitle="Create"
+          defaultOpen
+          description="Transactions description"
+          pluralTitle="Transactions"
+          singularTitle="Transaction"
+          wsId="ws-1"
         />
       </QueryClientProvider>
     );
