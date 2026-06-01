@@ -460,6 +460,15 @@ export async function updateExternalProjectTeamRole({
     );
   }
 
+  const roleAccess = await requireExternalProjectRoleInWorkspace({
+    access,
+    roleId,
+  });
+
+  if (!roleAccess.ok) {
+    return roleAccess.response;
+  }
+
   const roleQuery = access.admin
     .from('workspace_roles')
     .update({ name: payload.name } satisfies TablesUpdate<'workspace_roles'>)
@@ -623,6 +632,33 @@ export async function parseExternalProjectTeamMemberType(request: Request) {
   return { memberType, ok: true as const };
 }
 
+async function requireExternalProjectRoleInWorkspace({
+  access,
+  roleId,
+}: {
+  access: ExternalProjectTeamAccess;
+  roleId: string;
+}) {
+  const { data: role, error } = await access.admin
+    .from('workspace_roles')
+    .select('id')
+    .eq('id', roleId)
+    .eq('ws_id', access.normalizedWorkspaceId)
+    .single();
+
+  if (error || !role) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { message: 'Access level not found' },
+        { status: 404 }
+      ),
+    };
+  }
+
+  return { ok: true as const };
+}
+
 export async function addExternalProjectRoleMembers({
   access,
   request,
@@ -636,6 +672,15 @@ export async function addExternalProjectRoleMembers({
 
   if (!data?.memberIds) {
     return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
+  }
+
+  const roleAccess = await requireExternalProjectRoleInWorkspace({
+    access,
+    roleId,
+  });
+
+  if (!roleAccess.ok) {
+    return roleAccess.response;
   }
 
   const { error } = await access.admin.from('workspace_role_members').insert(
@@ -667,18 +712,13 @@ export async function listExternalProjectRoleMembers({
   access: ExternalProjectTeamAccess;
   roleId: string;
 }) {
-  const { data: role, error: roleError } = await access.admin
-    .from('workspace_roles')
-    .select('id')
-    .eq('id', roleId)
-    .eq('ws_id', access.normalizedWorkspaceId)
-    .single();
+  const roleAccess = await requireExternalProjectRoleInWorkspace({
+    access,
+    roleId,
+  });
 
-  if (roleError || !role) {
-    return NextResponse.json(
-      { message: 'Access level not found' },
-      { status: 404 }
-    );
+  if (!roleAccess.ok) {
+    return roleAccess.response;
   }
 
   const { data, error, count } = await access.admin
@@ -723,6 +763,15 @@ export async function removeExternalProjectRoleMember({
   roleId: string;
   userId: string;
 }) {
+  const roleAccess = await requireExternalProjectRoleInWorkspace({
+    access,
+    roleId,
+  });
+
+  if (!roleAccess.ok) {
+    return roleAccess.response;
+  }
+
   const { error } = await access.admin
     .from('workspace_role_members')
     .delete()
