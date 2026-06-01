@@ -583,6 +583,8 @@ as $$
             'user_group_attendance',
             'user_group_linked_products',
             'user_group_metrics',
+            'user_group_metric_categories',
+            'user_group_metric_category_links',
             'user_indicators',
             'user_feedbacks',
             'workspace_course_modules',
@@ -593,9 +595,7 @@ as $$
           audit_log.table_schema = 'private'
           and audit_log.table_name in (
             'external_user_monthly_reports',
-            'external_user_monthly_report_logs',
-            'user_group_metric_categories',
-            'user_group_metric_category_links'
+            'external_user_monthly_report_logs'
           )
         )
       )
@@ -772,7 +772,7 @@ as $$
       on post_group.id = post_record.group_id
     left join public.user_group_metrics metric_record
       on metric_record.id = ids.metric_id
-    left join private.user_group_metric_categories category_record
+    left join public.user_group_metric_categories category_record
       on category_record.id = ids.category_id
     left join public.workspace_course_modules module_record
       on module_record.id = ids.module_id

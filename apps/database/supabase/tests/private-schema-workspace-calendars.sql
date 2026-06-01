@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(21);
+select plan(30);
 
 select ok(
   to_regclass('public.workspace_calendars') is null,
@@ -216,6 +216,22 @@ insert into private.workspace_calendars (
   999
 );
 
+insert into public.handles (value)
+values ('pgtap-private-calendar-trigger')
+on conflict do nothing;
+
+insert into public.workspaces (
+  id,
+  name,
+  handle,
+  creator_id
+) values (
+  '10000000-0000-0000-0000-000000000302',
+  'pgTAP private calendar trigger workspace',
+  'pgtap-private-calendar-trigger',
+  '00000000-0000-0000-0000-000000000001'
+);
+
 reset role;
 
 select pass(
@@ -230,6 +246,100 @@ select ok(
       and ws_id = '00000000-0000-0000-0000-000000000000'
   ),
   'private workspace calendar rows are readable for server-owned verification'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from private.workspace_calendars
+    where ws_id = '10000000-0000-0000-0000-000000000302'
+      and is_system
+      and calendar_type in ('primary', 'tasks', 'habits')
+  ),
+  3,
+  'workspace insert trigger creates system calendars in the private schema'
+);
+
+select is(
+  public.get_default_calendar_for_event(
+    '10000000-0000-0000-0000-000000000302',
+    'manual'
+  ),
+  (
+    select id
+    from private.workspace_calendars
+    where ws_id = '10000000-0000-0000-0000-000000000302'
+      and calendar_type = 'primary'
+    limit 1
+  ),
+  'default calendar helper reads private workspace calendars'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.get_default_calendar_for_event(uuid,public.calendar_scheduling_source)',
+    'execute'
+  ),
+  'anon cannot execute the default calendar helper'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.get_default_calendar_for_event(uuid,public.calendar_scheduling_source)',
+    'execute'
+  ),
+  'authenticated cannot execute the default calendar helper directly'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.get_default_calendar_for_event(uuid,public.calendar_scheduling_source)',
+    'execute'
+  ),
+  'service role can execute the default calendar helper'
+);
+
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.get_or_create_external_calendar(uuid,text,text,text,public.calendar_provider)',
+    'execute'
+  ),
+  'authenticated can execute the validated external calendar helper'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.get_or_create_external_calendar(uuid,text,text,text,public.calendar_provider)',
+    'execute'
+  ),
+  'service role can execute the external calendar helper'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.get_or_create_external_calendar(uuid,text,text,text,public.calendar_provider)',
+    'execute'
+  ),
+  'anon cannot execute the external calendar helper'
+);
+
+select ok(
+  pg_get_functiondef(
+    'public.create_workspace_system_calendars()'::regprocedure
+  ) like '%private.workspace_calendars%'
+    and pg_get_functiondef(
+      'public.get_or_create_external_calendar(uuid,text,text,text,public.calendar_provider)'::regprocedure
+    ) like '%private.workspace_calendars%'
+    and pg_get_functiondef(
+      'public.get_default_calendar_for_event(uuid,public.calendar_scheduling_source)'::regprocedure
+    ) like '%private.workspace_calendars%',
+  'workspace calendar helper functions reference private workspace calendars'
 );
 
 select * from finish();

@@ -346,15 +346,10 @@ as $function$
             'workspace_user_groups_users',
             'workspace_user_group_tag_groups',
             'workspace_default_included_user_groups',
-            'user_group_posts',
-            'user_group_post_logs',
-            'user_group_post_checks',
             'user_group_attendance',
             'user_group_linked_products',
             'user_group_metrics',
             'user_indicators',
-            'external_user_monthly_reports',
-            'external_user_monthly_report_logs',
             'user_feedbacks',
             'workspace_course_modules',
             'workspace_course_module_groups'
@@ -363,6 +358,11 @@ as $function$
         or (
           audit_log.table_schema = 'private'
           and audit_log.table_name in (
+            'user_group_posts',
+            'user_group_post_logs',
+            'user_group_post_checks',
+            'external_user_monthly_reports',
+            'external_user_monthly_report_logs',
             'user_group_metric_categories',
             'user_group_metric_category_links'
           )
@@ -535,7 +535,7 @@ as $function$
     from ids
     left join public.workspace_user_groups direct_group
       on direct_group.id = ids.direct_group_id
-    left join public.user_group_posts post_record
+    left join private.user_group_posts post_record
       on post_record.id = ids.post_id
     left join public.workspace_user_groups post_group
       on post_group.id = post_record.group_id
@@ -549,7 +549,7 @@ as $function$
       on module_group_record.id = ids.module_group_id
     left join public.workspace_user_groups module_group_parent
       on module_group_parent.id = coalesce(module_record.group_id, module_group_record.group_id)
-    left join public.external_user_monthly_reports report_record
+    left join private.external_user_monthly_reports report_record
       on report_record.id = ids.report_id
     left join public.workspace_user_groups report_group
       on report_group.id = report_record.group_id
