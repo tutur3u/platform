@@ -6,6 +6,7 @@ const emailServiceMocks = vi.hoisted(() => ({
 }));
 const storageMocks = vi.hoisted(() => ({
   downloadWorkspaceStorageObjectForProvider: vi.fn(),
+  getWorkspaceStorageObjectMetadataForProvider: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/email-service', () => ({
@@ -18,6 +19,16 @@ vi.mock('@tuturuuu/email-service', () => ({
 vi.mock('@/lib/workspace-storage-provider', () => ({
   downloadWorkspaceStorageObjectForProvider:
     storageMocks.downloadWorkspaceStorageObjectForProvider,
+  getWorkspaceStorageObjectMetadataForProvider:
+    storageMocks.getWorkspaceStorageObjectMetadataForProvider,
+  WorkspaceStorageError: class WorkspaceStorageError extends Error {
+    constructor(
+      message: string,
+      public readonly status = 500
+    ) {
+      super(message);
+    }
+  },
 }));
 
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
@@ -63,6 +74,17 @@ describe('topic announcement email helpers', () => {
     emailServiceMocks.fromWorkspace.mockReset();
     emailServiceMocks.sendWorkspaceEmail.mockReset();
     storageMocks.downloadWorkspaceStorageObjectForProvider.mockReset();
+    storageMocks.getWorkspaceStorageObjectMetadataForProvider.mockReset();
+    storageMocks.getWorkspaceStorageObjectMetadataForProvider.mockResolvedValue(
+      {
+        contentType: 'application/pdf',
+        fullPath: 'workspace-1/topic-announcements/a/lesson-plan.pdf',
+        path: 'topic-announcements/a/lesson-plan.pdf',
+        provider: 'supabase',
+        size: 6,
+        updatedAt: '2026-06-02T00:00:00.000Z',
+      }
+    );
   });
 
   afterEach(() => {
@@ -297,8 +319,9 @@ describe('topic announcement email helpers', () => {
                   content_type: 'application/pdf',
                   file_name:
                     '1314c279-8f86-4674-83e4-811190d22166-lesson-plan.pdf',
-                  size_bytes: 4,
-                  storage_path: 'topic-announcements/a/lesson-plan.pdf',
+                  size_bytes: 6,
+                  storage_path:
+                    'topic-announcements/attachments/lesson-plan.pdf',
                   storage_provider: 'supabase',
                 },
               ],
@@ -322,7 +345,7 @@ describe('topic announcement email helpers', () => {
       rpc: vi.fn(async () => ({ data: true, error: null })),
     };
     storageMocks.downloadWorkspaceStorageObjectForProvider.mockResolvedValue({
-      buffer: new Uint8Array([37, 80, 68, 70]),
+      buffer: new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]),
       contentType: 'application/pdf',
     });
     emailServiceMocks.sendWorkspaceEmail.mockResolvedValue({
@@ -346,7 +369,7 @@ describe('topic announcement email helpers', () => {
     ).toHaveBeenCalledWith(
       'workspace-1',
       'supabase',
-      'topic-announcements/a/lesson-plan.pdf'
+      'topic-announcements/attachments/lesson-plan.pdf'
     );
     expect(emailServiceMocks.sendWorkspaceEmail).toHaveBeenCalledWith(
       'workspace-1',
@@ -355,7 +378,7 @@ describe('topic announcement email helpers', () => {
           attachments: [
             {
               contentType: 'application/pdf',
-              data: new Uint8Array([37, 80, 68, 70]),
+              data: new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]),
               filename: 'lesson-plan.pdf',
             },
           ],
@@ -365,11 +388,116 @@ describe('topic announcement email helpers', () => {
             {
               contentType: 'application/pdf',
               fileName: 'lesson-plan.pdf',
-              sizeBytes: 4,
+              sizeBytes: 6,
             },
           ],
         }),
       })
     );
+  });
+
+  it('marks announcements failed instead of sending attachments with invalid stored metadata', async () => {
+    const announcement = {
+      body: 'Please review the attachment.',
+      class_label: 'EGET1',
+      day_label: 'Saturday',
+      id: 'announcement-1',
+      place: 'Center 1',
+      room: '6',
+      session_date: '2026-06-01',
+      start_time: '16:30:00',
+      status: 'draft',
+      title: 'Unit 3 speaking practice',
+      topic: 'Practice speaking about weekend plans.',
+    };
+    const contact = {
+      email: 'teacher@example.com',
+      id: 'contact-1',
+    };
+    const updateQuery = {
+      eq: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+    };
+    const sbAdmin = {
+      from: vi.fn((table: string) => {
+        if (table === 'topic_announcements') {
+          return {
+            eq: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn(async () => ({
+              data: announcement,
+              error: null,
+            })),
+            select: vi.fn().mockReturnThis(),
+            update: updateQuery.update,
+          };
+        }
+        if (table === 'topic_announcement_recipients') {
+          return {
+            eq: vi.fn(async () => ({
+              data: [{ contact, contact_id: contact.id }],
+              error: null,
+            })),
+            select: vi.fn().mockReturnThis(),
+          };
+        }
+        if (table === 'topic_announcement_contact_verifications') {
+          return verificationQuery([]);
+        }
+        if (table === 'topic_announcement_attachments') {
+          return {
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn(async () => ({
+              data: [
+                {
+                  content_type: 'application/pdf',
+                  file_name: 'lesson-plan.pdf',
+                  size_bytes: 6,
+                  storage_path:
+                    'topic-announcements/attachments/lesson-plan.pdf',
+                  storage_provider: 'supabase',
+                },
+              ],
+              error: null,
+            })),
+            select: vi.fn().mockReturnThis(),
+          };
+        }
+        throw new Error(`Unexpected table ${table}`);
+      }),
+      rpc: vi.fn(async () => ({ data: true, error: null })),
+    };
+    storageMocks.getWorkspaceStorageObjectMetadataForProvider.mockResolvedValue(
+      {
+        contentType: 'application/pdf',
+        fullPath: 'workspace-1/topic-announcements/attachments/lesson-plan.pdf',
+        path: 'topic-announcements/attachments/lesson-plan.pdf',
+        provider: 'supabase',
+        size: 7,
+        updatedAt: '2026-06-02T00:00:00.000Z',
+      }
+    );
+
+    const result = await sendTopicAnnouncement({
+      actorUserId: 'user-1',
+      announcementId: announcement.id,
+      normalizedWsId: 'workspace-1',
+      request: new Request('https://tuturuuu.com/api'),
+      resend: false,
+      sbAdmin,
+    });
+
+    expect(result).toEqual({ error: 'INVALID_ATTACHMENT', status: 400 });
+    expect(updateQuery.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        last_error:
+          'INVALID_ATTACHMENT: Topic Announcement attachment metadata does not match the uploaded file',
+        status: 'failed',
+        updated_by: 'user-1',
+      })
+    );
+    expect(
+      storageMocks.downloadWorkspaceStorageObjectForProvider
+    ).not.toHaveBeenCalled();
+    expect(emailServiceMocks.sendWorkspaceEmail).not.toHaveBeenCalled();
   });
 });

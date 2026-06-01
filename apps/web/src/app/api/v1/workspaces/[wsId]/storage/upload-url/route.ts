@@ -11,6 +11,7 @@ import { validateWorkspaceStorageUploadMetadata } from '@/lib/workspace-storage-
 import {
   resolveTopicAnnouncementsAccess,
   TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES,
+  TOPIC_ANNOUNCEMENT_ATTACHMENT_UPLOAD_PATH,
   TOPIC_ANNOUNCEMENT_MAX_ATTACHMENT_BYTES,
 } from '../../topic-announcements/shared';
 import type { WorkspaceStorageRouteAuthContext } from '../route-auth';
@@ -26,9 +27,6 @@ const uploadUrlSchema = z.object({
   upsert: z.boolean().optional(),
   size: z.number().int().min(0).optional(),
 });
-
-const TOPIC_ANNOUNCEMENT_ATTACHMENT_UPLOAD_PATH =
-  'topic-announcements/attachments';
 
 const TOPIC_ANNOUNCEMENT_EXTENSION_CONTENT_TYPES: Record<
   string,

@@ -40,6 +40,7 @@ vi.mock('../../topic-announcements/shared', () => ({
     'image/png',
     'image/webp',
   ],
+  TOPIC_ANNOUNCEMENT_ATTACHMENT_UPLOAD_PATH: 'topic-announcements/attachments',
   TOPIC_ANNOUNCEMENT_MAX_ATTACHMENT_BYTES: 10 * 1024 * 1024,
 }));
 
@@ -252,6 +253,22 @@ describe('workspace storage upload-url route', () => {
       const response = await postUploadUrl(payload);
       expect(response.status).toBe(expectedStatus);
     }
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('rejects Topic Announcement attachment overwrite signing', async () => {
+    const response = await postUploadUrl({
+      contentType: 'application/pdf',
+      filename: 'lesson-plan.pdf',
+      path: 'topic-announcements/attachments',
+      size: 1234,
+      upsert: true,
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Upload overwrite is not allowed for this path',
+    });
     expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 

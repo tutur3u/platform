@@ -23,6 +23,7 @@ import { downloadWorkspaceStorageObjectForProvider } from '@/lib/workspace-stora
 import {
   getPublicSchemaClient,
   type TopicAnnouncementsSupabaseClient,
+  validateTopicAnnouncementAttachmentDraftObjects,
 } from './shared';
 
 const VERIFICATION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -211,6 +212,32 @@ export async function sendTopicAnnouncement({
 
   const attachments: EmailAttachment[] = [];
   const attachmentMetadata: EmailAttachmentAuditMetadata[] = [];
+  const attachmentValidation =
+    await validateTopicAnnouncementAttachmentDraftObjects({
+      attachmentDrafts: (
+        (attachmentRows ?? []) as TopicAnnouncementAttachmentEmailRow[]
+      ).map((attachment) => ({
+        contentType: attachment.content_type,
+        fileName: attachment.file_name,
+        sizeBytes: Number(attachment.size_bytes),
+        storagePath: attachment.storage_path,
+        storageProvider: attachment.storage_provider,
+      })),
+      normalizedWsId,
+    });
+
+  if (!attachmentValidation.ok) {
+    await sbAdmin
+      .from('topic_announcements')
+      .update({
+        last_error: `INVALID_ATTACHMENT: ${attachmentValidation.message}`,
+        status: 'failed',
+        updated_by: actorUserId,
+      })
+      .eq('id', announcementId)
+      .eq('ws_id', normalizedWsId);
+    return { error: 'INVALID_ATTACHMENT', status: attachmentValidation.status };
+  }
 
   for (const attachment of (attachmentRows ??
     []) as TopicAnnouncementAttachmentEmailRow[]) {

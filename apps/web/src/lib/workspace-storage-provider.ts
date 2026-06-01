@@ -99,6 +99,15 @@ export interface WorkspaceStorageRawObject {
   isFolderPlaceholder: boolean;
 }
 
+export interface WorkspaceStorageObjectMetadata {
+  provider: WorkspaceStorageProvider;
+  path: string;
+  fullPath: string;
+  size: number;
+  contentType?: string | null;
+  updatedAt?: string | null;
+}
+
 interface WorkspaceStorageRawListOptions {
   pathPrefix?: string;
   limit?: number;
@@ -1080,6 +1089,73 @@ export async function listWorkspaceStorageRawObjectsForProvider(
   } while (continuationToken);
 
   return objects;
+}
+
+export async function getWorkspaceStorageObjectMetadataForProvider(
+  wsId: string,
+  provider: WorkspaceStorageProvider,
+  path: string
+): Promise<WorkspaceStorageObjectMetadata> {
+  const fullPath = buildWorkspaceStorageKey(wsId, path);
+
+  if (provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
+    const supabase = await createDynamicAdminClient();
+    const object = await findSupabaseStorageObject(
+      supabase as TypedSupabaseClient,
+      fullPath
+    );
+
+    if (!object) {
+      throw new WorkspaceStorageError('Storage object not found', 404);
+    }
+
+    return {
+      provider,
+      path,
+      fullPath,
+      size: toNumber(object.metadata?.size),
+      contentType: getSupabaseStorageObjectContentType(object),
+      updatedAt:
+        typeof object.updated_at === 'string' ? object.updated_at : null,
+    };
+  }
+
+  const config = await resolveWorkspaceStorageBackendConfig(wsId, provider);
+
+  if (config.provider !== WORKSPACE_STORAGE_PROVIDER_R2) {
+    throw new WorkspaceStorageError(
+      'Cloudflare R2 is not fully configured for this workspace.',
+      400
+    );
+  }
+
+  try {
+    const response = await createR2Client(config).send(
+      new HeadObjectCommand({
+        Bucket: config.bucket,
+        Key: fullPath,
+      })
+    );
+
+    return {
+      provider,
+      path,
+      fullPath,
+      size: Number(response.ContentLength ?? 0),
+      contentType: response.ContentType ?? null,
+      updatedAt: response.LastModified?.toISOString() ?? null,
+    };
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      throw new WorkspaceStorageError('Storage object not found', 404);
+    }
+
+    throw new WorkspaceStorageError(
+      error instanceof Error
+        ? error.message
+        : 'Failed to inspect storage object'
+    );
+  }
 }
 
 export async function downloadWorkspaceStorageObjectForProvider(

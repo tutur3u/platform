@@ -10,6 +10,8 @@ import {
   TopicAnnouncementListQuerySchema,
   TopicAnnouncementPayloadSchema,
   type TopicAnnouncementsSupabaseClient,
+  topicAnnouncementAttachmentValidationResponse,
+  validateTopicAnnouncementAttachmentDraftObjects,
   validateTopicAnnouncementGroupId,
 } from './shared';
 
@@ -212,6 +214,15 @@ export async function POST(request: Request, { params }: Params) {
     sbAdmin,
   });
   if (invalidGroup) return invalidGroup;
+
+  const attachmentValidation =
+    await validateTopicAnnouncementAttachmentDraftObjects({
+      attachmentDrafts: payload.attachmentDrafts,
+      normalizedWsId,
+    });
+  if (!attachmentValidation.ok) {
+    return topicAnnouncementAttachmentValidationResponse(attachmentValidation);
+  }
 
   const { data: announcement, error } = await sbAdmin
     .from('topic_announcements')

@@ -1,8 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET, POST } from './route';
 
 const mocks = vi.hoisted(() => ({
   resolveTopicAnnouncementsAccess: vi.fn(),
+  validateTopicAnnouncementAttachmentDraftObjects: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
@@ -104,6 +105,11 @@ vi.mock('./shared', () => {
         success: true,
       })),
     },
+    topicAnnouncementAttachmentValidationResponse: vi.fn((result: any) =>
+      Response.json({ message: result.message }, { status: result.status })
+    ),
+    validateTopicAnnouncementAttachmentDraftObjects:
+      mocks.validateTopicAnnouncementAttachmentDraftObjects,
     validateTopicAnnouncementGroupId: vi.fn(async () => null),
   };
 });
@@ -137,6 +143,9 @@ function setupAccess() {
       normalizedWsId: 'workspace-1',
       sbAdmin,
     },
+  });
+  mocks.validateTopicAnnouncementAttachmentDraftObjects.mockResolvedValue({
+    ok: true,
   });
 
   return { queryChain, sbAdmin };
@@ -175,6 +184,12 @@ describe('topic announcements GET route', () => {
 });
 
 describe('topic announcements POST route', () => {
+  beforeEach(() => {
+    mocks.validateTopicAnnouncementAttachmentDraftObjects.mockResolvedValue({
+      ok: true,
+    });
+  });
+
   it('persists uploaded attachment descriptors with the created announcement', async () => {
     const attachmentInsert = vi.fn(async () => ({ error: null }));
     const announcement = {
@@ -239,7 +254,8 @@ describe('topic announcements POST route', () => {
             file_name: 'lesson-plan.pdf',
             id: '123e4567-e89b-12d3-a456-426614174011',
             size_bytes: 1234,
-            storage_path: 'topic-announcements/drafts/lesson-plan-1234.pdf',
+            storage_path:
+              'topic-announcements/attachments/lesson-plan-1234.pdf',
             storage_provider: 'supabase',
           },
         ],
@@ -282,7 +298,8 @@ describe('topic announcements POST route', () => {
               contentType: 'application/pdf',
               fileName: 'lesson-plan.pdf',
               sizeBytes: 1234,
-              storagePath: 'topic-announcements/drafts/lesson-plan-1234.pdf',
+              storagePath:
+                'topic-announcements/attachments/lesson-plan-1234.pdf',
               storageProvider: 'supabase',
             },
           ],
@@ -303,10 +320,88 @@ describe('topic announcements POST route', () => {
         content_type: 'application/pdf',
         file_name: 'lesson-plan.pdf',
         size_bytes: 1234,
-        storage_path: 'topic-announcements/drafts/lesson-plan-1234.pdf',
+        storage_path: 'topic-announcements/attachments/lesson-plan-1234.pdf',
         storage_provider: 'supabase',
         ws_id: 'workspace-1',
       }),
     ]);
+    expect(
+      mocks.validateTopicAnnouncementAttachmentDraftObjects
+    ).toHaveBeenCalledWith({
+      attachmentDrafts: [
+        {
+          contentType: 'application/pdf',
+          fileName: 'lesson-plan.pdf',
+          sizeBytes: 1234,
+          storagePath: 'topic-announcements/attachments/lesson-plan-1234.pdf',
+          storageProvider: 'supabase',
+        },
+      ],
+      normalizedWsId: 'workspace-1',
+    });
+  });
+
+  it('rejects invalid uploaded attachment metadata before inserting announcements', async () => {
+    const insertAnnouncement = vi.fn();
+    const contactsQuery = {
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn(async () => ({
+        data: [{ id: '123e4567-e89b-12d3-a456-426614174001' }],
+        error: null,
+      })),
+      select: vi.fn().mockReturnThis(),
+    };
+    const sbAdmin = {
+      from: vi.fn((table: string) => {
+        if (table === 'topic_announcement_contacts') return contactsQuery;
+        if (table === 'topic_announcements') {
+          return {
+            insert: insertAnnouncement,
+          };
+        }
+        throw new Error(`Unexpected table ${table}`);
+      }),
+    };
+    mocks.resolveTopicAnnouncementsAccess.mockResolvedValue({
+      context: {
+        actorUserId: '123e4567-e89b-12d3-a456-426614174099',
+        normalizedWsId: 'workspace-1',
+        sbAdmin,
+      },
+    });
+    mocks.validateTopicAnnouncementAttachmentDraftObjects.mockResolvedValue({
+      message:
+        'Topic Announcement attachment metadata does not match the uploaded file',
+      ok: false,
+      status: 400,
+    });
+
+    const response = await POST(
+      new Request('http://localhost', {
+        body: JSON.stringify({
+          attachmentDrafts: [
+            {
+              contentType: 'application/pdf',
+              fileName: 'lesson-plan.pdf',
+              sizeBytes: 1234,
+              storagePath: 'topic-announcements/attachments/lesson-plan.pdf',
+              storageProvider: 'supabase',
+            },
+          ],
+          contactIds: ['123e4567-e89b-12d3-a456-426614174001'],
+          title: 'Unit 3 speaking practice',
+          topic: 'Practice speaking about weekend plans.',
+        }),
+        method: 'POST',
+      }),
+      params()
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'Topic Announcement attachment metadata does not match the uploaded file',
+    });
+    expect(insertAnnouncement).not.toHaveBeenCalled();
   });
 });

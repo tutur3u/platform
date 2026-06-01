@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  downloadWorkspaceStorageObjectForProvider,
+  getWorkspaceStorageObjectMetadataForProvider,
+  WorkspaceStorageError,
+} from '@/lib/workspace-storage-provider';
 import type { TopicAnnouncementsSupabaseClient } from './server-helpers';
 import { getPublicSchemaClient } from './server-helpers';
 
@@ -43,6 +48,9 @@ export const TOPIC_ANNOUNCEMENT_ATTACHMENT_STORAGE_PROVIDERS = [
   'r2',
   'supabase',
 ] as const;
+export const TOPIC_ANNOUNCEMENT_ATTACHMENT_UPLOAD_PATH =
+  'topic-announcements/attachments';
+const TOPIC_ANNOUNCEMENT_ATTACHMENT_UPLOAD_PREFIX = `${TOPIC_ANNOUNCEMENT_ATTACHMENT_UPLOAD_PATH}/`;
 
 const OPTIONAL_TEXT_SCHEMA = z
   .string()
@@ -146,6 +154,220 @@ export const TopicAnnouncementPayloadSchema = z
       path: ['attachmentDrafts'],
     }
   );
+
+type TopicAnnouncementAttachmentDraft = z.infer<
+  typeof TopicAnnouncementAttachmentDraftSchema
+>;
+
+export type TopicAnnouncementAttachmentValidationResult =
+  | { ok: true }
+  | { ok: false; message: string; status: number };
+
+function normalizeAttachmentContentType(contentType?: string | null) {
+  return contentType?.split(';', 1)[0]?.trim().toLowerCase() || null;
+}
+
+function matchesTopicAnnouncementAttachmentSignature(
+  contentType: (typeof TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES)[number],
+  buffer: Uint8Array
+) {
+  if (contentType === 'application/pdf') {
+    return (
+      buffer.length >= 5 &&
+      buffer[0] === 0x25 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x44 &&
+      buffer[3] === 0x46 &&
+      buffer[4] === 0x2d
+    );
+  }
+
+  if (contentType === 'image/png') {
+    const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    return (
+      buffer.length >= signature.length &&
+      signature.every((byte, index) => buffer[index] === byte)
+    );
+  }
+
+  if (contentType === 'image/gif') {
+    return (
+      buffer.length >= 6 &&
+      buffer[0] === 0x47 &&
+      buffer[1] === 0x49 &&
+      buffer[2] === 0x46 &&
+      buffer[3] === 0x38 &&
+      (buffer[4] === 0x37 || buffer[4] === 0x39) &&
+      buffer[5] === 0x61
+    );
+  }
+
+  if (contentType === 'image/jpeg') {
+    return (
+      buffer.length >= 3 &&
+      buffer[0] === 0xff &&
+      buffer[1] === 0xd8 &&
+      buffer[2] === 0xff
+    );
+  }
+
+  if (contentType === 'image/webp') {
+    return (
+      buffer.length >= 12 &&
+      buffer[0] === 0x52 &&
+      buffer[1] === 0x49 &&
+      buffer[2] === 0x46 &&
+      buffer[3] === 0x46 &&
+      buffer[8] === 0x57 &&
+      buffer[9] === 0x45 &&
+      buffer[10] === 0x42 &&
+      buffer[11] === 0x50
+    );
+  }
+
+  return false;
+}
+
+function attachmentValidationError(
+  message: string,
+  status: number
+): TopicAnnouncementAttachmentValidationResult {
+  return { ok: false, message, status };
+}
+
+export function topicAnnouncementAttachmentValidationResponse(
+  result: Exclude<TopicAnnouncementAttachmentValidationResult, { ok: true }>
+) {
+  return NextResponse.json(
+    { message: result.message },
+    { status: result.status }
+  );
+}
+
+export async function validateTopicAnnouncementAttachmentDraftObjects({
+  attachmentDrafts,
+  normalizedWsId,
+}: {
+  attachmentDrafts: TopicAnnouncementAttachmentDraft[];
+  normalizedWsId: string;
+}): Promise<TopicAnnouncementAttachmentValidationResult> {
+  if (attachmentDrafts.length === 0) {
+    return { ok: true };
+  }
+
+  const seenStoragePaths = new Set<string>();
+  let totalActualSize = 0;
+
+  for (const attachment of attachmentDrafts) {
+    if (
+      !attachment.storagePath.startsWith(
+        TOPIC_ANNOUNCEMENT_ATTACHMENT_UPLOAD_PREFIX
+      ) ||
+      attachment.storagePath.length <=
+        TOPIC_ANNOUNCEMENT_ATTACHMENT_UPLOAD_PREFIX.length
+    ) {
+      return attachmentValidationError(
+        'Invalid Topic Announcement attachment path',
+        400
+      );
+    }
+
+    const storageKey = `${attachment.storageProvider}:${attachment.storagePath}`;
+    if (seenStoragePaths.has(storageKey)) {
+      return attachmentValidationError(
+        'Duplicate Topic Announcement attachment path',
+        400
+      );
+    }
+    seenStoragePaths.add(storageKey);
+
+    let metadata: Awaited<
+      ReturnType<typeof getWorkspaceStorageObjectMetadataForProvider>
+    >;
+    try {
+      metadata = await getWorkspaceStorageObjectMetadataForProvider(
+        normalizedWsId,
+        attachment.storageProvider,
+        attachment.storagePath
+      );
+    } catch (error) {
+      if (error instanceof WorkspaceStorageError) {
+        return attachmentValidationError(
+          error.status === 404
+            ? 'Topic Announcement attachment file was not found'
+            : 'Failed to validate Topic Announcement attachment upload',
+          error.status === 404 ? 400 : error.status
+        );
+      }
+
+      throw error;
+    }
+
+    if (!Number.isSafeInteger(metadata.size) || metadata.size <= 0) {
+      return attachmentValidationError('File is empty', 400);
+    }
+
+    if (metadata.size > TOPIC_ANNOUNCEMENT_MAX_ATTACHMENT_BYTES) {
+      return attachmentValidationError('Attachment exceeds 10 MB limit', 413);
+    }
+
+    totalActualSize += metadata.size;
+    if (totalActualSize > TOPIC_ANNOUNCEMENT_MAX_ATTACHMENT_BYTES) {
+      return attachmentValidationError(
+        'Attachments cannot exceed 10 MB total',
+        413
+      );
+    }
+
+    if (metadata.size !== attachment.sizeBytes) {
+      return attachmentValidationError(
+        'Topic Announcement attachment metadata does not match the uploaded file',
+        400
+      );
+    }
+
+    const actualContentType = normalizeAttachmentContentType(
+      metadata.contentType
+    );
+    if (
+      actualContentType !== attachment.contentType ||
+      !TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES.includes(
+        actualContentType as (typeof TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES)[number]
+      )
+    ) {
+      return attachmentValidationError(
+        'Topic Announcement attachment content type does not match the uploaded file',
+        415
+      );
+    }
+
+    const downloaded = await downloadWorkspaceStorageObjectForProvider(
+      normalizedWsId,
+      attachment.storageProvider,
+      attachment.storagePath
+    );
+    if (downloaded.buffer.byteLength !== attachment.sizeBytes) {
+      return attachmentValidationError(
+        'Topic Announcement attachment metadata does not match the uploaded file',
+        400
+      );
+    }
+
+    if (
+      !matchesTopicAnnouncementAttachmentSignature(
+        attachment.contentType,
+        downloaded.buffer
+      )
+    ) {
+      return attachmentValidationError(
+        'Topic Announcement attachment content does not match the declared type',
+        415
+      );
+    }
+  }
+
+  return { ok: true };
+}
 
 export const TopicAnnouncementImportSchema = z.object({
   rows: z
