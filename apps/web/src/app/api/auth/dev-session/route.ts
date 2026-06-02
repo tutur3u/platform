@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import {
   createAdminClient,
   createClient,
@@ -6,9 +7,15 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { checkIfUserExists, validateEmail } from '@tuturuuu/utils/email/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
-import { isLocalE2EAuthRequestAllowed } from '@/lib/auth/local-e2e';
+import {
+  isLocalE2EAuthBypassEnabled,
+  isLocalE2EAuthRequestAllowed,
+} from '@/lib/auth/local-e2e';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resetRateLimitMemoryStoreForTests } from '@/lib/rate-limit';
+
+const LOCAL_E2E_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
+const SUPABASE_BASE64_PREFIX = 'base64-';
 
 const COMPLETED_ONBOARDING_STEPS = [
   'welcome',
@@ -40,6 +47,60 @@ async function completeDevSessionOnboarding(
     )
     .select('user_id')
     .single();
+}
+
+function getSupabaseAuthStorageKey(url: string | null | undefined) {
+  if (!url) {
+    return null;
+  }
+
+  try {
+    return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+  } catch {
+    return null;
+  }
+}
+
+function encodeSupabaseSessionCookieValue(session: unknown) {
+  return `${SUPABASE_BASE64_PREFIX}${Buffer.from(
+    JSON.stringify(session),
+    'utf8'
+  ).toString('base64url')}`;
+}
+
+function mirrorLocalE2ESupabaseBrowserCookie(
+  response: NextResponse,
+  session: unknown
+) {
+  if (!isLocalE2EAuthBypassEnabled()) {
+    return;
+  }
+
+  const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serverSupabaseUrl =
+    process.env.SUPABASE_SERVER_URL ?? publicSupabaseUrl;
+  const publicStorageKey = getSupabaseAuthStorageKey(publicSupabaseUrl);
+  const serverStorageKey = getSupabaseAuthStorageKey(serverSupabaseUrl);
+
+  if (
+    !publicStorageKey ||
+    !serverStorageKey ||
+    publicStorageKey === serverStorageKey
+  ) {
+    return;
+  }
+
+  response.cookies.set(
+    publicStorageKey,
+    encodeSupabaseSessionCookieValue(session),
+    {
+      httpOnly: false,
+      maxAge: LOCAL_E2E_SESSION_COOKIE_MAX_AGE_SECONDS,
+      path: '/',
+      sameSite: 'lax',
+      secure: false,
+    }
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -176,7 +237,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true });
+    mirrorLocalE2ESupabaseBrowserCookie(response, verifyData.session);
+
+    return response;
   } catch (error) {
     serverLogger.error('[auth/dev-session] Unexpected error:', error);
     return NextResponse.json(

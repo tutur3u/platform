@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -36,7 +37,11 @@ vi.mock('@/lib/rate-limit', () => ({
   ) => mocks.resetRateLimitMemoryStoreForTests(...args),
 }));
 
-function mockSuccessfulSession() {
+function mockSuccessfulSession(
+  session: Record<string, unknown> = {
+    access_token: 'token',
+  }
+) {
   const createUser = vi.fn().mockResolvedValue({
     data: {
       user: {
@@ -56,9 +61,7 @@ function mockSuccessfulSession() {
   });
   const verifyOtp = vi.fn().mockResolvedValue({
     data: {
-      session: {
-        access_token: 'token',
-      },
+      session,
     },
     error: null,
   });
@@ -120,6 +123,13 @@ function stubLocalE2EEnv(overrides: Record<string, string> = {}) {
   for (const [key, value] of Object.entries(values)) {
     vi.stubEnv(key, value);
   }
+}
+
+function decodeSupabaseSessionCookieValue(value: string) {
+  expect(value).toMatch(/^base64-/u);
+  return JSON.parse(
+    Buffer.from(value.slice('base64-'.length), 'base64url').toString('utf8')
+  );
 }
 
 describe('dev-session route', () => {
@@ -324,6 +334,83 @@ describe('dev-session route', () => {
     expect(mocks.createClient).toHaveBeenCalledWith(request);
   });
 
+  it('mirrors Docker E2E sessions to the public Supabase browser cookie key', async () => {
+    mocks.devMode = false;
+    stubLocalE2EEnv();
+    const session = {
+      access_token: 'access-token',
+      expires_at: 1_763_456_789,
+      refresh_token: 'refresh-token',
+    };
+    mockSuccessfulSession(session);
+
+    const request = new NextRequest(
+      'http://web-blue:7803/api/auth/dev-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          host: 'web-blue:7803',
+          'x-forwarded-host': 'localhost:7803',
+          'x-forwarded-proto': 'http',
+        },
+        body: JSON.stringify({
+          email: 'local@tuturuuu.com',
+          locale: 'en',
+        }),
+      }
+    );
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    const publicCookie = response.cookies.get('sb-127-auth-token');
+    expect(publicCookie?.value).toBeDefined();
+    expect(decodeSupabaseSessionCookieValue(publicCookie!.value)).toEqual(
+      session
+    );
+
+    const setCookie = response.headers.get('set-cookie');
+    expect(setCookie).toContain('sb-127-auth-token=base64-');
+    expect(setCookie).toContain('Max-Age=34560000');
+    expect(setCookie).toContain('Path=/');
+    expect(setCookie).toContain('SameSite=lax');
+    expect(setCookie).not.toContain('HttpOnly');
+    expect(setCookie).not.toContain('Secure');
+  });
+
+  it('does not mirror local E2E sessions when server and public Supabase cookie keys match', async () => {
+    mocks.devMode = false;
+    stubLocalE2EEnv({
+      SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
+    });
+    mockSuccessfulSession();
+
+    const request = new NextRequest(
+      'http://localhost:7803/api/auth/dev-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          host: 'localhost:7803',
+          origin: 'http://localhost:7803',
+        },
+        body: JSON.stringify({
+          email: 'local@tuturuuu.com',
+          locale: 'en',
+        }),
+      }
+    );
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(response.cookies.get('sb-127-auth-token')).toBeUndefined();
+    expect(response.headers.get('set-cookie')).toBeNull();
+  });
+
   it('rejects production remote requests before admin user mutation even when E2E env values look local', async () => {
     mocks.devMode = false;
     stubLocalE2EEnv();
@@ -382,6 +469,7 @@ describe('dev-session route', () => {
     const response = await POST(request);
 
     expect(response.status).toBe(403);
+    expect(response.headers.get('set-cookie')).toBeNull();
     expect(mocks.validateEmail).not.toHaveBeenCalled();
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
     expect(mocks.createClient).not.toHaveBeenCalled();

@@ -164,8 +164,7 @@ function assertLocalSupabaseCredentials() {
     throw new Error(`Refusing to run E2E with non-local Supabase URL.`);
   }
 
-  const isKnownLocalFallback =
-    SUPABASE_SECRET_KEY_SOURCE === 'local-fallback' &&
+  const isKnownLocalSecret =
     SUPABASE_SECRET_KEY === LOCAL_E2E_SUPABASE_SECRET_KEY;
   const isLocalEnvFileSecret = SUPABASE_SECRET_KEY_SOURCE === 'local-env-file';
   const isConfirmedProcessEnvSecret =
@@ -173,7 +172,7 @@ function assertLocalSupabaseCredentials() {
     process.env[NON_LOCAL_SUPABASE_CONFIRMATION_ENV] === '1';
 
   if (
-    isKnownLocalFallback ||
+    isKnownLocalSecret ||
     isLocalEnvFileSecret ||
     isConfirmedProcessEnvSecret
   ) {
