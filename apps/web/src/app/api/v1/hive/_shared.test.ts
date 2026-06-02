@@ -5,7 +5,11 @@ import {
   signHiveRealtimeToken,
   verifyHiveRealtimeToken,
 } from './_realtime-token';
-import { hiveEventSchema, requireHiveAccess } from './_shared';
+import {
+  hiveCrdtUpdateSchema,
+  hiveEventSchema,
+  requireHiveAccess,
+} from './_shared';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
@@ -211,5 +215,40 @@ describe('Hive event validation', () => {
     expect(result.data?.world.blocks[0]?.state).toEqual({
       color: '#ffcc00',
     });
+  });
+
+  it('rejects oversized object footprints before persisting world snapshots', () => {
+    const world = {
+      blocks: [],
+      objects: [
+        {
+          id: 'object:malicious:seed',
+          position: { x: 0, y: 1, z: 0 },
+          state: {
+            footprint: {
+              depth: 1_000_000,
+              width: 1_000_000,
+            },
+          },
+          type: 'custom',
+        },
+      ],
+    };
+
+    expect(
+      hiveEventSchema.safeParse({
+        eventType: 'object.update',
+        expectedRevision: 7,
+        payload: {},
+        world,
+      }).success
+    ).toBe(false);
+
+    expect(
+      hiveCrdtUpdateSchema.safeParse({
+        update: 'AQID',
+        world,
+      }).success
+    ).toBe(false);
   });
 });

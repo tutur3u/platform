@@ -22,6 +22,23 @@ const world = {
   objects: [],
 };
 
+const worldWithOversizedFootprint = {
+  blocks: [],
+  objects: [
+    {
+      id: 'object:malicious:seed',
+      position: { x: 0, y: 1, z: 0 },
+      state: {
+        footprint: {
+          depth: 1_000_000,
+          width: 1_000_000,
+        },
+      },
+      type: 'custom',
+    },
+  ],
+};
+
 describe('Hive realtime protocol', () => {
   it('accepts CRDT update messages with optional world projections', () => {
     expect(
@@ -68,6 +85,27 @@ describe('Hive realtime protocol', () => {
         event,
         type: 'world.event.applied',
         world: { blocks: [{ id: '' }], objects: [] },
+      }).success
+    ).toBe(false);
+  });
+
+  it('rejects oversized world footprint projections from clients', () => {
+    expect(
+      hiveRealtimeClientMessageSchema.safeParse({
+        stateVector: 'AQID',
+        type: 'sync.update',
+        update: 'BAUG',
+        world: worldWithOversizedFootprint,
+      }).success
+    ).toBe(false);
+
+    expect(
+      hiveRealtimeClientMessageSchema.safeParse({
+        eventType: 'object.update',
+        expectedRevision: 2,
+        payload: {},
+        type: 'world.event',
+        world: worldWithOversizedFootprint,
       }).success
     ).toBe(false);
   });

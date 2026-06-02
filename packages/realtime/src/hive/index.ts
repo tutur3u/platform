@@ -1,11 +1,35 @@
 import * as Y from 'yjs';
 import { z } from 'zod';
+import { getHiveObjectStateFootprintValidationError } from './footprint';
+
+export {
+  getHiveObjectStateFootprintValidationError,
+  type HiveObjectFootprint,
+  type HiveObjectStateFootprintValidationError,
+  MAX_HIVE_OBJECT_FOOTPRINT_CELLS,
+  MAX_HIVE_OBJECT_FOOTPRINT_DIMENSION,
+  normalizeHiveObjectFootprint,
+} from './footprint';
 
 export const hiveVectorSchema = z.object({
   x: z.number().finite(),
   y: z.number().finite(),
   z: z.number().finite(),
 });
+
+const hiveObjectStateSchema = z
+  .record(z.string(), z.any())
+  .superRefine((state, ctx) => {
+    const error = getHiveObjectStateFootprintValidationError(state);
+
+    if (error) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: error.message,
+        path: error.path,
+      });
+    }
+  });
 
 export const hiveWorldSchema = z.object({
   blocks: z.array(
@@ -21,7 +45,7 @@ export const hiveWorldSchema = z.object({
       id: z.string().min(1),
       position: hiveVectorSchema,
       rotation: z.number().optional(),
-      state: z.record(z.string(), z.any()).optional(),
+      state: hiveObjectStateSchema.optional(),
       type: z.string().min(1),
     })
   ),

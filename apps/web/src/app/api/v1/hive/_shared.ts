@@ -2,6 +2,7 @@ import {
   getAppSessionTokenFromRequest,
   verifyAppSessionToken,
 } from '@tuturuuu/auth/app-session';
+import { getHiveObjectStateFootprintValidationError } from '@tuturuuu/realtime/hive';
 import {
   createAdminClient,
   createClient,
@@ -50,6 +51,20 @@ export const hiveJsonSchema: z.ZodType<Json> = z.lazy(() =>
 
 export const hiveJsonObjectSchema = z.record(z.string(), hiveJsonSchema);
 
+const hiveObjectStateSchema = hiveJsonObjectSchema.superRefine((state, ctx) => {
+  const error = getHiveObjectStateFootprintValidationError(
+    state as Record<string, unknown>
+  );
+
+  if (error) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: error.message,
+      path: error.path,
+    });
+  }
+});
+
 export const hiveWorldSchema = z.object({
   blocks: z
     .array(
@@ -67,7 +82,7 @@ export const hiveWorldSchema = z.object({
         id: z.string().trim().min(1).max(120),
         position: hiveVectorSchema,
         rotation: z.number().finite().optional(),
-        state: hiveJsonObjectSchema.optional(),
+        state: hiveObjectStateSchema.optional(),
         type: z.string().trim().min(1).max(80),
       })
     )

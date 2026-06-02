@@ -424,6 +424,70 @@ describe('Hive workflow execution', () => {
     expect(createHiveWorldEvent).not.toHaveBeenCalled();
   });
 
+  it('rejects oversized workflow object footprints before creating events', async () => {
+    const createHiveWorldEvent = vi.fn();
+    const result = await executeHiveWorkflowDefinition({
+      actorUserId: '00000000-0000-4000-8000-000000000001',
+      capabilities: {
+        createHiveWorldEvent,
+        createTradeOffer: vi.fn(),
+        createWarehouse: vi.fn(),
+        getSnapshot: vi.fn(),
+        log: vi.fn(),
+        persistNpcDecision: vi.fn(),
+        runAgentInteractions: vi.fn(),
+        runFarmingAction: vi.fn(),
+        runSimulationTick: vi.fn(),
+        runTradeAccept: vi.fn(),
+        transferInventory: vi.fn(),
+        updateNpc: vi.fn(),
+      },
+      definition: {
+        edges: [{ id: 'trigger-event', source: 'trigger', target: 'event' }],
+        nodes: [
+          {
+            data: { label: 'Manual run' },
+            id: 'trigger',
+            position: { x: 0, y: 0 },
+            type: 'manual_trigger',
+          },
+          {
+            data: {
+              config: {
+                eventType: 'workflow.bad_footprint',
+                worldPatch: {
+                  objects: [
+                    {
+                      position: { x: 1, y: 1, z: 1 },
+                      state: {
+                        footprint: {
+                          depth: 1_000_000,
+                          width: 1_000_000,
+                        },
+                      },
+                      type: 'custom',
+                    },
+                  ],
+                },
+              },
+              label: 'Patch world',
+            },
+            id: 'event',
+            position: { x: 220, y: 0 },
+            type: 'world_event',
+          },
+        ],
+        version: 1,
+      },
+      serverId: 'server-1',
+    });
+
+    expect(result.status).toBe('failed');
+    expect(result.error).toContain('Invalid Hive workflow world_event config');
+    expect(result.error).toContain('worldPatch.objects.0.state.footprint');
+    expect(createHiveWorldEvent).not.toHaveBeenCalled();
+  });
+
   it('records failed node traces and stops execution', async () => {
     const result = await executeHiveWorkflowDefinition({
       actorUserId: '00000000-0000-4000-8000-000000000001',

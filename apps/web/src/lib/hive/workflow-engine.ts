@@ -1,3 +1,4 @@
+import { getHiveObjectStateFootprintValidationError } from '@tuturuuu/realtime/hive';
 import type { Json } from '@tuturuuu/types/db';
 import { z } from 'zod';
 import type {
@@ -43,6 +44,20 @@ const hiveJsonSchema: z.ZodType<Json> = z.lazy(() =>
 
 const hiveJsonObjectSchema = z.record(z.string(), hiveJsonSchema);
 
+const hiveObjectStateSchema = hiveJsonObjectSchema.superRefine((state, ctx) => {
+  const error = getHiveObjectStateFootprintValidationError(
+    state as Record<string, unknown>
+  );
+
+  if (error) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: error.message,
+      path: error.path,
+    });
+  }
+});
+
 const hiveWorldSchema = z.object({
   blocks: z
     .array(
@@ -60,7 +75,7 @@ const hiveWorldSchema = z.object({
         id: z.string().trim().min(1).max(120),
         position: hiveVectorSchema,
         rotation: z.number().finite().optional(),
-        state: hiveJsonObjectSchema.optional(),
+        state: hiveObjectStateSchema.optional(),
         type: z.string().trim().min(1).max(80),
       })
     )
@@ -78,7 +93,7 @@ const hiveWorldPatchObjectSchema = z.object({
   id: z.string().trim().min(1).max(120).optional(),
   position: hiveVectorSchema,
   rotation: z.number().finite().optional(),
-  state: hiveJsonObjectSchema.optional(),
+  state: hiveObjectStateSchema.optional(),
   type: z.string().trim().min(1).max(80),
 });
 
