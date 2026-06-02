@@ -262,7 +262,7 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
   );
   assert.equal(config.packages['apps/mobile']['release-type'], 'dart');
   assert.equal(config.packages['apps/web'], undefined);
-  assert.equal(manifest['.'], '0.1.159');
+  assert.equal(manifest['.'], '0.2.0');
   assert.equal(manifest['apps/mobile'], '0.5.0');
   assert.equal(manifest['packages/sdk'], '0.4.9');
   assert.deepEqual(configuredReleasePaths, expectedReleasePaths);
