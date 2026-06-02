@@ -73,6 +73,21 @@ function makeRequest(
   });
 }
 
+function singleReadRoutePolicies() {
+  return [
+    {
+      key: 'redis-fallback-test',
+      matches: () => true,
+      rateLimits: {
+        get: [
+          { duration: '1 m' as const, limit: 1, window: 'minute' as const },
+        ],
+        mutate: [],
+      },
+    },
+  ];
+}
+
 describe('guardApiProxyRequest', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -216,7 +231,7 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.validateEmoji).not.toHaveBeenCalled();
   });
 
-  it('fails open when the configured Redis rate limiter is unreachable', async () => {
+  it('uses local rate limits when the Redis rate limiter is unreachable', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv(
       'UPSTASH_REDIS_REST_URL',
@@ -233,19 +248,71 @@ describe('guardApiProxyRequest', () => {
       await import('../api-proxy-guard.js');
     clearApiProxyGuardLimiterCache();
 
+    const options = {
+      prefixBase: 'proxy:test:api',
+      routePolicies: singleReadRoutePolicies(),
+    };
+
     const response = await guardApiProxyRequest(
       makeRequest('/api/test', 'GET'),
-      { prefixBase: 'proxy:test:api' }
+      options
     );
 
     expect(response).toBeNull();
     expect(mocks.limit).toHaveBeenCalledTimes(1);
 
-    await guardApiProxyRequest(makeRequest('/api/test', 'GET'), {
-      prefixBase: 'proxy:test:api',
-    });
+    const blockedResponse = await guardApiProxyRequest(
+      makeRequest('/api/test', 'GET'),
+      options
+    );
 
+    expect(blockedResponse?.status).toBe(429);
+    expect(blockedResponse?.headers.get('X-Proxy-Block-Reason')).toBe(
+      'route-rate-limit'
+    );
+    expect(blockedResponse?.headers.get('X-RateLimit-Policy')).toBe(
+      'redis-fallback-test'
+    );
     expect(mocks.limit).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses local rate limits when Redis client initialization fails', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockImplementation(() => {
+      throw new TypeError('Redis unavailable');
+    });
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const options = {
+      prefixBase: 'proxy:test:api',
+      routePolicies: singleReadRoutePolicies(),
+    };
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/test', 'GET'),
+      options
+    );
+
+    expect(response).toBeNull();
+
+    const blockedResponse = await guardApiProxyRequest(
+      makeRequest('/api/test', 'GET'),
+      options
+    );
+
+    expect(blockedResponse?.status).toBe(429);
+    expect(blockedResponse?.headers.get('X-Proxy-Block-Reason')).toBe(
+      'route-rate-limit'
+    );
+    expect(mocks.limit).not.toHaveBeenCalled();
   });
 
   it('rate limits anonymous users/me reads', async () => {
