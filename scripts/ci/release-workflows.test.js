@@ -288,19 +288,14 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
     assert.equal(manifest[workspacePath], version);
   }
 
-  for (const workspacePath of workspacePaths) {
-    const jsrPath = path.join(repoRoot, workspacePath, 'jsr.json');
-    const packageConfig = config.packages[workspacePath];
-
-    if (!packageConfig || !fs.existsSync(jsrPath)) continue;
-
-    assert.deepEqual(packageConfig['extra-files'], [
-      {
-        type: 'json',
-        path: 'jsr.json',
-        jsonpath: '$.version',
-      },
-    ]);
+  for (const [workspacePath, packageConfig] of Object.entries(
+    config.packages
+  )) {
+    const extraFiles = packageConfig['extra-files'] ?? [];
+    assert.ok(
+      extraFiles.every((entry) => entry.path !== 'jsr.json'),
+      `${workspacePath} must not update JSR package metadata while package releases are npm-only`
+    );
   }
 });
 
@@ -588,11 +583,19 @@ test('package publish workflows release from production version bumps', () => {
 
     assert.match(workflow, /\n {2}push:\n {4}branches:\s*\[production\]/);
     assert.match(workflow, new RegExp(`"${packagePath}/package\\.json"`));
-    assert.match(workflow, new RegExp(`"${packagePath}/jsr\\.json"`));
     assert.match(workflow, new RegExp(`"\\.github/workflows/${workflowName}"`));
     assert.doesNotMatch(workflow, /\n {2}pull_request:\n/);
     assert.doesNotMatch(workflow, /github\.event\.pull_request/);
     assert.doesNotMatch(workflow, /pull_request\.title/);
+    assert.doesNotMatch(workflow, /jsr/);
+    assert.doesNotMatch(workflow, /npm\.pkg\.github\.com/);
+    assert.doesNotMatch(workflow, /publish-jsr/);
+    assert.doesNotMatch(workflow, /publish-gpr/);
+    assert.doesNotMatch(workflow, /bunx jsr publish/);
+    assert.doesNotMatch(workflow, /bun publish --no-git-checks/);
+    assert.match(workflow, /publish-npm:/);
+    assert.match(workflow, /registry-url: "https:\/\/registry\.npmjs\.org"/);
+    assert.match(workflow, /NODE_AUTH_TOKEN: \$\{\{secrets\.NPM_TOKEN\}\}/);
 
     assert.match(rejectJob, /if: github\.ref != 'refs\/heads\/production'/);
     assert.match(rejectJob, /permissions:\s*\{\}/);

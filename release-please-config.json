@@ -129,25 +129,11 @@
     },
     "packages/ai": {
       "component": "ai",
-      "package-name": "@tuturuuu/ai",
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "jsr.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "package-name": "@tuturuuu/ai"
     },
     "packages/apis": {
       "component": "apis",
-      "package-name": "@tuturuuu/apis",
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "jsr.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "package-name": "@tuturuuu/apis"
     },
     "packages/auth": {
       "component": "auth",
@@ -159,25 +145,11 @@
     },
     "packages/games": {
       "component": "games",
-      "package-name": "@tuturuuu/games",
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "jsr.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "package-name": "@tuturuuu/games"
     },
     "packages/google": {
       "component": "google",
-      "package-name": "@tuturuuu/google",
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "jsr.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "package-name": "@tuturuuu/google"
     },
     "packages/hive-ui": {
       "component": "hive-ui",
@@ -189,14 +161,7 @@
     },
     "packages/icons": {
       "component": "icons",
-      "package-name": "@tuturuuu/icons",
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "jsr.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "package-name": "@tuturuuu/icons"
     },
     "packages/internal-api": {
       "component": "internal-api",
@@ -236,14 +201,7 @@
     },
     "packages/supabase": {
       "component": "supabase",
-      "package-name": "@tuturuuu/supabase",
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "jsr.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "package-name": "@tuturuuu/supabase"
     },
     "packages/transactional": {
       "component": "transactional",
@@ -259,58 +217,23 @@
     },
     "packages/types": {
       "component": "types",
-      "package-name": "@tuturuuu/types",
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "jsr.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "package-name": "@tuturuuu/types"
     },
     "packages/typescript-config": {
       "component": "typescript-config",
-      "package-name": "@tuturuuu/typescript-config",
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "jsr.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "package-name": "@tuturuuu/typescript-config"
     },
     "packages/ui": {
       "component": "ui",
-      "package-name": "@tuturuuu/ui",
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "jsr.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "package-name": "@tuturuuu/ui"
     },
     "packages/utils": {
       "component": "utils",
-      "package-name": "@tuturuuu/utils",
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "jsr.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "package-name": "@tuturuuu/utils"
     },
     "packages/vercel": {
       "component": "vercel",
-      "package-name": "@tuturuuu/vercel",
-      "extra-files": [
-        {
-          "type": "json",
-          "path": "jsr.json",
-          "jsonpath": "$.version"
-        }
-      ]
+      "package-name": "@tuturuuu/vercel"
     },
     "packages/workflows": {
       "component": "workflows",

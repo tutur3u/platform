@@ -1,7 +1,7 @@
 ---
 title: 'DevOps & Deployment'
 description: 'The operational map for how Tuturuuu is built, deployed, migrated, and validated.'
-updatedAt: '2026-05-20'
+updatedAt: '2026-06-02'
 ---
 
 This section is the runbook for shipping and operating Tuturuuu. It documents the
@@ -18,7 +18,7 @@ released, or recovered.
 | Self-hosted web runtime (`apps/web`) | `apps/web/Dockerfile`, `docker-compose.web.yml`, `docker-compose.web.prod.yml`, `scripts/docker-web.js` | Docker dev stacks and production blue/green deployments |
 | Discord utilities (`apps/discord`) | `.github/workflows/discord-modal-deploy.yml` | Modal |
 | Mobile artifacts (`apps/mobile`) | `.github/workflows/mobile-build-*.yaml` | Build artifacts for Android, iOS, macOS, Windows |
-| Shared packages (`packages/*`) | `.github/workflows/release-*.yaml` | npm, GitHub Packages, JSR |
+| Shared packages (`packages/*`) | `.github/workflows/release-*.yaml` | npm |
 
 ## Read This In Order
 

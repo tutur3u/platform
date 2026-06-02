@@ -38,6 +38,9 @@ formatting behavior, or repo-wide verification.
   `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when
   changing release automation. Do not reintroduce checksum or PR-title package
   version bump generators.
+- Package release workflows are npm-only for now. Do not add JSR or GitHub
+  Packages publish jobs, and do not wire `jsr.json` version files into Release
+  Please while those registries are paused.
 - If local type-check passes but CI fails from stale incremental state, rerun
   with forced cache invalidation before changing unrelated code.
 - Do not patch unrelated packages just because `bun check` fails outside the

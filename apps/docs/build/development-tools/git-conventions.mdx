@@ -198,7 +198,7 @@ and opens one combined release PR with package versions and changelogs. Package
 publish workflows do not generate versions; they publish only after a
 release-please version bump lands on `production`. For example,
 `release-types-package.yaml` triggers from production changes to
-`packages/types/package.json` or `packages/types/jsr.json`:
+`packages/types/package.json`:
 
 ```yaml
 on:
@@ -206,7 +206,6 @@ on:
     branches: [production]
     paths:
       - "packages/types/package.json"
-      - "packages/types/jsr.json"
   # ...
 
 jobs:

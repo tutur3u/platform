@@ -5,7 +5,6 @@ on:
     branches: [production]
     paths:
       - "packages/typescript-config/package.json"
-      - "packages/typescript-config/jsr.json"
       - ".github/workflows/release-typescript-config-package.yaml"
   workflow_dispatch:
 
@@ -70,73 +69,15 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run tests
+      - name: Validate package metadata
         working-directory: packages/typescript-config
-        run: bun run test
-
-  publish-jsr:
-    needs: [build]
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          registry-url: https://npm.jsr.io
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Publish package to JSR
-        working-directory: packages/typescript-config
-        run: bunx jsr publish
-
-  publish-gpr:
-    needs: [build]
-    runs-on: ubuntu-latest
-
-    permissions:
-      packages: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          registry-url: https://npm.pkg.github.com
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Publish package
-        working-directory: packages/typescript-config
-        run: bun publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: node -e "const pkg = require('./package.json'); if (pkg.name !== '@tuturuuu/typescript-config') throw new Error('Unexpected package name'); if (pkg.private) throw new Error('Package must be publishable');"
 
   publish-npm:
     needs: [build]
     runs-on: ubuntu-latest
 
     permissions:
-      packages: write
       contents: read
     steps:
       - uses: actions/checkout@v6

@@ -5,7 +5,6 @@ on:
     branches: [production]
     paths:
       - "packages/supabase/package.json"
-      - "packages/supabase/jsr.json"
       - ".github/workflows/release-supabase-package.yaml"
   workflow_dispatch:
 
@@ -70,73 +69,18 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Build workspace dependencies
+        run: bun run --filter @tuturuuu/types build
+
       - name: Run tests
         working-directory: packages/supabase
         run: bun run test
-
-  publish-jsr:
-    needs: [build]
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          registry-url: https://npm.jsr.io
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Publish package to JSR
-        working-directory: packages/supabase
-        run: bunx jsr publish
-
-  publish-gpr:
-    needs: [build]
-    runs-on: ubuntu-latest
-
-    permissions:
-      packages: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          registry-url: https://npm.pkg.github.com
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Publish package
-        working-directory: packages/supabase
-        run: bun publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
   publish-npm:
     needs: [build]
     runs-on: ubuntu-latest
 
     permissions:
-      packages: write
       contents: read
     steps:
       - uses: actions/checkout@v6
@@ -153,6 +97,9 @@ jobs:
 
       - name: Install dependencies
         run: bun install
+
+      - name: Build workspace dependencies
+        run: bun run --filter @tuturuuu/types build
 
       - name: Publish package
         working-directory: packages/supabase
