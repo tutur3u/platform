@@ -1,7 +1,10 @@
 import type { JSONContent } from '@tiptap/core';
-import { Schema } from 'prosemirror-model';
+import { Node as ProseMirrorNode, Schema } from 'prosemirror-model';
 import { getDescriptionText } from './text-helper';
-import { convertJsonContentToYjsState } from './yjs-helper';
+import {
+  convertJsonContentToYjsState,
+  convertYjsStateToJsonContent,
+} from './yjs-helper';
 
 export const taskDescriptionSchema = new Schema({
   nodes: {
@@ -217,6 +220,43 @@ function parseDescriptionContent(description: string): JSONContent {
 
 function hasMeaningfulContent(content: JSONContent): boolean {
   return getDescriptionText(content).trim().length > 0;
+}
+
+export function isValidTaskDescriptionContent(
+  description: string | null | undefined
+): boolean {
+  const normalizedDescription = description?.trim();
+  if (!normalizedDescription) {
+    return true;
+  }
+
+  try {
+    ProseMirrorNode.fromJSON(
+      taskDescriptionSchema,
+      parseDescriptionContent(normalizedDescription)
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function isValidTaskDescriptionYjsState(
+  yjsState: number[] | null | undefined
+): boolean {
+  if (yjsState == null) {
+    return true;
+  }
+
+  try {
+    convertYjsStateToJsonContent(
+      Uint8Array.from(yjsState),
+      taskDescriptionSchema
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function encodeYjsState(content: JSONContent): number[] | null {

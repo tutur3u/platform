@@ -161,6 +161,44 @@ describe('convertJsonContentToYjsState', () => {
     expect(yjsState).toBeInstanceOf(Uint8Array);
     expect(yjsState.length).toBeGreaterThan(0);
   });
+
+  it('rejects JSONContent with unsupported node types when a schema is provided', () => {
+    const jsonContent: JSONContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'unsupportedNode',
+          content: [{ type: 'text', text: 'Invalid node' }],
+        },
+      ],
+    };
+
+    expect(() => convertJsonContentToYjsState(jsonContent, testSchema)).toThrow(
+      /Unknown node type/
+    );
+  });
+
+  it('rejects JSONContent with unsupported marks when a schema is provided', () => {
+    const jsonContent: JSONContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            {
+              marks: [{ type: 'unknownMark' }],
+              text: 'Invalid mark',
+              type: 'text',
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(() => convertJsonContentToYjsState(jsonContent, testSchema)).toThrow(
+      /There is no mark type/
+    );
+  });
 });
 
 describe('convertYjsStateToJsonContent', () => {
@@ -249,6 +287,22 @@ describe('convertYjsStateToJsonContent', () => {
     expect(headingNode?.type).toBe('heading');
     expect(headingNode?.attrs?.level).toBe(2);
     expect(headingNode?.content?.[0]?.text).toBe('Heading 2');
+  });
+
+  it('rejects decoded Yjs content with unsupported node types when a schema is provided', () => {
+    const malformedState = convertJsonContentToYjsState({
+      type: 'doc',
+      content: [
+        {
+          type: 'unsupportedNode',
+          content: [{ type: 'text', text: 'Invalid node' }],
+        },
+      ],
+    });
+
+    expect(() =>
+      convertYjsStateToJsonContent(malformedState, testSchema)
+    ).toThrow(/Unknown node type/);
   });
 });
 
