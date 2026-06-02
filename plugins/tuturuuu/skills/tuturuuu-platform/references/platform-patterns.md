@@ -31,6 +31,11 @@ shared-package changes.
 - AI memory access belongs behind `@tuturuuu/ai/memory`, workspace API routes,
   and internal API helpers. Browser code must not call Supermemory directly or
   receive server-only Supermemory credentials.
+- Browser AI chat surfaces that stream through `/api/ai/chat` must create or
+  resume a durable user-owned `ai_chats` UUID before model invocation. Do not
+  use prefixed local UI session ids as chat ids; the route must verify requested
+  chat ownership before streaming so message persistence and credit deduction
+  cannot be split.
 - API routes should parse JSON inside a `try/catch` before Zod validation and
   return explicit `400` for malformed JSON.
 - Validate UUID path params with shared Zod GUID schemas instead of ad-hoc

@@ -94,6 +94,22 @@ describe('chat google new route', () => {
     expect(mocks.generateText).not.toHaveBeenCalled();
   });
 
+  it('rejects client-only prefixed chat ids before title generation', async () => {
+    const response = await createPOST()(
+      new Request('http://localhost/api/ai/chat/new', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: 'learn-workspace-1-0-00000000-0000-0000-0000-000000000000',
+          message: 'hello',
+        }),
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toBe('Invalid chat id');
+    expect(mocks.generateText).not.toHaveBeenCalled();
+  });
+
   it('auto-suspends the verified user when the database returns 429', async () => {
     const insert = vi.fn().mockResolvedValue({
       data: null,
@@ -138,7 +154,7 @@ describe('chat google new route', () => {
   it('uses a valid temp token without calling Supabase getUser', async () => {
     const getUser = vi.fn();
     const single = vi.fn().mockResolvedValue({
-      data: { id: 'chat-1' },
+      data: { id: '11111111-1111-4111-8111-111111111111' },
       error: null,
     });
     const insert = vi.fn().mockReturnValue({
@@ -162,7 +178,7 @@ describe('chat google new route', () => {
       new Request('http://localhost/api/ai/chat/new', {
         method: 'POST',
         body: JSON.stringify({
-          id: 'chat-1',
+          id: '11111111-1111-4111-8111-111111111111',
           message: 'hello',
           model: 'google/gemini-2.5-flash',
         }),

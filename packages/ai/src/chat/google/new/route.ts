@@ -10,6 +10,7 @@ import {
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { normalizeStableModelId } from '../../../credits/model-mapping';
 import {
   resolveAiMemoryWorkspaceIdForUser,
@@ -25,6 +26,7 @@ const AI_PROMPT = '\n\nAssistant:';
 
 /** Always use a lightweight model for title generation */
 const TITLE_MODEL = 'gemini-3.1-flash-lite';
+const NewChatIdSchema = z.string().trim().pipe(z.uuid());
 
 async function buildRateLimitResponse(
   req: Request,
@@ -106,12 +108,21 @@ type AuthenticatedContext = GatewayAuthenticatedClient & {
 export function createPOST(options: CreatePostOptions = {}) {
   return async function handler(req: Request) {
     try {
-      const { id, model, message, isMiraMode } = (await req.json()) as {
+      const requestBody = (await req.json()) as {
         id?: string;
         model?: string;
         message?: string;
         isMiraMode?: boolean;
       };
+      const parsedId =
+        requestBody.id === undefined
+          ? { data: undefined, success: true as const }
+          : NewChatIdSchema.safeParse(requestBody.id);
+      if (!parsedId.success) {
+        return NextResponse.json('Invalid chat id', { status: 400 });
+      }
+      const { model, message, isMiraMode } = requestBody;
+      const id = parsedId.data;
 
       if (!message)
         return NextResponse.json('No message provided', { status: 400 });

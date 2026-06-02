@@ -1,16 +1,47 @@
+import { z } from 'zod';
+
 type AdminClientLike = {
   message?: string;
 };
+
+type ChatRowLookupResult = PromiseLike<{
+  data: { id: string } | null;
+  error: { message: string } | null;
+}>;
 
 export async function resolveChatIdForUser(
   requestedChatId: string | undefined,
   fetchLatestChatId: () => PromiseLike<{
     data: { id: string } | null;
     error: { message: string } | null;
-  }>
+  }>,
+  fetchRequestedChatId?: (chatId: string) => ChatRowLookupResult
 ): Promise<{ chatId: string } | { error: Response }> {
   if (requestedChatId) {
-    return { chatId: requestedChatId };
+    const parsedChatId = z.uuid().safeParse(requestedChatId.trim());
+    if (!parsedChatId.success) {
+      return {
+        error: new Response('Invalid chat identifier', { status: 400 }),
+      };
+    }
+
+    const chatId = parsedChatId.data;
+    if (!fetchRequestedChatId) {
+      return { chatId };
+    }
+
+    const { data, error } = await fetchRequestedChatId(chatId);
+
+    if (error) {
+      console.error(error.message);
+      return { error: new Response(error.message, { status: 500 }) };
+    }
+
+    if (!data) {
+      return { error: new Response('Chat not found', { status: 404 }) };
+    }
+
+    return { chatId: data.id };
   }
 
   const { data, error } = await fetchLatestChatId();

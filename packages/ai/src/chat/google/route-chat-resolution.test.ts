@@ -1,5 +1,66 @@
 import { describe, expect, it, vi } from 'vitest';
-import { moveTempFilesToThread } from './route-chat-resolution';
+import {
+  moveTempFilesToThread,
+  resolveChatIdForUser,
+} from './route-chat-resolution';
+
+describe('resolveChatIdForUser', () => {
+  it('rejects client-only prefixed chat ids before database lookup', async () => {
+    const fetchLatestChatId = vi.fn();
+    const fetchRequestedChatId = vi.fn();
+
+    const result = await resolveChatIdForUser(
+      'learn-workspace-1-0-00000000-0000-0000-0000-000000000000',
+      fetchLatestChatId,
+      fetchRequestedChatId
+    );
+
+    expect('error' in result).toBe(true);
+    if ('error' in result) {
+      expect(result.error.status).toBe(400);
+      await expect(result.error.text()).resolves.toBe(
+        'Invalid chat identifier'
+      );
+    }
+    expect(fetchLatestChatId).not.toHaveBeenCalled();
+    expect(fetchRequestedChatId).not.toHaveBeenCalled();
+  });
+
+  it('rejects valid UUID chat ids that do not belong to the requester', async () => {
+    const chatId = '11111111-1111-4111-8111-111111111111';
+    const fetchLatestChatId = vi.fn();
+    const fetchRequestedChatId = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    const result = await resolveChatIdForUser(
+      chatId,
+      fetchLatestChatId,
+      fetchRequestedChatId
+    );
+
+    expect('error' in result).toBe(true);
+    if ('error' in result) {
+      expect(result.error.status).toBe(404);
+      await expect(result.error.text()).resolves.toBe('Chat not found');
+    }
+    expect(fetchLatestChatId).not.toHaveBeenCalled();
+    expect(fetchRequestedChatId).toHaveBeenCalledWith(chatId);
+  });
+
+  it('returns verified requester-owned chat ids', async () => {
+    const chatId = '11111111-1111-4111-8111-111111111111';
+    const fetchRequestedChatId = vi.fn().mockResolvedValue({
+      data: { id: chatId },
+      error: null,
+    });
+
+    await expect(
+      resolveChatIdForUser(chatId, vi.fn(), fetchRequestedChatId)
+    ).resolves.toEqual({ chatId });
+  });
+});
 
 describe('moveTempFilesToThread', () => {
   it('moves every temp file into the chat folder when a thread exists', async () => {
