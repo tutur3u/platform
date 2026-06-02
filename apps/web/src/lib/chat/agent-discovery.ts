@@ -314,6 +314,89 @@ export async function archiveAiChatConversation({
   };
 }
 
+export async function updateAiChatConversationTitle({
+  conversationId,
+  supabase,
+  title,
+  user,
+  wsId,
+}: {
+  conversationId: string;
+  supabase: SessionAuthContext['supabase'];
+  title: string;
+  user: SessionAuthContext['user'];
+  wsId: string;
+}): Promise<ChatConversation | null> {
+  const chatId = getAiChatId(conversationId);
+  if (!chatId) return null;
+
+  const personalWorkspaceId = await getUserPersonalWorkspaceId({
+    supabase,
+    userId: user.id,
+  });
+
+  if (!personalWorkspaceId || wsId !== personalWorkspaceId) {
+    return null;
+  }
+
+  const { data: chat, error } = await supabase
+    .from('ai_chats')
+    .update({ title })
+    .eq('id', chatId)
+    .eq('creator_id', user.id)
+    .select(
+      'id,title,created_at,creator_id,is_public,model,pinned,summary,archived_at'
+    )
+    .maybeSingle();
+
+  if (error || !chat) return null;
+
+  const [chatRow] = await filterNativeChatShadowRows([chat as AiChatRow]);
+  if (!chatRow) return null;
+
+  const { data: latestMessages } = await supabase
+    .from('ai_chat_messages')
+    .select('id,chat_id,content,created_at,creator_id,metadata,model,role,type')
+    .eq('chat_id', chatRow.id)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const [latestMessage] = (latestMessages ?? []) as AiChatMessageRow[];
+  const sender = getAiChatUserProfile(user);
+
+  return {
+    aiEnabled: true,
+    archivedAt: chatRow.archived_at,
+    createdAt: chatRow.created_at,
+    createdBy: chatRow.creator_id,
+    description: chatRow.summary,
+    id: conversationId,
+    latestMessage: latestMessage
+      ? toAiChatMessage({
+          conversationId,
+          message: latestMessage,
+          sender,
+          userId: user.id,
+        })
+      : null,
+    memberCount: 1,
+    members: [],
+    metadata: {
+      isPublic: chatRow.is_public,
+      aiChatId: chatRow.id,
+      model: chatRow.model,
+      pinned: chatRow.pinned,
+      readOnly: false,
+      source: 'ai-chat',
+    },
+    title: chatRow.title?.trim() || 'Mira',
+    type: 'ai',
+    unreadCount: 0,
+    updatedAt: latestMessage?.created_at ?? chatRow.created_at,
+    wsId,
+  };
+}
+
 export async function listAiChatMessages({
   before,
   conversationId,

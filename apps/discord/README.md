@@ -108,6 +108,31 @@ modal run app.py::create_slash_command --force
 modal deploy app.py
 ```
 
+### AI Agent Gateway Watcher
+
+The apps/web AI-agent Discord webhook handles HTTP interactions and forwarded
+Gateway events. To self-host message watching from `apps/discord`, run:
+
+```bash
+cd apps/discord
+DISCORD_AI_AGENT_GATEWAY_BOT_TOKEN="$DISCORD_BOT_TOKEN" \
+DISCORD_AI_AGENT_GATEWAY_PLATFORM_URL="https://<platform>" \
+DISCORD_AI_AGENT_GATEWAY_WATCHER_SECRET="<root watcher secret>" \
+uv run python ai_agent_gateway_watcher.py
+```
+
+Store the same `AI_AGENT_DISCORD_GATEWAY_WATCHER_SECRET` value as a root
+workspace secret in apps/web. The watcher asks apps/web for deployed Discord
+AI-agent webhook targets and apps/web only returns enabled root-internal
+channels. Set `DISCORD_AI_AGENT_GATEWAY_CHANNEL_ID` to pin one channel when a
+deployment has more than one root-internal Discord channel.
+
+For local smoke tests, `DISCORD_AI_AGENT_GATEWAY_WEBHOOK_URL` can still point at
+a generated AI-agent Discord channel webhook URL from Infrastructure → AI
+Agents or the apps/chat agent details panel. The watcher forwards Discord
+Gateway packets with the Chat SDK `GATEWAY_<event>` contract and does not run
+AI-agent tools or model calls locally.
+
 ### 6. Continuous Deployment (GitHub Actions)
 
 This repo includes a dedicated workflow at

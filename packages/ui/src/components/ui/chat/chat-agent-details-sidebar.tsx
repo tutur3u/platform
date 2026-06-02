@@ -3,7 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bot, LoaderCircle } from '@tuturuuu/icons';
 import type { ChatConversation } from '@tuturuuu/internal-api';
-import type { SaveAiAgentPayload } from '@tuturuuu/internal-api/infrastructure';
+import type {
+  AiAgentTestResponse,
+  SaveAiAgentPayload,
+} from '@tuturuuu/internal-api/infrastructure';
 import {
   deployAiAgentChannel,
   listAiAgents,
@@ -45,6 +48,9 @@ export function ChatAgentDetailsSidebar({
     label: string;
     value: string;
   } | null>(null);
+  const [testResult, setTestResult] = useState<AiAgentTestResponse | null>(
+    null
+  );
   const agentsQuery = useQuery({
     enabled: open && Boolean(metadata),
     queryFn: () => listAiAgents(),
@@ -65,10 +71,7 @@ export function ChatAgentDetailsSidebar({
         : undefined,
     [agent, metadata]
   );
-  const tabs: AgentTab[] =
-    metadata?.source === 'ai-agent-external-thread'
-      ? ['setup', 'operations', 'thread']
-      : ['setup', 'operations'];
+  const tabs: AgentTab[] = ['setup', 'operations', 'thread'];
   const refreshAgent = () =>
     queryClient.invalidateQueries({ queryKey: AGENT_QUERY_KEY });
   const refreshChat = () => {
@@ -122,6 +125,7 @@ export function ChatAgentDetailsSidebar({
         : Promise.reject(new Error(t('agent_not_found'))),
     onError: (error) => toast.error(error.message || t('agent_test_failed')),
     onSuccess: (result) => {
+      setTestResult(result);
       if (result.ok) toast.success(result.response || t('agent_test_success'));
       else toast.error(result.response || t('agent_test_failed'));
     },
@@ -204,6 +208,7 @@ export function ChatAgentDetailsSidebar({
             onTest: (prompt) => testMutation.mutate(prompt),
             secretPreview,
             tabs,
+            testResult,
             t,
             agent,
           })}
@@ -229,6 +234,7 @@ function renderContent({
   onTest,
   secretPreview,
   tabs,
+  testResult,
   t,
 }: {
   agent?: Awaited<ReturnType<typeof listAiAgents>>['agents'][number];
@@ -248,6 +254,7 @@ function renderContent({
   onTest: (prompt?: string) => void;
   secretPreview: { label: string; value: string } | null;
   tabs: AgentTab[];
+  testResult: AiAgentTestResponse | null;
   t: ReturnType<typeof useTranslations>;
 }) {
   if (!metadata) {
@@ -296,6 +303,7 @@ function renderContent({
           onRotateSecret={onRotateSecret}
           onTest={onTest}
           secretPreview={secretPreview}
+          testResult={testResult}
         />
       </TabsContent>
       {tabs.includes('thread') ? (

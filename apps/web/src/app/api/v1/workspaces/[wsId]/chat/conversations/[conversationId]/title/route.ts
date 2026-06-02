@@ -7,6 +7,11 @@ import { generateText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
 import {
+  isAiChatConversationId,
+  listAiChatMessages,
+  updateAiChatConversationTitle,
+} from '@/lib/chat/agent-discovery';
+import {
   type ChatConversation,
   type ChatMessage,
   callPrivateChatRpc,
@@ -39,6 +44,14 @@ export const POST = withSessionAuth<RouteParams>(
     if (!context.ok) return context.response;
 
     try {
+      if (isAiChatConversationId(params.conversationId)) {
+        return await generateAiChatConversationTitle({
+          auth,
+          conversationId: params.conversationId,
+          normalizedWsId: context.context.normalizedWsId,
+        });
+      }
+
       await callPrivateChatRpc<ChatConversation>('chat_get_conversation', {
         p_actor_user_id: auth.user.id,
         p_conversation_id: params.conversationId,
@@ -108,6 +121,77 @@ export const POST = withSessionAuth<RouteParams>(
   },
   { allowAppSessionAuth: true }
 );
+
+async function generateAiChatConversationTitle({
+  auth,
+  conversationId,
+  normalizedWsId,
+}: {
+  auth: SessionAuthContext;
+  conversationId: string;
+  normalizedWsId: string;
+}) {
+  const messages = await listAiChatMessages({
+    conversationId,
+    limit: 5,
+    supabase: auth.supabase,
+    user: auth.user,
+    wsId: normalizedWsId,
+  });
+
+  if (!messages) {
+    return NextResponse.json(
+      { message: 'Conversation not found' },
+      { status: 404 }
+    );
+  }
+
+  const titleMessages = normalizeTitleMessages(messages);
+
+  if (titleMessages.length === 0) {
+    return NextResponse.json({ message: 'No messages found' }, { status: 404 });
+  }
+
+  const title = await generateConversationTitle({
+    auth,
+    messages: titleMessages,
+    normalizedWsId,
+    conversationId,
+  });
+
+  if (!title) {
+    return NextResponse.json(
+      { message: 'Could not generate title' },
+      { status: 502 }
+    );
+  }
+
+  const conversation = await updateAiChatConversationTitle({
+    conversationId,
+    supabase: auth.supabase,
+    title,
+    user: auth.user,
+    wsId: normalizedWsId,
+  });
+
+  if (!conversation) {
+    return NextResponse.json(
+      { message: 'Conversation not found' },
+      { status: 404 }
+    );
+  }
+
+  await publishChatRealtimeEvent({
+    actorUserId: auth.user.id,
+    audience: getChatRealtimeAudience(conversation),
+    conversation,
+    conversationId: conversation.id,
+    type: 'conversation.updated',
+    wsId: normalizedWsId,
+  });
+
+  return NextResponse.json({ conversation, title });
+}
 
 function normalizeTitleMessages(messages: ChatMessage[]) {
   return messages

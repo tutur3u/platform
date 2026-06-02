@@ -10,10 +10,13 @@ const mocks = {
   callPrivateChatRpc: vi.fn(),
   generateText: vi.fn(),
   google: vi.fn((model: string) => ({ model })),
+  isAiChatConversationId: vi.fn(),
+  listAiChatMessages: vi.fn(),
   publishChatRealtimeEvent: vi.fn(),
   resolveAiMemoryWorkspaceIdForUser: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   serverError: vi.fn(),
+  updateAiChatConversationTitle: vi.fn(),
   withAiMemory: vi.fn(async ({ model }) => model),
 };
 
@@ -52,6 +55,17 @@ vi.mock('@/lib/chat/private-rpc', () => ({
   resolveChatRouteContext: (
     ...args: Parameters<typeof mocks.resolveChatRouteContext>
   ) => mocks.resolveChatRouteContext(...args),
+}));
+
+vi.mock('@/lib/chat/agent-discovery', () => ({
+  isAiChatConversationId: (
+    ...args: Parameters<typeof mocks.isAiChatConversationId>
+  ) => mocks.isAiChatConversationId(...args),
+  listAiChatMessages: (...args: Parameters<typeof mocks.listAiChatMessages>) =>
+    mocks.listAiChatMessages(...args),
+  updateAiChatConversationTitle: (
+    ...args: Parameters<typeof mocks.updateAiChatConversationTitle>
+  ) => mocks.updateAiChatConversationTitle(...args),
 }));
 
 vi.mock('@/lib/chat/realtime', () => ({
@@ -110,13 +124,13 @@ function mockRouteContext() {
   });
 }
 
-async function callRoute() {
+async function callRoute(conversationId = 'conversation-1') {
   const { POST } = await import('./route');
   return POST(
     new Request('http://localhost/title', { method: 'POST' }) as never,
     {
       params: Promise.resolve({
-        conversationId: 'conversation-1',
+        conversationId,
         wsId: 'workspace-1',
       }),
     }
@@ -130,6 +144,17 @@ describe('chat conversation generated title route', () => {
     mocks.resolveAiMemoryWorkspaceIdForUser.mockResolvedValue('workspace-1');
     mocks.generateText.mockResolvedValue({
       text: 'Recent Planning Decisions',
+    });
+    mocks.isAiChatConversationId.mockImplementation((conversationId: string) =>
+      conversationId.startsWith('ai-chat-')
+    );
+    mocks.listAiChatMessages.mockResolvedValue(messages);
+    mocks.updateAiChatConversationTitle.mockResolvedValue({
+      ...conversation,
+      id: 'ai-chat-chat-1',
+      metadata: { aiChatId: 'chat-1', source: 'ai-chat' },
+      title: 'Recent Planning Decisions',
+      type: 'ai',
     });
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
       if (name === 'chat_get_conversation') return conversation;
@@ -203,5 +228,44 @@ describe('chat conversation generated title route', () => {
       message: 'No messages found',
     });
     expect(mocks.generateText).not.toHaveBeenCalled();
+  });
+
+  it('generates and saves a title for synthetic AI chat conversations', async () => {
+    const response = await callRoute('ai-chat-chat-1');
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      conversation: {
+        id: 'ai-chat-chat-1',
+        metadata: { aiChatId: 'chat-1', source: 'ai-chat' },
+        title: 'Recent Planning Decisions',
+      },
+      title: 'Recent Planning Decisions',
+    });
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalled();
+    expect(mocks.listAiChatMessages).toHaveBeenCalledWith({
+      conversationId: 'ai-chat-chat-1',
+      limit: 5,
+      supabase: mocks.auth.supabase,
+      user: mocks.auth.user,
+      wsId: 'workspace-1',
+    });
+    expect(mocks.updateAiChatConversationTitle).toHaveBeenCalledWith({
+      conversationId: 'ai-chat-chat-1',
+      supabase: mocks.auth.supabase,
+      title: 'Recent Planning Decisions',
+      user: mocks.auth.user,
+      wsId: 'workspace-1',
+    });
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        conversation: expect.objectContaining({
+          id: 'ai-chat-chat-1',
+          title: 'Recent Planning Decisions',
+        }),
+        conversationId: 'ai-chat-chat-1',
+        type: 'conversation.updated',
+      })
+    );
   });
 });

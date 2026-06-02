@@ -289,7 +289,15 @@ export interface AiAgentDeployResponse {
   webhookUrl: string;
 }
 
+export interface AiAgentDiagnosticCheck {
+  detail?: string | null;
+  id: string;
+  label: string;
+  ok: boolean;
+}
+
 export interface AiAgentTestResponse {
+  checks?: AiAgentDiagnosticCheck[];
   ok: boolean;
   response: string;
 }
