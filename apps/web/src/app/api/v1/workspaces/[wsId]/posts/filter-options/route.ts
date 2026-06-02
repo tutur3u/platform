@@ -1,6 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getPostEmailMaxAgeCutoff } from '@/lib/post-email-queue';
 
 interface Params {
@@ -26,7 +27,6 @@ type PostReviewFilterOptionsRpc = (
 ) => Promise<{ data: PostReviewFilterOption[] | null; error: unknown }>;
 
 export async function GET(request: Request, { params }: Params) {
-  const supabase = await createClient(request);
   const { wsId } = await params;
   const url = new URL(request.url);
   const includedGroups = url.searchParams.getAll('includedGroups');
@@ -36,7 +36,8 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const privateRpc = supabase.schema('private')
+  const sbAdmin = await createAdminClient();
+  const privateRpc = sbAdmin.schema('private')
     .rpc as unknown as PostReviewFilterOptionsRpc;
   const userGroupsPromise = privateRpc(
     'get_workspace_post_review_filter_options',
@@ -51,9 +52,7 @@ export async function GET(request: Request, { params }: Params) {
   const { data: filterOptions, error } = await userGroupsPromise;
 
   if (error) {
-    console.error('Error loading post filter options:', {
-      filterOptions: error,
-    });
+    serverLogger.error('Error loading post filter options', { error });
     return NextResponse.json(
       { message: 'Failed to load filter options' },
       { status: 500 }
