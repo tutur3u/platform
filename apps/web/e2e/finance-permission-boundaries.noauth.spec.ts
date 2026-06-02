@@ -39,6 +39,13 @@ function serviceHeaders({
   };
 }
 
+function isoDateWithOffset(days: number) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + days);
+
+  return date.toISOString().slice(0, 10);
+}
+
 test.describe('Finance permission boundaries', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
@@ -52,7 +59,14 @@ test.describe('Finance permission boundaries', () => {
     const origin = baseURL ?? 'https://tuturuuu.localhost';
     const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 262));
     const categoryId = randomUUID();
+    const confidentialInterestTransactionId = randomUUID();
+    const interestConfigId = randomUUID();
+    const interestRateId = randomUUID();
     const roleId = randomUUID();
+    const calculationDate = isoDateWithOffset(0);
+    const interestTrackingStartDate = isoDateWithOffset(-3);
+    const interestTransactionDate = isoDateWithOffset(-1);
+    const visibleInterestTransactionId = randomUUID();
     const walletId = randomUUID();
     const workspaceId = randomUUID();
     const lowPrivEmail = `e2e-finance-invoice-${Date.now()}@tuturuuu.com`;
@@ -337,7 +351,188 @@ test.describe('Finance permission boundaries', () => {
           total_income: expect.any(Number),
         })
       );
+
+      const transactionsPermissionResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspace_role_permissions`,
+        {
+          data: {
+            enabled: true,
+            permission: 'view_transactions',
+            role_id: roleId,
+            ws_id: workspaceId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      expect(transactionsPermissionResponse.status()).toBe(201);
+
+      const walletWhitelistResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspace_role_wallet_whitelist`,
+        {
+          data: {
+            role_id: roleId,
+            wallet_id: walletId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      expect(walletWhitelistResponse.status()).toBe(201);
+
+      const interestConfigResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/wallet_interest_configs`,
+        {
+          data: {
+            enabled: true,
+            id: interestConfigId,
+            last_interest_amount: 333,
+            provider: 'momo',
+            total_interest_earned: 7777,
+            tracking_start_date: interestTrackingStartDate,
+            wallet_id: walletId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      expect(interestConfigResponse.status()).toBe(201);
+
+      const interestRateResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/wallet_interest_rates`,
+        {
+          data: {
+            annual_rate: 36.5,
+            config_id: interestConfigId,
+            effective_from: interestTrackingStartDate,
+            id: interestRateId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      expect(interestRateResponse.status()).toBe(201);
+
+      const interestTransactionsResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/wallet_transactions`,
+        {
+          data: [
+            {
+              amount: 1000,
+              created_at: `${interestTransactionDate}T09:00:00+00:00`,
+              description: 'daily interest visible',
+              id: visibleInterestTransactionId,
+              is_amount_confidential: false,
+              is_description_confidential: false,
+              wallet_id: walletId,
+            },
+            {
+              amount: 9000,
+              created_at: `${interestTransactionDate}T10:00:00+00:00`,
+              description: 'daily interest confidential',
+              id: confidentialInterestTransactionId,
+              is_amount_confidential: true,
+              is_description_confidential: true,
+              wallet_id: walletId,
+            },
+          ],
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      expect(interestTransactionsResponse.status()).toBe(201);
+
+      const projectionResponse = await lowPrivPage.request.get(
+        `${origin}/api/workspaces/${workspaceId}/wallets/${walletId}/interest/project?startDate=${calculationDate}&days=1`,
+        {
+          failOnStatusCode: false,
+          headers,
+        }
+      );
+      expect(projectionResponse.status()).toBe(200);
+      await expect(projectionResponse.json()).resolves.toEqual(
+        expect.objectContaining({
+          currentBalance: 1000,
+          summary: expect.any(Object),
+        })
+      );
+
+      const calculationResponse = await lowPrivPage.request.get(
+        `${origin}/api/workspaces/${workspaceId}/wallets/${walletId}/interest/calculate?from=${calculationDate}&to=${calculationDate}`,
+        {
+          failOnStatusCode: false,
+          headers,
+        }
+      );
+      expect(calculationResponse.status()).toBe(200);
+      await expect(calculationResponse.json()).resolves.toEqual(
+        expect.objectContaining({
+          initialBalance: 1000,
+          dailyResults: [
+            expect.objectContaining({
+              balance: 1000,
+            }),
+          ],
+        })
+      );
+
+      const summaryResponse = await lowPrivPage.request.get(
+        `${origin}/api/workspaces/${workspaceId}/wallets/${walletId}/interest`,
+        {
+          failOnStatusCode: false,
+          headers,
+        }
+      );
+      expect(summaryResponse.status()).toBe(200);
+      const summary = (await summaryResponse.json()) as {
+        config?: { total_interest_earned?: number };
+        estimatedMonthlyInterest?: number;
+        estimatedYearlyInterest?: number;
+        projections?: { week?: Array<Record<string, unknown>> };
+        totalEarnedInterest?: number;
+      };
+      expect(summary.config?.total_interest_earned).toBe(0);
+      expect(summary.totalEarnedInterest).not.toBe(7777);
+      expect(summary.estimatedMonthlyInterest).toBe(22);
+      expect(summary.estimatedYearlyInterest).toBe(260);
+      expect(summary.projections?.week?.[0]).toEqual(
+        expect.objectContaining({
+          projectedBalance: expect.any(Number),
+        })
+      );
     } finally {
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/wallet_transactions?wallet_id=eq.${walletId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders(),
+        }
+      );
+
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/wallet_interest_rates?config_id=eq.${interestConfigId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders(),
+        }
+      );
+
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/wallet_interest_configs?id=eq.${interestConfigId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders(),
+        }
+      );
+
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/workspace_role_wallet_whitelist?role_id=eq.${roleId}&wallet_id=eq.${walletId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders(),
+        }
+      );
+
       await request.delete(
         `${SUPABASE_URL}/rest/v1/transaction_categories?id=eq.${categoryId}`,
         {

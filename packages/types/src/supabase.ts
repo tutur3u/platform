@@ -8616,6 +8616,10 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      get_wallet_interest_visible_balance: {
+        Args: { _can_view_confidential_amounts: boolean; _wallet_id: string };
+        Returns: number;
+      };
       get_workspace_post_email_rows: {
         Args: {
           p_approval_status?: Database['public']['Enums']['approval_status'];
@@ -9245,6 +9249,7 @@ export type Database = {
         Args: {
           _config_id: string;
           _from_date: string;
+          _include_confidential_amounts?: boolean;
           _initial_balance?: number;
           _to_date: string;
           _transaction_from_date: string;
