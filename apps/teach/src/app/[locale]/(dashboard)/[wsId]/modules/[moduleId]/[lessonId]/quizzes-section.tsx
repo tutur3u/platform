@@ -1,13 +1,12 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { ListTodo, Plus } from '@tuturuuu/icons';
-import { getWorkspaceQuizzes } from '@tuturuuu/internal-api';
+import { ListTodo, Loader2, Plus, Sparkles } from '@tuturuuu/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import ClientQuizzes from './client-quizzes';
 import DynamicQuizForm from './dynamic-form';
+import { useQuizzes } from './use-quizzes';
 
 interface Props {
   wsId: string;
@@ -18,14 +17,8 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
   const t = useTranslations();
   const [creating, setCreating] = useState(false);
 
-  // Fetch quizzes using TanStack Query
-  const { data, isError, isLoading, refetch } = useQuery({
-    queryKey: ['module-quizzes', wsId, lessonId],
-    queryFn: () => getWorkspaceQuizzes(wsId, { moduleId: lessonId }),
-    enabled: Boolean(wsId) && Boolean(lessonId),
-  });
-
-  const quizzes = data?.data ?? [];
+  const { quizzes, isLoading, isError, refetch, generateQuiz, isGenerating } =
+    useQuizzes(wsId, lessonId);
 
   return (
     <section className="mt-8 space-y-4 border-2 border-border bg-background p-6 shadow-[5px_5px_0_var(--border)]">
@@ -37,14 +30,36 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
           </h2>
         </div>
         {!creating && (
-          <button
-            className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
-            onClick={() => setCreating(true)}
-            type="button"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {t('ws-quizzes.create_manually')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              onClick={() => generateQuiz()}
+              disabled={isGenerating}
+              type="button"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {t('ws-quizzes.generating_with_ai')}
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-3.5 w-3.5 text-dynamic-purple" />
+                  {t('ws-quizzes.generate_with_ai')}
+                </>
+              )}
+            </button>
+
+            <button
+              className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              onClick={() => setCreating(true)}
+              disabled={isGenerating}
+              type="button"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t('ws-quizzes.create_manually')}
+            </button>
+          </div>
         )}
       </div>
 

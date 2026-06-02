@@ -353,3 +353,37 @@ export async function generateWorkspaceCourseModulesFromStorage(
     }
   );
 }
+
+export interface GenerateQuizFromLessonPayload {
+  lessonId: string;
+  context?: string;
+}
+
+export interface GenerateQuizFromLessonResponse {
+  success: boolean;
+  count: number;
+  quizzes: Array<{ id: string }>;
+}
+
+export async function generateQuizFromLesson(
+  workspaceId: string,
+  payload: GenerateQuizFromLessonPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<GenerateQuizFromLessonResponse>(
+    '/api/ai/quiz',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        wsId: workspaceId,
+        ...payload,
+      }),
+      cache: 'no-store',
+    }
+  );
+}
+
