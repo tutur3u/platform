@@ -59,8 +59,7 @@ def test_watcher_config_can_auto_resolve_from_apps_web():
     assert config.watcher_secret == env["DISCORD_AI_AGENT_GATEWAY_WATCHER_SECRET"]
     assert config.webhook_urls == ()
     assert (
-        config.watcher_config_url()
-        == "https://tuturuuu.com/api/v1/infrastructure/ai-agents/"
+        config.watcher_config_url() == "https://tuturuuu.com/api/v1/infrastructure/ai-agents/"
         "discord-gateway/watcher-config?channelId=root-discord"
     )
 

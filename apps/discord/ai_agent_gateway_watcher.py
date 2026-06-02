@@ -17,9 +17,7 @@ import aiohttp
 logger = logging.getLogger(__name__)
 
 DISCORD_GATEWAY_URL = "wss://gateway.discord.gg/?v=10&encoding=json"
-WATCHER_CONFIG_PATH = (
-    "/api/v1/infrastructure/ai-agents/discord-gateway/watcher-config"
-)
+WATCHER_CONFIG_PATH = "/api/v1/infrastructure/ai-agents/discord-gateway/watcher-config"
 DISCORD_GATEWAY_INTENTS = (
     1  # Guilds
     | 512  # GuildMessages
@@ -32,9 +30,7 @@ DISCORD_GATEWAY_INTENTS = (
 
 def _split_urls(value: str | None) -> tuple[str, ...]:
     return tuple(
-        entry.strip()
-        for entry in (value or "").replace("\n", ",").split(",")
-        if entry.strip()
+        entry.strip() for entry in (value or "").replace("\n", ",").split(",") if entry.strip()
     )
 
 
@@ -202,9 +198,7 @@ async def resolve_watcher_webhook_urls(
     )
 
     if not webhook_urls:
-        raise RuntimeError(
-            "Discord Gateway watcher configuration did not return webhook targets"
-        )
+        raise RuntimeError("Discord Gateway watcher configuration did not return webhook targets")
 
     return webhook_urls
 
