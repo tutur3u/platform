@@ -19,6 +19,10 @@ import {
   type UpdateChatConversationPayload,
   updateWorkspaceChatConversation,
 } from '@tuturuuu/internal-api';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+} from '@tuturuuu/internal-api/client';
 import { chatQueryKeys } from './query-keys';
 
 export function useChatConversations(
@@ -133,6 +137,40 @@ export function useUpdateChatConversation(wsId: string) {
       });
     },
   });
+}
+
+export function useGenerateChatConversationTitle(wsId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      generateChatConversationTitle(wsId, conversationId),
+    onSuccess: ({ conversation }) => {
+      queryClient.setQueryData<ChatConversation[]>(
+        chatQueryKeys.conversations(wsId, 'active'),
+        (current = []) =>
+          current.map((item) =>
+            item.id === conversation.id ? conversation : item
+          )
+      );
+      queryClient.invalidateQueries({
+        queryKey: [...chatQueryKeys.all(wsId), 'conversations'],
+      });
+    },
+  });
+}
+
+function generateChatConversationTitle(wsId: string, conversationId: string) {
+  const client = getInternalApiClient();
+  return client.json<{ conversation: ChatConversation; title: string }>(
+    `/api/v1/workspaces/${encodePathSegment(
+      wsId
+    )}/chat/conversations/${encodePathSegment(conversationId)}/title`,
+    {
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
 }
 
 export function useMarkChatConversationRead({

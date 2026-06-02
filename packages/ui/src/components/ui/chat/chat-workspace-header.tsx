@@ -8,6 +8,7 @@ import {
   LoaderCircle,
   MessageCircle,
   PanelRight,
+  Sparkles,
   Users,
 } from '@tuturuuu/icons';
 import type {
@@ -50,8 +51,10 @@ export function ChatHeader({
   currentUserId,
   isDeletingConversation,
   isFetching,
+  isGeneratingConversationTitle,
   isUpdatingConversation,
   onDeleteConversation,
+  onGenerateConversationTitle,
   onToggleSharedContent,
   onUpdateConversation,
   sharedContentOpen,
@@ -61,8 +64,10 @@ export function ChatHeader({
   currentUserId: string;
   isDeletingConversation?: boolean;
   isFetching?: boolean;
+  isGeneratingConversationTitle?: boolean;
   isUpdatingConversation?: boolean;
   onDeleteConversation?: () => void;
+  onGenerateConversationTitle?: () => Promise<void> | void;
   onToggleSharedContent?: () => void;
   onUpdateConversation?: (
     payload: UpdateChatConversationPayload
@@ -83,6 +88,9 @@ export function ChatHeader({
     [];
   const canDelete = Boolean(conversation && !readOnly && onDeleteConversation);
   const canRename = Boolean(conversation && !readOnly && onUpdateConversation);
+  const canGenerateTitle = Boolean(
+    conversation && !readOnly && onGenerateConversationTitle
+  );
   const deleteLabel = getArchiveLabel(t, conversation);
   const deleteDescription = getArchiveDescription({
     actorRole: actorMember?.role,
@@ -100,6 +108,13 @@ export function ChatHeader({
     if (!conversation || !trimmedDraftTitle) return;
 
     await onUpdateConversation?.({ title: trimmedDraftTitle });
+    setRenameOpen(false);
+  }
+
+  async function handleGenerateTitle() {
+    if (!conversation) return;
+
+    await onGenerateConversationTitle?.();
     setRenameOpen(false);
   }
 
@@ -193,8 +208,29 @@ export function ChatHeader({
                   value={draftTitle}
                 />
                 <DialogFooter>
+                  {canGenerateTitle ? (
+                    <Button
+                      disabled={
+                        isUpdatingConversation || isGeneratingConversationTitle
+                      }
+                      onClick={handleGenerateTitle}
+                      type="button"
+                      variant="secondary"
+                    >
+                      {isGeneratingConversationTitle ? (
+                        <LoaderCircle className="size-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="size-4" />
+                      )}
+                      {isGeneratingConversationTitle
+                        ? t('generating_conversation_title')
+                        : t('generate_conversation_title')}
+                    </Button>
+                  ) : null}
                   <Button
-                    disabled={isUpdatingConversation}
+                    disabled={
+                      isUpdatingConversation || isGeneratingConversationTitle
+                    }
                     onClick={() => setRenameOpen(false)}
                     type="button"
                     variant="outline"
@@ -203,7 +239,9 @@ export function ChatHeader({
                   </Button>
                   <Button
                     disabled={
-                      isUpdatingConversation || trimmedDraftTitle.length === 0
+                      isUpdatingConversation ||
+                      isGeneratingConversationTitle ||
+                      trimmedDraftTitle.length === 0
                     }
                     type="submit"
                   >

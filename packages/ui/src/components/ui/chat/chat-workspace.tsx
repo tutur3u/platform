@@ -27,6 +27,7 @@ import {
   useChatRealtime,
   useDeleteChatConversation,
   useDeleteChatMessage,
+  useGenerateChatConversationTitle,
   useInfiniteChatConversations,
   useInfiniteChatMessages,
   useMarkChatConversationRead,
@@ -164,6 +165,7 @@ export function ChatWorkspace({
   });
   const deleteConversation = useDeleteChatConversation(wsId);
   const updateConversation = useUpdateChatConversation(wsId);
+  const generateConversationTitle = useGenerateChatConversationTitle(wsId);
   const uploadAttachment = useUploadChatAttachment({
     conversationId: activeConversationId,
     wsId,
@@ -398,6 +400,18 @@ export function ChatWorkspace({
     }
   }
 
+  async function handleGenerateConversationTitle() {
+    if (!selectedConversation) return;
+
+    try {
+      await generateConversationTitle.mutateAsync(selectedConversation.id);
+      toast.success(t('conversation_updated'));
+    } catch (error) {
+      toast.error(t('conversation_title_generate_failed'));
+      throw error;
+    }
+  }
+
   return (
     <section
       className={cn(
@@ -455,8 +469,10 @@ export function ChatWorkspace({
           currentUserId={currentUserId}
           isDeletingConversation={deleteConversation.isPending}
           isFetching={messagesQuery.isFetching}
+          isGeneratingConversationTitle={generateConversationTitle.isPending}
           isUpdatingConversation={updateConversation.isPending}
           onDeleteConversation={handleDeleteConversation}
+          onGenerateConversationTitle={handleGenerateConversationTitle}
           onToggleSharedContent={() =>
             setSharedContentOpen((current) => !current)
           }

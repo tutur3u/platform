@@ -182,6 +182,76 @@ type ConversationListItem =
   | { conversation: ChatConversation; key: string; type: 'conversation' }
   | { key: string; type: 'loader' };
 
+type ChatConversationSectionLabels = {
+  ai: string;
+  channel: string;
+  direct: string;
+  group: string;
+};
+
+export function getChatConversationSections({
+  conversations,
+  labels,
+  scope,
+}: {
+  conversations: ChatConversation[];
+  labels: ChatConversationSectionLabels;
+  scope?: ChatConversationScope;
+}) {
+  if (scope === 'workspaces') {
+    return [
+      {
+        conversations: conversations.filter(
+          (conversation) => conversation.type === 'channel'
+        ),
+        label: labels.channel,
+        sectionType: 'channel' as const,
+      },
+      {
+        conversations: conversations.filter(
+          (conversation) => conversation.type === 'ai'
+        ),
+        label: labels.ai,
+        sectionType: 'ai' as const,
+      },
+    ];
+  }
+
+  if (scope === 'personal') {
+    return [
+      {
+        conversations: conversations.filter(
+          (conversation) => conversation.type === 'direct'
+        ),
+        label: labels.direct,
+        sectionType: 'direct' as const,
+      },
+      {
+        conversations: conversations.filter(
+          (conversation) => conversation.type === 'group'
+        ),
+        label: labels.group,
+        sectionType: 'group' as const,
+      },
+      {
+        conversations: conversations.filter(
+          (conversation) => conversation.type === 'ai'
+        ),
+        label: labels.ai,
+        sectionType: 'ai' as const,
+      },
+    ];
+  }
+
+  return [
+    {
+      conversations,
+      label: null,
+      sectionType: 'direct' as const,
+    },
+  ];
+}
+
 function ConversationGroups({
   archiveFilter,
   conversations,
@@ -211,41 +281,16 @@ function ConversationGroups({
   const parentRef = useRef<HTMLDivElement | null>(null);
   const groups = useMemo(
     () =>
-      scope === 'workspaces'
-        ? [
-            {
-              conversations: conversations.filter(
-                (conversation) => conversation.type === 'channel'
-              ),
-              label: t('channels'),
-              sectionType: 'channel' as const,
-            },
-            {
-              conversations: conversations.filter(
-                (conversation) => conversation.type === 'ai'
-              ),
-              label: t('ai_agents'),
-              sectionType: 'ai' as const,
-            },
-          ]
-        : scope === 'personal'
-          ? [
-              {
-                conversations: conversations.filter(
-                  (conversation) => conversation.type === 'direct'
-                ),
-                label: t('direct_messages'),
-                sectionType: 'direct' as const,
-              },
-              {
-                conversations: conversations.filter(
-                  (conversation) => conversation.type === 'group'
-                ),
-                label: t('groups'),
-                sectionType: 'group' as const,
-              },
-            ]
-          : [{ conversations, label: null, sectionType: 'direct' as const }],
+      getChatConversationSections({
+        conversations,
+        labels: {
+          ai: t('ai_agents'),
+          channel: t('channels'),
+          direct: t('direct_messages'),
+          group: t('groups'),
+        },
+        scope,
+      }),
     [conversations, scope, t]
   );
   const items = useMemo<ConversationListItem[]>(() => {

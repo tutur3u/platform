@@ -214,6 +214,11 @@ export interface DeleteChatConversationResult {
   type: ChatConversationType;
 }
 
+export interface GenerateChatConversationTitleResult {
+  conversation: ChatConversation;
+  title: string;
+}
+
 export interface UpdateChatConversationPayload {
   description?: string | null;
   pinned?: boolean;
