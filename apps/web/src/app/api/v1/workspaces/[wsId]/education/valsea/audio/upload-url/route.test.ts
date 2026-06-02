@@ -11,13 +11,13 @@ type UploadHandler = (
 ) => Promise<Response>;
 
 const mocks = vi.hoisted(() => ({
+  checkEducationWorkspaceAccess: vi.fn(),
   createWorkspaceStorageUploadPayload: vi.fn(),
   getPermissions: vi.fn(),
   randomUUID: vi.fn(() => 'audio-id'),
   serverLogger: {
     error: vi.fn(),
   },
-  verifyWorkspaceMembershipType: vi.fn(),
   withSessionAuth: vi.fn(),
 }));
 
@@ -37,11 +37,14 @@ vi.mock('@tuturuuu/utils/constants', () => ({
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: mocks.getPermissions,
-  verifyWorkspaceMembershipType: mocks.verifyWorkspaceMembershipType,
 }));
 
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: mocks.withSessionAuth,
+}));
+
+vi.mock('@/lib/education/access', () => ({
+  checkEducationWorkspaceAccess: mocks.checkEducationWorkspaceAccess,
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -108,7 +111,11 @@ describe('Valsea audio upload-url route', () => {
             await context.params
           )
     );
-    mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+    mocks.checkEducationWorkspaceAccess.mockResolvedValue({
+      normalizedWsId: 'workspace-1',
+      ok: true,
+      sbAdmin: {},
+    });
     mocks.getPermissions.mockResolvedValue(permissions(['manage_drive']));
     mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
       filename: 'audio-id-classroom.webm',

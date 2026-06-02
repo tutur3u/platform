@@ -11,12 +11,12 @@ type SpeechHandler = (
 ) => Promise<Response>;
 
 const mocks = vi.hoisted(() => ({
+  checkEducationWorkspaceAccess: vi.fn(),
   randomUUID: vi.fn(() => 'audio-id'),
   serverLogger: {
     error: vi.fn(),
   },
   uploadWorkspaceStorageFileDirect: vi.fn(),
-  verifyWorkspaceMembershipType: vi.fn(),
   withSessionAuth: vi.fn(),
 }));
 
@@ -30,12 +30,12 @@ vi.mock('node:crypto', async (importOriginal) => {
   };
 });
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  verifyWorkspaceMembershipType: mocks.verifyWorkspaceMembershipType,
-}));
-
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: mocks.withSessionAuth,
+}));
+
+vi.mock('@/lib/education/access', () => ({
+  checkEducationWorkspaceAccess: mocks.checkEducationWorkspaceAccess,
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -96,7 +96,11 @@ describe('Valsea speech route', () => {
             await context.params
           )
     );
-    mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+    mocks.checkEducationWorkspaceAccess.mockResolvedValue({
+      normalizedWsId: 'ws-1',
+      ok: true,
+      sbAdmin: {},
+    });
     mocks.uploadWorkspaceStorageFileDirect.mockResolvedValue({
       path: 'education/valsea/audio/mira.wav',
     });

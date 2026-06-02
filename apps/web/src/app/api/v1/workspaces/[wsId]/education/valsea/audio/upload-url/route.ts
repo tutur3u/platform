@@ -1,13 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
-import {
-  getPermissions,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
+import { checkEducationWorkspaceAccess } from '@/lib/education/access';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   MAX_VALSEA_AUDIO_UPLOAD_BYTES,
@@ -33,30 +31,12 @@ async function verifyValseaAudioUploadAccess(
   context: AuthorizedRequest,
   wsId: string
 ) {
-  const resolvedWsId = resolveWorkspaceId(wsId);
-  const membership = await verifyWorkspaceMembershipType({
-    supabase: context.supabase,
-    userId: context.user.id,
-    wsId: resolvedWsId,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { message: 'Could not verify workspace membership' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json(
-      { message: "You don't have access to this workspace" },
-      { status: 403 }
-    );
-  }
+  const access = await checkEducationWorkspaceAccess({ context, wsId });
+  if (!access.ok) return access.response;
 
   const permissions = await getPermissions({
     user: context.user,
-    wsId: resolvedWsId,
+    wsId: access.normalizedWsId,
   });
   if (!permissions || permissions.withoutPermission('manage_drive')) {
     return NextResponse.json(
