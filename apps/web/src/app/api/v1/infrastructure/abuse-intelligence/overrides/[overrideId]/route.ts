@@ -33,7 +33,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     );
   }
 
-  const { data, error } = await authorization.supabase
+  const { data, error } = await authorization.sbAdmin
     .from('abuse_trust_overrides')
     .update({
       revoke_reason: parsed.data.reason,
