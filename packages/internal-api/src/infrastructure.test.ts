@@ -5,6 +5,7 @@ import {
   deleteAIWhitelistDomain,
   deleteAIWhitelistEmail,
   deployAiAgentChannel,
+  getBlueGreenMonitoringRequestArchive,
   getObservabilityLogs,
   listAIWhitelistDomains,
   listAIWhitelistEmails,
@@ -301,9 +302,11 @@ describe('observability internal API helpers', () => {
         q: 'sample resources',
         requestId: 'req-123',
         route: '/api/cron/infrastructure/sample-resources',
+        since: 1710000000000,
         source: 'api',
         status: '2xx',
         timeframeHours: 6,
+        until: Date.parse('2026-05-04T01:02:03.000Z'),
       },
       {
         baseUrl: 'https://internal.example.com',
@@ -312,7 +315,69 @@ describe('observability internal API helpers', () => {
     );
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://internal.example.com/api/v1/infrastructure/observability/logs?page=2&pageSize=25&projectId=platform&timeframeHours=6&q=sample+resources&route=%2Fapi%2Fcron%2Finfrastructure%2Fsample-resources&requestId=req-123&deploymentStamp=deploy-123&level=error&source=api&status=2xx',
+      'https://internal.example.com/api/v1/infrastructure/observability/logs?page=2&pageSize=25&projectId=platform&timeframeHours=6&q=sample+resources&route=%2Fapi%2Fcron%2Finfrastructure%2Fsample-resources&requestId=req-123&deploymentStamp=deploy-123&since=1710000000000&until=1777856523000&level=error&source=api&status=2xx',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('passes blue-green request archive cursor params through the apps/web API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        analytics: {
+          averageLatencyMs: null,
+          distinctRoutes: 0,
+          errorRequestCount: 0,
+          externalRequestCount: 0,
+          internalRequestCount: 0,
+          requestCount: 0,
+          retainedRequestCount: 0,
+          rscRequestCount: 0,
+          statusCodes: [],
+          timeframe: {
+            days: 7,
+            endAt: 0,
+            startAt: 0,
+          },
+          topRoutes: [],
+        },
+        hasNextPage: false,
+        hasPreviousPage: false,
+        items: [],
+        limit: 25,
+        offset: 0,
+        page: 1,
+        pageCount: 1,
+        total: 0,
+        window: {
+          newestAt: null,
+          oldestAt: null,
+        },
+      })
+    );
+
+    await getBlueGreenMonitoringRequestArchive(
+      {
+        page: 1,
+        pageSize: 25,
+        q: 'login',
+        render: 'rsc',
+        route: '/login',
+        since: 1710000000000,
+        status: '5xx',
+        traffic: 'external',
+        until: Date.parse('2026-05-04T01:02:03.000Z'),
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green/requests?page=1&pageSize=25&q=login&status=5xx&route=%2Flogin&since=1710000000000&render=rsc&traffic=external&until=1777856523000',
       expect.objectContaining({
         cache: 'no-store',
         headers: expect.any(Headers),

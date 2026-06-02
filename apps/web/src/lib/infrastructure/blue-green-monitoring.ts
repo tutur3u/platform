@@ -55,7 +55,9 @@ interface RequestArchiveFilters {
   q?: string;
   render?: string;
   route?: string;
+  since?: number | null;
   status?: string;
+  until?: number | null;
   traffic?: string;
 }
 
@@ -389,6 +391,30 @@ function isRequestInTimeframe(
   );
 }
 
+function normalizeTimestampBound(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : null;
+}
+
+function isRequestInCursorWindow(
+  request: BlueGreenMonitoringRequestLog,
+  filters: Pick<RequestArchiveFilters, 'since' | 'until'>
+) {
+  const since = normalizeTimestampBound(filters.since);
+  const until = normalizeTimestampBound(filters.until);
+
+  if (since != null && request.time <= since) {
+    return false;
+  }
+
+  if (until != null && request.time > until) {
+    return false;
+  }
+
+  return true;
+}
+
 function getRequestStatusCodeFamily(status: number | null | undefined) {
   if (status == null || !Number.isFinite(status)) {
     return 'unknown';
@@ -422,6 +448,10 @@ function matchesRequestArchiveFilters(
   filters: RequestArchiveFilters = {}
 ) {
   const parsedPath = parseMonitoringRequestPath(request.path);
+
+  if (!isRequestInCursorWindow(request, filters)) {
+    return false;
+  }
 
   if (filters.status) {
     const statusValue = request.status != null ? String(request.status) : null;
@@ -1907,8 +1937,10 @@ export function readBlueGreenMonitoringRequestArchive({
   q,
   render,
   route,
+  since,
   status,
   timeframeDays = DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS,
+  until,
   traffic,
 }: {
   fsImpl?: FsLike;
@@ -1918,8 +1950,10 @@ export function readBlueGreenMonitoringRequestArchive({
   q?: string;
   render?: string;
   route?: string;
+  since?: number | null;
   status?: string;
   timeframeDays?: number | null;
+  until?: number | null;
   traffic?: string;
 } = {}): BlueGreenMonitoringRequestArchive {
   const monitoringDir = resolveMonitoringDir(fsImpl);
@@ -1932,7 +1966,7 @@ export function readBlueGreenMonitoringRequestArchive({
     timeframe,
     watchDir,
   });
-  const filters = { q, render, route, status, traffic };
+  const filters = { q, render, route, since, status, traffic, until };
   const filteredItems = aggregate.items.filter((request) =>
     matchesRequestArchiveFilters(request, filters)
   );

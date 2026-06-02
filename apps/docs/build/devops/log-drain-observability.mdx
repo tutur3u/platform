@@ -101,7 +101,7 @@ state. The global deployment failure banner and current blocked-target summary
 come only from the latest active deployment row; older failures remain visible
 inside deployment history rows and filters.
 
-The Requests tab intentionally freezes its result window when opened. New traffic is counted in the background and offered as an explicit "show new" action, while older pages are appended automatically as the operator scrolls. This prevents live traffic from shifting the visible rows during investigation.
+The Requests tab intentionally freezes its result window when opened. New traffic is counted in the background and offered as an explicit "show new" action, while older pages are appended automatically as the operator scrolls. This prevents live traffic from shifting the visible rows during investigation. The frozen `since` and `until` cursor bounds must be applied by the Postgres log-drain query or legacy archive reader before any `ORDER BY ... LIMIT`, archive page size, or aggregate row cap so request floods after the freeze cannot evict older rows still inside the operator's investigation window.
 
 Monitoring links preserve the selected `project` query parameter so Overview, Deployments, Logs, Analytics, Observability, Cron, Requests, and Resources stay scoped to the same project while an operator moves between tabs. The project scope card on each tab is the visible source of truth for the active project, branch, hostnames, commit, and addons.
 

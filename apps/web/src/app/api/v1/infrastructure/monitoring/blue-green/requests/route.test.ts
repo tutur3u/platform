@@ -172,7 +172,7 @@ describe('blue-green monitoring requests route', () => {
 
     const response = await GET(
       createTestRequest(
-        '?q=login&status=5xx&route=%2Flogin&render=rsc&traffic=external'
+        '?q=login&status=5xx&route=%2Flogin&render=rsc&traffic=external&since=1710000000000&until=2026-05-04T01%3A02%3A03.000Z'
       )
     );
 
@@ -183,9 +183,11 @@ describe('blue-green monitoring requests route', () => {
       q: 'login',
       render: 'rsc',
       route: '/login',
+      since: 1710000000000,
       status: '5xx',
       timeframeDays: 7,
       traffic: 'external',
+      until: Date.parse('2026-05-04T01:02:03.000Z'),
     });
   });
 });

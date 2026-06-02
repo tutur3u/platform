@@ -1472,8 +1472,10 @@ export interface GetBlueGreenMonitoringRequestArchiveParams
   q?: string;
   render?: 'all' | 'document' | 'rsc';
   route?: string;
+  since?: number;
   status?: string;
   traffic?: 'all' | 'external' | 'internal';
+  until?: number;
 }
 
 export async function sendInfrastructurePushTest(
@@ -2144,12 +2146,20 @@ export async function getBlueGreenMonitoringRequestArchive(
     searchParams.set('route', params.route);
   }
 
+  if (params?.since != null) {
+    searchParams.set('since', String(params.since));
+  }
+
   if (params?.render && params.render !== 'all') {
     searchParams.set('render', params.render);
   }
 
   if (params?.traffic && params.traffic !== 'all') {
     searchParams.set('traffic', params.traffic);
+  }
+
+  if (params?.until != null) {
+    searchParams.set('until', String(params.until));
   }
 
   return client.json<BlueGreenMonitoringRequestArchive>(

@@ -30,6 +30,21 @@ function parseStringFilter(value: string | null) {
   return trimmed && trimmed !== 'all' ? trimmed : undefined;
 }
 
+function parseTimestampFilter(value: string | null) {
+  const normalized = value?.trim();
+  if (!normalized) {
+    return undefined;
+  }
+
+  const numeric = Number(normalized);
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return numeric;
+  }
+
+  const parsed = Date.parse(normalized);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export async function GET(request: Request) {
   const authorization = await authorizeInfrastructureViewer(request);
   if (!authorization.ok) {
@@ -45,6 +60,8 @@ export async function GET(request: Request) {
     const status = parseStringFilter(searchParams.get('status'));
     const route = parseStringFilter(searchParams.get('route'));
     const render = parseStringFilter(searchParams.get('render'));
+    const since = parseTimestampFilter(searchParams.get('since'));
+    const until = parseTimestampFilter(searchParams.get('until'));
     const traffic = parseStringFilter(searchParams.get('traffic'));
 
     return NextResponse.json(
@@ -54,8 +71,10 @@ export async function GET(request: Request) {
         q,
         render,
         route,
+        since,
         status,
         timeframeDays,
+        until,
         traffic,
       })
     );
