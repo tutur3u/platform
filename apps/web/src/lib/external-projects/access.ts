@@ -148,12 +148,6 @@ async function ensureCanonicalExternalProject({
     throw new Error(existingProjectError.message);
   }
 
-  const schemaCollectionSlugs = getExternalProjectSchemaCollectionSlugs(schema);
-  const allowedCollections =
-    schemaCollectionSlugs.length > 0
-      ? schemaCollectionSlugs
-      : DEFAULT_EXTERNAL_PROJECT_COLLECTIONS[adapter];
-
   if (existingProject) {
     if (existingProject.adapter !== adapter) {
       throw new Error(
@@ -167,31 +161,18 @@ async function ensureCanonicalExternalProject({
       );
     }
 
-    const { data: updatedProject, error: updateError } = await admin
-      .from('canonical_external_projects')
-      .update({
-        allowed_collections: allowedCollections,
-        ...(schema
-          ? {
-              delivery_profile: buildExternalProjectDeliveryProfile(schema),
-            }
-          : {}),
-        updated_by: actorId,
-      })
-      .eq('id', canonicalProjectId)
-      .select('*')
-      .single();
-
-    if (updateError) {
-      throw new Error(updateError.message);
-    }
-
     return {
-      canonicalProject: updatedProject,
+      canonicalProject: existingProject,
       created: false,
       id: canonicalProjectId,
     };
   }
+
+  const schemaCollectionSlugs = getExternalProjectSchemaCollectionSlugs(schema);
+  const allowedCollections =
+    schemaCollectionSlugs.length > 0
+      ? schemaCollectionSlugs
+      : DEFAULT_EXTERNAL_PROJECT_COLLECTIONS[adapter];
 
   const { data: canonicalProject, error: insertError } = await admin
     .from('canonical_external_projects')
