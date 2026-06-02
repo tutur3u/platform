@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { setPrivateWorkspaceQuizAnswer } from '@/lib/education/private-quiz-answers';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
@@ -76,8 +77,6 @@ export const PUT = withSessionAuth(
       updateData.type = parsedBody.data.type;
     if (parsedBody.data.content !== undefined)
       updateData.content = parsedBody.data.content;
-    if (parsedBody.data.answer !== undefined)
-      updateData.answer = parsedBody.data.answer;
 
     const { data, error } = await access.sbAdmin
       .from('workspace_quizzes')
@@ -102,6 +101,12 @@ export const PUT = withSessionAuth(
     if (!data) {
       return NextResponse.json({ message: 'Quiz not found' }, { status: 404 });
     }
+
+    await setPrivateWorkspaceQuizAnswer({
+      answer: parsedBody.data.answer,
+      db: access.sbAdmin,
+      quizId: parsedParams.data.quizId,
+    });
 
     if (parsedBody.data.quiz_options !== undefined) {
       const { error: deleteOptionsError } = await access.sbAdmin

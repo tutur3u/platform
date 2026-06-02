@@ -6890,6 +6890,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_quiz_answers: {
+        Row: {
+          answer: Json;
+          created_at: string;
+          quiz_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          answer: Json;
+          created_at?: string;
+          quiz_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          answer?: Json;
+          created_at?: string;
+          quiz_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       workspace_scheduling_metadata: {
         Row: {
           bumped_habits: number | null;

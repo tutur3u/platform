@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import {
+  attachPrivateWorkspaceQuizAnswers,
+  setPrivateWorkspaceQuizAnswer,
+} from '@/lib/education/private-quiz-answers';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -129,8 +133,13 @@ export const GET = withSessionAuth(
       );
     }
 
+    const quizzes = await attachPrivateWorkspaceQuizAnswers(
+      access.sbAdmin,
+      data ?? []
+    );
+
     return NextResponse.json({
-      data: data ?? [],
+      data: quizzes,
       count: count ?? 0,
       page,
       pageSize,
@@ -190,7 +199,6 @@ export const POST = withSessionAuth(
         const updateData: any = { question: quiz.question };
         if (quiz.type !== undefined) updateData.type = quiz.type;
         if (quiz.content !== undefined) updateData.content = quiz.content;
-        if (quiz.answer !== undefined) updateData.answer = quiz.answer;
 
         if (quiz.id != null) {
           const { data: updated, error: updateErr } = await access.sbAdmin
@@ -215,7 +223,6 @@ export const POST = withSessionAuth(
           };
           if (quiz.type !== undefined) insertData.type = quiz.type;
           if (quiz.content !== undefined) insertData.content = quiz.content;
-          if (quiz.answer !== undefined) insertData.answer = quiz.answer;
 
           const { data: inserted, error: insertErr } = await access.sbAdmin
             .from('workspace_quizzes')
@@ -225,6 +232,12 @@ export const POST = withSessionAuth(
           if (insertErr) throw insertErr;
           quizId = inserted.id;
         }
+
+        await setPrivateWorkspaceQuizAnswer({
+          answer: quiz.answer,
+          db: access.sbAdmin,
+          quizId,
+        });
 
         if (moduleId != null) {
           const { error: moduleError } = await access.sbAdmin

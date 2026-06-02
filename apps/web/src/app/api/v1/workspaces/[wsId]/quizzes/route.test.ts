@@ -11,6 +11,7 @@ function createRouteMocks() {
   const quizzesBuilder: Record<string, any> = Promise.resolve({
     data: [
       {
+        answer: null,
         created_at: '2026-05-19T00:00:00.000Z',
         id: 'quiz-1',
         question: 'Question?',
@@ -38,8 +39,29 @@ function createRouteMocks() {
   updateQuizBuilder.maybeSingle = vi.fn();
 
   const workspaceQuizzesTable = {
+    insert: vi.fn(),
     select: vi.fn(() => quizzesBuilder),
     update: vi.fn(() => updateQuizBuilder),
+  };
+
+  const privateAnswerSelectBuilder: Record<string, any> = {};
+  privateAnswerSelectBuilder.in = vi.fn(async () => ({
+    data: [
+      {
+        answer: { correct: true },
+        quiz_id: 'quiz-1',
+      },
+    ],
+    error: null,
+  }));
+
+  const privateAnswerDeleteBuilder: Record<string, any> = {};
+  privateAnswerDeleteBuilder.eq = vi.fn(async () => ({ error: null }));
+
+  const privateQuizAnswersTable = {
+    delete: vi.fn(() => privateAnswerDeleteBuilder),
+    select: vi.fn(() => privateAnswerSelectBuilder),
+    upsert: vi.fn(async () => ({ error: null })),
   };
 
   const deleteQuizOptionsBuilder: Record<string, any> = {};
@@ -62,11 +84,29 @@ function createRouteMocks() {
 
       throw new Error(`Unexpected table: ${table}`);
     }),
+    schema: vi.fn((schema: string) => {
+      if (schema === 'private') {
+        return {
+          from: vi.fn((table: string) => {
+            if (table === 'workspace_quiz_answers') {
+              return privateQuizAnswersTable;
+            }
+
+            throw new Error(`Unexpected private table: ${table}`);
+          }),
+        };
+      }
+
+      throw new Error(`Unexpected schema: ${schema}`);
+    }),
   };
 
   return {
     requireTeachWorkspaceAccess,
     deleteQuizOptionsBuilder,
+    privateAnswerDeleteBuilder,
+    privateAnswerSelectBuilder,
+    privateQuizAnswersTable,
     quizOptionsTable,
     quizzesBuilder,
     sessionSupabase,
@@ -158,7 +198,15 @@ describe('workspace quizzes route', () => {
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.count).toBe(1);
+    expect(payload.data[0].answer).toEqual({ correct: true });
     expect(payload.data[0].quiz_options[0].is_correct).toBe(true);
+    expect(mocks.privateQuizAnswersTable.select).toHaveBeenCalledWith(
+      'quiz_id, answer'
+    );
+    expect(mocks.privateAnswerSelectBuilder.in).toHaveBeenCalledWith(
+      'quiz_id',
+      ['quiz-1']
+    );
     expect(mocks.quizzesBuilder.eq).toHaveBeenCalledWith(
       'ws_id',
       '00000000-0000-0000-0000-000000000001'
@@ -197,6 +245,42 @@ describe('workspace quizzes route', () => {
     );
     expect(mocks.quizOptionsTable.delete).not.toHaveBeenCalled();
     expect(mocks.quizOptionsTable.insert).not.toHaveBeenCalled();
+  });
+
+  it('stores dynamic answer keys in private storage during bulk updates', async () => {
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/quizzes/route'
+    );
+
+    const response = await POST(
+      new NextRequest('http://localhost/api/v1/workspaces/ws-1/quizzes', {
+        method: 'POST',
+        body: JSON.stringify({
+          quizzes: [
+            {
+              answer: { correct: true },
+              id: '00000000-0000-0000-0000-000000000002',
+              question: 'Updated question?',
+              type: 'true_false',
+            },
+          ],
+        }),
+      }),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.workspaceQuizzesTable.update).toHaveBeenCalledWith({
+      question: 'Updated question?',
+      type: 'true_false',
+    });
+    expect(mocks.privateQuizAnswersTable.upsert).toHaveBeenCalledWith(
+      {
+        answer: { correct: true },
+        quiz_id: '00000000-0000-0000-0000-000000000002',
+      },
+      { onConflict: 'quiz_id' }
+    );
   });
 
   it('does not update quiz relations when the quiz is outside the workspace', async () => {

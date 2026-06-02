@@ -2,8 +2,11 @@ import { ListTodo } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { attachPrivateWorkspaceQuizAnswers } from '@/lib/education/private-quiz-answers';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import AIQuizzes from './client-ai';
 import ClientQuizzes from './client-quizzes';
@@ -25,6 +28,12 @@ export default async function ModuleQuizzesPage({ params }: Props) {
   const { wsId: routeWsId, courseId, moduleId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const t = await getTranslations();
+  const permissions = await getPermissions({ wsId: resolvedWsId });
+
+  if (!permissions || permissions.withoutPermission('update_user_groups')) {
+    notFound();
+  }
+
   const quizzes = await getQuizzes(moduleId);
 
   return (
@@ -77,5 +86,5 @@ const getQuizzes = async (moduleId: string) => {
     console.error('error', error);
   }
 
-  return data || [];
+  return attachPrivateWorkspaceQuizAnswers(supabase, data || []);
 };

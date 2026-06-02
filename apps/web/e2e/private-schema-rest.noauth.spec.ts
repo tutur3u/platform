@@ -223,6 +223,10 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'workspace_quiz_answers',
+    select: 'quiz_id',
+  },
+  {
     name: 'workspace_subscription_products',
     select: 'id',
   },
