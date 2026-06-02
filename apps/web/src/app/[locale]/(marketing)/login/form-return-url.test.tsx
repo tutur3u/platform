@@ -7,6 +7,13 @@ import LoginForm from './form';
 const mocks = vi.hoisted(() => ({
   assign: vi.fn(),
   createCrossAppReturnUrlWithInternalApi: vi.fn(),
+  currentUserProfile: null as {
+    avatar_url: string | null;
+    display_name: string | null;
+    email: string | null;
+    full_name: string | null;
+    id: string;
+  } | null,
   getOtpSettings: vi.fn(),
   getUser: vi.fn(),
   mfaAssuranceLevel: vi.fn(),
@@ -75,7 +82,7 @@ vi.mock('@/context/account-switcher-context', () => ({
 
 vi.mock('@/hooks/use-current-user-profile', () => ({
   useCurrentUserProfile: () => ({
-    data: null,
+    data: mocks.currentUserProfile,
     isFetching: false,
     isLoading: false,
     refetch: vi.fn(),
@@ -153,6 +160,13 @@ function renderLoginForm(returnUrl: string) {
 describe('LoginForm returnUrl navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.currentUserProfile = {
+      avatar_url: null,
+      display_name: 'Person Example',
+      email: 'person@example.com',
+      full_name: null,
+      id: 'user-1',
+    };
     mocks.getOtpSettings.mockResolvedValue({ otpEnabled: true });
     mocks.getUser.mockResolvedValue({
       data: {
@@ -206,5 +220,51 @@ describe('LoginForm returnUrl navigation', () => {
       expect.stringContaining('evil.test')
     );
     queryClient.clear();
+  });
+
+  it('requires confirmation for configured external app returnUrls', async () => {
+    const originalPublicExternalDomains =
+      process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS;
+    const originalServerExternalDomains =
+      process.env.TUTURUUU_EXTERNAL_APP_DOMAINS;
+
+    try {
+      process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS =
+        'partner:https://partner.example';
+      delete process.env.TUTURUUU_EXTERNAL_APP_DOMAINS;
+      mocks.resolveCrossAppReturnUrlWithInternalApi.mockResolvedValue({
+        appName: 'Partner Portal',
+        targetApp: 'partner',
+      });
+
+      const queryClient = renderLoginForm('https://partner.example/launch');
+
+      await screen.findByText('login.confirm_internal_app_account_title');
+
+      expect(
+        mocks.resolveCrossAppReturnUrlWithInternalApi
+      ).toHaveBeenCalledWith({
+        returnUrl: 'https://partner.example/launch',
+      });
+      expect(
+        mocks.createCrossAppReturnUrlWithInternalApi
+      ).not.toHaveBeenCalled();
+      expect(mocks.assign).not.toHaveBeenCalled();
+      queryClient.clear();
+    } finally {
+      if (originalPublicExternalDomains === undefined) {
+        delete process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS;
+      } else {
+        process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS =
+          originalPublicExternalDomains;
+      }
+
+      if (originalServerExternalDomains === undefined) {
+        delete process.env.TUTURUUU_EXTERNAL_APP_DOMAINS;
+      } else {
+        process.env.TUTURUUU_EXTERNAL_APP_DOMAINS =
+          originalServerExternalDomains;
+      }
+    }
   });
 });

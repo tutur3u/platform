@@ -1,5 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
+import { getInternalAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import type { useRouter } from 'next/navigation';
 
 export * from './navigation';
@@ -181,7 +181,7 @@ export function mapUrlToApp(url: string): string | null {
     return null;
   }
 
-  const appIdentifier = getAppDomainByUrl(parsedUrl.toString())?.name;
+  const appIdentifier = getInternalAppDomainByUrl(parsedUrl.toString())?.name;
 
   if (!appIdentifier) {
     console.warn('No app identifier found for URL:', parsedUrl.origin);

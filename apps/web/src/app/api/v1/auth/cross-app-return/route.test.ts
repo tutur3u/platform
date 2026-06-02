@@ -135,4 +135,50 @@ describe('cross-app return route', () => {
       targetApp: 'platform',
     });
   });
+
+  it('still resolves configured external app returns through the API', async () => {
+    const originalPublicExternalDomains =
+      process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS;
+    const originalServerExternalDomains =
+      process.env.TUTURUUU_EXTERNAL_APP_DOMAINS;
+
+    try {
+      process.env.TUTURUUU_EXTERNAL_APP_DOMAINS =
+        'partner:https://partner.example';
+      delete process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS;
+
+      const response = await POST(
+        createRequest('https://partner.example/callback?state=next')
+      );
+
+      expect(response.status).toBe(200);
+      const body = (await response.json()) as {
+        returnUrl: string;
+        targetApp: string;
+      };
+      const returnUrl = new URL(body.returnUrl);
+
+      expect(body.targetApp).toBe('partner');
+      expect(returnUrl.origin).toBe('https://partner.example');
+      expect(returnUrl.pathname).toBe('/callback');
+      expect(returnUrl.searchParams.get('state')).toBe('next');
+      expect(returnUrl.searchParams.get('token')).toBe('cross-app-token');
+      expect(returnUrl.searchParams.get('originApp')).toBe('web');
+      expect(returnUrl.searchParams.get('targetApp')).toBe('partner');
+    } finally {
+      if (originalPublicExternalDomains === undefined) {
+        delete process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS;
+      } else {
+        process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS =
+          originalPublicExternalDomains;
+      }
+
+      if (originalServerExternalDomains === undefined) {
+        delete process.env.TUTURUUU_EXTERNAL_APP_DOMAINS;
+      } else {
+        process.env.TUTURUUU_EXTERNAL_APP_DOMAINS =
+          originalServerExternalDomains;
+      }
+    }
+  });
 });

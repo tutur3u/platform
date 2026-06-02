@@ -411,6 +411,14 @@ export function getAppDomainByUrl(value: string): AppDomainUrlMatch | null {
     : null;
 }
 
+export function getInternalAppDomainByUrl(
+  value: string
+): AppDomainUrlMatch | null {
+  const appDomain = getAppDomainByUrl(value);
+
+  return appDomain?.kind === 'internal' ? appDomain : null;
+}
+
 export const INTERNAL_DOMAINS = [
   ...PRODUCTION_INTERNAL_APP_DOMAINS,
   ...DEV_INTERNAL_APP_DOMAINS,

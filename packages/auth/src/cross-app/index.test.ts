@@ -141,6 +141,38 @@ describe('mapUrlToApp', () => {
   it('rejects hostname prefix lookalikes', () => {
     expect(mapUrlToApp('https://learn.tuturuuu.com.evil.test')).toBeNull();
   });
+
+  it('does not map configured external app domains as internal app returns', () => {
+    const originalPublicExternalDomains =
+      process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS;
+    const originalServerExternalDomains =
+      process.env.TUTURUUU_EXTERNAL_APP_DOMAINS;
+    const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS =
+        'partner:https://partner.example';
+      delete process.env.TUTURUUU_EXTERNAL_APP_DOMAINS;
+
+      expect(mapUrlToApp('https://partner.example/return')).toBeNull();
+    } finally {
+      consoleWarn.mockRestore();
+
+      if (originalPublicExternalDomains === undefined) {
+        delete process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS;
+      } else {
+        process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS =
+          originalPublicExternalDomains;
+      }
+
+      if (originalServerExternalDomains === undefined) {
+        delete process.env.TUTURUUU_EXTERNAL_APP_DOMAINS;
+      } else {
+        process.env.TUTURUUU_EXTERNAL_APP_DOMAINS =
+          originalServerExternalDomains;
+      }
+    }
+  });
 });
 
 describe('normalizeClientRedirectPath', () => {
