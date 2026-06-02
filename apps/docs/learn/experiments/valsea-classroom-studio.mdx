@@ -76,11 +76,13 @@ to Valsea, so preview audio is never silently submitted.
 POST /api/v1/workspaces/:wsId/education/valsea/audio/upload-url
 ```
 
-The audio upload route is session-authenticated, verifies workspace membership,
-checks file type and size, applies workspace Drive capacity checks, and returns a
-short-lived signed upload URL for
+The audio upload route is session-authenticated, requires `manage_drive`, checks
+file type and declared size, applies workspace Drive capacity checks, and
+returns a short-lived signed upload URL for
 `education/valsea/audio/<timestamp>-<uuid>-<filename>` in workspace storage. The
-browser uploads selected files and live recordings there before generation.
+browser uploads selected files and live recordings there before generation. When
+generation reads a stored audio path, the route re-checks actual object metadata
+and rejects oversized stored audio before downloading or forwarding it.
 
 ## Pipeline
 
