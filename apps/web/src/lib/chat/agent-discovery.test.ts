@@ -74,4 +74,30 @@ describe('AI agent chat discovery', () => {
     expect(payload).not.toContain('ops-agent');
     expect(payload).not.toContain('discord-main');
   });
+
+  it('includes agent and channel IDs for root AI-agent admins only', async () => {
+    const [conversation] = await listRootAiAgentDiscoveryConversations({
+      includeAdminMetadata: true,
+      wsId: ROOT_WORKSPACE_ID,
+    });
+
+    expect(conversation?.metadata).toEqual({
+      agentId: 'ops-agent',
+      channelId: 'discord-main',
+      readOnly: true,
+      source: 'ai-agent',
+    });
+    expect(conversation?.latestMessage?.metadata).toEqual({
+      agentId: 'ops-agent',
+      channelId: 'discord-main',
+      readOnly: true,
+      source: 'ai-agent',
+    });
+
+    const payload = JSON.stringify(conversation);
+    expect(payload).not.toContain('https://secret.example/webhook');
+    expect(payload).not.toContain('webhookUrl');
+    expect(payload).not.toContain('"status":');
+    expect(payload).not.toContain('workspaceId');
+  });
 });

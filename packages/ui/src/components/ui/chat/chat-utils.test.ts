@@ -188,6 +188,7 @@ describe('chat utils', () => {
     expect(getChatConversationTypesForScope('personal')).toEqual([
       'direct',
       'group',
+      'ai',
     ]);
     expect(getChatConversationTypesForScope('workspaces')).toEqual([
       'channel',
@@ -199,12 +200,43 @@ describe('chat utils', () => {
         'personal'
       ).map((item) => item.id)
     ).toEqual(['direct-1', 'group-1']);
+
     expect(
       filterChatConversationsByScope(
-        [direct, group, channel, ai],
+        [
+          direct,
+          group,
+          channel,
+          conversation({
+            id: 'ai-chat-1',
+            metadata: { source: 'ai-chat' },
+            type: 'ai',
+          }),
+          conversation({
+            id: 'personal-ai-1',
+            metadata: { source: 'personal-ai-chat' },
+            type: 'ai',
+          }),
+        ],
+        'personal'
+      ).map((item) => item.id)
+    ).toEqual(['direct-1', 'group-1', 'ai-chat-1', 'personal-ai-1']);
+    expect(
+      filterChatConversationsByScope(
+        [
+          direct,
+          group,
+          channel,
+          ai,
+          conversation({
+            id: 'agent-thread-1',
+            metadata: { source: 'ai-agent-external-thread' },
+            type: 'ai',
+          }),
+        ],
         'workspaces'
       ).map((item) => item.id)
-    ).toEqual(['channel-1', 'ai-1']);
+    ).toEqual(['channel-1', 'ai-1', 'agent-thread-1']);
   });
 
   it('resolves workspace chat selection from requested, stored, then first conversation', () => {

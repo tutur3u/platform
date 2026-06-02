@@ -62,12 +62,24 @@ function buildVirtualAgentMessage({
   agent,
   channel,
   conversationId,
+  includeAdminMetadata = false,
 }: {
   agent: Awaited<ReturnType<typeof listAiAgents>>[number];
   channel: Awaited<ReturnType<typeof listAiAgents>>[number]['channels'][number];
   conversationId: string;
+  includeAdminMetadata?: boolean;
 }): ChatMessage {
   const timestamp = agentChannelTimestamp(agent, channel);
+  const metadata = {
+    readOnly: true,
+    source: 'ai-agent',
+    ...(includeAdminMetadata
+      ? {
+          agentId: agent.id,
+          channelId: channel.id,
+        }
+      : {}),
+  };
 
   return {
     attachments: [],
@@ -78,10 +90,7 @@ function buildVirtualAgentMessage({
     editedAt: null,
     id: `${conversationId}-status`,
     kind: 'system',
-    metadata: {
-      readOnly: true,
-      source: 'ai-agent',
-    },
+    metadata,
     reactions: [],
     replyToMessageId: null,
     sender: null,
@@ -91,8 +100,10 @@ function buildVirtualAgentMessage({
 }
 
 export async function listRootAiAgentDiscoveryConversations({
+  includeAdminMetadata = false,
   wsId,
 }: {
+  includeAdminMetadata?: boolean;
   wsId: string;
 }): Promise<ChatConversation[]> {
   if (wsId !== ROOT_WORKSPACE_ID) {
@@ -115,7 +126,18 @@ export async function listRootAiAgentDiscoveryConversations({
           agent,
           channel,
           conversationId: id,
+          includeAdminMetadata,
         });
+        const metadata = {
+          readOnly: true,
+          source: 'ai-agent',
+          ...(includeAdminMetadata
+            ? {
+                agentId: agent.id,
+                channelId: channel.id,
+              }
+            : {}),
+        };
 
         return {
           aiEnabled: true,
@@ -127,10 +149,7 @@ export async function listRootAiAgentDiscoveryConversations({
           latestMessage,
           memberCount: 0,
           members: [],
-          metadata: {
-            readOnly: true,
-            source: 'ai-agent',
-          },
+          metadata,
           title: `${agent.name} / ${channel.displayName}`,
           type: 'ai',
           unreadCount: 0,

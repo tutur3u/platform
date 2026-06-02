@@ -3,7 +3,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Building2, Check, ChevronsUpDown, Loader2 } from '@tuturuuu/icons';
 import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
-import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -19,20 +18,20 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-
-function workspaceSearchValue(workspace: InternalApiWorkspaceSummary) {
-  const handle = (workspace as { handle?: string | null }).handle;
-
-  return [workspace.id, workspace.name, handle].filter(Boolean).join(' ');
-}
+import {
+  getAiAgentWorkspaceSearchValue,
+  mergeInternalAiAgentWorkspaceOption,
+} from './ai-agents-utils';
 
 export function WorkspacePicker({
   defaultValue,
   id,
+  includeInternalWorkspace = false,
   name = 'workspaceId',
 }: {
   defaultValue?: string | null;
   id: string;
+  includeInternalWorkspace?: boolean;
   name?: string;
 }) {
   const t = useTranslations('ai-agents-settings');
@@ -43,9 +42,18 @@ export function WorkspacePicker({
     queryKey: ['ai-agents', 'workspaces'],
     staleTime: 60_000,
   });
+  const workspaceOptions = useMemo(
+    () =>
+      mergeInternalAiAgentWorkspaceOption(workspaces, {
+        includeInternal: includeInternalWorkspace,
+        label: t('workspace.internal'),
+      }),
+    [includeInternalWorkspace, t, workspaces]
+  );
   const selectedWorkspace = useMemo(
-    () => workspaces?.find((workspace) => workspace.id === selectedId) ?? null,
-    [selectedId, workspaces]
+    () =>
+      workspaceOptions.find((workspace) => workspace.id === selectedId) ?? null,
+    [selectedId, workspaceOptions]
   );
   const selectedLabel =
     selectedWorkspace?.name || selectedId || t('workspace.select');
@@ -80,14 +88,14 @@ export function WorkspacePicker({
             <CommandList>
               <CommandEmpty>{t('workspace.empty')}</CommandEmpty>
               <CommandGroup>
-                {(workspaces ?? []).map((workspace) => (
+                {workspaceOptions.map((workspace) => (
                   <CommandItem
                     key={workspace.id}
                     onSelect={() => {
                       setSelectedId(workspace.id);
                       setOpen(false);
                     }}
-                    value={workspaceSearchValue(workspace)}
+                    value={getAiAgentWorkspaceSearchValue(workspace)}
                   >
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     <span className="min-w-0 flex-1">

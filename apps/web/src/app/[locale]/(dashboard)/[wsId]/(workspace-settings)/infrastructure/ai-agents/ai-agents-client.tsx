@@ -166,6 +166,7 @@ export function AiAgentsClient({ initialData }: { initialData: AiAgentsData }) {
       <div className="space-y-3">
         <h2 className="font-semibold text-lg">{t('new_agent.title')}</h2>
         <AgentForm
+          includeInternalWorkspace
           isPending={isPending}
           onSubmit={(payload, reset) =>
             saveMutation.mutate(payload, {
@@ -196,6 +197,7 @@ export function AiAgentsClient({ initialData }: { initialData: AiAgentsData }) {
             <div className="space-y-4" key={agent.id}>
               <AgentForm
                 agent={agent}
+                includeInternalWorkspace
                 isPending={isPending}
                 onSubmit={(payload) => saveMutation.mutate(payload)}
               />

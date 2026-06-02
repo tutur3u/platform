@@ -75,13 +75,20 @@ directly.
 The shared chat UI displays mirrored external AI-agent threads as read-only AI
 conversations in the workspace selected for the agent channel. This works in
 `apps/web` and the standalone `apps/chat` app. Chat users can inspect mirrored
-history there, while manual response drafting and sending stays in
-Infrastructure > AI Agents.
+history there, while root AI-agent admins can use the setup, operations, and
+manual-response controls from Infrastructure > AI Agents or the `apps/chat`
+agent details sidebar.
 
 The root workspace may still show enabled agent channel setup entries so
 operators can jump to channel configuration. Those setup entries are not the
 message mirror; mirrored external threads use `ai-agent-thread-<uuid>`
 conversation IDs.
+
+Root AI-agent admins can also manage those setup entries from the standalone
+`apps/chat` internal workspace. The `internal` workspace resolves to
+`ROOT_WORKSPACE_ID`, and admin-visible setup conversations include the minimum
+agent/channel IDs needed by the sidebar operations panel. Non-admin chat
+viewers still receive scrubbed setup metadata.
 
 ## Manual Response Console
 
@@ -99,6 +106,31 @@ when the bot token has the required scopes. Zalo history fetch support is
 limited, so Zalo mirrors primarily rely on webhook/runtime events until the
 adapter can fetch historical messages.
 
+The same external-thread operations are available from `apps/chat` for root
+AI-agent admins when an external AI-agent thread is selected: sync external
+history, draft a manual response, send the reviewed response, and refresh the
+mirrored conversation.
+
+## Testing From Apps/Chat
+
+Use `apps/chat` as the operator smoke-test surface after deployment:
+
+1. Open the `internal` workspace and select the AI-agent setup conversation.
+2. Confirm setup data loads instead of the metadata-hidden notice.
+3. Run **Test** as a readiness check for required credentials and channel
+   status. This does not replace a live external-platform round trip.
+4. For Discord, set the generated webhook URL as the Interactions Endpoint URL
+   so Discord performs its endpoint verification. Then install the app and send
+   a live mention/message in the mapped channel. The official references are
+   [Discord interactions](https://docs.discord.com/developers/interactions/overview)
+   and the
+   [Discord quickstart](https://docs.discord.com/developers/quick-start/getting-started).
+5. Select a mirrored `ai-agent-thread-<uuid>` conversation and use **Sync
+   external thread**. A zero-message result means the adapter found no newer
+   messages.
+6. Draft and send a manual response from the thread panel, then confirm the
+   mirrored conversation refreshes.
+
 ## Discord And Zalo Setup
 
 For Discord, configure the app with the generated webhook URL, then store the
@@ -108,6 +140,11 @@ on the Discord channel.
 For Zalo, configure the bot webhook URL in the Zalo Bot dashboard, set the
 secret token to the channel's `webhookSecret`, and store the bot token plus OA ID
 on the Zalo channel.
+
+For experimental root-internal external chatbots, choose the explicit
+`Internal` workspace option in the AI-agent workspace picker. It stores
+`workspaceId = ROOT_WORKSPACE_ID` on the channel and keeps the runtime, test,
+deploy, and mirror paths scoped to the internal workspace.
 
 ## Mapped User Requirement
 

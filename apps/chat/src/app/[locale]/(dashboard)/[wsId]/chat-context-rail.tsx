@@ -76,6 +76,17 @@ export function ChatContextRail({
     () => getChatRailWorkspaces(workspaces),
     [workspaces]
   );
+  const personalPending =
+    !personalWorkspace &&
+    (workspacesQuery.isLoading ||
+      workspacesQuery.isFetchingNextPage ||
+      workspacesQuery.hasNextPage);
+  const personalUnavailable = !personalWorkspace && !personalPending;
+  const personalLabel = personalPending
+    ? t('loading_workspaces')
+    : personalUnavailable
+      ? t('scope_personal_unavailable')
+      : t('scope_personal');
   const workspaceCount =
     railWorkspaces.length + (workspacesQuery.hasNextPage ? 1 : 0);
   const workspaceVirtualizer = useVirtualizer({
@@ -128,17 +139,9 @@ export function ChatContextRail({
     }
 
     if (collapsed) onExpand?.();
-
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set('scope', 'personal');
-    nextParams.delete('conversationId');
-    const nextQuery = nextParams.toString();
-    window.history.replaceState(
-      null,
-      '',
-      nextQuery ? `${pathname}?${nextQuery}` : pathname
-    );
-    closeOnMobile?.();
+    if (workspacesQuery.hasNextPage && !workspacesQuery.isFetchingNextPage) {
+      void workspacesQuery.fetchNextPage();
+    }
   }
 
   return (
@@ -149,8 +152,9 @@ export function ChatContextRail({
       )}
     >
       <RailButton
-        active={activeScope === 'personal'}
-        label={t('scope_personal')}
+        active={activeScope === 'personal' && Boolean(personalWorkspace)}
+        disabled={personalUnavailable}
+        label={personalLabel}
         onClick={selectPersonal}
       >
         <MessageCircle className="size-5" />
@@ -224,11 +228,13 @@ function orderWorkspaces(workspaces: InternalApiWorkspaceSummary[]) {
 function RailButton({
   active,
   children,
+  disabled = false,
   label,
   onClick,
 }: {
   active: boolean;
   children: ReactNode;
+  disabled?: boolean;
   label: string;
   onClick: () => void;
 }) {
@@ -241,8 +247,10 @@ function RailButton({
             'aspect-square size-10 max-h-10 min-h-10 min-w-10 max-w-10 shrink-0 rounded-md p-0 transition-colors',
             active
               ? 'bg-foreground text-background hover:bg-foreground/90'
-              : 'bg-background hover:bg-accent'
+              : 'bg-background hover:bg-accent',
+            disabled && 'cursor-not-allowed opacity-50 hover:bg-background'
           )}
+          disabled={disabled}
           onClick={onClick}
           type="button"
           variant="ghost"

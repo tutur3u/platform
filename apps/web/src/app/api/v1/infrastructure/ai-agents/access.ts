@@ -1,28 +1,21 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 export async function requireAiAgentAdmin(request: NextRequest) {
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: { targetApp: 'chat' },
+  });
 
-  if (authError || !user) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+  if (!auth.ok) {
+    return auth;
   }
 
   const permissions = await getPermissions({
-    request,
+    user: auth.user,
     wsId: ROOT_WORKSPACE_ID,
   });
 
@@ -42,7 +35,9 @@ export async function requireAiAgentAdmin(request: NextRequest) {
 
   return {
     ok: true as const,
-    sbAdmin: (await createAdminClient()) as TypedSupabaseClient,
-    user,
+    sbAdmin: (await createAdminClient({
+      noCookie: true,
+    })) as TypedSupabaseClient,
+    user: auth.user,
   };
 }

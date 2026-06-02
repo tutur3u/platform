@@ -22,10 +22,12 @@ import { WorkspacePicker } from './workspace-picker';
 
 export function AgentForm({
   agent,
+  includeInternalWorkspace = false,
   isPending,
   onSubmit,
 }: {
   agent?: AiAgentDefinition;
+  includeInternalWorkspace?: boolean;
   isPending: boolean;
   onSubmit: (payload: SaveAiAgentPayload, reset?: () => void) => void;
 }) {
@@ -63,6 +65,7 @@ export function AgentForm({
             discord?.workspaceId || zalo?.workspaceId || ROOT_WORKSPACE_ID
           }
           id={agent ? `${agent.id}-workspaceId` : 'new-workspaceId'}
+          includeInternalWorkspace={includeInternalWorkspace}
         />
       </div>
 

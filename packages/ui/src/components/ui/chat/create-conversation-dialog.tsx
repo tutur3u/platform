@@ -155,6 +155,10 @@ export function CreateConversationDialog({
       const { conversation } = await createConversation.mutateAsync({
         aiEnabled: type === 'ai',
         description: description.trim() || null,
+        metadata:
+          conversationScope === 'personal' && type === 'ai'
+            ? { source: 'personal-ai-chat' }
+            : undefined,
         participantUserIds: validSelectedUsers.map((user) => user.id),
         title: title.trim() || null,
         type,

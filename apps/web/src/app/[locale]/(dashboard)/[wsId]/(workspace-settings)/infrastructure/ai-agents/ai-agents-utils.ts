@@ -3,6 +3,8 @@ import type {
   AiAgentIdentityLink,
   SaveAiAgentPayload,
 } from '@tuturuuu/internal-api/infrastructure';
+import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
 export const QUERY_KEY = ['infrastructure', 'ai-agents'];
 export const DEFAULT_MODEL = 'google/gemini-3.1-flash-lite';
@@ -39,6 +41,58 @@ export type OneTimeSecret = {
   name: string;
   value: string;
 } | null;
+
+export function createInternalAiAgentWorkspaceOption(
+  label = 'Internal'
+): InternalApiWorkspaceSummary {
+  return {
+    access_type: 'member',
+    avatar_url: null,
+    created_by_me: false,
+    id: ROOT_WORKSPACE_ID,
+    logo_url: null,
+    name: label,
+    personal: false,
+  };
+}
+
+export function mergeInternalAiAgentWorkspaceOption(
+  workspaces: InternalApiWorkspaceSummary[] | null | undefined,
+  {
+    includeInternal,
+    label,
+  }: {
+    includeInternal?: boolean;
+    label?: string;
+  }
+) {
+  const workspaceList = workspaces ?? [];
+
+  if (!includeInternal) {
+    return workspaceList;
+  }
+
+  const internalWorkspace = createInternalAiAgentWorkspaceOption(label);
+  const filteredWorkspaces = workspaceList.filter(
+    (workspace) => workspace.id !== ROOT_WORKSPACE_ID
+  );
+
+  return [internalWorkspace, ...filteredWorkspaces];
+}
+
+export function getAiAgentWorkspaceSearchValue(
+  workspace: InternalApiWorkspaceSummary
+) {
+  const handle = (workspace as { handle?: string | null }).handle;
+  const aliases =
+    workspace.id === ROOT_WORKSPACE_ID
+      ? ['internal', 'root', ROOT_WORKSPACE_ID]
+      : [];
+
+  return [workspace.id, workspace.name, handle, ...aliases]
+    .filter(Boolean)
+    .join(' ');
+}
 
 function splitLines(value: FormDataEntryValue | null) {
   return String(value ?? '')

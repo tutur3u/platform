@@ -1,5 +1,11 @@
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { describe, expect, it } from 'vitest';
-import { buildAgentPayload, SECRET_CLEAR_VALUE } from './ai-agents-utils';
+import {
+  buildAgentPayload,
+  getAiAgentWorkspaceSearchValue,
+  mergeInternalAiAgentWorkspaceOption,
+  SECRET_CLEAR_VALUE,
+} from './ai-agents-utils';
 
 describe('AI agent settings payload builder', () => {
   it('builds Discord and Zalo channel payloads from the dense admin form', () => {
@@ -86,5 +92,38 @@ describe('AI agent settings payload builder', () => {
       botToken: 'new-token',
       publicKey: undefined,
     });
+  });
+
+  it('adds a searchable root internal workspace option only when requested', () => {
+    const workspace = {
+      avatar_url: null,
+      id: 'workspace-1',
+      logo_url: null,
+      name: 'Customer workspace',
+      personal: false,
+    };
+
+    expect(
+      mergeInternalAiAgentWorkspaceOption([workspace], {
+        includeInternal: false,
+      })
+    ).toEqual([workspace]);
+
+    const options = mergeInternalAiAgentWorkspaceOption([workspace], {
+      includeInternal: true,
+      label: 'Internal',
+    });
+
+    expect(options).toHaveLength(2);
+    expect(options[0]).toMatchObject({
+      id: ROOT_WORKSPACE_ID,
+      name: 'Internal',
+      personal: false,
+    });
+    expect(getAiAgentWorkspaceSearchValue(options[0]!)).toContain('internal');
+    expect(getAiAgentWorkspaceSearchValue(options[0]!)).toContain('root');
+    expect(getAiAgentWorkspaceSearchValue(options[0]!)).toContain(
+      ROOT_WORKSPACE_ID
+    );
   });
 });
