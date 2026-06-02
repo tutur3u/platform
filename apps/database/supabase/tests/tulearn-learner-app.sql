@@ -1,6 +1,6 @@
 begin;
 
-select plan(21);
+select plan(26);
 
 select has_table('public', 'tulearn_parent_student_links', 'parent student links table exists');
 select has_table('public', 'tulearn_parent_invites', 'parent invites table exists');
@@ -32,6 +32,76 @@ select policies_are(
     'Learners can insert own Tulearn state',
     'Learners can update own Tulearn state'
   ]
+);
+
+select isnt_empty(
+  $$
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'tulearn_learner_state'
+      and policyname = 'Learners can view own Tulearn state'
+      and qual like '%workspace_members%'
+      and qual like '%auth.uid() = user_id%'
+  $$,
+  'learner state select policy requires user ownership and workspace membership'
+);
+
+select isnt_empty(
+  $$
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'tulearn_learner_state'
+      and policyname = 'Learners can insert own Tulearn state'
+      and with_check like '%workspace_members%'
+      and with_check like '%selected_workspace_id%'
+      and with_check like '%auth.uid() = user_id%'
+  $$,
+  'learner state insert policy requires owned rows, workspace membership, and selected workspace access'
+);
+
+select isnt_empty(
+  $$
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'tulearn_learner_state'
+      and policyname = 'Learners can update own Tulearn state'
+      and qual like '%workspace_members%'
+      and qual like '%auth.uid() = user_id%'
+  $$,
+  'learner state update policy requires existing row workspace membership'
+);
+
+select isnt_empty(
+  $$
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'tulearn_learner_state'
+      and policyname = 'Learners can update own Tulearn state'
+      and with_check like '%workspace_members%'
+      and with_check like '%selected_workspace_id%'
+      and with_check like '%auth.uid() = user_id%'
+  $$,
+  'learner state update policy requires selected workspace access'
+);
+
+select isnt_empty(
+  $$
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'tulearn_learner_state'
+      and policyname in (
+        'Learners can insert own Tulearn state',
+        'Learners can update own Tulearn state'
+      )
+      and with_check like '%selected_wm.ws_id = tulearn_learner_state.selected_workspace_id%'
+      and with_check like '%selected_wm.user_id = auth.uid()%'
+  $$,
+  'learner state selected workspace checks are bound to the authenticated user'
 );
 
 select isnt_empty(
