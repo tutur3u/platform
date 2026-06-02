@@ -65,6 +65,7 @@ type CharacterAlignment = {
 
 const SOFT_MISSING_TOKENS = new Set(['ah', 'lah', 'leh', 'lor', 'mah', 'one']);
 const MAX_CHARACTER_ALIGNMENT_CELLS = 16_384;
+const MAX_WORD_ALIGNMENT_CELLS = 65_536;
 
 function getString(record: ValseaRecord | undefined, key: string) {
   const value = record?.[key];
@@ -176,6 +177,17 @@ function getReferenceCoverage(referenceText: string, heardText: string) {
   if (expectedWords.length === 0) return 1;
   if (heardWords.length === 0) return 0;
 
+  if (
+    (expectedWords.length + 1) * (heardWords.length + 1) >
+    MAX_WORD_ALIGNMENT_CELLS
+  ) {
+    const heardSet = new Set(heardWords);
+    const matchedExpectedWords = expectedWords.filter((expected) =>
+      heardSet.has(expected)
+    );
+    return matchedExpectedWords.length / expectedWords.length;
+  }
+
   const matchedExpectedWords = expectedWords.filter((expected) =>
     heardWords.some((heard) => compareTokens(expected, heard) >= 82)
   );
@@ -264,7 +276,7 @@ function alignCharacters(expected: string, heard: string) {
   const rows = expectedCharacters.length + 1;
   const columns = heardCharacters.length + 1;
 
-  if (rows * columns > MAX_CHARACTER_ALIGNMENT_CELLS) {
+  if (exceedsAlignmentBudget(rows, columns, MAX_CHARACTER_ALIGNMENT_CELLS)) {
     return expectedCharacters.map<CharacterAlignment>(
       (expectedCharacter, index) => {
         const heardCharacter = heardCharacters[index] ?? '';
@@ -353,6 +365,10 @@ function alignCharacters(expected: string, heard: string) {
   return aligned.reverse();
 }
 
+function exceedsAlignmentBudget(rows: number, columns: number, budget: number) {
+  return rows > Math.floor(budget / Math.max(columns, 1));
+}
+
 function scoreAlignedToken(expected: string, heard: string) {
   if (heard) return compareTokens(expected, heard);
   return isSoftMissingToken(expected) ? 78 : 45;
@@ -361,6 +377,14 @@ function scoreAlignedToken(expected: string, heard: string) {
 function alignWords(expectedWords: string[], heardWords: string[]) {
   const rows = expectedWords.length + 1;
   const columns = heardWords.length + 1;
+
+  if (exceedsAlignmentBudget(rows, columns, MAX_WORD_ALIGNMENT_CELLS)) {
+    return expectedWords.map<AlignmentPair>((expected, index) => ({
+      expected,
+      heard: heardWords[index] ?? '',
+    }));
+  }
+
   const costs: number[][] = Array.from({ length: rows }, () =>
     Array.from({ length: columns }, () => 0)
   );

@@ -26,4 +26,24 @@ describe('gradeVoicePronunciation', () => {
       status: 'substituted',
     });
   });
+
+  it('falls back to linear word comparison when transcript alignment exceeds the cell budget', async () => {
+    const referenceText = Array.from({ length: 300 }, () => 'alpha').join(' ');
+    const heardText = `wrong ${referenceText}`;
+
+    const result = await gradeVoicePronunciation({
+      assessorModel: 'local-whisper-large-v3-turbo',
+      file: new File(['audio'], 'sample.wav', { type: 'audio/wav' }),
+      language: 'english',
+      referenceText,
+      transcription: { text: heardText },
+    });
+
+    expect(result.status).toBe('graded');
+    expect(result.words).toHaveLength(300);
+    expect(result.words[0]).toMatchObject({
+      expected: 'alpha',
+      heard: 'wrong',
+    });
+  });
 });

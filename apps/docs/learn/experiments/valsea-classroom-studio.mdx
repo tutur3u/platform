@@ -195,6 +195,9 @@ red score cards.
 Character-level pronunciation alignment also has a fixed cell budget per token.
 Long single-token references fall back to linear character comparison instead of
 allocating a quadratic edit-distance trace matrix.
+Word-level transcript alignment uses the same budgeted pattern for long
+reference/heard token lists, so oversized recordings degrade to linear pairing
+instead of allocating quadratic word matrices.
 Amber scores around 75-78% mean "review this alignment" rather than "bad
 pronunciation"; they are used when ASR skipped a short filler or heard a nearby
 sound. Character feedback carries `matched`, `substituted`, `missing`, or
