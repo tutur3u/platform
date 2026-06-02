@@ -444,7 +444,7 @@ describe('external project setup access', () => {
     );
   });
 
-  it('treats same-adapter non-default canonical bindings as idempotent setup', async () => {
+  it('keeps same-adapter canonical bindings immutable during idempotent setup', async () => {
     const schema = {
       collections: [
         {
@@ -480,13 +480,7 @@ describe('external project setup access', () => {
       createdCanonicalProject: false,
     });
 
-    expect(fixture.canonicalProjectUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        allowed_collections: ['games'],
-        delivery_profile: { schema },
-        updated_by: 'user-1',
-      })
-    );
+    expect(fixture.canonicalProjectUpdate).not.toHaveBeenCalled();
     expect(fixture.workspaceSecretDelete).not.toHaveBeenCalled();
     expect(fixture.workspaceSecretInsert).not.toHaveBeenCalled();
     expect(
