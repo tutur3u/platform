@@ -52,14 +52,14 @@ describe('Hive realtime protocol', () => {
     ).toBe(true);
   });
 
-  it('accepts web-api-applied world event broadcasts', () => {
+  it('rejects client-supplied applied world event broadcasts', () => {
     expect(
       hiveRealtimeClientMessageSchema.safeParse({
         event,
         type: 'world.event.applied',
         world,
       }).success
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('rejects malformed applied event snapshots', () => {

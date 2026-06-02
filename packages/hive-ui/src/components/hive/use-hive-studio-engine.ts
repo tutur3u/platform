@@ -169,7 +169,7 @@ export function useHiveStudioEngine({
     [currentUser, npcs, selectedServer, selection, tool]
   );
 
-  const { realtimeClientRef, sendCursorPosition } = useHiveRealtimeSession({
+  const { sendCursorPosition } = useHiveRealtimeSession({
     currentUserId: currentUser.id,
     getOwnAwareness,
     realtimeUrl,
@@ -198,13 +198,6 @@ export function useHiveStudioEngine({
     setWorld,
     snapshotQuery,
     tool,
-    onPersisted: ({ event, world }) => {
-      realtimeClientRef.current?.send({
-        event,
-        type: 'world.event.applied',
-        world,
-      });
-    },
   });
 
   const editorActions = useHiveEditorActions({

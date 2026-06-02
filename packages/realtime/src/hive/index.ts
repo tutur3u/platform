@@ -90,11 +90,6 @@ export const hiveRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     world: hiveWorldSchema,
   }),
   z.object({
-    event: eventSchema,
-    type: z.literal('world.event.applied'),
-    world: hiveWorldSchema,
-  }),
-  z.object({
     selection: z
       .object({
         id: z.string(),
