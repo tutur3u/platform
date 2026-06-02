@@ -16,6 +16,7 @@ import {
 } from '../../topic-announcements/shared';
 import type { WorkspaceStorageRouteAuthContext } from '../route-auth';
 import {
+  FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,
 } from '../route-auth';
@@ -193,7 +194,9 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId, {
+      appSessionTargets: FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
+    });
     if (!auth.ok) {
       return auth.response;
     }

@@ -52,6 +52,7 @@ vi.mock('@/lib/workspace-storage-provider', () => ({
 }));
 
 vi.mock('../route-auth', () => ({
+  FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS: ['drive', 'finance'],
   logWorkspaceStorageRouteError: (
     ...args: Parameters<typeof mocks.logWorkspaceStorageRouteError>
   ) => mocks.logWorkspaceStorageRouteError(...args),

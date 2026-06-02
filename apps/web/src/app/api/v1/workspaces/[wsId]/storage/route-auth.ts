@@ -1,3 +1,4 @@
+import type { AppSessionTargetApp } from '@tuturuuu/auth/app-session';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -18,9 +19,19 @@ export interface WorkspaceStorageRouteAuthContext {
   userId: string;
 }
 
+export const FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS = [
+  'drive',
+  'finance',
+] as const satisfies readonly AppSessionTargetApp[];
+
+export interface WorkspaceStorageRouteAuthOptions {
+  appSessionTargets?: AppSessionTargetApp | readonly AppSessionTargetApp[];
+}
+
 export async function resolveWorkspaceStorageRouteAuth(
   request: Request,
-  wsId: string
+  wsId: string,
+  options: WorkspaceStorageRouteAuthOptions = {}
 ): Promise<
   | {
       ok: true;
@@ -32,7 +43,9 @@ export async function resolveWorkspaceStorageRouteAuth(
     }
 > {
   const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: true,
+    allowAppSessionAuth: {
+      targetApp: options.appSessionTargets ?? 'drive',
+    },
   });
 
   if (!auth.ok) {

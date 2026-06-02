@@ -198,7 +198,7 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/storage(?:\/|$)/u,
-    targetApp: ALL_SATELLITE_APP_SESSION_TARGETS,
+    targetApp: 'drive',
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/time-tracking(?:\/|$)/u,

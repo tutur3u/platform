@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
 import {
+  FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,
 } from '../../route-auth';
@@ -27,7 +28,9 @@ export async function GET(
     }
 
     const { wsId, id } = parsedParams.data;
-    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId, {
+      appSessionTargets: FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
+    });
     if (!auth.ok) {
       return auth.response;
     }

@@ -217,6 +217,56 @@ describe('satellite app-session route inventory', () => {
     expect(broadFinanceTargets).toEqual([]);
   });
 
+  it('keeps workspace storage app-session targets route scoped', () => {
+    const routeAuthSource = readFileSync(
+      resolve(
+        repoRoot,
+        'apps/web/src/app/api/v1/workspaces/[wsId]/storage/route-auth.ts'
+      ),
+      'utf8'
+    );
+    const apiAuthSource = readFileSync(
+      resolve(repoRoot, 'apps/web/src/lib/api-auth.ts'),
+      'utf8'
+    );
+    const storageRouteFiles = walkRouteFiles(
+      'apps/web/src/app/api/v1/workspaces/[wsId]/storage'
+    );
+    const financeTargetRoutes = storageRouteFiles
+      .map(relative)
+      .filter((file) =>
+        readFileSync(resolve(repoRoot, file), 'utf8').includes(
+          'FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS'
+        )
+      )
+      .sort();
+    const financeStorageAccessRoutes = storageRouteFiles
+      .map(relative)
+      .filter((file) =>
+        readFileSync(resolve(repoRoot, file), 'utf8').includes(
+          'canAccessFinanceTransactionStoragePath'
+        )
+      )
+      .sort();
+
+    expect(apiAuthSource).toContain(
+      'pattern: /^\\/api\\/v1\\/workspaces\\/[^/]+\\/storage(?:\\/|$)/u,'
+    );
+    expect(routeAuthSource).toContain(
+      "targetApp: options.appSessionTargets ?? 'drive'"
+    );
+    expect(routeAuthSource).not.toContain('ALL_SATELLITE_APP_SESSION_TARGETS');
+    expect(financeTargetRoutes).toEqual([
+      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/finalize-upload/route.ts',
+      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/list/route.ts',
+      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/object/[id]/route.ts',
+      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/object/route.ts',
+      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/share/route.ts',
+      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/upload-url/route.ts',
+    ]);
+    expect(financeTargetRoutes).toEqual(financeStorageAccessRoutes);
+  });
+
   it('keeps satellite local APIs limited to auth cookie handoff routes', () => {
     const unexpectedRoutes = satelliteAppApiRoots
       .flatMap(walkRouteFiles)

@@ -701,6 +701,63 @@ describe('withSessionAuth', () => {
     expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
   });
 
+  it('should bind storage APIs to the Drive app-session audience by default', async () => {
+    const { token: financeToken } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'finance',
+      userId: 'finance-user-1',
+    });
+    const financeRequest = new Request(
+      'http://localhost:3000/api/v1/workspaces/ws-1/storage/list',
+      {
+        headers: {
+          authorization: `Bearer ${financeToken}`,
+        },
+        method: 'GET',
+      }
+    ) as unknown as NextRequest;
+
+    const financeResult = await resolveSessionAuthContext(financeRequest, {
+      allowAppSessionAuth: true,
+    });
+
+    expect(financeResult.ok).toBe(false);
+    if (!financeResult.ok) {
+      expect(financeResult.response.status).toBe(401);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+
+    const { token: driveToken } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'drive',
+      userId: 'drive-user-1',
+    });
+    const driveRequest = new Request(
+      'http://localhost:3000/api/v1/workspaces/ws-1/storage/list',
+      {
+        headers: {
+          authorization: `Bearer ${driveToken}`,
+        },
+        method: 'GET',
+      }
+    ) as unknown as NextRequest;
+
+    const driveResult = await resolveSessionAuthContext(driveRequest, {
+      allowAppSessionAuth: true,
+    });
+
+    expect(driveResult.ok).toBe(true);
+    if (driveResult.ok) {
+      expect(driveResult.user.id).toBe('drive-user-1');
+      expect(driveResult.supabase).toBe(mockAdminClient);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
+  });
+
   it('should keep shared satellite API audiences path-bound', () => {
     expect(
       getDefaultAppSessionVerificationOptions(
@@ -721,26 +778,7 @@ describe('withSessionAuth', () => {
       getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/workspaces/ws-1/storage/list'
       )
-    ).toEqual({
-      targetApp: [
-        'calendar',
-        'chat',
-        'cms',
-        'drive',
-        'finance',
-        'hive',
-        'inventory',
-        'learn',
-        'mail',
-        'mind',
-        'mira',
-        'nova',
-        'rewise',
-        'tasks',
-        'teach',
-        'track',
-      ],
-    });
+    ).toEqual({ targetApp: 'drive' });
     expect(
       getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/users/me/profile'

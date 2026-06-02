@@ -45,6 +45,7 @@ vi.mock('../../topic-announcements/shared', () => ({
 }));
 
 vi.mock('../route-auth', () => ({
+  FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS: ['drive', 'finance'],
   logWorkspaceStorageRouteError: mocks.logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth: mocks.resolveWorkspaceStorageRouteAuth,
 }));
