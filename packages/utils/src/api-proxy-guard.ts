@@ -470,10 +470,7 @@ export function hasAuthenticatedApiSession(req: NextRequest): boolean {
 }
 
 function getCallerClass(req: NextRequest): CallerClass {
-  if (hasAuthenticatedApiSession(req)) {
-    return 'authenticated';
-  }
-
+  void req;
   return 'anonymous';
 }
 
@@ -524,6 +521,36 @@ export function clearApiProxyGuardLimiterCache() {
   limiterCache.clear();
 }
 
+async function requestBodyExceedsLimit(
+  req: NextRequest,
+  maxBytes: number
+): Promise<boolean> {
+  const body = req.clone().body;
+  if (!body) {
+    return false;
+  }
+
+  const reader = body.getReader();
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        return false;
+      }
+
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        void reader.cancel().catch(() => {});
+        return true;
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export async function guardApiProxyRequest(
   req: NextRequest,
   options: GuardOptions
@@ -537,6 +564,13 @@ export async function guardApiProxyRequest(
         { status: 413 }
       );
     }
+  }
+
+  if (await requestBodyExceedsLimit(req, MAX_PAYLOAD_SIZE)) {
+    return NextResponse.json(
+      { error: 'Payload Too Large', message: 'Request body exceeds limit' },
+      { status: 413 }
+    );
   }
 
   const routePolicies = options.routePolicies ?? DEFAULT_ROUTE_POLICIES;
