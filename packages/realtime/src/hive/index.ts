@@ -3,6 +3,11 @@ import { z } from 'zod';
 import { getHiveObjectStateFootprintValidationError } from './footprint';
 
 export {
+  getHiveAgentDestructiveWorldAction,
+  type HiveDestructiveWorldAction,
+  isHiveAdminWorldEvent,
+} from './agent';
+export {
   getHiveObjectStateFootprintValidationError,
   type HiveObjectFootprint,
   type HiveObjectStateFootprintValidationError,

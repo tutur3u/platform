@@ -40,6 +40,7 @@ type UseHiveStudioEngineProps = {
   currentUser: HiveUser;
   initialServers: HiveServersResponse;
   initialServerId?: string | null;
+  isAdmin: boolean;
   realtimeUrl: string;
 };
 
@@ -53,6 +54,7 @@ export function useHiveStudioEngine({
   currentUser,
   initialServers,
   initialServerId,
+  isAdmin,
   realtimeUrl,
 }: UseHiveStudioEngineProps) {
   const [serverId, setServerId] = useHivePersistedState<string | null>(
@@ -204,6 +206,7 @@ export function useHiveStudioEngine({
     activeObject,
     activeTerrain,
     aiRunContext: aiContext.aiRunContext,
+    isAdmin,
     mutations,
     npcs,
     onNpcRunError: (npcId, promptMode) =>

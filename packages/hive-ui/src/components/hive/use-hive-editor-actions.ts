@@ -31,6 +31,7 @@ type UseHiveEditorActionsProps = {
   activeObject: string;
   activeTerrain: string;
   aiRunContext: HiveAiRunContext | null;
+  isAdmin: boolean;
   mutations: ReturnType<typeof useHiveMutations>;
   npcs: HiveNpc[];
   onNpcRunError?: (
@@ -63,6 +64,7 @@ export function useHiveEditorActions({
   activeObject,
   activeTerrain,
   aiRunContext,
+  isAdmin,
   mutations,
   npcs,
   onNpcRunError,
@@ -347,7 +349,9 @@ export function useHiveEditorActions({
       };
     }
 
-    const result = applyHiveAgentInstruction(world, prompt);
+    const result = applyHiveAgentInstruction(world, prompt, {
+      allowDestructiveWorldActions: isAdmin,
+    });
     if (!result.changed) {
       setSyncNotice(result.summary);
       return result;
@@ -362,7 +366,9 @@ export function useHiveEditorActions({
       },
       {
         rebase: (latestWorld) =>
-          applyHiveAgentInstruction(latestWorld, prompt).world,
+          applyHiveAgentInstruction(latestWorld, prompt, {
+            allowDestructiveWorldActions: isAdmin,
+          }).world,
       }
     );
     setSelection(null);
