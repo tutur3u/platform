@@ -22,6 +22,10 @@ from rapidfuzz.distance import Levenshtein
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 from transformers import pipeline as transformers_pipeline
 
+from .audio_limits import (
+    validate_audio_duration_seconds,
+    validate_audio_upload_bytes,
+)
 from .model_admin_auth import verify_model_admin_authorization
 
 LOCAL_WAV2VEC2_MODEL_ID = os.getenv(
@@ -60,6 +64,18 @@ LOCAL_MODEL_MAX_LOADED = max(
 )
 MODEL_ADMIN_TOKEN = os.getenv("PRONUNCIATION_ASSESSOR_ADMIN_TOKEN", "").strip()
 SAMPLE_RATE = 16_000
+MAX_ASSESSOR_UPLOAD_BYTES = max(
+    1,
+    int(
+        os.getenv(
+            "PRONUNCIATION_ASSESSOR_MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)
+        )
+    ),
+)
+MAX_ASSESSOR_AUDIO_SECONDS = max(
+    1.0, float(os.getenv("PRONUNCIATION_ASSESSOR_MAX_AUDIO_SECONDS", "120"))
+)
+UPLOAD_READ_CHUNK_BYTES = 1024 * 1024
 LOCAL_ASSESSOR_MODEL = "local-wav2vec2"
 SUPPORTED_ASSESSOR_MODELS = {
     *LOCAL_WHISPER_MODEL_IDS.keys(),
@@ -229,6 +245,41 @@ def require_model_admin_authorization(authorization: str | None) -> None:
             status_code=failure.status_code,
             detail=failure.detail,
         )
+
+
+def raise_audio_limit_failure(detail: str, status_code: int) -> None:
+    raise HTTPException(status_code=status_code, detail=detail)
+
+
+async def write_limited_audio_upload(file: UploadFile, destination: Any) -> None:
+    byte_count = 0
+    while True:
+        chunk = await file.read(UPLOAD_READ_CHUNK_BYTES)
+        if not chunk:
+            break
+
+        byte_count += len(chunk)
+        failure = validate_audio_upload_bytes(byte_count, MAX_ASSESSOR_UPLOAD_BYTES)
+        if failure:
+            raise_audio_limit_failure(failure.detail, failure.status_code)
+
+        destination.write(chunk)
+
+    destination.flush()
+
+
+def validate_pronunciation_audio_duration(audio_path: str) -> None:
+    try:
+        duration = librosa.get_duration(path=audio_path)
+    except Exception as error:
+        logger.exception("Could not inspect pronunciation audio duration")
+        raise HTTPException(
+            status_code=400, detail="Could not inspect audio duration"
+        ) from error
+
+    failure = validate_audio_duration_seconds(duration, MAX_ASSESSOR_AUDIO_SECONDS)
+    if failure:
+        raise_audio_limit_failure(failure.detail, failure.status_code)
 
 
 def get_piper_voice_id(voice_id: str | None) -> str:
@@ -510,7 +561,9 @@ def run_local_ctc(
     audio_path: str, assessor_model: str
 ) -> tuple[str, int, dict[str, Any]]:
     loaded = load_local_model(assessor_model)
-    audio, _ = librosa.load(audio_path, sr=SAMPLE_RATE, mono=True)
+    audio, _ = librosa.load(
+        audio_path, sr=SAMPLE_RATE, mono=True, duration=MAX_ASSESSOR_AUDIO_SECONDS
+    )
     if audio.size == 0:
         return "", 0, {"model": get_local_model_id(assessor_model), "transcript": ""}
 
@@ -747,8 +800,8 @@ async def assess(
     model = get_assessor_model(assessorModel)
     suffix = os.path.splitext(file.filename or "")[1] or ".wav"
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=True) as temp_file:
-        temp_file.write(await file.read())
-        temp_file.flush()
+        await write_limited_audio_upload(file, temp_file)
+        validate_pronunciation_audio_duration(temp_file.name)
 
         if model == LOCAL_ASSESSOR_MODEL:
             local_transcript, acoustic_confidence, raw = run_local_ctc(

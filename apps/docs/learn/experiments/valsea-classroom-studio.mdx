@@ -91,9 +91,11 @@ storage path. The UI has three capture sources: generated Piper audio, live
 audio through `MediaRecorder`, and uploaded audio. Every audio source is saved
 into workspace Drive storage before generation and then referenced as
 `audioStoragePath` when generation starts. Audio is capped at 10 MB before upload
-and again before being forwarded to Valsea. When audio is present, the Valsea
-transcription becomes the primary classroom source text, and the typed note
-remains visible as the pronunciation/reference phrase.
+and again before being forwarded to Valsea. The local pronunciation assessor
+also enforces its own 10 MB read limit and a decoded-duration limit before model
+inference. When audio is present, the Valsea transcription becomes the primary
+classroom source text, and the typed note remains visible as the
+pronunciation/reference phrase.
 
 For text and transcribed audio, the server runs this Valsea pipeline:
 
@@ -160,6 +162,8 @@ The explicit model-control endpoints, `POST /models/load` and
 `PRONUNCIATION_ASSESSOR_ADMIN_TOKEN` is configured, and successful calls must
 send `Authorization: Bearer <token>`. Loaded models are idle-unloaded after
 `PRONUNCIATION_ASSESSOR_IDLE_TTL_SECONDS` seconds. Set
+`PRONUNCIATION_ASSESSOR_MAX_AUDIO_SECONDS` to tune the decoded-audio cap
+(default: 120 seconds), and keep
 `PRONUNCIATION_ASSESSOR_MAX_LOADED_MODELS=1` on constrained hosts so switching
 models evicts the least recently used resident model.
 

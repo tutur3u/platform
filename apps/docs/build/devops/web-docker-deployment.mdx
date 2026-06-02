@@ -429,7 +429,10 @@ The default model preloads at container startup. Set
 first-request latency. On shared hosts, keep
 `PRONUNCIATION_ASSESSOR_MAX_LOADED_MODELS=1` and tune
 `PRONUNCIATION_ASSESSOR_IDLE_TTL_SECONDS` so idle models are unloaded before
-they hold GPU or RAM capacity unnecessarily. Leave
+they hold GPU or RAM capacity unnecessarily. The helper rejects uploads over
+`PRONUNCIATION_ASSESSOR_MAX_UPLOAD_BYTES` (default: 10 MB) and rejects decoded
+audio longer than `PRONUNCIATION_ASSESSOR_MAX_AUDIO_SECONDS` (default: 120
+seconds) before local model inference. Leave
 `PRONUNCIATION_ASSESSOR_ADMIN_TOKEN` unset unless operators need to call
 `POST /models/load` or `POST /models/unload`; those model-control endpoints are
 disabled without the token and require `Authorization: Bearer <token>` when it
