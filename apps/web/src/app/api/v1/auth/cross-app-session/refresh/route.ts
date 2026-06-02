@@ -1,7 +1,6 @@
 import {
   createAppSessionTokenPair,
   verifyAppSessionRefreshToken,
-  verifyAppSessionToken,
 } from '@tuturuuu/auth/app-session';
 import { resolveInternalAppSessionPolicy } from '@tuturuuu/auth/app-session-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -95,51 +94,38 @@ async function consumeRefreshTokenWithGrace({
   }
 }
 
-async function verifyRefreshOrLegacyAccess({
-  accessToken,
+async function verifyRefreshToken({
   refreshToken,
   replayGraceSeconds,
   targetApp,
 }: {
-  accessToken?: string;
-  refreshToken?: string;
+  refreshToken: string;
   replayGraceSeconds: number;
   targetApp: AppName;
 }) {
-  if (refreshToken) {
-    const verification = verifyAppSessionRefreshToken(refreshToken, {
-      targetApp,
-    });
+  const verification = verifyAppSessionRefreshToken(refreshToken, {
+    targetApp,
+  });
 
-    if (!verification.ok) {
-      return verification;
-    }
-
-    const consumeResult = await consumeRefreshTokenWithGrace({
-      exp: verification.claims.exp,
-      graceSeconds: replayGraceSeconds,
-      jti: verification.claims.jti,
-      sub: verification.claims.sub,
-    });
-
-    if (consumeResult === 'replayed') {
-      return {
-        error: 'Invalid or expired refresh token',
-        ok: false as const,
-      };
-    }
-
+  if (!verification.ok) {
     return verification;
   }
 
-  if (accessToken) {
-    return verifyAppSessionToken(accessToken, { targetApp });
+  const consumeResult = await consumeRefreshTokenWithGrace({
+    exp: verification.claims.exp,
+    graceSeconds: replayGraceSeconds,
+    jti: verification.claims.jti,
+    sub: verification.claims.sub,
+  });
+
+  if (consumeResult === 'replayed') {
+    return {
+      error: 'Invalid or expired refresh token',
+      ok: false as const,
+    };
   }
 
-  return {
-    error: 'Missing app session refresh credentials',
-    ok: false as const,
-  };
+  return verification;
 }
 
 async function refreshCrossAppSession(request: NextRequest) {
@@ -153,7 +139,7 @@ async function refreshCrossAppSession(request: NextRequest) {
     );
   }
 
-  if (!parsed.data.accessToken && !parsed.data.refreshToken) {
+  if (!parsed.data.refreshToken) {
     return jsonNoStore(
       { error: 'Missing app session refresh credentials' },
       { status: 401 }
@@ -161,8 +147,7 @@ async function refreshCrossAppSession(request: NextRequest) {
   }
 
   const { policy } = await getAppCoordinationSessionPolicy();
-  const verification = await verifyRefreshOrLegacyAccess({
-    accessToken: parsed.data.accessToken,
+  const verification = await verifyRefreshToken({
     refreshToken: parsed.data.refreshToken,
     replayGraceSeconds: policy.browserRefreshReplayGraceSeconds,
     targetApp: parsed.data.targetApp,
