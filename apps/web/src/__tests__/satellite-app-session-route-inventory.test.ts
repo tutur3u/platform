@@ -171,14 +171,50 @@ describe('satellite app-session route inventory', () => {
     expect(source).toContain('verifyAppSessionRequest');
   });
 
-  it('keeps Inventory workspace APIs on the inventory app-session target', () => {
+  it('keeps Inventory workspace APIs on the inventory app-session target by default', () => {
     const source = readFileSync(
       resolve(repoRoot, 'apps/web/src/lib/inventory/commerce/auth.ts'),
       'utf8'
     );
+    const actorSource = readFileSync(
+      resolve(repoRoot, 'apps/web/src/lib/inventory/actor.ts'),
+      'utf8'
+    );
 
     expect(source).toContain('resolveSessionAuthContext');
-    expect(source).toContain("targetApp: ['inventory', 'finance']");
+    expect(source).toContain(
+      "targetApp: options.appSessionTargets ?? ['inventory']"
+    );
+    expect(source).not.toContain("targetApp: ['inventory', 'finance']");
+    expect(actorSource).toContain("targetApp: 'inventory'");
+    expect(actorSource).not.toContain("targetApp: ['inventory', 'finance']");
+  });
+
+  it('limits Finance app-session access to invoice product lookup routes', () => {
+    const productsRoute = readFileSync(
+      resolve(
+        repoRoot,
+        'apps/web/src/app/api/v1/workspaces/[wsId]/inventory/products/route.ts'
+      ),
+      'utf8'
+    );
+    const broadFinanceTargets = satelliteRouteRoots
+      .flatMap(walkRouteFiles)
+      .map(relative)
+      .filter((file) => file.includes('/inventory/'))
+      .filter(
+        (file) =>
+          file !==
+          'apps/web/src/app/api/v1/workspaces/[wsId]/inventory/products/route.ts'
+      )
+      .filter((file) =>
+        readFileSync(resolve(repoRoot, file), 'utf8').includes("'finance'")
+      );
+
+    expect(productsRoute).toContain(
+      "appSessionTargets: ['inventory', 'finance']"
+    );
+    expect(broadFinanceTargets).toEqual([]);
   });
 
   it('keeps satellite local APIs limited to auth cookie handoff routes', () => {

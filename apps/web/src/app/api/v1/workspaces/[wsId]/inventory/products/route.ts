@@ -54,7 +54,9 @@ export async function GET(request: Request, { params }: Params) {
   try {
     const sbAdmin = await createAdminClient();
     const { wsId: id } = await params;
-    const authorization = await authorizeInventoryWorkspace(request, id);
+    const authorization = await authorizeInventoryWorkspace(request, id, {
+      appSessionTargets: ['inventory', 'finance'],
+    });
     if (!authorization.ok) return authorization.response;
 
     const { permissions, wsId } = authorization.value;
