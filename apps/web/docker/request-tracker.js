@@ -88,9 +88,23 @@ function getPathname(request) {
   }
 }
 
+function getRawPathname(request) {
+  const requestUrl = typeof request.url === 'string' ? request.url : '/';
+  const queryIndex = requestUrl.indexOf('?');
+
+  return queryIndex === -1 ? requestUrl : requestUrl.slice(0, queryIndex);
+}
+
+function isDrainStatusPathRequest(request) {
+  return (
+    getRawPathname(request) === DRAIN_STATUS_PATH &&
+    getPathname(request) === DRAIN_STATUS_PATH
+  );
+}
+
 function isTrackedRequest(request) {
   const pathname = getPathname(request);
-  return pathname !== DRAIN_STATUS_PATH && pathname !== HEALTH_PATH;
+  return !isDrainStatusPathRequest(request) && pathname !== HEALTH_PATH;
 }
 
 function respondWithDrainStatus(response) {
@@ -130,10 +144,9 @@ function patchServerModule(serverModule) {
     }
 
     const [request, response] = args;
-    const pathname = getPathname(request);
 
     if (
-      pathname === DRAIN_STATUS_PATH &&
+      isDrainStatusPathRequest(request) &&
       isInternalDrainStatusRequestAllowed(request)
     ) {
       respondWithDrainStatus(response);
@@ -181,6 +194,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
 module.exports = {
   INTERNAL_DRAIN_STATUS_HEADER,
   INTERNAL_DRAIN_STATUS_HEADER_VALUE,
+  isDrainStatusPathRequest,
   isInternalDrainStatusRequestAllowed,
   isLocalAddress,
   isPrivateNetworkAddress,

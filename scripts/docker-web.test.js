@@ -1432,6 +1432,21 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
     config,
     /proxy_set_header X-Platform-Internal-Drain-Status "1";/
   );
+  assert.equal(
+    (
+      config.match(
+        /proxy_set_header X-Platform-Internal-Drain-Status "1";/gu
+      ) ?? []
+    ).length,
+    1
+  );
+  assert.equal(
+    (
+      config.match(/proxy_set_header X-Platform-Internal-Drain-Status "";/gu) ??
+      []
+    ).length,
+    6
+  );
   assert.match(
     config,
     /proxy_next_upstream error timeout invalid_header http_502 http_503 http_504;/

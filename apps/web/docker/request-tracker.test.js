@@ -5,6 +5,8 @@ import { expect, test } from 'vitest';
 const require = createRequire(import.meta.url);
 const {
   INTERNAL_DRAIN_STATUS_HEADER,
+  INTERNAL_DRAIN_STATUS_HEADER_VALUE,
+  isDrainStatusPathRequest,
   isInternalDrainStatusRequestAllowed,
   isPrivateNetworkAddress,
 } = require('./request-tracker.js');
@@ -58,6 +60,37 @@ async function createServer() {
   };
 }
 
+function requestPath(baseUrl, path, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const base = new URL(baseUrl);
+    const request = http.request(
+      {
+        headers,
+        hostname: base.hostname,
+        path,
+        port: base.port,
+      },
+      (response) => {
+        let body = '';
+
+        response.setEncoding('utf8');
+        response.on('data', (chunk) => {
+          body += chunk;
+        });
+        response.on('end', () => {
+          resolve({
+            body,
+            statusCode: response.statusCode,
+          });
+        });
+      }
+    );
+
+    request.on('error', reject);
+    request.end();
+  });
+}
+
 test('request tracker reports in-flight requests and excludes health probes', async () => {
   const server = await createServer();
 
@@ -100,6 +133,25 @@ test('request tracker reports in-flight requests and excludes health probes', as
   }
 });
 
+test('request tracker rejects spoofed non-canonical drain-status paths', async () => {
+  const server = await createServer();
+
+  try {
+    const response = await requestPath(
+      server.url,
+      '/__platform\\drain-status',
+      {
+        [INTERNAL_DRAIN_STATUS_HEADER]: INTERNAL_DRAIN_STATUS_HEADER_VALUE,
+      }
+    );
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body).toBe('missing');
+  } finally {
+    await server.close();
+  }
+});
+
 test('request tracker accepts only explicit internal proxy drain-status probes', () => {
   expect(isPrivateNetworkAddress('172.18.0.5')).toBe(true);
   expect(isPrivateNetworkAddress('::ffff:172.18.0.5')).toBe(true);
@@ -129,4 +181,16 @@ test('request tracker accepts only explicit internal proxy drain-status probes',
       socket: { remoteAddress: '8.8.8.8' },
     })
   ).toBe(false);
+});
+
+test('request tracker requires the canonical raw drain-status request target', () => {
+  expect(isDrainStatusPathRequest({ url: '/__platform/drain-status' })).toBe(
+    true
+  );
+  expect(
+    isDrainStatusPathRequest({ url: '/__platform/drain-status?probe=1' })
+  ).toBe(true);
+  expect(isDrainStatusPathRequest({ url: '/__platform\\drain-status' })).toBe(
+    false
+  );
 });
