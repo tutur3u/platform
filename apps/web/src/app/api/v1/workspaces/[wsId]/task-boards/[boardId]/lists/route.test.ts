@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const requireBoardAccessMock = vi.fn();
 const rpcMock = vi.fn();
+const sessionSupabase = { from: vi.fn() };
+const sessionUser = { id: 'user-1' };
 
 vi.mock('@tuturuuu/types/primitives/SupportedColors', () => ({
   SUPPORTED_COLORS: [
@@ -17,6 +19,34 @@ vi.mock('@tuturuuu/types/primitives/SupportedColors', () => ({
     'INDIGO',
     'CYAN',
   ],
+}));
+
+vi.mock('@tuturuuu/auth/cli-session', () => ({
+  CLI_APP_TARGET_APP: 'platform',
+}));
+
+vi.mock('@/lib/api-auth', () => ({
+  withSessionAuth:
+    <T>(
+      handler: (
+        request: NextRequest,
+        context: { supabase: typeof sessionSupabase; user: typeof sessionUser },
+        params: T
+      ) => Promise<Response> | Response
+    ) =>
+    async (
+      request: NextRequest,
+      routeContext?: { params?: Promise<T> | T }
+    ) => {
+      const params = routeContext?.params
+        ? await Promise.resolve(routeContext.params)
+        : ({} as T);
+      return handler(
+        request,
+        { supabase: sessionSupabase, user: sessionUser },
+        params
+      );
+    },
 }));
 
 vi.mock('./access', () => ({
@@ -117,6 +147,11 @@ describe('task board lists route GET', () => {
         },
       ],
     });
+    expect(requireBoardAccessMock).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      { boardId: 'board-1', wsId: 'ws-1' },
+      { supabase: sessionSupabase, user: sessionUser }
+    );
   });
 });
 
@@ -194,6 +229,12 @@ describe('task board lists route POST', () => {
         p_status: 'closed',
         p_color: 'PURPLE',
       }
+    );
+    expect(requireBoardAccessMock).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      { boardId: 'board-1', wsId: 'ws-1' },
+      { supabase: sessionSupabase, user: sessionUser },
+      { requiredPermission: 'edit' }
     );
   });
 

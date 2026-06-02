@@ -971,6 +971,38 @@ describe('withSessionAuth', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
+  it('should still enforce suspension checks for valid app-session auth', async () => {
+    const session = createCliAppSession({
+      email: 'agent@example.com',
+      userId: 'app-user-1',
+    });
+    mockCheckSuspension.mockResolvedValue({
+      suspended: true,
+      reason: 'Suspended account',
+    });
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        authorization: `Bearer ${session.access.token}`,
+      },
+      method: 'GET',
+    }) as unknown as NextRequest;
+    const handler = vi.fn();
+
+    const wrapped = withSessionAuth(handler, {
+      allowAppSessionAuth: { targetApp: 'platform' },
+    });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Forbidden',
+      message: 'Suspended account',
+    });
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
+  });
+
   it('should still enforce suspension checks for valid AI temp auth', async () => {
     mockValidateAiTempAuthRequest.mockResolvedValue({
       status: 'valid',
