@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { acceptHiveTradeOffer, createHiveTradeOffer } from '@/lib/hive/economy';
 import {
   hiveJsonSchema,
-  requireHiveAccess,
+  requireHiveAdmin,
   withHiveRoute,
 } from '../../../_shared';
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const route = `/api/v1/hive/servers/${serverId}/trades`;
 
   return withHiveRoute(request, route, async () => {
-    const access = await requireHiveAccess(request);
+    const access = await requireHiveAdmin(request);
     if (!access.ok) return access.response;
 
     const body = await request.json().catch(() => null);

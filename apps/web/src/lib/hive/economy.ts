@@ -11,6 +11,26 @@ type HiveVector = {
 };
 type HiveTransactionSql = postgres.TransactionSql;
 
+async function assertNpcBelongsToServer(
+  tx: HiveTransactionSql,
+  input: {
+    label: string;
+    npcId: string;
+    serverId: string;
+  }
+) {
+  const [npc] = await tx<Array<{ id: string }>>`
+    select id
+    from hive_npcs
+    where id = ${input.npcId}
+      and server_id = ${input.serverId}
+  `;
+
+  if (!npc) {
+    throw new Error(`${input.label} NPC not found`);
+  }
+}
+
 async function addInventoryItem(
   tx: HiveTransactionSql,
   input: {
@@ -250,25 +270,41 @@ export async function createHiveTradeOffer(input: {
   toNpcId?: string | null;
 }) {
   const sql = getHiveSql();
-  const [trade] = await sql`
-    insert into hive_trade_offers (
-      server_id, from_npc_id, to_npc_id, offered_items, requested_items,
-      offered_currency, requested_currency, expires_at
-    )
-    values (
-      ${input.serverId},
-      ${input.fromNpcId},
-      ${input.toNpcId ?? null},
-      ${sql.json(asHiveJson(input.offeredItems))},
-      ${sql.json(asHiveJson(input.requestedItems))},
-      ${input.offeredCurrency},
-      ${input.requestedCurrency},
-      ${input.expiresAt ?? null}
-    )
-    returning id, from_npc_id, to_npc_id, offered_items, requested_items,
-      offered_currency, requested_currency, status, expires_at, created_at
-  `;
-  return trade ?? null;
+  return sql.begin(async (tx) => {
+    await assertNpcBelongsToServer(tx, {
+      label: 'Offering',
+      npcId: input.fromNpcId,
+      serverId: input.serverId,
+    });
+
+    if (input.toNpcId) {
+      await assertNpcBelongsToServer(tx, {
+        label: 'Recipient',
+        npcId: input.toNpcId,
+        serverId: input.serverId,
+      });
+    }
+
+    const [trade] = await tx`
+      insert into hive_trade_offers (
+        server_id, from_npc_id, to_npc_id, offered_items, requested_items,
+        offered_currency, requested_currency, expires_at
+      )
+      values (
+        ${input.serverId},
+        ${input.fromNpcId},
+        ${input.toNpcId ?? null},
+        ${tx.json(asHiveJson(input.offeredItems))},
+        ${tx.json(asHiveJson(input.requestedItems))},
+        ${input.offeredCurrency},
+        ${input.requestedCurrency},
+        ${input.expiresAt ?? null}
+      )
+      returning id, from_npc_id, to_npc_id, offered_items, requested_items,
+        offered_currency, requested_currency, status, expires_at, created_at
+    `;
+    return trade ?? null;
+  });
 }
 
 export async function acceptHiveTradeOffer(input: {
@@ -303,19 +339,41 @@ export async function acceptHiveTradeOffer(input: {
       throw new Error('Trade offer is not addressed to this NPC');
     }
 
+    await assertNpcBelongsToServer(tx, {
+      label: 'Offering',
+      npcId: trade.from_npc_id,
+      serverId: input.serverId,
+    });
+    if (trade.to_npc_id) {
+      await assertNpcBelongsToServer(tx, {
+        label: 'Recipient',
+        npcId: trade.to_npc_id,
+        serverId: input.serverId,
+      });
+    }
+    await assertNpcBelongsToServer(tx, {
+      label: 'Accepting',
+      npcId: input.acceptingNpcId,
+      serverId: input.serverId,
+    });
+
     const offered = Number(trade.offered_currency);
     const requested = Number(trade.requested_currency);
 
     const [fromWallet] = await tx<Array<{ balance: string }>>`
-      select balance
-      from hive_npc_wallets
-      where npc_id = ${trade.from_npc_id}
+      select wallets.balance
+      from hive_npc_wallets wallets
+      join hive_npcs npcs on npcs.id = wallets.npc_id
+      where wallets.npc_id = ${trade.from_npc_id}
+        and npcs.server_id = ${input.serverId}
       for update
     `;
     const [toWallet] = await tx<Array<{ balance: string }>>`
-      select balance
-      from hive_npc_wallets
-      where npc_id = ${input.acceptingNpcId}
+      select wallets.balance
+      from hive_npc_wallets wallets
+      join hive_npcs npcs on npcs.id = wallets.npc_id
+      where wallets.npc_id = ${input.acceptingNpcId}
+        and npcs.server_id = ${input.serverId}
       for update
     `;
 
@@ -327,24 +385,38 @@ export async function acceptHiveTradeOffer(input: {
       throw new Error('Accepting NPC has insufficient currency');
     }
 
-    await tx`
-      update hive_npc_wallets
-      set balance = balance - ${offered} + ${requested},
+    const [fromUpdate] = await tx<Array<{ npc_id: string }>>`
+      update hive_npc_wallets wallets
+      set balance = wallets.balance - ${offered} + ${requested},
         updated_at = now()
-      where npc_id = ${trade.from_npc_id}
+      from hive_npcs npcs
+      where wallets.npc_id = ${trade.from_npc_id}
+        and wallets.npc_id = npcs.id
+        and npcs.server_id = ${input.serverId}
+      returning wallets.npc_id
     `;
-    await tx`
-      update hive_npc_wallets
-      set balance = balance + ${offered} - ${requested},
+    const [toUpdate] = await tx<Array<{ npc_id: string }>>`
+      update hive_npc_wallets wallets
+      set balance = wallets.balance + ${offered} - ${requested},
         updated_at = now()
-      where npc_id = ${input.acceptingNpcId}
+      from hive_npcs npcs
+      where wallets.npc_id = ${input.acceptingNpcId}
+        and wallets.npc_id = npcs.id
+        and npcs.server_id = ${input.serverId}
+      returning wallets.npc_id
     `;
+
+    if (!fromUpdate || !toUpdate) {
+      throw new Error('Trade wallet missing');
+    }
+
     await tx`
       update hive_trade_offers
       set status = 'accepted',
         to_npc_id = coalesce(to_npc_id, ${input.acceptingNpcId}),
         updated_at = now()
       where id = ${input.tradeId}
+        and server_id = ${input.serverId}
     `;
     await tx`
       insert into hive_ledger_entries (
