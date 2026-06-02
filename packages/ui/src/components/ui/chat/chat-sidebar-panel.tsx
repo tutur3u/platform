@@ -3,7 +3,11 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ChatSidebar } from './chat-sidebar';
 import { CreateConversationDialog } from './create-conversation-dialog';
-import { useChatConversations, useChatMessageSearch } from './hooks';
+import {
+  flattenChatConversationPages,
+  useChatMessageSearch,
+  useInfiniteChatConversations,
+} from './hooks';
 import {
   CHAT_CONVERSATION_TYPE_FILTERS,
   type ChatConversationArchiveFilter,
@@ -62,7 +66,10 @@ export function ChatSidebarPanel({
   const setCreateOpen = onCreateOpenChange ?? setInternalCreateOpen;
   const archiveFilter = controlledArchiveFilter ?? internalArchiveFilter;
   const selectedTypes = controlledSelectedTypes ?? internalSelectedTypes;
-  const conversationsQuery = useChatConversations(wsId, archiveFilter);
+  const conversationsQuery = useInfiniteChatConversations({
+    archived: archiveFilter,
+    wsId,
+  });
   const searchQuery = useChatMessageSearch({
     query: searchValue,
     wsId,
@@ -70,7 +77,7 @@ export function ChatSidebarPanel({
   const conversationScope = normalizeChatConversationScope(
     searchParams.get('scope') ?? defaultConversationScope
   );
-  const conversations = conversationsQuery.data ?? [];
+  const conversations = flattenChatConversationPages(conversationsQuery.data);
   const scopeConversations = filterChatConversationsByScope(
     conversations,
     conversationScope
@@ -158,7 +165,10 @@ export function ChatSidebarPanel({
         conversations={scopedConversations}
         currentUserId={currentUserId}
         embedded
+        hasMoreConversations={conversationsQuery.hasNextPage}
+        isFetchingMoreConversations={conversationsQuery.isFetchingNextPage}
         isLoading={conversationsQuery.isLoading}
+        onLoadMoreConversations={() => conversationsQuery.fetchNextPage()}
         onSearchChange={setSearchValue}
         onSelectConversation={selectConversation}
         searchResults={scopedSearchResults}
