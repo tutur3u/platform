@@ -322,7 +322,7 @@ export const PUT = withSessionAuth<{ taskId: string }>(
     }
 
     const { data: placementRows, error: saveError } = await (
-      sbAdmin as any
+      supabase as any
     ).rpc('upsert_personal_task_placement', {
       p_task_id: taskId,
       p_user_id: user.id,
