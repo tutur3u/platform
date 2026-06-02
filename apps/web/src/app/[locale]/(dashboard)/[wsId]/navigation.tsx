@@ -298,6 +298,12 @@ export async function WorkspaceNavigationLinks({
     withoutPermission('manage_users') &&
     withoutPermission('view_users_private_info') &&
     withoutPermission('view_users_public_info');
+  const educationDisabled =
+    withoutPermission('manage_users') &&
+    withoutPermission('view_user_groups') &&
+    withoutPermission('view_user_groups_reports') &&
+    withoutPermission('view_user_groups_scores') &&
+    withoutPermission('view_user_groups_posts');
 
   const navLinks: (NavLink | null)[] = [
     {
@@ -1253,7 +1259,7 @@ export async function WorkspaceNavigationLinks({
           disabled:
             ENABLE_AI_ONLY ||
             !hasSecret('ENABLE_EDUCATION', 'true') ||
-            withoutPermission('ai_lab'),
+            educationDisabled,
           experimental: 'beta',
           preferenceSectionLabel: sidebarSections.utilities,
           children: [
@@ -1282,6 +1288,7 @@ export async function WorkspaceNavigationLinks({
               title: t('workspace-education-tabs.attempts'),
               href: `/${personalOrWsId}/education/attempts`,
               icon: <ClipboardList className="h-5 w-5" />,
+              disabled: withoutPermission('view_user_groups_reports'),
             },
             {
               title: t('workspace-education-tabs.valsea.title'),

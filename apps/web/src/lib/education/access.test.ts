@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkEducationWorkspaceAccess,
+  EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION,
   EDUCATION_WORKSPACE_PERMISSION,
 } from './access';
 
@@ -125,6 +126,23 @@ describe('checkEducationWorkspaceAccess', () => {
     await expect(access.response.json()).resolves.toEqual({
       message: 'Insufficient permissions',
     });
+  });
+
+  it('supports stricter education data permissions for attempt metadata', async () => {
+    mocks.getPermissions.mockResolvedValue(
+      withPermissions([EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION])
+    );
+
+    const access = await checkEducationWorkspaceAccess({
+      context: {
+        user: { id: 'user-1' } as never,
+        supabase: mocks.sessionSupabase as never,
+      },
+      permission: EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION,
+      wsId: 'ws-1',
+    });
+
+    expect(access.ok).toBe(true);
   });
 
   it('blocks workspaces without the education feature flag before checking permissions', async () => {

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { requireEducationWorkspaceAccess } from '@/lib/education/access';
+import {
+  EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION,
+  requireEducationWorkspaceAccess,
+} from '@/lib/education/access';
 
 interface RouteParams {
   wsId: string;
@@ -10,7 +13,11 @@ interface RouteParams {
 export const GET = withSessionAuth(
   async (_request, context, params: RouteParams | Promise<RouteParams>) => {
     const { wsId, attemptId } = await params;
-    const access = await requireEducationWorkspaceAccess({ context, wsId });
+    const access = await requireEducationWorkspaceAccess({
+      context,
+      permission: EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION,
+      wsId,
+    });
     if (access instanceof NextResponse) return access;
     const { normalizedWsId, sbAdmin } = access;
 
