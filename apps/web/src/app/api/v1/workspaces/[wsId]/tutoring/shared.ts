@@ -138,7 +138,6 @@ export interface TutoringSessionConflict {
   startTime: string;
   durationMinutes: number;
   conflictType: 'teacher' | 'student';
-  conflictWithId?: string;
   teacherUserId?: string | null;
   studentUserId: string;
 }
@@ -238,7 +237,6 @@ export function findConflictsWithinSlots(slots: TutoringSessionSlotInput[]) {
 }
 
 interface ExistingTutoringSession {
-  id: string;
   session_date: string;
   start_time: string;
   duration_minutes: number;
@@ -268,18 +266,14 @@ export function findConflictsWithExistingSessions(
         return null;
       }
 
-      return {
-        normalized,
-        raw: session,
-      };
+      return normalized;
     })
-    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+    .filter((session): session is NonNullable<typeof session> =>
+      Boolean(session)
+    );
 
   for (const incoming of normalizedIncoming) {
-    for (const existingEntry of normalizedExisting) {
-      const existing = existingEntry.normalized;
-      const existingRaw = existingEntry.raw;
-
+    for (const existing of normalizedExisting) {
       if (
         !rangesOverlap(
           incoming.absoluteStartMinutes,
@@ -298,7 +292,6 @@ export function findConflictsWithExistingSessions(
       ) {
         conflicts.push({
           conflictType: 'teacher',
-          conflictWithId: existingRaw.id,
           durationMinutes: incoming.durationMinutes,
           sessionDate: incoming.sessionDate,
           startTime: incoming.startTime,
@@ -311,7 +304,6 @@ export function findConflictsWithExistingSessions(
       if (incoming.studentUserId === existing.studentUserId) {
         conflicts.push({
           conflictType: 'student',
-          conflictWithId: existingRaw.id,
           durationMinutes: incoming.durationMinutes,
           sessionDate: incoming.sessionDate,
           startTime: incoming.startTime,
