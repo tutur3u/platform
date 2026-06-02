@@ -552,24 +552,105 @@ test('legacy version bump generator workflows are retired', () => {
   }
 });
 
-test('package publish workflows release from production version bumps', () => {
-  const packageWorkflows = [
-    ['release-ai-package.yaml', 'packages/ai', '@tuturuuu/ai'],
-    [
-      'release-supabase-package.yaml',
-      'packages/supabase',
-      '@tuturuuu/supabase',
+const packageReleaseWorkflows = [
+  {
+    artifactDir: 'ai-package',
+    artifactName: 'tuturuuu-ai-npm-package',
+    environment: 'ai-release-production',
+    packageName: '@tuturuuu/ai',
+    packagePath: 'packages/ai',
+    rejectMessagePattern:
+      /@tuturuuu\/ai releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/ai/,
+      /run: bun run test/,
     ],
-    ['release-types-package.yaml', 'packages/types', '@tuturuuu/types'],
-    [
-      'release-typescript-config-package.yaml',
-      'packages/typescript-config',
-      '@tuturuuu/typescript-config',
+    workflowName: 'release-ai-package.yaml',
+  },
+  {
+    artifactDir: 'supabase-package',
+    artifactName: 'tuturuuu-supabase-npm-package',
+    environment: 'supabase-release-production',
+    packageName: '@tuturuuu/supabase',
+    packagePath: 'packages/supabase',
+    rejectMessagePattern:
+      /@tuturuuu\/supabase releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /bun run --filter @tuturuuu\/types build/,
+      /working-directory: packages\/supabase/,
+      /run: bun run test/,
     ],
-    ['release-ui-package.yaml', 'packages/ui', '@tuturuuu/ui'],
-  ];
+    workflowName: 'release-supabase-package.yaml',
+  },
+  {
+    artifactDir: 'types-package',
+    artifactName: 'tuturuuu-types-npm-package',
+    environment: 'types-release-production',
+    packageName: '@tuturuuu/types',
+    packagePath: 'packages/types',
+    rejectMessagePattern:
+      /@tuturuuu\/types releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/types/,
+      /run: bun run build/,
+    ],
+    workflowName: 'release-types-package.yaml',
+  },
+  {
+    artifactDir: 'typescript-config-package',
+    artifactName: 'tuturuuu-typescript-config-npm-package',
+    environment: 'typescript-config-release-production',
+    packageName: '@tuturuuu/typescript-config',
+    packagePath: 'packages/typescript-config',
+    rejectMessagePattern:
+      /@tuturuuu\/typescript-config releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/typescript-config/,
+      /Validate package metadata/,
+    ],
+    workflowName: 'release-typescript-config-package.yaml',
+  },
+  {
+    artifactDir: 'ui-package',
+    artifactName: 'tuturuuu-ui-npm-package',
+    environment: 'ui-release-production',
+    packageName: '@tuturuuu/ui',
+    packagePath: 'packages/ui',
+    rejectMessagePattern:
+      /@tuturuuu\/ui releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /bun run --filter @tuturuuu\/types build/,
+      /bun run --filter @tuturuuu\/supabase build/,
+      /working-directory: packages\/ui/,
+      /run: bun run test/,
+    ],
+    workflowName: 'release-ui-package.yaml',
+  },
+  {
+    artifactDir: 'sdk-package',
+    artifactName: 'tuturuuu-sdk-npm-package',
+    environment: 'sdk-release-production',
+    packageName: 'tuturuuu',
+    packagePath: 'packages/sdk',
+    rejectMessagePattern:
+      /SDK releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /Build SDK workspace dependencies/,
+      /bun run --filter @tuturuuu\/types build/,
+      /bun run --filter @tuturuuu\/internal-api build/,
+      /working-directory: packages\/sdk/,
+      /run: bun run test/,
+    ],
+    workflowName: 'release-sdk-package.yaml',
+  },
+];
 
-  for (const [workflowName, packagePath, packageName] of packageWorkflows) {
+test('package publish workflows release from production version bumps', () => {
+  for (const {
+    packagePath,
+    rejectMessagePattern,
+    workflowName,
+  } of packageReleaseWorkflows) {
     const workflow = fs.readFileSync(
       path.join(repoRoot, '.github', 'workflows', workflowName),
       'utf8'
@@ -583,6 +664,12 @@ test('package publish workflows release from production version bumps', () => {
       workflowName,
       'check-version-bump'
     );
+    const buildJob = readWorkflowJobBlock(workflowName, 'build');
+    const prepareJob = readWorkflowJobBlock(
+      workflowName,
+      'prepare-publish-npm'
+    );
+    const publishJob = readWorkflowJobBlock(workflowName, 'publish-npm');
 
     assert.match(workflow, /\n {2}push:\n {4}branches:\s*\[production\]/);
     assert.match(workflow, new RegExp(`"${packagePath}/package\\.json"`));
@@ -596,114 +683,105 @@ test('package publish workflows release from production version bumps', () => {
     assert.doesNotMatch(workflow, /publish-gpr/);
     assert.doesNotMatch(workflow, /bunx jsr publish/);
     assert.doesNotMatch(workflow, /bun publish --no-git-checks/);
+    assert.doesNotMatch(workflow, /\bbun publish\b/);
+    assert.doesNotMatch(workflow, /NODE_AUTH_TOKEN/);
+    assert.doesNotMatch(workflow, /secrets\.NPM_TOKEN/);
     assert.match(workflow, /publish-npm:/);
     assert.match(workflow, /registry-url: "https:\/\/registry\.npmjs\.org"/);
-    assert.match(workflow, /NODE_AUTH_TOKEN: \$\{\{secrets\.NPM_TOKEN\}\}/);
 
     assert.match(rejectJob, /if: github\.ref != 'refs\/heads\/production'/);
     assert.match(rejectJob, /permissions:\s*\{\}/);
-    assert.match(
-      rejectJob,
-      new RegExp(
-        `${packageName} releases can only run from refs/heads/production`
-      )
-    );
+    assert.match(rejectJob, rejectMessagePattern);
     assert.match(checkCiJob, /if: github\.ref == 'refs\/heads\/production'/);
     assert.match(
       checkVersionBumpJob,
       /if: github\.ref == 'refs\/heads\/production' && needs\.check-ci\.outputs\.should_run == 'true'/
     );
+    assert.match(
+      buildJob,
+      /if: github\.ref == 'refs\/heads\/production' && needs\.check-version-bump\.outputs\.should_release == 'true'/
+    );
+    assert.match(prepareJob, /if: github\.ref == 'refs\/heads\/production'/);
+    assert.match(
+      prepareJob,
+      /npm view "\$\{PACKAGE_NAME\}@\$\{PACKAGE_VERSION\}" version/
+    );
+    assert.match(prepareJob, /npm pack --pack-destination/);
+    assert.match(prepareJob, /actions\/upload-artifact@/);
+    assert.doesNotMatch(prepareJob, /id-token:\s*write/);
+    assert.match(
+      publishJob,
+      /if: github\.ref == 'refs\/heads\/production' && needs\.prepare-publish-npm\.outputs\.should_publish == 'true'/
+    );
   }
 });
 
-test('SDK trusted publishing keeps OIDC isolated to artifact publish job', () => {
-  const workflow = fs.readFileSync(
-    path.join(repoRoot, '.github', 'workflows', 'release-sdk-package.yaml'),
-    'utf8'
-  );
-  const rejectJob = readWorkflowJobBlock(
-    'release-sdk-package.yaml',
-    'reject-non-production-ref'
-  );
-  const checkCiJob = readWorkflowJobBlock(
-    'release-sdk-package.yaml',
-    'check-ci'
-  );
-  const checkVersionBumpJob = readWorkflowJobBlock(
-    'release-sdk-package.yaml',
-    'check-version-bump'
-  );
-  const buildJob = readWorkflowJobBlock('release-sdk-package.yaml', 'build');
-  const prepareJob = readWorkflowJobBlock(
-    'release-sdk-package.yaml',
-    'prepare-publish-npm'
-  );
-  const publishJob = readWorkflowJobBlock(
-    'release-sdk-package.yaml',
-    'publish-npm'
-  );
+test('package trusted publishing keeps OIDC isolated to artifact publish jobs', () => {
+  for (const {
+    artifactDir,
+    artifactName,
+    environment,
+    requiredBuildPatterns,
+    workflowName,
+  } of packageReleaseWorkflows) {
+    const workflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', workflowName),
+      'utf8'
+    );
+    const buildJob = readWorkflowJobBlock(workflowName, 'build');
+    const prepareJob = readWorkflowJobBlock(
+      workflowName,
+      'prepare-publish-npm'
+    );
+    const publishJob = readWorkflowJobBlock(workflowName, 'publish-npm');
 
-  assert.match(workflow, /\n {2}push:\n/);
-  assert.match(workflow, /branches:\s*\[production\]/);
-  assert.match(workflow, /"packages\/sdk\/package\.json"/);
-  assert.match(workflow, /"\.github\/workflows\/release-sdk-package\.yaml"/);
-  assert.doesNotMatch(workflow, /\bsecrets\./);
-  assert.doesNotMatch(workflow, /github\.event\.pull_request/);
-  assert.doesNotMatch(workflow, /pull_request\.title/);
+    assert.doesNotMatch(workflow, /github\.event\.pull_request/);
+    assert.doesNotMatch(workflow, /pull_request\.title/);
 
-  assert.match(rejectJob, /if: github\.ref != 'refs\/heads\/production'/);
-  assert.match(rejectJob, /permissions:\s*\{\}/);
-  assert.match(
-    rejectJob,
-    /SDK releases can only run from refs\/heads\/production/
-  );
+    for (const pattern of requiredBuildPatterns) {
+      assert.match(buildJob, pattern);
+    }
 
-  assert.match(checkCiJob, /if: github\.ref == 'refs\/heads\/production'/);
-  assert.match(
-    checkVersionBumpJob,
-    /if: github\.ref == 'refs\/heads\/production' && needs\.check-ci\.outputs\.should_run == 'true'/
-  );
+    assert.match(
+      prepareJob,
+      /package_name: \$\{\{ steps\.version-check\.outputs\.package_name \}\}/
+    );
+    assert.match(
+      prepareJob,
+      /package_version: \$\{\{ steps\.version-check\.outputs\.package_version \}\}/
+    );
+    assert.match(
+      prepareJob,
+      /should_publish: \$\{\{ steps\.version-check\.outputs\.should_publish \}\}/
+    );
+    assert.match(prepareJob, new RegExp(`name: ${artifactName}`));
+    assert.match(prepareJob, /path: \$\{\{ runner\.temp \}\}\/.+\/\*\.tgz/);
+    assert.match(
+      prepareJob,
+      /steps\.version-check\.outputs\.should_publish == 'true'/
+    );
+    assert.doesNotMatch(prepareJob, /id-token:\s*write/);
 
-  assert.match(
-    buildJob,
-    /if: github\.ref == 'refs\/heads\/production' && needs\.check-version-bump\.outputs\.should_release == 'true'/
-  );
-  assert.match(buildJob, /Build SDK workspace dependencies/);
-  assert.match(buildJob, /bun run --filter @tuturuuu\/types build/);
-  assert.match(buildJob, /bun run --filter @tuturuuu\/internal-api build/);
-  assert.match(buildJob, /working-directory: packages\/sdk/);
-  assert.match(buildJob, /run: bun run test/);
-
-  assert.match(prepareJob, /if: github\.ref == 'refs\/heads\/production'/);
-  assert.doesNotMatch(prepareJob, /id-token:\s*write/);
-  assert.match(prepareJob, /Build SDK workspace dependencies/);
-  assert.match(
-    prepareJob,
-    /steps\.version-check\.outputs\.should_publish == 'true'/
-  );
-  assert.match(prepareJob, /bun run --filter @tuturuuu\/types build/);
-  assert.match(prepareJob, /bun run --filter @tuturuuu\/internal-api build/);
-  assert.match(prepareJob, /npm pack --pack-destination/);
-  assert.match(prepareJob, /actions\/upload-artifact@/);
-
-  assert.match(
-    publishJob,
-    /if: github\.ref == 'refs\/heads\/production' && needs\.prepare-publish-npm\.outputs\.should_publish == 'true'/
-  );
-  assert.match(publishJob, /environment: sdk-release-production/);
-  assert.match(publishJob, /id-token:\s*write/);
-  assert.match(publishJob, /actions\/download-artifact@/);
-  assert.match(publishJob, /Verify package artifact/);
-  assert.match(
-    publishJob,
-    /echo "path=\.\/\$\{PACKAGE_TARBALL\}" >> "\$GITHUB_OUTPUT"/
-  );
-  assert.match(
-    publishJob,
-    /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/
-  );
-  assert.doesNotMatch(publishJob, /actions\/checkout@/);
-  assert.doesNotMatch(publishJob, /setup-bun/);
-  assert.doesNotMatch(publishJob, /\bbun install\b/);
-  assert.doesNotMatch(publishJob, /\bnpm install\b/);
+    assert.match(publishJob, new RegExp(`environment: ${environment}`));
+    assert.match(publishJob, /id-token:\s*write/);
+    assert.match(publishJob, /actions\/download-artifact@/);
+    assert.match(publishJob, new RegExp(`name: ${artifactName}`));
+    assert.match(publishJob, new RegExp(`path: ${artifactDir}`));
+    assert.match(publishJob, /Check npm trusted publishing support/);
+    assert.match(publishJob, /Verify package artifact/);
+    assert.match(
+      publishJob,
+      /echo "path=\.\/\$\{PACKAGE_TARBALL\}" >> "\$GITHUB_OUTPUT"/
+    );
+    assert.match(
+      publishJob,
+      /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/
+    );
+    assert.doesNotMatch(publishJob, /actions\/checkout@/);
+    assert.doesNotMatch(publishJob, /setup-bun/);
+    assert.doesNotMatch(publishJob, /\bbun install\b/);
+    assert.doesNotMatch(publishJob, /\bnpm install\b/);
+    assert.doesNotMatch(publishJob, /\bsecrets\./);
+    assert.doesNotMatch(publishJob, /NODE_AUTH_TOKEN/);
+  }
 });

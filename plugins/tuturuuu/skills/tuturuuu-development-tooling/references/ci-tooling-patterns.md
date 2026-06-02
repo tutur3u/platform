@@ -47,6 +47,11 @@ formatting behavior, or repo-wide verification.
 - Package release workflows are npm-only for now. Do not add JSR or GitHub
   Packages publish jobs, and do not wire `jsr.json` version files into Release
   Please while those registries are paused.
+- Package release workflows must use npm trusted publishing. Keep `id-token:
+  write` isolated to the final `publish-npm` job, publish a downloaded and
+  verified tarball with `npm publish --ignore-scripts`, and do not reintroduce
+  `NPM_TOKEN`, checkout, Bun setup, dependency install, or package builds in the
+  publish job.
 - If local type-check passes but CI fails from stale incremental state, rerun
   with forced cache invalidation before changing unrelated code.
 - Do not patch unrelated packages just because `bun check` fails outside the

@@ -212,10 +212,15 @@ failing when the bot token is not provisioned. The `github.token` fallback does
 not trigger downstream workflow runs from generated release PRs. Release Please
 rejects non-production manual dispatches before the write-capable release job.
 Package publish workflows consume release-please version bumps on `production`;
-they must not recreate checksum or PR-title version bump automation. For the SDK
-release workflow, manual dispatch is only valid with the branch selector set to
-`production`; non-production refs are rejected before the package or publish jobs
-can start.
+they must not recreate checksum or PR-title version bump automation. Package
+release workflows use npm trusted publishing: build and artifact-pack work runs
+before any OIDC permission is granted, then the `publish-npm` job downloads one
+tarball, verifies its package name and version, and runs `npm publish` without
+`NPM_TOKEN`. Each publish job is bound to its package release environment, and
+the matching npm trusted publisher must use this repository, the workflow
+filename, and that environment. Manual dispatch is only valid with the branch
+selector set to `production`; non-production refs are rejected before the package
+or publish jobs can start.
 
 ### Newer-commit guards
 

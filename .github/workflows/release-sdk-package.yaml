@@ -224,7 +224,8 @@ jobs:
           echo "path=./${PACKAGE_TARBALL}" >> "$GITHUB_OUTPUT"
 
       # npm CLI auto-detects the GitHub Actions OIDC environment and
-      # exchanges it for a short-lived publish token, so no NPM_TOKEN is set.
+      # exchanges it for a short-lived publish token, so no registry token
+      # secret is set.
       # Provenance attestations are generated automatically for public packages
       # in public repositories when publishing via trusted publishing.
       - name: Publish package

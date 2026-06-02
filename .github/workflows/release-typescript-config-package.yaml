@@ -37,7 +37,7 @@ jobs:
 
   build:
     needs: check-version-bump
-    if: needs.check-version-bump.outputs.should_release == 'true'
+    if: github.ref == 'refs/heads/production' && needs.check-version-bump.outputs.should_release == 'true'
     runs-on: ubuntu-latest
 
     env:
@@ -73,10 +73,14 @@ jobs:
         working-directory: packages/typescript-config
         run: node -e "const pkg = require('./package.json'); if (pkg.name !== '@tuturuuu/typescript-config') throw new Error('Unexpected package name'); if (pkg.private) throw new Error('Package must be publishable');"
 
-  publish-npm:
+  prepare-publish-npm:
     needs: [build]
+    if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
-
+    outputs:
+      package_name: ${{ steps.version-check.outputs.package_name }}
+      package_version: ${{ steps.version-check.outputs.package_version }}
+      should_publish: ${{ steps.version-check.outputs.should_publish }}
     permissions:
       contents: read
     steps:
@@ -91,12 +95,136 @@ jobs:
         with:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
 
       - name: Install dependencies
         run: bun install
 
-      - name: Publish package
+      - name: Check whether the version already exists on npm
+        id: version-check
         working-directory: packages/typescript-config
-        run: bun publish
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "package_name=${PACKAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "package_version=${PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
+
+          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "${PACKAGE_NAME}@${PACKAGE_VERSION} already exists on npm; skipping publish."
+          else
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pack publish artifact
+        if: steps.version-check.outputs.should_publish == 'true'
+        working-directory: packages/typescript-config
+        run: |
+          mkdir -p "$RUNNER_TEMP/tuturuuu-typescript-config-package"
+          npm pack --pack-destination "$RUNNER_TEMP/tuturuuu-typescript-config-package"
+
+      - name: Upload publish artifact
+        if: steps.version-check.outputs.should_publish == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          if-no-files-found: error
+          name: tuturuuu-typescript-config-npm-package
+          path: ${{ runner.temp }}/tuturuuu-typescript-config-package/*.tgz
+          retention-days: 1
+
+  publish-npm:
+    needs: [prepare-publish-npm]
+    if: github.ref == 'refs/heads/production' && needs.prepare-publish-npm.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    environment: typescript-config-release-production
+
+    # Trusted publishing requires the workflow to be able to mint an OIDC
+    # token. Keep dependency installation, tool upgrades, package builds, and
+    # lifecycle scripts out of this job so only the final artifact publish runs
+    # with npm publish authority.
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Check npm trusted publishing support
+        run: |
+          NPM_VERSION=$(npm --version)
+          node - "$NPM_VERSION" <<'NODE'
+          const version = process.argv[2];
+          const [major = 0, minor = 0, patch = 0] = version
+            .split('.')
+            .map((value) => Number.parseInt(value, 10));
+          const supportsTrustedPublishing =
+            major > 11 ||
+            (major === 11 && (minor > 5 || (minor === 5 && patch >= 1)));
+
+          if (!supportsTrustedPublishing) {
+            throw new Error(
+              `npm ${version} does not support trusted publishing. ` +
+                'Use Node 24 with npm 11.5.1+ instead of installing npm ' +
+                'inside the OIDC publish job.'
+            );
+          }
+
+          console.log(`npm ${version} supports trusted publishing.`);
+          NODE
+
+      - name: Download publish artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: tuturuuu-typescript-config-npm-package
+          path: typescript-config-package
+
+      - name: Verify package artifact
+        id: artifact
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
+          EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
+        run: |
+          PACKAGE_TARBALL=$(find typescript-config-package -maxdepth 1 -name '*.tgz' -type f | sort)
+          TARBALL_COUNT=$(printf '%s\n' "$PACKAGE_TARBALL" | sed '/^$/d' | wc -l | tr -d ' ')
+
+          if [ "$TARBALL_COUNT" != "1" ]; then
+            echo "Expected exactly one package tarball, found ${TARBALL_COUNT}." >&2
+            exit 1
+          fi
+
+          node - "$PACKAGE_TARBALL" <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const tarball = process.argv[2];
+          const manifest = JSON.parse(
+            execFileSync('tar', ['-xOf', tarball, 'package/package.json'], {
+              encoding: 'utf8',
+            })
+          );
+
+          if (manifest.name !== process.env.EXPECTED_PACKAGE_NAME) {
+            throw new Error(
+              `Artifact package name mismatch: expected ` +
+                `${process.env.EXPECTED_PACKAGE_NAME}, got ${manifest.name}`
+            );
+          }
+
+          if (manifest.version !== process.env.EXPECTED_PACKAGE_VERSION) {
+            throw new Error(
+              `Artifact package version mismatch: expected ` +
+                `${process.env.EXPECTED_PACKAGE_VERSION}, got ${manifest.version}`
+            );
+          }
+
+          console.log(`Verified ${manifest.name}@${manifest.version}.`);
+          NODE
+
+          echo "path=./${PACKAGE_TARBALL}" >> "$GITHUB_OUTPUT"
+
+      # npm CLI auto-detects the GitHub Actions OIDC environment and
+      # exchanges it for a short-lived publish token, so no registry token
+      # secret is set.
+      - name: Publish package
+        run: npm publish "${{ steps.artifact.outputs.path }}" --ignore-scripts
