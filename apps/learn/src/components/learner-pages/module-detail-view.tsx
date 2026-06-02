@@ -6,7 +6,10 @@ import {
   Layers,
   Youtube,
 } from '@tuturuuu/icons';
-import type { SharedCourseContentResponse } from '@tuturuuu/internal-api';
+import type {
+  TulearnCourseDetail,
+  TulearnCourseModuleDetail,
+} from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 import { ContentCard } from './content-card';
@@ -14,7 +17,9 @@ import { hasContent, RichContentRenderer } from './rich-content-renderer';
 import { BrutalCard, EmptyState } from './shared';
 import { YoutubeCard } from './youtube-card';
 
-type CourseModule = SharedCourseContentResponse['modules'][number];
+type CourseModule = TulearnCourseModuleDetail;
+type CourseModuleSummary = TulearnCourseDetail['modules'][number];
+type CourseGroup = Pick<TulearnCourseDetail, 'description' | 'name'>;
 
 export function ModuleDetailView({
   courseModule,
@@ -27,12 +32,12 @@ export function ModuleDetailView({
   totalModules,
 }: {
   courseModule: CourseModule;
-  group: SharedCourseContentResponse['group'];
+  group: CourseGroup;
   moduleIndex: number;
-  nextModule?: CourseModule;
+  nextModule?: CourseModuleSummary;
   onBack: () => void;
   onNavigate: (id: string) => void;
-  previousModule?: CourseModule;
+  previousModule?: CourseModuleSummary;
   totalModules: number;
 }) {
   const t = useTranslations();
@@ -51,7 +56,7 @@ export function ModuleDetailView({
         </button>
         <span className="text-muted-foreground">/</span>
         <span className="font-semibold text-muted-foreground">
-          {group.name}
+          {group.name ?? t('courses.untitled')}
         </span>
       </div>
 
@@ -121,15 +126,19 @@ export function ModuleDetailView({
             <div className="mt-3 space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span>{t('courses.quizzes')}</span>
-                <span className="font-bold">{courseModule.quizzes}</span>
+                <span className="font-bold">{courseModule.counts.quizzes}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>{t('courses.quizSets')}</span>
-                <span className="font-bold">{courseModule.quizSets}</span>
+                <span className="font-bold">
+                  {courseModule.counts.quizSets}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>{t('courses.flashcards')}</span>
-                <span className="font-bold">{courseModule.flashcards}</span>
+                <span className="font-bold">
+                  {courseModule.counts.flashcards}
+                </span>
               </div>
             </div>
           </BrutalCard>
