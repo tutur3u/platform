@@ -1503,7 +1503,12 @@ test('writeWatchStatus persists a serializable watcher snapshot', () => {
       {
         deployments: [],
         lastResult: {
+          activeDeployment: {
+            lockToken: 'nested-secret',
+            ownerPid: 9876,
+          },
           error: new Error('deploy failed'),
+          lockToken: 'result-secret',
           status: 'deploy-failed',
         },
         latestCommit: {
@@ -1522,6 +1527,9 @@ test('writeWatchStatus persists a serializable watcher snapshot', () => {
     assert.deepEqual(readWatchStatus(paths, fs), {
       deployments: [],
       lastResult: {
+        activeDeployment: {
+          ownerPid: 9876,
+        },
         error: 'deploy failed',
         status: 'deploy-failed',
       },
@@ -3370,6 +3378,7 @@ test('runDeployWatchIteration waits instead of retrying while a deployment build
 
     assert.equal(result.status, 'deployment-active');
     assert.equal(result.activeDeployment?.ownerPid, 9876);
+    assert.equal(result.activeDeployment?.lockToken, undefined);
     assert.equal(result.deployments.length, 1);
     assert.equal(readDeploymentHistory(paths, fs).length, 1);
     assert.ok(

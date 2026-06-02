@@ -77,6 +77,45 @@ describe('readBlueGreenMonitoringSnapshot', () => {
     }
   });
 
+  it('redacts deployment lock tokens from watcher results', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-monitoring-lock-token-')
+    );
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'watch'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, 'watch', 'blue-green-auto-deploy.status.json'),
+        JSON.stringify({
+          intervalMs: 1000,
+          lastResult: {
+            activeDeployment: {
+              command: 'bun serve:web:docker:bg',
+              lockToken: 'secret-lock-token',
+              ownerPid: 9876,
+            },
+            lockToken: 'outer-secret-lock-token',
+            status: 'deployment-active',
+          },
+          updatedAt: 1000,
+        })
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const snapshot = readBlueGreenMonitoringSnapshot({ now: 2000 });
+
+      expect(snapshot.watcher.lastResult).toEqual({
+        activeDeployment: {
+          command: 'bun serve:web:docker:bg',
+          ownerPid: 9876,
+        },
+        status: 'deployment-active',
+      });
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
   it('treats running containers without Docker healthchecks as healthy', () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'blue-green-monitoring-runtime-health-')

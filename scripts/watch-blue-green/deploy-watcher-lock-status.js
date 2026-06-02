@@ -26,19 +26,37 @@ function readWatchStatus(paths = getWatchPaths(), fsImpl = fs) {
   }
 }
 
+function serializeWatchStatusValue(value) {
+  if (value instanceof Error) {
+    return value.message;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => serializeWatchStatusValue(entry));
+  }
+
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+
+  const out = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === 'lockToken') {
+      continue;
+    }
+
+    out[key] = serializeWatchStatusValue(entry);
+  }
+
+  return out;
+}
+
 function serializeWatchStatus(
   state,
   { now = Date.now(), processImpl = process } = {}
 ) {
   const { logs: _logs, ...serializableState } = state;
-  const out = { ...serializableState };
-
-  if (out.lastResult?.error instanceof Error) {
-    out.lastResult = {
-      ...out.lastResult,
-      error: out.lastResult.error.message,
-    };
-  }
+  const out = serializeWatchStatusValue(serializableState);
 
   return {
     ...out,
@@ -173,5 +191,6 @@ module.exports = {
   readWatchLock,
   readWatchStatus,
   releaseWatchLock,
+  serializeWatchStatusValue,
   writeWatchStatus,
 };

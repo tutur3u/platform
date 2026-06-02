@@ -129,6 +129,29 @@ function toRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function redactMonitoringSecretFields(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(redactMonitoringSecretFields);
+  }
+
+  const record = toRecord(value);
+  if (!record) {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(record)
+      .filter(([key]) => key !== 'lockToken')
+      .map(([key, entry]) => [key, redactMonitoringSecretFields(entry)])
+  );
+}
+
+function normalizeWatcherLastResult(
+  value: unknown
+): Record<string, unknown> | null {
+  return toRecord(redactMonitoringSecretFields(value));
+}
+
 function normalizeStageStringArray(value: unknown) {
   return Array.isArray(value)
     ? value.filter((entry): entry is string => typeof entry === 'string')
@@ -1811,10 +1834,7 @@ export function readBlueGreenMonitoringSnapshot({
       lastDeployAt: toFiniteNumber(status?.lastDeployAt),
       lastDeployStatus: humanizeStatus(status?.lastDeployStatus),
       logs: slicePreviewItems(watcherLogs, watcherLogLimit),
-      lastResult:
-        status?.lastResult && typeof status.lastResult === 'object'
-          ? (status.lastResult as Record<string, unknown>)
-          : null,
+      lastResult: normalizeWatcherLastResult(status?.lastResult),
       latestCommit: latestCommitRecord
         ? {
             committedAt:
