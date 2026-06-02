@@ -8,12 +8,13 @@ export const QUIZ_GENERATION_PROMPT = `You are an expert Academic Curriculum Des
 3. **Format Options:**
    - Generate ONLY the question types requested.
    - At least one correct answer must be specified for each question.
-   - Include clear explanations for the answers if possible.`;
+   - Include clear explanations for the answers if possible.
+   - The score field MUST be an integer between 1 and 10 (do NOT generate extremely large numbers).`;
 
 export const GeneratedQuizSchema = z.object({
   question: z.string().describe('The quiz question text.'),
   type: z.enum(['multiple_choice', 'true_false', 'matching', 'ordering']).describe('The question type.'),
-  score: z.number().int().positive().default(1),
+  score: z.number().int().min(1).max(10).default(1).describe('Point value for this question (MUST be an integer between 1 and 10, default is 1).'),
   // Multiple choice fields
   options: z.array(z.string()).min(2).max(6).optional().describe('List of options for multiple choice questions. Required if type is multiple_choice.'),
   correct_option_index: z.number().int().nonnegative().optional().describe('Index of the correct option for multiple choice (0-indexed). Required if type is multiple_choice.'),

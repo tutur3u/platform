@@ -88,7 +88,7 @@ export const POST = withSessionAuth(
       const { data: lesson, error: lessonError } = await sbAdmin
         .from('workspace_course_modules')
         .select(
-          'id, name, content, extra_content, workspace_user_groups!inner(ws_id)'
+          'id, name, content, extra_content, youtube_links, workspace_user_groups!inner(ws_id)'
         )
         .eq('id', lessonId)
         .eq('workspace_user_groups.ws_id', normalizedWsId)
@@ -112,14 +112,91 @@ export const POST = withSessionAuth(
       const extraText = lesson.extra_content
         ? extractTextFromContent(lesson.extra_content)
         : '';
-      const lessonInfo = `Lesson Title: ${lesson.name}\n\nLesson Content:\n${lessonText}\n\nExtra Content:\n${extraText}`;
 
+      // Convert YouTube URLs of the lesson to markdown transcripts in parallel using MarkItDown
+      const youtubeMarkdownList: string[] = [];
+      const endpointUrl = process.env.MARKITDOWN_ENDPOINT_URL?.trim();
+      const deploymentUrl = process.env.DISCORD_APP_DEPLOYMENT_URL?.trim();
+
+      const markitdownUrl =
+        endpointUrl ||
+        (deploymentUrl
+          ? `${deploymentUrl.replace(/\/+$/, '')}/markitdown`
+          : null);
+
+      const markitdownSecret =
+        process.env.MARKITDOWN_ENDPOINT_SECRET?.trim() ||
+        process.env.VERCEL_CRON_SECRET?.trim() ||
+        process.env.CRON_SECRET?.trim() ||
+        null;
+
+      if (
+        markitdownUrl &&
+        markitdownSecret &&
+        Array.isArray(lesson.youtube_links)
+      ) {
+        const activeLinks = lesson.youtube_links.filter(Boolean);
+
+        // Fetch transcripts in parallel with a 15-second timeout per video to prevent socket hangup
+        const ytPromises = activeLinks.map(async (ytUrl) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+          try {
+            const ytResponse = await fetch(markitdownUrl, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${markitdownSecret}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                url: ytUrl.trim(),
+                filename: 'youtube.md',
+                enable_plugins: true,
+              }),
+              signal: controller.signal,
+            });
+
+            if (ytResponse.ok) {
+              const ytData = await ytResponse.json();
+              if (ytData.markdown) {
+                return `YouTube Video Content (${ytUrl}):\n${ytData.markdown}`;
+              }
+            }
+          } catch (e) {
+            serverLogger.error(
+              'Failed to convert YouTube URL to markdown during quiz generation',
+              {
+                url: ytUrl,
+                error: e instanceof Error ? e.message : String(e),
+              }
+            );
+          } finally {
+            clearTimeout(timeoutId);
+          }
+          return null;
+        });
+
+        const results = await Promise.all(ytPromises);
+        for (const res of results) {
+          if (res) youtubeMarkdownList.push(res);
+        }
+      }
+
+      const youtubeText = youtubeMarkdownList.join('\n\n');
+      const lessonInfo = `Lesson Title: ${lesson.name}\n\nLesson Content:\n${lessonText}\n\nExtra Content:\n${extraText}${
+        youtubeText
+          ? `\n\nAssociated YouTube Video Transcripts:\n${youtubeText}`
+          : ''
+      }`;
+
+      console.log('Generated lesson info for quiz generation:', youtubeText);
       const typeInstruction =
         questionType === 'mix'
           ? 'Generate a mix of question types (multiple_choice, true_false, matching, ordering).'
           : `Generate ONLY questions of type "${questionType}".`;
 
-      const promptText = `Analyze the following lesson content and create exactly ${count} structured quiz questions.
+      const promptText = `Analyze the following lesson content and associated YouTube video transcripts (if any) to create exactly ${count} structured quiz questions.
 ${typeInstruction}
 
 ${teacherContext?.trim() ? `Additional context/instructions: ${teacherContext.trim()}\n` : ''}
