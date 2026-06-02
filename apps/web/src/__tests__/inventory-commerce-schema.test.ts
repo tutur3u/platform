@@ -30,6 +30,10 @@ const pendingInvoicePrivateInventoryMigrationPath = resolve(
   repoRoot,
   'apps/database/supabase/migrations/20260601101948_fix_pending_invoice_private_inventory.sql'
 );
+const pendingInvoiceRpcPermissionMigrationPath = resolve(
+  repoRoot,
+  'apps/database/supabase/migrations/20260602173706_harden_pending_invoice_rpcs.sql'
+);
 const bundleRepositoryPath = resolve(
   repoRoot,
   'apps/web/src/lib/inventory/commerce/bundles.ts'
@@ -219,6 +223,35 @@ describe('inventory commerce migration contract', () => {
     );
     expect(privateInventoryJoins).toHaveLength(2);
     expect(source).not.toContain('left join inventory_products ip');
+    expect(source).toContain("notify pgrst, 'reload schema'");
+  });
+
+  it('requires invoice view permission inside public pending invoice RPCs', () => {
+    expect(existsSync(pendingInvoiceRpcPermissionMigrationPath)).toBe(true);
+
+    const source = readFileSync(
+      pendingInvoiceRpcPermissionMigrationPath,
+      'utf8'
+    );
+
+    expect(source).toContain(
+      'create or replace function public.get_pending_invoices_base'
+    );
+    expect(source).toContain(
+      "public.has_workspace_permission(\n      p_ws_id,\n      auth.uid(),\n      'view_invoices'\n    )"
+    );
+
+    for (const signature of [
+      'public.get_pending_invoices_base(uuid, boolean)',
+      'public.get_pending_invoices(uuid, integer, integer, text, uuid[])',
+      'public.get_pending_invoices_count(uuid, text, uuid[])',
+      'public.get_pending_invoices_grouped_by_user(uuid, integer, integer, text, uuid[])',
+      'public.get_pending_invoices_grouped_by_user_count(uuid, text, uuid[])',
+    ]) {
+      expect(source).toContain(`revoke all on function ${signature}`);
+      expect(source).toContain(`grant execute on function ${signature}`);
+    }
+
     expect(source).toContain("notify pgrst, 'reload schema'");
   });
 });

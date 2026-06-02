@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = {
+  authorizeInventoryWorkspace: vi.fn(),
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
+  createInventoryAuditLog: vi.fn(),
+  diffInventoryAuditFields: vi.fn(),
   getPermissions: vi.fn(),
+  getInventoryActorContext: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   serverError: vi.fn(),
 };
@@ -28,6 +32,27 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
     error: (...args: Parameters<typeof mocks.serverError>) =>
       mocks.serverError(...args),
   },
+}));
+
+vi.mock('@/lib/inventory/commerce/auth', () => ({
+  authorizeInventoryWorkspace: (
+    ...args: Parameters<typeof mocks.authorizeInventoryWorkspace>
+  ) => mocks.authorizeInventoryWorkspace(...args),
+}));
+
+vi.mock('@/lib/inventory/audit', () => ({
+  createInventoryAuditLog: (
+    ...args: Parameters<typeof mocks.createInventoryAuditLog>
+  ) => mocks.createInventoryAuditLog(...args),
+  diffInventoryAuditFields: (
+    ...args: Parameters<typeof mocks.diffInventoryAuditFields>
+  ) => mocks.diffInventoryAuditFields(...args),
+}));
+
+vi.mock('@/lib/inventory/actor', () => ({
+  getInventoryActorContext: (
+    ...args: Parameters<typeof mocks.getInventoryActorContext>
+  ) => mocks.getInventoryActorContext(...args),
 }));
 
 type MutationResult = {
@@ -113,6 +138,97 @@ function createWarehouseAdminClient(result?: MutationResult) {
   };
 }
 
+type UnitResult = {
+  data: Record<string, unknown> | Record<string, unknown>[] | null;
+  error: { message: string } | null;
+};
+
+function createUnitQuery(
+  result: UnitResult = { data: { id: 'unit-1', name: 'Box' }, error: null }
+) {
+  const eqCalls: [string, unknown][] = [];
+  const limitCalls: number[] = [];
+  const selectCalls: string[] = [];
+  const maybeSingle = vi.fn(async () => result);
+  const single = vi.fn(async () => result);
+
+  const chain: any = {
+    data: result.data,
+    error: result.error,
+    eq: (column: string, value: unknown) => {
+      eqCalls.push([column, value]);
+      return chain;
+    },
+    limit: (value: number) => {
+      limitCalls.push(value);
+      return chain;
+    },
+    maybeSingle,
+    select: (columns: string) => {
+      selectCalls.push(columns);
+      return chain;
+    },
+    single,
+  };
+
+  return { chain, eqCalls, limitCalls, maybeSingle, selectCalls, single };
+}
+
+function createUnitAdminClient() {
+  const existingUnit = {
+    id: 'unit-from-workspace-b',
+    name: 'Box',
+    ws_id: 'workspace-a',
+  };
+  const updatedUnit = {
+    ...existingUnit,
+    name: 'Crate',
+  };
+  const existingQuery = createUnitQuery({
+    data: existingUnit,
+    error: null,
+  });
+  const updateQuery = createUnitQuery({
+    data: updatedUnit,
+    error: null,
+  });
+  const linkedProductsQuery = createUnitQuery({ data: [], error: null });
+  const deleteQuery = createUnitQuery({ data: null, error: null });
+  const update = vi.fn(() => updateQuery.chain);
+  const deleteMutation = vi.fn(() => deleteQuery.chain);
+
+  const from = vi.fn((table: string) => {
+    if (table === 'inventory_units') {
+      return {
+        delete: deleteMutation,
+        select: vi.fn(() => existingQuery.chain),
+        update,
+      };
+    }
+
+    if (table === 'inventory_products') {
+      return {
+        select: vi.fn(() => linkedProductsQuery.chain),
+      };
+    }
+
+    return { select: vi.fn(() => createUnitQuery().chain) };
+  });
+  const schema = vi.fn(() => ({ from }));
+
+  return {
+    client: { schema },
+    deleteMutation,
+    deleteQuery,
+    existingQuery,
+    from,
+    linkedProductsQuery,
+    schema,
+    update,
+    updateQuery,
+  };
+}
+
 describe('inventory item mutation workspace scope', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -120,6 +236,20 @@ describe('inventory item mutation workspace scope', () => {
       permissionsWith(['delete_inventory', 'update_inventory'])
     );
     mocks.normalizeWorkspaceId.mockResolvedValue('workspace-a');
+    mocks.authorizeInventoryWorkspace.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: permissionsWith(['delete_inventory', 'update_inventory']),
+        userId: 'user-1',
+        wsId: 'workspace-a',
+      },
+    });
+    mocks.createInventoryAuditLog.mockResolvedValue(undefined);
+    mocks.diffInventoryAuditFields.mockReturnValue(['name']);
+    mocks.getInventoryActorContext.mockResolvedValue({
+      authUserId: 'user-1',
+      workspaceUserId: 'workspace-user-1',
+    });
   });
 
   it('binds product category updates to the normalized route workspace', async () => {
@@ -238,5 +368,70 @@ describe('inventory item mutation workspace scope', () => {
       ['ws_id', 'workspace-a'],
     ]);
     expect(warehouseAdmin.deleteChain.selectCalls).toEqual(['id']);
+  });
+
+  it('binds unit updates to the authorized inventory workspace', async () => {
+    const unitAdmin = createUnitAdminClient();
+    mocks.createAdminClient.mockResolvedValue(unitAdmin.client);
+    const request = new Request('https://app.example.com/api', {
+      body: JSON.stringify({ name: 'Crate', ws_id: 'workspace-b' }),
+      method: 'PUT',
+    });
+
+    const { PUT } = await import('./product-units/[unitId]/route');
+    const response = await PUT(request, {
+      params: Promise.resolve({
+        unitId: 'unit-from-workspace-b',
+        wsId: 'personal',
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.authorizeInventoryWorkspace).toHaveBeenCalledWith(
+      request,
+      'personal'
+    );
+    expect(unitAdmin.schema).toHaveBeenCalledWith('private');
+    expect(unitAdmin.existingQuery.eqCalls).toEqual([
+      ['id', 'unit-from-workspace-b'],
+      ['ws_id', 'workspace-a'],
+    ]);
+    expect(unitAdmin.update).toHaveBeenCalledWith({ name: 'Crate' });
+    expect(unitAdmin.updateQuery.eqCalls).toEqual([
+      ['id', 'unit-from-workspace-b'],
+      ['ws_id', 'workspace-a'],
+    ]);
+    expect(unitAdmin.updateQuery.selectCalls).toEqual(['*']);
+  });
+
+  it('binds unit deletes to the authorized inventory workspace', async () => {
+    const unitAdmin = createUnitAdminClient();
+    mocks.createAdminClient.mockResolvedValue(unitAdmin.client);
+    const request = new Request('https://app.example.com/api', {
+      method: 'DELETE',
+    });
+
+    const { DELETE } = await import('./product-units/[unitId]/route');
+    const response = await DELETE(request, {
+      params: Promise.resolve({
+        unitId: 'unit-from-workspace-b',
+        wsId: 'personal',
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(unitAdmin.existingQuery.eqCalls).toEqual([
+      ['id', 'unit-from-workspace-b'],
+      ['ws_id', 'workspace-a'],
+    ]);
+    expect(unitAdmin.linkedProductsQuery.eqCalls).toEqual([
+      ['unit_id', 'unit-from-workspace-b'],
+    ]);
+    expect(unitAdmin.linkedProductsQuery.limitCalls).toEqual([1]);
+    expect(unitAdmin.deleteMutation).toHaveBeenCalled();
+    expect(unitAdmin.deleteQuery.eqCalls).toEqual([
+      ['id', 'unit-from-workspace-b'],
+      ['ws_id', 'workspace-a'],
+    ]);
   });
 });

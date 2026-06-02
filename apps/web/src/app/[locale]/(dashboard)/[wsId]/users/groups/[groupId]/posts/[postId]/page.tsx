@@ -51,8 +51,8 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
           notFound();
         }
 
-        const post = await getPostData(postId);
         const group = await getGroupData(wsId, groupId);
+        const post = await getPostData(wsId, groupId, postId);
         const status = await getPostStatus(wsId, groupId, postId);
         const recipients = await getRecipientRows(
           wsId,

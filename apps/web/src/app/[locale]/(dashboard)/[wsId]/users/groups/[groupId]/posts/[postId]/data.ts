@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { UserGroupPost } from '@tuturuuu/types/db';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { notFound } from 'next/navigation';
 import type { GroupPostRecipientRow, GroupPostStatusSummaryRow } from './types';
@@ -37,17 +38,26 @@ type PrivateUserGroupPostClient = {
   rpc: PrivateUserGroupPostRpc;
 };
 
-export async function getPostData(postId: string) {
+export async function getPostData(
+  wsId: string,
+  groupId: string,
+  postId: string
+): Promise<UserGroupPost> {
   const sbAdmin = await createAdminClient();
   const { data, error } = await sbAdmin
     .schema('private')
     .from('user_group_posts')
-    .select('*')
+    .select(`
+      *,
+      workspace_user_groups!inner(ws_id)
+    `)
     .eq('id', postId)
+    .eq('workspace_user_groups.ws_id', wsId)
+    .eq('group_id', groupId)
     .maybeSingle();
   if (error) throw error;
   if (!data) notFound();
-  return data;
+  return data as UserGroupPost;
 }
 
 export async function getGroupData(wsId: string, groupId: string) {

@@ -217,7 +217,7 @@ describe('TaskMentionChip', () => {
     expect(screen.getByText('Complete Team Charter V1.0')).toBeInTheDocument();
   });
 
-  it('uses the mention workspace when repairing a task from another workspace', async () => {
+  it('ignores untrusted mention workspace when repairing stale task mentions', async () => {
     const resolvedTask = {
       assignees: [],
       board_id: 'board-1',
@@ -242,7 +242,7 @@ describe('TaskMentionChip', () => {
         task: resolvedTask,
         taskWorkspacePersonal: false,
         taskWorkspaceTier: 'FREE',
-        taskWsId: 'source-ws',
+        taskWsId: 'route-ws',
       };
     });
     mocks.listWorkspaceTasks.mockResolvedValue({ tasks: [resolvedTask] });
@@ -259,7 +259,7 @@ describe('TaskMentionChip', () => {
 
     await waitFor(() => {
       expect(mocks.listWorkspaceTasks).toHaveBeenCalledWith(
-        'source-ws',
+        'route-ws',
         expect.objectContaining({
           boardId: 'board-1',
           identifier: '7',
@@ -271,9 +271,50 @@ describe('TaskMentionChip', () => {
       expect(onResolvedTaskMention).toHaveBeenCalledWith(
         expect.objectContaining({
           entityId: 'source-task-id',
-          workspaceId: 'source-ws',
+          workspaceId: 'route-ws',
         })
       );
     });
+  });
+
+  it('uses the server-returned workspace for resolved cross-workspace task mentions', async () => {
+    const resolvedTask = {
+      assignees: [],
+      board_id: 'source-board',
+      display_number: 9,
+      id: 'source-task-id',
+      labels: [],
+      list_id: 'list-1',
+      name: 'Trusted cross workspace task',
+      projects: [],
+      ticket_prefix: null,
+    };
+
+    window.history.pushState({}, '', '/route-ws/tasks/boards/board-1');
+    mocks.getCurrentUserTask.mockResolvedValue({
+      availableLists: [],
+      task: resolvedTask,
+      taskWorkspacePersonal: false,
+      taskWorkspaceTier: 'FREE',
+      taskWsId: 'source-ws',
+    });
+
+    renderWithQueryClient(
+      <TaskMentionChip
+        entityId="source-task-id"
+        displayNumber="9"
+        subtitle="Trusted cross workspace task"
+        workspaceId="source-ws"
+      />
+    );
+
+    await waitFor(() => {
+      expect(mocks.getCurrentUserTask).toHaveBeenCalledWith('source-task-id');
+    });
+
+    expect(mocks.listWorkspaceTasks).not.toHaveBeenCalled();
+    expect(
+      screen.getByText('Trusted cross workspace task')
+    ).toBeInTheDocument();
   });
 });
