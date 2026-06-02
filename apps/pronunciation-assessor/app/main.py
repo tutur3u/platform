@@ -16,11 +16,13 @@ from typing import Any
 import librosa
 import numpy as np
 import torch
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from pydantic import BaseModel
 from rapidfuzz.distance import Levenshtein
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 from transformers import pipeline as transformers_pipeline
+
+from .model_admin_auth import verify_model_admin_authorization
 
 LOCAL_WAV2VEC2_MODEL_ID = os.getenv(
     "PRONUNCIATION_ASSESSOR_MODEL", "facebook/wav2vec2-base-960h"
@@ -56,6 +58,7 @@ LOCAL_MODEL_IDLE_TTL_SECONDS = int(
 LOCAL_MODEL_MAX_LOADED = max(
     1, int(os.getenv("PRONUNCIATION_ASSESSOR_MAX_LOADED_MODELS", "1"))
 )
+MODEL_ADMIN_TOKEN = os.getenv("PRONUNCIATION_ASSESSOR_ADMIN_TOKEN", "").strip()
 SAMPLE_RATE = 16_000
 LOCAL_ASSESSOR_MODEL = "local-wav2vec2"
 SUPPORTED_ASSESSOR_MODELS = {
@@ -217,6 +220,15 @@ def get_loaded_model_snapshot() -> list[dict[str, Any]]:
         }
         for loaded in loaded_local_models.values()
     ]
+
+
+def require_model_admin_authorization(authorization: str | None) -> None:
+    failure = verify_model_admin_authorization(authorization, MODEL_ADMIN_TOKEN)
+    if failure:
+        raise HTTPException(
+            status_code=failure.status_code,
+            detail=failure.detail,
+        )
 
 
 def get_piper_voice_id(voice_id: str | None) -> str:
@@ -698,7 +710,10 @@ def synthesize_tts(request: TtsRequest) -> dict[str, Any]:
 
 
 @app.post("/models/load")
-def load_model_endpoint(request: ModelRequest) -> dict[str, Any]:
+def load_model_endpoint(
+    request: ModelRequest, authorization: str | None = Header(default=None)
+) -> dict[str, Any]:
+    require_model_admin_authorization(authorization)
     model = get_assessor_model(request.model)
     load_local_model(model)
     return {
@@ -708,7 +723,10 @@ def load_model_endpoint(request: ModelRequest) -> dict[str, Any]:
 
 
 @app.post("/models/unload")
-def unload_model_endpoint(request: ModelRequest) -> dict[str, Any]:
+def unload_model_endpoint(
+    request: ModelRequest, authorization: str | None = Header(default=None)
+) -> dict[str, Any]:
+    require_model_admin_authorization(authorization)
     model = get_assessor_model(request.model) if request.model else None
     removed = unload_local_model(model)
     return {

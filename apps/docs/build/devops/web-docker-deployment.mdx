@@ -429,7 +429,11 @@ The default model preloads at container startup. Set
 first-request latency. On shared hosts, keep
 `PRONUNCIATION_ASSESSOR_MAX_LOADED_MODELS=1` and tune
 `PRONUNCIATION_ASSESSOR_IDLE_TTL_SECONDS` so idle models are unloaded before
-they hold GPU or RAM capacity unnecessarily.
+they hold GPU or RAM capacity unnecessarily. Leave
+`PRONUNCIATION_ASSESSOR_ADMIN_TOKEN` unset unless operators need to call
+`POST /models/load` or `POST /models/unload`; those model-control endpoints are
+disabled without the token and require `Authorization: Bearer <token>` when it
+is configured.
 
 CMS WebGL package uploads also use the `storage-unzip-proxy`, but they are a
 first-class CMS upload path rather than generic Drive automation. They require a

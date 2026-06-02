@@ -154,9 +154,11 @@ contract simple: a deployed stack only needs a valid Valsea API key, because the
 pronunciation model runs locally in the helper container.
 
 The assessor is resource-aware. The default model preloads at container startup;
-other models are loaded lazily when selected, exposed through `GET /models`,
-pre-loadable through `POST /models/load`, removable through `POST /models/unload`,
-and idle-unloaded after
+other models are loaded lazily when selected and exposed through `GET /models`.
+The explicit model-control endpoints, `POST /models/load` and
+`POST /models/unload`, are disabled unless
+`PRONUNCIATION_ASSESSOR_ADMIN_TOKEN` is configured, and successful calls must
+send `Authorization: Bearer <token>`. Loaded models are idle-unloaded after
 `PRONUNCIATION_ASSESSOR_IDLE_TTL_SECONDS` seconds. Set
 `PRONUNCIATION_ASSESSOR_MAX_LOADED_MODELS=1` on constrained hosts so switching
 models evicts the least recently used resident model.
