@@ -5,12 +5,13 @@ import {
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
+  getLearnerCourseDetail,
+  getLearnerCourseSummaries,
   resolveStudentForPlatformUser,
   resolveTulearnSubject,
   tulearnAccessErrorResponse,
@@ -18,6 +19,7 @@ import {
 
 const DetailQuerySchema = z.object({
   courseId: z.guid(),
+  studentId: z.guid().optional(),
 });
 
 const ListQuerySchema = z.object({
@@ -83,12 +85,17 @@ export async function GET(request: Request) {
 
     // If courseId is provided, return detailed content for a single course
     if (courseId) {
-      return handleCourseDetail(courseId, user.id, sessionSupabase);
+      return await handleCourseDetail({
+        courseId,
+        sessionSupabase,
+        studentId,
+        user,
+      });
     }
 
     // If wsId is provided, return list of courses for the workspace
     if (wsId) {
-      return handleCourseList({
+      return await handleCourseList({
         sessionSupabase,
         studentId,
         user,
@@ -143,179 +150,19 @@ async function handleCourseList({
     );
   }
 
-  const normalizedWsId = await normalizeWorkspaceId(
-    parsed.data.wsId,
-    sessionSupabase
-  );
+  const subject = await resolveTulearnSubject({
+    requestSupabase: sessionSupabase,
+    studentId: parsed.data.studentId,
+    user,
+    wsId: parsed.data.wsId,
+  });
   const sbAdmin = await createAdminClient();
-  let progressUserId = user.id;
-  let hasAccess = false;
 
-  if (parsed.data.studentId) {
-    const subject = await resolveTulearnSubject({
-      requestSupabase: sessionSupabase,
-      studentId: parsed.data.studentId,
-      user,
-      wsId: normalizedWsId,
-    });
-    progressUserId = subject.studentPlatformUserId;
-    hasAccess = true;
-  }
-
-  if (!hasAccess) {
-    const selfStudent = await resolveStudentForPlatformUser({
-      db: sbAdmin,
-      platformUserId: user.id,
-      wsId: normalizedWsId,
-    });
-    hasAccess = Boolean(selfStudent);
-  }
-
-  // Verify workspace membership
-  if (!hasAccess) {
-    const { data: membership, error: membershipError } = await sessionSupabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .eq('type', 'MEMBER')
-      .maybeSingle();
-
-    if (membershipError) {
-      throw courseRouteError(
-        'workspace_membership_lookup_failed',
-        membershipError
-      );
-    }
-    hasAccess = Boolean(membership);
-  }
-
-  if (!hasAccess) {
-    const { data: guest, error: guestError } = await sessionSupabase
-      .from('workspace_guests')
-      .select('id')
-      .eq('ws_id', normalizedWsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (guestError) {
-      throw courseRouteError('workspace_guest_lookup_failed', guestError);
-    }
-    if (guest) {
-      const { data: permission, error: permissionError } = await sessionSupabase
-        .from('workspace_guest_permissions')
-        .select('id')
-        .eq('guest_id', guest.id)
-        .eq('permission', 'course:view')
-        .eq('enable', true)
-        .limit(1)
-        .maybeSingle();
-
-      if (permissionError) {
-        throw courseRouteError(
-          'workspace_guest_permission_lookup_failed',
-          permissionError
-        );
-      }
-      hasAccess = Boolean(permission);
-    }
-  }
-
-  if (!hasAccess) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  // Fetch workspace groups first, then scope module lookup to those groups.
-  const { data: groups, error: groupsError } = await sbAdmin
-    .from('workspace_user_groups')
-    .select('id, name, description')
-    .eq('ws_id', normalizedWsId)
-    .eq('is_course_published', true)
-    .order('name', { ascending: true });
-
-  if (groupsError)
-    throw courseRouteError('course_groups_lookup_failed', groupsError);
-
-  const workspaceGroupIds = (groups ?? []).map((group) => group.id);
-
-  if (!workspaceGroupIds.length) {
-    return NextResponse.json({ courses: [] });
-  }
-
-  const { data: modules, error: modulesError } = await sbAdmin
-    .from('workspace_course_modules')
-    .select('id, group_id')
-    .in('group_id', workspaceGroupIds)
-    .eq('is_published', true);
-
-  if (modulesError) {
-    throw courseRouteError('course_modules_lookup_failed', modulesError);
-  }
-
-  // Count modules per course
-  const moduleCountByCourse = new Map<string, number>();
-  for (const mod of modules ?? []) {
-    moduleCountByCourse.set(
-      mod.group_id,
-      (moduleCountByCourse.get(mod.group_id) ?? 0) + 1
-    );
-  }
-
-  // Get completion status for this user
-  const allModuleIds = (modules ?? []).map((m) => m.id);
-  const { data: completions, error: completionsError } =
-    allModuleIds.length > 0
-      ? await sbAdmin
-          .from('course_module_completion_status')
-          .select('module_id')
-          .eq('user_id', progressUserId)
-          .eq('completion_status', true)
-          .in('module_id', allModuleIds)
-      : { data: [], error: null };
-
-  if (completionsError) {
-    throw courseRouteError(
-      'course_completions_lookup_failed',
-      completionsError
-    );
-  }
-
-  const completedModuleIds = new Set(
-    (completions ?? []).map((r) => r.module_id)
-  );
-
-  // Build module-to-course mapping for completion counting
-  const moduleToCourse = new Map<string, string>();
-  for (const mod of modules ?? []) {
-    moduleToCourse.set(mod.id, mod.group_id);
-  }
-
-  const completedByCourse = new Map<string, number>();
-  for (const moduleId of completedModuleIds) {
-    const courseId = moduleToCourse.get(moduleId);
-    if (courseId) {
-      completedByCourse.set(
-        courseId,
-        (completedByCourse.get(courseId) ?? 0) + 1
-      );
-    }
-  }
-
-  const courses = (groups ?? []).map((group) => {
-    const totalModules = moduleCountByCourse.get(group.id) ?? 0;
-    const completedModules = completedByCourse.get(group.id) ?? 0;
-    const progress = totalModules
-      ? Math.round((completedModules / totalModules) * 100)
-      : 0;
-
-    return {
-      id: group.id,
-      name: group.name,
-      description: group.description,
-      totalModules,
-      completedModules,
-      progress,
-    };
+  const courses = await getLearnerCourseSummaries({
+    db: sbAdmin,
+    studentPlatformUserId: subject.studentPlatformUserId,
+    studentWorkspaceUserId: subject.studentWorkspaceUserId,
+    wsId: subject.wsId,
   });
 
   return NextResponse.json({ courses });
@@ -323,12 +170,18 @@ async function handleCourseList({
 
 // ─── Get detailed content for a single course ────────────────────────────────
 
-async function handleCourseDetail(
-  courseId: string,
-  userId: string,
-  sessionSupabase: TypedSupabaseClient
-) {
-  const parsed = DetailQuerySchema.safeParse({ courseId });
+async function handleCourseDetail({
+  courseId,
+  sessionSupabase,
+  studentId,
+  user,
+}: {
+  courseId: string;
+  sessionSupabase: TypedSupabaseClient;
+  studentId?: string;
+  user: SupabaseUser;
+}) {
+  const parsed = DetailQuerySchema.safeParse({ courseId, studentId });
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Invalid courseId', errors: parsed.error.issues },
@@ -353,23 +206,72 @@ async function handleCourseDetail(
     return NextResponse.json({ error: 'Course not found' }, { status: 404 });
   }
 
-  // Check workspace membership
-  const { data: membership, error: membershipError } = await sessionSupabase
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', group.ws_id)
-    .eq('user_id', userId)
-    .eq('type', 'MEMBER')
-    .maybeSingle();
+  let hasAccess = false;
 
-  if (membershipError) {
-    throw courseRouteError(
-      'workspace_membership_lookup_failed',
-      membershipError
-    );
+  if (parsed.data.studentId) {
+    const subject = await resolveTulearnSubject({
+      requestSupabase: sessionSupabase,
+      studentId: parsed.data.studentId,
+      user,
+      wsId: group.ws_id,
+    });
+    const course = await getLearnerCourseDetail({
+      courseId: groupId,
+      db: sbAdmin,
+      studentPlatformUserId: subject.studentPlatformUserId,
+      studentWorkspaceUserId: subject.studentWorkspaceUserId,
+      wsId: subject.wsId,
+    });
+    if (!course) {
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 });
+    }
+    hasAccess = true;
   }
 
-  let hasAccess = Boolean(membership);
+  if (!hasAccess) {
+    const selfStudent = await resolveStudentForPlatformUser({
+      db: sbAdmin,
+      platformUserId: user.id,
+      wsId: group.ws_id,
+    });
+
+    if (selfStudent) {
+      const course = await getLearnerCourseDetail({
+        courseId: groupId,
+        db: sbAdmin,
+        studentPlatformUserId: user.id,
+        studentWorkspaceUserId: selfStudent.workspace_user_id,
+        wsId: group.ws_id,
+      });
+      if (!course) {
+        return NextResponse.json(
+          { error: 'Course not found' },
+          { status: 404 }
+        );
+      }
+      hasAccess = true;
+    }
+  }
+
+  // Check workspace membership
+  if (!hasAccess) {
+    const { data: membership, error: membershipError } = await sessionSupabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', group.ws_id)
+      .eq('user_id', user.id)
+      .eq('type', 'MEMBER')
+      .maybeSingle();
+
+    if (membershipError) {
+      throw courseRouteError(
+        'workspace_membership_lookup_failed',
+        membershipError
+      );
+    }
+
+    hasAccess = Boolean(membership);
+  }
 
   // Fallback: check guest permissions
   if (!hasAccess) {
@@ -377,7 +279,7 @@ async function handleCourseDetail(
       .from('workspace_guests')
       .select('id')
       .eq('ws_id', group.ws_id)
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (guestError) {
