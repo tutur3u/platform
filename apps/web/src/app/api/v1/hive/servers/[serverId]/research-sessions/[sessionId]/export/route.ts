@@ -30,6 +30,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     if (!access.ok) return access.response;
 
     const researchExport = await getHiveResearchSessionExport({
+      isAdmin: access.access.isAdmin,
       serverId,
       sessionId,
     });

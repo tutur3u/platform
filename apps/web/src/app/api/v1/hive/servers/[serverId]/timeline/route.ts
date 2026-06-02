@@ -39,6 +39,7 @@ export async function GET(request: NextRequest, { params }: Params) {
           trigger: nullableParam(request, 'trigger'),
           workflowId: nullableParam(request, 'workflowId'),
         },
+        isAdmin: access.access.isAdmin,
         serverId,
       });
 
