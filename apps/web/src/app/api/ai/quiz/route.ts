@@ -27,7 +27,6 @@ function extractTextFromContent(content: any): string {
 async function cleanupQuizzes(quizIds: string[], sbAdmin: TypedSupabaseClient) {
   if (quizIds.length === 0) return;
   try {
-    await sbAdmin.from('quiz_options').delete().in('quiz_id', quizIds);
     await sbAdmin.from('course_module_quizzes').delete().in('quiz_id', quizIds);
     await sbAdmin.from('workspace_quizzes').delete().in('id', quizIds);
   } catch (error) {
@@ -66,7 +65,13 @@ export const POST = withSessionAuth(
         );
       }
 
-      const { lessonId, wsId, context: teacherContext } = parsedBody.data;
+      const {
+        lessonId,
+        wsId,
+        context: teacherContext,
+        questionType,
+        count,
+      } = parsedBody.data;
 
       // Require teach workspace access
       const access = await requireTeachWorkspaceAccess({
@@ -109,12 +114,17 @@ export const POST = withSessionAuth(
         : '';
       const lessonInfo = `Lesson Title: ${lesson.name}\n\nLesson Content:\n${lessonText}\n\nExtra Content:\n${extraText}`;
 
-      const trimmedTeacherContext = teacherContext?.trim();
-      const promptText = `Analyze the following lesson content and create structured quiz questions.${
-        trimmedTeacherContext
-          ? `\n\nAdditional context/instructions: ${trimmedTeacherContext}`
-          : ''
-      }\n\nLesson Information:\n${lessonInfo}`;
+      const typeInstruction =
+        questionType === 'mix'
+          ? 'Generate a mix of question types (multiple_choice, true_false, matching, ordering).'
+          : `Generate ONLY questions of type "${questionType}".`;
+
+      const promptText = `Analyze the following lesson content and create exactly ${count} structured quiz questions.
+${typeInstruction}
+
+${teacherContext?.trim() ? `Additional context/instructions: ${teacherContext.trim()}\n` : ''}
+Lesson Information:
+${lessonInfo}`;
 
       // Generate structured quizzes via AI SDK
       const { object } = await generateObject({
@@ -142,16 +152,38 @@ export const POST = withSessionAuth(
       const createdQuizIds: string[] = [];
 
       try {
-        // Insert quizzes
+        // Map and insert quizzes into database
+        const quizzesPayload = object.quizzes.map((quiz) => {
+          let content: any = {};
+          let answer: any = {};
+
+          if (quiz.type === 'true_false') {
+            content = {};
+            answer = { correct: quiz.correct_boolean ?? true };
+          } else if (quiz.type === 'multiple_choice') {
+            content = { options: quiz.options ?? [] };
+            answer = { correctIndex: quiz.correct_option_index ?? 0 };
+          } else if (quiz.type === 'matching') {
+            content = { pairs: quiz.matching_pairs ?? [] };
+            answer = { pairs: quiz.matching_pairs ?? [] };
+          } else if (quiz.type === 'ordering') {
+            content = { items: quiz.ordering_items ?? [] };
+            answer = { order: quiz.ordering_items ?? [] };
+          }
+
+          return {
+            question: quiz.question,
+            type: quiz.type,
+            content,
+            answer,
+            score: quiz.score,
+            ws_id: normalizedWsId,
+          };
+        });
+
         const { data: createdQuizzes, error: quizError } = await sbAdmin
           .from('workspace_quizzes')
-          .insert(
-            object.quizzes.map((quiz) => ({
-              question: quiz.question,
-              score: quiz.score,
-              ws_id: normalizedWsId,
-            }))
-          )
+          .insert(quizzesPayload)
           .select('id');
 
         if (quizError || !createdQuizzes) {
@@ -171,28 +203,6 @@ export const POST = withSessionAuth(
           );
 
         if (linkError) throw linkError;
-
-        // Insert quiz options
-        const quizOptions = object.quizzes.flatMap((quiz, quizIndex) => {
-          const createdQuiz = createdQuizzes[quizIndex];
-          if (!createdQuiz) {
-            throw new Error('Generated quiz option mapping failed');
-          }
-          return quiz.quiz_options.map((option) => ({
-            quiz_id: createdQuiz.id,
-            value: option.value,
-            is_correct: option.is_correct,
-            explanation: option.explanation ?? null,
-          }));
-        });
-
-        if (quizOptions.length) {
-          const { error: optionsError } = await sbAdmin
-            .from('quiz_options')
-            .insert(quizOptions);
-
-          if (optionsError) throw optionsError;
-        }
 
         return NextResponse.json({
           success: true,

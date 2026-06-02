@@ -17,7 +17,11 @@ export function useQuizzes(wsId: string, lessonId: string) {
   });
 
   const generateMutation = useMutation({
-    mutationFn: () => generateQuizFromLesson(wsId, { lessonId }),
+    mutationFn: (payload: {
+      questionType?: 'multiple_choice' | 'true_false' | 'matching' | 'ordering' | 'mix';
+      count?: number;
+      context?: string;
+    } = {}) => generateQuizFromLesson(wsId, { lessonId, ...payload }),
     onSuccess: (res) => {
       if (res.success) {
         toast.success(t('ws-quizzes.generation_success'));

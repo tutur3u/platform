@@ -3,53 +3,36 @@ import { z } from 'zod';
 export const QUIZ_GENERATION_PROMPT = `You are an expert Academic Curriculum Designer and Subject Matter Expert. Your goal is to transform lesson content into a set of high-quality, structured, and specific quizzes.
 
 ### GUIDELINES FOR DEPTH & SPECIFICITY:
-1. **Rigor and Fact-Driven Content:** Do NOT write generic questions or high-level definitions. If the lesson content contains code snippets, formulas, specific rules, steps, or constraints, incorporate them directly into the quiz questions and option explanations.
+1. **Rigor and Fact-Driven Content:** Do NOT write generic questions or high-level definitions. If the lesson content contains code snippets, formulas, specific rules, steps, or constraints, incorporate them directly into the quiz questions.
 2. **Pedagogy:** Ensure each question tests a clear learning objective based on the lesson content.
 3. **Format Options:**
-   - Every quiz must have a clear question and a score (usually 1-10, default to 1).
-   - Each quiz must have multiple options (between 2 and 6 options).
-   - At least one option MUST be marked as correct.
-   - For every option, provide a detailed and constructive explanation of why it is correct or incorrect.
+   - Generate ONLY the question types requested.
+   - At least one correct answer must be specified for each question.
+   - Include clear explanations for the answers if possible.`;
 
-### FORMATTING:
-- Output must be strictly valid JSON that conforms to the QuizGenerationSchema.
-- Do not include conversational filler.`;
-
-export const QuizOptionSchema = z.object({
-  value: z.string().describe('The text of this answer option.'),
-  is_correct: z
-    .boolean()
-    .describe('Whether this option is the correct answer.'),
-  explanation: z
-    .string()
-    .nullable()
-    .describe('Brief explanation of why this option is correct or incorrect.')
-    .optional(),
-});
-
-export const QuizSchema = z.object({
+export const GeneratedQuizSchema = z.object({
   question: z.string().describe('The quiz question text.'),
-  score: z
-    .number()
-    .int()
-    .positive()
-    .describe('Point value for this question (typically 1-10).')
-    .default(1),
-  quiz_options: z
-    .array(QuizOptionSchema)
-    .min(2)
-    .max(6)
-    .describe(
-      'Answer options for this quiz question. At least one must be correct.'
-    )
-    .refine((options) => options.some((option) => option.is_correct), {
-      error: 'At least one quiz option must be marked as correct.',
-    }),
+  type: z.enum(['multiple_choice', 'true_false', 'matching', 'ordering']).describe('The question type.'),
+  score: z.number().int().positive().default(1),
+  // Multiple choice fields
+  options: z.array(z.string()).min(2).max(6).optional().describe('List of options for multiple choice questions. Required if type is multiple_choice.'),
+  correct_option_index: z.number().int().nonnegative().optional().describe('Index of the correct option for multiple choice (0-indexed). Required if type is multiple_choice.'),
+  // True/false fields
+  correct_boolean: z.boolean().optional().describe('Correct answer for true/false questions. Required if type is true_false.'),
+  // Matching fields
+  matching_pairs: z.array(z.object({
+    left: z.string().describe('Left item'),
+    right: z.string().describe('Right matched item'),
+  })).optional().describe('Pairs of items that match each other. Required if type is matching.'),
+  // Ordering fields
+  ordering_items: z.array(z.string()).min(2).optional().describe('Items in their correct ordered sequence. Required if type is ordering.'),
+  // Universal explanation
+  explanation: z.string().optional().describe('Explanation of the correct answer.'),
 });
 
 export const QuizGenerationSchema = z.object({
   quizzes: z
-    .array(QuizSchema)
+    .array(GeneratedQuizSchema)
     .min(1)
     .describe('A list of quizzes generated based on the lesson content.'),
 });
@@ -58,4 +41,6 @@ export const GenerateQuizRequestSchema = z.object({
   lessonId: z.string().uuid(),
   wsId: z.string().min(1),
   context: z.string().max(4000).optional(),
+  questionType: z.enum(['multiple_choice', 'true_false', 'matching', 'ordering', 'mix']).default('mix'),
+  count: z.number().int().min(1).max(20).default(5),
 });
