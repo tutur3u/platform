@@ -1067,6 +1067,11 @@ instead of host ports in the Cloudflare service URL. Keep `cms.tuturuuu.com` and
 other satellite app hostnames on Vercel unless those apps are explicitly moved
 into this Docker stack.
 
+Production compose binds host-published web, Hive, Meet, and Redis ports to
+`127.0.0.1` only. Do not remove that loopback prefix during blue/green
+migration; public exposure should go through Cloudflare Tunnel or another
+controlled frontend, not the staged Docker host ports.
+
 When blue/green is deployed with `--with-cloudflared`, the watcher receives
 `DOCKER_WEB_WITH_CLOUDFLARED=1` so future auto-deploys keep the tunnel profile
 active and do not remove the `cloudflared` container as an orphan.
@@ -1270,15 +1275,16 @@ Dashboard details:
   Optional local LLM support runs behind the `hive-ollama` profile and is
   disabled unless operators enable the profile and Hive settings enable the
   exact `gemma4` model.
-  Production compose publishes **`7814:7814`** from `web-proxy`, not from a
-  direct Hive container, so Cloudflare tunnel traffic to `localhost:7814` always
-  reaches the currently promoted Hive color.
-  Deploys verify that the running `web-proxy` container has both host bindings
-  (`7803` and `7814`) and that its running image matches the resolved Compose
-  image before reusing it; if an older proxy was created before Hive moved
-  behind blue/green or before the nginx image pin changed, the next deploy
-  force-recreates the proxy so the host-level Cloudflare Tunnel route can reach
-  Hive on the expected proxy runtime.
+  Production compose publishes **`127.0.0.1:7814:7814`** from `web-proxy`, not
+  from a direct Hive container, so host-local or Cloudflare tunnel traffic to
+  `localhost:7814` always reaches the currently promoted Hive color without
+  exposing staged migration ports on every host interface.
+  Deploys verify that the running `web-proxy` container has the required
+  loopback host bindings (`7803`, `7814`, and `7816`) and that its running image
+  matches the resolved Compose image before reusing it; if an older proxy was
+  created before Hive moved behind blue/green or before the nginx image pin
+  changed, the next deploy force-recreates the proxy so the host-level
+  Cloudflare Tunnel route can reach Hive on the expected proxy runtime.
   The Hive color services use the same Supabase env source as `apps/web`:
   runtime env files are shared, and production image builds mount the `web_env`
   BuildKit secret so hidden-locale auth pages can prerender with the platform

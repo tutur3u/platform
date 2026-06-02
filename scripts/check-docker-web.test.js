@@ -643,8 +643,27 @@ test('validateDockerProdCompose reports missing version badge metadata env wirin
   assert.match(errors, /PLATFORM_BUILD_COMMIT_HASH/);
 });
 
-test('validateDockerProdCompose rejects public Redis mappings and fallback token', () => {
+test('validateDockerProdCompose rejects public production port mappings and fallback token', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replace(
+      '"127.0.0.1:$' + '{' + 'DOCKER_WEB_DIRECT_HOST_PORT:-7803' + '}:7803"',
+      '"$' + '{' + 'DOCKER_WEB_DIRECT_HOST_PORT:-7803' + '}:7803"'
+    )
+    .replace(
+      '"127.0.0.1:$' + '{' + 'DOCKER_WEB_PROXY_HOST_PORT:-7803' + '}:7803"',
+      '"$' + '{' + 'DOCKER_WEB_PROXY_HOST_PORT:-7803' + '}:7803"'
+    )
+    .replace(
+      '"127.0.0.1:$' + '{' + 'DOCKER_HIVE_PROXY_HOST_PORT:-7814' + '}:7814"',
+      '"$' + '{' + 'DOCKER_HIVE_PROXY_HOST_PORT:-7814' + '}:7814"'
+    )
+    .replace(
+      '"127.0.0.1:$' +
+        '{' +
+        'DOCKER_MEET_REALTIME_PROXY_HOST_PORT:-7816' +
+        '}:7816"',
+      '"$' + '{' + 'DOCKER_MEET_REALTIME_PROXY_HOST_PORT:-7816' + '}:7816"'
+    )
     .replace(
       '"127.0.0.1:$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379"',
       '"$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379"'
@@ -666,6 +685,13 @@ test('validateDockerProdCompose rejects public Redis mappings and fallback token
 
   const errors = validateDockerProdCompose(composeContent).join('\n');
 
+  assert.match(errors, /production direct web port must bind to 127\.0\.0\.1/);
+  assert.match(errors, /production web proxy port must bind to 127\.0\.0\.1/);
+  assert.match(errors, /production Hive proxy port must bind to 127\.0\.0\.1/);
+  assert.match(
+    errors,
+    /production Meet realtime proxy port must bind to 127\.0\.0\.1/
+  );
   assert.match(
     errors,
     /production Redis native port must bind to 127\.0\.0\.1/

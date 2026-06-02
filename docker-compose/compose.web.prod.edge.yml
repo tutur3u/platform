@@ -1,7 +1,11 @@
 services:
   web-proxy:
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status || exit 1",
+        ]
       interval: 30s
       timeout: 5s
       start_period: 10s
@@ -9,22 +13,16 @@ services:
     image: nginx:1.31.0-alpine
     init: true
     ports:
-      - "${DOCKER_WEB_PROXY_HOST_PORT:-7803}:7803"
-      - "${DOCKER_HIVE_PROXY_HOST_PORT:-7814}:7814"
-      - "${DOCKER_MEET_REALTIME_PROXY_HOST_PORT:-7816}:7816"
+      - "127.0.0.1:${DOCKER_WEB_PROXY_HOST_PORT:-7803}:7803"
+      - "127.0.0.1:${DOCKER_HIVE_PROXY_HOST_PORT:-7814}:7814"
+      - "127.0.0.1:${DOCKER_MEET_REALTIME_PROXY_HOST_PORT:-7816}:7816"
     volumes:
       - ../tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
   cloudflared:
     profiles: ["cloudflared"]
     command:
-      [
-        "tunnel",
-        "--no-autoupdate",
-        "run",
-        "--token",
-        "${CLOUDFLARED_TOKEN:-}",
-      ]
+      ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARED_TOKEN:-}"]
     depends_on:
       web-proxy:
         condition: service_healthy
