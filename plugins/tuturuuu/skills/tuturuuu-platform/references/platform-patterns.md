@@ -50,6 +50,11 @@ shared-package changes.
 - Admin-backed user-group course module routes must verify workspace
   membership, require `manage_users`, validate the group with `ws_id`, and keep
   update/delete predicates bound to the module's original `group_id`.
+- Personal task-board external reads can hydrate candidate source tasks with an
+  admin client, but they must re-filter every source workspace through the
+  request user's `workspace_members.type = 'MEMBER'` rows before returning
+  default or placed external cards. Guest source membership is not sufficient
+  for personal-board task data.
 - Forward request auth when server-side loaders call internal API helpers.
 - Treat workspace/resource IDs embedded in rich-text documents, Yjs payloads,
   mention nodes, or other user-authored content as untrusted hints. Resolve

@@ -323,6 +323,11 @@ dropping them from the schedule.
 Personal task boards can reference tasks from other workspaces without cloning
 or moving the source task. Assigned tasks from accessible source workspaces
 appear by default in a virtual `External tasks` lane on each personal board.
+The tasks API may use the server-side admin client to hydrate candidate source
+tasks, but it must filter those rows through the current user's source
+`workspace_members` rows with `type = 'MEMBER'` before returning personal
+default or placed external cards. A guest row in the source workspace is not
+enough to reveal task data through the personal board.
 
 The virtual lane is presentation-only: it has no `task_lists` row, no list
 actions, no create-task form, no list reordering, and can be collapsed per board
