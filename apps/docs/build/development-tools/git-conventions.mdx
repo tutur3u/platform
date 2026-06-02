@@ -122,6 +122,10 @@ Tuturuuu uses the following branch types:
 | `dependabot` | Automated dependency update branches   | `dependabot/npm_and_yarn/next`  |
 | `claude`     | AI-assisted scratch or experimental PR | `claude/rate-limit-audit`       |
 
+Release Please bot branches are also accepted with the
+`release-please--branches--` prefix. Do not create human-authored branches with
+that prefix.
+
 ### Naming Rules
 
 1. Use lowercase alphanumeric characters and hyphens
@@ -186,21 +190,28 @@ Conventional commits help determine the next semantic version for packages:
 - `feat:` commits trigger a MINOR increment (1.0.0 → 1.1.0)
 - Commits with `BREAKING CHANGE` trigger a MAJOR increment (1.0.0 → 2.0.0)
 
-### 3. Automated Package Publishing
+### 3. Automated Release PRs And Package Publishing
 
-In our CI workflows, package publishing is automatically triggered when a PR with specific commit types is merged. For example, our `release-types-package.yaml` workflow triggers when:
+Release Please reads Conventional Commits from `production`, updates
+`release-please-config.json` packages through `.release-please-manifest.json`,
+and opens one combined release PR with package versions and changelogs. Package
+publish workflows do not generate versions; they publish only after a
+release-please version bump lands on `production`. For example,
+`release-types-package.yaml` triggers from production changes to
+`packages/types/package.json` or `packages/types/jsr.json`:
 
 ```yaml
 on:
-  pull_request:
-    types: [closed]
+  push:
+    branches: [production]
     paths:
-      - 'packages/types/package.json'
+      - "packages/types/package.json"
+      - "packages/types/jsr.json"
   # ...
 
 jobs:
   check-version-bump:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@tuturuuu/types)')
+    if: github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
     # ...
 ```
 
@@ -248,10 +259,11 @@ jobs:
       - name: Check branch name
         run: |
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          if ! [[ $BRANCH_NAME =~ ^(feature|feat|fix|bugfix|hotfix|release|chore|docs|style|refactor|perf|dependabot|claude)/.+ ]]; then
+          if ! [[ $BRANCH_NAME =~ ^(feature|feat|fix|bugfix|hotfix|release|chore|docs|style|refactor|perf|dependabot|claude)/.+|^release-please--branches--.+ ]]; then
             echo "❌ Branch name '$BRANCH_NAME' doesn't follow the conventional branch format."
             echo "Branch name should be in format: type/description"
             echo "Allowed types: feature, feat, fix, bugfix, hotfix, release, chore, docs, style, refactor, perf, dependabot, claude"
+            echo "Release Please bot branches are also allowed with the release-please--branches-- prefix."
             exit 1
           else
             echo "✅ Branch name follows convention: $BRANCH_NAME"

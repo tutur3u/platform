@@ -18,6 +18,7 @@ export const ci = {
   'release-ai-package.yaml': true,
   'release-sdk-package.yaml': true,
   'release-supabase-package.yaml': true,
+  'release-please.yaml': true,
   'release-types-package.yaml': true,
   'release-typescript-config-package.yaml': true,
   'release-ui-package.yaml': true,

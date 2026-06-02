@@ -1,0 +1,320 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "node",
+  "bootstrap-sha": "c5a2f5935cfd8a814a8946742cdea404ba609f23",
+  "always-update": true,
+  "include-component-in-tag": true,
+  "include-v-in-tag": true,
+  "separate-pull-requests": false,
+  "tag-separator": "-",
+  "group-pull-request-title-pattern": "chore(release): release ${branch}",
+  "packages": {
+    ".": {
+      "component": "platform",
+      "package-name": "platform",
+      "release-type": "simple",
+      "version-file": "platform-version.txt",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "packages/utils/src/platform-release.ts"
+        },
+        {
+          "type": "generic",
+          "path": "packages/utils/src/platform-release.test.ts"
+        }
+      ]
+    },
+    "apps/apps": {
+      "component": "apps",
+      "package-name": "@tuturuuu/apps"
+    },
+    "apps/calendar": {
+      "component": "calendar",
+      "package-name": "@tuturuuu/calendar"
+    },
+    "apps/chat": {
+      "component": "chat",
+      "package-name": "@tuturuuu/chat"
+    },
+    "apps/cms": {
+      "component": "cms",
+      "package-name": "@tuturuuu/cms"
+    },
+    "apps/database": {
+      "component": "database",
+      "package-name": "@tuturuuu/database"
+    },
+    "apps/drive": {
+      "component": "drive",
+      "package-name": "@tuturuuu/drive"
+    },
+    "apps/external": {
+      "component": "external",
+      "package-name": "@tuturuuu/external"
+    },
+    "apps/finance": {
+      "component": "finance",
+      "package-name": "@tuturuuu/finance"
+    },
+    "apps/hive": {
+      "component": "hive",
+      "package-name": "@tuturuuu/hive"
+    },
+    "apps/hive-realtime": {
+      "component": "hive-realtime",
+      "package-name": "@tuturuuu/hive-realtime"
+    },
+    "apps/inventory": {
+      "component": "inventory",
+      "package-name": "@tuturuuu/inventory"
+    },
+    "apps/learn": {
+      "component": "learn",
+      "package-name": "@tuturuuu/learn"
+    },
+    "apps/mail": {
+      "component": "mail",
+      "package-name": "@tuturuuu/mail"
+    },
+    "apps/meet": {
+      "component": "meet",
+      "package-name": "@tuturuuu/meet"
+    },
+    "apps/mind": {
+      "component": "mind",
+      "package-name": "@tuturuuu/mind"
+    },
+    "apps/mobile": {
+      "component": "mobile",
+      "package-name": "mobile",
+      "release-type": "dart"
+    },
+    "apps/nova": {
+      "component": "nova",
+      "package-name": "@tuturuuu/nova"
+    },
+    "apps/playground": {
+      "component": "playground",
+      "package-name": "@tuturuuu/playground"
+    },
+    "apps/qr": {
+      "component": "qr",
+      "package-name": "@tuturuuu/qr"
+    },
+    "apps/redis": {
+      "component": "redis",
+      "package-name": "@tuturuuu/redis"
+    },
+    "apps/rewise": {
+      "component": "rewise",
+      "package-name": "@tuturuuu/rewise"
+    },
+    "apps/shortener": {
+      "component": "shortener",
+      "package-name": "@tuturuuu/shortener"
+    },
+    "apps/tasks": {
+      "component": "tasks",
+      "package-name": "@tuturuuu/tasks"
+    },
+    "apps/teach": {
+      "component": "teach",
+      "package-name": "@tuturuuu/teach"
+    },
+    "apps/track": {
+      "component": "track",
+      "package-name": "@tuturuuu/track"
+    },
+    "packages/ai": {
+      "component": "ai",
+      "package-name": "@tuturuuu/ai",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/apis": {
+      "component": "apis",
+      "package-name": "@tuturuuu/apis",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/auth": {
+      "component": "auth",
+      "package-name": "@tuturuuu/auth"
+    },
+    "packages/email-service": {
+      "component": "email-service",
+      "package-name": "@tuturuuu/email-service"
+    },
+    "packages/games": {
+      "component": "games",
+      "package-name": "@tuturuuu/games",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/google": {
+      "component": "google",
+      "package-name": "@tuturuuu/google",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/hive-ui": {
+      "component": "hive-ui",
+      "package-name": "@tuturuuu/hive-ui"
+    },
+    "packages/hooks": {
+      "component": "hooks",
+      "package-name": "@tuturuuu/hooks"
+    },
+    "packages/icons": {
+      "component": "icons",
+      "package-name": "@tuturuuu/icons",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/internal-api": {
+      "component": "internal-api",
+      "package-name": "@tuturuuu/internal-api"
+    },
+    "packages/masonry": {
+      "component": "masonry",
+      "package-name": "@tuturuuu/masonry"
+    },
+    "packages/microsoft": {
+      "component": "microsoft",
+      "package-name": "@tuturuuu/microsoft"
+    },
+    "packages/mind-ui": {
+      "component": "mind-ui",
+      "package-name": "@tuturuuu/mind-ui"
+    },
+    "packages/offline": {
+      "component": "offline",
+      "package-name": "@tuturuuu/offline"
+    },
+    "packages/payment": {
+      "component": "payment",
+      "package-name": "@tuturuuu/payment"
+    },
+    "packages/realtime": {
+      "component": "realtime",
+      "package-name": "@tuturuuu/realtime"
+    },
+    "packages/satellite": {
+      "component": "satellite",
+      "package-name": "@tuturuuu/satellite"
+    },
+    "packages/sdk": {
+      "component": "sdk",
+      "package-name": "tuturuuu"
+    },
+    "packages/supabase": {
+      "component": "supabase",
+      "package-name": "@tuturuuu/supabase",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/transactional": {
+      "component": "transactional",
+      "package-name": "@tuturuuu/transactional"
+    },
+    "packages/trigger": {
+      "component": "trigger",
+      "package-name": "@tuturuuu/trigger"
+    },
+    "packages/turnstile": {
+      "component": "turnstile",
+      "package-name": "@tuturuuu/turnstile"
+    },
+    "packages/types": {
+      "component": "types",
+      "package-name": "@tuturuuu/types",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/typescript-config": {
+      "component": "typescript-config",
+      "package-name": "@tuturuuu/typescript-config",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/ui": {
+      "component": "ui",
+      "package-name": "@tuturuuu/ui",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/utils": {
+      "component": "utils",
+      "package-name": "@tuturuuu/utils",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/vercel": {
+      "component": "vercel",
+      "package-name": "@tuturuuu/vercel",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "jsr.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    },
+    "packages/workflows": {
+      "component": "workflows",
+      "package-name": "@tuturuuu/workflows"
+    }
+  }
+}

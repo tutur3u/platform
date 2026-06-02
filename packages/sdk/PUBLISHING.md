@@ -111,26 +111,24 @@ Check the package on npm:
 
 ### Option 1: GitHub Actions (npm Trusted Publishing)
 
-The repository uses `.github/workflows/release-sdk-package.yaml` to publish the
-SDK automatically to npm when a push to `production` changes
-`packages/sdk/package.json` or the release workflow itself. The workflow can also
-be dispatched manually to catch up a version that already landed on
-`production`. Manual dispatches from any other ref are rejected before
-dependency installation, packaging, or npm trusted publishing can run. It runs
-the SDK test suite, checks whether the exact package version is already present
-on npm, and prepares a package tarball with `npm pack` outside the
-trusted-publish job. The npm-version check makes workflow changes and manual
-retries idempotent: if `tuturuuu@<version>` already exists, the publish job is
-skipped.
+The repository uses `.github/workflows/release-please.yaml` to generate SDK
+version and changelog PRs from Conventional Commits on `production`. The SDK is
+tracked as the `sdk` component in `release-please-config.json`, with its current
+version stored in `.release-please-manifest.json`. When a release-please PR
+lands on `production`, `.github/workflows/release-sdk-package.yaml` publishes the
+new `packages/sdk/package.json` version to npm. The publish workflow can also be
+dispatched manually to catch up a version that already landed on `production`.
+Manual dispatches from any other ref are rejected before dependency
+installation, packaging, or npm trusted publishing can run. It runs the SDK test
+suite, checks whether the exact package version is already present on npm, and
+prepares a package tarball with `npm pack` outside the trusted-publish job. The
+npm-version check makes workflow changes and manual retries idempotent: if
+`tuturuuu@<version>` already exists, the publish job is skipped.
 
-`.github/workflows/sdk-version-bump.yaml` protects that release trigger. Pull
-requests that change release-impacting SDK files without changing
-`packages/sdk/package.json` fail fast, and pushes to `production` open an
-automatic patch-version pull request when a release-impacting SDK change lands
-without a version bump. The detector is
-`scripts/ci/check-sdk-version-bump.mjs`; run it locally with
-`node scripts/ci/check-sdk-version-bump.mjs --changed-files packages/sdk/src/index.ts --mode check`
-to verify the missing-bump failure path.
+`.github/workflows/sdk-version-bump.yaml` is retired and must not be restored as
+a checksum or patch-version generator. Release Please owns SDK version bumps,
+changelog updates, tags, and GitHub releases; the SDK package workflow only
+publishes an already-landed production version.
 
 The SDK imports local workspace packages whose package exports point at
 git-ignored `dist/` output. The release workflow therefore builds
@@ -159,9 +157,12 @@ npm also generates and attaches build provenance attestations automatically.
 
 To publish a new release:
 
-1. Bump `packages/sdk/package.json`.
-2. Merge or push the version bump to `production`.
-3. If the version bump already landed without publishing, manually dispatch
+1. Land Conventional Commits for SDK changes on `production`.
+2. Let `.github/workflows/release-please.yaml` open the combined monorepo
+   release PR, then merge the PR back to `production`.
+3. Confirm `.github/workflows/release-sdk-package.yaml` publishes the new
+   `packages/sdk/package.json` version. If the version bump already landed
+   without publishing, manually dispatch
    `Release tuturuuu package` from GitHub Actions with the branch selector set
    to `production`.
 4. Make sure the npm trusted publisher entry for `tuturuuu` still points at

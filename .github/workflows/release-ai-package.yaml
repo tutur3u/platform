@@ -1,22 +1,34 @@
 name: Release @tuturuuu/ai package
 
 on:
-  pull_request:
-    types: [closed]
+  push:
+    branches: [production]
     paths:
       - "packages/ai/package.json"
       - "packages/ai/jsr.json"
+      - ".github/workflows/release-ai-package.yaml"
   workflow_dispatch:
 
 jobs:
+  reject-non-production-ref:
+    if: github.ref != 'refs/heads/production'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Reject non-production release ref
+        run: |
+          echo "::error::@tuturuuu/ai releases can only run from refs/heads/production. Current ref: ${GITHUB_REF}."
+          exit 1
+
   check-ci:
+    if: github.ref == 'refs/heads/production'
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: release-ai-package.yaml
 
   check-version-bump:
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true' && github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(@tuturuuu/ai)')
+    if: github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}

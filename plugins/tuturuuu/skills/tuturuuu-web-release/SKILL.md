@@ -14,6 +14,9 @@ change that needs the displayed badge version bumped.
 - Treat `TUTURUUU_PLATFORM_VERSION` in `@tuturuuu/utils/platform-release` as
   the displayed platform badge version. Bump it once for every authored platform
   commit, even for docs, scripts, plugin, or workflow-only changes.
+- Keep the `x-release-please-version` comments on the platform version constant
+  and matching test expectation. The monorepo release-please config also keeps
+  `platform-version.txt` aligned for the `platform` release component.
 - Do not bump `apps/web/package.json` for badge/version display unless the user
   explicitly asks for package metadata changes.
 - Preserve the account gate: only exact `@tuturuuu.com` users can see/manage the

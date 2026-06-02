@@ -55,6 +55,8 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
 - Update the Tuturuuu plugin when agent-facing CLI, validation, setup, or workflow knowledge changes.
 - Keep the displayed platform badge version bumped for every authored platform
   commit by updating `TUTURUUU_PLATFORM_VERSION` and its test expectation.
+- Do not remove the release-please annotations from the platform version lines;
+  the `platform` release component uses them with `platform-version.txt`.
 - If you created a coordination note, update it with final status, verification,
   and risks. Archive it before the final response when the status is `done` and
   no active handoff needs it in the top-level directory.

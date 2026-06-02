@@ -204,9 +204,15 @@ secret-backed Vercel workflows.
 
 Package release workflows that expose production secrets or trusted publishing
 authority must add their own ref guard before dependency installation or publish
-jobs. For the SDK release workflow, manual dispatch is only valid with the
-branch selector set to `production`; non-production refs are rejected before the
-package or publish jobs can start.
+jobs. Release Please is the only workflow that generates monorepo version and
+changelog PRs. It runs from `production`, uses
+`secrets.RELEASE_PLEASE_TOKEN` so generated PRs and releases can trigger
+downstream workflows, and rejects non-production manual dispatches before the
+write-capable release job. Package publish workflows consume release-please
+version bumps on `production`; they must not recreate checksum or PR-title
+version bump automation. For the SDK release workflow, manual dispatch is only
+valid with the branch selector set to `production`; non-production refs are
+rejected before the package or publish jobs can start.
 
 ### Newer-commit guards
 

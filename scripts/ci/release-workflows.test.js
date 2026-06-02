@@ -143,6 +143,167 @@ test('Supabase staging migration includes every local migration when pushing', (
   assert.match(deployJob, /supabase db push --include-all/);
 });
 
+test('branch name check allows release-please generated branches', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'branch-name-check.yaml'),
+    'utf8'
+  );
+
+  assert.match(workflow, /\^release-please--branches--\.\+/);
+});
+
+test('Release Please workflow is production-scoped and uses bot token', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'release-please.yaml'),
+    'utf8'
+  );
+  const rejectJob = readWorkflowJobBlock(
+    'release-please.yaml',
+    'reject-non-production-ref'
+  );
+  const checkCiJob = readWorkflowJobBlock('release-please.yaml', 'check-ci');
+  const releaseJob = readWorkflowJobBlock(
+    'release-please.yaml',
+    'release-please'
+  );
+
+  assert.match(workflow, /\n {2}push:\n {4}branches:\s*\[production\]/);
+  assert.match(workflow, /\n {2}workflow_dispatch:\n/);
+  assert.match(rejectJob, /if: github\.ref != 'refs\/heads\/production'/);
+  assert.match(rejectJob, /permissions:\s*\{\}/);
+  assert.match(
+    rejectJob,
+    /Release Please can only run from refs\/heads\/production/
+  );
+  assert.match(checkCiJob, /if: github\.ref == 'refs\/heads\/production'/);
+  assert.match(checkCiJob, /workflow_name: release-please\.yaml/);
+  assert.match(
+    releaseJob,
+    /if: github\.ref == 'refs\/heads\/production' && needs\.check-ci\.outputs\.should_run == 'true'/
+  );
+  assert.match(releaseJob, /contents:\s*write/);
+  assert.match(releaseJob, /issues:\s*write/);
+  assert.match(releaseJob, /pull-requests:\s*write/);
+  assert.match(releaseJob, /uses: googleapis\/release-please-action@v5/);
+  assert.match(releaseJob, /token: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \}\}/);
+  assert.match(releaseJob, /target-branch: production/);
+  assert.match(releaseJob, /config-file: release-please-config\.json/);
+  assert.match(releaseJob, /manifest-file: \.release-please-manifest\.json/);
+  assert.doesNotMatch(releaseJob, /secrets\.GITHUB_TOKEN/);
+});
+
+test('Release Please manifest tracks platform and workspace releases safely', () => {
+  const config = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, 'release-please-config.json'), 'utf8')
+  );
+  const manifest = JSON.parse(
+    fs.readFileSync(
+      path.join(repoRoot, '.release-please-manifest.json'),
+      'utf8'
+    )
+  );
+  const workspacePaths = ['apps', 'packages']
+    .flatMap((workspaceDir) =>
+      fs
+        .readdirSync(path.join(repoRoot, workspaceDir), {
+          withFileTypes: true,
+        })
+        .filter((dirent) => dirent.isDirectory())
+        .map((dirent) => `${workspaceDir}/${dirent.name}`)
+    )
+    .filter((workspacePath) =>
+      fs.existsSync(path.join(repoRoot, workspacePath, 'package.json'))
+    )
+    .sort();
+  const workspaceVersions = new Map(
+    workspacePaths.map((workspacePath) => {
+      const packageJson = JSON.parse(
+        fs.readFileSync(
+          path.join(repoRoot, workspacePath, 'package.json'),
+          'utf8'
+        )
+      );
+
+      return [workspacePath, packageJson.version];
+    })
+  );
+  const expectedReleasePaths = workspacePaths
+    .filter((workspacePath) => {
+      if (workspacePath === 'apps/web') return false;
+      if (workspacePath === 'apps/mobile') return true;
+
+      return Boolean(workspaceVersions.get(workspacePath));
+    })
+    .sort();
+  const configuredReleasePaths = Object.keys(config.packages)
+    .filter((workspacePath) => workspacePath !== '.')
+    .sort();
+
+  assert.equal(
+    config['bootstrap-sha'],
+    'c5a2f5935cfd8a814a8946742cdea404ba609f23'
+  );
+  assert.equal(config['always-update'], true);
+  assert.equal(config['separate-pull-requests'], false);
+  assert.equal(config['include-component-in-tag'], true);
+  assert.equal(config.plugins, undefined);
+  assert.equal(config.packages['.'].component, 'platform');
+  assert.equal(config.packages['.']['release-type'], 'simple');
+  assert.equal(config.packages['.']['version-file'], 'platform-version.txt');
+  assert.deepEqual(
+    config.packages['.']['extra-files'].map((entry) => entry.path).sort(),
+    [
+      'packages/utils/src/platform-release.test.ts',
+      'packages/utils/src/platform-release.ts',
+    ]
+  );
+  assert.equal(config.packages['apps/mobile']['release-type'], 'dart');
+  assert.equal(config.packages['apps/web'], undefined);
+  assert.equal(manifest['.'], '0.1.158');
+  assert.equal(manifest['apps/mobile'], '0.5.0');
+  assert.equal(manifest['packages/sdk'], '0.4.9');
+  assert.deepEqual(configuredReleasePaths, expectedReleasePaths);
+
+  for (const [workspacePath, version] of workspaceVersions) {
+    if (workspacePath === 'apps/mobile') {
+      const pubspec = fs.readFileSync(
+        path.join(repoRoot, workspacePath, 'pubspec.yaml'),
+        'utf8'
+      );
+      const mobileVersion = pubspec.match(
+        /^version:\s*([0-9]+\.[0-9]+\.[0-9]+)(?:\+\d+)?$/m
+      );
+
+      assert.ok(mobileVersion);
+      assert.equal(manifest[workspacePath], mobileVersion[1]);
+      continue;
+    }
+
+    if (workspacePath === 'apps/web' || !version) {
+      assert.equal(config.packages[workspacePath], undefined);
+      assert.equal(manifest[workspacePath], undefined);
+      continue;
+    }
+
+    assert.equal(manifest[workspacePath], version);
+  }
+
+  for (const workspacePath of workspacePaths) {
+    const jsrPath = path.join(repoRoot, workspacePath, 'jsr.json');
+    const packageConfig = config.packages[workspacePath];
+
+    if (!packageConfig || !fs.existsSync(jsrPath)) continue;
+
+    assert.deepEqual(packageConfig['extra-files'], [
+      {
+        type: 'json',
+        path: 'jsr.json',
+        jsonpath: '$.version',
+      },
+    ]);
+  }
+});
+
 test('E2E workflow frees runner disk before loading cached Docker images', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'e2e-tests.yaml'),
@@ -368,6 +529,84 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
         `${workflowName} must read ${secretName} from the Vercel project environment, not GitHub Actions`
       );
     }
+  }
+});
+
+test('legacy version bump generator workflows are retired', () => {
+  for (const workflowName of [
+    'check-and-bump-versions.yaml',
+    'sdk-version-bump.yaml',
+  ]) {
+    const workflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', workflowName),
+      'utf8'
+    );
+
+    assert.match(workflow, /\n {2}workflow_dispatch:\n/);
+    assert.match(workflow, /release-please\.yaml/);
+    assert.match(workflow, /permissions:\s*\{\}/);
+    assert.doesNotMatch(workflow, /\n {2}push:\n/);
+    assert.doesNotMatch(workflow, /\n {2}pull_request:\n/);
+    assert.doesNotMatch(workflow, /contents:\s*write/);
+    assert.doesNotMatch(workflow, /pull-requests:\s*write/);
+    assert.doesNotMatch(workflow, /peter-evans\/create-pull-request/);
+    assert.doesNotMatch(workflow, /check-sdk-version-bump\.mjs/);
+  }
+});
+
+test('package publish workflows release from production version bumps', () => {
+  const packageWorkflows = [
+    ['release-ai-package.yaml', 'packages/ai', '@tuturuuu/ai'],
+    [
+      'release-supabase-package.yaml',
+      'packages/supabase',
+      '@tuturuuu/supabase',
+    ],
+    ['release-types-package.yaml', 'packages/types', '@tuturuuu/types'],
+    [
+      'release-typescript-config-package.yaml',
+      'packages/typescript-config',
+      '@tuturuuu/typescript-config',
+    ],
+    ['release-ui-package.yaml', 'packages/ui', '@tuturuuu/ui'],
+  ];
+
+  for (const [workflowName, packagePath, packageName] of packageWorkflows) {
+    const workflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', workflowName),
+      'utf8'
+    );
+    const rejectJob = readWorkflowJobBlock(
+      workflowName,
+      'reject-non-production-ref'
+    );
+    const checkCiJob = readWorkflowJobBlock(workflowName, 'check-ci');
+    const checkVersionBumpJob = readWorkflowJobBlock(
+      workflowName,
+      'check-version-bump'
+    );
+
+    assert.match(workflow, /\n {2}push:\n {4}branches:\s*\[production\]/);
+    assert.match(workflow, new RegExp(`"${packagePath}/package\\.json"`));
+    assert.match(workflow, new RegExp(`"${packagePath}/jsr\\.json"`));
+    assert.match(workflow, new RegExp(`"\\.github/workflows/${workflowName}"`));
+    assert.doesNotMatch(workflow, /\n {2}pull_request:\n/);
+    assert.doesNotMatch(workflow, /github\.event\.pull_request/);
+    assert.doesNotMatch(workflow, /pull_request\.title/);
+
+    assert.match(rejectJob, /if: github\.ref != 'refs\/heads\/production'/);
+    assert.match(rejectJob, /permissions:\s*\{\}/);
+    assert.match(
+      rejectJob,
+      new RegExp(
+        `${packageName} releases can only run from refs/heads/production`
+      )
+    );
+    assert.match(checkCiJob, /if: github\.ref == 'refs\/heads\/production'/);
+    assert.match(
+      checkVersionBumpJob,
+      /if: github\.ref == 'refs\/heads\/production' && needs\.check-ci\.outputs\.should_run == 'true'/
+    );
   }
 });
 

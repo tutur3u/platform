@@ -204,6 +204,23 @@ test('workflow_dispatch bypasses affected gating', () => {
   );
 });
 
+test('release-please workflow uses static switchboard gating', () => {
+  const rootDir = createFixtureRoot();
+  const decision = assertWorkflowDecision(
+    {
+      changedFiles: ['apps/docs/build/devops/github-actions-runbook.mdx'],
+      rootDir,
+      workflowName: 'release-please.yaml',
+    },
+    true
+  );
+
+  assert.match(
+    decision.output,
+    /release-please\.yaml uses static tuturuuu\.ts gating/
+  );
+});
+
 test('disabled ci entries still skip regardless of affected status', () => {
   const output = execFileSync(
     'bun',

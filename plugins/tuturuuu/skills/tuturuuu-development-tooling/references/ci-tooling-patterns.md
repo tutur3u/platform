@@ -33,6 +33,11 @@ formatting behavior, or repo-wide verification.
 ## CI And Dependency Drift
 
 - Keep workflow Bun versions aligned with the repo `packageManager` pin.
+- Release Please is the monorepo source of truth for version/changelog PRs.
+  Keep `release-please-config.json`, `.release-please-manifest.json`,
+  `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when
+  changing release automation. Do not reintroduce checksum or PR-title package
+  version bump generators.
 - If local type-check passes but CI fails from stale incremental state, rerun
   with forced cache invalidation before changing unrelated code.
 - Do not patch unrelated packages just because `bun check` fails outside the

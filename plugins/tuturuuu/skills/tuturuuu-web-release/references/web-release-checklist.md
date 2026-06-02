@@ -8,6 +8,9 @@ Use this checklist for `apps/web` version badge and release metadata work.
   once per authored platform commit.
 - Update `packages/utils/src/platform-release.test.ts` with the new expected
   version.
+- Keep the `x-release-please-version` annotations on both platform version
+  lines. Release Please updates those annotated lines and the root
+  `platform-version.txt` file when it opens the `platform` release PR.
 - Do not edit package manifests for the displayed badge version unless the user
   asks for package metadata changes.
 
