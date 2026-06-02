@@ -51,6 +51,10 @@ shared-package changes.
   membership, require `manage_users`, validate the group with `ws_id`, and keep
   update/delete predicates bound to the module's original `group_id`.
 - Forward request auth when server-side loaders call internal API helpers.
+- Treat workspace/resource IDs embedded in rich-text documents, Yjs payloads,
+  mention nodes, or other user-authored content as untrusted hints. Resolve
+  stale content through the current route/document workspace or a server-returned
+  resource workspace, not through the embedded attribute alone.
 
 ## Translations And Navigation
 

@@ -186,7 +186,6 @@ export function TaskMentionChip({
   displayNumber,
   avatarUrl,
   subtitle,
-  workspaceId,
   className,
   editor: editorProp,
   onResolvedTaskMention,
@@ -213,8 +212,7 @@ export function TaskMentionChip({
 
     return getRouteTaskBoardIdFromPathname(window.location.pathname);
   }, []);
-  const mentionWorkspaceId = workspaceId?.trim() || undefined;
-  const resolutionWorkspaceId = mentionWorkspaceId ?? routeWsId;
+  const resolutionWorkspaceId = routeWsId;
   const isDark = useDomResolvedTheme() === 'dark';
 
   // Dialog states
@@ -249,8 +247,7 @@ export function TaskMentionChip({
   const resolvedTaskId = task?.id ?? entityId;
   const taskWorkspaceId = taskPayload?.taskWsId;
   const taskWorkspacePersonal = taskPayload?.taskWorkspacePersonal;
-  const canonicalWorkspaceId =
-    mentionWorkspaceId ?? taskWorkspaceId ?? routeWsId;
+  const canonicalWorkspaceId = taskWorkspaceId ?? routeWsId;
   const boardWorkspaceId = canonicalWorkspaceId;
 
   // Get board config - only fetch when menu opens and we have task data
