@@ -17,22 +17,28 @@ interface Props {
   params: Promise<{
     planId: string;
   }>;
+  actorUserId?: string | null;
   baseUrl: string;
 }
 
 export default async function MeetTogetherPlanDetailsPage({
+  actorUserId,
   params,
   baseUrl,
 }: Props) {
   const { planId } = await params;
 
   const platformUser = await getCurrentUser();
-  const plan = await getPlan(planId);
-  const users: PlanUser[] = await getUsers(planId);
-  const polls = await getPollsForPlan(planId);
-  const timeblocks = await getTimeBlocks(planId);
+  const plan = await getPlan(planId, { actorUserId });
 
   if (!plan) return notFound();
+
+  const canonicalPlanId = plan.id;
+  if (!canonicalPlanId) return notFound();
+
+  const users: PlanUser[] = await getUsers(canonicalPlanId);
+  const polls = await getPollsForPlan(canonicalPlanId);
+  const timeblocks = await getTimeBlocks(canonicalPlanId);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center">
