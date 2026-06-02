@@ -1,11 +1,13 @@
 import gc
 import base64
 import json
+import logging
 import os
 import subprocess
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from threading import Lock
@@ -86,6 +88,7 @@ PIPER_VOICES = {
 }
 
 app = FastAPI(title="Tuturuuu Pronunciation Assessor")
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -238,6 +241,14 @@ def get_piper_voice_paths(voice_id: str) -> tuple[str, str]:
     )
 
 
+def redact_url_for_logs(url: str) -> str:
+    parsed = urllib.parse.urlsplit(url)
+    host = parsed.hostname or ""
+    port = f":{parsed.port}" if parsed.port else ""
+    netloc = f"{host}{port}" if host else parsed.netloc.rsplit("@", 1)[-1]
+    return urllib.parse.urlunsplit((parsed.scheme, netloc, parsed.path, "", ""))
+
+
 def download_piper_asset(url: str, destination: str) -> None:
     os.makedirs(os.path.dirname(destination), exist_ok=True)
     with tempfile.NamedTemporaryFile(
@@ -261,7 +272,14 @@ def download_piper_asset(url: str, destination: str) -> None:
             os.unlink(temp_path)
         except OSError:
             pass
-        raise RuntimeError(f"Could not download Piper asset {url}: {error}") from error
+        logger.exception(
+            "Could not download Piper asset",
+            extra={
+                "destination": os.path.basename(destination),
+                "url": redact_url_for_logs(url),
+            },
+        )
+        raise RuntimeError("Could not download Piper voice asset") from error
 
 
 def ensure_piper_voice(voice_id: str) -> tuple[str, str, list[str]]:
@@ -334,10 +352,15 @@ def run_piper_tts(request: TtsRequest) -> dict[str, Any]:
         duration_ms = int((time.monotonic() - started_at) * 1000)
 
         if process.returncode != 0:
-            raise RuntimeError(
-                process.stderr.strip()
-                or f"Piper exited with status {process.returncode}"
+            logger.error(
+                "Piper process failed",
+                extra={
+                    "returncode": process.returncode,
+                    "stderr": process.stderr.strip()[:1000],
+                    "voiceId": voice_id,
+                },
             )
+            raise RuntimeError("Piper speech synthesis failed")
 
         output_file.seek(0)
         audio = output_file.read()
@@ -349,11 +372,9 @@ def run_piper_tts(request: TtsRequest) -> dict[str, Any]:
         "engine": "piper",
         "model": voice_id,
         "trace": {
-            "dataDir": PIPER_DATA_DIR,
             "downloadedAssets": downloaded_assets,
             "language": request.language,
             "lengthScale": get_piper_length_scale(request.pace),
-            "modelPath": model_path,
             "speakerId": request.speakerId,
         },
         "voiceId": voice_id,
@@ -670,7 +691,10 @@ def synthesize_tts(request: TtsRequest) -> dict[str, Any]:
     try:
         return run_piper_tts(request)
     except Exception as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
+        logger.exception("Piper speech synthesis failed")
+        raise HTTPException(
+            status_code=503, detail="Local speech synthesis failed"
+        ) from error
 
 
 @app.post("/models/load")

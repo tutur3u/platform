@@ -106,13 +106,12 @@ export const POST = withSessionAuth<Params>(
         .json()
         .catch(() => ({}))) as LocalSpeechResponse;
       if (!response.ok || !data.audioBase64) {
-        const detail = data.detail || data.message;
+        serverLogger.error('Local speech synthesis upstream failed', {
+          hasPublicDetail: Boolean(data.detail || data.message),
+          status: response.status,
+        });
         return NextResponse.json(
-          {
-            message: detail
-              ? `Local speech synthesis failed: ${detail}`
-              : 'Local speech synthesis failed',
-          },
+          { message: 'Local speech synthesis failed' },
           { status: response.ok ? 502 : response.status }
         );
       }
@@ -151,10 +150,8 @@ export const POST = withSessionAuth<Params>(
         trace: {
           durationMs: Math.round(performance.now() - startedAt),
           engine: 'piper',
-          endpoint,
           model: data.model,
           provider: 'local-model',
-          response: data.trace,
           voiceId: data.voiceId || parsed.data.voiceId,
         },
         voiceId: data.voiceId || parsed.data.voiceId,

@@ -43,6 +43,10 @@ shared-package changes.
   resource metadata for `none`/not-authorized states. Build and return resource
   summaries only after membership, a matching invitation, or the route's
   intended authorization proof has succeeded.
+- Routes that proxy local helpers, model runtimes, or upstream providers must
+  not copy raw upstream `detail`, stderr, traces, URLs, filesystem paths, or
+  credential-bearing diagnostics into browser JSON. Return a generic public
+  message and log sanitized server-side context instead.
 - For nested route resources, bind the child row to all trusted parent route
   params in the same admin query, such as `wsId + groupId + postId`. Do not load
   by child ID first and rely on a separate parent lookup or an empty related RPC

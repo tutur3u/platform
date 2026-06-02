@@ -174,6 +174,11 @@ known voice IDs such as `en_US-lessac-high`, downloads missing assets from
 and then calls Piper with the cached model path instead of passing a bare voice
 ID to the CLI.
 
+The helper must keep Piper download URLs, cache paths, and process stderr out of
+browser-visible errors. It should log sanitized diagnostics inside the service
+and return generic failure details to the web proxy; the web route should also
+avoid copying upstream `detail` or helper trace objects into its JSON response.
+
 The web route POSTs multipart form data to the assessor with `file`, `language`,
 `referenceText`, `valseaTranscript`, and `valseaResponse`. If the local assessor
 returns a compatible JSON object, the UI marks the provider as local model; if it
