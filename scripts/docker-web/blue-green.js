@@ -3019,11 +3019,17 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     options.bakeFile ?? getBlueGreenBakeFile(options.rootDir ?? ROOT_DIR);
   const buildStrategy = options.buildStrategy ?? 'compose';
   const needsProxyBootstrap = !!migration || !proxyRunning || needsProxyRefresh;
+  const previousHiveColor =
+    previousTargetState.targets.hive.activeColor ?? activeColor ?? targetColor;
+  const previousHiveStandbyColor =
+    previousTargetState.targets.hive.standbyColor ??
+    (previousHiveColor !== targetColor ? targetColor : null);
   let stages = createBlueGreenDeploymentStages({
     buildServices: [],
     env: targetEnv,
     targetColor,
   });
+  let publicProxyPromoted = false;
 
   try {
     if (needsProxyBootstrap) {
@@ -3087,15 +3093,6 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             : []),
         ]
       : [];
-    const previousHiveColor =
-      previousTargetState.targets.hive.activeColor ??
-      activeColor ??
-      targetColor;
-    const previousHiveStandbyColor =
-      previousTargetState.targets.hive.standbyColor ??
-      (previousHiveColor !== targetColor ? targetColor : null);
-    let webProxyReloaded = false;
-
     if (webAlreadyPromoted) {
       markBlueGreenStageSkipped(
         stages,
@@ -3174,63 +3171,6 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
           }
         );
 
-        writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
-        writeBlueGreenProxyConfig(targetColor, {
-          deploymentStamp,
-          fsImpl,
-          hiveColor: previousHiveColor,
-          hiveStandbyColor: previousHiveStandbyColor,
-          paths,
-          standbyColor,
-        });
-
-        if (proxyBootstrapServices.length > 0) {
-          await runComposeUpWithNameConflictRecovery({
-            composeFile,
-            composeGlobalArgs: parsed.composeGlobalArgs,
-            env: targetEnv,
-            fsImpl,
-            runCommand: run,
-            services: proxyBootstrapServices,
-            upArgs: getBlueGreenProxyBootstrapUpArgs(
-              parsed,
-              proxyBootstrapServices,
-              {
-                forceRecreate: needsProxyRefresh,
-              }
-            ),
-          });
-
-          await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {
-            composeFile,
-            composeGlobalArgs: parsed.composeGlobalArgs,
-            env: targetEnv,
-            runCommand: run,
-          });
-        } else {
-          await validateBlueGreenProxyConfig({
-            composeFile,
-            composeGlobalArgs: parsed.composeGlobalArgs,
-            env: targetEnv,
-            runCommand: run,
-          });
-          await reloadBlueGreenProxy({
-            composeFile,
-            composeGlobalArgs: parsed.composeGlobalArgs,
-            env: targetEnv,
-            runCommand: run,
-          });
-        }
-
-        await testBlueGreenProxyRouting({
-          composeFile,
-          composeGlobalArgs: parsed.composeGlobalArgs,
-          env: targetEnv,
-          runCommand: run,
-        });
-
-        webProxyReloaded = true;
-        writeBlueGreenActiveColor(targetColor, paths, fsImpl);
         updateBlueGreenTargetRuntime(
           'web',
           {
@@ -3238,54 +3178,14 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             commitHash: options.latestCommit?.hash ?? null,
             commitShortHash: options.latestCommit?.shortHash ?? null,
             deploymentStamp,
-            health: 'healthy',
-            lastPromotedAt: Date.now(),
+            health: 'staged',
+            lastPromotedAt: null,
             standbyColor,
           },
           paths,
           fsImpl
         );
       });
-    }
-
-    if (webAlreadyPromoted && proxyBootstrapServices.length > 0) {
-      writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
-      writeBlueGreenProxyConfig(targetColor, {
-        deploymentStamp,
-        fsImpl,
-        hiveColor: previousHiveColor,
-        hiveStandbyColor: previousHiveStandbyColor,
-        paths,
-        standbyColor,
-      });
-      await runComposeUpWithNameConflictRecovery({
-        composeFile,
-        composeGlobalArgs: parsed.composeGlobalArgs,
-        env: targetEnv,
-        fsImpl,
-        runCommand: run,
-        services: proxyBootstrapServices,
-        upArgs: getBlueGreenProxyBootstrapUpArgs(
-          parsed,
-          proxyBootstrapServices,
-          {
-            forceRecreate: needsProxyRefresh,
-          }
-        ),
-      });
-      await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {
-        composeFile,
-        composeGlobalArgs: parsed.composeGlobalArgs,
-        env: targetEnv,
-        runCommand: run,
-      });
-      await testBlueGreenProxyRouting({
-        composeFile,
-        composeGlobalArgs: parsed.composeGlobalArgs,
-        env: targetEnv,
-        runCommand: run,
-      });
-      webProxyReloaded = true;
     }
 
     await removeLegacyHiveContainerIfPresent({
@@ -3473,18 +3373,45 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     });
 
     await runBlueGreenStage(stages, 'proxy-reload', async () => {
-      if (!webProxyReloaded) {
-        writeBlueGreenProxyConfig(targetColor, {
-          deploymentStamp,
+      const latestTargetState = readBlueGreenTargetState(paths, fsImpl);
+      const promotedHiveColor =
+        latestTargetState.targets.hive.activeColor ?? previousHiveColor;
+      const promotedHiveStandbyColor =
+        latestTargetState.targets.hive.standbyColor;
+
+      writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
+      writeBlueGreenProxyConfig(targetColor, {
+        deploymentStamp,
+        fsImpl,
+        hiveColor: promotedHiveColor,
+        hiveStandbyColor: promotedHiveStandbyColor,
+        paths,
+        standbyColor,
+      });
+
+      if (proxyBootstrapServices.length > 0) {
+        await runComposeUpWithNameConflictRecovery({
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
           fsImpl,
-          hiveColor:
-            readBlueGreenTargetState(paths, fsImpl).targets.hive.activeColor ??
-            previousHiveColor,
-          hiveStandbyColor: readBlueGreenTargetState(paths, fsImpl).targets.hive
-            .standbyColor,
-          paths,
-          standbyColor,
+          runCommand: run,
+          services: proxyBootstrapServices,
+          upArgs: getBlueGreenProxyBootstrapUpArgs(
+            parsed,
+            proxyBootstrapServices,
+            {
+              forceRecreate: needsProxyRefresh,
+            }
+          ),
         });
+        await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
+          runCommand: run,
+        });
+      } else {
         await validateBlueGreenProxyConfig({
           composeFile,
           composeGlobalArgs: parsed.composeGlobalArgs,
@@ -3499,12 +3426,28 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
         });
       }
 
+      publicProxyPromoted = true;
       await testBlueGreenProxyRouting({
         composeFile,
         composeGlobalArgs: parsed.composeGlobalArgs,
         env: targetEnv,
         runCommand: run,
       });
+      writeBlueGreenActiveColor(targetColor, paths, fsImpl);
+      updateBlueGreenTargetRuntime(
+        'web',
+        {
+          activeColor: targetColor,
+          commitHash: options.latestCommit?.hash ?? null,
+          commitShortHash: options.latestCommit?.shortHash ?? null,
+          deploymentStamp,
+          health: 'healthy',
+          lastPromotedAt: Date.now(),
+          standbyColor,
+        },
+        paths,
+        fsImpl
+      );
     });
 
     if (activeColor && activeColor !== targetColor) {
@@ -3530,6 +3473,39 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       stages,
     };
   } catch (error) {
+    if (publicProxyPromoted && activeColor && activeColor !== targetColor) {
+      try {
+        writeBlueGreenProxyConfig(activeColor, {
+          deploymentStamp:
+            readBlueGreenDeploymentStamp(paths, fsImpl) ?? deploymentStamp,
+          fsImpl,
+          hiveColor: previousHiveColor,
+          hiveStandbyColor: previousHiveStandbyColor,
+          paths,
+          standbyColor: targetColor,
+        });
+        await validateBlueGreenProxyConfig({
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
+          runCommand: run,
+        });
+        await reloadBlueGreenProxy({
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
+          runCommand: run,
+        });
+        writeBlueGreenActiveColor(activeColor, paths, fsImpl);
+      } catch (rollbackError) {
+        if (error && typeof error === 'object') {
+          error.blueGreenRollbackError =
+            rollbackError instanceof Error
+              ? rollbackError.message
+              : String(rollbackError);
+        }
+      }
+    }
     skipQueuedBlueGreenDeploymentStages(
       stages,
       error instanceof Error ? error.message : String(error)

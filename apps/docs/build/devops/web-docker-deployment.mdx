@@ -279,15 +279,19 @@ Blue/green deploy does this:
 3. Builds the target web image through Docker Buildx Bake using Compose-derived
    targets, then stops/removes only the old target web lane and starts the fresh
    replacement.
-4. Promotes web immediately after its healthcheck and proxy request check pass.
-   The deploy writes `tmp/docker-web/prod/active-color`, updates
-   `tmp/docker-web/prod/target-state.json`, reloads `web-proxy`, and records the
-   `web-build` / `web-promote` stages before Hive migration starts.
-5. Builds and runs Hive separately. `hive-db-migrate` gates only
-   `hive-blue`/`hive-green` and `hive-realtime`; a migration failure marks
-   `hive-migrate` failed and leaves the already promoted web color serving.
+4. Starts the target web lane after its healthcheck passes and records
+   `web-promote` as a staged target in
+   `tmp/docker-web/prod/target-state.json`. The deploy does not reload
+   `web-proxy` or write `tmp/docker-web/prod/active-color` yet.
+5. Builds and runs Hive separately. `hive-db-migrate`, the target
+   `hive-blue`/`hive-green` service, `hive-realtime`, and the Hive proxy check
+   must pass before web can be publicly promoted. A migration or Hive health
+   failure marks the Hive stage failed, leaves `active-color` on the previous
+   web lane, and keeps the staged target web lane out of public routing.
 6. Refreshes support services (`backend`, `meet-realtime`, `markitdown`,
    `storage-unzip-proxy`, and `web-cron-runner`) after web/Hive target work.
+   A support build or health failure also blocks `web-proxy` reload and leaves
+   the previous active web lane serving.
    Their build step is scoped:
    ordinary web commits build only `web-blue` or `web-green`, while Hive and
    helper images rebuild only when their source, Dockerfile, compose wiring, or
@@ -305,14 +309,14 @@ Blue/green deploy does this:
    promotions instead of re-running `compose up` against the public `:7803`
    listener. If the running proxy is missing required host ports or its
    container image no longer matches the resolved Compose image, the deploy
-   defers the forced proxy recreate until after the replacement lane is healthy.
-9. Validates the generated nginx config with `nginx -t`, then reloads nginx
-   inside the existing or freshly recreated proxy only after the new color is
-   healthy.
+   defers the forced proxy recreate until after the target web, Hive, and
+   support gates have passed.
+9. Validates the generated nginx config with `nginx -t`, then reloads or
+   recreates the proxy only after every staging gate has passed.
 10. Immediately verifies the proxy can serve the internal
-    `/__platform/drain-status` endpoint through the newly promoted color before
-    marking the new color active. This avoids false deployment failures from
-    public API middleware or rate limits.
+    `/__platform/drain-status` endpoint through the newly routed color before
+    writing `active-color` and marking the staged web target healthy. This
+    avoids false deployment failures from public API middleware or rate limits.
 11. Polls an internal drain-status endpoint on the old color and waits until it
     has no in-flight HTTP work left before demoting it to standby. This keeps
     long-running server actions, route handlers, and other open requests from
@@ -511,8 +515,10 @@ The local runtime state lives in:
 These files are intentionally local-only and safe to regenerate.
 Infrastructure Monitoring → Deployments reads `target-state.json`, the watcher
 deployment history, and the latest deployment stage handoff together, so
-operators can see a partial promotion such as web serving a new commit while
-Hive remains blocked on migration. Watcher-managed deployments persist the
+operators can see staged target work such as a prepared web color while Hive or
+support gates still block public promotion. `active-color` and the generated
+proxy config remain on the previous serving web lane until the final
+`proxy-reload` stage passes. Watcher-managed deployments persist the
 `web-build`, `web-promote`, `hive-migrate`, `hive-promote`,
 `support-refresh`, and `proxy-reload` stage results into deployment history.
 Modern rows that were recorded without a stage array are inferred from final
@@ -1277,16 +1283,17 @@ Dashboard details:
   runtime env files are shared, and production image builds mount the `web_env`
   BuildKit secret so hidden-locale auth pages can prerender with the platform
   Supabase URL.
-  **Deploy coordination:** `scripts/docker-web/blue-green.js` still builds every
-  prod service in one pass, but runtime services come up before proxy handoff:
-  first the target `web-{color}`, backend, MarkItDown, storage-unzip-proxy,
-  `web-cron-runner`, and (when enabled) Redis, then `hive-{color}` and
-  `hive-realtime`. If `web-proxy` or `cloudflared` must be bootstrapped or
-  recreated for host-port changes, they start only after the target web and Hive
+  **Deploy coordination:** `scripts/docker-web/blue-green.js` still scopes prod
+  builds by changed service group, but runtime promotion happens in staged
+  order: first the target `web-{color}`, then `hive-{color}` and
+  `hive-realtime`, then refreshed support services such as backend,
+  MarkItDown, storage-unzip-proxy, `web-cron-runner`, and optional Redis-backed
+  helpers. If `web-proxy` or `cloudflared` must be bootstrapped or recreated for
+  host-port changes, they start only after target web, Hive, and support
   services are healthy, so `hive.tuturuuu.com` is not exposed with an empty
-  `hive_app_upstream`. Promotion waits for the target web color, target Hive
-  color, Hive realtime, and the first-phase support services before switching
-  nginx.
+  `hive_app_upstream` and web is not publicly switched before dependent gates
+  finish. Promotion waits for the final proxy route check before writing
+  `active-color`.
 - Every service owned by `docker-compose.web.prod.yml` should declare a
   healthcheck, either directly in compose or in the image. The resources
   inventory treats an `Up` container without Docker health metadata as healthy
