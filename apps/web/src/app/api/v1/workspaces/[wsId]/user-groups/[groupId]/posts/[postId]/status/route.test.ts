@@ -30,14 +30,35 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 
 import { GET } from './route';
 
+function createReceiverSensitiveSupabaseClient() {
+  const privateSchemaClient = {
+    rpc(this: unknown, fn: string, args: Record<string, unknown>) {
+      if (this !== privateSchemaClient) {
+        throw new TypeError('rpc called without private schema receiver');
+      }
+
+      return rpcMock(fn, args);
+    },
+  };
+
+  return {
+    schema: vi.fn((schema: string) => {
+      if (schema !== 'private') {
+        throw new Error(`unexpected schema ${schema}`);
+      }
+
+      return privateSchemaClient;
+    }),
+  };
+}
+
 describe('group post status route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    createAdminClientMock.mockResolvedValue({
-      rpc: rpcMock,
-      schema: () => ({ rpc: rpcMock }),
-    });
+    createAdminClientMock.mockResolvedValue(
+      createReceiverSensitiveSupabaseClient()
+    );
 
     getPermissionsMock.mockResolvedValue({
       withoutPermission: vi.fn().mockReturnValue(false),

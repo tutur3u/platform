@@ -1,10 +1,8 @@
 import { Check, CheckCheck, CircleHelp, Clock, Send, X } from '@tuturuuu/icons';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
@@ -13,42 +11,20 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { CheckAll } from './check-all';
-import type { GroupPostRecipientRow, GroupPostStatusSummaryRow } from './types';
+import {
+  getGroupData,
+  getPostData,
+  getPostStatus,
+  getRecipientRows,
+  type SearchParams,
+} from './data';
 import { UsersList } from './users-list';
-
-type PostStatusRpcArgs = {
-  p_group_id: string;
-  p_post_id: string;
-  p_ws_id: string;
-};
-
-type RecipientRowsRpcArgs = PostStatusRpcArgs & {
-  p_q?: string;
-};
-
-type PrivateUserGroupPostRpc = {
-  (
-    fn: 'get_user_group_post_status_summary',
-    args: PostStatusRpcArgs
-  ): Promise<{ data: GroupPostStatusSummaryRow[] | null; error: unknown }>;
-  (
-    fn: 'get_user_group_post_recipient_rows',
-    args: RecipientRowsRpcArgs
-  ): Promise<{ data: GroupPostRecipientRow[] | null; error: unknown }>;
-};
 
 export const metadata: Metadata = {
   title: 'Postid Details',
   description:
     'Manage Postid Details in the Posts area of your Tuturuuu workspace.',
 };
-
-interface SearchParams {
-  q?: string;
-  page?: string;
-  pageSize?: string;
-  excludedGroups?: string | string[];
-}
 
 interface Props {
   params: Promise<{
@@ -261,96 +237,4 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
       }}
     </WorkspaceWrapper>
   );
-}
-
-async function getPostData(postId: string) {
-  const sbAdmin = await createAdminClient();
-  const { data, error } = await sbAdmin
-    .schema('private')
-    .from('user_group_posts')
-    .select('*')
-    .eq('id', postId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) notFound();
-  return data;
-}
-
-async function getGroupData(wsId: string, groupId: string) {
-  const sbAdmin = await createAdminClient();
-  const { data, error } = await sbAdmin
-    .from('workspace_user_groups')
-    .select('*')
-    .eq('ws_id', wsId)
-    .eq('id', groupId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) notFound();
-  return data;
-}
-
-async function getPostStatus(wsId: string, groupId: string, postId: string) {
-  const sbAdmin = await createAdminClient();
-  const privateRpc = sbAdmin.schema('private')
-    .rpc as unknown as PrivateUserGroupPostRpc;
-  const { data, error } = await privateRpc(
-    'get_user_group_post_status_summary',
-    {
-      p_group_id: groupId,
-      p_post_id: postId,
-      p_ws_id: wsId,
-    }
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  const summary = data?.[0] as GroupPostStatusSummaryRow | undefined;
-
-  return {
-    approvals: {
-      approved: Number(summary?.approved_count ?? 0),
-      pending: Number(summary?.pending_approval_count ?? 0),
-      rejected: Number(summary?.rejected_count ?? 0),
-    },
-    completed: Number(summary?.completed_count ?? 0),
-    count: Number(summary?.total_count ?? 0),
-    delivery_failed: Number(summary?.delivery_failed_count ?? 0),
-    incomplete: Number(summary?.incomplete_count ?? 0),
-    missing_check: Number(summary?.missing_check_count ?? 0),
-    processing: Number(summary?.processing_stage_count ?? 0),
-    queued: Number(summary?.queued_stage_count ?? 0),
-    sent: Number(summary?.sent_stage_count ?? 0),
-    undeliverable: Number(summary?.undeliverable_count ?? 0),
-  };
-}
-
-async function getRecipientRows(
-  wsId: string,
-  groupId: string,
-  postId: string,
-  { q }: SearchParams = {}
-) {
-  const sbAdmin = await createAdminClient();
-  const privateRpc = sbAdmin.schema('private')
-    .rpc as unknown as PrivateUserGroupPostRpc;
-  const { data, error } = await privateRpc(
-    'get_user_group_post_recipient_rows',
-    {
-      p_group_id: groupId,
-      p_post_id: postId,
-      p_q: q ?? undefined,
-      p_ws_id: wsId,
-    }
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return (data ?? []).map((recipient) => ({
-    ...recipient,
-    user_avatar_url: normalizeAvatarImageSrc(recipient.user_avatar_url) ?? null,
-  })) as GroupPostRecipientRow[];
 }

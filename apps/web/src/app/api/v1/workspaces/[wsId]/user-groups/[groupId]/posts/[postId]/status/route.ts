@@ -26,6 +26,10 @@ type PostStatusRpc = (
   args: PostStatusRpcArgs
 ) => Promise<{ data: GroupPostStatusSummaryRow[] | null; error: unknown }>;
 
+type PostStatusRpcClient = {
+  rpc: PostStatusRpc;
+};
+
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id, groupId, postId } = await params;
   const wsId = await normalizeWorkspaceId(id);
@@ -44,8 +48,8 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
-  const privateRpc = sbAdmin.schema('private').rpc as unknown as PostStatusRpc;
-  const { data, error } = await privateRpc(
+  const privateDb = sbAdmin.schema('private') as unknown as PostStatusRpcClient;
+  const { data, error } = await privateDb.rpc(
     'get_user_group_post_status_summary',
     {
       p_group_id: groupId,
