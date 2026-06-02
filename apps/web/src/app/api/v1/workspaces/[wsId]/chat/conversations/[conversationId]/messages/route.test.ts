@@ -248,6 +248,12 @@ describe('native AI chat message route', () => {
     });
 
     expect(response.status).toBe(201);
+    expect(mocks.resolveChatRouteContext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        permission: 'create_chat',
+        wsId: 'workspace-1',
+      })
+    );
     expect(mocks.aiRouteBodies).toContainEqual(
       expect.objectContaining({
         model: 'google/gemini-3.1-flash-lite',

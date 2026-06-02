@@ -53,7 +53,7 @@ export const POST = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
     const context = await resolveChatRouteContext({
       auth,
-      permission: 'view_chat',
+      permission: 'create_chat',
       wsId: params.wsId,
     });
     if (!context.ok) return context.response;

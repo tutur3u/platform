@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(55);
+select plan(57);
 
 select ok(
   to_regclass('private.chat_conversations') is not null,
@@ -508,6 +508,26 @@ select ok(
       and enabled = true
   ),
   'member defaults include create_chat'
+);
+
+select ok(
+  pg_get_functiondef(
+    'private.chat_send_message(uuid, uuid, uuid, text, uuid, jsonb, text)'::regprocedure
+  ) like '%''create_chat''%'
+    and pg_get_functiondef(
+      'private.chat_send_message(uuid, uuid, uuid, text, uuid, jsonb, text)'::regprocedure
+    ) not like '%''view_chat''%',
+  'chat_send_message requires create_chat rather than view_chat'
+);
+
+select ok(
+  pg_get_functiondef(
+    'private.chat_prepare_attachment(uuid, uuid, uuid, text, bigint)'::regprocedure
+  ) like '%''create_chat''%'
+    and pg_get_functiondef(
+      'private.chat_prepare_attachment(uuid, uuid, uuid, text, bigint)'::regprocedure
+    ) not like '%''view_chat''%',
+  'chat_prepare_attachment requires create_chat rather than view_chat'
 );
 
 select * from finish();
