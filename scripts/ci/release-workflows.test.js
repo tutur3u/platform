@@ -152,7 +152,7 @@ test('branch name check allows release-please generated branches', () => {
   assert.match(workflow, /\^release-please--branches--\.\+/);
 });
 
-test('Release Please workflow is production-scoped and uses bot token', () => {
+test('Release Please workflow is production-scoped and prefers bot token', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'release-please.yaml'),
     'utf8'
@@ -185,7 +185,10 @@ test('Release Please workflow is production-scoped and uses bot token', () => {
   assert.match(releaseJob, /issues:\s*write/);
   assert.match(releaseJob, /pull-requests:\s*write/);
   assert.match(releaseJob, /uses: googleapis\/release-please-action@v5/);
-  assert.match(releaseJob, /token: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \}\}/);
+  assert.match(
+    releaseJob,
+    /token: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \|\| github\.token \}\}/
+  );
   assert.match(releaseJob, /target-branch: production/);
   assert.match(releaseJob, /config-file: release-please-config\.json/);
   assert.match(releaseJob, /manifest-file: \.release-please-manifest\.json/);

@@ -32,7 +32,22 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: |
+          set -euo pipefail
+          attempt=1
+          while [ "$attempt" -le 3 ]; do
+            if bun install --frozen-lockfile; then
+              exit 0
+            fi
+            echo "bun install attempt ${attempt} failed; scrubbing Bun install cache before retry..." >&2
+            bun pm cache rm || true
+            if [ "$attempt" -eq 3 ]; then
+              echo "bun install failed after 3 attempts." >&2
+              exit 1
+            fi
+            attempt=$((attempt + 1))
+            sleep 5
+          done
 
       - name: Build workspace dependencies
         run: bun run build -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/internal-api -F @tuturuuu/masonry

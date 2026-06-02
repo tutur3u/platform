@@ -38,6 +38,12 @@ formatting behavior, or repo-wide verification.
   `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when
   changing release automation. Do not reintroduce checksum or PR-title package
   version bump generators.
+- Keep the Release Please token fallback ordered as
+  `secrets.RELEASE_PLEASE_TOKEN || github.token`; the bot token is still needed
+  for generated PRs and releases to trigger downstream workflows.
+- For `bun install --frozen-lockfile` workflow steps, prefer bounded retries
+  with `bun pm cache rm` before changing dependencies when the failure is a
+  tarball extraction or cache issue.
 - Package release workflows are npm-only for now. Do not add JSR or GitHub
   Packages publish jobs, and do not wire `jsr.json` version files into Release
   Please while those registries are paused.

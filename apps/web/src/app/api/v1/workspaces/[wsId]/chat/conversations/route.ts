@@ -1,9 +1,7 @@
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { listAiAgentExternalThreadConversations } from '@/lib/ai-agents/external-chat-mirror';
-import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
+import { withSessionAuth } from '@/lib/api-auth';
 import {
   listAiChatConversations,
   listRootAiAgentDiscoveryConversations,
@@ -124,10 +122,6 @@ export const GET = withSessionAuth<RouteParams>(
     const pagination = readPagination(url);
 
     try {
-      const includeAiAgentAdminMetadata =
-        archived === 'active' &&
-        context.context.normalizedWsId === ROOT_WORKSPACE_ID &&
-        (await canManageRootAiAgents(auth.user));
       const [
         conversations,
         aiAgentConversations,
@@ -145,7 +139,6 @@ export const GET = withSessionAuth<RouteParams>(
         }),
         archived === 'active'
           ? listRootAiAgentDiscoveryConversations({
-              includeAdminMetadata: includeAiAgentAdminMetadata,
               wsId: context.context.normalizedWsId,
             })
           : [],
@@ -191,18 +184,6 @@ export const GET = withSessionAuth<RouteParams>(
   },
   { allowAppSessionAuth: true, rateLimitKind: 'read' }
 );
-
-async function canManageRootAiAgents(user: SessionAuthContext['user']) {
-  const permissions = await getPermissions({
-    user,
-    wsId: ROOT_WORKSPACE_ID,
-  });
-
-  return (
-    Boolean(permissions) &&
-    !permissions?.withoutPermission('manage_workspace_secrets')
-  );
-}
 
 export const POST = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {

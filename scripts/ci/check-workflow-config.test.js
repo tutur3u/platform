@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 const {
   assertWorkflowDecision,
   createFixtureRoot,
@@ -219,6 +221,18 @@ test('release-please workflow uses static switchboard gating', () => {
     decision.output,
     /release-please\.yaml uses static tuturuuu\.ts gating/
   );
+});
+
+test('type-check workflow retries frozen Bun installs after cache cleanup', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'type-check.yaml'),
+    'utf8'
+  );
+
+  assert.match(workflow, /bun install --frozen-lockfile/);
+  assert.match(workflow, /while \[ "\$attempt" -le 3 \]/);
+  assert.match(workflow, /bun pm cache rm/);
+  assert.match(workflow, /bun install failed after 3 attempts/);
 });
 
 test('disabled ci entries still skip regardless of affected status', () => {
