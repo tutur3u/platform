@@ -1,7 +1,7 @@
 ---
-title: 'Finance'
-description: 'Shared Finance product surface across apps/web and apps/finance.'
-updatedAt: '2026-05-23'
+title: "Finance"
+description: "Shared Finance product surface across apps/web and apps/finance."
+updatedAt: "2026-06-03"
 ---
 
 ## Overview
@@ -54,6 +54,13 @@ Protected Finance APIs stay centralized in `apps/web`.
 - Finance app-session cookies are accepted by central Finance API routes and
   invoice-adjacent helper routes, then route-level permissions are enforced by
   `apps/web`.
+- Finance transaction attachment reads must authorize through the same
+  authenticated transaction visibility path as normal transaction reads. Do not
+  grant storage list, metadata, or signed-read URL access from coarse
+  `view_transactions` or `update_transactions` permissions alone; reuse
+  `get_wallet_transactions_with_permissions` with `p_transaction_ids` so wallet
+  whitelists, viewing windows, and granular income/expense permissions stay
+  aligned.
 
 When adding new Finance behavior, update the shared Finance UI/helper first,
 then wire both host wrappers in the same change. Add or extend the protected

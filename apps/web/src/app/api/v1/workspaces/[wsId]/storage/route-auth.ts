@@ -1,4 +1,5 @@
 import type { AppSessionTargetApp } from '@tuturuuu/auth/app-session';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -12,6 +13,7 @@ type StoragePermissions = Awaited<ReturnType<typeof getPermissions>>;
 export interface WorkspaceStorageRouteAuthContext {
   normalizedWsId: string;
   permissions: NonNullable<StoragePermissions>;
+  supabase: TypedSupabaseClient;
   user: {
     email?: string | null;
     id: string;
@@ -73,6 +75,7 @@ export async function resolveWorkspaceStorageRouteAuth(
     context: {
       normalizedWsId,
       permissions,
+      supabase: auth.supabase,
       user: auth.user,
       userId: auth.user.id,
     },

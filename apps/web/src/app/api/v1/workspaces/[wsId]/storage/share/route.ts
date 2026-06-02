@@ -63,7 +63,7 @@ async function resolveSignedUrl(
   if (!auth.ok) {
     return auth.response;
   }
-  const { normalizedWsId, permissions, userId } = auth.context;
+  const { normalizedWsId, permissions, supabase, userId } = auth.context;
 
   const sanitizedPath = sanitizePath(input.path);
   if (!sanitizedPath) {
@@ -79,6 +79,7 @@ async function resolveSignedUrl(
       normalizedWsId,
       path: sanitizedPath,
       permissions,
+      supabase,
       userId,
     });
 

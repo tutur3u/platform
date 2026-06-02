@@ -53,7 +53,7 @@ export async function POST(
     if (!auth.ok) {
       return auth.response;
     }
-    const { normalizedWsId, permissions, userId } = auth.context;
+    const { normalizedWsId, permissions, supabase, userId } = auth.context;
 
     let payload: unknown;
     try {
@@ -85,6 +85,7 @@ export async function POST(
         normalizedWsId,
         path: sanitizedPath,
         permissions,
+        supabase,
         userId,
       }));
 

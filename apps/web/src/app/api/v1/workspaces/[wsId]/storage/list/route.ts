@@ -38,7 +38,7 @@ export async function GET(
     if (!auth.ok) {
       return auth.response;
     }
-    const { normalizedWsId, permissions, userId } = auth.context;
+    const { normalizedWsId, permissions, supabase, userId } = auth.context;
 
     const { searchParams } = new URL(request.url);
     const parsed = listQuerySchema.safeParse({
@@ -70,6 +70,7 @@ export async function GET(
         normalizedWsId,
         path: sanitizedPath,
         permissions,
+        supabase,
         userId,
       }));
 

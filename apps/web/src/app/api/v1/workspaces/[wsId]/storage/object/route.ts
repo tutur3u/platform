@@ -27,7 +27,7 @@ export async function DELETE(
   if (!auth.ok) {
     return auth.response;
   }
-  const { normalizedWsId, permissions, userId } = auth.context;
+  const { normalizedWsId, permissions, supabase, userId } = auth.context;
 
   let body: unknown;
   try {
@@ -68,6 +68,7 @@ export async function DELETE(
       normalizedWsId,
       path: sanitizedPath,
       permissions,
+      supabase,
       userId,
     }));
 

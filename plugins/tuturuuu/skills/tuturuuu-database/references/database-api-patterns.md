@@ -44,6 +44,13 @@ workspace-scoped API work.
 - Mixed Supabase/R2 upload helpers must preserve Authorization headers when
   the server issued a bearer token and relax only headers that break presigned
   PUTs.
+- Storage paths that mirror protected domain records must reuse that domain's
+  request-scoped authorization model before any admin-backed list, metadata, or
+  signed-read operation. Finance transaction attachments, for example, should
+  call `get_wallet_transactions_with_permissions` with `p_transaction_ids`
+  through the authenticated Supabase client so wallet whitelists, viewing
+  windows, and granular income/expense visibility match normal transaction
+  reads.
 
 ## Validation
 
