@@ -51,6 +51,11 @@ workspace-scoped API work.
   through the authenticated Supabase client so wallet whitelists, viewing
   windows, and granular income/expense visibility match normal transaction
   reads.
+- Direct-to-storage signed uploads still need server-side upload policy. Require
+  positive declared sizes before signing, enforce domain caps before issuing the
+  URL, and validate the actual stored object during finalize. When a finalized
+  object violates the policy, delete it before returning an error so understated
+  signed-upload requests cannot retain oversized files.
 
 ## Validation
 

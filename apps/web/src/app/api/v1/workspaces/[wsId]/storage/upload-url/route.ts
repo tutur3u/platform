@@ -3,6 +3,7 @@ import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
+import { validateFinanceTransactionAttachmentUploadRequest } from '@/lib/finance-transaction-storage-limits';
 import {
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
@@ -285,6 +286,19 @@ export async function POST(
       return NextResponse.json(
         { message: 'Insufficient permissions' },
         { status: 403 }
+      );
+    }
+
+    const financeAttachmentValidation =
+      await validateFinanceTransactionAttachmentUploadRequest({
+        path: sanitizedPath,
+        size: parsed.data.size,
+        wsId: normalizedWsId,
+      });
+    if (!financeAttachmentValidation.ok) {
+      return NextResponse.json(
+        { message: financeAttachmentValidation.message },
+        { status: financeAttachmentValidation.status }
       );
     }
 

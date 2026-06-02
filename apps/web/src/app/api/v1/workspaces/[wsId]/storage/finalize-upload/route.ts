@@ -2,6 +2,7 @@ import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
+import { validateFinalizedFinanceTransactionAttachment } from '@/lib/finance-transaction-storage-limits';
 import { triggerWorkspaceStorageAutoExtract } from '@/lib/workspace-storage-auto-extract';
 import type { WorkspaceStorageRouteAuthContext } from '../route-auth';
 import {
@@ -93,6 +94,18 @@ export async function POST(
       return NextResponse.json(
         { message: 'Insufficient permissions' },
         { status: 403 }
+      );
+    }
+
+    const financeAttachmentValidation =
+      await validateFinalizedFinanceTransactionAttachment({
+        path: sanitizedPath,
+        wsId: normalizedWsId,
+      });
+    if (!financeAttachmentValidation.ok) {
+      return NextResponse.json(
+        { message: financeAttachmentValidation.message },
+        { status: financeAttachmentValidation.status }
       );
     }
 

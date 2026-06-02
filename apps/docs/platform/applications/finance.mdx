@@ -61,6 +61,11 @@ Protected Finance APIs stay centralized in `apps/web`.
   `get_wallet_transactions_with_permissions` with `p_transaction_ids` so wallet
   whitelists, viewing windows, and granular income/expense permissions stay
   aligned.
+- Finance transaction attachment uploads have server-side limits: 10 files per
+  transaction and 50 MB per file. The signed-upload route must reject
+  over-limit declared sizes before issuing a URL, and finalize must inspect the
+  actual stored object size/count and delete over-limit uploads before any
+  follow-up processing.
 
 When adding new Finance behavior, update the shared Finance UI/helper first,
 then wire both host wrappers in the same change. Add or extend the protected

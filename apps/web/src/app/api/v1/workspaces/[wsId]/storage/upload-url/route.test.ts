@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   logWorkspaceStorageRouteError: vi.fn(),
   resolveTopicAnnouncementsAccess: vi.fn(),
   resolveWorkspaceStorageRouteAuth: vi.fn(),
+  validateFinanceTransactionAttachmentUploadRequest: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/utils/uuid-helper', () => ({
@@ -16,6 +17,11 @@ vi.mock('@tuturuuu/utils/uuid-helper', () => ({
 vi.mock('@/lib/finance-transaction-storage-access', () => ({
   canAccessFinanceTransactionStoragePath:
     mocks.canAccessFinanceTransactionStoragePath,
+}));
+
+vi.mock('@/lib/finance-transaction-storage-limits', () => ({
+  validateFinanceTransactionAttachmentUploadRequest:
+    mocks.validateFinanceTransactionAttachmentUploadRequest,
 }));
 
 vi.mock('@/lib/workspace-storage-provider', () => ({
@@ -76,6 +82,9 @@ function setupAuth(permissionOptions: Parameters<typeof permissions>[0] = {}) {
     },
   });
   mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(false);
+  mocks.validateFinanceTransactionAttachmentUploadRequest.mockResolvedValue({
+    ok: true,
+  });
   mocks.resolveTopicAnnouncementsAccess.mockResolvedValue({
     context: {
       normalizedWsId: 'workspace-1',
@@ -121,6 +130,7 @@ describe('workspace storage upload-url route', () => {
     mocks.logWorkspaceStorageRouteError.mockReset();
     mocks.resolveTopicAnnouncementsAccess.mockReset();
     mocks.resolveWorkspaceStorageRouteAuth.mockReset();
+    mocks.validateFinanceTransactionAttachmentUploadRequest.mockReset();
     setupAuth();
   });
 
@@ -425,5 +435,34 @@ describe('workspace storage upload-url route', () => {
         upsert: true,
       }
     );
+  });
+
+  it('rejects finance attachment upload signing when server-side attachment limits fail', async () => {
+    mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(true);
+    mocks.validateFinanceTransactionAttachmentUploadRequest.mockResolvedValue({
+      message: 'Finance attachment exceeds 50 MB limit',
+      ok: false,
+      status: 413,
+    });
+
+    const response = await postUploadUrl({
+      contentType: 'application/pdf',
+      filename: 'receipt.pdf',
+      path: 'finance/transactions/tx-1',
+      size: 50 * 1024 * 1024 + 1,
+    });
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Finance attachment exceeds 50 MB limit',
+    });
+    expect(
+      mocks.validateFinanceTransactionAttachmentUploadRequest
+    ).toHaveBeenCalledWith({
+      path: 'finance/transactions/tx-1',
+      size: 50 * 1024 * 1024 + 1,
+      wsId: 'workspace-1',
+    });
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 });

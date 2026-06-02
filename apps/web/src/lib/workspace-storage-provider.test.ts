@@ -194,6 +194,45 @@ describe('workspace storage provider', () => {
     expect(schemaMock).not.toHaveBeenCalled();
   });
 
+  it('rejects zero-byte declared upload sizes before signing upload URLs', async () => {
+    const listMock = vi.fn().mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    const createSignedUploadUrlMock = vi.fn().mockResolvedValue({
+      data: {
+        signedUrl: 'https://storage.example.com/upload',
+        token: 'upload-token',
+      },
+      error: null,
+    });
+
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      storage: {
+        from: vi.fn(() => ({
+          createSignedUploadUrl: createSignedUploadUrlMock,
+          list: listMock,
+        })),
+      },
+    });
+
+    const { createWorkspaceStorageUploadPayload } = await import(
+      './workspace-storage-provider'
+    );
+
+    await expect(
+      createWorkspaceStorageUploadPayload('ws-1', 'empty.pdf', {
+        contentType: 'application/pdf',
+        path: 'finance/transactions/tx-1',
+        size: 0,
+      })
+    ).rejects.toMatchObject({
+      message: 'A valid file size is required for storage uploads.',
+      status: 400,
+    });
+    expect(createSignedUploadUrlMock).not.toHaveBeenCalled();
+  });
+
   it('lists Supabase raw objects recursively without querying the storage schema', async () => {
     const listMock = vi
       .fn()
