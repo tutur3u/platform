@@ -400,6 +400,20 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.limit).toHaveBeenCalledTimes(1);
   });
 
+  it('does not classify raw app-session cookies as authenticated sessions', async () => {
+    const { hasAuthenticatedApiSession } = await import(
+      '../api-proxy-guard.js'
+    );
+
+    expect(
+      hasAuthenticatedApiSession(
+        makeRequest('/api/v1/workspaces/ws-1/tasks', 'GET', {
+          cookie: 'tuturuuu_app_session=anything; theme=dark',
+        })
+      )
+    ).toBe(false);
+  });
+
   it('enforces anonymous IP blocks for cookie-looking browser requests', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
