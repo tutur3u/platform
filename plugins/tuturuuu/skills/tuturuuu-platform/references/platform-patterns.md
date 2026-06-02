@@ -43,6 +43,9 @@ shared-package changes.
   params in the same admin query, such as `wsId + groupId + postId`. Do not load
   by child ID first and rely on a separate parent lookup or an empty related RPC
   result to prove tenant ownership.
+- Admin-backed user-group course module routes must verify workspace
+  membership, require `manage_users`, validate the group with `ws_id`, and keep
+  update/delete predicates bound to the module's original `group_id`.
 - Forward request auth when server-side loaders call internal API helpers.
 
 ## Translations And Navigation
