@@ -115,7 +115,7 @@
     "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.6",
     "react-dropzone": "^15.0.0",
-    "react-hook-form": "^7.76.0",
+    "react-hook-form": "^7.77.0",
     "react-markdown": "^10.1.0",
     "react-papaparse": "^4.4.0",
     "react-pdf": "^10.4.1",
@@ -161,7 +161,7 @@
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
     "uuid": "^14.0.0",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.100.11",

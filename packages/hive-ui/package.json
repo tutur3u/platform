@@ -29,7 +29,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@xyflow/react": "^12.10.2",
+    "@xyflow/react": "^12.11.0",
     "next": "^16.2.6",
     "next-intl": "^4.13.0",
     "react": "^19.2.6",
@@ -47,6 +47,6 @@
     "@vitejs/plugin-react": "^6.0.2",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   }
 }

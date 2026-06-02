@@ -43,7 +43,7 @@
     "@ai-sdk/google": "^3.0.80",
     "@aws-sdk/client-s3": "^3.1057.0",
     "@aws-sdk/s3-request-presigner": "^3.1057.0",
-    "@deepgram/sdk": "^5.3.0",
+    "@deepgram/sdk": "^5.4.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -111,7 +111,7 @@
     "@upstash/qstash": "^2.10.1",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
-    "@xyflow/react": "^12.10.2",
+    "@xyflow/react": "^12.11.0",
     "ai": "^6.0.193",
     "bcrypt": "^6.0.0",
     "browser-image-compression": "^2.0.2",
@@ -152,7 +152,7 @@
     "react-confetti": "^6.4.0",
     "react-dom": "^19.2.6",
     "react-easy-crop": "^5.5.6",
-    "react-hook-form": "^7.76.0",
+    "react-hook-form": "^7.77.0",
     "react-intersection-observer": "^10.0.3",
     "react-papaparse": "^4.4.0",
     "react-pdf": "^10.4.1",
@@ -207,7 +207,7 @@
     "postcss-simple-vars": "^7.0.1",
     "typescript": "^6.0.3",
     "undici": "^8.3.0",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   },
   "packageManager": "bun@1.3.14",
   "portless": {
