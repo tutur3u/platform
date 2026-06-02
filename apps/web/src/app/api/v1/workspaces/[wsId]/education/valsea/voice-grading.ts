@@ -64,6 +64,7 @@ type CharacterAlignment = {
 };
 
 const SOFT_MISSING_TOKENS = new Set(['ah', 'lah', 'leh', 'lor', 'mah', 'one']);
+const MAX_CHARACTER_ALIGNMENT_CELLS = 16_384;
 
 function getString(record: ValseaRecord | undefined, key: string) {
   const value = record?.[key];
@@ -262,6 +263,25 @@ function alignCharacters(expected: string, heard: string) {
   const heardCharacters = [...normalizeToken(heard)];
   const rows = expectedCharacters.length + 1;
   const columns = heardCharacters.length + 1;
+
+  if (rows * columns > MAX_CHARACTER_ALIGNMENT_CELLS) {
+    return expectedCharacters.map<CharacterAlignment>(
+      (expectedCharacter, index) => {
+        const heardCharacter = heardCharacters[index] ?? '';
+        return {
+          expected: expectedCharacter,
+          heard: heardCharacter,
+          status:
+            expectedCharacter === heardCharacter
+              ? 'matched'
+              : heardCharacter
+                ? 'substituted'
+                : 'missing',
+        };
+      }
+    );
+  }
+
   const costs: number[][] = Array.from({ length: rows }, () =>
     Array.from({ length: columns }, () => 0)
   );

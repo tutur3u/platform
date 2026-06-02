@@ -52,6 +52,9 @@ shared-package changes.
   not copy raw upstream `detail`, stderr, traces, URLs, filesystem paths, or
   credential-bearing diagnostics into browser JSON. Return a generic public
   message and log sanitized server-side context instead.
+- Dynamic-programming aligners in request-time routes must enforce explicit
+  cell budgets and safe fallbacks before allocating trace matrices from
+  user-controlled transcripts, tokens, or model output.
 - For nested route resources, bind the child row to all trusted parent route
   params in the same admin query, such as `wsId + groupId + postId`. Do not load
   by child ID first and rely on a separate parent lookup or an empty related RPC

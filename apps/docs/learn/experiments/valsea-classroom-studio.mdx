@@ -192,6 +192,9 @@ a short utterance such as "Haha." while the typed note is a full paragraph, the
 response is marked `insufficient_speech` or `reference_mismatch`, `words` is
 empty, and the UI shows the heard/reference transcripts instead of misleading
 red score cards.
+Character-level pronunciation alignment also has a fixed cell budget per token.
+Long single-token references fall back to linear character comparison instead of
+allocating a quadratic edit-distance trace matrix.
 Amber scores around 75-78% mean "review this alignment" rather than "bad
 pronunciation"; they are used when ASR skipped a short filler or heard a nearby
 sound. Character feedback carries `matched`, `substituted`, `missing`, or
