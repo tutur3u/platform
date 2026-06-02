@@ -132,4 +132,40 @@ describe('executeGenerateImage', () => {
       })
     );
   });
+
+  it('routes Vertex-prefixed image models through the gateway image provider', async () => {
+    mocks.resolvePlanModel.mockResolvedValueOnce({
+      allocationId: 'allocation-1',
+      modelId: 'google-vertex/imagen-4.0-generate-001',
+      source: 'requested',
+      tier: 'PRO',
+    });
+    mocks.gatewayImage.mockReturnValueOnce({
+      modelId: 'google-vertex/imagen-4.0-generate-001',
+      provider: 'gateway',
+    });
+
+    const result = await executeGenerateImage({ prompt: 'Draw a roadmap' }, {
+      creditWsId: 'workspace-1',
+      userId: 'user-1',
+      wsId: 'workspace-1',
+    } as never);
+
+    expect(result).toMatchObject({
+      success: true,
+      imageUrl: 'https://example.com/generated.png',
+    });
+    expect(mocks.googleImage).not.toHaveBeenCalled();
+    expect(mocks.gatewayImage).toHaveBeenCalledWith(
+      'google-vertex/imagen-4.0-generate-001'
+    );
+    expect(mocks.generateImage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: {
+          modelId: 'google-vertex/imagen-4.0-generate-001',
+          provider: 'gateway',
+        },
+      })
+    );
+  });
 });
