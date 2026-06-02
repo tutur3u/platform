@@ -149,7 +149,7 @@ const BLUE_GREEN_PROXY_ROUTE_CHECK_ATTEMPTS = 6;
 const BLUE_GREEN_PROXY_ROUTE_CHECK_DELAY_MS = 2_000;
 const BLUE_GREEN_BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
 const BLUE_GREEN_CLEAR_SITE_DATA_VALUE =
-  '"cache", "cookies", "storage", "executionContexts"';
+  '"cache", "storage", "executionContexts"';
 const BLUE_GREEN_MIGRATION_PROXY_HANDOFF_TIMEOUT_MS = 3_000;
 const DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS = 45 * 60_000;
 const BLUE_GREEN_MIGRATION_STAGING_PORT_ENV = {

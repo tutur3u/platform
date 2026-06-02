@@ -1405,7 +1405,11 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
   );
   assert.match(config, /listen 7814;/);
   assert.match(config, /location = \/~recover-browser-state \{/);
-  assert.match(config, /add_header Clear-Site-Data/);
+  assert.match(
+    config,
+    /add_header Clear-Site-Data .*cache.*storage.*executionContexts.*always;/
+  );
+  assert.doesNotMatch(config, /Clear-Site-Data[^\n]*cookies/u);
   assert.match(config, /return 302 \/login\?browserStateReset=1;/);
   assert.match(config, /client_header_buffer_size 16k;/);
   assert.match(config, /keepalive_timeout 15s;/);
