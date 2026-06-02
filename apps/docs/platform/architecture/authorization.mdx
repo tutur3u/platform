@@ -1,7 +1,7 @@
 ---
 title: "Authorization & Permissions"
 description: "How apps/web evaluates workspace-scoped permissions and where those checks are enforced"
-updatedAt: "2026-05-19"
+updatedAt: "2026-06-02"
 ---
 
 `apps/web` uses workspace-scoped permissions, not a single coarse role string, to decide what a signed-in user can see or mutate.
@@ -163,6 +163,26 @@ permission before the admin write. A `workspace_members` row alone is never
 enough for those flows: invite creation and membership-type changes require
 `manage_workspace_members`, and `workspace_members.type` is protected at the
 database layer so non-managers cannot self-promote from `GUEST` to `MEMBER`.
+
+When a server page or API route uses `createAdminClient()` after a workspace
+permission gate, the protected row lookup must still prove the row belongs to
+the authorized route scope. For nested resources, include every trusted parent
+identifier in the same query or RPC:
+
+```ts
+await admin
+  .schema('private')
+  .from('user_group_posts')
+  .select('id, group_id, workspace_user_groups!inner(ws_id)')
+  .eq('id', postId)
+  .eq('group_id', groupId)
+  .eq('workspace_user_groups.ws_id', normalizedWsId)
+  .maybeSingle();
+```
+
+Do not load a child row by ID with service-role privileges and then separately
+validate only the supplied parent route data. A mismatched child ID can expose
+cross-workspace data before later related lookups return empty results.
 
 Education authoring and review APIs are also feature-gated. Routes that expose
 quiz answer keys, learner attempt metadata, flashcards, quiz sets, or other
