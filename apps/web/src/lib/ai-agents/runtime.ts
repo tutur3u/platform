@@ -5,6 +5,15 @@ import {
   type Message as SdkMessage,
   type SentMessage as SdkSentMessage,
 } from '@tuturuuu/ai/chat-sdk';
+import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
+import {
+  checkAiCredits,
+  deductAiCredits,
+} from '@tuturuuu/ai/credits/check-credits';
+import {
+  PlanModelResolutionError,
+  resolvePlanModel,
+} from '@tuturuuu/ai/credits/resolve-plan-model';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import {
   createMiraStreamTools,
@@ -14,7 +23,14 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { PermissionId } from '@tuturuuu/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { stepCountIs, ToolLoopAgent, type ToolSet } from 'ai';
+import {
+  type LanguageModelUsage,
+  stepCountIs,
+  ToolLoopAgent,
+  type ToolSet,
+} from 'ai';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { checkRateLimitRedis } from '@/lib/rate-limit';
 import { persistAiAgentExternalSdkMessage } from './external-chat-mirror';
 import {
   getChannelSecretValues,
@@ -31,6 +47,12 @@ import {
   type AiAgentDefinition,
 } from './types';
 
+const AI_AGENT_CREDIT_FEATURE = 'chat' as const;
+const AI_AGENT_MODEL_RATE_LIMIT = {
+  maxRequests: 12,
+  windowMs: 60_000,
+} as const;
+
 type MappedPlatformUser =
   | {
       ok: true;
@@ -42,8 +64,46 @@ type MappedPlatformUser =
       reason: string;
     };
 
+type AiAgentModelExecution =
+  | {
+      ok: true;
+      cappedMaxOutput: number | null;
+      modelId: string;
+    }
+  | {
+      ok: false;
+      reason: string;
+    };
+
 function bareGoogleModel(modelId: string) {
   return modelId.split('/').at(-1) || 'gemini-3.1-flash-lite';
+}
+
+function buildAiAgentModelRateLimitKey({
+  channel,
+  userId,
+}: {
+  channel: AiAgentChannelConfig;
+  userId: string;
+}) {
+  return `ai-agent:model:${channel.workspaceId}:${channel.id}:${userId}`;
+}
+
+function creditFailureReason(errorMessage: string | null) {
+  return (
+    errorMessage ||
+    'This workspace does not have enough AI credits for the agent to respond.'
+  );
+}
+
+function modelResolutionFailureReason(error: unknown) {
+  if (error instanceof PlanModelResolutionError) {
+    return error.code === 'NO_ALLOCATION'
+      ? 'This workspace is not configured for AI usage yet.'
+      : 'The configured AI agent model is not available for this workspace.';
+  }
+
+  return 'The AI agent could not verify this workspace AI model allowance.';
 }
 
 function selectTools(tools: ToolSet, allowed: readonly MiraToolName[]) {
@@ -182,6 +242,148 @@ async function createAgentTools({
   return selectTools(tools, configuredTools);
 }
 
+async function prepareAiAgentModelExecution({
+  agent,
+  channel,
+  mappedUser,
+}: {
+  agent: AiAgentDefinition;
+  channel: AiAgentChannelConfig;
+  mappedUser: Extract<MappedPlatformUser, { ok: true }>;
+}): Promise<AiAgentModelExecution> {
+  const rateLimit = await checkRateLimitRedis(
+    buildAiAgentModelRateLimitKey({
+      channel,
+      userId: mappedUser.userId,
+    }),
+    AI_AGENT_MODEL_RATE_LIMIT
+  );
+
+  if (!rateLimit.allowed) {
+    return {
+      ok: false,
+      reason:
+        'This Tuturuuu agent is receiving messages too quickly. Please try again in a moment.',
+    };
+  }
+
+  let modelId: string;
+  try {
+    const resolvedModel = await resolvePlanModel({
+      capability: 'language',
+      requestedModel: agent.modelId,
+      wsId: channel.workspaceId,
+    });
+    modelId = resolvedModel.modelId;
+  } catch (error) {
+    return {
+      ok: false,
+      reason: modelResolutionFailureReason(error),
+    };
+  }
+
+  const creditCheck = await checkAiCredits(
+    channel.workspaceId,
+    modelId,
+    AI_AGENT_CREDIT_FEATURE,
+    {
+      userId: mappedUser.userId,
+    }
+  );
+
+  if (!creditCheck.allowed) {
+    return {
+      ok: false,
+      reason: creditFailureReason(creditCheck.errorMessage),
+    };
+  }
+
+  const sbAdmin = await createAdminClient();
+  const cappedMaxOutput = await capMaxOutputTokensByCredits(
+    sbAdmin,
+    modelId,
+    creditCheck.maxOutputTokens,
+    creditCheck.remainingCredits
+  );
+
+  if (cappedMaxOutput === null) {
+    return {
+      ok: false,
+      reason: creditFailureReason('AI credits insufficient.'),
+    };
+  }
+
+  return {
+    ok: true,
+    cappedMaxOutput,
+    modelId,
+  };
+}
+
+function createAiAgentCreditDeduction({
+  agent,
+  channel,
+  message,
+  modelId,
+  userId,
+}: {
+  agent: AiAgentDefinition;
+  channel: AiAgentChannelConfig;
+  message: SdkMessage;
+  modelId: string;
+  userId: string;
+}) {
+  return async ({ totalUsage }: { totalUsage: LanguageModelUsage }) => {
+    const inputTokens = totalUsage.inputTokens ?? 0;
+    const outputTokens = totalUsage.outputTokens ?? 0;
+    const reasoningTokens =
+      totalUsage.outputTokenDetails?.reasoningTokens ??
+      totalUsage.reasoningTokens ??
+      0;
+
+    if (inputTokens <= 0 && outputTokens <= 0 && reasoningTokens <= 0) {
+      return;
+    }
+
+    try {
+      const result = await deductAiCredits({
+        feature: AI_AGENT_CREDIT_FEATURE,
+        inputTokens,
+        metadata: {
+          adapter: channel.adapter,
+          agentId: agent.id,
+          channelId: channel.id,
+          externalMessageId: message.id ?? null,
+          source: 'ai_agent_webhook',
+        },
+        modelId,
+        outputTokens,
+        reasoningTokens,
+        userId,
+        wsId: channel.workspaceId,
+      });
+
+      if (!result.success) {
+        serverLogger.warn('AI agent credit deduction returned no charge', {
+          agentId: agent.id,
+          channelId: channel.id,
+          errorCode: result.errorCode,
+          userId,
+          wsId: channel.workspaceId,
+        });
+      }
+    } catch (error) {
+      serverLogger.warn('Failed to deduct AI agent credits', {
+        agentId: agent.id,
+        channelId: channel.id,
+        error: error instanceof Error ? error.message : String(error),
+        userId,
+        wsId: channel.workspaceId,
+      });
+    }
+  };
+}
+
 async function respondWithAgent({
   agent,
   channel,
@@ -199,12 +401,26 @@ async function respondWithAgent({
     return await thread.post(mappedUser.reason);
   }
 
+  const execution = await prepareAiAgentModelExecution({
+    agent,
+    channel,
+    mappedUser,
+  });
+
+  if (!execution.ok) {
+    return await thread.post(execution.reason);
+  }
+
   await thread.startTyping();
 
-  const tools = await createAgentTools({ agent, channel, mappedUser });
+  const tools = await createAgentTools({
+    agent,
+    channel,
+    mappedUser,
+  });
   const modelWithMemory = await withAiMemory({
     customId: `${channel.id}-${message.id ?? Date.now()}`,
-    model: google(bareGoogleModel(agent.modelId)),
+    model: google(bareGoogleModel(execution.modelId)),
     product: 'ai_agents',
     source: channel.adapter,
     surface: 'ai_agent_runtime',
@@ -220,6 +436,16 @@ Mapped Tuturuuu user ID: ${mappedUser.userId}
 
 Only use the configured task and calendar tools. If a tool returns a permission error, explain that the mapped Tuturuuu user needs the relevant workspace permission.`,
     model: modelWithMemory,
+    ...(execution.cappedMaxOutput
+      ? { maxOutputTokens: execution.cappedMaxOutput }
+      : {}),
+    onFinish: createAiAgentCreditDeduction({
+      agent,
+      channel,
+      message,
+      modelId: execution.modelId,
+      userId: mappedUser.userId,
+    }),
     stopWhen: stepCountIs(8),
     temperature: agent.temperature ?? undefined,
     tools,

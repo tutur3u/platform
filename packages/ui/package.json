@@ -170,6 +170,18 @@
   "exports": {
     "./globals.css": "./src/globals.css",
     "./postcss.config": "./postcss.config.mjs",
+    "./badge": {
+      "types": "./src/components/ui/badge.tsx",
+      "import": "./src/components/ui/badge.tsx"
+    },
+    "./command": {
+      "types": "./src/components/ui/command.tsx",
+      "import": "./src/components/ui/command.tsx"
+    },
+    "./dialog": {
+      "types": "./src/components/ui/dialog.tsx",
+      "import": "./src/components/ui/dialog.tsx"
+    },
     "./tooltip": {
       "types": "./src/components/ui/tooltip.tsx",
       "import": "./src/components/ui/tooltip.tsx"
