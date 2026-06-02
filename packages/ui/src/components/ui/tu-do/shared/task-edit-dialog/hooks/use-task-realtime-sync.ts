@@ -93,6 +93,7 @@ export function useTaskRealtimeSync({
   const endDateRef = useRef(endDate);
   const estimationPointsRef = useRef(estimationPoints);
   const selectedListIdRef = useRef(selectedListId);
+  const taskRequestTokenRef = useRef(0);
   const relationsRequestTokenRef = useRef(0);
 
   nameRef.current = name;
@@ -105,7 +106,7 @@ export function useTaskRealtimeSync({
   const realtimeActive =
     !isCreateMode && isOpen && realtimeEnabled && !!taskId && !disabled;
 
-  const fetchTaskRelations = useCallback(async () => {
+  const fetchLatestTask = useCallback(async () => {
     if (!taskId) return null;
 
     try {
@@ -127,24 +128,95 @@ export function useTaskRealtimeSync({
         staleTime: 0,
       });
 
-      const relationshipProjectIds =
-        routeTask.task.project_ids ??
-        routeTask.task.projects?.map((project) => project.id) ??
-        [];
-
-      const filteredProjects = (routeTask.task.projects ?? []).filter(
-        (project) => relationshipProjectIds.includes(project.id)
-      );
-
-      return {
-        labels: routeTask.task.labels ?? [],
-        assignees: routeTask.task.assignees ?? [],
-        projects: filteredProjects,
-      };
+      return routeTask.task;
     } catch {
       return null;
     }
   }, [queryClient, taskId, taskWorkspaceId, wsId]);
+
+  const applyLatestTaskFields = useCallback(async () => {
+    if (!realtimeActive || !taskId) return;
+
+    taskRequestTokenRef.current += 1;
+    const token = taskRequestTokenRef.current;
+    const task = await fetchLatestTask();
+
+    if (token !== taskRequestTokenRef.current || !task || task.id !== taskId) {
+      return;
+    }
+
+    if (
+      hasOwn(task, 'name') &&
+      typeof task.name === 'string' &&
+      !pendingNameRef.current &&
+      task.name !== nameRef.current
+    ) {
+      setName(task.name);
+    }
+
+    if (hasOwn(task, 'priority') && task.priority !== priorityRef.current) {
+      setPriority(task.priority ?? null);
+    }
+
+    if (hasOwn(task, 'start_date')) {
+      const nextStartDate = toDate(task.start_date);
+      if (!datesMatch(startDateRef.current, nextStartDate)) {
+        setStartDate(nextStartDate);
+      }
+    }
+
+    if (hasOwn(task, 'end_date')) {
+      const nextEndDate = toDate(task.end_date);
+      if (!datesMatch(endDateRef.current, nextEndDate)) {
+        setEndDate(nextEndDate);
+      }
+    }
+
+    if (
+      hasOwn(task, 'estimation_points') &&
+      task.estimation_points !== estimationPointsRef.current
+    ) {
+      setEstimationPoints(task.estimation_points ?? null);
+    }
+
+    if (
+      hasOwn(task, 'list_id') &&
+      typeof task.list_id === 'string' &&
+      task.list_id !== selectedListIdRef.current
+    ) {
+      setSelectedListId(task.list_id);
+    }
+  }, [
+    fetchLatestTask,
+    pendingNameRef,
+    realtimeActive,
+    setEndDate,
+    setEstimationPoints,
+    setName,
+    setPriority,
+    setSelectedListId,
+    setStartDate,
+    taskId,
+  ]);
+
+  const fetchTaskRelations = useCallback(async () => {
+    const task = await fetchLatestTask();
+
+    if (!task) return null;
+
+    const relationshipProjectIds =
+      task.project_ids ?? task.projects?.map((project) => project.id) ?? [];
+
+    const filteredProjects = (task.projects ?? []).filter((project) =>
+      relationshipProjectIds.includes(project.id)
+    );
+
+    return {
+      labels: task.labels ?? [],
+      assignees: task.assignees ?? [],
+      projects: filteredProjects,
+    };
+  }, [fetchLatestTask]);
 
   const applyLatestRelations = useCallback(async () => {
     if (!realtimeActive) return;
@@ -175,62 +247,9 @@ export function useTaskRealtimeSync({
       )
         return;
 
-      if (
-        hasOwn(updatedTask, 'name') &&
-        typeof updatedTask.name === 'string' &&
-        !pendingNameRef.current &&
-        updatedTask.name !== nameRef.current
-      ) {
-        setName(updatedTask.name);
-      }
-
-      if (
-        hasOwn(updatedTask, 'priority') &&
-        updatedTask.priority !== priorityRef.current
-      ) {
-        setPriority(updatedTask.priority ?? null);
-      }
-
-      if (hasOwn(updatedTask, 'start_date')) {
-        const nextStartDate = toDate(updatedTask.start_date);
-        if (!datesMatch(startDateRef.current, nextStartDate)) {
-          setStartDate(nextStartDate);
-        }
-      }
-
-      if (hasOwn(updatedTask, 'end_date')) {
-        const nextEndDate = toDate(updatedTask.end_date);
-        if (!datesMatch(endDateRef.current, nextEndDate)) {
-          setEndDate(nextEndDate);
-        }
-      }
-
-      if (
-        hasOwn(updatedTask, 'estimation_points') &&
-        updatedTask.estimation_points !== estimationPointsRef.current
-      ) {
-        setEstimationPoints(updatedTask.estimation_points ?? null);
-      }
-
-      if (
-        hasOwn(updatedTask, 'list_id') &&
-        typeof updatedTask.list_id === 'string' &&
-        updatedTask.list_id !== selectedListIdRef.current
-      ) {
-        setSelectedListId(updatedTask.list_id);
-      }
+      void applyLatestTaskFields();
     },
-    [
-      pendingNameRef,
-      realtimeActive,
-      setEndDate,
-      setEstimationPoints,
-      setName,
-      setPriority,
-      setSelectedListId,
-      setStartDate,
-      taskId,
-    ]
+    [applyLatestTaskFields, realtimeActive, taskId]
   );
 
   const handleTaskRelationsChange = useCallback(
