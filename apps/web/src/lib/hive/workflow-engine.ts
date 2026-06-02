@@ -1,4 +1,5 @@
 import type { Json } from '@tuturuuu/types/db';
+import { z } from 'zod';
 import type {
   HiveWorkflowDefinition,
   HiveWorkflowEdge,
@@ -22,6 +23,172 @@ type WorkflowContext = {
 };
 
 type WorkflowCapabilityPayload = Record<string, unknown>;
+
+const hiveVectorSchema = z.object({
+  x: z.number().finite(),
+  y: z.number().finite(),
+  z: z.number().finite(),
+});
+
+const hiveJsonSchema: z.ZodType<Json> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(hiveJsonSchema),
+    z.record(z.string(), hiveJsonSchema),
+  ])
+);
+
+const hiveJsonObjectSchema = z.record(z.string(), hiveJsonSchema);
+
+const hiveWorldSchema = z.object({
+  blocks: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(120),
+        position: hiveVectorSchema,
+        state: hiveJsonObjectSchema.optional(),
+        type: z.string().trim().min(1).max(80),
+      })
+    )
+    .max(10_000),
+  objects: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(120),
+        position: hiveVectorSchema,
+        rotation: z.number().finite().optional(),
+        state: hiveJsonObjectSchema.optional(),
+        type: z.string().trim().min(1).max(80),
+      })
+    )
+    .max(2_000),
+});
+
+const hiveWorldPatchBlockSchema = z.object({
+  id: z.string().trim().min(1).max(120).optional(),
+  position: hiveVectorSchema,
+  state: hiveJsonObjectSchema.optional(),
+  type: z.string().trim().min(1).max(80),
+});
+
+const hiveWorldPatchObjectSchema = z.object({
+  id: z.string().trim().min(1).max(120).optional(),
+  position: hiveVectorSchema,
+  rotation: z.number().finite().optional(),
+  state: hiveJsonObjectSchema.optional(),
+  type: z.string().trim().min(1).max(80),
+});
+
+const ownerTypeSchema = z.enum(['npc', 'warehouse']);
+
+const workflowWarehouseConfigSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('create'),
+    capacity: z.number().int().min(1).max(50_000).default(500),
+    name: z.string().trim().min(1).max(120),
+    position: hiveVectorSchema,
+  }),
+  z.object({
+    action: z.literal('transfer'),
+    fromOwnerId: z.string().uuid(),
+    fromOwnerType: ownerTypeSchema,
+    itemType: z.string().trim().min(1).max(80),
+    quantity: z.number().int().min(1).max(10_000),
+    toOwnerId: z.string().uuid(),
+    toOwnerType: ownerTypeSchema,
+  }),
+]);
+
+const workflowTradeConfigSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('create'),
+    expiresAt: z.string().datetime().nullable().optional(),
+    fromNpcId: z.string().uuid(),
+    offeredCurrency: z.number().min(0).default(0),
+    offeredItems: z.array(hiveJsonSchema).default([]),
+    requestedCurrency: z.number().min(0).default(0),
+    requestedItems: z.array(hiveJsonSchema).default([]),
+    toNpcId: z.string().uuid().nullable().optional(),
+  }),
+  z.object({
+    acceptingNpcId: z.string().uuid(),
+    action: z.literal('accept'),
+    tradeId: z.string().uuid(),
+  }),
+]);
+
+const workflowFarmingConfigSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('plant'),
+    cropType: z.string().trim().min(1).max(80).default('turnip'),
+    npcId: z.string().uuid().optional(),
+    position: hiveVectorSchema,
+  }),
+  z.object({
+    action: z.literal('water'),
+    cropId: z.string().uuid(),
+  }),
+  z.object({
+    action: z.literal('harvest'),
+    cropId: z.string().uuid(),
+    npcId: z.string().uuid().optional(),
+  }),
+]);
+
+const workflowNpcPatchSchema = z
+  .object({
+    backstory: z.string().max(10_000).optional(),
+    backstoryEnabled: z.boolean().optional(),
+    customPromptEnabled: z.boolean().optional(),
+    memoryEnabled: z.boolean().optional(),
+    model: z.string().trim().min(1).max(120).optional(),
+    name: z.string().trim().min(1).max(120).optional(),
+    position: hiveVectorSchema.optional(),
+    role: z.string().trim().min(1).max(200).optional(),
+    settings: hiveJsonObjectSchema.optional(),
+    systemPrompt: z.string().max(20_000).optional(),
+  })
+  .strict();
+
+const workflowUpdateNpcConfigSchema = z.object({
+  npcId: z.string().uuid(),
+  patch: workflowNpcPatchSchema,
+});
+
+const workflowNpcDecisionConfigSchema = z.object({
+  intent: z.string().trim().min(1).max(4000).optional(),
+  npcId: z.string().uuid(),
+  spokenText: z.string().max(4000).optional(),
+});
+
+const workflowWorldPatchSchema = z.object({
+  blocks: z.array(hiveWorldPatchBlockSchema).max(10_000).optional(),
+  clear: z.boolean().optional(),
+  objects: z.array(hiveWorldPatchObjectSchema).max(2_000).optional(),
+  removeBlockIds: z
+    .array(z.string().trim().min(1).max(120))
+    .max(10_000)
+    .optional(),
+  removeObjectIds: z
+    .array(z.string().trim().min(1).max(120))
+    .max(2_000)
+    .optional(),
+});
+
+const workflowWorldEventRawConfigSchema = z
+  .object({
+    worldPatch: workflowWorldPatchSchema.optional(),
+  })
+  .passthrough();
+
+const workflowWorldEventConfigSchema = z.object({
+  eventType: z.string().trim().min(1).max(80).default('workflow.event'),
+  payload: hiveJsonObjectSchema.default({}),
+  world: hiveWorldSchema.optional(),
+});
 
 export type HiveWorkflowExecutionCapabilities = {
   createHiveWorldEvent: (
@@ -143,6 +310,25 @@ function getConfig(node: HiveWorkflowNode, context: WorkflowContext) {
     {}) as Record<string, unknown>;
 }
 
+function getIssuePath(issue: { path: PropertyKey[] }) {
+  return issue.path.length > 0 ? issue.path.join('.') : 'config';
+}
+
+function parseNodeConfig<T>(
+  schema: z.ZodType<T>,
+  config: Record<string, unknown>,
+  nodeType: HiveWorkflowNodeType
+): T {
+  const parsed = schema.safeParse(config);
+  if (parsed.success) return parsed.data;
+
+  const issues = parsed.error.issues
+    .map((issue) => `${getIssuePath(issue)}: ${issue.message}`)
+    .join('; ');
+
+  throw new Error(`Invalid Hive workflow ${nodeType} config: ${issues}`);
+}
+
 function compareCondition(config: Record<string, unknown>) {
   const operator =
     typeof config.operator === 'string' ? config.operator : 'truthy';
@@ -187,7 +373,9 @@ async function executeNode(input: {
     case 'context':
       return capabilities.getSnapshot(serverId);
     case 'farming':
-      return capabilities.runFarmingAction(config);
+      return capabilities.runFarmingAction(
+        parseNodeConfig(workflowFarmingConfigSchema, config, node.type)
+      );
     case 'log': {
       const message =
         typeof config.message === 'string' ? config.message : node.data.label;
@@ -197,36 +385,60 @@ async function executeNode(input: {
     case 'manual_trigger':
       return context.input;
     case 'npc_decision':
-      return capabilities.persistNpcDecision(config);
+      return capabilities.persistNpcDecision(
+        parseNodeConfig(workflowNpcDecisionConfigSchema, config, node.type)
+      );
     case 'simulation_tick':
       return capabilities.runSimulationTick(serverId);
-    case 'trade':
-      return config.action === 'accept'
-        ? capabilities.runTradeAccept(config)
-        : capabilities.createTradeOffer(config);
+    case 'trade': {
+      const parsed = parseNodeConfig(
+        workflowTradeConfigSchema,
+        config,
+        node.type
+      );
+      return parsed.action === 'accept'
+        ? capabilities.runTradeAccept(parsed)
+        : capabilities.createTradeOffer(parsed);
+    }
     case 'transform':
       return config.value ?? config;
     case 'update_npc': {
-      const npcId = typeof config.npcId === 'string' ? config.npcId : '';
-      const patch =
-        config.patch && typeof config.patch === 'object'
-          ? (config.patch as Record<string, unknown>)
-          : {};
-      if (!npcId) throw new Error('update_npc nodes require npcId.');
-      return capabilities.updateNpc(npcId, patch);
-    }
-    case 'warehouse':
-      return config.action === 'transfer'
-        ? capabilities.transferInventory(config)
-        : capabilities.createWarehouse(config);
-    case 'world_event':
-      return capabilities.createHiveWorldEvent(
-        await getHiveWorkflowWorldEventConfig({
-          capabilities,
-          config,
-          serverId,
-        })
+      const parsed = parseNodeConfig(
+        workflowUpdateNpcConfigSchema,
+        config,
+        node.type
       );
+      return capabilities.updateNpc(parsed.npcId, parsed.patch);
+    }
+    case 'warehouse': {
+      const parsed = parseNodeConfig(
+        workflowWarehouseConfigSchema,
+        config,
+        node.type
+      );
+      return parsed.action === 'transfer'
+        ? capabilities.transferInventory(parsed)
+        : capabilities.createWarehouse(parsed);
+    }
+    case 'world_event': {
+      const rawConfig = parseNodeConfig(
+        workflowWorldEventRawConfigSchema,
+        config,
+        node.type
+      );
+      const patchedConfig = await getHiveWorkflowWorldEventConfig({
+        capabilities,
+        config: rawConfig,
+        serverId,
+      });
+      return capabilities.createHiveWorldEvent(
+        parseNodeConfig(
+          workflowWorldEventConfigSchema,
+          patchedConfig,
+          node.type
+        )
+      );
+    }
     default:
       return assertNever(node.type);
   }
