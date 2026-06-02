@@ -213,6 +213,18 @@ export function TaskMentionChip({
     return getRouteTaskBoardIdFromPathname(window.location.pathname);
   }, []);
   const resolutionWorkspaceId = routeWsId;
+  const taskMentionQueryKey = useMemo(
+    () => [
+      'task',
+      'mention',
+      entityId,
+      resolutionWorkspaceId ?? null,
+      routeBoardId ?? null,
+      displayNumber.trim(),
+      subtitle?.trim() ?? null,
+    ],
+    [displayNumber, entityId, resolutionWorkspaceId, routeBoardId, subtitle]
+  );
   const isDark = useDomResolvedTheme() === 'dark';
 
   // Dialog states
@@ -228,7 +240,7 @@ export function TaskMentionChip({
     isLoading: taskLoading,
     error: taskError,
   } = useQuery({
-    queryKey: ['task', entityId, resolutionWorkspaceId],
+    queryKey: taskMentionQueryKey,
     queryFn: async () => {
       return resolveTaskMentionPayload({
         displayNumber,
@@ -249,6 +261,17 @@ export function TaskMentionChip({
   const taskWorkspacePersonal = taskPayload?.taskWorkspacePersonal;
   const canonicalWorkspaceId = taskWorkspaceId ?? routeWsId;
   const boardWorkspaceId = canonicalWorkspaceId;
+  const resolvedTaskBelongsToRouteWorkspace = useMemo(() => {
+    if (!routeWsId || !taskWorkspaceId) {
+      return false;
+    }
+
+    if (taskWorkspaceId === routeWsId) {
+      return true;
+    }
+
+    return routeWsId === 'personal' && taskWorkspacePersonal === true;
+  }, [routeWsId, taskWorkspaceId, taskWorkspacePersonal]);
 
   // Get board config - only fetch when menu opens and we have task data
   const { data: boardConfig } = useBoardConfig(
@@ -391,6 +414,7 @@ export function TaskMentionChip({
   }, [availableLists, task]);
 
   const handleUpdate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['task', 'mention'] });
     queryClient.invalidateQueries({ queryKey: ['task', entityId] });
     if (resolvedTaskId !== entityId) {
       queryClient.invalidateQueries({ queryKey: ['task', resolvedTaskId] });
@@ -665,7 +689,7 @@ export function TaskMentionChip({
   }, [task?.name, subtitle]);
 
   useEffect(() => {
-    if (!task || task.id === entityId) {
+    if (!task || task.id === entityId || !resolvedTaskBelongsToRouteWorkspace) {
       return;
     }
 
@@ -694,6 +718,7 @@ export function TaskMentionChip({
     entityId,
     onResolvedTaskMention,
     queryClient,
+    resolvedTaskBelongsToRouteWorkspace,
     subtitle,
     task,
     taskPayload,
