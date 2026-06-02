@@ -39,6 +39,10 @@ shared-package changes.
   honor both web cookies and mobile Bearer tokens.
 - When using admin clients after access checks, re-apply explicit workspace,
   owner, or resource predicates before reading or mutating protected rows.
+- Admin-backed lookup/status routes must not return workspace, user, invite, or
+  resource metadata for `none`/not-authorized states. Build and return resource
+  summaries only after membership, a matching invitation, or the route's
+  intended authorization proof has succeeded.
 - For nested route resources, bind the child row to all trusted parent route
   params in the same admin query, such as `wsId + groupId + postId`. Do not load
   by child ID first and rely on a separate parent lookup or an empty related RPC

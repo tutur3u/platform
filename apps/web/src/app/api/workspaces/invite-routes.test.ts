@@ -121,6 +121,25 @@ describe('workspace invitation API routes', () => {
     );
   });
 
+  it('returns not found when invite status has no visible workspace', async () => {
+    mocks.getWorkspaceInviteStatus.mockResolvedValue({
+      status: 'none',
+      workspace: null,
+    });
+    const { GET } = await import(
+      '@/app/api/workspaces/[wsId]/invite-status/route'
+    );
+
+    const response = await GET(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: 'workspace-alpha' }),
+    });
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toMatchObject({
+      errorCode: 'WORKSPACE_NOT_FOUND',
+    });
+  });
+
   it('lists invitations with app-session auth', async () => {
     mocks.listPendingWorkspaceInvitations.mockResolvedValue([
       {
