@@ -9,8 +9,16 @@ const {
 const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
 const DEFAULT_WAIT_ATTEMPTS = 60;
 const DEFAULT_WAIT_DELAY_MS = 10_000;
+const DEFAULT_GITHUB_API_URL = 'https://api.github.com';
 const WORKFLOW_PACKAGE_PATH_PATTERN =
   /["'](packages\/[^"']+\/package\.json)["']/g;
+const FAILED_WORKFLOW_CONCLUSIONS = new Set([
+  'action_required',
+  'cancelled',
+  'failure',
+  'startup_failure',
+  'timed_out',
+]);
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -193,6 +201,102 @@ function packageVersionExists({
   return result.status === 0;
 }
 
+function getGitHubToken(env = process.env) {
+  return env.GH_TOKEN || env.GITHUB_TOKEN || '';
+}
+
+function buildWorkflowRunsUrl({ env = process.env, workflowName }) {
+  if (!env.GITHUB_REPOSITORY || !workflowName) return null;
+
+  const apiUrl = (env.GITHUB_API_URL || DEFAULT_GITHUB_API_URL).replace(
+    /\/$/u,
+    ''
+  );
+  const params = new URLSearchParams({
+    event: env.GITHUB_EVENT_NAME || 'push',
+    per_page: '20',
+  });
+
+  if (env.GITHUB_REF_NAME) {
+    params.set('branch', env.GITHUB_REF_NAME);
+  }
+
+  return `${apiUrl}/repos/${env.GITHUB_REPOSITORY}/actions/workflows/${encodeURIComponent(workflowName)}/runs?${params}`;
+}
+
+async function getRelatedWorkflowRunStatus({
+  env = process.env,
+  fetchImpl = globalThis.fetch,
+  logger = console,
+  workflowName,
+}) {
+  const url = buildWorkflowRunsUrl({ env, workflowName });
+  const token = getGitHubToken(env);
+
+  if (!url || !env.GITHUB_SHA || !token || typeof fetchImpl !== 'function') {
+    return { state: 'unknown' };
+  }
+
+  try {
+    const response = await fetchImpl(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'tuturuuu-package-release-readiness',
+      },
+    });
+
+    if (!response.ok) {
+      logger.log(
+        `Unable to inspect ${workflowName} release workflow status: ` +
+          `${response.status} ${response.statusText}`
+      );
+      return { state: 'unknown' };
+    }
+
+    const payload = await response.json();
+    const workflowRun = (payload.workflow_runs ?? [])
+      .filter((run) => run.head_sha === env.GITHUB_SHA)
+      .sort((left, right) =>
+        String(right.run_started_at ?? '').localeCompare(
+          String(left.run_started_at ?? '')
+        )
+      )[0];
+
+    if (!workflowRun) {
+      return { state: 'unknown' };
+    }
+
+    if (workflowRun.status === 'completed') {
+      if (workflowRun.conclusion === 'success') {
+        return {
+          state: 'success',
+          url: workflowRun.html_url,
+        };
+      }
+
+      if (FAILED_WORKFLOW_CONCLUSIONS.has(workflowRun.conclusion)) {
+        return {
+          conclusion: workflowRun.conclusion,
+          state: 'failed',
+          url: workflowRun.html_url,
+        };
+      }
+    }
+
+    return {
+      state: 'pending',
+      status: workflowRun.status,
+      url: workflowRun.html_url,
+    };
+  } catch (error) {
+    logger.log(
+      `Unable to inspect ${workflowName} release workflow status: ${error.message}`
+    );
+    return { state: 'unknown' };
+  }
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -200,13 +304,32 @@ function sleep(ms) {
 async function waitForPackageVersion({
   attempts = DEFAULT_WAIT_ATTEMPTS,
   delayMs = DEFAULT_WAIT_DELAY_MS,
+  env = process.env,
+  getRelatedWorkflowStatus = getRelatedWorkflowRunStatus,
   logger = console,
   packageName,
   packageVersion,
+  relatedWorkflow,
   registry = DEFAULT_REGISTRY,
   versionExists = packageVersionExists,
 }) {
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    if (relatedWorkflow?.workflowName) {
+      const workflowStatus = await getRelatedWorkflowStatus({
+        env,
+        workflowName: relatedWorkflow.workflowName,
+      });
+
+      if (workflowStatus.state === 'failed') {
+        throw new Error(
+          `${packageName}@${packageVersion} is blocked because ` +
+            `${relatedWorkflow.workflowName} failed for ${env.GITHUB_SHA}. ` +
+            `Conclusion: ${workflowStatus.conclusion}. ` +
+            `Run: ${workflowStatus.url ?? '(unavailable)'}`
+        );
+      }
+    }
+
     if (versionExists({ packageName, packageVersion, registry })) {
       logger.log(`${packageName}@${packageVersion} is visible on npm.`);
       return true;
@@ -255,11 +378,25 @@ function getVersionCheckOutputs({
 }
 
 function runGitDiff({ baseRef, headRef, repoRoot }) {
-  const result = spawnSync('git', ['diff', '--name-only', baseRef, headRef], {
+  let result = spawnSync('git', ['diff', '--name-only', baseRef, headRef], {
     cwd: repoRoot,
     encoding: 'utf8',
     stdio: 'pipe',
   });
+
+  if (result.status !== 0 && /bad object/u.test(result.stderr)) {
+    spawnSync('git', ['fetch', '--no-tags', '--depth=1', 'origin', baseRef], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
+
+    result = spawnSync('git', ['diff', '--name-only', baseRef, headRef], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
+  }
 
   if (result.status !== 0) {
     throw new Error(
@@ -439,8 +576,12 @@ async function runCli(argv = process.argv.slice(2), env = process.env) {
     for (const dependency of dependencies) {
       await waitForPackageVersion({
         ...waitOptions,
+        env,
         packageName: dependency.packageName,
         packageVersion: dependency.packageVersion,
+        relatedWorkflow: {
+          workflowName: dependency.workflowName,
+        },
       });
     }
 
@@ -462,8 +603,12 @@ async function runCli(argv = process.argv.slice(2), env = process.env) {
     for (const packageInfo of changedPackages) {
       await waitForPackageVersion({
         ...waitOptions,
+        env,
         packageName: packageInfo.packageJson.name,
         packageVersion: packageInfo.version,
+        relatedWorkflow: {
+          workflowName: packageInfo.workflowName,
+        },
       });
     }
 
@@ -485,8 +630,11 @@ if (require.main === module) {
 
 module.exports = {
   DEFAULT_REGISTRY,
+  DEFAULT_GITHUB_API_URL,
   DEFAULT_WAIT_ATTEMPTS,
   DEFAULT_WAIT_DELAY_MS,
+  FAILED_WORKFLOW_CONCLUSIONS,
+  buildWorkflowRunsUrl,
   getBeforeRefFromEventPayload,
   getChangedFiles,
   getChangedFilesFromEventPayload,
@@ -494,10 +642,12 @@ module.exports = {
   getPackageInfo,
   getPublishableWorkspacePackages,
   getReleaseWorkflowFiles,
+  getRelatedWorkflowRunStatus,
   getVersionCheckOutputs,
   getWaitOptions,
   getWorkspaceDependencies,
   getWorkspacePackages,
+  getGitHubToken,
   packageVersionExists,
   runCli,
   waitForPackageVersion,

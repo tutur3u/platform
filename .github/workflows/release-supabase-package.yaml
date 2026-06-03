@@ -85,6 +85,7 @@ jobs:
       package_version: ${{ steps.version-check.outputs.package_version }}
       should_publish: ${{ steps.version-check.outputs.should_publish }}
     permissions:
+      actions: read
       contents: read
     steps:
       - uses: actions/checkout@v6
@@ -121,6 +122,8 @@ jobs:
 
       - name: Wait for npm workspace dependencies
         if: steps.version-check.outputs.should_publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/supabase
 
       - name: Build workspace dependencies

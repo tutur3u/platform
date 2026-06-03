@@ -227,7 +227,9 @@ local `workspace:` protocol ranges. Keep matching npm release workflows for the
 SDK runtime workspace dependencies so consumers can install the published SDK.
 When release-please bumps the SDK and one of those dependencies in the same
 production push, the SDK workflow waits for the dependency versions before it
-packs and publishes.
+packs and publishes. If a dependency release workflow for the same SHA fails,
+the SDK wait fails immediately instead of waiting for npm visibility until
+timeout.
 
 The matching npm-side trusted publisher must stay configured at
 `https://www.npmjs.com/package/tuturuuu/access` with these exact values:

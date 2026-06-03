@@ -115,6 +115,8 @@ test('Platform production deployment waits for release package visibility', () =
     deployJob,
     /node scripts\/ci\/package-release-readiness\.js wait-changed-package-versions/
   );
+  assert.match(deployJob, /actions:\s*read/);
+  assert.match(deployJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
 });
 
 test('mail deployment workflows do not persist checkout credentials', () => {
@@ -814,6 +816,8 @@ test('package publish workflows release from production version bumps', () => {
       /if: github\.ref == 'refs\/heads\/production' && needs\.check-version-bump\.outputs\.should_release == 'true'/
     );
     assert.match(prepareJob, /if: github\.ref == 'refs\/heads\/production'/);
+    assert.match(prepareJob, /actions:\s*read/);
+    assert.match(prepareJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
     assert.match(
       prepareJob,
       /npm view "\$\{PACKAGE_NAME\}@\$\{PACKAGE_VERSION\}" version/

@@ -23,6 +23,7 @@ jobs:
     environment: vercel-production-platform
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       deployments: write
     steps:
@@ -59,6 +60,8 @@ jobs:
 
       - name: Wait for package release gate
         if: steps.check_commits.outputs.skip_build != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/ci/package-release-readiness.js wait-changed-package-versions
 
       - name: Install dependencies

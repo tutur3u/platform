@@ -227,7 +227,10 @@ manifests so local builds always use the checked-out workspace. Package release
 workflows must first run
 `node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/<name>`
 so publishable Tuturuuu dependencies are visible on npm before the dependent
-tarball is packed. They must then rewrite the checked-out manifest immediately
+tarball is packed. That wait also inspects the dependency package workflow run
+for the same production SHA and fails immediately when that related workflow has
+already failed instead of burning the full npm polling timeout. It must then
+rewrite the checked-out manifest immediately
 before `npm pack` with
 `node scripts/ci/prepare-npm-package-manifest.js packages/<name>`. That
 temporary rewrite replaces `workspace:` protocol ranges with the current
@@ -243,7 +246,9 @@ The platform production Vercel workflow also runs
 `node scripts/ci/package-release-readiness.js wait-changed-package-versions`
 before installing dependencies. Release-please package bumps therefore publish
 and become visible on npm before the normal production platform deployment flow
-continues.
+continues. When the push payload omits changed package files, the helper fetches
+the missing base SHA before falling back to `git diff`, so shallow checkout
+depth does not break the release gate.
 
 ### Newer-commit guards
 

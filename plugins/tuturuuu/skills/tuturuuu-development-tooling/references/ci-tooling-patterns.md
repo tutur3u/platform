@@ -51,7 +51,9 @@ formatting behavior, or repo-wide verification.
   manifests. Before `npm pack`, package release workflows must run
   `node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/<name>`
   so release-please package bumps wait for publishable workspace dependencies
-  to be visible on npm. Then run
+  to be visible on npm. The wait must inspect the dependency package workflow
+  run for the same SHA and fail immediately if that workflow already failed.
+  Then run
   `node scripts/ci/prepare-npm-package-manifest.js packages/<name>` so packed
   artifacts contain concrete npm-compatible versions instead of `workspace:`
   protocol ranges.
@@ -67,8 +69,10 @@ formatting behavior, or repo-wide verification.
 - Platform Vercel production deployments should run
   `node scripts/ci/package-release-readiness.js wait-changed-package-versions`
   before dependency installation when release-please package manifests changed,
-  and platform Vercel workflows must build local `@tuturuuu/devbox` artifacts
-  before `vercel build` because `apps/web` imports that workspace package.
+  tolerate shallow checkout by fetching a missing base SHA before `git diff`,
+  and fail fast if a related package release workflow for the same SHA failed.
+  Platform Vercel workflows must build local `@tuturuuu/devbox` artifacts before
+  `vercel build` because `apps/web` imports that workspace package.
 - Package release workflows must use npm trusted publishing. Keep `id-token:
   write` isolated to the final `publish-npm` job, publish a downloaded and
   verified tarball with `npm publish --ignore-scripts`, and do not reintroduce

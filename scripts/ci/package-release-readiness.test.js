@@ -4,9 +4,11 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {
+  buildWorkflowRunsUrl,
   getChangedFiles,
   getChangedPublishablePackages,
   getPublishableWorkspacePackages,
+  getRelatedWorkflowRunStatus,
   getVersionCheckOutputs,
   getWorkspaceDependencies,
   waitForPackageVersion,
@@ -204,6 +206,72 @@ test('reports whether a package version should publish', () => {
   });
 });
 
+test('builds GitHub workflow run lookup URLs for the current push', () => {
+  assert.equal(
+    buildWorkflowRunsUrl({
+      env: {
+        GITHUB_API_URL: 'https://api.github.test',
+        GITHUB_EVENT_NAME: 'push',
+        GITHUB_REF_NAME: 'production',
+        GITHUB_REPOSITORY: 'tutur3u/platform',
+      },
+      workflowName: 'release-types-package.yaml',
+    }),
+    'https://api.github.test/repos/tutur3u/platform/actions/workflows/release-types-package.yaml/runs?event=push&per_page=20&branch=production'
+  );
+});
+
+test('detects failed related package release workflows for the same SHA', async () => {
+  const calls = [];
+  const status = await getRelatedWorkflowRunStatus({
+    env: {
+      GH_TOKEN: 'token',
+      GITHUB_API_URL: 'https://api.github.test',
+      GITHUB_EVENT_NAME: 'push',
+      GITHUB_REF_NAME: 'production',
+      GITHUB_REPOSITORY: 'tutur3u/platform',
+      GITHUB_SHA: 'abc123',
+    },
+    fetchImpl: async (url, options) => {
+      calls.push({ options, url });
+
+      return {
+        ok: true,
+        async json() {
+          return {
+            workflow_runs: [
+              {
+                conclusion: 'success',
+                head_sha: 'unrelated',
+                html_url: 'https://example.test/old',
+                run_started_at: '2026-06-03T13:00:00Z',
+                status: 'completed',
+              },
+              {
+                conclusion: 'failure',
+                head_sha: 'abc123',
+                html_url: 'https://example.test/failing',
+                run_started_at: '2026-06-03T14:00:00Z',
+                status: 'completed',
+              },
+            ],
+          };
+        },
+      };
+    },
+    logger: { log() {} },
+    workflowName: 'release-types-package.yaml',
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].options.headers.Authorization, 'Bearer token');
+  assert.deepEqual(status, {
+    conclusion: 'failure',
+    state: 'failed',
+    url: 'https://example.test/failing',
+  });
+});
+
 test('waits for npm visibility and fails after bounded retries', async () => {
   const attempts = [];
   const logger = { log() {} };
@@ -232,5 +300,30 @@ test('waits for npm visibility and fails after bounded retries', async () => {
       versionExists: () => false,
     }),
     /@tuturuuu\/devbox@0\.1\.0 did not become visible on npm/
+  );
+});
+
+test('fails package waits immediately when a related release workflow failed', async () => {
+  await assert.rejects(
+    waitForPackageVersion({
+      attempts: 3,
+      delayMs: 0,
+      env: {
+        GITHUB_SHA: 'abc123',
+      },
+      getRelatedWorkflowStatus: async () => ({
+        conclusion: 'failure',
+        state: 'failed',
+        url: 'https://example.test/run',
+      }),
+      logger: { log() {} },
+      packageName: '@tuturuuu/internal-api',
+      packageVersion: '0.3.0',
+      relatedWorkflow: {
+        workflowName: 'release-types-package.yaml',
+      },
+      versionExists: () => false,
+    }),
+    /@tuturuuu\/internal-api@0\.3\.0 is blocked because release-types-package\.yaml failed/
   );
 });
