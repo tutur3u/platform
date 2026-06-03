@@ -1,7 +1,7 @@
 import type { TuturuuuUserClient } from '../platform';
 import { type FlagValue, getFlag, getTaskStateFilters } from './args';
 import { type CliConfig, writeCliConfig } from './config';
-import { color, selectItem } from './select';
+import { color, escapeTerminalText, selectItem } from './select';
 
 type ListedWorkspace = Awaited<
   ReturnType<TuturuuuUserClient['workspaces']['list']>
@@ -62,10 +62,13 @@ function isPrefixedTaskIdentifier(value: string) {
 }
 
 function formatColorBadge(value?: string | null) {
-  const label = value?.trim();
+  const rawLabel = value?.trim();
+  if (!rawLabel) return undefined;
+
+  const label = escapeTerminalText(rawLabel);
   if (!label) return undefined;
 
-  return `${color.hexOrName('■', label)} ${color.hexOrName(label.toUpperCase(), label)}`;
+  return `${color.hexOrName('■', rawLabel)} ${color.hexOrName(label.toUpperCase(), rawLabel)}`;
 }
 
 async function resolveTaskIdentifier(
@@ -108,26 +111,28 @@ async function resolveTaskIdentifier(
 }
 
 function formatBadge(value?: string | null) {
-  const label = String(value || 'free').toUpperCase();
+  const rawLabel = String(value || 'free').trim() || 'free';
+  const normalizedLabel = rawLabel.toUpperCase();
+  const label = escapeTerminalText(rawLabel).toUpperCase();
   const badge = `[${label}]`;
 
-  if (['DONE', 'CLOSED', 'ARCHIVED'].includes(label)) {
+  if (['DONE', 'CLOSED', 'ARCHIVED'].includes(normalizedLabel)) {
     return color.dim(badge);
   }
 
-  if (['PRO', 'PLUS', 'PREMIUM'].includes(label)) {
+  if (['PRO', 'PLUS', 'PREMIUM'].includes(normalizedLabel)) {
     return color.magenta(badge);
   }
 
-  if (['BUSINESS', 'TEAM'].includes(label)) {
+  if (['BUSINESS', 'TEAM'].includes(normalizedLabel)) {
     return color.yellow(badge);
   }
 
-  if (['ENTERPRISE', 'STUDIO'].includes(label)) {
+  if (['ENTERPRISE', 'STUDIO'].includes(normalizedLabel)) {
     return color.cyan(badge);
   }
 
-  if (['ERROR', 'BLOCKED', 'BLOCKING'].includes(label)) {
+  if (['ERROR', 'BLOCKED', 'BLOCKING'].includes(normalizedLabel)) {
     return color.red(badge);
   }
 
@@ -177,7 +182,9 @@ export async function chooseBoard(
       (board) => board.id === config.currentBoardId
     ),
     getBadge: (board) =>
-      board.ticket_prefix ? color.blue(`[${board.ticket_prefix}]`) : undefined,
+      board.ticket_prefix
+        ? color.blue(`[${escapeTerminalText(board.ticket_prefix)}]`)
+        : undefined,
     getDescription: (board) => [board.id].filter(Boolean).join(' '),
     getLabel: (board) => board.name || board.id,
     items: boards,

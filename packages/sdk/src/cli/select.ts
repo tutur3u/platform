@@ -8,6 +8,21 @@ export interface SelectItemOptions<T> {
 }
 
 type ColorCode = 1 | 2 | 22 | 31 | 32 | 33 | 34 | 35 | 36 | 90;
+type RenderSelectItemLinesOptions<T> = Pick<
+  SelectItemOptions<T>,
+  'getBadge' | 'getDescription' | 'getLabel' | 'items' | 'title'
+> & {
+  selectedIndex: number;
+};
+
+const NAMED_CONTROL_ESCAPES = new Map<string, string>([
+  ['\b', '\\b'],
+  ['\t', '\\t'],
+  ['\n', '\\n'],
+  ['\v', '\\v'],
+  ['\f', '\\f'],
+  ['\r', '\\r'],
+]);
 
 function supportsColor() {
   return (
@@ -19,6 +34,34 @@ function supportsColor() {
 
 function colorize(code: ColorCode, value: string) {
   return supportsColor() ? `\x1b[${code}m${value}\x1b[0m` : value;
+}
+
+export function escapeTerminalText(value: string) {
+  let escaped = '';
+
+  for (const character of value) {
+    const codePoint = character.codePointAt(0) ?? 0;
+
+    if (
+      !(
+        (codePoint >= 0x00 && codePoint <= 0x1f) ||
+        (codePoint >= 0x7f && codePoint <= 0x9f)
+      )
+    ) {
+      escaped += character;
+      continue;
+    }
+
+    const named = NAMED_CONTROL_ESCAPES.get(character);
+    if (named) {
+      escaped += named;
+      continue;
+    }
+
+    escaped += `\\x${codePoint.toString(16).toUpperCase().padStart(2, '0')}`;
+  }
+
+  return escaped;
 }
 
 function getNamedColorCode(value: string): ColorCode {
@@ -88,6 +131,44 @@ function isRawModeCapable(
   return typeof stream.setRawMode === 'function';
 }
 
+export function renderSelectItemLines<T>({
+  getBadge,
+  getDescription,
+  getLabel,
+  items,
+  selectedIndex,
+  title,
+}: RenderSelectItemLinesOptions<T>) {
+  const indexWidth = String(items.length).length;
+
+  return [
+    color.bold(color.cyan(title)),
+    color.dim(
+      'Use up/down or j/k to move, space/enter to select, q/esc to cancel.'
+    ),
+    '',
+    ...items.map((item, index) => {
+      const selected = index === selectedIndex;
+      const prefix = selected ? color.green('>') : ' ';
+      const itemIndex = color.cyan(
+        `${String(index + 1).padStart(indexWidth, ' ')}.`
+      );
+      const badge = getBadge?.(item);
+      const safeLabel = escapeTerminalText(getLabel(item));
+      const label = selected ? color.bold(safeLabel) : safeLabel;
+      const description = getDescription?.(item);
+      return [
+        `${prefix} ${itemIndex}`,
+        badge,
+        label,
+        description ? color.dim(escapeTerminalText(description)) : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+    }),
+  ];
+}
+
 export async function selectItem<T>({
   defaultIndex = 0,
   getBadge,
@@ -129,32 +210,14 @@ export async function selectItem<T>({
       }
       write('\x1b[J\x1b[?25l');
 
-      const indexWidth = String(items.length).length;
-      const lines = [
-        color.bold(color.cyan(title)),
-        color.dim(
-          'Use up/down or j/k to move, space/enter to select, q/esc to cancel.'
-        ),
-        '',
-        ...items.map((item, index) => {
-          const selected = index === selectedIndex;
-          const prefix = selected ? color.green('>') : ' ';
-          const itemIndex = color.cyan(
-            `${String(index + 1).padStart(indexWidth, ' ')}.`
-          );
-          const badge = getBadge?.(item);
-          const label = selected ? color.bold(getLabel(item)) : getLabel(item);
-          const description = getDescription?.(item);
-          return [
-            `${prefix} ${itemIndex}`,
-            badge,
-            label,
-            description ? color.dim(description) : '',
-          ]
-            .filter(Boolean)
-            .join(' ');
-        }),
-      ];
+      const lines = renderSelectItemLines({
+        getBadge,
+        getDescription,
+        getLabel,
+        items,
+        selectedIndex,
+        title,
+      });
 
       renderedLines = lines.length;
       write(`${lines.join('\n')}\n`);

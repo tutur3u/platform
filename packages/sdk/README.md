@@ -224,7 +224,9 @@ the keyboard. The interactive picker shows one-based indexes, colored badges
 such as `[FREE] Tuturuuu` and `[PRO] Personal`, task-list color swatches, the
 selected row, and muted metadata. Use up/down or `j`/`k` to move, space/enter to
 select, and escape/`q` to cancel. Interactive selection is disabled for `--json`
-output. Use `ttr -v` or `ttr --version` to print the installed CLI version.
+output. Picker labels, descriptions, badges, and color names derived from
+platform data must visibly escape terminal control characters before rendering.
+Use `ttr -v` or `ttr --version` to print the installed CLI version.
 
 ### Client Initialization
 
