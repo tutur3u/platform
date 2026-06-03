@@ -75,8 +75,10 @@ and the created `wallet_transactions.id` when processing succeeds.
   [Secrets & Configuration](/build/devops/secrets-and-configuration).
 - The end-to-end validation flow lives in
   [SePay Testing Guide](/build/devops/sepay-testing-guide).
-- OAuth callback state is intentionally cookie-backed rather than a custom HMAC
-  payload.
+- OAuth callback state is a short-lived HMAC-signed payload bound to the
+  workspace id and stored in a callback-scoped HttpOnly cookie. The callback
+  must require the cookie value and query `state` to match before validating the
+  signature, expiry, and workspace.
 - SePay account sync follows cursor pagination and retries `429` responses using
   SePay's `x-sepay-userapi-retry-after` header, but request-path retry sleeps
   are capped at 2 seconds each so sync and webhook-provisioning handlers do not

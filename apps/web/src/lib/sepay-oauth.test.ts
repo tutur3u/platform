@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildSepayOauthAuthorizeUrl,
   createSepayOauthState,
@@ -7,23 +7,88 @@ import {
 } from './sepay-oauth';
 
 describe('sepay oauth helpers', () => {
-  it('creates and verifies an opaque oauth state token', () => {
-    const { state } = createSepayOauthState();
+  const originalClientSecret = process.env.SEPAY_OAUTH_CLIENT_SECRET;
+  const originalStateSecret = process.env.SEPAY_OAUTH_STATE_SECRET;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-03T01:00:00.000Z'));
+    process.env.SEPAY_OAUTH_CLIENT_SECRET = 'client-secret-for-state';
+    delete process.env.SEPAY_OAUTH_STATE_SECRET;
+  });
+
+  afterEach(() => {
+    if (originalClientSecret == null) {
+      delete process.env.SEPAY_OAUTH_CLIENT_SECRET;
+    } else {
+      process.env.SEPAY_OAUTH_CLIENT_SECRET = originalClientSecret;
+    }
+
+    if (originalStateSecret == null) {
+      delete process.env.SEPAY_OAUTH_STATE_SECRET;
+    } else {
+      process.env.SEPAY_OAUTH_STATE_SECRET = originalStateSecret;
+    }
+
+    vi.useRealTimers();
+  });
+
+  it('creates and verifies a signed workspace-bound oauth state token', () => {
+    const { state } = createSepayOauthState({ wsId: 'ws_1' });
 
     const verification = verifySepayOauthState({
       expectedState: state,
       state,
+      wsId: 'ws_1',
     });
 
     expect(verification).toEqual({ ok: true });
+    expect(state.split('.')).toHaveLength(2);
   });
 
   it('rejects mismatched oauth state tokens', () => {
-    const { state } = createSepayOauthState();
+    const { state } = createSepayOauthState({ wsId: 'ws_1' });
 
     const verification = verifySepayOauthState({
       expectedState: state,
       state: 'tampered',
+      wsId: 'ws_1',
+    });
+
+    expect(verification).toEqual({ ok: false });
+  });
+
+  it('rejects unsigned fixed oauth state values even when cookie and query match', () => {
+    const verification = verifySepayOauthState({
+      expectedState: 'attacker-chosen-state',
+      state: 'attacker-chosen-state',
+      wsId: 'ws_1',
+    });
+
+    expect(verification).toEqual({ ok: false });
+  });
+
+  it('rejects signed oauth state for another workspace', () => {
+    const { state } = createSepayOauthState({ wsId: 'ws_1' });
+
+    const verification = verifySepayOauthState({
+      expectedState: state,
+      state,
+      wsId: 'ws_2',
+    });
+
+    expect(verification).toEqual({ ok: false });
+  });
+
+  it('rejects expired signed oauth state', () => {
+    const { state } = createSepayOauthState({ ttlMs: 1000, wsId: 'ws_1' });
+
+    vi.advanceTimersByTime(1001);
+
+    const verification = verifySepayOauthState({
+      expectedState: state,
+      state,
+      wsId: 'ws_1',
     });
 
     expect(verification).toEqual({ ok: false });

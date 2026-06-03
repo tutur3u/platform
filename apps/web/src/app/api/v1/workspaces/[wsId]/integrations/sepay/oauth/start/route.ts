@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const env = getSepayOauthEnv();
-  if (!env.clientId) {
+  if (!env.clientId || !env.clientSecret) {
     return NextResponse.json(
       { message: 'SePay OAuth is not configured' },
       { status: 500 }
@@ -38,7 +38,7 @@ export async function POST(request: Request, { params }: Params) {
 
   const callbackUrl = buildSepayOauthCallbackUrl(access.wsId);
   const callbackPath = new URL(callbackUrl).pathname;
-  const oauthState = createSepayOauthState();
+  const oauthState = createSepayOauthState({ wsId: access.wsId });
   const authorizeUrl = buildSepayOauthAuthorizeUrl({
     authorizeUrl: env.authorizeUrl,
     clientId: env.clientId,

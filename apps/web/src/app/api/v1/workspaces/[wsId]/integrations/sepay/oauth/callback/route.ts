@@ -105,6 +105,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     expectedState:
       request.cookies.get(getSepayOauthStateCookieName(wsId))?.value ?? null,
     state,
+    wsId,
   });
 
   if (!verifiedState.ok) {

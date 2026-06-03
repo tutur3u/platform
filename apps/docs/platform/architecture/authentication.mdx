@@ -179,9 +179,11 @@ export function OAuthButtons() {
 
 For provider-specific OAuth callbacks that need to carry ephemeral verifier or
 CSRF state across a browser redirect, prefer a short-lived HttpOnly cookie scoped
-to the callback route. Do not default to bespoke HMAC-signed state blobs when the
-server only needs to confirm that the callback matches the browser session that
-initiated the flow.
+to the callback route. When the callback binds external credentials or mutates a
+workspace, do not let the cookie value be the sole authority: use a signed,
+expiry-bound state payload that also binds the workspace or account being
+connected, then require the callback cookie and query `state` to match before
+verifying that payload.
 
 ### Passkeys
 
