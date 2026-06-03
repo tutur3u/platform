@@ -939,19 +939,12 @@ export async function handleTaskRouteGET(
     const parsedIdentifier = identifierQuery
       ? parseTaskIdentifierQuery(identifierQuery)
       : null;
-    const hasRpcTaskFilters =
-      !!searchQuery ||
+    const hasRpcOnlyTaskFilters =
       labelIds.length > 0 ||
       assigneeIds.length > 0 ||
       projectIds.length > 0 ||
       priorities.length > 0 ||
-      estimationMin !== null ||
-      estimationMax !== null ||
-      !!dueDateFrom ||
-      !!dueDateTo ||
-      hasDueDate ||
       includeUnassigned ||
-      assignedToMe ||
       !!sortBy;
     const sourceFilterHasEmptySelection =
       sourceScope === 'external_specific' &&
@@ -966,7 +959,9 @@ export async function handleTaskRouteGET(
       !sourceFilterHasEmptySelection &&
       !sourceTasksDisabled &&
       !forTimeTracking &&
-      (sourceScope !== 'all_visible' || hasRpcTaskFilters || includeListCounts);
+      (sourceScope !== 'all_visible' ||
+        hasRpcOnlyTaskFilters ||
+        includeListCounts);
 
     if (isGuestBoardAccess) {
       if (
