@@ -29,7 +29,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   flutter_colorpicker: ^1.1.0
   flutter_inappwebview: ^6.1.5
-  flutter_local_notifications: ^21.0.0
+  flutter_local_notifications: ^22.0.0-dev.3
   flutter_localizations:
     sdk: flutter
   flutter_markdown: ^0.7.7+1
@@ -44,7 +44,7 @@ dependencies:
   hive: ^2.2.3
   http: ^1.6.0
   http_parser: ^4.1.2
-  image: ^4.8.0
+  image: ^4.9.1
   image_cropper: ^12.1.1
   image_picker: ^1.2.1
   intl: ^0.20.2
