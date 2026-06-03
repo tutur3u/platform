@@ -795,7 +795,11 @@ export function normalizeLabelColor(value?: string) {
 }
 
 export async function runCli(argv = process.argv.slice(2)) {
-  if (argv.includes('-v') || argv.includes('--version')) {
+  const commandSeparatorIndex = argv.indexOf('--');
+  const globalArgs =
+    commandSeparatorIndex >= 0 ? argv.slice(0, commandSeparatorIndex) : argv;
+
+  if (globalArgs.includes('-v') || globalArgs.includes('--version')) {
     process.stdout.write(`${packageJson.version}\n`);
     return;
   }

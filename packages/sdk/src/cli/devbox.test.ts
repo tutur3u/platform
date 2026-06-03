@@ -1,12 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   collectRepeatedFlagValues,
   createDevboxRunPayload,
   extractDevboxForwardedCommand,
   parseDurationSeconds,
+  runDevboxCommand,
 } from './devbox';
 
 describe('devbox CLI helpers', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('extracts commands after -- without treating command flags as CLI flags', () => {
     expect(
       extractDevboxForwardedCommand([
@@ -85,5 +90,47 @@ describe('devbox CLI helpers', () => {
       reuse: true,
       timeoutSeconds: 120,
     });
+  });
+
+  it('fails agent start when heartbeat rejects the runner token', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Unauthorized' }), {
+        status: 401,
+        statusText: 'Unauthorized',
+      })
+    );
+
+    await expect(
+      runDevboxCommand({
+        action: 'agent',
+        argv: ['box', 'agent', 'start'],
+        baseUrl: 'http://localhost:7903',
+        flags: { once: true, token: 'invalid' },
+        json: false,
+      })
+    ).rejects.toThrow('Devbox agent heartbeat failed: 401 Unauthorized');
+  });
+
+  it('runs one heartbeat and poll cycle for one-shot agents', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ jobs: [] })));
+
+    await runDevboxCommand({
+      action: 'agent',
+      argv: ['box', 'agent', 'start'],
+      baseUrl: 'http://localhost:7903',
+      flags: { once: true, token: 'runner-token' },
+      json: false,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+      '/api/v1/devboxes/agents/heartbeat'
+    );
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain(
+      '/api/v1/devboxes/agents/poll'
+    );
   });
 });

@@ -211,6 +211,10 @@ function runInstallerCommand(command: string[]) {
   });
 }
 
+function formatResponseStatus(response: Response) {
+  return `${response.status}${response.statusText ? ` ${response.statusText}` : ''}`;
+}
+
 export async function runDevboxCommand({
   action,
   argv,
@@ -431,16 +435,31 @@ async function runDevboxAgentLoop({
 
   let running = true;
   while (running) {
-    await fetch(new URL('/api/v1/devboxes/agents/heartbeat', origin), {
-      headers,
-      method: 'POST',
-    });
+    const heartbeatResponse = await fetch(
+      new URL('/api/v1/devboxes/agents/heartbeat', origin),
+      {
+        headers,
+        method: 'POST',
+      }
+    );
+    if (!heartbeatResponse.ok) {
+      throw new Error(
+        `Devbox agent heartbeat failed: ${formatResponseStatus(heartbeatResponse)}`
+      );
+    }
+
     const pollResponse = await fetch(
       new URL('/api/v1/devboxes/agents/poll', origin),
       {
         headers,
       }
     );
+    if (!pollResponse.ok) {
+      throw new Error(
+        `Devbox agent poll failed: ${formatResponseStatus(pollResponse)}`
+      );
+    }
+
     const payload = (await pollResponse.json().catch(() => ({ jobs: [] }))) as {
       jobs?: unknown[];
     };
