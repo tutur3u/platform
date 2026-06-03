@@ -1,10 +1,13 @@
 {
   "name": "@tuturuuu/types",
   "license": "MIT",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
