@@ -56,9 +56,12 @@ and the created `wallet_transactions.id` when processing succeeds.
   `transferAmount`.
 - `transferType: "in"` is written as a positive wallet transaction amount.
 - `transferType: "out"` is written as a negative wallet transaction amount.
-- Webhook retries reopen `failed` events immediately.
+- Webhook retries must atomically claim `failed` events by `id`, `ws_id`,
+  `status`, and empty `created_transaction_id` before creating a wallet
+  transaction. A competing retry that loses the claim is treated as a duplicate.
 - `received` events become retriable once they are older than the stale-event
-  TTL and still do not have a `created_transaction_id`.
+  TTL and still do not have a `created_transaction_id`; stale retries must use
+  the same atomic claim with a stale `received_at` predicate.
 - `processed` and `duplicate` rows are treated as non-replayable duplicates.
 - Auto-classification failures must not block ingestion; the route falls back to
   an uncategorized category.
