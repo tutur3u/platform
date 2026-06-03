@@ -24,6 +24,21 @@ type Params = {
   wsId: string;
 };
 
+type TaskListTaskCountRow = {
+  list_id: string | null;
+  task_count: number | string | null;
+};
+
+type TaskListTaskCountClient = {
+  rpc: (
+    fn: 'get_task_board_list_task_counts',
+    args: { p_board_id: string }
+  ) => Promise<{
+    data: TaskListTaskCountRow[] | null;
+    error: { message?: string } | null;
+  }>;
+};
+
 const TASK_BOARD_LIST_ROUTE_APP_SESSION_AUTH = {
   targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
 } as const;
@@ -70,15 +85,16 @@ export const GET = withSessionAuth<Params>(
         );
       }
 
-      const listIds = (lists ?? []).map((list) => list.id);
       const taskCountsByListId = new Map<string, number>();
 
-      if (listIds.length > 0) {
-        const { data: taskRows, error: taskCountError } = await sbAdmin
-          .from('tasks')
-          .select('list_id')
-          .in('list_id', listIds)
-          .is('deleted_at', null);
+      if ((lists ?? []).length > 0) {
+        const taskCountClient = sbAdmin.schema(
+          'private'
+        ) as unknown as TaskListTaskCountClient;
+        const { data: taskCountRows, error: taskCountError } =
+          await taskCountClient.rpc('get_task_board_list_task_counts', {
+            p_board_id: boardId,
+          });
 
         if (taskCountError) {
           return NextResponse.json(
@@ -87,12 +103,9 @@ export const GET = withSessionAuth<Params>(
           );
         }
 
-        for (const task of taskRows ?? []) {
-          if (!task.list_id) continue;
-          taskCountsByListId.set(
-            task.list_id,
-            (taskCountsByListId.get(task.list_id) ?? 0) + 1
-          );
+        for (const row of (taskCountRows ?? []) as TaskListTaskCountRow[]) {
+          if (!row.list_id) continue;
+          taskCountsByListId.set(row.list_id, Number(row.task_count ?? 0));
         }
       }
 
