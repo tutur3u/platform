@@ -131,6 +131,19 @@ const AUTH_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const CRON_RATE_LIMITS: RateLimitProfile = {
+  get: [
+    createConfig('minute', '1 m', 10, 'API_PROXY_CRON_READ_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 60, 'API_PROXY_CRON_READ_LIMIT_HOUR'),
+    createConfig('day', '1 d', 200, 'API_PROXY_CRON_READ_LIMIT_DAY'),
+  ],
+  mutate: [
+    createConfig('minute', '1 m', 10, 'API_PROXY_CRON_MUTATE_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 60, 'API_PROXY_CRON_MUTATE_LIMIT_HOUR'),
+    createConfig('day', '1 d', 200, 'API_PROXY_CRON_MUTATE_LIMIT_DAY'),
+  ],
+};
+
 const CROSS_APP_RETURN_RATE_LIMITS: RateLimitProfile = {
   get: NO_READ_RATE_LIMITS,
   mutate: [
@@ -173,6 +186,13 @@ const FORM_SUBMISSION_RATE_LIMITS: RateLimitProfile = {
 };
 
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
+  {
+    key: 'cron',
+    matches: (req) =>
+      req.nextUrl.pathname === '/api/cron' ||
+      req.nextUrl.pathname.startsWith('/api/cron/'),
+    rateLimits: CRON_RATE_LIMITS,
+  },
   {
     key: 'auth',
     matches: (req) =>

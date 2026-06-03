@@ -195,6 +195,37 @@ describe('guardApiProxyRequest', () => {
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
   });
 
+  it('keeps unauthenticated cron reads on a strict proxy bucket', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 10,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/cron/ai/sync-models', 'GET'),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('10');
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('cron');
+  });
+
   it('does not grant elevated proxy budgets from authenticated-looking headers alone', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
@@ -812,7 +843,7 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(blockedResponse?.status).toBe(429);
-    expect(blockedResponse?.headers.get('X-RateLimit-Policy')).toBe('default');
+    expect(blockedResponse?.headers.get('X-RateLimit-Policy')).toBe('cron');
   });
 
   it('bypasses trusted webhook traffic only with required signature headers', async () => {

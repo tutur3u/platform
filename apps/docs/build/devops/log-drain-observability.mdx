@@ -119,6 +119,11 @@ per-job runtime enablement changes must go through routes guarded by
 `authorizeInfrastructureOperator` so roles with only `view_infrastructure`
 cannot change scheduler behavior.
 
+Cron log-drain wrappers must not persist unauthorized attempts. Keep
+`withCronLogDrain` configured so 401 and 403 cron responses return to callers
+without writing `requests`, `cron_runs`, or buffered `log_events`; attackers must
+not be able to fill observability storage with unauthenticated cron probes.
+
 Cron jobs should show both the raw expression and a natural description such as "Every 15 minutes", plus the previous and next scheduled run timestamps when the runtime snapshot provides them. Cron expressions are stored as runtime config, while visible daily schedule descriptions and run timestamps are rendered in the viewer's browser timezone.
 
 The `infrastructure-sample-resources` job runs every minute through `/api/cron/infrastructure/sample-resources`. It is the automated source for retained resource charts; do not rely on opening the Resources page to create samples.

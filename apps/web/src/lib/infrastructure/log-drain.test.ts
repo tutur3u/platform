@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createCronLogDrainContext,
   createRequestLogDrainContext,
+  shouldPersistLogDrainContext,
 } from './log-drain';
 
 describe('log drain request ids', () => {
@@ -35,5 +36,26 @@ describe('log drain request ids', () => {
     expect(context.requestId).toMatch(/^cron-/u);
     expect(context.requestId).not.toBe('cron-attacker-id');
     expect(context.clientRequestId).toBe('cron-attacker-id');
+  });
+
+  it('skips log-drain persistence for unauthorized cron responses', () => {
+    const context = createCronLogDrainContext({
+      jobId: 'sample',
+      path: '/api/cron/sample',
+      request: new Request('https://app.example.com/api/cron/sample'),
+    });
+
+    expect(shouldPersistLogDrainContext(context, 401)).toBe(false);
+    expect(shouldPersistLogDrainContext(context, 403)).toBe(false);
+    expect(shouldPersistLogDrainContext(context, 200)).toBe(true);
+  });
+
+  it('keeps unauthorized non-cron responses eligible for log-drain persistence', () => {
+    const context = createRequestLogDrainContext({
+      request: new Request('https://app.example.com/api/test'),
+      route: '/api/test',
+    });
+
+    expect(shouldPersistLogDrainContext(context, 401)).toBe(true);
   });
 });
