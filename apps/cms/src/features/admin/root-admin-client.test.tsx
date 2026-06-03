@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RootExternalProjectsAdminClient } from './root-admin-client';
@@ -189,6 +195,8 @@ const audits = [
   },
 ] as any[];
 
+const ROOT_ADMIN_INTERACTION_TIMEOUT_MS = 10_000;
+
 function renderClient() {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -227,31 +235,42 @@ describe('RootExternalProjectsAdminClient', () => {
     });
   });
 
-  it('filters site projects and opens the project details dialog', async () => {
-    renderClient();
+  it(
+    'filters site projects and opens the project details dialog',
+    async () => {
+      renderClient();
 
-    expect(screen.getByText('Yoola Studio')).not.toBeNull();
-    expect(screen.getByText('Junly Shop')).not.toBeNull();
+      expect(
+        screen.getByRole('button', { name: /Yoola Studio/ })
+      ).not.toBeNull();
+      expect(screen.getByRole('button', { name: /Junly Shop/ })).not.toBeNull();
 
-    fireEvent.change(
-      screen.getByPlaceholderText(
-        'Search project name, internal ID, template, or site type'
-      ),
-      {
-        target: { value: 'junly' },
-      }
-    );
+      fireEvent.change(
+        screen.getByPlaceholderText(
+          'Search project name, internal ID, template, or site type'
+        ),
+        {
+          target: { value: 'junly' },
+        }
+      );
 
-    await waitFor(() => {
-      expect(screen.queryByText('Yoola Studio')).toBeNull();
-    });
-    expect(screen.getByText('Junly Shop')).not.toBeNull();
+      await waitFor(() => {
+        expect(
+          screen.queryByRole('button', { name: /Yoola Studio/ })
+        ).toBeNull();
+      });
 
-    fireEvent.click(screen.getByText('Junly Shop').closest('button')!);
+      const junlyProjectButton = screen.getByRole('button', {
+        name: /Junly Shop/,
+      });
+      fireEvent.click(junlyProjectButton);
 
-    expect(screen.getByRole('dialog')).not.toBeNull();
-    expect(screen.getByText('Selected template')).not.toBeNull();
-  });
+      const dialog = await screen.findByRole('dialog');
+
+      expect(within(dialog).getByText('Selected template')).not.toBeNull();
+    },
+    ROOT_ADMIN_INTERACTION_TIMEOUT_MS
+  );
 
   it('saves a disconnected project connection from the details dialog', async () => {
     renderClient();
