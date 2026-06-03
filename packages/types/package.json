@@ -17,14 +17,14 @@
   },
   "dependencies": {
     "@tiptap/react": "3.24.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.9.1",
-    "@types/react": "^19.2.15",
+    "@types/react": "^19.2.16",
     "typescript": "^6.0.3"
   },
   "exports": {

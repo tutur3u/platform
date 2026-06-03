@@ -30,14 +30,14 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "^16.2.6",
-    "react": "^19.2.6",
+    "next": "^16.2.7",
+    "react": "^19.2.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.9.1",
-    "@types/react": "^19.2.15",
+    "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
