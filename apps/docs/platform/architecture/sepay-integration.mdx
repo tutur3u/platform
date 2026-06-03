@@ -1,7 +1,7 @@
 ---
-title: 'SePay Integration'
-description: 'Architecture and implementation notes for the SePay finance integration.'
-updatedAt: '2026-04-22'
+title: "SePay Integration"
+description: "Architecture and implementation notes for the SePay finance integration."
+updatedAt: "2026-04-22"
 ---
 
 ## Goal
@@ -35,7 +35,7 @@ tokens, scopes, expiry, and connection status.
 ### `sepay_wallet_links`
 
 Maps SePay bank-account metadata to workspace wallets so webhook deliveries can
- resolve to the correct wallet without manual per-event routing.
+resolve to the correct wallet without manual per-event routing.
 
 ### `sepay_webhook_endpoints`
 
@@ -75,8 +75,9 @@ and the created `wallet_transactions.id` when processing succeeds.
 - OAuth callback state is intentionally cookie-backed rather than a custom HMAC
   payload.
 - SePay account sync follows cursor pagination and retries `429` responses using
-  SePay's `x-sepay-userapi-retry-after` header before failing the workspace
-  sync.
+  SePay's `x-sepay-userapi-retry-after` header, but request-path retry sleeps
+  are capped at 2 seconds each so sync and webhook-provisioning handlers do not
+  stay open for provider-supplied long delays.
 - Webhook provisioning only accepts numeric SePay bank-account ids
   (`bank_account_id` or numeric `id`) and best-effort deletes the remote webhook
   if local persistence of the resulting webhook id fails.

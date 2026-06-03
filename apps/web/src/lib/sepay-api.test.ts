@@ -59,6 +59,31 @@ describe('sepay api', () => {
     expect(thirdCallUrl.searchParams.get('since_id')).toBe('100');
   });
 
+  it('caps SePay bank-account Retry-After delays on request paths', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response('rate limited', {
+          headers: { 'x-sepay-userapi-retry-after': '3600' },
+          status: 429,
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [] }), { status: 200 })
+      );
+
+    global.fetch = fetchMock;
+
+    const pending = listSepayBankAccounts({ accessToken: 'token' });
+
+    await vi.advanceTimersByTimeAsync(1999);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(pending).resolves.toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('stops pagination when SePay repeats a previously seen cursor id', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
