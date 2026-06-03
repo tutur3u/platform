@@ -70,6 +70,10 @@ session is already at `aal2`:
   refresh-token revocation can be best-effort, but a failed Supabase logout must
   leave the account visible with an error so the persisted session cannot
   silently reappear later.
+- Auth account models may serialize refresh tokens and session JSON only for the
+  encrypted secure-storage store. Do not include those raw secrets in
+  `Equatable.props`, `toString`, or other Cubit/Bloc state debug output because
+  the global Bloc observer logs state changes during development.
 
 ## Mobile Drive Coverage
 
