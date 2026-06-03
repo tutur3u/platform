@@ -45,6 +45,16 @@ If reputation lookup, challenge verification, or signal recording fails, request
 handling must fall back to standard limits. Failures must never grant elevated
 limits.
 
+## Backend 429 Cascades
+
+Supabase Auth and PostgREST/backend `429` responses are availability signals,
+not user-scoped abuse proof. Handlers may return `429` to the caller and seed a
+bounded proxy/IP throttle when the client IP is known, but a single backend rate
+limit must not create or extend `user_suspensions` for the authenticated user.
+User suspension requires manual operator action or repeated, user-attributable
+abuse counters, and automated suspensions should be expiry-bound unless a
+separate policy explicitly justifies permanence.
+
 ## Step-Up Challenges
 
 Browser mutations with medium risk should require Turnstile through the existing

@@ -32,10 +32,8 @@ async function buildRateLimitResponse(
   req: Request,
   {
     source,
-    userId,
   }: {
     source: 'auth' | 'database';
-    userId?: string | null;
   }
 ) {
   const ipAddress = extractIPFromHeaders(req.headers);
@@ -43,7 +41,6 @@ async function buildRateLimitResponse(
     endpoint: new URL(req.url).pathname,
     ipAddress,
     source,
-    userId,
   });
   const retryAfter = blockInfo
     ? Math.max(
@@ -279,7 +276,6 @@ export function createPOST(options: CreatePostOptions = {}) {
         if (isBackendRateLimitError(chatError)) {
           return buildRateLimitResponse(req, {
             source: 'database',
-            userId: user.id,
           });
         }
 
@@ -307,7 +303,6 @@ export function createPOST(options: CreatePostOptions = {}) {
         if (isBackendRateLimitError(msgError)) {
           return buildRateLimitResponse(req, {
             source: 'database',
-            userId: user.id,
           });
         }
 

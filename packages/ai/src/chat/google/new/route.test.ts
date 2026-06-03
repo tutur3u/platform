@@ -89,7 +89,6 @@ describe('chat google new route', () => {
       endpoint: '/api/ai/chat/new',
       ipAddress: '203.0.113.10',
       source: 'auth',
-      userId: undefined,
     });
     expect(mocks.generateText).not.toHaveBeenCalled();
   });
@@ -110,7 +109,7 @@ describe('chat google new route', () => {
     expect(mocks.generateText).not.toHaveBeenCalled();
   });
 
-  it('auto-suspends the verified user when the database returns 429', async () => {
+  it('does not pass the verified user when the database returns 429', async () => {
     const insert = vi.fn().mockResolvedValue({
       data: null,
       error: { status: 429, message: 'Request rate limit reached' },
@@ -147,7 +146,6 @@ describe('chat google new route', () => {
       endpoint: '/api/ai/chat/new',
       ipAddress: '203.0.113.10',
       source: 'database',
-      userId: 'user-1',
     });
   });
 

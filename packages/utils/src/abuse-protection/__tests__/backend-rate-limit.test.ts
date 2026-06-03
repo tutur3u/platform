@@ -51,7 +51,7 @@ describe('backend-rate-limit', () => {
   });
 
   describe('cascadeBackendRateLimitToProxyBan', () => {
-    it('blocks the IP and suspends an identified user', async () => {
+    it('blocks the IP without suspending an identified user', async () => {
       const blockInfo = {
         id: 'block-1',
         blockLevel: 1,
@@ -73,15 +73,11 @@ describe('backend-rate-limit', () => {
         '203.0.113.10',
         'api_abuse'
       );
-      expect(mocks.checkUserSuspension).toHaveBeenCalledWith('user-1');
-      expect(mocks.suspendUser).toHaveBeenCalledWith(
-        'user-1',
-        'Automatic suspension for API abuse after database rate limiting on /api/ai/chat/new.',
-        null
-      );
+      expect(mocks.checkUserSuspension).not.toHaveBeenCalled();
+      expect(mocks.suspendUser).not.toHaveBeenCalled();
     });
 
-    it('does not create duplicate suspensions for already banned users', async () => {
+    it('does not inspect existing user suspensions', async () => {
       mocks.checkUserSuspension.mockResolvedValue({
         suspended: true,
         reason: 'already suspended',
@@ -99,9 +95,10 @@ describe('backend-rate-limit', () => {
         '203.0.113.10',
         'api_abuse'
       );
+      expect(mocks.checkUserSuspension).not.toHaveBeenCalled();
     });
 
-    it('still suspends the user when the client IP is unavailable', async () => {
+    it('does not suspend the user when the client IP is unavailable', async () => {
       await cascadeBackendRateLimitToProxyBan({
         endpoint: '/api/ai/chat/new',
         ipAddress: 'unknown',
@@ -110,7 +107,7 @@ describe('backend-rate-limit', () => {
       });
 
       expect(mocks.blockIPEdge).not.toHaveBeenCalled();
-      expect(mocks.suspendUser).toHaveBeenCalledTimes(1);
+      expect(mocks.suspendUser).not.toHaveBeenCalled();
     });
   });
 });
