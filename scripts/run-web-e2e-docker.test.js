@@ -13,12 +13,16 @@ const {
 } = require('./e2e-local-environment.js');
 const {
   ensureLocalE2EEnvFile,
+  formatBlueGreenStages,
+  getDockerComposeDiagnosticArgs,
   getDockerMemoryLimit,
   getE2EComposeProjectName,
+  getE2EDiagnosticLogTail,
   getDockerWebDownArgs,
   getDockerWebUpArgs,
   isE2EComposeProjectName,
   parseE2EProjectImageTags,
+  printE2EFailureDiagnostics,
   removeE2EProjectImages,
   shouldKeepStack,
 } = require('./run-web-e2e-docker.js');
@@ -156,6 +160,166 @@ test('getE2EComposeProjectName only accepts E2E-scoped projects', () => {
     }),
     null
   );
+});
+
+test('getDockerComposeDiagnosticArgs scopes diagnostics to the E2E project', () => {
+  assert.deepEqual(
+    getDockerComposeDiagnosticArgs(
+      { DOCKER_WEB_COMPOSE_PROJECT_NAME: 'ttr-e2e-local-123' },
+      'ps',
+      '-a'
+    ),
+    [
+      'compose',
+      '-f',
+      path.join(path.resolve(__dirname, '..'), 'docker-compose.web.prod.yml'),
+      '-p',
+      'ttr-e2e-local-123',
+      'ps',
+      '-a',
+    ]
+  );
+  assert.deepEqual(getDockerComposeDiagnosticArgs({}, 'ps', '-a'), [
+    'compose',
+    '-f',
+    path.join(path.resolve(__dirname, '..'), 'docker-compose.web.prod.yml'),
+    'ps',
+    '-a',
+  ]);
+});
+
+test('getE2EDiagnosticLogTail accepts positive numeric overrides only', () => {
+  assert.equal(
+    getE2EDiagnosticLogTail({ E2E_DIAGNOSTIC_LOG_TAIL: '42' }),
+    '42'
+  );
+  assert.equal(
+    getE2EDiagnosticLogTail({ E2E_DIAGNOSTIC_LOG_TAIL: '0' }),
+    '300'
+  );
+  assert.equal(
+    getE2EDiagnosticLogTail({ E2E_DIAGNOSTIC_LOG_TAIL: 'nope' }),
+    '300'
+  );
+});
+
+test('formatBlueGreenStages keeps failed stage details readable', () => {
+  assert.deepEqual(
+    formatBlueGreenStages([
+      {
+        buildServices: ['web-green'],
+        color: 'green',
+        durationMs: 123,
+        id: 'web-build',
+        serviceNames: ['web-green'],
+        status: 'succeeded',
+      },
+      {
+        failureReason: 'web-proxy returned 502',
+        id: 'proxy-reload',
+        serviceNames: ['web-proxy'],
+        status: 'failed',
+      },
+    ]),
+    [
+      '- web-build | succeeded | color=green | build=web-green | services=web-green | durationMs=123',
+      '- proxy-reload | failed | services=web-proxy | failure=web-proxy returned 502',
+    ]
+  );
+});
+
+test('printE2EFailureDiagnostics prints compose logs without masking diagnostics errors', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ttr-e2e-diag-'));
+  const calls = [];
+  const chunks = [];
+  const output = {
+    write(chunk) {
+      chunks.push(String(chunk));
+    },
+  };
+  const error = new Error('web stack failed');
+  error.blueGreenStages = [
+    {
+      failureReason: 'proxy route check failed',
+      id: 'proxy-reload',
+      serviceNames: ['web-proxy'],
+      status: 'failed',
+    },
+  ];
+
+  try {
+    const lastRunPath = path.join(
+      tempDir,
+      'apps',
+      'web',
+      'test-results',
+      '.last-run.json'
+    );
+    fs.mkdirSync(path.dirname(lastRunPath), { recursive: true });
+    fs.writeFileSync(lastRunPath, '{"status":"failed"}\n');
+
+    await printE2EFailureDiagnostics({
+      env: {
+        DOCKER_WEB_COMPOSE_PROJECT_NAME: 'ttr-e2e-local-123',
+        E2E_DIAGNOSTIC_LOG_TAIL: '42',
+        GITHUB_ACTIONS: 'true',
+      },
+      error,
+      output,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({ args, command, options });
+
+        if (args.includes('logs')) {
+          throw new Error('docker logs unavailable');
+        }
+      },
+    });
+
+    assert.equal(calls.length, 4);
+    assert.deepEqual(calls[0].args, [
+      'ps',
+      '-a',
+      '--filter',
+      'label=com.docker.compose.project=ttr-e2e-local-123',
+      '--format',
+      'table {{.Names}}\t{{.Status}}\t{{.Image}}',
+    ]);
+    assert.deepEqual(calls[1].args.slice(0, 5), [
+      'compose',
+      '-f',
+      path.join(path.resolve(__dirname, '..'), 'docker-compose.web.prod.yml'),
+      '-p',
+      'ttr-e2e-local-123',
+    ]);
+    assert.deepEqual(calls[1].args.slice(-2), ['ps', '-a']);
+    assert.deepEqual(calls[2].args.slice(-4), [
+      'backend',
+      'markitdown',
+      'storage-unzip-proxy',
+      'web-cron-runner',
+    ]);
+    assert.ok(calls[2].args.includes('--tail'));
+    assert.ok(calls[2].args.includes('42'));
+    assert.deepEqual(calls[3].args, ['sb:status']);
+    assert.ok(
+      calls.every(
+        ({ options }) =>
+          options.cwd === tempDir &&
+          options.env.COMPOSE_PROJECT_NAME === 'ttr-e2e-local-123' &&
+          options.stdio === 'inherit'
+      )
+    );
+
+    const text = chunks.join('');
+    assert.match(text, /::group::E2E failure summary/u);
+    assert.match(text, /Primary failure: web stack failed/u);
+    assert.match(text, /proxy route check failed/u);
+    assert.match(text, /\{"status":"failed"\}/u);
+    assert.match(text, /Diagnostic command failed: docker logs unavailable/u);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('parseE2EProjectImageTags selects only current E2E project images', () => {

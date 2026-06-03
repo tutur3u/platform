@@ -80,6 +80,7 @@ const { WATCHER_CONTAINER_ENV } = require('./watch-blue-green-deploy.js');
 const BLUE_GREEN_PROXY_PORTS_JSON = JSON.stringify({
   '7803/tcp': [{ HostIp: '0.0.0.0', HostPort: '7803' }],
   '7814/tcp': [{ HostIp: '0.0.0.0', HostPort: '7814' }],
+  '7816/tcp': [{ HostIp: '0.0.0.0', HostPort: '7816' }],
 });
 
 function isHiveDbMigrateRun(command, args) {
@@ -2499,7 +2500,7 @@ test('runDockerWebWorkflow auto-generates redis credentials for production docke
 test('runDockerWebWorkflow performs an initial blue-green deployment', async () => {
   const calls = [];
   const watcherStarts = [];
-  let webProxyPsCalls = 0;
+  let proxyStarted = false;
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'docker-web-bg-initial-')
   );
@@ -2519,12 +2520,11 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     }
 
     if (args.includes('ps') && args.at(-1) === BLUE_GREEN_PROXY_SERVICE) {
-      webProxyPsCalls += 1;
       return {
         code: 0,
         signal: null,
         stderr: '',
-        stdout: webProxyPsCalls === 1 ? '' : 'proxy-123\n',
+        stdout: proxyStarted ? 'proxy-123\n' : '',
       };
     }
 
@@ -2559,6 +2559,20 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
 
     if (args[0] === 'inspect') {
       return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+    }
+
+    if (args.includes('up') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
+      proxyStarted = true;
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('exec') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
+      return {
+        code: proxyStarted ? 0 : 1,
+        signal: null,
+        stderr: proxyStarted ? '' : 'service "web-proxy" is not running\n',
+        stdout: '',
+      };
     }
 
     return { code: 0, signal: null, stderr: '', stdout: '' };

@@ -189,6 +189,14 @@ loading cached Supabase Docker images. Keep that cleanup ahead of the cache load
 running `docker system prune -af --volumes` after cached images are loaded would
 remove the images the shard is about to use, while skipping the cleanup can leave
 too little space for the web Docker image dependency layer.
+When an E2E shard fails, the runner prints diagnostics before teardown while the
+containers still exist. The job log includes the primary error, blue/green stage
+state, the Playwright `.last-run.json` file when available, Docker containers
+for the shard Compose project, production Compose status, recent logs for web,
+Hive, proxy, and support services, and `bun sb:status`. The workflow also has a
+failure-only diagnostic step after `Run Playwright shard` as a backstop, so the
+job output should show the failing service or stage even when Playwright report
+artifacts are incomplete.
 
 The Playwright global setup refuses non-local web origins and refuses Supabase
 origins outside `localhost`, `127.0.0.1`, or `host.docker.internal` on port

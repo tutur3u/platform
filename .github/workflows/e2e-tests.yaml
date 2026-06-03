@@ -96,6 +96,35 @@ jobs:
         working-directory: apps/web
         run: bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }}
 
+      - name: Print Dockerized E2E diagnostics
+        if: ${{ failure() }}
+        run: |
+          set +e
+
+          echo "::group::Docker containers for E2E project"
+          docker ps -a --filter "label=com.docker.compose.project=${DOCKER_WEB_COMPOSE_PROJECT_NAME}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+          echo "::endgroup::"
+
+          echo "::group::Docker Compose status"
+          docker compose -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" ps -a
+          echo "::endgroup::"
+
+          echo "::group::Docker Compose logs"
+          docker compose -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" logs --tail=300 web-proxy web-blue web-green hive-blue hive-green hive-realtime meet-realtime backend markitdown storage-unzip-proxy web-cron-runner
+          echo "::endgroup::"
+
+          echo "::group::Supabase status"
+          bun sb:status
+          echo "::endgroup::"
+
+          echo "::group::Playwright last run"
+          if [ -f apps/web/test-results/.last-run.json ]; then
+            cat apps/web/test-results/.last-run.json
+          else
+            echo "apps/web/test-results/.last-run.json not found"
+          fi
+          echo "::endgroup::"
+
       - name: Save Supabase Docker images for cache
         if: ${{ always() && matrix.shard == 1 && steps.cache-supabase.outputs.cache-hit != 'true' }}
         run: |

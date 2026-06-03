@@ -309,8 +309,11 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   const e2eJob = readWorkflowJobBlock('e2e-tests.yaml', 'e2e');
   const cleanupIndex = e2eJob.indexOf('Free runner disk for Dockerized E2E');
+  const runIndex = e2eJob.indexOf('Run Playwright shard');
+  const diagnosticsIndex = e2eJob.indexOf('Print Dockerized E2E diagnostics');
   const restoreIndex = e2eJob.indexOf('Restore cached Docker images');
   const loadIndex = e2eJob.indexOf('Load cached Docker images');
+  const uploadIndex = e2eJob.indexOf('Upload Playwright report');
 
   assert.match(
     workflow,
@@ -318,8 +321,11 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   assert.match(e2eJob, /github\.ref != 'refs\/heads\/production'/);
   assert.notEqual(cleanupIndex, -1);
+  assert.notEqual(runIndex, -1);
+  assert.notEqual(diagnosticsIndex, -1);
   assert.notEqual(restoreIndex, -1);
   assert.notEqual(loadIndex, -1);
+  assert.notEqual(uploadIndex, -1);
   assert.ok(
     cleanupIndex < restoreIndex,
     'runner disk cleanup must happen before restoring Supabase Docker images'
@@ -328,10 +334,32 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     cleanupIndex < loadIndex,
     'runner disk cleanup must happen before loading Supabase Docker images'
   );
+  assert.ok(
+    runIndex < diagnosticsIndex,
+    'E2E diagnostics must run after the shard command can fail'
+  );
+  assert.ok(
+    diagnosticsIndex < uploadIndex,
+    'E2E diagnostics must print before artifact upload/cleanup steps'
+  );
   assert.match(e2eJob, /docker system prune -af --volumes/u);
   assert.match(e2eJob, /\/usr\/share\/dotnet/u);
   assert.match(e2eJob, /\/usr\/local\/lib\/android/u);
   assert.match(e2eJob, /\/opt\/hostedtoolcache\/CodeQL/u);
+  assert.match(e2eJob, /if: \$\{\{ failure\(\) \}\}/u);
+  assert.match(
+    e2eJob,
+    /docker ps -a --filter "label=com\.docker\.compose\.project=\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}"/u
+  );
+  assert.match(
+    e2eJob,
+    /docker compose -f docker-compose\.web\.prod\.yml -p "\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}" ps -a/u
+  );
+  assert.match(
+    e2eJob,
+    /docker compose -f docker-compose\.web\.prod\.yml -p "\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}" logs --tail=300/u
+  );
+  assert.match(e2eJob, /apps\/web\/test-results\/\.last-run\.json/u);
 });
 
 test('Supabase production migration requires production deployment and successful staged SHA', () => {

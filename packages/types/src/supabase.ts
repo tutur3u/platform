@@ -3825,6 +3825,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'mind_ai_messages_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
             foreignKeyName: 'mind_ai_messages_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
@@ -3844,6 +3851,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mind_ai_threads';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_ai_messages_thread_workspace_fk';
+            columns: ['thread_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_ai_threads';
+            referencedColumns: ['id', 'ws_id'];
           },
         ];
       };
@@ -3899,6 +3913,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'mind_ai_patches_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
             foreignKeyName: 'mind_ai_patches_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
@@ -3918,6 +3939,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mind_ai_threads';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_ai_patches_thread_workspace_fk';
+            columns: ['thread_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_ai_threads';
+            referencedColumns: ['id', 'ws_id'];
           },
         ];
       };
@@ -3965,6 +3993,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mind_boards';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_ai_threads_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
           },
           {
             foreignKeyName: 'mind_ai_threads_creator_id_fkey';
@@ -4094,11 +4129,32 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'mind_edges_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'mind_edges_source_board_workspace_fk';
+            columns: ['source_node_id', 'board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id', 'board_id', 'ws_id'];
+          },
+          {
             foreignKeyName: 'mind_edges_source_node_id_fkey';
             columns: ['source_node_id'];
             isOneToOne: false;
             referencedRelation: 'mind_nodes';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_edges_target_board_workspace_fk';
+            columns: ['target_node_id', 'board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id', 'board_id', 'ws_id'];
           },
           {
             foreignKeyName: 'mind_edges_target_node_id_fkey';
@@ -4372,11 +4428,32 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'mind_nodes_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'mind_nodes_merged_board_workspace_fk';
+            columns: ['merged_into_node_id', 'board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id', 'board_id', 'ws_id'];
+          },
+          {
             foreignKeyName: 'mind_nodes_merged_into_node_id_fkey';
             columns: ['merged_into_node_id'];
             isOneToOne: false;
             referencedRelation: 'mind_nodes';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_nodes_parent_board_workspace_fk';
+            columns: ['parent_node_id', 'board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id', 'board_id', 'ws_id'];
           },
           {
             foreignKeyName: 'mind_nodes_parent_node_id_fkey';
@@ -4419,6 +4496,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mind_boards';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_tags_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
           },
         ];
       };
@@ -8490,6 +8574,13 @@ export type Database = {
         Returns: string;
       };
       get_request_ip: { Args: { p_headers: Json }; Returns: unknown };
+      get_task_board_list_task_counts: {
+        Args: { p_board_id: string };
+        Returns: {
+          list_id: string;
+          task_count: number;
+        }[];
+      };
       get_transaction_tag_stats: {
         Args: { _actor_id: string; _ws_id: string };
         Returns: {
@@ -12392,6 +12483,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_customer_workspace_fkey';
+            columns: ['ws_id', 'customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_customer_workspace_fkey';
+            columns: ['ws_id', 'customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['ws_id', 'id'];
           },
           {
             foreignKeyName: 'finance_invoices_platform_creator_id_fkey';
@@ -19951,6 +20056,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_guest';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_attendance_member_fkey';
+            columns: ['user_id', 'group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_users';
+            referencedColumns: ['user_id', 'group_id'];
           },
           {
             foreignKeyName: 'user_group_attendance_user_id_fkey';

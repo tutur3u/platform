@@ -3030,6 +3030,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     targetColor,
   });
   let publicProxyPromoted = false;
+  let testHiveProxyRoutingAfterBootstrap = false;
 
   try {
     if (needsProxyBootstrap) {
@@ -3275,24 +3276,28 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
           paths,
           standbyColor,
         });
-        await validateBlueGreenProxyConfig({
-          composeFile,
-          composeGlobalArgs: parsed.composeGlobalArgs,
-          env: targetEnv,
-          runCommand: run,
-        });
-        await reloadBlueGreenProxy({
-          composeFile,
-          composeGlobalArgs: parsed.composeGlobalArgs,
-          env: targetEnv,
-          runCommand: run,
-        });
-        await testBlueGreenHiveProxyRouting({
-          composeFile,
-          composeGlobalArgs: parsed.composeGlobalArgs,
-          env: targetEnv,
-          runCommand: run,
-        });
+        if (needsProxyBootstrap) {
+          testHiveProxyRoutingAfterBootstrap = true;
+        } else {
+          await validateBlueGreenProxyConfig({
+            composeFile,
+            composeGlobalArgs: parsed.composeGlobalArgs,
+            env: targetEnv,
+            runCommand: run,
+          });
+          await reloadBlueGreenProxy({
+            composeFile,
+            composeGlobalArgs: parsed.composeGlobalArgs,
+            env: targetEnv,
+            runCommand: run,
+          });
+          await testBlueGreenHiveProxyRouting({
+            composeFile,
+            composeGlobalArgs: parsed.composeGlobalArgs,
+            env: targetEnv,
+            runCommand: run,
+          });
+        }
 
         updateBlueGreenTargetRuntime(
           'hive',
@@ -3433,6 +3438,14 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
         env: targetEnv,
         runCommand: run,
       });
+      if (testHiveProxyRoutingAfterBootstrap) {
+        await testBlueGreenHiveProxyRouting({
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
+          runCommand: run,
+        });
+      }
       writeBlueGreenActiveColor(targetColor, paths, fsImpl);
       updateBlueGreenTargetRuntime(
         'web',

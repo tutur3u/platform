@@ -8,6 +8,7 @@ const {
   parseArgs: parseDockerWebArgs,
   runDockerWebWorkflow,
 } = require('./docker-web.js');
+const { PROD_COMPOSE_FILE } = require('./docker-web/compose.js');
 const {
   assertSafeE2EEnvironment,
   createLocalE2EEnvFileContent,
@@ -20,7 +21,21 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const WEB_DIR = path.join(ROOT_DIR, 'apps', 'web');
 const DEFAULT_ENV_FILE = path.join(ROOT_DIR, 'tmp', 'e2e', 'web.env');
 const DEFAULT_HEALTH_URL = 'http://localhost:7803/login';
+const DEFAULT_DIAGNOSTIC_LOG_TAIL = '300';
 const E2E_COMPOSE_PROJECT_PREFIX = 'ttr-e2e-';
+const E2E_DIAGNOSTIC_SERVICES = Object.freeze([
+  'web-proxy',
+  'web-blue',
+  'web-green',
+  'hive-blue',
+  'hive-green',
+  'hive-realtime',
+  'meet-realtime',
+  'backend',
+  'markitdown',
+  'storage-unzip-proxy',
+  'web-cron-runner',
+]);
 
 function getDockerWebUpArgs(envFilePath, env = process.env) {
   return [
@@ -54,6 +69,230 @@ function getDockerWebDownArgs(envFilePath) {
     '--rmi',
     'local',
   ];
+}
+
+function getErrorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function writeDiagnosticLine(output, message = '') {
+  output.write(`${message}\n`);
+}
+
+function startDiagnosticGroup(title, { env = process.env, output } = {}) {
+  if (env.GITHUB_ACTIONS) {
+    writeDiagnosticLine(output, `::group::${title}`);
+    return;
+  }
+
+  writeDiagnosticLine(output, `[e2e-diagnostics] ${title}`);
+}
+
+function endDiagnosticGroup({ env = process.env, output } = {}) {
+  if (env.GITHUB_ACTIONS) {
+    writeDiagnosticLine(output, '::endgroup::');
+  }
+}
+
+function getE2EDiagnosticLogTail(env = process.env) {
+  const value = String(env.E2E_DIAGNOSTIC_LOG_TAIL ?? '').trim();
+
+  return /^\d+$/u.test(value) && Number.parseInt(value, 10) > 0
+    ? value
+    : DEFAULT_DIAGNOSTIC_LOG_TAIL;
+}
+
+function getDiagnosticCommandEnv(env = process.env) {
+  const projectName = getE2EComposeProjectName(env);
+
+  return projectName
+    ? {
+        ...env,
+        COMPOSE_PROJECT_NAME: projectName,
+      }
+    : env;
+}
+
+function getDockerComposeDiagnosticArgs(env = process.env, ...args) {
+  const projectName = getE2EComposeProjectName(env);
+
+  return [
+    'compose',
+    '-f',
+    PROD_COMPOSE_FILE,
+    ...(projectName ? ['-p', projectName] : []),
+    ...args,
+  ];
+}
+
+function formatBlueGreenStages(stages) {
+  if (!Array.isArray(stages) || stages.length === 0) {
+    return [];
+  }
+
+  return stages.map((stage) => {
+    const parts = [
+      stage.id ?? 'unknown-stage',
+      stage.status ?? 'unknown-status',
+    ];
+
+    if (stage.color) {
+      parts.push(`color=${stage.color}`);
+    }
+
+    if (Array.isArray(stage.buildServices) && stage.buildServices.length > 0) {
+      parts.push(`build=${stage.buildServices.join(',')}`);
+    }
+
+    if (Array.isArray(stage.serviceNames) && stage.serviceNames.length > 0) {
+      parts.push(`services=${stage.serviceNames.join(',')}`);
+    }
+
+    if (stage.failureReason) {
+      parts.push(`failure=${stage.failureReason}`);
+    } else if (stage.skippedReason) {
+      parts.push(`skipped=${stage.skippedReason}`);
+    }
+
+    if (stage.durationMs != null) {
+      parts.push(`durationMs=${stage.durationMs}`);
+    }
+
+    return `- ${parts.join(' | ')}`;
+  });
+}
+
+function printPlaywrightLastRun({ output, rootDir = ROOT_DIR } = {}) {
+  const lastRunPath = path.join(
+    rootDir,
+    'apps',
+    'web',
+    'test-results',
+    '.last-run.json'
+  );
+
+  if (!fs.existsSync(lastRunPath)) {
+    writeDiagnosticLine(
+      output,
+      `[e2e-diagnostics] No Playwright last-run file found at ${path.relative(
+        rootDir,
+        lastRunPath
+      )}.`
+    );
+    return;
+  }
+
+  writeDiagnosticLine(
+    output,
+    `[e2e-diagnostics] Playwright last-run file: ${path.relative(
+      rootDir,
+      lastRunPath
+    )}`
+  );
+  writeDiagnosticLine(output, fs.readFileSync(lastRunPath, 'utf8').trim());
+}
+
+async function runDiagnosticCommand(
+  title,
+  command,
+  args,
+  {
+    cwd = ROOT_DIR,
+    env = process.env,
+    output = process.stderr,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  startDiagnosticGroup(title, { env, output });
+  writeDiagnosticLine(
+    output,
+    `[e2e-diagnostics] $ ${command} ${args.join(' ')}`
+  );
+
+  try {
+    await run(command, args, {
+      cwd,
+      env: getDiagnosticCommandEnv(env),
+      stdio: 'inherit',
+    });
+  } catch (error) {
+    writeDiagnosticLine(
+      output,
+      `[e2e-diagnostics] Diagnostic command failed: ${getErrorMessage(error)}`
+    );
+  } finally {
+    endDiagnosticGroup({ env, output });
+  }
+}
+
+async function printE2EFailureDiagnostics({
+  env = process.env,
+  error,
+  output = process.stderr,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  writeDiagnosticLine(output);
+  startDiagnosticGroup('E2E failure summary', { env, output });
+  writeDiagnosticLine(
+    output,
+    `[e2e-diagnostics] Primary failure: ${getErrorMessage(error)}`
+  );
+
+  const stageLines = formatBlueGreenStages(error?.blueGreenStages);
+
+  if (stageLines.length > 0) {
+    writeDiagnosticLine(output, '[e2e-diagnostics] Blue/green stages:');
+    for (const line of stageLines) {
+      writeDiagnosticLine(output, line);
+    }
+  }
+
+  printPlaywrightLastRun({ output, rootDir });
+  endDiagnosticGroup({ env, output });
+
+  const projectName = getE2EComposeProjectName(env);
+
+  if (projectName) {
+    await runDiagnosticCommand(
+      'Docker containers for E2E project',
+      'docker',
+      [
+        'ps',
+        '-a',
+        '--filter',
+        `label=com.docker.compose.project=${projectName}`,
+        '--format',
+        'table {{.Names}}\t{{.Status}}\t{{.Image}}',
+      ],
+      { cwd: rootDir, env, output, runCommand: run }
+    );
+  }
+
+  await runDiagnosticCommand(
+    'Docker Compose status',
+    'docker',
+    getDockerComposeDiagnosticArgs(env, 'ps', '-a'),
+    { cwd: rootDir, env, output, runCommand: run }
+  );
+  await runDiagnosticCommand(
+    'Docker Compose logs',
+    'docker',
+    getDockerComposeDiagnosticArgs(
+      env,
+      'logs',
+      '--tail',
+      getE2EDiagnosticLogTail(env),
+      ...E2E_DIAGNOSTIC_SERVICES
+    ),
+    { cwd: rootDir, env, output, runCommand: run }
+  );
+  await runDiagnosticCommand('Supabase status', 'bun', ['sb:status'], {
+    cwd: rootDir,
+    env,
+    output,
+    runCommand: run,
+  });
 }
 
 function runCommand(command, args, options = {}) {
@@ -309,6 +548,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     });
   } catch (error) {
     runError = error;
+    await printE2EFailureDiagnostics({ env, error });
   }
 
   if (stackTouched && !shouldKeepStack(env)) {
@@ -348,12 +588,16 @@ module.exports = {
   DEFAULT_HEALTH_URL,
   E2E_COMPOSE_PROJECT_PREFIX,
   ensureLocalE2EEnvFile,
+  formatBlueGreenStages,
+  getDockerComposeDiagnosticArgs,
   getDockerMemoryLimit,
   getE2EComposeProjectName,
+  getE2EDiagnosticLogTail,
   getDockerWebDownArgs,
   getDockerWebUpArgs,
   isE2EComposeProjectName,
   parseE2EProjectImageTags,
+  printE2EFailureDiagnostics,
   removeE2EProjectImages,
   runCommand,
   runCommandForOutput,
