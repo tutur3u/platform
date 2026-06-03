@@ -12,10 +12,14 @@ extracted objects to the active workspace storage provider.
 - `PORT`: HTTP port. Default `8788`.
 - `DRIVE_UNZIP_PROXY_SHARED_TOKEN`: Bearer token that must match the workspace secret `DRIVE_AUTO_EXTRACT_PROXY_TOKEN`.
 - `DRIVE_UNZIP_PROXY_FETCH_TIMEOUT_MS`: Upstream download/upload timeout. Default `600000` (10 minutes).
-- `DRIVE_UNZIP_PROXY_MAX_ARCHIVE_BYTES`: Maximum ZIP download size in bytes. Default `1073741824` (1 GiB).
+- `DRIVE_UNZIP_PROXY_MAX_ARCHIVE_BYTES`: Maximum ZIP download size in bytes. Default `104857600` (100 MiB).
 - `DRIVE_UNZIP_PROXY_MAX_ARCHIVE_ENTRIES`: Maximum number of ZIP entries. Default `2000`.
-- `DRIVE_UNZIP_PROXY_MAX_ENTRY_BYTES`: Maximum extracted file size in bytes. Default `1073741824` (1 GiB).
-- `DRIVE_UNZIP_PROXY_MAX_TOTAL_EXTRACTED_BYTES`: Maximum total extracted file size in bytes. Default `1073741824` (1 GiB).
+- `DRIVE_UNZIP_PROXY_MAX_ENTRY_BYTES`: Maximum extracted file size in bytes. Default `52428800` (50 MiB).
+- `DRIVE_UNZIP_PROXY_MAX_TOTAL_EXTRACTED_BYTES`: Maximum total extracted file size in bytes. Default `262144000` (250 MiB).
+
+Keep the archive, per-entry, and total extracted byte defaults conservative unless
+the proxy implementation changes to stream safely. The current extractor buffers
+the downloaded archive and each extracted file in memory before uploading.
 
 ## Run locally
 

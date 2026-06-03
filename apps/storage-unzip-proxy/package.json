@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "bun run src/server.js"
+    "start": "bun run src/server.js",
+    "test": "node --test src/limits.test.js"
   },
   "dependencies": {
     "unzipper": "^0.12.3"
