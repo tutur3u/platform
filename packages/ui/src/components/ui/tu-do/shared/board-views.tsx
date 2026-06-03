@@ -6,7 +6,10 @@ import {
   useHotkeySequence,
 } from '@tanstack/react-hotkeys';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
+import {
+  type ListWorkspaceTasksOptions,
+  listWorkspaceTasks,
+} from '@tuturuuu/internal-api/tasks';
 import type {
   Workspace,
   WorkspaceProductTier,
@@ -14,7 +17,6 @@ import type {
 } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useSemanticTaskSearch } from '@tuturuuu/ui/hooks/use-semantic-task-search';
 import {
   getPersonalExternalStagingListId,
   type WorkspaceLabel,
@@ -25,7 +27,6 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
@@ -34,7 +35,6 @@ import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
-import { useProgressiveLoader } from '../shared/progressive-loader-context';
 import { RecycleBinPanel } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
 
@@ -108,7 +108,6 @@ export function BoardViews({
   const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const { createTask } = useTaskDialog();
-  const { pagination, loadListPage } = useProgressiveLoader();
   const sourceScope = filters.sourceScope ?? 'all_visible';
   const sourceWorkspaceIds = filters.sourceWorkspaceIds ?? [];
   const sourceBoardIds = filters.sourceBoardIds ?? [];
@@ -119,15 +118,79 @@ export function BoardViews({
     () => (listStatusFilter === 'all' ? undefined : [listStatusFilter]),
     [listStatusFilter]
   );
-  const sourceFilterKey = useMemo(
+  const hasTaskFilters = useMemo(
+    () =>
+      filters.labels.length > 0 ||
+      filters.assignees.length > 0 ||
+      filters.projects.length > 0 ||
+      filters.priorities.length > 0 ||
+      !!filters.dueDateRange?.from ||
+      !!filters.dueDateRange?.to ||
+      typeof filters.estimationRange?.min === 'number' ||
+      typeof filters.estimationRange?.max === 'number' ||
+      !!filters.searchQuery?.trim() ||
+      filters.includeMyTasks ||
+      filters.includeUnassigned ||
+      sourceScope !== 'all_visible' ||
+      sourceWorkspaceIds.length > 0 ||
+      sourceBoardIds.length > 0,
+    [filters, sourceBoardIds.length, sourceScope, sourceWorkspaceIds.length]
+  );
+  const hasServerTaskQuery = hasTaskFilters || !!filters.sortBy;
+  const taskQueryOptions = useMemo<ListWorkspaceTasksOptions>(
+    () => ({
+      assignedToMe: filters.includeMyTasks || undefined,
+      assigneeIds: filters.includeMyTasks
+        ? undefined
+        : filters.assignees.map((assignee) => assignee.id),
+      dueDateFrom: filters.dueDateRange?.from?.toISOString(),
+      dueDateTo: filters.dueDateRange?.to?.toISOString(),
+      estimationMax: filters.estimationRange?.max,
+      estimationMin: filters.estimationRange?.min,
+      includeUnassigned: filters.includeUnassigned || undefined,
+      labelIds: filters.labels.map((label) => label.id),
+      priorities: filters.priorities,
+      projectIds: filters.projects.map((project) => project.id),
+      q: filters.searchQuery?.trim() || undefined,
+      sortBy: filters.sortBy,
+      sourceBoardIds,
+      sourceScope,
+      sourceWorkspaceIds,
+    }),
+    [
+      filters.assignees,
+      filters.dueDateRange?.from,
+      filters.dueDateRange?.to,
+      filters.estimationRange?.max,
+      filters.estimationRange?.min,
+      filters.includeMyTasks,
+      filters.includeUnassigned,
+      filters.labels,
+      filters.priorities,
+      filters.projects,
+      filters.searchQuery,
+      filters.sortBy,
+      sourceBoardIds,
+      sourceScope,
+      sourceWorkspaceIds,
+    ]
+  );
+  const taskFilterKey = useMemo(
     () =>
       JSON.stringify({
         listStatusFilter,
+        query: taskQueryOptions,
         scope: sourceScope,
         sourceBoardIds: [...sourceBoardIds].sort(),
         sourceWorkspaceIds: [...sourceWorkspaceIds].sort(),
       }),
-    [listStatusFilter, sourceBoardIds, sourceScope, sourceWorkspaceIds]
+    [
+      listStatusFilter,
+      sourceBoardIds,
+      sourceScope,
+      sourceWorkspaceIds,
+      taskQueryOptions,
+    ]
   );
   const viewHotkeyLabels = useMemo(
     () => ({
@@ -138,38 +201,28 @@ export function BoardViews({
     []
   );
   const shouldEagerLoadTasks =
-    currentView === 'list' ||
-    currentView === 'timeline' ||
-    sourceScope !== 'all_visible';
+    currentView === 'list' || currentView === 'timeline' || hasServerTaskQuery;
   const fetchBoardTasks = useCallback(async () => {
     const result = await listWorkspaceTasks(effectiveWorkspaceId, {
+      ...taskQueryOptions,
       boardId: board.id,
       listStatuses: listStatusesForQuery,
-      sourceBoardIds,
-      sourceScope: sourceScope === 'all_visible' ? undefined : sourceScope,
-      sourceWorkspaceIds,
+      limit: 200,
     });
     return result.tasks;
-  }, [
-    board.id,
-    effectiveWorkspaceId,
-    listStatusesForQuery,
-    sourceBoardIds,
-    sourceScope,
-    sourceWorkspaceIds,
-  ]);
+  }, [board.id, effectiveWorkspaceId, listStatusesForQuery, taskQueryOptions]);
 
   const primeFullTaskCache = useCallback(
     (nextView: ViewType) => {
       if (nextView !== 'list' && nextView !== 'timeline') return;
 
       void queryClient.prefetchQuery({
-        queryKey: ['tasks-full', board.id, sourceFilterKey],
+        queryKey: ['tasks-full', board.id, taskFilterKey],
         queryFn: fetchBoardTasks,
         staleTime: 0,
       });
     },
-    [board.id, fetchBoardTasks, queryClient, sourceFilterKey]
+    [board.id, fetchBoardTasks, queryClient, taskFilterKey]
   );
 
   const handleViewChange = useCallback(
@@ -180,8 +233,8 @@ export function BoardViews({
     [primeFullTaskCache]
   );
 
-  const { data: fullTasks = [] } = useQuery({
-    queryKey: ['tasks-full', board.id, sourceFilterKey],
+  const { data: fullTasks = [], isFetching: isFullTasksFetching } = useQuery({
+    queryKey: ['tasks-full', board.id, taskFilterKey],
     enabled: shouldEagerLoadTasks,
     queryFn: fetchBoardTasks,
     refetchOnMount: 'always',
@@ -253,24 +306,6 @@ export function BoardViews({
     [board.id, workspace.personal]
   );
 
-  // Detect whether any filter is active (requires all data to be loaded)
-  const hasActiveFilters = useMemo(
-    () =>
-      filters.labels.length > 0 ||
-      filters.assignees.length > 0 ||
-      filters.projects.length > 0 ||
-      filters.priorities.length > 0 ||
-      !!filters.dueDateRange?.from ||
-      !!filters.searchQuery?.trim() ||
-      filters.includeMyTasks ||
-      filters.includeUnassigned ||
-      sourceScope !== 'all_visible' ||
-      sourceWorkspaceIds.length > 0 ||
-      sourceBoardIds.length > 0 ||
-      !!filters.sortBy,
-    [filters, sourceBoardIds.length, sourceScope, sourceWorkspaceIds.length]
-  );
-
   const externalStagingList = useMemo<TaskList | null>(() => {
     if (!workspace.personal) return null;
 
@@ -303,57 +338,28 @@ export function BoardViews({
       : realLists;
   }, [boardLists, externalStagingList]);
 
-  // When filters or sorting are active, auto-load all remaining pages so
-  // client-side filtering/sorting operates on complete data.
-  const autoLoadingRef = useRef(false);
-  useEffect(() => {
-    if (
-      currentView !== 'kanban' ||
-      !hasActiveFilters ||
-      sourceScope !== 'all_visible' ||
-      autoLoadingRef.current
-    ) {
-      return;
-    }
-
-    // Find the first list that still has more pages and isn't loading
-    for (const list of activeLists) {
-      const state = pagination[list.id];
-      if (state?.hasMore && !state.isLoading) {
-        autoLoadingRef.current = true;
-        loadListPage(list.id, state.page + 1).finally(() => {
-          autoLoadingRef.current = false;
+  const { data: filteredListCounts, isFetching: isFilteredListCountsFetching } =
+    useQuery({
+      queryKey: ['task-list-counts', board.id, taskFilterKey],
+      enabled: hasTaskFilters,
+      queryFn: async () => {
+        const result = await listWorkspaceTasks(effectiveWorkspaceId, {
+          ...taskQueryOptions,
+          boardId: board.id,
+          includeListCounts: true,
+          includeRelationshipSummary: false,
+          limit: 0,
+          listStatuses: listStatusesForQuery,
         });
-        return; // Process one at a time; the next run picks up the next list
-      }
-    }
-  }, [
-    currentView,
-    hasActiveFilters,
-    pagination,
-    activeLists,
-    loadListPage,
-    sourceScope,
-  ]);
-
-  // Semantic search hook
-  const {
-    data: semanticSearchResults = [],
-    isLoading: isSearchLoading,
-    isFetching: isSearchFetching,
-  } = useSemanticTaskSearch({
-    wsId: effectiveWorkspaceId,
-    query: filters.searchQuery || '',
-    matchThreshold: 0.3,
-    matchCount: 50,
-    enabled: !!filters.searchQuery && filters.searchQuery.trim().length > 0,
-  });
+        return result.listCounts ?? [];
+      },
+      staleTime: 30_000,
+    });
 
   // Filter lists based on selected status filter
-  const filteredLists = useMemo(() => {
-    if (listStatusFilter === 'all') {
-      return activeLists;
-    }
+  const statusFilteredLists = useMemo(() => {
+    if (listStatusFilter === 'all') return activeLists;
+
     const stagingLists = activeLists.filter((list) => list.is_external_staging);
     const realLists = activeLists.filter(
       (list) => !list.is_external_staging && list.status === listStatusFilter
@@ -361,83 +367,26 @@ export function BoardViews({
     return [...stagingLists, ...realLists];
   }, [activeLists, listStatusFilter]);
 
-  // Helper function to apply non-search filters
-  const applyNonSearchFilters = useCallback(
-    (tasksToFilter: Task[]) => {
-      let result = tasksToFilter;
+  const filteredLists = useMemo(() => {
+    if (!hasTaskFilters || !filteredListCounts) return statusFilteredLists;
 
-      // Filter by labels
-      if (filters.labels.length > 0) {
-        result = result.filter((task) => {
-          if (!task.labels || task.labels.length === 0) return false;
-          return filters.labels.some((selectedLabel) =>
-            task.labels?.some((taskLabel) => taskLabel.id === selectedLabel.id)
-          );
-        });
-      }
+    const countByListId = new Map(
+      filteredListCounts.map((entry) => [entry.list_id, entry.count] as const)
+    );
 
-      // Filter by assignees or "my tasks"
-      if (filters.includeMyTasks && currentUserId) {
-        result = result.filter((task) =>
-          task.assignees?.some((a) => a.id === currentUserId)
-        );
-      } else if (filters.assignees.length > 0) {
-        result = result.filter((task) =>
-          task.assignees?.some((a) =>
-            filters.assignees.some((fa) => fa.id === a.id)
-          )
-        );
-      }
-
-      // Filter by unassigned
-      if (filters.includeUnassigned) {
-        result = result.filter(
-          (task) => !task.assignees || task.assignees.length === 0
-        );
-      }
-
-      // Filter by projects
-      if (filters.projects.length > 0) {
-        result = result.filter((task) => {
-          // Check if task has projects relationship
-          if (!task.projects || task.projects.length === 0) return false;
-          return task.projects.some((pt: any) =>
-            filters.projects.some((p) => p.id === pt.id)
-          );
-        });
-      }
-
-      // Filter by priorities
-      if (filters.priorities.length > 0) {
-        result = result.filter((task) =>
-          task.priority ? filters.priorities.includes(task.priority) : false
-        );
-      }
-
-      // Filter by due date range
-      if (filters.dueDateRange?.from) {
-        result = result.filter((task) => {
-          if (!task.end_date) return false;
-          const taskDate = new Date(task.end_date);
-          const fromDate = filters.dueDateRange!.from!;
-          const toDate = filters.dueDateRange!.to;
-          return taskDate >= fromDate && (!toDate || taskDate <= toDate);
-        });
-      }
-
-      return result;
-    },
-    [filters, currentUserId]
-  );
+    return statusFilteredLists.filter(
+      (list) => (countByListId.get(list.id) ?? 0) > 0
+    );
+  }, [filteredListCounts, hasTaskFilters, statusFilteredLists]);
 
   const sourceTasks = useMemo(() => {
     if (!shouldEagerLoadTasks) return tasks;
 
     if (fullTasks.length === 0) {
-      return sourceScope === 'all_visible' ? tasks : [];
+      return hasServerTaskQuery || sourceScope !== 'all_visible' ? [] : tasks;
     }
 
-    if (sourceScope !== 'all_visible') {
+    if (hasServerTaskQuery || sourceScope !== 'all_visible') {
       return fullTasks;
     }
 
@@ -455,44 +404,15 @@ export function BoardViews({
     }
 
     return merged;
-  }, [fullTasks, shouldEagerLoadTasks, sourceScope, tasks]);
+  }, [fullTasks, hasServerTaskQuery, shouldEagerLoadTasks, sourceScope, tasks]);
 
-  // Filter tasks based on filters AND filtered lists
+  // Keep only tasks that belong to the server-visible lists/status scope.
   const filteredTasks = useMemo(() => {
-    // First, filter by list status
     const listIds = new Set(filteredLists.map((list) => list.id));
-    let result = isExternalSourceScope
+    return isExternalSourceScope
       ? sourceTasks
       : sourceTasks.filter((task) => listIds.has(task.list_id));
-
-    // If there's a search query, use semantic search results
-    if (filters.searchQuery && filters.searchQuery.trim().length > 0) {
-      // Create a map of task IDs to their search ranking
-      const searchRankMap = new Map(
-        semanticSearchResults.map((result, index) => [result.id, index])
-      );
-
-      // Filter to only include semantic search results
-      result = result.filter((task) => searchRankMap.has(task.id));
-
-      // Sort by search relevance (lower index = higher relevance)
-      result.sort((a, b) => {
-        const rankA = searchRankMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
-        const rankB = searchRankMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
-        return rankA - rankB;
-      });
-    }
-
-    // Apply other filters (labels, assignees, projects, priorities, due date)
-    return applyNonSearchFilters(result);
-  }, [
-    sourceTasks,
-    filters,
-    filteredLists,
-    isExternalSourceScope,
-    semanticSearchResults,
-    applyNonSearchFilters,
-  ]);
+  }, [filteredLists, isExternalSourceScope, sourceTasks]);
 
   // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
   const effectiveTasks = useMemo(() => {
@@ -508,141 +428,8 @@ export function BoardViews({
 
     tasks = tasks.filter((task) => !task.deleted_at);
 
-    // Apply sorting - but NEVER sort done/closed tasks (they always sort by timestamps)
-    if (filters.sortBy) {
-      // Create a map of list_id to status
-      const listStatusMap = new Map(
-        activeLists.map((list) => [list.id, list.status])
-      );
-
-      // Separate tasks into sortable and completion (done/closed) tasks
-      const sortableTasks = tasks.filter((task) => {
-        const status = listStatusMap.get(task.list_id);
-        return status !== 'done' && status !== 'closed';
-      });
-      const completionTasks = tasks.filter((task) => {
-        const status = listStatusMap.get(task.list_id);
-        return status === 'done' || status === 'closed';
-      });
-
-      // Sort only the sortable tasks
-      const sorted = [...sortableTasks];
-      switch (filters.sortBy) {
-        case 'name-asc':
-          sorted.sort((a, b) => a.name.localeCompare(b.name));
-          break;
-        case 'name-desc':
-          sorted.sort((a, b) => b.name.localeCompare(a.name));
-          break;
-        case 'priority-high': {
-          const priorityOrder = { critical: 0, high: 1, normal: 2, low: 3 };
-          sorted.sort((a, b) => {
-            const priorityA = a.priority
-              ? priorityOrder[a.priority]
-              : Number.MAX_SAFE_INTEGER;
-            const priorityB = b.priority
-              ? priorityOrder[b.priority]
-              : Number.MAX_SAFE_INTEGER;
-            return priorityA - priorityB;
-          });
-          break;
-        }
-        case 'priority-low': {
-          const priorityOrder = { critical: 0, high: 1, normal: 2, low: 3 };
-          sorted.sort((a, b) => {
-            const priorityA = a.priority
-              ? priorityOrder[a.priority]
-              : Number.MAX_SAFE_INTEGER;
-            const priorityB = b.priority
-              ? priorityOrder[b.priority]
-              : Number.MAX_SAFE_INTEGER;
-            return priorityB - priorityA;
-          });
-          break;
-        }
-        case 'due-date-asc':
-          sorted.sort((a, b) => {
-            if (!a.end_date && !b.end_date) return 0;
-            if (!a.end_date) return 1;
-            if (!b.end_date) return -1;
-            return (
-              new Date(a.end_date).getTime() - new Date(b.end_date).getTime()
-            );
-          });
-          break;
-        case 'due-date-desc':
-          sorted.sort((a, b) => {
-            if (!a.end_date && !b.end_date) return 0;
-            if (!a.end_date) return -1;
-            if (!b.end_date) return 1;
-            return (
-              new Date(b.end_date).getTime() - new Date(a.end_date).getTime()
-            );
-          });
-          break;
-        case 'created-date-desc':
-          sorted.sort(
-            (a, b) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime()
-          );
-          break;
-        case 'created-date-asc':
-          sorted.sort(
-            (a, b) =>
-              new Date(a.created_at).getTime() -
-              new Date(b.created_at).getTime()
-          );
-          break;
-        case 'estimation-high':
-          sorted.sort((a, b) => {
-            const estA = a.estimation_points ?? Number.MIN_SAFE_INTEGER;
-            const estB = b.estimation_points ?? Number.MIN_SAFE_INTEGER;
-            return estB - estA;
-          });
-          break;
-        case 'estimation-low':
-          sorted.sort((a, b) => {
-            const estA = a.estimation_points ?? Number.MAX_SAFE_INTEGER;
-            const estB = b.estimation_points ?? Number.MAX_SAFE_INTEGER;
-            return estA - estB;
-          });
-          break;
-      }
-
-      // Sort completion tasks by their respective timestamps
-      const sortedCompletionTasks = [...completionTasks].sort((a, b) => {
-        const statusA = listStatusMap.get(a.list_id);
-        const statusB = listStatusMap.get(b.list_id);
-
-        // For done tasks, sort by completed_at
-        if (statusA === 'done' && statusB === 'done') {
-          const completionA = a.completed_at
-            ? new Date(a.completed_at).getTime()
-            : 0;
-          const completionB = b.completed_at
-            ? new Date(b.completed_at).getTime()
-            : 0;
-          return completionB - completionA; // Most recent first
-        }
-
-        // For closed tasks, sort by closed_at
-        if (statusA === 'closed' && statusB === 'closed') {
-          const closedA = a.closed_at ? new Date(a.closed_at).getTime() : 0;
-          const closedB = b.closed_at ? new Date(b.closed_at).getTime() : 0;
-          return closedB - closedA; // Most recent first
-        }
-
-        // Mixed statuses - maintain original order
-        return 0;
-      });
-
-      // Combine sorted tasks with completion tasks (unsorted)
-      return [...sorted, ...sortedCompletionTasks];
-    }
-
     return tasks;
-  }, [filteredTasks, taskOverrides, filters.sortBy, activeLists]);
+  }, [filteredTasks, taskOverrides]);
 
   const handleTaskPartialUpdate = (taskId: string, partial: Partial<Task>) => {
     setTaskOverrides((prev) => ({
@@ -787,7 +574,7 @@ export function BoardViews({
         listStatusFilter={listStatusFilter}
         onListStatusFilterChange={setListStatusFilter}
         isPersonalWorkspace={workspace.personal}
-        isSearching={isSearchLoading || isSearchFetching}
+        isSearching={isFullTasksFetching || isFilteredListCountsFetching}
         lists={boardLists}
         onUpdate={handleUpdate}
         onRecycleBinOpen={() => setRecycleBinOpen(true)}

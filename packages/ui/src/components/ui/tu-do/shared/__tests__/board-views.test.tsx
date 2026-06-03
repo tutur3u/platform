@@ -500,6 +500,47 @@ describe('BoardViews', () => {
     });
   });
 
+  it('uses server-side search counts to hide task lists without matching tasks', async () => {
+    listWorkspaceTasksMock.mockImplementation(async (_workspaceId, options) => {
+      if (options?.includeListCounts) {
+        return {
+          listCounts: [{ count: 1, list_id: 'list-1' }],
+          tasks: [],
+        };
+      }
+
+      return { tasks: [mockTasks[0]!] };
+    });
+
+    renderBoardViews();
+
+    act(() => {
+      boardHeaderProps?.onFiltersChange({
+        ...boardHeaderProps.filters,
+        estimationRange: { max: 5, min: 2 },
+        searchQuery: 'TIMELINE',
+      });
+    });
+
+    await waitFor(() => {
+      expect(listWorkspaceTasksMock).toHaveBeenCalledWith(
+        'ws-1',
+        expect.objectContaining({
+          boardId: 'board-1',
+          estimationMax: 5,
+          estimationMin: 2,
+          includeListCounts: true,
+          limit: 0,
+          q: 'TIMELINE',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.lists).toEqual([mockLists[0]]);
+    });
+  });
+
   it('does not auto-load progressive list pages for server-backed source scopes', async () => {
     progressivePagination = {
       'list-1': {

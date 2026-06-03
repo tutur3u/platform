@@ -55,6 +55,14 @@ const mocks = vi.hoisted(() => {
         query.calls.push(['ilike', args]);
         return query;
       }),
+      gte: vi.fn((...args: unknown[]) => {
+        query.calls.push(['gte', args]);
+        return query;
+      }),
+      lte: vi.fn((...args: unknown[]) => {
+        query.calls.push(['lte', args]);
+        return query;
+      }),
       order: vi.fn((...args: unknown[]) => {
         query.calls.push(['order', args]);
         return query;
@@ -298,15 +306,14 @@ describe('workspace task route personal external loading', () => {
     ]);
   });
 
-  it('filters direct task queries to due-dated tasks when requested', async () => {
+  it('uses the private RPC for due-dated task filtering', async () => {
     queueResult(mocks.adminQueues, 'workspaces', {
       data: { personal: false },
       error: null,
     });
-    queueResult(mocks.adminQueues, 'tasks', {
+    queueAdminRpcResult('list_task_source_filter_ids', {
       data: [],
       error: null,
-      count: 0,
     });
 
     const { GET } = await import('./route.js');
@@ -318,10 +325,18 @@ describe('workspace task route personal external loading', () => {
     );
 
     expect(response.status).toBe(200);
-    const taskQuery = mocks.adminQueries.find(
-      (query) => query.table === 'tasks'
+    await expect(response.json()).resolves.toMatchObject({
+      count: 0,
+      tasks: [],
+    });
+    expect(mocks.adminClient.schema).toHaveBeenCalledWith('private');
+    expect(mocks.adminSchemaClient.rpc).toHaveBeenCalledWith(
+      'list_task_source_filter_ids',
+      expect.objectContaining({
+        p_board_id: PERSONAL_BOARD_ID,
+        p_has_due_date: true,
+      })
     );
-    expect(taskQuery?.calls).toContainEqual(['not', ['end_date', 'is', null]]);
   });
 
   it('includes archived board tasks when requested', async () => {
@@ -501,6 +516,98 @@ describe('workspace task route personal external loading', () => {
         p_list_statuses: ['active', 'review'],
         p_offset: 50,
         p_source_scope: 'external_current_workspace',
+      })
+    );
+  });
+
+  it('uses the private RPC for board search and relation filters', async () => {
+    queueResult(mocks.adminQueues, 'workspaces', {
+      data: { personal: false },
+      error: null,
+    });
+    queueAdminRpcResult('list_task_source_filter_ids', {
+      data: [
+        {
+          list_id: PERSONAL_LIST_ID,
+          task_id: PLACED_TASK_ID,
+          total_count: 1,
+        },
+      ],
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [externalTask(PLACED_TASK_ID)],
+      error: null,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/ws-1/tasks?boardId=${PERSONAL_BOARD_ID}&q=LAUNCH&labelIds=${SOURCE_LIST_ID}&assigneeIds=${USER_ID}&projectIds=${SOURCE_BOARD_ID}&priorities=critical,high&estimationMin=2&estimationMax=5&dueDateFrom=2026-06-01&dueDateTo=2026-06-30&includeUnassigned=true&sortBy=name-asc&includeRelationshipSummary=false&includeCount=true`
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      count: 1,
+      tasks: [expect.objectContaining({ id: PLACED_TASK_ID })],
+    });
+    expect(mocks.adminClient.schema).toHaveBeenCalledWith('private');
+    expect(mocks.adminSchemaClient.rpc).toHaveBeenCalledWith(
+      'list_task_source_filter_ids',
+      expect.objectContaining({
+        p_assignee_ids: [USER_ID],
+        p_due_date_from: '2026-06-01',
+        p_due_date_to: '2026-06-30',
+        p_estimation_max: 5,
+        p_estimation_min: 2,
+        p_has_due_date: false,
+        p_include_unassigned: true,
+        p_label_ids: [SOURCE_LIST_ID],
+        p_priorities: ['critical', 'high'],
+        p_project_ids: [SOURCE_BOARD_ID],
+        p_search: 'LAUNCH',
+        p_sort_by: 'name-asc',
+      })
+    );
+  });
+
+  it('returns server-side filtered list counts from the private count RPC', async () => {
+    queueResult(mocks.adminQueues, 'workspaces', {
+      data: { personal: false },
+      error: null,
+    });
+    queueAdminRpcResult('count_task_source_filter_lists', {
+      data: [{ list_id: PERSONAL_LIST_ID, total_count: 2 }],
+      error: null,
+    });
+    queueAdminRpcResult('list_task_source_filter_ids', {
+      data: [],
+      error: null,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/ws-1/tasks?boardId=${PERSONAL_BOARD_ID}&q=launch&hasDueDate=true&estimationMin=1&estimationMax=8&limit=0&includeListCounts=true&includeRelationshipSummary=false`
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      listCounts: [{ count: 2, list_id: PERSONAL_LIST_ID }],
+      tasks: [],
+    });
+    expect(mocks.adminSchemaClient.rpc).toHaveBeenCalledWith(
+      'count_task_source_filter_lists',
+      expect.objectContaining({
+        p_board_id: PERSONAL_BOARD_ID,
+        p_estimation_max: 8,
+        p_estimation_min: 1,
+        p_has_due_date: true,
+        p_search: 'launch',
       })
     );
   });

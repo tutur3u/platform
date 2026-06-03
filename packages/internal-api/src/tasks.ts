@@ -165,18 +165,29 @@ export interface ListWorkspaceTasksOptions {
   identifier?: string;
   limit?: number;
   offset?: number;
+  labelIds?: string[];
+  assigneeIds?: string[];
+  projectIds?: string[];
+  priorities?: TaskPriority[];
+  estimationMin?: number;
+  estimationMax?: number;
+  dueDateFrom?: string;
+  dueDateTo?: string;
   assignedToMe?: boolean;
+  includeUnassigned?: boolean;
   completed?: 'exclude' | 'only';
   closed?: 'exclude' | 'only';
   hasDueDate?: boolean;
   externalIncludeDocuments?: boolean;
   externalIncludeDoneClosed?: boolean;
   externalSortBy?: ExternalTaskSortBy;
+  sortBy?: SortOption;
   forTimeTracking?: boolean;
   includeRelationshipSummary?: boolean;
   includeArchivedBoards?: boolean;
   includeDeleted?: boolean | 'only';
   includeCount?: boolean;
+  includeListCounts?: boolean;
 }
 
 export type ExternalTaskSortBy =
@@ -192,9 +203,27 @@ export type TaskSourceScope =
   | 'external_current_workspace'
   | 'external_specific';
 
+export type SortOption =
+  | 'name-asc'
+  | 'name-desc'
+  | 'priority-high'
+  | 'priority-low'
+  | 'due-date-asc'
+  | 'due-date-desc'
+  | 'created-date-desc'
+  | 'created-date-asc'
+  | 'estimation-high'
+  | 'estimation-low';
+
+export interface WorkspaceTaskListCount {
+  list_id: string;
+  count: number;
+}
+
 export interface WorkspaceTasksResponse {
   tasks: WorkspaceTaskApiTask[];
   count?: number;
+  listCounts?: WorkspaceTaskListCount[];
   pagination?: {
     hasNextPage: boolean;
     hasPreviousPage: boolean;
@@ -1018,13 +1047,23 @@ export async function listWorkspaceTasks(
         identifier: options?.identifier,
         limit: options?.limit,
         offset: options?.offset,
+        labelIds: joinQueryList(options?.labelIds),
+        assigneeIds: joinQueryList(options?.assigneeIds),
+        projectIds: joinQueryList(options?.projectIds),
+        priorities: joinQueryList(options?.priorities),
+        estimationMin: options?.estimationMin,
+        estimationMax: options?.estimationMax,
+        dueDateFrom: options?.dueDateFrom,
+        dueDateTo: options?.dueDateTo,
         assignedToMe: options?.assignedToMe,
+        includeUnassigned: options?.includeUnassigned,
         completed: options?.completed,
         closed: options?.closed,
         hasDueDate: options?.hasDueDate,
         externalIncludeDocuments: options?.externalIncludeDocuments,
         externalIncludeDoneClosed: options?.externalIncludeDoneClosed,
         externalSortBy: options?.externalSortBy,
+        sortBy: options?.sortBy,
         forTimeTracking: options?.forTimeTracking,
         includeRelationshipSummary: options?.includeRelationshipSummary,
         includeArchivedBoards: options?.includeArchivedBoards,
@@ -1035,6 +1074,7 @@ export async function listWorkspaceTasks(
               ? 'all'
               : undefined,
         includeCount: options?.includeCount,
+        includeListCounts: options?.includeListCounts,
       },
       cache: 'no-store',
     }

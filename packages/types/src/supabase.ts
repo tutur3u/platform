@@ -8765,6 +8765,40 @@ export type Database = {
         };
         Returns: number;
       };
+      count_task_source_filter_lists: {
+        Args: {
+          p_actor_id: string;
+          p_assigned_to_me?: boolean;
+          p_assignee_ids?: string[];
+          p_board_id?: string;
+          p_closed_mode?: string;
+          p_completed_mode?: string;
+          p_display_number?: number;
+          p_due_date_from?: string;
+          p_due_date_to?: string;
+          p_estimation_max?: number;
+          p_estimation_min?: number;
+          p_has_due_date?: boolean;
+          p_include_archived_boards?: boolean;
+          p_include_deleted?: string;
+          p_include_unassigned?: boolean;
+          p_label_ids?: string[];
+          p_list_id?: string;
+          p_list_statuses?: string[];
+          p_priorities?: string[];
+          p_project_ids?: string[];
+          p_search?: string;
+          p_source_board_ids?: string[];
+          p_source_scope?: string;
+          p_source_workspace_ids?: string[];
+          p_ticket_prefix?: string;
+          p_workspace_id: string;
+        };
+        Returns: {
+          list_id: string;
+          total_count: number;
+        }[];
+      };
       count_workspace_user_groups_for_table: {
         Args: {
           p_accessible_group_ids?: string[];
@@ -9443,16 +9477,26 @@ export type Database = {
         Args: {
           p_actor_id: string;
           p_assigned_to_me?: boolean;
+          p_assignee_ids?: string[];
           p_board_id?: string;
           p_closed_mode?: string;
           p_completed_mode?: string;
           p_display_number?: number;
+          p_due_date_from?: string;
+          p_due_date_to?: string;
+          p_estimation_max?: number;
+          p_estimation_min?: number;
+          p_has_due_date?: boolean;
           p_include_archived_boards?: boolean;
           p_include_deleted?: string;
+          p_include_unassigned?: boolean;
+          p_label_ids?: string[];
           p_limit?: number;
           p_list_id?: string;
           p_list_statuses?: string[];
           p_offset?: number;
+          p_priorities?: string[];
+          p_project_ids?: string[];
           p_search?: string;
           p_sort_by?: string;
           p_source_board_ids?: string[];
@@ -9462,6 +9506,7 @@ export type Database = {
           p_workspace_id: string;
         };
         Returns: {
+          list_id: string;
           task_id: string;
           total_count: number;
         }[];
