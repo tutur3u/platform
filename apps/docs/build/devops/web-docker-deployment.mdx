@@ -1583,12 +1583,13 @@ Dashboard details:
 If some normal browsers still return Cloudflare `502 Host Error` while
 incognito works, treat it as stale client state or an auth-cookie/header-size
 problem before assuming the tunnel itself is broken.
-For Hive, the production nginx proxy serves
-`https://hive.tuturuuu.com/~recover-browser-state` directly with
-`Clear-Site-Data` so the reset path still works when stale cookies are too large
-for the Next.js app server to accept. Hive's `next start` command also runs with
-`NODE_OPTIONS=--max-http-header-size=65536` so ordinary Supabase auth-cookie
-chunking has more headroom before the app server returns `431`.
+For Hive, the browser-state recovery path must follow the same shape as the web
+app route: GET is a no-store confirmation page only, and the destructive
+`Clear-Site-Data` response happens only after a same-origin POST. Do not serve a
+direct side-effecting GET from nginx, even for stale-cookie recovery. Hive's
+`next start` command also runs with `NODE_OPTIONS=--max-http-header-size=65536`
+so ordinary Supabase auth-cookie chunking has more headroom before the app
+server returns `431`.
 
 How to recognize each failure mode:
 
