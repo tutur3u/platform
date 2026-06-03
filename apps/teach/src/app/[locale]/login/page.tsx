@@ -2,14 +2,14 @@ import {
   getAppSessionClaimsFromRequest,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
+import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
 
 function normalizeNextPath(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
-  if (!rawValue?.startsWith('/') || rawValue.startsWith('//')) return '/';
-  return rawValue;
+  return normalizeAuthRedirectPath(rawValue, BASE_URL, '/');
 }
 
 export default async function LoginPage({

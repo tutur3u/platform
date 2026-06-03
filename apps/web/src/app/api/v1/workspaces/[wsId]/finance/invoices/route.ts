@@ -114,6 +114,48 @@ async function validateInvoiceWallet({
   return { ok: true as const };
 }
 
+export async function validateInvoiceCustomer({
+  customerId,
+  sbAdmin,
+  wsId,
+}: {
+  customerId?: string | null;
+  sbAdmin: FinanceRouteContext['sbAdmin'];
+  wsId: string;
+}) {
+  const resolvedCustomerId = customerId?.trim() || null;
+
+  if (!resolvedCustomerId) {
+    return { customerId: null, ok: true as const };
+  }
+
+  const { data, error } = await sbAdmin
+    .from('workspace_users')
+    .select('id')
+    .eq('id', resolvedCustomerId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (error) {
+    return {
+      error,
+      message: 'Failed to validate invoice customer',
+      ok: false as const,
+      status: 500 as const,
+    };
+  }
+
+  if (!data) {
+    return {
+      message: 'Invalid invoice customer',
+      ok: false as const,
+      status: 400 as const,
+    };
+  }
+
+  return { customerId: resolvedCustomerId, ok: true as const };
+}
+
 export interface CalculatedPromotion {
   code: string | null;
   description: string | null;
@@ -176,6 +218,62 @@ async function attachWalletNames(
       },
     };
   });
+}
+
+async function attachInvoiceCustomers({
+  invoices,
+  sbAdmin,
+  wsId,
+}: {
+  invoices: FullInvoiceData[];
+  sbAdmin: FinanceRouteContext['sbAdmin'];
+  wsId: string;
+}) {
+  const customerIds = [
+    ...new Set(
+      invoices
+        .map((invoice) => invoice.customer_id)
+        .filter((id): id is string => typeof id === 'string' && Boolean(id))
+    ),
+  ];
+
+  if (customerIds.length === 0) {
+    return invoices.map((invoice) => ({
+      ...invoice,
+      customer: null,
+    }));
+  }
+
+  const { data, error } = await sbAdmin
+    .from('workspace_users')
+    .select('id, full_name, avatar_url')
+    .eq('ws_id', wsId)
+    .in('id', customerIds);
+
+  if (error) {
+    serverLogger.error('Error fetching invoice customers:', error);
+    return invoices.map((invoice) => ({
+      ...invoice,
+      customer: null,
+    }));
+  }
+
+  const customersById = new Map(
+    (data ?? []).map((customer) => [
+      customer.id,
+      {
+        avatar_url: customer.avatar_url ?? null,
+        full_name: customer.full_name ?? null,
+      },
+    ])
+  );
+
+  return invoices.map((invoice) => ({
+    ...invoice,
+    customer: invoice.customer_id
+      ? (customersById.get(invoice.customer_id) ?? null)
+      : null,
+  }));
 }
 
 interface InvoiceCalculationRpcRow {
@@ -395,7 +493,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     // No search query - use regular query builder
-    let selectQuery = `*, customer:workspace_users!finance_invoices_customer_id_fkey(full_name, avatar_url), legacy_creator:workspace_users!finance_invoices_creator_id_fkey(id, full_name, display_name, email, avatar_url), platform_creator:users!finance_invoices_platform_creator_id_fkey(id, display_name, avatar_url, user_private_details(full_name, email))`;
+    let selectQuery = `*, legacy_creator:workspace_users!finance_invoices_creator_id_fkey(id, full_name, display_name, email, avatar_url), platform_creator:users!finance_invoices_platform_creator_id_fkey(id, display_name, avatar_url, user_private_details(full_name, email))`;
 
     // Join wallet_transactions, using !inner if walletIds filter is present
     const walletJoinType = sp.walletIds.length > 0 ? '!inner' : '';
@@ -456,7 +554,14 @@ export async function GET(request: Request, { params }: Params) {
 
     // Transform data to match expected Invoice type
     const data = transformInvoiceData(
-      await attachWalletNames(sbAdmin, rawData || [])
+      await attachWalletNames(
+        sbAdmin,
+        await attachInvoiceCustomers({
+          invoices: rawData || [],
+          sbAdmin,
+          wsId,
+        })
+      )
     );
 
     return NextResponse.json({
@@ -546,6 +651,25 @@ export async function POST(req: Request, { params }: Params) {
         { status: walletValidation.status }
       );
     }
+
+    const customerValidation = await validateInvoiceCustomer({
+      customerId: customer_id,
+      sbAdmin,
+      wsId,
+    });
+    if (!customerValidation.ok) {
+      if (customerValidation.status === 500) {
+        serverLogger.error(
+          customerValidation.message,
+          customerValidation.error
+        );
+      }
+      return NextResponse.json(
+        { message: customerValidation.message },
+        { status: customerValidation.status }
+      );
+    }
+    const resolvedCustomerId = customerValidation.customerId;
 
     // Get user workspace ID
     const { data: workspaceUser } = await sbAdmin
@@ -712,7 +836,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const invoiceData: any = {
       ws_id: wsId,
-      customer_id: customer_id ?? null,
+      customer_id: resolvedCustomerId,
       price: roundedPrice, // Calculate from rounded values for consistency
       total_diff: roundedRounding, // Store the rounding applied
       note: notes,
@@ -935,7 +1059,7 @@ export async function POST(req: Request, { params }: Params) {
       warehouse_id: product.warehouse_id,
       amount: -product.quantity, // Negative because it's being sold
       creator_id: workspaceUserId,
-      beneficiary_id: customer_id ?? null,
+      beneficiary_id: resolvedCustomerId,
     }));
 
     const { error: stockError } = await sbAdmin
@@ -975,7 +1099,7 @@ export async function POST(req: Request, { params }: Params) {
       changedFields: ['products', 'wallet_id', 'category_id', 'paid_amount'],
       after: {
         invoice_id: invoiceId,
-        customer_id: customer_id ?? null,
+        customer_id: resolvedCustomerId,
         wallet_id,
         category_id: resolvedCategoryId,
         paid_amount: roundedTotal,
@@ -996,7 +1120,7 @@ export async function POST(req: Request, { params }: Params) {
       invoice_id: invoiceId,
       data: {
         id: invoiceId,
-        customer_id: customer_id ?? null,
+        customer_id: resolvedCustomerId,
         category_id: resolvedCategoryId,
         total,
         subtotal,

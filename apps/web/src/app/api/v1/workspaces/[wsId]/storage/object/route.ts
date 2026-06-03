@@ -7,6 +7,7 @@ import {
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
 import {
+  FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,
 } from '../route-auth';
@@ -20,11 +21,13 @@ export async function DELETE(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   const { wsId } = await params;
-  const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+  const auth = await resolveWorkspaceStorageRouteAuth(request, wsId, {
+    appSessionTargets: FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
+  });
   if (!auth.ok) {
     return auth.response;
   }
-  const { normalizedWsId, permissions, userId } = auth.context;
+  const { normalizedWsId, permissions, supabase, userId } = auth.context;
 
   let body: unknown;
   try {
@@ -65,6 +68,7 @@ export async function DELETE(
       normalizedWsId,
       path: sanitizedPath,
       permissions,
+      supabase,
       userId,
     }));
 

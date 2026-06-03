@@ -1,11 +1,13 @@
 import gc
 import base64
 import json
+import logging
 import os
 import subprocess
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from threading import Lock
@@ -14,11 +16,17 @@ from typing import Any
 import librosa
 import numpy as np
 import torch
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from pydantic import BaseModel
 from rapidfuzz.distance import Levenshtein
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 from transformers import pipeline as transformers_pipeline
+
+from .audio_limits import (
+    validate_audio_duration_seconds,
+    validate_audio_upload_bytes,
+)
+from .model_admin_auth import verify_model_admin_authorization
 
 LOCAL_WAV2VEC2_MODEL_ID = os.getenv(
     "PRONUNCIATION_ASSESSOR_MODEL", "facebook/wav2vec2-base-960h"
@@ -54,7 +62,20 @@ LOCAL_MODEL_IDLE_TTL_SECONDS = int(
 LOCAL_MODEL_MAX_LOADED = max(
     1, int(os.getenv("PRONUNCIATION_ASSESSOR_MAX_LOADED_MODELS", "1"))
 )
+MODEL_ADMIN_TOKEN = os.getenv("PRONUNCIATION_ASSESSOR_ADMIN_TOKEN", "").strip()
 SAMPLE_RATE = 16_000
+MAX_ASSESSOR_UPLOAD_BYTES = max(
+    1,
+    int(
+        os.getenv(
+            "PRONUNCIATION_ASSESSOR_MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)
+        )
+    ),
+)
+MAX_ASSESSOR_AUDIO_SECONDS = max(
+    1.0, float(os.getenv("PRONUNCIATION_ASSESSOR_MAX_AUDIO_SECONDS", "120"))
+)
+UPLOAD_READ_CHUNK_BYTES = 1024 * 1024
 LOCAL_ASSESSOR_MODEL = "local-wav2vec2"
 SUPPORTED_ASSESSOR_MODELS = {
     *LOCAL_WHISPER_MODEL_IDS.keys(),
@@ -86,6 +107,7 @@ PIPER_VOICES = {
 }
 
 app = FastAPI(title="Tuturuuu Pronunciation Assessor")
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -216,6 +238,50 @@ def get_loaded_model_snapshot() -> list[dict[str, Any]]:
     ]
 
 
+def require_model_admin_authorization(authorization: str | None) -> None:
+    failure = verify_model_admin_authorization(authorization, MODEL_ADMIN_TOKEN)
+    if failure:
+        raise HTTPException(
+            status_code=failure.status_code,
+            detail=failure.detail,
+        )
+
+
+def raise_audio_limit_failure(detail: str, status_code: int) -> None:
+    raise HTTPException(status_code=status_code, detail=detail)
+
+
+async def write_limited_audio_upload(file: UploadFile, destination: Any) -> None:
+    byte_count = 0
+    while True:
+        chunk = await file.read(UPLOAD_READ_CHUNK_BYTES)
+        if not chunk:
+            break
+
+        byte_count += len(chunk)
+        failure = validate_audio_upload_bytes(byte_count, MAX_ASSESSOR_UPLOAD_BYTES)
+        if failure:
+            raise_audio_limit_failure(failure.detail, failure.status_code)
+
+        destination.write(chunk)
+
+    destination.flush()
+
+
+def validate_pronunciation_audio_duration(audio_path: str) -> None:
+    try:
+        duration = librosa.get_duration(path=audio_path)
+    except Exception as error:
+        logger.exception("Could not inspect pronunciation audio duration")
+        raise HTTPException(
+            status_code=400, detail="Could not inspect audio duration"
+        ) from error
+
+    failure = validate_audio_duration_seconds(duration, MAX_ASSESSOR_AUDIO_SECONDS)
+    if failure:
+        raise_audio_limit_failure(failure.detail, failure.status_code)
+
+
 def get_piper_voice_id(voice_id: str | None) -> str:
     if voice_id and voice_id in PIPER_VOICES:
         return voice_id
@@ -236,6 +302,14 @@ def get_piper_voice_paths(voice_id: str) -> tuple[str, str]:
         os.path.join(PIPER_DATA_DIR, f"{voice_id}.onnx"),
         os.path.join(PIPER_DATA_DIR, f"{voice_id}.onnx.json"),
     )
+
+
+def redact_url_for_logs(url: str) -> str:
+    parsed = urllib.parse.urlsplit(url)
+    host = parsed.hostname or ""
+    port = f":{parsed.port}" if parsed.port else ""
+    netloc = f"{host}{port}" if host else parsed.netloc.rsplit("@", 1)[-1]
+    return urllib.parse.urlunsplit((parsed.scheme, netloc, parsed.path, "", ""))
 
 
 def download_piper_asset(url: str, destination: str) -> None:
@@ -261,7 +335,14 @@ def download_piper_asset(url: str, destination: str) -> None:
             os.unlink(temp_path)
         except OSError:
             pass
-        raise RuntimeError(f"Could not download Piper asset {url}: {error}") from error
+        logger.exception(
+            "Could not download Piper asset",
+            extra={
+                "destination": os.path.basename(destination),
+                "url": redact_url_for_logs(url),
+            },
+        )
+        raise RuntimeError("Could not download Piper voice asset") from error
 
 
 def ensure_piper_voice(voice_id: str) -> tuple[str, str, list[str]]:
@@ -334,10 +415,15 @@ def run_piper_tts(request: TtsRequest) -> dict[str, Any]:
         duration_ms = int((time.monotonic() - started_at) * 1000)
 
         if process.returncode != 0:
-            raise RuntimeError(
-                process.stderr.strip()
-                or f"Piper exited with status {process.returncode}"
+            logger.error(
+                "Piper process failed",
+                extra={
+                    "returncode": process.returncode,
+                    "stderr": process.stderr.strip()[:1000],
+                    "voiceId": voice_id,
+                },
             )
+            raise RuntimeError("Piper speech synthesis failed")
 
         output_file.seek(0)
         audio = output_file.read()
@@ -349,11 +435,9 @@ def run_piper_tts(request: TtsRequest) -> dict[str, Any]:
         "engine": "piper",
         "model": voice_id,
         "trace": {
-            "dataDir": PIPER_DATA_DIR,
             "downloadedAssets": downloaded_assets,
             "language": request.language,
             "lengthScale": get_piper_length_scale(request.pace),
-            "modelPath": model_path,
             "speakerId": request.speakerId,
         },
         "voiceId": voice_id,
@@ -477,7 +561,9 @@ def run_local_ctc(
     audio_path: str, assessor_model: str
 ) -> tuple[str, int, dict[str, Any]]:
     loaded = load_local_model(assessor_model)
-    audio, _ = librosa.load(audio_path, sr=SAMPLE_RATE, mono=True)
+    audio, _ = librosa.load(
+        audio_path, sr=SAMPLE_RATE, mono=True, duration=MAX_ASSESSOR_AUDIO_SECONDS
+    )
     if audio.size == 0:
         return "", 0, {"model": get_local_model_id(assessor_model), "transcript": ""}
 
@@ -670,11 +756,17 @@ def synthesize_tts(request: TtsRequest) -> dict[str, Any]:
     try:
         return run_piper_tts(request)
     except Exception as error:
-        raise HTTPException(status_code=503, detail=str(error)) from error
+        logger.exception("Piper speech synthesis failed")
+        raise HTTPException(
+            status_code=503, detail="Local speech synthesis failed"
+        ) from error
 
 
 @app.post("/models/load")
-def load_model_endpoint(request: ModelRequest) -> dict[str, Any]:
+def load_model_endpoint(
+    request: ModelRequest, authorization: str | None = Header(default=None)
+) -> dict[str, Any]:
+    require_model_admin_authorization(authorization)
     model = get_assessor_model(request.model)
     load_local_model(model)
     return {
@@ -684,7 +776,10 @@ def load_model_endpoint(request: ModelRequest) -> dict[str, Any]:
 
 
 @app.post("/models/unload")
-def unload_model_endpoint(request: ModelRequest) -> dict[str, Any]:
+def unload_model_endpoint(
+    request: ModelRequest, authorization: str | None = Header(default=None)
+) -> dict[str, Any]:
+    require_model_admin_authorization(authorization)
     model = get_assessor_model(request.model) if request.model else None
     removed = unload_local_model(model)
     return {
@@ -705,8 +800,8 @@ async def assess(
     model = get_assessor_model(assessorModel)
     suffix = os.path.splitext(file.filename or "")[1] or ".wav"
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=True) as temp_file:
-        temp_file.write(await file.read())
-        temp_file.flush()
+        await write_limited_audio_upload(file, temp_file)
+        validate_pronunciation_audio_duration(temp_file.name)
 
         if model == LOCAL_ASSESSOR_MODEL:
             local_transcript, acoustic_confidence, raw = run_local_ctc(

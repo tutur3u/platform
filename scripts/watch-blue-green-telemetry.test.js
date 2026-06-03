@@ -14,6 +14,7 @@ const {
   MAX_REQUEST_LOG_BYTES_ENV,
   parseContainerConsoleLogEntries,
   readTelemetryState,
+  redactRequestConsoleLogMessage,
 } = require('./watch-blue-green/telemetry.js');
 
 function createResult(stdout = '', { code = 0, stderr = '' } = {}) {
@@ -105,6 +106,21 @@ test('parseContainerConsoleLogEntries coalesces timestamped multiline object wri
   assert.match(entries[0].message, /activeBuilds: 0/);
   assert.match(entries[0].rawLine, /buildState: 'idle'/);
   assert.equal(entries[1].message, 'Finished sampler');
+});
+
+test('redactRequestConsoleLogMessage redacts sensitive route payloads', () => {
+  const redacted = redactRequestConsoleLogMessage(
+    `OAuth callback failed for admin@example.com /api/auth?code=oauth-code&token=secret-token Authorization: Bearer abc.def.ghi ${'x'.repeat(600)}`
+  );
+
+  assert.equal(redacted.includes('admin@example.com'), false);
+  assert.equal(redacted.includes('oauth-code'), false);
+  assert.equal(redacted.includes('secret-token'), false);
+  assert.equal(redacted.includes('abc.def.ghi'), false);
+  assert.match(redacted, /code=\[REDACTED\]/);
+  assert.match(redacted, /token=\[REDACTED\]/);
+  assert.match(redacted, /Authorization: \[REDACTED\]/);
+  assert.match(redacted, /\.\.\. \[truncated\]$/);
 });
 
 test('collectDeploymentTraffic bounds durable request logs by bytes before appending long URIs', async () => {

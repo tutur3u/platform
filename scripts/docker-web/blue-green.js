@@ -149,7 +149,7 @@ const BLUE_GREEN_PROXY_ROUTE_CHECK_ATTEMPTS = 6;
 const BLUE_GREEN_PROXY_ROUTE_CHECK_DELAY_MS = 2_000;
 const BLUE_GREEN_BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
 const BLUE_GREEN_CLEAR_SITE_DATA_VALUE =
-  '"cache", "cookies", "storage", "executionContexts"';
+  '"cache", "storage", "executionContexts"';
 const BLUE_GREEN_MIGRATION_PROXY_HANDOFF_TIMEOUT_MS = 3_000;
 const DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS = 45 * 60_000;
 const BLUE_GREEN_MIGRATION_STAGING_PORT_ENV = {
@@ -1194,6 +1194,7 @@ function renderBlueGreenProxyConfig(
     '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
     '    proxy_set_header X-Forwarded-Host $http_host;',
     '    proxy_set_header X-Forwarded-Proto $scheme;',
+    '    proxy_set_header X-Platform-Internal-Drain-Status "";',
     '    proxy_set_header Upgrade $http_upgrade;',
     '    proxy_set_header Connection $connection_upgrade;',
     '  }',
@@ -1228,6 +1229,7 @@ function renderBlueGreenProxyConfig(
     '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
     '    proxy_set_header X-Forwarded-Host $http_host;',
     '    proxy_set_header X-Forwarded-Proto $scheme;',
+    '    proxy_set_header X-Platform-Internal-Drain-Status "";',
     '    proxy_set_header Upgrade $http_upgrade;',
     '    proxy_set_header Connection $connection_upgrade;',
     '  }',
@@ -1240,6 +1242,7 @@ function renderBlueGreenProxyConfig(
     '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
     '    proxy_set_header X-Forwarded-Host $http_host;',
     '    proxy_set_header X-Forwarded-Proto $scheme;',
+    '    proxy_set_header X-Platform-Internal-Drain-Status "";',
     '    proxy_set_header Upgrade $http_upgrade;',
     '    proxy_set_header Connection $connection_upgrade;',
     '  }',
@@ -1267,6 +1270,7 @@ function renderBlueGreenProxyConfig(
     '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
     '    proxy_set_header X-Forwarded-Host $http_host;',
     '    proxy_set_header X-Forwarded-Proto $scheme;',
+    '    proxy_set_header X-Platform-Internal-Drain-Status "";',
     '    proxy_set_header Upgrade $http_upgrade;',
     '    proxy_set_header Connection $connection_upgrade;',
     '  }',
@@ -1279,6 +1283,7 @@ function renderBlueGreenProxyConfig(
     '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
     '    proxy_set_header X-Forwarded-Host $http_host;',
     '    proxy_set_header X-Forwarded-Proto $scheme;',
+    '    proxy_set_header X-Platform-Internal-Drain-Status "";',
     '  }',
     '',
     '  location / {',
@@ -1289,6 +1294,7 @@ function renderBlueGreenProxyConfig(
     '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
     '    proxy_set_header X-Forwarded-Host $http_host;',
     '    proxy_set_header X-Forwarded-Proto $scheme;',
+    '    proxy_set_header X-Platform-Internal-Drain-Status "";',
     '    proxy_set_header Upgrade $http_upgrade;',
     '    proxy_set_header Connection $connection_upgrade;',
     '  }',
@@ -3013,11 +3019,17 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     options.bakeFile ?? getBlueGreenBakeFile(options.rootDir ?? ROOT_DIR);
   const buildStrategy = options.buildStrategy ?? 'compose';
   const needsProxyBootstrap = !!migration || !proxyRunning || needsProxyRefresh;
+  const previousHiveColor =
+    previousTargetState.targets.hive.activeColor ?? activeColor ?? targetColor;
+  const previousHiveStandbyColor =
+    previousTargetState.targets.hive.standbyColor ??
+    (previousHiveColor !== targetColor ? targetColor : null);
   let stages = createBlueGreenDeploymentStages({
     buildServices: [],
     env: targetEnv,
     targetColor,
   });
+  let publicProxyPromoted = false;
 
   try {
     if (needsProxyBootstrap) {
@@ -3081,15 +3093,6 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             : []),
         ]
       : [];
-    const previousHiveColor =
-      previousTargetState.targets.hive.activeColor ??
-      activeColor ??
-      targetColor;
-    const previousHiveStandbyColor =
-      previousTargetState.targets.hive.standbyColor ??
-      (previousHiveColor !== targetColor ? targetColor : null);
-    let webProxyReloaded = false;
-
     if (webAlreadyPromoted) {
       markBlueGreenStageSkipped(
         stages,
@@ -3168,63 +3171,6 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
           }
         );
 
-        writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
-        writeBlueGreenProxyConfig(targetColor, {
-          deploymentStamp,
-          fsImpl,
-          hiveColor: previousHiveColor,
-          hiveStandbyColor: previousHiveStandbyColor,
-          paths,
-          standbyColor,
-        });
-
-        if (proxyBootstrapServices.length > 0) {
-          await runComposeUpWithNameConflictRecovery({
-            composeFile,
-            composeGlobalArgs: parsed.composeGlobalArgs,
-            env: targetEnv,
-            fsImpl,
-            runCommand: run,
-            services: proxyBootstrapServices,
-            upArgs: getBlueGreenProxyBootstrapUpArgs(
-              parsed,
-              proxyBootstrapServices,
-              {
-                forceRecreate: needsProxyRefresh,
-              }
-            ),
-          });
-
-          await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {
-            composeFile,
-            composeGlobalArgs: parsed.composeGlobalArgs,
-            env: targetEnv,
-            runCommand: run,
-          });
-        } else {
-          await validateBlueGreenProxyConfig({
-            composeFile,
-            composeGlobalArgs: parsed.composeGlobalArgs,
-            env: targetEnv,
-            runCommand: run,
-          });
-          await reloadBlueGreenProxy({
-            composeFile,
-            composeGlobalArgs: parsed.composeGlobalArgs,
-            env: targetEnv,
-            runCommand: run,
-          });
-        }
-
-        await testBlueGreenProxyRouting({
-          composeFile,
-          composeGlobalArgs: parsed.composeGlobalArgs,
-          env: targetEnv,
-          runCommand: run,
-        });
-
-        webProxyReloaded = true;
-        writeBlueGreenActiveColor(targetColor, paths, fsImpl);
         updateBlueGreenTargetRuntime(
           'web',
           {
@@ -3232,54 +3178,14 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             commitHash: options.latestCommit?.hash ?? null,
             commitShortHash: options.latestCommit?.shortHash ?? null,
             deploymentStamp,
-            health: 'healthy',
-            lastPromotedAt: Date.now(),
+            health: 'staged',
+            lastPromotedAt: null,
             standbyColor,
           },
           paths,
           fsImpl
         );
       });
-    }
-
-    if (webAlreadyPromoted && proxyBootstrapServices.length > 0) {
-      writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
-      writeBlueGreenProxyConfig(targetColor, {
-        deploymentStamp,
-        fsImpl,
-        hiveColor: previousHiveColor,
-        hiveStandbyColor: previousHiveStandbyColor,
-        paths,
-        standbyColor,
-      });
-      await runComposeUpWithNameConflictRecovery({
-        composeFile,
-        composeGlobalArgs: parsed.composeGlobalArgs,
-        env: targetEnv,
-        fsImpl,
-        runCommand: run,
-        services: proxyBootstrapServices,
-        upArgs: getBlueGreenProxyBootstrapUpArgs(
-          parsed,
-          proxyBootstrapServices,
-          {
-            forceRecreate: needsProxyRefresh,
-          }
-        ),
-      });
-      await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {
-        composeFile,
-        composeGlobalArgs: parsed.composeGlobalArgs,
-        env: targetEnv,
-        runCommand: run,
-      });
-      await testBlueGreenProxyRouting({
-        composeFile,
-        composeGlobalArgs: parsed.composeGlobalArgs,
-        env: targetEnv,
-        runCommand: run,
-      });
-      webProxyReloaded = true;
     }
 
     await removeLegacyHiveContainerIfPresent({
@@ -3467,18 +3373,45 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     });
 
     await runBlueGreenStage(stages, 'proxy-reload', async () => {
-      if (!webProxyReloaded) {
-        writeBlueGreenProxyConfig(targetColor, {
-          deploymentStamp,
+      const latestTargetState = readBlueGreenTargetState(paths, fsImpl);
+      const promotedHiveColor =
+        latestTargetState.targets.hive.activeColor ?? previousHiveColor;
+      const promotedHiveStandbyColor =
+        latestTargetState.targets.hive.standbyColor;
+
+      writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
+      writeBlueGreenProxyConfig(targetColor, {
+        deploymentStamp,
+        fsImpl,
+        hiveColor: promotedHiveColor,
+        hiveStandbyColor: promotedHiveStandbyColor,
+        paths,
+        standbyColor,
+      });
+
+      if (proxyBootstrapServices.length > 0) {
+        await runComposeUpWithNameConflictRecovery({
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
           fsImpl,
-          hiveColor:
-            readBlueGreenTargetState(paths, fsImpl).targets.hive.activeColor ??
-            previousHiveColor,
-          hiveStandbyColor: readBlueGreenTargetState(paths, fsImpl).targets.hive
-            .standbyColor,
-          paths,
-          standbyColor,
+          runCommand: run,
+          services: proxyBootstrapServices,
+          upArgs: getBlueGreenProxyBootstrapUpArgs(
+            parsed,
+            proxyBootstrapServices,
+            {
+              forceRecreate: needsProxyRefresh,
+            }
+          ),
         });
+        await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
+          runCommand: run,
+        });
+      } else {
         await validateBlueGreenProxyConfig({
           composeFile,
           composeGlobalArgs: parsed.composeGlobalArgs,
@@ -3493,12 +3426,28 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
         });
       }
 
+      publicProxyPromoted = true;
       await testBlueGreenProxyRouting({
         composeFile,
         composeGlobalArgs: parsed.composeGlobalArgs,
         env: targetEnv,
         runCommand: run,
       });
+      writeBlueGreenActiveColor(targetColor, paths, fsImpl);
+      updateBlueGreenTargetRuntime(
+        'web',
+        {
+          activeColor: targetColor,
+          commitHash: options.latestCommit?.hash ?? null,
+          commitShortHash: options.latestCommit?.shortHash ?? null,
+          deploymentStamp,
+          health: 'healthy',
+          lastPromotedAt: Date.now(),
+          standbyColor,
+        },
+        paths,
+        fsImpl
+      );
     });
 
     if (activeColor && activeColor !== targetColor) {
@@ -3524,6 +3473,39 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       stages,
     };
   } catch (error) {
+    if (publicProxyPromoted && activeColor && activeColor !== targetColor) {
+      try {
+        writeBlueGreenProxyConfig(activeColor, {
+          deploymentStamp:
+            readBlueGreenDeploymentStamp(paths, fsImpl) ?? deploymentStamp,
+          fsImpl,
+          hiveColor: previousHiveColor,
+          hiveStandbyColor: previousHiveStandbyColor,
+          paths,
+          standbyColor: targetColor,
+        });
+        await validateBlueGreenProxyConfig({
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
+          runCommand: run,
+        });
+        await reloadBlueGreenProxy({
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
+          runCommand: run,
+        });
+        writeBlueGreenActiveColor(activeColor, paths, fsImpl);
+      } catch (rollbackError) {
+        if (error && typeof error === 'object') {
+          error.blueGreenRollbackError =
+            rollbackError instanceof Error
+              ? rollbackError.message
+              : String(rollbackError);
+        }
+      }
+    }
     skipQueuedBlueGreenDeploymentStages(
       stages,
       error instanceof Error ? error.message : String(error)

@@ -92,6 +92,21 @@ describe('auth proxy redirect helpers', () => {
     ).toBe('/workspace/demo?tab=mail');
   });
 
+  it('rejects slash-backslash redirects that parse as cross-origin URLs', () => {
+    expect(
+      normalizeAuthRedirectPath(
+        '/\\\\evil.example',
+        'https://learn.tuturuuu.com'
+      )
+    ).toBe('/');
+    expect(
+      normalizeAuthRedirectPath(
+        '/%5C%5Cevil.example',
+        'https://learn.tuturuuu.com'
+      )
+    ).toBe('/');
+  });
+
   describe('consumeVerifyTokenRequest', () => {
     it('redirects missing-token verifier requests to a safe nextUrl without fetching', async () => {
       const fetchMock = vi.fn();

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   const linkedUserMaybeSingle = vi.fn();
+  const rpc = vi.fn();
   const transactionMaybeSingle = vi.fn();
   const walletMaybeSingle = vi.fn();
 
@@ -59,6 +60,7 @@ const mocks = vi.hoisted(() => {
   return {
     adminSupabase,
     linkedUserMaybeSingle,
+    rpc,
     transactionMaybeSingle,
     walletMaybeSingle,
   };
@@ -103,6 +105,10 @@ describe('finance transaction storage access', () => {
       },
       error: null,
     });
+    mocks.rpc.mockResolvedValue({
+      data: [{ id: 'tx-1' }],
+      error: null,
+    });
   });
 
   it('ignores paths outside finance transaction storage', async () => {
@@ -116,14 +122,16 @@ describe('finance transaction storage access', () => {
         normalizedWsId: 'ws-1',
         path: 'drive/file.txt',
         permissions: createPermissions(['view_transactions']) as never,
+        supabase: { rpc: mocks.rpc } as never,
         userId: 'user-1',
       })
     ).resolves.toBe(false);
 
     expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it('allows transaction viewers to read files in the same workspace', async () => {
+  it('uses finance transaction visibility for attachment reads', async () => {
     const { canAccessFinanceTransactionStoragePath } = await import(
       './finance-transaction-storage-access'
     );
@@ -134,9 +142,43 @@ describe('finance transaction storage access', () => {
         normalizedWsId: 'ws-1',
         path: 'finance/transactions/tx-1/receipt.pdf',
         permissions: createPermissions(['view_transactions']) as never,
+        supabase: { rpc: mocks.rpc } as never,
         userId: 'user-1',
       })
     ).resolves.toBe(true);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'get_wallet_transactions_with_permissions',
+      {
+        p_limit: 1,
+        p_transaction_ids: ['tx-1'],
+        p_user_id: 'user-1',
+        p_ws_id: 'ws-1',
+      }
+    );
+    expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
+  });
+
+  it('rejects attachment reads when transaction visibility filters remove the row', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+
+    const { canAccessFinanceTransactionStoragePath } = await import(
+      './finance-transaction-storage-access'
+    );
+
+    await expect(
+      canAccessFinanceTransactionStoragePath({
+        access: 'read',
+        normalizedWsId: 'ws-1',
+        path: 'finance/transactions/tx-1/receipt.pdf',
+        permissions: createPermissions(['view_transactions']) as never,
+        supabase: { rpc: mocks.rpc } as never,
+        userId: 'user-1',
+      })
+    ).resolves.toBe(false);
+    expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
   });
 
   it('allows transaction creators to attach files to their own transaction', async () => {
@@ -150,26 +192,19 @@ describe('finance transaction storage access', () => {
         normalizedWsId: 'ws-1',
         path: 'finance/transactions/tx-1',
         permissions: createPermissions(['create_transactions']) as never,
+        supabase: { rpc: mocks.rpc } as never,
         userId: 'user-1',
       })
     ).resolves.toBe(true);
 
     expect(mocks.linkedUserMaybeSingle).toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it('rejects files for transactions in another workspace', async () => {
-    mocks.transactionMaybeSingle.mockResolvedValue({
-      data: {
-        creator_id: 'virtual-user-1',
-        wallet_id: 'wallet-2',
-      },
-      error: null,
-    });
-    mocks.walletMaybeSingle.mockResolvedValue({
-      data: {
-        ws_id: 'ws-2',
-      },
-      error: null,
+  it('rejects attachment reads when transaction visibility lookup fails', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { message: 'permission lookup failed' },
     });
 
     const { canAccessFinanceTransactionStoragePath } = await import(
@@ -182,8 +217,17 @@ describe('finance transaction storage access', () => {
         normalizedWsId: 'ws-1',
         path: 'finance/transactions/tx-1/receipt.pdf',
         permissions: createPermissions(['view_transactions']) as never,
+        supabase: { rpc: mocks.rpc } as never,
         userId: 'user-1',
       })
     ).resolves.toBe(false);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'get_wallet_transactions_with_permissions',
+      expect.objectContaining({
+        p_transaction_ids: ['tx-1'],
+        p_ws_id: 'ws-1',
+      })
+    );
+    expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
   });
 });

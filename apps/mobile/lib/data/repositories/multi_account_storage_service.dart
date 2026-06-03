@@ -374,16 +374,11 @@ class MultiAccountStorageService {
     }
 
     if (remaining.isEmpty) {
-      try {
-        await _client.auth.signOut();
-      } on Object catch (error, stackTrace) {
-        developer.log(
-          'Supabase sign-out failed while removing final account',
-          name: 'MultiAccountStorageService',
-          error: error,
-          stackTrace: stackTrace,
-          level: 900,
-        );
+      final signOutError = await _signOutSupabase(
+        logMessage: 'Supabase sign-out failed while removing final account',
+      );
+      if (signOutError != null) {
+        return (success: false, switched: false, error: signOutError);
       }
 
       try {
@@ -396,9 +391,8 @@ class MultiAccountStorageService {
           stackTrace: stackTrace,
           level: 900,
         );
-      } finally {
-        await clearMultiAccountStore();
       }
+      await clearMultiAccountStore();
       return (success: true, switched: false, error: null);
     }
 
@@ -450,7 +444,12 @@ class MultiAccountStorageService {
   Future<({bool switched, String? error})> signOutCurrentAccount() async {
     final activeId = await getActiveStoredAccountId();
     if (activeId == null) {
-      await _client.auth.signOut();
+      final signOutError = await _signOutSupabase(
+        logMessage: 'Supabase sign-out failed during current account sign-out',
+      );
+      if (signOutError != null) {
+        return (switched: false, error: signOutError);
+      }
       await clearMultiAccountStore();
       return (switched: false, error: null);
     }
@@ -462,7 +461,7 @@ class MultiAccountStorageService {
     return (switched: result.switched, error: null);
   }
 
-  Future<void> signOutAllAccounts() async {
+  Future<({bool success, String? error})> signOutAllAccounts() async {
     final store = await _loadMultiAccountStore();
     for (final account in store.accounts) {
       try {
@@ -490,19 +489,15 @@ class MultiAccountStorageService {
       );
     }
 
-    try {
-      await _client.auth.signOut();
-    } on Object catch (error, stackTrace) {
-      developer.log(
-        'Supabase sign-out failed during signOutAllAccounts',
-        name: 'MultiAccountStorageService',
-        error: error,
-        stackTrace: stackTrace,
-        level: 900,
-      );
-    } finally {
-      await clearMultiAccountStore();
+    final signOutError = await _signOutSupabase(
+      logMessage: 'Supabase sign-out failed during signOutAllAccounts',
+    );
+    if (signOutError != null) {
+      return (success: false, error: signOutError);
     }
+
+    await clearMultiAccountStore();
+    return (success: true, error: null);
   }
 
   Future<void> _googleSignOutBestEffort() async {
@@ -565,6 +560,31 @@ class MultiAccountStorageService {
         'Failed to revoke refresh token globally '
         '(${logoutResponse.statusCode}): ${logoutResponse.body}',
       );
+    }
+  }
+
+  Future<String?> _signOutSupabase({required String logMessage}) async {
+    try {
+      await _client.auth.signOut();
+      return null;
+    } on AuthException catch (error, stackTrace) {
+      developer.log(
+        logMessage,
+        name: 'MultiAccountStorageService',
+        error: error,
+        stackTrace: stackTrace,
+        level: 900,
+      );
+      return error.message;
+    } on Object catch (error, stackTrace) {
+      developer.log(
+        logMessage,
+        name: 'MultiAccountStorageService',
+        error: error,
+        stackTrace: stackTrace,
+        level: 900,
+      );
+      return error.toString();
     }
   }
 }

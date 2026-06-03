@@ -42,8 +42,10 @@ const TaskBoardContextSchema = z.object({
   lists: z.array(TaskBoardContextListSchema).max(80).default([]),
 });
 
+const ChatIdSchema = z.string().trim().pipe(z.uuid());
+
 export const ChatRequestBodySchema = z.object({
-  id: z.string().optional(),
+  id: ChatIdSchema.optional(),
   model: z.string().optional(),
   messages: z.array(UIMessageSchema).optional(),
   wsId: z.string().optional(),

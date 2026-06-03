@@ -384,9 +384,5 @@ export async function listSharedCourses(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
-  return client.json<CourseListResponse>('/api/v1/course', {
-    cache: 'no-store',
-    query: { ...studentQuery(studentId), wsId },
-  });
+  return listTulearnCourses(wsId, studentId, options);
 }

@@ -1,19 +1,27 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, ChevronLeft, ChevronRight, Youtube } from '@tuturuuu/icons';
+import { BookOpen, ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import {
-  getSharedCourseContent,
-  type SharedCourseContentResponse,
+  getTulearnCourse,
+  getTulearnCourseModule,
+  type TulearnCourseDetail,
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
+import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ModuleDetailView } from './module-detail-view';
-import { BrutalCard, EmptyState, LoadingState, useStudentHref } from './shared';
+import {
+  BrutalCard,
+  EmptyState,
+  LoadingState,
+  useStudentHref,
+  useStudentId,
+} from './shared';
 
-export type CourseModule = SharedCourseContentResponse['modules'][number];
+export type CourseModule = TulearnCourseDetail['modules'][number];
 
 export function CourseDetailPage({
   courseId,
@@ -23,12 +31,35 @@ export function CourseDetailPage({
   wsId: string;
 }) {
   const t = useTranslations();
+  const studentId = useStudentId();
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const coursesHref = useStudentHref(`/${wsId}/courses`);
 
   const course = useQuery({
-    queryFn: () => getSharedCourseContent(courseId),
-    queryKey: ['course-detail', courseId],
+    queryFn: () => getTulearnCourse(wsId, courseId, studentId),
+    queryKey: ['tulearn', wsId, studentId, 'course', courseId],
+  });
+
+  const modules = course.data?.modules ?? [];
+  const selectedModule =
+    modules.find((module) => module.id === selectedModuleId) ?? null;
+  const selectedModuleDetail = useQuery({
+    enabled: Boolean(selectedModule && !selectedModule.locked),
+    queryFn: () =>
+      getTulearnCourseModule(
+        wsId,
+        courseId,
+        selectedModule?.id ?? '',
+        studentId
+      ),
+    queryKey: [
+      'tulearn',
+      wsId,
+      studentId,
+      'course-module',
+      courseId,
+      selectedModule?.id,
+    ],
   });
 
   if (course.isLoading) return <LoadingState />;
@@ -50,8 +81,10 @@ export function CourseDetailPage({
   }
   if (!course.data) return <EmptyState label={t('courses.empty')} />;
 
-  const { group, modules } = course.data;
-  const selectedModule = modules.find((m) => m.id === selectedModuleId) ?? null;
+  const group = {
+    description: course.data.description,
+    name: course.data.name,
+  };
   const selectedIndex = selectedModule ? modules.indexOf(selectedModule) : -1;
   const previousModule = selectedIndex > 0 ? modules[selectedIndex - 1] : null;
   const nextModule =
@@ -60,15 +93,52 @@ export function CourseDetailPage({
       : null;
 
   if (selectedModule) {
+    if (selectedModule.locked) {
+      return (
+        <EmptyState
+          action={
+            <button
+              className="border-2 border-border bg-background px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+              onClick={() => setSelectedModuleId(null)}
+              type="button"
+            >
+              {t('common.back')}
+            </button>
+          }
+          label={t('courses.locked')}
+        />
+      );
+    }
+
+    if (selectedModuleDetail.isLoading) return <LoadingState />;
+    if (selectedModuleDetail.isError || !selectedModuleDetail.data) {
+      return (
+        <EmptyState
+          action={
+            <button
+              className="border-2 border-border bg-background px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+              onClick={() => selectedModuleDetail.refetch()}
+              type="button"
+            >
+              {t('common.retry')}
+            </button>
+          }
+          label={t('courses.loadError')}
+        />
+      );
+    }
+
     return (
       <ModuleDetailView
-        courseModule={selectedModule}
+        courseModule={selectedModuleDetail.data}
         group={group}
         moduleIndex={selectedIndex}
-        nextModule={nextModule ?? undefined}
+        nextModule={nextModule && !nextModule.locked ? nextModule : undefined}
         onBack={() => setSelectedModuleId(null)}
         onNavigate={(id) => setSelectedModuleId(id)}
-        previousModule={previousModule ?? undefined}
+        previousModule={
+          previousModule && !previousModule.locked ? previousModule : undefined
+        }
         totalModules={modules.length}
       />
     );
@@ -111,7 +181,13 @@ export function CourseDetailPage({
             <div className="mt-3 space-y-1.5">
               {modules.map((courseModule, index) => (
                 <button
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm transition hover:bg-muted/60"
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm transition',
+                    courseModule.locked
+                      ? 'cursor-not-allowed opacity-60'
+                      : 'hover:bg-muted/60'
+                  )}
+                  disabled={courseModule.locked}
                   key={courseModule.id}
                   onClick={() => setSelectedModuleId(courseModule.id)}
                   type="button"
@@ -122,6 +198,11 @@ export function CourseDetailPage({
                   <span className="truncate">
                     {courseModule.name ?? t('courses.untitled')}
                   </span>
+                  {courseModule.locked ? (
+                    <span className="ml-auto text-[10px] text-muted-foreground uppercase">
+                      {t('courses.locked')}
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </div>
@@ -143,11 +224,16 @@ export function CourseDetailPage({
 
           <div className="space-y-3">
             {modules.map((courseModule, index) => {
-              const videos = courseModule.youtube_links ?? [];
               return (
                 <BrutalCard key={courseModule.id} className="p-0">
                   <button
-                    className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-muted/30"
+                    className={cn(
+                      'flex w-full items-center gap-4 px-5 py-4 text-left transition',
+                      courseModule.locked
+                        ? 'cursor-not-allowed opacity-60'
+                        : 'hover:bg-muted/30'
+                    )}
+                    disabled={courseModule.locked}
                     onClick={() => setSelectedModuleId(courseModule.id)}
                     type="button"
                   >
@@ -159,33 +245,32 @@ export function CourseDetailPage({
                         {courseModule.name ?? t('courses.untitled')}
                       </h3>
                       <div className="mt-0.5 flex items-center gap-3 text-muted-foreground text-xs">
-                        {courseModule.quizzes > 0 && (
+                        {courseModule.counts.quizzes > 0 && (
                           <span>
                             {t('courses.quizCount', {
-                              count: courseModule.quizzes,
+                              count: courseModule.counts.quizzes,
                             })}
                           </span>
                         )}
-                        {courseModule.flashcards > 0 && (
+                        {courseModule.counts.flashcards > 0 && (
                           <span>
                             {t('courses.flashcardCount', {
-                              count: courseModule.flashcards,
+                              count: courseModule.counts.flashcards,
                             })}
                           </span>
                         )}
-                        {videos.length > 0 && (
-                          <span className="flex items-center gap-1">
-                            <Youtube className="h-3 w-3" />
-                            {t('courses.videoCount', {
-                              count: videos.length,
-                            })}
-                          </span>
-                        )}
+                        {courseModule.locked ? (
+                          <span>{t('courses.locked')}</span>
+                        ) : null}
                       </div>
                     </div>
                     <span className="flex items-center gap-1 font-bold text-muted-foreground text-sm transition group-hover:text-foreground">
-                      {t('courses.openModule')}
-                      <ChevronRight className="h-4 w-4" />
+                      {courseModule.locked
+                        ? t('courses.locked')
+                        : t('courses.openModule')}
+                      {!courseModule.locked ? (
+                        <ChevronRight className="h-4 w-4" />
+                      ) : null}
                     </span>
                   </button>
                 </BrutalCard>

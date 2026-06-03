@@ -68,7 +68,7 @@ describe('AI credit Redis snapshot cache', () => {
     });
   });
 
-  it('returns a usable snapshot without creating an admin client', async () => {
+  it('does not authorize AI requests from Redis status snapshots', async () => {
     mocks.readAiCreditSnapshot.mockResolvedValue({
       remainingCredits: 250,
       maxOutputTokens: 2048,
@@ -86,65 +86,12 @@ describe('AI credit Redis snapshot cache', () => {
 
     expect(result).toEqual({
       allowed: true,
-      remainingCredits: 250,
+      remainingCredits: 1000,
       tier: 'PRO',
-      maxOutputTokens: 2048,
+      maxOutputTokens: 4096,
       errorCode: null,
       errorMessage: null,
     });
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
-    expect(mocks.rpc).not.toHaveBeenCalled();
-    expect(mocks.hasAiCreditChargeInFlight).toHaveBeenCalledWith({
-      wsId: 'workspace-1',
-      userId: 'user-1',
-    });
-    expect(mocks.isAiCreditSnapshotUsable).toHaveBeenCalledWith(
-      expect.any(Object),
-      { inFlight: false }
-    );
-  });
-
-  it('falls back to the authoritative DB check when a charge is in flight', async () => {
-    mocks.readAiCreditSnapshot.mockResolvedValue({
-      remainingCredits: 250,
-      maxOutputTokens: 2048,
-      tier: 'PRO',
-      allowedModels: [],
-      allowedFeatures: [],
-      dailyLimit: null,
-      updatedAt: Date.now(),
-    });
-    mocks.hasAiCreditChargeInFlight.mockResolvedValue(true);
-    mocks.isAiCreditSnapshotUsable.mockReturnValue(false);
-
-    await checkAiCredits('workspace-1', 'gemini-lite', 'chat', {
-      userId: 'user-1',
-    });
-
-    expect(mocks.isAiCreditSnapshotUsable).toHaveBeenCalledWith(
-      expect.any(Object),
-      { inFlight: true }
-    );
-    expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
-  });
-
-  it('falls back to the authoritative DB check when the snapshot is stale', async () => {
-    mocks.readAiCreditSnapshot.mockResolvedValue({
-      remainingCredits: 250,
-      maxOutputTokens: 2048,
-      tier: 'PRO',
-      allowedModels: ['*'],
-      allowedFeatures: ['chat'],
-      dailyLimit: null,
-      updatedAt: Date.now() - 60_000,
-    });
-    mocks.isAiCreditSnapshotUsable.mockReturnValue(false);
-
-    const result = await checkAiCredits('workspace-1', 'gemini-lite', 'chat', {
-      userId: 'user-1',
-    });
-
-    expect(result.remainingCredits).toBe(1000);
     expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
     expect(mocks.rpc).toHaveBeenCalledWith(
       'check_ai_credit_allowance',
@@ -153,29 +100,9 @@ describe('AI credit Redis snapshot cache', () => {
         p_user_id: 'user-1',
       })
     );
-  });
-
-  it('falls back when the cached model or feature allowance does not match', async () => {
-    mocks.readAiCreditSnapshot.mockResolvedValue({
-      remainingCredits: 250,
-      maxOutputTokens: 2048,
-      tier: 'PRO',
-      allowedModels: ['different-model'],
-      allowedFeatures: ['summaries'],
-      dailyLimit: null,
-      updatedAt: Date.now(),
-    });
-    mocks.isAiCreditSnapshotUsable.mockReturnValue(true);
-
-    await checkAiCredits('workspace-1', 'gemini-lite', 'chat', {
-      userId: 'user-1',
-    });
-
-    expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
-    expect(mocks.rpc).toHaveBeenCalledWith(
-      'check_ai_credit_allowance',
-      expect.any(Object)
-    );
+    expect(mocks.readAiCreditSnapshot).not.toHaveBeenCalled();
+    expect(mocks.hasAiCreditChargeInFlight).not.toHaveBeenCalled();
+    expect(mocks.isAiCreditSnapshotUsable).not.toHaveBeenCalled();
   });
 
   it('invalidates the snapshot after a successful token deduction', async () => {

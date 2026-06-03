@@ -4,7 +4,7 @@ import { resolveSessionAuthContext } from '@/lib/api-auth';
 export async function getInventoryActorContext(req: Request, wsId: string) {
   const sbAdmin = await createAdminClient();
   const auth = await resolveSessionAuthContext(req, {
-    allowAppSessionAuth: { targetApp: ['inventory', 'finance'] },
+    allowAppSessionAuth: { targetApp: 'inventory' },
   });
 
   if (!auth.ok) {

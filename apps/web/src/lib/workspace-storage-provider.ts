@@ -569,16 +569,12 @@ async function ensureWorkspaceCapacity(
   if (
     incomingBytes === undefined ||
     !Number.isFinite(incomingBytes) ||
-    incomingBytes < 0
+    incomingBytes <= 0
   ) {
     throw new WorkspaceStorageError(
       'A valid file size is required for storage uploads.',
       400
     );
-  }
-
-  if (incomingBytes === 0) {
-    return;
   }
 
   const overview = await getWorkspaceStorageOverview(wsId);
@@ -1452,6 +1448,7 @@ export async function createWorkspaceStorageUploadPayload(
       new PutObjectCommand({
         Bucket: config.bucket,
         Key: fullPath,
+        ContentLength: options?.size,
         ContentType: options?.contentType,
       }),
       { expiresIn: R2_SIGNED_URL_TTL_SECONDS }

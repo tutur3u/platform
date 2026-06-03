@@ -160,7 +160,7 @@ describe('cross-app app-session refresh route', () => {
     expect(response.status).toBe(401);
   });
 
-  it('upgrades a still-valid legacy access-only session', async () => {
+  it('rejects access-only session refresh attempts', async () => {
     const access = createAppSessionToken({
       targetApp: 'learn',
       userId: 'user-1',
@@ -172,10 +172,13 @@ describe('cross-app app-session refresh route', () => {
         targetApp: 'learn',
       })
     );
-    const body = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(body.appSessionRefreshToken).toMatch(/^ttr_app_/u);
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Missing app session refresh credentials',
+    });
+    expect(mocks.getAppCoordinationSessionPolicy).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('rejects refresh when the user no longer exists', async () => {

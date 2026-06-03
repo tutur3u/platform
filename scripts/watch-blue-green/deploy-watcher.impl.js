@@ -1760,10 +1760,19 @@ function getConflictFromDeploymentBuildLockError(
   };
 }
 
+function sanitizeActiveDeploymentLock(lock) {
+  if (!lock || typeof lock !== 'object') {
+    return null;
+  }
+
+  const { lockToken: _lockToken, ...safeLock } = lock;
+  return safeLock;
+}
+
 function createDeploymentActiveResult(conflict, result = {}) {
   return {
     ...result,
-    activeDeployment: conflict?.lock ?? null,
+    activeDeployment: sanitizeActiveDeploymentLock(conflict?.lock),
     activeDeploymentKey: getActiveDeploymentConflictKey(conflict),
     activeDeploymentSource: conflict?.source ?? null,
     activeDeploymentStatus: conflict?.status ?? null,

@@ -69,6 +69,13 @@ describe('inventory products route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.authorizeInventoryWorkspace).toHaveBeenCalledWith(
+      expect.any(Request),
+      'ws-1',
+      {
+        appSessionTargets: ['inventory', 'finance'],
+      }
+    );
     expect(mocks.getInventoryCatalogProducts).toHaveBeenCalledWith(
       expect.objectContaining({
         includeStock: true,

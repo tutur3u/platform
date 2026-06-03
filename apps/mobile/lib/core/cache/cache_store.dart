@@ -21,6 +21,9 @@ class CacheStore {
 
   static const _resourceBoxName = 'offline_cache_v1';
   static const _mutationBoxName = 'offline_mutations_v1';
+  static const _nonPersistentResourceNamespaces = {
+    'settings.workspaceSecrets.list',
+  };
 
   final Map<String, CachedResourceRecord> _memory = {};
   late Box<dynamic> _resourceBox;
@@ -34,12 +37,20 @@ class CacheStore {
     Hive.init(dir.path);
     _resourceBox = await Hive.openBox<dynamic>(_resourceBoxName);
     _mutationBox = await Hive.openBox<dynamic>(_mutationBoxName);
+    final nonPersistentKeys = <dynamic>[];
     for (final key in _resourceBox.keys) {
       final raw = _resourceBox.get(key);
       if (raw is Map<dynamic, dynamic>) {
         final record = CachedResourceRecord.fromJson(raw);
+        if (_nonPersistentResourceNamespaces.contains(record.namespace)) {
+          nonPersistentKeys.add(key);
+          continue;
+        }
         _memory[record.key] = record;
       }
+    }
+    for (final key in nonPersistentKeys) {
+      await _resourceBox.delete(key);
     }
     _initialized = true;
   }
@@ -184,6 +195,11 @@ class CacheStore {
     List<String> tags = const <String>[],
   }) async {
     await init();
+    if (_nonPersistentResourceNamespaces.contains(key.namespace)) {
+      _memory.remove(key.value);
+      await _resourceBox.delete(key.value);
+      return;
+    }
     final now = DateTime.now();
     final record = CachedResourceRecord(
       key: key.value,

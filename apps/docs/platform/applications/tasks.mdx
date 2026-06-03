@@ -50,6 +50,10 @@ Web. Keep the corresponding Web routes app-session aware for
 `targetApp: 'tasks'`; otherwise the browser can have valid Tasks cookies while
 the data layer still loops through `401` and proxy-side `429` responses.
 
+Task board/list count endpoints must compute counts in the database, preferably
+through private service-role RPCs, and return one aggregate row per board/list.
+Do not hydrate every matching `tasks` row in an API route just to count them.
+
 ## Rich Text Editor Notes
 
 The task editor includes isolated React roots inside some Tiptap node views, especially task mention chips.
@@ -83,6 +87,7 @@ The task editor includes isolated React roots inside some Tiptap node views, esp
 - Any workspace alias accepted by the board/list bootstrap endpoints, such as `personal`, must also be normalized by the journal save route before membership and list checks. Otherwise the picker can show valid destinations while the final save still rejects the same workspace context.
 - The journal save route should verify workspace membership first with the request-scoped client, then validate the chosen list against that normalized workspace. Admin-backed list checks are fine for consistency with selector data, but they must never bypass the caller's workspace access gate.
 - Any workspace-scoped project validation in that same save route should follow the same pattern: verify membership with the request-scoped client first, then resolve valid `task_projects` IDs through the admin client scoped to the normalized workspace. Do not read protected workspace project tables directly from the caller-scoped client after access has already been established.
+- Any top-level `labelIds` or reviewed task `labels[].id` in that save route must be checked against `workspace_task_labels.ws_id` for the normalized workspace before task rows are inserted. Foreign workspace label IDs must fail the request instead of being carried into `task_labels`; labels created by name can still be upserted through the admin-backed workspace path after membership passes.
 - After membership passes, persist the journal-created `tasks` rows and their relation-table writes (`task_labels`, `task_project_tasks`, `task_assignees`, label upserts) through the same admin-backed workspace path, and stamp actor-owned columns such as `creator_id` explicitly. Do not mix admin-backed validation with caller-scoped writes or the save step can still fail with table-level permission errors.
 
 ## Task Hierarchy
@@ -323,6 +328,11 @@ dropping them from the schedule.
 Personal task boards can reference tasks from other workspaces without cloning
 or moving the source task. Assigned tasks from accessible source workspaces
 appear by default in a virtual `External tasks` lane on each personal board.
+The tasks API may use the server-side admin client to hydrate candidate source
+tasks, but it must filter those rows through the current user's source
+`workspace_members` rows with `type = 'MEMBER'` before returning personal
+default or placed external cards. A guest row in the source workspace is not
+enough to reveal task data through the personal board.
 
 The virtual lane is presentation-only: it has no `task_lists` row, no list
 actions, no create-task form, no list reordering, and can be collapsed per board

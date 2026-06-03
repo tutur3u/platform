@@ -341,14 +341,23 @@ export function createPOST(
         );
       }
 
-      const resolvedChatId = await resolveChatIdForUser(id, () =>
-        sbAdmin
-          .from('ai_chats')
-          .select('id')
-          .eq('creator_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single()
+      const resolvedChatId = await resolveChatIdForUser(
+        id,
+        () =>
+          sbAdmin
+            .from('ai_chats')
+            .select('id')
+            .eq('creator_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single(),
+        (chatId) =>
+          sbAdmin
+            .from('ai_chats')
+            .select('id')
+            .eq('id', chatId)
+            .eq('creator_id', user.id)
+            .maybeSingle()
       );
       if ('error' in resolvedChatId) {
         return resolvedChatId.error;

@@ -26,6 +26,7 @@ interface SepayApiListResponse<T> {
 const SEPAY_FETCH_TIMEOUT_MS = 10_000;
 const SEPAY_BANK_ACCOUNT_PAGE_LIMIT = 100;
 const SEPAY_BANK_ACCOUNT_RATE_LIMIT_RETRIES = 3;
+const SEPAY_BANK_ACCOUNT_MAX_RETRY_AFTER_MS = 2_000;
 const SEPAY_BANK_ACCOUNT_MAX_PAGES = 100;
 
 function normalizeBaseUrl(value: string) {
@@ -83,22 +84,26 @@ async function fetchSepay(url: string, init: RequestInit) {
   }
 }
 
+function capRetryAfterMs(valueMs: number) {
+  return Math.min(valueMs, SEPAY_BANK_ACCOUNT_MAX_RETRY_AFTER_MS);
+}
+
 function readRetryAfterMs(value: string | null, fallbackMs: number) {
   if (!value) {
-    return fallbackMs;
+    return capRetryAfterMs(fallbackMs);
   }
 
   const seconds = Number(value);
   if (Number.isFinite(seconds) && seconds >= 0) {
-    return seconds * 1000;
+    return capRetryAfterMs(seconds * 1000);
   }
 
   const retryAt = Date.parse(value);
   if (Number.isNaN(retryAt)) {
-    return fallbackMs;
+    return capRetryAfterMs(fallbackMs);
   }
 
-  return Math.max(0, retryAt - Date.now());
+  return capRetryAfterMs(Math.max(0, retryAt - Date.now()));
 }
 
 function readSepayRetryAfterMs(response: Response, fallbackMs: number) {

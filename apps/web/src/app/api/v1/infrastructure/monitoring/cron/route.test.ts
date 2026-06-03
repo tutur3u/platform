@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  authorizeInfrastructureOperatorMock,
   authorizeInfrastructureViewerMock,
   queueCronRunRequestMock,
   readCronExecutionArchiveMock,
   readCronMonitoringSnapshotMock,
   updateCronMonitoringControlMock,
 } = vi.hoisted(() => ({
+  authorizeInfrastructureOperatorMock: vi.fn(),
   authorizeInfrastructureViewerMock: vi.fn(),
   queueCronRunRequestMock: vi.fn(),
   readCronExecutionArchiveMock: vi.fn(),
@@ -15,10 +17,12 @@ const {
 }));
 
 vi.mock('../blue-green/authorization', () => ({
+  authorizeInfrastructureOperator: authorizeInfrastructureOperatorMock,
   authorizeInfrastructureViewer: authorizeInfrastructureViewerMock,
 }));
 
 vi.mock('../../blue-green/authorization', () => ({
+  authorizeInfrastructureOperator: authorizeInfrastructureOperatorMock,
   authorizeInfrastructureViewer: authorizeInfrastructureViewerMock,
 }));
 
@@ -35,12 +39,21 @@ import { GET } from './route';
 import { POST as POSTRun } from './run/route';
 
 function authorize() {
-  authorizeInfrastructureViewerMock.mockResolvedValue({
+  const authorization = {
     ok: true,
     user: {
       email: 'ops@tuturuuu.com',
       id: 'user-1',
     },
+  };
+  authorizeInfrastructureOperatorMock.mockResolvedValue(authorization);
+  authorizeInfrastructureViewerMock.mockResolvedValue(authorization);
+}
+
+function denyOperator() {
+  authorizeInfrastructureOperatorMock.mockResolvedValue({
+    ok: false,
+    response: Response.json({ message: 'Forbidden' }, { status: 403 }),
   });
 }
 
@@ -112,11 +125,32 @@ describe('cron monitoring routes', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(authorizeInfrastructureOperatorMock).toHaveBeenCalledTimes(1);
+    expect(authorizeInfrastructureViewerMock).not.toHaveBeenCalled();
     expect(queueCronRunRequestMock).toHaveBeenCalledWith({
       jobId: 'job-1',
       requestedBy: 'user-1',
       requestedByEmail: 'ops@tuturuuu.com',
     });
+  });
+
+  it('rejects manual cron runs without infrastructure operator access', async () => {
+    denyOperator();
+
+    const response = await POSTRun(
+      new Request(
+        'http://localhost/api/v1/infrastructure/monitoring/cron/run',
+        {
+          body: JSON.stringify({ jobId: 'job-1' }),
+          method: 'POST',
+        }
+      )
+    );
+
+    expect(response.status).toBe(403);
+    expect(authorizeInfrastructureOperatorMock).toHaveBeenCalledTimes(1);
+    expect(readCronMonitoringSnapshotMock).not.toHaveBeenCalled();
+    expect(queueCronRunRequestMock).not.toHaveBeenCalled();
   });
 
   it('updates native cron execution control', async () => {
@@ -139,11 +173,31 @@ describe('cron monitoring routes', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(authorizeInfrastructureOperatorMock).toHaveBeenCalledTimes(1);
+    expect(authorizeInfrastructureViewerMock).not.toHaveBeenCalled();
     expect(updateCronMonitoringControlMock).toHaveBeenCalledWith({
       enabled: false,
       jobId: null,
       updatedBy: 'user-1',
       updatedByEmail: 'ops@tuturuuu.com',
     });
+  });
+
+  it('rejects cron control updates without infrastructure operator access', async () => {
+    denyOperator();
+
+    const response = await PUTControl(
+      new Request(
+        'http://localhost/api/v1/infrastructure/monitoring/cron/control',
+        {
+          body: JSON.stringify({ enabled: false }),
+          method: 'PUT',
+        }
+      )
+    );
+
+    expect(response.status).toBe(403);
+    expect(authorizeInfrastructureOperatorMock).toHaveBeenCalledTimes(1);
+    expect(updateCronMonitoringControlMock).not.toHaveBeenCalled();
   });
 });

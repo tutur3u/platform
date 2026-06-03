@@ -78,7 +78,7 @@ export function isGoogleModelId(modelId: string): boolean {
   if (slashIndex === -1) return true;
 
   const provider = modelId.slice(0, slashIndex);
-  return provider === 'google' || provider === 'google-vertex';
+  return provider === 'google';
 }
 
 /**

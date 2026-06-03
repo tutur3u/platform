@@ -5,6 +5,7 @@ import { useChat } from '@tuturuuu/ai/react';
 import { RotateCcw, Send } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
@@ -19,11 +20,8 @@ const LEARNER_AI_MODEL = 'google/gemini-3-flash';
 export function LearnerAiChat({ wsId }: { wsId: string }) {
   const t = useTranslations();
   const [input, setInput] = useState('');
-  const [resetKey, setResetKey] = useState(0);
-  const chatId = useMemo(
-    () => `learn-${wsId}-${resetKey}-${crypto.randomUUID()}`,
-    [resetKey, wsId]
-  );
+  const [chatId, setChatId] = useState(() => generateRandomUUID());
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -43,13 +41,47 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
     transport,
   });
 
-  const isBusy = status === 'streaming' || status === 'submitted';
+  const isBusy =
+    isCreatingChat || status === 'streaming' || status === 'submitted';
   const hasMessages = messages.length > 0;
+
+  const createChat = async (prompt: string) => {
+    setIsCreatingChat(true);
+    try {
+      const response = await fetch('/api/ai/chat/new', {
+        body: JSON.stringify({
+          id: chatId,
+          message: prompt,
+          model: LEARNER_AI_MODEL,
+        }),
+        cache: 'no-store',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+
+      if (!response.ok) return false;
+
+      const payload = (await response.json()) as { id?: string };
+      return payload.id === chatId;
+    } finally {
+      setIsCreatingChat(false);
+    }
+  };
 
   const submit = async (value: string) => {
     const prompt = value.trim();
     if (!prompt || isBusy) return;
     setInput('');
+
+    if (!hasMessages) {
+      const created = await createChat(prompt);
+      if (!created) {
+        setInput(prompt);
+        return;
+      }
+    }
+
     await sendMessage({
       role: 'user',
       parts: [{ type: 'text', text: prompt }],
@@ -74,7 +106,7 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
             className="rounded-none border-2 border-border font-black shadow-[3px_3px_0_var(--border)] active:translate-x-1 active:translate-y-1 active:shadow-none"
             onClick={() => {
               if (isBusy) stop();
-              setResetKey((current) => current + 1);
+              setChatId(generateRandomUUID());
               setInput('');
             }}
             size="sm"

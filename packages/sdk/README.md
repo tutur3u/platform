@@ -112,6 +112,11 @@ updates the saved config with the rotated refresh token, and retries once after 
 used directly as API bearer tokens. If refresh fails because the user no longer
 exists or the refresh JWT has expired, run `ttr login` again.
 
+The SDK fetch wrapper must attach CLI bearer tokens, refresh sessions, and retry
+`401` responses only for relative Tuturuuu API paths or absolute URLs whose
+origin exactly matches the configured CLI base URL. Cross-origin absolute URLs
+must be delegated without `Authorization` headers.
+
 Scoped help is available without login, saved config reads, or update checks:
 
 ```bash
@@ -219,7 +224,9 @@ the keyboard. The interactive picker shows one-based indexes, colored badges
 such as `[FREE] Tuturuuu` and `[PRO] Personal`, task-list color swatches, the
 selected row, and muted metadata. Use up/down or `j`/`k` to move, space/enter to
 select, and escape/`q` to cancel. Interactive selection is disabled for `--json`
-output. Use `ttr -v` or `ttr --version` to print the installed CLI version.
+output. Picker labels, descriptions, badges, and color names derived from
+platform data must visibly escape terminal control characters before rendering.
+Use `ttr -v` or `ttr --version` to print the installed CLI version.
 
 ### Client Initialization
 
@@ -390,7 +397,7 @@ console.log(sync.uploaded.length);
 console.log(linkedManifest.content.entries[0]?.assets?.[0]?.storagePath);
 ```
 
-Set `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl` on manifest assets. The helper uploads those files through the existing external-project signed upload URL endpoint and rewrites assets to deterministic Drive paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`.
+Set `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl` on manifest assets. The helper uploads those files through the external-project asset app-server upload route, so Tuturuuu measures the actual bytes before writing storage objects, and rewrites assets to deterministic Drive paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`.
 
 Yoola-style consumers can also use the helper accessors exported from the SDK:
 

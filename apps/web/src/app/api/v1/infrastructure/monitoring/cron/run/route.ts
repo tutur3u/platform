@@ -5,14 +5,14 @@ import {
   readCronMonitoringSnapshot,
 } from '@/lib/infrastructure/cron-monitoring';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInfrastructureViewer } from '../../blue-green/authorization';
+import { authorizeInfrastructureOperator } from '../../blue-green/authorization';
 
 const payloadSchema = z.object({
   jobId: z.string().min(1),
 });
 
 export async function POST(request: Request) {
-  const authorization = await authorizeInfrastructureViewer(request);
+  const authorization = await authorizeInfrastructureOperator(request);
   if (!authorization.ok) {
     return authorization.response;
   }

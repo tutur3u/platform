@@ -99,7 +99,7 @@ services:
   web:
     <<: *web-service
     ports:
-      - "${DOCKER_WEB_DIRECT_HOST_PORT:-7803}:7803"
+      - "127.0.0.1:${DOCKER_WEB_DIRECT_HOST_PORT:-7803}:7803"
 
   web-blue:
     <<: *web-service

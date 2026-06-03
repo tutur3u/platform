@@ -5,9 +5,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import {
   createAppSessionTokenPair,
   getAppSessionRefreshTokenFromRequest,
-  getAppSessionTokenFromRequest,
   getWebAppSessionRefreshTokenFromRequest,
-  getWebAppSessionTokenFromRequest,
   setAppSessionCookie,
   setAppSessionRefreshCookie,
   setWebAppSessionCookie,
@@ -173,19 +171,17 @@ async function validateCrossAppTokenWithCentralVerifier({
 }
 
 async function refreshAppSessionWithCentralVerifier({
-  accessToken,
   baseUrl,
   refreshToken,
   targetApp,
 }: {
-  accessToken?: string | null;
   baseUrl: string;
   refreshToken?: string | null;
   targetApp: AppName;
 }): Promise<CrossAppTokenValidation | null> {
   const refreshUrl = new URL('/api/v1/auth/cross-app-session/refresh', baseUrl);
   const response = await fetch(refreshUrl, {
-    body: JSON.stringify({ accessToken, refreshToken, targetApp }),
+    body: JSON.stringify({ refreshToken, targetApp }),
     cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
@@ -356,21 +352,15 @@ export function createRefreshPOST(
     }
 
     const body = (await request.json().catch(() => null)) as {
-      accessToken?: unknown;
       refreshToken?: unknown;
     } | null;
-    const accessToken =
-      typeof body?.accessToken === 'string'
-        ? body.accessToken
-        : (getWebAppSessionTokenFromRequest(request) ??
-          getAppSessionTokenFromRequest(request));
     const refreshToken =
       typeof body?.refreshToken === 'string'
         ? body.refreshToken
         : (getWebAppSessionRefreshTokenFromRequest(request) ??
           getAppSessionRefreshTokenFromRequest(request));
 
-    if (!accessToken && !refreshToken) {
+    if (!refreshToken) {
       return jsonNoStore(
         { error: 'Missing app session refresh credentials' },
         { status: 401 }
@@ -378,7 +368,6 @@ export function createRefreshPOST(
     }
 
     const validation = await refreshAppSessionWithCentralVerifier({
-      accessToken,
       baseUrl: options.verificationBaseUrl,
       refreshToken,
       targetApp: appName,

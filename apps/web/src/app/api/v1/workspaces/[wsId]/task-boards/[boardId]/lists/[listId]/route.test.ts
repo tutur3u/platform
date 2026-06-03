@@ -10,6 +10,8 @@ const eqUpdatedBoardMock = vi.fn();
 const eqUpdatedIdMock = vi.fn();
 const updateMock = vi.fn();
 const fromMock = vi.fn();
+const sessionSupabase = { from: vi.fn() };
+const sessionUser = { id: 'user-1' };
 
 vi.mock('@tuturuuu/types/primitives/SupportedColors', () => ({
   SUPPORTED_COLORS: [
@@ -24,6 +26,34 @@ vi.mock('@tuturuuu/types/primitives/SupportedColors', () => ({
     'INDIGO',
     'CYAN',
   ],
+}));
+
+vi.mock('@tuturuuu/auth/cli-session', () => ({
+  CLI_APP_TARGET_APP: 'platform',
+}));
+
+vi.mock('@/lib/api-auth', () => ({
+  withSessionAuth:
+    <T>(
+      handler: (
+        request: NextRequest,
+        context: { supabase: typeof sessionSupabase; user: typeof sessionUser },
+        params: T
+      ) => Promise<Response> | Response
+    ) =>
+    async (
+      request: NextRequest,
+      routeContext?: { params?: Promise<T> | T }
+    ) => {
+      const params = routeContext?.params
+        ? await Promise.resolve(routeContext.params)
+        : ({} as T);
+      return handler(
+        request,
+        { supabase: sessionSupabase, user: sessionUser },
+        params
+      );
+    },
 }));
 
 vi.mock('../access', () => ({
@@ -149,6 +179,12 @@ describe('task board lists/[listId] route PATCH', () => {
       status: 'closed',
       color: 'PURPLE',
     });
+    expect(requireBoardAccessMock).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      { boardId: 'board-1', listId: 'list-1', wsId: 'ws-1' },
+      { supabase: sessionSupabase, user: sessionUser },
+      { requiredPermission: 'edit' }
+    );
   });
 
   it('returns a stable duplicate-name error when renaming to an existing list name', async () => {

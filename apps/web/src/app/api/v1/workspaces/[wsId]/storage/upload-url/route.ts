@@ -3,6 +3,7 @@ import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
+import { validateFinanceTransactionAttachmentUploadRequest } from '@/lib/finance-transaction-storage-limits';
 import {
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
@@ -16,6 +17,7 @@ import {
 } from '../../topic-announcements/shared';
 import type { WorkspaceStorageRouteAuthContext } from '../route-auth';
 import {
+  FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,
 } from '../route-auth';
@@ -41,32 +43,21 @@ const TOPIC_ANNOUNCEMENT_EXTENSION_CONTENT_TYPES: Record<
 };
 
 function canCreateUploadUrlForPath(
-  permissions: WorkspaceStorageRouteAuthContext['permissions'],
-  path: string
+  permissions: WorkspaceStorageRouteAuthContext['permissions']
 ) {
   if (!permissions) {
     return false;
   }
 
-  if (!permissions.withoutPermission('manage_drive')) {
-    return true;
-  }
-
-  return (
-    path.startsWith('external-projects/') &&
-    permissions.containsPermission('manage_external_projects')
-  );
+  return !permissions.withoutPermission('manage_drive');
 }
 
-function canOverwriteUploadUrlForPath(
-  permissions: WorkspaceStorageRouteAuthContext['permissions'],
-  path: string
-) {
-  return (
-    !!permissions &&
-    path.startsWith('external-projects/') &&
-    permissions.containsPermission('manage_external_projects')
-  );
+function canOverwriteUploadUrlForPath() {
+  return false;
+}
+
+function isReservedExternalProjectPath(path: string) {
+  return path === 'external-projects' || path.startsWith('external-projects/');
 }
 
 function getFileExtension(fileName: string) {
@@ -193,11 +184,13 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId, {
+      appSessionTargets: FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
+    });
     if (!auth.ok) {
       return auth.response;
     }
-    const { normalizedWsId, permissions, userId } = auth.context;
+    const { normalizedWsId, permissions, supabase, userId } = auth.context;
 
     let payload: unknown;
     try {
@@ -230,6 +223,16 @@ export async function POST(
       );
     }
 
+    if (isReservedExternalProjectPath(sanitizedPath)) {
+      return NextResponse.json(
+        {
+          message:
+            'External project uploads must use the external project asset upload route',
+        },
+        { status: 400 }
+      );
+    }
+
     let uploadContentType = parsed.data.contentType;
     const topicUploadAccess = isReservedTopicAnnouncementPath(sanitizedPath)
       ? await resolveTopicAnnouncementAttachmentUploadAccess({
@@ -250,8 +253,6 @@ export async function POST(
       uploadContentType = topicUploadAccess.contentType;
     } else {
       const uploadValidation = validateWorkspaceStorageUploadMetadata({
-        allowExternalProjectAssets:
-          sanitizedPath.startsWith('external-projects/'),
         contentType: parsed.data.contentType,
         filename: sanitizedFilename,
         size: parsed.data.size,
@@ -268,12 +269,13 @@ export async function POST(
 
     const canCreateUploadUrl =
       topicUploadAccess?.allowed ||
-      canCreateUploadUrlForPath(permissions, sanitizedPath) ||
+      canCreateUploadUrlForPath(permissions) ||
       (await canAccessFinanceTransactionStoragePath({
         access: 'write',
         normalizedWsId,
         path: sanitizedPath,
         permissions,
+        supabase,
         userId,
       }));
 
@@ -284,10 +286,20 @@ export async function POST(
       );
     }
 
-    if (
-      parsed.data.upsert === true &&
-      !canOverwriteUploadUrlForPath(permissions, sanitizedPath)
-    ) {
+    const financeAttachmentValidation =
+      await validateFinanceTransactionAttachmentUploadRequest({
+        path: sanitizedPath,
+        size: parsed.data.size,
+        wsId: normalizedWsId,
+      });
+    if (!financeAttachmentValidation.ok) {
+      return NextResponse.json(
+        { message: financeAttachmentValidation.message },
+        { status: financeAttachmentValidation.status }
+      );
+    }
+
+    if (parsed.data.upsert === true && !canOverwriteUploadUrlForPath()) {
       return NextResponse.json(
         { message: 'Upload overwrite is not allowed for this path' },
         { status: 403 }

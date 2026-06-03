@@ -49,7 +49,7 @@ Parents can switch between linked students in Learn. Parent requests may read ho
 Learn-owned gamification behavior is backed by the existing Tulearn tables, separate from teacher-owned course data:
 
 - `tulearn_gamification_events` stores XP events with an idempotency key per workspace and learner.
-- `tulearn_learner_state` stores hearts, max hearts, total XP, streaks, freezes, selected workspace, and UI preferences.
+- `tulearn_learner_state` stores hearts, max hearts, total XP, streaks, freezes, selected workspace, and UI preferences. Direct authenticated writes are limited by RLS to the learner's own row in workspaces where that learner is a member; non-null `selected_workspace_id` values must also point to a workspace the learner can access.
 
 XP awards and heart loss must go through the database RPCs `award_tulearn_xp` and `lose_tulearn_heart`. Those functions lock the learner state row and keep event insertion, streak updates, XP totals, heart decrements, and refill timer resets atomic under concurrent practice or assignment submissions. Streak dates currently use UTC day boundaries until Learn stores learner or workspace time zones.
 

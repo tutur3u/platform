@@ -326,6 +326,7 @@ async function loadAccessibleWorkspaceIds(
     .from('workspace_members')
     .select('ws_id')
     .eq('user_id', userId)
+    .eq('type', 'MEMBER')
     .in('ws_id', uniqueWorkspaceIds);
 
   if (error) {

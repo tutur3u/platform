@@ -56,7 +56,7 @@ export async function GET(request: Request) {
     250
   );
 
-  const { supabase } = authorization;
+  const { sbAdmin, supabase } = authorization;
 
   const [subjectsResult, signalsResult, challengesResult, overridesResult] =
     await Promise.all([
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50),
-      supabase
+      sbAdmin
         .from('abuse_trust_overrides')
         .select('*')
         .is('revoked_at', null)
@@ -163,7 +163,7 @@ export async function POST(request: Request) {
   const trustMultiplier =
     payload.trustMultiplier ?? defaultTrustMultiplierForTier(payload.tier);
 
-  const { data, error } = await authorization.supabase
+  const { data, error } = await authorization.sbAdmin
     .from('abuse_trust_overrides')
     .insert({
       created_by: authorization.user.id,

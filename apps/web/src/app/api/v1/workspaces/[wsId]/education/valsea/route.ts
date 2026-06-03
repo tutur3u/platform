@@ -12,12 +12,17 @@ import { withAiMemory } from '@tuturuuu/ai/memory';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
+import { checkEducationWorkspaceAccess } from '@/lib/education/access';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  isValseaAudioStoragePath,
+  MAX_VALSEA_AUDIO_UPLOAD_BYTES,
+  validateFinalizedValseaAudioUpload,
+} from '@/lib/valsea-audio-storage-policy';
 import { createWorkspaceStorageSignedReadUrl } from '@/lib/workspace-storage-provider';
 import { gradeVoicePronunciation } from './voice-grading';
 
@@ -70,8 +75,6 @@ const MiraSentimentSchema = z.object({
 });
 
 const VALSEA_BASE_URL = 'https://api.valsea.ai/v1';
-const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
-const VALSEA_AUDIO_DRIVE_PATH = 'education/valsea/audio/';
 const PRONUNCIATION_MODELS = [
   'local-whisper-large-v3-turbo',
   'local-whisper-large-v3',
@@ -275,28 +278,8 @@ async function verifyValseaWorkspaceAccess(
   context: AuthorizedRequest,
   wsId: string
 ) {
-  const resolvedWsId = resolveWorkspaceId(wsId);
-  const membership = await verifyWorkspaceMembershipType({
-    supabase: context.supabase,
-    userId: context.user.id,
-    wsId: resolvedWsId,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { message: 'Could not verify workspace membership' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json(
-      { message: "You don't have access to this workspace" },
-      { status: 403 }
-    );
-  }
-
-  return null;
+  const access = await checkEducationWorkspaceAccess({ context, wsId });
+  return access.ok ? null : access.response;
 }
 
 async function readJsonResponse(response: Response) {
@@ -408,12 +391,24 @@ async function readDriveAudioFile({
   wsId: string;
 }) {
   const sanitizedPath = sanitizePath(audioStoragePath);
-  if (!sanitizedPath?.startsWith(VALSEA_AUDIO_DRIVE_PATH)) {
+  if (!sanitizedPath || !isValseaAudioStoragePath(sanitizedPath)) {
     throw new ValseaRequestError('Invalid Valsea audio storage path', 400);
   }
 
+  const resolvedWsId = resolveWorkspaceId(wsId);
+  const finalizedValidation = await validateFinalizedValseaAudioUpload({
+    path: sanitizedPath,
+    wsId: resolvedWsId,
+  });
+  if (!finalizedValidation.ok) {
+    throw new ValseaRequestError(
+      finalizedValidation.message,
+      finalizedValidation.status
+    );
+  }
+
   const signedUrl = await createWorkspaceStorageSignedReadUrl(
-    resolveWorkspaceId(wsId),
+    resolvedWsId,
     sanitizedPath,
     { expiresIn: 5 * 60 }
   );
@@ -423,7 +418,7 @@ async function readDriveAudioFile({
   }
 
   const buffer = await response.arrayBuffer();
-  if (buffer.byteLength > MAX_AUDIO_UPLOAD_BYTES) {
+  if (buffer.byteLength > MAX_VALSEA_AUDIO_UPLOAD_BYTES) {
     throw new ValseaRequestError('Audio file must be 10 MB or smaller', 413);
   }
 
@@ -671,7 +666,7 @@ export const POST = withSessionAuth<Params>(
         : undefined;
       const file = parsed.data.file ?? driveFile;
 
-      if (file && file.size > MAX_AUDIO_UPLOAD_BYTES) {
+      if (file && file.size > MAX_VALSEA_AUDIO_UPLOAD_BYTES) {
         return NextResponse.json(
           { message: 'Audio file must be 10 MB or smaller' },
           { status: 413 }
@@ -946,7 +941,7 @@ export const POST = withSessionAuth<Params>(
     }
   },
   {
-    maxPayloadSize: MAX_AUDIO_UPLOAD_BYTES + 512 * 1024,
+    maxPayloadSize: MAX_VALSEA_AUDIO_UPLOAD_BYTES + 512 * 1024,
     rateLimit: { maxRequests: 10, windowMs: 60_000 },
   }
 );

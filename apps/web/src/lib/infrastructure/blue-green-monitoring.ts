@@ -38,24 +38,39 @@ type DockerAggregateContainer = {
 
 const DOCKER_WEB_ENV_KEY = 'PLATFORM_BLUE_GREEN_MONITORING_DIR';
 const DEFAULT_ARCHIVE_PAGE_SIZE = 25;
-const DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS = 7;
+export const DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS = 7;
+export const MAX_REQUEST_ARCHIVE_TIMEFRAME_DAYS = 30;
 const DEFAULT_RECOVERY_CACHE_LIMIT = 3;
+const MAX_REQUEST_CONSOLE_MESSAGE_LENGTH = 500;
 const MAX_ARCHIVE_PAGE_SIZE = 100;
 const REQUEST_ARCHIVE_AGGREGATE_CACHE_TTL_MS = 10_000;
 const REQUEST_ARCHIVE_TOP_ROUTE_LIMIT = 100;
+const REDACTED_CONSOLE_VALUE = '[REDACTED]';
+const SENSITIVE_QUERY_PARAM_PATTERN =
+  /([?&](?:access[_-]?token|api[_-]?key|authorization|code|cookie|key|password|refresh[_-]?token|secret|session|token)=)[^&\s]+/giu;
+const SENSITIVE_KEY_VALUE_PATTERN =
+  /(?<![?&])\b(access[_-]?token|api[_-]?key|authorization|client[_-]?secret|cookie|password|refresh[_-]?token|secret|session|token)\b\s*[:=]\s*("[^"]*"|'[^']*'|Bearer\s+[A-Za-z0-9._~+/=-]+|[^\s,;}\]]+)/giu;
+const BEARER_TOKEN_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/giu;
+const JWT_PATTERN = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/gu;
+const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/giu;
 
 interface RequestArchiveAggregateCacheEntry {
   analytics: BlueGreenMonitoringRequestArchive['analytics'];
   createdAt: number;
-  items: BlueGreenMonitoringRequestLog[];
   signature: string;
 }
+
+type RequestArchiveAggregateRead = RequestArchiveAggregateCacheEntry & {
+  items?: BlueGreenMonitoringRequestLog[];
+};
 
 interface RequestArchiveFilters {
   q?: string;
   render?: string;
   route?: string;
+  since?: number | null;
   status?: string;
+  until?: number | null;
   traffic?: string;
 }
 
@@ -127,6 +142,54 @@ function toRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+}
+
+function redactMonitoringSecretFields(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(redactMonitoringSecretFields);
+  }
+
+  const record = toRecord(value);
+  if (!record) {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(record)
+      .filter(([key]) => key !== 'lockToken')
+      .map(([key, entry]) => [key, redactMonitoringSecretFields(entry)])
+  );
+}
+
+function normalizeWatcherLastResult(
+  value: unknown
+): Record<string, unknown> | null {
+  return toRecord(redactMonitoringSecretFields(value));
+}
+
+function limitRequestConsoleMessage(message: string) {
+  if (message.length <= MAX_REQUEST_CONSOLE_MESSAGE_LENGTH) {
+    return message;
+  }
+
+  return `${message.slice(0, MAX_REQUEST_CONSOLE_MESSAGE_LENGTH)}... [truncated]`;
+}
+
+function redactRequestConsoleLogMessage(value: string) {
+  return limitRequestConsoleMessage(
+    value
+      .replace(
+        SENSITIVE_QUERY_PARAM_PATTERN,
+        (_match, prefix: string) => `${prefix}${REDACTED_CONSOLE_VALUE}`
+      )
+      .replace(
+        SENSITIVE_KEY_VALUE_PATTERN,
+        (_match, key: string) => `${key}: ${REDACTED_CONSOLE_VALUE}`
+      )
+      .replace(BEARER_TOKEN_PATTERN, `Bearer ${REDACTED_CONSOLE_VALUE}`)
+      .replace(JWT_PATTERN, REDACTED_CONSOLE_VALUE)
+      .replace(EMAIL_PATTERN, '[REDACTED_EMAIL]')
+  );
 }
 
 function normalizeStageStringArray(value: unknown) {
@@ -342,17 +405,18 @@ function normalizeRequestTimeframe({
   now: number;
   timeframeDays?: number | null;
 }) {
-  const days =
+  const requestedDays =
     typeof timeframeDays === 'number' &&
     Number.isInteger(timeframeDays) &&
-    timeframeDays >= 0
+    timeframeDays > 0
       ? timeframeDays
       : DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS;
+  const days = Math.min(requestedDays, MAX_REQUEST_ARCHIVE_TIMEFRAME_DAYS);
 
   return {
-    days: days === 0 ? null : days,
+    days,
     endAt: now,
-    startAt: days === 0 ? null : now - days * 24 * 60 * 60 * 1000,
+    startAt: now - days * 24 * 60 * 60 * 1000,
   };
 }
 
@@ -360,10 +424,31 @@ function isRequestInTimeframe(
   request: BlueGreenMonitoringRequestLog,
   timeframe: ReturnType<typeof normalizeRequestTimeframe>
 ) {
-  return (
-    request.time <= timeframe.endAt &&
-    (timeframe.startAt == null || request.time >= timeframe.startAt)
-  );
+  return request.time <= timeframe.endAt && request.time >= timeframe.startAt;
+}
+
+function normalizeTimestampBound(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : null;
+}
+
+function isRequestInCursorWindow(
+  request: BlueGreenMonitoringRequestLog,
+  filters: Pick<RequestArchiveFilters, 'since' | 'until'>
+) {
+  const since = normalizeTimestampBound(filters.since);
+  const until = normalizeTimestampBound(filters.until);
+
+  if (since != null && request.time <= since) {
+    return false;
+  }
+
+  if (until != null && request.time > until) {
+    return false;
+  }
+
+  return true;
 }
 
 function getRequestStatusCodeFamily(status: number | null | undefined) {
@@ -399,6 +484,10 @@ function matchesRequestArchiveFilters(
   filters: RequestArchiveFilters = {}
 ) {
   const parsedPath = parseMonitoringRequestPath(request.path);
+
+  if (!isRequestInCursorWindow(request, filters)) {
+    return false;
+  }
 
   if (filters.status) {
     const statusValue = request.status != null ? String(request.status) : null;
@@ -449,6 +538,18 @@ function matchesRequestArchiveFilters(
     .filter((value): value is string => Boolean(value))
     .map((value) => value.toLowerCase())
     .some((value) => value.includes(query));
+}
+
+function hasRequestArchiveFilters(filters: RequestArchiveFilters) {
+  return Boolean(
+    filters.q?.trim() ||
+      filters.render ||
+      filters.route ||
+      filters.since ||
+      filters.status ||
+      filters.until ||
+      filters.traffic
+  );
 }
 
 function buildRequestRouteSummaries(
@@ -664,7 +765,7 @@ function readCachedRequestArchiveAggregate({
   timeframe: ReturnType<typeof normalizeRequestTimeframe>;
   watchDir: string;
 }) {
-  const cacheKey = `${watchDir}:${timeframe.days ?? 'all'}`;
+  const cacheKey = `${watchDir}:${timeframe.days}`;
   const signature = getRequestArchiveCacheSignature(watchDir, fsImpl);
   const cached = requestArchiveAggregateCache.get(cacheKey);
 
@@ -673,7 +774,7 @@ function readCachedRequestArchiveAggregate({
     cached.signature === signature &&
     now - cached.createdAt <= REQUEST_ARCHIVE_AGGREGATE_CACHE_TTL_MS
   ) {
-    return cached;
+    return cached as RequestArchiveAggregateRead;
   }
 
   const allItems = readAllRequestArchiveItems(watchDir, fsImpl, timeframe);
@@ -685,9 +786,8 @@ function readCachedRequestArchiveAggregate({
   const nextEntry = {
     analytics,
     createdAt: now,
-    items: allItems.items,
     signature,
-  };
+  } satisfies RequestArchiveAggregateCacheEntry;
 
   requestArchiveAggregateCache.set(cacheKey, nextEntry);
 
@@ -704,7 +804,10 @@ function readCachedRequestArchiveAggregate({
     }
   }
 
-  return nextEntry;
+  return {
+    ...nextEntry,
+    items: allItems.items,
+  } satisfies RequestArchiveAggregateRead;
 }
 
 function getScopedWatcherLogsForRequest(
@@ -960,7 +1063,7 @@ function normalizeRequestConsoleLogs(
             ? record.deploymentColor
             : null,
         level,
-        message,
+        message: redactRequestConsoleLogMessage(message),
         source: typeof record?.source === 'string' ? record.source : 'route',
         time,
       },
@@ -1811,10 +1914,7 @@ export function readBlueGreenMonitoringSnapshot({
       lastDeployAt: toFiniteNumber(status?.lastDeployAt),
       lastDeployStatus: humanizeStatus(status?.lastDeployStatus),
       logs: slicePreviewItems(watcherLogs, watcherLogLimit),
-      lastResult:
-        status?.lastResult && typeof status.lastResult === 'object'
-          ? (status.lastResult as Record<string, unknown>)
-          : null,
+      lastResult: normalizeWatcherLastResult(status?.lastResult),
       latestCommit: latestCommitRecord
         ? {
             committedAt:
@@ -1887,8 +1987,10 @@ export function readBlueGreenMonitoringRequestArchive({
   q,
   render,
   route,
+  since,
   status,
   timeframeDays = DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS,
+  until,
   traffic,
 }: {
   fsImpl?: FsLike;
@@ -1898,8 +2000,10 @@ export function readBlueGreenMonitoringRequestArchive({
   q?: string;
   render?: string;
   route?: string;
+  since?: number | null;
   status?: string;
   timeframeDays?: number | null;
+  until?: number | null;
   traffic?: string;
 } = {}): BlueGreenMonitoringRequestArchive {
   const monitoringDir = resolveMonitoringDir(fsImpl);
@@ -1912,15 +2016,20 @@ export function readBlueGreenMonitoringRequestArchive({
     timeframe,
     watchDir,
   });
-  const filters = { q, render, route, status, traffic };
-  const filteredItems = aggregate.items.filter((request) =>
+  const filters = { q, render, route, since, status, traffic, until };
+  const aggregateItems =
+    aggregate.items ??
+    readAllRequestArchiveItems(watchDir, fsImpl, timeframe).items;
+  const filteredItems = aggregateItems.filter((request) =>
     matchesRequestArchiveFilters(request, filters)
   );
-  const analytics = buildRequestArchiveAnalytics({
-    requests: filteredItems,
-    retainedRequestCount: aggregate.analytics.retainedRequestCount,
-    timeframe,
-  });
+  const analytics = hasRequestArchiveFilters(filters)
+    ? buildRequestArchiveAnalytics({
+        requests: filteredItems,
+        retainedRequestCount: aggregate.analytics.retainedRequestCount,
+        timeframe,
+      })
+    : aggregate.analytics;
   const total = filteredItems.length;
   const archivePage = getArchivePage(page, total, normalizedPageSize);
   const watcherLogs = readNormalizedWatcherLogs(watchDir, fsImpl);

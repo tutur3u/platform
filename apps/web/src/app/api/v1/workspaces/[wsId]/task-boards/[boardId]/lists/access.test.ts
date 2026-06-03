@@ -1,14 +1,20 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SessionAuthContext } from '@/lib/api-auth';
 
 const createAdminClientMock = vi.fn();
-const createClientMock = vi.fn();
-const getAppSessionTokenFromRequestMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
-const verifyAppSessionRequestMock = vi.fn();
-const verifyCliAccessTokenMock = vi.fn();
 const verifyWorkspaceMembershipTypeMock = vi.fn();
 const taskBoardShareResults: Array<{ data: unknown; error: unknown }> = [];
+const authUser = {
+  app_metadata: {},
+  aud: 'authenticated',
+  created_at: '2026-06-02T00:00:00.000Z',
+  email: 'agent@example.com',
+  id: '00000000-0000-4000-8000-000000000999',
+  user_metadata: {},
+};
+let authSupabase: SessionAuthContext['supabase'];
 
 function createThenableQuery(result: { data: unknown; error: unknown }) {
   const query = {
@@ -27,32 +33,9 @@ function createThenableQuery(result: { data: unknown; error: unknown }) {
   return query;
 }
 
-vi.mock('@tuturuuu/auth/app-session', () => ({
-  attachSupabaseAuthUser: (supabase: unknown) => supabase,
-  createAppSessionUser: (claims: { email?: string | null; sub: string }) => ({
-    aud: 'authenticated',
-    email: claims.email ?? undefined,
-    id: claims.sub,
-  }),
-  getAppSessionTokenFromRequest: (
-    ...args: Parameters<typeof getAppSessionTokenFromRequestMock>
-  ) => getAppSessionTokenFromRequestMock(...args),
-  verifyAppSessionRequest: (
-    ...args: Parameters<typeof verifyAppSessionRequestMock>
-  ) => verifyAppSessionRequestMock(...args),
-}));
-
-vi.mock('@tuturuuu/auth/cli-session', () => ({
-  verifyCliAccessToken: (
-    ...args: Parameters<typeof verifyCliAccessTokenMock>
-  ) => verifyCliAccessTokenMock(...args),
-}));
-
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof createAdminClientMock>) =>
     createAdminClientMock(...args),
-  createClient: (...args: Parameters<typeof createClientMock>) =>
-    createClientMock(...args),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
@@ -71,19 +54,17 @@ vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
 
 import { requireBoardAccess } from './access';
 
+function createAuthContext() {
+  return {
+    supabase: authSupabase,
+    user: authUser,
+  } satisfies SessionAuthContext;
+}
+
 describe('task board list access', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_access');
-    verifyAppSessionRequestMock.mockReturnValue({ ok: false });
-    verifyCliAccessTokenMock.mockReturnValue({
-      claims: {
-        email: 'agent@example.com',
-        sub: '00000000-0000-4000-8000-000000000999',
-      },
-      ok: true,
-    });
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
     normalizeWorkspaceIdMock.mockResolvedValue(
       '00000000-0000-4000-8000-000000000123'
@@ -132,11 +113,14 @@ describe('task board list access', () => {
 
       throw new Error(`Unexpected table: ${table}`);
     });
+    authSupabase = {
+      from: fromMock,
+    } as unknown as SessionAuthContext['supabase'];
 
     createAdminClientMock.mockResolvedValue({ from: fromMock });
   });
 
-  it('resolves personal board access from a CLI app-session token', async () => {
+  it('resolves personal board access from a pre-authenticated app-session context', async () => {
     const access = await requireBoardAccess(
       new NextRequest(
         'http://localhost/api/v1/workspaces/personal/task-boards/00000000-0000-4000-8000-000000000456/lists',
@@ -149,11 +133,12 @@ describe('task board list access', () => {
       {
         boardId: '00000000-0000-4000-8000-000000000456',
         wsId: 'personal',
-      }
+      },
+      createAuthContext()
     );
 
     expect('error' in access).toBe(false);
-    expect(createClientMock).not.toHaveBeenCalled();
+    expect(createAdminClientMock).toHaveBeenCalledWith({ noCookie: true });
     expect(verifyWorkspaceMembershipTypeMock).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: '00000000-0000-4000-8000-000000000999',
@@ -162,16 +147,7 @@ describe('task board list access', () => {
     );
   });
 
-  it('resolves personal board access from a Tasks app-session token', async () => {
-    getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_tasks');
-    verifyAppSessionRequestMock.mockReturnValue({
-      claims: {
-        email: 'tasks-user@example.com',
-        sub: '00000000-0000-4000-8000-000000000999',
-      },
-      ok: true,
-    });
-
+  it('normalizes route workspaces with the wrapper-provided Supabase client', async () => {
     const access = await requireBoardAccess(
       new NextRequest(
         'http://localhost/api/v1/workspaces/personal/task-boards/00000000-0000-4000-8000-000000000456/lists',
@@ -184,15 +160,14 @@ describe('task board list access', () => {
       {
         boardId: '00000000-0000-4000-8000-000000000456',
         wsId: 'personal',
-      }
+      },
+      createAuthContext()
     );
 
     expect('error' in access).toBe(false);
-    expect(createClientMock).not.toHaveBeenCalled();
-    expect(verifyCliAccessTokenMock).not.toHaveBeenCalled();
-    expect(verifyAppSessionRequestMock).toHaveBeenCalledWith(
-      expect.any(NextRequest),
-      { targetApp: ['calendar', 'tasks'] }
+    expect(normalizeWorkspaceIdMock).toHaveBeenCalledWith(
+      'personal',
+      authSupabase
     );
   });
 
@@ -229,7 +204,8 @@ describe('task board list access', () => {
       {
         boardId: '00000000-0000-4000-8000-000000000456',
         wsId: 'personal',
-      }
+      },
+      createAuthContext()
     );
 
     expect('error' in access).toBe(false);
@@ -272,6 +248,7 @@ describe('task board list access', () => {
         boardId: '00000000-0000-4000-8000-000000000456',
         wsId: 'personal',
       },
+      createAuthContext(),
       { requiredPermission: 'edit' }
     );
 

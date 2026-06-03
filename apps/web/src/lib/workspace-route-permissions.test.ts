@@ -20,8 +20,15 @@ describe('workspace route permission mapping', () => {
 
   it('maps dashboard routes to the same feature permissions exposed in navigation', () => {
     expect(getWorkspaceRoutePermissionRequirements(['education'])).toEqual([
-      'ai_lab',
+      'manage_users',
+      'view_user_groups',
+      'view_user_groups_reports',
+      'view_user_groups_scores',
+      'view_user_groups_posts',
     ]);
+    expect(
+      getWorkspaceRoutePermissionRequirements(['education', 'attempts'])
+    ).toEqual(['manage_users', 'view_user_groups_reports']);
     expect(getWorkspaceRoutePermissionRequirements(['cron'])).toEqual([
       'ai_lab',
     ]);
@@ -50,6 +57,14 @@ describe('workspace route permission mapping', () => {
         'import',
       ])
     ).toEqual(['manage_users', 'send_user_group_post_emails']);
+    expect(
+      hasRequiredWorkspaceRoutePermission({
+        grantedPermissions: ['ai_lab'],
+        requiredPermissions:
+          getWorkspaceRoutePermissionRequirements(['education', 'attempts']) ??
+          [],
+      })
+    ).toBe(false);
   });
 
   it('allows guest admin to satisfy mapped route permissions only', () => {

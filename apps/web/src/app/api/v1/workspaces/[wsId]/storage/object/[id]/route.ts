@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
 import {
+  FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,
 } from '../../route-auth';
@@ -27,31 +28,35 @@ export async function GET(
     }
 
     const { wsId, id } = parsedParams.data;
-    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId, {
+      appSessionTargets: FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
+    });
     if (!auth.ok) {
       return auth.response;
     }
-    const { normalizedWsId, permissions, userId } = auth.context;
+    const { normalizedWsId, permissions, supabase, userId } = auth.context;
 
-    const supabase = await createDynamicAdminClient();
-    const { data: object, error } = await supabase
+    const storageAdmin = await createDynamicAdminClient();
+    const { data: object, error } = await storageAdmin
       .schema('storage')
       .from('objects')
       .select('id, name, metadata, bucket_id, created_at, updated_at')
       .eq('id', id)
       .single();
 
-    if (error || !object) {
+    if (error || !object?.name) {
       return NextResponse.json({ message: 'File not found' }, { status: 404 });
     }
 
+    const objectName = object.name;
+
     // Ensure the file belongs to the workspace
     const prefix = `${normalizedWsId}/`;
-    if (!object.name.startsWith(prefix)) {
+    if (!objectName.startsWith(prefix)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
-    const relativePath = object.name.substring(prefix.length);
+    const relativePath = objectName.substring(prefix.length);
     const sanitizedPath = sanitizePath(relativePath);
     if (!sanitizedPath) {
       return NextResponse.json(
@@ -67,6 +72,7 @@ export async function GET(
         normalizedWsId,
         path: sanitizedPath,
         permissions,
+        supabase,
         userId,
       }));
 
@@ -80,9 +86,9 @@ export async function GET(
     return NextResponse.json({
       data: {
         id: object.id,
-        name: object.name.split('/').pop() || '',
+        name: objectName.split('/').pop() || '',
         path: sanitizedPath,
-        fullPath: object.name,
+        fullPath: objectName,
         bucketId: object.bucket_id,
         size: (object.metadata as any)?.size ?? 0,
         mimetype:

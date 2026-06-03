@@ -1503,7 +1503,12 @@ test('writeWatchStatus persists a serializable watcher snapshot', () => {
       {
         deployments: [],
         lastResult: {
+          activeDeployment: {
+            lockToken: 'nested-secret',
+            ownerPid: 9876,
+          },
           error: new Error('deploy failed'),
+          lockToken: 'result-secret',
           status: 'deploy-failed',
         },
         latestCommit: {
@@ -1522,6 +1527,9 @@ test('writeWatchStatus persists a serializable watcher snapshot', () => {
     assert.deepEqual(readWatchStatus(paths, fs), {
       deployments: [],
       lastResult: {
+        activeDeployment: {
+          ownerPid: 9876,
+        },
         error: 'deploy failed',
         status: 'deploy-failed',
       },
@@ -2047,7 +2055,7 @@ test('collectDeploymentTraffic stores request-scoped route console logs', async 
             'docker logs --timestamps --since 2026-04-18T10:28:00.000Z green-123',
             createResult(
               [
-                '2026-04-18T11:05:00.200000000Z Error fetching transaction export tags',
+                '2026-04-18T11:05:00.200000000Z Error fetching transaction export tags token=secret-token user=admin@example.com Authorization: Bearer abc.def.ghi',
                 '2026-04-18T11:06:00.000000000Z unrelated later log',
               ].join('\n')
             ),
@@ -2070,7 +2078,8 @@ test('collectDeploymentTraffic stores request-scoped route console logs', async 
         containerId: 'green-123',
         deploymentColor: 'green',
         level: 'error',
-        message: 'Error fetching transaction export tags',
+        message:
+          'Error fetching transaction export tags token: [REDACTED] user=[REDACTED_EMAIL] Authorization: [REDACTED]',
         source: 'route',
         time: Date.parse('2026-04-18T11:05:00.200000000Z'),
       },
@@ -3370,6 +3379,7 @@ test('runDeployWatchIteration waits instead of retrying while a deployment build
 
     assert.equal(result.status, 'deployment-active');
     assert.equal(result.activeDeployment?.ownerPid, 9876);
+    assert.equal(result.activeDeployment?.lockToken, undefined);
     assert.equal(result.deployments.length, 1);
     assert.equal(readDeploymentHistory(paths, fs).length, 1);
     assert.ok(

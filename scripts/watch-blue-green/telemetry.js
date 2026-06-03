@@ -3,6 +3,7 @@ const path = require('node:path');
 
 const MAX_RECENT_REQUESTS = 120;
 const MAX_REQUEST_CONSOLE_LOGS = 20;
+const MAX_REQUEST_CONSOLE_MESSAGE_LENGTH = 500;
 const MAX_REQUEST_LOG_BYTES = 256 * 1024 * 1024;
 const MAX_REQUEST_LOG_BYTES_ENV = 'DOCKER_WEB_WATCHER_MAX_REQUEST_LOG_BYTES';
 const MAX_REQUEST_LOG_RECORDS = 100_000_000;
@@ -15,10 +16,18 @@ const PERIOD_RETENTION = {
 const REQUEST_CONSOLE_CAPTURE_PADDING_MS = 250;
 const REQUEST_CONSOLE_LOG_LOOKBACK_MS = 2 * 60 * 1000;
 const REQUEST_LOG_CHUNK_SIZE = 50_000;
+const REDACTED_CONSOLE_VALUE = '[REDACTED]';
 const INTERNAL_PROXY_METRIC_EXCLUDE_PATHS = new Set([
   '/__platform/drain-status',
   '/api/health',
 ]);
+const SENSITIVE_QUERY_PARAM_PATTERN =
+  /([?&](?:access[_-]?token|api[_-]?key|authorization|code|cookie|key|password|refresh[_-]?token|secret|session|token)=)[^&\s]+/giu;
+const SENSITIVE_KEY_VALUE_PATTERN =
+  /(?<![?&])\b(access[_-]?token|api[_-]?key|authorization|client[_-]?secret|cookie|password|refresh[_-]?token|secret|session|token)\b\s*[:=]\s*("[^"]*"|'[^']*'|Bearer\s+[A-Za-z0-9._~+/=-]+|[^\s,;}\]]+)/giu;
+const BEARER_TOKEN_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/giu;
+const JWT_PATTERN = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/gu;
+const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/giu;
 
 function readJsonFile(filePath, fallback, fsImpl = fs) {
   if (!fsImpl.existsSync(filePath)) {
@@ -381,6 +390,33 @@ function getConsoleLogMessage(message) {
   return message;
 }
 
+function limitRequestConsoleMessage(message) {
+  if (message.length <= MAX_REQUEST_CONSOLE_MESSAGE_LENGTH) {
+    return message;
+  }
+
+  return `${message.slice(0, MAX_REQUEST_CONSOLE_MESSAGE_LENGTH)}... [truncated]`;
+}
+
+function redactRequestConsoleLogMessage(value) {
+  const message = typeof value === 'string' ? value : String(value ?? '');
+
+  return limitRequestConsoleMessage(
+    message
+      .replace(
+        SENSITIVE_QUERY_PARAM_PATTERN,
+        (_match, prefix) => `${prefix}${REDACTED_CONSOLE_VALUE}`
+      )
+      .replace(
+        SENSITIVE_KEY_VALUE_PATTERN,
+        (_match, key) => `${key}: ${REDACTED_CONSOLE_VALUE}`
+      )
+      .replace(BEARER_TOKEN_PATTERN, `Bearer ${REDACTED_CONSOLE_VALUE}`)
+      .replace(JWT_PATTERN, REDACTED_CONSOLE_VALUE)
+      .replace(EMAIL_PATTERN, '[REDACTED_EMAIL]')
+  );
+}
+
 function getConsoleMessageBraceDelta(message) {
   let delta = 0;
   let escaped = false;
@@ -632,7 +668,7 @@ function toCompactRequestEntry(entry, deploymentKey = null) {
         containerId: log.containerId ?? null,
         deploymentColor: log.deploymentColor ?? null,
         level: log.level ?? 'info',
-        message: log.message,
+        message: redactRequestConsoleLogMessage(log.message),
         source: log.source ?? 'route',
         time: log.time,
       }))
@@ -1401,6 +1437,7 @@ function enrichDeploymentsWithTelemetry(
 module.exports = {
   INTERNAL_PROXY_METRIC_EXCLUDE_PATHS,
   MAX_REQUEST_CONSOLE_LOGS,
+  MAX_REQUEST_CONSOLE_MESSAGE_LENGTH,
   MAX_REQUEST_LOG_BYTES,
   MAX_REQUEST_LOG_BYTES_ENV,
   MAX_REQUEST_LOG_RECORDS,
@@ -1411,6 +1448,7 @@ module.exports = {
   getDeploymentStorageKey,
   parseContainerConsoleLogEntries,
   parseProxyLogEntries,
+  redactRequestConsoleLogMessage,
   readTelemetryState,
   readTelemetrySummary,
   summarizeRequestRate,

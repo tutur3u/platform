@@ -69,10 +69,10 @@ describe('model-mapping', () => {
       expect(isGoogleModelId('gemini-2.5-flash')).toBe(true);
       expect(isGoogleModelId('google/gemini-2.5-flash')).toBe(true);
       expect(isGoogleModelId('google/imagen-4.0-generate-001')).toBe(true);
-      expect(isGoogleModelId('google-vertex/gemini-2.5-flash')).toBe(true);
     });
 
     it('does not classify other provider prefixes as Google models', () => {
+      expect(isGoogleModelId('google-vertex/gemini-2.5-flash')).toBe(false);
       expect(isGoogleModelId('openai/gpt-5')).toBe(false);
       expect(isGoogleModelId('anthropic/claude-sonnet-4')).toBe(false);
     });

@@ -7,6 +7,7 @@ const mocks = {
   getUser: vi.fn(),
   getWorkspaceConfig: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
+  publicFrom: vi.fn(),
   privateFrom: vi.fn(),
   sbAdmin: {} as {
     from?: ReturnType<typeof vi.fn>;
@@ -17,6 +18,7 @@ const mocks = {
       getUser: vi.fn(),
     },
   },
+  customerMaybeSingle: vi.fn(),
   walletMaybeSingle: vi.fn(),
 };
 
@@ -71,6 +73,25 @@ describe('invoice create route', () => {
       data: { id: 'wallet-other' },
       error: null,
     });
+    mocks.customerMaybeSingle.mockResolvedValue({
+      data: { id: 'customer-1' },
+      error: null,
+    });
+    mocks.publicFrom.mockImplementation((table: string) => {
+      if (table === 'workspace_users') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: mocks.customerMaybeSingle,
+              }),
+            }),
+          }),
+        };
+      }
+
+      throw new Error(`Unexpected public table: ${table}`);
+    });
     mocks.privateFrom.mockImplementation((table: string) => {
       if (table === 'workspace_wallets') {
         return {
@@ -87,6 +108,7 @@ describe('invoice create route', () => {
       throw new Error(`Unexpected private table: ${table}`);
     });
     mocks.sbAdmin = {
+      from: mocks.publicFrom,
       schema: vi.fn((schema: string) => {
         if (schema === 'private') {
           return { from: mocks.privateFrom };
@@ -291,6 +313,59 @@ describe('invoice create route', () => {
     });
     expect(mocks.privateFrom).toHaveBeenCalledWith('workspace_wallets');
     expect(mocks.walletMaybeSingle).toHaveBeenCalled();
+    expect(mocks.getUser).not.toHaveBeenCalled();
+  });
+
+  it('rejects customers outside the normalized workspace before invoice creation', async () => {
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/finance/invoices/route'
+    );
+
+    mocks.getWorkspaceConfig.mockResolvedValue('wallet-default');
+    mocks.getPermissions.mockResolvedValue(
+      withPermissions(['set_finance_wallets_on_create'])
+    );
+    mocks.customerMaybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/finance/invoices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: 'Invoice',
+          customer_id: 'customer-from-other-workspace',
+          wallet_id: 'wallet-other',
+          products: [
+            {
+              product_id: 'product-1',
+              unit_id: 'unit-1',
+              warehouse_id: 'warehouse-1',
+              quantity: 1,
+              price: 100,
+              category_id: 'category-1',
+            },
+          ],
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Invalid invoice customer',
+    });
+    expect(mocks.privateFrom).toHaveBeenCalledWith('workspace_wallets');
+    expect(mocks.publicFrom).toHaveBeenCalledWith('workspace_users');
+    expect(mocks.customerMaybeSingle).toHaveBeenCalled();
     expect(mocks.getUser).not.toHaveBeenCalled();
   });
 

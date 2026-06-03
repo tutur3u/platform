@@ -101,8 +101,6 @@ const RESERVED_ROOT_NOT_FOUND_PATH = '/__reserved-root-not-found__';
 const BLOCKED_ROOT_SEGMENT_PREFIX = '.';
 const EMAIL_ROUTE_WORKSPACE_PATTERN =
   /^\/api\/v1\/workspaces\/([^/]+)\/(?:mail\/send|users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
-const STORAGE_UNZIP_CALLBACK_PATTERN =
-  /^\/api\/v1\/workspaces\/[^/]+\/(?:storage\/auto-extract|external-projects\/webgl-packages\/extract-callback)(?:\/|$)/;
 const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
   'EMAIL_RATE_LIMIT_MINUTE',
   'EMAIL_RATE_LIMIT_HOUR',
@@ -408,14 +406,6 @@ function hasMalformedAuthorizationHeader(req: NextRequest): boolean {
 
   const token = trimmedHeader.slice(7).trim();
   return token.length === 0 || /\s/.test(token);
-}
-
-function isStorageUnzipCallbackRequest(req: NextRequest): boolean {
-  return (
-    STORAGE_UNZIP_CALLBACK_PATTERN.test(req.nextUrl.pathname) &&
-    req.headers.get('authorization')?.toLowerCase().startsWith('bearer ') ===
-      true
-  );
 }
 
 function buildProxyBlockResponse(
@@ -857,10 +847,6 @@ async function guardGuestWorkspaceRoute({
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
-    if (isStorageUnzipCallbackRequest(req)) {
-      return NextResponse.next();
-    }
-
     const malformedAuthCookieResponse =
       await blockMalformedApiAuthCookieRequest(req);
     if (malformedAuthCookieResponse) {

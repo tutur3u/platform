@@ -90,10 +90,22 @@ describe('useTaskRealtimeSync', () => {
     );
   });
 
-  it('applies a matching task upsert to the open dialog state', () => {
+  it('refetches a matching task upsert before applying open dialog state', async () => {
     const start = '2026-05-22T01:00:00.000Z';
     const end = '2026-05-22T02:00:00.000Z';
     const props = makeProps();
+
+    taskApiMocks.getWorkspaceTask.mockResolvedValueOnce({
+      task: {
+        id: 'task-1',
+        name: 'Server task',
+        priority: 'high',
+        start_date: start,
+        end_date: end,
+        estimation_points: 5,
+        list_id: 'list-2',
+      },
+    });
 
     renderHook(() => useTaskRealtimeSync(props), { wrapper });
 
@@ -101,18 +113,25 @@ describe('useTaskRealtimeSync', () => {
       boardRealtimeMocks.onTaskChange?.(
         {
           id: 'task-1',
-          name: 'Remote task',
-          priority: 'high',
-          start_date: start,
-          end_date: end,
-          estimation_points: 5,
-          list_id: 'list-2',
+          name: 'Untrusted broadcast task',
+          priority: 'critical',
+          start_date: '2026-05-23T01:00:00.000Z',
+          end_date: '2026-05-23T02:00:00.000Z',
+          estimation_points: 8,
+          list_id: 'list-3',
         } as Task,
         'UPDATE'
       );
     });
 
-    expect(props.setName).toHaveBeenCalledWith('Remote task');
+    await waitFor(() => {
+      expect(props.setName).toHaveBeenCalledWith('Server task');
+    });
+    expect(taskApiMocks.getWorkspaceTask).toHaveBeenCalledWith(
+      'ws-1',
+      'task-1'
+    );
+    expect(props.setName).not.toHaveBeenCalledWith('Untrusted broadcast task');
     expect(props.setPriority).toHaveBeenCalledWith('high');
     expect(props.setStartDate).toHaveBeenCalledWith(new Date(start));
     expect(props.setEndDate).toHaveBeenCalledWith(new Date(end));
@@ -137,9 +156,12 @@ describe('useTaskRealtimeSync', () => {
     expect(props.setSelectedListId).not.toHaveBeenCalled();
   });
 
-  it('does not overwrite a local pending title edit', () => {
+  it('does not overwrite a local pending title edit', async () => {
     const props = makeProps({
       pendingNameRef: { current: 'Local draft title' },
+    });
+    taskApiMocks.getWorkspaceTask.mockResolvedValueOnce({
+      task: { id: 'task-1', name: 'Remote title' },
     });
 
     renderHook(() => useTaskRealtimeSync(props), { wrapper });
@@ -151,6 +173,12 @@ describe('useTaskRealtimeSync', () => {
       );
     });
 
+    await waitFor(() => {
+      expect(taskApiMocks.getWorkspaceTask).toHaveBeenCalledWith(
+        'ws-1',
+        'task-1'
+      );
+    });
     expect(props.setName).not.toHaveBeenCalled();
   });
 

@@ -236,7 +236,6 @@ describe('cross-app server verification', () => {
       ),
       expect.objectContaining({
         body: JSON.stringify({
-          accessToken: null,
           refreshToken: 'ttr_app_existing-refresh',
           targetApp: 'chat',
         }),
@@ -252,6 +251,31 @@ describe('cross-app server verification', () => {
     expect(setCookie).toContain(
       'tuturuuu_web_app_session_refresh=ttr_app_refreshed-refresh'
     );
+  });
+
+  it('does not call central refresh verification with only an access token', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const handler = createRefreshPOST('chat', {
+      verificationBaseUrl: 'https://tuturuuu.localhost',
+    });
+
+    const response = await handler(
+      new NextRequest(
+        'https://chat.tuturuuu.localhost/api/auth/refresh-app-session',
+        {
+          body: JSON.stringify({ accessToken: 'ttr_app_existing-access' }),
+          method: 'POST',
+        }
+      )
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Missing app session refresh credentials',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('mints app-session cookies in satellite deployments with only the existing server-side Supabase secret', async () => {

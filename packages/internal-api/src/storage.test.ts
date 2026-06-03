@@ -93,21 +93,48 @@ describe('workspace task upload helpers', () => {
     );
   });
 
-  it('requests user-group upload URLs from the group storage endpoint', async () => {
+  it('disables user-group signed upload URLs', async () => {
+    const fetchMock = vi.fn();
+
+    await expect(
+      createWorkspaceUserGroupStorageUploadUrl(
+        'ws-1',
+        'group-1',
+        'file.pdf',
+        { size: 5 },
+        {
+          baseUrl: 'https://internal.example.com',
+          fetch: fetchMock as unknown as typeof fetch,
+        }
+      )
+    ).rejects.toThrow(
+      'User-group storage uploads must use uploadWorkspaceUserGroupStorageFile'
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uploads user-group files through the app server', async () => {
+    const file = new File(['hello'], 'file.pdf', { type: 'application/pdf' });
+    const uploadProgress = vi.fn();
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({
-        signedUrl: 'https://upload.example.com/group-signed',
-        token: 'token-1',
-        path: 'user-groups/group-1/file.pdf',
-        fullPath: 'ws-1/user-groups/group-1/file.pdf',
+        autoExtract: {
+          message: 'Uploaded file is not a ZIP archive.',
+          status: 'skipped',
+        },
+        data: {
+          path: 'user-groups/group-1/file.pdf',
+          fullPath: 'ws-1/user-groups/group-1/file.pdf',
+        },
       })
     );
 
-    await createWorkspaceUserGroupStorageUploadUrl(
+    const result = await uploadWorkspaceUserGroupStorageFile(
       'ws-1',
       'group-1',
-      'file.pdf',
-      { size: 5 },
+      file,
+      { onUploadProgress: uploadProgress },
       {
         baseUrl: 'https://internal.example.com',
         fetch: fetchMock as unknown as typeof fetch,
@@ -118,13 +145,29 @@ describe('workspace task upload helpers', () => {
       'https://internal.example.com/api/v1/workspaces/ws-1/user-groups/group-1/storage',
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({
-          filename: 'file.pdf',
-          size: 5,
-        }),
+        body: expect.any(FormData),
         cache: 'no-store',
       })
     );
+    const uploadBody = fetchMock.mock.calls[0]?.[1]?.body as FormData;
+    expect(uploadBody.get('file')).toBe(file);
+    expect(uploadBody.get('upsert')).toBeNull();
+    expect(uploadProgress).toHaveBeenCalledWith({
+      loaded: file.size,
+      percent: 100,
+      total: file.size,
+    });
+    expect(result).toEqual({
+      autoExtract: {
+        message: 'Uploaded file is not a ZIP archive.',
+        status: 'skipped',
+      },
+      finalize: {
+        success: true,
+      },
+      path: 'user-groups/group-1/file.pdf',
+      fullPath: 'ws-1/user-groups/group-1/file.pdf',
+    });
   });
 
   it('deletes user-group storage files through the group storage endpoint', async () => {
@@ -360,57 +403,50 @@ describe('workspace task upload helpers', () => {
     });
   });
 
-  it('fails user-group uploads when finalization fails', async () => {
+  it('keeps user-group uploads on the app server when auto extraction fails', async () => {
     const file = new File(['hello'], 'file.pdf', { type: 'application/pdf' });
-    const uploadFetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        createJsonResponse({
-          signedUrl: 'https://upload.example.com/group-signed',
-          token: 'token-1',
-          headers: {
-            'x-upload-target': 'group',
-          },
+    const uploadFetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        autoExtractError: 'Finalize failed',
+        data: {
           path: 'user-groups/group-1/file.pdf',
           fullPath: 'ws-1/user-groups/group-1/file.pdf',
-        })
-      )
-      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' })
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        json: async () => ({ message: 'Finalize failed' }),
-        text: async () => 'Finalize failed',
-      });
-
-    await expect(
-      uploadWorkspaceUserGroupStorageFile('ws-1', 'group-1', file, undefined, {
-        baseUrl: 'https://internal.example.com',
-        fetch: uploadFetchMock as unknown as typeof fetch,
-      })
-    ).rejects.toThrow('Finalize failed');
-
-    expect(uploadFetchMock).toHaveBeenNthCalledWith(
-      2,
-      'https://upload.example.com/group-signed',
-      expect.objectContaining({
-        method: 'PUT',
-        body: file,
-        headers: expect.objectContaining({
-          Authorization: 'Bearer token-1',
-          'Content-Type': 'application/pdf',
-          'x-upload-target': 'group',
-        }),
+        },
       })
     );
-    expect(uploadFetchMock).toHaveBeenNthCalledWith(
-      3,
-      'https://internal.example.com/api/v1/workspaces/ws-1/storage/finalize-upload',
+
+    const result = await uploadWorkspaceUserGroupStorageFile(
+      'ws-1',
+      'group-1',
+      file,
+      undefined,
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: uploadFetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(uploadFetchMock).toHaveBeenCalledTimes(1);
+    expect(uploadFetchMock).not.toHaveBeenCalledWith(
+      expect.stringContaining('upload.example.com'),
+      expect.anything()
+    );
+    expect(uploadFetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/user-groups/group-1/storage',
       expect.objectContaining({
         method: 'POST',
+        body: expect.any(FormData),
         cache: 'no-store',
       })
     );
+    expect(result).toEqual({
+      finalize: {
+        success: false,
+        error: 'Finalize failed',
+      },
+      path: 'user-groups/group-1/file.pdf',
+      fullPath: 'ws-1/user-groups/group-1/file.pdf',
+    });
   });
 
   it('reports upload progress completion for Drive uploads', async () => {

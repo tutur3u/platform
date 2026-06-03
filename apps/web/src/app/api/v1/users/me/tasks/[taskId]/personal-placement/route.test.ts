@@ -10,13 +10,14 @@ const PREVIOUS_TASK_ID = '88888888-8888-4888-8888-888888888888';
 const NEXT_TASK_ID = '99999999-9999-4999-8999-999999999999';
 
 const mocks = vi.hoisted(() => {
+  const adminRpc = vi.fn();
   const sourceTaskMaybeSingle = vi.fn();
   const targetBoardMaybeSingle = vi.fn();
   const targetListMaybeSingle = vi.fn();
   const placementRpc = vi.fn();
 
   const adminClient = {
-    rpc: placementRpc,
+    rpc: adminRpc,
     from: vi.fn((table: string) => {
       if (table === 'tasks') {
         return {
@@ -67,6 +68,7 @@ const mocks = vi.hoisted(() => {
   const verifyWorkspaceMembershipType = vi.fn();
 
   return {
+    adminRpc,
     adminClient,
     placementRpc,
     sourceTaskMaybeSingle,
@@ -149,7 +151,7 @@ describe('current-user task personal-placement route', () => {
   beforeEach(() => {
     vi.resetModules();
     mocks.adminClient.from.mockClear();
-    mocks.adminClient.rpc.mockReset();
+    mocks.adminRpc.mockReset();
     mocks.sourceTaskMaybeSingle.mockReset();
     mocks.targetBoardMaybeSingle.mockReset();
     mocks.targetListMaybeSingle.mockReset();
@@ -205,7 +207,7 @@ describe('current-user task personal-placement route', () => {
       ),
       {
         user: { id: 'user-1' },
-        supabase: {},
+        supabase: { rpc: mocks.placementRpc },
       },
       { taskId: TASK_ID }
     );
@@ -223,6 +225,7 @@ describe('current-user task personal-placement route', () => {
         p_next_task_id: null,
       }
     );
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
     const payload = await response.json();
     expect(payload.task).toEqual(
       expect.objectContaining({
@@ -293,7 +296,7 @@ describe('current-user task personal-placement route', () => {
       ),
       {
         user: { id: 'user-1' },
-        supabase: {},
+        supabase: { rpc: mocks.placementRpc },
       },
       { taskId: TASK_ID }
     );
@@ -311,6 +314,7 @@ describe('current-user task personal-placement route', () => {
         p_next_task_id: NEXT_TASK_ID,
       }
     );
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
     const payload = await response.json();
     expect(payload.task).toEqual(
       expect.objectContaining({
@@ -359,7 +363,7 @@ describe('current-user task personal-placement route', () => {
       ),
       {
         user: { id: 'user-1' },
-        supabase: {},
+        supabase: { rpc: mocks.placementRpc },
       },
       { taskId: TASK_ID }
     );

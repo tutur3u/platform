@@ -4,23 +4,12 @@ import {
   type TaskBoardAccess,
   type TaskBoardGuestPermission,
 } from '@tuturuuu/apis/tu-do/board-access';
-import {
-  attachSupabaseAuthUser,
-  createAppSessionUser,
-  getAppSessionTokenFromRequest,
-  verifyAppSessionRequest,
-} from '@tuturuuu/auth/app-session';
-import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import type { SessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const paramsSchema = z.object({
@@ -28,22 +17,6 @@ const paramsSchema = z.object({
   boardId: z.guid(),
   listId: z.guid().optional(),
 });
-
-type BoardRequestAuth =
-  | {
-      appSession: false;
-      supabase: TypedSupabaseClient;
-      user: SupabaseUser;
-    }
-  | {
-      appSession: true;
-      sbAdmin: TypedSupabaseClient;
-      supabase: TypedSupabaseClient;
-      user: SupabaseUser;
-    }
-  | {
-      error: NextResponse;
-    };
 
 type BoardAccessResult =
   | {
@@ -53,83 +26,25 @@ type BoardAccessResult =
       list?: { board_id: string; id: string };
       listId?: string;
       sbAdmin: TypedSupabaseClient;
-      supabase: TypedSupabaseClient;
-      user: SupabaseUser;
+      supabase: SessionAuthContext['supabase'];
+      user: SessionAuthContext['user'];
       wsId: string;
     }
   | {
       error: NextResponse;
     };
 
-async function resolveBoardRequestAuth(
-  request: Request
-): Promise<BoardRequestAuth> {
-  const taskAppSessionVerification = verifyAppSessionRequest(request, {
-    targetApp: ['calendar', 'tasks'],
-  });
-
-  if (taskAppSessionVerification.ok) {
-    const sbAdmin = (await createAdminClient({
-      noCookie: true,
-    })) as TypedSupabaseClient;
-    const user = createAppSessionUser(taskAppSessionVerification.claims);
-    const supabase = attachSupabaseAuthUser(sbAdmin, user);
-
-    return {
-      appSession: true,
-      sbAdmin,
-      supabase,
-      user,
-    };
-  }
-
-  const appSessionToken = getAppSessionTokenFromRequest(request);
-
-  if (appSessionToken) {
-    const verification = verifyCliAccessToken(appSessionToken);
-
-    if (verification.ok) {
-      const sbAdmin = (await createAdminClient({
-        noCookie: true,
-      })) as TypedSupabaseClient;
-      const user = createAppSessionUser(verification.claims);
-      const supabase = attachSupabaseAuthUser(sbAdmin, user);
-
-      return {
-        appSession: true,
-        sbAdmin,
-        supabase,
-        user,
-      };
-    }
-  }
-
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return {
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  return { appSession: false, supabase, user };
-}
-
 export async function requireBoardAccess(
-  request: Request,
+  _request: Request,
   rawParams: unknown,
+  auth: SessionAuthContext,
   options: { requiredPermission?: TaskBoardGuestPermission } = {}
 ): Promise<BoardAccessResult> {
   const { wsId: rawWsId, boardId, listId } = paramsSchema.parse(rawParams);
-  const auth = await resolveBoardRequestAuth(request);
-  if ('error' in auth) return auth;
-
   const { supabase, user } = auth;
-  const sbAdmin: TypedSupabaseClient =
-    'sbAdmin' in auth
-      ? auth.sbAdmin
-      : ((await createAdminClient()) as TypedSupabaseClient);
+  const sbAdmin = (await createAdminClient({
+    noCookie: true,
+  })) as TypedSupabaseClient;
   const normalizedWsId = await normalizeWorkspaceId(rawWsId, supabase);
 
   const access = await resolveTaskBoardAccess({

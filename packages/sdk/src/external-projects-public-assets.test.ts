@@ -71,7 +71,7 @@ describe('external project public folder assets', () => {
     );
   });
 
-  it('uploads linked public assets through Tuturuuu signed upload URLs', async () => {
+  it('uploads linked public assets through the Tuturuuu app server', async () => {
     const publicDir = await mkdtemp(join(tmpdir(), 'ttr-public-assets-'));
     await mkdir(join(publicDir, 'artworks'));
     await writeFile(
@@ -79,17 +79,15 @@ describe('external project public folder assets', () => {
       'png bytes'
     );
 
-    mockFetch
-      .mockResolvedValueOnce(
-        createMockResponse({
+    mockFetch.mockResolvedValueOnce(
+      createMockResponse({
+        data: {
           fullPath:
             'ws_123/external-projects/yoola/artworks/starter-signal/starter-signal.png',
           path: 'external-projects/yoola/artworks/starter-signal/starter-signal.png',
-          signedUrl: 'https://upload.example.com/object',
-          token: 'upload_token',
-        })
-      )
-      .mockResolvedValueOnce(createMockResponse('', 200));
+        },
+      })
+    );
 
     const client = new EpmClient({
       apiKey: 'ttr_test_key',
@@ -121,21 +119,12 @@ describe('external project public folder assets', () => {
       expect(mockFetch.mock.calls[0]?.[0]).toBe(
         'https://example.com/api/v1/workspaces/ws_123/external-projects/assets/upload-url'
       );
-      expect(JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string)).toEqual({
-        collectionType: 'artworks',
-        contentType: 'image/png',
-        entrySlug: 'starter-signal',
-        filename: 'starter-signal.png',
-        size: 9,
-        upsert: true,
-      });
-
-      const uploadHeaders = new Headers(mockFetch.mock.calls[1]?.[1]?.headers);
-      expect(mockFetch.mock.calls[1]?.[0]).toBe(
-        'https://upload.example.com/object'
-      );
-      expect(uploadHeaders.get('Authorization')).toBe('Bearer upload_token');
-      expect(uploadHeaders.get('Content-Type')).toBe('image/png');
+      const uploadBody = mockFetch.mock.calls[0]?.[1]?.body as FormData;
+      expect(uploadBody.get('collectionType')).toBe('artworks');
+      expect(uploadBody.get('entrySlug')).toBe('starter-signal');
+      expect(uploadBody.get('upsert')).toBe('true');
+      expect(uploadBody.get('file')).toBeInstanceOf(File);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(result.manifest.content.entries[0]?.assets?.[0]?.storagePath).toBe(
         'external-projects/yoola/artworks/starter-signal/starter-signal.png'
       );
@@ -149,17 +138,15 @@ describe('external project public folder assets', () => {
     await mkdir(join(publicDir, 'audio'));
     await writeFile(join(publicDir, 'audio', 'voice-reel.wav'), 'wav bytes');
 
-    mockFetch
-      .mockResolvedValueOnce(
-        createMockResponse({
+    mockFetch.mockResolvedValueOnce(
+      createMockResponse({
+        data: {
           fullPath:
             'ws_123/external-projects/kendra/voice-reels/demo/voice-reel.wav',
           path: 'external-projects/kendra/voice-reels/demo/voice-reel.wav',
-          signedUrl: 'https://upload.example.com/audio',
-          token: 'upload_token',
-        })
-      )
-      .mockResolvedValueOnce(createMockResponse('', 200));
+        },
+      })
+    );
 
     const client = new EpmClient({
       apiKey: 'ttr_test_key',
@@ -202,8 +189,10 @@ describe('external project public folder assets', () => {
         }
       );
 
-      const uploadHeaders = new Headers(mockFetch.mock.calls[1]?.[1]?.headers);
-      expect(uploadHeaders.get('Content-Type')).toBe('audio/wav');
+      const uploadBody = mockFetch.mock.calls[0]?.[1]?.body as FormData;
+      const file = uploadBody.get('file') as File;
+      expect(file.type).toBe('audio/wav');
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     } finally {
       await rm(publicDir, { force: true, recursive: true });
     }

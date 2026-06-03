@@ -12,6 +12,8 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { ENABLE_EDUCATION_SECRET } from '@/lib/tulearn/constants';
 
 export const EDUCATION_WORKSPACE_PERMISSION = 'ai_lab' satisfies PermissionId;
+export const EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION =
+  'view_user_groups_reports' satisfies PermissionId;
 
 export type EducationAccessSuccess = {
   normalizedWsId: string;
@@ -37,9 +39,11 @@ function educationAccessFailure(message: string, status: number) {
 
 export async function checkEducationWorkspaceAccess({
   context,
+  permission = EDUCATION_WORKSPACE_PERMISSION,
   wsId,
 }: {
   context: SessionAuthContext;
+  permission?: PermissionId | readonly PermissionId[];
   wsId: string;
 }): Promise<EducationAccessResult> {
   let normalizedWsId: string;
@@ -99,9 +103,15 @@ export async function checkEducationWorkspaceAccess({
     wsId: normalizedWsId,
   });
 
+  const requiredPermissions = Array.isArray(permission)
+    ? permission
+    : [permission];
+
   if (
     !permissions ||
-    permissions.withoutPermission(EDUCATION_WORKSPACE_PERMISSION)
+    requiredPermissions.every((requiredPermission) =>
+      permissions.withoutPermission(requiredPermission)
+    )
   ) {
     return educationAccessFailure('Insufficient permissions', 403);
   }
@@ -115,6 +125,7 @@ export async function checkEducationWorkspaceAccess({
 
 export async function requireEducationWorkspaceAccess(options: {
   context: SessionAuthContext;
+  permission?: PermissionId | readonly PermissionId[];
   wsId: string;
 }) {
   const access = await checkEducationWorkspaceAccess(options);

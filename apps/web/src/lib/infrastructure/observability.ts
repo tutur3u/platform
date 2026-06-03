@@ -306,6 +306,15 @@ function shouldIncludeTime(
   return true;
 }
 
+function toSqlTimestampFilter(value: number | null | undefined) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+}
+
 function mapLegacyRequest(request: BlueGreenMonitoringRequestLog) {
   const startedAt = request.time;
   const id = `legacy-request-${request.time}-${request.method ?? 'GET'}-${request.path}`;
@@ -411,8 +420,10 @@ function loadLegacyRequests(
     page: 1,
     pageSize: 100,
     q: filters.q ?? undefined,
+    since: filters.since,
     status: filters.status ?? undefined,
     timeframeDays: getLegacyTimeframeDays(filters.timeframeHours),
+    until: filters.until,
   });
   const cutoff = Date.now() - filters.timeframeHours * 60 * 60 * 1000;
 
@@ -443,8 +454,10 @@ function loadLegacyLogs(
   const requestConsoleLogs = readBlueGreenMonitoringRequestArchive({
     page: 1,
     pageSize: 100,
+    since: filters.since,
     status: filters.status ?? undefined,
     timeframeDays: getLegacyTimeframeDays(filters.timeframeHours),
+    until: filters.until,
   }).items.flatMap((request) =>
     (request.consoleLogs ?? []).map((log) => mapLegacyConsoleLog(log, request))
   );
@@ -480,6 +493,8 @@ async function loadRecentLogs(
     return shouldReadLegacyProject(filters) ? loadLegacyLogs(filters) : [];
   }
 
+  const since = toSqlTimestampFilter(filters.since);
+  const until = toSqlTimestampFilter(filters.until);
   const rows = await sql<
     Array<{
       created_at: Date;
@@ -521,6 +536,8 @@ async function loadRecentLogs(
     LEFT JOIN requests ON requests.id = log_events.request_id
     WHERE log_events.project_id = ${filters.projectId ?? DEFAULT_PROJECT_ID}
       AND log_events.created_at >= now() - make_interval(hours => ${filters.timeframeHours})
+      AND (${since}::timestamptz IS NULL OR log_events.created_at > ${since}::timestamptz)
+      AND (${until}::timestamptz IS NULL OR log_events.created_at <= ${until}::timestamptz)
     ORDER BY log_events.created_at DESC
     LIMIT ${MAX_AGGREGATE_ROWS}
   `;
@@ -585,6 +602,8 @@ async function loadRecentRequests(
     return shouldReadLegacyProject(filters) ? loadLegacyRequests(filters) : [];
   }
 
+  const since = toSqlTimestampFilter(filters.since);
+  const until = toSqlTimestampFilter(filters.until);
   const rows = await sql<
     Array<{
       cron_job_id: string | null;
@@ -624,6 +643,8 @@ async function loadRecentRequests(
     LEFT JOIN log_events ON log_events.request_id = requests.id
     WHERE requests.project_id = ${filters.projectId ?? DEFAULT_PROJECT_ID}
       AND requests.started_at >= now() - make_interval(hours => ${filters.timeframeHours})
+      AND (${since}::timestamptz IS NULL OR requests.started_at > ${since}::timestamptz)
+      AND (${until}::timestamptz IS NULL OR requests.started_at <= ${until}::timestamptz)
     GROUP BY requests.id
     ORDER BY requests.started_at DESC
     LIMIT ${MAX_AGGREGATE_ROWS}

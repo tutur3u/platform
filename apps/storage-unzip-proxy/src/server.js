@@ -1,28 +1,24 @@
 import path from 'node:path';
 import unzipper from 'unzipper';
+import { resolveUnzipProxyLimits } from './limits.js';
+import {
+  buildSignedUploadHeaders,
+  validateSignedUploadDestination,
+} from './upload-destination.js';
 
 const PORT = Number(process.env.PORT || 8788);
 const SHARED_TOKEN = process.env.DRIVE_UNZIP_PROXY_SHARED_TOKEN || '';
-const ONE_GIB = 1024 * 1024 * 1024;
-const FETCH_TIMEOUT_MS = Number(
-  process.env.DRIVE_UNZIP_PROXY_FETCH_TIMEOUT_MS || 10 * 60 * 1000
-);
-const MAX_ARCHIVE_DOWNLOAD_BYTES = parseByteLimitEnv(
-  'DRIVE_UNZIP_PROXY_MAX_ARCHIVE_BYTES',
-  ONE_GIB
-);
-const MAX_ARCHIVE_ENTRIES = parseIntegerLimitEnv(
-  'DRIVE_UNZIP_PROXY_MAX_ARCHIVE_ENTRIES',
-  2000
-);
-const MAX_EXTRACTED_ENTRY_BYTES = parseByteLimitEnv(
-  'DRIVE_UNZIP_PROXY_MAX_ENTRY_BYTES',
-  ONE_GIB
-);
-const MAX_TOTAL_EXTRACTED_BYTES = parseByteLimitEnv(
-  'DRIVE_UNZIP_PROXY_MAX_TOTAL_EXTRACTED_BYTES',
-  ONE_GIB
-);
+const ALLOWED_UPLOAD_ORIGINS =
+  process.env.DRIVE_UNZIP_PROXY_ALLOWED_UPLOAD_ORIGINS || '';
+const ALLOW_LOCAL_UPLOAD_ORIGINS =
+  process.env.DRIVE_UNZIP_PROXY_ALLOW_LOCAL_UPLOAD_ORIGINS === 'true';
+const {
+  fetchTimeoutMs: FETCH_TIMEOUT_MS,
+  maxArchiveDownloadBytes: MAX_ARCHIVE_DOWNLOAD_BYTES,
+  maxArchiveEntries: MAX_ARCHIVE_ENTRIES,
+  maxExtractedEntryBytes: MAX_EXTRACTED_ENTRY_BYTES,
+  maxTotalExtractedBytes: MAX_TOTAL_EXTRACTED_BYTES,
+} = resolveUnzipProxyLimits();
 
 const MIME_TYPES = {
   '.br': 'application/octet-stream',
@@ -45,20 +41,6 @@ const MIME_TYPES = {
   '.wasm': 'application/wasm',
   '.webp': 'image/webp',
 };
-
-function parseIntegerLimitEnv(name, fallback) {
-  const raw = process.env[name];
-  if (!raw) {
-    return fallback;
-  }
-
-  const value = Number(raw);
-  return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
-}
-
-function parseByteLimitEnv(name, fallback) {
-  return parseIntegerLimitEnv(name, fallback);
-}
 
 if (!SHARED_TOKEN) {
   throw new Error(
@@ -265,19 +247,17 @@ async function putExtractedFileToSignedUrl({
   contentType,
   uploadPayload,
 }) {
-  const headers = {
-    ...(uploadPayload.headers || {}),
-  };
-
-  if (!headers['Content-Type']) {
-    headers['Content-Type'] = contentType || 'application/octet-stream';
+  const destination = validateSignedUploadDestination(uploadPayload, {
+    allowedUploadOrigins: ALLOWED_UPLOAD_ORIGINS,
+    allowLocalUploadOrigins: ALLOW_LOCAL_UPLOAD_ORIGINS,
+  });
+  if (!destination.ok) {
+    throw new HttpError(502, destination.message);
   }
 
-  if (uploadPayload.token) {
-    headers.Authorization = `Bearer ${uploadPayload.token}`;
-  }
+  const headers = buildSignedUploadHeaders(uploadPayload, contentType);
 
-  let response = await fetchWithTimeout(uploadPayload.signedUrl, {
+  let response = await fetchWithTimeout(destination.signedUrl, {
     method: 'PUT',
     headers,
     body,
@@ -287,7 +267,7 @@ async function putExtractedFileToSignedUrl({
     const retryHeaders = { ...headers };
     delete retryHeaders['Content-Type'];
 
-    response = await fetchWithTimeout(uploadPayload.signedUrl, {
+    response = await fetchWithTimeout(destination.signedUrl, {
       method: 'PUT',
       headers: retryHeaders,
       body,

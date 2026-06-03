@@ -101,6 +101,7 @@ vi.mock('@/lib/api-auth', () => ({
 }));
 
 vi.mock('@/lib/education/access', () => ({
+  EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION: 'view_user_groups_reports',
   requireEducationWorkspaceAccess: (
     ...args: Parameters<typeof mocks.requireEducationWorkspaceAccess>
   ) => mocks.requireEducationWorkspaceAccess(...args),
@@ -153,6 +154,11 @@ describe('education attempts list route', () => {
     expect(mocks.adminSupabase.from).not.toHaveBeenCalledWith(
       'workspace_quiz_attempts'
     );
+    expect(mocks.requireEducationWorkspaceAccess).toHaveBeenCalledWith({
+      context: expect.objectContaining({ user: { id: 'user-1' } }),
+      permission: 'view_user_groups_reports',
+      wsId: 'ws-1',
+    });
   });
 
   it('returns attempts payload for authorized members', async () => {

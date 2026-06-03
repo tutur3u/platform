@@ -1,11 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
+import { checkEducationWorkspaceAccess } from '@/lib/education/access';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  MAX_VALSEA_AUDIO_UPLOAD_BYTES,
+  VALSEA_AUDIO_DRIVE_PATH,
+  VALSEA_AUDIO_EXTENSIONS,
+} from '@/lib/valsea-audio-storage-policy';
 import {
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
@@ -15,47 +21,26 @@ type Params = {
   wsId: string;
 };
 
-const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
-const VALSEA_AUDIO_DRIVE_PATH = 'education/valsea/audio';
-const ALLOWED_AUDIO_EXTENSIONS = new Set([
-  'flac',
-  'm4a',
-  'mp3',
-  'mp4',
-  'mpeg',
-  'oga',
-  'ogg',
-  'wav',
-  'webm',
-]);
-
 const uploadUrlSchema = z.object({
   contentType: z.string().max(255).optional(),
   filename: z.string().min(1).max(255),
-  size: z.number().int().min(1).max(MAX_AUDIO_UPLOAD_BYTES),
+  size: z.number().int().min(1).max(MAX_VALSEA_AUDIO_UPLOAD_BYTES),
 });
 
 async function verifyValseaAudioUploadAccess(
   context: AuthorizedRequest,
   wsId: string
 ) {
-  const resolvedWsId = resolveWorkspaceId(wsId);
-  const membership = await verifyWorkspaceMembershipType({
-    supabase: context.supabase,
-    userId: context.user.id,
-    wsId: resolvedWsId,
+  const access = await checkEducationWorkspaceAccess({ context, wsId });
+  if (!access.ok) return access.response;
+
+  const permissions = await getPermissions({
+    user: context.user,
+    wsId: access.normalizedWsId,
   });
-
-  if (membership.error === 'membership_lookup_failed') {
+  if (!permissions || permissions.withoutPermission('manage_drive')) {
     return NextResponse.json(
-      { message: 'Could not verify workspace membership' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json(
-      { message: "You don't have access to this workspace" },
+      { message: 'Insufficient permissions' },
       { status: 403 }
     );
   }
@@ -91,7 +76,7 @@ export const POST = withSessionAuth<Params>(
         dotIndex >= 0
           ? sanitizedFilename.slice(dotIndex + 1).toLowerCase()
           : '';
-      if (!ALLOWED_AUDIO_EXTENSIONS.has(extension)) {
+      if (!VALSEA_AUDIO_EXTENSIONS.has(extension)) {
         return NextResponse.json(
           { message: 'Unsupported audio file type' },
           { status: 400 }

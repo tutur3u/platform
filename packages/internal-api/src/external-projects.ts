@@ -24,10 +24,9 @@ import {
   type InternalApiClientOptions,
   resolveInternalApiUrl,
 } from './client';
-import {
-  createWorkspaceStorageUploadUrl,
-  uploadWorkspaceStorageFile,
-  type WorkspaceStorageUploadProgress,
+import type {
+  WorkspaceStorageAutoExtractResult,
+  WorkspaceStorageUploadProgress,
 } from './storage';
 
 type CanonicalExternalProjectUpsertPayload = {
@@ -112,6 +111,15 @@ type ExternalProjectUploadUrlPayload = {
   token?: string;
   path: string;
   fullPath: string | null;
+};
+
+type ExternalProjectDirectUploadResponse = {
+  autoExtract?: WorkspaceStorageAutoExtractResult;
+  autoExtractError?: string | null;
+  data?: {
+    fullPath?: string | null;
+    path?: string;
+  };
 };
 
 type ExternalProjectUploadProgressHandler = (
@@ -687,59 +695,13 @@ export async function createWorkspaceExternalProjectAssetUploadUrl(
   },
   options?: InternalApiClientOptions
 ) {
-  return createWorkspaceStorageUploadUrl(
-    workspaceId,
-    payload.filename,
-    {
-      path: buildExternalProjectAssetStoragePath(payload),
-      contentType: payload.contentType,
-      size: payload.size,
-      upsert: payload.upsert,
-    },
-    options
+  void workspaceId;
+  void payload;
+  void options;
+
+  throw new Error(
+    'External project asset uploads must use uploadWorkspaceExternalProjectAssetFile so workspace quota checks use the uploaded byte length.'
   );
-}
-
-function normalizeExternalProjectPathPart(value: string, label: string) {
-  const segments = value
-    .replace(/\\/g, '/')
-    .trim()
-    .replace(/^\/+|\/+$/g, '')
-    .split('/')
-    .filter(Boolean);
-
-  if (segments.length === 0) {
-    throw new Error(`Invalid ${label}`);
-  }
-
-  for (const segment of segments) {
-    if (segment === '.' || segment === '..' || segment.includes('..')) {
-      throw new Error(`Invalid ${label}`);
-    }
-  }
-
-  return segments.join('/');
-}
-
-function buildExternalProjectAssetStoragePath(payload: {
-  adapter?: string | null;
-  collectionType: string;
-  entrySlug: string;
-}) {
-  const adapter = normalizeExternalProjectPathPart(
-    payload.adapter || 'shared',
-    'external project adapter'
-  );
-  const collectionType = normalizeExternalProjectPathPart(
-    payload.collectionType,
-    'collection type'
-  );
-  const entrySlug = normalizeExternalProjectPathPart(
-    payload.entrySlug,
-    'entry slug'
-  );
-
-  return `external-projects/${adapter}/${collectionType}/${entrySlug}`;
 }
 
 export async function uploadWorkspaceExternalProjectAssetFile(
@@ -753,16 +715,48 @@ export async function uploadWorkspaceExternalProjectAssetFile(
   },
   options?: ExternalProjectUploadOptions
 ) {
-  return uploadWorkspaceStorageFile(
-    workspaceId,
-    file,
+  const client = getInternalApiClient(options);
+  const formData = new FormData();
+  formData.set('collectionType', payload.collectionType);
+  formData.set('entrySlug', payload.entrySlug);
+  formData.set('file', file);
+
+  if (payload.upsert === true) {
+    formData.set('upsert', 'true');
+  }
+
+  const response = await client.json<ExternalProjectDirectUploadResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/assets/upload-url`,
     {
-      onUploadProgress: options?.onUploadProgress,
-      path: buildExternalProjectAssetStoragePath(payload),
-      upsert: payload.upsert,
-    },
-    options
+      body: formData,
+      cache: 'no-store',
+      method: 'POST',
+    }
   );
+
+  if (!response.data?.path) {
+    throw new Error('Missing upload response payload');
+  }
+
+  options?.onUploadProgress?.({
+    loaded: file.size,
+    percent: 100,
+    total: file.size,
+  });
+
+  return {
+    autoExtract: response.autoExtract,
+    finalize: response.autoExtractError
+      ? {
+          error: response.autoExtractError,
+          success: false,
+        }
+      : {
+          success: true,
+        },
+    fullPath: response.data.fullPath ?? null,
+    path: response.data.path,
+  };
 }
 
 export async function createWorkspaceExternalProjectWebglPackageUploadUrl(

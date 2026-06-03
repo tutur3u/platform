@@ -207,6 +207,29 @@ function queueSourceMembership() {
   });
 }
 
+function queueNoSourceMembership() {
+  queueResult(mocks.memberQueues, 'workspace_members', {
+    data: [],
+    error: null,
+  });
+}
+
+function expectSourceMembershipQueriesRequireMemberAccess() {
+  const sourceMembershipQueries = mocks.adminQueries.filter(
+    (query) => query.table === 'workspace_members'
+  );
+
+  expect(sourceMembershipQueries.length).toBeGreaterThan(0);
+  expect(
+    sourceMembershipQueries.every((query) =>
+      query.calls.some(
+        ([method, args]) =>
+          method === 'eq' && args[0] === 'type' && args[1] === 'MEMBER'
+      )
+    )
+  ).toBe(true);
+}
+
 function queueEmptyPersonalMetadata() {
   queueResult(mocks.adminQueues, 'task_user_override_labels', {
     data: [],
@@ -573,6 +596,7 @@ describe('workspace task route personal external loading', () => {
         is_personal_external_default: false,
       })
     );
+    expectSourceMembershipQueriesRequireMemberAccess();
   });
 
   it('uses RPC-backed external counts for personal list totals', async () => {
@@ -618,6 +642,7 @@ describe('workspace task route personal external loading', () => {
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.count).toBe(9);
+    expectSourceMembershipQueriesRequireMemberAccess();
     expect(mocks.memberClient.rpc).toHaveBeenCalledWith(
       'get_personal_task_board_external_counts',
       {
@@ -665,6 +690,7 @@ describe('workspace task route personal external loading', () => {
     expect(payload.tasks.map((task: { id: string }) => task.id)).toEqual([
       UNPLACED_TASK_ID,
     ]);
+    expectSourceMembershipQueriesRequireMemberAccess();
     expect(
       mocks.adminQueries
         .filter((query) => query.table === 'task_user_overrides')
@@ -678,6 +704,47 @@ describe('workspace task route personal external loading', () => {
           )
         )
     ).toBe(true);
+  });
+
+  it('filters default external tasks without member access to the source workspace', async () => {
+    const stagingListId = `personal-external-staging:${PERSONAL_BOARD_ID}`;
+
+    queuePersonalWorkspace();
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+    queueResult(mocks.adminQueues, 'task_user_overrides', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+    queueResult(mocks.adminQueues, 'task_user_overrides', {
+      data: [],
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [externalTask(UNPLACED_TASK_ID)],
+      error: null,
+      count: 1,
+    });
+    queueNoSourceMembership();
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/personal/tasks?boardId=${PERSONAL_BOARD_ID}&listId=${stagingListId}&includeRelationshipSummary=false&includeCount=true`
+      ),
+      { params: Promise.resolve({ wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      count: 0,
+      tasks: [],
+    });
+    expectSourceMembershipQueriesRequireMemberAccess();
   });
 
   it('uses RPC-backed external counts for the virtual external lane', async () => {
@@ -721,6 +788,7 @@ describe('workspace task route personal external loading', () => {
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.count).toBe(2);
+    expectSourceMembershipQueriesRequireMemberAccess();
   });
 
   it('rejects external source filters for direct board guests', async () => {

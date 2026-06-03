@@ -65,6 +65,7 @@ function Harness() {
   const engine = useHiveStudioEngine({
     currentUser: { displayName: 'Test user', id: 'user-1' },
     initialServers: serversData,
+    isAdmin: serversData.isAdmin,
     realtimeUrl: 'ws://localhost:8787',
   });
 
