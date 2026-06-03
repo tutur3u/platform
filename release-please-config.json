@@ -139,6 +139,10 @@
       "component": "auth",
       "package-name": "@tuturuuu/auth"
     },
+    "packages/devbox": {
+      "component": "devbox",
+      "package-name": "@tuturuuu/devbox"
+    },
     "packages/email-service": {
       "component": "email-service",
       "package-name": "@tuturuuu/email-service"

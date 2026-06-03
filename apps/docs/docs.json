@@ -151,6 +151,7 @@
               "build/development-tools/monorepo-architecture",
               "build/development-tools/git-conventions",
               "build/development-tools/local-supabase-development",
+              "build/development-tools/remote-devboxes",
               "build/development-tools/ci-cd-pipelines",
               "build/development-tools/ci-cd-optimization",
               "build/development-tools/cleaning-clone",

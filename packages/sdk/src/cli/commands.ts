@@ -28,6 +28,7 @@ import {
   readCliConfig,
   writeCliConfig,
 } from './config';
+import { runDevboxCommand } from './devbox';
 import { runFinanceCommand } from './finance';
 import { getGlobalHelp, getHelpOutput } from './help';
 import {
@@ -915,6 +916,24 @@ export async function runCli(argv = process.argv.slice(2)) {
   if (group === 'config' && action === 'set-base-url' && firstId) {
     await writeCliConfig({ ...config, baseUrl: normalizeBaseUrl(firstId) });
     process.stdout.write(`Base URL set to ${normalizeBaseUrl(firstId)}\n`);
+    return;
+  }
+
+  if (group === 'box') {
+    const client =
+      action === 'doctor' ||
+      action === 'setup' ||
+      (action === 'agent' && firstId === 'start')
+        ? undefined
+        : getClient(config);
+    await runDevboxCommand({
+      action,
+      argv,
+      baseUrl: config.baseUrl,
+      client,
+      flags,
+      json,
+    });
     return;
   }
 

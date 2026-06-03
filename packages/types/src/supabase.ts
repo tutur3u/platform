@@ -1195,6 +1195,519 @@ export type Database = {
         };
         Relationships: [];
       };
+      devbox_artifacts: {
+        Row: {
+          artifact_type: string;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          run_id: string;
+          size_bytes: number;
+          storage_path: string;
+        };
+        Insert: {
+          artifact_type: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          run_id: string;
+          size_bytes?: number;
+          storage_path: string;
+        };
+        Update: {
+          artifact_type?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          run_id?: string;
+          size_bytes?: number;
+          storage_path?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_artifacts_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_cache_evictions: {
+        Row: {
+          cache_key: string;
+          created_at: string;
+          id: string;
+          reason: string;
+          runner_id: string | null;
+          size_bytes: number;
+        };
+        Insert: {
+          cache_key: string;
+          created_at?: string;
+          id?: string;
+          reason: string;
+          runner_id?: string | null;
+          size_bytes?: number;
+        };
+        Update: {
+          cache_key?: string;
+          created_at?: string;
+          id?: string;
+          reason?: string;
+          runner_id?: string | null;
+          size_bytes?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_cache_evictions_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_cache_records: {
+        Row: {
+          cache_key: string;
+          cache_type: string;
+          compatibility: Json;
+          created_at: string;
+          id: string;
+          last_used_at: string;
+          runner_id: string | null;
+          size_bytes: number;
+        };
+        Insert: {
+          cache_key: string;
+          cache_type: string;
+          compatibility?: Json;
+          created_at?: string;
+          id?: string;
+          last_used_at?: string;
+          runner_id?: string | null;
+          size_bytes?: number;
+        };
+        Update: {
+          cache_key?: string;
+          cache_type?: string;
+          compatibility?: Json;
+          created_at?: string;
+          id?: string;
+          last_used_at?: string;
+          runner_id?: string | null;
+          size_bytes?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_cache_records_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_env_revisions: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          id: string;
+          lease_id: string;
+          removals: string[];
+          updates: Json;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          id?: string;
+          lease_id: string;
+          removals?: string[];
+          updates?: Json;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          id?: string;
+          lease_id?: string;
+          removals?: string[];
+          updates?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_env_revisions_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_env_revisions_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_env_revisions_lease_id_fkey';
+            columns: ['lease_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_leases';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_leases: {
+        Row: {
+          actor_id: string;
+          cleanup_status: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          keep: boolean;
+          profile: string | null;
+          released_at: string | null;
+          runner_id: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          actor_id: string;
+          cleanup_status?: string;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          keep?: boolean;
+          profile?: string | null;
+          released_at?: string | null;
+          runner_id?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          actor_id?: string;
+          cleanup_status?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          keep?: boolean;
+          profile?: string | null;
+          released_at?: string | null;
+          runner_id?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_leases_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_leases_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_leases_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_preview_requests: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          id: string;
+          lease_id: string;
+          method: string;
+          path: string;
+          port: number;
+          request_headers: Json;
+          response_headers: Json;
+          response_status: number | null;
+          status: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          lease_id: string;
+          method: string;
+          path: string;
+          port: number;
+          request_headers?: Json;
+          response_headers?: Json;
+          response_status?: number | null;
+          status?: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          lease_id?: string;
+          method?: string;
+          path?: string;
+          port?: number;
+          request_headers?: Json;
+          response_headers?: Json;
+          response_status?: number | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_preview_requests_lease_id_fkey';
+            columns: ['lease_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_leases';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_run_events: {
+        Row: {
+          created_at: string;
+          event_type: string;
+          id: string;
+          message: string | null;
+          metadata: Json;
+          run_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          message?: string | null;
+          metadata?: Json;
+          run_id: string;
+        };
+        Update: {
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          message?: string | null;
+          metadata?: Json;
+          run_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_run_events_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_runner_tokens: {
+        Row: {
+          created_at: string;
+          id: string;
+          revoked_at: string | null;
+          runner_id: string;
+          token_hash: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          revoked_at?: string | null;
+          runner_id: string;
+          token_hash: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          revoked_at?: string | null;
+          runner_id?: string;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_runner_tokens_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_runners: {
+        Row: {
+          actor_id: string;
+          capabilities: Json;
+          created_at: string;
+          id: string;
+          last_heartbeat_at: string | null;
+          name: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          actor_id: string;
+          capabilities?: Json;
+          created_at?: string;
+          id?: string;
+          last_heartbeat_at?: string | null;
+          name: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          actor_id?: string;
+          capabilities?: Json;
+          created_at?: string;
+          id?: string;
+          last_heartbeat_at?: string | null;
+          name?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_runners_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_runners_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      devbox_runs: {
+        Row: {
+          actor_id: string;
+          command: string[];
+          completed_at: string | null;
+          created_at: string;
+          env: Json;
+          env_files: string[];
+          exit_code: number | null;
+          id: string;
+          lease_id: string;
+          preview_ports: number[];
+          started_at: string | null;
+          status: string;
+          timeout_seconds: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          actor_id: string;
+          command: string[];
+          completed_at?: string | null;
+          created_at?: string;
+          env?: Json;
+          env_files?: string[];
+          exit_code?: number | null;
+          id?: string;
+          lease_id: string;
+          preview_ports?: number[];
+          started_at?: string | null;
+          status?: string;
+          timeout_seconds?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          actor_id?: string;
+          command?: string[];
+          completed_at?: string | null;
+          created_at?: string;
+          env?: Json;
+          env_files?: string[];
+          exit_code?: number | null;
+          id?: string;
+          lease_id?: string;
+          preview_ports?: number[];
+          started_at?: string | null;
+          status?: string;
+          timeout_seconds?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_runs_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_runs_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_runs_lease_id_fkey';
+            columns: ['lease_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_leases';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_sync_artifacts: {
+        Row: {
+          created_at: string;
+          id: string;
+          lease_id: string | null;
+          manifest: Json;
+          run_id: string | null;
+          sha256: string | null;
+          size_bytes: number;
+          storage_path: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          lease_id?: string | null;
+          manifest?: Json;
+          run_id?: string | null;
+          sha256?: string | null;
+          size_bytes?: number;
+          storage_path: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          lease_id?: string | null;
+          manifest?: Json;
+          run_id?: string | null;
+          sha256?: string | null;
+          size_bytes?: number;
+          storage_path?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_sync_artifacts_lease_id_fkey';
+            columns: ['lease_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_leases';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'devbox_sync_artifacts_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       email_bounce_complaints: {
         Row: {
           bounce_subtype: string | null;

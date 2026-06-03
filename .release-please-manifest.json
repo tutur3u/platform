@@ -28,6 +28,7 @@
   "packages/ai": "0.0.11",
   "packages/apis": "0.0.10",
   "packages/auth": "0.1.0",
+  "packages/devbox": "0.0.1",
   "packages/email-service": "0.0.1",
   "packages/games": "0.0.1",
   "packages/google": "0.0.1",
