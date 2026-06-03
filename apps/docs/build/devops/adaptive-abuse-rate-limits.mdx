@@ -30,6 +30,15 @@ Trust never bypasses active user suspension, active IP blocks, sensitive auth
 route protections, workspace-secret hard overrides, or severe backend abuse
 cascades.
 
+## API Abuse IP Blocks
+
+Session-authenticated routes may defer proxy-side `api_abuse` IP blocks only
+long enough to validate route authentication. Do not treat bearer-shaped tokens,
+`ttr_` strings, Supabase auth cookie names, or app-session cookie presence as
+proof of an authenticated session. If the route auth check fails, return the
+original block response before invoking the handler or recording normal auth
+failure side effects.
+
 ## Signals
 
 The layer records rolling signals for:

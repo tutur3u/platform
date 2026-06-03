@@ -241,7 +241,7 @@ describe('withSessionAuth', () => {
     expect(response.headers.get('Retry-After')).toBeTruthy();
   });
 
-  it('should ignore api_abuse IP blocks for authenticated session requests', async () => {
+  it('should defer api_abuse IP blocks until session requests validate', async () => {
     mockHasAuthenticatedApiSession.mockReturnValue(true);
     mockIsIPBlocked.mockResolvedValue({
       expiresAt: new Date(Date.now() + 60000),
@@ -254,6 +254,28 @@ describe('withSessionAuth', () => {
 
     expect(response.status).toBe(200);
     expect(handler).toHaveBeenCalledTimes(1);
+    expect(mockGetUser).toHaveBeenCalled();
+  });
+
+  it('should enforce api_abuse IP blocks when auth markers fail validation', async () => {
+    mockHasAuthenticatedApiSession.mockReturnValue(true);
+    mockIsIPBlocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 60000),
+      reason: 'api_abuse',
+    });
+    mockGetUser.mockResolvedValue({
+      data: { user: null },
+      error: { message: 'Invalid JWT' },
+    });
+
+    const handler = vi.fn();
+    const wrapped = withSessionAuth(handler);
+    const response = await wrapped(makeRequest('GET'));
+
+    expect(response.status).toBe(429);
+    expect(handler).not.toHaveBeenCalled();
+    expect(mockGetUser).toHaveBeenCalled();
+    expect(mockRecordAuthFailure).not.toHaveBeenCalled();
   });
 
   it('should keep non-api_abuse IP blocks for authenticated session requests', async () => {
