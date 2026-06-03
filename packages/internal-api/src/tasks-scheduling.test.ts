@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { updateCurrentUserTaskSchedulingSettings } from './tasks-scheduling';
+import {
+  getCurrentUserTaskSchedule,
+  updateCurrentUserTaskSchedulingSettings,
+} from './tasks-scheduling';
 
 function createJsonResponse(payload: unknown) {
   return {
@@ -10,6 +13,35 @@ function createJsonResponse(payload: unknown) {
 }
 
 describe('task scheduling internal API helpers', () => {
+  it('gets current-user scheduling settings without a workspace-scoped URL', async () => {
+    const schedule = {
+      task: {
+        total_duration: 1.5,
+        is_splittable: true,
+        min_split_duration_minutes: 30,
+        max_split_duration_minutes: 90,
+        calendar_hours: 'work_hours',
+        auto_schedule: true,
+      },
+      events: [],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(schedule));
+
+    const result = await getCurrentUserTaskSchedule('task-1', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/users/me/tasks/task-1/schedule',
+      expect.objectContaining({
+        method: 'GET',
+        cache: 'no-store',
+      })
+    );
+    expect(result).toEqual(schedule);
+  });
+
   it('updates current-user scheduling settings without a workspace-scoped URL', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({

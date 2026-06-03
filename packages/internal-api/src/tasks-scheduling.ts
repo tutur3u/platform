@@ -23,6 +23,39 @@ export interface CurrentUserTaskSchedulingUpdateResponse {
   task_ws_id: string;
 }
 
+export interface CurrentUserTaskScheduleResponse {
+  calendar_ws_id: string;
+  task_ws_id: string;
+  task: Pick<
+    Task,
+    | 'id'
+    | 'name'
+    | 'total_duration'
+    | 'is_splittable'
+    | 'min_split_duration_minutes'
+    | 'max_split_duration_minutes'
+    | 'calendar_hours'
+    | 'auto_schedule'
+  >;
+  scheduling: {
+    totalMinutes: number;
+    scheduledMinutes: number;
+    completedMinutes: number;
+    remainingMinutes: number;
+    progress: number;
+    isFullyScheduled: boolean;
+  };
+  events: {
+    id?: string;
+    title?: string;
+    start_at?: string;
+    end_at?: string;
+    color?: string;
+    scheduled_minutes: number;
+    completed: boolean;
+  }[];
+}
+
 export async function updateTaskSchedulingSettings(
   wsId: string,
   taskId: string,
@@ -38,6 +71,20 @@ export async function updateTaskSchedulingSettings(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+    }
+  );
+}
+
+export async function getCurrentUserTaskSchedule(
+  taskId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserTaskScheduleResponse>(
+    `/api/v1/users/me/tasks/${encodePathSegment(taskId)}/schedule`,
+    {
+      method: 'GET',
+      cache: 'no-store',
     }
   );
 }

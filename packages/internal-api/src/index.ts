@@ -852,8 +852,10 @@ export {
   type WorkspaceTaskJournalResponse,
 } from './tasks';
 export {
+  type CurrentUserTaskScheduleResponse,
   type CurrentUserTaskSchedulingUpdatePayload,
   type CurrentUserTaskSchedulingUpdateResponse,
+  getCurrentUserTaskSchedule,
   type TaskSchedulingUpdatePayload,
   updateCurrentUserTaskSchedulingSettings,
   updateTaskSchedulingSettings,

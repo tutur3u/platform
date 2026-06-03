@@ -121,7 +121,9 @@ import {
   TaskPriorityMenu,
   TaskProjectsMenu,
   TaskRelatedMenu,
+  TaskSchedulingMenu,
 } from '../menus';
+import { formatTaskDurationLabel } from '../menus/task-scheduling-utils';
 import { TaskActions } from '../task-actions';
 import { TaskCustomDateDialog } from '../task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from '../task-dialogs/TaskDeleteDialog';
@@ -1188,6 +1190,27 @@ function TaskCardInner({
       });
     }
 
+    const durationLabel = formatTaskDurationLabel(task.total_duration ?? null);
+    if (durationLabel) {
+      badges.push({
+        id: 'duration',
+        element: (
+          <Badge
+            key="duration"
+            variant="secondary"
+            className="h-5 shrink-0 border border-dynamic-amber/30 bg-dynamic-amber/10 px-2 text-[10px] text-dynamic-amber"
+            title={taskBoardT('ws-task-boards.dialog.estimated_duration')}
+            ref={(el) => {
+              if (el) badgeRefs.current.set('duration', el as any);
+            }}
+          >
+            <Clock className="h-2.5 w-2.5" />
+            {durationLabel}
+          </Badge>
+        ),
+      });
+    }
+
     // Labels badge
     if (task.labels && task.labels.length > 0) {
       badges.push({
@@ -1324,6 +1347,7 @@ function TaskCardInner({
     task.priority,
     task.projects,
     task.estimation_points,
+    task.total_duration,
     task.labels,
     boardConfig?.estimation_type,
     descriptionMeta.totalCheckboxes,
@@ -1336,6 +1360,7 @@ function TaskCardInner({
     blockingCount,
     relatedTaskCount,
     t,
+    taskBoardT,
     parentBadgeIdentifier,
   ]);
 
@@ -1876,6 +1901,47 @@ function TaskCardInner({
                       removeDueDate: t('remove_due_date'),
                     }}
                   />
+
+                  {/* Scheduling Menu */}
+                  {taskList?.status !== 'documents' && (
+                    <TaskSchedulingMenu
+                      task={task}
+                      boardId={boardId}
+                      isLoading={isLoading}
+                      onUpdate={onUpdate}
+                      onClose={() => setMenuOpen(false)}
+                      translations={{
+                        schedule: taskBoardT('ws-task-boards.dialog.schedule'),
+                        estimatedDuration: taskBoardT(
+                          'ws-task-boards.dialog.estimated_duration'
+                        ),
+                        h: taskBoardT('ws-task-boards.dialog.h'),
+                        m: taskBoardT('ws-task-boards.dialog.m'),
+                        splittable: taskBoardT(
+                          'ws-task-boards.dialog.splittable'
+                        ),
+                        minSplit: taskBoardT('ws-task-boards.dialog.min_split'),
+                        maxSplit: taskBoardT('ws-task-boards.dialog.max_split'),
+                        hourType: taskBoardT('ws-task-boards.dialog.hour_type'),
+                        workHours: taskBoardT(
+                          'ws-task-boards.dialog.work_hours'
+                        ),
+                        meetingHours: taskBoardT(
+                          'ws-task-boards.dialog.meeting_hours'
+                        ),
+                        personalHours: taskBoardT(
+                          'ws-task-boards.dialog.personal_hours'
+                        ),
+                        autoSchedule: taskBoardT(
+                          'ws-task-boards.dialog.auto_schedule'
+                        ),
+                        save: t('save'),
+                        clear: t('clear'),
+                        saved: t('saved'),
+                        error: t('error'),
+                      }}
+                    />
+                  )}
 
                   {/* Estimation Menu */}
                   {boardConfig?.estimation_type && (

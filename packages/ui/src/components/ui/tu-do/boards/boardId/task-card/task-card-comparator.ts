@@ -42,6 +42,12 @@ export function areTaskCardPropsEqual(
     'start_date',
     'completed_at',
     'estimation_points',
+    'total_duration',
+    'is_splittable',
+    'min_split_duration_minutes',
+    'max_split_duration_minutes',
+    'calendar_hours',
+    'auto_schedule',
     'relationship_summary',
     'list_id',
   ];

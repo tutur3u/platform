@@ -9,3 +9,4 @@ export { TaskPickerPopover } from './task-picker-popover';
 export { TaskPriorityMenu } from './task-priority-menu';
 export { TaskProjectsMenu } from './task-projects-menu';
 export { TaskRelatedMenu } from './task-related-menu';
+export { TaskSchedulingMenu } from './task-scheduling-menu';

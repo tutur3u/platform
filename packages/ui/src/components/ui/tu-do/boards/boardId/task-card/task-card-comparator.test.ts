@@ -58,4 +58,13 @@ describe('areTaskCardPropsEqual', () => {
       )
     ).toBe(false);
   });
+
+  it('rerenders when personal scheduling duration changes', () => {
+    expect(
+      areTaskCardPropsEqual(
+        taskCardProps({ task: { ...task, total_duration: null } }),
+        taskCardProps({ task: { ...task, total_duration: 1.5 } })
+      )
+    ).toBe(false);
+  });
 });
