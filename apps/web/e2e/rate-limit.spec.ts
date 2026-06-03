@@ -13,7 +13,9 @@ import { resetDbRateLimits } from './helpers/rate-limits';
  *
  * Two independent rate-limit layers exist:
  *   1. Proxy (middleware, `proxy.ts`) — uses `@upstash/ratelimit` + Redis.
- *      Disabled (fail-open) when UPSTASH_REDIS_REST_URL is not set (CI).
+ *      Disabled (fail-open) only when UPSTASH_REDIS_REST_URL is not set.
+ *      Dockerized CI wires a local Redis bridge, so browser session traffic
+ *      must still stay below the proxy's anonymous pre-auth read budget.
  *   2. Session auth (`withSessionAuth` in `api-auth.ts`) — uses Redis with
  *      in-memory Map fallback. Always active.
  *
@@ -42,6 +44,7 @@ const CONFIG_URL = '/api/v1/users/me/configs/RATE_LIMIT_E2E_TEST';
 /** Custom-limited endpoint: 10 req/min for PATCH (session auth layer). */
 const FULL_NAME_URL = '/api/v1/users/me/full-name';
 const FULL_NAME_RATE_LIMIT = 10;
+const REPEATED_GET_REQUESTS = 50;
 
 function clientHeaders(addr: string) {
   return {
@@ -80,6 +83,19 @@ function rateLimitTestEmail(testInfo: TestInfo) {
   const slug = slugifyEmailPart(title);
 
   return `e2e-rate-limit-${testInfo.workerIndex}-${testInfo.retry}-${slug}@tuturuuu.com`;
+}
+
+function summarizeStatuses(statuses: number[]): string {
+  const counts = new Map<number, number>();
+
+  for (const status of statuses) {
+    counts.set(status, (counts.get(status) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .sort(([left], [right]) => left - right)
+    .map(([status, count]) => `${status}: ${count}`)
+    .join(', ');
 }
 
 /**
@@ -187,11 +203,15 @@ test.describe('Rate limiting (session auth)', () => {
     context,
   }, testInfo) => {
     const addr = ip(1, testInfo.retry);
-    const total = 80;
+    const total = REPEATED_GET_REQUESTS;
 
     const responses = await fireGets(context.request, total, addr);
+    const statuses = responses.map((response) => response.status());
 
-    expect(responses.every((r) => r.status() === 200)).toBe(true);
+    expect(
+      statuses.every((status) => status === 200),
+      `Expected all ${total} repeated GETs to return 200; observed statuses: ${summarizeStatuses(statuses)}`
+    ).toBe(true);
   });
 
   test('Mutation rate limit: 429 after the route budget is exhausted', async ({
