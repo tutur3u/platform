@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeAvatarImageSrc } from '../avatar-url';
 
-const BROKEN_SUPABASE_AVATAR_URL =
+const SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL =
   'https://yjbjpmwbfimjcdsjxfst.supabase.co/storage/v1/object/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e';
 
 describe('normalizeAvatarImageSrc', () => {
@@ -19,8 +19,10 @@ describe('normalizeAvatarImageSrc', () => {
     ).toBeUndefined();
   });
 
-  it('drops Supabase public avatar URLs that point to a bare UUID object', () => {
-    expect(normalizeAvatarImageSrc(BROKEN_SUPABASE_AVATAR_URL)).toBeUndefined();
+  it('keeps Supabase public avatar URLs even when the object key is a UUID', () => {
+    expect(normalizeAvatarImageSrc(SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL)).toBe(
+      SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL
+    );
   });
 
   it('keeps supported image source schemes and paths', () => {
@@ -40,5 +42,12 @@ describe('normalizeAvatarImageSrc', () => {
     expect(
       normalizeAvatarImageSrc('avatars/user-1/avatar-1700000000000.png')
     ).toBe('avatars/user-1/avatar-1700000000000.png');
+    expect(
+      normalizeAvatarImageSrc(
+        'https://hvgmshmjolwfcbsxmyku.supabase.co/storage/v1/object/public/avatars/00000000-0000-4000-8000-000000000001/1770694181366.jpg'
+      )
+    ).toBe(
+      'https://hvgmshmjolwfcbsxmyku.supabase.co/storage/v1/object/public/avatars/00000000-0000-4000-8000-000000000001/1770694181366.jpg'
+    );
   });
 });

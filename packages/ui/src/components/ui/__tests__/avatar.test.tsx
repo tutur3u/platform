@@ -19,22 +19,25 @@ vi.mock('@radix-ui/react-avatar', () => ({
   ),
 }));
 
-const BROKEN_SUPABASE_AVATAR_URL =
+const SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL =
   'https://yjbjpmwbfimjcdsjxfst.supabase.co/storage/v1/object/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e';
 
 describe('AvatarImage', () => {
-  it('omits broken Supabase bare-UUID avatar URLs so fallback can render', () => {
+  it('passes full Supabase avatar URLs through so the image can load', () => {
     render(
       <Avatar>
-        <AvatarImage alt="Broken avatar" src={BROKEN_SUPABASE_AVATAR_URL} />
+        <AvatarImage
+          alt="Supabase avatar"
+          src={SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL}
+        />
         <AvatarFallback>AV</AvatarFallback>
       </Avatar>
     );
 
     expect(screen.getByText('AV')).toBeInTheDocument();
     expect(
-      screen.getByRole('img', { name: 'Broken avatar' })
-    ).not.toHaveAttribute('data-src');
+      screen.getByRole('img', { name: 'Supabase avatar' })
+    ).toHaveAttribute('data-src', SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL);
   });
 
   it('keeps valid avatar URLs', () => {
