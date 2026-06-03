@@ -166,6 +166,12 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
             >
               {t('common.branding')}
             </Link>
+            <Link
+              href={`${TUTURUUU_URL}/ui`}
+              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common.ui')}
+            </Link>
           </div>
 
           <div className="grid gap-1 md:items-start">
