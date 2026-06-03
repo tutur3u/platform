@@ -220,7 +220,12 @@ tarball, verifies its package name and version, and runs `npm publish` without
 the matching npm trusted publisher must use this repository, the workflow
 filename, and that environment. Manual dispatch is only valid with the branch
 selector set to `production`; non-production refs are rejected before the package
-or publish jobs can start.
+or publish jobs can start. Every workflow-published package manifest must also
+declare `repository.type: "git"`,
+`repository.url: "https://github.com/tutur3u/platform"`, and
+`repository.directory` matching the package path. npm validates those fields
+against GitHub Actions provenance and rejects publishes with `E422` when the
+packed manifest has an empty or mismatched repository URL.
 
 Keep internal Tuturuuu dependencies as `workspace:*` in source package
 manifests so local builds always use the checked-out workspace. Package release

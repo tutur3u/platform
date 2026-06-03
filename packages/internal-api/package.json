@@ -2,6 +2,11 @@
   "name": "@tuturuuu/internal-api",
   "version": "0.1.0",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tutur3u/platform",
+    "directory": "packages/internal-api"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": ["dist", "README.md"],

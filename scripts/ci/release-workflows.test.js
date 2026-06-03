@@ -8,6 +8,8 @@ const {
   vercelWorkflows,
 } = require('./workflow-config-test-helpers.js');
 
+const PACKAGE_PROVENANCE_REPOSITORY_URL = 'https://github.com/tutur3u/platform';
+
 test('Vercel workflows grant marker permissions and record successful runs', () => {
   for (const workflowName of vercelWorkflows) {
     const workflow = fs.readFileSync(
@@ -758,6 +760,29 @@ const packageReleaseWorkflows = [
     workflowName: 'release-sdk-package.yaml',
   },
 ];
+
+test('package publish manifests expose provenance-compatible repository metadata', () => {
+  for (const {
+    packageName,
+    packagePath,
+    workflowName,
+  } of packageReleaseWorkflows) {
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, packagePath, 'package.json'), 'utf8')
+    );
+
+    assert.equal(packageJson.name, packageName);
+    assert.deepEqual(
+      packageJson.repository,
+      {
+        directory: packagePath,
+        type: 'git',
+        url: PACKAGE_PROVENANCE_REPOSITORY_URL,
+      },
+      `${packagePath}/package.json repository metadata must match npm provenance for ${workflowName}`
+    );
+  }
+});
 
 test('package publish workflows release from production version bumps', () => {
   for (const {

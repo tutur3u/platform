@@ -209,7 +209,10 @@ workflow cannot mint a matching npm publish identity. Do not add `bun install`,
 `npm install -g`, package builds, package lifecycle scripts, or repository
 secrets to the SDK release workflow. Because the `tuturuuu` package is public
 and `tutur3u/platform` is a public repository, npm also generates and attaches
-build provenance attestations automatically.
+build provenance attestations automatically. The package manifest inside the
+tarball must keep repository metadata aligned with the provenance repository:
+`repository.url` is `https://github.com/tutur3u/platform`, and
+`repository.directory` points at the package directory.
 
 `.github/workflows/sdk-version-bump.yaml` is retired and no longer generates
 patch-version PRs. Do not restore checksum or package-only bump automation for

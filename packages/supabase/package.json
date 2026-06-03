@@ -16,7 +16,7 @@
   "author": "Tuturuuu",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tutur3u/platform.git",
+    "url": "https://github.com/tutur3u/platform",
     "directory": "packages/supabase"
   },
   "bugs": {

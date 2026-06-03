@@ -78,6 +78,11 @@ formatting behavior, or repo-wide verification.
   verified tarball with `npm publish --ignore-scripts`, and do not reintroduce
   `NPM_TOKEN`, checkout, Bun setup, dependency install, or package builds in the
   publish job.
+- Workflow-published package manifests must include provenance-compatible
+  `repository` metadata: `type: "git"`,
+  `url: "https://github.com/tutur3u/platform"`, and `directory` equal to the
+  package path. npm trusted publishing rejects an empty or mismatched repository
+  URL with `E422` while verifying the sigstore provenance bundle.
 - If local type-check passes but CI fails from stale incremental state, rerun
   with forced cache invalidation before changing unrelated code.
 - Do not patch unrelated packages just because `bun check` fails outside the

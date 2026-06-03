@@ -205,7 +205,9 @@ published artifacts contain installable npm version ranges. Before that rewrite,
 workspace dependency versions on npm, and publish jobs wait for their own
 version to become visible after `npm publish`. Dependency waits inspect the
 related release workflow for the same production SHA and fail fast when that
-workflow already failed. For example,
+workflow already failed. Workflow-published package manifests must carry
+provenance-compatible `repository` metadata for `tutur3u/platform`; otherwise
+npm rejects trusted publishes with `E422`. For example,
 `release-types-package.yaml` triggers from production changes to
 `packages/types/package.json`:
 
