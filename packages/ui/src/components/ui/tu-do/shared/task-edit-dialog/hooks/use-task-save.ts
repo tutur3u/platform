@@ -2,7 +2,7 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
-import { updateTaskSchedulingSettings } from '@tuturuuu/internal-api';
+import { updateCurrentUserTaskSchedulingSettings } from '@tuturuuu/internal-api';
 import type { WorkspaceTaskUpdatePayload } from '@tuturuuu/internal-api/tasks';
 import { createWorkspaceTaskRelationship } from '@tuturuuu/internal-api/tasks';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -975,7 +975,7 @@ async function handleCreateTask({
 
     if (hasAnySchedulingValue) {
       try {
-        await updateTaskSchedulingSettings(wsId, newTask.id, {
+        await updateCurrentUserTaskSchedulingSettings(newTask.id, {
           total_duration: totalDuration,
           is_splittable: isSplittable,
           min_split_duration_minutes: minSplitDurationMinutes,

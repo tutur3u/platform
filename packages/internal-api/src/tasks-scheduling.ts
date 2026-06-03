@@ -13,6 +13,16 @@ export interface TaskSchedulingUpdatePayload {
   priority?: TaskPriority | null;
 }
 
+export type CurrentUserTaskSchedulingUpdatePayload = Omit<
+  TaskSchedulingUpdatePayload,
+  'priority'
+>;
+
+export interface CurrentUserTaskSchedulingUpdateResponse {
+  ok: true;
+  task_ws_id: string;
+}
+
 export async function updateTaskSchedulingSettings(
   wsId: string,
   taskId: string,
@@ -24,6 +34,25 @@ export async function updateTaskSchedulingSettings(
     `/api/${encodePathSegment(wsId)}/task/${encodePathSegment(taskId)}/edit`,
     {
       method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export async function updateCurrentUserTaskSchedulingSettings(
+  taskId: string,
+  payload: CurrentUserTaskSchedulingUpdatePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserTaskSchedulingUpdateResponse>(
+    `/api/v1/users/me/tasks/${encodePathSegment(taskId)}/schedule`,
+    {
+      method: 'PATCH',
+      cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
       },

@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import {
   type TaskSchedulingUpdatePayload,
-  updateTaskSchedulingSettings,
+  updateCurrentUserTaskSchedulingSettings,
 } from '@tuturuuu/internal-api';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
@@ -482,7 +482,10 @@ export function useTaskMutations({
           auto_schedule: settings.autoSchedule,
         };
 
-        await updateTaskSchedulingSettings(wsId, taskId, schedulingPayload);
+        await updateCurrentUserTaskSchedulingSettings(
+          taskId,
+          schedulingPayload
+        );
 
         // Keep any related query data consistent
         queryClient.invalidateQueries({
@@ -519,7 +522,7 @@ export function useTaskMutations({
         setSchedulingSaving(false);
       }
     },
-    [isCreateMode, taskId, queryClient, toast, triggerRefresh, wsId]
+    [isCreateMode, taskId, queryClient, toast, triggerRefresh]
   );
 
   return {
