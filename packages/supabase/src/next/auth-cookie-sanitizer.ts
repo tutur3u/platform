@@ -1,3 +1,5 @@
+import { getSupabaseAuthStorageKey } from './common';
+
 type CookieLike = {
   name: string;
   value: string;
@@ -11,10 +13,6 @@ const EXPIRED_COOKIE_OPTIONS = {
   maxAge: 0,
   path: '/',
 };
-
-function getSupabaseAuthStorageKey(url: string): string {
-  return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
-}
 
 function getChunkIndex(cookieName: string, storageKey: string): number | null {
   if (cookieName === storageKey) {

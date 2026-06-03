@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { checkEnvVariables } from '../common';
+import {
+  checkEnvVariables,
+  getSupabaseAuthStorageKey,
+  getSupabaseCookieOptions,
+} from '../common';
 
 describe('common', () => {
   const originalEnv = process.env;
@@ -110,6 +114,118 @@ describe('common', () => {
       expect(() => checkEnvVariables({ useSecretKey: true })).toThrow(
         'Missing Supabase key'
       );
+    });
+  });
+
+  describe('getSupabaseAuthStorageKey', () => {
+    it('derives the Supabase SSR storage key from the project hostname', () => {
+      expect(
+        getSupabaseAuthStorageKey('https://nzamlzqfdwaaxdefwraj.supabase.co')
+      ).toBe('sb-nzamlzqfdwaaxdefwraj-auth-token');
+    });
+  });
+
+  describe('getSupabaseCookieOptions', () => {
+    const supabaseUrl = 'https://nzamlzqfdwaaxdefwraj.supabase.co';
+
+    it('shares cookies across production Tuturuuu subdomains', () => {
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://tasks.tuturuuu.com')
+      ).toEqual({
+        domain: '.tuturuuu.com',
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      });
+    });
+
+    it('shares cookies across local Tuturuuu subdomains without secure cookies', () => {
+      expect(
+        getSupabaseCookieOptions(
+          supabaseUrl,
+          'https://tasks.tuturuuu.localhost'
+        )
+      ).toEqual({
+        domain: '.tuturuuu.localhost',
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+        secure: false,
+      });
+    });
+
+    it('keeps plain localhost and preview hosts scoped to the current host', () => {
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'http://localhost:7803')
+      ).toEqual({
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+      });
+
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://preview.vercel.app')
+      ).toEqual({
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+      });
+    });
+
+    it('uses the public Portless URL for injected backend listener requests', () => {
+      process.env.PORT = '4703';
+      process.env.PORTLESS_URL = 'https://tuturuuu.localhost';
+
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'http://127.0.0.1:4703')
+      ).toEqual({
+        domain: '.tuturuuu.localhost',
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+        secure: false,
+      });
+    });
+
+    it('uses the public Portless URL for forwarded https backend listener requests', () => {
+      process.env.PORT = '4703';
+      process.env.PORTLESS_URL = 'https://tuturuuu.localhost';
+
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://127.0.0.1:4703')
+      ).toEqual({
+        domain: '.tuturuuu.localhost',
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+        secure: false,
+      });
+    });
+
+    it('keeps unmatched loopback listener requests scoped to the current host', () => {
+      process.env.PORT = '4704';
+      process.env.PORTLESS_URL = 'https://tuturuuu.localhost';
+
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'http://127.0.0.1:4703')
+      ).toEqual({
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+      });
+    });
+
+    it('falls back to configured app URL when no request URL is provided', () => {
+      process.env.NEXT_PUBLIC_APP_URL = 'https://calendar.tuturuuu.com';
+
+      expect(getSupabaseCookieOptions(supabaseUrl)).toEqual({
+        domain: '.tuturuuu.com',
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      });
     });
   });
 });

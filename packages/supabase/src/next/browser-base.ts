@@ -1,7 +1,7 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types';
-import { checkEnvVariables } from './common';
+import { checkEnvVariables, getSupabaseCookieOptions } from './common';
 
 const { url, key } = checkEnvVariables({ useSecretKey: false });
 const BROWSER_CLIENT_CACHE_KEY = '__tuturuuu_supabase_browser_client__';
@@ -21,11 +21,10 @@ function getOrCreateBrowserClient(): SupabaseClient<Database> {
   const cache = globalThis as BrowserClientCache;
 
   if (!cache[BROWSER_CLIENT_CACHE_KEY]) {
-    cache[BROWSER_CLIENT_CACHE_KEY] = createBrowserClient<Database>(
-      url,
-      key,
-      BROWSER_AUTH_OPTIONS
-    );
+    cache[BROWSER_CLIENT_CACHE_KEY] = createBrowserClient<Database>(url, key, {
+      ...BROWSER_AUTH_OPTIONS,
+      cookieOptions: getSupabaseCookieOptions(url),
+    });
   }
 
   return cache[BROWSER_CLIENT_CACHE_KEY];
@@ -42,7 +41,10 @@ export function createBaseDynamicBrowserClient(): SupabaseClient<any> {
 export async function createBaseClientWithSession<T = Database>(
   session: Session
 ): Promise<SupabaseClient<T>> {
-  const client = createBrowserClient<T>(url, key, BROWSER_AUTH_OPTIONS);
+  const client = createBrowserClient<T>(url, key, {
+    ...BROWSER_AUTH_OPTIONS,
+    cookieOptions: getSupabaseCookieOptions(url),
+  });
 
   const { data, error } = await client.auth.setSession({
     access_token: session.access_token,

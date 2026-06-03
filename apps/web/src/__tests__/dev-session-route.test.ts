@@ -334,6 +334,105 @@ describe('dev-session route', () => {
     expect(mocks.createClient).toHaveBeenCalledWith(request);
   });
 
+  it('allows production-mode Portless E2E requests on the injected backend port', async () => {
+    mocks.devMode = false;
+    stubLocalE2EEnv({
+      BASE_URL: 'https://tuturuuu.localhost',
+      PORT: '4703',
+      PORTLESS_URL: 'https://tuturuuu.localhost',
+      SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
+    });
+    mockSuccessfulSession();
+
+    const request = new NextRequest(
+      'http://127.0.0.1:4703/api/auth/dev-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          host: '127.0.0.1:4703',
+          origin: 'https://tuturuuu.localhost',
+        },
+        body: JSON.stringify({
+          email: 'local@tuturuuu.com',
+          locale: 'en',
+        }),
+      }
+    );
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
+    expect(mocks.createClient).toHaveBeenCalledWith(request);
+  });
+
+  it('allows production-mode Portless E2E requests with public runtime fallbacks', async () => {
+    mocks.devMode = false;
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS', 'true');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'http://127.0.0.1:8001');
+    vi.stubEnv('PORT', '4703');
+    vi.stubEnv('PORTLESS_URL', 'https://tuturuuu.localhost');
+    mockSuccessfulSession();
+
+    const request = new NextRequest(
+      'http://127.0.0.1:4703/api/auth/dev-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          host: '127.0.0.1:4703',
+          origin: 'https://tuturuuu.localhost',
+        },
+        body: JSON.stringify({
+          email: 'local@tuturuuu.com',
+          locale: 'en',
+        }),
+      }
+    );
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
+    expect(mocks.createClient).toHaveBeenCalledWith(request);
+  });
+
+  it('allows production-mode Portless E2E requests with forwarded https loopback origins', async () => {
+    mocks.devMode = false;
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS', 'true');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'http://127.0.0.1:8001');
+    vi.stubEnv('PORT', '4703');
+    vi.stubEnv('PORTLESS_URL', 'https://tuturuuu.localhost');
+    mockSuccessfulSession();
+
+    const request = new NextRequest(
+      'https://127.0.0.1:4703/api/auth/dev-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          host: '127.0.0.1:4703',
+          origin: 'https://tuturuuu.localhost',
+          'x-forwarded-proto': 'https',
+        },
+        body: JSON.stringify({
+          email: 'local@tuturuuu.com',
+          locale: 'en',
+        }),
+      }
+    );
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
+    expect(mocks.createClient).toHaveBeenCalledWith(request);
+  });
+
   it('mirrors Docker E2E sessions to the public Supabase browser cookie key', async () => {
     mocks.devMode = false;
     stubLocalE2EEnv();
@@ -374,6 +473,56 @@ describe('dev-session route', () => {
     const setCookie = response.headers.get('set-cookie');
     expect(setCookie).toContain('sb-127-auth-token=base64-');
     expect(setCookie).toContain('Max-Age=34560000');
+    expect(setCookie).toContain('Path=/');
+    expect(setCookie).toContain('SameSite=lax');
+    expect(setCookie).not.toContain('HttpOnly');
+    expect(setCookie).not.toContain('Secure');
+  });
+
+  it('mirrors Portless E2E sessions to the shared Tuturuuu localhost cookie domain', async () => {
+    mocks.devMode = false;
+    stubLocalE2EEnv({
+      BASE_URL: 'https://tuturuuu.localhost',
+      PORT: '4703',
+      PORTLESS_URL: 'https://tuturuuu.localhost',
+      SUPABASE_SERVER_URL: 'http://localhost:8001',
+    });
+    const session = {
+      access_token: 'access-token',
+      expires_at: 1_763_456_789,
+      refresh_token: 'refresh-token',
+    };
+    mockSuccessfulSession(session);
+
+    const request = new NextRequest(
+      'http://127.0.0.1:4703/api/auth/dev-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          host: '127.0.0.1:4703',
+          origin: 'https://tuturuuu.localhost',
+        },
+        body: JSON.stringify({
+          email: 'local@tuturuuu.com',
+          locale: 'en',
+        }),
+      }
+    );
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    const publicCookie = response.cookies.get('sb-127-auth-token');
+    expect(publicCookie?.value).toBeDefined();
+    expect(decodeSupabaseSessionCookieValue(publicCookie!.value)).toEqual(
+      session
+    );
+
+    const setCookie = response.headers.get('set-cookie');
+    expect(setCookie).toContain('sb-127-auth-token=base64-');
+    expect(setCookie).toContain('Domain=.tuturuuu.localhost');
     expect(setCookie).toContain('Path=/');
     expect(setCookie).toContain('SameSite=lax');
     expect(setCookie).not.toContain('HttpOnly');

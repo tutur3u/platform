@@ -162,6 +162,10 @@ describe('workspace API helpers', () => {
 });
 
 describe('withForwardedInternalApiAuth', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('strips Supabase auth cookies when forwarding Tuturuuu app-session auth', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -183,6 +187,59 @@ describe('withForwardedInternalApiAuth', () => {
     const forwardedCookie = (init.headers as Headers).get('cookie');
     expect(forwardedCookie).toBe(
       'tuturuuu_app_session=ttr_app_123; theme=dark'
+    );
+  });
+
+  it('preserves canonical shared Supabase auth cookies for production Tuturuuu internal API calls', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://resolved-kingfish-21146.supabase.co'
+    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+    const headers = new Headers({
+      cookie:
+        'tuturuuu_app_session=ttr_app_123; sb-resolved-kingfish-21146-auth-token=web-session; sb-resolved-kingfish-21146-auth-token.0=chunk; sb-stale-auth-token=stale; theme=dark',
+    });
+    const options = withForwardedInternalApiAuth(headers, {
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    await createInternalApiClient(options).json('/api/v1/hive/servers');
+
+    const [, init] = fetchMock.mock.calls[0];
+    const forwardedCookie = (init.headers as Headers).get('cookie');
+    expect(forwardedCookie).toBe(
+      'tuturuuu_app_session=ttr_app_123; sb-resolved-kingfish-21146-auth-token=web-session; sb-resolved-kingfish-21146-auth-token.0=chunk; theme=dark'
+    );
+  });
+
+  it('preserves canonical shared Supabase auth cookies for local Tuturuuu internal API calls', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'http://127.0.0.1:8001');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+    const headers = new Headers({
+      cookie:
+        'tuturuuu_app_session=ttr_app_123; sb-127-auth-token=local-session; sb-stale-auth-token=stale; theme=dark',
+    });
+    const options = withForwardedInternalApiAuth(headers, {
+      baseUrl: 'https://tuturuuu.localhost',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    await createInternalApiClient(options).json('/api/v1/hive/servers');
+
+    const [, init] = fetchMock.mock.calls[0];
+    const forwardedCookie = (init.headers as Headers).get('cookie');
+    expect(forwardedCookie).toBe(
+      'tuturuuu_app_session=ttr_app_123; sb-127-auth-token=local-session; theme=dark'
     );
   });
 

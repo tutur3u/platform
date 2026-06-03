@@ -95,6 +95,14 @@ test('portless keeps the canonical Tuturuuu app hostnames stable', () => {
   );
 });
 
+test('apps/web production start runs the native build through Portless', () => {
+  const pkg = readJson(path.join(repoRoot, 'apps/web/package.json'));
+
+  assert.equal(pkg.scripts.start, 'portless --script start:app');
+  assert.match(pkg.scripts['start:app'], /\bnext start -p \$\{PORT:-7803\}/u);
+  assert.match(pkg.scripts['start:app'], /scripts\/portless-dev-banner\.js/u);
+});
+
 test('satellite runtime defaults keep Portless origins in local redirects', () => {
   const appConstantFiles = [
     'apps/calendar/src/constants/common.ts',

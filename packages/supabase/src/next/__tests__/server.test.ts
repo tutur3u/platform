@@ -24,6 +24,13 @@ vi.mock('../common', () => ({
     url: 'https://test.supabase.co',
     key: useSecretKey ? 'test-secret-key' : 'test-publishable-key',
   }),
+  getSupabaseCookieOptions: (url: string) => ({
+    name: `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
+    path: '/',
+    sameSite: 'lax',
+  }),
+  getSupabaseAuthStorageKey: (url: string) =>
+    `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
 }));
 
 describe('Supabase Server Client', () => {

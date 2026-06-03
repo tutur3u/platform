@@ -42,6 +42,9 @@ describe('app-session JWTs', () => {
     vi.stubEnv('SUPABASE_SERVICE_KEY', '');
     vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.SUPABASE_SERVER_URL;
+    delete process.env.SUPABASE_URL;
   });
 
   it('creates and verifies an app-session token for the target app', () => {
@@ -526,6 +529,69 @@ describe('app-session JWTs', () => {
     expect(setCookie).toContain('Max-Age=0');
     expect(setCookie).not.toContain(`${APP_SESSION_COOKIE_NAME}=;`);
     expect(setCookie).not.toContain('regular_cookie=;');
+  });
+
+  it('preserves the canonical shared Supabase cookie on production Tuturuuu subdomains', () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL =
+      'https://nzamlzqfdwaaxdefwraj.supabase.co';
+    const request = new NextRequest('https://tasks.tuturuuu.com/personal', {
+      headers: {
+        cookie: [
+          'sb-nzamlzqfdwaaxdefwraj-auth-token=shared-session',
+          'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session-chunk',
+          'sb-stale-auth-token=stale',
+        ].join('; '),
+      },
+    });
+    const response = clearSupabaseAuthCookies(
+      request,
+      NextResponse.json({ ok: true })
+    );
+    const setCookie = response.headers.get('set-cookie') ?? '';
+
+    expect(setCookie).not.toContain('sb-nzamlzqfdwaaxdefwraj-auth-token=;');
+    expect(setCookie).not.toContain('sb-nzamlzqfdwaaxdefwraj-auth-token.0=;');
+    expect(setCookie).toContain('sb-stale-auth-token=;');
+  });
+
+  it('preserves the canonical shared Supabase cookie on local Tuturuuu subdomains', () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:8001';
+    const request = new NextRequest(
+      'https://tasks.tuturuuu.localhost/personal',
+      {
+        headers: {
+          cookie: [
+            'sb-127-auth-token=shared-local-session',
+            'sb-stale-auth-token=stale',
+          ].join('; '),
+        },
+      }
+    );
+    const response = clearSupabaseAuthCookies(
+      request,
+      NextResponse.json({ ok: true })
+    );
+    const setCookie = response.headers.get('set-cookie') ?? '';
+
+    expect(setCookie).not.toContain('sb-127-auth-token=;');
+    expect(setCookie).toContain('sb-stale-auth-token=;');
+  });
+
+  it('does not preserve canonical Supabase cookies on unrelated hosts', () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL =
+      'https://nzamlzqfdwaaxdefwraj.supabase.co';
+    const request = new NextRequest('https://preview.vercel.app/personal', {
+      headers: {
+        cookie: 'sb-nzamlzqfdwaaxdefwraj-auth-token=preview-session',
+      },
+    });
+    const response = clearSupabaseAuthCookies(
+      request,
+      NextResponse.json({ ok: true })
+    );
+    const setCookie = response.headers.get('set-cookie') ?? '';
+
+    expect(setCookie).toContain('sb-nzamlzqfdwaaxdefwraj-auth-token=;');
   });
 
   it('redirects browser logout requests after clearing local app cookies', () => {

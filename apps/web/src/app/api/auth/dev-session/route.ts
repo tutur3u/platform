@@ -49,7 +49,7 @@ async function completeDevSessionOnboarding(
     .single();
 }
 
-function getSupabaseAuthStorageKey(url: string | null | undefined) {
+function getSupabaseAuthStorageKeyOrNull(url: string | null | undefined) {
   if (!url) {
     return null;
   }
@@ -61,6 +61,78 @@ function getSupabaseAuthStorageKey(url: string | null | undefined) {
   }
 }
 
+function getHeaderUrl(
+  headers: NextRequest['headers'],
+  headerName: string,
+  protocol: string | null
+) {
+  const host = headers.get(headerName)?.split(',')[0]?.trim();
+
+  if (!host || /[\r\n]/u.test(host)) {
+    return null;
+  }
+
+  const normalizedProtocol =
+    protocol === 'http' || protocol === 'https' ? protocol : 'https';
+
+  return `${normalizedProtocol}://${host}`;
+}
+
+function getLocalE2ESupabaseCookieOptions(request: NextRequest) {
+  const forwardedProtocol =
+    request.headers
+      .get('x-forwarded-proto')
+      ?.split(',')[0]
+      ?.trim()
+      ?.replace(/:$/u, '') ?? null;
+  const candidateUrls = [
+    request.url,
+    getHeaderUrl(request.headers, 'x-forwarded-host', forwardedProtocol),
+    getHeaderUrl(request.headers, 'host', forwardedProtocol),
+    process.env.PORTLESS_URL,
+    process.env.BASE_URL,
+  ];
+
+  for (const requestUrl of candidateUrls) {
+    if (!requestUrl) {
+      continue;
+    }
+
+    try {
+      const hostname = new URL(requestUrl).hostname;
+
+      if (hostname === 'tuturuuu.com' || hostname.endsWith('.tuturuuu.com')) {
+        return {
+          domain: '.tuturuuu.com',
+          path: '/',
+          sameSite: 'lax' as const,
+          secure: true,
+        };
+      }
+
+      if (
+        hostname === 'tuturuuu.localhost' ||
+        hostname.endsWith('.tuturuuu.localhost')
+      ) {
+        return {
+          domain: '.tuturuuu.localhost',
+          path: '/',
+          sameSite: 'lax' as const,
+          secure: false,
+        };
+      }
+    } catch {
+      // Try the next candidate below.
+    }
+  }
+
+  return {
+    path: '/',
+    sameSite: 'lax' as const,
+    secure: false,
+  };
+}
+
 function encodeSupabaseSessionCookieValue(session: unknown) {
   return `${SUPABASE_BASE64_PREFIX}${Buffer.from(
     JSON.stringify(session),
@@ -69,6 +141,7 @@ function encodeSupabaseSessionCookieValue(session: unknown) {
 }
 
 function mirrorLocalE2ESupabaseBrowserCookie(
+  request: NextRequest,
   response: NextResponse,
   session: unknown
 ) {
@@ -79,8 +152,8 @@ function mirrorLocalE2ESupabaseBrowserCookie(
   const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serverSupabaseUrl =
     process.env.SUPABASE_SERVER_URL ?? publicSupabaseUrl;
-  const publicStorageKey = getSupabaseAuthStorageKey(publicSupabaseUrl);
-  const serverStorageKey = getSupabaseAuthStorageKey(serverSupabaseUrl);
+  const publicStorageKey = getSupabaseAuthStorageKeyOrNull(publicSupabaseUrl);
+  const serverStorageKey = getSupabaseAuthStorageKeyOrNull(serverSupabaseUrl);
 
   if (
     !publicStorageKey ||
@@ -90,15 +163,18 @@ function mirrorLocalE2ESupabaseBrowserCookie(
     return;
   }
 
+  const cookieOptions = getLocalE2ESupabaseCookieOptions(request);
+
   response.cookies.set(
     publicStorageKey,
     encodeSupabaseSessionCookieValue(session),
     {
+      domain: cookieOptions.domain,
       httpOnly: false,
       maxAge: LOCAL_E2E_SESSION_COOKIE_MAX_AGE_SECONDS,
-      path: '/',
-      sameSite: 'lax',
-      secure: false,
+      path: cookieOptions.path,
+      sameSite: cookieOptions.sameSite,
+      secure: cookieOptions.secure,
     }
   );
 }
@@ -238,7 +314,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = NextResponse.json({ success: true });
-    mirrorLocalE2ESupabaseBrowserCookie(response, verifyData.session);
+    mirrorLocalE2ESupabaseBrowserCookie(request, response, verifyData.session);
 
     return response;
   } catch (error) {

@@ -12,6 +12,11 @@ vi.mock('../common', () => ({
     key: 'test-key',
     url: 'https://test.supabase.co',
   }),
+  getSupabaseCookieOptions: (url: string) => ({
+    name: `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
+    path: '/',
+    sameSite: 'lax',
+  }),
 }));
 
 describe('auth browser client', () => {
@@ -34,6 +39,11 @@ describe('auth browser client', () => {
           experimental: {
             passkey: true,
           },
+        },
+        cookieOptions: {
+          name: 'sb-test-auth-token',
+          path: '/',
+          sameSite: 'lax',
         },
       }
     );

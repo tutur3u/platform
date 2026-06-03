@@ -40,6 +40,17 @@ describe('isLocalE2EAuthBypassEnabled', () => {
     expect(isLocalE2EAuthBypassEnabled(localE2EEnv)).toBe(true);
   });
 
+  it('allows Portless production starts with public E2E env fallbacks', () => {
+    expect(
+      isLocalE2EAuthBypassEnabled({
+        NODE_ENV: 'test',
+        NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
+        NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS: 'true',
+        PORTLESS_URL: 'https://tuturuuu.localhost',
+      })
+    ).toBe(true);
+  });
+
   it('rejects the bypass when either origin is not local', () => {
     expect(
       isLocalE2EAuthBypassEnabled({
@@ -109,6 +120,79 @@ describe('isLocalE2EAuthRequestAllowed', () => {
         localE2EEnv
       )
     ).toBe(true);
+  });
+
+  it('allows Portless production backends when the public URL is local', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://127.0.0.1:4703/api/auth/dev-session', {
+          host: '127.0.0.1:4703',
+          origin: 'https://tuturuuu.localhost',
+        }),
+        {
+          ...localE2EEnv,
+          BASE_URL: 'https://tuturuuu.localhost',
+          PORT: '4703',
+          PORTLESS_URL: 'https://tuturuuu.localhost',
+          SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
+        }
+      )
+    ).toBe(true);
+  });
+
+  it('allows Portless production backends with public E2E env fallbacks', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://127.0.0.1:4703/api/auth/dev-session', {
+          host: '127.0.0.1:4703',
+          origin: 'https://tuturuuu.localhost',
+        }),
+        {
+          NODE_ENV: 'test',
+          NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
+          NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS: 'true',
+          PORT: '4703',
+          PORTLESS_URL: 'https://tuturuuu.localhost',
+        }
+      )
+    ).toBe(true);
+  });
+
+  it('allows Portless production backends with forwarded https loopback origins', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('https://127.0.0.1:4703/api/auth/dev-session', {
+          host: '127.0.0.1:4703',
+          origin: 'https://tuturuuu.localhost',
+          'x-forwarded-proto': 'https',
+        }),
+        {
+          NODE_ENV: 'test',
+          NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
+          NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS: 'true',
+          PORT: '4703',
+          PORTLESS_URL: 'https://tuturuuu.localhost',
+        }
+      )
+    ).toBe(true);
+  });
+
+  it('rejects Portless backend origins when the injected port does not match', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://127.0.0.1:4704/api/auth/dev-session', {
+          host: '127.0.0.1:4704',
+          origin: 'https://tuturuuu.localhost',
+        }),
+        {
+          ...localE2EEnv,
+          BASE_URL: 'https://tuturuuu.localhost',
+          PORT: '4703',
+          PORTLESS_URL: 'https://tuturuuu.localhost',
+          SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
+        }
+      )
+    ).toBe(false);
   });
 
   it('rejects internal Docker origins without a public local forwarded origin', () => {

@@ -178,7 +178,76 @@ function hasAppSessionCookie(cookieHeader: string) {
     .some((part) => getCookieName(part) === APP_SESSION_COOKIE_NAME);
 }
 
-function sanitizeForwardedCookieHeader(cookieHeader: string | null) {
+function getSupabaseAuthStorageKey(url: string) {
+  return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+}
+
+function getConfiguredSupabaseAuthStorageKeys() {
+  return [
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVER_URL,
+    process.env.SUPABASE_URL,
+  ]
+    .flatMap((url) => {
+      if (!url) {
+        return [];
+      }
+
+      try {
+        return [getSupabaseAuthStorageKey(url)];
+      } catch {
+        return [];
+      }
+    })
+    .filter((value, index, values) => values.indexOf(value) === index);
+}
+
+function isSupabaseAuthCookieChunkForStorageKey(
+  cookieName: string,
+  storageKey: string
+) {
+  if (cookieName === storageKey) {
+    return true;
+  }
+
+  if (!cookieName.startsWith(`${storageKey}.`)) {
+    return false;
+  }
+
+  return /^\d+$/u.test(cookieName.slice(storageKey.length + 1));
+}
+
+function isSharedSupabaseCookieHostname(hostname: string) {
+  return (
+    hostname === 'tuturuuu.com' ||
+    hostname.endsWith('.tuturuuu.com') ||
+    hostname === 'tuturuuu.localhost' ||
+    hostname.endsWith('.tuturuuu.localhost')
+  );
+}
+
+function shouldPreserveSupabaseAuthCookie(
+  cookieName: string,
+  targetOrigin: string | null
+) {
+  if (!targetOrigin) {
+    return false;
+  }
+
+  const targetUrl = tryParseAbsoluteUrl(targetOrigin);
+  if (!targetUrl || !isSharedSupabaseCookieHostname(targetUrl.hostname)) {
+    return false;
+  }
+
+  return getConfiguredSupabaseAuthStorageKeys().some((storageKey) =>
+    isSupabaseAuthCookieChunkForStorageKey(cookieName, storageKey)
+  );
+}
+
+function sanitizeForwardedCookieHeader(
+  cookieHeader: string | null,
+  targetOrigin: string | null
+) {
   if (!cookieHeader || !hasAppSessionCookie(cookieHeader)) {
     return cookieHeader;
   }
@@ -187,7 +256,13 @@ function sanitizeForwardedCookieHeader(cookieHeader: string | null) {
     .split(';')
     .map((part) => part.trim())
     .filter(Boolean)
-    .filter((part) => !SUPABASE_AUTH_COOKIE_PATTERN.test(getCookieName(part)));
+    .filter((part) => {
+      const cookieName = getCookieName(part);
+      return (
+        !SUPABASE_AUTH_COOKIE_PATTERN.test(cookieName) ||
+        shouldPreserveSupabaseAuthCookie(cookieName, targetOrigin)
+      );
+    });
 
   return cookies.length > 0 ? cookies.join('; ') : null;
 }
@@ -262,14 +337,7 @@ export function withForwardedInternalApiAuth(
   requestHeaders: HeaderAccessor,
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  const cookieHeader = sanitizeForwardedCookieHeader(
-    requestHeaders.get('cookie')
-  );
   const authorizationHeader = requestHeaders.get('authorization');
-
-  if (!cookieHeader && !authorizationHeader) {
-    return options;
-  }
 
   const allowedOrigins = new Set<string>();
 
@@ -285,6 +353,21 @@ export function withForwardedInternalApiAuth(
   );
   if (configuredBaseUrl) {
     allowedOrigins.add(configuredBaseUrl.origin);
+  }
+
+  const targetOrigin =
+    (options.baseUrl
+      ? tryParseAbsoluteUrl(normalizeBaseUrl(options.baseUrl))?.origin
+      : null) ??
+    configuredBaseUrl?.origin ??
+    null;
+  const cookieHeader = sanitizeForwardedCookieHeader(
+    requestHeaders.get('cookie'),
+    targetOrigin
+  );
+
+  if (!cookieHeader && !authorizationHeader) {
+    return options;
   }
 
   const runtimeLocation =

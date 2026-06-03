@@ -5,7 +5,11 @@ import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { cookies } from 'next/headers';
 import { sanitizeSupabaseAuthCookies } from './auth-cookie-sanitizer';
-import { checkEnvVariables, type SupabaseCookie } from './common';
+import {
+  checkEnvVariables,
+  getSupabaseCookieOptions,
+  type SupabaseCookie,
+} from './common';
 import {
   wrapDirectClientForProxyOnlyTables,
   wrapRequestClientForProxyOnlyTables,
@@ -50,11 +54,13 @@ function createCookieHandler(
 }
 
 async function createGenericClient<T = Database>(
-  isAdmin: boolean
+  isAdmin: boolean,
+  requestUrl?: string | URL | null
 ): Promise<SupabaseClient<T>> {
   const { url, key } = checkEnvVariables({ useSecretKey: isAdmin });
   const cookieStore = await cookies();
   return createServerClient<T>(url, key, {
+    cookieOptions: getSupabaseCookieOptions(url, requestUrl),
     cookies: isAdmin
       ? {
           getAll() {
@@ -175,7 +181,7 @@ export function createAnonClient<T = Database>():
  * RLS intact because the user's JWT is forwarded to Supabase.
  */
 export async function createClient<T = Database>(
-  request?: Pick<Request, 'headers'>
+  request?: Pick<Request, 'headers'> & Partial<Pick<Request, 'url'>>
 ): Promise<SupabaseClient<T>> {
   // Check for Bearer token in request headers (mobile / API callers).
   if (request) {
@@ -206,7 +212,7 @@ export async function createClient<T = Database>(
       );
     }
 
-    const userClient = await createGenericClient<T>(false);
+    const userClient = await createGenericClient<T>(false, request.url);
 
     return wrapRequestClientForProxyOnlyTables(
       userClient,
@@ -230,7 +236,7 @@ export async function createClient<T = Database>(
  * RLS intact because the user's JWT is forwarded to Supabase.
  */
 export async function createDynamicClient<T = Database>(
-  request?: Pick<Request, 'headers'>
+  request?: Pick<Request, 'headers'> & Partial<Pick<Request, 'url'>>
 ): Promise<SupabaseClient<T>> {
   // Check for Bearer token in request headers (mobile / API callers).
   if (request) {
@@ -261,7 +267,7 @@ export async function createDynamicClient<T = Database>(
       );
     }
 
-    const userClient = await createGenericClient<T>(false);
+    const userClient = await createGenericClient<T>(false, request.url);
 
     return wrapRequestClientForProxyOnlyTables(
       userClient,
@@ -274,6 +280,7 @@ export async function createDynamicClient<T = Database>(
   const cookieStore = await cookies();
   return wrapDirectClientForProxyOnlyTables(
     createServerClient<T>(url, key, {
+      cookieOptions: getSupabaseCookieOptions(url),
       cookies: createCookieHandler(cookieStore, url),
     })
   );
@@ -288,6 +295,7 @@ export async function createDynamicClient<T = Database>(
 export function createDetachedClient<T = Database>(): SupabaseClient<T> {
   const { url, key } = checkEnvVariables({ useSecretKey: false });
   return createServerClient<T>(url, key, {
+    cookieOptions: getSupabaseCookieOptions(url),
     cookies: {
       getAll() {
         return [] as SupabaseCookie[];
@@ -300,6 +308,7 @@ export function createDetachedClient<T = Database>(): SupabaseClient<T> {
 export async function createDynamicAdminClient(): Promise<SupabaseClient<any>> {
   const { url, key } = checkEnvVariables({ useSecretKey: true });
   return createServerClient(url, key, {
+    cookieOptions: getSupabaseCookieOptions(url),
     cookies: {
       getAll() {
         return [] as SupabaseCookie[];

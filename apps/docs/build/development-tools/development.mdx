@@ -146,6 +146,19 @@ of hard-coding `localhost` fallbacks in satellite app constants or proxies, so a
 browser session that starts on `tasks.tuturuuu.localhost` stays under the
 `tuturuuu.localhost` namespace through login and return URLs.
 
+For a native production-mode smoke test of `apps/web`, run the native build and
+then start it through the same Portless hostname:
+
+```bash
+bun run build:web
+cd apps/web
+bun run start
+```
+
+`bun run start` delegates to Portless and runs the built Next.js server through
+`start:app`, so the browser URL remains `https://tuturuuu.localhost` while the
+server listens on the backend port that Portless injects through `PORT`.
+
 Use `bun dev:edu` when working on the education apps together. It starts Learn,
 Teach, their shared packages, and the central web app so cross-app login can
 complete locally.

@@ -6,7 +6,7 @@ import {
   getMalformedSupabaseAuthCookieNames,
   sanitizeSupabaseAuthCookies,
 } from './auth-cookie-sanitizer';
-import { checkEnvVariables } from './common';
+import { checkEnvVariables, getSupabaseCookieOptions } from './common';
 import type { SupabaseJwtPayload } from './user';
 
 export { getMalformedSupabaseAuthCookieNames };
@@ -22,6 +22,7 @@ export async function updateSession(request: NextRequest): Promise<{
 
     const { url, key } = checkEnvVariables({ useSecretKey: false });
     const supabase = createServerClient<Database>(url, key, {
+      cookieOptions: getSupabaseCookieOptions(url, request.url),
       cookies: {
         getAll() {
           return sanitizeSupabaseAuthCookies(
