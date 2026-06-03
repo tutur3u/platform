@@ -480,7 +480,9 @@ Do not route YouTube summaries through MarkItDown or Google Search. Google
 Gemini chat requests attach one public or unlisted YouTube URL directly as a
 native `video/mp4` file input, so the model can summarize the video through the
 provider-supported video path. Playlist/query parameters are stripped before
-the URL is attached so each request references only one video.
+the URL is attached so each request references only one video. Any legacy direct
+URL conversion path that still reaches MarkItDown must reserve and commit the
+fixed MarkItDown credit charge before the sidecar request is sent.
 
 Interrupted Docker Compose recreates can leave temporary container names such
 as `<hex>_platform-markitdown-1`. The Docker helper treats those as recoverable

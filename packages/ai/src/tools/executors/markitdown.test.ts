@@ -118,7 +118,7 @@ describe('executeConvertFileToMarkdown', () => {
     );
   });
 
-  it('returns metadata-only output for direct YouTube URLs without charging conversion credits', async () => {
+  it('charges conversion credits for direct YouTube URLs before calling the sidecar', async () => {
     const list = vi.fn();
     const createSignedUrl = vi.fn();
     createAdminClientMock.mockResolvedValue({
@@ -135,6 +135,7 @@ describe('executeConvertFileToMarkdown', () => {
       new Response(
         JSON.stringify({
           ok: true,
+          markdown: '# Video transcript',
           title: 'Video title',
         }),
         { status: 200 }
@@ -150,23 +151,43 @@ describe('executeConvertFileToMarkdown', () => {
     expect(result.ok).toBe(true);
     expect(result.url).toBe('https://youtu.be/dQw4w9WgXcQ');
     expect(result.title).toBe('Video title');
-    expect(result.metadataOnly).toBe(true);
-    expect(result.supportedCapabilities).toEqual(['youtube_title_metadata']);
-    expect(result.unsupportedCapabilities).toEqual([
-      'youtube_transcription',
-      'youtube_summary',
-    ]);
+    expect(result.markdown).toBe('# Video transcript');
+    expect(result.creditsCharged).toBe(100);
+    expect(result.metadataOnly).toBeUndefined();
     expect(result.storagePath).toBeNull();
-    expect(createAdminClientMock).not.toHaveBeenCalled();
     expect(list).not.toHaveBeenCalled();
     expect(createSignedUrl).not.toHaveBeenCalled();
+    expect(reserveFixedAiCreditsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amount: 100,
+        metadata: expect.objectContaining({
+          sourceType: 'youtube_url',
+          sourceUrl: 'https://youtu.be/dQw4w9WgXcQ',
+        }),
+        wsId: 'workspace-1',
+      }),
+      expect.any(Object)
+    );
+    expect(commitFixedAiCreditReservationMock).toHaveBeenCalledWith(
+      'reservation-1',
+      expect.objectContaining({
+        sourceType: 'youtube_url',
+        sourceUrl: 'https://youtu.be/dQw4w9WgXcQ',
+      }),
+      expect.any(Object)
+    );
+    const reserveCallOrder =
+      reserveFixedAiCreditsMock.mock.invocationCallOrder[0];
+    const fetchCallOrder = fetchMock.mock.invocationCallOrder[0];
+    expect(reserveCallOrder).toBeDefined();
+    expect(fetchCallOrder).toBeDefined();
+    expect(reserveCallOrder as number).toBeLessThan(fetchCallOrder as number);
     expect(fetchMock).toHaveBeenCalledWith(
       'http://markitdown:8000/markitdown',
       expect.objectContaining({
         body: expect.stringContaining('"url":"https://youtu.be/dQw4w9WgXcQ"'),
       })
     );
-    expect(reserveFixedAiCreditsMock).not.toHaveBeenCalled();
   });
 
   it('denies user-group files when the caller did not prove group read access', async () => {
@@ -254,6 +275,7 @@ describe('executeConvertFileToMarkdown', () => {
       new Response(
         JSON.stringify({
           ok: true,
+          markdown: '# Video transcript',
           title: 'Video title',
         }),
         { status: 200 }
@@ -268,7 +290,18 @@ describe('executeConvertFileToMarkdown', () => {
 
     expect(result.ok).toBe(true);
     expect(result.url).toBe('https://youtu.be/dQw4w9WgXcQ');
-    expect(result.metadataOnly).toBe(true);
+    expect(result.markdown).toBe('# Video transcript');
+    expect(result.creditsCharged).toBe(100);
+    expect(reserveFixedAiCreditsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amount: 100,
+        metadata: expect.objectContaining({
+          sourceType: 'youtube_url',
+          sourceUrl: 'https://youtu.be/dQw4w9WgXcQ',
+        }),
+      }),
+      expect.any(Object)
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       'http://markitdown:8000/markitdown',
       expect.objectContaining({
