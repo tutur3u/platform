@@ -83,7 +83,10 @@ web lookups, workspace context switching, workspace member lookups, file
 conversion, or writes. Complex verification, risk review, planning checks, or
 conflicting evidence should use `run_parallel_checks`, which delegates to
 bounded `ToolLoopAgent` subagents in parallel and returns a compact summary to
-the main assistant.
+the main assistant. Any Mira tool that spawns additional model calls must use
+`MiraToolContext.creditWsId ?? wsId`, resolve the plan model for that billed
+workspace, preflight AI credits, apply the workspace output-token cap, and
+deduct the subcall usage before exposing the generated result.
 
 ## Schema Definitions
 
