@@ -131,8 +131,8 @@ class AuthRepository {
     return _multiAccountStorageService.signOutCurrentAccount();
   }
 
-  Future<void> signOutAllAccounts() async {
-    await _multiAccountStorageService.signOutAllAccounts();
+  Future<({bool success, String? error})> signOutAllAccounts() async {
+    return _multiAccountStorageService.signOutAllAccounts();
   }
 
   // ── OTP ─────────────────────────────────────────

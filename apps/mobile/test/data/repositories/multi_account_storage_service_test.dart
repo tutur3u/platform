@@ -173,6 +173,34 @@ void main() {
   );
 
   test(
+    'removeStoredAccount keeps final account when Supabase sign-out fails',
+    () async {
+      secureStorageValues[StorageKeys.multiAccountStore] = jsonEncode({
+        'version': 1,
+        'activeAccountId': 'only-user',
+        'accounts': [
+          _storedAccount(id: 'only-user', lastActiveAt: 100, refreshToken: ''),
+        ],
+      });
+      when(
+        () => goTrueClient.signOut(),
+      ).thenThrow(const AuthException('sign-out failed'));
+
+      final result = await service.removeStoredAccount('only-user');
+
+      expect(result.success, isFalse);
+      expect(result.switched, isFalse);
+      expect(result.error, 'sign-out failed');
+      expect(
+        secureStorageValues.containsKey(StorageKeys.multiAccountStore),
+        isTrue,
+      );
+      verify(() => goTrueClient.signOut()).called(1);
+      verifyNever(() => googleIdentityClient.signOut());
+    },
+  );
+
+  test(
     'signOutAllAccounts clears store after best-effort revocation loop',
     () async {
       secureStorageValues[StorageKeys.multiAccountStore] = jsonEncode({
@@ -184,11 +212,40 @@ void main() {
         ],
       });
 
-      await service.signOutAllAccounts();
+      final result = await service.signOutAllAccounts();
 
+      expect(result.success, isTrue);
       expect(
         secureStorageValues.containsKey(StorageKeys.multiAccountStore),
         isFalse,
+      );
+      verify(() => goTrueClient.signOut()).called(1);
+      verify(() => googleIdentityClient.signOut()).called(1);
+    },
+  );
+
+  test(
+    'signOutAllAccounts keeps store when Supabase sign-out fails',
+    () async {
+      secureStorageValues[StorageKeys.multiAccountStore] = jsonEncode({
+        'version': 1,
+        'activeAccountId': 'user-a',
+        'accounts': [
+          _storedAccount(id: 'user-a', lastActiveAt: 100, refreshToken: ''),
+          _storedAccount(id: 'user-b', lastActiveAt: 90, refreshToken: ''),
+        ],
+      });
+      when(
+        () => goTrueClient.signOut(),
+      ).thenThrow(const AuthException('sign-out failed'));
+
+      final result = await service.signOutAllAccounts();
+
+      expect(result.success, isFalse);
+      expect(result.error, 'sign-out failed');
+      expect(
+        secureStorageValues.containsKey(StorageKeys.multiAccountStore),
+        isTrue,
       );
       verify(() => goTrueClient.signOut()).called(1);
       verify(() => googleIdentityClient.signOut()).called(1);

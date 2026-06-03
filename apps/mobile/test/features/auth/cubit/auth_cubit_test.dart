@@ -390,6 +390,49 @@ void main() {
     );
   });
 
+  group('AuthCubit.signOutAllAccounts', () {
+    late AuthRepository authRepository;
+
+    setUp(() {
+      authRepository = _MockAuthRepository();
+      when(() => authRepository.getCurrentUserSync()).thenReturn(_user());
+      when(() => authRepository.onAuthStateChange()).thenAnswer(
+        (_) => const Stream<supa.AuthState>.empty(),
+      );
+      when(() => authRepository.dispose()).thenReturn(null);
+      when(() => authRepository.checkMfaRequired()).thenReturn(false);
+      when(
+        () => authRepository.getStoredAccounts(),
+      ).thenAnswer((_) async => const <StoredAuthAccount>[]);
+      when(
+        () => authRepository.getActiveStoredAccountId(),
+      ).thenAnswer((_) async => 'user-1');
+      when(
+        () => authRepository.syncCurrentSessionToMultiAccountStore(
+          switchImmediately: any(named: 'switchImmediately'),
+        ),
+      ).thenAnswer((_) async {});
+    });
+
+    test('keeps auth state when repository sign-out fails', () async {
+      when(
+        () => authRepository.signOutAllAccounts(),
+      ).thenAnswer((_) async => (success: false, error: 'sign-out failed'));
+
+      final cubit = AuthCubit(authRepository: authRepository);
+      addTearDown(cubit.close);
+      await Future<void>.delayed(Duration.zero);
+
+      final signedOut = await cubit.signOutAllAccounts();
+
+      expect(signedOut, isFalse);
+      expect(cubit.state.status, AuthStatus.authenticated);
+      expect(cubit.state.user?.id, 'user-1');
+      expect(cubit.state.isLoading, isFalse);
+      expect(cubit.state.error, 'sign-out failed');
+    });
+  });
+
   group('AuthCubit.verifyMfa', () {
     late AuthRepository authRepository;
 

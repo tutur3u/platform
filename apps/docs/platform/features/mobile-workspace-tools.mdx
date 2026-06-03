@@ -64,6 +64,12 @@ session is already at `aal2`:
   refreshed `aal2` Supabase session into the active multi-account store. Without
   that sync, later mobile API calls can restore/send an older `aal1` token and
   the approvals endpoint will respond with `requiresMobileMfa`.
+- Multi-account removal and all-account logout must treat Supabase
+  `auth.signOut()` as required before clearing the local account store or
+  emitting an unauthenticated Cubit state. Google/provider logout and stored
+  refresh-token revocation can be best-effort, but a failed Supabase logout must
+  leave the account visible with an error so the persisted session cannot
+  silently reappear later.
 
 ## Mobile Drive Coverage
 
