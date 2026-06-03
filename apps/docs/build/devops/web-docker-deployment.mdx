@@ -1270,9 +1270,12 @@ Dashboard details:
   inventory without mounting the Docker socket into `apps/web`.
 - The request archive view computes route summaries, status totals, RSC counts,
   and error totals across the selected timeframe instead of only the visible
-  page. The default timeframe is seven days, and the web API keeps a short
-  in-process aggregate cache keyed by timeframe plus telemetry log file stats so
-  pagination stays responsive while new proxy logs invalidate the cache.
+  page. The default timeframe is seven days, the API rejects unbounded or
+  oversized windows, and operators can query at most 30 days of retained request
+  logs at a time. The web API keeps a short in-process aggregate cache keyed by
+  bounded timeframe plus telemetry log file stats, but the cache stores only
+  aggregate analytics so request rows are not retained in memory between page
+  reads.
 - Drive ZIP extraction does not stream extracted file bytes back through the web
   app proxy. The unzip worker requests a per-entry signed upload URL from the
   callback route and uploads extracted files directly to trusted storage

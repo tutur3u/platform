@@ -645,6 +645,171 @@ describe('readBlueGreenMonitoringRequestArchive', () => {
     }
   });
 
+  it('bounds zero and oversized request archive timeframes', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-monitoring-request-bounds-')
+    );
+    const now = Date.UTC(2026, 3, 25, 12, 0, 0);
+
+    try {
+      const requestLogDir = path.join(
+        tempDir,
+        'watch',
+        'blue-green-request-logs'
+      );
+      fs.mkdirSync(requestLogDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, 'watch', 'blue-green-request-telemetry.state.json'),
+        JSON.stringify({
+          chunks: [
+            {
+              count: 3,
+              file: 'requests-1.jsonl',
+              firstRequestAt: now - 31 * 24 * 60 * 60 * 1000,
+              lastRequestAt: now - 60_000,
+            },
+          ],
+          currentChunkCount: 3,
+          currentChunkFile: 'requests-1.jsonl',
+          totalRecords: 3,
+        })
+      );
+      fs.writeFileSync(
+        path.join(requestLogDir, 'requests-1.jsonl'),
+        [
+          {
+            host: 'tuturuuu.com',
+            isInternal: false,
+            method: 'GET',
+            path: '/older-than-max',
+            status: 200,
+            time: now - 31 * 24 * 60 * 60 * 1000,
+          },
+          {
+            host: 'tuturuuu.com',
+            isInternal: false,
+            method: 'GET',
+            path: '/within-max',
+            status: 200,
+            time: now - 29 * 24 * 60 * 60 * 1000,
+          },
+          {
+            host: 'tuturuuu.com',
+            isInternal: false,
+            method: 'GET',
+            path: '/recent',
+            status: 200,
+            time: now - 60_000,
+          },
+        ]
+          .map((entry) => JSON.stringify(entry))
+          .join('\n')
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const defaultWindow = readBlueGreenMonitoringRequestArchive({
+        now,
+        timeframeDays: 0,
+      });
+      const maximumWindow = readBlueGreenMonitoringRequestArchive({
+        now,
+        timeframeDays: 999,
+      });
+
+      expect(defaultWindow.analytics.timeframe.days).toBe(7);
+      expect(defaultWindow.items.map((entry) => entry.path)).toEqual([
+        '/recent',
+      ]);
+      expect(maximumWindow.analytics.timeframe.days).toBe(30);
+      expect(maximumWindow.items.map((entry) => entry.path)).toEqual([
+        '/recent',
+        '/within-max',
+      ]);
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('does not serve request rows from the aggregate cache', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-monitoring-request-cache-')
+    );
+    const now = Date.UTC(2026, 3, 25, 12, 0, 0);
+
+    try {
+      const watchDir = path.join(tempDir, 'watch');
+      const requestLogDir = path.join(watchDir, 'blue-green-request-logs');
+      const requestLogPath = path.join(requestLogDir, 'requests-1.jsonl');
+      fs.mkdirSync(requestLogDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(watchDir, 'blue-green-request-telemetry.state.json'),
+        JSON.stringify({
+          chunks: [
+            {
+              count: 1,
+              file: 'requests-1.jsonl',
+              firstRequestAt: now - 60_000,
+              lastRequestAt: now - 60_000,
+            },
+          ],
+          currentChunkCount: 1,
+          currentChunkFile: 'requests-1.jsonl',
+          totalRecords: 1,
+        })
+      );
+      fs.writeFileSync(
+        requestLogPath,
+        JSON.stringify({
+          host: 'tuturuuu.com',
+          isInternal: false,
+          method: 'GET',
+          path: '/first',
+          status: 200,
+          time: now - 60_000,
+        })
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const stableStat = { mtimeMs: 1, size: 1 } as ReturnType<
+        typeof fs.statSync
+      >;
+      const fsImpl = {
+        existsSync: fs.existsSync.bind(fs),
+        readFileSync: fs.readFileSync.bind(fs),
+        statSync: (() => stableStat) as unknown as typeof fs.statSync,
+      };
+
+      const firstArchive = readBlueGreenMonitoringRequestArchive({
+        fsImpl,
+        now,
+        timeframeDays: 7,
+      });
+      fs.writeFileSync(
+        requestLogPath,
+        JSON.stringify({
+          host: 'tuturuuu.com',
+          isInternal: false,
+          method: 'GET',
+          path: '/second',
+          status: 200,
+          time: now - 30_000,
+        })
+      );
+      const secondArchive = readBlueGreenMonitoringRequestArchive({
+        fsImpl,
+        now: now + 1000,
+        timeframeDays: 7,
+      });
+
+      expect(firstArchive.items.map((entry) => entry.path)).toEqual(['/first']);
+      expect(secondArchive.items.map((entry) => entry.path)).toEqual([
+        '/second',
+      ]);
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
   it('filters requests before pagination and attaches scoped watcher logs', () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'blue-green-monitoring-request-filters-')

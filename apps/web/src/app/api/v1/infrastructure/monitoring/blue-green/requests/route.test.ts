@@ -14,6 +14,8 @@ vi.mock('../authorization', () => ({
 }));
 
 vi.mock('@/lib/infrastructure/blue-green-monitoring', () => ({
+  DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS: 7,
+  MAX_REQUEST_ARCHIVE_TIMEFRAME_DAYS: 30,
   readBlueGreenMonitoringRequestArchive:
     readBlueGreenMonitoringRequestArchiveMock,
 }));
@@ -82,7 +84,7 @@ describe('blue-green monitoring requests route', () => {
     });
   });
 
-  it('passes explicit timeframe params to the request archive reader', async () => {
+  it('passes bounded explicit timeframe params to the request archive reader', async () => {
     authorizeInfrastructureViewerMock.mockResolvedValue({
       ok: true,
       user: {
@@ -101,9 +103,9 @@ describe('blue-green monitoring requests route', () => {
         rscRequestCount: 0,
         statusCodes: [],
         timeframe: {
-          days: null,
+          days: 30,
           endAt: 0,
-          startAt: null,
+          startAt: 0,
         },
         topRoutes: [],
       },
@@ -121,13 +123,38 @@ describe('blue-green monitoring requests route', () => {
       },
     });
 
-    const response = await GET(createTestRequest('?timeframeDays=all'));
+    const response = await GET(createTestRequest('?timeframeDays=30'));
 
     expect(response.status).toBe(200);
     expect(readBlueGreenMonitoringRequestArchiveMock).toHaveBeenCalledWith({
       page: 1,
       pageSize: 25,
-      timeframeDays: 0,
+      timeframeDays: 30,
+    });
+  });
+
+  it.each([
+    'all',
+    '0',
+    '-1',
+    '31',
+    '1.5',
+  ])('rejects unsafe request archive timeframe %s before reading logs', async (timeframeDays) => {
+    authorizeInfrastructureViewerMock.mockResolvedValue({
+      ok: true,
+      user: {
+        id: 'user-1',
+      },
+    });
+
+    const response = await GET(
+      createTestRequest(`?timeframeDays=${encodeURIComponent(timeframeDays)}`)
+    );
+
+    expect(response.status).toBe(400);
+    expect(readBlueGreenMonitoringRequestArchiveMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: 'timeframeDays must be an integer between 1 and 30',
     });
   });
 

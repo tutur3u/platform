@@ -38,7 +38,8 @@ type DockerAggregateContainer = {
 
 const DOCKER_WEB_ENV_KEY = 'PLATFORM_BLUE_GREEN_MONITORING_DIR';
 const DEFAULT_ARCHIVE_PAGE_SIZE = 25;
-const DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS = 7;
+export const DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS = 7;
+export const MAX_REQUEST_ARCHIVE_TIMEFRAME_DAYS = 30;
 const DEFAULT_RECOVERY_CACHE_LIMIT = 3;
 const MAX_REQUEST_CONSOLE_MESSAGE_LENGTH = 500;
 const MAX_ARCHIVE_PAGE_SIZE = 100;
@@ -56,9 +57,12 @@ const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/giu;
 interface RequestArchiveAggregateCacheEntry {
   analytics: BlueGreenMonitoringRequestArchive['analytics'];
   createdAt: number;
-  items: BlueGreenMonitoringRequestLog[];
   signature: string;
 }
+
+type RequestArchiveAggregateRead = RequestArchiveAggregateCacheEntry & {
+  items?: BlueGreenMonitoringRequestLog[];
+};
 
 interface RequestArchiveFilters {
   q?: string;
@@ -401,17 +405,18 @@ function normalizeRequestTimeframe({
   now: number;
   timeframeDays?: number | null;
 }) {
-  const days =
+  const requestedDays =
     typeof timeframeDays === 'number' &&
     Number.isInteger(timeframeDays) &&
-    timeframeDays >= 0
+    timeframeDays > 0
       ? timeframeDays
       : DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS;
+  const days = Math.min(requestedDays, MAX_REQUEST_ARCHIVE_TIMEFRAME_DAYS);
 
   return {
-    days: days === 0 ? null : days,
+    days,
     endAt: now,
-    startAt: days === 0 ? null : now - days * 24 * 60 * 60 * 1000,
+    startAt: now - days * 24 * 60 * 60 * 1000,
   };
 }
 
@@ -419,10 +424,7 @@ function isRequestInTimeframe(
   request: BlueGreenMonitoringRequestLog,
   timeframe: ReturnType<typeof normalizeRequestTimeframe>
 ) {
-  return (
-    request.time <= timeframe.endAt &&
-    (timeframe.startAt == null || request.time >= timeframe.startAt)
-  );
+  return request.time <= timeframe.endAt && request.time >= timeframe.startAt;
 }
 
 function normalizeTimestampBound(value: number | null | undefined) {
@@ -536,6 +538,18 @@ function matchesRequestArchiveFilters(
     .filter((value): value is string => Boolean(value))
     .map((value) => value.toLowerCase())
     .some((value) => value.includes(query));
+}
+
+function hasRequestArchiveFilters(filters: RequestArchiveFilters) {
+  return Boolean(
+    filters.q?.trim() ||
+      filters.render ||
+      filters.route ||
+      filters.since ||
+      filters.status ||
+      filters.until ||
+      filters.traffic
+  );
 }
 
 function buildRequestRouteSummaries(
@@ -751,7 +765,7 @@ function readCachedRequestArchiveAggregate({
   timeframe: ReturnType<typeof normalizeRequestTimeframe>;
   watchDir: string;
 }) {
-  const cacheKey = `${watchDir}:${timeframe.days ?? 'all'}`;
+  const cacheKey = `${watchDir}:${timeframe.days}`;
   const signature = getRequestArchiveCacheSignature(watchDir, fsImpl);
   const cached = requestArchiveAggregateCache.get(cacheKey);
 
@@ -760,7 +774,7 @@ function readCachedRequestArchiveAggregate({
     cached.signature === signature &&
     now - cached.createdAt <= REQUEST_ARCHIVE_AGGREGATE_CACHE_TTL_MS
   ) {
-    return cached;
+    return cached as RequestArchiveAggregateRead;
   }
 
   const allItems = readAllRequestArchiveItems(watchDir, fsImpl, timeframe);
@@ -772,9 +786,8 @@ function readCachedRequestArchiveAggregate({
   const nextEntry = {
     analytics,
     createdAt: now,
-    items: allItems.items,
     signature,
-  };
+  } satisfies RequestArchiveAggregateCacheEntry;
 
   requestArchiveAggregateCache.set(cacheKey, nextEntry);
 
@@ -791,7 +804,10 @@ function readCachedRequestArchiveAggregate({
     }
   }
 
-  return nextEntry;
+  return {
+    ...nextEntry,
+    items: allItems.items,
+  } satisfies RequestArchiveAggregateRead;
 }
 
 function getScopedWatcherLogsForRequest(
@@ -2001,14 +2017,19 @@ export function readBlueGreenMonitoringRequestArchive({
     watchDir,
   });
   const filters = { q, render, route, since, status, traffic, until };
-  const filteredItems = aggregate.items.filter((request) =>
+  const aggregateItems =
+    aggregate.items ??
+    readAllRequestArchiveItems(watchDir, fsImpl, timeframe).items;
+  const filteredItems = aggregateItems.filter((request) =>
     matchesRequestArchiveFilters(request, filters)
   );
-  const analytics = buildRequestArchiveAnalytics({
-    requests: filteredItems,
-    retainedRequestCount: aggregate.analytics.retainedRequestCount,
-    timeframe,
-  });
+  const analytics = hasRequestArchiveFilters(filters)
+    ? buildRequestArchiveAnalytics({
+        requests: filteredItems,
+        retainedRequestCount: aggregate.analytics.retainedRequestCount,
+        timeframe,
+      })
+    : aggregate.analytics;
   const total = filteredItems.length;
   const archivePage = getArchivePage(page, total, normalizedPageSize);
   const watcherLogs = readNormalizedWatcherLogs(watchDir, fsImpl);
