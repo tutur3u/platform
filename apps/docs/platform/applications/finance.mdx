@@ -72,6 +72,10 @@ Protected Finance APIs stay centralized in `apps/web`.
   is non-confidential or the caller can view confidential amounts; otherwise
   typed filters should omit those redacted rows instead of using the raw amount
   sign.
+- Finance invoice customer IDs must be validated against `workspace_users`
+  with the route workspace before insert, and admin-backed invoice reads should
+  resolve customer display fields with an explicit `ws_id` filter instead of a
+  nested service-role join on `customer_id`.
 
 When adding new Finance behavior, update the shared Finance UI/helper first,
 then wire both host wrappers in the same change. Add or extend the protected

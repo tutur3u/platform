@@ -6,6 +6,17 @@ const mocks = vi.hoisted(() => {
   const resolveAuthenticatedSessionUser = vi.fn();
   const transactionRpc = vi.fn();
   const invoiceReturns = vi.fn();
+  const customerReturns = vi.fn();
+  const invoiceEq = vi.fn(() => ({
+    in: vi.fn(() => ({
+      returns: invoiceReturns,
+    })),
+  }));
+  const customerEq = vi.fn(() => ({
+    in: vi.fn(() => ({
+      returns: customerReturns,
+    })),
+  }));
 
   const sessionSupabase = {
     rpc: transactionRpc,
@@ -16,11 +27,15 @@ const mocks = vi.hoisted(() => {
       if (table === 'finance_invoices') {
         return {
           select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              in: vi.fn(() => ({
-                returns: invoiceReturns,
-              })),
-            })),
+            eq: invoiceEq,
+          })),
+        };
+      }
+
+      if (table === 'workspace_users') {
+        return {
+          select: vi.fn(() => ({
+            eq: customerEq,
           })),
         };
       }
@@ -31,7 +46,10 @@ const mocks = vi.hoisted(() => {
 
   return {
     adminSupabase,
+    customerEq,
+    customerReturns,
     getPermissions,
+    invoiceEq,
     invoiceReturns,
     normalizeWorkspaceId,
     resolveAuthenticatedSessionUser,
@@ -94,6 +112,10 @@ describe('transaction export route', () => {
       data: [],
       error: null,
     });
+    mocks.customerReturns.mockResolvedValue({
+      data: [],
+      error: null,
+    });
   });
 
   it('exports transactions through the permission-aware RPC', async () => {
@@ -143,13 +165,20 @@ describe('transaction export route', () => {
     mocks.invoiceReturns.mockResolvedValue({
       data: [
         {
+          customer_id: 'customer-1',
           id: 'invoice-1',
           transaction_id: 'transaction-1',
-          workspace_users: {
-            display_name: 'Customer',
-            full_name: 'Customer Full',
-            email: 'customer@example.com',
-          },
+        },
+      ],
+      error: null,
+    });
+    mocks.customerReturns.mockResolvedValue({
+      data: [
+        {
+          display_name: 'Customer',
+          email: 'customer@example.com',
+          full_name: 'Customer Full',
+          id: 'customer-1',
         },
       ],
       error: null,
@@ -184,6 +213,8 @@ describe('transaction export route', () => {
     expect(mocks.adminSupabase.from).not.toHaveBeenCalledWith(
       'wallet_transaction_tags'
     );
+    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_users');
+    expect(mocks.customerEq).toHaveBeenCalledWith('ws_id', 'workspace-1');
     expect(mocks.transactionRpc).toHaveBeenCalledWith(
       'get_transaction_list_enrichment',
       expect.objectContaining({
@@ -210,6 +241,78 @@ describe('transaction export route', () => {
           transaction_type: 'expense',
           wallet: 'Cash',
         },
+      ],
+    });
+  });
+
+  it('does not enrich invoice customers that are outside the route workspace', async () => {
+    const { GET } = await import('./route.js');
+
+    mocks.transactionRpc.mockImplementation((functionName: string) => {
+      if (functionName === 'get_wallet_transactions_with_permissions') {
+        return Promise.resolve({
+          data: [
+            {
+              id: 'transaction-1',
+              amount: 100,
+              description: 'Invoice payment',
+              category_name: 'Sales',
+              created_at: '2026-05-01T09:00:00.000Z',
+              creator_email: 'creator@example.com',
+              creator_full_name: 'Creator Name',
+              invoice_id: 'invoice-1',
+              report_opt_in: true,
+              taken_at: '2026-05-01T08:00:00.000Z',
+              total_count: 1,
+              wallet_name: 'Cash',
+            },
+          ],
+          error: null,
+        });
+      }
+
+      if (functionName === 'get_transaction_list_enrichment') {
+        return Promise.resolve({ data: [], error: null });
+      }
+
+      throw new Error(`Unexpected RPC: ${functionName}`);
+    });
+    mocks.invoiceReturns.mockResolvedValue({
+      data: [
+        {
+          customer_id: 'other-workspace-customer',
+          id: 'invoice-1',
+          transaction_id: 'transaction-1',
+        },
+      ],
+      error: null,
+    });
+    mocks.customerReturns.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/workspaces/workspace-1/transactions/export'
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'workspace-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_users');
+    expect(mocks.customerEq).toHaveBeenCalledWith('ws_id', 'workspace-1');
+    await expect(response.json()).resolves.toEqual({
+      count: 1,
+      data: [
+        expect.objectContaining({
+          invoice_for_email: null,
+          invoice_for_name: null,
+        }),
       ],
     });
   });
