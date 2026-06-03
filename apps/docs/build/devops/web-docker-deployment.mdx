@@ -455,13 +455,16 @@ callback route for per-file upload URLs. Before uploading extracted bytes, the
 proxy verifies the callback response names a trusted provider and that the
 signed upload URL belongs to hosted Supabase, Cloudflare R2, or an exact
 operator-configured upload origin. It forwards only content type and generated
-bearer-token headers to the upload URL. The web proxy intentionally lets the
-bearer-token protected storage auto-extract and CMS WebGL extract callback
-routes pass through without anonymous mutation rate limiting; the callback
-routes still validate the shared unzip token before creating folders or signing
-file uploads. The proxy currently buffers the downloaded archive and each
-extracted file in memory, so the default caps stay conservative: 100 MiB ZIP
-downloads, 50 MiB per extracted file, and 250 MiB total extracted output.
+bearer-token headers to the upload URL. The storage auto-extract and CMS WebGL
+extract callback routes still pass through the central API proxy guard before
+they validate the shared unzip token, so malformed, rate-limited, or oversized
+callback requests are rejected at the same cheap boundary as other API
+mutations. Direct `file` callbacks are legacy/small-file only and enforce the
+same 512 KiB body budget locally; large extracted files must use the
+`file-upload-url` callback flow. The proxy currently buffers the downloaded
+archive and each extracted file in memory, so the default caps stay
+conservative: 100 MiB ZIP downloads, 50 MiB per extracted file, and 250 MiB
+total extracted output.
 Operators can tune those caps with
 `DRIVE_UNZIP_PROXY_MAX_ARCHIVE_BYTES`,
 `DRIVE_UNZIP_PROXY_MAX_ENTRY_BYTES`,

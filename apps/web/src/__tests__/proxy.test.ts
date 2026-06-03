@@ -440,15 +440,12 @@ describe('web proxy api handling', () => {
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
   });
 
-  it('lets storage unzip callbacks bypass proxy rate limiting', async () => {
+  it('keeps storage unzip callbacks inside proxy guard enforcement', async () => {
     mocks.guardApiProxyRequest.mockResolvedValue(
       NextResponse.json(
-        { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+        { error: 'Payload Too Large', message: 'Request body exceeds limit' },
         {
-          status: 429,
-          headers: {
-            'X-Proxy-Block-Reason': 'route-rate-limit',
-          },
+          status: 413,
         }
       )
     );
@@ -469,8 +466,13 @@ describe('web proxy api handling', () => {
       )
     );
 
-    expect(response.status).toBe(200);
-    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(response.status).toBe(413);
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      {
+        prefixBase: 'proxy:web:api',
+      }
+    );
     expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
   });
 

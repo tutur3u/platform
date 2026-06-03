@@ -1,3 +1,4 @@
+import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -163,6 +164,41 @@ describe('WebGL package extract callback route', () => {
         upsert: true,
       }
     );
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+  });
+
+  it('rejects oversized direct WebGL file callback bodies with valid tokens', async () => {
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route'
+    );
+
+    const response = await POST(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/external-projects/webgl-packages/extract-callback',
+        {
+          body: 'x'.repeat(MAX_PAYLOAD_SIZE + 1),
+          headers: {
+            Authorization: 'Bearer token-1',
+            'Content-Type': 'text/plain',
+            'x-drive-auto-extract-operation': 'file',
+            'x-drive-auto-extract-path':
+              'external-projects/yoola/games/mine/webgl-packages/build/large.txt',
+          },
+          method: 'POST',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Payload Too Large',
+      message: 'Extracted file exceeds direct callback body limit',
+    });
     expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
   });
 });
