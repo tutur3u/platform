@@ -112,6 +112,11 @@ updates the saved config with the rotated refresh token, and retries once after 
 used directly as API bearer tokens. If refresh fails because the user no longer
 exists or the refresh JWT has expired, run `ttr login` again.
 
+The SDK fetch wrapper must attach CLI bearer tokens, refresh sessions, and retry
+`401` responses only for relative Tuturuuu API paths or absolute URLs whose
+origin exactly matches the configured CLI base URL. Cross-origin absolute URLs
+must be delegated without `Authorization` headers.
+
 Scoped help is available without login, saved config reads, or update checks:
 
 ```bash
