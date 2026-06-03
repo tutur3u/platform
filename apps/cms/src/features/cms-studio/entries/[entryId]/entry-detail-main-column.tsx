@@ -28,6 +28,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
+import type { DragEvent } from 'react';
 import type { CmsSupportedEntryAssetType } from '../../cms-content-model';
 import type { CmsStrings } from '../../cms-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
@@ -71,6 +72,7 @@ type EntryDetailMainColumnProps = {
   onDeleteSelectedMedia: () => void;
   onDeleteSingleAsset: (assetId: string) => void;
   onDescriptionChange: (content: JSONContent | null) => void;
+  onMediaDrop: (files: File[]) => void;
   onMoveMediaAsset: (assetId: string, direction: -1 | 1) => void;
   onOpenPreview: () => void;
   onSaveAssetCaption: (assetId: string) => void;
@@ -122,6 +124,7 @@ export function EntryDetailMainColumn({
   onDeleteSelectedMedia,
   onDeleteSingleAsset,
   onDescriptionChange,
+  onMediaDrop,
   onMoveMediaAsset,
   onOpenPreview,
   onSaveAssetCaption,
@@ -176,6 +179,14 @@ export function EntryDetailMainColumn({
   const uploadMediaLabel = supportsOnlyAudio
     ? strings.uploadAudioAction
     : strings.bulkUploadMediaAction;
+  const handleMediaDrop = (event: DragEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (mediaProcessing || !supportsMediaUploads) {
+      return;
+    }
+
+    onMediaDrop(Array.from(event.dataTransfer.files));
+  };
 
   return (
     <div className="space-y-6">
@@ -393,6 +404,8 @@ export function EntryDetailMainColumn({
                 >
                   {uploadMediaPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : supportsOnlyAudio ? (
+                    <Music className="mr-2 h-4 w-4" />
                   ) : (
                     <ImagePlus className="mr-2 h-4 w-4" />
                   )}
@@ -433,6 +446,31 @@ export function EntryDetailMainColumn({
             </div>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3">
+            {supportsOnlyAudio ? (
+              <button
+                type="button"
+                className="grid min-h-36 gap-3 rounded-[1.2rem] border border-dynamic-blue/25 border-dashed bg-dynamic-blue/5 p-5 text-left transition hover:border-dynamic-blue/45 hover:bg-dynamic-blue/10 disabled:cursor-not-allowed disabled:opacity-60 md:col-span-3"
+                disabled={mediaProcessing || !supportsMediaUploads}
+                onClick={onUploadMediaClick}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={handleMediaDrop}
+              >
+                <span className="flex size-11 items-center justify-center rounded-full border border-dynamic-blue/25 bg-background text-dynamic-blue">
+                  <Music className="h-5 w-5" />
+                </span>
+                <span>
+                  <span className="block font-semibold">
+                    {strings.audioDropzoneTitle}
+                  </span>
+                  <span className="mt-2 block max-w-2xl text-muted-foreground text-sm leading-6">
+                    {strings.audioDropzoneDescription}
+                  </span>
+                  <span className="mt-2 block max-w-2xl text-muted-foreground text-xs leading-5">
+                    {strings.audioMetadataHint}
+                  </span>
+                </span>
+              </button>
+            ) : null}
             {mediaProcessing ? (
               <div className="flex items-center gap-3 rounded-[1.1rem] border border-dynamic-blue/20 bg-dynamic-blue/5 px-4 py-3 text-dynamic-blue text-sm md:col-span-3">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -444,21 +482,23 @@ export function EntryDetailMainColumn({
               items={mediaUploadProgressItems}
             />
             {mediaAssets.length === 0 ? (
-              <button
-                type="button"
-                className="rounded-[1.2rem] border border-border/70 border-dashed bg-background/50 p-6 text-left transition hover:border-border hover:bg-background/70 md:col-span-3"
-                disabled={mediaProcessing || !supportsMediaUploads}
-                onClick={onUploadMediaClick}
-              >
-                <div className="font-medium">
-                  {supportsMediaUploads
-                    ? uploadMediaLabel
-                    : strings.noMediaAssetsTitle}
-                </div>
-                <div className="mt-2 text-muted-foreground text-sm">
-                  {mediaGalleryDescription}
-                </div>
-              </button>
+              supportsOnlyAudio ? null : (
+                <button
+                  type="button"
+                  className="rounded-[1.2rem] border border-border/70 border-dashed bg-background/50 p-6 text-left transition hover:border-border hover:bg-background/70 md:col-span-3"
+                  disabled={mediaProcessing || !supportsMediaUploads}
+                  onClick={onUploadMediaClick}
+                >
+                  <div className="font-medium">
+                    {supportsMediaUploads
+                      ? uploadMediaLabel
+                      : strings.noMediaAssetsTitle}
+                  </div>
+                  <div className="mt-2 text-muted-foreground text-sm">
+                    {mediaGalleryDescription}
+                  </div>
+                </button>
+              )
             ) : (
               mediaAssets.map((asset) => {
                 const isSelected = selectedAssetIds.includes(asset.id);

@@ -1,6 +1,6 @@
 'use client';
 
-import { Image as ImageIcon, ListOrdered, Tags } from '@tuturuuu/icons';
+import { Image as ImageIcon, ListOrdered, Music, Tags } from '@tuturuuu/icons';
 import type {
   ExternalProjectEntry,
   ExternalProjectStudioAsset,
@@ -43,6 +43,11 @@ function getEntryTags(entry: ExternalProjectEntry) {
   ];
 }
 
+function getEntryDuration(entry: ExternalProjectEntry) {
+  const duration = asProfileDataRecord(entry.profile_data).duration;
+  return typeof duration === 'string' ? duration.trim() : '';
+}
+
 export function CmsEntryIndexCard({
   entry,
   onDeleteEntry,
@@ -69,7 +74,9 @@ export function CmsEntryIndexCard({
   visual: ExternalProjectStudioAsset | undefined;
 }) {
   const hasVisual = Boolean(visual?.preview_url || visual?.asset_url);
+  const isAudio = visual?.asset_type === 'audio';
   const category = getEntryCategory(entry);
+  const duration = getEntryDuration(entry);
   const tags = getEntryTags(entry);
 
   return (
@@ -87,7 +94,7 @@ export function CmsEntryIndexCard({
         aria-label={entry.title}
         onClick={() => onOpenEntry(entry.id)}
       >
-        {hasVisual ? (
+        {hasVisual && !isAudio ? (
           <ResilientMediaImage
             alt={visual?.alt_text ?? entry.title}
             assetUrl={visual?.asset_url}
@@ -96,6 +103,13 @@ export function CmsEntryIndexCard({
             previewUrl={visual?.preview_url}
             sizes="(max-width: 768px) 100vw, 104px"
           />
+        ) : isAudio ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-dynamic-blue">
+            <Music className="h-6 w-6" />
+            <span className="text-muted-foreground text-xs">
+              {duration || strings.audioAssetLabel}
+            </span>
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
             <ImageIcon className="h-5 w-5" />

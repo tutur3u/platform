@@ -43,3 +43,68 @@ export async function optimizeCmsMediaUpload(file: File) {
     return file;
   }
 }
+
+function formatCmsAudioDuration(seconds: number) {
+  const roundedSeconds = Math.round(seconds);
+  const minutes = Math.floor(roundedSeconds / 60);
+  const remainingSeconds = roundedSeconds % 60;
+
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+export type CmsAudioUploadMetadata = {
+  contentType: string;
+  duration: string | null;
+  durationSeconds: number | null;
+  filename: string;
+  size: number;
+};
+
+export async function readCmsAudioUploadMetadata(
+  file: File
+): Promise<CmsAudioUploadMetadata> {
+  if (typeof document === 'undefined' || typeof URL === 'undefined') {
+    return {
+      contentType: file.type,
+      duration: null,
+      durationSeconds: null,
+      filename: file.name,
+      size: file.size,
+    };
+  }
+
+  return new Promise((resolve) => {
+    const audio = document.createElement('audio');
+    const objectUrl = URL.createObjectURL(file);
+
+    const cleanup = () => {
+      audio.removeAttribute('src');
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    const complete = (durationSeconds: number | null) => {
+      cleanup();
+      resolve({
+        contentType: file.type,
+        duration:
+          durationSeconds && durationSeconds > 0
+            ? formatCmsAudioDuration(durationSeconds)
+            : null,
+        durationSeconds,
+        filename: file.name,
+        size: file.size,
+      });
+    };
+
+    audio.preload = 'metadata';
+    audio.onloadedmetadata = () => {
+      complete(
+        Number.isFinite(audio.duration) && audio.duration > 0
+          ? audio.duration
+          : null
+      );
+    };
+    audio.onerror = () => complete(null);
+    audio.src = objectUrl;
+  });
+}

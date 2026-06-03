@@ -40,7 +40,10 @@ import {
   supportsMarkdownBodyFromSchema,
 } from '../../cms-content-model';
 import { isGameLikeCollection } from '../../cms-games-shared';
-import { optimizeCmsMediaUpload } from '../../cms-media-upload';
+import {
+  optimizeCmsMediaUpload,
+  readCmsAudioUploadMetadata,
+} from '../../cms-media-upload';
 import {
   getCmsEntryPath,
   getCmsLibraryPath,
@@ -1473,6 +1476,27 @@ export function EntryDetailClient({
             scope: 'media',
             total: file.size,
           });
+          const audioMetadata =
+            assetType === 'audio'
+              ? await readCmsAudioUploadMetadata(file)
+              : null;
+
+          if (audioMetadata?.duration) {
+            setSchemaProfileData((current) => {
+              if (
+                typeof current.duration === 'string' &&
+                current.duration.trim()
+              ) {
+                return current;
+              }
+
+              return {
+                ...current,
+                duration: audioMetadata.duration,
+              };
+            });
+          }
+
           const optimizedFile =
             assetType === 'image' ? await optimizeCmsMediaUpload(file) : file;
           const upload = await uploadWorkspaceExternalProjectAssetFile(
@@ -1518,7 +1542,15 @@ export function EntryDetailClient({
             alt_text: file.name,
             asset_type: assetType,
             entry_id: activeEntry?.id ?? entryId,
-            metadata: {},
+            metadata: audioMetadata
+              ? ({
+                  contentType: audioMetadata.contentType,
+                  duration: audioMetadata.duration,
+                  durationSeconds: audioMetadata.durationSeconds,
+                  filename: audioMetadata.filename,
+                  size: audioMetadata.size,
+                } as Json)
+              : {},
             sort_order: nextSortOrder,
             source_url: null,
             storage_path: upload.path,
@@ -1766,15 +1798,19 @@ export function EntryDetailClient({
     uploadCoverMutation.mutate(file);
   };
 
-  const handleMediaInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = '';
-
+  const handleMediaFiles = (files: File[]) => {
     if (files.length === 0) {
       return;
     }
 
     uploadMediaMutation.mutate(files);
+  };
+
+  const handleMediaInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+
+    handleMediaFiles(files);
   };
 
   const handleWebglInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -2117,6 +2153,7 @@ export function EntryDetailClient({
             onDeleteSelectedMedia={() => setDeleteMediaDialogOpen(true)}
             onDeleteSingleAsset={deleteSingleAsset}
             onDescriptionChange={setDescriptionContent}
+            onMediaDrop={handleMediaFiles}
             onMoveMediaAsset={(assetId, direction) =>
               moveMediaAssetMutation.mutate({ assetId, direction })
             }
