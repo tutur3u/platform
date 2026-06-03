@@ -1,9 +1,17 @@
 import path from 'node:path';
 import unzipper from 'unzipper';
 import { resolveUnzipProxyLimits } from './limits.js';
+import {
+  buildSignedUploadHeaders,
+  validateSignedUploadDestination,
+} from './upload-destination.js';
 
 const PORT = Number(process.env.PORT || 8788);
 const SHARED_TOKEN = process.env.DRIVE_UNZIP_PROXY_SHARED_TOKEN || '';
+const ALLOWED_UPLOAD_ORIGINS =
+  process.env.DRIVE_UNZIP_PROXY_ALLOWED_UPLOAD_ORIGINS || '';
+const ALLOW_LOCAL_UPLOAD_ORIGINS =
+  process.env.DRIVE_UNZIP_PROXY_ALLOW_LOCAL_UPLOAD_ORIGINS === 'true';
 const {
   fetchTimeoutMs: FETCH_TIMEOUT_MS,
   maxArchiveDownloadBytes: MAX_ARCHIVE_DOWNLOAD_BYTES,
@@ -239,19 +247,17 @@ async function putExtractedFileToSignedUrl({
   contentType,
   uploadPayload,
 }) {
-  const headers = {
-    ...(uploadPayload.headers || {}),
-  };
-
-  if (!headers['Content-Type']) {
-    headers['Content-Type'] = contentType || 'application/octet-stream';
+  const destination = validateSignedUploadDestination(uploadPayload, {
+    allowedUploadOrigins: ALLOWED_UPLOAD_ORIGINS,
+    allowLocalUploadOrigins: ALLOW_LOCAL_UPLOAD_ORIGINS,
+  });
+  if (!destination.ok) {
+    throw new HttpError(502, destination.message);
   }
 
-  if (uploadPayload.token) {
-    headers.Authorization = `Bearer ${uploadPayload.token}`;
-  }
+  const headers = buildSignedUploadHeaders(uploadPayload, contentType);
 
-  let response = await fetchWithTimeout(uploadPayload.signedUrl, {
+  let response = await fetchWithTimeout(destination.signedUrl, {
     method: 'PUT',
     headers,
     body,
@@ -261,7 +267,7 @@ async function putExtractedFileToSignedUrl({
     const retryHeaders = { ...headers };
     delete retryHeaders['Content-Type'];
 
-    response = await fetchWithTimeout(uploadPayload.signedUrl, {
+    response = await fetchWithTimeout(destination.signedUrl, {
       method: 'PUT',
       headers: retryHeaders,
       body,

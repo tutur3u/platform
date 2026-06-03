@@ -132,6 +132,7 @@ export async function POST(
         headers: uploadPayload.headers,
         message: 'Upload URL created successfully',
         path: uploadPayload.path,
+        provider: uploadPayload.provider,
         signedUrl: uploadPayload.signedUrl,
         token: uploadPayload.token,
       });

@@ -108,6 +108,7 @@ describe('storage auto-extract callback route', () => {
         'x-amz-acl': 'private',
       },
       path: 'archive/Build/game.data',
+      provider: 'r2',
       signedUrl: 'https://storage.example.com/upload',
       token: undefined,
     });
@@ -146,6 +147,7 @@ describe('storage auto-extract callback route', () => {
         'x-amz-acl': 'private',
       },
       path: 'archive/Build/game.data',
+      provider: 'r2',
       signedUrl: 'https://storage.example.com/upload',
     });
     expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(

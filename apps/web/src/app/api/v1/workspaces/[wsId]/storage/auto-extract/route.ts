@@ -137,6 +137,7 @@ export async function POST(
         headers: uploadPayload.headers,
         path: uploadPayload.path,
         fullPath: uploadPayload.fullPath,
+        provider: uploadPayload.provider,
       });
     }
 

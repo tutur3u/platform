@@ -450,21 +450,27 @@ the web app proxy before reaching Supabase Storage or R2. The CMS client reports
 per-file upload progress during the signed upload, then calls the WebGL finalize
 route so the backend handles extraction and artifact-map persistence.
 
-The unzip proxy fans out one backend callback per extracted folder or file. File
-callbacks send the extracted bytes to the web backend, and the backend writes to
-Supabase Storage or R2 server-side. The web proxy intentionally lets the
+The unzip proxy fans out backend callbacks for extracted folders and asks the
+callback route for per-file upload URLs. Before uploading extracted bytes, the
+proxy verifies the callback response names a trusted provider and that the
+signed upload URL belongs to hosted Supabase, Cloudflare R2, or an exact
+operator-configured upload origin. It forwards only content type and generated
+bearer-token headers to the upload URL. The web proxy intentionally lets the
 bearer-token protected storage auto-extract and CMS WebGL extract callback
 routes pass through without anonymous mutation rate limiting; the callback
-routes still validate the shared unzip token before creating folders or writing
-files. The proxy currently buffers the downloaded archive and each extracted
-file in memory, so the default caps stay conservative: 100 MiB ZIP downloads,
-50 MiB per extracted file, and 250 MiB total extracted output. Operators can
-tune those caps with
+routes still validate the shared unzip token before creating folders or signing
+file uploads. The proxy currently buffers the downloaded archive and each
+extracted file in memory, so the default caps stay conservative: 100 MiB ZIP
+downloads, 50 MiB per extracted file, and 250 MiB total extracted output.
+Operators can tune those caps with
 `DRIVE_UNZIP_PROXY_MAX_ARCHIVE_BYTES`,
 `DRIVE_UNZIP_PROXY_MAX_ENTRY_BYTES`,
 `DRIVE_UNZIP_PROXY_MAX_TOTAL_EXTRACTED_BYTES`, and
 `DRIVE_UNZIP_PROXY_MAX_ARCHIVE_ENTRIES`; workspace Drive quota must still be
-large enough for the uploaded archive and extracted files.
+large enough for the uploaded archive and extracted files. Set
+`DRIVE_UNZIP_PROXY_ALLOWED_UPLOAD_ORIGINS` for self-hosted Supabase or custom
+R2/S3-compatible origins, and reserve
+`DRIVE_UNZIP_PROXY_ALLOW_LOCAL_UPLOAD_ORIGINS=true` for local Supabase testing.
 
 The MarkItDown endpoint is the conversion path for uploaded workspace files.
 Do not route YouTube summaries through MarkItDown or Google Search. Google
@@ -1269,9 +1275,9 @@ Dashboard details:
   pagination stays responsive while new proxy logs invalidate the cache.
 - Drive ZIP extraction does not stream extracted file bytes back through the web
   app proxy. The unzip worker requests a per-entry signed upload URL from the
-  callback route and uploads extracted files directly to the active storage
-  backend, which avoids nginx body-size limits for large WebGL artifacts while
-  keeping folder creation and auth checks in the backend callback.
+  callback route and uploads extracted files directly to trusted storage
+  origins only, which avoids nginx body-size limits for large WebGL artifacts
+  while keeping folder creation and auth checks in the backend callback.
 - Hive is promoted with the web blue/green color: `hive-blue` and `hive-green`
   are routed from `hive.tuturuuu.com`, and `hive-realtime` serves `/realtime` with
   `HIVE_REALTIME_TOKEN_SECRET`, `HIVE_REALTIME_URL`, and
