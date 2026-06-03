@@ -40,9 +40,18 @@ const DOCKER_WEB_ENV_KEY = 'PLATFORM_BLUE_GREEN_MONITORING_DIR';
 const DEFAULT_ARCHIVE_PAGE_SIZE = 25;
 const DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS = 7;
 const DEFAULT_RECOVERY_CACHE_LIMIT = 3;
+const MAX_REQUEST_CONSOLE_MESSAGE_LENGTH = 500;
 const MAX_ARCHIVE_PAGE_SIZE = 100;
 const REQUEST_ARCHIVE_AGGREGATE_CACHE_TTL_MS = 10_000;
 const REQUEST_ARCHIVE_TOP_ROUTE_LIMIT = 100;
+const REDACTED_CONSOLE_VALUE = '[REDACTED]';
+const SENSITIVE_QUERY_PARAM_PATTERN =
+  /([?&](?:access[_-]?token|api[_-]?key|authorization|code|cookie|key|password|refresh[_-]?token|secret|session|token)=)[^&\s]+/giu;
+const SENSITIVE_KEY_VALUE_PATTERN =
+  /(?<![?&])\b(access[_-]?token|api[_-]?key|authorization|client[_-]?secret|cookie|password|refresh[_-]?token|secret|session|token)\b\s*[:=]\s*("[^"]*"|'[^']*'|Bearer\s+[A-Za-z0-9._~+/=-]+|[^\s,;}\]]+)/giu;
+const BEARER_TOKEN_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/giu;
+const JWT_PATTERN = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/gu;
+const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/giu;
 
 interface RequestArchiveAggregateCacheEntry {
   analytics: BlueGreenMonitoringRequestArchive['analytics'];
@@ -152,6 +161,31 @@ function normalizeWatcherLastResult(
   value: unknown
 ): Record<string, unknown> | null {
   return toRecord(redactMonitoringSecretFields(value));
+}
+
+function limitRequestConsoleMessage(message: string) {
+  if (message.length <= MAX_REQUEST_CONSOLE_MESSAGE_LENGTH) {
+    return message;
+  }
+
+  return `${message.slice(0, MAX_REQUEST_CONSOLE_MESSAGE_LENGTH)}... [truncated]`;
+}
+
+function redactRequestConsoleLogMessage(value: string) {
+  return limitRequestConsoleMessage(
+    value
+      .replace(
+        SENSITIVE_QUERY_PARAM_PATTERN,
+        (_match, prefix: string) => `${prefix}${REDACTED_CONSOLE_VALUE}`
+      )
+      .replace(
+        SENSITIVE_KEY_VALUE_PATTERN,
+        (_match, key: string) => `${key}: ${REDACTED_CONSOLE_VALUE}`
+      )
+      .replace(BEARER_TOKEN_PATTERN, `Bearer ${REDACTED_CONSOLE_VALUE}`)
+      .replace(JWT_PATTERN, REDACTED_CONSOLE_VALUE)
+      .replace(EMAIL_PATTERN, '[REDACTED_EMAIL]')
+  );
 }
 
 function normalizeStageStringArray(value: unknown) {
@@ -1013,7 +1047,7 @@ function normalizeRequestConsoleLogs(
             ? record.deploymentColor
             : null,
         level,
-        message,
+        message: redactRequestConsoleLogMessage(message),
         source: typeof record?.source === 'string' ? record.source : 'route',
         time,
       },

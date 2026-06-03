@@ -124,6 +124,12 @@ Cron log-drain wrappers must not persist unauthorized attempts. Keep
 without writing `requests`, `cron_runs`, or buffered `log_events`; attackers must
 not be able to fill observability storage with unauthenticated cron probes.
 
+Request-archive console lenses must store and return redacted summaries only.
+Watcher ingestion and web-side archive normalization both redact common bearer
+tokens, JWTs, sensitive key/value fields, sensitive query parameters, and email
+addresses, then cap each attached console message at 500 characters. Do not
+persist raw app-container console payloads in `blue-green-request-logs`.
+
 Cron jobs should show both the raw expression and a natural description such as "Every 15 minutes", plus the previous and next scheduled run timestamps when the runtime snapshot provides them. Cron expressions are stored as runtime config, while visible daily schedule descriptions and run timestamps are rendered in the viewer's browser timezone.
 
 The `infrastructure-sample-resources` job runs every minute through `/api/cron/infrastructure/sample-resources`. It is the automated source for retained resource charts; do not rely on opening the Resources page to create samples.

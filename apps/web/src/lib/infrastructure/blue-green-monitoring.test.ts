@@ -707,7 +707,8 @@ describe('readBlueGreenMonitoringRequestArchive', () => {
                 containerId: 'green-123',
                 deploymentColor: 'green',
                 level: 'error',
-                message: 'Error fetching transaction export tags',
+                message:
+                  'Error fetching transaction export tags token=secret-token user=admin@example.com Authorization: Bearer abc.def.ghi',
                 source: 'route',
                 time: now - 9_500,
               },
@@ -753,7 +754,8 @@ describe('readBlueGreenMonitoringRequestArchive', () => {
       expect(archive.items[0]).toMatchObject({
         consoleLogs: [
           expect.objectContaining({
-            message: 'Error fetching transaction export tags',
+            message:
+              'Error fetching transaction export tags token: [REDACTED] user=[REDACTED_EMAIL] Authorization: [REDACTED]',
             source: 'route',
           }),
         ],
