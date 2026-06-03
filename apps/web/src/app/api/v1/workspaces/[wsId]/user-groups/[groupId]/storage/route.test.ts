@@ -1,12 +1,14 @@
+import { File as NodeFile } from 'node:buffer';
 import { type NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const GROUP_ID = '11111111-1111-4111-8111-111111111111';
 
 const mocks = vi.hoisted(() => ({
-  createWorkspaceStorageUploadPayload: vi.fn(),
   generateRandomUUID: vi.fn(() => 'upload-id'),
   requireTeachWorkspaceAccess: vi.fn(),
+  triggerWorkspaceStorageAutoExtract: vi.fn(),
+  uploadWorkspaceStorageFileDirect: vi.fn(),
 }));
 
 const groupLookup = vi.hoisted(() => {
@@ -46,11 +48,14 @@ vi.mock('@/lib/teach/api', () => ({
   ) => mocks.requireTeachWorkspaceAccess(...args),
 }));
 
+vi.mock('@/lib/workspace-storage-auto-extract', () => ({
+  triggerWorkspaceStorageAutoExtract: mocks.triggerWorkspaceStorageAutoExtract,
+}));
+
 vi.mock('@/lib/workspace-storage-provider', () => ({
-  createWorkspaceStorageUploadPayload:
-    mocks.createWorkspaceStorageUploadPayload,
   deleteWorkspaceStorageObjectByPath: vi.fn(),
   listWorkspaceStorageDirectory: vi.fn(),
+  uploadWorkspaceStorageFileDirect: mocks.uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError: class WorkspaceStorageError extends Error {
     constructor(
       message: string,
@@ -61,20 +66,42 @@ vi.mock('@/lib/workspace-storage-provider', () => ({
   },
 }));
 
-function createRequest(payload: Record<string, unknown>) {
-  return new Request(
-    `http://localhost/api/v1/workspaces/workspace-1/user-groups/${GROUP_ID}/storage`,
-    {
-      body: JSON.stringify(payload),
-      method: 'POST',
-    }
-  ) as NextRequest;
+function createUploadRequest(file: File, fields: Record<string, string> = {}) {
+  return {
+    formData: async () => ({
+      get: (key: string) => {
+        if (key === 'file') return file;
+        return fields[key] ?? null;
+      },
+    }),
+    url: `http://localhost/api/v1/workspaces/workspace-1/user-groups/${GROUP_ID}/storage`,
+  } as unknown as NextRequest;
 }
 
-async function postGroupStorage(payload: Record<string, unknown>) {
+function createJsonRequest(_payload: Record<string, unknown>) {
+  return {
+    formData: async () => {
+      throw new Error('Invalid form data');
+    },
+    url: `http://localhost/api/v1/workspaces/workspace-1/user-groups/${GROUP_ID}/storage`,
+  } as unknown as NextRequest;
+}
+
+async function postGroupStorageFile(
+  file: File,
+  fields: Record<string, string> = {}
+) {
   const { POST } = await import('./route');
 
-  return POST(createRequest(payload), {
+  return POST(createUploadRequest(file, fields), {
+    params: Promise.resolve({ groupId: GROUP_ID, wsId: 'workspace-1' }),
+  });
+}
+
+async function postGroupStorageJson(payload: Record<string, unknown>) {
+  const { POST } = await import('./route');
+
+  return POST(createJsonRequest(payload), {
     params: Promise.resolve({ groupId: GROUP_ID, wsId: 'workspace-1' }),
   });
 }
@@ -82,9 +109,11 @@ async function postGroupStorage(payload: Record<string, unknown>) {
 describe('workspace user-group storage route', () => {
   beforeEach(() => {
     vi.resetModules();
-    mocks.createWorkspaceStorageUploadPayload.mockReset();
+    vi.stubGlobal('File', NodeFile);
     mocks.generateRandomUUID.mockClear();
     mocks.requireTeachWorkspaceAccess.mockReset();
+    mocks.triggerWorkspaceStorageAutoExtract.mockReset();
+    mocks.uploadWorkspaceStorageFileDirect.mockReset();
     groupLookup.eq.mockClear();
     groupLookup.maybeSingle.mockReset();
     groupLookup.select.mockClear();
@@ -106,94 +135,118 @@ describe('workspace user-group storage route', () => {
         }),
       },
     });
-    mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
-      contentType: 'application/pdf',
+    mocks.uploadWorkspaceStorageFileDirect.mockResolvedValue({
       fullPath: `workspace-1/user-groups/${GROUP_ID}/upload-id-syllabus.pdf`,
-      headers: {
-        'Content-Type': 'application/pdf',
-      },
       path: `user-groups/${GROUP_ID}/upload-id-syllabus.pdf`,
-      signedUrl: 'https://storage.example.com/upload',
-      token: 'upload-token',
+    });
+    mocks.triggerWorkspaceStorageAutoExtract.mockResolvedValue({
+      archivePath: `user-groups/${GROUP_ID}/upload-id-syllabus.pdf`,
+      message: 'Uploaded file is not a ZIP archive.',
+      status: 'skipped',
     });
   });
 
-  it('creates group storage signed upload URLs after validating metadata', async () => {
-    const response = await postGroupStorage({
-      contentType: 'application/pdf',
-      filename: 'syllabus.pdf',
-      size: 128,
-    });
+  it('uploads group storage files through the app server after validating metadata', async () => {
+    const file = new NodeFile(['hello'], 'syllabus.pdf', {
+      type: 'application/pdf',
+    }) as File;
+    const response = await postGroupStorageFile(file);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      contentType: 'application/pdf',
-      fullPath: `workspace-1/user-groups/${GROUP_ID}/upload-id-syllabus.pdf`,
-      headers: {
-        'Content-Type': 'application/pdf',
+      autoExtract: {
+        archivePath: `user-groups/${GROUP_ID}/upload-id-syllabus.pdf`,
+        message: 'Uploaded file is not a ZIP archive.',
+        status: 'skipped',
       },
-      path: `user-groups/${GROUP_ID}/upload-id-syllabus.pdf`,
-      signedUrl: 'https://storage.example.com/upload',
-      token: 'upload-token',
+      autoExtractError: null,
+      data: {
+        fullPath: `workspace-1/user-groups/${GROUP_ID}/upload-id-syllabus.pdf`,
+        path: `user-groups/${GROUP_ID}/upload-id-syllabus.pdf`,
+      },
+      message: 'File uploaded successfully',
     });
     expect(mocks.requireTeachWorkspaceAccess).toHaveBeenCalledWith({
       context: { user: { id: 'user-1' } },
       permission: 'update_user_groups',
       wsId: 'workspace-1',
     });
-    expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
+    expect(mocks.uploadWorkspaceStorageFileDirect).toHaveBeenCalledWith(
       'workspace-1',
-      'upload-id-syllabus.pdf',
+      `user-groups/${GROUP_ID}/upload-id-syllabus.pdf`,
+      expect.any(Uint8Array),
       {
         contentType: 'application/pdf',
-        path: `user-groups/${GROUP_ID}`,
-        size: 128,
         upsert: false,
+      }
+    );
+    const uploadedBytes = mocks.uploadWorkspaceStorageFileDirect.mock
+      .calls[0]?.[2] as Uint8Array;
+    expect(uploadedBytes.byteLength).toBe(5);
+    expect(mocks.triggerWorkspaceStorageAutoExtract).toHaveBeenCalledWith(
+      'workspace-1',
+      {
+        contentType: 'application/pdf',
+        originalFilename: 'syllabus.pdf',
+        path: `user-groups/${GROUP_ID}/upload-id-syllabus.pdf`,
+        requestOrigin: 'http://localhost',
       }
     );
   });
 
-  it('rejects empty group storage uploads before signing', async () => {
-    const response = await postGroupStorage({
+  it('rejects legacy signed upload URL JSON requests before storage writes', async () => {
+    const response = await postGroupStorageJson({
       contentType: 'application/pdf',
-      filename: 'empty.pdf',
-      size: 0,
+      filename: 'syllabus.pdf',
+      size: 1,
     });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Invalid upload body',
+    });
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+  });
+
+  it('rejects empty group storage uploads before storage writes', async () => {
+    const response = await postGroupStorageFile(
+      new NodeFile([], 'empty.pdf', { type: 'application/pdf' }) as File
+    );
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       message: 'File is empty',
     });
-    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
   });
 
-  it('rejects disallowed group storage file types before signing', async () => {
-    const response = await postGroupStorage({
-      contentType: 'application/octet-stream',
-      filename: 'script.sh',
-      size: 128,
-    });
+  it('rejects disallowed group storage file types before storage writes', async () => {
+    const response = await postGroupStorageFile(
+      new NodeFile(['echo hi'], 'script.sh', {
+        type: 'application/octet-stream',
+      }) as File
+    );
 
     expect(response.status).toBe(415);
     await expect(response.json()).resolves.toEqual({
       message: 'File type not allowed',
     });
-    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
   });
 
-  it('rejects group storage overwrite signing', async () => {
-    const response = await postGroupStorage({
-      contentType: 'application/pdf',
-      filename: 'syllabus.pdf',
-      size: 128,
-      upsert: true,
-    });
+  it('rejects group storage overwrite uploads', async () => {
+    const response = await postGroupStorageFile(
+      new NodeFile(['hello'], 'syllabus.pdf', {
+        type: 'application/pdf',
+      }) as File,
+      { upsert: 'true' }
+    );
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
       message: 'Upload overwrite is not allowed for this path',
     });
-    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
   });
 
   it('returns access denials before group lookup', async () => {
@@ -204,14 +257,14 @@ describe('workspace user-group storage route', () => {
       )
     );
 
-    const response = await postGroupStorage({
-      contentType: 'application/pdf',
-      filename: 'syllabus.pdf',
-      size: 128,
-    });
+    const response = await postGroupStorageFile(
+      new NodeFile(['hello'], 'syllabus.pdf', {
+        type: 'application/pdf',
+      }) as File
+    );
 
     expect(response.status).toBe(403);
     expect(groupLookup.select).not.toHaveBeenCalled();
-    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
   });
 });

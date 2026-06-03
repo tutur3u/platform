@@ -1,6 +1,6 @@
 ---
-title: 'User Management'
-description: 'A central place to manage users, groups, and information about them.'
+title: "User Management"
+description: "A central place to manage users, groups, and information about them."
 ---
 
 ## Post Email Delivery Recovery
@@ -121,4 +121,5 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - If a contact email changes, previous verification records for the old email must no longer satisfy delivery checks.
 - Linked-account auto-confirm checks must join through `workspace_members` for the contact workspace. Do not treat a confirmed Tuturuuu account as sufficient unless that platform user belongs to the same workspace as the linked virtual user.
 - Attachment uploads must prepare signed upload URLs through the central workspace storage route, then upload bytes directly to the active storage provider. Do not stream attachment bytes through Topic Announcement-specific Next.js routes.
+- User group and course storage uploads are quota-sensitive and must use the server-mediated `uploadWorkspaceUserGroupStorageFile` / group storage multipart route. Do not mint signed upload URLs from this route because the app server cannot verify the final object size after a direct provider upload.
 - Attachment rows keep workspace, announcement, storage path, content type, and size metadata. Email delivery downloads the stored files and switches to raw MIME only when attachments exist; regular no-attachment messages should keep the standard SES `SendEmailCommand` path.

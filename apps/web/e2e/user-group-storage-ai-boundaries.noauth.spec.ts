@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext } from '@playwright/test';
 import { expect, test } from '@playwright/test';
@@ -183,20 +184,22 @@ test.describe('User-group storage AI boundaries', () => {
       );
       expect(groupResponse.status()).toBe(201);
 
-      const uploadUrlResponse = await lowPrivPage.request.post(
+      const uploadResponse = await lowPrivPage.request.post(
         `${origin}/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/storage`,
         {
-          data: {
-            contentType: 'application/pdf',
-            filename: 'empty-syllabus.pdf',
-            size: 0,
+          multipart: {
+            file: {
+              buffer: Buffer.alloc(0),
+              mimeType: 'application/pdf',
+              name: 'empty-syllabus.pdf',
+            },
           },
           failOnStatusCode: false,
           headers,
         }
       );
-      expect(uploadUrlResponse.status()).toBe(400);
-      await expect(uploadUrlResponse.json()).resolves.toEqual({
+      expect(uploadResponse.status()).toBe(400);
+      await expect(uploadResponse.json()).resolves.toEqual({
         message: 'File is empty',
       });
 

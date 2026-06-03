@@ -34,6 +34,16 @@ interface WorkspaceStorageFinalizeUploadResponse {
   };
 }
 
+interface WorkspaceStorageDirectUploadResponse {
+  message?: string;
+  autoExtract?: WorkspaceStorageAutoExtractResult;
+  autoExtractError?: string | null;
+  data?: {
+    path?: string;
+    fullPath?: string | null;
+  };
+}
+
 export interface WorkspaceStorageAutoExtractResult {
   status?: string;
   message?: string;
@@ -403,44 +413,49 @@ export async function uploadWorkspaceUserGroupStorageFile(
   },
   clientOptions?: InternalApiClientOptions
 ): Promise<WorkspaceStorageUploadResult> {
-  const fetchImpl = clientOptions?.fetch ?? globalThis.fetch;
   const { onUploadProgress, upsert } = options ?? {};
-  const uploadUrlResult = await createWorkspaceUserGroupStorageUploadUrl(
-    workspaceId,
-    groupId,
-    file.name,
+  const client = getInternalApiClient(clientOptions);
+  const formData = new FormData();
+  formData.set('file', file);
+
+  if (upsert === true) {
+    formData.set('upsert', 'true');
+  }
+
+  const response = await client.json<WorkspaceStorageDirectUploadResponse>(
+    `/api/v1/workspaces/${encodePathSegment(
+      workspaceId
+    )}/user-groups/${encodePathSegment(groupId)}/storage`,
     {
-      contentType: file.type || 'application/octet-stream',
-      size: file.size,
-      upsert,
-    },
-    clientOptions
-  );
-
-  return uploadFileWithSignedUrl(
-    file,
-    uploadUrlResult,
-    fetchImpl,
-    onUploadProgress,
-    async (result) => {
-      const finalized = await finalizeWorkspaceStorageUpload(
-        workspaceId,
-        {
-          path: result.path,
-          contentType: file.type || 'application/octet-stream',
-          originalFilename: file.name,
-        },
-        clientOptions
-      );
-
-      return {
-        autoExtract: finalized.autoExtract,
-        finalize: {
-          success: true,
-        },
-      };
+      method: 'POST',
+      body: formData,
+      cache: 'no-store',
     }
   );
+
+  if (!response.data?.path) {
+    throw new Error('Missing upload response payload');
+  }
+
+  onUploadProgress?.({
+    loaded: file.size,
+    percent: 100,
+    total: file.size,
+  });
+
+  return {
+    autoExtract: response.autoExtract,
+    finalize: response.autoExtractError
+      ? {
+          success: false,
+          error: response.autoExtractError,
+        }
+      : {
+          success: true,
+        },
+    fullPath: response.data.fullPath ?? null,
+    path: response.data.path,
+  };
 }
 
 export async function uploadWorkspaceTaskFile(
@@ -536,27 +551,15 @@ export async function createWorkspaceUserGroupStorageUploadUrl(
   },
   clientOptions?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(clientOptions);
-  const payload = await client.json<WorkspaceUploadUrlResponse>(
-    `/api/v1/workspaces/${encodePathSegment(
-      workspaceId
-    )}/user-groups/${encodePathSegment(groupId)}/storage`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        filename,
-        contentType: options?.contentType,
-        upsert: options?.upsert,
-        size: options?.size,
-      }),
-      cache: 'no-store',
-    }
-  );
+  void workspaceId;
+  void groupId;
+  void filename;
+  void options;
+  void clientOptions;
 
-  return parseSignedUploadPayload(payload);
+  throw new Error(
+    'User-group storage uploads must use uploadWorkspaceUserGroupStorageFile so workspace quota checks use the uploaded byte length.'
+  );
 }
 
 export async function createWorkspaceTaskUploadUrl(

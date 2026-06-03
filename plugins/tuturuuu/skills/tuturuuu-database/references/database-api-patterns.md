@@ -56,6 +56,10 @@ workspace-scoped API work.
   URL, and validate the actual stored object during finalize. When a finalized
   object violates the policy, delete it before returning an error so understated
   signed-upload requests cannot retain oversized files.
+- For quota-sensitive namespaces where finalize cannot reliably verify the
+  stored object, such as user-group/course storage, route multipart bytes
+  through `apps/web` and upload with the measured server-side byte length
+  instead of issuing a signed upload URL.
 
 ## Validation
 
