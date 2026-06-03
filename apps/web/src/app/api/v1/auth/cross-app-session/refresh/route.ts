@@ -1,6 +1,7 @@
 import {
   createAppSessionTokenPair,
   verifyAppSessionRefreshToken,
+  verifyAppSessionToken,
 } from '@tuturuuu/auth/app-session';
 import { resolveInternalAppSessionPolicy } from '@tuturuuu/auth/app-session-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -128,6 +129,25 @@ async function verifyRefreshToken({
   return verification;
 }
 
+function verifyLegacyAccessToken({
+  accessToken,
+  targetApp,
+}: {
+  accessToken?: string;
+  targetApp: AppName;
+}) {
+  if (!accessToken) {
+    return {
+      error: 'Missing app session access token',
+      ok: false as const,
+    };
+  }
+
+  return verifyAppSessionToken(accessToken, {
+    targetApp,
+  });
+}
+
 async function refreshCrossAppSession(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = refreshSchema.safeParse(body);
@@ -139,7 +159,9 @@ async function refreshCrossAppSession(request: NextRequest) {
     );
   }
 
-  if (!parsed.data.refreshToken) {
+  const { accessToken, refreshToken, targetApp } = parsed.data;
+
+  if (!accessToken && !refreshToken) {
     return jsonNoStore(
       { error: 'Missing app session refresh credentials' },
       { status: 401 }
@@ -147,11 +169,16 @@ async function refreshCrossAppSession(request: NextRequest) {
   }
 
   const { policy } = await getAppCoordinationSessionPolicy();
-  const verification = await verifyRefreshToken({
-    refreshToken: parsed.data.refreshToken,
-    replayGraceSeconds: policy.browserRefreshReplayGraceSeconds,
-    targetApp: parsed.data.targetApp,
-  });
+  const verification = refreshToken
+    ? await verifyRefreshToken({
+        refreshToken,
+        replayGraceSeconds: policy.browserRefreshReplayGraceSeconds,
+        targetApp,
+      })
+    : verifyLegacyAccessToken({
+        accessToken,
+        targetApp,
+      });
 
   if (!verification.ok) {
     return jsonNoStore(
@@ -176,12 +203,12 @@ async function refreshCrossAppSession(request: NextRequest) {
 
   const internalAppSessionPolicy = resolveInternalAppSessionPolicy(
     policy,
-    parsed.data.targetApp
+    targetApp
   );
   const session = createAppSessionTokenPair(
     {
       email: data.user.email ?? verification.claims.email,
-      targetApp: parsed.data.targetApp,
+      targetApp,
       userId: verification.claims.sub,
     },
     {

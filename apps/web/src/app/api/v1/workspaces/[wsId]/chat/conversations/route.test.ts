@@ -116,6 +116,7 @@ describe('workspace chat conversations route', () => {
     mockRouteContext();
     mocks.callPrivateChatRpc.mockResolvedValue([]);
     mocks.getPermissions.mockResolvedValue({
+      permissions: ['manage_workspace_secrets'],
       withoutPermission: () => false,
     });
     mocks.listAiAgentExternalThreadConversations.mockResolvedValue([]);
@@ -157,6 +158,7 @@ describe('workspace chat conversations route', () => {
 
   it('omits virtual AI-agent IDs for non-admin chat viewers', async () => {
     mocks.getPermissions.mockResolvedValue({
+      permissions: ['view_chat'],
       withoutPermission: () => true,
     });
 
@@ -176,6 +178,26 @@ describe('workspace chat conversations route', () => {
     });
     expect(payload.conversations[0].metadata).not.toHaveProperty('agentId');
     expect(payload.conversations[0].metadata).not.toHaveProperty('channelId');
+    expect(mocks.listRootAiAgentDiscoveryConversations).toHaveBeenCalledWith({
+      includeAdminMetadata: false,
+      wsId: ROOT_WORKSPACE_ID,
+    });
+  });
+
+  it('omits virtual AI-agent IDs when only inherited admin access is present', async () => {
+    mocks.getPermissions.mockResolvedValue({
+      permissions: ['admin'],
+      withoutPermission: () => false,
+    });
+
+    const response = await callGet();
+
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    expect(payload.conversations[0].metadata).toEqual({
+      readOnly: true,
+      source: 'ai-agent',
+    });
     expect(mocks.listRootAiAgentDiscoveryConversations).toHaveBeenCalledWith({
       includeAdminMetadata: false,
       wsId: ROOT_WORKSPACE_ID,

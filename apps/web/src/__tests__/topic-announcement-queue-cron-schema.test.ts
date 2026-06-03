@@ -18,6 +18,8 @@ describe('topic announcement queue cron migration', () => {
     const source = readFileSync(migrationPath, 'utf8');
 
     expect(source).toContain('drop constraint if exists');
+    expect(source).toContain('alter table private.topic_announcements');
+    expect(source).not.toContain('public.topic_announcements');
     expect(source).toContain('topic_announcements_status_check');
     expect(source).toContain("'processing'");
     expect(source).toContain('topic_announcements_processing_updated_idx');

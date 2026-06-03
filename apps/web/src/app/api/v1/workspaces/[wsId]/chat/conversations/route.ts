@@ -94,9 +94,7 @@ async function canIncludeAiAgentAdminMetadata({
     wsId: ROOT_WORKSPACE_ID,
   });
 
-  return Boolean(
-    permissions && !permissions.withoutPermission('manage_workspace_secrets')
-  );
+  return Boolean(permissions?.permissions.includes('manage_workspace_secrets'));
 }
 
 function isMissingArchivedChatListRpc(error: unknown) {

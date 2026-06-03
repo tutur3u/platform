@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "bun run src/server.js",
-    "test": "node --test src/limits.test.js src/upload-destination.test.js"
+    "test": "vitest run"
   },
   "dependencies": {
     "unzipper": "^0.12.3"

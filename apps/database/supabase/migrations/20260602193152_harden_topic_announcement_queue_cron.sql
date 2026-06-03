@@ -1,7 +1,7 @@
-alter table public.topic_announcements
+alter table private.topic_announcements
   drop constraint if exists topic_announcements_status_check;
 
-alter table public.topic_announcements
+alter table private.topic_announcements
   add constraint topic_announcements_status_check check (
     status in (
       'draft',
@@ -15,7 +15,7 @@ alter table public.topic_announcements
   );
 
 create index if not exists topic_announcements_processing_updated_idx
-  on public.topic_announcements (updated_at)
+  on private.topic_announcements (updated_at)
   where status = 'processing' and scheduled_send_at is not null;
 
 notify pgrst, 'reload schema';

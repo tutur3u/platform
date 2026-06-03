@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { describe, it } from 'vitest';
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
   DEFAULT_MAX_ARCHIVE_DOWNLOAD_BYTES,

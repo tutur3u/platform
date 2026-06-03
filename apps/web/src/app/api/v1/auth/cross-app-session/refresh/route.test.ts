@@ -160,7 +160,7 @@ describe('cross-app app-session refresh route', () => {
     expect(response.status).toBe(401);
   });
 
-  it('rejects access-only session refresh attempts', async () => {
+  it('upgrades still-valid access-only sessions into a refreshable pair', async () => {
     const access = createAppSessionToken({
       targetApp: 'learn',
       userId: 'user-1',
@@ -172,13 +172,19 @@ describe('cross-app app-session refresh route', () => {
         targetApp: 'learn',
       })
     );
+    const body = await response.json();
 
-    expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({
-      error: 'Missing app session refresh credentials',
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      appSessionRefreshEarlySeconds: 900,
+      sessionData: { email: 'agent@example.com' },
+      userId: 'user-1',
+      valid: true,
     });
-    expect(mocks.getAppCoordinationSessionPolicy).not.toHaveBeenCalled();
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(body.appSessionToken).toMatch(/^ttr_app_/u);
+    expect(body.appSessionRefreshToken).toMatch(/^ttr_app_/u);
+    expect(mocks.getAppCoordinationSessionPolicy).toHaveBeenCalledTimes(1);
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
   });
 
   it('rejects refresh when the user no longer exists', async () => {
