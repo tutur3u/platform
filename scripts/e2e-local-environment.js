@@ -1,6 +1,6 @@
 const path = require('node:path');
 
-const LOCAL_E2E_BASE_URL = 'http://localhost:7803';
+const LOCAL_E2E_BASE_URL = 'https://tuturuuu.localhost';
 const LOCAL_E2E_SUPABASE_URL = 'http://127.0.0.1:8001';
 const LOCAL_E2E_DOCKER_SUPABASE_URL = 'http://host.docker.internal:8001';
 const LOCAL_E2E_SUPABASE_PUBLISHABLE_KEY =
@@ -17,6 +17,7 @@ const LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD =
 const SAFE_LOCAL_WEB_ORIGINS = new Set([
   'http://127.0.0.1:7803',
   'http://localhost:7803',
+  'https://tuturuuu.localhost',
 ]);
 const SAFE_LOCAL_SUPABASE_ORIGINS = new Set([
   'http://127.0.0.1:8001',

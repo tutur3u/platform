@@ -34,6 +34,16 @@ test('assertSafeE2EEnvironment accepts only local web and Supabase origins', () 
   );
 });
 
+test('local E2E app URL uses Tuturuuu localhost for shared-cookie coverage', () => {
+  assert.equal(LOCAL_E2E_BASE_URL, 'https://tuturuuu.localhost');
+  assert.doesNotThrow(() =>
+    assertSafeE2EEnvironment({
+      BASE_URL: 'http://localhost:7803',
+      NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
+    })
+  );
+});
+
 test('assertSafeE2EEnvironment rejects cloud Supabase URLs', () => {
   assert.throws(
     () =>

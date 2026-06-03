@@ -375,6 +375,11 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     workflow,
     /\n {2}push:\n {4}branches-ignore:\n {6}- production\n/
   );
+  assert.match(
+    e2eJob,
+    /BASE_URL: https:\/\/tuturuuu\.localhost/u,
+    'E2E must exercise the shared-cookie localhost domain, not plain localhost'
+  );
   assert.match(e2eJob, /github\.ref != 'refs\/heads\/production'/);
   assert.notEqual(cleanupIndex, -1);
   assert.notEqual(runIndex, -1);
