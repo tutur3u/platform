@@ -91,6 +91,7 @@ test('createLocalE2EEnvFileContent is pinned to local Docker E2E values', () => 
     content,
     new RegExp(`NEXT_PUBLIC_WEB_APP_URL=${LOCAL_E2E_BASE_URL}`)
   );
+  assert.match(content, new RegExp(`PORTLESS_URL=${LOCAL_E2E_BASE_URL}`));
   assert.match(content, new RegExp(`WEB_APP_URL=${LOCAL_E2E_BASE_URL}`));
   assert.match(
     content,
@@ -144,6 +145,7 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
   assert.equal(env.NEXT_PUBLIC_APP_URL, LOCAL_E2E_BASE_URL);
   assert.equal(env.NEXT_PUBLIC_WEB_APP_URL, LOCAL_E2E_BASE_URL);
   assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, LOCAL_E2E_SUPABASE_URL);
+  assert.equal(env.PORTLESS_URL, LOCAL_E2E_BASE_URL);
   assert.equal(
     env.NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS,
     LOCAL_E2E_AUTH_BYPASS

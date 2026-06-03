@@ -15,6 +15,7 @@ import {
   consumeVerifyTokenRequest,
   createCentralizedAuthProxy,
   normalizeAuthRedirectPath,
+  propagateAuthCookies,
   refreshAppSessionForRequest,
   resolveCanonicalRequestOrigin,
 } from './index';
@@ -64,6 +65,30 @@ describe('auth proxy redirect helpers', () => {
     mocks.createAdminClient.mockResolvedValue({
       from: vi.fn(),
     });
+  });
+
+  it('propagates raw Set-Cookie headers for same-name auth cookie updates', () => {
+    const source = NextResponse.next();
+    const target = NextResponse.next();
+
+    source.headers.append(
+      'set-cookie',
+      'sb-test-auth-token.0=chunk; Path=/; Domain=.tuturuuu.com; SameSite=lax'
+    );
+    source.headers.append(
+      'set-cookie',
+      'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0'
+    );
+
+    propagateAuthCookies(source, target);
+
+    const setCookie = target.headers.get('set-cookie') ?? '';
+    expect(setCookie).toContain(
+      'sb-test-auth-token.0=chunk; Path=/; Domain=.tuturuuu.com'
+    );
+    expect(setCookie).toContain(
+      'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0'
+    );
   });
 
   it('resolves the canonical public origin from forwarded headers', () => {
@@ -407,6 +432,88 @@ describe('auth proxy redirect helpers', () => {
       `Bearer ${token}`
     );
     expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
+
+  it('uses shared Supabase auth on registered Tuturuuu apps and clears app-session cookies', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    const session = createAppSessionTokenPair({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+    mocks.updateSession.mockResolvedValueOnce({
+      claims: {
+        aal: 'aal1',
+        exp: 1_767_225_600,
+        sub: 'user-1',
+      },
+      res: NextResponse.next(),
+    });
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${session.access.token}`,
+          `${APP_SESSION_REFRESH_COOKIE_NAME}=${session.refresh.token}`,
+          'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session',
+        ].join('; '),
+      },
+    });
+
+    const response = await authProxy(request);
+    const setCookie = response.headers.get('set-cookie') ?? '';
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.updateSession).toHaveBeenCalledWith(request);
+    expect(setCookie).toContain(`${APP_SESSION_COOKIE_NAME}=;`);
+    expect(setCookie).toContain(`${APP_SESSION_REFRESH_COOKIE_NAME}=;`);
+    expect(setCookie).toContain('Max-Age=0');
+    expect(getMiddlewareRequestHeader(response, 'authorization')).toBeNull();
+  });
+
+  it('keeps the app-session fallback when shared Supabase auth has no claims', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    const { token } = createAppSessionToken({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+    mocks.updateSession.mockResolvedValueOnce({
+      claims: null,
+      res: NextResponse.next(),
+    });
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${token}`,
+          'sb-nzamlzqfdwaaxdefwraj-auth-token=stale-session',
+        ].join('; '),
+      },
+    });
+
+    const response = await authProxy(request);
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.updateSession).toHaveBeenCalledWith(request);
+    expect(response.headers.get('set-cookie') ?? '').not.toContain(
+      `${APP_SESSION_COOKIE_NAME}=;`
+    );
+    expect(getMiddlewareRequestHeader(response, 'authorization')).toBe(
+      `Bearer ${token}`
+    );
   });
 
   it('refreshes registered app sessions when the access cookie is near expiry', async () => {

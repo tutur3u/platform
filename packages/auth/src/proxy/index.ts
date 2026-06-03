@@ -14,12 +14,14 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { AppCoordinationTokenClaims } from '../app-coordination';
 import {
+  clearAppSessionCookie,
   clearSupabaseAuthCookies,
   getAppSessionRefreshEarlySeconds,
   getAppSessionRefreshTokenFromRequest,
   getAppSessionTokenFromRequest,
   getWebAppSessionRefreshTokenFromRequest,
   getWebAppSessionTokenFromRequest,
+  hasSupportedSupabaseAuthCookie,
   verifyAppSessionRequest,
 } from '../app-session';
 import {
@@ -162,6 +164,13 @@ export function propagateAuthCookies(
   source: NextResponse,
   target: NextResponse
 ): void {
+  const setCookieHeaders = getSetCookieHeaders(source.headers);
+
+  if (setCookieHeaders.length > 0) {
+    copySetCookieHeaders(setCookieHeaders, target);
+    return;
+  }
+
   for (const cookie of source.cookies.getAll()) {
     target.cookies.set(cookie);
   }
@@ -907,6 +916,34 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
         isPublicPath?.(req.nextUrl.pathname);
 
       if (appSession) {
+        if (hasSupportedSupabaseAuthCookie(req)) {
+          const { res, claims } = await updateSession(req);
+
+          if (claims) {
+            if (mfaEnabled) {
+              const mfaRedirect = await handleMFACheck(
+                req,
+                claims.aal,
+                claims.sub,
+                sessionIdFromClaims(claims),
+                webAppUrl,
+                mfaProtectedPaths,
+                mfaExcludedPaths,
+                mfaEnforceForAll
+              );
+
+              if (mfaRedirect) {
+                propagateAuthCookies(res, mfaRedirect);
+                clearAppSessionCookie(mfaRedirect);
+                return mfaRedirect;
+              }
+            }
+
+            clearAppSessionCookie(res);
+            return res;
+          }
+        }
+
         const appSessionVerification = await refreshAppSessionForRequest(req, {
           now: appSession.now,
           targetApp: appSession.targetApp,

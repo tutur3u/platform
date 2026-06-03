@@ -6,6 +6,8 @@ export type SupabaseCookie = {
   options: CookieOptions;
 };
 
+const HOST_ONLY_COOKIE_CLEAR_DATE = 'Thu, 01 Jan 1970 00:00:00 GMT';
+const SAFE_COOKIE_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/u;
 const SHARED_COOKIE_DOMAINS = [
   {
     cookieDomain: '.tuturuuu.com',
@@ -109,6 +111,59 @@ function resolveSharedCookieDomain(url: string | URL | null | undefined) {
 
 export function getSupabaseAuthStorageKey(url: string): string {
   return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+}
+
+function getSafeCookiePath(path: string | undefined) {
+  return path && !/[;\r\n]/u.test(path) ? path : '/';
+}
+
+function isSafeCookieName(name: string) {
+  return SAFE_COOKIE_NAME_PATTERN.test(name);
+}
+
+export function getHostOnlyCookieClearHeadersForNames(
+  cookieNames: Iterable<string>,
+  path = '/'
+) {
+  const seen = new Set<string>();
+  const headers: string[] = [];
+  const safePath = getSafeCookiePath(path);
+
+  for (const name of cookieNames) {
+    if (!isSafeCookieName(name)) {
+      continue;
+    }
+
+    const key = `${name}\0${safePath}`;
+
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    headers.push(
+      `${name}=; Path=${safePath}; Expires=${HOST_ONLY_COOKIE_CLEAR_DATE}; Max-Age=0`
+    );
+  }
+
+  return headers;
+}
+
+export function getHostOnlyCookieClearHeaders(cookiesToSet: SupabaseCookie[]) {
+  const cookiesByPath = new Map<string, string[]>();
+
+  for (const cookie of cookiesToSet) {
+    if (!cookie.options.domain) {
+      continue;
+    }
+
+    const path = getSafeCookiePath(cookie.options.path);
+    cookiesByPath.set(path, [...(cookiesByPath.get(path) ?? []), cookie.name]);
+  }
+
+  return [...cookiesByPath].flatMap(([path, names]) =>
+    getHostOnlyCookieClearHeadersForNames(names, path)
+  );
 }
 
 export function getSupabaseCookieOptions(

@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkEnvVariables,
+  getHostOnlyCookieClearHeaders,
+  getHostOnlyCookieClearHeadersForNames,
   getSupabaseAuthStorageKey,
   getSupabaseCookieOptions,
 } from '../common';
@@ -226,6 +228,88 @@ describe('common', () => {
         sameSite: 'lax',
         secure: true,
       });
+    });
+  });
+
+  describe('getHostOnlyCookieClearHeaders', () => {
+    it('builds host-only expiration headers for shared-domain cookie writes', () => {
+      expect(
+        getHostOnlyCookieClearHeaders([
+          {
+            name: 'sb-test-auth-token.0',
+            options: {
+              domain: '.tuturuuu.com',
+              path: '/',
+              sameSite: 'lax',
+              secure: true,
+            },
+            value: 'chunk',
+          },
+          {
+            name: 'sb-test-auth-token.0',
+            options: {
+              domain: '.tuturuuu.com',
+              path: '/',
+              sameSite: 'lax',
+              secure: true,
+            },
+            value: 'chunk',
+          },
+          {
+            name: 'sb-test-auth-token.1',
+            options: {
+              domain: '.tuturuuu.com',
+              path: '/',
+              sameSite: 'lax',
+              secure: true,
+            },
+            value: 'chunk',
+          },
+        ])
+      ).toEqual([
+        'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+        'sb-test-auth-token.1=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+      ]);
+    });
+
+    it('does not emit host-only cleanup for host-scoped cookie writes', () => {
+      expect(
+        getHostOnlyCookieClearHeaders([
+          {
+            name: 'sb-test-auth-token',
+            options: {
+              path: '/',
+              sameSite: 'lax',
+            },
+            value: 'session',
+          },
+        ])
+      ).toEqual([]);
+    });
+
+    it('builds deduped host-only expiration headers from cookie names', () => {
+      expect(
+        getHostOnlyCookieClearHeadersForNames([
+          'sb-test-auth-token.0',
+          'sb-test-auth-token.0',
+          'sb-test-auth-token.1',
+        ])
+      ).toEqual([
+        'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+        'sb-test-auth-token.1=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+      ]);
+    });
+
+    it('skips unsafe cookie names in host-only expiration headers', () => {
+      expect(
+        getHostOnlyCookieClearHeadersForNames([
+          'sb-test-auth-token.0',
+          'bad;name',
+          'bad\rname',
+        ])
+      ).toEqual([
+        'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+      ]);
     });
   });
 });

@@ -19,6 +19,7 @@ import {
   getAppSessionUserFromRequest,
   getWebAppSessionRefreshTokenFromRequest,
   getWebAppSessionTokenFromRequest,
+  hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
   setAppSessionCookie,
   setAppSessionRefreshCookie,
@@ -552,6 +553,33 @@ describe('app-session JWTs', () => {
     expect(setCookie).not.toContain('sb-nzamlzqfdwaaxdefwraj-auth-token=;');
     expect(setCookie).not.toContain('sb-nzamlzqfdwaaxdefwraj-auth-token.0=;');
     expect(setCookie).toContain('sb-stale-auth-token=;');
+  });
+
+  it('detects when a request can use shared Supabase auth on a Tuturuuu subdomain', () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL =
+      'https://nzamlzqfdwaaxdefwraj.supabase.co';
+    const request = new NextRequest('https://calendar.tuturuuu.com/', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=ttr_app_local`,
+          'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session',
+        ].join('; '),
+      },
+    });
+
+    expect(hasSupportedSupabaseAuthCookie(request)).toBe(true);
+  });
+
+  it('does not treat Supabase cookies on unrelated hosts as shared auth support', () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL =
+      'https://nzamlzqfdwaaxdefwraj.supabase.co';
+    const request = new NextRequest('https://preview.vercel.app/', {
+      headers: {
+        cookie: 'sb-nzamlzqfdwaaxdefwraj-auth-token=preview-session',
+      },
+    });
+
+    expect(hasSupportedSupabaseAuthCookie(request)).toBe(false);
   });
 
   it('preserves the canonical shared Supabase cookie on local Tuturuuu subdomains', () => {

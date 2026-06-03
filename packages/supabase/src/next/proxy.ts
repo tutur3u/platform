@@ -3,10 +3,16 @@ import type { Database } from '@tuturuuu/types';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import {
+  getDuplicateSupabaseAuthCookieNames,
   getMalformedSupabaseAuthCookieNames,
   sanitizeSupabaseAuthCookies,
 } from './auth-cookie-sanitizer';
-import { checkEnvVariables, getSupabaseCookieOptions } from './common';
+import {
+  checkEnvVariables,
+  getHostOnlyCookieClearHeaders,
+  getHostOnlyCookieClearHeadersForNames,
+  getSupabaseCookieOptions,
+} from './common';
 import type { SupabaseJwtPayload } from './user';
 
 export { getMalformedSupabaseAuthCookieNames };
@@ -21,8 +27,12 @@ export async function updateSession(request: NextRequest): Promise<{
     });
 
     const { url, key } = checkEnvVariables({ useSecretKey: false });
+    const cookieOptions = getSupabaseCookieOptions(url, request.url);
+    const duplicateAuthCookieNames = cookieOptions.domain
+      ? getDuplicateSupabaseAuthCookieNames(request.headers.get('cookie'), url)
+      : [];
     const supabase = createServerClient<Database>(url, key, {
-      cookieOptions: getSupabaseCookieOptions(url, request.url),
+      cookieOptions,
       cookies: {
         getAll() {
           return sanitizeSupabaseAuthCookies(
@@ -44,6 +54,9 @@ export async function updateSession(request: NextRequest): Promise<{
           cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, options);
           });
+          getHostOnlyCookieClearHeaders(cookiesToSet).forEach((header) => {
+            supabaseResponse.headers.append('set-cookie', header);
+          });
         },
       },
     });
@@ -53,6 +66,12 @@ export async function updateSession(request: NextRequest): Promise<{
     // issues with users being randomly logged out.
 
     const { data } = await supabase.auth.getClaims();
+
+    getHostOnlyCookieClearHeadersForNames(duplicateAuthCookieNames).forEach(
+      (header) => {
+        supabaseResponse.headers.append('set-cookie', header);
+      }
+    );
 
     // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
     // creating a new response object with NextResponse.next() make sure to:

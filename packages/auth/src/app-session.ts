@@ -666,6 +666,14 @@ export function clearSupabaseAuthCookies(
   return response;
 }
 
+export function hasSupportedSupabaseAuthCookie(request: RequestLike) {
+  return getRequestCookieNames(request).some(
+    (name) =>
+      isSupabaseAuthCookieName(name) &&
+      shouldPreserveSupabaseAuthCookie(request, name)
+  );
+}
+
 export function createAppSessionUser(
   claims: AppCoordinationTokenClaims
 ): SupabaseUser {
