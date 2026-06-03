@@ -69,7 +69,7 @@ jobs:
 
       - name: Build workspace dependencies
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry
+        run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry --filter=@tuturuuu/devbox
 
       - name: Generate shared build metadata
         if: steps.check_commits.outputs.skip_build != 'true'

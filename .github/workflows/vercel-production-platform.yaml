@@ -57,6 +57,10 @@ jobs:
         with:
           node-version: 24
 
+      - name: Wait for package release gate
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: node scripts/ci/package-release-readiness.js wait-changed-package-versions
+
       - name: Install dependencies
         if: steps.check_commits.outputs.skip_build != 'true'
         run: bun install
@@ -74,7 +78,7 @@ jobs:
 
       - name: Build workspace dependencies
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry
+        run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry --filter=@tuturuuu/devbox
 
       - name: Generate shared build metadata
         if: steps.check_commits.outputs.skip_build != 'true'

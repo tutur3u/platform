@@ -108,6 +108,10 @@ jobs:
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Wait for npm workspace dependencies
+        if: steps.version-check.outputs.should_publish == 'true'
+        run: node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/sdk
+
       - name: Build SDK workspace dependencies
         if: steps.version-check.outputs.should_publish == 'true'
         run: |
@@ -235,4 +239,35 @@ jobs:
       # Provenance attestations are generated automatically for public packages
       # in public repositories when publishing via trusted publishing.
       - name: Publish package
-        run: npm publish "${{ steps.artifact.outputs.path }}" --ignore-scripts
+        env:
+          EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
+          EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
+        run: |
+          set -o pipefail
+          PUBLISH_LOG="${RUNNER_TEMP}/npm-publish.log"
+
+          if ! npm publish "${{ steps.artifact.outputs.path }}" --ignore-scripts 2>&1 | tee "$PUBLISH_LOG"; then
+            if grep -Eiq 'E404|404 Not Found|not have permission|ENEEDAUTH' "$PUBLISH_LOG"; then
+              echo "::error::npm could not publish ${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION}. Ensure the npm package exists when npm requires first-publish setup, package access is public, and the trusted publisher is configured for this repository, workflow filename, and environment."
+            fi
+
+            exit 1
+          fi
+
+      - name: Wait for npm publication
+        env:
+          EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
+          EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
+        run: |
+          for attempt in {1..60}; do
+            if npm view "${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION}" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
+              echo "${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION} is visible on npm."
+              exit 0
+            fi
+
+            echo "Waiting for ${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION} on npm (${attempt}/60)."
+            sleep 10
+          done
+
+          echo "::error::${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION} was published but did not become visible on npm before timeout."
+          exit 1

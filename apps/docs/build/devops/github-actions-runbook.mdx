@@ -224,13 +224,26 @@ or publish jobs can start.
 
 Keep internal Tuturuuu dependencies as `workspace:*` in source package
 manifests so local builds always use the checked-out workspace. Package release
-workflows must rewrite the checked-out manifest immediately before `npm pack`
-with `node scripts/ci/prepare-npm-package-manifest.js packages/<name>`. That
+workflows must first run
+`node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/<name>`
+so publishable Tuturuuu dependencies are visible on npm before the dependent
+tarball is packed. They must then rewrite the checked-out manifest immediately
+before `npm pack` with
+`node scripts/ci/prepare-npm-package-manifest.js packages/<name>`. That
 temporary rewrite replaces `workspace:` protocol ranges with the current
-workspace package versions so npm consumers can install the tarball. If a
-published package depends on another release-please-managed Tuturuuu package,
-that dependency also needs its own `release-*-package.yaml` workflow and
-matching `tuturuuu.ts` entry.
+workspace package versions so npm consumers can install the tarball. After
+`npm publish`, the publish job polls `npm view` for the exact published version
+before it reports success. If npm returns first-publish or permission errors,
+fix the npm package access and trusted publisher setup instead of skipping the
+package. If a published package depends on another release-please-managed
+Tuturuuu package, that dependency also needs its own
+`release-*-package.yaml` workflow and matching `tuturuuu.ts` entry.
+
+The platform production Vercel workflow also runs
+`node scripts/ci/package-release-readiness.js wait-changed-package-versions`
+before installing dependencies. Release-please package bumps therefore publish
+and become visible on npm before the normal production platform deployment flow
+continues.
 
 ### Newer-commit guards
 

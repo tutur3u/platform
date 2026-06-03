@@ -64,7 +64,8 @@ const doc = await client.documents.create({
     Use `ttr` for browser login, workspace discovery, and task workflows
   </Card>
   <Card title="Headless Login" icon="copy">
-    Copy a short-lived CLI token from the browser when a local callback is not available
+    Copy a short-lived CLI token from the browser when a local callback is not
+    available
   </Card>
   <Card title="Storage Operations" icon="folder">
     Upload, download, list, and delete files and folders
@@ -190,15 +191,17 @@ workflow can be dispatched manually to catch up a version that already landed on
 `production`. Manual dispatches from any other ref are rejected before
 dependency installation, packaging, or npm trusted publishing can run. The
 workflow runs the SDK tests, skips publication if the exact package version
-already exists on npm, prepares a tarball with `npm pack` outside the
+already exists on npm, waits for publishable Tuturuuu workspace dependencies to
+be visible on npm, prepares a tarball with `npm pack` outside the
 trusted-publish job, and then publishes that tarball through
 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers). Only the
 final `publish-npm` job requests `id-token: write`, so GitHub Actions mints the
 short-lived OIDC token after dependency installation, package builds, and version
 checks have already finished. That job downloads the prepared artifact, verifies
 its package `name` and `version`, confirms the bundled `npm` CLI supports trusted
-publishing, and runs `npm publish ./<tarball> --ignore-scripts` without an
-`NPM_TOKEN` so npm treats the downloaded artifact as a local file path. The job
+publishing, runs `npm publish ./<tarball> --ignore-scripts`, and polls `npm view`
+until the exact SDK version is visible without using an `NPM_TOKEN`. npm treats
+the downloaded artifact as a local file path. The job
 targets the GitHub environment `sdk-release-production`; keep that environment
 restricted to the `production` branch in repository settings, and keep the npm
 trusted publisher bound to the same environment name so a branch-selected
@@ -222,6 +225,9 @@ imports. The workflow then runs
 `npm pack` so the published manifest contains concrete npm versions instead of
 local `workspace:` protocol ranges. Keep matching npm release workflows for the
 SDK runtime workspace dependencies so consumers can install the published SDK.
+When release-please bumps the SDK and one of those dependencies in the same
+production push, the SDK workflow waits for the dependency versions before it
+packs and publishes.
 
 The matching npm-side trusted publisher must stay configured at
 `https://www.npmjs.com/package/tuturuuu/access` with these exact values:
@@ -232,13 +238,14 @@ The matching npm-side trusted publisher must stay configured at
 - **Workflow filename**: `release-sdk-package.yaml`
 - **Environment name**: `sdk-release-production`
 
-If the npm-side configuration drifts (for example after a repo rename or after
-moving the publish step into another workflow file), `npm publish` will fail
-with `ENEEDAUTH`. Update the trusted publisher entry first; do not paper over
-the failure by reintroducing a long-lived `NPM_TOKEN`. After confirming a
-trusted-publisher release works end to end, the npm package settings should
-keep `Require two-factor authentication and disallow tokens` enabled so the
-package cannot be published with classic tokens.
+If the npm-side configuration drifts (for example after a repo rename, missing
+first-publish setup, package access drift, or after moving the publish step into
+another workflow file), `npm publish` can fail with `ENEEDAUTH`, `E404`, or
+permission text. Update the npm package access or trusted publisher entry first;
+do not paper over the failure by reintroducing a long-lived `NPM_TOKEN`. After
+confirming a trusted-publisher release works end to end, the npm package
+settings should keep `Require two-factor authentication and disallow tokens`
+enabled so the package cannot be published with classic tokens.
 
 ### Scoped Help
 
@@ -443,15 +450,15 @@ Lists files and folders in the workspace drive.
 
 ```typescript
 const files = await client.storage.list({
-  path: 'documents',          // folder path (optional)
-  search: 'report',           // search term (optional)
-  limit: 50,                  // max results (optional, default 100)
-  offset: 0,                  // pagination offset (optional)
-  sortBy: 'created_at',       // sort field (optional)
-  sortOrder: 'desc'           // sort direction (optional)
+  path: 'documents', // folder path (optional)
+  search: 'report', // search term (optional)
+  limit: 50, // max results (optional, default 100)
+  offset: 0, // pagination offset (optional)
+  sortBy: 'created_at', // sort field (optional)
+  sortOrder: 'desc' // sort direction (optional)
 });
 
-console.log(files.data);       // Array of StorageObject
+console.log(files.data); // Array of StorageObject
 console.log(files.pagination); // Pagination info
 ```
 
@@ -463,11 +470,11 @@ Uploads a file to the workspace drive.
 const file = new File(['content'], 'document.pdf');
 
 const result = await client.storage.upload(file, {
-  path: 'documents',  // destination folder (optional)
-  upsert: true        // overwrite if exists (optional)
+  path: 'documents', // destination folder (optional)
+  upsert: true // overwrite if exists (optional)
 });
 
-console.log(result.data.path);     // Relative path
+console.log(result.data.path); // Relative path
 console.log(result.data.fullPath); // Full storage path
 ```
 
@@ -514,7 +521,7 @@ const result = await client.storage.delete([
 ]);
 
 console.log(result.data.deleted); // Number of files deleted
-console.log(result.data.paths);   // Array of deleted paths
+console.log(result.data.paths); // Array of deleted paths
 ```
 
 ### Create Folder
@@ -523,8 +530,8 @@ Creates a new folder in the workspace drive.
 
 ```typescript
 const result = await client.storage.createFolder(
-  'documents',  // parent path
-  'reports'     // folder name
+  'documents', // parent path
+  'reports' // folder name
 );
 
 console.log(result.data.path); // "documents/reports"
@@ -539,9 +546,9 @@ const result = await client.storage.share('documents/report.pdf', {
   expiresIn: 3600 // 1 hour in seconds (default 3600, max 604800)
 });
 
-console.log(result.data.signedUrl);  // Temporary URL
-console.log(result.data.expiresAt);  // ISO timestamp
-console.log(result.data.expiresIn);  // Seconds until expiration
+console.log(result.data.signedUrl); // Temporary URL
+console.log(result.data.expiresAt); // ISO timestamp
+console.log(result.data.expiresIn); // Seconds until expiration
 ```
 
 Apply an image transform before generating the signed URL:
@@ -565,12 +572,12 @@ Retrieves storage usage statistics for the workspace.
 ```typescript
 const analytics = await client.storage.getAnalytics();
 
-console.log(analytics.data.totalSize);       // Total bytes used
-console.log(analytics.data.fileCount);       // Number of files
-console.log(analytics.data.storageLimit);    // Storage limit in bytes
+console.log(analytics.data.totalSize); // Total bytes used
+console.log(analytics.data.fileCount); // Number of files
+console.log(analytics.data.storageLimit); // Storage limit in bytes
 console.log(analytics.data.usagePercentage); // Usage percentage
-console.log(analytics.data.largestFile);     // Largest file info
-console.log(analytics.data.smallestFile);    // Smallest file info
+console.log(analytics.data.largestFile); // Largest file info
+console.log(analytics.data.smallestFile); // Smallest file info
 ```
 
 ## Documents API
@@ -581,13 +588,13 @@ Lists documents in the workspace with optional filters.
 
 ```typescript
 const docs = await client.documents.list({
-  search: 'meeting',    // search in names (optional)
-  limit: 20,            // max results (optional, default 50)
-  offset: 0,            // pagination offset (optional)
-  isPublic: false       // filter by visibility (optional)
+  search: 'meeting', // search in names (optional)
+  limit: 20, // max results (optional, default 50)
+  offset: 0, // pagination offset (optional)
+  isPublic: false // filter by visibility (optional)
 });
 
-console.log(docs.data);       // Array of Document
+console.log(docs.data); // Array of Document
 console.log(docs.pagination); // Pagination info
 ```
 
@@ -605,8 +612,8 @@ const doc = await client.documents.create({
   isPublic: false // optional, default false
 });
 
-console.log(doc.data.id);      // Document ID
-console.log(doc.data.name);    // Document name
+console.log(doc.data.id); // Document ID
+console.log(doc.data.name); // Document name
 console.log(doc.data.content); // JSONB content
 ```
 
@@ -628,9 +635,9 @@ Updates an existing document.
 
 ```typescript
 const doc = await client.documents.update('document-id-123', {
-  name: 'Updated Meeting Notes',     // optional
-  content: { text: 'New content' },  // optional
-  isPublic: true                     // optional
+  name: 'Updated Meeting Notes', // optional
+  content: { text: 'New content' }, // optional
+  isPublic: true // optional
 });
 
 console.log(doc.data); // Updated document
@@ -687,9 +694,7 @@ await client.externalProjects.sync.setup('workspace-id', { manifest });
 External apps can keep seed media in their local `public/` folder and still publish it through Tuturuuu Drive. Mark each manifest asset with `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl`.
 
 ```typescript
-import {
-  linkExternalProjectPublicFolderAssets,
-} from 'tuturuuu';
+import { linkExternalProjectPublicFolderAssets } from 'tuturuuu';
 import { uploadExternalProjectPublicFolderAssets } from 'tuturuuu/external-projects/public-assets';
 
 const linkedManifest = linkExternalProjectPublicFolderAssets(manifest);
@@ -715,20 +720,17 @@ For React apps, keep the SDK as the delivery boundary and TanStack Query as the 
 import { useQuery } from '@tanstack/react-query';
 import {
   getEpmDeliveryQueryOptions,
-  getYoolaLoadingDataQueryOptions,
+  getYoolaLoadingDataQueryOptions
 } from 'tuturuuu';
 
 const deliveryQuery = useQuery({
   ...getEpmDeliveryQueryOptions(client.externalProjects, 'workspace-id'),
-  staleTime: 60_000,
+  staleTime: 60_000
 });
 
 const yoolaLoadingQuery = useQuery({
-  ...getYoolaLoadingDataQueryOptions(
-    client.externalProjects,
-    'workspace-id'
-  ),
-  staleTime: 60_000,
+  ...getYoolaLoadingDataQueryOptions(client.externalProjects, 'workspace-id'),
+  staleTime: 60_000
 });
 ```
 
@@ -791,10 +793,10 @@ try {
   await client.storage.delete([]);
 } catch (error) {
   if (error instanceof ValidationError) {
-    console.log(error.message);    // "At least one path is required"
-    console.log(error.code);       // "VALIDATION_ERROR"
+    console.log(error.message); // "At least one path is required"
+    console.log(error.code); // "VALIDATION_ERROR"
     console.log(error.statusCode); // 400
-    console.log(error.name);       // "ValidationError"
+    console.log(error.name); // "ValidationError"
   }
 }
 ```
@@ -846,7 +848,8 @@ const docData: CreateDocumentData = {
 ### Best Practices
 
 <Warning>
-  **Never commit API keys to version control!** Use environment variables or secret management services.
+  **Never commit API keys to version control!** Use environment variables or
+  secret management services.
 </Warning>
 
 ```bash
@@ -865,18 +868,19 @@ API keys inherit permissions from their assigned **Workspace Role**. The role de
 
 **Required Permissions:**
 
-| Operation | Required Role Permission |
-|-----------|-------------------------|
-| Storage Operations (list, upload, download, delete, folders, share, analytics) | `manage_drive` |
-| Document Operations (list, create, get, update, delete, search) | `manage_documents` |
-| API Key Management | `manage_api_keys` (Owner/Admin only) |
+| Operation                                                                      | Required Role Permission             |
+| ------------------------------------------------------------------------------ | ------------------------------------ |
+| Storage Operations (list, upload, download, delete, folders, share, analytics) | `manage_drive`                       |
+| Document Operations (list, create, get, update, delete, search)                | `manage_documents`                   |
+| API Key Management                                                             | `manage_api_keys` (Owner/Admin only) |
 
 **Note:** Permissions are managed through workspace roles, not individual API keys. To modify what an API key can do, update its assigned role's permissions in **Settings** → **Roles**.
 
 ## Security Best Practices
 
 <Warning>
-  **CRITICAL: Never expose API keys in client-side code!** API keys must remain server-side only.
+  **CRITICAL: Never expose API keys in client-side code!** API keys must remain
+  server-side only.
 </Warning>
 
 ### ❌ Insecure (NEVER do this)
@@ -960,7 +964,7 @@ export const handler = async (event) => {
 
   return {
     statusCode: 200,
-    body: JSON.stringify(files),
+    body: JSON.stringify(files)
   };
 };
 ```
@@ -985,28 +989,22 @@ export const handler = async (event) => {
     ```
 
     **Never** use `NEXT_PUBLIC_` prefix for API keys!
+
   </Accordion>
 
-  <Accordion title="✅ DO: Add .env.local to .gitignore">
-    Ensure secrets never get committed:
-    ```gitignore
-    # .gitignore
-    .env.local
-    .env*.local
-    ```
-  </Accordion>
+<Accordion title="✅ DO: Add .env.local to .gitignore">
+  Ensure secrets never get committed: ```gitignore # .gitignore .env.local
+  .env*.local ```
+</Accordion>
 
-  <Accordion title="❌ DON'T: Use NEXT_PUBLIC_ prefix">
-    This exposes the variable to the browser:
-    ```bash
-    # BAD - Exposed to client!
-    NEXT_PUBLIC_TUTURUUU_API_KEY=ttr_key
-    ```
-  </Accordion>
+<Accordion title="❌ DON'T: Use NEXT_PUBLIC_ prefix">
+  This exposes the variable to the browser: ```bash # BAD - Exposed to client!
+  NEXT_PUBLIC_TUTURUUU_API_KEY=ttr_key ```
+</Accordion>
 
-  <Accordion title="❌ DON'T: Import SDK in client components">
-    Never import the SDK in files with `'use client'` directive.
-  </Accordion>
+<Accordion title="❌ DON'T: Import SDK in client components">
+  Never import the SDK in files with `'use client'` directive.
+</Accordion>
 
   <Accordion title="❌ DON'T: Hardcode API keys">
     Never commit keys to version control:
@@ -1033,11 +1031,11 @@ The API enforces rate limits per API key to ensure fair usage and system stabili
 
 ### Rate Limits by Operation
 
-| Operation | Limit | Window |
-|-----------|-------|--------|
-| Storage Upload | 20 requests | per minute |
-| Storage Download | 50 requests | per minute |
-| Signed Upload URLs | 30 requests | per minute |
+| Operation            | Limit        | Window     |
+| -------------------- | ------------ | ---------- |
+| Storage Upload       | 20 requests  | per minute |
+| Storage Download     | 50 requests  | per minute |
+| Signed Upload URLs   | 30 requests  | per minute |
 | All Other Operations | 100 requests | per minute |
 
 ### Rate Limit Headers
@@ -1054,9 +1052,10 @@ const result = await client.storage.list();
 // Access rate limit info from headers (if using direct API calls)
 console.log('Limit:', result.headers.get('X-RateLimit-Limit'));
 console.log('Remaining:', result.headers.get('X-RateLimit-Remaining'));
-console.log('Resets at:', new Date(
-  Number.parseInt(result.headers.get('X-RateLimit-Reset')) * 1000
-));
+console.log(
+  'Resets at:',
+  new Date(Number.parseInt(result.headers.get('X-RateLimit-Reset')) * 1000)
+);
 ```
 
 ### Handling Rate Limits
@@ -1072,7 +1071,7 @@ try {
     console.error('Retry after:', error.retryAfter, 'seconds');
 
     // Implement exponential backoff
-    await new Promise(resolve =>
+    await new Promise((resolve) =>
       setTimeout(resolve, error.retryAfter * 1000)
     );
   }
@@ -1088,10 +1087,10 @@ To set custom rate limits:
 1. Navigate to **Settings** → **Workspace Settings** → **Secrets**
 2. Add one or more of these secrets:
 
-| Secret Name | Description | Example Value |
-|-------------|-------------|---------------|
-| `RATE_LIMIT_WINDOW_MS` | Time window in milliseconds | `60000` (1 minute) |
-| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `200` (double the default) |
+| Secret Name               | Description                 | Example Value              |
+| ------------------------- | --------------------------- | -------------------------- |
+| `RATE_LIMIT_WINDOW_MS`    | Time window in milliseconds | `60000` (1 minute)         |
+| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window     | `200` (double the default) |
 
 **Example Configuration:**
 
@@ -1103,13 +1102,16 @@ RATE_LIMIT_MAX_REQUESTS = 500
 This configuration allows 500 requests per minute for all API keys in the workspace, instead of the default 100.
 
 <Note>
-  Workspace-specific rate limits only apply to operations that don't have explicit per-operation limits. For operations like uploads and downloads, the operation-specific limits still apply.
+  Workspace-specific rate limits only apply to operations that don't have
+  explicit per-operation limits. For operations like uploads and downloads, the
+  operation-specific limits still apply.
 </Note>
 
 ### Best Practices
 
 <Tip>
-  **Implement exponential backoff** when handling rate limits to avoid hammering the API with retries.
+  **Implement exponential backoff** when handling rate limits to avoid hammering
+  the API with retries.
 </Tip>
 
 ```typescript
@@ -1121,7 +1123,7 @@ async function uploadWithRetry(file: File, maxRetries = 3) {
       if (error instanceof RateLimitError && attempt < maxRetries - 1) {
         // Exponential backoff: 1s, 2s, 4s
         const delay = Math.pow(2, attempt) * 1000;
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
       throw error;
@@ -1138,41 +1140,42 @@ async function uploadWithRetry(file: File, maxRetries = 3) {
     headers: { 'Authorization': `Bearer ${apiKey}` }
   });
 
-  const remaining = response.headers.get('X-RateLimit-Remaining');
-  const limit = response.headers.get('X-RateLimit-Limit');
+const remaining = response.headers.get('X-RateLimit-Remaining');
+const limit = response.headers.get('X-RateLimit-Limit');
 
-  console.log(`API calls remaining: ${remaining}/${limit}`);
+console.log(`API calls remaining: ${remaining}/${limit}`);
 
-  // Slow down if close to limit
-  if (Number(remaining) < Number(limit) * 0.1) {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-  ```
+// Slow down if close to limit
+if (Number(remaining) < Number(limit) \* 0.1) {
+await new Promise(resolve => setTimeout(resolve, 1000));
+}
+
+```
 </Tip>
 
 ## Examples
 
 <CardGroup cols={2}>
-  <Card title="Basic Usage" icon="play" href="https://github.com/tutur3u/platform/blob/main/packages/sdk/examples/basic-usage.ts">
-    Complete example of all SDK operations
-  </Card>
-  <Card title="Error Handling" icon="triangle-exclamation" href="https://github.com/tutur3u/platform/blob/main/packages/sdk/examples/error-handling.ts">
-    Comprehensive error handling patterns
-  </Card>
+<Card title="Basic Usage" icon="play" href="https://github.com/tutur3u/platform/blob/main/packages/sdk/examples/basic-usage.ts">
+  Complete example of all SDK operations
+</Card>
+<Card title="Error Handling" icon="triangle-exclamation" href="https://github.com/tutur3u/platform/blob/main/packages/sdk/examples/error-handling.ts">
+  Comprehensive error handling patterns
+</Card>
 </CardGroup>
 
 ## Support
 
 <CardGroup cols={3}>
-  <Card title="GitHub" icon="github" href="https://github.com/tutur3u/platform">
-    Source code and issues
-  </Card>
-  <Card title="Discord" icon="discord" href="https://discord.gg/tuturuuu">
-    Community support
-  </Card>
-  <Card title="Docs" icon="book" href="https://docs.tuturuuu.com">
-    Full documentation
-  </Card>
+<Card title="GitHub" icon="github" href="https://github.com/tutur3u/platform">
+  Source code and issues
+</Card>
+<Card title="Discord" icon="discord" href="https://discord.gg/tuturuuu">
+  Community support
+</Card>
+<Card title="Docs" icon="book" href="https://docs.tuturuuu.com">
+  Full documentation
+</Card>
 </CardGroup>
 
 ## Changelog
@@ -1189,3 +1192,4 @@ async function uploadWithRetry(file: File, maxRetries = 3) {
 ## License
 
 MIT
+```

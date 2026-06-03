@@ -49,13 +49,26 @@ formatting behavior, or repo-wide verification.
   Please while those registries are paused.
 - Keep local Tuturuuu package dependencies on `workspace:*` in source
   manifests. Before `npm pack`, package release workflows must run
+  `node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/<name>`
+  so release-please package bumps wait for publishable workspace dependencies
+  to be visible on npm. Then run
   `node scripts/ci/prepare-npm-package-manifest.js packages/<name>` so packed
   artifacts contain concrete npm-compatible versions instead of `workspace:`
   protocol ranges.
+- After `npm publish`, package workflows must poll `npm view` for the exact
+  published version before reporting success. First-publish `E404`, permission,
+  or trusted-publisher errors should fail clearly and be fixed in npm package
+  access/trusted publisher settings, not bypassed with tokens or skipped
+  package publishes.
 - If a release-please-managed package becomes a runtime dependency of another
   published package, add a matching npm release workflow and `tuturuuu.ts`
   switchboard entry for that dependency instead of letting consumers resolve an
   unpublished package name.
+- Platform Vercel production deployments should run
+  `node scripts/ci/package-release-readiness.js wait-changed-package-versions`
+  before dependency installation when release-please package manifests changed,
+  and platform Vercel workflows must build local `@tuturuuu/devbox` artifacts
+  before `vercel build` because `apps/web` imports that workspace package.
 - Package release workflows must use npm trusted publishing. Keep `id-token:
   write` isolated to the final `publish-npm` job, publish a downloaded and
   verified tarball with `npm publish --ignore-scripts`, and do not reintroduce

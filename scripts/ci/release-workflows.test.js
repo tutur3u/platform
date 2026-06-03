@@ -65,6 +65,58 @@ test('Vercel workflows generate shared build metadata before building', () => {
   }
 });
 
+test('Platform Vercel workflows build local devbox dependency before Vercel build', () => {
+  for (const workflowName of [
+    'vercel-preview-platform.yaml',
+    'vercel-production-platform.yaml',
+  ]) {
+    const deployJob = readWorkflowJobBlock(
+      workflowName,
+      workflowName.startsWith('vercel-preview-')
+        ? 'Deploy-Preview'
+        : 'Deploy-Production'
+    );
+    const dependencyBuildIndex = deployJob.indexOf(
+      'Build workspace dependencies'
+    );
+    const vercelBuildIndex = deployJob.indexOf('Build Project Artifacts');
+
+    assert.notEqual(dependencyBuildIndex, -1);
+    assert.notEqual(vercelBuildIndex, -1);
+    assert.ok(
+      dependencyBuildIndex < vercelBuildIndex,
+      `${workflowName} must build workspace dependencies before Vercel build`
+    );
+    assert.match(deployJob, /--filter=@tuturuuu\/devbox/);
+  }
+});
+
+test('Platform production deployment waits for release package visibility', () => {
+  const deployJob = readWorkflowJobBlock(
+    'vercel-production-platform.yaml',
+    'Deploy-Production'
+  );
+  const releaseGateIndex = deployJob.indexOf('Wait for package release gate');
+  const installIndex = deployJob.indexOf('Install dependencies');
+  const vercelBuildIndex = deployJob.indexOf('Build Project Artifacts');
+
+  assert.notEqual(releaseGateIndex, -1);
+  assert.notEqual(installIndex, -1);
+  assert.notEqual(vercelBuildIndex, -1);
+  assert.ok(
+    releaseGateIndex < installIndex,
+    'platform production deploy must wait for package releases before installing dependencies'
+  );
+  assert.ok(
+    releaseGateIndex < vercelBuildIndex,
+    'platform production deploy must wait for package releases before Vercel build'
+  );
+  assert.match(
+    deployJob,
+    /node scripts\/ci\/package-release-readiness\.js wait-changed-package-versions/
+  );
+});
+
 test('mail deployment workflows do not persist checkout credentials', () => {
   for (const workflowName of [
     'vercel-preview-mail.yaml',
@@ -766,6 +818,9 @@ test('package publish workflows release from production version bumps', () => {
       prepareJob,
       /npm view "\$\{PACKAGE_NAME\}@\$\{PACKAGE_VERSION\}" version/
     );
+    const dependencyWaitIndex = prepareJob.indexOf(
+      `node scripts/ci/package-release-readiness.js wait-workspace-dependencies ${packagePath}`
+    );
     assert.match(prepareJob, /npm pack --pack-destination/);
     const prepareManifestIndex = prepareJob.indexOf(
       `node scripts/ci/prepare-npm-package-manifest.js ${packagePath}`
@@ -773,9 +828,18 @@ test('package publish workflows release from production version bumps', () => {
     const packIndex = prepareJob.indexOf('npm pack --pack-destination');
 
     assert.notEqual(
+      dependencyWaitIndex,
+      -1,
+      `${workflowName} must wait for publishable workspace dependencies before packing`
+    );
+    assert.notEqual(
       prepareManifestIndex,
       -1,
       `${workflowName} must prepare npm package manifests before packing`
+    );
+    assert.ok(
+      dependencyWaitIndex < prepareManifestIndex,
+      `${workflowName} must wait for npm workspace dependencies before rewriting the publish manifest`
     );
     assert.ok(
       prepareManifestIndex < packIndex,
@@ -851,10 +915,18 @@ test('package trusted publishing keeps OIDC isolated to artifact publish jobs', 
       publishJob,
       /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/
     );
+    assert.match(publishJob, /trusted publisher is configured/);
+    assert.match(publishJob, /Wait for npm publication/);
+    assert.match(
+      publishJob,
+      /npm view "\$\{EXPECTED_PACKAGE_NAME\}@\$\{EXPECTED_PACKAGE_VERSION\}" version --registry https:\/\/registry\.npmjs\.org/
+    );
+    assert.match(publishJob, /was published but did not become visible on npm/);
     assert.doesNotMatch(publishJob, /actions\/checkout@/);
     assert.doesNotMatch(publishJob, /setup-bun/);
     assert.doesNotMatch(publishJob, /\bbun install\b/);
     assert.doesNotMatch(publishJob, /\bnpm install\b/);
+    assert.doesNotMatch(publishJob, /package-release-readiness\.js/);
     assert.doesNotMatch(publishJob, /\bsecrets\./);
     assert.doesNotMatch(publishJob, /NODE_AUTH_TOKEN/);
   }
