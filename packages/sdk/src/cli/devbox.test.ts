@@ -92,6 +92,18 @@ describe('devbox CLI helpers', () => {
     });
   });
 
+  it('explains that agent start needs a registered runner token', async () => {
+    await expect(
+      runDevboxCommand({
+        action: 'agent',
+        argv: ['box', 'agent', 'start'],
+        baseUrl: 'http://localhost:7903',
+        flags: { once: true },
+        json: false,
+      })
+    ).rejects.toThrow('Run `ttr box agent register` with a logged-in account');
+  });
+
   it('fails agent start when heartbeat rejects the runner token', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ message: 'Unauthorized' }), {

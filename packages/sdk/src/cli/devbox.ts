@@ -422,7 +422,7 @@ async function runDevboxAgentLoop({
 }) {
   if (!token) {
     throw new Error(
-      'Missing runner token. Use --token or TUTURUUU_DEVBOX_RUNNER_TOKEN.'
+      'Missing runner token. Run `ttr box agent register` with a logged-in account, then start with --token or TUTURUUU_DEVBOX_RUNNER_TOKEN.'
     );
   }
 

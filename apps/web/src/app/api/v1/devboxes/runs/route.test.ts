@@ -2,15 +2,31 @@ import type { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  createAppSessionUserMock,
   createAdminClientMock,
   createClientMock,
+  getAppSessionTokenFromRequestMock,
   getPermissionsMock,
   resolveAuthenticatedSessionUserMock,
+  verifyAppSessionRequestMock,
 } = vi.hoisted(() => ({
+  createAppSessionUserMock: vi.fn(),
   createAdminClientMock: vi.fn(),
   createClientMock: vi.fn(),
+  getAppSessionTokenFromRequestMock: vi.fn(),
   getPermissionsMock: vi.fn(),
   resolveAuthenticatedSessionUserMock: vi.fn(),
+  verifyAppSessionRequestMock: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/auth/app-session', () => ({
+  createAppSessionUser: createAppSessionUserMock,
+  getAppSessionTokenFromRequest: getAppSessionTokenFromRequestMock,
+  verifyAppSessionRequest: verifyAppSessionRequestMock,
+}));
+
+vi.mock('@tuturuuu/auth/cli-session', () => ({
+  CLI_APP_TARGET_APP: 'platform',
 }));
 
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
@@ -53,6 +69,13 @@ describe('devbox runs route', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    getAppSessionTokenFromRequestMock.mockReturnValue(null);
+    createAppSessionUserMock.mockImplementation(
+      (claims: { email?: string | null; sub: string }) => ({
+        email: claims.email ?? undefined,
+        id: claims.sub,
+      })
+    );
     createClientMock.mockResolvedValue({});
     createAdminClientMock.mockResolvedValue({
       schema: vi.fn(() => ({
@@ -85,6 +108,54 @@ describe('devbox runs route', () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
+  });
+
+  it('accepts CLI app-session tokens for root workspace members', async () => {
+    getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_access');
+    verifyAppSessionRequestMock.mockReturnValue({
+      claims: {
+        email: 'agent@example.com',
+        sub: 'user-1',
+      },
+      ok: true,
+    });
+    getPermissionsMock.mockResolvedValue(createPermissionsResult('MEMBER'));
+
+    const request = createRunRequest({ command: ['bun', 'check'] });
+    const response = await POST(request);
+
+    expect(response.status).toBe(201);
+    expect(createClientMock).not.toHaveBeenCalled();
+    expect(resolveAuthenticatedSessionUserMock).not.toHaveBeenCalled();
+    expect(verifyAppSessionRequestMock).toHaveBeenCalledWith(request, {
+      targetApp: 'platform',
+    });
+    expect(getPermissionsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: expect.objectContaining({ id: 'user-1' }),
+      })
+    );
+  });
+
+  it('rejects invalid CLI app-session tokens without Supabase fallback', async () => {
+    getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_invalid');
+    verifyAppSessionRequestMock.mockReturnValue({
+      error: 'Invalid app session',
+      ok: false,
+    });
+    resolveAuthenticatedSessionUserMock.mockResolvedValue({
+      user: { id: 'fallback-user' },
+    });
+
+    const response = await POST(
+      createRunRequest({ command: ['bun', 'check'] })
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ message: 'Unauthorized' });
+    expect(createClientMock).not.toHaveBeenCalled();
+    expect(resolveAuthenticatedSessionUserMock).not.toHaveBeenCalled();
+    expect(getPermissionsMock).not.toHaveBeenCalled();
   });
 
   it('rejects blocked host-destructive commands before storage writes', async () => {
