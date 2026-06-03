@@ -2,10 +2,7 @@ import type {
   AiFeature,
   CreditErrorCode,
 } from '@tuturuuu/ai/credits/constants';
-import {
-  matchesAllowedModel,
-  resolveGatewayModelId,
-} from '@tuturuuu/ai/credits/model-mapping';
+import { resolveGatewayModelId } from '@tuturuuu/ai/credits/model-mapping';
 import type {
   CreditCheckResult,
   CreditDeductionResult,
@@ -14,11 +11,8 @@ import type {
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   decrementAiCreditChargeInFlight,
-  hasAiCreditChargeInFlight,
   incrementAiCreditChargeInFlight,
   invalidateAiCreditSnapshot,
-  isAiCreditSnapshotUsable,
-  readAiCreditSnapshot,
 } from '@tuturuuu/utils/ai-temp-auth';
 
 type DeductAiCreditsRpcRow = {
@@ -52,35 +46,8 @@ export async function checkAiCredits(
   }
 
   const gatewayModelId = resolveGatewayModelId(modelId);
-
-  if (opts?.userId) {
-    const snapshot = await readAiCreditSnapshot({
-      wsId,
-      userId: opts.userId,
-    });
-    const inFlight = await hasAiCreditChargeInFlight({
-      wsId,
-      userId: opts.userId,
-    });
-    if (
-      isAiCreditSnapshotUsable(snapshot, { inFlight }) &&
-      (snapshot.allowedFeatures.length === 0 ||
-        snapshot.allowedFeatures.includes(feature)) &&
-      matchesAllowedModel(gatewayModelId, snapshot.allowedModels)
-    ) {
-      return {
-        allowed: snapshot.remainingCredits > 0,
-        remainingCredits: snapshot.remainingCredits,
-        tier: snapshot.tier,
-        maxOutputTokens: snapshot.maxOutputTokens,
-        errorCode: snapshot.remainingCredits > 0 ? null : 'CREDITS_EXHAUSTED',
-        errorMessage:
-          snapshot.remainingCredits > 0
-            ? null
-            : 'AI credits exhausted. Please upgrade your plan or purchase more credits.',
-      };
-    }
-  }
+  // Status snapshots are UI hints only. The RPC is the authoritative gate for
+  // daily credit, daily request, and feature-specific request limits.
 
   const sbAdmin = await createAdminClient();
   const { data, error } = await sbAdmin.rpc('check_ai_credit_allowance', {

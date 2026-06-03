@@ -215,7 +215,7 @@ Session-authenticated AI routes may accept the `x-tuturuuu-ai-temp-auth` header 
 
 Revocation is version-based: `ai:temp-auth:user-version:{userId}` is bumped before logout or account removal, so any token minted under the old version is rejected. Redis is not authoritative for security; when Redis is unavailable or a token is missing/invalid, routes fall back to the existing Supabase session path. A revoked token returns `401` and does not fall back.
 
-Credit availability snapshots are also Redis-backed under `ai:credits:snapshot:{billingWsId}:{userId}`. They can be used only for UI status and AI preflight when fresh, above the near-exhaustion threshold, model/feature compatible, and no charge marker exists under `ai:credits:in-flight:{billingWsId}:{userId}`. Actual reservations, deductions, and ledger writes remain in Postgres, and successful commits invalidate the snapshot.
+Credit availability snapshots are also Redis-backed under `ai:credits:snapshot:{billingWsId}:{userId}`. They are UI/status hints only and must not authorize model execution. AI preflight must call the authoritative Postgres allowance RPC so daily credit limits, daily request limits, and feature-specific request limits are enforced before every model run. Actual reservations, deductions, and ledger writes remain in Postgres, and successful commits invalidate the snapshot.
 
 ### 3. Generate structured data
 
