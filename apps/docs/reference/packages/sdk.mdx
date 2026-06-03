@@ -700,7 +700,7 @@ console.log(sync.uploaded.length);
 console.log(linkedManifest.content.entries[0]?.assets?.[0]?.storagePath);
 ```
 
-The linker writes deterministic storage paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`. The upload helper uses the existing external-project signed upload URL route, so production Supabase keys are not needed in external apps.
+The linker writes deterministic storage paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`. The upload helper uses the external-project asset app-server upload route so Tuturuuu measures the actual bytes before writing storage objects; production Supabase keys are not needed in external apps.
 
 ### TanStack Query
 

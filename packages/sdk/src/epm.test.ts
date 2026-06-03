@@ -379,17 +379,15 @@ describe('EpmClient', () => {
     );
   });
 
-  it('uploads asset files through signed upload URLs', async () => {
-    mockFetch
-      .mockResolvedValueOnce(
-        createMockResponse({
+  it('uploads asset files through the app server', async () => {
+    mockFetch.mockResolvedValueOnce(
+      createMockResponse({
+        data: {
           fullPath: 'ws_123/external-projects/yoola/artworks/entry/file.png',
           path: 'external-projects/yoola/artworks/entry/file.png',
-          signedUrl: 'https://upload.example.com/object',
-          token: 'upload_token',
-        })
-      )
-      .mockResolvedValueOnce(createMockResponse('', 200));
+        },
+      })
+    );
 
     const client = new EpmClient({
       apiKey: 'ttr_test_key',
@@ -404,19 +402,36 @@ describe('EpmClient', () => {
     });
 
     expect(result.path).toBe('external-projects/yoola/artworks/entry/file.png');
+    expect(result.fullPath).toBe(
+      'ws_123/external-projects/yoola/artworks/entry/file.png'
+    );
     expect(mockFetch.mock.calls[0]?.[0]).toBe(
       'https://example.com/api/v1/workspaces/ws_123/external-projects/assets/upload-url'
     );
-    expect(JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string)).toEqual({
-      collectionType: 'artworks',
-      contentType: 'image/png',
-      entrySlug: 'entry',
-      filename: 'file.png',
-      size: 5,
+    const body = mockFetch.mock.calls[0]?.[1]?.body as FormData;
+    expect(body.get('collectionType')).toBe('artworks');
+    expect(body.get('entrySlug')).toBe('entry');
+    expect(body.get('file')).toBe(file);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables direct external-project asset upload URL creation', async () => {
+    const client = new EpmClient({
+      apiKey: 'ttr_test_key',
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
     });
-    expect(mockFetch.mock.calls[1]?.[0]).toBe(
-      'https://upload.example.com/object'
+
+    await expect(
+      client.createAssetUploadUrl('ws_123', {
+        collectionType: 'artworks',
+        entrySlug: 'entry',
+        filename: 'file.png',
+      })
+    ).rejects.toThrow(
+      'External project asset uploads must use uploadAssetFile'
     );
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it('builds navigation items from collection config for external apps like yoola', () => {

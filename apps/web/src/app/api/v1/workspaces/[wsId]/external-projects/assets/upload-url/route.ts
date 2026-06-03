@@ -5,19 +5,17 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { triggerWorkspaceStorageAutoExtract } from '@/lib/workspace-storage-auto-extract';
 import {
-  createWorkspaceStorageUploadPayload,
+  uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
 import { validateWorkspaceStorageUploadMetadata } from '@/lib/workspace-storage-upload-policy';
 
-const uploadUrlSchema = z.object({
+const uploadFormSchema = z.object({
   collectionType: z.string().min(1).max(120),
-  contentType: z.string().max(255).optional(),
   entrySlug: z.string().min(1).max(120),
-  filename: z.string().min(1).max(255),
-  size: z.number().int().min(0).optional(),
-  upsert: z.boolean().optional(),
+  upsert: z.enum(['true', 'false']).optional(),
 });
 
 export async function POST(
@@ -33,10 +31,29 @@ export async function POST(
   if (!access.ok) return access.response;
 
   try {
-    const payload = uploadUrlSchema.parse(await request.json());
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid upload body' },
+        { status: 400 }
+      );
+    }
+
+    const file = formData.get('file');
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: 'Missing file' }, { status: 400 });
+    }
+
+    const payload = uploadFormSchema.parse({
+      collectionType: formData.get('collectionType'),
+      entrySlug: formData.get('entrySlug'),
+      upsert: formData.get('upsert') || undefined,
+    });
     const collectionType = sanitizePath(payload.collectionType);
     const entrySlug = sanitizePath(payload.entrySlug);
-    const filename = sanitizeFilename(payload.filename);
+    const filename = sanitizeFilename(file.name);
 
     if (!collectionType || !entrySlug || !filename) {
       return NextResponse.json(
@@ -47,9 +64,9 @@ export async function POST(
 
     const uploadValidation = validateWorkspaceStorageUploadMetadata({
       allowExternalProjectAssets: true,
-      contentType: payload.contentType,
+      contentType: file.type,
       filename,
-      size: payload.size,
+      size: file.size,
     });
     if (!uploadValidation.ok) {
       return NextResponse.json(
@@ -59,7 +76,7 @@ export async function POST(
     }
 
     const filenameWithSuffix =
-      payload.upsert === true
+      payload.upsert === 'true'
         ? filename
         : `${generateRandomUUID()}-${filename}`;
     const storagePath = posix.join(
@@ -68,27 +85,49 @@ export async function POST(
       collectionType,
       entrySlug
     );
+    const targetPath = posix.join(storagePath, filenameWithSuffix);
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = new Uint8Array(arrayBuffer);
 
-    const uploadPayload = await createWorkspaceStorageUploadPayload(
+    const data = await uploadWorkspaceStorageFileDirect(
       access.normalizedWorkspaceId,
-      filenameWithSuffix,
+      targetPath,
+      buffer,
       {
         contentType: uploadValidation.contentType,
-        path: storagePath,
-        size: payload.size,
-        upsert: payload.upsert ?? false,
+        upsert: payload.upsert === 'true',
       }
     );
+    let autoExtract = null;
+    let autoExtractError: string | null = null;
+
+    try {
+      autoExtract = await triggerWorkspaceStorageAutoExtract(
+        access.normalizedWorkspaceId,
+        {
+          path: data.path,
+          contentType:
+            uploadValidation.contentType || 'application/octet-stream',
+          originalFilename: filename,
+          requestOrigin: new URL(request.url).origin,
+        }
+      );
+    } catch (error) {
+      autoExtractError =
+        error instanceof Error
+          ? error.message
+          : 'Failed to trigger auto extraction';
+    }
 
     return NextResponse.json({
-      contentType: uploadPayload.contentType,
-      filename: uploadPayload.filename,
-      fullPath: uploadPayload.fullPath,
-      headers: uploadPayload.headers,
-      path: uploadPayload.path,
-      provider: uploadPayload.provider,
-      signedUrl: uploadPayload.signedUrl,
-      token: uploadPayload.token,
+      autoExtract,
+      autoExtractError,
+      contentType: uploadValidation.contentType,
+      data: {
+        fullPath: data.fullPath,
+        path: data.path,
+      },
+      filename: filenameWithSuffix,
     });
   } catch (error) {
     if (error instanceof WorkspaceStorageError) {
@@ -105,11 +144,11 @@ export async function POST(
       );
     }
 
-    serverLogger.error('Failed to create external project upload URL', {
+    serverLogger.error('Failed to upload external project asset', {
       error,
     });
     return NextResponse.json(
-      { error: 'Failed to create external project upload URL' },
+      { error: 'Failed to upload external project asset' },
       { status: 500 }
     );
   }

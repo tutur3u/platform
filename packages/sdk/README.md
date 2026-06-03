@@ -397,7 +397,7 @@ console.log(sync.uploaded.length);
 console.log(linkedManifest.content.entries[0]?.assets?.[0]?.storagePath);
 ```
 
-Set `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl` on manifest assets. The helper uploads those files through the existing external-project signed upload URL endpoint and rewrites assets to deterministic Drive paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`.
+Set `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl` on manifest assets. The helper uploads those files through the external-project asset app-server upload route, so Tuturuuu measures the actual bytes before writing storage objects, and rewrites assets to deterministic Drive paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`.
 
 Yoola-style consumers can also use the helper accessors exported from the SDK:
 

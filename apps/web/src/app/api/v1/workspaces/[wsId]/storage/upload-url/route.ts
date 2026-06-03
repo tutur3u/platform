@@ -43,32 +43,21 @@ const TOPIC_ANNOUNCEMENT_EXTENSION_CONTENT_TYPES: Record<
 };
 
 function canCreateUploadUrlForPath(
-  permissions: WorkspaceStorageRouteAuthContext['permissions'],
-  path: string
+  permissions: WorkspaceStorageRouteAuthContext['permissions']
 ) {
   if (!permissions) {
     return false;
   }
 
-  if (!permissions.withoutPermission('manage_drive')) {
-    return true;
-  }
-
-  return (
-    path.startsWith('external-projects/') &&
-    permissions.containsPermission('manage_external_projects')
-  );
+  return !permissions.withoutPermission('manage_drive');
 }
 
-function canOverwriteUploadUrlForPath(
-  permissions: WorkspaceStorageRouteAuthContext['permissions'],
-  path: string
-) {
-  return (
-    !!permissions &&
-    path.startsWith('external-projects/') &&
-    permissions.containsPermission('manage_external_projects')
-  );
+function canOverwriteUploadUrlForPath() {
+  return false;
+}
+
+function isReservedExternalProjectPath(path: string) {
+  return path === 'external-projects' || path.startsWith('external-projects/');
 }
 
 function getFileExtension(fileName: string) {
@@ -234,6 +223,16 @@ export async function POST(
       );
     }
 
+    if (isReservedExternalProjectPath(sanitizedPath)) {
+      return NextResponse.json(
+        {
+          message:
+            'External project uploads must use the external project asset upload route',
+        },
+        { status: 400 }
+      );
+    }
+
     let uploadContentType = parsed.data.contentType;
     const topicUploadAccess = isReservedTopicAnnouncementPath(sanitizedPath)
       ? await resolveTopicAnnouncementAttachmentUploadAccess({
@@ -254,8 +253,6 @@ export async function POST(
       uploadContentType = topicUploadAccess.contentType;
     } else {
       const uploadValidation = validateWorkspaceStorageUploadMetadata({
-        allowExternalProjectAssets:
-          sanitizedPath.startsWith('external-projects/'),
         contentType: parsed.data.contentType,
         filename: sanitizedFilename,
         size: parsed.data.size,
@@ -272,7 +269,7 @@ export async function POST(
 
     const canCreateUploadUrl =
       topicUploadAccess?.allowed ||
-      canCreateUploadUrlForPath(permissions, sanitizedPath) ||
+      canCreateUploadUrlForPath(permissions) ||
       (await canAccessFinanceTransactionStoragePath({
         access: 'write',
         normalizedWsId,
@@ -302,10 +299,7 @@ export async function POST(
       );
     }
 
-    if (
-      parsed.data.upsert === true &&
-      !canOverwriteUploadUrlForPath(permissions, sanitizedPath)
-    ) {
+    if (parsed.data.upsert === true && !canOverwriteUploadUrlForPath()) {
       return NextResponse.json(
         { message: 'Upload overwrite is not allowed for this path' },
         { status: 403 }

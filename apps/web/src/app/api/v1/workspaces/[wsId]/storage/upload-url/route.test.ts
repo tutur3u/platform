@@ -385,7 +385,7 @@ describe('workspace storage upload-url route', () => {
     expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 
-  it('requires external-project management before signing external-project overwrites', async () => {
+  it('rejects external-project paths through the generic Drive upload URL route', async () => {
     setupAuth({ manageDrive: true });
 
     const response = await postUploadUrl({
@@ -396,25 +396,16 @@ describe('workspace storage upload-url route', () => {
       upsert: true,
     });
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'External project uploads must use the external project asset upload route',
+    });
     expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 
-  it('allows managed external-project asset overwrites with media metadata', async () => {
+  it('does not let external-project managers mint generic signed upload URLs', async () => {
     setupAuth({ manageExternalProjects: true });
-    mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
-      contentType: 'audio/wav',
-      filename: 'voice.wav',
-      fullPath:
-        'workspace-1/external-projects/yoola/voice-reels/demo/voice.wav',
-      headers: {
-        'Content-Type': 'audio/wav',
-      },
-      path: 'external-projects/yoola/voice-reels/demo/voice.wav',
-      provider: 'supabase',
-      signedUrl: 'https://storage.example.com/upload',
-      token: 'upload-token',
-    });
 
     const response = await postUploadUrl({
       contentType: 'audio/wav',
@@ -424,17 +415,12 @@ describe('workspace storage upload-url route', () => {
       upsert: true,
     });
 
-    expect(response.status).toBe(200);
-    expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
-      'workspace-1',
-      'voice.wav',
-      {
-        contentType: 'audio/wav',
-        path: 'external-projects/yoola/voice-reels/demo',
-        size: 128,
-        upsert: true,
-      }
-    );
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'External project uploads must use the external project asset upload route',
+    });
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 
   it('rejects finance attachment upload signing when server-side attachment limits fail', async () => {
