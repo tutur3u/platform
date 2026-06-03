@@ -68,7 +68,7 @@
     "@streamdown/math": "^1.0.2",
     "@streamdown/mermaid": "^1.0.2",
     "@tanstack/react-hotkeys": "^0.10.0",
-    "@tanstack/react-query": "^5.100.11",
+    "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@tiptap/extension-highlight": "3.24.0",
