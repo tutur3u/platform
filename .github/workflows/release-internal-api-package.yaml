@@ -1,11 +1,11 @@
-name: Release @tuturuuu/supabase package
+name: Release @tuturuuu/internal-api package
 
 on:
   push:
     branches: [production]
     paths:
-      - "packages/supabase/package.json"
-      - ".github/workflows/release-supabase-package.yaml"
+      - "packages/internal-api/package.json"
+      - ".github/workflows/release-internal-api-package.yaml"
   workflow_dispatch:
 
 jobs:
@@ -16,14 +16,14 @@ jobs:
     steps:
       - name: Reject non-production release ref
         run: |
-          echo "::error::@tuturuuu/supabase releases can only run from refs/heads/production. Current ref: ${GITHUB_REF}."
+          echo "::error::@tuturuuu/internal-api releases can only run from refs/heads/production. Current ref: ${GITHUB_REF}."
           exit 1
 
   check-ci:
     if: github.ref == 'refs/heads/production'
     uses: ./.github/workflows/ci-check.yml
     with:
-      workflow_name: release-supabase-package.yaml
+      workflow_name: release-internal-api-package.yaml
 
   check-version-bump:
     needs: [check-ci]
@@ -39,20 +39,6 @@ jobs:
     needs: check-version-bump
     if: github.ref == 'refs/heads/production' && needs.check-version-bump.outputs.should_release == 'true'
     runs-on: ubuntu-latest
-
-    env:
-      # Use Vercel Remote Caching
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
-      # Configure production Supabase client
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
-
-      # Configure infrastructure
-      PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
-      NEXT_PUBLIC_PROXY_API_KEY: ${{ secrets.NEXT_PUBLIC_PROXY_API_KEY }}
 
     steps:
       - uses: actions/checkout@v6
@@ -72,8 +58,12 @@ jobs:
       - name: Build workspace dependencies
         run: bun run --filter @tuturuuu/types build
 
+      - name: Build package
+        working-directory: packages/internal-api
+        run: bun run build
+
       - name: Run tests
-        working-directory: packages/supabase
+        working-directory: packages/internal-api
         run: bun run test
 
   prepare-publish-npm:
@@ -105,7 +95,7 @@ jobs:
 
       - name: Check whether the version already exists on npm
         id: version-check
-        working-directory: packages/supabase
+        working-directory: packages/internal-api
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
@@ -125,34 +115,34 @@ jobs:
 
       - name: Build package
         if: steps.version-check.outputs.should_publish == 'true'
-        working-directory: packages/supabase
+        working-directory: packages/internal-api
         run: bun run build
 
       - name: Prepare npm package manifest
         if: steps.version-check.outputs.should_publish == 'true'
-        run: node scripts/ci/prepare-npm-package-manifest.js packages/supabase
+        run: node scripts/ci/prepare-npm-package-manifest.js packages/internal-api
 
       - name: Pack publish artifact
         if: steps.version-check.outputs.should_publish == 'true'
-        working-directory: packages/supabase
+        working-directory: packages/internal-api
         run: |
-          mkdir -p "$RUNNER_TEMP/tuturuuu-supabase-package"
-          npm pack --pack-destination "$RUNNER_TEMP/tuturuuu-supabase-package"
+          mkdir -p "$RUNNER_TEMP/tuturuuu-internal-api-package"
+          npm pack --pack-destination "$RUNNER_TEMP/tuturuuu-internal-api-package"
 
       - name: Upload publish artifact
         if: steps.version-check.outputs.should_publish == 'true'
         uses: actions/upload-artifact@v7
         with:
           if-no-files-found: error
-          name: tuturuuu-supabase-npm-package
-          path: ${{ runner.temp }}/tuturuuu-supabase-package/*.tgz
+          name: tuturuuu-internal-api-npm-package
+          path: ${{ runner.temp }}/tuturuuu-internal-api-package/*.tgz
           retention-days: 1
 
   publish-npm:
     needs: [prepare-publish-npm]
     if: github.ref == 'refs/heads/production' && needs.prepare-publish-npm.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
-    environment: supabase-release-production
+    environment: internal-api-release-production
 
     # Trusted publishing requires the workflow to be able to mint an OIDC
     # token. Keep dependency installation, tool upgrades, package builds, and
@@ -194,8 +184,8 @@ jobs:
       - name: Download publish artifact
         uses: actions/download-artifact@v8
         with:
-          name: tuturuuu-supabase-npm-package
-          path: supabase-package
+          name: tuturuuu-internal-api-npm-package
+          path: internal-api-package
 
       - name: Verify package artifact
         id: artifact
@@ -203,7 +193,7 @@ jobs:
           EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
           EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
         run: |
-          PACKAGE_TARBALL=$(find supabase-package -maxdepth 1 -name '*.tgz' -type f | sort)
+          PACKAGE_TARBALL=$(find internal-api-package -maxdepth 1 -name '*.tgz' -type f | sort)
           TARBALL_COUNT=$(printf '%s\n' "$PACKAGE_TARBALL" | sed '/^$/d' | wc -l | tr -d ' ')
 
           if [ "$TARBALL_COUNT" != "1" ]; then

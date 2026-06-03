@@ -222,6 +222,16 @@ filename, and that environment. Manual dispatch is only valid with the branch
 selector set to `production`; non-production refs are rejected before the package
 or publish jobs can start.
 
+Keep internal Tuturuuu dependencies as `workspace:*` in source package
+manifests so local builds always use the checked-out workspace. Package release
+workflows must rewrite the checked-out manifest immediately before `npm pack`
+with `node scripts/ci/prepare-npm-package-manifest.js packages/<name>`. That
+temporary rewrite replaces `workspace:` protocol ranges with the current
+workspace package versions so npm consumers can install the tarball. If a
+published package depends on another release-please-managed Tuturuuu package,
+that dependency also needs its own `release-*-package.yaml` workflow and
+matching `tuturuuu.ts` entry.
+
 ### Newer-commit guards
 
 Production Vercel push workflows intentionally skip if the branch already has a

@@ -2,16 +2,26 @@
   "name": "@tuturuuu/devbox",
   "license": "MIT",
   "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "clean": "rm -rf dist .turbo tsconfig.tsbuildinfo",
+    "prepack": "bun run clean && bun run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
   },
   "packageManager": "bun@1.3.14",
   "devDependencies": {

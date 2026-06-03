@@ -13,11 +13,7 @@
   "bugs": {
     "url": "https://github.com/tutur3u/platform/issues"
   },
-  "keywords": [
-    "tuturuuu",
-    "sdk",
-    "api"
-  ],
+  "keywords": ["tuturuuu", "sdk", "api"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
@@ -83,11 +79,7 @@
       "default": "./dist/platform.js"
     }
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public"
   },
@@ -104,8 +96,8 @@
   },
   "dependencies": {
     "@tuturuuu/devbox": "workspace:*",
-    "@tuturuuu/internal-api": "0.0.2",
-    "@tuturuuu/types": "0.2.4",
+    "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -47,6 +47,15 @@ formatting behavior, or repo-wide verification.
 - Package release workflows are npm-only for now. Do not add JSR or GitHub
   Packages publish jobs, and do not wire `jsr.json` version files into Release
   Please while those registries are paused.
+- Keep local Tuturuuu package dependencies on `workspace:*` in source
+  manifests. Before `npm pack`, package release workflows must run
+  `node scripts/ci/prepare-npm-package-manifest.js packages/<name>` so packed
+  artifacts contain concrete npm-compatible versions instead of `workspace:`
+  protocol ranges.
+- If a release-please-managed package becomes a runtime dependency of another
+  published package, add a matching npm release workflow and `tuturuuu.ts`
+  switchboard entry for that dependency instead of letting consumers resolve an
+  unpublished package name.
 - Package release workflows must use npm trusted publishing. Keep `id-token:
   write` isolated to the final `publish-npm` job, publish a downloaded and
   verified tarball with `npm publish --ignore-scripts`, and do not reintroduce

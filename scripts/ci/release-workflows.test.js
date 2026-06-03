@@ -262,9 +262,9 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
   );
   assert.equal(config.packages['apps/mobile']['release-type'], 'dart');
   assert.equal(config.packages['apps/web'], undefined);
-  assert.equal(manifest['.'], '0.2.0');
-  assert.equal(manifest['apps/mobile'], '0.5.0');
-  assert.equal(manifest['packages/sdk'], '0.4.9');
+  assert.equal(manifest['.'], '0.3.0');
+  assert.equal(manifest['apps/mobile'], '0.5.1');
+  assert.equal(manifest['packages/sdk'], '0.5.0');
   assert.deepEqual(configuredReleasePaths, expectedReleasePaths);
 
   for (const [workspacePath, version] of workspaceVersions) {
@@ -596,6 +596,37 @@ const packageReleaseWorkflows = [
     workflowName: 'release-ai-package.yaml',
   },
   {
+    artifactDir: 'devbox-package',
+    artifactName: 'tuturuuu-devbox-npm-package',
+    environment: 'devbox-release-production',
+    packageName: '@tuturuuu/devbox',
+    packagePath: 'packages/devbox',
+    rejectMessagePattern:
+      /@tuturuuu\/devbox releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/devbox/,
+      /run: bun run build/,
+      /run: bun run test/,
+    ],
+    workflowName: 'release-devbox-package.yaml',
+  },
+  {
+    artifactDir: 'internal-api-package',
+    artifactName: 'tuturuuu-internal-api-npm-package',
+    environment: 'internal-api-release-production',
+    packageName: '@tuturuuu/internal-api',
+    packagePath: 'packages/internal-api',
+    rejectMessagePattern:
+      /@tuturuuu\/internal-api releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /bun run --filter @tuturuuu\/types build/,
+      /working-directory: packages\/internal-api/,
+      /run: bun run build/,
+      /run: bun run test/,
+    ],
+    workflowName: 'release-internal-api-package.yaml',
+  },
+  {
     artifactDir: 'supabase-package',
     artifactName: 'tuturuuu-supabase-npm-package',
     environment: 'supabase-release-production',
@@ -664,6 +695,7 @@ const packageReleaseWorkflows = [
       /SDK releases can only run from refs\/heads\/production/,
     requiredBuildPatterns: [
       /Build SDK workspace dependencies/,
+      /bun run --filter @tuturuuu\/devbox build/,
       /bun run --filter @tuturuuu\/types build/,
       /bun run --filter @tuturuuu\/internal-api build/,
       /working-directory: packages\/sdk/,
@@ -735,6 +767,20 @@ test('package publish workflows release from production version bumps', () => {
       /npm view "\$\{PACKAGE_NAME\}@\$\{PACKAGE_VERSION\}" version/
     );
     assert.match(prepareJob, /npm pack --pack-destination/);
+    const prepareManifestIndex = prepareJob.indexOf(
+      `node scripts/ci/prepare-npm-package-manifest.js ${packagePath}`
+    );
+    const packIndex = prepareJob.indexOf('npm pack --pack-destination');
+
+    assert.notEqual(
+      prepareManifestIndex,
+      -1,
+      `${workflowName} must prepare npm package manifests before packing`
+    );
+    assert.ok(
+      prepareManifestIndex < packIndex,
+      `${workflowName} must rewrite workspace protocol dependencies before npm pack`
+    );
     assert.match(prepareJob, /actions\/upload-artifact@/);
     assert.doesNotMatch(prepareJob, /id-token:\s*write/);
     assert.match(

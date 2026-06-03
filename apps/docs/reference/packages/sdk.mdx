@@ -212,11 +212,16 @@ build provenance attestations automatically.
 patch-version PRs. Do not restore checksum or package-only bump automation for
 the SDK; release-please must remain the version/changelog source of truth.
 
-The SDK imports `@tuturuuu/types` and `@tuturuuu/internal-api` through package
-exports that point at their git-ignored `dist/` directories. The release
-workflow must build those two workspace packages in the non-OIDC build and
-prepare jobs before running SDK tests or creating the `npm pack` tarball;
-otherwise a clean Actions checkout cannot resolve the SDK imports.
+The SDK imports `@tuturuuu/devbox`, `@tuturuuu/types`, and
+`@tuturuuu/internal-api` through package exports that point at their git-ignored
+`dist/` directories. The release workflow must build those workspace packages in
+the non-OIDC build and prepare jobs before running SDK tests or creating the
+`npm pack` tarball; otherwise a clean Actions checkout cannot resolve the SDK
+imports. The workflow then runs
+`node scripts/ci/prepare-npm-package-manifest.js packages/sdk` before
+`npm pack` so the published manifest contains concrete npm versions instead of
+local `workspace:` protocol ranges. Keep matching npm release workflows for the
+SDK runtime workspace dependencies so consumers can install the published SDK.
 
 The matching npm-side trusted publisher must stay configured at
 `https://www.npmjs.com/package/tuturuuu/access` with these exact values:

@@ -196,7 +196,11 @@ Release Please reads Conventional Commits from `production`, updates
 `release-please-config.json` packages through `.release-please-manifest.json`,
 and opens one combined release PR with package versions and changelogs. Package
 publish workflows do not generate versions; they publish only after a
-release-please version bump lands on `production`. For example,
+release-please version bump lands on `production`. Local manifests keep
+Tuturuuu workspace dependencies as `workspace:*`; npm release workflows rewrite
+the checked-out package manifest with
+`scripts/ci/prepare-npm-package-manifest.js` immediately before `npm pack` so
+published artifacts contain installable npm version ranges. For example,
 `release-types-package.yaml` triggers from production changes to
 `packages/types/package.json`:
 
