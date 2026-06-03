@@ -10,6 +10,7 @@ import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import { CurrencyInput } from '@tuturuuu/ui/currency-input';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
+  Form,
   FormControl,
   FormDescription,
   FormField,
@@ -89,19 +90,21 @@ export function FormPreview({ s }: { s: SampleTranslator }) {
   });
   return (
     <div className="grid gap-2">
-      <FormField
-        control={form.control}
-        name="workspace"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{s('workspaceName')}</FormLabel>
-            <FormControl>
-              <Input {...field} />
-            </FormControl>
-            <FormDescription>{s('formDescription')}</FormDescription>
-          </FormItem>
-        )}
-      />
+      <Form {...form}>
+        <FormField
+          control={form.control}
+          name="workspace"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{s('workspaceName')}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormDescription>{s('formDescription')}</FormDescription>
+            </FormItem>
+          )}
+        />
+      </Form>
       <div className="flex items-center gap-2 text-muted-foreground text-xs">
         <Circle className="h-3 w-3 fill-current" />
         {s('validated')}
