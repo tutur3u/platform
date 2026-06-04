@@ -91,6 +91,12 @@ jobs:
         working-directory: apps/web
         run: bunx playwright install chromium
 
+      - name: Start Portless shared localhost proxy
+        run: |
+          bunx portless proxy start --wildcard
+          bunx portless alias tuturuuu 7803
+          bunx portless list
+
       # --- Run E2E tests against Docker web + local Docker Supabase ---
       - name: Run Playwright shard
         working-directory: apps/web
