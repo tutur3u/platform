@@ -6,14 +6,18 @@ const {
   createQueuedStressTestRunMock,
   getPermissionsMock,
   persistStressTestRunMock,
+  queueStressTestAbortFileMock,
   queueStressTestRunFileMock,
+  readStressTestRunMock,
   readStressTestSnapshotMock,
 } = vi.hoisted(() => ({
   createClientMock: vi.fn(),
   createQueuedStressTestRunMock: vi.fn(),
   getPermissionsMock: vi.fn(),
   persistStressTestRunMock: vi.fn(),
+  queueStressTestAbortFileMock: vi.fn(),
   queueStressTestRunFileMock: vi.fn(),
+  readStressTestRunMock: vi.fn(),
   readStressTestSnapshotMock: vi.fn(),
 }));
 
@@ -36,10 +40,13 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 vi.mock('@/lib/infrastructure/stress-testing', () => ({
   createQueuedStressTestRun: createQueuedStressTestRunMock,
   persistStressTestRun: persistStressTestRunMock,
+  queueStressTestAbortFile: queueStressTestAbortFileMock,
   queueStressTestRunFile: queueStressTestRunFileMock,
+  readStressTestRun: readStressTestRunMock,
   readStressTestSnapshot: readStressTestSnapshotMock,
 }));
 
+import { POST as abortPost } from './[runId]/abort/route';
 import { GET, POST } from './route';
 
 function createPermissionsResult(permissions: string[] = []) {
@@ -80,7 +87,17 @@ describe('infrastructure stress-test route', () => {
       recentRuns: [],
       targets: [],
     });
+    readStressTestRunMock.mockResolvedValue(null);
   });
+
+  function authorizeStressTestManager() {
+    authGetUserMock.mockResolvedValue({
+      data: { user: { email: 'ops@tuturuuu.com', id: 'user-1' } },
+    });
+    getPermissionsMock.mockResolvedValue(
+      createPermissionsResult(['manage_infrastructure_stress_tests'])
+    );
+  }
 
   it('allows infrastructure viewers to read the snapshot', async () => {
     authGetUserMock.mockResolvedValue({
@@ -119,12 +136,7 @@ describe('infrastructure stress-test route', () => {
 
   it('queues a run for stress-test managers', async () => {
     const run = { id: 'run-1', status: 'queued' };
-    authGetUserMock.mockResolvedValue({
-      data: { user: { email: 'ops@tuturuuu.com', id: 'user-1' } },
-    });
-    getPermissionsMock.mockResolvedValue(
-      createPermissionsResult(['manage_infrastructure_stress_tests'])
-    );
+    authorizeStressTestManager();
     createQueuedStressTestRunMock.mockReturnValue(run);
 
     const response = await POST(
@@ -145,5 +157,77 @@ describe('infrastructure stress-test route', () => {
     });
     expect(queueStressTestRunFileMock).toHaveBeenCalledWith(run);
     expect(persistStressTestRunMock).toHaveBeenCalledWith(run);
+  });
+
+  it('rejects invalid queue payloads as bad requests', async () => {
+    authorizeStressTestManager();
+
+    const response = await POST(
+      createTestRequest('POST', {
+        profileId: 'invalid',
+        targetId: 'local-web',
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.code).toBe('STRESS_TEST_INVALID_REQUEST');
+    expect(body.message).toContain('profileId');
+    expect(queueStressTestRunFileMock).not.toHaveBeenCalled();
+  });
+
+  it('does not persist the run when queue control-file writes fail', async () => {
+    const run = { id: 'run-1', status: 'queued' };
+    authorizeStressTestManager();
+    createQueuedStressTestRunMock.mockReturnValue(run);
+    queueStressTestRunFileMock.mockImplementation(() => {
+      throw new Error(
+        "ENOENT: no such file or directory, mkdir '/app/runtime/docker-web/stress-tests/runs/run-1'"
+      );
+    });
+
+    const response = await POST(
+      createTestRequest('POST', {
+        profileId: 'smoke',
+        targetId: 'local-web',
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.code).toBe('STRESS_TEST_CONTROL_WRITE_FAILED');
+    expect(body.message).toContain(
+      'Unable to write stress-test control files: ENOENT'
+    );
+    expect(persistStressTestRunMock).not.toHaveBeenCalled();
+  });
+
+  it('returns detailed abort errors when abort control-file writes fail', async () => {
+    authorizeStressTestManager();
+    readStressTestRunMock.mockResolvedValue({
+      id: 'run-1',
+      status: 'queued',
+      updatedAt: 1000,
+    });
+    queueStressTestAbortFileMock.mockImplementation(() => {
+      throw new Error(
+        "EACCES: permission denied, open '/app/runtime/docker-web-control/stress-tests/abort-requests/run-1.json'"
+      );
+    });
+
+    const response = await abortPost(
+      createTestRequest('POST', { reason: 'Stop it' }),
+      {
+        params: Promise.resolve({ runId: 'run-1' }),
+      }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.code).toBe('STRESS_TEST_CONTROL_WRITE_FAILED');
+    expect(body.message).toContain(
+      'Unable to write stress-test control files: EACCES'
+    );
+    expect(persistStressTestRunMock).not.toHaveBeenCalled();
   });
 });

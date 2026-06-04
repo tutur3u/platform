@@ -94,6 +94,7 @@ describe('infrastructure stress testing helpers', () => {
     expect(queued.run.target.url).toBe(
       'https://staging.tuturuuu.localhost/api/health'
     );
+    expect(fs.existsSync(paths.runsDir)).toBe(false);
   });
 
   it('merges queued runtime state into the monitoring snapshot', async () => {
@@ -106,6 +107,14 @@ describe('infrastructure stress testing helpers', () => {
       requestedByEmail: 'ops@tuturuuu.com',
     });
     queueStressTestRunFile(run);
+    const paths = getStressTestingPaths();
+    const runDir = path.join(paths.runsDir, run.id);
+    fs.mkdirSync(runDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(runDir, 'status.json'),
+      `${JSON.stringify(run, null, 2)}\n`,
+      'utf8'
+    );
 
     const snapshot = await readStressTestSnapshot({ canManage: true });
 

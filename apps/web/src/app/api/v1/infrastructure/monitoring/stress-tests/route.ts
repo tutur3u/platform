@@ -25,6 +25,33 @@ const payloadSchema = z.object({
   targetId: z.string().min(1).max(120),
 });
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error && error.message.trim()
+    ? error.message
+    : 'Unknown error';
+}
+
+function getValidationMessage(error: unknown) {
+  if (error instanceof z.ZodError) {
+    const issue = error.issues[0];
+    if (!issue) return 'Invalid stress-test request payload.';
+    const field = issue.path.join('.');
+    return field
+      ? `Invalid stress-test request payload: ${field}: ${issue.message}`
+      : `Invalid stress-test request payload: ${issue.message}`;
+  }
+
+  if (error instanceof SyntaxError) {
+    return 'Invalid stress-test request JSON.';
+  }
+
+  return null;
+}
+
+function jsonError(message: string, status: number, code: string) {
+  return NextResponse.json({ code, message }, { status });
+}
+
 export async function GET(request: Request) {
   return withRequestLogDrain(
     { request, route: '/api/v1/infrastructure/monitoring/stress-tests' },
@@ -49,7 +76,17 @@ export async function POST(request: Request) {
       if (!authorization.ok) return authorization.response;
 
       try {
-        const payload = payloadSchema.parse(await request.json());
+        let payload: z.infer<typeof payloadSchema>;
+        try {
+          payload = payloadSchema.parse(await request.json());
+        } catch (error) {
+          const message = getValidationMessage(error);
+          if (message) {
+            return jsonError(message, 400, 'STRESS_TEST_INVALID_REQUEST');
+          }
+          throw error;
+        }
+
         const snapshot = await readStressTestSnapshot({ canManage: true });
         const activeRun = snapshot.activeRun;
 
@@ -65,7 +102,18 @@ export async function POST(request: Request) {
           requestedBy: authorization.user.id,
           requestedByEmail: authorization.user.email ?? null,
         });
-        queueStressTestRunFile(run);
+
+        try {
+          queueStressTestRunFile(run);
+        } catch (error) {
+          const message = `Unable to write stress-test control files: ${getErrorMessage(error)}`;
+          serverLogger.error(
+            'Failed to queue infrastructure stress test control file',
+            error
+          );
+          return jsonError(message, 500, 'STRESS_TEST_CONTROL_WRITE_FAILED');
+        }
+
         await persistStressTestRun(run);
 
         return NextResponse.json({
@@ -73,6 +121,17 @@ export async function POST(request: Request) {
           run,
         });
       } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message === 'Stress test target is not allowlisted.'
+        ) {
+          return jsonError(
+            error.message,
+            400,
+            'STRESS_TEST_TARGET_NOT_ALLOWLISTED'
+          );
+        }
+
         serverLogger.error('Failed to queue infrastructure stress test', error);
         return NextResponse.json(
           { message: 'Failed to queue stress test' },

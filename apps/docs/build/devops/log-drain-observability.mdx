@@ -168,7 +168,7 @@ Run the native worker with:
 node scripts/watch-stress-tests.js
 ```
 
-The worker consumes queued files under `PLATFORM_STRESS_TEST_CONTROL_DIR` or the default `tmp/docker-web/watch/control/stress-tests`, writes live run state under `PLATFORM_STRESS_TEST_MONITORING_DIR` or `tmp/docker-web/stress-tests`, and tags synthetic requests with `X-Tuturuuu-Stress-Test-Run` plus a stress-test user agent. Abort requests are files in the same control tree; the worker honors them between sample ticks.
+The web container writes queued run and abort request files only under `PLATFORM_STRESS_TEST_CONTROL_DIR` or the default `tmp/docker-web/watch/control/stress-tests`, which should resolve to the writable blue/green control mount in production. The native worker consumes those control files, writes live run state under `PLATFORM_STRESS_TEST_MONITORING_DIR` or `tmp/docker-web/stress-tests`, and tags synthetic requests with `X-Tuturuuu-Stress-Test-Run` plus a stress-test user agent. Keep the runtime/monitoring tree read-only for web containers; run directories, samples, and result files are worker-owned.
 
 Durable run summaries are stored in private Supabase tables and read only through `/api/v1/infrastructure/monitoring/stress-tests`. Completed runtime files are synced back to those private tables when the dashboard/API reads them, so rollout order stays fail-open if the migration or log-drain database is not available yet.
 

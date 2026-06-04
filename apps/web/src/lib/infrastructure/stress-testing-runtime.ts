@@ -343,7 +343,6 @@ export function queueStressTestRunFile(
     path.join(paths.runRequestsDir, `${run.queuedAt}-${run.id}.json`),
     request
   );
-  writeJsonFile(path.join(getRunDir(run.id, paths), 'status.json'), run);
   return request;
 }
 

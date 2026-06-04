@@ -15,6 +15,48 @@ const payloadSchema = z.object({
   reason: z.string().max(500).optional(),
 });
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error && error.message.trim()
+    ? error.message
+    : 'Unknown error';
+}
+
+function getValidationMessage(error: unknown) {
+  if (error instanceof z.ZodError) {
+    const issue = error.issues[0];
+    if (!issue) return 'Invalid stress-test abort request payload.';
+    const field = issue.path.join('.');
+    return field
+      ? `Invalid stress-test abort request payload: ${field}: ${issue.message}`
+      : `Invalid stress-test abort request payload: ${issue.message}`;
+  }
+
+  if (error instanceof SyntaxError) {
+    return 'Invalid stress-test abort request JSON.';
+  }
+
+  return null;
+}
+
+function jsonError(message: string, status: number, code: string) {
+  return NextResponse.json({ code, message }, { status });
+}
+
+async function parseAbortPayload(request: Request) {
+  try {
+    return payloadSchema.parse(await request.json());
+  } catch (error) {
+    if (
+      error instanceof SyntaxError &&
+      !request.headers.get('content-type')?.includes('application/json')
+    ) {
+      return payloadSchema.parse({});
+    }
+
+    throw error;
+  }
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ runId: string }> }
@@ -32,9 +74,17 @@ export async function POST(
       if (!authorization.ok) return authorization.response;
 
       try {
-        const payload = payloadSchema.parse(
-          await request.json().catch(() => ({}))
-        );
+        let payload: z.infer<typeof payloadSchema>;
+        try {
+          payload = await parseAbortPayload(request);
+        } catch (error) {
+          const message = getValidationMessage(error);
+          if (message) {
+            return jsonError(message, 400, 'STRESS_TEST_ABORT_INVALID_REQUEST');
+          }
+          throw error;
+        }
+
         const run = await readStressTestRun(runId);
         if (!run) {
           return NextResponse.json(
@@ -50,11 +100,22 @@ export async function POST(
           );
         }
 
-        const abortRequest = queueStressTestAbortFile({
-          reason: payload.reason ?? null,
-          requestedBy: authorization.user.id,
-          runId,
-        });
+        let abortRequest: ReturnType<typeof queueStressTestAbortFile>;
+        try {
+          abortRequest = queueStressTestAbortFile({
+            reason: payload.reason ?? null,
+            requestedBy: authorization.user.id,
+            runId,
+          });
+        } catch (error) {
+          const message = `Unable to write stress-test control files: ${getErrorMessage(error)}`;
+          serverLogger.error(
+            'Failed to queue infrastructure stress test abort control file',
+            error
+          );
+          return jsonError(message, 500, 'STRESS_TEST_CONTROL_WRITE_FAILED');
+        }
+
         const nextRun = {
           ...run,
           abortReason: payload.reason ?? 'Operator requested abort.',

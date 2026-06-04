@@ -25,6 +25,12 @@ import {
 } from './blue-green-monitoring-query-hooks';
 import { RunStatusBadge } from './infrastructure-stress-test-run-summary';
 
+function getMutationErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message.trim()
+    ? error.message
+    : fallback;
+}
+
 export function InfrastructureStressTestControlPanel({
   activeRun,
   canManage,
@@ -66,7 +72,10 @@ export function InfrastructureStressTestControlPanel({
         targetId: selectedTargetId,
       },
       {
-        onError: () => toast.error(t('messages.queue_error')),
+        onError: (error) =>
+          toast.error(
+            getMutationErrorMessage(error, t('messages.queue_error'))
+          ),
         onSuccess: () => toast.success(t('messages.queue_success')),
       }
     );
@@ -80,7 +89,10 @@ export function InfrastructureStressTestControlPanel({
         runId: activeRun.id,
       },
       {
-        onError: () => toast.error(t('messages.abort_error')),
+        onError: (error) =>
+          toast.error(
+            getMutationErrorMessage(error, t('messages.abort_error'))
+          ),
         onSuccess: () => toast.success(t('messages.abort_success')),
       }
     );
