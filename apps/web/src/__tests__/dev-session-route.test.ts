@@ -337,9 +337,9 @@ describe('dev-session route', () => {
   it('allows production-mode Portless E2E requests on the injected backend port', async () => {
     mocks.devMode = false;
     stubLocalE2EEnv({
-      BASE_URL: 'https://tuturuuu.localhost',
+      BASE_URL: 'https://tuturuuu.localhost:1355',
       PORT: '4703',
-      PORTLESS_URL: 'https://tuturuuu.localhost',
+      PORTLESS_URL: 'https://tuturuuu.localhost:1355',
       SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
     });
     mockSuccessfulSession();
@@ -351,7 +351,7 @@ describe('dev-session route', () => {
         headers: {
           'Content-Type': 'application/json',
           host: '127.0.0.1:4703',
-          origin: 'https://tuturuuu.localhost',
+          origin: 'https://tuturuuu.localhost:1355',
         },
         body: JSON.stringify({
           email: 'local@tuturuuu.com',
@@ -373,7 +373,7 @@ describe('dev-session route', () => {
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS', 'true');
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'http://127.0.0.1:8001');
     vi.stubEnv('PORT', '4703');
-    vi.stubEnv('PORTLESS_URL', 'https://tuturuuu.localhost');
+    vi.stubEnv('PORTLESS_URL', 'https://tuturuuu.localhost:1355');
     mockSuccessfulSession();
 
     const request = new NextRequest(
@@ -383,7 +383,7 @@ describe('dev-session route', () => {
         headers: {
           'Content-Type': 'application/json',
           host: '127.0.0.1:4703',
-          origin: 'https://tuturuuu.localhost',
+          origin: 'https://tuturuuu.localhost:1355',
         },
         body: JSON.stringify({
           email: 'local@tuturuuu.com',

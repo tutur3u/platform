@@ -2490,6 +2490,152 @@ export type Database = {
         };
         Relationships: [];
       };
+      infrastructure_stress_test_runs: {
+        Row: {
+          abort_reason: string | null;
+          abort_requested_at: string | null;
+          abort_requested_by: string | null;
+          control_request_id: string | null;
+          created_at: string;
+          ended_at: string | null;
+          error_message: string | null;
+          id: string;
+          profile: Json;
+          profile_id: string;
+          queued_at: string;
+          requested_by: string | null;
+          requested_by_email: string | null;
+          resource_spikes: Json;
+          result_notes: string | null;
+          samples_ingested_at: string | null;
+          started_at: string | null;
+          status: string;
+          summary: Json;
+          target_id: string;
+          target_label: string;
+          target_url: string;
+          updated_at: string;
+        };
+        Insert: {
+          abort_reason?: string | null;
+          abort_requested_at?: string | null;
+          abort_requested_by?: string | null;
+          control_request_id?: string | null;
+          created_at?: string;
+          ended_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          profile?: Json;
+          profile_id: string;
+          queued_at?: string;
+          requested_by?: string | null;
+          requested_by_email?: string | null;
+          resource_spikes?: Json;
+          result_notes?: string | null;
+          samples_ingested_at?: string | null;
+          started_at?: string | null;
+          status?: string;
+          summary?: Json;
+          target_id: string;
+          target_label: string;
+          target_url: string;
+          updated_at?: string;
+        };
+        Update: {
+          abort_reason?: string | null;
+          abort_requested_at?: string | null;
+          abort_requested_by?: string | null;
+          control_request_id?: string | null;
+          created_at?: string;
+          ended_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          profile?: Json;
+          profile_id?: string;
+          queued_at?: string;
+          requested_by?: string | null;
+          requested_by_email?: string | null;
+          resource_spikes?: Json;
+          result_notes?: string | null;
+          samples_ingested_at?: string | null;
+          started_at?: string | null;
+          status?: string;
+          summary?: Json;
+          target_id?: string;
+          target_label?: string;
+          target_url?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      infrastructure_stress_test_samples: {
+        Row: {
+          active_requests: number;
+          cpu_percent: number | null;
+          created_at: string;
+          error_rate: number | null;
+          id: number;
+          latency_p50_ms: number | null;
+          latency_p95_ms: number | null;
+          latency_p99_ms: number | null;
+          memory_bytes: number | null;
+          metadata: Json;
+          requests_per_second: number;
+          run_id: string;
+          rx_bytes: number | null;
+          sampled_at: string;
+          status_codes: Json;
+          tx_bytes: number | null;
+          virtual_users: number;
+        };
+        Insert: {
+          active_requests?: number;
+          cpu_percent?: number | null;
+          created_at?: string;
+          error_rate?: number | null;
+          id?: number;
+          latency_p50_ms?: number | null;
+          latency_p95_ms?: number | null;
+          latency_p99_ms?: number | null;
+          memory_bytes?: number | null;
+          metadata?: Json;
+          requests_per_second?: number;
+          run_id: string;
+          rx_bytes?: number | null;
+          sampled_at: string;
+          status_codes?: Json;
+          tx_bytes?: number | null;
+          virtual_users?: number;
+        };
+        Update: {
+          active_requests?: number;
+          cpu_percent?: number | null;
+          created_at?: string;
+          error_rate?: number | null;
+          id?: number;
+          latency_p50_ms?: number | null;
+          latency_p95_ms?: number | null;
+          latency_p99_ms?: number | null;
+          memory_bytes?: number | null;
+          metadata?: Json;
+          requests_per_second?: number;
+          run_id?: string;
+          rx_bytes?: number | null;
+          sampled_at?: string;
+          status_codes?: Json;
+          tx_bytes?: number | null;
+          virtual_users?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'infrastructure_stress_test_samples_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'infrastructure_stress_test_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       internal_email_api_keys: {
         Row: {
           allowed_emails: string[] | null;
@@ -35278,7 +35424,8 @@ export type Database = {
         | 'view_chat'
         | 'create_chat'
         | 'manage_chat'
-        | 'moderate_chat';
+        | 'moderate_chat'
+        | 'manage_infrastructure_stress_tests';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -38019,6 +38166,7 @@ export const Constants = {
         'create_chat',
         'manage_chat',
         'moderate_chat',
+        'manage_infrastructure_stress_tests',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

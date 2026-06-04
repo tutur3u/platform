@@ -46,7 +46,7 @@ describe('isLocalE2EAuthBypassEnabled', () => {
         NODE_ENV: 'test',
         NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
         NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS: 'true',
-        PORTLESS_URL: 'https://tuturuuu.localhost',
+        PORTLESS_URL: 'https://tuturuuu.localhost:1355',
       })
     ).toBe(true);
   });
@@ -127,13 +127,13 @@ describe('isLocalE2EAuthRequestAllowed', () => {
       isLocalE2EAuthRequestAllowed(
         createRequest('http://127.0.0.1:4703/api/auth/dev-session', {
           host: '127.0.0.1:4703',
-          origin: 'https://tuturuuu.localhost',
+          origin: 'https://tuturuuu.localhost:1355',
         }),
         {
           ...localE2EEnv,
-          BASE_URL: 'https://tuturuuu.localhost',
+          BASE_URL: 'https://tuturuuu.localhost:1355',
           PORT: '4703',
-          PORTLESS_URL: 'https://tuturuuu.localhost',
+          PORTLESS_URL: 'https://tuturuuu.localhost:1355',
           SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
         }
       )

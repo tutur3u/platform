@@ -2,11 +2,13 @@ const LOCAL_E2E_AUTH_BYPASS_ENV = 'TUTURUUU_LOCAL_E2E_AUTH_BYPASS';
 const LOCAL_E2E_PUBLIC_AUTH_BYPASS_ENV =
   'NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS';
 const LOCAL_E2E_DEFAULT_SUPABASE_URL = 'http://127.0.0.1:8001';
+const LOCAL_E2E_PORTLESS_ORIGIN = 'https://tuturuuu.localhost:1355';
 
 const LOCAL_WEB_ORIGINS = new Set([
   'http://127.0.0.1:7803',
   'http://localhost:7803',
   'https://tuturuuu.localhost',
+  LOCAL_E2E_PORTLESS_ORIGIN,
 ]);
 
 const LOCAL_REQUEST_WEB_ORIGINS = new Set([
