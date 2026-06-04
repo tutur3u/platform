@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types';
 import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { sanitizeSupabaseAuthCookies } from './auth-cookie-sanitizer';
 import {
   checkEnvVariables,
@@ -53,14 +53,53 @@ function createCookieHandler(
   };
 }
 
+function extractForwardedHeaderValue(value: string | null) {
+  return (
+    value
+      ?.split(',')
+      .map((entry) => entry.trim())
+      .find(Boolean) ?? null
+  );
+}
+
+function resolveRequestUrlFromHeaders(
+  headerStore: Pick<Headers, 'get'>
+): string | null {
+  const forwardedHost = extractForwardedHeaderValue(
+    headerStore.get('x-forwarded-host')
+  );
+  const host =
+    forwardedHost ?? extractForwardedHeaderValue(headerStore.get('host'));
+
+  if (!host || /[\r\n]/u.test(host)) {
+    return null;
+  }
+
+  const forwardedProto =
+    extractForwardedHeaderValue(headerStore.get('x-forwarded-proto')) ??
+    'https';
+  const protocol = forwardedProto.replace(/:$/u, '').toLowerCase();
+
+  return `${protocol === 'http' ? 'http' : 'https'}://${host}`;
+}
+
+async function getRequestUrlFromHeaders() {
+  try {
+    return resolveRequestUrlFromHeaders(await headers());
+  } catch {
+    return null;
+  }
+}
+
 async function createGenericClient<T = Database>(
   isAdmin: boolean,
   requestUrl?: string | URL | null
 ): Promise<SupabaseClient<T>> {
   const { url, key } = checkEnvVariables({ useSecretKey: isAdmin });
   const cookieStore = await cookies();
+  const resolvedRequestUrl = requestUrl ?? (await getRequestUrlFromHeaders());
   return createServerClient<T>(url, key, {
-    cookieOptions: getSupabaseCookieOptions(url, requestUrl),
+    cookieOptions: getSupabaseCookieOptions(url, resolvedRequestUrl),
     cookies: isAdmin
       ? {
           getAll() {
@@ -276,13 +315,8 @@ export async function createDynamicClient<T = Database>(
   }
 
   // Fall back to cookie-based auth (web browser flow).
-  const { url, key } = checkEnvVariables({ useSecretKey: false });
-  const cookieStore = await cookies();
   return wrapDirectClientForProxyOnlyTables(
-    createServerClient<T>(url, key, {
-      cookieOptions: getSupabaseCookieOptions(url),
-      cookies: createCookieHandler(cookieStore, url),
-    })
+    await createGenericClient<T>(false)
   );
 }
 

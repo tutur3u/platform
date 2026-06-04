@@ -26,11 +26,12 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-      BASE_URL: https://tuturuuu.localhost
+      BASE_URL: https://tuturuuu.localhost:1355
       DOCKER_WEB_COMPOSE_PROJECT_NAME: ttr-e2e-${{ github.run_id }}-${{ matrix.shard }}
       E2E_SHARD_INDEX: ${{ matrix.shard }}
       E2E_TOTAL_SHARDS: ${{ matrix.total_shards }}
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:8001
+      PORTLESS_PORT: "1355"
 
     steps:
       - name: Check out code
@@ -91,11 +92,6 @@ jobs:
         working-directory: apps/web
         run: bunx playwright install chromium
 
-      - name: Start Portless shared localhost proxy
-        run: |
-          bunx portless proxy start --wildcard
-          bunx portless list
-
       # --- Run E2E tests against Docker web + local Docker Supabase ---
       - name: Run Playwright shard
         working-directory: apps/web
@@ -117,6 +113,8 @@ jobs:
             printf 'sha=%s\n' "${GITHUB_SHA}"
             printf 'ref=%s\n' "${GITHUB_REF}"
             printf 'shard=%s/%s\n' "${E2E_SHARD_INDEX}" "${E2E_TOTAL_SHARDS}"
+            printf 'base_url=%s\n' "${BASE_URL}"
+            printf 'portless_port=%s\n' "${PORTLESS_PORT}"
             printf 'compose_project=%s\n' "${DOCKER_WEB_COMPOSE_PROJECT_NAME}"
             date -u +"collected_at=%Y-%m-%dT%H:%M:%SZ"
           } > "$diagnostics_dir/summary.txt"
@@ -132,7 +130,8 @@ jobs:
           docker compose --env-file tmp/e2e/web.env -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" logs --tail=1000 web-proxy web-blue web-green hive-blue hive-green hive-realtime meet-realtime backend markitdown storage-unzip-proxy web-cron-runner > "$diagnostics_dir/docker-compose-services.log" 2>&1 || true
           docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" > "$diagnostics_dir/docker-images.txt" 2>&1 || true
           bunx portless list > "$diagnostics_dir/portless-list.txt" 2>&1 || true
-          curl -k -i --max-time 10 https://tuturuuu.localhost/login > "$diagnostics_dir/portless-login.txt" 2>&1 || true
+          portless_login_url="${BASE_URL%/}/login"
+          curl -k -i --max-time 10 "$portless_login_url" > "$diagnostics_dir/portless-login.txt" 2>&1 || true
           bun sb:status > "$diagnostics_dir/supabase-status.txt" 2>&1 || true
 
           if [ -f apps/web/test-results/.last-run.json ]; then

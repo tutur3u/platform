@@ -1,5 +1,5 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createAdminClient,
@@ -17,6 +17,7 @@ vi.mock('@supabase/ssr', () => ({
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(),
+  headers: vi.fn(),
 }));
 
 vi.mock('../common', () => ({
@@ -24,7 +25,13 @@ vi.mock('../common', () => ({
     url: 'https://test.supabase.co',
     key: useSecretKey ? 'test-secret-key' : 'test-publishable-key',
   }),
-  getSupabaseCookieOptions: (url: string) => ({
+  getSupabaseCookieOptions: (
+    url: string,
+    requestUrl?: string | URL | null
+  ) => ({
+    ...(requestUrl?.toString().includes('tuturuuu.com')
+      ? { domain: '.tuturuuu.com', secure: true }
+      : {}),
     name: `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
     path: '/',
     sameSite: 'lax',
@@ -72,6 +79,7 @@ describe('Supabase Server Client', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (cookies as any).mockReturnValue(mockCookieStore);
+    (headers as any).mockReturnValue(new Headers());
     (createServerClient as any).mockImplementation(
       (_url: string, key: string) =>
         key === 'test-secret-key' ? mockAdminClient : mockUserClient
@@ -108,6 +116,28 @@ describe('Supabase Server Client', () => {
         client: 'user',
         table: 'workspace_boards',
       });
+    });
+
+    it('infers shared-domain cookie options from forwarded headers without an explicit request', async () => {
+      (headers as any).mockReturnValue(
+        new Headers({
+          'x-forwarded-host': 'tasks.tuturuuu.com',
+          'x-forwarded-proto': 'https',
+        })
+      );
+
+      await createClient();
+
+      expect(createServerClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-publishable-key',
+        expect.objectContaining({
+          cookieOptions: expect.objectContaining({
+            domain: '.tuturuuu.com',
+            secure: true,
+          }),
+        })
+      );
     });
 
     it('should clear malformed Supabase auth cookies before SSR parsing', async () => {
@@ -478,6 +508,28 @@ describe('Supabase Server Client', () => {
         client: 'user',
         table: 'topic_announcements',
       });
+    });
+
+    it('infers shared-domain cookie options for dynamic clients without an explicit request', async () => {
+      (headers as any).mockReturnValue(
+        new Headers({
+          host: 'tuturuuu.com',
+          'x-forwarded-proto': 'https',
+        })
+      );
+
+      await createDynamicClient();
+
+      expect(createServerClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-publishable-key',
+        expect.objectContaining({
+          cookieOptions: expect.objectContaining({
+            domain: '.tuturuuu.com',
+            secure: true,
+          }),
+        })
+      );
     });
   });
 

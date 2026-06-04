@@ -13,6 +13,7 @@ const {
   assertSafeE2EEnvironment,
   createLocalE2EEnvFileContent,
   createLocalE2EProcessEnv,
+  LOCAL_E2E_BASE_URL,
 } = require('./e2e-local-environment.js');
 const { SKIP_WATCH_HISTORY_ENV } = require('./watch-blue-green/history.js');
 const { WATCHER_CONTAINER_ENV } = require('./watch-blue-green-deploy.js');
@@ -21,7 +22,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const WEB_DIR = path.join(ROOT_DIR, 'apps', 'web');
 const DEFAULT_ENV_FILE = path.join(ROOT_DIR, 'tmp', 'e2e', 'web.env');
 const DEFAULT_HEALTH_URL = 'http://127.0.0.1:7803/login';
-const DEFAULT_PORTLESS_BASE_URL = 'https://tuturuuu.localhost';
+const DEFAULT_PORTLESS_BASE_URL = LOCAL_E2E_BASE_URL;
 const DEFAULT_PORTLESS_HEALTH_URL = `${DEFAULT_PORTLESS_BASE_URL}/login`;
 const DEFAULT_DIAGNOSTIC_LOG_TAIL = '300';
 const E2E_COMPOSE_PROJECT_PREFIX = 'ttr-e2e-';

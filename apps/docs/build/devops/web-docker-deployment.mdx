@@ -144,10 +144,11 @@ This is the operational guide for the Docker-based `apps/web` runtime.
    Turnstile/dev-session,
 2. starts and resets the Dockerized local Supabase stack,
 3. boots `apps/web` through the production blue/green Docker flow,
-4. registers the Portless `https://tuturuuu.localhost` route only after the
-   direct Docker proxy is healthy,
-5. waits for `https://tuturuuu.localhost/login`, then runs Playwright against
-   that shared-cookie origin, and
+4. starts Portless on unprivileged HTTPS port `1355` and registers the
+   `https://tuturuuu.localhost:1355` route only after the direct Docker proxy is
+   healthy,
+5. waits for `https://tuturuuu.localhost:1355/login`, then runs Playwright
+   against that shared-cookie origin, and
 6. tears down Docker web plus local Supabase unless `E2E_KEEP_DOCKER_STACK=1`.
 
 Normal teardown passes `--volumes --rmi local` to Docker Compose and then removes
@@ -196,12 +197,12 @@ When an E2E shard fails, the runner prints diagnostics before teardown while the
 containers still exist. The job log includes the primary error, blue/green stage
 state, the Playwright `.last-run.json` file when available, Docker containers
 for the shard Compose project, production Compose status, recent logs for web,
-Hive, proxy, and support services, the Portless route list, a
-`https://tuturuuu.localhost/login` probe, and `bun sb:status`. The workflow also
-has a failure-only diagnostic step after `Run Playwright shard` as a backstop,
-so the job output should show the failing service or stage even when Playwright
-report artifacts are incomplete. The workflow uploads diagnostics, Playwright
-reports, and `apps/web/test-results` for every non-cancelled shard so traces and
+Hive, proxy, and support services, the Portless route list, a probe against the
+configured E2E `BASE_URL`, and `bun sb:status`. The workflow also has a
+failure-only diagnostic step after `Run Playwright shard` as a backstop, so the
+job output should show the failing service or stage even when Playwright report
+artifacts are incomplete. The workflow uploads diagnostics, Playwright reports,
+and `apps/web/test-results` for every non-cancelled shard so traces and
 screenshots stay available when the job output is too short.
 
 The Playwright global setup refuses non-local web origins and refuses Supabase

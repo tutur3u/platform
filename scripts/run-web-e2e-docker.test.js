@@ -7,6 +7,7 @@ const path = require('node:path');
 const {
   LOCAL_E2E_AUTH_BYPASS,
   LOCAL_E2E_BASE_URL,
+  LOCAL_E2E_PORTLESS_PORT,
   LOCAL_E2E_SUPERMEMORY_ENABLED,
   LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD,
   LOCAL_E2E_SUPABASE_URL,
@@ -116,6 +117,10 @@ test('ensureLocalE2EEnvFile writes a local-only web env file', () => {
     );
     assert.match(content, new RegExp(LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD));
     assert.match(content, new RegExp(`WEB_APP_URL=${LOCAL_E2E_BASE_URL}`));
+    assert.match(
+      content,
+      new RegExp(`PORTLESS_PORT=${LOCAL_E2E_PORTLESS_PORT}`)
+    );
     assert.doesNotMatch(content, /supabase\.(co|in)/iu);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -398,7 +403,7 @@ test('printE2EFailureDiagnostics prints compose logs without masking diagnostics
       '-i',
       '--max-time',
       '10',
-      'https://tuturuuu.localhost/login',
+      'https://tuturuuu.localhost:1355/login',
     ]);
     assert.deepEqual(calls[5].args, ['sb:status']);
     assert.ok(

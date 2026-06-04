@@ -365,7 +365,6 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   const e2eJob = readWorkflowJobBlock('e2e-tests.yaml', 'e2e');
   const cleanupIndex = e2eJob.indexOf('Free runner disk for Dockerized E2E');
-  const portlessIndex = e2eJob.indexOf('Start Portless shared localhost proxy');
   const runIndex = e2eJob.indexOf('Run Playwright shard');
   const diagnosticsIndex = e2eJob.indexOf('Collect Dockerized E2E diagnostics');
   const restoreIndex = e2eJob.indexOf('Restore cached Docker images');
@@ -379,19 +378,23 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   assert.match(
     e2eJob,
-    /BASE_URL: https:\/\/tuturuuu\.localhost/u,
-    'E2E must exercise the shared-cookie localhost domain, not plain localhost'
+    /BASE_URL: https:\/\/tuturuuu\.localhost:1355/u,
+    'E2E must exercise the shared-cookie localhost domain on the unprivileged Portless port'
   );
+  assert.match(e2eJob, /PORTLESS_PORT: "1355"/u);
   assert.match(e2eJob, /github\.ref != 'refs\/heads\/production'/);
   assert.notEqual(cleanupIndex, -1);
-  assert.notEqual(portlessIndex, -1);
   assert.notEqual(runIndex, -1);
   assert.notEqual(diagnosticsIndex, -1);
   assert.notEqual(restoreIndex, -1);
   assert.notEqual(loadIndex, -1);
   assert.notEqual(diagnosticsUploadIndex, -1);
   assert.notEqual(uploadIndex, -1);
-  assert.match(e2eJob, /bunx portless proxy start --wildcard/u);
+  assert.doesNotMatch(
+    e2eJob,
+    /name: Start Portless shared localhost proxy/u,
+    'Docker E2E runner must own Portless startup after Docker is healthy'
+  );
   assert.doesNotMatch(
     e2eJob,
     /bunx portless alias tuturuuu 7803/u,
@@ -408,10 +411,6 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.ok(
     cleanupIndex < loadIndex,
     'runner disk cleanup must happen before loading Supabase Docker images'
-  );
-  assert.ok(
-    portlessIndex < runIndex,
-    'shared localhost proxy must start before Playwright uses BASE_URL'
   );
   assert.ok(
     runIndex < diagnosticsIndex,
@@ -448,7 +447,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   assert.match(
     e2eJob,
-    /curl -k -i --max-time 10 https:\/\/tuturuuu\.localhost\/login > "\$diagnostics_dir\/portless-login\.txt"/u
+    /curl -k -i --max-time 10 "\$portless_login_url" > "\$diagnostics_dir\/portless-login\.txt"/u
   );
   assert.match(e2eJob, /apps\/web\/test-results\/\.last-run\.json/u);
   assert.match(

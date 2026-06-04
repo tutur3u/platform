@@ -8,6 +8,7 @@ const {
   LOCAL_E2E_BASE_URL,
   LOCAL_E2E_CRON_SECRET,
   LOCAL_E2E_DOCKER_SUPABASE_URL,
+  LOCAL_E2E_PORTLESS_PORT,
   LOCAL_E2E_SUPERMEMORY_ENABLED,
   LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD,
   LOCAL_E2E_SUPABASE_SECRET_KEY,
@@ -35,10 +36,16 @@ test('assertSafeE2EEnvironment accepts only local web and Supabase origins', () 
 });
 
 test('local E2E app URL uses Tuturuuu localhost for shared-cookie coverage', () => {
-  assert.equal(LOCAL_E2E_BASE_URL, 'https://tuturuuu.localhost');
+  assert.equal(LOCAL_E2E_BASE_URL, 'https://tuturuuu.localhost:1355');
   assert.doesNotThrow(() =>
     assertSafeE2EEnvironment({
       BASE_URL: 'http://localhost:7803',
+      NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
+    })
+  );
+  assert.doesNotThrow(() =>
+    assertSafeE2EEnvironment({
+      BASE_URL: 'https://tuturuuu.localhost',
       NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
     })
   );
@@ -92,6 +99,7 @@ test('createLocalE2EEnvFileContent is pinned to local Docker E2E values', () => 
     new RegExp(`NEXT_PUBLIC_WEB_APP_URL=${LOCAL_E2E_BASE_URL}`)
   );
   assert.match(content, new RegExp(`PORTLESS_URL=${LOCAL_E2E_BASE_URL}`));
+  assert.match(content, new RegExp(`PORTLESS_PORT=${LOCAL_E2E_PORTLESS_PORT}`));
   assert.match(content, new RegExp(`WEB_APP_URL=${LOCAL_E2E_BASE_URL}`));
   assert.match(
     content,
@@ -146,6 +154,7 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
   assert.equal(env.NEXT_PUBLIC_WEB_APP_URL, LOCAL_E2E_BASE_URL);
   assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, LOCAL_E2E_SUPABASE_URL);
   assert.equal(env.PORTLESS_URL, LOCAL_E2E_BASE_URL);
+  assert.equal(env.PORTLESS_PORT, LOCAL_E2E_PORTLESS_PORT);
   assert.equal(
     env.NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS,
     LOCAL_E2E_AUTH_BYPASS
