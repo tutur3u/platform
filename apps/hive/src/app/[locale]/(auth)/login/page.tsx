@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/auth/app-session';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { ArrowRight, Bot, Box, Radio, ShieldCheck } from '@tuturuuu/icons';
+import { getSatelliteSupabaseSessionUser } from '@tuturuuu/satellite/auth';
 import { headers } from 'next/headers';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
@@ -35,10 +36,11 @@ export default async function LoginPage({ searchParams }: Props) {
   const hasWebAppSession = hasWebAppSessionTokenFromRequest({
     headers: requestHeaders,
   });
+  const supabaseUser = await getSatelliteSupabaseSessionUser();
 
   const nextPath = normalizeNextPath(params.next);
 
-  if (appSession && hasWebAppSession) {
+  if (supabaseUser?.id || (appSession && hasWebAppSession)) {
     redirect(nextPath);
   }
 

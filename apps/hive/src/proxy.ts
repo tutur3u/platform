@@ -1,6 +1,7 @@
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
@@ -65,6 +66,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const appSessionRefresh = isLocalAuthApi
       ? null
       : await refreshAppSessionForRequest(request, {
+          sessionMode: 'supabase-first',
           targetApp: 'hive',
         });
 
@@ -112,12 +114,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (!isPublicPath) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {
       requireWebAppSession: true,
+      sessionMode: 'supabase-first',
       targetApp: 'hive',
     });
     const requestWithRefresh = {
       headers: appSessionRefresh.ok
         ? (appSessionRefresh.requestHeaders ?? request.headers)
         : request.headers,
+      url: request.url,
     };
     const appSession = appSessionRefresh.ok
       ? appSessionRefresh.claims
@@ -126,8 +130,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         });
     const hasWebAppSession =
       hasWebAppSessionTokenFromRequest(requestWithRefresh);
+    const hasSupabaseSession =
+      hasSupportedSupabaseAuthCookie(requestWithRefresh);
+    const hasSatelliteSession =
+      hasSupabaseSession || Boolean(appSession && hasWebAppSession);
 
-    if (!appSession || !hasWebAppSession) {
+    if (!hasSatelliteSession) {
       const url = createHivePublicUrl('/login', request);
       const next = getNextValue(request);
       if (next) url.searchParams.set('next', next);

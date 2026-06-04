@@ -14,6 +14,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { AppCoordinationTokenClaims } from '../app-coordination';
 import {
+  APP_SESSION_SCOPE,
   clearAppSessionCookie,
   clearSupabaseAuthCookies,
   getAppSessionRefreshEarlySeconds,
@@ -187,7 +188,14 @@ function getSetCookieHeaders(headers: Headers) {
   }
 
   const singleHeader = headers.get('set-cookie');
-  return singleHeader ? [singleHeader] : [];
+  return singleHeader ? splitCombinedSetCookieHeader(singleHeader) : [];
+}
+
+function splitCombinedSetCookieHeader(header: string) {
+  return header
+    .split(/,\s*(?=[A-Za-z0-9!#$%&'*+\-.^_`|~]+=)/u)
+    .map((setCookie) => setCookie.trim())
+    .filter(Boolean);
 }
 
 function parseCookieHeader(cookieHeader: string | null) {
@@ -491,16 +499,75 @@ type AppSessionRefreshState =
       ok: false;
     };
 
+function createAppSessionClaimsFromSupabaseClaims(
+  claims: unknown,
+  options: {
+    now: Date;
+    targetApp: AppName | string;
+  }
+): AppCoordinationTokenClaims | null {
+  const record = asRecord(claims);
+  const sub = typeof record.sub === 'string' ? record.sub : null;
+
+  if (!sub) {
+    return null;
+  }
+
+  const nowSeconds = Math.floor(options.now.getTime() / 1000);
+  const exp = typeof record.exp === 'number' ? record.exp : nowSeconds + 3600;
+  const iat = typeof record.iat === 'number' ? record.iat : nowSeconds;
+  const sessionId =
+    typeof record.session_id === 'string' ? record.session_id : null;
+
+  return {
+    aud: 'tuturuuu-api',
+    email: typeof record.email === 'string' ? record.email : null,
+    exp,
+    iat,
+    iss: 'tuturuuu',
+    jti: sessionId ?? `supabase:${sub}:${iat}`,
+    origin_app: 'web',
+    scopes: [APP_SESSION_SCOPE],
+    sub,
+    target_app: options.targetApp,
+    typ: 'app_coordination',
+  };
+}
+
 export async function refreshAppSessionForRequest(
   req: NextRequest,
   options: {
     now?: Date;
     requireWebAppSession?: boolean;
     refreshPath?: string;
+    sessionMode?: 'app-session' | 'supabase-first';
     targetApp: AppName | string;
   }
 ): Promise<AppSessionRefreshState> {
   const now = options.now ?? new Date();
+
+  if (
+    options.sessionMode === 'supabase-first' &&
+    hasSupportedSupabaseAuthCookie(req)
+  ) {
+    const { res, claims } = await updateSession(req);
+    const appSessionClaims = createAppSessionClaimsFromSupabaseClaims(claims, {
+      now,
+      targetApp: options.targetApp,
+    });
+
+    if (appSessionClaims) {
+      clearAppSessionCookie(res);
+
+      return {
+        claims: appSessionClaims,
+        ok: true,
+        refreshed: false,
+        response: res,
+      };
+    }
+  }
+
   const verification = verifyAppSessionRequest(req, {
     now,
     targetApp: options.targetApp,
@@ -871,6 +938,7 @@ interface CentralizedAuthOptions {
    */
   appSession?: {
     now?: Date;
+    sessionMode?: 'app-session' | 'supabase-first';
     targetApp: AppName | string;
   };
 }
@@ -946,6 +1014,7 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
 
         const appSessionVerification = await refreshAppSessionForRequest(req, {
           now: appSession.now,
+          sessionMode: appSession.sessionMode,
           targetApp: appSession.targetApp,
         });
 

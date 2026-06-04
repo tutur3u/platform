@@ -1,16 +1,51 @@
+import type { AppCoordinationTokenClaims } from '@tuturuuu/auth/app-coordination';
 import {
+  APP_SESSION_SCOPE,
   type AppSessionTargetApp,
   getAppSessionClaimsFromRequest,
   getAppSessionUserFromRequest,
+  getSupabaseSessionUser,
 } from '@tuturuuu/auth/app-session';
 import {
   getCurrentUserProfile,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { headers } from 'next/headers';
 
+function createSupabaseBackedAppSession(
+  user: SupabaseUser,
+  targetApp?: AppSessionTargetApp
+): AppCoordinationTokenClaims {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+
+  return {
+    aud: 'tuturuuu-api',
+    email: user.email ?? null,
+    exp: nowSeconds + 3600,
+    iat: nowSeconds,
+    iss: 'tuturuuu',
+    jti: `supabase:${user.id}:${nowSeconds}`,
+    origin_app: 'web',
+    scopes: [APP_SESSION_SCOPE],
+    sub: user.id,
+    target_app: targetApp ?? 'web',
+    typ: 'app_coordination',
+  };
+}
+
+export async function getSatelliteSupabaseSessionUser() {
+  return getSupabaseSessionUser();
+}
+
 export async function getSatelliteAppSession(targetApp?: AppSessionTargetApp) {
+  const supabaseUser = await getSatelliteSupabaseSessionUser();
+
+  if (supabaseUser?.id) {
+    return createSupabaseBackedAppSession(supabaseUser, targetApp);
+  }
+
   const requestHeaders = await headers();
 
   return getAppSessionClaimsFromRequest(
@@ -22,6 +57,12 @@ export async function getSatelliteAppSession(targetApp?: AppSessionTargetApp) {
 export async function getSatelliteAppSessionUser(
   targetApp?: AppSessionTargetApp
 ) {
+  const supabaseUser = await getSatelliteSupabaseSessionUser();
+
+  if (supabaseUser?.id) {
+    return supabaseUser;
+  }
+
   const requestHeaders = await headers();
 
   return getAppSessionUserFromRequest(
@@ -34,6 +75,7 @@ export async function getSatelliteCurrentUser(
   targetApp?: AppSessionTargetApp
 ): Promise<WorkspaceUser | null> {
   const requestHeaders = await headers();
+  const supabaseUser = await getSatelliteSupabaseSessionUser();
   const appSession = getAppSessionClaimsFromRequest(
     {
       headers: requestHeaders,
@@ -41,7 +83,7 @@ export async function getSatelliteCurrentUser(
     targetApp ? { targetApp } : {}
   );
 
-  if (!appSession) {
+  if (!supabaseUser && !appSession) {
     return null;
   }
 
@@ -62,6 +104,26 @@ export async function getSatelliteCurrentUser(
       new_email: profile.new_email,
     };
   } catch {
+    if (supabaseUser) {
+      return {
+        avatar_url: supabaseUser.user_metadata?.avatar_url ?? null,
+        created_at: supabaseUser.created_at ?? null,
+        display_name: supabaseUser.user_metadata?.display_name ?? null,
+        email: supabaseUser.email,
+        full_name: supabaseUser.user_metadata?.full_name ?? null,
+        id: supabaseUser.id,
+        name:
+          supabaseUser.user_metadata?.display_name ??
+          supabaseUser.user_metadata?.full_name ??
+          supabaseUser.email,
+        new_email: null,
+      };
+    }
+
+    if (!appSession) {
+      return null;
+    }
+
     return {
       email: appSession.email,
       id: appSession.sub,

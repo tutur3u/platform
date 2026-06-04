@@ -2,6 +2,7 @@ import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
@@ -35,7 +36,7 @@ const AUTH_PUBLIC_PATHS = [
 ];
 
 const authProxy = createCentralizedAuthProxy({
-  appSession: { targetApp: 'mail' },
+  appSession: { sessionMode: 'supabase-first', targetApp: 'mail' },
   excludeRootPath: true,
   mfa: { enabled: false },
   publicPaths: AUTH_PUBLIC_PATHS,
@@ -52,6 +53,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const appSessionRefresh = isLocalAuthApi
       ? null
       : await refreshAppSessionForRequest(req, {
+          sessionMode: 'supabase-first',
           targetApp: 'mail',
         });
 
@@ -97,6 +99,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     targetApp: 'mail',
   });
   const hasWebAppSession = hasWebAppSessionTokenFromRequest(authRequest);
+  const hasSupabaseSession = hasSupportedSupabaseAuthCookie(authRequest);
+  const hasSatelliteSession =
+    hasSupabaseSession || Boolean(appSession && hasWebAppSession);
   const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
   const uuidRegex =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -112,7 +117,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       : 0;
   const isLoginPath = pathSegments[loginSegmentIndex] === 'login';
 
-  if (isLoginPath && appSession && hasWebAppSession) {
+  if (isLoginPath && hasSatelliteSession) {
     const nextPath = normalizeAuthRedirectPath(
       req.nextUrl.searchParams.get('next') ??
         req.nextUrl.searchParams.get('nextUrl'),
@@ -163,7 +168,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  if (potentialWorkspaceId && appSession) {
+  if (potentialWorkspaceId && hasSatelliteSession) {
     try {
       const personal = await isPersonalWorkspace(potentialWorkspaceId);
 
@@ -201,11 +206,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
     !isMultiAccountFlow &&
-    appSession
+    hasSatelliteSession
   ) {
     try {
       const defaultWorkspace = await getCurrentUserDefaultWorkspace(
-        withForwardedInternalApiAuth(req.headers)
+        withForwardedInternalApiAuth(authRequestHeaders)
       );
       const target = defaultWorkspace
         ? defaultWorkspace.personal

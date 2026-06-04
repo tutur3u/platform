@@ -3,6 +3,7 @@ import {
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
+import { getSatelliteSupabaseSessionUser } from '@tuturuuu/satellite/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, TTR_URL } from '@/constants/common';
@@ -30,8 +31,12 @@ export default async function LoginPage({
   const hasWebAppSession = hasWebAppSessionTokenFromRequest({
     headers: requestHeaders,
   });
+  const supabaseUser = await getSatelliteSupabaseSessionUser();
 
-  if (appSession && hasWebAppSession && !shouldRefreshCrossAppSession) {
+  if (
+    (supabaseUser?.id || (appSession && hasWebAppSession)) &&
+    !shouldRefreshCrossAppSession
+  ) {
     redirect(nextPath);
   }
 

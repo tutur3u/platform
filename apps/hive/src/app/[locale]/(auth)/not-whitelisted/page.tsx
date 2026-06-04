@@ -1,13 +1,9 @@
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
 import { HiveAccessRequestCard } from '@tuturuuu/hive-ui/access';
-import { headers } from 'next/headers';
+import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { redirect } from 'next/navigation';
 
 export default async function NotWhitelistedPage() {
-  const appSession = getAppSessionClaimsFromRequest(
-    { headers: await headers() },
-    { targetApp: 'hive' }
-  );
+  const appSession = await getSatelliteAppSession('hive');
 
   if (!appSession) {
     redirect('/login');

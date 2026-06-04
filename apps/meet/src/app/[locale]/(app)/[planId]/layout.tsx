@@ -1,7 +1,6 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import { siteConfig } from '@/constants/configs';
 
@@ -23,12 +22,9 @@ export const generateMetadata = async ({
 
   const untitled = locale === 'vi' ? 'Kế hoạch' : 'Plan';
 
-  const appSessionUser = getAppSessionUserFromRequest(
-    { headers: await headers() },
-    { targetApp: 'meet' }
-  );
+  const user = await getSatelliteAppSessionUser('meet');
   const plan = await getPlan(planId, {
-    actorUserId: appSessionUser?.id ?? null,
+    actorUserId: user?.id ?? null,
   });
   const planName = plan?.name || untitled;
 

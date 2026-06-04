@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => {
       (_request: NextRequest, response: NextResponse) => response.headers
     ),
     guardApiProxyRequest: vi.fn(),
+    hasSupportedSupabaseAuthCookie: vi.fn(),
     hasWebAppSessionTokenFromRequest: vi.fn(),
     normalizeAuthRedirectPath: vi.fn(
       (value: string | null | undefined, _origin: string, fallback: string) =>
@@ -34,6 +35,9 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   getAppSessionClaimsFromRequest: (
     ...args: Parameters<typeof mocks.getAppSessionClaimsFromRequest>
   ) => mocks.getAppSessionClaimsFromRequest(...args),
+  hasSupportedSupabaseAuthCookie: (
+    ...args: Parameters<typeof mocks.hasSupportedSupabaseAuthCookie>
+  ) => mocks.hasSupportedSupabaseAuthCookie(...args),
   hasWebAppSessionTokenFromRequest: (
     ...args: Parameters<typeof mocks.hasWebAppSessionTokenFromRequest>
   ) => mocks.hasWebAppSessionTokenFromRequest(...args),
@@ -98,6 +102,9 @@ describe('Mail proxy auth handoff', () => {
     mocks.authProxy.mockResolvedValue(NextResponse.next());
     mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
     mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
   });
 
   it('consumes verify-token requests before centralized auth redirects', async () => {
@@ -118,5 +125,25 @@ describe('Mail proxy auth handoff', () => {
     );
     expect(mocks.authProxy).not.toHaveBeenCalled();
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it('keeps Supabase-authenticated login requests inside Mail instead of restarting central handoff', async () => {
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    mocks.normalizeAuthRedirectPath.mockReturnValue('/personal');
+    const request = new NextRequest(
+      'https://mail.tuturuuu.localhost/login?next=%2Fpersonal'
+    );
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('Location')).toBe(
+      'https://mail.tuturuuu.localhost/personal'
+    );
+    expect(mocks.authProxy).toHaveBeenCalledWith(request);
+    expect(mocks.normalizeAuthRedirectPath).toHaveBeenCalledWith(
+      '/personal',
+      'https://mail.tuturuuu.localhost',
+      '/personal'
+    );
   });
 });

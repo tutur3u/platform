@@ -25,12 +25,17 @@ export default async function TumeetPage({
   searchParams,
 }: TumeetPageProps) {
   const { wsId: id } = await params;
-  const { wsId } = await getMeetWorkspaceContext(id);
+  const { workspace, wsId } = await getMeetWorkspaceContext(id);
 
   return (
     <div className="-m-4">
       <Suspense>
-        <MeetTogetherPage wsId={wsId} path="" searchParams={searchParams} />
+        <MeetTogetherPage
+          scope={workspace?.personal ? 'personal-consolidated' : 'workspace'}
+          wsId={wsId}
+          path=""
+          searchParams={searchParams}
+        />
       </Suspense>
     </div>
   );

@@ -1,13 +1,9 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export async function requireHiveAccess() {
-  const user = getAppSessionUserFromRequest(
-    { headers: await headers() },
-    { targetApp: 'hive' }
-  );
+  const user = await getSatelliteAppSessionUser('hive');
 
   if (!user?.id) {
     redirect('/login');

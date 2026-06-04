@@ -70,6 +70,8 @@ const coordinatedCookieApps = [
   'hive',
 ] as const;
 
+const supabaseFirstCookieApps = ['mail', 'hive', 'meet'] as const;
+
 const allowedSatelliteLocalApiRoutes = new Set([
   'apps/learn/src/app/api/auth/logout/route.ts',
   'apps/learn/src/app/api/auth/refresh-app-session/route.ts',
@@ -328,6 +330,18 @@ describe('satellite app-session route inventory', () => {
       const proxySource = readFileSync(resolve(repoRoot, proxyFile), 'utf8');
 
       expect(proxySource, proxyFile).toContain('requireWebAppSession: true');
+    }
+  });
+
+  it('keeps first-party cookie satellite apps on Supabase-first auth', () => {
+    for (const app of supabaseFirstCookieApps) {
+      const proxyFile = `apps/${app}/src/proxy.ts`;
+      const proxySource = readFileSync(resolve(repoRoot, proxyFile), 'utf8');
+
+      expect(proxySource, proxyFile).toContain("sessionMode: 'supabase-first'");
+      expect(proxySource, proxyFile).toContain(
+        'hasSupportedSupabaseAuthCookie'
+      );
     }
   });
 

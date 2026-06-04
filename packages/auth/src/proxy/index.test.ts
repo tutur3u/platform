@@ -91,6 +91,33 @@ describe('auth proxy redirect helpers', () => {
     );
   });
 
+  it('splits combined fallback Set-Cookie headers before propagation', () => {
+    const headers = new Headers();
+    headers.append(
+      'set-cookie',
+      [
+        'sb-test-auth-token.0=chunk; Path=/; Domain=.tuturuuu.com; SameSite=lax',
+        'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+      ].join(', ')
+    );
+    Object.defineProperty(headers, 'getSetCookie', {
+      configurable: true,
+      value: undefined,
+    });
+    const source = {
+      cookies: { getAll: () => [] },
+      headers,
+    } as unknown as NextResponse;
+    const target = NextResponse.next();
+
+    propagateAuthCookies(source, target);
+
+    expect(target.headers.getSetCookie?.()).toEqual([
+      'sb-test-auth-token.0=chunk; Path=/; Domain=.tuturuuu.com; SameSite=lax',
+      'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+    ]);
+  });
+
   it('resolves the canonical public origin from forwarded headers', () => {
     const request = new NextRequest('http://0.0.0.0:7803/dashboard', {
       headers: {
@@ -654,6 +681,53 @@ describe('auth proxy redirect helpers', () => {
         method: 'POST',
       })
     );
+  });
+
+  it('uses shared Supabase auth in supabase-first refresh mode without issuing app-session cookies', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    const oldSession = createAppSessionTokenPair({
+      targetApp: 'mail',
+      userId: 'user-1',
+    });
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    mocks.updateSession.mockResolvedValueOnce({
+      claims: {
+        email: 'user@tuturuuu.com',
+        exp: 1_767_225_600,
+        iat: 1_767_222_000,
+        session_id: 'session-1',
+        sub: 'user-1',
+      },
+      res: NextResponse.next(),
+    });
+    const request = new NextRequest('https://mail.tuturuuu.com/api/messages', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${oldSession.access.token}`,
+          `${APP_SESSION_REFRESH_COOKIE_NAME}=${oldSession.refresh.token}`,
+          'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session',
+        ].join('; '),
+      },
+    });
+
+    const result = await refreshAppSessionForRequest(request, {
+      sessionMode: 'supabase-first',
+      targetApp: 'mail',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.refreshed).toBe(false);
+    expect(result.ok && result.claims.sub).toBe('user-1');
+    expect(result.ok && result.claims.target_app).toBe('mail');
+    expect(result.ok && result.response.headers.get('set-cookie')).toContain(
+      `${APP_SESSION_COOKIE_NAME}=;`
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mocks.updateSession).toHaveBeenCalledWith(request);
   });
 
   it('uses the local HTTP app port for Portless app-session refresh self-fetches', async () => {
