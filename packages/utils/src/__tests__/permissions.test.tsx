@@ -12,6 +12,7 @@ describe('workspace permission catalog', () => {
 
     expect(permissionIds).toContain('admin');
     expect(permissionIds).not.toContain('view_infrastructure');
+    expect(permissionIds).not.toContain('manage_infrastructure_stress_tests');
     expect(permissionIds).not.toContain('manage_workspace_secrets');
   });
 
@@ -24,6 +25,7 @@ describe('workspace permission catalog', () => {
 
     expect(permissionIds).toContain('admin');
     expect(permissionIds).toContain('view_infrastructure');
+    expect(permissionIds).toContain('manage_infrastructure_stress_tests');
     expect(permissionIds).toContain('manage_external_migrations');
     expect(permissionIds).toContain('manage_workspace_secrets');
     expect(new Set(permissionIds).size).toBe(permissionIds.length);

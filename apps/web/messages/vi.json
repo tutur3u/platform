@@ -2642,6 +2642,10 @@
       "rollouts": {
         "description": "Triển khai, biểu đồ lưu lượng, luồng sự kiện và các nút đồng bộ.",
         "title": "Rollout"
+      },
+      "stress_tests": {
+        "description": "Các lượt tải native có kiểm soát, lịch sử sức chịu tải và spike tài nguyên.",
+        "title": "Stress Test"
       }
     },
     "runtime": {
@@ -2688,6 +2692,59 @@
       "total_container_memory": "Tổng bộ nhớ container",
       "total_requests": "Tổng request",
       "watcher": "Watcher"
+    },
+    "stress_tests": {
+      "actions": {
+        "abort": "Dừng",
+        "inspect": "Xem",
+        "retry": "Thử lại",
+        "start": "Bắt đầu"
+      },
+      "form": {
+        "disabled": "Cần quyền quản lý stress test.",
+        "enabled": "Điều khiển native runner đang bật.",
+        "path": "Đường dẫn",
+        "profile": "Hồ sơ",
+        "target": "Mục tiêu",
+        "title": "Điều khiển lượt chạy"
+      },
+      "history": {
+        "empty": "Chưa lưu lượt stress test nào.",
+        "title": "Lịch sử lượt chạy"
+      },
+      "idle": {
+        "description": "Các lượt đo sức chịu tải sẽ xuất hiện tại đây sau khi được xếp hoặc lưu lại.",
+        "title": "Không có stress test đang chạy"
+      },
+      "messages": {
+        "abort_error": "Không thể xếp yêu cầu dừng.",
+        "abort_success": "Đã xếp yêu cầu dừng.",
+        "queue_error": "Không thể xếp stress test.",
+        "queue_success": "Đã xếp stress test."
+      },
+      "metrics": {
+        "average_rps": "RPS trung bình",
+        "cpu_delta": "Chênh {value}",
+        "cpu_peak": "CPU đỉnh",
+        "current_profile": "Hồ sơ {value}",
+        "duration": "Thời lượng",
+        "error_rate": "Lỗi {value}",
+        "estimated_users": "Người dùng ổn định",
+        "memory_delta": "Chênh {value}",
+        "memory_peak": "Bộ nhớ đỉnh",
+        "p95_latency": "Độ trễ P95",
+        "peak_rps": "RPS đỉnh",
+        "resource_spikes": "Mẫu CPU và RAM",
+        "safe_rps": "An toàn {value}",
+        "samples": "Mẫu",
+        "total_requests": "Request {value}"
+      },
+      "states": {
+        "idle": "Nhàn rỗi",
+        "live": "Trực tiếp",
+        "loading": "Đang tải telemetry stress test...",
+        "unavailable": "Telemetry stress test hiện không khả dụng."
+      }
     },
     "title": "Giám Sát Hạ Tầng",
     "watcher": {
@@ -7383,6 +7440,7 @@
     "monitoring_requests": "Requests",
     "monitoring_resources": "Resources",
     "monitoring_rollouts": "Deployments",
+    "monitoring_stress_tests": "Stress Test",
     "monitoring_watcher_logs": "Log Watcher",
     "operations": "Vận Hành",
     "otp_limits": "Giới hạn OTP",
@@ -17821,6 +17879,8 @@
     "manage_finance_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa giao dịch tài chính trong không gian làm việc.",
     "manage_forms": "Quản lý biểu mẫu",
     "manage_forms_description": "Cho phép thành viên tạo, chỉnh sửa và quản lý biểu mẫu trong không gian làm việc.",
+    "manage_infrastructure_stress_tests": "Quản lý stress test hạ tầng",
+    "manage_infrastructure_stress_tests_description": "Cho phép thành viên không gian làm việc gốc bắt đầu và dừng các stress test hạ tầng có kiểm soát.",
     "manage_inventory": "Quản lý kho",
     "manage_inventory_catalog": "Quản lý danh mục kho",
     "manage_inventory_catalog_description": "Cho phép thành viên tạo, chỉnh sửa và xóa mặt hàng trong danh mục kho.",

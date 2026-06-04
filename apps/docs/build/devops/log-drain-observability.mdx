@@ -18,6 +18,7 @@ The monitoring navigation uses compact labels:
 - Requests
 - Resources
 - Projects
+- Stress Tests
 
 ## Runtime
 
@@ -154,6 +155,24 @@ The internal resource sampler writes the current Docker snapshot into the log dr
 Chart gaps on the Resources tab mean a retained sampler record is missing for that time bucket; they are not automatically downtime. The Resources tab now shows sampling continuity for runtime and build metrics, including sampled buckets, gap buckets, latest retained sample age, and a live-snapshot marker for the current bucket. If the live snapshot is healthy but historical charts have gaps, inspect the Cron tab and the `infrastructure-sample-resources` job before treating the gap as runtime unavailability.
 
 Resource pressure uses the same thresholds as the dashboard: memory under 200 MB is green, 200-500 MB is amber, 500-1024 MB is orange, and anything above 1024 MB is red. CPU under 5% is green, 5-20% is amber, 20-40% is orange, and anything above 40% is red.
+
+## Stress Tests
+
+Infrastructure → Monitoring → Stress Tests queues controlled native load runs for root workspace infrastructure operators. The web app only validates permissions, writes a control request, and reads status. It must not generate load inside a Next.js route handler.
+
+Allowed targets come from `PLATFORM_STRESS_TEST_TARGETS`, a JSON array of objects with `id`, `label`, `baseUrl`, optional `defaultPath`, and optional `description`. If the variable is absent, the dashboard exposes only the local web target at `http://127.0.0.1:7803`. Do not accept arbitrary operator-entered URLs; add production, staging, or canary targets explicitly to this allowlist.
+
+Run the native worker with:
+
+```bash
+node scripts/watch-stress-tests.js
+```
+
+The worker consumes queued files under `PLATFORM_STRESS_TEST_CONTROL_DIR` or the default `tmp/docker-web/watch/control/stress-tests`, writes live run state under `PLATFORM_STRESS_TEST_MONITORING_DIR` or `tmp/docker-web/stress-tests`, and tags synthetic requests with `X-Tuturuuu-Stress-Test-Run` plus a stress-test user agent. Abort requests are files in the same control tree; the worker honors them between sample ticks.
+
+Durable run summaries are stored in private Supabase tables and read only through `/api/v1/infrastructure/monitoring/stress-tests`. Completed runtime files are synced back to those private tables when the dashboard/API reads them, so rollout order stays fail-open if the migration or log-drain database is not available yet.
+
+Per-run resource samples are also copied into log-drain `usage_events` with `stress.*` metrics and `metadata.runId`. This lets operators compare RPS, latency, CPU, memory, and network spikes against the existing Requests, Logs, Deployments, and Resources tabs for the same run window.
 
 ## Troubleshooting
 

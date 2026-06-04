@@ -2642,6 +2642,10 @@
       "rollouts": {
         "description": "Deployments, traffic charts, event streams, and sync controls.",
         "title": "Rollouts"
+      },
+      "stress_tests": {
+        "description": "Controlled native load runs, capacity history, and resource spikes.",
+        "title": "Stress Tests"
       }
     },
     "runtime": {
@@ -2688,6 +2692,59 @@
       "total_container_memory": "Total container memory",
       "total_requests": "Total Requests",
       "watcher": "Watcher"
+    },
+    "stress_tests": {
+      "actions": {
+        "abort": "Abort",
+        "inspect": "Inspect",
+        "retry": "Retry",
+        "start": "Start"
+      },
+      "form": {
+        "disabled": "Requires stress-test management permission.",
+        "enabled": "Native runner control is enabled.",
+        "path": "Path",
+        "profile": "Profile",
+        "target": "Target",
+        "title": "Run control"
+      },
+      "history": {
+        "empty": "No stress-test runs have been retained yet.",
+        "title": "Run history"
+      },
+      "idle": {
+        "description": "Capacity runs will appear here once queued or retained.",
+        "title": "No active stress test"
+      },
+      "messages": {
+        "abort_error": "Could not queue the abort request.",
+        "abort_success": "Queued the abort request.",
+        "queue_error": "Could not queue the stress test.",
+        "queue_success": "Queued the stress test."
+      },
+      "metrics": {
+        "average_rps": "Average RPS",
+        "cpu_delta": "Delta {value}",
+        "cpu_peak": "CPU Peak",
+        "current_profile": "Profile {value}",
+        "duration": "Duration",
+        "error_rate": "Errors {value}",
+        "estimated_users": "Steady Users",
+        "memory_delta": "Delta {value}",
+        "memory_peak": "Memory Peak",
+        "p95_latency": "P95 Latency",
+        "peak_rps": "Peak RPS",
+        "resource_spikes": "CPU and RAM samples",
+        "safe_rps": "Safe {value}",
+        "samples": "Samples",
+        "total_requests": "Requests {value}"
+      },
+      "states": {
+        "idle": "Idle",
+        "live": "Live",
+        "loading": "Loading stress-test telemetry...",
+        "unavailable": "Stress-test telemetry is unavailable."
+      }
     },
     "title": "Infrastructure Monitoring",
     "watcher": {
@@ -7383,6 +7440,7 @@
     "monitoring_requests": "Requests",
     "monitoring_resources": "Resources",
     "monitoring_rollouts": "Deployments",
+    "monitoring_stress_tests": "Stress Tests",
     "monitoring_watcher_logs": "Watcher Logs",
     "operations": "Operations",
     "otp_limits": "OTP Limits",
@@ -17821,6 +17879,8 @@
     "manage_finance_description": "Allows members to view, create, edit, and delete financial transactions in the workspace.",
     "manage_forms": "Manage Forms",
     "manage_forms_description": "Allows members to create, edit, and manage workspace forms.",
+    "manage_infrastructure_stress_tests": "Manage infrastructure stress tests",
+    "manage_infrastructure_stress_tests_description": "Allows root workspace members to start and abort controlled infrastructure stress tests.",
     "manage_inventory": "Manage Inventory",
     "manage_inventory_catalog": "Manage Inventory Catalog",
     "manage_inventory_catalog_description": "Allows members to create, edit, and remove inventory catalog items.",

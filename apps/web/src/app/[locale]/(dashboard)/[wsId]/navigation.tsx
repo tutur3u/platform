@@ -1565,6 +1565,7 @@ export async function WorkspaceNavigationLinks({
                 `/${personalOrWsId}/infrastructure/monitoring/requests`,
                 `/${personalOrWsId}/infrastructure/monitoring/resources`,
                 `/${personalOrWsId}/infrastructure/monitoring/rollouts`,
+                `/${personalOrWsId}/infrastructure/monitoring/stress-tests`,
                 `/${personalOrWsId}/infrastructure/monitoring/watcher-logs`,
               ],
               children: [
@@ -1613,6 +1614,11 @@ export async function WorkspaceNavigationLinks({
                   title: t('infrastructure-tabs.monitoring_resources'),
                   href: `/${personalOrWsId}/infrastructure/monitoring/resources`,
                   icon: <HardDrive className="h-5 w-5" />,
+                },
+                {
+                  title: t('infrastructure-tabs.monitoring_stress_tests'),
+                  href: `/${personalOrWsId}/infrastructure/monitoring/stress-tests`,
+                  icon: <Bolt className="h-5 w-5" />,
                 },
                 {
                   title: t('infrastructure-tabs.monitoring_watcher_logs'),
