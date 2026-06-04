@@ -16,7 +16,7 @@
     "@noble/hashes": "^2.2.0",
     "@tanstack/react-query": "^5.100.11",
     "@tiptap/core": "3.24.0",
-    "@tiptap/react": "3.24.0",
+    "@tiptap/react": "3.25.0",
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
