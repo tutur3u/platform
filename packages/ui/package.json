@@ -179,6 +179,10 @@
       "types": "./src/components/ui/badge.tsx",
       "import": "./src/components/ui/badge.tsx"
     },
+    "./button": {
+      "types": "./src/components/ui/button.tsx",
+      "import": "./src/components/ui/button.tsx"
+    },
     "./command": {
       "types": "./src/components/ui/command.tsx",
       "import": "./src/components/ui/command.tsx"
@@ -198,6 +202,10 @@
     "./sheet": {
       "types": "./src/components/ui/sheet.tsx",
       "import": "./src/components/ui/sheet.tsx"
+    },
+    "./sonner": {
+      "types": "./src/components/ui/sonner.tsx",
+      "import": "./src/components/ui/sonner.tsx"
     },
     "./hooks/use-board-actions": "./src/hooks/use-board-actions.ts",
     "./hooks/*": "./src/hooks/*.ts",
