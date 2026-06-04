@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.8.9",
-    "@tanstack/react-query": "5.100.14",
+    "@tanstack/react-query": "5.101.0",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
-    "@tanstack/react-query-devtools": "5.100.14",
+    "@tanstack/react-query-devtools": "5.101.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
