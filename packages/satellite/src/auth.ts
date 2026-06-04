@@ -4,8 +4,8 @@ import {
   type AppSessionTargetApp,
   getAppSessionClaimsFromRequest,
   getAppSessionUserFromRequest,
-  getSupabaseSessionUser,
 } from '@tuturuuu/auth/app-session';
+import { getSupabaseSessionUser } from '@tuturuuu/auth/supabase-session-user';
 import {
   getCurrentUserProfile,
   withForwardedInternalApiAuth,

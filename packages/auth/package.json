@@ -10,6 +10,7 @@
     "./app-session-policy": "./src/app-session-policy.ts",
     "./app-session": "./src/app-session.ts",
     "./cli-session": "./src/cli-session.ts",
+    "./supabase-session-user": "./src/supabase-session-user.ts",
     "./proxy": "./src/proxy/index.ts",
     "./cross-app": "./src/cross-app/index.ts",
     "./cross-app/server": "./src/cross-app/server.ts",

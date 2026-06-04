@@ -696,20 +696,6 @@ export function createAppSessionUser(
   } as SupabaseUser;
 }
 
-export async function getSupabaseSessionUser(): Promise<SupabaseUser | null> {
-  try {
-    const { createClient } = await import('@tuturuuu/supabase/next/server');
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    return user;
-  } catch {
-    return null;
-  }
-}
-
 function getSupabaseAuthClaimsForUser(user: SupabaseUser) {
   const sessionUser = user as SupabaseUser & {
     app_metadata?: Record<string, unknown>;

@@ -100,35 +100,65 @@ jobs:
       # --- Run E2E tests against Docker web + local Docker Supabase ---
       - name: Run Playwright shard
         working-directory: apps/web
-        run: bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }}
+        run: |
+          mkdir -p ../../tmp/e2e-diagnostics
+          set -o pipefail
+          bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }} 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
 
-      - name: Print Dockerized E2E diagnostics
+      - name: Collect Dockerized E2E diagnostics
         if: ${{ failure() }}
         run: |
           set +e
+          diagnostics_dir="tmp/e2e-diagnostics"
+          mkdir -p "$diagnostics_dir"
+
+          {
+            printf 'run_id=%s\n' "${GITHUB_RUN_ID}"
+            printf 'job=%s\n' "${GITHUB_JOB}"
+            printf 'sha=%s\n' "${GITHUB_SHA}"
+            printf 'ref=%s\n' "${GITHUB_REF}"
+            printf 'shard=%s/%s\n' "${E2E_SHARD_INDEX}" "${E2E_TOTAL_SHARDS}"
+            printf 'compose_project=%s\n' "${DOCKER_WEB_COMPOSE_PROJECT_NAME}"
+            date -u +"collected_at=%Y-%m-%dT%H:%M:%SZ"
+          } > "$diagnostics_dir/summary.txt"
+
+          if [ -f tmp/e2e/web.env ]; then
+            sed -E 's/^([^=]+)=.*/\1=<redacted>/' tmp/e2e/web.env > "$diagnostics_dir/web-env.keys.txt"
+          else
+            echo "tmp/e2e/web.env not found" > "$diagnostics_dir/web-env.keys.txt"
+          fi
+
+          docker ps -a --filter "label=com.docker.compose.project=${DOCKER_WEB_COMPOSE_PROJECT_NAME}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" > "$diagnostics_dir/docker-containers.txt" 2>&1 || true
+          docker compose -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" ps -a > "$diagnostics_dir/docker-compose-ps.txt" 2>&1 || true
+          docker compose -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" logs --tail=1000 web-proxy web-blue web-green hive-blue hive-green hive-realtime meet-realtime backend markitdown storage-unzip-proxy web-cron-runner > "$diagnostics_dir/docker-compose-services.log" 2>&1 || true
+          docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" > "$diagnostics_dir/docker-images.txt" 2>&1 || true
+          bunx portless list > "$diagnostics_dir/portless-list.txt" 2>&1 || true
+          bun sb:status > "$diagnostics_dir/supabase-status.txt" 2>&1 || true
+
+          if [ -f apps/web/test-results/.last-run.json ]; then
+            cp apps/web/test-results/.last-run.json "$diagnostics_dir/playwright-last-run.json"
+          else
+            echo "apps/web/test-results/.last-run.json not found" > "$diagnostics_dir/playwright-last-run.json"
+          fi
 
           echo "::group::Docker containers for E2E project"
-          docker ps -a --filter "label=com.docker.compose.project=${DOCKER_WEB_COMPOSE_PROJECT_NAME}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+          cat "$diagnostics_dir/docker-containers.txt"
           echo "::endgroup::"
 
           echo "::group::Docker Compose status"
-          docker compose -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" ps -a
+          cat "$diagnostics_dir/docker-compose-ps.txt"
           echo "::endgroup::"
 
           echo "::group::Docker Compose logs"
-          docker compose -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" logs --tail=300 web-proxy web-blue web-green hive-blue hive-green hive-realtime meet-realtime backend markitdown storage-unzip-proxy web-cron-runner
+          tail -n 300 "$diagnostics_dir/docker-compose-services.log"
           echo "::endgroup::"
 
           echo "::group::Supabase status"
-          bun sb:status
+          cat "$diagnostics_dir/supabase-status.txt"
           echo "::endgroup::"
 
           echo "::group::Playwright last run"
-          if [ -f apps/web/test-results/.last-run.json ]; then
-            cat apps/web/test-results/.last-run.json
-          else
-            echo "apps/web/test-results/.last-run.json not found"
-          fi
+          cat "$diagnostics_dir/playwright-last-run.json"
           echo "::endgroup::"
 
       - name: Save Supabase Docker images for cache
@@ -145,6 +175,15 @@ jobs:
           key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}
 
       # --- Upload artifacts on failure ---
+      - name: Upload E2E diagnostics
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: e2e-diagnostics-${{ matrix.shard }}-of-${{ matrix.total_shards }}
+          path: tmp/e2e-diagnostics/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}

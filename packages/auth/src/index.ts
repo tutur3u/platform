@@ -1,5 +1,5 @@
-// Note: api-keys is not exported from the main entry point because it uses server-side code
-// Import it using '@tuturuuu/auth/api-keys' instead
+// Note: server-only helpers are not exported from the main entry point because
+// client components import @tuturuuu/auth.
 export * from './app-session';
 export * from './app-session-policy';
 export * from './cli-session';

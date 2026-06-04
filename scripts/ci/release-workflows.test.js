@@ -367,9 +367,10 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   const cleanupIndex = e2eJob.indexOf('Free runner disk for Dockerized E2E');
   const portlessIndex = e2eJob.indexOf('Start Portless shared localhost proxy');
   const runIndex = e2eJob.indexOf('Run Playwright shard');
-  const diagnosticsIndex = e2eJob.indexOf('Print Dockerized E2E diagnostics');
+  const diagnosticsIndex = e2eJob.indexOf('Collect Dockerized E2E diagnostics');
   const restoreIndex = e2eJob.indexOf('Restore cached Docker images');
   const loadIndex = e2eJob.indexOf('Load cached Docker images');
+  const diagnosticsUploadIndex = e2eJob.indexOf('Upload E2E diagnostics');
   const uploadIndex = e2eJob.indexOf('Upload Playwright report');
 
   assert.match(
@@ -388,9 +389,14 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.notEqual(diagnosticsIndex, -1);
   assert.notEqual(restoreIndex, -1);
   assert.notEqual(loadIndex, -1);
+  assert.notEqual(diagnosticsUploadIndex, -1);
   assert.notEqual(uploadIndex, -1);
   assert.match(e2eJob, /bunx portless proxy start --wildcard/u);
   assert.match(e2eJob, /bunx portless alias tuturuuu 7803/u);
+  assert.match(
+    e2eJob,
+    /tee \.\.\/\.\.\/tmp\/e2e-diagnostics\/run-playwright-shard\.log/u
+  );
   assert.ok(
     cleanupIndex < restoreIndex,
     'runner disk cleanup must happen before restoring Supabase Docker images'
@@ -411,6 +417,14 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     diagnosticsIndex < uploadIndex,
     'E2E diagnostics must print before artifact upload/cleanup steps'
   );
+  assert.ok(
+    diagnosticsIndex < diagnosticsUploadIndex,
+    'E2E diagnostics must be collected before uploading the diagnostics artifact'
+  );
+  assert.ok(
+    diagnosticsUploadIndex < uploadIndex,
+    'E2E diagnostics artifact should upload before Playwright-only artifacts'
+  );
   assert.match(e2eJob, /docker system prune -af --volumes/u);
   assert.match(e2eJob, /\/usr\/share\/dotnet/u);
   assert.match(e2eJob, /\/usr\/local\/lib\/android/u);
@@ -426,9 +440,15 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   assert.match(
     e2eJob,
-    /docker compose -f docker-compose\.web\.prod\.yml -p "\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}" logs --tail=300/u
+    /docker compose -f docker-compose\.web\.prod\.yml -p "\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}" logs --tail=1000/u
   );
   assert.match(e2eJob, /apps\/web\/test-results\/\.last-run\.json/u);
+  assert.match(
+    e2eJob,
+    /name: e2e-diagnostics-\$\{\{ matrix\.shard \}\}-of-\$\{\{ matrix\.total_shards \}\}/u
+  );
+  assert.match(e2eJob, /path: tmp\/e2e-diagnostics\//u);
+  assert.match(e2eJob, /if-no-files-found: warn/u);
 });
 
 test('Supabase production migration requires production deployment and successful staged SHA', () => {
