@@ -32,7 +32,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@xyflow/react": "^12.11.0",
-    "ai": "^6.0.195",
+    "ai": "^6.0.196",
     "katex": "^0.17.0",
     "next": "^16.2.7",
     "next-intl": "^4.13.0",
