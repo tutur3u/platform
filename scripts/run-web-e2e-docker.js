@@ -20,9 +20,13 @@ const { WATCHER_CONTAINER_ENV } = require('./watch-blue-green-deploy.js');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const WEB_DIR = path.join(ROOT_DIR, 'apps', 'web');
 const DEFAULT_ENV_FILE = path.join(ROOT_DIR, 'tmp', 'e2e', 'web.env');
-const DEFAULT_HEALTH_URL = 'http://localhost:7803/login';
+const DEFAULT_HEALTH_URL = 'http://127.0.0.1:7803/login';
+const DEFAULT_PORTLESS_BASE_URL = 'https://tuturuuu.localhost';
+const DEFAULT_PORTLESS_HEALTH_URL = `${DEFAULT_PORTLESS_BASE_URL}/login`;
 const DEFAULT_DIAGNOSTIC_LOG_TAIL = '300';
 const E2E_COMPOSE_PROJECT_PREFIX = 'ttr-e2e-';
+const PORTLESS_ROUTE_NAME = 'tuturuuu';
+const PORTLESS_ROUTE_PORT = '7803';
 const E2E_DIAGNOSTIC_SERVICES = Object.freeze([
   'web-proxy',
   'web-blue',
@@ -35,6 +39,10 @@ const E2E_DIAGNOSTIC_SERVICES = Object.freeze([
   'markitdown',
   'storage-unzip-proxy',
   'web-cron-runner',
+]);
+const PORTLESS_NOT_READY_PATTERNS = Object.freeze([
+  /No app registered/iu,
+  /No apps running/iu,
 ]);
 
 function getDockerWebUpArgs(envFilePath, env = process.env) {
@@ -115,14 +123,44 @@ function getDiagnosticCommandEnv(env = process.env) {
 
 function getDockerComposeDiagnosticArgs(env = process.env, ...args) {
   const projectName = getE2EComposeProjectName(env);
+  const envFilePath = env.DOCKER_WEB_ENV_FILE;
 
   return [
     'compose',
+    ...(envFilePath ? ['--env-file', envFilePath] : []),
     '-f',
     PROD_COMPOSE_FILE,
     ...(projectName ? ['-p', projectName] : []),
     ...args,
   ];
+}
+
+function getPortlessHealthUrl(env = process.env) {
+  const baseUrl = env.BASE_URL ?? DEFAULT_PORTLESS_BASE_URL;
+
+  try {
+    const url = new URL(baseUrl);
+    url.pathname = '/login';
+    url.search = '';
+    url.hash = '';
+
+    return url.toString();
+  } catch {
+    return DEFAULT_PORTLESS_HEALTH_URL;
+  }
+}
+
+function isPortlessNotReadyBody(body) {
+  return PORTLESS_NOT_READY_PATTERNS.some((pattern) =>
+    pattern.test(String(body ?? ''))
+  );
+}
+
+function getResponseBodySnippet(body) {
+  return String(body ?? '')
+    .replace(/\s+/gu, ' ')
+    .trim()
+    .slice(0, 240);
 }
 
 function formatBlueGreenStages(stages) {
@@ -287,6 +325,18 @@ async function printE2EFailureDiagnostics({
     ),
     { cwd: rootDir, env, output, runCommand: run }
   );
+  await runDiagnosticCommand('Portless routes', 'bunx', ['portless', 'list'], {
+    cwd: rootDir,
+    env,
+    output,
+    runCommand: run,
+  });
+  await runDiagnosticCommand(
+    'Portless login probe',
+    'curl',
+    ['-k', '-i', '--max-time', '10', getPortlessHealthUrl(env)],
+    { cwd: rootDir, env, output, runCommand: run }
+  );
   await runDiagnosticCommand('Supabase status', 'bun', ['sb:status'], {
     cwd: rootDir,
     env,
@@ -359,23 +409,41 @@ function runCommandForOutput(command, args, options = {}) {
 async function waitForUrl(url, options = {}) {
   const timeoutMs = options.timeoutMs ?? 180_000;
   const intervalMs = options.intervalMs ?? 2_000;
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const sleep =
+    options.sleep ??
+    ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   const deadline = Date.now() + timeoutMs;
   let lastError = null;
 
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(url, { redirect: 'manual' });
+      const response = await fetchImpl(url, { redirect: 'manual' });
+      const body =
+        typeof response.text === 'function' ? await response.text() : '';
+      const bodySnippet = getResponseBodySnippet(body);
+      const portlessNotReady = isPortlessNotReadyBody(body);
 
-      if (response.status >= 200 && response.status < 400) {
+      if (
+        response.status >= 200 &&
+        response.status < 400 &&
+        !portlessNotReady
+      ) {
         return;
       }
 
-      lastError = new Error(`${url} returned ${response.status}`);
+      lastError = new Error(
+        portlessNotReady
+          ? `Portless route is not registered for ${url}: ${bodySnippet}`
+          : `${url} returned ${response.status}${
+              bodySnippet ? `: ${bodySnippet}` : ''
+            }`
+      );
     } catch (error) {
       lastError = error;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    await sleep(intervalMs);
   }
 
   throw new Error(
@@ -383,6 +451,72 @@ async function waitForUrl(url, options = {}) {
       lastError instanceof Error ? lastError.message : String(lastError)
     }`
   );
+}
+
+async function ensurePortlessRoute({
+  env = process.env,
+  output = process.stderr,
+  runCommand: run = runCommand,
+  runCommandForOutput: runForOutput = runCommandForOutput,
+} = {}) {
+  startDiagnosticGroup('Portless shared localhost route', { env, output });
+
+  try {
+    await run('bunx', ['portless', 'proxy', 'start', '--wildcard'], {
+      cwd: ROOT_DIR,
+      env,
+    });
+
+    try {
+      await run(
+        'bunx',
+        ['portless', 'alias', '--remove', PORTLESS_ROUTE_NAME],
+        {
+          cwd: ROOT_DIR,
+          env,
+        }
+      );
+    } catch (error) {
+      writeDiagnosticLine(
+        output,
+        `[e2e-diagnostics] Existing Portless route was not removed: ${getErrorMessage(
+          error
+        )}`
+      );
+    }
+
+    await run(
+      'bunx',
+      [
+        'portless',
+        'alias',
+        PORTLESS_ROUTE_NAME,
+        PORTLESS_ROUTE_PORT,
+        '--force',
+      ],
+      {
+        cwd: ROOT_DIR,
+        env,
+      }
+    );
+
+    try {
+      const routes = await runForOutput('bunx', ['portless', 'list'], {
+        cwd: ROOT_DIR,
+        env,
+      });
+      writeDiagnosticLine(output, routes.stdout.trim());
+    } catch (error) {
+      writeDiagnosticLine(
+        output,
+        `[e2e-diagnostics] Unable to list Portless routes: ${getErrorMessage(
+          error
+        )}`
+      );
+    }
+  } finally {
+    endDiagnosticGroup({ env, output });
+  }
 }
 
 function ensureLocalE2EEnvFile(envFilePath) {
@@ -542,6 +676,8 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       }
     );
     await waitForUrl(DEFAULT_HEALTH_URL);
+    await ensurePortlessRoute({ env });
+    await waitForUrl(getPortlessHealthUrl(env));
     await runCommand('bunx', ['playwright', 'test', ...playwrightArgs], {
       cwd: WEB_DIR,
       env,
@@ -586,7 +722,10 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_ENV_FILE,
   DEFAULT_HEALTH_URL,
+  DEFAULT_PORTLESS_BASE_URL,
+  DEFAULT_PORTLESS_HEALTH_URL,
   E2E_COMPOSE_PROJECT_PREFIX,
+  ensurePortlessRoute,
   ensureLocalE2EEnvFile,
   formatBlueGreenStages,
   getDockerComposeDiagnosticArgs,
@@ -595,6 +734,8 @@ module.exports = {
   getE2EDiagnosticLogTail,
   getDockerWebDownArgs,
   getDockerWebUpArgs,
+  getPortlessHealthUrl,
+  isPortlessNotReadyBody,
   isE2EComposeProjectName,
   parseE2EProjectImageTags,
   printE2EFailureDiagnostics,

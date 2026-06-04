@@ -1410,11 +1410,16 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
     config,
     /add_header Clear-Site-Data .*cache.*storage.*executionContexts.*always;/
   );
-  assert.doesNotMatch(config, /Clear-Site-Data[^\n]*cookies/u);
+  assert.match(config, /Clear-Site-Data[^\n]*cookies/u);
   assert.match(config, /return 302 \/login\?browserStateReset=1;/);
-  assert.match(config, /client_header_buffer_size 16k;/);
+  assert.match(config, /client_header_buffer_size 64k;/);
   assert.match(config, /keepalive_timeout 15s;/);
-  assert.match(config, /large_client_header_buffers 8 16k;/);
+  assert.match(config, /large_client_header_buffers 8 64k;/);
+  assert.equal((config.match(/error_page 431 494/gu) ?? []).length, 3);
+  assert.equal(
+    (config.match(/location @browser_state_recovery \{/gu) ?? []).length,
+    3
+  );
   assert.match(
     config,
     /add_header X-Platform-Deployment-Stamp "deploy-2026-04-18T12-30-00Z" always;/

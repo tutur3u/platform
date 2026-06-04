@@ -12,6 +12,8 @@ const {
   LOCAL_E2E_SUPABASE_URL,
 } = require('./e2e-local-environment.js');
 const {
+  DEFAULT_PORTLESS_HEALTH_URL,
+  ensurePortlessRoute,
   ensureLocalE2EEnvFile,
   formatBlueGreenStages,
   getDockerComposeDiagnosticArgs,
@@ -20,11 +22,14 @@ const {
   getE2EDiagnosticLogTail,
   getDockerWebDownArgs,
   getDockerWebUpArgs,
+  getPortlessHealthUrl,
+  isPortlessNotReadyBody,
   isE2EComposeProjectName,
   parseE2EProjectImageTags,
   printE2EFailureDiagnostics,
   removeE2EProjectImages,
   shouldKeepStack,
+  waitForUrl,
 } = require('./run-web-e2e-docker.js');
 
 test('getDockerWebUpArgs starts production blue-green Docker with reset local Supabase', () => {
@@ -165,12 +170,17 @@ test('getE2EComposeProjectName only accepts E2E-scoped projects', () => {
 test('getDockerComposeDiagnosticArgs scopes diagnostics to the E2E project', () => {
   assert.deepEqual(
     getDockerComposeDiagnosticArgs(
-      { DOCKER_WEB_COMPOSE_PROJECT_NAME: 'ttr-e2e-local-123' },
+      {
+        DOCKER_WEB_COMPOSE_PROJECT_NAME: 'ttr-e2e-local-123',
+        DOCKER_WEB_ENV_FILE: 'tmp/e2e/web.env',
+      },
       'ps',
       '-a'
     ),
     [
       'compose',
+      '--env-file',
+      'tmp/e2e/web.env',
       '-f',
       path.join(path.resolve(__dirname, '..'), 'docker-compose.web.prod.yml'),
       '-p',
@@ -186,6 +196,87 @@ test('getDockerComposeDiagnosticArgs scopes diagnostics to the E2E project', () 
     'ps',
     '-a',
   ]);
+});
+
+test('getPortlessHealthUrl targets the browser-facing local E2E login route', () => {
+  assert.equal(getPortlessHealthUrl({}), DEFAULT_PORTLESS_HEALTH_URL);
+  assert.equal(
+    getPortlessHealthUrl({
+      BASE_URL: 'https://tuturuuu.localhost/personal/tasks?view=board',
+    }),
+    'https://tuturuuu.localhost/login'
+  );
+});
+
+test('isPortlessNotReadyBody detects Portless placeholder responses', () => {
+  assert.equal(
+    isPortlessNotReadyBody(
+      'No app registered for <strong>tuturuuu.localhost</strong>. No apps running.'
+    ),
+    true
+  );
+  assert.equal(isPortlessNotReadyBody('<html>Login</html>'), false);
+});
+
+test('waitForUrl keeps retrying while Portless has no registered app', async () => {
+  const statuses = [];
+
+  await waitForUrl('https://tuturuuu.localhost/login', {
+    fetchImpl: async () => {
+      statuses.push(statuses.length === 0 ? 404 : 200);
+
+      return {
+        status: statuses.at(-1),
+        text: async () =>
+          statuses.length === 1
+            ? 'No app registered for <strong>tuturuuu.localhost</strong>. No apps running.'
+            : '<html>Login</html>',
+      };
+    },
+    intervalMs: 0,
+    sleep: async () => {},
+    timeoutMs: 5_000,
+  });
+
+  assert.deepEqual(statuses, [404, 200]);
+});
+
+test('ensurePortlessRoute starts the wildcard proxy and refreshes the route', async () => {
+  const calls = [];
+  const chunks = [];
+
+  await ensurePortlessRoute({
+    env: { PATH: 'test-path' },
+    output: {
+      write(chunk) {
+        chunks.push(String(chunk));
+      },
+    },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (args.includes('--remove')) {
+        throw new Error('route not registered yet');
+      }
+    },
+    runCommandForOutput: async (command, args) => {
+      calls.push([command, args]);
+
+      return {
+        stderr: '',
+        stdout:
+          'Active routes:\n  https://tuturuuu.localhost  ->  localhost:7803  (alias)\n',
+      };
+    },
+  });
+
+  assert.deepEqual(calls, [
+    ['bunx', ['portless', 'proxy', 'start', '--wildcard']],
+    ['bunx', ['portless', 'alias', '--remove', 'tuturuuu']],
+    ['bunx', ['portless', 'alias', 'tuturuuu', '7803', '--force']],
+    ['bunx', ['portless', 'list']],
+  ]);
+  assert.match(chunks.join(''), /https:\/\/tuturuuu\.localhost/u);
 });
 
 test('getE2EDiagnosticLogTail accepts positive numeric overrides only', () => {
@@ -276,7 +367,7 @@ test('printE2EFailureDiagnostics prints compose logs without masking diagnostics
       },
     });
 
-    assert.equal(calls.length, 4);
+    assert.equal(calls.length, 6);
     assert.deepEqual(calls[0].args, [
       'ps',
       '-a',
@@ -301,7 +392,15 @@ test('printE2EFailureDiagnostics prints compose logs without masking diagnostics
     ]);
     assert.ok(calls[2].args.includes('--tail'));
     assert.ok(calls[2].args.includes('42'));
-    assert.deepEqual(calls[3].args, ['sb:status']);
+    assert.deepEqual(calls[3].args, ['portless', 'list']);
+    assert.deepEqual(calls[4].args, [
+      '-k',
+      '-i',
+      '--max-time',
+      '10',
+      'https://tuturuuu.localhost/login',
+    ]);
+    assert.deepEqual(calls[5].args, ['sb:status']);
     assert.ok(
       calls.every(
         ({ options }) =>

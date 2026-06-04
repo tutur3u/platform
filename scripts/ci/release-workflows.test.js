@@ -392,7 +392,11 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.notEqual(diagnosticsUploadIndex, -1);
   assert.notEqual(uploadIndex, -1);
   assert.match(e2eJob, /bunx portless proxy start --wildcard/u);
-  assert.match(e2eJob, /bunx portless alias tuturuuu 7803/u);
+  assert.doesNotMatch(
+    e2eJob,
+    /bunx portless alias tuturuuu 7803/u,
+    'Docker E2E runner must refresh the Portless alias after Docker is healthy'
+  );
   assert.match(
     e2eJob,
     /tee \.\.\/\.\.\/tmp\/e2e-diagnostics\/run-playwright-shard\.log/u
@@ -436,11 +440,15 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   assert.match(
     e2eJob,
-    /docker compose -f docker-compose\.web\.prod\.yml -p "\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}" ps -a/u
+    /docker compose --env-file tmp\/e2e\/web\.env -f docker-compose\.web\.prod\.yml -p "\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}" ps -a/u
   );
   assert.match(
     e2eJob,
-    /docker compose -f docker-compose\.web\.prod\.yml -p "\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}" logs --tail=1000/u
+    /docker compose --env-file tmp\/e2e\/web\.env -f docker-compose\.web\.prod\.yml -p "\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}" logs --tail=1000/u
+  );
+  assert.match(
+    e2eJob,
+    /curl -k -i --max-time 10 https:\/\/tuturuuu\.localhost\/login > "\$diagnostics_dir\/portless-login\.txt"/u
   );
   assert.match(e2eJob, /apps\/web\/test-results\/\.last-run\.json/u);
   assert.match(

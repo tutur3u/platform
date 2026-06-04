@@ -1,7 +1,7 @@
 ---
 title: "Web Docker Deployment"
 description: "Run the web app in Docker for development, production, and blue/green self-hosted rollout."
-updatedAt: "2026-05-28"
+updatedAt: "2026-06-04"
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -144,8 +144,11 @@ This is the operational guide for the Docker-based `apps/web` runtime.
    Turnstile/dev-session,
 2. starts and resets the Dockerized local Supabase stack,
 3. boots `apps/web` through the production blue/green Docker flow,
-4. runs Playwright against `http://localhost:7803`, and
-5. tears down Docker web plus local Supabase unless `E2E_KEEP_DOCKER_STACK=1`.
+4. registers the Portless `https://tuturuuu.localhost` route only after the
+   direct Docker proxy is healthy,
+5. waits for `https://tuturuuu.localhost/login`, then runs Playwright against
+   that shared-cookie origin, and
+6. tears down Docker web plus local Supabase unless `E2E_KEEP_DOCKER_STACK=1`.
 
 Normal teardown passes `--volumes --rmi local` to Docker Compose and then removes
 custom image tags for the current `ttr-e2e-*` project, so per-run containers,
@@ -193,10 +196,13 @@ When an E2E shard fails, the runner prints diagnostics before teardown while the
 containers still exist. The job log includes the primary error, blue/green stage
 state, the Playwright `.last-run.json` file when available, Docker containers
 for the shard Compose project, production Compose status, recent logs for web,
-Hive, proxy, and support services, and `bun sb:status`. The workflow also has a
-failure-only diagnostic step after `Run Playwright shard` as a backstop, so the
-job output should show the failing service or stage even when Playwright report
-artifacts are incomplete.
+Hive, proxy, and support services, the Portless route list, a
+`https://tuturuuu.localhost/login` probe, and `bun sb:status`. The workflow also
+has a failure-only diagnostic step after `Run Playwright shard` as a backstop,
+so the job output should show the failing service or stage even when Playwright
+report artifacts are incomplete. The workflow uploads diagnostics, Playwright
+reports, and `apps/web/test-results` for every non-cancelled shard so traces and
+screenshots stay available when the job output is too short.
 
 The Playwright global setup refuses non-local web origins and refuses Supabase
 origins outside `localhost`, `127.0.0.1`, or `host.docker.internal` on port
@@ -205,12 +211,20 @@ project name, but all shards still use ephemeral local Supabase rather than any
 cloud Supabase project. Because the Docker web app runs with
 `NODE_ENV=production`, the generated env file and Playwright process env also
 pin `WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`, and `NEXT_PUBLIC_APP_URL` to
-`http://localhost:7803`; otherwise central-auth redirects can escape to the
-real `tuturuuu.com` origin during setup. The auth bypass is guarded by the
+the local shared-cookie origin; otherwise central-auth redirects can escape to
+the real `tuturuuu.com` origin during setup. The auth bypass is guarded by the
 local E2E web origin, the incoming request `Host` / forwarded host / `Origin`
 headers, and both the public and server-side Supabase origins before
 server-side auth code honors it, so it must not be used as a general production
 configuration.
+
+The blue/green proxy and `apps/web` runtime both allow 64 KB request headers.
+That headroom lets the browser reach `/~recover-browser-state` or the normal
+login flow when duplicated Supabase cookies make the default header limit too
+small. If a request is still too large for the proxy to forward, nginx handles
+431/494 directly with `Clear-Site-Data` and redirects to
+`/login?browserStateReset=1`; this recovery must stay in the proxy because
+Next.js middleware cannot run after nginx rejects the header.
 
 The blue/green nginx proxy must forward the original `Host` header with its
 port intact via `$http_host`. Local E2E auth setup posts to
@@ -1588,16 +1602,19 @@ Dashboard details:
 
 ## Browser-State 502 Recovery
 
-If some normal browsers still return Cloudflare `502 Host Error` while
-incognito works, treat it as stale client state or an auth-cookie/header-size
-problem before assuming the tunnel itself is broken.
-For Hive, the browser-state recovery path must follow the same shape as the web
-app route: GET is a no-store confirmation page only, and the destructive
-`Clear-Site-Data` response happens only after a same-origin POST. Do not serve a
-direct side-effecting GET from nginx, even for stale-cookie recovery. Hive's
-`next start` command also runs with `NODE_OPTIONS=--max-http-header-size=65536`
-so ordinary Supabase auth-cookie chunking has more headroom before the app
-server returns `431`.
+If some normal browsers still return Cloudflare `502 Host Error`, `431`, or
+Chrome `ERR_INVALID_RESPONSE` while incognito works, treat it as stale client
+state or an auth-cookie/header-size problem before assuming the tunnel itself is
+broken. Normal browser-state recovery should use the app route: GET is a
+no-store confirmation page only, and the destructive `Clear-Site-Data` response
+happens only after a same-origin POST.
+
+Oversized request headers are different: the request may never reach Next.js.
+The production `web-proxy` therefore gives web, Hive, and Meet 64 KB request
+header headroom, maps Nginx `431`/`494` oversized-header failures to a local
+browser-state recovery response, and the Docker web app server starts with
+`--max-http-header-size=65536` so ordinary Supabase auth-cookie chunking has
+matching headroom after proxying.
 
 How to recognize each failure mode:
 
@@ -1614,11 +1631,13 @@ Recovery path:
 - Send affected users to the recovery route on the affected origin:
   `https://tuturuuu.com/~recover-browser-state` for the main app, or
   `https://hive.tuturuuu.com/~recover-browser-state` for Hive.
-- That route is public and bypasses auth/onboarding middleware.
-- It responds with `Clear-Site-Data: "cache", "cookies", "storage",
-"executionContexts"` and explicitly expires all Supabase auth cookie variants
-  for the current host before redirecting the browser back to
-  `/login?browserStateReset=1`.
+- That route is public and bypasses auth/onboarding middleware. When the
+  request can reach the app, use the confirmation form so the cookie-clearing
+  POST explicitly expires Supabase auth cookie variants for the current host.
+- If the browser is already sending too many stale cookies, the proxy catches
+  the `431`/`494` before Next.js and returns
+  `Clear-Site-Data: "cache", "cookies", "storage", "executionContexts"` while
+  redirecting the browser back to `/login?browserStateReset=1`.
 
 Operational signals:
 

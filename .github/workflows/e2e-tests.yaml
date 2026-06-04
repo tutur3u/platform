@@ -94,7 +94,6 @@ jobs:
       - name: Start Portless shared localhost proxy
         run: |
           bunx portless proxy start --wildcard
-          bunx portless alias tuturuuu 7803
           bunx portless list
 
       # --- Run E2E tests against Docker web + local Docker Supabase ---
@@ -129,10 +128,11 @@ jobs:
           fi
 
           docker ps -a --filter "label=com.docker.compose.project=${DOCKER_WEB_COMPOSE_PROJECT_NAME}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" > "$diagnostics_dir/docker-containers.txt" 2>&1 || true
-          docker compose -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" ps -a > "$diagnostics_dir/docker-compose-ps.txt" 2>&1 || true
-          docker compose -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" logs --tail=1000 web-proxy web-blue web-green hive-blue hive-green hive-realtime meet-realtime backend markitdown storage-unzip-proxy web-cron-runner > "$diagnostics_dir/docker-compose-services.log" 2>&1 || true
+          docker compose --env-file tmp/e2e/web.env -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" ps -a > "$diagnostics_dir/docker-compose-ps.txt" 2>&1 || true
+          docker compose --env-file tmp/e2e/web.env -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" logs --tail=1000 web-proxy web-blue web-green hive-blue hive-green hive-realtime meet-realtime backend markitdown storage-unzip-proxy web-cron-runner > "$diagnostics_dir/docker-compose-services.log" 2>&1 || true
           docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" > "$diagnostics_dir/docker-images.txt" 2>&1 || true
           bunx portless list > "$diagnostics_dir/portless-list.txt" 2>&1 || true
+          curl -k -i --max-time 10 https://tuturuuu.localhost/login > "$diagnostics_dir/portless-login.txt" 2>&1 || true
           bun sb:status > "$diagnostics_dir/supabase-status.txt" 2>&1 || true
 
           if [ -f apps/web/test-results/.last-run.json ]; then
@@ -155,6 +155,10 @@ jobs:
 
           echo "::group::Supabase status"
           cat "$diagnostics_dir/supabase-status.txt"
+          echo "::endgroup::"
+
+          echo "::group::Portless login probe"
+          cat "$diagnostics_dir/portless-login.txt"
           echo "::endgroup::"
 
           echo "::group::Playwright last run"

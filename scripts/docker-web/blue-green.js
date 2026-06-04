@@ -142,6 +142,8 @@ const BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS = Object.freeze([
 const BLUE_GREEN_COLORS = ['blue', 'green'];
 const LEGACY_HIVE_SERVICE = 'hive';
 const BLUE_GREEN_PROXY_DRAIN_MS = 20_000;
+const BLUE_GREEN_CLIENT_HEADER_BUFFER_SIZE = '64k';
+const BLUE_GREEN_LARGE_CLIENT_HEADER_BUFFERS = '8 64k';
 const BLUE_GREEN_PROXY_RESPONSE_BUFFER_SIZE = '128k';
 const BLUE_GREEN_PROXY_RESPONSE_BUFFERS = '8 128k';
 const BLUE_GREEN_PROXY_BUSY_BUFFER_SIZE = '256k';
@@ -149,7 +151,7 @@ const BLUE_GREEN_PROXY_ROUTE_CHECK_ATTEMPTS = 6;
 const BLUE_GREEN_PROXY_ROUTE_CHECK_DELAY_MS = 2_000;
 const BLUE_GREEN_BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
 const BLUE_GREEN_CLEAR_SITE_DATA_VALUE =
-  '"cache", "storage", "executionContexts"';
+  '"cache", "cookies", "storage", "executionContexts"';
 const BLUE_GREEN_MIGRATION_PROXY_HANDOFF_TIMEOUT_MS = 3_000;
 const DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS = 45 * 60_000;
 const BLUE_GREEN_MIGRATION_STAGING_PORT_ENV = {
@@ -1110,6 +1112,23 @@ function renderBlueGreenProxyConfig(
         (block) => typeof block === 'string' && block.trim().length > 0
       )
     : [];
+  const browserStateRecoveryHeaders = [
+    '    add_header Cache-Control "no-store, no-cache, must-revalidate" always;',
+    '    add_header CDN-Cache-Control "no-store" always;',
+    `    add_header Clear-Site-Data ${JSON.stringify(BLUE_GREEN_CLEAR_SITE_DATA_VALUE)} always;`,
+  ];
+  const browserStateRecoveryLocation = [
+    `  location = ${BLUE_GREEN_BROWSER_STATE_RECOVERY_PATH} {`,
+    ...browserStateRecoveryHeaders,
+    '    return 302 /login?browserStateReset=1;',
+    '  }',
+  ];
+  const browserStateRecoveryErrorLocation = [
+    '  location @browser_state_recovery {',
+    ...browserStateRecoveryHeaders,
+    '    return 302 /login?browserStateReset=1;',
+    '  }',
+  ];
 
   return [
     'map $http_upgrade $connection_upgrade {',
@@ -1159,12 +1178,15 @@ function renderBlueGreenProxyConfig(
     '  set $platform_project_id "platform";',
     '  set $platform_selected_branch "production";',
     `  set $platform_upstream_service "${primaryServiceName}";`,
-    '  client_header_buffer_size 16k;',
+    `  client_header_buffer_size ${BLUE_GREEN_CLIENT_HEADER_BUFFER_SIZE};`,
     '  keepalive_timeout 15s;',
-    '  large_client_header_buffers 8 16k;',
+    `  large_client_header_buffers ${BLUE_GREEN_LARGE_CLIENT_HEADER_BUFFERS};`,
+    '  error_page 431 494 = @browser_state_recovery;',
     `  add_header X-Platform-Deployment-Stamp "${deploymentStamp ?? 'unknown'}" always;`,
     `  add_header X-Platform-Blue-Green-Primary "${webColor}" always;`,
     `  add_header X-Platform-Blue-Green-Standby "${standbyColor ?? 'none'}" always;`,
+    '',
+    ...browserStateRecoveryErrorLocation,
     '',
     `  location = ${BLUE_GREEN_DRAIN_STATUS_PATH} {`,
     '    allow 127.0.0.1;',
@@ -1207,19 +1229,17 @@ function renderBlueGreenProxyConfig(
     '  set $platform_project_id "hive";',
     '  set $platform_selected_branch "production";',
     `  set $platform_upstream_service "${primaryHiveServiceName}";`,
-    '  client_header_buffer_size 16k;',
+    `  client_header_buffer_size ${BLUE_GREEN_CLIENT_HEADER_BUFFER_SIZE};`,
     '  keepalive_timeout 15s;',
-    '  large_client_header_buffers 8 16k;',
+    `  large_client_header_buffers ${BLUE_GREEN_LARGE_CLIENT_HEADER_BUFFERS};`,
+    '  error_page 431 494 = @browser_state_recovery;',
     `  add_header X-Platform-Deployment-Stamp "${deploymentStamp ?? 'unknown'}" always;`,
     `  add_header X-Platform-Blue-Green-Primary "${resolvedHiveColor}" always;`,
     `  add_header X-Platform-Blue-Green-Standby "${resolvedHiveStandbyColor ?? 'none'}" always;`,
     '',
-    `  location = ${BLUE_GREEN_BROWSER_STATE_RECOVERY_PATH} {`,
-    '    add_header Cache-Control "no-store, no-cache, must-revalidate" always;',
-    '    add_header CDN-Cache-Control "no-store" always;',
-    `    add_header Clear-Site-Data ${JSON.stringify(BLUE_GREEN_CLEAR_SITE_DATA_VALUE)} always;`,
-    '    return 302 /login?browserStateReset=1;',
-    '  }',
+    ...browserStateRecoveryErrorLocation,
+    '',
+    ...browserStateRecoveryLocation,
     '',
     '  location /realtime {',
     '    proxy_http_version 1.1;',
@@ -1255,12 +1275,15 @@ function renderBlueGreenProxyConfig(
     '  set $platform_project_id "meet";',
     '  set $platform_selected_branch "production";',
     '  set $platform_upstream_service "meet-realtime";',
-    '  client_header_buffer_size 16k;',
+    `  client_header_buffer_size ${BLUE_GREEN_CLIENT_HEADER_BUFFER_SIZE};`,
     '  keepalive_timeout 15s;',
-    '  large_client_header_buffers 8 16k;',
+    `  large_client_header_buffers ${BLUE_GREEN_LARGE_CLIENT_HEADER_BUFFERS};`,
+    '  error_page 431 494 = @browser_state_recovery;',
     `  add_header X-Platform-Deployment-Stamp "${deploymentStamp ?? 'unknown'}" always;`,
     `  add_header X-Platform-Blue-Green-Primary "${webColor}" always;`,
     `  add_header X-Platform-Blue-Green-Standby "${standbyColor ?? 'none'}" always;`,
+    '',
+    ...browserStateRecoveryErrorLocation,
     '',
     '  location /realtime {',
     '    proxy_http_version 1.1;',
