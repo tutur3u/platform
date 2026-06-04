@@ -13,10 +13,12 @@ const {
   LOCAL_E2E_SUPABASE_URL,
 } = require('./e2e-local-environment.js');
 const {
+  DNS_IPV4_FIRST_NODE_OPTION,
   DEFAULT_PORTLESS_HEALTH_URL,
   ensurePortlessRoute,
   ensureLocalE2EEnvFile,
   formatBlueGreenStages,
+  getPortlessCommandEnv,
   getDockerComposeDiagnosticArgs,
   getDockerMemoryLimit,
   getE2EComposeProjectName,
@@ -24,6 +26,9 @@ const {
   getDockerWebDownArgs,
   getDockerWebUpArgs,
   getPortlessHealthUrl,
+  getPortlessProxyStartArgs,
+  getWebProxyHealthUrl,
+  getWebProxyHostPort,
   isPortlessNotReadyBody,
   isE2EComposeProjectName,
   parseE2EProjectImageTags,
@@ -213,6 +218,76 @@ test('getPortlessHealthUrl targets the browser-facing local E2E login route', ()
   );
 });
 
+test('getWebProxyHealthUrl targets the direct Docker web proxy login route', () => {
+  assert.equal(getWebProxyHostPort({}), '7803');
+  assert.equal(
+    getWebProxyHostPort({ DOCKER_WEB_PROXY_HOST_PORT: '17803' }),
+    '17803'
+  );
+  assert.equal(
+    getWebProxyHostPort({ DOCKER_WEB_PROXY_HOST_PORT: 'not-a-port' }),
+    '7803'
+  );
+  assert.equal(getWebProxyHealthUrl({}), 'http://127.0.0.1:7803/login');
+  assert.equal(
+    getWebProxyHealthUrl({
+      DOCKER_WEB_PROXY_HOST_PORT: '17803',
+    }),
+    'http://127.0.0.1:17803/login'
+  );
+  assert.equal(
+    getWebProxyHealthUrl({
+      E2E_WEB_PROXY_HEALTH_URL: 'http://docker-host.localhost/ready',
+    }),
+    'http://docker-host.localhost/ready'
+  );
+});
+
+test('getPortlessProxyStartArgs pins the wildcard proxy to the configured port', () => {
+  assert.deepEqual(getPortlessProxyStartArgs({}), [
+    'portless',
+    'proxy',
+    'start',
+    '--wildcard',
+  ]);
+  assert.deepEqual(getPortlessProxyStartArgs({ PORTLESS_PORT: '1355' }), [
+    'portless',
+    'proxy',
+    'start',
+    '--wildcard',
+    '--port',
+    '1355',
+    '--https',
+  ]);
+  assert.deepEqual(getPortlessProxyStartArgs({ PORTLESS_PORT: 'nope' }), [
+    'portless',
+    'proxy',
+    'start',
+    '--wildcard',
+  ]);
+});
+
+test('getPortlessCommandEnv makes Portless prefer IPv4 localhost resolution', () => {
+  assert.equal(
+    getPortlessCommandEnv({ PATH: 'test-path' }).NODE_OPTIONS,
+    DNS_IPV4_FIRST_NODE_OPTION
+  );
+  assert.equal(
+    getPortlessCommandEnv({
+      NODE_OPTIONS: '--trace-warnings',
+      PATH: 'test-path',
+    }).NODE_OPTIONS,
+    `--trace-warnings ${DNS_IPV4_FIRST_NODE_OPTION}`
+  );
+
+  const env = {
+    NODE_OPTIONS: `--trace-warnings ${DNS_IPV4_FIRST_NODE_OPTION}`,
+    PATH: 'test-path',
+  };
+
+  assert.equal(getPortlessCommandEnv(env), env);
+});
+
 test('isPortlessNotReadyBody detects Portless placeholder responses', () => {
   assert.equal(
     isPortlessNotReadyBody(
@@ -227,6 +302,7 @@ test('waitForUrl keeps retrying while Portless has no registered app', async () 
   const statuses = [];
 
   await waitForUrl('https://tuturuuu.localhost/login', {
+    acceptedStatusCodes: [404],
     fetchImpl: async () => {
       statuses.push(statuses.length === 0 ? 404 : 200);
 
@@ -246,6 +322,54 @@ test('waitForUrl keeps retrying while Portless has no registered app', async () 
   assert.deepEqual(statuses, [404, 200]);
 });
 
+test('waitForUrl accepts configured app-level readiness statuses', async () => {
+  const statuses = [];
+
+  await waitForUrl('https://tuturuuu.localhost/login', {
+    acceptedStatusCodes: [404],
+    fetchImpl: async () => {
+      statuses.push(404);
+
+      return {
+        status: 404,
+        text: async () =>
+          '<html><head><title>Sign In to Tuturuuu | Tuturuuu</title></head><body><h1>404</h1></body></html>',
+      };
+    },
+    intervalMs: 0,
+    sleep: async () => {
+      throw new Error('should not retry accepted app responses');
+    },
+    timeoutMs: 5_000,
+  });
+
+  assert.deepEqual(statuses, [404]);
+});
+
+test('waitForUrl keeps retrying while the upstream returns server errors', async () => {
+  const statuses = [];
+
+  await waitForUrl('https://tuturuuu.localhost/login', {
+    acceptedStatusCodes: [404],
+    fetchImpl: async () => {
+      statuses.push(statuses.length === 0 ? 502 : 200);
+
+      return {
+        status: statuses.at(-1),
+        text: async () =>
+          statuses.length === 1
+            ? '<title>502 - Bad Gateway</title>'
+            : '<html>Login</html>',
+      };
+    },
+    intervalMs: 0,
+    sleep: async () => {},
+    timeoutMs: 5_000,
+  });
+
+  assert.deepEqual(statuses, [502, 200]);
+});
+
 test('ensurePortlessRoute starts the wildcard proxy and refreshes the route', async () => {
   const calls = [];
   const chunks = [];
@@ -257,15 +381,15 @@ test('ensurePortlessRoute starts the wildcard proxy and refreshes the route', as
         chunks.push(String(chunk));
       },
     },
-    runCommand: async (command, args) => {
-      calls.push([command, args]);
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
 
       if (args.includes('--remove')) {
         throw new Error('route not registered yet');
       }
     },
-    runCommandForOutput: async (command, args) => {
-      calls.push([command, args]);
+    runCommandForOutput: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
 
       return {
         stderr: '',
@@ -275,13 +399,74 @@ test('ensurePortlessRoute starts the wildcard proxy and refreshes the route', as
     },
   });
 
-  assert.deepEqual(calls, [
-    ['bunx', ['portless', 'proxy', 'start', '--wildcard']],
-    ['bunx', ['portless', 'alias', '--remove', 'tuturuuu']],
-    ['bunx', ['portless', 'alias', 'tuturuuu', '7803', '--force']],
-    ['bunx', ['portless', 'list']],
-  ]);
+  assert.deepEqual(
+    calls.map(([command, args]) => [command, args]),
+    [
+      ['bunx', ['portless', 'proxy', 'start', '--wildcard']],
+      ['bunx', ['portless', 'alias', '--remove', 'tuturuuu']],
+      ['bunx', ['portless', 'alias', 'tuturuuu', '7803', '--force']],
+      ['bunx', ['portless', 'list']],
+    ]
+  );
+  assert.ok(
+    calls.every(([, , options]) =>
+      options.env.NODE_OPTIONS.includes(DNS_IPV4_FIRST_NODE_OPTION)
+    )
+  );
   assert.match(chunks.join(''), /https:\/\/tuturuuu\.localhost/u);
+});
+
+test('ensurePortlessRoute honors the configured proxy host and Portless ports', async () => {
+  const calls = [];
+
+  await ensurePortlessRoute({
+    env: {
+      DOCKER_WEB_PROXY_HOST_PORT: '17803',
+      PATH: 'test-path',
+      PORTLESS_PORT: '1355',
+    },
+    output: {
+      write() {},
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+    },
+    runCommandForOutput: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+
+      return {
+        stderr: '',
+        stdout:
+          'Active routes:\n  https://tuturuuu.localhost  ->  localhost:17803  (alias)\n',
+      };
+    },
+  });
+
+  assert.deepEqual(
+    calls.map(([command, args]) => [command, args]),
+    [
+      [
+        'bunx',
+        [
+          'portless',
+          'proxy',
+          'start',
+          '--wildcard',
+          '--port',
+          '1355',
+          '--https',
+        ],
+      ],
+      ['bunx', ['portless', 'alias', '--remove', 'tuturuuu']],
+      ['bunx', ['portless', 'alias', 'tuturuuu', '17803', '--force']],
+      ['bunx', ['portless', 'list']],
+    ]
+  );
+  assert.ok(
+    calls.every(([, , options]) =>
+      options.env.NODE_OPTIONS.includes(DNS_IPV4_FIRST_NODE_OPTION)
+    )
+  );
 });
 
 test('getE2EDiagnosticLogTail accepts positive numeric overrides only', () => {
@@ -372,7 +557,7 @@ test('printE2EFailureDiagnostics prints compose logs without masking diagnostics
       },
     });
 
-    assert.equal(calls.length, 6);
+    assert.equal(calls.length, 7);
     assert.deepEqual(calls[0].args, [
       'ps',
       '-a',
@@ -397,15 +582,21 @@ test('printE2EFailureDiagnostics prints compose logs without masking diagnostics
     ]);
     assert.ok(calls[2].args.includes('--tail'));
     assert.ok(calls[2].args.includes('42'));
-    assert.deepEqual(calls[3].args, ['portless', 'list']);
-    assert.deepEqual(calls[4].args, [
+    assert.deepEqual(calls[3].args, [
+      '-i',
+      '--max-time',
+      '10',
+      'http://127.0.0.1:7803/login',
+    ]);
+    assert.deepEqual(calls[4].args, ['portless', 'list']);
+    assert.deepEqual(calls[5].args, [
       '-k',
       '-i',
       '--max-time',
       '10',
       'https://tuturuuu.localhost:1355/login',
     ]);
-    assert.deepEqual(calls[5].args, ['sb:status']);
+    assert.deepEqual(calls[6].args, ['sb:status']);
     assert.ok(
       calls.every(
         ({ options }) =>

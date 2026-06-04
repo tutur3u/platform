@@ -220,34 +220,30 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     (isRootPath || isLocaleRootPath) &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
-    !isMultiAccountFlow
+    !isMultiAccountFlow &&
+    (appSession || hasWebAppSession)
   ) {
     try {
-      if (appSession) {
-        const defaultWorkspace = await getCurrentUserDefaultWorkspace(
-          withForwardedInternalApiAuth(req.headers)
-        );
-
-        if (defaultWorkspace) {
-          const target = defaultWorkspace.personal
-            ? 'personal'
-            : defaultWorkspace.id === ROOT_WORKSPACE_ID
-              ? 'internal'
-              : defaultWorkspace.id;
-          const redirectUrl = new URL(`/${target}`, req.nextUrl);
-          const wsRedirect = NextResponse.redirect(redirectUrl);
-          propagateAuthCookies(authRes, wsRedirect);
-          return wsRedirect;
-        }
-
-        // Fallback to personal workspace if no default workspace found
-        const redirectUrl = new URL('/personal', req.nextUrl);
-        const fallbackRedirect = NextResponse.redirect(redirectUrl);
-        propagateAuthCookies(authRes, fallbackRedirect);
-        return fallbackRedirect;
-      }
-    } catch (error) {
-      console.error('Error handling root path redirect:', error);
+      const defaultWorkspace = await getCurrentUserDefaultWorkspace(
+        withForwardedInternalApiAuth(authRequestHeaders)
+      );
+      const target = defaultWorkspace
+        ? defaultWorkspace.personal
+          ? 'personal'
+          : defaultWorkspace.id === ROOT_WORKSPACE_ID
+            ? 'internal'
+            : defaultWorkspace.id
+        : 'personal';
+      const redirectUrl = new URL(`/${target}`, req.nextUrl);
+      const wsRedirect = NextResponse.redirect(redirectUrl);
+      propagateAuthCookies(authRes, wsRedirect);
+      return wsRedirect;
+    } catch {
+      const fallbackRedirect = NextResponse.redirect(
+        new URL('/personal', req.nextUrl)
+      );
+      propagateAuthCookies(authRes, fallbackRedirect);
+      return fallbackRedirect;
     }
   }
 

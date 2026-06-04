@@ -447,6 +447,10 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   assert.match(
     e2eJob,
+    /curl -i --max-time 10 "\$web_proxy_login_url" > "\$diagnostics_dir\/web-proxy-login\.txt"/u
+  );
+  assert.match(
+    e2eJob,
     /curl -k -i --max-time 10 "\$portless_login_url" > "\$diagnostics_dir\/portless-login\.txt"/u
   );
   assert.match(e2eJob, /apps\/web\/test-results\/\.last-run\.json/u);

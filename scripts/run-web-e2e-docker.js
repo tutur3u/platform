@@ -24,10 +24,13 @@ const DEFAULT_ENV_FILE = path.join(ROOT_DIR, 'tmp', 'e2e', 'web.env');
 const DEFAULT_HEALTH_URL = 'http://127.0.0.1:7803/login';
 const DEFAULT_PORTLESS_BASE_URL = LOCAL_E2E_BASE_URL;
 const DEFAULT_PORTLESS_HEALTH_URL = `${DEFAULT_PORTLESS_BASE_URL}/login`;
+const DEFAULT_PORTLESS_READY_STATUS_CODES = Object.freeze([404]);
+const DEFAULT_PORTLESS_READY_TIMEOUT_MS = 300_000;
 const DEFAULT_DIAGNOSTIC_LOG_TAIL = '300';
 const E2E_COMPOSE_PROJECT_PREFIX = 'ttr-e2e-';
 const PORTLESS_ROUTE_NAME = 'tuturuuu';
-const PORTLESS_ROUTE_PORT = '7803';
+const DEFAULT_WEB_PROXY_HOST_PORT = '7803';
+const DNS_IPV4_FIRST_NODE_OPTION = '--dns-result-order=ipv4first';
 const E2E_DIAGNOSTIC_SERVICES = Object.freeze([
   'web-proxy',
   'web-blue',
@@ -149,6 +152,54 @@ function getPortlessHealthUrl(env = process.env) {
   } catch {
     return DEFAULT_PORTLESS_HEALTH_URL;
   }
+}
+
+function getWebProxyHostPort(env = process.env) {
+  const value = String(
+    env.DOCKER_WEB_PROXY_HOST_PORT ?? DEFAULT_WEB_PROXY_HOST_PORT
+  ).trim();
+
+  return /^\d+$/u.test(value) && Number.parseInt(value, 10) > 0
+    ? value
+    : DEFAULT_WEB_PROXY_HOST_PORT;
+}
+
+function getWebProxyHealthUrl(env = process.env) {
+  const value =
+    typeof env.E2E_WEB_PROXY_HEALTH_URL === 'string'
+      ? env.E2E_WEB_PROXY_HEALTH_URL.trim()
+      : '';
+
+  if (value) {
+    return value;
+  }
+
+  return `http://127.0.0.1:${getWebProxyHostPort(env)}/login`;
+}
+
+function getPortlessProxyStartArgs(env = process.env) {
+  const args = ['portless', 'proxy', 'start', '--wildcard'];
+  const port = String(env.PORTLESS_PORT ?? '').trim();
+
+  if (/^\d+$/u.test(port) && Number.parseInt(port, 10) > 0) {
+    args.push('--port', port, '--https');
+  }
+
+  return args;
+}
+
+function getPortlessCommandEnv(env = process.env) {
+  const nodeOptions = String(env.NODE_OPTIONS ?? '').trim();
+  const options = nodeOptions ? nodeOptions.split(/\s+/u) : [];
+
+  if (options.includes(DNS_IPV4_FIRST_NODE_OPTION)) {
+    return env;
+  }
+
+  return {
+    ...env,
+    NODE_OPTIONS: [...options, DNS_IPV4_FIRST_NODE_OPTION].join(' '),
+  };
 }
 
 function isPortlessNotReadyBody(body) {
@@ -326,6 +377,12 @@ async function printE2EFailureDiagnostics({
     ),
     { cwd: rootDir, env, output, runCommand: run }
   );
+  await runDiagnosticCommand(
+    'Docker web proxy login probe',
+    'curl',
+    ['-i', '--max-time', '10', getWebProxyHealthUrl(env)],
+    { cwd: rootDir, env, output, runCommand: run }
+  );
   await runDiagnosticCommand('Portless routes', 'bunx', ['portless', 'list'], {
     cwd: rootDir,
     env,
@@ -410,6 +467,7 @@ function runCommandForOutput(command, args, options = {}) {
 async function waitForUrl(url, options = {}) {
   const timeoutMs = options.timeoutMs ?? 180_000;
   const intervalMs = options.intervalMs ?? 2_000;
+  const acceptedStatusCodes = new Set(options.acceptedStatusCodes ?? []);
   const fetchImpl = options.fetchImpl ?? fetch;
   const sleep =
     options.sleep ??
@@ -425,11 +483,11 @@ async function waitForUrl(url, options = {}) {
       const bodySnippet = getResponseBodySnippet(body);
       const portlessNotReady = isPortlessNotReadyBody(body);
 
-      if (
-        response.status >= 200 &&
-        response.status < 400 &&
-        !portlessNotReady
-      ) {
+      const readyStatus =
+        (response.status >= 200 && response.status < 400) ||
+        acceptedStatusCodes.has(response.status);
+
+      if (readyStatus && !portlessNotReady) {
         return;
       }
 
@@ -463,9 +521,11 @@ async function ensurePortlessRoute({
   startDiagnosticGroup('Portless shared localhost route', { env, output });
 
   try {
-    await run('bunx', ['portless', 'proxy', 'start', '--wildcard'], {
+    const portlessEnv = getPortlessCommandEnv(env);
+
+    await run('bunx', getPortlessProxyStartArgs(env), {
       cwd: ROOT_DIR,
-      env,
+      env: portlessEnv,
     });
 
     try {
@@ -474,7 +534,7 @@ async function ensurePortlessRoute({
         ['portless', 'alias', '--remove', PORTLESS_ROUTE_NAME],
         {
           cwd: ROOT_DIR,
-          env,
+          env: portlessEnv,
         }
       );
     } catch (error) {
@@ -492,19 +552,19 @@ async function ensurePortlessRoute({
         'portless',
         'alias',
         PORTLESS_ROUTE_NAME,
-        PORTLESS_ROUTE_PORT,
+        getWebProxyHostPort(env),
         '--force',
       ],
       {
         cwd: ROOT_DIR,
-        env,
+        env: portlessEnv,
       }
     );
 
     try {
       const routes = await runForOutput('bunx', ['portless', 'list'], {
         cwd: ROOT_DIR,
-        env,
+        env: portlessEnv,
       });
       writeDiagnosticLine(output, routes.stdout.trim());
     } catch (error) {
@@ -676,9 +736,12 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
         rootDir: ROOT_DIR,
       }
     );
-    await waitForUrl(DEFAULT_HEALTH_URL);
+    await waitForUrl(getWebProxyHealthUrl(env));
     await ensurePortlessRoute({ env });
-    await waitForUrl(getPortlessHealthUrl(env));
+    await waitForUrl(getPortlessHealthUrl(env), {
+      acceptedStatusCodes: DEFAULT_PORTLESS_READY_STATUS_CODES,
+      timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
+    });
     await runCommand('bunx', ['playwright', 'test', ...playwrightArgs], {
       cwd: WEB_DIR,
       env,
@@ -721,14 +784,19 @@ if (require.main === module) {
 }
 
 module.exports = {
+  DNS_IPV4_FIRST_NODE_OPTION,
   DEFAULT_ENV_FILE,
   DEFAULT_HEALTH_URL,
   DEFAULT_PORTLESS_BASE_URL,
   DEFAULT_PORTLESS_HEALTH_URL,
+  DEFAULT_PORTLESS_READY_STATUS_CODES,
+  DEFAULT_PORTLESS_READY_TIMEOUT_MS,
+  DEFAULT_WEB_PROXY_HOST_PORT,
   E2E_COMPOSE_PROJECT_PREFIX,
   ensurePortlessRoute,
   ensureLocalE2EEnvFile,
   formatBlueGreenStages,
+  getPortlessCommandEnv,
   getDockerComposeDiagnosticArgs,
   getDockerMemoryLimit,
   getE2EComposeProjectName,
@@ -736,6 +804,9 @@ module.exports = {
   getDockerWebDownArgs,
   getDockerWebUpArgs,
   getPortlessHealthUrl,
+  getPortlessProxyStartArgs,
+  getWebProxyHealthUrl,
+  getWebProxyHostPort,
   isPortlessNotReadyBody,
   isE2EComposeProjectName,
   parseE2EProjectImageTags,

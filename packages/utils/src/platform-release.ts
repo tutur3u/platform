@@ -1,6 +1,6 @@
 import { PLATFORM_BUILD_METADATA } from './generated/platform-build-metadata';
 
-export const TUTURUUU_PLATFORM_VERSION = '0.3.28'; // x-release-please-version
+export const TUTURUUU_PLATFORM_VERSION = '0.3.27'; // x-release-please-version
 
 export type PlatformBuildMetadataInput = {
   builtAt?: string | null;
