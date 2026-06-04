@@ -57,7 +57,10 @@ import { TaskMoveMenu } from '../task-move-menu';
 import { TaskPriorityMenu } from '../task-priority-menu';
 import { TaskProjectsMenu } from '../task-projects-menu';
 import { TaskSchedulingMenu } from '../task-scheduling-menu';
-import { formatTaskDurationLabel } from '../task-scheduling-utils';
+import {
+  formatTaskDurationLabel,
+  formatTaskSchedulingBadgeTitle,
+} from '../task-scheduling-utils';
 
 // Mock dropdown components to avoid Radix UI context issues in tests
 vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
@@ -206,6 +209,29 @@ describe('task scheduling utilities', () => {
     expect(formatTaskDurationLabel(0.75)).toBe('45m');
     expect(formatTaskDurationLabel(2)).toBe('2h');
     expect(formatTaskDurationLabel(1.5)).toBe('1h 30m');
+  });
+
+  it('formats compact scheduling badge titles with split and auto-schedule details', () => {
+    expect(
+      formatTaskSchedulingBadgeTitle({
+        autoSchedule: true,
+        calendarHours: 'work_hours',
+        durationLabel: '2h',
+        isSplittable: true,
+        labels: {
+          autoSchedule: 'Auto-schedule',
+          estimatedDuration: 'Estimated Duration',
+          meetingHours: 'Meeting Hours',
+          personalHours: 'Personal Hours',
+          splittable: 'Splittable',
+          workHours: 'Work Hours',
+        },
+        maxSplitDurationMinutes: 90,
+        minSplitDurationMinutes: 30,
+      })
+    ).toBe(
+      'Estimated Duration: 2h | Work Hours | Splittable: 30m-1h 30m | Auto-schedule'
+    );
   });
 });
 

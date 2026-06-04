@@ -159,6 +159,16 @@ type NormalizedRouteTask = Task & {
   task_lists?: TaskRecord['task_lists'];
 };
 
+type TaskSchedulingSettingsRow = {
+  task_id: string;
+  total_duration: number | null;
+  is_splittable: boolean | null;
+  min_split_duration_minutes: number | null;
+  max_split_duration_minutes: number | null;
+  calendar_hours: Task['calendar_hours'] | null;
+  auto_schedule: boolean | null;
+};
+
 type ExternalTaskSortBy =
   | 'created-desc'
   | 'created-asc'
@@ -221,6 +231,85 @@ type TaskSourceFilterListCountRow = {
   list_id: string | null;
   total_count: number | string | null;
 };
+
+async function loadTaskSchedulingSettingsByTaskId({
+  supabase,
+  taskIds,
+  userId,
+}: {
+  supabase: TypedSupabaseClient;
+  taskIds: string[];
+  userId: string;
+}) {
+  const uniqueTaskIds = [...new Set(taskIds.filter(Boolean))];
+  const settingsByTaskId = new Map<string, TaskSchedulingSettingsRow>();
+
+  if (uniqueTaskIds.length === 0) {
+    return settingsByTaskId;
+  }
+
+  const { data, error } = await supabase
+    .from('task_user_scheduling_settings')
+    .select(
+      `
+      task_id,
+      total_duration,
+      is_splittable,
+      min_split_duration_minutes,
+      max_split_duration_minutes,
+      calendar_hours,
+      auto_schedule
+    `
+    )
+    .eq('user_id', userId)
+    .in('task_id', uniqueTaskIds);
+
+  if (error) {
+    throw new Error('TASK_SCHEDULING_SETTINGS_QUERY_FAILED');
+  }
+
+  for (const row of (data ?? []) as TaskSchedulingSettingsRow[]) {
+    if (!row.task_id) continue;
+    settingsByTaskId.set(row.task_id, row);
+  }
+
+  return settingsByTaskId;
+}
+
+async function applyTaskSchedulingSettings({
+  supabase,
+  tasks,
+  userId,
+}: {
+  supabase: TypedSupabaseClient;
+  tasks: NormalizedRouteTask[];
+  userId: string;
+}) {
+  const settingsByTaskId = await loadTaskSchedulingSettingsByTaskId({
+    supabase,
+    taskIds: tasks.map((task) => task.id),
+    userId,
+  });
+
+  if (settingsByTaskId.size === 0) {
+    return tasks;
+  }
+
+  return tasks.map((task) => {
+    const settings = settingsByTaskId.get(task.id);
+    if (!settings) return task;
+
+    return {
+      ...task,
+      total_duration: settings.total_duration,
+      is_splittable: settings.is_splittable,
+      min_split_duration_minutes: settings.min_split_duration_minutes,
+      max_split_duration_minutes: settings.max_split_duration_minutes,
+      calendar_hours: settings.calendar_hours,
+      auto_schedule: settings.auto_schedule,
+    };
+  });
+}
 
 function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
   switch (value) {
@@ -1787,7 +1876,24 @@ export async function handleTaskRouteGET(
       }
     }
 
-    const tasks = [...sourceTasks, ...externalTasks];
+    let tasks: NormalizedRouteTask[];
+
+    try {
+      tasks = await applyTaskSchedulingSettings({
+        supabase,
+        tasks: [...sourceTasks, ...externalTasks],
+        userId: user.id,
+      });
+    } catch (schedulingError) {
+      console.error(
+        'Failed to load task scheduling settings:',
+        schedulingError
+      );
+      return NextResponse.json(
+        { error: 'Failed to load task scheduling settings' },
+        { status: 500 }
+      );
+    }
 
     const shouldIncludeRelationshipSummary =
       includeRelationshipSummary && !forTimeTracking;

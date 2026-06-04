@@ -123,7 +123,6 @@ import {
   TaskRelatedMenu,
   TaskSchedulingMenu,
 } from '../menus';
-import { formatTaskDurationLabel } from '../menus/task-scheduling-utils';
 import { TaskActions } from '../task-actions';
 import { TaskCustomDateDialog } from '../task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from '../task-dialogs/TaskDeleteDialog';
@@ -134,6 +133,7 @@ import { TaskCardCheckbox } from './TaskCardCheckbox';
 import { areTaskCardPropsEqual } from './task-card-comparator';
 import { mergeTaskCardLabelOptions } from './task-card-label-options';
 import { getTaskCardVisibilityState } from './task-card-visibility';
+import { TaskSchedulingBadge } from './task-scheduling-badge';
 
 export interface TaskCardProps {
   task: Task;
@@ -1190,23 +1190,32 @@ function TaskCardInner({
       });
     }
 
-    const durationLabel = formatTaskDurationLabel(task.total_duration ?? null);
-    if (durationLabel) {
+    if ((task.total_duration ?? 0) > 0) {
       badges.push({
         id: 'duration',
         element: (
-          <Badge
+          <TaskSchedulingBadge
             key="duration"
-            variant="secondary"
-            className="h-5 shrink-0 border border-dynamic-amber/30 bg-dynamic-amber/10 px-2 text-[10px] text-dynamic-amber"
-            title={taskBoardT('ws-task-boards.dialog.estimated_duration')}
-            ref={(el) => {
-              if (el) badgeRefs.current.set('duration', el as any);
+            autoSchedule={task.auto_schedule}
+            calendarHours={task.calendar_hours}
+            isSplittable={task.is_splittable}
+            labels={{
+              autoSchedule: taskBoardT('ws-task-boards.dialog.auto_schedule'),
+              estimatedDuration: taskBoardT(
+                'ws-task-boards.dialog.estimated_duration'
+              ),
+              meetingHours: taskBoardT('ws-task-boards.dialog.meeting_hours'),
+              personalHours: taskBoardT('ws-task-boards.dialog.personal_hours'),
+              splittable: taskBoardT('ws-task-boards.dialog.splittable'),
+              workHours: taskBoardT('ws-task-boards.dialog.work_hours'),
             }}
-          >
-            <Clock className="h-2.5 w-2.5" />
-            {durationLabel}
-          </Badge>
+            maxSplitDurationMinutes={task.max_split_duration_minutes}
+            minSplitDurationMinutes={task.min_split_duration_minutes}
+            onElement={(element) => {
+              if (element) badgeRefs.current.set('duration', element as any);
+            }}
+            totalDuration={task.total_duration}
+          />
         ),
       });
     }
@@ -1348,6 +1357,11 @@ function TaskCardInner({
     task.projects,
     task.estimation_points,
     task.total_duration,
+    task.auto_schedule,
+    task.calendar_hours,
+    task.is_splittable,
+    task.max_split_duration_minutes,
+    task.min_split_duration_minutes,
     task.labels,
     boardConfig?.estimation_type,
     descriptionMeta.totalCheckboxes,

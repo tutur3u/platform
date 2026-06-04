@@ -436,6 +436,81 @@ describe('workspace task route personal external loading', () => {
     expect(taskQuery?.calls).toContainEqual(['ilike', ['name', '%cms%']]);
   });
 
+  it('hydrates per-user scheduling settings for returned board tasks', async () => {
+    queueResult(mocks.adminQueues, 'workspaces', {
+      data: { personal: false },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [boardTask(PLACED_TASK_ID), boardTask(UNPLACED_TASK_ID)],
+      error: null,
+      count: 2,
+    });
+    queueResult(mocks.memberQueues, 'task_user_scheduling_settings', {
+      data: [
+        {
+          auto_schedule: true,
+          calendar_hours: 'work_hours',
+          is_splittable: true,
+          max_split_duration_minutes: 90,
+          min_split_duration_minutes: 30,
+          task_id: PLACED_TASK_ID,
+          total_duration: 2,
+        },
+      ],
+      error: null,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/ws-1/tasks?boardId=${PERSONAL_BOARD_ID}&includeRelationshipSummary=false&includeCount=true`
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    const scheduledTask = payload.tasks.find(
+      (task: { id: string }) => task.id === PLACED_TASK_ID
+    );
+    const unscheduledTask = payload.tasks.find(
+      (task: { id: string }) => task.id === UNPLACED_TASK_ID
+    );
+
+    expect(scheduledTask).toEqual(
+      expect.objectContaining({
+        auto_schedule: true,
+        calendar_hours: 'work_hours',
+        is_splittable: true,
+        max_split_duration_minutes: 90,
+        min_split_duration_minutes: 30,
+        total_duration: 2,
+      })
+    );
+    expect(unscheduledTask).toBeDefined();
+    expect(unscheduledTask?.total_duration).toBeUndefined();
+    expect(
+      mocks.adminQueries
+        .filter((query) => query.table === 'task_user_scheduling_settings')
+        .some(
+          (query) =>
+            query.calls.some(
+              ([method, args]) =>
+                method === 'eq' && args[0] === 'user_id' && args[1] === USER_ID
+            ) &&
+            query.calls.some(
+              ([method, args]) =>
+                method === 'in' &&
+                args[0] === 'task_id' &&
+                Array.isArray(args[1]) &&
+                args[1].includes(PLACED_TASK_ID) &&
+                args[1].includes(UNPLACED_TASK_ID)
+            )
+        )
+    ).toBe(true);
+  });
+
   it('uses the private RPC for all-visible relation filters', async () => {
     queueResult(mocks.adminQueues, 'workspaces', {
       data: { personal: false },
@@ -782,6 +857,20 @@ describe('workspace task route personal external loading', () => {
     });
     queueSourceMembership();
     queueEmptyPersonalMetadata();
+    queueResult(mocks.memberQueues, 'task_user_scheduling_settings', {
+      data: [
+        {
+          auto_schedule: false,
+          calendar_hours: 'personal_hours',
+          is_splittable: false,
+          max_split_duration_minutes: null,
+          min_split_duration_minutes: null,
+          task_id: PLACED_TASK_ID,
+          total_duration: 1.5,
+        },
+      ],
+      error: null,
+    });
 
     const { GET } = await import('./route.js');
     const response = await GET(
@@ -803,6 +892,8 @@ describe('workspace task route personal external loading', () => {
         personal_sort_key: 1_500_000,
         is_personal_external: true,
         is_personal_external_default: false,
+        total_duration: 1.5,
+        calendar_hours: 'personal_hours',
       })
     );
     expectSourceMembershipQueriesRequireMemberAccess();
