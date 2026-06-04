@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getActiveBoardRefresh,
   setActiveBoardRefresh,
@@ -84,6 +84,10 @@ describe('BoardClient', () => {
     setActiveBoardRefresh(null);
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('loads dependent board data with the fetched board workspace id', async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -148,5 +152,54 @@ describe('BoardClient', () => {
       queryKey: ['tasks-full', 'board-1'],
     });
     expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('throttles focus-driven list revalidation for thirty seconds', async () => {
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(100_000);
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByTestId('board-views')).toBeInTheDocument();
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    await waitFor(() => {
+      expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
+    });
+
+    nowSpy.mockReturnValue(101_500);
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
+
+    nowSpy.mockReturnValue(130_000);
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    await waitFor(() => {
+      expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(2);
+    });
   });
 });

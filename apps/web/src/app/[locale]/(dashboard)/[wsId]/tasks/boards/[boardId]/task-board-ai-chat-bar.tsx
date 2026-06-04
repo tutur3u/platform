@@ -59,7 +59,7 @@ export function TaskBoardAiChatBar({
   const taskFlow = useTaskBoardAiChatBarTaskFlow({
     boardId,
     currentUser,
-    expanded: islandExpanded,
+    expanded,
     wsId,
   });
 

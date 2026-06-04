@@ -26,6 +26,8 @@ import { ProgressiveLoaderProvider } from './progressive-loader-context';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
+const BOARD_REVALIDATE_COOLDOWN_MS = 30_000;
+
 interface Props {
   boardId: string;
   workspace: Workspace;
@@ -100,7 +102,12 @@ export function BoardClient({
 
     const revalidateLoadedLists = () => {
       const now = Date.now();
-      if (isRevalidating || now - lastRevalidateAt < 1500) return;
+      if (
+        isRevalidating ||
+        now - lastRevalidateAt < BOARD_REVALIDATE_COOLDOWN_MS
+      ) {
+        return;
+      }
 
       isRevalidating = true;
       lastRevalidateAt = now;

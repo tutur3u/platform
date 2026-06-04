@@ -195,6 +195,101 @@ describe('guardApiProxyRequest', () => {
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
   });
 
+  it('uses the task-board read bucket for high-fanout board task reads', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 300,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/tasks?boardId=board-1', 'GET'),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('300');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('task-board-read');
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 300,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:task-board-read:anonymous:get:minute'
+    );
+  });
+
+  it('uses the task-board read bucket for task-board detail and list reads', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 300,
+        remaining: 299,
+        reset: Date.now() + 15_000,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 3000,
+        remaining: 2999,
+        reset: Date.now() + 15_000,
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        limit: 20000,
+        remaining: 19999,
+        reset: Date.now() + 15_000,
+      })
+      .mockResolvedValueOnce({
+        success: false,
+        limit: 300,
+        remaining: 0,
+        reset: Date.now() + 15_000,
+      });
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const detailResponse = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/task-boards/board-1', 'GET'),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
+    const listsResponse = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/task-boards/board-1/lists', 'GET'),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(detailResponse).toBeNull();
+    expect(listsResponse?.status).toBe(429);
+    expect(listsResponse?.headers.get('X-RateLimit-Policy')).toBe(
+      'task-board-read'
+    );
+  });
+
   it('keeps unauthenticated cron reads on a strict proxy bucket', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');

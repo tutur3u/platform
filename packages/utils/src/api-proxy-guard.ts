@@ -185,6 +185,20 @@ const FORM_SUBMISSION_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const TASK_BOARD_READ_RATE_LIMITS: RateLimitProfile = {
+  get: [
+    createConfig(
+      'minute',
+      '1 m',
+      300,
+      'API_PROXY_TASK_BOARD_READ_LIMIT_MINUTE'
+    ),
+    createConfig('hour', '1 h', 3000, 'API_PROXY_TASK_BOARD_READ_LIMIT_HOUR'),
+    createConfig('day', '1 d', 20_000, 'API_PROXY_TASK_BOARD_READ_LIMIT_DAY'),
+  ],
+  mutate: DEFAULT_MUTATE_RATE_LIMITS,
+};
+
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
   {
     key: 'cron',
@@ -218,6 +232,19 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
       req.method === 'POST' &&
       /^\/api\/v1\/shared\/forms\/[^/]+(?:\/|$)/.test(req.nextUrl.pathname),
     rateLimits: FORM_SUBMISSION_RATE_LIMITS,
+  },
+  {
+    key: 'task-board-read',
+    matches: (req) =>
+      (req.method === 'GET' || req.method === 'HEAD') &&
+      (/^\/api\/v1\/workspaces\/[^/]+\/tasks\/?$/u.test(req.nextUrl.pathname) ||
+        /^\/api\/v1\/workspaces\/[^/]+\/task-boards\/[^/]+\/?$/u.test(
+          req.nextUrl.pathname
+        ) ||
+        /^\/api\/v1\/workspaces\/[^/]+\/task-boards\/[^/]+\/lists\/?$/u.test(
+          req.nextUrl.pathname
+        )),
+    rateLimits: TASK_BOARD_READ_RATE_LIMITS,
   },
   {
     key: 'high-fanout',

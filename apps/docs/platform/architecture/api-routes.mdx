@@ -626,6 +626,15 @@ such as task boards. Default GET/HEAD requests are not rate-limited by the
 session wrapper; default mutations use the shared mutation budget unless the
 route provides an explicit `rateLimit` option.
 
+The API proxy still protects request-heavy dashboard reads before route auth is
+validated. High-fanout task-board reads use a dedicated `task-board-read` proxy
+bucket so normal board loading, per-list pagination, and focused revalidation do
+not exhaust the generic anonymous read budget. The defaults are 300 requests per
+minute, 3000 per hour, and 20000 per day, and can be tuned with
+`API_PROXY_TASK_BOARD_READ_LIMIT_MINUTE`,
+`API_PROXY_TASK_BOARD_READ_LIMIT_HOUR`, and
+`API_PROXY_TASK_BOARD_READ_LIMIT_DAY`.
+
 ```typescript
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
