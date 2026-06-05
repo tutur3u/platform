@@ -7,7 +7,7 @@
     "@typescript/native-preview": "^7.0.0-dev.20260603.1",
     "@vitest/coverage-v8": "^4.1.8",
     "lucide-static": "^1.17.0",
-    "portless": "^0.13.1",
+    "portless": "^0.14.0",
     "turbo": "^2.9.16",
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
