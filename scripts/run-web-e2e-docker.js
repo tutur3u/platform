@@ -2,6 +2,7 @@
 
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
+const https = require('node:https');
 const path = require('node:path');
 
 const {
@@ -14,6 +15,7 @@ const {
   createLocalE2EEnvFileContent,
   createLocalE2EProcessEnv,
   LOCAL_E2E_BASE_URL,
+  SAFE_LOCAL_WEB_ORIGINS,
 } = require('./e2e-local-environment.js');
 const { SKIP_WATCH_HISTORY_ENV } = require('./watch-blue-green/history.js');
 const { WATCHER_CONTAINER_ENV } = require('./watch-blue-green-deploy.js');
@@ -84,7 +86,18 @@ function getDockerWebDownArgs(envFilePath) {
 }
 
 function getErrorMessage(error) {
-  return error instanceof Error ? error.message : String(error);
+  if (!(error instanceof Error)) {
+    return String(error);
+  }
+
+  const cause =
+    error.cause instanceof Error
+      ? error.cause.message
+      : error.cause == null
+        ? ''
+        : String(error.cause);
+
+  return cause ? `${error.message}: ${cause}` : error.message;
 }
 
 function writeDiagnosticLine(output, message = '') {
@@ -213,6 +226,79 @@ function getResponseBodySnippet(body) {
     .replace(/\s+/gu, ' ')
     .trim()
     .slice(0, 240);
+}
+
+function isLocalHttpsReadinessUrl(url) {
+  try {
+    const parsed = new URL(url);
+
+    return (
+      parsed.protocol === 'https:' && SAFE_LOCAL_WEB_ORIGINS.has(parsed.origin)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getReadinessFetchOptions(url, options = {}) {
+  const fetchOptions = {
+    redirect: 'manual',
+  };
+
+  if (Number.isFinite(options.requestTimeoutMs)) {
+    fetchOptions.requestTimeoutMs = options.requestTimeoutMs;
+  }
+
+  if (isLocalHttpsReadinessUrl(url)) {
+    fetchOptions.rejectUnauthorized = false;
+  }
+
+  return fetchOptions;
+}
+
+function fetchLocalHttpsReadinessUrl(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    const request = https.request(
+      url,
+      {
+        headers: {
+          accept: '*/*',
+        },
+        method: 'GET',
+        rejectUnauthorized: false,
+      },
+      (response) => {
+        let body = '';
+
+        response.setEncoding('utf8');
+        response.on('data', (chunk) => {
+          body += chunk;
+        });
+        response.on('end', () => {
+          resolve({
+            status: response.statusCode ?? 0,
+            text: async () => body,
+          });
+        });
+      }
+    );
+
+    request.setTimeout(options.requestTimeoutMs ?? 10_000, () => {
+      request.destroy(new Error(`Timed out requesting ${url}`));
+    });
+    request.on('error', reject);
+    request.end();
+  });
+}
+
+function fetchReadinessUrl(url, options = {}) {
+  const { rejectUnauthorized, requestTimeoutMs, ...fetchOptions } = options;
+
+  if (rejectUnauthorized === false) {
+    return fetchLocalHttpsReadinessUrl(url, { requestTimeoutMs });
+  }
+
+  return fetch(url, fetchOptions);
 }
 
 function formatBlueGreenStages(stages) {
@@ -468,7 +554,7 @@ async function waitForUrl(url, options = {}) {
   const timeoutMs = options.timeoutMs ?? 180_000;
   const intervalMs = options.intervalMs ?? 2_000;
   const acceptedStatusCodes = new Set(options.acceptedStatusCodes ?? []);
-  const fetchImpl = options.fetchImpl ?? fetch;
+  const fetchImpl = options.fetchImpl ?? fetchReadinessUrl;
   const sleep =
     options.sleep ??
     ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
@@ -477,7 +563,10 @@ async function waitForUrl(url, options = {}) {
 
   while (Date.now() < deadline) {
     try {
-      const response = await fetchImpl(url, { redirect: 'manual' });
+      const response = await fetchImpl(
+        url,
+        getReadinessFetchOptions(url, options)
+      );
       const body =
         typeof response.text === 'function' ? await response.text() : '';
       const bodySnippet = getResponseBodySnippet(body);
@@ -506,9 +595,7 @@ async function waitForUrl(url, options = {}) {
   }
 
   throw new Error(
-    `Timed out waiting for ${url}: ${
-      lastError instanceof Error ? lastError.message : String(lastError)
-    }`
+    `Timed out waiting for ${url}: ${getErrorMessage(lastError)}`
   );
 }
 
@@ -805,6 +892,7 @@ module.exports = {
   getDockerWebUpArgs,
   getPortlessHealthUrl,
   getPortlessProxyStartArgs,
+  getReadinessFetchOptions,
   getWebProxyHealthUrl,
   getWebProxyHostPort,
   isPortlessNotReadyBody,

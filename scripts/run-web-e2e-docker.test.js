@@ -27,6 +27,7 @@ const {
   getDockerWebUpArgs,
   getPortlessHealthUrl,
   getPortlessProxyStartArgs,
+  getReadinessFetchOptions,
   getWebProxyHealthUrl,
   getWebProxyHostPort,
   isPortlessNotReadyBody,
@@ -370,6 +371,63 @@ test('waitForUrl keeps retrying while the upstream returns server errors', async
   assert.deepEqual(statuses, [502, 200]);
 });
 
+test('waitForUrl uses local-only insecure TLS options for Portless readiness', async () => {
+  const seenOptions = [];
+
+  await waitForUrl('https://tuturuuu.localhost:1355/login', {
+    fetchImpl: async (_url, options = {}) => {
+      seenOptions.push(options);
+
+      return {
+        status: 200,
+        text: async () => '<html>Login</html>',
+      };
+    },
+    intervalMs: 0,
+    sleep: async () => {
+      throw new Error('should not retry a ready local response');
+    },
+    timeoutMs: 5_000,
+  });
+
+  assert.equal(seenOptions.length, 1);
+  assert.equal(seenOptions[0].redirect, 'manual');
+  assert.equal(seenOptions[0].rejectUnauthorized, false);
+});
+
+test('getReadinessFetchOptions refuses insecure TLS for non-local HTTPS origins', () => {
+  assert.equal(
+    getReadinessFetchOptions('https://tuturuuu.com/login').rejectUnauthorized,
+    undefined
+  );
+  assert.equal(
+    getReadinessFetchOptions('http://127.0.0.1:7803/login').rejectUnauthorized,
+    undefined
+  );
+  assert.equal(
+    getReadinessFetchOptions('https://tuturuuu.localhost:1355/login')
+      .rejectUnauthorized,
+    false
+  );
+});
+
+test('waitForUrl timeout keeps nested fetch failure causes visible', async () => {
+  await assert.rejects(
+    () =>
+      waitForUrl('https://tuturuuu.localhost:1355/login', {
+        fetchImpl: async () => {
+          const error = new Error('fetch failed');
+          error.cause = new Error('self-signed certificate');
+          throw error;
+        },
+        intervalMs: 0,
+        sleep: async () => {},
+        timeoutMs: 20,
+      }),
+    /Timed out waiting for https:\/\/tuturuuu\.localhost:1355\/login: fetch failed: self-signed certificate/u
+  );
+});
+
 test('ensurePortlessRoute starts the wildcard proxy and refreshes the route', async () => {
   const calls = [];
   const chunks = [];
@@ -542,8 +600,10 @@ test('printE2EFailureDiagnostics prints compose logs without masking diagnostics
     await printE2EFailureDiagnostics({
       env: {
         DOCKER_WEB_COMPOSE_PROJECT_NAME: 'ttr-e2e-local-123',
+        DOCKER_WEB_ENV_FILE: 'tmp/e2e/web.env',
         E2E_DIAGNOSTIC_LOG_TAIL: '42',
         GITHUB_ACTIONS: 'true',
+        UPSTASH_REDIS_REST_TOKEN: 'diagnostic-token',
       },
       error,
       output,
@@ -568,11 +628,12 @@ test('printE2EFailureDiagnostics prints compose logs without masking diagnostics
     ]);
     assert.deepEqual(calls[1].args.slice(0, 5), [
       'compose',
+      '--env-file',
+      'tmp/e2e/web.env',
       '-f',
       path.join(path.resolve(__dirname, '..'), 'docker-compose.web.prod.yml'),
-      '-p',
-      'ttr-e2e-local-123',
     ]);
+    assert.deepEqual(calls[1].args.slice(5, 7), ['-p', 'ttr-e2e-local-123']);
     assert.deepEqual(calls[1].args.slice(-2), ['ps', '-a']);
     assert.deepEqual(calls[2].args.slice(-4), [
       'backend',
@@ -602,6 +663,7 @@ test('printE2EFailureDiagnostics prints compose logs without masking diagnostics
         ({ options }) =>
           options.cwd === tempDir &&
           options.env.COMPOSE_PROJECT_NAME === 'ttr-e2e-local-123' &&
+          options.env.UPSTASH_REDIS_REST_TOKEN === 'diagnostic-token' &&
           options.stdio === 'inherit'
       )
     );
