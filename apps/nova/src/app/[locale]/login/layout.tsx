@@ -1,5 +1,4 @@
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
-import { headers } from 'next/headers';
+import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { redirect } from 'next/navigation';
 import type React from 'react';
 
@@ -8,10 +7,7 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children }: LayoutProps) {
-  const appSession = getAppSessionClaimsFromRequest(
-    { headers: await headers() },
-    { targetApp: 'nova' }
-  );
+  const appSession = await getSatelliteAppSession('nova');
 
   if (appSession) redirect('/home');
 

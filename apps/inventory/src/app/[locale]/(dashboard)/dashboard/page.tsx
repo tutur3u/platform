@@ -1,12 +1,9 @@
 import {
-  getAppSessionClaimsFromRequest,
-  hasWebAppSessionTokenFromRequest,
-} from '@tuturuuu/auth/app-session';
-import {
   getCurrentUserDefaultWorkspace,
   InternalApiError,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { ROOT_WORKSPACE_ID, toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { headers } from 'next/headers';
 import { redirect } from '@/i18n/navigation';
@@ -18,15 +15,9 @@ export default async function DashboardEntryPage({
 }) {
   const { locale } = await params;
   const requestHeaders = await headers();
-  const appSession = getAppSessionClaimsFromRequest(
-    { headers: requestHeaders },
-    { targetApp: 'inventory' }
-  );
-  const hasWebAppSession = hasWebAppSessionTokenFromRequest({
-    headers: requestHeaders,
-  });
+  const appSession = await getSatelliteAppSession('inventory');
 
-  if (!appSession || !hasWebAppSession) {
+  if (!appSession) {
     redirect({ href: '/login?next=/dashboard', locale });
   }
 

@@ -7,6 +7,14 @@ import {
 } from './helpers/environment';
 
 const SATELLITE_E2E_URL = 'https://tasks.tuturuuu.localhost';
+const REPRESENTATIVE_SATELLITE_E2E_URLS = [
+  'https://calendar.tuturuuu.localhost',
+  'https://tasks.tuturuuu.localhost',
+  'https://cms.tuturuuu.localhost',
+  'https://learn.tuturuuu.localhost',
+  'https://inventory.tuturuuu.localhost',
+  'https://nova.tuturuuu.localhost',
+] as const;
 
 function getSupabaseAuthStorageKey(url: string) {
   return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
@@ -88,6 +96,27 @@ test.describe('Shared Supabase auth cookies', () => {
           cookie.path === '/'
       )
     ).toBe(true);
+  });
+
+  test('local dev-session shares the Supabase cookie with representative satellite origins', async ({
+    page,
+  }) => {
+    const storageKey = await createLocalDevSession(page);
+
+    for (const satelliteUrl of REPRESENTATIVE_SATELLITE_E2E_URLS) {
+      await expect
+        .poll(
+          async () =>
+            (await page.context().cookies(satelliteUrl)).some(
+              (cookie) =>
+                cookie.name === storageKey &&
+                cookie.domain === '.tuturuuu.localhost' &&
+                cookie.path === '/'
+            ),
+          { timeout: 15_000 }
+        )
+        .toBe(true);
+    }
   });
 
   test('shared-cookie middleware removes old host-only Supabase duplicates', async ({

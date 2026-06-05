@@ -1,13 +1,10 @@
-import {
-  getAppSessionClaimsFromRequest,
-  hasWebAppSessionTokenFromRequest,
-} from '@tuturuuu/auth/app-session';
 import { GraduationCap } from '@tuturuuu/icons';
 import {
   getTulearnBootstrap,
   InternalApiError,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import {
   getPendingWorkspaceInvitations,
   SatelliteWorkspaceInvitationList,
@@ -43,15 +40,9 @@ export default async function DashboardEntryPage({
 }) {
   const { locale } = await params;
   const requestHeaders = await headers();
-  const appSession = getAppSessionClaimsFromRequest(
-    { headers: requestHeaders },
-    { targetApp: 'teach' }
-  );
-  const hasWebAppSession = hasWebAppSessionTokenFromRequest({
-    headers: requestHeaders,
-  });
+  const appSession = await getSatelliteAppSession('teach');
 
-  if (!appSession || !hasWebAppSession) {
+  if (!appSession) {
     redirect({ href: '/login?next=/dashboard', locale });
   }
 

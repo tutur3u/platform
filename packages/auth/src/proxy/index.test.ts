@@ -501,7 +501,9 @@ describe('auth proxy redirect helpers', () => {
     expect(setCookie).toContain(`${APP_SESSION_COOKIE_NAME}=;`);
     expect(setCookie).toContain(`${APP_SESSION_REFRESH_COOKIE_NAME}=;`);
     expect(setCookie).toContain('Max-Age=0');
-    expect(getMiddlewareRequestHeader(response, 'authorization')).toBeNull();
+    expect(getMiddlewareRequestHeader(response, 'authorization')).toMatch(
+      /^Bearer /
+    );
   });
 
   it('keeps the app-session fallback when shared Supabase auth has no claims', async () => {
@@ -725,6 +727,9 @@ describe('auth proxy redirect helpers', () => {
     expect(result.ok && result.claims.target_app).toBe('mail');
     expect(result.ok && result.response.headers.get('set-cookie')).toContain(
       `${APP_SESSION_COOKIE_NAME}=;`
+    );
+    expect(result.ok && result.requestHeaders?.get('authorization')).toMatch(
+      /^Bearer /
     );
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mocks.updateSession).toHaveBeenCalledWith(request);

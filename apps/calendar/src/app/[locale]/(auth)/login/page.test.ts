@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  getAppSessionClaimsFromRequest: vi.fn(),
+  getSatelliteAppSession: vi.fn(),
+  hasSupportedSupabaseAuthCookie: vi.fn(),
   hasWebAppSessionTokenFromRequest: vi.fn(),
   headers: vi.fn(),
   normalizeAuthRedirectPath: vi.fn(),
@@ -11,8 +12,12 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
-  getAppSessionClaimsFromRequest: mocks.getAppSessionClaimsFromRequest,
+  hasSupportedSupabaseAuthCookie: mocks.hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest: mocks.hasWebAppSessionTokenFromRequest,
+}));
+
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSession: mocks.getSatelliteAppSession,
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
@@ -35,12 +40,14 @@ vi.mock('@/constants/common', () => ({
 describe('Calendar login page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getSatelliteAppSession.mockResolvedValue(null);
     mocks.headers.mockResolvedValue(new Headers());
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
     mocks.normalizeAuthRedirectPath.mockReturnValue('/personal');
   });
 
   it('skips the central handoff when Calendar and Web app-session cookies exist', async () => {
-    mocks.getAppSessionClaimsFromRequest.mockReturnValue({ sub: 'user-id' });
+    mocks.getSatelliteAppSession.mockResolvedValue({ sub: 'user-id' });
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
     mocks.normalizeAuthRedirectPath.mockReturnValue('/internal?view=week');
 
@@ -54,7 +61,7 @@ describe('Calendar login page', () => {
   });
 
   it('starts the central web login handoff when the local app-session is missing', async () => {
-    mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
+    mocks.getSatelliteAppSession.mockResolvedValue(null);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
 
     const LoginPage = (await import('./page')).default;

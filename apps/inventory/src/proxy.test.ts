@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   consumeVerifyTokenRequest: vi.fn(),
   getAppSessionClaimsFromRequest: vi.fn(),
   guardApiProxyRequest: vi.fn(),
+  hasSupportedSupabaseAuthCookie: vi.fn(),
   hasWebAppSessionTokenFromRequest: vi.fn(),
   propagateAuthCookies: vi.fn(),
   refreshAppSessionForRequest: vi.fn(),
@@ -21,6 +22,9 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   getAppSessionClaimsFromRequest: (
     ...args: Parameters<typeof mocks.getAppSessionClaimsFromRequest>
   ) => mocks.getAppSessionClaimsFromRequest(...args),
+  hasSupportedSupabaseAuthCookie: (
+    ...args: Parameters<typeof mocks.hasSupportedSupabaseAuthCookie>
+  ) => mocks.hasSupportedSupabaseAuthCookie(...args),
   hasWebAppSessionTokenFromRequest: (
     ...args: Parameters<typeof mocks.hasWebAppSessionTokenFromRequest>
   ) => mocks.hasWebAppSessionTokenFromRequest(...args),
@@ -64,6 +68,8 @@ vi.mock('next-intl/navigation', () => ({
 describe('Inventory proxy storefront access', () => {
   beforeEach(() => {
     mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -125,6 +131,42 @@ describe('Inventory proxy storefront access', () => {
     );
     expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
       requireWebAppSession: true,
+      sessionMode: 'supabase-first',
+      targetApp: 'inventory',
+    });
+  });
+
+  it('allows protected operator routes with a shared Supabase session', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValueOnce({
+      claims: {
+        aud: 'tuturuuu-api',
+        email: 'local@tuturuuu.com',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        iat: Math.floor(Date.now() / 1000),
+        iss: 'tuturuuu',
+        jti: 'supabase:user-1',
+        origin_app: 'web',
+        scopes: ['internal-app:session'],
+        sub: 'user-1',
+        target_app: 'inventory',
+        typ: 'app_coordination',
+      },
+      ok: true,
+      refreshed: false,
+      response: NextResponse.next(),
+    });
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+
+    const request = new NextRequest(
+      'https://inventory.tuturuuu.com/personal/catalog'
+    );
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
+      requireWebAppSession: true,
+      sessionMode: 'supabase-first',
       targetApp: 'inventory',
     });
   });

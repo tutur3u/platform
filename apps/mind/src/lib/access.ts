@@ -1,12 +1,8 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
-import { headers } from 'next/headers';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { redirect } from 'next/navigation';
 
 export async function requireMindUser() {
-  const user = getAppSessionUserFromRequest(
-    { headers: await headers() },
-    { targetApp: 'mind' }
-  );
+  const user = await getSatelliteAppSessionUser('mind');
 
   if (!user?.id) {
     redirect('/login');

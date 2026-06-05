@@ -1,4 +1,4 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import {
   getPendingWorkspaceInvitation,
   SatelliteWorkspaceInvitationCard,
@@ -25,10 +25,7 @@ interface LayoutProps {
 export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
   const requestHeaders = await headers();
-  const user = getAppSessionUserFromRequest(
-    { headers: requestHeaders },
-    { targetApp: 'inventory' }
-  );
+  const user = await getSatelliteAppSessionUser('inventory');
 
   if (!user?.id) redirect('/login');
 

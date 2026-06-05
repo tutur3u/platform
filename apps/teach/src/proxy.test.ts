@@ -7,7 +7,10 @@ const mocks = vi.hoisted(() => ({
     (_request: NextRequest, response: NextResponse) => response
   ),
   consumeVerifyTokenRequest: vi.fn(),
+  getAppSessionClaimsFromRequest: vi.fn(),
   guardApiProxyRequest: vi.fn(),
+  hasSupportedSupabaseAuthCookie: vi.fn(),
+  hasWebAppSessionTokenFromRequest: vi.fn(),
   propagateAuthCookies: vi.fn(),
   refreshAppSessionForRequest: vi.fn(),
 }));
@@ -16,8 +19,15 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   clearSupabaseAuthCookies: (
     ...args: Parameters<typeof mocks.clearSupabaseAuthCookies>
   ) => mocks.clearSupabaseAuthCookies(...args),
-  getAppSessionClaimsFromRequest: vi.fn(),
-  hasWebAppSessionTokenFromRequest: vi.fn(),
+  getAppSessionClaimsFromRequest: (
+    ...args: Parameters<typeof mocks.getAppSessionClaimsFromRequest>
+  ) => mocks.getAppSessionClaimsFromRequest(...args),
+  hasSupportedSupabaseAuthCookie: (
+    ...args: Parameters<typeof mocks.hasSupportedSupabaseAuthCookie>
+  ) => mocks.hasSupportedSupabaseAuthCookie(...args),
+  hasWebAppSessionTokenFromRequest: (
+    ...args: Parameters<typeof mocks.hasWebAppSessionTokenFromRequest>
+  ) => mocks.hasWebAppSessionTokenFromRequest(...args),
 }));
 
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
@@ -58,6 +68,10 @@ vi.mock('next-intl/navigation', () => ({
 describe('Teach proxy local auth API guard', () => {
   beforeEach(() => {
     mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -147,5 +161,38 @@ describe('Teach proxy local auth API guard', () => {
       request,
       response
     );
+  });
+
+  it('allows protected routes with a shared Supabase session', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValueOnce({
+      claims: {
+        aud: 'tuturuuu-api',
+        email: 'local@tuturuuu.com',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        iat: Math.floor(Date.now() / 1000),
+        iss: 'tuturuuu',
+        jti: 'supabase:user-1',
+        origin_app: 'web',
+        scopes: ['internal-app:session'],
+        sub: 'user-1',
+        target_app: 'teach',
+        typ: 'app_coordination',
+      },
+      ok: true,
+      refreshed: false,
+      response: NextResponse.next(),
+    });
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+
+    const request = new NextRequest('https://teach.tuturuuu.com/dashboard');
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
+      requireWebAppSession: true,
+      sessionMode: 'supabase-first',
+      targetApp: 'teach',
+    });
   });
 });

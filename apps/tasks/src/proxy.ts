@@ -37,7 +37,7 @@ const AUTH_PUBLIC_PATHS = [
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
-  appSession: { targetApp: 'tasks' },
+  appSession: { sessionMode: 'supabase-first', targetApp: 'tasks' },
   webAppUrl: TTR_URL,
   publicPaths: AUTH_PUBLIC_PATHS,
   skipApiRoutes: true,
@@ -54,6 +54,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const appSessionRefresh = isLocalAuthApi
       ? null
       : await refreshAppSessionForRequest(req, {
+          sessionMode: 'supabase-first',
           targetApp: 'tasks',
         });
 

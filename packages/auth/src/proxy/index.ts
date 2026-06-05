@@ -17,6 +17,7 @@ import {
   APP_SESSION_SCOPE,
   clearAppSessionCookie,
   clearSupabaseAuthCookies,
+  createAppSessionToken,
   getAppSessionRefreshEarlySeconds,
   getAppSessionRefreshTokenFromRequest,
   getAppSessionTokenFromRequest,
@@ -534,6 +535,36 @@ function createAppSessionClaimsFromSupabaseClaims(
   };
 }
 
+function createSupabaseBackedAppSessionResponse(
+  req: NextRequest,
+  res: NextResponse,
+  claims: AppCoordinationTokenClaims,
+  options: {
+    now: Date;
+    targetApp: AppName | string;
+  }
+) {
+  const nowSeconds = Math.floor(options.now.getTime() / 1000);
+  const secondsUntilExpiry = claims.exp - nowSeconds;
+  const { token } = createAppSessionToken(
+    {
+      email: claims.email ?? undefined,
+      expiresInSeconds: Math.max(1, secondsUntilExpiry),
+      scopes: claims.scopes,
+      targetApp: options.targetApp,
+      userId: claims.sub,
+    },
+    { now: options.now }
+  );
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set('authorization', `Bearer ${token}`);
+  const response = createNextResponseWithRequestHeaders(requestHeaders);
+  copySetCookieHeaders(getSetCookieHeaders(res.headers), response);
+  clearAppSessionCookie(response);
+
+  return { requestHeaders, response };
+}
+
 export async function refreshAppSessionForRequest(
   req: NextRequest,
   options: {
@@ -557,13 +588,18 @@ export async function refreshAppSessionForRequest(
     });
 
     if (appSessionClaims) {
-      clearAppSessionCookie(res);
+      const { requestHeaders, response } =
+        createSupabaseBackedAppSessionResponse(req, res, appSessionClaims, {
+          now,
+          targetApp: options.targetApp,
+        });
 
       return {
         claims: appSessionClaims,
         ok: true,
         refreshed: false,
-        response: res,
+        requestHeaders,
+        response,
       };
     }
   }
@@ -1005,6 +1041,27 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
                 clearAppSessionCookie(mfaRedirect);
                 return mfaRedirect;
               }
+            }
+
+            const now = appSession.now ?? new Date();
+            const appSessionClaims = createAppSessionClaimsFromSupabaseClaims(
+              claims,
+              {
+                now,
+                targetApp: appSession.targetApp,
+              }
+            );
+
+            if (appSessionClaims) {
+              return createSupabaseBackedAppSessionResponse(
+                req,
+                res,
+                appSessionClaims,
+                {
+                  now,
+                  targetApp: appSession.targetApp,
+                }
+              ).response;
             }
 
             clearAppSessionCookie(res);

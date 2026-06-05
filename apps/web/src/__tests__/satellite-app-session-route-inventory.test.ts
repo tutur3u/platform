@@ -70,7 +70,7 @@ const coordinatedCookieApps = [
   'hive',
 ] as const;
 
-const supabaseFirstCookieApps = ['mail', 'hive', 'meet'] as const;
+const supabaseFirstCookieApps = registeredSatelliteApps;
 
 const allowedSatelliteLocalApiRoutes = new Set([
   'apps/learn/src/app/api/auth/logout/route.ts',
@@ -333,14 +333,13 @@ describe('satellite app-session route inventory', () => {
     }
   });
 
-  it('keeps first-party cookie satellite apps on Supabase-first auth', () => {
+  it('keeps registered satellite apps on Supabase-first auth', () => {
     for (const app of supabaseFirstCookieApps) {
       const proxyFile = `apps/${app}/src/proxy.ts`;
       const proxySource = readFileSync(resolve(repoRoot, proxyFile), 'utf8');
 
-      expect(proxySource, proxyFile).toContain("sessionMode: 'supabase-first'");
-      expect(proxySource, proxyFile).toContain(
-        'hasSupportedSupabaseAuthCookie'
+      expect(proxySource, proxyFile).toMatch(
+        /sessionMode:\s*["']supabase-first["']/u
       );
     }
   });
@@ -363,13 +362,17 @@ describe('satellite app-session route inventory', () => {
 
       expect(proxySource, proxyFile).toContain('guardApiProxyRequest');
       expect(proxySource, proxyFile).toContain('refreshAppSessionForRequest');
-      expect(proxySource, proxyFile).toContain(
-        `prefixBase: 'proxy:${app}:api'`
+      expect(proxySource, proxyFile).toMatch(
+        new RegExp(`prefixBase:\\s*["']proxy:${app}:api["']`, 'u')
       );
       expect(proxySource, proxyFile).not.toContain('LOCAL_AUTH_API_PATHS');
-      expect(testSource, testFile).toContain("'/api/auth/logout'");
-      expect(testSource, testFile).toContain("'/api/auth/refresh-app-session'");
-      expect(testSource, testFile).toContain("'/api/auth/verify-app-token'");
+      expect(testSource, testFile).toMatch(/["']\/api\/auth\/logout["']/u);
+      expect(testSource, testFile).toMatch(
+        /["']\/api\/auth\/refresh-app-session["']/u
+      );
+      expect(testSource, testFile).toMatch(
+        /["']\/api\/auth\/verify-app-token["']/u
+      );
     }
   });
 
@@ -379,14 +382,16 @@ describe('satellite app-session route inventory', () => {
       'apps/teach/src/app/[locale]/dashboard/page.tsx',
     ]) {
       const source = readFileSync(resolve(repoRoot, file), 'utf8');
-      const loginRedirectIndex = source.indexOf(
-        "redirect({ href: '/login?next=/dashboard'"
+      const sessionIndex = source.indexOf('getSatelliteAppSession(');
+      const loginRedirectIndex = source.search(
+        /href:\s*['"]\/login\?next=\/dashboard['"]/u
       );
       const bootstrapIndex = source.indexOf('getTulearnBootstrap(');
 
-      expect(source, file).toContain('getAppSessionClaimsFromRequest');
-      expect(source, file).toContain('hasWebAppSessionTokenFromRequest');
+      expect(source, file).toContain('getSatelliteAppSession');
+      expect(sessionIndex, file).toBeGreaterThanOrEqual(0);
       expect(loginRedirectIndex, file).toBeGreaterThanOrEqual(0);
+      expect(loginRedirectIndex, file).toBeGreaterThan(sessionIndex);
       expect(bootstrapIndex, file).toBeGreaterThan(loginRedirectIndex);
       expect(source, file).toMatch(
         /return <No(?:Workspace|TeachWorkspace)State/u
@@ -400,8 +405,6 @@ describe('satellite app-session route inventory', () => {
       'apps/teach/src/proxy.ts',
       'apps/learn/src/app/[locale]/(auth)/login/page.tsx',
       'apps/teach/src/app/[locale]/login/page.tsx',
-      'apps/learn/src/app/[locale]/page.tsx',
-      'apps/teach/src/app/[locale]/page.tsx',
     ]) {
       const source = readFileSync(resolve(repoRoot, file), 'utf8');
 

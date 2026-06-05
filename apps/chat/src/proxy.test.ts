@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   consumeVerifyTokenRequest: vi.fn(),
   getAppSessionClaimsFromRequest: vi.fn(),
   guardApiProxyRequest: vi.fn(),
+  hasSupportedSupabaseAuthCookie: vi.fn(),
   hasWebAppSessionTokenFromRequest: vi.fn(),
   propagateAuthCookies: vi.fn(),
   refreshAppSessionForRequest: vi.fn(),
@@ -22,6 +23,9 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   getAppSessionClaimsFromRequest: (
     ...args: Parameters<typeof mocks.getAppSessionClaimsFromRequest>
   ) => mocks.getAppSessionClaimsFromRequest(...args),
+  hasSupportedSupabaseAuthCookie: (
+    ...args: Parameters<typeof mocks.hasSupportedSupabaseAuthCookie>
+  ) => mocks.hasSupportedSupabaseAuthCookie(...args),
   hasWebAppSessionTokenFromRequest: (
     ...args: Parameters<typeof mocks.hasWebAppSessionTokenFromRequest>
   ) => mocks.hasWebAppSessionTokenFromRequest(...args),
@@ -83,6 +87,7 @@ describe('Chat proxy auth handoff', () => {
     vi.clearAllMocks();
     mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
     mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
   });
 
@@ -137,5 +142,26 @@ describe('Chat proxy auth handoff', () => {
 
     expect(response.headers.get('location')).toBeNull();
     expect(response.headers.get('x-middleware-next')).toBe('1');
+  });
+
+  it('allows protected pages with a shared Supabase session', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValueOnce({
+      claims: appSessionClaims(),
+      ok: true,
+      refreshed: false,
+      response: NextResponse.next(),
+    });
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValueOnce(true);
+    const request = new NextRequest('https://chat.tuturuuu.localhost/personal');
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
+      requireWebAppSession: true,
+      sessionMode: 'supabase-first',
+      targetApp: 'chat',
+    });
   });
 });

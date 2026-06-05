@@ -132,8 +132,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       hasWebAppSessionTokenFromRequest(requestWithRefresh);
     const hasSupabaseSession =
       hasSupportedSupabaseAuthCookie(requestWithRefresh);
-    const hasSatelliteSession =
-      hasSupabaseSession || Boolean(appSession && hasWebAppSession);
+    const hasSatelliteSession = Boolean(
+      appSession && (hasSupabaseSession || hasWebAppSession)
+    );
 
     if (!hasSatelliteSession) {
       const url = createHivePublicUrl('/login', request);

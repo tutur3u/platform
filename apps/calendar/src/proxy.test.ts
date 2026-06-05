@@ -4,14 +4,19 @@ import { proxy } from './proxy';
 
 const mocks = vi.hoisted(() => {
   const authProxy = vi.fn();
+  const centralizedAuthOptions: unknown[] = [];
 
   return {
     authProxy,
+    centralizedAuthOptions,
     clearSupabaseAuthCookies: vi.fn(
       (_request: NextRequest, response: NextResponse) => response
     ),
     consumeVerifyTokenRequest: vi.fn(),
-    createCentralizedAuthProxy: vi.fn((_options: unknown) => authProxy),
+    createCentralizedAuthProxy: vi.fn((options: unknown) => {
+      centralizedAuthOptions.push(options);
+      return authProxy;
+    }),
     getAppSessionClaimsFromRequest: vi.fn(),
     getCurrentUserDefaultWorkspace: vi.fn(),
     getRequestHeadersWithResponseCookies: vi.fn(),
@@ -92,6 +97,35 @@ describe('Calendar proxy verify-token handoff', () => {
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
     mocks.withForwardedInternalApiAuth.mockReturnValue({
       defaultHeaders: { authorization: 'Bearer app-session' },
+    });
+  });
+
+  it('registers Calendar auth as Supabase-first', () => {
+    const options = mocks.centralizedAuthOptions[0] as
+      | { appSession?: { sessionMode?: string; targetApp?: string } }
+      | undefined;
+
+    expect(options?.appSession).toMatchObject({
+      sessionMode: 'supabase-first',
+      targetApp: 'calendar',
+    });
+  });
+
+  it('refreshes product APIs in Supabase-first mode', async () => {
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+    const request = new NextRequest(
+      'https://calendar.tuturuuu.com/api/v1/calendar/events'
+    );
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
+      sessionMode: 'supabase-first',
+      targetApp: 'calendar',
+    });
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+      prefixBase: 'proxy:calendar:api',
     });
   });
 
