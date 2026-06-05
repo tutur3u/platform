@@ -80,7 +80,7 @@
     "@tiptap/extension-text-align": "3.25.0",
     "@tiptap/extension-underline": "3.25.0",
     "@tiptap/html": "3.25.0",
-    "@tiptap/react": "3.25.0",
+    "@tiptap/react": "3.26.0",
     "@tiptap/starter-kit": "3.25.0",
     "@trpc/client": "^11.17.0",
     "@trpc/react-query": "^11.17.0",
