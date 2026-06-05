@@ -1,5 +1,25 @@
 import type { TaskCardProps } from './task-card';
 
+function areSelectedTaskSetsEqual(
+  previousSelectedTasks?: Set<string>,
+  nextSelectedTasks?: Set<string>
+) {
+  if (previousSelectedTasks === nextSelectedTasks) return true;
+  if (!previousSelectedTasks || !nextSelectedTasks) {
+    return (
+      (previousSelectedTasks?.size ?? 0) === (nextSelectedTasks?.size ?? 0)
+    );
+  }
+
+  if (previousSelectedTasks.size !== nextSelectedTasks.size) return false;
+
+  for (const taskId of previousSelectedTasks) {
+    if (!nextSelectedTasks.has(taskId)) return false;
+  }
+
+  return true;
+}
+
 export function areTaskCardPropsEqual(
   prev: TaskCardProps,
   next: TaskCardProps
@@ -7,6 +27,13 @@ export function areTaskCardPropsEqual(
   if (prev.isOverlay !== next.isOverlay) return false;
   if (prev.isSelected !== next.isSelected) return false;
   if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
+  if (
+    (prev.isSelected || next.isSelected) &&
+    (prev.isMultiSelectMode || next.isMultiSelectMode) &&
+    !areSelectedTaskSetsEqual(prev.selectedTasks, next.selectedTasks)
+  ) {
+    return false;
+  }
   if (prev.boardId !== next.boardId) return false;
   if (prev.workspaceId !== next.workspaceId) return false;
   if (prev.dragDisabled !== next.dragDisabled) return false;
