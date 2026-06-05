@@ -15,6 +15,8 @@ const LOCAL_REQUEST_WEB_ORIGINS = new Set([
   ...LOCAL_WEB_ORIGINS,
   'http://127.0.0.1',
   'http://localhost',
+  'http://tuturuuu.localhost',
+  'http://tuturuuu.localhost:1355',
 ]);
 
 const LOCAL_INTERNAL_WEB_ORIGINS = new Set([

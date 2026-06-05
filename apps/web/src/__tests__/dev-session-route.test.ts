@@ -334,6 +334,40 @@ describe('dev-session route', () => {
     expect(mocks.createClient).toHaveBeenCalledWith(request);
   });
 
+  it('allows production-mode Portless E2E requests after local TLS termination', async () => {
+    mocks.devMode = false;
+    stubLocalE2EEnv({
+      BASE_URL: 'https://tuturuuu.localhost:1355',
+      PORTLESS_URL: 'https://tuturuuu.localhost:1355',
+      SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
+    });
+    mockSuccessfulSession();
+
+    const request = new NextRequest(
+      'http://web-blue:7803/api/auth/dev-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          host: 'tuturuuu.localhost',
+          'x-forwarded-host': 'tuturuuu.localhost',
+          'x-forwarded-proto': 'http',
+        },
+        body: JSON.stringify({
+          email: 'local@tuturuuu.com',
+          locale: 'en',
+        }),
+      }
+    );
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
+    expect(mocks.createClient).toHaveBeenCalledWith(request);
+  });
+
   it('allows production-mode Portless E2E requests on the injected backend port', async () => {
     mocks.devMode = false;
     stubLocalE2EEnv({

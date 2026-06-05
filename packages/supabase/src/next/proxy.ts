@@ -17,6 +17,45 @@ import type { SupabaseJwtPayload } from './user';
 
 export { getMalformedSupabaseAuthCookieNames };
 
+function extractForwardedHeaderValue(value: string | null) {
+  return (
+    value
+      ?.split(',')
+      .map((entry) => entry.trim())
+      .find(Boolean) ?? null
+  );
+}
+
+function resolveRequestUrlFromRequest(
+  request: Pick<NextRequest, 'headers' | 'url'>
+) {
+  const forwardedHost = extractForwardedHeaderValue(
+    request.headers.get('x-forwarded-host')
+  );
+  const host =
+    forwardedHost ?? extractForwardedHeaderValue(request.headers.get('host'));
+
+  if (!host || /[\r\n]/u.test(host)) {
+    return request.url;
+  }
+
+  const forwardedProto = extractForwardedHeaderValue(
+    request.headers.get('x-forwarded-proto')
+  );
+  const fallbackProtocol = (() => {
+    try {
+      return new URL(request.url).protocol.replace(/:$/u, '');
+    } catch {
+      return 'https';
+    }
+  })();
+  const protocol = (forwardedProto ?? fallbackProtocol)
+    .replace(/:$/u, '')
+    .toLowerCase();
+
+  return `${protocol === 'http' ? 'http' : 'https'}://${host}`;
+}
+
 export async function updateSession(request: NextRequest): Promise<{
   res: NextResponse;
   claims: SupabaseJwtPayload | null;
@@ -27,7 +66,8 @@ export async function updateSession(request: NextRequest): Promise<{
     });
 
     const { url, key } = checkEnvVariables({ useSecretKey: false });
-    const cookieOptions = getSupabaseCookieOptions(url, request.url);
+    const requestUrl = resolveRequestUrlFromRequest(request);
+    const cookieOptions = getSupabaseCookieOptions(url, requestUrl);
     const duplicateAuthCookieNames = cookieOptions.domain
       ? getDuplicateSupabaseAuthCookieNames(request.headers.get('cookie'), url)
       : [];

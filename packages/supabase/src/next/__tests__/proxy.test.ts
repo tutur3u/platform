@@ -45,6 +45,9 @@ vi.mock('../common', () => ({
     ...(requestUrl?.includes('tuturuuu.com')
       ? { domain: '.tuturuuu.com' }
       : {}),
+    ...(requestUrl?.includes('tuturuuu.localhost')
+      ? { domain: '.tuturuuu.localhost' }
+      : {}),
     name: `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
     path: '/',
     sameSite: 'lax',
@@ -170,6 +173,30 @@ describe('Supabase Proxy', () => {
     expect(nextResponseMocks.headerAppend).toHaveBeenCalledWith(
       'set-cookie',
       'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0'
+    );
+  });
+
+  it('expires duplicate host-only Supabase cookies for forwarded local E2E hosts', async () => {
+    mockRequest.url = 'http://web-blue:7803';
+    mockRequest.headers = new Map([
+      ['host', 'tuturuuu.localhost'],
+      ['x-forwarded-host', 'tuturuuu.localhost'],
+      ['x-forwarded-proto', 'http'],
+      [
+        'cookie',
+        [
+          'theme=dark',
+          'sb-test-auth-token=shared',
+          'sb-test-auth-token=host',
+        ].join('; '),
+      ],
+    ]);
+
+    await updateSession(mockRequest as any);
+
+    expect(nextResponseMocks.headerAppend).toHaveBeenCalledWith(
+      'set-cookie',
+      'sb-test-auth-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0'
     );
   });
 

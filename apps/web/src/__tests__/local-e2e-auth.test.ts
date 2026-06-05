@@ -122,6 +122,24 @@ describe('isLocalE2EAuthRequestAllowed', () => {
     ).toBe(true);
   });
 
+  it('allows proxied Tuturuuu localhost requests after local TLS termination', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://web-blue:7803/api/auth/dev-session', {
+          host: 'tuturuuu.localhost',
+          'x-forwarded-host': 'tuturuuu.localhost',
+          'x-forwarded-proto': 'http',
+        }),
+        {
+          ...localE2EEnv,
+          BASE_URL: 'https://tuturuuu.localhost:1355',
+          PORTLESS_URL: 'https://tuturuuu.localhost:1355',
+          SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
+        }
+      )
+    ).toBe(true);
+  });
+
   it('allows Portless production backends when the public URL is local', () => {
     expect(
       isLocalE2EAuthRequestAllowed(
