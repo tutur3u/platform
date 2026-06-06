@@ -6399,6 +6399,21 @@
     "total-income": "Tổng thu",
     "year_range": "Khoảng năm"
   },
+  "finance-permission-warning": {
+    "copy_error": "Không thể sao chép yêu cầu",
+    "copy_request": "Sao chép yêu cầu",
+    "copy_success": "Đã sao chép yêu cầu quyền",
+    "description": "Gửi thông tin này cho quản trị viên không gian làm việc để họ thêm quyền cần thiết vào vai trò của bạn.",
+    "dialog_description": "Tài khoản của bạn đang thiếu quyền trong không gian làm việc cho thao tác tài chính này.",
+    "display_name": "Tên hiển thị",
+    "open_request": "Hiển thị yêu cầu quyền",
+    "permissions_to_add": "Quyền cần thêm",
+    "request_template": "Vui lòng thêm các quyền không gian làm việc này cho tôi: {permissions}\nMã người dùng: {userId}\nTên hiển thị: {displayName}",
+    "summary": "Thao tác này cần thêm quyền.",
+    "title": "Cần thêm quyền",
+    "unknown_user": "Người dùng không xác định",
+    "user_id": "Mã người dùng"
+  },
   "finance-recurring": {
     "active_title": "Định kỳ đang hoạt động",
     "amount": "Số tiền",

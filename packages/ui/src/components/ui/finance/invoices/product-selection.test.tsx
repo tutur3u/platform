@@ -1,23 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ProductSelection } from './product-selection';
 import type { Product, SelectedProductItem } from './types';
 
-const mocks = vi.hoisted(() => ({
-  useFinanceConfidentialVisibility: vi.fn(() => ({
-    isConfidential: true,
-  })),
-}));
-
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
-}));
-
-vi.mock('../shared/use-finance-confidential-visibility', () => ({
-  FINANCE_HIDDEN_AMOUNT: '•••••',
-  useFinanceConfidentialVisibility: (
-    ...args: Parameters<typeof mocks.useFinanceConfidentialVisibility>
-  ) => mocks.useFinanceConfidentialVisibility(...args),
 }));
 
 const product: Product = {
@@ -52,14 +39,7 @@ const selectedProducts: SelectedProductItem[] = [
 ];
 
 describe('ProductSelection', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mocks.useFinanceConfidentialVisibility.mockReturnValue({
-      isConfidential: true,
-    });
-  });
-
-  it('masks selected invoice product prices when finance numbers are hidden', () => {
+  it('keeps selected invoice product prices visible on creation flows', () => {
     render(
       <ProductSelection
         products={[product]}
@@ -69,10 +49,12 @@ describe('ProductSelection', () => {
       />
     );
 
+    expect(screen.queryByText('•••••')).not.toBeInTheDocument();
     expect(
-      screen.getAllByText((content) => content.includes('•••••')).length
-    ).toBeGreaterThanOrEqual(2);
-    expect(screen.queryByText(/100.000/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/50.000/)).not.toBeInTheDocument();
+      screen.getAllByText((content) => /100[,.]000/.test(content)).length
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText((content) => /50[,.]000/.test(content)).length
+    ).toBeGreaterThanOrEqual(1);
   });
 });

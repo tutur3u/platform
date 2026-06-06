@@ -6,6 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import SearchBar from '@tuturuuu/ui/custom/search-bar';
 import { Dialog, DialogContent, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { DateRangeFilterWrapper } from '@tuturuuu/ui/finance/shared/date-range-filter-wrapper';
+import type { FinancePermissionRequestUser } from '@tuturuuu/ui/finance/shared/finance-permission-warning-dialog';
 import { CategoryFilterWrapper } from '@tuturuuu/ui/finance/transactions/category-filter-wrapper';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
 import MoneyLoverImportDialog from '@tuturuuu/ui/finance/transactions/money-lover-import-dialog';
@@ -41,6 +42,7 @@ interface TransactionsInfinitePageProps {
   canViewConfidentialCategory?: boolean;
   /** Hide transaction creator (useful for personal workspaces) */
   isPersonalWorkspace?: boolean;
+  permissionRequestUser?: FinancePermissionRequestUser | null;
   showTransactionTypeFilter?: boolean;
 }
 
@@ -62,6 +64,7 @@ export function TransactionsInfinitePage({
   canViewConfidentialDescription,
   canViewConfidentialCategory,
   isPersonalWorkspace,
+  permissionRequestUser,
   showTransactionTypeFilter,
 }: TransactionsInfinitePageProps) {
   const t = useTranslations();
@@ -206,6 +209,7 @@ export function TransactionsInfinitePage({
           canViewConfidentialDescription={canViewConfidentialDescription}
           canViewConfidentialCategory={canViewConfidentialCategory}
           isPersonalWorkspace={isPersonalWorkspace}
+          permissionRequestUser={permissionRequestUser}
         />
       </Suspense>
     </div>

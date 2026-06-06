@@ -6399,6 +6399,21 @@
     "total-income": "Total income",
     "year_range": "Year range"
   },
+  "finance-permission-warning": {
+    "copy_error": "Could not copy the request",
+    "copy_request": "Copy request",
+    "copy_success": "Permission request copied",
+    "description": "Send this information to a workspace admin so they can add the required permission to your role.",
+    "dialog_description": "Your account is missing a workspace permission for this finance action.",
+    "display_name": "Display name",
+    "open_request": "Show permission request",
+    "permissions_to_add": "Permission to add",
+    "request_template": "Please add these workspace permissions for me: {permissions}\nUser ID: {userId}\nDisplay name: {displayName}",
+    "summary": "This action needs an additional permission.",
+    "title": "Permission required",
+    "unknown_user": "Unknown user",
+    "user_id": "User ID"
+  },
   "finance-recurring": {
     "active_title": "Active recurring",
     "amount": "Amount",

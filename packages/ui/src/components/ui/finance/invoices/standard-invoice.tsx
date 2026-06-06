@@ -13,6 +13,10 @@ import { useQueryState } from 'nuqs';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from '../../../../hooks/use-debounce';
 import { useFinanceHref } from '../finance-route-context';
+import {
+  type FinancePermissionRequestUser,
+  FinancePermissionWarningDialog,
+} from '../shared/finance-permission-warning-dialog';
 import { useFinanceConfidentialVisibility } from '../shared/use-finance-confidential-visibility';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
 import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
@@ -51,6 +55,7 @@ interface Props {
   defaultCurrency?: 'VND' | 'USD';
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
+  permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 
 export function StandardInvoice({
@@ -62,6 +67,7 @@ export function StandardInvoice({
   defaultCurrency = 'USD',
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
+  permissionRequestUser,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -139,6 +145,18 @@ export function StandardInvoice({
     canChangeFinanceWallets,
     canSetFinanceWalletsOnCreate,
   });
+  const walletPermissionWarning =
+    isWalletSelectionLocked && permissionRequestUser ? (
+      <FinancePermissionWarningDialog
+        missingPermissions={['set_finance_wallets_on_create']}
+        user={permissionRequestUser}
+        trigger={
+          <Button type="button" variant="outline" size="sm">
+            {t('finance-permission-warning.open_request')}
+          </Button>
+        }
+      />
+    ) : null;
 
   useEffect(() => {
     if (defaultWalletId) {
@@ -472,6 +490,7 @@ export function StandardInvoice({
                   onWalletChange={setSelectedWalletId}
                   onCategoryChange={setSelectedCategoryId}
                   walletDisabled={isWalletSelectionLocked}
+                  walletPermissionWarning={walletPermissionWarning}
                   showPromotion
                   currency={defaultCurrency}
                   promotionsAllowed={promotionsAllowed}

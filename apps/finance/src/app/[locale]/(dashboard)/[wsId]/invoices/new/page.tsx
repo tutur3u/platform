@@ -13,7 +13,7 @@ interface Props {
 export default async function WorkspaceNewInvoicePage({ params }: Props) {
   const { wsId: id } = await params;
   const context = await getFinanceWorkspaceContext(id);
-  if (!context || context.permissions.withoutPermission('create_invoices')) {
+  if (!context) {
     notFound();
   }
 
@@ -21,12 +21,16 @@ export default async function WorkspaceNewInvoicePage({ params }: Props) {
     <Suspense>
       <NewInvoicePage
         wsId={context.wsId}
+        canCreateInvoices={context.permissions.containsPermission(
+          'create_invoices'
+        )}
         canChangeFinanceWallets={context.permissions.containsPermission(
           'change_finance_wallets'
         )}
         canSetFinanceWalletsOnCreate={context.permissions.containsPermission(
           'set_finance_wallets_on_create'
         )}
+        permissionRequestUser={context.user}
       />
     </Suspense>
   );

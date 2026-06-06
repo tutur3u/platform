@@ -34,6 +34,10 @@ const pendingInvoiceRpcPermissionMigrationPath = resolve(
   repoRoot,
   'apps/database/supabase/migrations/20260602173706_harden_pending_invoice_rpcs.sql'
 );
+const pendingInvoicePaidCoverageMigrationPath = resolve(
+  repoRoot,
+  'apps/database/supabase/migrations/20260606092544_subscription_invoice_paid_coverage.sql'
+);
 const bundleRepositoryPath = resolve(
   repoRoot,
   'apps/web/src/lib/inventory/commerce/bundles.ts'
@@ -252,6 +256,27 @@ describe('inventory commerce migration contract', () => {
       expect(source).toContain(`grant execute on function ${signature}`);
     }
 
+    expect(source).toContain("notify pgrst, 'reload schema'");
+  });
+
+  it('uses only completed invoices as pending invoice paid coverage', () => {
+    expect(existsSync(pendingInvoicePaidCoverageMigrationPath)).toBe(true);
+
+    const source = readFileSync(
+      pendingInvoicePaidCoverageMigrationPath,
+      'utf8'
+    );
+
+    expect(source).toContain(
+      'create or replace function public.get_pending_invoices_base'
+    );
+    expect(source).toContain('and fi.completed_at is not null');
+    expect(source).toContain(
+      'revoke all on function public.get_pending_invoices_base'
+    );
+    expect(source).toContain(
+      'grant execute on function public.get_pending_invoices_base'
+    );
     expect(source).toContain("notify pgrst, 'reload schema'");
   });
 });

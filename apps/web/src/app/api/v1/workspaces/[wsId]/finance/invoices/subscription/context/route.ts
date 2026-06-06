@@ -87,9 +87,12 @@ export async function GET(req: Request, { params }: Params) {
       .order('date', { ascending: true }),
     sbAdmin
       .from('finance_invoice_user_groups')
-      .select('user_group_id, finance_invoices!inner(valid_until, created_at)')
+      .select(
+        'user_group_id, finance_invoices!inner(valid_until, created_at, completed_at)'
+      )
       .in('user_group_id', validGroupIds)
       .eq('finance_invoices.customer_id', userId)
+      .not('finance_invoices.completed_at', 'is', null)
       .order('created_at', {
         referencedTable: 'finance_invoices',
         ascending: false,
