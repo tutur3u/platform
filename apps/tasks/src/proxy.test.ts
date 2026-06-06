@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => {
     getRequestHeadersWithResponseCookies: vi.fn(),
     getUserConfig: vi.fn(),
     guardApiProxyRequest: vi.fn(),
+    hasSupportedSupabaseAuthCookie: vi.fn(),
     hasWebAppSessionTokenFromRequest: vi.fn(),
     propagateAuthCookies: vi.fn(),
     refreshAppSessionForRequest: vi.fn(),
@@ -36,6 +37,9 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   getAppSessionClaimsFromRequest: (
     ...args: Parameters<typeof mocks.getAppSessionClaimsFromRequest>
   ) => mocks.getAppSessionClaimsFromRequest(...args),
+  hasSupportedSupabaseAuthCookie: (
+    ...args: Parameters<typeof mocks.hasSupportedSupabaseAuthCookie>
+  ) => mocks.hasSupportedSupabaseAuthCookie(...args),
   hasWebAppSessionTokenFromRequest: (
     ...args: Parameters<typeof mocks.hasWebAppSessionTokenFromRequest>
   ) => mocks.hasWebAppSessionTokenFromRequest(...args),
@@ -105,8 +109,13 @@ describe('Tasks proxy auth mode', () => {
     mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
     mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
     mocks.getRequestHeadersWithResponseCookies.mockReturnValue(new Headers());
+    mocks.getUserConfig.mockResolvedValue(null);
     mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+    mocks.withForwardedInternalApiAuth.mockReturnValue({
+      defaultHeaders: { authorization: 'Bearer satellite-session' },
+    });
   });
 
   it('registers Tasks auth as Supabase-first', () => {
@@ -133,5 +142,33 @@ describe('Tasks proxy auth mode', () => {
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
       prefixBase: 'proxy:tasks:api',
     });
+  });
+
+  it('redirects Supabase-authenticated root requests to personal tasks', async () => {
+    const authRequestHeaders = new Headers({
+      cookie: 'sb-test-auth-token=shared',
+    });
+    mocks.getRequestHeadersWithResponseCookies.mockReturnValue(
+      authRequestHeaders
+    );
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    const request = new NextRequest('https://tasks.tuturuuu.com/');
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBe(
+      'https://tasks.tuturuuu.com/personal/tasks'
+    );
+    expect(mocks.withForwardedInternalApiAuth).toHaveBeenCalledWith(
+      authRequestHeaders
+    );
+    expect(mocks.getUserConfig).toHaveBeenCalledWith(
+      'TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT',
+      expect.objectContaining({
+        defaultHeaders: expect.objectContaining({
+          authorization: 'Bearer satellite-session',
+        }),
+      })
+    );
   });
 });

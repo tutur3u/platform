@@ -114,11 +114,12 @@ export async function updateSession(request: NextRequest): Promise<{
 
     const { data } = await supabase.auth.getClaims();
 
-    getHostOnlyCookieClearHeadersForNames(duplicateAuthCookieNames).forEach(
-      (header) => {
-        supabaseResponse.headers.append('set-cookie', header);
-      }
-    );
+    getHostOnlyCookieClearHeadersForNames(
+      duplicateAuthCookieNames,
+      cookieOptions
+    ).forEach((header) => {
+      supabaseResponse.headers.append('set-cookie', header);
+    });
 
     // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
     // creating a new response object with NextResponse.next() make sure to:

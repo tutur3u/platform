@@ -2,6 +2,8 @@ import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasSupportedSupabaseAuthCookie,
+  hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
   consumeVerifyTokenRequest,
@@ -88,12 +90,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
-  const appSession = getAppSessionClaimsFromRequest(
-    { headers: authRequestHeaders },
-    {
-      targetApp: 'track',
-    }
-  );
+  const authRequest = { headers: authRequestHeaders };
+  const appSession = getAppSessionClaimsFromRequest(authRequest, {
+    targetApp: 'track',
+  });
+  const hasWebAppSession = hasWebAppSessionTokenFromRequest(authRequest);
+  const hasSupabaseSession = hasSupportedSupabaseAuthCookie(authRequest);
+  const hasSatelliteSession =
+    hasSupabaseSession || Boolean(appSession && hasWebAppSession);
 
   // Handle direct navigation to workspace IDs that are personal workspaces
   // Check if the path matches /[locale]/[wsId] or /[wsId] pattern where wsId is a UUID
@@ -152,7 +156,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // If we found a potential workspace ID, check if it's a personal workspace
   if (potentialWorkspaceId) {
     try {
-      if (appSession) {
+      if (hasSatelliteSession) {
         const isPersonal = await isPersonalWorkspace(potentialWorkspaceId);
 
         if (isPersonal) {
@@ -194,33 +198,32 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     (isRootPath || isLocaleRootPath) &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
-    !isMultiAccountFlow
+    !isMultiAccountFlow &&
+    hasSatelliteSession
   ) {
     try {
-      if (appSession) {
-        const defaultWorkspace = await getCurrentUserDefaultWorkspace(
-          withForwardedInternalApiAuth(req.headers)
-        );
+      const defaultWorkspace = await getCurrentUserDefaultWorkspace(
+        withForwardedInternalApiAuth(authRequestHeaders)
+      );
 
-        if (defaultWorkspace) {
-          const target = defaultWorkspace.personal
-            ? 'personal'
-            : defaultWorkspace.id === ROOT_WORKSPACE_ID
-              ? 'internal'
-              : defaultWorkspace.id;
-          // Track app root is the overview page — redirect to /{wsId}
-          const redirectUrl = new URL(`/${target}`, req.nextUrl);
-          const wsRedirect = NextResponse.redirect(redirectUrl);
-          propagateAuthCookies(authRes, wsRedirect);
-          return wsRedirect;
-        }
-
-        // Fallback to personal workspace if no default workspace found
-        const redirectUrl = new URL('/personal', req.nextUrl);
-        const fallbackRedirect = NextResponse.redirect(redirectUrl);
-        propagateAuthCookies(authRes, fallbackRedirect);
-        return fallbackRedirect;
+      if (defaultWorkspace) {
+        const target = defaultWorkspace.personal
+          ? 'personal'
+          : defaultWorkspace.id === ROOT_WORKSPACE_ID
+            ? 'internal'
+            : defaultWorkspace.id;
+        // Track app root is the overview page — redirect to /{wsId}
+        const redirectUrl = new URL(`/${target}`, req.nextUrl);
+        const wsRedirect = NextResponse.redirect(redirectUrl);
+        propagateAuthCookies(authRes, wsRedirect);
+        return wsRedirect;
       }
+
+      // Fallback to personal workspace if no default workspace found
+      const redirectUrl = new URL('/personal', req.nextUrl);
+      const fallbackRedirect = NextResponse.redirect(redirectUrl);
+      propagateAuthCookies(authRes, fallbackRedirect);
+      return fallbackRedirect;
     } catch (error) {
       console.error('Error handling root path redirect:', error);
     }

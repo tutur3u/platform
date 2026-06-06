@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
     getCurrentUserDefaultWorkspace: vi.fn(),
     getRequestHeadersWithResponseCookies: vi.fn(),
     guardApiProxyRequest: vi.fn(),
+    hasSupportedSupabaseAuthCookie: vi.fn(),
     hasWebAppSessionTokenFromRequest: vi.fn(),
     propagateAuthCookies: vi.fn(),
     refreshAppSessionForRequest: vi.fn(),
@@ -35,6 +36,9 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   getAppSessionClaimsFromRequest: (
     ...args: Parameters<typeof mocks.getAppSessionClaimsFromRequest>
   ) => mocks.getAppSessionClaimsFromRequest(...args),
+  hasSupportedSupabaseAuthCookie: (
+    ...args: Parameters<typeof mocks.hasSupportedSupabaseAuthCookie>
+  ) => mocks.hasSupportedSupabaseAuthCookie(...args),
   hasWebAppSessionTokenFromRequest: (
     ...args: Parameters<typeof mocks.hasWebAppSessionTokenFromRequest>
   ) => mocks.hasWebAppSessionTokenFromRequest(...args),
@@ -94,6 +98,7 @@ describe('Calendar proxy verify-token handoff', () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
     mocks.getCurrentUserDefaultWorkspace.mockResolvedValue(null);
     mocks.getRequestHeadersWithResponseCookies.mockReturnValue(new Headers());
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
     mocks.withForwardedInternalApiAuth.mockReturnValue({
       defaultHeaders: { authorization: 'Bearer app-session' },
@@ -153,6 +158,7 @@ describe('Calendar proxy verify-token handoff', () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue({
       sub: 'user-1',
     });
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
     const request = new NextRequest('https://calendar.tuturuuu.com/');
 
     const response = await proxy(request);
@@ -171,6 +177,9 @@ describe('Calendar proxy verify-token handoff', () => {
   });
 
   it('redirects authenticated root requests to the default workspace', async () => {
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue({
+      sub: 'user-1',
+    });
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
     mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
       id: '11111111-1111-4111-8111-111111111111',
@@ -189,6 +198,7 @@ describe('Calendar proxy verify-token handoff', () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue({
       sub: 'user-1',
     });
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
     mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
       id: '22222222-2222-4222-8222-222222222222',
       personal: false,
@@ -206,6 +216,7 @@ describe('Calendar proxy verify-token handoff', () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue({
       sub: 'user-1',
     });
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
     mocks.getCurrentUserDefaultWorkspace.mockRejectedValue(
       new Error('internal api unavailable')
     );
@@ -215,6 +226,30 @@ describe('Calendar proxy verify-token handoff', () => {
 
     expect(response.headers.get('location')).toBe(
       'https://calendar.tuturuuu.com/personal'
+    );
+  });
+
+  it('redirects Supabase-authenticated root requests without a legacy app session', async () => {
+    const authRequestHeaders = new Headers({
+      cookie: 'sb-test-auth-token=shared',
+    });
+    mocks.getRequestHeadersWithResponseCookies.mockReturnValue(
+      authRequestHeaders
+    );
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
+      id: '33333333-3333-4333-8333-333333333333',
+      personal: false,
+    });
+    const request = new NextRequest('https://calendar.tuturuuu.com/');
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBe(
+      'https://calendar.tuturuuu.com/33333333-3333-4333-8333-333333333333'
+    );
+    expect(mocks.withForwardedInternalApiAuth).toHaveBeenCalledWith(
+      authRequestHeaders
     );
   });
 

@@ -24,6 +24,8 @@ const mocks = vi.hoisted(() => {
     getWorkspaces: vi.fn(),
     guardApiProxyRequest: vi.fn(),
     hasRootExternalProjectsAdminPermission: vi.fn(),
+    hasSupportedSupabaseAuthCookie: vi.fn(),
+    hasWebAppSessionTokenFromRequest: vi.fn(),
     isPersonalWorkspace: vi.fn(),
     propagateAuthCookies: vi.fn(),
     refreshAppSessionForRequest: vi.fn(),
@@ -39,6 +41,12 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   getAppSessionClaimsFromRequest: (
     ...args: Parameters<typeof mocks.getAppSessionClaimsFromRequest>
   ) => mocks.getAppSessionClaimsFromRequest(...args),
+  hasSupportedSupabaseAuthCookie: (
+    ...args: Parameters<typeof mocks.hasSupportedSupabaseAuthCookie>
+  ) => mocks.hasSupportedSupabaseAuthCookie(...args),
+  hasWebAppSessionTokenFromRequest: (
+    ...args: Parameters<typeof mocks.hasWebAppSessionTokenFromRequest>
+  ) => mocks.hasWebAppSessionTokenFromRequest(...args),
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
@@ -105,6 +113,11 @@ describe('CMS proxy auth mode', () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
     mocks.getRequestHeadersWithResponseCookies.mockReturnValue(new Headers());
     mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+    mocks.withForwardedInternalApiAuth.mockReturnValue({
+      defaultHeaders: { authorization: 'Bearer satellite-session' },
+    });
   });
 
   it('registers CMS auth as Supabase-first', () => {
@@ -147,6 +160,7 @@ describe('CMS proxy auth mode', () => {
       email: 'user@example.com',
       sub: 'user-1',
     });
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
     mocks.getCurrentUserDefaultWorkspace.mockResolvedValue(null);
     mocks.getWorkspaces.mockResolvedValue([]);
     mocks.getPermissions.mockResolvedValue({
@@ -163,5 +177,30 @@ describe('CMS proxy auth mode', () => {
       { headers: authRequestHeaders },
       { targetApp: 'cms' }
     );
+  });
+
+  it('redirects Supabase-authenticated root requests before locale fallback', async () => {
+    const request = new NextRequest('https://cms.tuturuuu.com/');
+    const authRequestHeaders = new Headers({
+      cookie: 'sb-test-auth-token=shared',
+    });
+    mocks.getRequestHeadersWithResponseCookies.mockReturnValue(
+      authRequestHeaders
+    );
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
+      id: '44444444-4444-4444-8444-444444444444',
+      personal: false,
+    });
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBe(
+      'https://cms.tuturuuu.com/44444444-4444-4444-8444-444444444444'
+    );
+    expect(mocks.withForwardedInternalApiAuth).toHaveBeenCalledWith(
+      authRequestHeaders
+    );
+    expect(mocks.getWorkspaces).not.toHaveBeenCalled();
   });
 });

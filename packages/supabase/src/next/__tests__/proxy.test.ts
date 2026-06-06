@@ -6,6 +6,30 @@ import { updateSession } from '../proxy';
 const nextResponseMocks = vi.hoisted(() => ({
   cookieSet: vi.fn(),
   headerAppend: vi.fn(),
+  hostOnlyClearForNames: vi.fn(
+    (
+      cookieNames: string[],
+      options?: { path?: string; sameSite?: string; secure?: boolean }
+    ) => {
+      const attributes = [
+        `Path=${options?.path ?? '/'}`,
+        'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+        'Max-Age=0',
+      ];
+
+      if (options?.sameSite === 'lax') {
+        attributes.push('SameSite=Lax');
+      }
+
+      if (options?.secure) {
+        attributes.push('Secure');
+      }
+
+      return [...new Set(cookieNames)].map(
+        (name) => `${name}=; ${attributes.join('; ')}`
+      );
+    }
+  ),
 }));
 
 vi.mock('@supabase/ssr', () => ({
@@ -41,31 +65,38 @@ vi.mock('../common', () => ({
     url: 'https://test.supabase.co',
     key: 'test-key',
   }),
-  getSupabaseCookieOptions: (url: string, requestUrl?: string) => ({
-    ...(requestUrl?.includes('tuturuuu.com')
-      ? { domain: '.tuturuuu.com' }
-      : {}),
-    ...(requestUrl?.includes('tuturuuu.localhost')
-      ? { domain: '.tuturuuu.localhost' }
-      : {}),
-    name: `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
-    path: '/',
-    sameSite: 'lax',
-  }),
+  getSupabaseCookieOptions: (url: string, requestUrl?: string) => {
+    const isProductionTuturuuuHost = requestUrl?.includes('tuturuuu.com');
+    const isLocalTuturuuuHost = requestUrl?.includes('tuturuuu.localhost');
+
+    return {
+      ...(isProductionTuturuuuHost ? { domain: '.tuturuuu.com' } : {}),
+      ...(isLocalTuturuuuHost ? { domain: '.tuturuuu.localhost' } : {}),
+      ...(isProductionTuturuuuHost ? { secure: true } : {}),
+      ...(isLocalTuturuuuHost ? { secure: false } : {}),
+      name: `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
+      path: '/',
+      sameSite: 'lax',
+    };
+  },
   getHostOnlyCookieClearHeaders: (
-    cookiesToSet: Array<{ name: string; options: { domain?: string } }>
+    cookiesToSet: Array<{
+      name: string;
+      options: {
+        domain?: string;
+        path?: string;
+        sameSite?: string;
+        secure?: boolean;
+      };
+    }>
   ) =>
     cookiesToSet
       .filter((cookie) => cookie.options.domain)
-      .map(
-        (cookie) =>
-          `${cookie.name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0`
+      .flatMap((cookie) =>
+        nextResponseMocks.hostOnlyClearForNames([cookie.name], cookie.options)
       ),
-  getHostOnlyCookieClearHeadersForNames: (cookieNames: string[]) =>
-    [...new Set(cookieNames)].map(
-      (name) =>
-        `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0`
-    ),
+  getHostOnlyCookieClearHeadersForNames:
+    nextResponseMocks.hostOnlyClearForNames,
   getSupabaseAuthStorageKey: (url: string) =>
     `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
 }));
@@ -151,7 +182,7 @@ describe('Supabase Proxy', () => {
     );
     expect(nextResponseMocks.headerAppend).toHaveBeenCalledWith(
       'set-cookie',
-      'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0'
+      'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax; Secure'
     );
   });
 
@@ -170,9 +201,18 @@ describe('Supabase Proxy', () => {
 
     await updateSession(mockRequest as any);
 
+    expect(nextResponseMocks.hostOnlyClearForNames).toHaveBeenCalledWith(
+      ['sb-test-auth-token.0'],
+      expect.objectContaining({
+        domain: '.tuturuuu.com',
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      })
+    );
     expect(nextResponseMocks.headerAppend).toHaveBeenCalledWith(
       'set-cookie',
-      'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0'
+      'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax; Secure'
     );
   });
 
@@ -194,9 +234,18 @@ describe('Supabase Proxy', () => {
 
     await updateSession(mockRequest as any);
 
+    expect(nextResponseMocks.hostOnlyClearForNames).toHaveBeenCalledWith(
+      ['sb-test-auth-token'],
+      expect.objectContaining({
+        domain: '.tuturuuu.localhost',
+        path: '/',
+        sameSite: 'lax',
+        secure: false,
+      })
+    );
     expect(nextResponseMocks.headerAppend).toHaveBeenCalledWith(
       'set-cookie',
-      'sb-test-auth-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0'
+      'sb-test-auth-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax'
     );
   });
 

@@ -267,8 +267,27 @@ describe('common', () => {
           },
         ])
       ).toEqual([
-        'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
-        'sb-test-auth-token.1=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+        'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax; Secure',
+        'sb-test-auth-token.1=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax; Secure',
+      ]);
+    });
+
+    it('builds non-secure local host-only expiration headers for shared-domain writes', () => {
+      expect(
+        getHostOnlyCookieClearHeaders([
+          {
+            name: 'sb-test-auth-token',
+            options: {
+              domain: '.tuturuuu.localhost',
+              path: '/',
+              sameSite: 'lax',
+              secure: false,
+            },
+            value: 'session',
+          },
+        ])
+      ).toEqual([
+        'sb-test-auth-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax',
       ]);
     });
 
@@ -297,6 +316,18 @@ describe('common', () => {
       ).toEqual([
         'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
         'sb-test-auth-token.1=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+      ]);
+    });
+
+    it('preserves Supabase cookie attributes when expiring duplicate host-only cookies by name', () => {
+      expect(
+        getHostOnlyCookieClearHeadersForNames(['sb-test-auth-token'], {
+          path: '/',
+          sameSite: 'lax',
+          secure: true,
+        })
+      ).toEqual([
+        'sb-test-auth-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax; Secure',
       ]);
     });
 

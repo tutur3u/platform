@@ -2,6 +2,7 @@ import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
@@ -101,6 +102,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     targetApp: 'calendar',
   });
   const hasWebAppSession = hasWebAppSessionTokenFromRequest(authRequest);
+  const hasSupabaseSession = hasSupportedSupabaseAuthCookie(authRequest);
+  const hasSatelliteSession =
+    hasSupabaseSession || Boolean(appSession && hasWebAppSession);
 
   // Handle direct navigation to workspace IDs that are personal workspaces
   // Check if the path matches /[locale]/[wsId] or /[wsId] pattern where wsId is a UUID
@@ -119,7 +123,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       : 0;
   const isLoginPath = pathSegments[loginSegmentIndex] === 'login';
 
-  if (isLoginPath && appSession && hasWebAppSession) {
+  if (isLoginPath && hasSatelliteSession) {
     const nextPath = normalizeAuthRedirectPath(
       req.nextUrl.searchParams.get('next') ??
         req.nextUrl.searchParams.get('nextUrl'),
@@ -179,7 +183,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // If we found a potential workspace ID, check if it's a personal workspace
   if (potentialWorkspaceId) {
     try {
-      if (appSession) {
+      if (hasSatelliteSession) {
         const isPersonal = await isPersonalWorkspace(potentialWorkspaceId);
 
         if (isPersonal) {
@@ -222,7 +226,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
     !isMultiAccountFlow &&
-    (appSession || hasWebAppSession)
+    hasSatelliteSession
   ) {
     try {
       const defaultWorkspace = await getCurrentUserDefaultWorkspace(

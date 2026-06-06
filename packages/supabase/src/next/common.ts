@@ -20,6 +20,11 @@ const SHARED_COOKIE_DOMAINS = [
     secure: false,
   },
 ] as const;
+type HostOnlyCookieClearHeaderOptions = Pick<
+  CookieOptions,
+  'path' | 'sameSite' | 'secure'
+>;
+type HostOnlyCookieClearHeaderInput = string | HostOnlyCookieClearHeaderOptions;
 
 function normalizeUrlLike(value: string | URL | null | undefined) {
   if (!value) return null;
@@ -121,49 +126,105 @@ function isSafeCookieName(name: string) {
   return SAFE_COOKIE_NAME_PATTERN.test(name);
 }
 
+function formatSameSiteCookieAttribute(
+  sameSite: HostOnlyCookieClearHeaderOptions['sameSite']
+) {
+  if (typeof sameSite !== 'string') {
+    return null;
+  }
+
+  switch (sameSite.toLowerCase()) {
+    case 'lax':
+      return 'Lax';
+    case 'strict':
+      return 'Strict';
+    case 'none':
+      return 'None';
+    default:
+      return null;
+  }
+}
+
+function getHostOnlyCookieClearAttributes(
+  optionsOrPath: HostOnlyCookieClearHeaderInput
+) {
+  if (typeof optionsOrPath === 'string') {
+    return {
+      path: getSafeCookiePath(optionsOrPath),
+      sameSite: null,
+      secure: false,
+    };
+  }
+
+  return {
+    path: getSafeCookiePath(optionsOrPath.path),
+    sameSite: formatSameSiteCookieAttribute(optionsOrPath.sameSite),
+    secure: optionsOrPath.secure === true,
+  };
+}
+
 export function getHostOnlyCookieClearHeadersForNames(
   cookieNames: Iterable<string>,
-  path = '/'
+  optionsOrPath: HostOnlyCookieClearHeaderInput = '/'
 ) {
   const seen = new Set<string>();
   const headers: string[] = [];
-  const safePath = getSafeCookiePath(path);
+  const attributes = getHostOnlyCookieClearAttributes(optionsOrPath);
 
   for (const name of cookieNames) {
     if (!isSafeCookieName(name)) {
       continue;
     }
 
-    const key = `${name}\0${safePath}`;
+    const key = [
+      name,
+      attributes.path,
+      attributes.sameSite ?? '',
+      attributes.secure ? 'secure' : '',
+    ].join('\0');
 
     if (seen.has(key)) {
       continue;
     }
 
     seen.add(key);
-    headers.push(
-      `${name}=; Path=${safePath}; Expires=${HOST_ONLY_COOKIE_CLEAR_DATE}; Max-Age=0`
-    );
+    const cookieAttributes = [
+      `Path=${attributes.path}`,
+      `Expires=${HOST_ONLY_COOKIE_CLEAR_DATE}`,
+      'Max-Age=0',
+    ];
+
+    if (attributes.sameSite) {
+      cookieAttributes.push(`SameSite=${attributes.sameSite}`);
+    }
+
+    if (attributes.secure) {
+      cookieAttributes.push('Secure');
+    }
+
+    headers.push(`${name}=; ${cookieAttributes.join('; ')}`);
   }
 
   return headers;
 }
 
 export function getHostOnlyCookieClearHeaders(cookiesToSet: SupabaseCookie[]) {
-  const cookiesByPath = new Map<string, string[]>();
+  const headers = new Set<string>();
 
   for (const cookie of cookiesToSet) {
     if (!cookie.options.domain) {
       continue;
     }
 
-    const path = getSafeCookiePath(cookie.options.path);
-    cookiesByPath.set(path, [...(cookiesByPath.get(path) ?? []), cookie.name]);
+    for (const header of getHostOnlyCookieClearHeadersForNames(
+      [cookie.name],
+      cookie.options
+    )) {
+      headers.add(header);
+    }
   }
 
-  return [...cookiesByPath].flatMap(([path, names]) =>
-    getHostOnlyCookieClearHeadersForNames(names, path)
-  );
+  return [...headers];
 }
 
 export function getSupabaseCookieOptions(
