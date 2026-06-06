@@ -185,6 +185,10 @@ CLI-only APIs.
    optional `requestedScopes`, and `workspaceId` whenever the requested or
    issued scopes include `external-projects:*`, `external-projects:manage`,
    `external-projects:publish`, or `external-projects:read`.
+   This server-to-server route must bypass browser challenges and WAF managed
+   challenges. A Cloudflare response with `cf-mitigated: challenge` is an edge
+   block, not an app-token validation failure, and the external app cannot
+   complete it with `fetch`.
 6. For external-project scopes, Tuturuuu validates that the workspace has an
    enabled external-project binding, that the binding's canonical adapter
    matches the registered external app ID, and that the user has the required

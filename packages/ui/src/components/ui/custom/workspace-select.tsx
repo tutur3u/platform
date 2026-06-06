@@ -10,7 +10,10 @@ import {
   Star,
 } from '@tuturuuu/icons';
 import { updateCurrentUserDefaultWorkspace } from '@tuturuuu/internal-api/users';
-import { acceptWorkspaceInvite } from '@tuturuuu/internal-api/workspaces';
+import {
+  acceptWorkspaceInvite,
+  getWorkspace,
+} from '@tuturuuu/internal-api/workspaces';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
@@ -63,6 +66,7 @@ import {
 import { Input } from '../input';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
+import { mergeWorkspaceSelectWorkspaces } from './workspace-select-helpers';
 
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
@@ -161,17 +165,34 @@ export function WorkspaceSelect({
   const pathname = usePathname();
   const queryClient = useQueryClient();
 
-  const { data: workspaces } = useQuery({
-    queryKey: ['workspaces'],
-    queryFn: fetchWorkspaces,
-    enabled: !!wsId,
-  });
-  const { data: currentUser } = useWorkspaceUser();
-
   const resolvedWorkspaceId =
     wsId && wsId !== PERSONAL_WORKSPACE_SLUG
       ? resolveWorkspaceId(wsId)
       : undefined;
+  const { data: listedWorkspaces } = useQuery({
+    queryKey: ['workspaces'],
+    queryFn: fetchWorkspaces,
+    enabled: !!wsId,
+  });
+  const hasListedCurrentWorkspace = Boolean(
+    resolvedWorkspaceId &&
+      listedWorkspaces?.some(
+        (workspace) => workspace.id === resolvedWorkspaceId
+      )
+  );
+  const { data: currentWorkspaceFallback } = useQuery({
+    queryKey: ['workspace-select-current-workspace', resolvedWorkspaceId],
+    queryFn: async () =>
+      (await getWorkspace(resolvedWorkspaceId!)) as InternalApiWorkspaceSummary,
+    enabled: Boolean(resolvedWorkspaceId && !hasListedCurrentWorkspace),
+    retry: 1,
+  });
+  const workspaces = mergeWorkspaceSelectWorkspaces(
+    listedWorkspaces,
+    currentWorkspaceFallback
+  );
+  const { data: currentUser } = useWorkspaceUser();
+
   const defaultWorkspaceId = currentUser?.default_workspace_id || null;
 
   const form = useForm({
@@ -435,8 +456,11 @@ export function WorkspaceSelect({
   const workspace =
     wsId === PERSONAL_WORKSPACE_SLUG
       ? personalWorkspace
-      : workspaces?.find((ws) => ws.id === resolvedWorkspaceId);
+      : (workspaces.find((ws) => ws.id === resolvedWorkspaceId) ??
+        guestWorkspaces.find((ws) => ws.id === resolvedWorkspaceId));
   if (!wsId) return <div />;
+
+  const hasSelectableWorkspaces = workspaces.length > 0;
 
   async function onJoinByHandleSubmit(
     formData: z.infer<typeof JoinWorkspaceByHandleFormSchema>
@@ -540,10 +564,7 @@ export function WorkspaceSelect({
         }}
       >
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger
-            asChild
-            disabled={!workspaces || workspaces.length === 0}
-          >
+          <PopoverTrigger asChild disabled={!hasSelectableWorkspaces}>
             <Button
               size="xs"
               variant="outline"
@@ -553,7 +574,7 @@ export function WorkspaceSelect({
                 hideLeading ? 'justify-center p-0' : 'justify-start',
                 'w-full whitespace-normal text-start'
               )}
-              disabled={!workspaces || workspaces.length === 0}
+              disabled={!hasSelectableWorkspaces}
             >
               <WorkspaceIcon
                 fallbackLogoUrl={fallbackLogoUrl}

@@ -136,20 +136,47 @@ function getCookieHeaderNames(cookieHeader: string | null | undefined) {
     );
 }
 
+function getSupabaseAuthStorageKeys(
+  urlOrUrls: string | string[] | null | undefined
+) {
+  const urls = Array.isArray(urlOrUrls) ? urlOrUrls : [urlOrUrls];
+  const storageKeys = new Set<string>();
+
+  for (const url of urls) {
+    if (!url) {
+      continue;
+    }
+
+    try {
+      storageKeys.add(getSupabaseAuthStorageKey(url));
+    } catch {
+      // Ignore invalid optional URLs. Required Supabase URLs are validated
+      // before this helper is called.
+    }
+  }
+
+  return storageKeys;
+}
+
 export function getDuplicateSupabaseAuthCookieNames(
   cookieHeader: string | null | undefined,
-  url: string | null | undefined
+  url: string | string[] | null | undefined
 ) {
-  if (!url) {
+  const storageKeys = getSupabaseAuthStorageKeys(url);
+
+  if (storageKeys.size === 0) {
     return [];
   }
 
-  const storageKey = getSupabaseAuthStorageKey(url);
   const seenNames = new Set<string>();
   const duplicateNames = new Set<string>();
 
   for (const name of getCookieHeaderNames(cookieHeader)) {
-    if (getChunkIndex(name, storageKey) === null) {
+    const isSupabaseAuthCookie = [...storageKeys].some(
+      (storageKey) => getChunkIndex(name, storageKey) !== null
+    );
+
+    if (!isSupabaseAuthCookie) {
       continue;
     }
 

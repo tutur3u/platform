@@ -68,8 +68,15 @@ export async function updateSession(request: NextRequest): Promise<{
     const { url, key } = checkEnvVariables({ useSecretKey: false });
     const requestUrl = resolveRequestUrlFromRequest(request);
     const cookieOptions = getSupabaseCookieOptions(url, requestUrl);
+    const duplicateAuthCookieUrls = [
+      url,
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+    ].filter((candidate): candidate is string => Boolean(candidate));
     const duplicateAuthCookieNames = cookieOptions.domain
-      ? getDuplicateSupabaseAuthCookieNames(request.headers.get('cookie'), url)
+      ? getDuplicateSupabaseAuthCookieNames(
+          request.headers.get('cookie'),
+          duplicateAuthCookieUrls
+        )
       : [];
     const supabase = createServerClient<Database>(url, key, {
       cookieOptions,

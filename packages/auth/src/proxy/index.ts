@@ -255,15 +255,33 @@ export function getRequestHeadersWithResponseCookies(
   req: NextRequest,
   response: NextResponse
 ) {
+  const headers = new Headers(req.headers);
+  const overrideHeaders = response.headers
+    .get('x-middleware-override-headers')
+    ?.split(',')
+    .map((header) => header.trim())
+    .filter(Boolean);
+
+  for (const header of overrideHeaders ?? []) {
+    const overrideValue = response.headers.get(
+      `x-middleware-request-${header}`
+    );
+
+    if (overrideValue === null) {
+      headers.delete(header);
+    } else {
+      headers.set(header, overrideValue);
+    }
+  }
+
   const setCookieHeaders = getSetCookieHeaders(response.headers);
 
   if (setCookieHeaders.length === 0) {
-    return req.headers;
+    return headers;
   }
 
-  const headers = new Headers(req.headers);
   const nextCookieHeader = updateCookieHeaderFromSetCookies(
-    req.headers.get('cookie'),
+    headers.get('cookie'),
     setCookieHeaders
   );
 

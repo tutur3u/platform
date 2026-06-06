@@ -64,6 +64,21 @@ describe('auth-cookie-sanitizer', () => {
     ).toEqual(['sb-test-auth-token.0', 'sb-test-auth-token.1']);
   });
 
+  it('detects duplicates for both server and public Supabase storage keys', () => {
+    expect(
+      getDuplicateSupabaseAuthCookieNames(
+        [
+          'sb-host-auth-token.0=shared',
+          'sb-host-auth-token.0=host',
+          'sb-127-auth-token.0=shared',
+          'sb-127-auth-token.0=host',
+          'sb-other-auth-token.0=ignored',
+        ].join('; '),
+        ['http://host.docker.internal:8001', 'http://127.0.0.1:8001']
+      )
+    ).toEqual(['sb-host-auth-token.0', 'sb-127-auth-token.0']);
+  });
+
   it('ignores non-duplicate Supabase auth names from the raw cookie header', () => {
     expect(
       getDuplicateSupabaseAuthCookieNames(

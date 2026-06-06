@@ -134,4 +134,34 @@ describe('CMS proxy auth mode', () => {
       prefixBase: 'proxy:cms:api',
     });
   });
+
+  it('redirects authenticated root requests before locale middleware can fall through to a 404', async () => {
+    const request = new NextRequest('https://cms.tuturuuu.com/');
+    const authRequestHeaders = new Headers({
+      authorization: 'Bearer cms-app-session',
+    });
+    mocks.getRequestHeadersWithResponseCookies.mockReturnValue(
+      authRequestHeaders
+    );
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue({
+      email: 'user@example.com',
+      sub: 'user-1',
+    });
+    mocks.getCurrentUserDefaultWorkspace.mockResolvedValue(null);
+    mocks.getWorkspaces.mockResolvedValue([]);
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: vi.fn().mockReturnValue(false),
+    });
+    mocks.hasRootExternalProjectsAdminPermission.mockReturnValue(false);
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBe(
+      'https://cms.tuturuuu.com/no-access'
+    );
+    expect(mocks.getAppSessionClaimsFromRequest).toHaveBeenCalledWith(
+      { headers: authRequestHeaders },
+      { targetApp: 'cms' }
+    );
+  });
 });

@@ -14,6 +14,7 @@ import {
 import {
   consumeVerifyTokenRequest,
   createCentralizedAuthProxy,
+  getRequestHeadersWithResponseCookies,
   normalizeAuthRedirectPath,
   propagateAuthCookies,
   refreshAppSessionForRequest,
@@ -116,6 +117,47 @@ describe('auth proxy redirect helpers', () => {
       'sb-test-auth-token.0=chunk; Path=/; Domain=.tuturuuu.com; SameSite=lax',
       'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
     ]);
+  });
+
+  it('replays middleware request header overrides before satellite proxies read app sessions', () => {
+    const request = new NextRequest('https://cms.tuturuuu.com/', {
+      headers: {
+        cookie: 'theme=dark',
+      },
+    });
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('authorization', 'Bearer app-session-token');
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+
+    const headers = getRequestHeadersWithResponseCookies(request, response);
+
+    expect(headers.get('authorization')).toBe('Bearer app-session-token');
+    expect(headers.get('cookie')).toBe('theme=dark');
+  });
+
+  it('applies response cookies on top of middleware request header overrides', () => {
+    const request = new NextRequest('https://cms.tuturuuu.com/', {
+      headers: {
+        cookie: 'theme=dark',
+      },
+    });
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('authorization', 'Bearer app-session-token');
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+    response.headers.append('set-cookie', 'theme=light; Path=/');
+
+    const headers = getRequestHeadersWithResponseCookies(request, response);
+
+    expect(headers.get('authorization')).toBe('Bearer app-session-token');
+    expect(headers.get('cookie')).toBe('theme=light');
   });
 
   it('resolves the canonical public origin from forwarded headers', () => {

@@ -20,6 +20,19 @@ function getSupabaseAuthStorageKey(url: string) {
   return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
 }
 
+function getSupabaseAuthStorageKeys() {
+  return [
+    process.env.SUPABASE_SERVER_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    LOCAL_E2E_SUPABASE_URL,
+  ]
+    .filter((url): url is string => Boolean(url))
+    .map(getSupabaseAuthStorageKey)
+    .filter((storageKey, index, storageKeys) => {
+      return storageKeys.indexOf(storageKey) === index;
+    });
+}
+
 async function createLocalDevSession(page: Page) {
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? LOCAL_E2E_SUPABASE_URL;
@@ -123,12 +136,15 @@ test.describe('Shared Supabase auth cookies', () => {
     page,
   }) => {
     const storageKey = await createLocalDevSession(page);
+    const storageKeys = getSupabaseAuthStorageKeys();
     const sharedCookies = (await page.context().cookies(LOCAL_E2E_BASE_URL))
       .filter(
         (cookie) =>
-          (cookie.name === storageKey ||
-            cookie.name.startsWith(`${storageKey}.`)) &&
-          cookie.domain === '.tuturuuu.localhost'
+          storageKeys.some(
+            (candidate) =>
+              cookie.name === candidate ||
+              cookie.name.startsWith(`${candidate}.`)
+          ) && cookie.domain === '.tuturuuu.localhost'
       )
       .map((cookie) => ({
         expires: cookie.expires,
@@ -148,8 +164,9 @@ test.describe('Shared Supabase auth cookies', () => {
         async () =>
           (await page.context().cookies(LOCAL_E2E_BASE_URL)).some(
             (cookie) =>
-              cookie.name.startsWith(storageKey) &&
-              cookie.domain === 'tuturuuu.localhost'
+              storageKeys.some((candidate) =>
+                cookie.name.startsWith(candidate)
+              ) && cookie.domain === 'tuturuuu.localhost'
           ),
         { timeout: 15_000 }
       )
@@ -162,8 +179,9 @@ test.describe('Shared Supabase auth cookies', () => {
         async () =>
           (await page.context().cookies(LOCAL_E2E_BASE_URL)).filter(
             (cookie) =>
-              cookie.name.startsWith(storageKey) &&
-              cookie.domain === 'tuturuuu.localhost'
+              storageKeys.some((candidate) =>
+                cookie.name.startsWith(candidate)
+              ) && cookie.domain === 'tuturuuu.localhost'
           ).length,
         { timeout: 15_000 }
       )
