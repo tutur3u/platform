@@ -84,6 +84,30 @@ describe('PasskeyLoginButton', () => {
     });
   });
 
+  it('passes a supplied captcha token even when Turnstile is optional', async () => {
+    const onAuthenticated = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <PasskeyLoginButton
+        captchaToken="captcha-token"
+        onAuthenticated={onAuthenticated}
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /continue with passkey/i })
+    );
+
+    await waitFor(() => {
+      expect(mockSignInWithPasskey).toHaveBeenCalledWith({
+        options: {
+          captchaToken: 'captcha-token',
+        },
+      });
+      expect(onAuthenticated).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('disables passkey sign-in when required Turnstile verification is missing', () => {
     const onAuthenticated = vi.fn();
 

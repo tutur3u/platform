@@ -38,4 +38,31 @@ describe('resolveTurnstileClientState', () => {
       canRenderWidget: false,
     });
   });
+
+  it('requires Turnstile in development when explicitly configured', () => {
+    expect(
+      resolveTurnstileClientState({
+        devMode: true,
+        requireInDevWhenConfigured: true,
+        siteKey: 'site-key',
+      })
+    ).toEqual({
+      siteKey: 'site-key',
+      isRequired: true,
+      canRenderWidget: true,
+    });
+  });
+
+  it('does not require Turnstile in development when the opt-in has no site key', () => {
+    expect(
+      resolveTurnstileClientState({
+        devMode: true,
+        requireInDevWhenConfigured: true,
+      })
+    ).toEqual({
+      siteKey: undefined,
+      isRequired: false,
+      canRenderWidget: false,
+    });
+  });
 });

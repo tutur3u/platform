@@ -346,6 +346,7 @@ export default function LoginForm() {
 
   const turnstileClientState = resolveTurnstileClientState({
     devMode: DEV_MODE || localE2EAuthBypass,
+    requireInDevWhenConfigured: !localE2EAuthBypass,
     siteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   });
   const turnstileSiteKey = turnstileClientState.siteKey;
