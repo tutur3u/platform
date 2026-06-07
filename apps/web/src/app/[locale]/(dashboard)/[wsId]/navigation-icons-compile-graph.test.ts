@@ -13,9 +13,14 @@ const navigationIconsSource = readFileSync(
 );
 
 describe('[wsId] navigation icons compile graph', () => {
-  it('uses narrow icon subpath imports instead of the package barrel', () => {
+  it('keeps icon modules behind an async registry loader', () => {
     expect(navigationIconsSource).not.toContain("from '@tuturuuu/icons'");
-    expect(navigationIconsSource).toContain("from '@tuturuuu/icons/lucide'");
-    expect(navigationIconsSource).toContain("from '@tuturuuu/icons/lab'");
+    expect(navigationIconsSource).not.toContain(
+      "from '@tuturuuu/icons/lucide'"
+    );
+    expect(navigationIconsSource).not.toContain("from '@tuturuuu/icons/lab'");
+    expect(navigationIconsSource).toContain("import('@tuturuuu/icons/lucide')");
+    expect(navigationIconsSource).toContain("import('@tuturuuu/icons/lab')");
+    expect(navigationIconsSource).toContain('loadNavigationIconRegistry');
   });
 });
