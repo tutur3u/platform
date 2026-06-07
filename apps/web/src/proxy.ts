@@ -21,6 +21,7 @@ import {
   isTrustedProxyBypassRequest,
 } from '@tuturuuu/utils/api-proxy-guard';
 import {
+  PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
@@ -1148,6 +1149,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     !isMultiAccountFlow
   ) {
     const workspaceSlug = pathSegments[hasLocaleInPath ? 1 : 0];
+
+    if (workspaceSlug === PERSONAL_WORKSPACE_SLUG) {
+      return handleLocaleWithAuthCookies(req, authRes);
+    }
 
     if (isWorkspaceHomeRedirectCandidate(workspaceSlug)) {
       try {

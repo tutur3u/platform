@@ -12,33 +12,46 @@ import type {
 const DEFAULT_CRON_STATUS_STALE_MS = 120_000;
 
 function readJsonFile<T>(filePath: string, fallback: T, fsImpl = fs): T {
-  if (!fsImpl.existsSync(filePath)) {
+  if (!fsImpl.existsSync(/*turbopackIgnore: true*/ filePath)) {
     return fallback;
   }
 
   try {
-    return JSON.parse(fsImpl.readFileSync(filePath, 'utf8')) as T;
+    return JSON.parse(
+      fsImpl.readFileSync(/*turbopackIgnore: true*/ filePath, 'utf8')
+    ) as T;
   } catch {
     return fallback;
   }
 }
 
 function writeJsonFile(filePath: string, value: unknown, fsImpl = fs) {
-  fsImpl.mkdirSync(path.dirname(filePath), { recursive: true });
-  fsImpl.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
+  fsImpl.mkdirSync(path.dirname(/*turbopackIgnore: true*/ filePath), {
+    recursive: true,
+  });
+  fsImpl.writeFileSync(
+    /*turbopackIgnore: true*/ filePath,
+    `${JSON.stringify(value, null, 2)}\n`
+  );
 }
 
 function resolveDockerWebRuntimeDir() {
   return (
     process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR ||
-    path.join(process.cwd(), 'tmp', 'docker-web')
+    path.join(/*turbopackIgnore: true*/ process.cwd(), 'tmp', 'docker-web')
   );
 }
 
 function resolveDockerWebControlDir() {
   return (
     process.env.PLATFORM_BLUE_GREEN_CONTROL_DIR ||
-    path.join(process.cwd(), 'tmp', 'docker-web', 'watch', 'control')
+    path.join(
+      /*turbopackIgnore: true*/ process.cwd(),
+      'tmp',
+      'docker-web',
+      'watch',
+      'control'
+    )
   );
 }
 
@@ -48,13 +61,25 @@ function resolveCronConfigPath() {
   }
 
   const candidates = [
-    path.join(process.cwd(), 'apps', 'web', 'cron.config.json'),
-    path.join(process.cwd(), 'cron.config.json'),
+    path.join(
+      /*turbopackIgnore: true*/ process.cwd(),
+      'apps',
+      'web',
+      'cron.config.json'
+    ),
+    path.join(/*turbopackIgnore: true*/ process.cwd(), 'cron.config.json'),
   ];
 
   return (
-    candidates.find((candidate) => fs.existsSync(candidate)) ??
-    path.join(process.cwd(), 'apps', 'web', 'cron.config.json')
+    candidates.find((candidate) =>
+      fs.existsSync(/*turbopackIgnore: true*/ candidate)
+    ) ??
+    path.join(
+      /*turbopackIgnore: true*/ process.cwd(),
+      'apps',
+      'web',
+      'cron.config.json'
+    )
   );
 }
 
@@ -106,17 +131,20 @@ function readExecutionRecords(
   paths = getCronMonitoringPaths(),
   fsImpl = fs
 ): CronExecutionRecord[] {
-  if (!fsImpl.existsSync(paths.executionDir)) {
+  if (!fsImpl.existsSync(/*turbopackIgnore: true*/ paths.executionDir)) {
     return [];
   }
 
   return fsImpl
-    .readdirSync(paths.executionDir)
+    .readdirSync(/*turbopackIgnore: true*/ paths.executionDir)
     .filter((fileName) => fileName.endsWith('.jsonl'))
     .sort()
     .flatMap((fileName) =>
       fsImpl
-        .readFileSync(path.join(paths.executionDir, fileName), 'utf8')
+        .readFileSync(
+          path.join(/*turbopackIgnore: true*/ paths.executionDir, fileName),
+          'utf8'
+        )
         .split(/\r?\n/u)
         .filter(Boolean)
         .flatMap((line) => {
@@ -180,12 +208,12 @@ function readQueuedRunRequests(
   paths = getCronMonitoringPaths(),
   fsImpl = fs
 ): CronRunRecord[] {
-  if (!fsImpl.existsSync(paths.runRequestsDir)) {
+  if (!fsImpl.existsSync(/*turbopackIgnore: true*/ paths.runRequestsDir)) {
     return [];
   }
 
   return fsImpl
-    .readdirSync(paths.runRequestsDir)
+    .readdirSync(/*turbopackIgnore: true*/ paths.runRequestsDir)
     .filter((fileName) => fileName.endsWith('.json'))
     .sort()
     .flatMap((fileName) => {
@@ -336,10 +364,18 @@ export function readCronMonitoringSnapshot({
     retainedExecutionCount: executions.length,
     runs,
     source: {
-      configAvailable: fsImpl.existsSync(paths.configFile),
-      controlAvailable: fsImpl.existsSync(paths.controlFile),
-      runtimeDirAvailable: fsImpl.existsSync(paths.runtimeDir),
-      statusAvailable: fsImpl.existsSync(paths.statusFile),
+      configAvailable: fsImpl.existsSync(
+        /*turbopackIgnore: true*/ paths.configFile
+      ),
+      controlAvailable: fsImpl.existsSync(
+        /*turbopackIgnore: true*/ paths.controlFile
+      ),
+      runtimeDirAvailable: fsImpl.existsSync(
+        /*turbopackIgnore: true*/ paths.runtimeDir
+      ),
+      statusAvailable: fsImpl.existsSync(
+        /*turbopackIgnore: true*/ paths.statusFile
+      ),
     },
     status: normalizeStatusHealth(updatedAt, now),
     updatedAt,

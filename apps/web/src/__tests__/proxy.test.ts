@@ -820,10 +820,8 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('location')).toBeNull();
-    expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
-      'personal',
-      expect.anything()
-    );
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+    expect(mocks.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
     expect(mocks.getUserDefaultWorkspace).not.toHaveBeenCalled();
   });

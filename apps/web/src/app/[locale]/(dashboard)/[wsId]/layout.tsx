@@ -11,7 +11,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import { MantineThemeProvider } from '@/components/mantine-theme-provider';
 import {
@@ -22,12 +21,11 @@ import {
 import { SidebarProvider } from '@/context/sidebar-context';
 import { CalendarPreferencesProvider } from '@/lib/calendar-preferences-provider';
 import NavbarActions from '../../navbar-actions';
-import { SettingsDialogHost } from '../../settings-dialog-host';
 import { UserNav } from '../../user-nav';
 import { DashboardClientProviders } from './dashboard-client-providers';
+import { DashboardSettingsDialogHost } from './dashboard-settings-dialog-host';
 import { WorkspaceNavigationLinks } from './navigation';
 import { filterDashboardNavigationLinks } from './navigation-visibility';
-import PersonalWorkspacePrompt from './personal-workspace-prompt';
 import { Structure } from './structure';
 
 interface LayoutProps {
@@ -37,11 +35,38 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-export default async function Layout({ children, params }: LayoutProps) {
+async function createPersonalWorkspacePrompt(
+  eligibleWorkspaces: { id: string; name: string | null }[]
+) {
+  const [{ getTranslations }, { default: PersonalWorkspacePrompt }] =
+    await Promise.all([
+      import('next-intl/server'),
+      import('./personal-workspace-prompt'),
+    ]);
   const t = await getTranslations();
+
+  return (
+    <PersonalWorkspacePrompt
+      eligibleWorkspaces={eligibleWorkspaces}
+      title={t('common.personal_account')}
+      description={t('common.set_up_personal_workspace')}
+      nameRule={t('common.personal_workspace_naming_rule')}
+      createLabel={t('common.create_workspace')}
+      markLabel={t('common.mark_as_personal')}
+      selectPlaceholder={t('common.select_workspace')}
+    />
+  );
+}
+
+export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
 
-  const workspace = await getWorkspace(id, { useAdmin: true });
+  const [user, workspace] = await Promise.all([
+    getCurrentUser(),
+    getWorkspace(id, { useAdmin: true }),
+  ]);
+
+  if (!user?.id) redirect('/login');
   if (!workspace) notFound();
 
   const isPolarConfigured =
@@ -60,12 +85,6 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,
   });
-
-  const user = await getCurrentUser();
-
-  if (!user?.id) redirect('/login');
-
-  const supabase = await createClient();
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
   const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
@@ -98,6 +117,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   let isGuestWorkspace = false;
 
   if (!workspace.joined) {
+    const supabase = await createClient();
     const sbAdmin = await createAdminClient();
     const {
       loadTaskBoardGuestSharesForWorkspace,
@@ -157,47 +177,52 @@ export default async function Layout({ children, params }: LayoutProps) {
     }
   }
 
-  // Personal workspace prompt data
-  const { data: existingPersonal } = await supabase
-    .from('workspaces')
-    .select('id')
-    .eq('personal', true)
-    .eq('creator_id', user.id)
-    .maybeSingle();
-
   let eligibleWorkspaces: { id: string; name: string | null }[] | undefined;
+  let showPersonalWorkspacePrompt = false;
+  let personalWorkspacePrompt: ReactNode = null;
 
-  if (!existingPersonal) {
-    const { data: candidates } = await supabase
+  if (!workspace.personal && !isGuestWorkspace) {
+    const supabase = await createClient();
+    const { data: existingPersonal } = await supabase
       .from('workspaces')
-      .select('id, name, creator_id, workspace_members(count)')
-      .eq('creator_id', user.id);
-    eligibleWorkspaces = (candidates || []).filter((ws) => {
-      const memberCount = ws.workspace_members?.[0]?.count ?? 0;
-      return memberCount === 1;
-    });
+      .select('id')
+      .eq('personal', true)
+      .eq('creator_id', user.id)
+      .maybeSingle();
+
+    if (!existingPersonal) {
+      const { data: candidates } = await supabase
+        .from('workspaces')
+        .select('id, name, creator_id, workspace_members(count)')
+        .eq('creator_id', user.id);
+      eligibleWorkspaces = (candidates || []).filter((ws) => {
+        const memberCount = ws.workspace_members?.[0]?.count ?? 0;
+        return memberCount === 1;
+      });
+    }
+
+    showPersonalWorkspacePrompt = !existingPersonal;
+
+    if (showPersonalWorkspacePrompt) {
+      personalWorkspacePrompt = await createPersonalWorkspacePrompt(
+        eligibleWorkspaces || []
+      );
+    }
   }
 
-  const SHOW_PERSONAL_WORKSPACE_PROMPT = !existingPersonal && !isGuestWorkspace;
-
-  if (SHOW_PERSONAL_WORKSPACE_PROMPT && eligibleWorkspaces?.length === 0)
-    return (
-      <PersonalWorkspacePrompt
-        eligibleWorkspaces={eligibleWorkspaces || []}
-        title={t('common.personal_account')}
-        description={t('common.set_up_personal_workspace')}
-        nameRule={t('common.personal_workspace_naming_rule')}
-        createLabel={t('common.create_workspace')}
-        markLabel={t('common.mark_as_personal')}
-        selectPlaceholder={t('common.select_workspace')}
-      />
-    );
+  if (showPersonalWorkspacePrompt && eligibleWorkspaces?.length === 0) {
+    return personalWorkspacePrompt;
+  }
 
   const navigationLinks = await WorkspaceNavigationLinks({
     wsId,
     personalOrWsId: workspaceSlug,
     isPersonal: !!workspace.personal,
     isTuturuuuUser: !!user.email?.endsWith('@tuturuuu.com'),
+    user: {
+      email: user.email ?? undefined,
+      id: user.id,
+    },
   });
   const visibleNavigationLinks = filterDashboardNavigationLinks(
     navigationLinks,
@@ -214,19 +239,15 @@ export default async function Layout({ children, params }: LayoutProps) {
       <CalendarPreferencesProvider wsId={wsId}>
         <SidebarProvider initialBehavior={sidebarBehavior}>
           {!isGuestWorkspace && (
-            <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
+            <DashboardSettingsDialogHost
+              wsId={wsId}
+              user={user}
+              workspace={workspace}
+            />
           )}
-          {SHOW_PERSONAL_WORKSPACE_PROMPT && (
+          {personalWorkspacePrompt && (
             <div className="px-2 pt-2 md:px-4 md:pt-3">
-              <PersonalWorkspacePrompt
-                eligibleWorkspaces={eligibleWorkspaces || []}
-                title={t('common.personal_account')}
-                description={t('common.set_up_personal_workspace')}
-                nameRule={t('common.personal_workspace_naming_rule')}
-                createLabel={t('common.create_workspace')}
-                markLabel={t('common.mark_as_personal')}
-                selectPlaceholder={t('common.select_workspace')}
-              />
+              {personalWorkspacePrompt}
             </div>
           )}
           <Structure
@@ -245,6 +266,7 @@ export default async function Layout({ children, params }: LayoutProps) {
                 <NavbarActions
                   renderCommandLauncher={false}
                   renderSettingsDialog={false}
+                  user={user}
                 />
               </Suspense>
             }
@@ -258,6 +280,7 @@ export default async function Layout({ children, params }: LayoutProps) {
                 <UserNav
                   hideMetadata
                   workspace={workspace}
+                  user={user}
                   renderSettingsDialog={false}
                   navLinks={visibleNavigationLinks}
                 />

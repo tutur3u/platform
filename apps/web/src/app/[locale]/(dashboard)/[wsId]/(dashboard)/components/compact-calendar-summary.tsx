@@ -15,7 +15,7 @@ interface CompactCalendarSummaryProps {
 export default async function CompactCalendarSummary({
   wsId,
 }: CompactCalendarSummaryProps) {
-  const supabase = await createAdminClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const t = await getTranslations('dashboard');
 
   const now = new Date();
@@ -31,10 +31,7 @@ export default async function CompactCalendarSummary({
     .order('start_at', { ascending: true })
     .limit(10);
 
-  if (error) {
-    console.error('Error fetching calendar summary:', error);
-    return null;
-  }
+  if (error) return null;
 
   const decryptedEvents = await decryptEventsFromStorage(allEvents || [], wsId);
   const viewableEvents = decryptedEvents.filter((e) => !e.is_encrypted);

@@ -1,20 +1,35 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+
+async function hasAuthenticatedSessionUser() {
+  const [{ resolveAuthenticatedSessionUser }, { createClient }] =
+    await Promise.all([
+      import('@tuturuuu/supabase/next/auth-session-user'),
+      import('@tuturuuu/supabase/next/server'),
+    ]);
+  const supabase = await createClient();
+
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+  return Boolean(user);
+}
 
 export default async function NavbarActions({
   hideMetadata = false,
   renderCommandLauncher = true,
   renderSettingsDialog = true,
+  user: providedUser,
 }: {
   hideMetadata?: boolean;
   renderCommandLauncher?: boolean;
   renderSettingsDialog?: boolean;
+  user?: WorkspaceUser | null;
 }) {
-  const supabase = await createClient();
+  const hasUser =
+    providedUser === undefined
+      ? await hasAuthenticatedSessionUser()
+      : Boolean(providedUser);
 
-  const { user: sbUser } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (sbUser) {
+  if (hasUser) {
     const [{ UserNavWrapper }, { default: NotificationPopover }] =
       await Promise.all([
         import('./user-nav-wrapper'),
@@ -28,6 +43,7 @@ export default async function NavbarActions({
             <div className="flex-1">
               <UserNavWrapper
                 hideMetadata={hideMetadata}
+                user={providedUser}
                 renderCommandLauncher={renderCommandLauncher}
                 renderSettingsDialog={renderSettingsDialog}
               />

@@ -1,10 +1,10 @@
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 const MiraDashboardClient = dynamic(
   () => import('./components/mira-dashboard-client'),
@@ -79,41 +79,46 @@ interface Props {
 }
 
 export default async function WorkspaceHomePage({ params }: Props) {
+  const { wsId: routeWsId } = await params;
+  const currentUser = await getCurrentUser();
+  if (!currentUser) notFound();
+
+  const workspace = await getWorkspace(routeWsId, {
+    useAdmin: true,
+    user: {
+      email: currentUser.email ?? null,
+      id: currentUser.id,
+    },
+  });
+  if (!workspace) notFound();
+
+  const wsId = workspace.id;
+  const isCreator = workspace.creator_id === currentUser.id;
+  await ensureDashboardAccess({ isCreator, wsId });
+
   return (
-    <WorkspaceWrapper params={params} fallback={<LoadingStatisticCard />}>
-      {async ({ workspace, wsId }) => {
-        const currentUser = await getCurrentUser();
-        if (!currentUser) notFound();
+    <>
+      {!workspace.personal && (
+        <Suspense fallback={null}>
+          <PermissionSetupBannerSlot wsId={wsId} isCreator={isCreator} />
+        </Suspense>
+      )}
 
-        const isCreator = workspace.creator_id === currentUser.id;
-        await ensureDashboardAccess({ isCreator, wsId });
+      {!workspace.personal && (
+        <Suspense fallback={null}>
+          <UserGroupQuickActionsSlot wsId={wsId} />
+        </Suspense>
+      )}
 
-        return (
-          <>
-            {!workspace.personal && (
-              <Suspense fallback={null}>
-                <PermissionSetupBannerSlot wsId={wsId} isCreator={isCreator} />
-              </Suspense>
-            )}
-
-            {!workspace.personal && (
-              <Suspense fallback={null}>
-                <UserGroupQuickActionsSlot wsId={wsId} />
-              </Suspense>
-            )}
-
-            <MiraDashboardClient
-              currentUser={currentUser}
-              initialAssistantName={DEFAULT_ASSISTANT_NAME}
-              wsId={wsId}
-            >
-              <Suspense fallback={<LoadingStatisticCard />}>
-                <DashboardInsightsSlot wsId={wsId} userId={currentUser.id} />
-              </Suspense>
-            </MiraDashboardClient>
-          </>
-        );
-      }}
-    </WorkspaceWrapper>
+      <MiraDashboardClient
+        currentUser={currentUser}
+        initialAssistantName={DEFAULT_ASSISTANT_NAME}
+        wsId={wsId}
+      >
+        <Suspense fallback={<LoadingStatisticCard />}>
+          <DashboardInsightsSlot wsId={wsId} userId={currentUser.id} />
+        </Suspense>
+      </MiraDashboardClient>
+    </>
   );
 }
