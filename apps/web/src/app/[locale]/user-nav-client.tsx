@@ -14,15 +14,9 @@ import {
   User,
   Users,
 } from '@tuturuuu/icons/lucide';
-import {
-  type CommandLauncherNavItem,
-  GlobalCommandLauncher,
-  openGlobalCommandLauncher,
-} from '@tuturuuu/satellite/command-launcher';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,19 +31,15 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
-import { useCallback, useContext, useMemo, useState } from 'react';
-import { AccountSwitcherModal } from '@/components/account-switcher';
-import { PlatformCommandExtraSections } from '@/components/command/platform-extra-sections';
-import { flattenNavigation } from '@/components/command/utils/use-navigation-data';
+import { useCallback, useContext, useState } from 'react';
 import type { NavLink } from '@/components/navigation';
-import { SettingsDialog } from '@/components/settings/settings-dialog';
 import { useSettingsDialogShortcut } from '@/components/settings/use-settings-dialog-shortcut';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { SidebarContext } from '@/context/sidebar-context';
@@ -64,6 +54,28 @@ import MeetTogetherMenuItem from './meet-together-menu-item';
 import ReportProblemMenuItem from './report-problem-menu-item';
 import RewiseMenuItem from './rewise-menu-item';
 import UserPresenceIndicator from './user-presence-indicator';
+
+const AccountSwitcherModal = dynamic(
+  () =>
+    import('@/components/account-switcher').then(
+      (module) => module.AccountSwitcherModal
+    ),
+  { ssr: false }
+);
+const UserNavCommandLauncher = dynamic(
+  () =>
+    import('./user-nav-command-launcher').then(
+      (module) => module.UserNavCommandLauncher
+    ),
+  { ssr: false }
+);
+const UserNavSettingsDialog = dynamic(
+  () =>
+    import('./user-nav-settings-dialog').then(
+      (module) => module.UserNavSettingsDialog
+    ),
+  { ssr: false }
+);
 
 export default function UserNavClient({
   user,
@@ -115,27 +127,6 @@ export default function UserNavClient({
   });
 
   const wsId = workspace?.id ?? resolvedWorkspace?.id;
-  const commandNavItems = useMemo<CommandLauncherNavItem[]>(
-    () =>
-      flattenNavigation(navLinks).map((item) => ({
-        aliases: item.aliases,
-        external: item.external,
-        group: item.productTitle,
-        href: item.href,
-        icon: item.icon,
-        keywords: item.path,
-        subtitle: item.path.join(' / '),
-        title: item.title,
-      })),
-    [navLinks]
-  );
-  const resolvePlatformWorkspacePath = useCallback(
-    (targetWorkspace: { id: string; personal?: boolean | null }) =>
-      `/${locale ?? 'en'}/${toWorkspaceSlug(targetWorkspace.id, {
-        personal: Boolean(targetWorkspace.personal),
-      })}`,
-    [locale]
-  );
 
   const handleSettingsOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -172,6 +163,12 @@ export default function UserNavClient({
     [setSettingsQuery]
   );
 
+  const openCommandLauncher = useCallback(() => {
+    void import('@tuturuuu/satellite/command-launcher').then((module) => {
+      module.openGlobalCommandLauncher();
+    });
+  }, []);
+
   useSettingsDialogShortcut({
     enabled: Boolean(user && renderSettingsDialog),
     onOpen: openSettingsDialog,
@@ -180,41 +177,30 @@ export default function UserNavClient({
   return (
     <>
       {renderCommandLauncher && (
-        <GlobalCommandLauncher
-          currentApp="platform"
-          currentWorkspaceId={wsId}
-          extraSections={({ onClose, query, setQuery }) => (
-            <PlatformCommandExtraSections
-              navLinks={navLinks}
-              onApplySearch={setQuery}
-              onClose={onClose}
-              query={query}
-              workspaceId={wsId}
-              workspaceName={(workspace ?? resolvedWorkspace)?.name}
-            />
-          )}
-          navItems={commandNavItems}
-          workspacePathResolver={resolvePlatformWorkspacePath}
+        <UserNavCommandLauncher
+          locale={locale}
+          navLinks={navLinks}
+          workspace={workspace ?? resolvedWorkspace}
+          wsId={wsId}
         />
       )}
       {user && renderSettingsDialog && (
-        <Dialog
+        <UserNavSettingsDialog
+          defaultTab={requestedSettingsTab}
+          linkedProvider={linkedProvider}
           open={requestedSettingsOpen}
           onOpenChange={handleSettingsOpenChange}
-        >
-          <SettingsDialog
-            wsId={wsId}
-            user={user}
-            workspace={workspace ?? resolvedWorkspace}
-            defaultTab={requestedSettingsTab}
-            linkedProvider={linkedProvider}
-          />
-        </Dialog>
+          user={user}
+          workspace={workspace ?? resolvedWorkspace}
+          wsId={wsId}
+        />
       )}
-      <AccountSwitcherModal
-        open={accountSwitcherOpen}
-        onOpenChange={setAccountSwitcherOpen}
-      />
+      {accountSwitcherOpen && (
+        <AccountSwitcherModal
+          open={accountSwitcherOpen}
+          onOpenChange={setAccountSwitcherOpen}
+        />
+      )}
 
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
@@ -280,7 +266,7 @@ export default function UserNavClient({
           <DropdownMenuGroup>
             {wsId && (
               <>
-                <DropdownMenuItem onSelect={openGlobalCommandLauncher}>
+                <DropdownMenuItem onSelect={openCommandLauncher}>
                   <Terminal className="h-4 w-4 text-dynamic-blue" />
                   <span>Command Palette</span>
                   <DropdownMenuShortcut>{modKey}K</DropdownMenuShortcut>

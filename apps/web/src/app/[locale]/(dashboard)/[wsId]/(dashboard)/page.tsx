@@ -2,13 +2,46 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import DashboardInsights from './components/dashboard-insights';
-import MiraDashboardClient from './components/mira-dashboard-client';
-import PermissionSetupBanner from './permission-setup-banner';
-import UserGroupQuickActions from './user-groups/quick-actions';
+
+const MiraDashboardClient = dynamic(
+  () => import('./components/mira-dashboard-client'),
+  {
+    loading: () => <LoadingStatisticCard />,
+  }
+);
+const PermissionSetupBanner = dynamic(
+  () => import('./permission-setup-banner'),
+  {
+    loading: () => null,
+  }
+);
+
+async function DashboardInsightsSlot({
+  userId,
+  wsId,
+}: {
+  userId: string;
+  wsId: string;
+}) {
+  const { default: DashboardInsights } = await import(
+    './components/dashboard-insights'
+  );
+
+  return <DashboardInsights wsId={wsId} userId={userId} />;
+}
+
+async function UserGroupQuickActionsSlot({ wsId }: { wsId: string }) {
+  const { default: UserGroupQuickActions } = await import(
+    './user-groups/quick-actions'
+  );
+
+  return <UserGroupQuickActions wsId={wsId} />;
+}
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -51,14 +84,18 @@ export default async function WorkspaceHomePage({ params }: Props) {
               />
             )}
 
-            <UserGroupQuickActions wsId={wsId} />
+            <Suspense fallback={null}>
+              <UserGroupQuickActionsSlot wsId={wsId} />
+            </Suspense>
 
             <MiraDashboardClient
               currentUser={currentUser}
               initialAssistantName={assistantName}
               wsId={wsId}
             >
-              <DashboardInsights wsId={wsId} userId={currentUser.id} />
+              <Suspense fallback={<LoadingStatisticCard />}>
+                <DashboardInsightsSlot wsId={wsId} userId={currentUser.id} />
+              </Suspense>
             </MiraDashboardClient>
           </>
         );

@@ -1,7 +1,3 @@
-import {
-  loadTaskBoardGuestSharesForWorkspace,
-  summarizeTaskBoardGuestShares,
-} from '@tuturuuu/apis/tu-do/board-access';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import {
   createAdminClient,
@@ -22,7 +18,6 @@ import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import { MantineThemeProvider } from '@/components/mantine-theme-provider';
-import { WorkspacePreparing } from '@/components/workspace-preparing';
 import {
   PROD_MODE,
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
@@ -30,11 +25,9 @@ import {
 } from '@/constants/common';
 import { SidebarProvider } from '@/context/sidebar-context';
 import { CalendarPreferencesProvider } from '@/lib/calendar-preferences-provider';
-import { resolveWorkspaceBrandingUrlsForNext } from '@/lib/workspace-branding-image-url';
 import NavbarActions from '../../navbar-actions';
 import { SettingsDialogHost } from '../../settings-dialog-host';
 import { UserNav } from '../../user-nav';
-import InvitationCard from './invitation-card';
 import { WorkspaceNavigationLinks } from './navigation';
 import { filterDashboardNavigationLinks } from './navigation-visibility';
 import { PersonalWorkspaceCollaborationBanner } from './personal-workspace-collaboration-banner';
@@ -60,6 +53,10 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   // Auto-assign free subscription if workspace has no active subscription
   if (isPolarConfigured && workspace.tier === null) {
+    const { WorkspacePreparing } = await import(
+      '@/components/workspace-preparing'
+    );
+
     return <WorkspacePreparing wsId={workspace.id} />;
   }
 
@@ -106,6 +103,10 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   if (!workspace.joined) {
     const sbAdmin = await createAdminClient();
+    const {
+      loadTaskBoardGuestSharesForWorkspace,
+      summarizeTaskBoardGuestShares,
+    } = await import('@tuturuuu/apis/tu-do/board-access');
     const guestShares = await loadTaskBoardGuestSharesForWorkspace({
       sbAdmin,
       user: {
@@ -135,6 +136,13 @@ export default async function Layout({ children, params }: LayoutProps) {
 
       const { allowGuestSelfJoin } = inviteEligibility;
 
+      const [
+        { resolveWorkspaceBrandingUrlsForNext },
+        { default: InvitationCard },
+      ] = await Promise.all([
+        import('@/lib/workspace-branding-image-url'),
+        import('./invitation-card'),
+      ]);
       const branding = await resolveWorkspaceBrandingUrlsForNext(sbAdmin, {
         logo_url: workspace.logo_url,
         avatar_url: workspace.avatar_url,

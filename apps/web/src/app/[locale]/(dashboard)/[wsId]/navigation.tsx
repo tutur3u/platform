@@ -1,8 +1,4 @@
 import {
-  loadTaskBoardGuestSharesForWorkspace,
-  summarizeTaskBoardGuestShares,
-} from '@tuturuuu/apis/tu-do/board-access';
-import {
   Archive,
   BadgeDollarSign,
   Banknote,
@@ -217,6 +213,10 @@ export async function WorkspaceNavigationLinks({
     if (!user) notFound();
 
     const sbAdmin = await createAdminClient({ noCookie: true });
+    const {
+      loadTaskBoardGuestSharesForWorkspace,
+      summarizeTaskBoardGuestShares,
+    } = await import('@tuturuuu/apis/tu-do/board-access');
     const guestShares = await loadTaskBoardGuestSharesForWorkspace({
       sbAdmin,
       user,

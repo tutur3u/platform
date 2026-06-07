@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useActiveTimerSession } from '@tuturuuu/hooks/hooks/use-active-timer-session';
 import { Archive, ArrowLeft } from '@tuturuuu/icons';
 import {
   getUserConfig,
@@ -22,6 +21,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -34,13 +34,11 @@ import {
   useRef,
   useState,
 } from 'react';
-import { ActiveTimerIndicator } from '@/components/active-timer-indicator';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { Nav } from './nav';
 import { filterDashboardNavigationLinks } from './navigation-visibility';
-import { RecentSidebarItems } from './recent-sidebar-items';
 import {
   applySidebarNavigationPreferences,
   createSidebarNavigationLayoutConfigForHiddenState,
@@ -53,6 +51,21 @@ import {
   serializeSidebarNavigationLayoutConfig,
 } from './sidebar-navigation-preferences';
 import { WorkspaceSelect } from './workspace-select';
+
+const RecentSidebarItems = dynamic(
+  () =>
+    import('./recent-sidebar-items').then(
+      (module) => module.RecentSidebarItems
+    ),
+  { ssr: false }
+);
+const SidebarActiveTimer = dynamic(
+  () =>
+    import('./sidebar-active-timer').then(
+      (module) => module.SidebarActiveTimer
+    ),
+  { ssr: false }
+);
 
 interface StructureProps {
   wsId: string;
@@ -419,9 +432,6 @@ export function Structure({
       t,
     ]
   );
-
-  // Fetch active timer session
-  const { data: activeTimerSession } = useActiveTimerSession(wsId);
 
   useEffect(() => {
     setInitialized(true);
@@ -791,16 +801,7 @@ export function Structure({
 
   const sidebarContent = (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      {/* Active Timer Indicator */}
-      {activeTimerSession && (
-        <div className="p-2 pt-0">
-          <ActiveTimerIndicator
-            wsId={wsId}
-            session={activeTimerSession}
-            isCollapsed={isCollapsed}
-          />
-        </div>
-      )}
+      <SidebarActiveTimer wsId={wsId} isCollapsed={isCollapsed} />
 
       <div className="relative min-h-0 flex-1">
         <div
@@ -822,13 +823,14 @@ export function Structure({
                 onSubMenuClick={handleNavChange}
                 onClick={handleSidebarNavigation}
               />
-              <RecentSidebarItems
-                enabled={recentNavigationEnabled}
-                wsId={wsId}
-                isCollapsed={isCollapsed}
-                links={filteredRootLinks}
-                onNavigate={handleSidebarNavigation}
-              />
+              {recentNavigationEnabled && (
+                <RecentSidebarItems
+                  wsId={wsId}
+                  isCollapsed={isCollapsed}
+                  links={filteredRootLinks}
+                  onNavigate={handleSidebarNavigation}
+                />
+              )}
             </div>
           ) : (
             <>
@@ -860,13 +862,14 @@ export function Structure({
                     onSubMenuClick={handleNavChange}
                     onClick={handleSidebarNavigation}
                   />
-                  <RecentSidebarItems
-                    enabled={recentNavigationEnabled}
-                    wsId={wsId}
-                    isCollapsed={isCollapsed}
-                    links={filteredRootLinks}
-                    onNavigate={handleSidebarNavigation}
-                  />
+                  {recentNavigationEnabled && (
+                    <RecentSidebarItems
+                      wsId={wsId}
+                      isCollapsed={isCollapsed}
+                      links={filteredRootLinks}
+                      onNavigate={handleSidebarNavigation}
+                    />
+                  )}
                 </div>
               )}
             </>

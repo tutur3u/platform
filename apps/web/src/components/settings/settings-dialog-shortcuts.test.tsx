@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { fireEvent, render } from '@testing-library/react';
+import { fireEvent, render, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsDialogHost } from '../../app/[locale]/settings-dialog-host';
@@ -280,7 +280,7 @@ describe('settings dialog shortcut', () => {
     expectSettingsQueryOpened();
   });
 
-  it('only mounts one command launcher when the secondary user nav disables it', () => {
+  it('only mounts one command launcher when the secondary user nav disables it', async () => {
     render(
       <>
         <UserNavClient
@@ -297,6 +297,8 @@ describe('settings dialog shortcut', () => {
       </>
     );
 
-    expect(globalCommandLauncherMock).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(globalCommandLauncherMock).toHaveBeenCalledTimes(1);
+    });
   });
 });
