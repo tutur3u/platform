@@ -1,7 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Brain, CheckIcon, ChevronDown, User, Users } from '@tuturuuu/icons';
+import {
+  Brain,
+  CheckIcon,
+  ChevronDown,
+  User,
+  Users,
+} from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -14,6 +20,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { fetchWorkspaces } from '../../actions';
@@ -22,7 +29,13 @@ import {
   WORKSPACE_CONTEXT_EVENT,
   WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX,
 } from './mira-chat-constants';
-import MiraChatPanel from './mira-chat-panel';
+
+const MiraChatPanel = dynamic(() => import('./mira-chat-panel'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-0 flex-1 animate-pulse flex-col rounded-lg bg-foreground/5" />
+  ),
+});
 
 interface MiraDashboardClientProps {
   currentUser: {

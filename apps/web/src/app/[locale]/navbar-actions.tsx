@@ -1,13 +1,6 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
-import { LanguageWrapper } from '@tuturuuu/ui/custom/language-wrapper';
-import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
-import { getTranslations } from 'next-intl/server';
-import { LOCALE_COOKIE_NAME } from '@/constants/common';
-import { defaultLocale, supportedLocales } from '@/i18n/routing';
-import NotificationPopover from './notification-popover';
-import { UserNavWrapper } from './user-nav-wrapper';
+import PublicNavbarActions from './public-navbar-actions';
 
 export default async function NavbarActions({
   hideMetadata = false,
@@ -18,43 +11,34 @@ export default async function NavbarActions({
   renderCommandLauncher?: boolean;
   renderSettingsDialog?: boolean;
 }) {
-  const t = await getTranslations();
   const supabase = await createClient();
 
   const { user: sbUser } = await resolveAuthenticatedSessionUser(supabase);
 
-  return (
-    <div className="relative flex w-full">
-      <div className="flex w-full flex-col gap-2">
-        {/* Main actions row */}
-        <div className="flex w-full items-center gap-1">
-          {sbUser ? (
-            <>
-              <div className="flex-1">
-                <UserNavWrapper
-                  hideMetadata={hideMetadata}
-                  renderCommandLauncher={renderCommandLauncher}
-                  renderSettingsDialog={renderSettingsDialog}
-                />
-              </div>
-              <NotificationPopover />
-            </>
-          ) : (
-            <>
-              <GetStartedButton
-                text={t('common.get-started')}
-                href="/onboarding"
+  if (sbUser) {
+    const [{ UserNavWrapper }, { default: NotificationPopover }] =
+      await Promise.all([
+        import('./user-nav-wrapper'),
+        import('./notification-popover'),
+      ]);
+
+    return (
+      <div className="relative flex w-full">
+        <div className="flex w-full flex-col gap-2">
+          <div className="flex w-full items-center gap-1">
+            <div className="flex-1">
+              <UserNavWrapper
+                hideMetadata={hideMetadata}
+                renderCommandLauncher={renderCommandLauncher}
+                renderSettingsDialog={renderSettingsDialog}
               />
-              <LanguageWrapper
-                cookieName={LOCALE_COOKIE_NAME}
-                defaultLocale={defaultLocale}
-                supportedLocales={supportedLocales}
-              />
-              <ThemeToggle />
-            </>
-          )}
+            </div>
+            <NotificationPopover />
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return <PublicNavbarActions />;
 }

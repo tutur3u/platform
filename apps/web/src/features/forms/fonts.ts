@@ -1,236 +1,73 @@
-import {
-  Barlow,
-  Be_Vietnam_Pro,
-  DM_Serif_Display,
-  Fira_Sans,
-  Fraunces,
-  Inter,
-  Lora,
-  Manrope,
-  Merriweather,
-  Newsreader,
-  Noto_Sans,
-  Noto_Serif,
-  Nunito_Sans,
-  Playfair_Display,
-  Plus_Jakarta_Sans,
-  Source_Sans_3,
-  Source_Serif_4,
-  Space_Grotesk,
-  Spectral,
-} from 'next/font/google';
 import type { CSSProperties } from 'react';
 import type { FormThemeInput } from './schema';
 
 type FormFontId = FormThemeInput['headlineFontId'];
 
-const barlow = Barlow({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-form-barlow',
-  weight: ['400', '500', '600', '700'],
-});
-
-const beVietnamPro = Be_Vietnam_Pro({
-  subsets: ['latin', 'vietnamese'],
-  display: 'swap',
-  variable: '--font-form-be-vietnam-pro',
-  weight: ['400', '500', '600', '700'],
-});
-
-const dmSerifDisplay = DM_Serif_Display({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-form-dm-serif-display',
-  weight: ['400'],
-});
-
-const firaSans = Fira_Sans({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-form-fira-sans',
-  weight: ['400', '500', '600', '700'],
-});
-
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-form-fraunces',
-});
-
-const inter = Inter({
-  subsets: ['latin', 'vietnamese'],
-  display: 'swap',
-  variable: '--font-form-inter',
-  weight: ['400', '500', '600', '700'],
-});
-
-const lora = Lora({
-  subsets: ['latin', 'vietnamese'],
-  display: 'swap',
-  variable: '--font-form-lora',
-  weight: ['400', '500', '600', '700'],
-});
-
-const manrope = Manrope({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-form-manrope',
-});
-
-const merriweather = Merriweather({
-  subsets: ['latin', 'vietnamese'],
-  display: 'swap',
-  variable: '--font-form-merriweather',
-  weight: ['300', '400', '700'],
-});
-
-const newsreader = Newsreader({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-form-newsreader',
-});
-
-const notoSans = Noto_Sans({
-  subsets: ['latin', 'vietnamese'],
-  display: 'swap',
-  variable: '--font-form-noto-sans',
-  weight: ['400', '500', '600', '700'],
-});
-
-const notoSerif = Noto_Serif({
-  subsets: ['latin', 'vietnamese'],
-  display: 'swap',
-  variable: '--font-form-noto-serif',
-  weight: ['400', '500', '600', '700'],
-});
-
-const nunitoSans = Nunito_Sans({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-form-nunito-sans',
-});
-
-const playfairDisplay = Playfair_Display({
-  subsets: ['latin', 'vietnamese'],
-  display: 'swap',
-  variable: '--font-form-playfair-display',
-  weight: ['400', '500', '600', '700'],
-});
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin', 'vietnamese'],
-  display: 'swap',
-  variable: '--font-form-plus-jakarta-sans',
-  weight: ['400', '500', '600', '700', '800'],
-});
-
-const sourceSans3 = Source_Sans_3({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-form-source-sans-3',
-});
-
-const sourceSerif4 = Source_Serif_4({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-form-source-serif-4',
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-form-space-grotesk',
-});
-
-const spectral = Spectral({
-  subsets: ['latin', 'vietnamese'],
-  display: 'swap',
-  variable: '--font-form-spectral',
-  weight: ['400', '500', '600', '700'],
-});
+const SANS_STACK =
+  'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+const SERIF_STACK = 'ui-serif, Georgia, Cambria, "Times New Roman", serif';
 
 const FONT_STYLE_MAP: Record<FormFontId, CSSProperties> = {
   barlow: {
-    fontFamily: 'var(--font-form-barlow)',
+    fontFamily: `Barlow, ${SANS_STACK}`,
   },
   'be-vietnam-pro': {
-    fontFamily: 'var(--font-form-be-vietnam-pro)',
+    fontFamily: `"Be Vietnam Pro", ${SANS_STACK}`,
   },
   'dm-serif-display': {
-    fontFamily: 'var(--font-form-dm-serif-display)',
+    fontFamily: `"DM Serif Display", ${SERIF_STACK}`,
   },
   'fira-sans': {
-    fontFamily: 'var(--font-form-fira-sans)',
+    fontFamily: `"Fira Sans", ${SANS_STACK}`,
   },
   fraunces: {
-    fontFamily: 'var(--font-form-fraunces)',
+    fontFamily: `Fraunces, ${SERIF_STACK}`,
   },
   inter: {
-    fontFamily: 'var(--font-form-inter)',
+    fontFamily: `Inter, ${SANS_STACK}`,
   },
   lora: {
-    fontFamily: 'var(--font-form-lora)',
+    fontFamily: `Lora, ${SERIF_STACK}`,
   },
   manrope: {
-    fontFamily: 'var(--font-form-manrope)',
+    fontFamily: `Manrope, ${SANS_STACK}`,
   },
   merriweather: {
-    fontFamily: 'var(--font-form-merriweather)',
+    fontFamily: `Merriweather, ${SERIF_STACK}`,
   },
   newsreader: {
-    fontFamily: 'var(--font-form-newsreader)',
+    fontFamily: `Newsreader, ${SERIF_STACK}`,
   },
   'noto-sans': {
-    fontFamily: 'var(--font-form-noto-sans)',
+    fontFamily: `"Noto Sans", ${SANS_STACK}`,
   },
   'noto-serif': {
-    fontFamily: 'var(--font-form-noto-serif)',
+    fontFamily: `"Noto Serif", ${SERIF_STACK}`,
   },
   'nunito-sans': {
-    fontFamily: 'var(--font-form-nunito-sans)',
+    fontFamily: `"Nunito Sans", ${SANS_STACK}`,
   },
   'playfair-display': {
-    fontFamily: 'var(--font-form-playfair-display)',
+    fontFamily: `"Playfair Display", ${SERIF_STACK}`,
   },
   'plus-jakarta-sans': {
-    fontFamily: 'var(--font-form-plus-jakarta-sans)',
+    fontFamily: `"Plus Jakarta Sans", ${SANS_STACK}`,
   },
   'source-sans-3': {
-    fontFamily: 'var(--font-form-source-sans-3)',
+    fontFamily: `"Source Sans 3", ${SANS_STACK}`,
   },
   'source-serif-4': {
-    fontFamily: 'var(--font-form-source-serif-4)',
+    fontFamily: `"Source Serif 4", ${SERIF_STACK}`,
   },
   'space-grotesk': {
-    fontFamily: 'var(--font-form-space-grotesk)',
+    fontFamily: `"Space Grotesk", ${SANS_STACK}`,
   },
   spectral: {
-    fontFamily: 'var(--font-form-spectral)',
+    fontFamily: `Spectral, ${SERIF_STACK}`,
   },
 };
 
-export const FORM_FONT_VARIABLES = [
-  barlow.variable,
-  beVietnamPro.variable,
-  dmSerifDisplay.variable,
-  firaSans.variable,
-  fraunces.variable,
-  inter.variable,
-  lora.variable,
-  manrope.variable,
-  merriweather.variable,
-  newsreader.variable,
-  notoSans.variable,
-  notoSerif.variable,
-  nunitoSans.variable,
-  playfairDisplay.variable,
-  plusJakartaSans.variable,
-  sourceSans3.variable,
-  sourceSerif4.variable,
-  spaceGrotesk.variable,
-  spectral.variable,
-].join(' ');
+export const FORM_FONT_VARIABLES = '';
 
 export const FORM_FONT_OPTIONS: Array<{
   id: FormFontId;

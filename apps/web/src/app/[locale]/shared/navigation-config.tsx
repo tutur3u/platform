@@ -20,7 +20,7 @@ import {
   Users,
   Utensils,
   Wallet,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 import type { ReactNode } from 'react';
 import { DEV_MODE } from '@/constants/common';

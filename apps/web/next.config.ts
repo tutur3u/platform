@@ -51,6 +51,7 @@ const optimizePackageImports = Array.from(
 const nextConfig: NextConfig = {
   ...serwistConfig,
   allowedDevOrigins: [...TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS],
+  cacheComponents: true,
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),
   reactCompiler: reactCompilerEnabled,

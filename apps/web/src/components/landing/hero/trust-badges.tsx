@@ -1,5 +1,3 @@
-'use client';
-
 import { CheckCircle2 } from '@tuturuuu/icons/lucide';
 import { useTranslations } from 'next-intl';
 

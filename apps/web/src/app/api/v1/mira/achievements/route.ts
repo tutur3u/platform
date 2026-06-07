@@ -8,13 +8,15 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import {
   getPrivateMiraCatalogClient,
   type MiraAchievementRow,
 } from '../private-catalog';
 
 export async function GET() {
+  await connection();
+
   try {
     const supabase = await createClient();
     const { user } = await resolveAuthenticatedSessionUser(supabase);

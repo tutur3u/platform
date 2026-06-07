@@ -5,7 +5,7 @@ import {
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
@@ -64,6 +64,8 @@ function toRichTextContent(value: unknown): JSONContent | null {
 }
 
 export async function GET(request: Request) {
+  await connection();
+
   try {
     const { searchParams } = new URL(request.url);
 

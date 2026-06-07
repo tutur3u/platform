@@ -3,13 +3,15 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import {
   getGroupedSessionsPaginated,
   type PaginationParams,
 } from '@/lib/time-tracking-helper';
 
 export async function GET(request: NextRequest) {
+  await connection();
+
   try {
     const supabase = await createClient();
 

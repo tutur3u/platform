@@ -6,8 +6,6 @@ import {
   verifySnsEnvelope,
 } from '@/lib/mail/inbound';
 
-export const runtime = 'nodejs';
-
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
 

@@ -5,9 +5,11 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 
 export async function GET() {
+  await connection();
+
   try {
     const supabase = await createClient();
     const { user, authError } = await resolveAuthenticatedSessionUser(supabase);

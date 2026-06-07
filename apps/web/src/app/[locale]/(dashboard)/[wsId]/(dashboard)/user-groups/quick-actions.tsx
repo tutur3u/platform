@@ -4,7 +4,7 @@ import {
   FileUser,
   UserCheck,
   Users,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Separator } from '@tuturuuu/ui/separator';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
