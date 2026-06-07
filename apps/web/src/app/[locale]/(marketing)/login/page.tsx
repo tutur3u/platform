@@ -1,7 +1,7 @@
 'use client';
 
 import { XIcon } from '@tuturuuu/icons';
-import { TUTURUUU_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
@@ -15,7 +15,7 @@ const DOMAINS = {
   TUTURUUU: {
     name: 'Tuturuuu',
     href: BASE_URL,
-    logo: TUTURUUU_LOGO_URL,
+    logo: TUTURUUU_LOCAL_LOGO_URL,
   },
   NOVA: {
     name: 'Nova',
@@ -29,21 +29,21 @@ const DOMAINS = {
     href: DEV_MODE
       ? getTuturuuuPortlessAppOrigin('learn')
       : 'https://learn.tuturuuu.com',
-    logo: TUTURUUU_LOGO_URL,
+    logo: TUTURUUU_LOCAL_LOGO_URL,
   },
   TEACH: {
     name: 'Teach',
     href: DEV_MODE
       ? getTuturuuuPortlessAppOrigin('teach')
       : 'https://teach.tuturuuu.com',
-    logo: TUTURUUU_LOGO_URL,
+    logo: TUTURUUU_LOCAL_LOGO_URL,
   },
   INVENTORY: {
     name: 'Inventory',
     href: DEV_MODE
       ? getTuturuuuPortlessAppOrigin('inventory')
       : 'https://inventory.tuturuuu.com',
-    logo: TUTURUUU_LOGO_URL,
+    logo: TUTURUUU_LOCAL_LOGO_URL,
   },
 } as const;
 

@@ -1,5 +1,8 @@
+const fs = require('node:fs');
+const path = require('node:path');
 const { spawn } = require('node:child_process');
 
+const ROOT_DIR = path.resolve(__dirname, '..');
 const NEXT_READY_PATTERNS = [
   /-\s+Environments:/u,
   /-\s+Network:/u,
@@ -7,6 +10,12 @@ const NEXT_READY_PATTERNS = [
 ];
 const DEFAULT_DEV_MAX_OPEN_FILES = '65536';
 const DEFAULT_WATCHPACK_POLLING = 'true';
+const DEV_ENV_FILE_ORDER = [
+  '.env',
+  '.env.development',
+  '.env.local',
+  '.env.development.local',
+];
 
 function formatPortlessBanner(url = process.env.PORTLESS_URL) {
   return url ? `\n  Portless URL: ${url}\n` : null;
@@ -19,6 +28,87 @@ function shouldPrintBannerForChunk(chunk) {
 function parseCommandArgs(args = process.argv.slice(2)) {
   const separatorIndex = args.indexOf('--');
   return separatorIndex >= 0 ? args.slice(separatorIndex + 1) : args;
+}
+
+function stripUnquotedInlineComment(value) {
+  const quote = value[0];
+
+  if (quote === '"' || quote === "'") {
+    const closingQuoteIndex = value.lastIndexOf(quote);
+    return closingQuoteIndex > 0
+      ? value.slice(0, closingQuoteIndex + 1)
+      : value;
+  }
+
+  return value.replace(/\s+#.*$/u, '').trimEnd();
+}
+
+function parseEnvFile(envFilePath, fsImpl = fs) {
+  if (!fsImpl.existsSync(envFilePath)) {
+    return {};
+  }
+
+  const values = {};
+  const content = fsImpl.readFileSync(envFilePath, 'utf8');
+
+  for (const rawLine of content.split(/\r?\n/u)) {
+    const line = rawLine.trim();
+
+    if (!line || line.startsWith('#')) {
+      continue;
+    }
+
+    const separatorIndex = line.indexOf('=');
+
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = line.slice(0, separatorIndex).trim();
+    const value = stripUnquotedInlineComment(
+      line.slice(separatorIndex + 1).trim()
+    );
+    values[key] = value.replace(/^(['"])(.*)\1$/u, '$2');
+  }
+
+  return values;
+}
+
+function getSharedLocalEnvFilePaths({
+  cwd = process.cwd(),
+  rootDir = ROOT_DIR,
+}) {
+  const appDir = path.resolve(cwd);
+  const rootEnvFile = path.join(rootDir, '.env.local');
+  const appEnvFiles = DEV_ENV_FILE_ORDER.map((fileName) =>
+    path.join(appDir, fileName)
+  );
+
+  return [rootEnvFile, ...appEnvFiles].filter(
+    (envFilePath, index, paths) => paths.indexOf(envFilePath) === index
+  );
+}
+
+function loadSharedLocalEnvDefaults({
+  cwd = process.cwd(),
+  env = process.env,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const fileEnv = {};
+
+  for (const envFilePath of getSharedLocalEnvFilePaths({ cwd, rootDir })) {
+    Object.assign(fileEnv, parseEnvFile(envFilePath, fsImpl));
+  }
+
+  return {
+    ...fileEnv,
+    ...env,
+  };
+}
+
+function shouldLoadSharedLocalEnv(commandArgs) {
+  return commandArgs[0] === 'next' && commandArgs[1] === 'dev';
 }
 
 function prepareCommandForOpenFilesLimit({
@@ -59,7 +149,10 @@ function prepareCommandForOpenFilesLimit({
 
 function runPortlessDevBanner({
   args = process.argv.slice(2),
+  cwd = process.cwd(),
   env = process.env,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
   stderr = process.stderr,
   stdin = process.stdin,
   stdout = process.stdout,
@@ -75,9 +168,12 @@ function runPortlessDevBanner({
     return 1;
   }
 
+  const commandEnv = shouldLoadSharedLocalEnv(commandArgs)
+    ? loadSharedLocalEnvDefaults({ cwd, env, fsImpl, rootDir })
+    : env;
   const preparedCommand = prepareCommandForOpenFilesLimit({
     commandArgs,
-    env,
+    env: commandEnv,
   });
 
   let bannerPrinted = false;
@@ -148,9 +244,15 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_DEV_MAX_OPEN_FILES,
   DEFAULT_WATCHPACK_POLLING,
+  DEV_ENV_FILE_ORDER,
   formatPortlessBanner,
+  getSharedLocalEnvFilePaths,
+  loadSharedLocalEnvDefaults,
   parseCommandArgs,
+  parseEnvFile,
   prepareCommandForOpenFilesLimit,
   runPortlessDevBanner,
+  shouldLoadSharedLocalEnv,
   shouldPrintBannerForChunk,
+  stripUnquotedInlineComment,
 };

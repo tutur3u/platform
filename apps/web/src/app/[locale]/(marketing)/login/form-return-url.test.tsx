@@ -46,8 +46,8 @@ vi.mock('@tuturuuu/internal-api/auth', () => ({
   verifyOtpWithInternalApi: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: () => ({
+vi.mock('@tuturuuu/supabase/next/auth-browser', () => ({
+  createAuthClient: () => ({
     auth: {
       getUser: mocks.getUser,
       mfa: {

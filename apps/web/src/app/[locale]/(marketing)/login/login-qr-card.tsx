@@ -13,6 +13,10 @@ import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTranslations } from 'next-intl';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  getTurnstileClientErrorMessageKey,
+  shouldRetryTurnstileClientError,
+} from './turnstile-state';
 
 const CAPTCHA_ERROR_RETRY_DELAY = 3000;
 
@@ -66,14 +70,18 @@ export function LoginQrCard({
   }, []);
 
   const handleCaptchaError = useCallback(
-    (_errorCode?: string) => {
+    (errorCode?: string) => {
       resetTurnstile();
-      setCaptchaError(t('login.captcha_error'));
+      setCaptchaError(
+        t(`login.${getTurnstileClientErrorMessageKey(errorCode)}`)
+      );
 
-      window.setTimeout(() => {
-        resetTurnstile();
-        setCaptchaError(undefined);
-      }, CAPTCHA_ERROR_RETRY_DELAY);
+      if (shouldRetryTurnstileClientError(errorCode)) {
+        window.setTimeout(() => {
+          resetTurnstile();
+          setCaptchaError(undefined);
+        }, CAPTCHA_ERROR_RETRY_DELAY);
+      }
     },
     [resetTurnstile, t]
   );

@@ -14,7 +14,10 @@ import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
-import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import {
+  TUTURUUU_LOCAL_LOGO_URL,
+  TuturuuLogo,
+} from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { toast } from '@tuturuuu/ui/sonner';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
@@ -760,6 +763,7 @@ export function Structure({
         <Link href="/home" className="flex flex-none items-center gap-2">
           <div className="flex-none">
             <TuturuuLogo
+              src={TUTURUUU_LOCAL_LOGO_URL}
               className="h-6 w-6"
               width={32}
               height={32}
@@ -878,7 +882,13 @@ export function Structure({
     <>
       <div className="flex flex-none items-center gap-2">
         <Link href="/home" className="flex flex-none items-center gap-2">
-          <TuturuuLogo className="h-8 w-8" width={32} height={32} alt="logo" />
+          <TuturuuLogo
+            src={TUTURUUU_LOCAL_LOGO_URL}
+            className="h-8 w-8"
+            width={32}
+            height={32}
+            alt="logo"
+          />
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />

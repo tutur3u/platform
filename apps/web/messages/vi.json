@@ -8667,6 +8667,7 @@
   "login": {
     "account_switch_failed": "Không thể chuyển tài khoản.",
     "back_to_email": "Quay lại nhập email",
+    "captcha_domain_not_authorized": "Bước xác minh bảo mật chưa được cho phép trên tên miền này. Hãy thêm tên miền local này vào widget Turnstile trong Cloudflare rồi tải lại.",
     "captcha_error": "Kiểm tra bảo mật thất bại. Đang thử lại...",
     "captcha_not_configured": "Bước xác minh bảo mật chưa được cấu hình cho môi trường này.",
     "check_email": "Kiểm tra email của bạn",

@@ -5,7 +5,10 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import {
+  TUTURUUU_LOCAL_LOGO_URL,
+  TuturuuLogo,
+} from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -72,7 +75,7 @@ export default function LogoutPage() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-8 flex justify-center">
-            <TuturuuLogo width={80} height={80} />
+            <TuturuuLogo src={TUTURUUU_LOCAL_LOGO_URL} width={80} height={80} />
           </div>
 
           <Card className="border-border/50 bg-card/80 shadow-2xl backdrop-blur-xl">

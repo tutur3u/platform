@@ -7,6 +7,7 @@ function normalizeEnvValue(value?: string | null) {
 
 export interface TurnstileClientStateOptions {
   devMode?: boolean;
+  requireInDev?: boolean;
   requireInDevWhenConfigured?: boolean;
   siteKey?: string | null;
 }
@@ -26,6 +27,7 @@ export function resolveTurnstileClientState(
   );
   const isRequired =
     !devMode ||
+    options.requireInDev === true ||
     (options.requireInDevWhenConfigured === true && Boolean(siteKey));
 
   return {

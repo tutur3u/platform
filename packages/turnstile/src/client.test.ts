@@ -53,6 +53,19 @@ describe('resolveTurnstileClientState', () => {
     });
   });
 
+  it('requires Turnstile in development when explicitly requested', () => {
+    expect(
+      resolveTurnstileClientState({
+        devMode: true,
+        requireInDev: true,
+      })
+    ).toEqual({
+      siteKey: undefined,
+      isRequired: true,
+      canRenderWidget: false,
+    });
+  });
+
   it('does not require Turnstile in development when the opt-in has no site key', () => {
     expect(
       resolveTurnstileClientState({

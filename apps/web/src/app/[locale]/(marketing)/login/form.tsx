@@ -25,7 +25,7 @@ import {
   sendOtpWithInternalApi,
   verifyOtpWithInternalApi,
 } from '@tuturuuu/internal-api/auth';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createAuthClient } from '@tuturuuu/supabase/next/auth-browser';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
 import { Button } from '@tuturuuu/ui/button';
@@ -68,6 +68,11 @@ import { LoginQrCard } from './login-qr-card';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
 import { PasskeyLoginButton } from './passkey-login-button';
 import { SocialLoginButton } from './social-login-button';
+import {
+  getTurnstileClientErrorMessageKey,
+  shouldRequireTurnstileForLocalDevAuth,
+  shouldRetryTurnstileClientError,
+} from './turnstile-state';
 
 const CAPTCHA_ERROR_RETRY_DELAY = 3000;
 const INVALID_LOCAL_RETURN_URL = '__invalid_local_return_url__';
@@ -172,7 +177,7 @@ function LoginMethodSeparator({ label }: { label: string }) {
 }
 
 export default function LoginForm() {
-  const supabase = createClient();
+  const supabase = createAuthClient();
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
@@ -346,6 +351,11 @@ export default function LoginForm() {
 
   const turnstileClientState = resolveTurnstileClientState({
     devMode: DEV_MODE || localE2EAuthBypass,
+    requireInDev: shouldRequireTurnstileForLocalDevAuth({
+      devMode: DEV_MODE,
+      localE2EAuthBypass,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    }),
     requireInDevWhenConfigured: !localE2EAuthBypass,
     siteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   });
@@ -497,14 +507,18 @@ export default function LoginForm() {
 
   const handleCaptchaError = useCallback(
     (errorCode?: string) => {
-      console.error('[Turnstile] Error:', errorCode);
+      console.warn('[Turnstile] Error:', errorCode);
       resetCaptcha();
-      setCaptchaError(t('login.captcha_error'));
+      setCaptchaError(
+        t(`login.${getTurnstileClientErrorMessageKey(errorCode)}`)
+      );
 
-      window.setTimeout(() => {
-        resetCaptcha();
-        setCaptchaError(undefined);
-      }, CAPTCHA_ERROR_RETRY_DELAY);
+      if (shouldRetryTurnstileClientError(errorCode)) {
+        window.setTimeout(() => {
+          resetCaptcha();
+          setCaptchaError(undefined);
+        }, CAPTCHA_ERROR_RETRY_DELAY);
+      }
     },
     [resetCaptcha, t]
   );

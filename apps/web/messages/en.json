@@ -8667,6 +8667,7 @@
   "login": {
     "account_switch_failed": "Could not switch account.",
     "back_to_email": "Back to email",
+    "captcha_domain_not_authorized": "Security verification is not authorized for this hostname. Add this local domain to the Turnstile widget in Cloudflare, then reload.",
     "captcha_error": "Security check failed. Retrying...",
     "captcha_not_configured": "Security verification is not configured for this deployment yet.",
     "check_email": "Enter the 6-digit code sent to your email",
