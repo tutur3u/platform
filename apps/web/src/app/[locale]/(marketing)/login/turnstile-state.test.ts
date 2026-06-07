@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   getTurnstileClientErrorMessageKey,
   isLocalSupabaseUrl,
-  shouldRequireTurnstileForLocalDevAuth,
+  resolveLoginTurnstileClientState,
+  shouldBypassTurnstileForLocalSupabaseDevAuth,
+  shouldRequireTurnstileForDevAuth,
   shouldRetryTurnstileClientError,
 } from './turnstile-state';
 
@@ -19,28 +21,75 @@ describe('login Turnstile state', () => {
     expect(isLocalSupabaseUrl(undefined)).toBe(false);
   });
 
-  it('requires Turnstile for local dev auth unless the E2E auth bypass is active', () => {
+  it('does not require Turnstile for local Supabase dev auth', () => {
     expect(
-      shouldRequireTurnstileForLocalDevAuth({
+      shouldRequireTurnstileForDevAuth({
+        devMode: true,
+        localE2EAuthBypass: false,
+        supabaseUrl: 'http://127.0.0.1:8001',
+      })
+    ).toBe(false);
+    expect(
+      shouldBypassTurnstileForLocalSupabaseDevAuth({
         devMode: true,
         localE2EAuthBypass: false,
         supabaseUrl: 'http://127.0.0.1:8001',
       })
     ).toBe(true);
+  });
+
+  it('requires Turnstile for remote dev auth when configured', () => {
     expect(
-      shouldRequireTurnstileForLocalDevAuth({
+      shouldRequireTurnstileForDevAuth({
+        devMode: true,
+        localE2EAuthBypass: false,
+        supabaseUrl: 'https://project.supabase.co',
+      })
+    ).toBe(true);
+    expect(
+      shouldRequireTurnstileForDevAuth({
         devMode: true,
         localE2EAuthBypass: true,
         supabaseUrl: 'http://127.0.0.1:8001',
       })
     ).toBe(false);
     expect(
-      shouldRequireTurnstileForLocalDevAuth({
+      shouldRequireTurnstileForDevAuth({
         devMode: false,
         localE2EAuthBypass: false,
         supabaseUrl: 'http://127.0.0.1:8001',
       })
     ).toBe(false);
+  });
+
+  it('keeps configured Turnstile disabled for local Supabase dev passkeys', () => {
+    expect(
+      resolveLoginTurnstileClientState({
+        devMode: true,
+        localE2EAuthBypass: false,
+        siteKey: '0x4AAAA-local-incompatible-key',
+        supabaseUrl: 'http://127.0.0.1:8001',
+      })
+    ).toEqual({
+      siteKey: '0x4AAAA-local-incompatible-key',
+      isRequired: false,
+      canRenderWidget: false,
+    });
+  });
+
+  it('keeps configured Turnstile enabled for remote dev auth', () => {
+    expect(
+      resolveLoginTurnstileClientState({
+        devMode: true,
+        localE2EAuthBypass: false,
+        siteKey: 'site-key',
+        supabaseUrl: 'https://project.supabase.co',
+      })
+    ).toEqual({
+      siteKey: 'site-key',
+      isRequired: true,
+      canRenderWidget: true,
+    });
   });
 
   it('treats Turnstile domain authorization errors as non-retryable config errors', () => {

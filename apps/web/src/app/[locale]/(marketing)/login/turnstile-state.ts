@@ -1,3 +1,5 @@
+import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
+
 const LOCAL_SUPABASE_HOSTS = new Set([
   '0.0.0.0',
   '127.0.0.1',
@@ -20,7 +22,19 @@ export function isLocalSupabaseUrl(rawUrl?: string | null) {
   }
 }
 
-export function shouldRequireTurnstileForLocalDevAuth({
+export function shouldRequireTurnstileForDevAuth({
+  devMode,
+  localE2EAuthBypass,
+  supabaseUrl,
+}: {
+  devMode: boolean;
+  localE2EAuthBypass: boolean;
+  supabaseUrl?: string | null;
+}) {
+  return devMode && !localE2EAuthBypass && !isLocalSupabaseUrl(supabaseUrl);
+}
+
+export function shouldBypassTurnstileForLocalSupabaseDevAuth({
   devMode,
   localE2EAuthBypass,
   supabaseUrl,
@@ -30,6 +44,37 @@ export function shouldRequireTurnstileForLocalDevAuth({
   supabaseUrl?: string | null;
 }) {
   return devMode && !localE2EAuthBypass && isLocalSupabaseUrl(supabaseUrl);
+}
+
+export function resolveLoginTurnstileClientState({
+  devMode,
+  localE2EAuthBypass,
+  siteKey,
+  supabaseUrl,
+}: {
+  devMode: boolean;
+  localE2EAuthBypass: boolean;
+  siteKey?: string | null;
+  supabaseUrl?: string | null;
+}) {
+  const bypassLocalSupabaseTurnstile =
+    shouldBypassTurnstileForLocalSupabaseDevAuth({
+      devMode,
+      localE2EAuthBypass,
+      supabaseUrl,
+    });
+
+  return resolveTurnstileClientState({
+    devMode: devMode || localE2EAuthBypass,
+    requireInDev: shouldRequireTurnstileForDevAuth({
+      devMode,
+      localE2EAuthBypass,
+      supabaseUrl,
+    }),
+    requireInDevWhenConfigured:
+      !localE2EAuthBypass && !bypassLocalSupabaseTurnstile,
+    siteKey,
+  });
 }
 
 export function getTurnstileClientErrorMessageKey(errorCode?: string) {

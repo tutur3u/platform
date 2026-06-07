@@ -27,7 +27,6 @@ import {
 } from '@tuturuuu/internal-api/auth';
 import { createAuthClient } from '@tuturuuu/supabase/next/auth-browser';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
@@ -70,7 +69,7 @@ import { PasskeyLoginButton } from './passkey-login-button';
 import { SocialLoginButton } from './social-login-button';
 import {
   getTurnstileClientErrorMessageKey,
-  shouldRequireTurnstileForLocalDevAuth,
+  resolveLoginTurnstileClientState,
   shouldRetryTurnstileClientError,
 } from './turnstile-state';
 
@@ -349,15 +348,11 @@ export default function LoginForm() {
     staleTime: 60_000,
   });
 
-  const turnstileClientState = resolveTurnstileClientState({
+  const turnstileClientState = resolveLoginTurnstileClientState({
     devMode: DEV_MODE || localE2EAuthBypass,
-    requireInDev: shouldRequireTurnstileForLocalDevAuth({
-      devMode: DEV_MODE,
-      localE2EAuthBypass,
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    }),
-    requireInDevWhenConfigured: !localE2EAuthBypass,
+    localE2EAuthBypass,
     siteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
   });
   const turnstileSiteKey = turnstileClientState.siteKey;
   const emailValue = emailForm.watch('email');
