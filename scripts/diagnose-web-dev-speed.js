@@ -119,6 +119,31 @@ function summarizeTraceEvents(events, { limit = 20 } = {}) {
     .slice(0, limit);
 }
 
+function getLatestDevServerStartTime(events) {
+  const startTimes = events
+    .filter((event) => event?.name === 'start-dev-server')
+    .map((event) => event.startTime)
+    .filter((startTime) => Number.isFinite(startTime));
+
+  return startTimes.length > 0 ? Math.max(...startTimes) : null;
+}
+
+function getLatestDevServerTraceEvents(events) {
+  const latestStartTime = getLatestDevServerStartTime(events);
+
+  if (latestStartTime === null) {
+    return events;
+  }
+
+  return events.filter((event) => {
+    if (!Number.isFinite(event.startTime)) {
+      return event.name === 'start-dev-server';
+    }
+
+    return event.startTime >= latestStartTime;
+  });
+}
+
 function collectWebDevSpeedDiagnostics({
   cachePaths = DEFAULT_CACHE_PATHS,
   execFileSyncImpl = execFileSync,
@@ -140,11 +165,16 @@ function collectWebDevSpeedDiagnostics({
     fsImpl
   );
   const traceText = readTextIfExists(path.join(devDir, 'trace'), fsImpl);
+  const traceEvents = parseTraceEvents(traceText);
+  const latestTraceEvents = getLatestDevServerTraceEvents(traceEvents);
 
   return {
     cacheSummaries,
     slowFilesystemWarnings: extractSlowFilesystemWarnings(logText),
-    traceSpans: summarizeTraceEvents(parseTraceEvents(traceText), {
+    latestTraceSpans: summarizeTraceEvents(latestTraceEvents, {
+      limit: traceLimit,
+    }),
+    traceSpans: summarizeTraceEvents(traceEvents, {
       limit: traceLimit,
     }),
     watcherErrors: extractWatcherErrors(logText),
@@ -181,7 +211,18 @@ function formatDiagnosticsReport(diagnostics) {
     }
   }
 
-  lines.push('', 'Top trace spans:');
+  lines.push('', 'Top trace spans (latest dev server):');
+  if ((diagnostics.latestTraceSpans ?? []).length === 0) {
+    lines.push('- none');
+  } else {
+    for (const span of diagnostics.latestTraceSpans) {
+      lines.push(
+        `- ${span.durationMs}ms ${span.name} ${JSON.stringify(span.tags)}`
+      );
+    }
+  }
+
+  lines.push('', 'Top trace spans (all recorded):');
   if (diagnostics.traceSpans.length === 0) {
     lines.push('- none');
   } else {
@@ -207,6 +248,8 @@ module.exports = {
   extractWatcherErrors,
   formatBytes,
   formatDiagnosticsReport,
+  getLatestDevServerStartTime,
+  getLatestDevServerTraceEvents,
   parseTraceEvents,
   summarizeTraceEvents,
 };

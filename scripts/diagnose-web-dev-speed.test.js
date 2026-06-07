@@ -7,6 +7,8 @@ const {
   extractWatcherErrors,
   formatBytes,
   formatDiagnosticsReport,
+  getLatestDevServerStartTime,
+  getLatestDevServerTraceEvents,
   parseTraceEvents,
   summarizeTraceEvents,
 } = require('./diagnose-web-dev-speed');
@@ -76,6 +78,32 @@ test('summarizeTraceEvents keeps the slowest relevant spans', () => {
   );
 });
 
+test('getLatestDevServerStartTime finds the newest dev session boundary', () => {
+  assert.equal(
+    getLatestDevServerStartTime([
+      { name: 'start-dev-server', startTime: 100 },
+      { name: 'compile-path', startTime: 200 },
+      { name: 'start-dev-server', startTime: 300 },
+    ]),
+    300
+  );
+});
+
+test('getLatestDevServerTraceEvents excludes stale spans from older sessions', () => {
+  assert.deepEqual(
+    getLatestDevServerTraceEvents([
+      { name: 'start-dev-server', startTime: 100 },
+      { name: 'compile-path', duration: 40_000_000, startTime: 120 },
+      { name: 'start-dev-server', startTime: 300 },
+      { name: 'compile-path', duration: 5_000, startTime: 320 },
+    ]),
+    [
+      { name: 'start-dev-server', startTime: 300 },
+      { name: 'compile-path', duration: 5_000, startTime: 320 },
+    ]
+  );
+});
+
 test('collectWebDevSpeedDiagnostics reads cache state, logs, and traces', () => {
   const files = new Map([
     [
@@ -87,7 +115,12 @@ test('collectWebDevSpeedDiagnostics reads cache state, logs, and traces', () => 
     ],
     [
       '/repo/apps/web/.next/dev/trace',
-      '[{"name":"compile-path","duration":42000000,"tags":{"trigger":"/"}}]',
+      [
+        '[{"name":"start-dev-server","duration":1000000,"startTime":100}]',
+        '[{"name":"compile-path","duration":42000000,"startTime":120,"tags":{"trigger":"/"}}]',
+        '[{"name":"start-dev-server","duration":500000,"startTime":200}]',
+        '[{"name":"compile-path","duration":5000,"startTime":220,"tags":{"trigger":"/[locale]/[wsId]"}}]',
+      ].join('\n'),
     ],
   ]);
   const existing = new Set([
@@ -123,16 +156,19 @@ test('collectWebDevSpeedDiagnostics reads cache state, logs, and traces', () => 
   assert.equal(diagnostics.slowFilesystemWarnings.length, 1);
   assert.equal(diagnostics.watcherErrors.length, 1);
   assert.equal(diagnostics.traceSpans[0].durationMs, 42000);
+  assert.equal(diagnostics.latestTraceSpans[0].durationMs, 500);
+  assert.equal(diagnostics.latestTraceSpans[1].durationMs, 5);
 });
 
 test('formatDiagnosticsReport prints missing traces without failing', () => {
   assert.match(
     formatDiagnosticsReport({
       cacheSummaries: [{ path: '.turbo/cache', exists: false, bytes: 0 }],
+      latestTraceSpans: [],
       slowFilesystemWarnings: [],
       traceSpans: [],
       watcherErrors: [],
     }),
-    /Top trace spans:\n- none/
+    /Top trace spans \(latest dev server\):\n- none/
   );
 });
