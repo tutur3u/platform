@@ -280,7 +280,6 @@ export default async function Layout({ children, params }: LayoutProps) {
                 workspace={workspace}
                 user={user}
                 renderSettingsDialog={false}
-                navLinks={visibleNavigationLinks}
               />
             </Suspense>
           }

@@ -19,14 +19,16 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/access';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
-import { DashboardNavigationIcon } from './navigation-icons';
+import {
+  createDashboardNavigationIcon,
+  type DashboardNavigationLink,
+} from './navigation-icon-descriptor';
 
 type NavigationUser = {
   email?: string;
@@ -151,9 +153,7 @@ export async function WorkspaceNavigationLinks({
         title: t('sidebar_tabs.tasks'),
         href: `/${personalOrWsId}/tasks/boards`,
         aliases: [`/${personalOrWsId}/tasks/boards`],
-        icon: (
-          <DashboardNavigationIcon name="CheckCircle2" className="h-5 w-5" />
-        ),
+        icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
         experimental: 'beta',
         preferencePlacement: 'root',
         preferenceSectionLabel: sidebarSections.core,
@@ -161,17 +161,12 @@ export async function WorkspaceNavigationLinks({
           {
             title: t('sidebar_tabs.boards'),
             href: `/${personalOrWsId}/tasks/boards`,
-            icon: (
-              <DashboardNavigationIcon
-                name="SquareKanban"
-                className="h-4 w-4"
-              />
-            ),
+            icon: createDashboardNavigationIcon('SquareKanban', 'h-4 w-4'),
             matchExact: true,
           },
         ],
       },
-    ] satisfies NavLink[];
+    ] satisfies DashboardNavigationLink[];
   }
 
   const hasHiveAccess =
@@ -231,12 +226,12 @@ export async function WorkspaceNavigationLinks({
     withoutPermission('view_user_groups_scores') &&
     withoutPermission('view_user_groups_posts');
 
-  const navLinks: (NavLink | null)[] = [
+  const navLinks: (DashboardNavigationLink | null)[] = [
     {
       id: 'dashboard',
       title: t('common.dashboard'),
       href: `/${personalOrWsId}`,
-      icon: <DashboardNavigationIcon name="ChartArea" className="h-5 w-5" />,
+      icon: createDashboardNavigationIcon('ChartArea', 'h-5 w-5'),
       matchExact: true,
       preferenceLocked: true,
       preferencePlacement: 'root',
@@ -248,7 +243,7 @@ export async function WorkspaceNavigationLinks({
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks`,
       aliases: [`/${personalOrWsId}/tasks`, `/${personalOrWsId}/tasks/drafts`],
-      icon: <DashboardNavigationIcon name="CheckCircle2" className="h-5 w-5" />,
+      icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
       preferencePlacement: 'root',
@@ -257,68 +252,64 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('sidebar_tabs.tasks'),
           href: `/${personalOrWsId}/tasks`,
-          icon: <DashboardNavigationIcon name="UserStar" className="h-4 w-4" />,
+          icon: createDashboardNavigationIcon('UserStar', 'h-4 w-4'),
           matchExact: true,
         },
         null,
         // {
         //   title: t('sidebar_tabs.notes'),
         //   href: `/${personalOrWsId}/tasks/notes`,
-        //   icon: <DashboardNavigationIcon name="NotepadText" className="h-4 w-4" />,
+        //   icon: createDashboardNavigationIcon('NotepadText', 'h-4 w-4'),
         // },
         {
           title: t('sidebar_tabs.drafts'),
           href: `/${personalOrWsId}/tasks/drafts`,
-          icon: <DashboardNavigationIcon name="FileEdit" className="h-4 w-4" />,
+          icon: createDashboardNavigationIcon('FileEdit', 'h-4 w-4'),
         },
         null,
         {
           title: t('sidebar_tabs.boards'),
           href: `/${personalOrWsId}/tasks/boards`,
-          icon: (
-            <DashboardNavigationIcon name="SquareKanban" className="h-4 w-4" />
-          ),
+          icon: createDashboardNavigationIcon('SquareKanban', 'h-4 w-4'),
         },
         null,
         {
           title: t('sidebar_tabs.initiatives'),
           href: `/${personalOrWsId}/tasks/initiatives`,
-          icon: <DashboardNavigationIcon name="Sparkle" className="h-4 w-4" />,
+          icon: createDashboardNavigationIcon('Sparkle', 'h-4 w-4'),
           matchExact: true,
         },
         {
           title: t('sidebar_tabs.projects'),
           href: `/${personalOrWsId}/tasks/projects`,
-          icon: <DashboardNavigationIcon name="Box" className="h-4 w-4" />,
+          icon: createDashboardNavigationIcon('Box', 'h-4 w-4'),
         },
         null,
         // {
         //   title: t('sidebar_tabs.cycles'),
         //   href: `/${personalOrWsId}/tasks/cycles`,
-        //   icon: <DashboardNavigationIcon name="RotateCcw" className="h-4 w-4" />,
+        //   icon: createDashboardNavigationIcon('RotateCcw', 'h-4 w-4'),
         // },
         {
           title: t('sidebar_tabs.labels'),
           href: `/${personalOrWsId}/tasks/labels`,
-          icon: <DashboardNavigationIcon name="Tags" className="h-4 w-4" />,
+          icon: createDashboardNavigationIcon('Tags', 'h-4 w-4'),
         },
         {
           title: t('sidebar_tabs.templates'),
           href: `/${personalOrWsId}/tasks/templates`,
-          icon: <DashboardNavigationIcon name="Bookmark" className="h-4 w-4" />,
+          icon: createDashboardNavigationIcon('Bookmark', 'h-4 w-4'),
         },
         {
           title: t('sidebar_tabs.estimates'),
-          icon: (
-            <DashboardNavigationIcon name="Hexagons3" className="h-4 w-4" />
-          ),
+          icon: createDashboardNavigationIcon('Hexagons3', 'h-4 w-4'),
           href: `/${personalOrWsId}/tasks/estimates`,
         },
         null,
         {
           title: t('sidebar_tabs.logs'),
           href: `/${personalOrWsId}/tasks/logs`,
-          icon: <DashboardNavigationIcon name="Logs" className="h-4 w-4" />,
+          icon: createDashboardNavigationIcon('Logs', 'h-4 w-4'),
           disabled: withoutPermission('manage_projects'),
         },
       ],
@@ -328,14 +319,14 @@ export async function WorkspaceNavigationLinks({
       title: t('sidebar_tabs.habits'),
       href: `/${personalOrWsId}/habits`,
       aliases: [`/${personalOrWsId}/habits`, `/${personalOrWsId}/tasks/habits`],
-      icon: <DashboardNavigationIcon name="Repeat" className="h-5 w-5" />,
+      icon: createDashboardNavigationIcon('Repeat', 'h-5 w-5'),
       disabled: !ENABLE_HABITS,
       preferenceSectionLabel: sidebarSections.workTools,
     },
     {
       id: 'calendar',
       title: t('sidebar_tabs.calendar'),
-      icon: <DashboardNavigationIcon name="Calendar" className="h-5 w-5" />,
+      icon: createDashboardNavigationIcon('Calendar', 'h-5 w-5'),
       href: `/${personalOrWsId}/calendar`,
       aliases: [`/${personalOrWsId}/calendar`],
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
@@ -346,7 +337,7 @@ export async function WorkspaceNavigationLinks({
       id: 'whiteboards',
       title: t('sidebar_tabs.whiteboards'),
       href: `/${personalOrWsId}/whiteboards`,
-      icon: <DashboardNavigationIcon name="PencilRuler" className="h-5 w-5" />,
+      icon: createDashboardNavigationIcon('PencilRuler', 'h-5 w-5'),
       requiredWorkspaceTier: createTierRequirement('whiteboards', {
         alwaysShow: true,
       }),
@@ -356,9 +347,7 @@ export async function WorkspaceNavigationLinks({
       id: 'finance',
       title: t('sidebar_tabs.finance'),
       href: `/${personalOrWsId}/finance`,
-      icon: (
-        <DashboardNavigationIcon name="BadgeDollarSign" className="h-5 w-5" />
-      ),
+      icon: createDashboardNavigationIcon('BadgeDollarSign', 'h-5 w-5'),
       experimental: 'beta',
       preferencePlacement: 'root',
       preferenceSectionLabel: sidebarSections.core,
@@ -381,12 +370,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('workspace-finance-tabs.overview'),
           href: `/${personalOrWsId}/finance`,
-          icon: (
-            <DashboardNavigationIcon
-              name="LayoutDashboard"
-              className="h-5 w-5"
-            />
-          ),
+          icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
           matchExact: true,
           disabled: withoutPermission('manage_finance'),
         },
@@ -394,27 +378,25 @@ export async function WorkspaceNavigationLinks({
           title: t('workspace-finance-tabs.transactions'),
           href: `/${personalOrWsId}/finance/transactions`,
           matchExact: true,
-          icon: <DashboardNavigationIcon name="Banknote" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Banknote', 'h-5 w-5'),
           disabled: withoutPermission('view_transactions'),
         },
         {
           title: t('workspace-finance-tabs.recurring'),
           href: `/${personalOrWsId}/finance/recurring`,
-          icon: <DashboardNavigationIcon name="Repeat" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Repeat', 'h-5 w-5'),
           disabled: withoutPermission('view_transactions'),
         },
         {
           title: t('workspace-finance-tabs.wallets'),
           href: `/${personalOrWsId}/finance/wallets`,
-          icon: <DashboardNavigationIcon name="Wallet" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Wallet', 'h-5 w-5'),
           disabled: withoutPermission('view_transactions'),
         },
         {
           title: t('workspace-finance-tabs.budgets'),
           href: `/${personalOrWsId}/finance/budgets`,
-          icon: (
-            <DashboardNavigationIcon name="ChartColumn" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('ChartColumn', 'h-5 w-5'),
           disabled: withoutPermission('manage_finance'),
         },
         null,
@@ -422,9 +404,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('workspace-finance-tabs.analytics'),
           href: `/${personalOrWsId}/finance/analytics`,
-          icon: (
-            <DashboardNavigationIcon name="ChartArea" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('ChartArea', 'h-5 w-5'),
           disabled: withoutPermission('manage_finance'),
         },
         null,
@@ -432,17 +412,13 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('workspace-finance-tabs.invoices'),
           href: `/${personalOrWsId}/finance/invoices`,
-          icon: (
-            <DashboardNavigationIcon name="ReceiptText" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('ReceiptText', 'h-5 w-5'),
           disabled: !showInvoices || withoutPermission('view_invoices'),
         },
         {
           title: t('workspace-finance-tabs.debts'),
           href: `/${personalOrWsId}/finance/debts`,
-          icon: (
-            <DashboardNavigationIcon name="HandCoins" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('HandCoins', 'h-5 w-5'),
           disabled: withoutPermission('view_transactions'),
         },
         null,
@@ -450,13 +426,13 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('workspace-finance-tabs.categories'),
           href: `/${personalOrWsId}/finance/categories`,
-          icon: <DashboardNavigationIcon name="Group" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Group', 'h-5 w-5'),
           disabled: withoutPermission('manage_finance'),
         },
         {
           title: t('workspace-finance-tabs.tags'),
           href: `/${personalOrWsId}/finance/tags`,
-          icon: <DashboardNavigationIcon name="Tags" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Tags', 'h-5 w-5'),
           disabled: withoutPermission('manage_finance'),
         },
       ],
@@ -466,7 +442,7 @@ export async function WorkspaceNavigationLinks({
       id: 'time_tracker',
       title: t('sidebar_tabs.track'),
       href: `/${personalOrWsId}/time-tracker`,
-      icon: <DashboardNavigationIcon name="ClockFading" className="h-5 w-5" />,
+      icon: createDashboardNavigationIcon('ClockFading', 'h-5 w-5'),
       experimental: 'beta',
       aliases: [
         `/${personalOrWsId}/time-tracker`,
@@ -480,12 +456,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('sidebar_tabs.overview'),
           href: `/${personalOrWsId}/time-tracker`,
-          icon: (
-            <DashboardNavigationIcon
-              name="LayoutDashboard"
-              className="h-5 w-5"
-            />
-          ),
+          icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
           matchExact: true,
           requiredWorkspaceTier: createTierRequirement('time_tracker', {
             alwaysShow: true,
@@ -494,7 +465,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('sidebar_tabs.timer'),
           href: `/${personalOrWsId}/time-tracker/timer`,
-          icon: <DashboardNavigationIcon name="Timer" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Timer', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('time_tracker', {
             alwaysShow: true,
           }),
@@ -502,12 +473,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('sidebar_tabs.history'),
           href: `/${personalOrWsId}/time-tracker/history`,
-          icon: (
-            <DashboardNavigationIcon
-              name="ClipboardClock"
-              className="h-5 w-5"
-            />
-          ),
+          icon: createDashboardNavigationIcon('ClipboardClock', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('time_tracker', {
             alwaysShow: true,
           }),
@@ -516,9 +482,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('sidebar_tabs.time_tracker_management'),
           href: `/${personalOrWsId}/time-tracker/management`,
-          icon: (
-            <DashboardNavigationIcon name="ChartGantt" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('ChartGantt', 'h-5 w-5'),
           requireRootWorkspace: true,
           requireRootMember: true,
           requiredWorkspaceTier: createTierRequirement('time_tracker', {
@@ -528,9 +492,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('sidebar_tabs.time_tracker_requests'),
           href: `/${personalOrWsId}/time-tracker/requests`,
-          icon: (
-            <DashboardNavigationIcon name="ClockCheck" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('ClockCheck', 'h-5 w-5'),
           disabled: isPersonal,
           requiredWorkspaceTier: createTierRequirement('time_tracker', {
             alwaysShow: true,
@@ -544,7 +506,7 @@ export async function WorkspaceNavigationLinks({
       id: 'drive',
       title: t('sidebar_tabs.drive'),
       href: `/${personalOrWsId}/drive`,
-      icon: <DashboardNavigationIcon name="HardDrive" className="h-5 w-5" />,
+      icon: createDashboardNavigationIcon('HardDrive', 'h-5 w-5'),
       requiredWorkspaceTier: createTierRequirement('drive', {
         alwaysShow: true,
       }),
@@ -558,9 +520,7 @@ export async function WorkspaceNavigationLinks({
       id: 'forms',
       title: t('sidebar_tabs.forms'),
       href: `/${personalOrWsId}/forms`,
-      icon: (
-        <DashboardNavigationIcon name="ClipboardList" className="h-5 w-5" />
-      ),
+      icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
       aliases: [`/${personalOrWsId}/forms`, `/${personalOrWsId}/forms/new`],
       disabled:
         withoutPermission('manage_forms') &&
@@ -570,16 +530,14 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('sidebar_tabs.forms'),
           href: `/${personalOrWsId}/forms`,
-          icon: (
-            <DashboardNavigationIcon name="ClipboardList" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
           matchExact: true,
         },
         null,
         {
           title: t('forms.studio.create_form'),
           href: `/${personalOrWsId}/forms/new`,
-          icon: <DashboardNavigationIcon name="Plus" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Plus', 'h-5 w-5'),
           disabled: withoutPermission('manage_forms'),
         },
       ],
@@ -589,18 +547,13 @@ export async function WorkspaceNavigationLinks({
     {
       id: 'more_tools',
       title: t('sidebar_tabs.more_tools'),
-      icon: (
-        <DashboardNavigationIcon
-          name="SquareChevronRight"
-          className="h-5 w-5"
-        />
-      ),
+      icon: createDashboardNavigationIcon('SquareChevronRight', 'h-5 w-5'),
       children: [
         {
           id: 'documents',
           title: t('sidebar_tabs.documents'),
           href: `/${personalOrWsId}/documents`,
-          icon: <DashboardNavigationIcon name="FileText" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('FileText', 'h-5 w-5'),
           disabled:
             ENABLE_AI_ONLY ||
             !hasSecret('ENABLE_DOCS', 'true') ||
@@ -614,9 +567,7 @@ export async function WorkspaceNavigationLinks({
         {
           id: 'mind',
           title: t('sidebar_tabs.mind'),
-          icon: (
-            <DashboardNavigationIcon name="BrainCircuit" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('BrainCircuit', 'h-5 w-5'),
           href: `/${personalOrWsId}/mind`,
           aliases: [
             `/${personalOrWsId}/mind`,
@@ -629,28 +580,21 @@ export async function WorkspaceNavigationLinks({
               {
                 id: 'hive',
                 title: t('sidebar_tabs.hive'),
-                icon: (
-                  <DashboardNavigationIcon name="Blocks" className="h-5 w-5" />
-                ),
+                icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
                 href: `/${personalOrWsId}/hive`,
                 aliases: [
                   `/${personalOrWsId}/hive`,
                   `/${personalOrWsId}/hive/not-whitelisted`,
                 ],
                 preferenceSectionLabel: sidebarSections.ai,
-              } satisfies NavLink,
+              } satisfies DashboardNavigationLink,
             ]
           : []),
         {
           id: 'chat',
           title: t('sidebar_tabs.chat'),
           href: `/${personalOrWsId}/chat`,
-          icon: (
-            <DashboardNavigationIcon
-              name="MessageCircleIcon"
-              className="h-5 w-5"
-            />
-          ),
+          icon: createDashboardNavigationIcon('MessageCircleIcon', 'h-5 w-5'),
           aliases: [`/${personalOrWsId}/chat`],
           disabled: withoutPermission('view_chat'),
           requiredWorkspaceTier: createTierRequirement('chat', {
@@ -663,9 +607,7 @@ export async function WorkspaceNavigationLinks({
           id: 'qr_generator',
           title: t('sidebar_tabs.qr_generator'),
           href: qrAppHref,
-          icon: (
-            <DashboardNavigationIcon name="QrCodeIcon" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('QrCodeIcon', 'h-5 w-5'),
           aliases: [`/${personalOrWsId}/qr-generator`],
           external: true,
           preferenceSectionLabel: sidebarSections.utilities,
@@ -675,12 +617,7 @@ export async function WorkspaceNavigationLinks({
           id: 'workforce',
           title: t('sidebar_tabs.workforce'),
           href: `/${personalOrWsId}/workforce`,
-          icon: (
-            <DashboardNavigationIcon
-              name="BriefcaseBusiness"
-              className="h-5 w-5"
-            />
-          ),
+          icon: createDashboardNavigationIcon('BriefcaseBusiness', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('workforce', {
             alwaysShow: true,
           }),
@@ -688,9 +625,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-workforce-tabs.directory'),
               href: `/${personalOrWsId}/workforce`,
-              icon: (
-                <DashboardNavigationIcon name="Users" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
               matchExact: true,
               disabled:
                 withoutPermission('view_workforce') &&
@@ -699,21 +634,14 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-workforce-tabs.contracts'),
               href: `/${personalOrWsId}/workforce/contracts`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="ScrollText"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('ScrollText', 'h-5 w-5'),
               disabled: withoutPermission('manage_workforce'),
             },
             null,
             {
               title: t('workspace-workforce-tabs.payroll'),
               href: `/${personalOrWsId}/workforce/payroll`,
-              icon: (
-                <DashboardNavigationIcon name="HandCoins" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('HandCoins', 'h-5 w-5'),
               disabled:
                 withoutPermission('view_payroll') &&
                 withoutPermission('manage_payroll'),
@@ -749,7 +677,7 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/approvals`,
             `/${personalOrWsId}/users/structure`,
           ],
-          icon: <DashboardNavigationIcon name="Users" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('users', {
             alwaysShow: true,
           }),
@@ -757,12 +685,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-users-tabs.overview'),
               href: `/${personalOrWsId}/users`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="LayoutDashboard"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
               matchExact: true,
               disabled: withoutPermission('manage_users'),
             },
@@ -770,9 +693,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-users-tabs.attendance'),
               href: `/${personalOrWsId}/users/attendance`,
-              icon: (
-                <DashboardNavigationIcon name="UserCheck" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('UserCheck', 'h-5 w-5'),
               disabled:
                 withoutPermission('manage_users') &&
                 withoutPermission('check_user_attendance'),
@@ -780,9 +701,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-users-tabs.database'),
               href: `/${personalOrWsId}/users/database`,
-              icon: (
-                <DashboardNavigationIcon name="BookUser" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('BookUser', 'h-5 w-5'),
               disabled: usersDatabaseDisabled,
               deferredQueryParamsFromWorkspaceConfig: [
                 {
@@ -798,9 +717,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-users-tabs.groups'),
               href: `/${personalOrWsId}/users/groups`,
-              icon: (
-                <DashboardNavigationIcon name="Users" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
               matchExact: true,
               disabled:
                 withoutPermission('manage_users') &&
@@ -809,7 +726,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-users-tabs.group_tags'),
               href: `/${personalOrWsId}/users/group-tags`,
-              icon: <DashboardNavigationIcon name="Tags" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Tags', 'h-5 w-5'),
               disabled:
                 withoutPermission('manage_users') &&
                 withoutPermission('view_user_groups'),
@@ -817,20 +734,16 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-users-tabs.feedbacks'),
               href: `/${personalOrWsId}/users/feedbacks`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="MessageCircleIcon"
-                  className="h-5 w-5"
-                />
+              icon: createDashboardNavigationIcon(
+                'MessageCircleIcon',
+                'h-5 w-5'
               ),
               disabled: withoutPermission('view_user_groups'),
             },
             {
               title: t('workspace-users-tabs.tutoring'),
               href: `/${personalOrWsId}/users/tutoring`,
-              icon: (
-                <DashboardNavigationIcon name="BookUser" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('BookUser', 'h-5 w-5'),
               disabled: withoutPermission('view_user_groups'),
             },
             {
@@ -844,9 +757,7 @@ export async function WorkspaceNavigationLinks({
                 `/${personalOrWsId}/users/topic-announcements/import`,
                 `/${personalOrWsId}/users/topic-announcements/templates`,
               ],
-              icon: (
-                <DashboardNavigationIcon name="Megaphone" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Megaphone', 'h-5 w-5'),
               disabled:
                 !ENABLE_TOPIC_ANNOUNCEMENTS ||
                 withoutPermission('manage_users'),
@@ -855,52 +766,33 @@ export async function WorkspaceNavigationLinks({
                 {
                   title: t('ws-topic-announcements.nav_announcements'),
                   href: `/${personalOrWsId}/users/topic-announcements/announcements`,
-                  icon: (
-                    <DashboardNavigationIcon
-                      name="Megaphone"
-                      className="h-5 w-5"
-                    />
-                  ),
+                  icon: createDashboardNavigationIcon('Megaphone', 'h-5 w-5'),
                   sectionLabel: t('ws-topic-announcements.nav_group_send'),
                 },
                 {
                   title: t('ws-topic-announcements.nav_delivery'),
                   href: `/${personalOrWsId}/users/topic-announcements/delivery`,
-                  icon: (
-                    <DashboardNavigationIcon name="Send" className="h-5 w-5" />
-                  ),
+                  icon: createDashboardNavigationIcon('Send', 'h-5 w-5'),
                 },
                 null,
                 {
                   title: t('ws-topic-announcements.nav_contacts'),
                   href: `/${personalOrWsId}/users/topic-announcements/contacts`,
-                  icon: (
-                    <DashboardNavigationIcon
-                      name="MailCheck"
-                      className="h-5 w-5"
-                    />
-                  ),
+                  icon: createDashboardNavigationIcon('MailCheck', 'h-5 w-5'),
                   sectionLabel: t('ws-topic-announcements.nav_group_setup'),
                 },
                 {
                   title: t('ws-topic-announcements.nav_templates'),
                   href: `/${personalOrWsId}/users/topic-announcements/templates`,
-                  icon: (
-                    <DashboardNavigationIcon
-                      name="BookOpenCheck"
-                      className="h-5 w-5"
-                    />
+                  icon: createDashboardNavigationIcon(
+                    'BookOpenCheck',
+                    'h-5 w-5'
                   ),
                 },
                 {
                   title: t('ws-topic-announcements.nav_import'),
                   href: `/${personalOrWsId}/users/topic-announcements/import`,
-                  icon: (
-                    <DashboardNavigationIcon
-                      name="Upload"
-                      className="h-5 w-5"
-                    />
-                  ),
+                  icon: createDashboardNavigationIcon('Upload', 'h-5 w-5'),
                 },
               ],
             },
@@ -908,23 +800,13 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-users-tabs.reports'),
               href: `/${personalOrWsId}/users/reports`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="ClipboardList"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
               disabled: withoutPermission('view_user_groups_reports'),
             },
             {
               title: t('workspace-users-tabs.approvals'),
               href: `/${personalOrWsId}/users/approvals`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="CheckCircle2"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
               disabled:
                 withoutPermission('approve_reports') &&
                 withoutPermission('approve_posts'),
@@ -932,22 +814,15 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-users-tabs.metrics'),
               href: `/${personalOrWsId}/users/groups/indicators`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="ChartColumn"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('ChartColumn', 'h-5 w-5'),
               disabled: withoutPermission('view_user_groups_scores'),
             },
             {
               title: t('sidebar_tabs.posts'),
               href: `/${personalOrWsId}/posts`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="GalleryVerticalEnd"
-                  className="h-5 w-5"
-                />
+              icon: createDashboardNavigationIcon(
+                'GalleryVerticalEnd',
+                'h-5 w-5'
               ),
               disabled:
                 !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
@@ -960,9 +835,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-users-tabs.guest_leads'),
               href: `/${personalOrWsId}/users/guest-leads`,
-              icon: (
-                <DashboardNavigationIcon name="Mails" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Mails', 'h-5 w-5'),
               disabled: withoutPermission('create_lead_generations'),
             },
             null,
@@ -970,12 +843,7 @@ export async function WorkspaceNavigationLinks({
               title: t('sidebar_tabs.structure'),
               aliases: [`/${personalOrWsId}/users/structure`],
               href: `/${personalOrWsId}/users/structure`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="IdCardLanyard"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('IdCardLanyard', 'h-5 w-5'),
               requireRootWorkspace: true,
               requireRootMember: true,
               disabled:
@@ -1002,7 +870,7 @@ export async function WorkspaceNavigationLinks({
         {
           id: 'inventory',
           title: t('sidebar_tabs.inventory'),
-          icon: <DashboardNavigationIcon name="Archive" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Archive', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('inventory', {
             alwaysShow: true,
           }),
@@ -1010,12 +878,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-inventory-tabs.overview'),
               href: `/${personalOrWsId}/inventory`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="LayoutDashboard"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
               matchExact: true,
               disabled: withoutPermission('view_inventory'),
             },
@@ -1023,70 +886,53 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-inventory-tabs.products'),
               href: `/${personalOrWsId}/inventory/products`,
-              icon: (
-                <DashboardNavigationIcon name="Package" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Package', 'h-5 w-5'),
               disabled: withoutPermission('view_inventory'),
             },
             {
               title: t('workspace-inventory-tabs.categories'),
               href: `/${personalOrWsId}/inventory/categories`,
-              icon: <DashboardNavigationIcon name="Tags" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Tags', 'h-5 w-5'),
               disabled: withoutPermission('view_inventory'),
             },
             {
               title: t('workspace-inventory-tabs.units'),
               href: `/${personalOrWsId}/inventory/units`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="RulerDimensionLine"
-                  className="h-5 w-5"
-                />
+              icon: createDashboardNavigationIcon(
+                'RulerDimensionLine',
+                'h-5 w-5'
               ),
               disabled: withoutPermission('view_inventory'),
             },
             {
               title: t('workspace-inventory-tabs.manufacturers'),
               href: `/${personalOrWsId}/inventory/manufacturers`,
-              icon: (
-                <DashboardNavigationIcon name="Blocks" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
               disabled: withoutPermission('view_inventory'),
             },
             {
               title: t('workspace-inventory-tabs.suppliers'),
               href: `/${personalOrWsId}/inventory/suppliers`,
-              icon: (
-                <DashboardNavigationIcon name="Truck" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Truck', 'h-5 w-5'),
               disabled: withoutPermission('view_inventory'),
             },
             {
               title: t('workspace-inventory-tabs.warehouses'),
               href: `/${personalOrWsId}/inventory/warehouses`,
-              icon: (
-                <DashboardNavigationIcon name="Warehouse" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Warehouse', 'h-5 w-5'),
               disabled: withoutPermission('view_inventory'),
             },
             {
               title: t('workspace-inventory-tabs.batches'),
               href: `/${personalOrWsId}/inventory/batches`,
-              icon: (
-                <DashboardNavigationIcon name="Boxes" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Boxes', 'h-5 w-5'),
               disabled: withoutPermission('view_inventory'),
             },
             null,
             {
               title: t('workspace-inventory-tabs.promotions'),
               href: `/${personalOrWsId}/inventory/promotions`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="TicketPercent"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('TicketPercent', 'h-5 w-5'),
               disabled: withoutPermission('view_inventory'),
             },
           ],
@@ -1098,7 +944,7 @@ export async function WorkspaceNavigationLinks({
         {
           id: 'ai_lab',
           title: t('sidebar_tabs.ai_lab'),
-          icon: <DashboardNavigationIcon name="Box" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Box', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('ai_lab', {
             alwaysShow: true,
           }),
@@ -1106,9 +952,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.spark'),
               href: `/${personalOrWsId}/ai/spark`,
-              icon: (
-                <DashboardNavigationIcon name="Sparkles" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Sparkles', 'h-5 w-5'),
               disabled:
                 ENABLE_AI_ONLY ||
                 !hasSecret('ENABLE_TASKS', 'true') ||
@@ -1118,11 +962,9 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.chat_with_ai'),
               href: `/${personalOrWsId}/ai-chat`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="MessageCircleIcon"
-                  className="h-5 w-5"
-                />
+              icon: createDashboardNavigationIcon(
+                'MessageCircleIcon',
+                'h-5 w-5'
               ),
               disabled:
                 ENABLE_AI_ONLY ||
@@ -1133,12 +975,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.memories'),
               href: `/${personalOrWsId}/memories`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="BrainCircuit"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('BrainCircuit', 'h-5 w-5'),
               disabled:
                 !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'beta',
@@ -1146,7 +983,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.ai_executions'),
               href: `/${personalOrWsId}/ai/executions`,
-              icon: <DashboardNavigationIcon name="Cctv" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Cctv', 'h-5 w-5'),
               requireRootWorkspace: true,
               requireRootMember: true,
               disabled: withoutPermission('manage_workspace_roles'),
@@ -1154,7 +991,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.models'),
               href: `/${personalOrWsId}/models`,
-              icon: <DashboardNavigationIcon name="Box" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Box', 'h-5 w-5'),
               disabled:
                 !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'alpha',
@@ -1162,9 +999,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.datasets'),
               href: `/${personalOrWsId}/datasets`,
-              icon: (
-                <DashboardNavigationIcon name="Database" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Database', 'h-5 w-5'),
               disabled:
                 !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'beta',
@@ -1172,7 +1007,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.pipelines'),
               href: `/${personalOrWsId}/pipelines`,
-              icon: <DashboardNavigationIcon name="Play" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Play', 'h-5 w-5'),
               disabled:
                 !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'alpha',
@@ -1180,12 +1015,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.crawlers'),
               href: `/${personalOrWsId}/crawlers`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="ScanSearch"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('ScanSearch', 'h-5 w-5'),
               disabled:
                 !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'alpha',
@@ -1193,9 +1023,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.cron'),
               href: `/${personalOrWsId}/cron`,
-              icon: (
-                <DashboardNavigationIcon name="Clock" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Clock', 'h-5 w-5'),
               disabled:
                 !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'alpha',
@@ -1203,7 +1031,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.queues'),
               href: `/${personalOrWsId}/queues`,
-              icon: <DashboardNavigationIcon name="Logs" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Logs', 'h-5 w-5'),
               disabled:
                 !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
               experimental: 'alpha',
@@ -1214,17 +1042,13 @@ export async function WorkspaceNavigationLinks({
         {
           id: 'google_workspace',
           title: t('sidebar_tabs.google_workspace'),
-          icon: (
-            <DashboardNavigationIcon name="ScreenShare" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('ScreenShare', 'h-5 w-5'),
           requireRootWorkspace: true,
           requireRootMember: true,
           children: [
             {
               title: t('sidebar_tabs.drive'),
-              icon: (
-                <DashboardNavigationIcon name="HardDrive" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('HardDrive', 'h-5 w-5'),
               href: 'https://drive.google.com/a/tuturuuu.com',
               external: true,
               newTab: true,
@@ -1233,7 +1057,7 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.mail'),
-              icon: <DashboardNavigationIcon name="Mail" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Mail', 'h-5 w-5'),
               href: 'https://mail.google.com/a/tuturuuu.com',
               external: true,
               newTab: true,
@@ -1242,9 +1066,7 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.calendar'),
-              icon: (
-                <DashboardNavigationIcon name="Calendar" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Calendar', 'h-5 w-5'),
               href: 'https://www.google.com/calendar/hosted/tuturuuu.com',
               external: true,
               newTab: true,
@@ -1253,7 +1075,7 @@ export async function WorkspaceNavigationLinks({
             },
             // {
             //   title: t('sidebar_tabs.groups'),
-            //   icon: <DashboardNavigationIcon name="Users" className="h-5 w-5" />,
+            //   icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
             //   href: 'https://groups.google.com/a/tuturuuu.com',
             //   external: true,
             //   newTab: true,
@@ -1262,7 +1084,7 @@ export async function WorkspaceNavigationLinks({
             // },
             // {
             //   title: t('sidebar_tabs.sites'),
-            //   icon: <DashboardNavigationIcon name="PanelsTopLeft" className="h-5 w-5" />,
+            //   icon: createDashboardNavigationIcon('PanelsTopLeft', 'h-5 w-5'),
             //   href: 'https://sites.google.com/a/tuturuuu.com',
             //   external: true,
             //   newTab: true,
@@ -1276,33 +1098,18 @@ export async function WorkspaceNavigationLinks({
           id: 'meet',
           title: t('sidebar_tabs.meet'),
           href: `/${personalOrWsId}/meet`,
-          icon: (
-            <DashboardNavigationIcon
-              name="SquaresIntersect"
-              className="h-5 w-5"
-            />
-          ),
+          icon: createDashboardNavigationIcon('SquaresIntersect', 'h-5 w-5'),
           preferenceSectionLabel: sidebarSections.utilities,
           children: [
             {
               title: t('sidebar_tabs.plans'),
               href: `/${personalOrWsId}/meet/plans`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="VectorSquare"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('VectorSquare', 'h-5 w-5'),
             },
             {
               title: t('sidebar_tabs.meetings'),
               href: `/${personalOrWsId}/meet/meetings`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="SquareUserRound"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('SquareUserRound', 'h-5 w-5'),
               requireRootWorkspace: true,
               requireRootMember: true,
             },
@@ -1312,7 +1119,7 @@ export async function WorkspaceNavigationLinks({
           id: 'polls',
           title: t('sidebar_tabs.polls'),
           href: `/${personalOrWsId}/polls`,
-          icon: <DashboardNavigationIcon name="Vote" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Vote', 'h-5 w-5'),
           disabled: !DEV_MODE,
           requireRootWorkspace: true,
           requireRootMember: true,
@@ -1322,7 +1129,7 @@ export async function WorkspaceNavigationLinks({
           id: 'mail',
           title: t('sidebar_tabs.mail'),
           href: mailAppHref,
-          icon: <DashboardNavigationIcon name="Mail" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Mail', 'h-5 w-5'),
           external: true,
           requireRootMember: true,
           disabled: !isMailUser,
@@ -1332,54 +1139,42 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('mail.inbox'),
               href: mailAppHref,
-              icon: <DashboardNavigationIcon name="Mail" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Mail', 'h-5 w-5'),
               external: true,
               disabled: !isMailUser,
             },
             {
               title: t('mail.starred'),
               href: `${mailAppHref}?folder=starred`,
-              icon: <DashboardNavigationIcon name="Star" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Star', 'h-5 w-5'),
               external: true,
               disabled: !isMailUser,
             },
             {
               title: t('mail.sent'),
               href: `${mailAppHref}?folder=sent`,
-              icon: <DashboardNavigationIcon name="Send" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Send', 'h-5 w-5'),
               external: true,
               disabled: !isMailUser,
             },
             {
               title: t('mail.drafts'),
               href: `${mailAppHref}?folder=drafts`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="TextSelect"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('TextSelect', 'h-5 w-5'),
               external: true,
               disabled: !isMailUser,
             },
             {
               title: t('mail.spam'),
               href: `${mailAppHref}?folder=spam`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="TriangleAlert"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('TriangleAlert', 'h-5 w-5'),
               external: true,
               disabled: !isMailUser,
             },
             {
               title: t('mail.trash'),
               href: `${mailAppHref}?folder=trash`,
-              icon: (
-                <DashboardNavigationIcon name="Trash" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Trash', 'h-5 w-5'),
               external: true,
               disabled: !isMailUser,
             },
@@ -1389,9 +1184,7 @@ export async function WorkspaceNavigationLinks({
           id: 'education',
           title: t('sidebar_tabs.education'),
           href: `/${personalOrWsId}/education`,
-          icon: (
-            <DashboardNavigationIcon name="GraduationCap" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('GraduationCap', 'h-5 w-5'),
           aliases: [
             `/${personalOrWsId}/education/library`,
             `/${personalOrWsId}/education/library/quizzes`,
@@ -1409,30 +1202,18 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-education-tabs.overview'),
               href: `/${personalOrWsId}/education`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="LayoutDashboard"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
               matchExact: true,
             },
             {
               title: t('workspace-education-tabs.courses'),
               href: `/${personalOrWsId}/education/courses`,
-              icon: (
-                <DashboardNavigationIcon name="BookText" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('BookText', 'h-5 w-5'),
             },
             {
               title: t('workspace-education-tabs.library'),
               href: `/${personalOrWsId}/education/library`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="LayoutList"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('LayoutList', 'h-5 w-5'),
               aliases: [
                 `/${personalOrWsId}/education/library/quizzes`,
                 `/${personalOrWsId}/education/library/quiz-sets`,
@@ -1442,20 +1223,13 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-education-tabs.attempts'),
               href: `/${personalOrWsId}/education/attempts`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="ClipboardList"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
               disabled: withoutPermission('view_user_groups_reports'),
             },
             {
               title: t('workspace-education-tabs.valsea.title'),
               href: `/${personalOrWsId}/education/valsea`,
-              icon: (
-                <DashboardNavigationIcon name="Languages" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Languages', 'h-5 w-5'),
               experimental: 'beta',
             },
           ],
@@ -1464,7 +1238,7 @@ export async function WorkspaceNavigationLinks({
           id: 'link_shortener',
           title: t('sidebar_tabs.link_shortener'),
           href: `/${personalOrWsId}/link-shortener`,
-          icon: <DashboardNavigationIcon name="Link" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Link', 'h-5 w-5'),
           disabled:
             resolvedWorkspaceId !== ROOT_WORKSPACE_ID &&
             !hasSecret('ENABLE_LINK_SHORTENER', 'true'),
@@ -1475,7 +1249,7 @@ export async function WorkspaceNavigationLinks({
     {
       id: 'settings',
       title: t('common.settings'),
-      icon: <DashboardNavigationIcon name="Settings" className="h-5 w-5" />,
+      icon: createDashboardNavigationIcon('Settings', 'h-5 w-5'),
       preferenceLocked: true,
       preferencePlacement: 'root',
       preferenceSectionLabel: sidebarSections.utilities,
@@ -1497,7 +1271,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('workspace-settings-layout.workspace'),
           href: `/${personalOrWsId}/settings`,
-          icon: <DashboardNavigationIcon name="Bolt" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Bolt', 'h-5 w-5'),
           matchExact: true,
         },
         null,
@@ -1506,9 +1280,7 @@ export async function WorkspaceNavigationLinks({
               {
                 title: t('workspace-settings-layout.members'),
                 href: `/${personalOrWsId}/members`,
-                icon: (
-                  <DashboardNavigationIcon name="Users" className="h-5 w-5" />
-                ),
+                icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
                 disabled:
                   ENABLE_AI_ONLY ||
                   withoutPermission('manage_workspace_members'),
@@ -1516,12 +1288,7 @@ export async function WorkspaceNavigationLinks({
               {
                 title: t('workspace-settings-layout.workspace_roles'),
                 href: `/${personalOrWsId}/roles`,
-                icon: (
-                  <DashboardNavigationIcon
-                    name="UserLock"
-                    className="h-5 w-5"
-                  />
-                ),
+                icon: createDashboardNavigationIcon('UserLock', 'h-5 w-5'),
                 disabled:
                   ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
               },
@@ -1531,7 +1298,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('workspace-settings-layout.reports'),
           href: `/${personalOrWsId}/settings/reports`,
-          icon: <DashboardNavigationIcon name="FileText" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('FileText', 'h-5 w-5'),
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_user_report_templates'),
           requireRootMember: true,
@@ -1539,42 +1306,30 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('workspace-settings-layout.notifications'),
           href: `/${personalOrWsId}/settings/notifications`,
-          icon: <DashboardNavigationIcon name="Bell" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Bell', 'h-5 w-5'),
         },
         {
           title: t('sidebar_tabs.billing'),
           href: `/${personalOrWsId}/billing`,
-          icon: (
-            <DashboardNavigationIcon
-              name="CircleDollarSign"
-              className="h-5 w-5"
-            />
-          ),
+          icon: createDashboardNavigationIcon('CircleDollarSign', 'h-5 w-5'),
         },
         {
           title: t('sidebar_tabs.usage'),
           href: `/${personalOrWsId}/usage`,
-          icon: (
-            <DashboardNavigationIcon
-              name="ChartColumnStacked"
-              className="h-5 w-5"
-            />
-          ),
+          icon: createDashboardNavigationIcon('ChartColumnStacked', 'h-5 w-5'),
         },
         null,
         allowDiscordIntegrations
           ? {
               title: t('sidebar_tabs.integrations'),
-              icon: <DashboardNavigationIcon name="Bot" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Bot', 'h-5 w-5'),
               href: `/${personalOrWsId}/integrations`,
               aliases: [`/${personalOrWsId}/integrations/discord`],
               children: [
                 {
                   title: 'Discord',
                   href: `/${personalOrWsId}/integrations/discord`,
-                  icon: (
-                    <DashboardNavigationIcon name="Bot" className="h-5 w-5" />
-                  ),
+                  icon: createDashboardNavigationIcon('Bot', 'h-5 w-5'),
                   disabled: !allowDiscordIntegrations,
                 },
               ],
@@ -1584,7 +1339,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('workspace-settings-layout.api_keys'),
           href: `/${personalOrWsId}/api-keys`,
-          icon: <DashboardNavigationIcon name="KeyRound" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('KeyRound', 'h-5 w-5'),
           disabled:
             ENABLE_AI_ONLY ||
             !hasSecret('ENABLE_API_KEYS', 'true') ||
@@ -1594,14 +1349,14 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('workspace-settings-layout.secrets'),
           href: `/${personalOrWsId}/secrets`,
-          icon: <DashboardNavigationIcon name="BookKey" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('BookKey', 'h-5 w-5'),
           disabled: withoutRootPermission('manage_workspace_secrets'),
           requireRootMember: true,
         },
         null,
         {
           title: t('workspace-settings-layout.infrastructure'),
-          icon: <DashboardNavigationIcon name="Blocks" className="h-5 w-5" />,
+          icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
           disabled: withoutPermission('view_infrastructure'),
           requireRootWorkspace: true,
           requireRootMember: true,
@@ -1609,56 +1364,38 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('infrastructure-tabs.overview'),
               href: `/${personalOrWsId}/infrastructure`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="LayoutDashboard"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
               matchExact: true,
             },
             {
               title: t('infrastructure-tabs.users'),
               href: `/${personalOrWsId}/infrastructure/users`,
-              icon: (
-                <DashboardNavigationIcon name="Users" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.workspaces'),
               href: `/${personalOrWsId}/infrastructure/workspaces`,
-              icon: (
-                <DashboardNavigationIcon name="Blocks" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.entity_creation_limits'),
               href: `/${personalOrWsId}/infrastructure/entity-creation-limits`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="RulerDimensionLine"
-                  className="h-5 w-5"
-                />
+              icon: createDashboardNavigationIcon(
+                'RulerDimensionLine',
+                'h-5 w-5'
               ),
               disabled: withoutPermission('manage_workspace_roles'),
             },
             {
               title: t('infrastructure-tabs.mobile_versions'),
               href: `/${personalOrWsId}/infrastructure/mobile-versions`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="Smartphone"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('Smartphone', 'h-5 w-5'),
               disabled: withoutPermission('manage_workspace_roles'),
             },
             {
               title: t('infrastructure-tabs.external_apps'),
               href: `/${personalOrWsId}/infrastructure/external-apps`,
-              icon: (
-                <DashboardNavigationIcon name="KeyRound" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('KeyRound', 'h-5 w-5'),
               disabled:
                 withoutPermission('manage_workspace_secrets') &&
                 withoutPermission('manage_workspace_roles'),
@@ -1666,9 +1403,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('infrastructure-tabs.app_coordination'),
               href: `/${personalOrWsId}/infrastructure/app-coordination`,
-              icon: (
-                <DashboardNavigationIcon name="RefreshCw" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('RefreshCw', 'h-5 w-5'),
               disabled:
                 withoutPermission('manage_workspace_secrets') &&
                 withoutPermission('manage_workspace_roles'),
@@ -1676,121 +1411,88 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('infrastructure-tabs.ai_agents'),
               href: `/${personalOrWsId}/infrastructure/ai-agents`,
-              icon: <DashboardNavigationIcon name="Bot" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Bot', 'h-5 w-5'),
               disabled: withoutPermission('manage_workspace_secrets'),
             },
             {
               title: t('infrastructure-tabs.email_blacklist'),
               href: `/${personalOrWsId}/infrastructure/email-blacklist`,
-              icon: (
-                <DashboardNavigationIcon name="MailX" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('MailX', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.email_audit'),
               href: `/${personalOrWsId}/infrastructure/email-audit`,
-              icon: (
-                <DashboardNavigationIcon name="Mails" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Mails', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.email_templates'),
               href: `/${personalOrWsId}/infrastructure/email-templates`,
-              icon: <DashboardNavigationIcon name="Mail" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Mail', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.post_email_queue'),
               href: `/${personalOrWsId}/infrastructure/post-email-queue`,
-              icon: (
-                <DashboardNavigationIcon name="Mails" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Mails', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.push_notifications'),
               href: `/${personalOrWsId}/infrastructure/push-notifications`,
-              icon: <DashboardNavigationIcon name="Bell" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Bell', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.blocked_ips'),
               href: `/${personalOrWsId}/infrastructure/blocked-ips`,
-              icon: (
-                <DashboardNavigationIcon name="ShieldBan" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('ShieldBan', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.abuse_events'),
               href: `/${personalOrWsId}/infrastructure/abuse-events`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="ShieldAlert"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('ShieldAlert', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.abuse_intelligence'),
               href: `/${personalOrWsId}/infrastructure/abuse-intelligence`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="ShieldUser"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('ShieldUser', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.otp_limits'),
               href: `/${personalOrWsId}/infrastructure/otp-limits`,
-              icon: (
-                <DashboardNavigationIcon name="KeyRound" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('KeyRound', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.timezones'),
               href: `/${personalOrWsId}/infrastructure/timezones`,
-              icon: (
-                <DashboardNavigationIcon name="Clock" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Clock', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.ai_whitelisted_emails'),
               href: `/${personalOrWsId}/infrastructure/ai/whitelist/emails`,
-              icon: <DashboardNavigationIcon name="Mail" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Mail', 'h-5 w-5'),
             },
             {
               title: t('ws-ai-whitelist-domains.plural'),
               href: `/${personalOrWsId}/infrastructure/ai/whitelist/domains`,
-              icon: (
-                <DashboardNavigationIcon name="Database" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Database', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.translations'),
               href: `/${personalOrWsId}/infrastructure/translations`,
-              icon: (
-                <DashboardNavigationIcon name="Languages" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Languages', 'h-5 w-5'),
             },
             {
               title: 'Calendar Sync',
               href: `/${personalOrWsId}/infrastructure/calendar-sync`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="FolderSync"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('FolderSync', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.realtime'),
               href: `/${personalOrWsId}/infrastructure/realtime`,
-              icon: (
-                <DashboardNavigationIcon name="Radio" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Radio', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.monitoring'),
               href: `/${personalOrWsId}/infrastructure/monitoring`,
-              icon: <DashboardNavigationIcon name="Cctv" className="h-5 w-5" />,
+              icon: createDashboardNavigationIcon('Cctv', 'h-5 w-5'),
               sectionLabel: t('infrastructure-tabs.operations'),
               aliases: [
                 `/${personalOrWsId}/infrastructure/monitoring/cron`,
@@ -1809,111 +1511,73 @@ export async function WorkspaceNavigationLinks({
                 {
                   title: t('infrastructure-tabs.monitoring_overview'),
                   href: `/${personalOrWsId}/infrastructure/monitoring`,
-                  icon: (
-                    <DashboardNavigationIcon name="Cctv" className="h-5 w-5" />
-                  ),
+                  icon: createDashboardNavigationIcon('Cctv', 'h-5 w-5'),
                   matchExact: true,
                 },
                 {
                   title: t('infrastructure-tabs.monitoring_cron'),
                   href: `/${personalOrWsId}/infrastructure/monitoring/cron`,
-                  icon: (
-                    <DashboardNavigationIcon
-                      name="CalendarClock"
-                      className="h-5 w-5"
-                    />
+                  icon: createDashboardNavigationIcon(
+                    'CalendarClock',
+                    'h-5 w-5'
                   ),
                 },
                 {
                   title: t('infrastructure-tabs.monitoring_rollouts'),
                   href: `/${personalOrWsId}/infrastructure/monitoring/deployments`,
-                  icon: (
-                    <DashboardNavigationIcon name="Box" className="h-5 w-5" />
-                  ),
+                  icon: createDashboardNavigationIcon('Box', 'h-5 w-5'),
                 },
                 {
                   title: t('infrastructure-tabs.monitoring_logs'),
                   href: `/${personalOrWsId}/infrastructure/monitoring/logs`,
-                  icon: (
-                    <DashboardNavigationIcon name="Logs" className="h-5 w-5" />
-                  ),
+                  icon: createDashboardNavigationIcon('Logs', 'h-5 w-5'),
                 },
                 {
                   title: t('infrastructure-tabs.monitoring_analytics'),
                   href: `/${personalOrWsId}/infrastructure/monitoring/analytics`,
-                  icon: (
-                    <DashboardNavigationIcon
-                      name="ChartColumn"
-                      className="h-5 w-5"
-                    />
-                  ),
+                  icon: createDashboardNavigationIcon('ChartColumn', 'h-5 w-5'),
                 },
                 {
                   title: t('infrastructure-tabs.monitoring_observability'),
                   href: `/${personalOrWsId}/infrastructure/monitoring/observability`,
-                  icon: (
-                    <DashboardNavigationIcon
-                      name="Database"
-                      className="h-5 w-5"
-                    />
-                  ),
+                  icon: createDashboardNavigationIcon('Database', 'h-5 w-5'),
                 },
                 {
                   title: t('infrastructure-tabs.monitoring_projects'),
                   href: `/${personalOrWsId}/infrastructure/monitoring/projects`,
-                  icon: (
-                    <DashboardNavigationIcon name="Box" className="h-5 w-5" />
-                  ),
+                  icon: createDashboardNavigationIcon('Box', 'h-5 w-5'),
                 },
                 {
                   title: t('infrastructure-tabs.monitoring_requests'),
                   href: `/${personalOrWsId}/infrastructure/monitoring/requests`,
-                  icon: (
-                    <DashboardNavigationIcon name="Radio" className="h-5 w-5" />
-                  ),
+                  icon: createDashboardNavigationIcon('Radio', 'h-5 w-5'),
                 },
                 {
                   title: t('infrastructure-tabs.monitoring_resources'),
                   href: `/${personalOrWsId}/infrastructure/monitoring/resources`,
-                  icon: (
-                    <DashboardNavigationIcon
-                      name="HardDrive"
-                      className="h-5 w-5"
-                    />
-                  ),
+                  icon: createDashboardNavigationIcon('HardDrive', 'h-5 w-5'),
                 },
                 {
                   title: t('infrastructure-tabs.monitoring_stress_tests'),
                   href: `/${personalOrWsId}/infrastructure/monitoring/stress-tests`,
-                  icon: (
-                    <DashboardNavigationIcon name="Bolt" className="h-5 w-5" />
-                  ),
+                  icon: createDashboardNavigationIcon('Bolt', 'h-5 w-5'),
                 },
                 {
                   title: t('infrastructure-tabs.monitoring_watcher_logs'),
                   href: `/${personalOrWsId}/infrastructure/monitoring/watcher-logs`,
-                  icon: (
-                    <DashboardNavigationIcon name="Logs" className="h-5 w-5" />
-                  ),
+                  icon: createDashboardNavigationIcon('Logs', 'h-5 w-5'),
                 },
               ],
             },
             {
               title: t('infrastructure-tabs.ai_credits'),
               href: `/${personalOrWsId}/infrastructure/ai-credits`,
-              icon: (
-                <DashboardNavigationIcon
-                  name="CreditCard"
-                  className="h-5 w-5"
-                />
-              ),
+              icon: createDashboardNavigationIcon('CreditCard', 'h-5 w-5'),
             },
             {
               title: t('infrastructure-tabs.changelog'),
               href: `/${personalOrWsId}/infrastructure/changelog`,
-              icon: (
-                <DashboardNavigationIcon name="Megaphone" className="h-5 w-5" />
-              ),
+              icon: createDashboardNavigationIcon('Megaphone', 'h-5 w-5'),
               disabled: withoutPermission('manage_changelog'),
             },
           ],
@@ -1921,9 +1585,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('workspace-settings-layout.platform_roles'),
           href: `/${personalOrWsId}/platform/roles`,
-          icon: (
-            <DashboardNavigationIcon name="ShieldUser" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('ShieldUser', 'h-5 w-5'),
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
           requireRootWorkspace: true,
@@ -1933,9 +1595,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: 'Platform Billing',
           href: `/${personalOrWsId}/platform/billing`,
-          icon: (
-            <DashboardNavigationIcon name="CreditCard" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('CreditCard', 'h-5 w-5'),
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
           requireRootWorkspace: true,
@@ -1944,9 +1604,7 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('workspace-settings-layout.migrations'),
           href: `/${personalOrWsId}/migrations`,
-          icon: (
-            <DashboardNavigationIcon name="FolderSync" className="h-5 w-5" />
-          ),
+          icon: createDashboardNavigationIcon('FolderSync', 'h-5 w-5'),
           disabled: withoutPermission('manage_external_migrations'),
           requireRootWorkspace: true,
           requireRootMember: true,
@@ -1954,16 +1612,11 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('sidebar_tabs.inquiries'),
           href: `/${personalOrWsId}/inquiries`,
-          icon: (
-            <DashboardNavigationIcon
-              name="MessageCircleIcon"
-              className="h-5 w-5"
-            />
-          ),
+          icon: createDashboardNavigationIcon('MessageCircleIcon', 'h-5 w-5'),
           requireRootWorkspace: true,
           requireRootMember: true,
         },
-      ].filter(Boolean) as NavLink[],
+      ].filter(Boolean) as DashboardNavigationLink[],
     },
   ];
 
@@ -1974,9 +1627,9 @@ export async function WorkspaceNavigationLinks({
    * @returns Cleaned array with no consecutive nulls and no leading/trailing nulls
    */
   const removeConsecutiveNulls = (
-    arr: (NavLink | null)[]
-  ): (NavLink | null)[] => {
-    const withoutConsecutive = arr.reduce<(NavLink | null)[]>(
+    arr: (DashboardNavigationLink | null)[]
+  ): (DashboardNavigationLink | null)[] => {
+    const withoutConsecutive = arr.reduce<(DashboardNavigationLink | null)[]>(
       (acc, item, index) => {
         // Skip null if previous item was also null
         if (item === null && index > 0 && arr[index - 1] === null) {
@@ -2005,5 +1658,7 @@ export async function WorkspaceNavigationLinks({
   };
 
   // Preserve null entries as separators; rendering components handle them
-  return removeConsecutiveNulls(navLinks) satisfies (NavLink | null)[];
+  return removeConsecutiveNulls(
+    navLinks
+  ) satisfies (DashboardNavigationLink | null)[];
 }

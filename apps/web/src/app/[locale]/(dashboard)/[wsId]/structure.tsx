@@ -38,6 +38,11 @@ import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { Nav } from './nav';
+import {
+  type DashboardNavigationLink,
+  isDashboardNavigationIconDescriptor,
+} from './navigation-icon-descriptor';
+import { DashboardNavigationIcon } from './navigation-icons';
 import { filterDashboardNavigationLinks } from './navigation-visibility';
 import {
   applySidebarNavigationPreferences,
@@ -80,7 +85,7 @@ interface StructureProps {
   workspace: (Workspace & { tier?: WorkspaceProductTier | null }) | null;
   defaultCollapsed: boolean;
   user: WorkspaceUser | null;
-  links: (NavLink | null)[];
+  links: (DashboardNavigationLink | null)[];
   actions: ReactNode;
   userPopover: ReactNode;
   children: ReactNode;
@@ -150,6 +155,38 @@ function insertArchivedNavigationLink({
   return cleanNavigationSeparators([...children, null, archivedNavigationLink]);
 }
 
+function hydrateDashboardNavigationLink(
+  link: DashboardNavigationLink
+): NavLink {
+  const icon = isDashboardNavigationIconDescriptor(link.icon) ? (
+    <DashboardNavigationIcon
+      className={link.icon.className}
+      name={link.icon.name}
+    />
+  ) : (
+    link.icon
+  );
+
+  return {
+    ...link,
+    icon,
+    children: link.children
+      ? hydrateDashboardNavigationIcons(link.children)
+      : undefined,
+    preferenceArchivedItems: link.preferenceArchivedItems?.map(
+      hydrateDashboardNavigationLink
+    ),
+  };
+}
+
+function hydrateDashboardNavigationIcons(
+  links: (DashboardNavigationLink | null)[]
+): (NavLink | null)[] {
+  return links.map((link) =>
+    link ? hydrateDashboardNavigationLink(link) : null
+  );
+}
+
 function findNavigationByTitleHistory({
   direction,
   links,
@@ -201,6 +238,10 @@ export function Structure({
   const { behavior, handleBehaviorChange } = useSidebar();
   const [initialized, setInitialized] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const hydratedLinks = useMemo(
+    () => hydrateDashboardNavigationIcons(links),
+    [links]
+  );
   const previousPathnameRef = useRef(pathname);
   const accountNavigationLayoutQueryKey = [
     'user-config',
@@ -239,10 +280,14 @@ export function Structure({
     workspaceNavigationLayout ?? accountNavigationLayout ?? null;
   const navigationPreferenceResult = useMemo(
     () =>
-      applySidebarNavigationPreferences(links, effectiveNavigationLayout, {
-        pathname,
-      }),
-    [effectiveNavigationLayout, links, pathname]
+      applySidebarNavigationPreferences(
+        hydratedLinks,
+        effectiveNavigationLayout,
+        {
+          pathname,
+        }
+      ),
+    [effectiveNavigationLayout, hydratedLinks, pathname]
   );
   const preferenceItemById = useMemo(
     () =>
@@ -291,7 +336,7 @@ export function Structure({
   const createQuickPlacementUpdate = useCallback(
     (id: string, placement: SidebarNavigationPlacement) => {
       const nextConfig = createSidebarNavigationLayoutConfigForPlacement(
-        links,
+        hydratedLinks,
         effectiveNavigationLayout,
         id,
         placement
@@ -303,12 +348,12 @@ export function Structure({
         value: serializeSidebarNavigationLayoutConfig(nextConfig),
       };
     },
-    [effectiveNavigationLayout, links]
+    [effectiveNavigationLayout, hydratedLinks]
   );
   const createQuickHiddenUpdate = useCallback(
     (id: string, hidden: boolean) => {
       const nextConfig = createSidebarNavigationLayoutConfigForHiddenState(
-        links,
+        hydratedLinks,
         effectiveNavigationLayout,
         id,
         hidden
@@ -319,7 +364,7 @@ export function Structure({
         value: serializeSidebarNavigationLayoutConfig(nextConfig),
       };
     },
-    [effectiveNavigationLayout, links]
+    [effectiveNavigationLayout, hydratedLinks]
   );
   const preferredLinks = useMemo(() => {
     if (navigationPreferenceResult.archivedLinks.length === 0) {

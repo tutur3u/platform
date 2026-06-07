@@ -4,6 +4,15 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { meetsAnyTierRequirement } from '@/lib/feature-tiers';
 
+type DashboardNavigationVisibilityLink = Omit<
+  NavLink,
+  'children' | 'icon' | 'preferenceArchivedItems'
+> & {
+  children?: (DashboardNavigationVisibilityLink | null)[];
+  icon?: unknown;
+  preferenceArchivedItems?: DashboardNavigationVisibilityLink[];
+};
+
 export interface DashboardNavigationVisibilityOptions {
   currentWsId: string;
   flattenSingleChild?: boolean;
@@ -12,13 +21,13 @@ export interface DashboardNavigationVisibilityOptions {
   workspaceTier?: WorkspaceProductTier | null;
 }
 
-function removeConsecutiveNulls(
-  items: (NavLink | null | undefined)[]
-): (NavLink | null)[] {
+function removeConsecutiveNulls<T extends DashboardNavigationVisibilityLink>(
+  items: (T | null | undefined)[]
+): (T | null)[] {
   const withoutUndefined = items.filter(
-    (item): item is NavLink | null => item !== undefined
+    (item): item is T | null => item !== undefined
   );
-  const withoutConsecutive: (NavLink | null)[] = [];
+  const withoutConsecutive: (T | null)[] = [];
 
   for (const item of withoutUndefined) {
     if (item === null && withoutConsecutive.at(-1) === null) continue;
@@ -36,10 +45,12 @@ function removeConsecutiveNulls(
   return withoutConsecutive;
 }
 
-export function filterDashboardNavigationLinks(
-  linksToFilter: (NavLink | null)[] | undefined,
+export function filterDashboardNavigationLinks<
+  T extends DashboardNavigationVisibilityLink = NavLink,
+>(
+  linksToFilter: (T | null)[] | undefined,
   options: DashboardNavigationVisibilityOptions
-): (NavLink | null)[] {
+): (T | null)[] {
   const isRootWorkspace = options.currentWsId === ROOT_WORKSPACE_ID;
   const isTuturuuuEmployee = isValidTuturuuuEmail(options.userEmail);
   const currentTier = options.workspaceTier || 'FREE';
@@ -55,9 +66,7 @@ export function filterDashboardNavigationLinks(
       ? filterDashboardNavigationLinks(link.preferenceArchivedItems, {
           ...options,
           flattenSingleChild: false,
-        }).filter((archivedItem): archivedItem is NavLink =>
-          Boolean(archivedItem)
-        )
+        }).filter((archivedItem): archivedItem is T => Boolean(archivedItem))
       : undefined;
 
     if (link.preferenceArchivedItems && archivedItems?.length === 0) {
@@ -80,7 +89,7 @@ export function filterDashboardNavigationLinks(
             {
               ...linkWithArchivedItems,
               tempDisabled: !isTuturuuuEmployee,
-            },
+            } as T,
           ];
         }
 
@@ -91,7 +100,7 @@ export function filterDashboardNavigationLinks(
         {
           ...linkWithArchivedItems,
           requiredWorkspaceTier: undefined,
-        },
+        } as T,
       ];
     }
 
@@ -109,7 +118,7 @@ export function filterDashboardNavigationLinks(
         linkWithArchivedItems.children.length === 1
       ) {
         return filterDashboardNavigationLinks(
-          [linkWithArchivedItems.children[0] as NavLink],
+          [linkWithArchivedItems.children[0] as T],
           options
         );
       }
@@ -118,12 +127,12 @@ export function filterDashboardNavigationLinks(
         {
           ...linkWithArchivedItems,
           children: filteredChildren,
-        },
+        } as T,
       ];
     }
 
-    return [linkWithArchivedItems];
+    return [linkWithArchivedItems as T];
   });
 
-  return removeConsecutiveNulls(filtered);
+  return removeConsecutiveNulls(filtered as (T | null | undefined)[]);
 }
