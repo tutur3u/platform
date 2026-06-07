@@ -2,13 +2,31 @@
 
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
-import { CalendarPreferencesProvider } from '@/lib/calendar-preferences-provider';
-import { DashboardClientProviders } from './dashboard-client-providers';
-import { DashboardSettingsDialogHost } from './dashboard-settings-dialog-host';
 import type { DashboardNavigationLink } from './navigation-icon-descriptor';
-import { Structure } from './structure';
+
+const CalendarPreferencesProvider = dynamic(() =>
+  import('@/lib/calendar-preferences-provider').then(
+    (module) => module.CalendarPreferencesProvider
+  )
+);
+const DashboardClientProviders = dynamic(() =>
+  import('./dashboard-client-providers').then(
+    (module) => module.DashboardClientProviders
+  )
+);
+const DashboardSettingsDialogHost = dynamic(
+  () =>
+    import('./dashboard-settings-dialog-host').then(
+      (module) => module.DashboardSettingsDialogHost
+    ),
+  { ssr: false }
+);
+const Structure = dynamic(() =>
+  import('./structure').then((module) => module.Structure)
+);
 
 interface DashboardShellClientProps {
   actions: ReactNode;

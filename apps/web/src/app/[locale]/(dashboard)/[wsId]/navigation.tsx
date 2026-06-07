@@ -1,7 +1,7 @@
 import {
   DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
   DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
-} from '@tuturuuu/internal-api/workspace-configs';
+} from '@tuturuuu/internal-api/workspace-config-ids';
 import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,

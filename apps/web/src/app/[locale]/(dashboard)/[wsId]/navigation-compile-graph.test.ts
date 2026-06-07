@@ -25,11 +25,22 @@ describe('[wsId] navigation compile graph', () => {
   it('keeps broad server helpers behind async split points', () => {
     for (const modulePath of [
       '@tuturuuu/supabase/next/server',
+      '@tuturuuu/internal-api/workspace-configs',
       '@tuturuuu/utils/workspace-helper',
       'next-intl/server',
     ] as const) {
       expect(navigationSource).not.toMatch(staticImportPattern(modulePath));
-      expect(navigationSource).toContain(`import('${modulePath}')`);
     }
+
+    expect(navigationSource).toContain(
+      "from '@tuturuuu/internal-api/workspace-config-ids'"
+    );
+    expect(navigationSource).toContain(
+      "import('@tuturuuu/supabase/next/server')"
+    );
+    expect(navigationSource).toContain(
+      "import('@tuturuuu/utils/workspace-helper')"
+    );
+    expect(navigationSource).toContain("import('next-intl/server')");
   });
 });

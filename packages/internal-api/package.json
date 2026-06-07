@@ -172,6 +172,11 @@
       "import": "./dist/workspace-configs.js",
       "require": "./dist/workspace-configs.js"
     },
+    "./workspace-config-ids": {
+      "types": "./dist/workspace-config-ids.d.ts",
+      "import": "./dist/workspace-config-ids.js",
+      "require": "./dist/workspace-config-ids.js"
+    },
     "./workspaces": {
       "types": "./dist/workspaces.d.ts",
       "import": "./dist/workspaces.js",

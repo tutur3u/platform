@@ -1,8 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getWorkspaceCalendarSettings } from '@tuturuuu/internal-api/settings';
-import { getUserCalendarSettings } from '@tuturuuu/internal-api/users';
 import {
   type CalendarPreferences,
   CalendarPreferencesProvider as UICalendarPreferencesProvider,
@@ -19,6 +17,24 @@ interface CalendarPreferencesProviderProps {
   wsId?: string;
 }
 
+async function loadUserCalendarSettings() {
+  const { getUserCalendarSettings } = await import(
+    '@tuturuuu/internal-api/users'
+  );
+
+  return getUserCalendarSettings();
+}
+
+async function loadWorkspaceCalendarSettings(wsId?: string) {
+  if (!wsId) return null;
+
+  const { getWorkspaceCalendarSettings } = await import(
+    '@tuturuuu/internal-api/settings'
+  );
+
+  return getWorkspaceCalendarSettings(wsId);
+}
+
 export function CalendarPreferencesProvider({
   children,
   wsId,
@@ -28,14 +44,14 @@ export function CalendarPreferencesProvider({
   // Fetch user calendar settings
   const { data: userSettings } = useQuery({
     queryKey: ['users', 'calendar-settings'],
-    queryFn: async () => getUserCalendarSettings(),
+    queryFn: loadUserCalendarSettings,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch workspace calendar settings (if wsId is provided)
   const { data: workspaceSettings } = useQuery({
     queryKey: ['workspace-calendar-settings', wsId],
-    queryFn: async () => (wsId ? getWorkspaceCalendarSettings(wsId) : null),
+    queryFn: () => loadWorkspaceCalendarSettings(wsId),
     enabled: !!wsId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
