@@ -1,11 +1,7 @@
-import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
-import { FadeSettingInitializer } from '@tuturuuu/ui/tu-do/shared/fade-setting-initializer';
-import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
@@ -28,9 +24,9 @@ import { CalendarPreferencesProvider } from '@/lib/calendar-preferences-provider
 import NavbarActions from '../../navbar-actions';
 import { SettingsDialogHost } from '../../settings-dialog-host';
 import { UserNav } from '../../user-nav';
+import { DashboardClientProviders } from './dashboard-client-providers';
 import { WorkspaceNavigationLinks } from './navigation';
 import { filterDashboardNavigationLinks } from './navigation-visibility';
-import { PersonalWorkspaceCollaborationBanner } from './personal-workspace-collaboration-banner';
 import PersonalWorkspacePrompt from './personal-workspace-prompt';
 import { Structure } from './structure';
 
@@ -216,7 +212,6 @@ export default async function Layout({ children, params }: LayoutProps) {
   return (
     <MantineThemeProvider>
       <CalendarPreferencesProvider wsId={wsId}>
-        <FadeSettingInitializer />
         <SidebarProvider initialBehavior={sidebarBehavior}>
           {!isGuestWorkspace && (
             <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
@@ -269,23 +264,15 @@ export default async function Layout({ children, params }: LayoutProps) {
               </Suspense>
             }
           >
-            <RealtimeLogProvider wsId={wsId}>
-              <WorkspacePresenceProvider
-                wsId={wsId}
-                tier={workspace.tier ?? null}
-                enabled={!workspace.personal && !isGuestWorkspace}
-              >
-                <TaskDialogWrapper
-                  isPersonalWorkspace={!!workspace.personal}
-                  wsId={wsId}
-                >
-                  {workspace.personal && (
-                    <PersonalWorkspaceCollaborationBanner />
-                  )}
-                  {children}
-                </TaskDialogWrapper>
-              </WorkspacePresenceProvider>
-            </RealtimeLogProvider>
+            <DashboardClientProviders
+              wsId={wsId}
+              tier={workspace.tier ?? null}
+              enablePresence={!workspace.personal && !isGuestWorkspace}
+              isPersonalWorkspace={!!workspace.personal}
+              showPersonalWorkspaceCollaborationBanner={!!workspace.personal}
+            >
+              {children}
+            </DashboardClientProviders>
           </Structure>
         </SidebarProvider>
       </CalendarPreferencesProvider>
