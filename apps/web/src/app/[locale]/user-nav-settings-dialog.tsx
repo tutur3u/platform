@@ -5,7 +5,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { SettingsDialog } from '@/components/settings/settings-dialog';
 
-interface UserNavSettingsDialogProps {
+export interface UserNavSettingsDialogProps {
   defaultTab?: string;
   linkedProvider?: string;
   onOpenChange: (open: boolean) => void;

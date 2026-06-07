@@ -11,6 +11,10 @@ const miraDashboardClientSource = readFileSync(
     encoding: 'utf8',
   }
 );
+const miraDashboardClientRuntimeSource = miraDashboardClientSource.replace(
+  /^\s*import\s+type\b[\s\S]*?\sfrom\s+['"][^'"]+['"];?/gmu,
+  ''
+);
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -35,15 +39,26 @@ describe('[wsId] Mira dashboard client compile graph', () => {
       '@tuturuuu/utils/constants',
       'next-intl',
       '../../workspace-list-actions',
+      './mira-chat-panel',
       './mira-chat-constants',
     ] as const) {
-      expect(miraDashboardClientSource).not.toMatch(
+      expect(miraDashboardClientRuntimeSource).not.toMatch(
         staticImportPattern(modulePath)
       );
     }
 
-    expect(miraDashboardClientSource).toContain(
-      "import('./mira-workspace-context-selector')"
+    expect(miraDashboardClientSource).toMatch(
+      /import\(["']\.\/mira-workspace-context-selector["']\)/u
     );
+  });
+
+  it('loads the chat panel after hydration instead of preloading it through next/dynamic', () => {
+    expect(miraDashboardClientSource).not.toContain(
+      "dynamic(() => import('./mira-chat-panel')"
+    );
+    expect(miraDashboardClientSource).toMatch(
+      /import\(["']\.\/mira-chat-panel["']\)/u
+    );
+    expect(miraDashboardClientSource).toContain('useMiraChatPanelComponent');
   });
 });

@@ -38,7 +38,8 @@ import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
-import { useCallback, useContext, useState } from 'react';
+import type { ComponentType } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import type { NavLink } from '@/components/navigation';
 import { useSettingsDialogShortcut } from '@/components/settings/use-settings-dialog-shortcut';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
@@ -53,6 +54,7 @@ import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
 import ReportProblemMenuItem from './report-problem-menu-item';
 import RewiseMenuItem from './rewise-menu-item';
+import type { UserNavSettingsDialogProps } from './user-nav-settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
 
 const AccountSwitcherModal = dynamic(
@@ -69,13 +71,26 @@ const UserNavCommandLauncher = dynamic(
     ),
   { ssr: false }
 );
-const UserNavSettingsDialog = dynamic(
-  () =>
-    import('./user-nav-settings-dialog').then(
-      (module) => module.UserNavSettingsDialog
-    ),
-  { ssr: false }
-);
+function useUserNavSettingsDialogComponent(enabled: boolean) {
+  const [UserNavSettingsDialog, setUserNavSettingsDialog] =
+    useState<ComponentType<UserNavSettingsDialogProps> | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    let active = true;
+
+    void import('./user-nav-settings-dialog').then((module) => {
+      if (active) setUserNavSettingsDialog(() => module.UserNavSettingsDialog);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [enabled]);
+
+  return UserNavSettingsDialog;
+}
 
 export default function UserNavClient({
   user,
@@ -100,6 +115,10 @@ export default function UserNavClient({
   const sidebar = useContext(SidebarContext);
   const { accounts } = useAccountSwitcher();
   const { modKey } = usePlatform();
+  const settingsDialogEnabled = Boolean(user && renderSettingsDialog);
+  const UserNavSettingsDialog = useUserNavSettingsDialogComponent(
+    settingsDialogEnabled
+  );
   const wsIdParam = typeof params?.wsId === 'string' ? params.wsId : undefined;
   const [settingsQuery, setSettingsQuery] = useQueryStates(
     {
@@ -170,7 +189,7 @@ export default function UserNavClient({
   }, []);
 
   useSettingsDialogShortcut({
-    enabled: Boolean(user && renderSettingsDialog),
+    enabled: settingsDialogEnabled,
     onOpen: openSettingsDialog,
   });
 
@@ -184,7 +203,7 @@ export default function UserNavClient({
           wsId={wsId}
         />
       )}
-      {user && renderSettingsDialog && (
+      {user && renderSettingsDialog && UserNavSettingsDialog && (
         <UserNavSettingsDialog
           defaultTab={requestedSettingsTab}
           linkedProvider={linkedProvider}
