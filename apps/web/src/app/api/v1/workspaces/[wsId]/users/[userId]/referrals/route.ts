@@ -7,11 +7,12 @@ import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   fetchRequireAttentionUserIds,
   withRequireAttentionFlag,
 } from '@/lib/require-attention-users';
-import { matchesWorkspaceUserSearch } from '@/lib/workspace-user-search';
+import { listAvailableReferralUsers } from '@/lib/user-referrals';
 
 const ReferralQuerySchema = z.object({
   type: z.enum(['available', 'list']).default('list'),
@@ -50,44 +51,25 @@ export async function GET(req: Request, { params }: Params) {
   const { type, q } = parsedQuery.data;
 
   if (type === 'available') {
-    const { data, error } = await sbAdmin.rpc('get_available_referral_users', {
-      p_ws_id: wsId,
-      p_user_id: userId,
-    });
+    if (!permissions.containsPermission('update_users')) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
 
-    if (error) {
-      console.error(error);
+    try {
+      return NextResponse.json(
+        await listAvailableReferralUsers(sbAdmin, {
+          currentUserId: userId,
+          q,
+          wsId,
+        })
+      );
+    } catch (error) {
+      serverLogger.error('Error fetching available referral users', { error });
       return NextResponse.json(
         { message: 'Error fetching available referral users' },
         { status: 500 }
       );
     }
-
-    const availableUsers = (
-      (data ?? []) as {
-        id: string;
-        full_name?: string | null;
-        display_name?: string | null;
-        email?: string | null;
-        phone?: string | null;
-      }[]
-    ).filter((user) => matchesWorkspaceUserSearch(user, q));
-    const requireAttentionUserIds = await fetchRequireAttentionUserIds(
-      sbAdmin,
-      {
-        wsId,
-        userIds: availableUsers.map((user) => user.id),
-      }
-    );
-
-    return NextResponse.json(
-      withRequireAttentionFlag(
-        availableUsers as unknown as {
-          id: string;
-        }[],
-        requireAttentionUserIds
-      )
-    );
   }
 
   // Default: list referred users

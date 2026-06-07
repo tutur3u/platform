@@ -16,6 +16,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { RequireAttentionName } from '@/components/users/require-attention-name';
 import { fetchRequireAttentionUserIds } from '@/lib/require-attention-users';
+import { listAvailableReferralUsers } from '@/lib/user-referrals';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { UserFeedbackPanel } from '../user-feedback-panel';
 import EditUserDialog from './edit-user-dialog';
@@ -99,11 +100,12 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
 
   // Fetch referral data
   const workspaceSettings = await getWorkspaceSettings(wsId);
-  const { data: availableUsers, count: availableUsersCount } =
-    await getAvailableUsersForReferral({
-      wsId,
-      currentUserId: userId,
-    });
+  const { data: availableUsers, count: availableUsersCount } = canUpdateUsers
+    ? await getAvailableUsersForReferral({
+        wsId,
+        currentUserId: userId,
+      })
+    : { data: [], count: 0 };
 
   const referredUsers = await getReferredUsers({ wsId, userId });
 
@@ -662,23 +664,13 @@ async function getAvailableUsersForReferral({
   currentUserId: string;
 }) {
   const sbAdmin = await createAdminClient();
-
-  const { data, error } = await sbAdmin.rpc('get_available_referral_users', {
-    p_ws_id: wsId,
-    p_user_id: currentUserId,
-  });
-  if (error) throw error;
-  const availableUsers = (data || []) as WorkspaceUser[];
-  const requireAttentionUserIds = await fetchRequireAttentionUserIds(sbAdmin, {
+  const availableUsers = await listAvailableReferralUsers(sbAdmin, {
     wsId,
-    userIds: availableUsers.map((user) => user.id),
+    currentUserId,
   });
 
   return {
-    data: availableUsers.map((user) => ({
-      ...user,
-      has_require_attention_feedback: requireAttentionUserIds.has(user.id),
-    })),
+    data: availableUsers,
     count: availableUsers.length,
   };
 }

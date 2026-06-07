@@ -1,10 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import {
   MAX_SEARCH_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import {
   getPermissions,
   normalizeWorkspaceId,

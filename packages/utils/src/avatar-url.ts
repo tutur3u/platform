@@ -39,9 +39,7 @@ export function normalizeAvatarImageSrc(
     return undefined;
   }
 
-  if (
-    /^https?:\/\//iu.test(src)
-  ) {
+  if (/^https?:\/\//iu.test(src)) {
     return normalizeSupabasePublicAvatarUrl(src);
   }
 

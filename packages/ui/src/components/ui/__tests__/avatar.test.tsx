@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type * as React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 
 vi.mock('@radix-ui/react-avatar', () => ({
@@ -21,9 +21,21 @@ vi.mock('@radix-ui/react-avatar', () => ({
 
 const SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL =
   'https://yjbjpmwbfimjcdsjxfst.supabase.co/storage/v1/object/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e';
+const CURRENT_SUPABASE_URL = 'https://test.supabase.co';
+const ORIGINAL_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+afterEach(() => {
+  if (ORIGINAL_SUPABASE_URL === undefined) {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+  } else {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = ORIGINAL_SUPABASE_URL;
+  }
+});
 
 describe('AvatarImage', () => {
-  it('passes full Supabase avatar URLs through so the image can load', () => {
+  it('canonicalizes full Supabase avatar URLs so the image can load', () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = CURRENT_SUPABASE_URL;
+
     render(
       <Avatar>
         <AvatarImage
@@ -37,7 +49,10 @@ describe('AvatarImage', () => {
     expect(screen.getByText('AV')).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: 'Supabase avatar' })
-    ).toHaveAttribute('data-src', SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL);
+    ).toHaveAttribute(
+      'data-src',
+      `${CURRENT_SUPABASE_URL}/storage/v1/object/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e`
+    );
   });
 
   it('keeps valid avatar URLs', () => {
