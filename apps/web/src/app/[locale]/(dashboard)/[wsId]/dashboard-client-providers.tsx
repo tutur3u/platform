@@ -1,9 +1,6 @@
 'use client';
 
-import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
-import { TaskDialogProvider } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
-import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 
@@ -14,19 +11,10 @@ const FadeSettingInitializer = dynamic(
     ),
   { ssr: false }
 );
-const PersonalWorkspaceCollaborationBanner = dynamic(
-  () =>
-    import('./personal-workspace-collaboration-banner').then(
-      (module) => module.PersonalWorkspaceCollaborationBanner
-    ),
-  { ssr: false }
-);
-const TaskDialogManager = dynamic(
-  () =>
-    import('@tuturuuu/ui/tu-do/shared/task-dialog-manager').then(
-      (module) => module.TaskDialogManager
-    ),
-  { ssr: false }
+const DashboardWorkspaceProviders = dynamic(() =>
+  import('./dashboard-workspace-providers').then(
+    (module) => module.DashboardWorkspaceProviders
+  )
 );
 
 interface DashboardClientProvidersProps {
@@ -49,21 +37,17 @@ export function DashboardClientProviders({
   return (
     <>
       <FadeSettingInitializer />
-      <RealtimeLogProvider wsId={wsId}>
-        <WorkspacePresenceProvider
-          wsId={wsId}
-          tier={tier}
-          enabled={enablePresence}
-        >
-          <TaskDialogProvider isPersonalWorkspace={isPersonalWorkspace}>
-            {showPersonalWorkspaceCollaborationBanner && (
-              <PersonalWorkspaceCollaborationBanner />
-            )}
-            {children}
-            <TaskDialogManager wsId={wsId} />
-          </TaskDialogProvider>
-        </WorkspacePresenceProvider>
-      </RealtimeLogProvider>
+      <DashboardWorkspaceProviders
+        wsId={wsId}
+        tier={tier}
+        enablePresence={enablePresence}
+        isPersonalWorkspace={isPersonalWorkspace}
+        showPersonalWorkspaceCollaborationBanner={
+          showPersonalWorkspaceCollaborationBanner
+        }
+      >
+        {children}
+      </DashboardWorkspaceProviders>
     </>
   );
 }
