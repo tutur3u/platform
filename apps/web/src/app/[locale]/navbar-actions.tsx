@@ -1,6 +1,5 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import PublicNavbarActions from './public-navbar-actions';
 
 export default async function NavbarActions({
   hideMetadata = false,
@@ -39,6 +38,10 @@ export default async function NavbarActions({
       </div>
     );
   }
+
+  const { default: PublicNavbarActions } = await import(
+    './public-navbar-actions'
+  );
 
   return <PublicNavbarActions />;
 }

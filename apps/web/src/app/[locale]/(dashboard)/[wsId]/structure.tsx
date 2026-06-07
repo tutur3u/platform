@@ -50,7 +50,6 @@ import {
   type SidebarNavigationPlacement,
   serializeSidebarNavigationLayoutConfig,
 } from './sidebar-navigation-preferences';
-import { WorkspaceSelect } from './workspace-select';
 
 const RecentSidebarItems = dynamic(
   () =>
@@ -65,6 +64,15 @@ const SidebarActiveTimer = dynamic(
       (module) => module.SidebarActiveTimer
     ),
   { ssr: false }
+);
+const WorkspaceSelect = dynamic(
+  () => import('./workspace-select').then((module) => module.WorkspaceSelect),
+  {
+    loading: () => (
+      <div className="h-10 w-full animate-pulse rounded-lg bg-foreground/5" />
+    ),
+    ssr: false,
+  }
 );
 
 interface StructureProps {
