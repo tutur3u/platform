@@ -3,22 +3,11 @@ import {
   DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
 } from '@tuturuuu/internal-api/workspace-configs';
 import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
-import {
-  getPermissions,
-  getSecret,
-  getSecrets,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import { DEV_MODE } from '@/constants/common';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/access';
@@ -35,6 +24,34 @@ type NavigationUser = {
   id: string;
 };
 
+async function createNavigationSupabaseClient() {
+  const { createClient } = await import('@tuturuuu/supabase/next/server');
+
+  return createClient();
+}
+
+async function createNavigationAdminClient(options?: { noCookie?: boolean }) {
+  const { createAdminClient } = await import('@tuturuuu/supabase/next/server');
+
+  return createAdminClient(options);
+}
+
+async function loadWorkspaceNavigationHelpers() {
+  const {
+    getPermissions,
+    getSecret,
+    getSecrets,
+    verifyWorkspaceMembershipType,
+  } = await import('@tuturuuu/utils/workspace-helper');
+
+  return {
+    getPermissions,
+    getSecret,
+    getSecrets,
+    verifyWorkspaceMembershipType,
+  };
+}
+
 export async function WorkspaceNavigationLinks({
   wsId,
   personalOrWsId,
@@ -48,7 +65,18 @@ export async function WorkspaceNavigationLinks({
   user?: NavigationUser | null;
 }) {
   const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-  const supabase = await createClient();
+  const [supabase, { getTranslations }, workspaceNavigationHelpers] =
+    await Promise.all([
+      createNavigationSupabaseClient(),
+      import('next-intl/server'),
+      loadWorkspaceNavigationHelpers(),
+    ]);
+  const {
+    getPermissions,
+    getSecret,
+    getSecrets,
+    verifyWorkspaceMembershipType,
+  } = workspaceNavigationHelpers;
 
   // Parallelize all independent initial queries
   const [t, user, secrets] = await Promise.all([
@@ -119,7 +147,7 @@ export async function WorkspaceNavigationLinks({
       .maybeSingle(),
     user
       ? Promise.all([
-          createAdminClient({ noCookie: true }),
+          createNavigationAdminClient({ noCookie: true }),
           import('@/lib/hive-page-context'),
         ]).then(([sbAdmin, { resolveWebHiveAccess }]) =>
           resolveWebHiveAccess({ userId: user.id, sbAdmin })
@@ -129,7 +157,7 @@ export async function WorkspaceNavigationLinks({
   if (!workspacePermissions) {
     if (!user) notFound();
 
-    const sbAdmin = await createAdminClient({ noCookie: true });
+    const sbAdmin = await createNavigationAdminClient({ noCookie: true });
     const {
       loadTaskBoardGuestSharesForWorkspace,
       summarizeTaskBoardGuestShares,
