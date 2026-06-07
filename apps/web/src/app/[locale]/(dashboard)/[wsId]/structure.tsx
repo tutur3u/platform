@@ -2,11 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Archive, ArrowLeft } from '@tuturuuu/icons/lucide';
-import {
-  getUserConfig,
-  getUserWorkspaceConfig,
-  updateUserWorkspaceConfig,
-} from '@tuturuuu/internal-api/users';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
@@ -17,7 +12,6 @@ import {
   TUTURUUU_LOCAL_LOGO_URL,
   TuturuuLogo,
 } from '@tuturuuu/ui/custom/tuturuuu-logo';
-import { toast } from '@tuturuuu/ui/sonner';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
@@ -36,7 +30,6 @@ import {
 } from 'react';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
-import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { Nav } from './nav';
 import {
   type DashboardNavigationLink,
@@ -220,6 +213,46 @@ function findNavigationByTitleHistory({
   };
 }
 
+async function loadUserConfig(
+  configId: string,
+  defaultValue: string | null = null
+) {
+  const { getUserConfig } = await import('@tuturuuu/internal-api/users');
+  const response = await getUserConfig(configId);
+
+  return (response.value as string | null) ?? defaultValue;
+}
+
+async function loadUserWorkspaceConfig(wsId: string, configId: string) {
+  const { getUserWorkspaceConfig } = await import(
+    '@tuturuuu/internal-api/users'
+  );
+  const response = await getUserWorkspaceConfig(wsId, configId);
+
+  return response.value;
+}
+
+async function updateWorkspaceNavigationLayoutConfig(
+  wsId: string,
+  value: string
+) {
+  const { updateUserWorkspaceConfig } = await import(
+    '@tuturuuu/internal-api/users'
+  );
+
+  await updateUserWorkspaceConfig(
+    wsId,
+    SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID,
+    value
+  );
+}
+
+function showSidebarLayoutQuickUpdateError(message: string) {
+  void import('@tuturuuu/ui/sonner').then(({ toast }) => {
+    toast.error(message);
+  });
+}
+
 export function Structure({
   wsId,
   defaultCollapsed = false,
@@ -254,28 +287,26 @@ export function Structure({
   ] as const;
   const { data: accountNavigationLayout } = useQuery({
     queryKey: accountNavigationLayoutQueryKey,
-    queryFn: async () => {
-      const response = await getUserConfig(SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID);
-      return response.value;
-    },
+    queryFn: () => loadUserConfig(SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID),
     staleTime: 5 * 60 * 1000,
   });
   const { data: workspaceNavigationLayout } = useQuery({
     queryKey: workspaceNavigationLayoutQueryKey,
-    queryFn: async () => {
-      const response = await getUserWorkspaceConfig(
-        wsId,
-        SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID
-      );
-      return response.value;
-    },
+    queryFn: () =>
+      loadUserWorkspaceConfig(wsId, SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID),
     enabled: Boolean(wsId),
     staleTime: 5 * 60 * 1000,
   });
-  const { value: recentNavigationEnabled } = useUserBooleanConfig(
-    SIDEBAR_RECENT_NAVIGATION_ENABLED_CONFIG_ID,
-    false
-  );
+  const { data: recentNavigationValue } = useQuery({
+    queryKey: [
+      'user-config',
+      SIDEBAR_RECENT_NAVIGATION_ENABLED_CONFIG_ID,
+    ] as const,
+    queryFn: () =>
+      loadUserConfig(SIDEBAR_RECENT_NAVIGATION_ENABLED_CONFIG_ID, 'false'),
+    staleTime: 5 * 60 * 1000,
+  });
+  const recentNavigationEnabled = recentNavigationValue === 'true';
   const effectiveNavigationLayout =
     workspaceNavigationLayout ?? accountNavigationLayout ?? null;
   const navigationPreferenceResult = useMemo(
@@ -296,11 +327,7 @@ export function Structure({
   );
   const quickLayoutMutation = useMutation({
     mutationFn: async ({ id, value }: { id: string; value: string }) => {
-      await updateUserWorkspaceConfig(
-        wsId,
-        SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID,
-        value
-      );
+      await updateWorkspaceNavigationLayoutConfig(wsId, value);
 
       return { id, value };
     },
@@ -322,7 +349,9 @@ export function Structure({
           context.previousValue
         );
       }
-      toast.error(t('settings.preferences.sidebar_layout.quick_update_error'));
+      showSidebarLayoutQuickUpdateError(
+        t('settings.preferences.sidebar_layout.quick_update_error')
+      );
     },
     onSettled: () => {
       void queryClient.invalidateQueries({
