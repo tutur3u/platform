@@ -8,8 +8,17 @@ const layoutSource = readFileSync(
     encoding: 'utf8',
   }
 );
+const layoutDataSource = readFileSync(
+  join(process.cwd(), 'src/app/[locale]/(dashboard)/[wsId]/layout-data.ts'),
+  {
+    encoding: 'utf8',
+  }
+);
 
 const forbiddenStaticImports = [
+  '@tuturuuu/supabase/next/server',
+  '@tuturuuu/utils/user-helper',
+  '@tuturuuu/utils/workspace-helper',
   '../../navbar-actions',
   '../../user-nav',
   './dashboard-client-providers',
@@ -41,5 +50,21 @@ describe('[wsId] layout compile graph', () => {
   it('loads dashboard navigation through an async split point', () => {
     expect(layoutSource).toContain("import('./navigation')");
     expect(layoutSource).toContain("import('./navigation-visibility')");
+  });
+
+  it('keeps broad server helpers behind route-local split points', () => {
+    expect(layoutSource).toContain("import('@tuturuuu/supabase/next/server')");
+    expect(layoutSource).toContain(
+      "import('@tuturuuu/utils/workspace-helper')"
+    );
+  });
+
+  it('keeps Supabase server helpers out of static layout data imports', () => {
+    expect(layoutDataSource).not.toMatch(
+      staticImportPattern('@tuturuuu/supabase/next/server')
+    );
+    expect(layoutDataSource).toContain(
+      "import('@tuturuuu/supabase/next/server')"
+    );
   });
 });

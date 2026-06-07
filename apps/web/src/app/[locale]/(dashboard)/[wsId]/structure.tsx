@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Archive, ArrowLeft } from '@tuturuuu/icons';
+import { Archive, ArrowLeft } from '@tuturuuu/icons/lucide';
 import {
   getUserConfig,
   getUserWorkspaceConfig,

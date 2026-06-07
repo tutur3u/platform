@@ -1,5 +1,6 @@
 'use client';
 
+import { hexagons3 } from '@tuturuuu/icons/lab';
 import {
   Archive,
   BadgeDollarSign,
@@ -41,7 +42,6 @@ import {
   Group,
   HandCoins,
   HardDrive,
-  hexagons3,
   Icon,
   IdCardLanyard,
   KeyRound,
@@ -98,7 +98,7 @@ import {
   Vote,
   Wallet,
   Warehouse,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import type { ComponentType } from 'react';
 
 type IconComponent = ComponentType<{ className?: string }>;

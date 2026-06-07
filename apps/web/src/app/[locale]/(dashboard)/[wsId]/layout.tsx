@@ -1,16 +1,6 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import {
-  canShowWorkspaceInviteForNonMember,
-  getWorkspace,
-  getWorkspaceNonMemberInviteEligibility,
-} from '@tuturuuu/utils/workspace-helper';
 import dynamic from 'next/dynamic';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
@@ -20,6 +10,10 @@ import {
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
+import {
+  type DashboardLayoutWorkspace,
+  getDashboardLayoutData,
+} from './layout-data';
 
 const DashboardShellClient = dynamic(() =>
   import('./dashboard-shell-client').then(
@@ -112,7 +106,7 @@ async function UserPopoverSlot({
   workspace,
 }: {
   user: WorkspaceUser;
-  workspace: NonNullable<Awaited<ReturnType<typeof getWorkspace>>>;
+  workspace: DashboardLayoutWorkspace;
 }) {
   const { UserNav } = await import('../../user-nav');
 
@@ -129,10 +123,7 @@ async function UserPopoverSlot({
 export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
 
-  const [user, workspace] = await Promise.all([
-    getCurrentUser(),
-    getWorkspace(id, { useAdmin: true }),
-  ]);
+  const { user, workspace } = await getDashboardLayoutData(id);
 
   if (!user?.id) redirect('/login');
   if (!workspace) notFound();
@@ -185,12 +176,17 @@ export default async function Layout({ children, params }: LayoutProps) {
   let isGuestWorkspace = false;
 
   if (!workspace.joined) {
-    const supabase = await createClient();
-    const sbAdmin = await createAdminClient();
-    const {
-      loadTaskBoardGuestSharesForWorkspace,
-      summarizeTaskBoardGuestShares,
-    } = await import('@tuturuuu/apis/tu-do/board-access');
+    const [
+      { createAdminClient, createClient },
+      { loadTaskBoardGuestSharesForWorkspace, summarizeTaskBoardGuestShares },
+    ] = await Promise.all([
+      import('@tuturuuu/supabase/next/server'),
+      import('@tuturuuu/apis/tu-do/board-access'),
+    ]);
+    const [supabase, sbAdmin] = await Promise.all([
+      createClient(),
+      createAdminClient(),
+    ]);
     const guestShares = await loadTaskBoardGuestSharesForWorkspace({
       sbAdmin,
       user: {
@@ -204,6 +200,10 @@ export default async function Layout({ children, params }: LayoutProps) {
     if (guestSummary.boardCount > 0) {
       isGuestWorkspace = true;
     } else {
+      const {
+        canShowWorkspaceInviteForNonMember,
+        getWorkspaceNonMemberInviteEligibility,
+      } = await import('@tuturuuu/utils/workspace-helper');
       const inviteEligibility = await getWorkspaceNonMemberInviteEligibility(
         sbAdmin,
         {
@@ -250,6 +250,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   let personalWorkspacePrompt: ReactNode = null;
 
   if (!workspace.personal && !isGuestWorkspace) {
+    const { createClient } = await import('@tuturuuu/supabase/next/server');
     const supabase = await createClient();
     const { data: existingPersonal } = await supabase
       .from('workspaces')
