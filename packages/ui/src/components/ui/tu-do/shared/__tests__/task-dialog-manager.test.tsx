@@ -52,15 +52,18 @@ const {
 
 vi.mock('@tuturuuu/internal-api', () => ({
   getCurrentUserProfile: mockGetCurrentUserProfile,
-  listWorkspaceLabels: mockListWorkspaceLabels,
-  listWorkspaceMembers: mockListWorkspaceMembers,
 }));
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   getCurrentUserTask: mockGetCurrentUserTask,
   getWorkspaceTask: mockGetWorkspaceTask,
+  listWorkspaceLabels: mockListWorkspaceLabels,
   listWorkspaceTaskProjectsByIds: mockListWorkspaceTaskProjectsByIds,
   resolveTaskProjectWorkspaceId: mockResolveTaskProjectWorkspaceId,
+}));
+
+vi.mock('@tuturuuu/internal-api/workspaces', () => ({
+  listWorkspaceMembers: mockListWorkspaceMembers,
 }));
 
 vi.mock('@tuturuuu/supabase/next/client', () => ({

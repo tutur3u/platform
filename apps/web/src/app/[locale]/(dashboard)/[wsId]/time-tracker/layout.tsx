@@ -1,3 +1,4 @@
+import { MantineThemeProvider } from '@/components/mantine-theme-provider';
 import TimeTrackerHeader from './components/time-tracker-header';
 
 interface TimeTrackerLayoutProps {
@@ -8,9 +9,11 @@ export default async function TimeTrackerLayout({
   children,
 }: TimeTrackerLayoutProps) {
   return (
-    <div className="space-y-4">
-      <TimeTrackerHeader />
-      {children}
-    </div>
+    <MantineThemeProvider>
+      <div className="space-y-4">
+        <TimeTrackerHeader />
+        {children}
+      </div>
+    </MantineThemeProvider>
   );
 }

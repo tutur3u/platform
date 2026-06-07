@@ -6,7 +6,7 @@ import {
   getUserConfig,
   getUserWorkspaceConfig,
   updateUserWorkspaceConfig,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/internal-api/users';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';

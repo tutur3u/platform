@@ -12,7 +12,6 @@ import {
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
-import { MantineThemeProvider } from '@/components/mantine-theme-provider';
 import {
   PROD_MODE,
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
@@ -235,70 +234,68 @@ export default async function Layout({ children, params }: LayoutProps) {
   );
 
   return (
-    <MantineThemeProvider>
-      <CalendarPreferencesProvider wsId={wsId}>
-        <SidebarProvider initialBehavior={sidebarBehavior}>
-          {!isGuestWorkspace && (
-            <DashboardSettingsDialogHost
-              wsId={wsId}
-              user={user}
-              workspace={workspace}
-            />
-          )}
-          {personalWorkspacePrompt && (
-            <div className="px-2 pt-2 md:px-4 md:pt-3">
-              {personalWorkspacePrompt}
-            </div>
-          )}
-          <Structure
+    <CalendarPreferencesProvider wsId={wsId}>
+      <SidebarProvider initialBehavior={sidebarBehavior}>
+        {!isGuestWorkspace && (
+          <DashboardSettingsDialogHost
             wsId={wsId}
             user={user}
             workspace={workspace}
-            defaultCollapsed={defaultCollapsed}
-            links={visibleNavigationLinks}
-            actions={
-              <Suspense
-                key={user.id}
-                fallback={
-                  <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-                }
-              >
-                <NavbarActions
-                  renderCommandLauncher={false}
-                  renderSettingsDialog={false}
-                  user={user}
-                />
-              </Suspense>
-            }
-            userPopover={
-              <Suspense
-                key={user.id}
-                fallback={
-                  <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-                }
-              >
-                <UserNav
-                  hideMetadata
-                  workspace={workspace}
-                  user={user}
-                  renderSettingsDialog={false}
-                  navLinks={visibleNavigationLinks}
-                />
-              </Suspense>
-            }
-          >
-            <DashboardClientProviders
-              wsId={wsId}
-              tier={workspace.tier ?? null}
-              enablePresence={!workspace.personal && !isGuestWorkspace}
-              isPersonalWorkspace={!!workspace.personal}
-              showPersonalWorkspaceCollaborationBanner={!!workspace.personal}
+          />
+        )}
+        {personalWorkspacePrompt && (
+          <div className="px-2 pt-2 md:px-4 md:pt-3">
+            {personalWorkspacePrompt}
+          </div>
+        )}
+        <Structure
+          wsId={wsId}
+          user={user}
+          workspace={workspace}
+          defaultCollapsed={defaultCollapsed}
+          links={visibleNavigationLinks}
+          actions={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+              }
             >
-              {children}
-            </DashboardClientProviders>
-          </Structure>
-        </SidebarProvider>
-      </CalendarPreferencesProvider>
-    </MantineThemeProvider>
+              <NavbarActions
+                renderCommandLauncher={false}
+                renderSettingsDialog={false}
+                user={user}
+              />
+            </Suspense>
+          }
+          userPopover={
+            <Suspense
+              key={user.id}
+              fallback={
+                <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+              }
+            >
+              <UserNav
+                hideMetadata
+                workspace={workspace}
+                user={user}
+                renderSettingsDialog={false}
+                navLinks={visibleNavigationLinks}
+              />
+            </Suspense>
+          }
+        >
+          <DashboardClientProviders
+            wsId={wsId}
+            tier={workspace.tier ?? null}
+            enablePresence={!workspace.personal && !isGuestWorkspace}
+            isPersonalWorkspace={!!workspace.personal}
+            showPersonalWorkspaceCollaborationBanner={!!workspace.personal}
+          >
+            {children}
+          </DashboardClientProviders>
+        </Structure>
+      </SidebarProvider>
+    </CalendarPreferencesProvider>
   );
 }
