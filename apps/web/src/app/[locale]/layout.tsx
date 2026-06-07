@@ -4,16 +4,11 @@ import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
 import '@mantine/charts/styles.layer.css';
 import '@mantine/core/styles.layer.css';
-import { SerwistProvider } from '@tuturuuu/offline/provider';
-import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
-import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
-import { ReactScan } from '@tuturuuu/utils/common/scan';
 import { cn } from '@tuturuuu/utils/format';
-import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
@@ -49,13 +44,68 @@ export function generateStaticParams() {
   return supportedLocales.map((locale) => ({ locale }));
 }
 
+async function ServiceWorkerBoundary({
+  children,
+  serviceWorkerUrl,
+}: {
+  children: ReactNode;
+  serviceWorkerUrl: string;
+}) {
+  if (process.env.NODE_ENV === 'development') {
+    return <>{children}</>;
+  }
+
+  const { SerwistProvider } = await import('@tuturuuu/offline/provider');
+
+  return (
+    <SerwistProvider
+      options={{ updateViaCache: 'none' }}
+      swUrl={serviceWorkerUrl}
+    >
+      {children}
+    </SerwistProvider>
+  );
+}
+
+async function VercelRuntimeSignals() {
+  const isVercelDeployment =
+    process.env.VERCEL === '1' || Boolean(process.env.VERCEL_URL);
+
+  if (!isVercelDeployment) {
+    return null;
+  }
+
+  const { VercelAnalytics, VercelInsights } = await import('@tuturuuu/vercel');
+
+  return (
+    <>
+      <VercelAnalytics />
+      <VercelInsights />
+    </>
+  );
+}
+
+async function ProductionDatabaseIndicator() {
+  const isProductionDatabase =
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
+  const isProductionRuntime = process.env.NODE_ENV === 'production';
+
+  if (!isProductionDatabase || isProductionRuntime) {
+    return null;
+  }
+
+  const { ProductionIndicator } = await import(
+    '@tuturuuu/ui/custom/production-indicator'
+  );
+
+  return <ProductionIndicator />;
+}
+
 export default async function RootLayout({ children, params }: Props) {
   const { locale } = await params;
   const deploymentStamp =
     process.env.PLATFORM_DEPLOYMENT_STAMP?.trim() || 'local';
   const serviceWorkerUrl = `/serwist/sw.js?v=${encodeURIComponent(deploymentStamp)}`;
-  const isVercelDeployment =
-    process.env.VERCEL === '1' || Boolean(process.env.VERCEL_URL);
 
   // Ensure that the incoming `locale` is valid
   if (!routing.locales.includes(locale as Locale)) {
@@ -66,23 +116,14 @@ export default async function RootLayout({ children, params }: Props) {
 
   return (
     <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">
-      <ReactScan />
       <body
         className={cn(
           'overflow-y-auto bg-root-background antialiased',
           font.className
         )}
       >
-        <SerwistProvider
-          options={{ updateViaCache: 'none' }}
-          swUrl={serviceWorkerUrl}
-        >
-          {isVercelDeployment ? (
-            <>
-              <VercelAnalytics />
-              <VercelInsights />
-            </>
-          ) : null}
+        <ServiceWorkerBoundary serviceWorkerUrl={serviceWorkerUrl}>
+          <VercelRuntimeSignals />
           <Suspense>
             <NuqsAdapter>
               <Providers>
@@ -94,10 +135,9 @@ export default async function RootLayout({ children, params }: Props) {
             </NuqsAdapter>
           </Suspense>
           <TailwindIndicator />
-          <ProductionIndicator />
-          <StaffToolbar />
+          <ProductionDatabaseIndicator />
           <Toaster />
-        </SerwistProvider>
+        </ServiceWorkerBoundary>
       </body>
     </html>
   );

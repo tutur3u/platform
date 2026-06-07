@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronDown, Minus } from '@tuturuuu/icons';
+import { Check, ChevronDown, Minus } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,

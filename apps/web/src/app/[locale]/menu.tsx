@@ -1,6 +1,6 @@
 'use client';
 
-import { MenuIcon } from '@tuturuuu/icons';
+import { MenuIcon } from '@tuturuuu/icons/lucide';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {

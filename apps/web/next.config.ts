@@ -37,6 +37,16 @@ const dockerNextBuildCpus = parsePositiveIntegerEnv(
   'DOCKER_WEB_NEXT_BUILD_CPUS',
   isDockerStandaloneBuild ? 4 : undefined
 );
+const optimizePackageImports = Array.from(
+  new Set([
+    ...(serwistConfig.experimental?.optimizePackageImports ?? []),
+    '@lucide/lab',
+    '@tuturuuu/icons',
+    '@tuturuuu/icons/lab',
+    '@tuturuuu/icons/lucide',
+    'lucide-react',
+  ])
+);
 
 const nextConfig: NextConfig = {
   ...serwistConfig,
@@ -52,6 +62,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [...(serwistConfig.serverExternalPackages ?? [])],
   experimental: {
     ...(serwistConfig.experimental ?? {}),
+    optimizePackageImports,
     ...(staticGenerationMaxConcurrency
       ? { staticGenerationMaxConcurrency }
       : {}),

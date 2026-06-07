@@ -13,7 +13,7 @@ import {
   Paintbrush,
   Settings,
   Video,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import {
   Breadcrumb,
   BreadcrumbItem,

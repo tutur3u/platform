@@ -1,7 +1,7 @@
 'use client';
 
 import type { StoredAccountWithEmail } from '@tuturuuu/auth';
-import { Check } from '@tuturuuu/icons';
+import { Check } from '@tuturuuu/icons/lucide';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';

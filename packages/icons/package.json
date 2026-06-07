@@ -20,6 +20,14 @@
     ".": {
       "types": "./src/icons.tsx",
       "import": "./src/icons.tsx"
+    },
+    "./lab": {
+      "types": "./src/lab.tsx",
+      "import": "./src/lab.tsx"
+    },
+    "./lucide": {
+      "types": "./src/lucide.tsx",
+      "import": "./src/lucide.tsx"
     }
   },
   "packageManager": "bun@1.3.14"

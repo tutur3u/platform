@@ -8,6 +8,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
+import { FadeSettingInitializer } from '@tuturuuu/ui/tu-do/shared/fade-setting-initializer';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
@@ -20,6 +21,7 @@ import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
+import { MantineThemeProvider } from '@/components/mantine-theme-provider';
 import { WorkspacePreparing } from '@/components/workspace-preparing';
 import {
   PROD_MODE,
@@ -27,6 +29,7 @@ import {
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
 import { SidebarProvider } from '@/context/sidebar-context';
+import { CalendarPreferencesProvider } from '@/lib/calendar-preferences-provider';
 import { resolveWorkspaceBrandingUrlsForNext } from '@/lib/workspace-branding-image-url';
 import NavbarActions from '../../navbar-actions';
 import { SettingsDialogHost } from '../../settings-dialog-host';
@@ -203,74 +206,81 @@ export default async function Layout({ children, params }: LayoutProps) {
   );
 
   return (
-    <SidebarProvider initialBehavior={sidebarBehavior}>
-      {!isGuestWorkspace && (
-        <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
-      )}
-      {SHOW_PERSONAL_WORKSPACE_PROMPT && (
-        <div className="px-2 pt-2 md:px-4 md:pt-3">
-          <PersonalWorkspacePrompt
-            eligibleWorkspaces={eligibleWorkspaces || []}
-            title={t('common.personal_account')}
-            description={t('common.set_up_personal_workspace')}
-            nameRule={t('common.personal_workspace_naming_rule')}
-            createLabel={t('common.create_workspace')}
-            markLabel={t('common.mark_as_personal')}
-            selectPlaceholder={t('common.select_workspace')}
-          />
-        </div>
-      )}
-      <Structure
-        wsId={wsId}
-        user={user}
-        workspace={workspace}
-        defaultCollapsed={defaultCollapsed}
-        links={visibleNavigationLinks}
-        actions={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <NavbarActions
-              renderCommandLauncher={false}
-              renderSettingsDialog={false}
-            />
-          </Suspense>
-        }
-        userPopover={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <UserNav
-              hideMetadata
-              workspace={workspace}
-              renderSettingsDialog={false}
-              navLinks={visibleNavigationLinks}
-            />
-          </Suspense>
-        }
-      >
-        <RealtimeLogProvider wsId={wsId}>
-          <WorkspacePresenceProvider
+    <MantineThemeProvider>
+      <CalendarPreferencesProvider wsId={wsId}>
+        <FadeSettingInitializer />
+        <SidebarProvider initialBehavior={sidebarBehavior}>
+          {!isGuestWorkspace && (
+            <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
+          )}
+          {SHOW_PERSONAL_WORKSPACE_PROMPT && (
+            <div className="px-2 pt-2 md:px-4 md:pt-3">
+              <PersonalWorkspacePrompt
+                eligibleWorkspaces={eligibleWorkspaces || []}
+                title={t('common.personal_account')}
+                description={t('common.set_up_personal_workspace')}
+                nameRule={t('common.personal_workspace_naming_rule')}
+                createLabel={t('common.create_workspace')}
+                markLabel={t('common.mark_as_personal')}
+                selectPlaceholder={t('common.select_workspace')}
+              />
+            </div>
+          )}
+          <Structure
             wsId={wsId}
-            tier={workspace.tier ?? null}
-            enabled={!workspace.personal && !isGuestWorkspace}
+            user={user}
+            workspace={workspace}
+            defaultCollapsed={defaultCollapsed}
+            links={visibleNavigationLinks}
+            actions={
+              <Suspense
+                key={user.id}
+                fallback={
+                  <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+                }
+              >
+                <NavbarActions
+                  renderCommandLauncher={false}
+                  renderSettingsDialog={false}
+                />
+              </Suspense>
+            }
+            userPopover={
+              <Suspense
+                key={user.id}
+                fallback={
+                  <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+                }
+              >
+                <UserNav
+                  hideMetadata
+                  workspace={workspace}
+                  renderSettingsDialog={false}
+                  navLinks={visibleNavigationLinks}
+                />
+              </Suspense>
+            }
           >
-            <TaskDialogWrapper
-              isPersonalWorkspace={!!workspace.personal}
-              wsId={wsId}
-            >
-              {workspace.personal && <PersonalWorkspaceCollaborationBanner />}
-              {children}
-            </TaskDialogWrapper>
-          </WorkspacePresenceProvider>
-        </RealtimeLogProvider>
-      </Structure>
-    </SidebarProvider>
+            <RealtimeLogProvider wsId={wsId}>
+              <WorkspacePresenceProvider
+                wsId={wsId}
+                tier={workspace.tier ?? null}
+                enabled={!workspace.personal && !isGuestWorkspace}
+              >
+                <TaskDialogWrapper
+                  isPersonalWorkspace={!!workspace.personal}
+                  wsId={wsId}
+                >
+                  {workspace.personal && (
+                    <PersonalWorkspaceCollaborationBanner />
+                  )}
+                  {children}
+                </TaskDialogWrapper>
+              </WorkspacePresenceProvider>
+            </RealtimeLogProvider>
+          </Structure>
+        </SidebarProvider>
+      </CalendarPreferencesProvider>
+    </MantineThemeProvider>
   );
 }

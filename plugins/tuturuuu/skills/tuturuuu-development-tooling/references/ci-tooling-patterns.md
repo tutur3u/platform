@@ -29,6 +29,20 @@ formatting behavior, or repo-wide verification.
   string literals that trip `noTemplateCurlyInString`.
 - Do not remove caching, fail-fast behavior, or security validation silently;
   document the rationale when tooling behavior changes.
+- Turborepo build outputs may include production `.next/**`, but must exclude
+  volatile Next caches such as `.next/cache/**` and `.next/dev/**`. The
+  `.next/dev` tree is local dev-server state; archiving it can capture multi-GB
+  Turbopack caches and slow `bun dev:web` compilation.
+- Before guessing at slow `apps/web` local compilation, run
+  `bun diagnose:dev:web`. Use its cache-size, slow-filesystem-warning, and
+  `.next/dev/trace` output to decide whether the next fix is cleanup,
+  filesystem placement, or import-graph reduction.
+- If diagnostics show `Watchpack Error (watcher): Error: EMFILE`, fix the dev
+  launcher or shell open-file limit first. The default web dev wrapper raises
+  the child process limit with `TUTURUUU_DEV_MAX_OPEN_FILES=65536`; set the env
+  var to another positive value or `0` to disable the wrapper behavior. The
+  same wrapper defaults `WATCHPACK_POLLING=true`; override it only when native
+  watchers are known to be stable on the local machine.
 
 ## CI And Dependency Drift
 

@@ -1,4 +1,4 @@
-import { Moon, Sun } from '@tuturuuu/icons';
+import { Moon, Sun } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,

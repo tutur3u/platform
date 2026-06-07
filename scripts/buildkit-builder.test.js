@@ -772,6 +772,21 @@ test('production Docker root scripts keep the default build caps', () => {
     /NEXT_BUILD_ENGINES\.get\(nextBuildEngine\)/
   );
   assert.deepEqual(turboConfig.tasks['build:docker'].dependsOn, ['^build']);
+  for (const taskName of ['build', 'build:docker']) {
+    const outputs = turboConfig.tasks[taskName].outputs;
+    assert.ok(
+      outputs.includes('.next/**'),
+      `${taskName} should cache production Next outputs`
+    );
+    assert.ok(
+      outputs.includes('!.next/cache/**'),
+      `${taskName} should skip volatile production Next cache`
+    );
+    assert.ok(
+      outputs.includes('!.next/dev/**'),
+      `${taskName} should not archive local Next dev server state`
+    );
+  }
   assert.match(buildWebDockerScript, /build:web:docker/);
   assert.match(webNextConfig, /DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT/);
   assert.match(webNextConfig, /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY/);

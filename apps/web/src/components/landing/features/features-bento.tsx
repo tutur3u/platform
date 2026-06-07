@@ -5,7 +5,7 @@ import {
   MessageSquare,
   Users,
   Wallet,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { useTranslations } from 'next-intl';
 import { FeatureCard } from './feature-card';
 

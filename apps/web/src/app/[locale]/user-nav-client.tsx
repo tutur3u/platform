@@ -13,7 +13,7 @@ import {
   Terminal,
   User,
   Users,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import {
   type CommandLauncherNavItem,
   GlobalCommandLauncher,

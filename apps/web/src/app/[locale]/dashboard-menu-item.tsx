@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ActivitySquare, Database } from '@tuturuuu/icons';
+import { ActivitySquare, Database } from '@tuturuuu/icons/lucide';
 import { getCurrentUserDefaultWorkspace } from '@tuturuuu/internal-api';
 import {
   DropdownMenuGroup,

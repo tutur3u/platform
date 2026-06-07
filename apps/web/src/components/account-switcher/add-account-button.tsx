@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus } from '@tuturuuu/icons';
+import { Plus } from '@tuturuuu/icons/lucide';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';

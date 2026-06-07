@@ -1,6 +1,6 @@
 'use client';
 
-import { AppWindow, Brain, Clock } from '@tuturuuu/icons';
+import { AppWindow, Brain, Clock } from '@tuturuuu/icons/lucide';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { StatCard } from './stat-card';

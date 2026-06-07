@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, Crown, Rocket, Sparkles } from '@tuturuuu/icons';
+import { Building2, Crown, Rocket, Sparkles } from '@tuturuuu/icons/lucide';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

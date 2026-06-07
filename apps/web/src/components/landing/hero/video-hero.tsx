@@ -7,7 +7,7 @@ import {
   Play,
   Sparkles,
   TrendingUp,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';

@@ -1,4 +1,4 @@
-import { DatabaseZap } from '@tuturuuu/icons';
+import { DatabaseZap } from '@tuturuuu/icons/lucide';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 
 export const IS_PRODUCTION_DB =

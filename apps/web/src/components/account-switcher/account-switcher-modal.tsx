@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Loader2, Plus, Trash2 } from '@tuturuuu/icons';
+import { Check, Loader2, Plus, Trash2 } from '@tuturuuu/icons/lucide';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

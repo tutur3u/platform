@@ -8,7 +8,7 @@ import {
   Clock,
   GripVertical,
   Loader2,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';

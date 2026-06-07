@@ -1,12 +1,6 @@
-'use client';
-
-import { AISection } from '@/components/landing/ai/ai-section';
-import { CTASection } from '@/components/landing/cta/cta-section';
-import { DemoSection } from '@/components/landing/demo/demo-section';
+import { DeferredLandingSections } from '@/components/landing/deferred-landing-sections';
 import { FeaturesBento } from '@/components/landing/features/features-bento';
 import { HeroSection } from '@/components/landing/hero/hero-section';
-import { PricingSection } from '@/components/landing/pricing/pricing-section';
-import { GithubStats } from '@/components/landing/social-proof/github-stats';
 
 export default function MarketingPage() {
   return (
@@ -22,20 +16,7 @@ export default function MarketingPage() {
       {/* Features Bento Grid */}
       <FeaturesBento />
 
-      {/* Interactive Demo */}
-      <DemoSection />
-
-      {/* Pricing */}
-      <PricingSection />
-
-      {/* AI Section */}
-      <AISection />
-
-      {/* Social Proof */}
-      <GithubStats />
-
-      {/* CTA */}
-      <CTASection />
+      <DeferredLandingSections />
     </main>
   );
 }
