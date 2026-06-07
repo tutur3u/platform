@@ -5,15 +5,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { fetchWorkspaces as _fetchWorkspaces } from '@tuturuuu/ui/lib/workspace-actions';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
 import { createFreeSubscription } from '@/utils/subscription-helper';
-
-export async function fetchWorkspaces() {
-  return _fetchWorkspaces();
-}
 
 export async function setupWorkspace(wsId: string) {
   const supabase = await createClient();

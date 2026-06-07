@@ -1,6 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
@@ -14,12 +12,8 @@ const MiraDashboardClient = dynamic(
     loading: () => <LoadingStatisticCard />,
   }
 );
-const PermissionSetupBanner = dynamic(
-  () => import('./permission-setup-banner'),
-  {
-    loading: () => null,
-  }
-);
+
+const DEFAULT_ASSISTANT_NAME = 'Mira';
 
 async function DashboardInsightsSlot({
   userId,
@@ -43,6 +37,36 @@ async function UserGroupQuickActionsSlot({ wsId }: { wsId: string }) {
   return <UserGroupQuickActions wsId={wsId} />;
 }
 
+async function PermissionSetupBannerSlot({
+  isCreator,
+  wsId,
+}: {
+  isCreator: boolean;
+  wsId: string;
+}) {
+  if (!isCreator) return null;
+
+  const { default: PermissionSetupBanner } = await import(
+    './permission-setup-banner'
+  );
+
+  return <PermissionSetupBanner wsId={wsId} isCreator />;
+}
+
+async function ensureDashboardAccess({
+  isCreator,
+  wsId,
+}: {
+  isCreator: boolean;
+  wsId: string;
+}) {
+  if (isCreator) return;
+
+  const { getPermissions } = await import('@tuturuuu/utils/workspace-helper');
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) notFound();
+}
+
 export const metadata: Metadata = {
   title: 'Dashboard',
   description: 'Your personal AI-powered workspace dashboard.',
@@ -61,36 +85,26 @@ export default async function WorkspaceHomePage({ params }: Props) {
         const currentUser = await getCurrentUser();
         if (!currentUser) notFound();
 
-        const permissions = await getPermissions({ wsId });
-        if (!permissions) notFound();
-
-        // Fetch mira_soul for assistant name
-        const supabase = await createClient();
-        const { data: soul } = await supabase
-          .from('mira_soul')
-          .select('name')
-          .eq('user_id', currentUser.id)
-          .maybeSingle();
-
-        const assistantName = soul?.name ?? 'Mira';
+        const isCreator = workspace.creator_id === currentUser.id;
+        await ensureDashboardAccess({ isCreator, wsId });
 
         return (
           <>
-            {/* Permission setup banner for workspace creators */}
             {!workspace.personal && (
-              <PermissionSetupBanner
-                wsId={wsId}
-                isCreator={workspace.creator_id === currentUser.id}
-              />
+              <Suspense fallback={null}>
+                <PermissionSetupBannerSlot wsId={wsId} isCreator={isCreator} />
+              </Suspense>
             )}
 
-            <Suspense fallback={null}>
-              <UserGroupQuickActionsSlot wsId={wsId} />
-            </Suspense>
+            {!workspace.personal && (
+              <Suspense fallback={null}>
+                <UserGroupQuickActionsSlot wsId={wsId} />
+              </Suspense>
+            )}
 
             <MiraDashboardClient
               currentUser={currentUser}
-              initialAssistantName={assistantName}
+              initialAssistantName={DEFAULT_ASSISTANT_NAME}
               wsId={wsId}
             >
               <Suspense fallback={<LoadingStatisticCard />}>

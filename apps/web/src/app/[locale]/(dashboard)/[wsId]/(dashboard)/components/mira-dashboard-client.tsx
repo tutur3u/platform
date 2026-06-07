@@ -23,7 +23,7 @@ import { cn } from '@tuturuuu/utils/format';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-import { fetchWorkspaces } from '../../actions';
+import { fetchWorkspaces } from '../../workspace-list-actions';
 import { useMiraSoul } from '../hooks/use-mira-soul';
 import {
   WORKSPACE_CONTEXT_EVENT,

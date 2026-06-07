@@ -1,7 +1,7 @@
 'use client';
 
 import { WorkspaceSelect as SharedWorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
-import { fetchWorkspaces } from './actions';
+import { fetchWorkspaces } from './workspace-list-actions';
 
 export function WorkspaceSelect({
   wsId,
