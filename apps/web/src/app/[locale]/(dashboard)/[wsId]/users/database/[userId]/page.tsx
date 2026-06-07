@@ -6,6 +6,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { InvoiceUserHistoryAccordion } from '@tuturuuu/ui/finance/invoices/components/invoice-user-history-accordion';
 import { Separator } from '@tuturuuu/ui/separator';
+import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import moment from 'moment';
 import type { Metadata } from 'next';
@@ -444,7 +445,7 @@ async function getData({
     id: userWithDetails.id,
     full_name: userWithDetails.full_name,
     display_name: userWithDetails.display_name,
-    avatar_url: userWithDetails.avatar_url,
+    avatar_url: normalizeAvatarImageSrc(userWithDetails.avatar_url) ?? null,
     email: userWithDetails.email,
     phone: userWithDetails.phone,
     birthday: userWithDetails.birthday,

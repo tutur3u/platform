@@ -11,6 +11,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_URL_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
@@ -306,7 +307,7 @@ async function getDataWithApiKey({
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(normalizeWorkspaceUserAvatars(data));
 }
 
 async function getDataFromSession({
@@ -344,5 +345,16 @@ async function getDataFromSession({
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(normalizeWorkspaceUserAvatars(data));
+}
+
+function normalizeWorkspaceUserAvatars<T extends { avatar_url?: string | null }>(
+  users: T[] | null
+) {
+  return (
+    users?.map((user) => ({
+      ...user,
+      avatar_url: normalizeAvatarImageSrc(user.avatar_url) ?? null,
+    })) ?? users
+  );
 }

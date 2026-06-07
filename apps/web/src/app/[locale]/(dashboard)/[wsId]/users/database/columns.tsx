@@ -10,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import moment from 'moment';
@@ -157,7 +158,9 @@ export const getUserColumns = ({
         />
       ),
       cell: ({ row }) => {
-        const avatarUrl = row.getValue('avatar_url') as string | undefined;
+        const avatarUrl = normalizeAvatarImageSrc(
+          row.getValue('avatar_url') as string | undefined
+        );
         if (!avatarUrl) return <div className="min-w-32">-</div>;
 
         return (

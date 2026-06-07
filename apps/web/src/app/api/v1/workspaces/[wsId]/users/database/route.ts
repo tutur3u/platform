@@ -4,6 +4,7 @@ import {
   MAX_SEARCH_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -357,6 +358,7 @@ export async function GET(request: Request, { params }: Params) {
       // Sanitize data based on permissions
       const sanitized: Record<string, unknown> = {
         ...u,
+        avatar_url: normalizeAvatarImageSrc(u.avatar_url) ?? null,
         is_guest: guestUserIds.has(u.id),
       };
 

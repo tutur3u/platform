@@ -1,8 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { normalizeAvatarImageSrc } from '../avatar-url';
 
 const SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL =
   'https://yjbjpmwbfimjcdsjxfst.supabase.co/storage/v1/object/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e';
+const CURRENT_SUPABASE_URL = 'https://hvgmshmjolwfcbsxmyku.supabase.co';
+const ORIGINAL_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+beforeEach(() => {
+  delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+});
+
+afterEach(() => {
+  if (ORIGINAL_SUPABASE_URL === undefined) {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+  } else {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = ORIGINAL_SUPABASE_URL;
+  }
+});
 
 describe('normalizeAvatarImageSrc', () => {
   it('drops blank and unsafe avatar values', () => {
@@ -22,6 +36,14 @@ describe('normalizeAvatarImageSrc', () => {
   it('keeps Supabase public avatar URLs even when the object key is a UUID', () => {
     expect(normalizeAvatarImageSrc(SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL)).toBe(
       SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL
+    );
+  });
+
+  it('canonicalizes Supabase public avatar URLs to the configured project', () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = CURRENT_SUPABASE_URL;
+
+    expect(normalizeAvatarImageSrc(SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL)).toBe(
+      `${CURRENT_SUPABASE_URL}/storage/v1/object/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e`
     );
   });
 
