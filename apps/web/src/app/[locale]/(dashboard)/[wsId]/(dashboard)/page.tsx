@@ -1,5 +1,3 @@
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
@@ -67,6 +65,27 @@ async function ensureDashboardAccess({
   if (!permissions) notFound();
 }
 
+async function resolveDashboardWorkspace(routeWsId: string) {
+  const [{ getCurrentUser }, { getWorkspace }] = await Promise.all([
+    import('@tuturuuu/utils/user-helper'),
+    import('@tuturuuu/utils/workspace-helper'),
+  ]);
+
+  const currentUser = await getCurrentUser();
+  if (!currentUser) notFound();
+
+  const workspace = await getWorkspace(routeWsId, {
+    useAdmin: true,
+    user: {
+      email: currentUser.email ?? null,
+      id: currentUser.id,
+    },
+  });
+  if (!workspace) notFound();
+
+  return { currentUser, workspace };
+}
+
 export const metadata: Metadata = {
   title: 'Dashboard',
   description: 'Your personal AI-powered workspace dashboard.',
@@ -80,17 +99,7 @@ interface Props {
 
 export default async function WorkspaceHomePage({ params }: Props) {
   const { wsId: routeWsId } = await params;
-  const currentUser = await getCurrentUser();
-  if (!currentUser) notFound();
-
-  const workspace = await getWorkspace(routeWsId, {
-    useAdmin: true,
-    user: {
-      email: currentUser.email ?? null,
-      id: currentUser.id,
-    },
-  });
-  if (!workspace) notFound();
+  const { currentUser, workspace } = await resolveDashboardWorkspace(routeWsId);
 
   const wsId = workspace.id;
   const isCreator = workspace.creator_id === currentUser.id;
