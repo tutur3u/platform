@@ -2,6 +2,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceProductTier } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
@@ -9,6 +11,7 @@ import {
   getWorkspace,
   getWorkspaceNonMemberInviteEligibility,
 } from '@tuturuuu/utils/workspace-helper';
+import dynamic from 'next/dynamic';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
@@ -17,15 +20,12 @@ import {
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
-import { SidebarProvider } from '@/context/sidebar-context';
-import { CalendarPreferencesProvider } from '@/lib/calendar-preferences-provider';
-import NavbarActions from '../../navbar-actions';
-import { UserNav } from '../../user-nav';
-import { DashboardClientProviders } from './dashboard-client-providers';
-import { DashboardSettingsDialogHost } from './dashboard-settings-dialog-host';
-import { WorkspaceNavigationLinks } from './navigation';
-import { filterDashboardNavigationLinks } from './navigation-visibility';
-import { Structure } from './structure';
+
+const DashboardShellClient = dynamic(() =>
+  import('./dashboard-shell-client').then(
+    (module) => module.DashboardShellClient
+  )
+);
 
 interface LayoutProps {
   params: Promise<{
@@ -53,6 +53,75 @@ async function createPersonalWorkspacePrompt(
       createLabel={t('common.create_workspace')}
       markLabel={t('common.mark_as_personal')}
       selectPlaceholder={t('common.select_workspace')}
+    />
+  );
+}
+
+async function createNavigationLinks({
+  isPersonal,
+  personalOrWsId,
+  user,
+  workspaceTier,
+  wsId,
+}: {
+  isPersonal: boolean;
+  personalOrWsId: string;
+  user: WorkspaceUser;
+  workspaceTier: WorkspaceProductTier | null;
+  wsId: string;
+}) {
+  const [{ WorkspaceNavigationLinks }, { filterDashboardNavigationLinks }] =
+    await Promise.all([
+      import('./navigation'),
+      import('./navigation-visibility'),
+    ]);
+
+  const navigationLinks = await WorkspaceNavigationLinks({
+    wsId,
+    personalOrWsId,
+    isPersonal,
+    isTuturuuuUser: !!user.email?.endsWith('@tuturuuu.com'),
+    user: {
+      email: user.email ?? undefined,
+      id: user.id,
+    },
+  });
+
+  return filterDashboardNavigationLinks(navigationLinks, {
+    currentWsId: wsId,
+    prodMode: PROD_MODE,
+    userEmail: user.email,
+    workspaceTier,
+  });
+}
+
+async function NavbarActionsSlot({ user }: { user: WorkspaceUser }) {
+  const { default: NavbarActions } = await import('../../navbar-actions');
+
+  return (
+    <NavbarActions
+      renderCommandLauncher={false}
+      renderSettingsDialog={false}
+      user={user}
+    />
+  );
+}
+
+async function UserPopoverSlot({
+  user,
+  workspace,
+}: {
+  user: WorkspaceUser;
+  workspace: NonNullable<Awaited<ReturnType<typeof getWorkspace>>>;
+}) {
+  const { UserNav } = await import('../../user-nav');
+
+  return (
+    <UserNav
+      hideMetadata
+      workspace={workspace}
+      user={user}
+      renderSettingsDialog={false}
     />
   );
 }
@@ -213,88 +282,50 @@ export default async function Layout({ children, params }: LayoutProps) {
     return personalWorkspacePrompt;
   }
 
-  const navigationLinks = await WorkspaceNavigationLinks({
+  const visibleNavigationLinks = await createNavigationLinks({
     wsId,
     personalOrWsId: workspaceSlug,
     isPersonal: !!workspace.personal,
-    isTuturuuuUser: !!user.email?.endsWith('@tuturuuu.com'),
-    user: {
-      email: user.email ?? undefined,
-      id: user.id,
-    },
+    user,
+    workspaceTier: workspace.tier ?? null,
   });
-  const visibleNavigationLinks = filterDashboardNavigationLinks(
-    navigationLinks,
-    {
-      currentWsId: wsId,
-      prodMode: PROD_MODE,
-      userEmail: user.email,
-      workspaceTier: workspace.tier ?? null,
-    }
-  );
 
   return (
-    <CalendarPreferencesProvider wsId={wsId}>
-      <SidebarProvider initialBehavior={sidebarBehavior}>
-        {!isGuestWorkspace && (
-          <DashboardSettingsDialogHost
-            wsId={wsId}
-            user={user}
-            workspace={workspace}
-          />
-        )}
-        {personalWorkspacePrompt && (
-          <div className="px-2 pt-2 md:px-4 md:pt-3">
-            {personalWorkspacePrompt}
-          </div>
-        )}
-        <Structure
-          wsId={wsId}
-          user={user}
-          workspace={workspace}
-          defaultCollapsed={defaultCollapsed}
-          links={visibleNavigationLinks}
-          actions={
-            <Suspense
-              key={user.id}
-              fallback={
-                <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-              }
-            >
-              <NavbarActions
-                renderCommandLauncher={false}
-                renderSettingsDialog={false}
-                user={user}
-              />
-            </Suspense>
-          }
-          userPopover={
-            <Suspense
-              key={user.id}
-              fallback={
-                <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-              }
-            >
-              <UserNav
-                hideMetadata
-                workspace={workspace}
-                user={user}
-                renderSettingsDialog={false}
-              />
-            </Suspense>
+    <DashboardShellClient
+      wsId={wsId}
+      user={user}
+      workspace={workspace}
+      defaultCollapsed={defaultCollapsed}
+      links={visibleNavigationLinks}
+      sidebarBehavior={sidebarBehavior}
+      isGuestWorkspace={isGuestWorkspace}
+      tier={workspace.tier ?? null}
+      enablePresence={!workspace.personal && !isGuestWorkspace}
+      isPersonalWorkspace={!!workspace.personal}
+      showPersonalWorkspaceCollaborationBanner={!!workspace.personal}
+      personalWorkspacePrompt={personalWorkspacePrompt}
+      actions={
+        <Suspense
+          key={user.id}
+          fallback={
+            <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
-          <DashboardClientProviders
-            wsId={wsId}
-            tier={workspace.tier ?? null}
-            enablePresence={!workspace.personal && !isGuestWorkspace}
-            isPersonalWorkspace={!!workspace.personal}
-            showPersonalWorkspaceCollaborationBanner={!!workspace.personal}
-          >
-            {children}
-          </DashboardClientProviders>
-        </Structure>
-      </SidebarProvider>
-    </CalendarPreferencesProvider>
+          <NavbarActionsSlot user={user} />
+        </Suspense>
+      }
+      userPopover={
+        <Suspense
+          key={user.id}
+          fallback={
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+          }
+        >
+          <UserPopoverSlot user={user} workspace={workspace} />
+        </Suspense>
+      }
+    >
+      {children}
+    </DashboardShellClient>
   );
 }
