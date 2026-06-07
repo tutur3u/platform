@@ -1,15 +1,8 @@
-import { TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS } from '@tuturuuu/utils/portless';
-import type { NextConfig } from 'next';
+import { createTuturuuuNextConfig } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
 
-const nextConfig: NextConfig = {
-  allowedDevOrigins: [...TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS],
-  reactCompiler: true,
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-};
+const nextConfig = createTuturuuuNextConfig();
 
 export default withNextIntl(nextConfig);

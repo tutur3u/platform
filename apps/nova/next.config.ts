@@ -1,44 +1,13 @@
-import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
-import { TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS } from '@tuturuuu/utils/portless';
-import type { NextConfig } from 'next';
+import {
+  createTuturuuuNextConfig,
+  resolveTuturuuuWebAppUrl,
+} from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
-const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
-const isDeployedEnvironment =
-  process.env.VERCEL === '1' ||
-  process.env.VERCEL_ENV === 'preview' ||
-  process.env.VERCEL_ENV === 'production' ||
-  process.env.NODE_ENV === 'production';
+const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 
-function trimTrailingSlashes(value: string) {
-  let end = value.length;
-
-  while (end > 0 && value.charCodeAt(end - 1) === 47) {
-    end -= 1;
-  }
-
-  return end === value.length ? value : value.slice(0, end);
-}
-
-const WEB_APP_URL = trimTrailingSlashes(
-  process.env.INTERNAL_WEB_API_ORIGIN ||
-    process.env.NEXT_PUBLIC_WEB_APP_URL ||
-    process.env.WEB_APP_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (isDeployedEnvironment
-      ? 'https://tuturuuu.com'
-      : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`))
-);
-
-const nextConfig: NextConfig = {
-  allowedDevOrigins: [...TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS],
-  reactCompiler: true,
-  reactStrictMode: true,
-  poweredByHeader: false,
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+const nextConfig = createTuturuuuNextConfig({
   transpilePackages: ['@tuturuuu/ui'],
   images: {
     remotePatterns: [
@@ -79,6 +48,6 @@ const nextConfig: NextConfig = {
       ],
     };
   },
-};
+});
 
 export default withNextIntl(nextConfig);

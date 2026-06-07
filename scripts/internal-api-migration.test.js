@@ -121,10 +121,9 @@ test('non-web apps fall back unmatched API routes to the central web app', () =>
   for (const file of apps) {
     const source = read(file);
 
-    assert.match(
-      source,
-      /const CENTRAL_PORT = process\.env\.CENTRAL_PORT \|\| 7803;/
-    );
+    assert.match(source, /createTuturuuuNextConfig/);
+    assert.match(source, /resolveTuturuuuWebAppUrl/);
+    assert.match(source, /const WEB_APP_URL = resolveTuturuuuWebAppUrl\(\);/);
     assert.match(source, /fallback:\s*\[/);
     assert.match(source, /destination:\s*`\$\{WEB_APP_URL\}\/api\/:path\*`/);
   }

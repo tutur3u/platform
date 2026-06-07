@@ -1,13 +1,16 @@
 import { getTurbopackConfig } from '@tuturuuu/offline/config';
-import { TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS } from '@tuturuuu/utils/portless';
-import type { NextConfig } from 'next';
+import {
+  createTuturuuuNextConfig,
+  isTuturuuuNextReactCompilerEnabled,
+} from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
 const serwistConfig = getTurbopackConfig();
 const isDockerStandaloneBuild = process.env.DOCKER_WEB_STANDALONE === '1';
-const reactCompilerEnabled =
-  !isDockerStandaloneBuild || process.env.DOCKER_WEB_REACT_COMPILER === '1';
+const reactCompilerEnabled = isDockerStandaloneBuild
+  ? process.env.DOCKER_WEB_REACT_COMPILER === '1'
+  : isTuturuuuNextReactCompilerEnabled();
 
 function parsePositiveIntegerEnv(name: string, fallback?: number) {
   const rawValue = process.env[name]?.trim();
@@ -37,33 +40,15 @@ const dockerNextBuildCpus = parsePositiveIntegerEnv(
   'DOCKER_WEB_NEXT_BUILD_CPUS',
   isDockerStandaloneBuild ? 4 : undefined
 );
-const optimizePackageImports = Array.from(
-  new Set([
-    ...(serwistConfig.experimental?.optimizePackageImports ?? []),
-    '@lucide/lab',
-    '@tuturuuu/icons',
-    '@tuturuuu/icons/lab',
-    '@tuturuuu/icons/lucide',
-    'lucide-react',
-  ])
-);
-
-const nextConfig: NextConfig = {
+const nextConfig = createTuturuuuNextConfig({
   ...serwistConfig,
-  allowedDevOrigins: [...TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS],
   cacheComponents: true,
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),
   reactCompiler: reactCompilerEnabled,
-  reactStrictMode: true,
-  poweredByHeader: false,
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   serverExternalPackages: [...(serwistConfig.serverExternalPackages ?? [])],
   experimental: {
     ...(serwistConfig.experimental ?? {}),
-    optimizePackageImports,
     ...(staticGenerationMaxConcurrency
       ? { staticGenerationMaxConcurrency }
       : {}),
@@ -112,6 +97,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-};
+});
 
 export default withNextIntl(nextConfig);

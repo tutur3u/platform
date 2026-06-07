@@ -1,7 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GET } from './route';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+type CourseRouteModule = typeof import('./route');
+
+let GET: CourseRouteModule['GET'];
 
 const mocks = vi.hoisted(() => ({
+  connection: vi.fn(),
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
   getLearnerCourseDetail: vi.fn(),
@@ -14,6 +18,15 @@ const mocks = vi.hoisted(() => ({
   },
   tulearnAccessErrorResponse: vi.fn(),
 }));
+
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+
+  return {
+    ...actual,
+    connection: () => mocks.connection(),
+  };
+});
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
@@ -49,6 +62,10 @@ vi.mock('@/lib/tulearn/service', () => ({
     ...args: Parameters<typeof mocks.tulearnAccessErrorResponse>
   ) => mocks.tulearnAccessErrorResponse(...args),
 }));
+
+beforeAll(async () => {
+  ({ GET } = await import('./route'));
+});
 
 type QueryResult = {
   data: unknown;
@@ -122,6 +139,7 @@ describe('course API app-session access', () => {
         totalModules: 1,
       },
     ]);
+    mocks.connection.mockResolvedValue(undefined);
     mocks.resolveStudentForPlatformUser.mockResolvedValue({
       avatar_url: null,
       email: 'learner@example.com',
