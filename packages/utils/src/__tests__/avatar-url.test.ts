@@ -39,11 +39,33 @@ describe('normalizeAvatarImageSrc', () => {
     );
   });
 
-  it('canonicalizes Supabase public avatar URLs to the configured project', () => {
+  it('keeps Supabase public avatar URLs on their original project', () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = CURRENT_SUPABASE_URL;
 
     expect(normalizeAvatarImageSrc(SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL)).toBe(
-      `${CURRENT_SUPABASE_URL}/storage/v1/object/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e`
+      SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL
+    );
+  });
+
+  it('repairs malformed Supabase public avatar object URLs', () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = CURRENT_SUPABASE_URL;
+
+    expect(
+      normalizeAvatarImageSrc(
+        'https://fnzamlzqfdwaaxdefwraj.supabase.co/storage/v1/object/v1/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e'
+      )
+    ).toBe(
+      'https://fnzamlzqfdwaaxdefwraj.supabase.co/storage/v1/object/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e'
+    );
+  });
+
+  it('repairs malformed Supabase avatar paths without project env config', () => {
+    expect(
+      normalizeAvatarImageSrc(
+        'https://fnzamlzqfdwaaxdefwraj.supabase.co/storage/v1/object/v1/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e'
+      )
+    ).toBe(
+      'https://fnzamlzqfdwaaxdefwraj.supabase.co/storage/v1/object/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e'
     );
   });
 

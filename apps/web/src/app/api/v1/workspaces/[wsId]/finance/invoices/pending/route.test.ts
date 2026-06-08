@@ -4,8 +4,6 @@ import { sanitizePendingInvoiceAvatarRows } from './route';
 const BARE_UUID_AVATAR_VALUE = 'bbaf2747-4452-4b56-910d-0b313f49843e';
 const SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL =
   'https://yjbjpmwbfimjcdsjxfst.supabase.co/storage/v1/object/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e';
-const CANONICAL_SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL =
-  'https://test.supabase.co/storage/v1/object/public/avatars/bbaf2747-4452-4b56-910d-0b313f49843e';
 
 describe('sanitizePendingInvoiceAvatarRows', () => {
   it('nulls invalid pending invoice avatar values without mutating other fields', () => {
@@ -40,7 +38,7 @@ describe('sanitizePendingInvoiceAvatarRows', () => {
       {
         user_id: 'user-2',
         user_name: 'Bich Ngan',
-        user_avatar_url: CANONICAL_SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL,
+        user_avatar_url: SUPABASE_PUBLIC_BARE_UUID_AVATAR_URL,
         months_owed: '2026-06',
       },
       {

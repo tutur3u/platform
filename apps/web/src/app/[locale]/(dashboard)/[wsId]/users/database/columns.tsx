@@ -14,7 +14,6 @@ import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment } from 'react';
 import { RequireAttentionName } from '@/components/users/require-attention-name';
@@ -164,12 +163,14 @@ export const getUserColumns = ({
         if (!avatarUrl) return <div className="min-w-32">-</div>;
 
         return (
-          <Image
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             width={128}
             height={128}
             src={avatarUrl}
             alt="Avatar"
             className="aspect-square min-w-32 rounded-lg object-cover"
+            loading="lazy"
           />
         );
       },

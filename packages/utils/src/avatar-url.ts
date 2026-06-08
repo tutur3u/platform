@@ -1,30 +1,38 @@
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SUPABASE_PUBLIC_AVATAR_PATH = '/storage/v1/object/public/avatars/';
+const SUPABASE_MALFORMED_PUBLIC_AVATAR_PATH =
+  '/storage/v1/object/v1/public/avatars/';
 
-function normalizeSupabasePublicAvatarUrl(src: string) {
-  const currentSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-
-  if (!currentSupabaseUrl) {
-    return src;
+function getSupabasePublicAvatarObjectPath(pathname: string) {
+  if (pathname.startsWith(SUPABASE_PUBLIC_AVATAR_PATH)) {
+    return pathname.slice(SUPABASE_PUBLIC_AVATAR_PATH.length);
   }
 
+  if (pathname.startsWith(SUPABASE_MALFORMED_PUBLIC_AVATAR_PATH)) {
+    return pathname.slice(SUPABASE_MALFORMED_PUBLIC_AVATAR_PATH.length);
+  }
+
+  return null;
+}
+
+function normalizeSupabasePublicAvatarUrl(src: string) {
   try {
     const sourceUrl = new URL(src);
+    const avatarObjectPath = getSupabasePublicAvatarObjectPath(
+      sourceUrl.pathname
+    );
 
     if (
       !sourceUrl.hostname.endsWith('.supabase.co') ||
-      !sourceUrl.pathname.startsWith(SUPABASE_PUBLIC_AVATAR_PATH)
+      avatarObjectPath === null
     ) {
       return src;
     }
 
-    const currentUrl = new URL(currentSupabaseUrl);
-    currentUrl.pathname = sourceUrl.pathname;
-    currentUrl.search = sourceUrl.search;
-    currentUrl.hash = sourceUrl.hash;
+    sourceUrl.pathname = `${SUPABASE_PUBLIC_AVATAR_PATH}${avatarObjectPath}`;
 
-    return currentUrl.toString();
+    return sourceUrl.toString();
   } catch {
     return src;
   }

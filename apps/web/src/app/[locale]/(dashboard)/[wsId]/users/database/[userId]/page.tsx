@@ -10,7 +10,6 @@ import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import moment from 'moment';
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -113,12 +112,14 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
     <div className="flex min-h-full w-full flex-col">
       {hasPublicInfo && data.avatar_url && (
         <div className="mb-2 flex flex-col items-center justify-center gap-2 font-semibold text-lg">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             width={128}
             height={128}
             src={data.avatar_url}
             alt="Avatar"
             className="aspect-square min-w-32 rounded-lg object-cover"
+            loading="lazy"
           />
           {data.full_name && (
             <div>

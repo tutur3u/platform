@@ -15,10 +15,9 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import type { GroupMembershipFilter } from './group-membership';
-import {
-  buildWorkspaceUsersSearchParams,
-  type UsersDatabaseRequireAttention,
-  type UsersDatabaseStatus,
+import type {
+  UsersDatabaseRequireAttention,
+  UsersDatabaseStatus,
 } from './resolved-filters';
 
 export interface WorkspaceUsersParams {
@@ -41,6 +40,26 @@ export interface WorkspaceUsersResponse {
     hasPublicInfo: boolean;
     canCheckUserAttendance: boolean;
   };
+}
+
+export async function fetchWorkspaceUsers(
+  wsId: string,
+  params: Required<WorkspaceUsersParams>
+): Promise<WorkspaceUsersResponse> {
+  const response = await fetch(`/api/v1/workspaces/${wsId}/users/database`, {
+    body: JSON.stringify(params),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch workspace users');
+  }
+
+  return response.json();
 }
 
 /**
@@ -82,8 +101,8 @@ export function useWorkspaceUsers(
         groupMembership,
       },
     ],
-    queryFn: async (): Promise<WorkspaceUsersResponse> => {
-      const searchParams = buildWorkspaceUsersSearchParams({
+    queryFn: () =>
+      fetchWorkspaceUsers(wsId, {
         q,
         page,
         pageSize,
@@ -93,19 +112,7 @@ export function useWorkspaceUsers(
         linkStatus,
         requireAttention,
         groupMembership,
-      });
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/database?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch workspace users');
-      }
-
-      return response.json();
-    },
+      }),
     enabled: options?.enabled !== false,
     initialData: options?.initialData,
     // Keep previous data while fetching new page - prevents UI from becoming unresponsive

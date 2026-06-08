@@ -28,7 +28,7 @@ function normalizeListParam(value: string | string[]) {
 }
 
 function normalizePositiveIntegerParam(
-  value: string | string[] | undefined,
+  value: unknown,
   {
     fallback,
     min,
@@ -40,9 +40,15 @@ function normalizePositiveIntegerParam(
   }
 ) {
   const rawValue = Array.isArray(value) ? value[0] : value;
-  const parsedValue = rawValue ? Number.parseInt(rawValue, 10) : fallback;
+  const normalizedValue =
+    typeof rawValue === 'number' || typeof rawValue === 'string'
+      ? String(rawValue)
+      : undefined;
+  const parsedValue = normalizedValue
+    ? Number.parseInt(normalizedValue, 10)
+    : fallback;
 
-  if (!Number.isFinite(parsedValue)) {
+  if (!normalizedValue || !Number.isFinite(parsedValue)) {
     return fallback;
   }
 
@@ -102,7 +108,56 @@ interface Params {
   }>;
 }
 
-export async function GET(request: Request, { params }: Params) {
+function collectSearchParams(searchParams: URLSearchParams) {
+  const params_obj: Record<string, string | string[]> = {};
+
+  searchParams.forEach((value, key) => {
+    const existing = params_obj[key];
+    if (existing) {
+      if (Array.isArray(existing)) {
+        existing.push(value);
+      } else {
+        params_obj[key] = [existing, value];
+      }
+    } else {
+      params_obj[key] = value;
+    }
+  });
+
+  return params_obj;
+}
+
+async function readJsonObject(request: Request) {
+  const body = await request.json().catch(() => ({}));
+  return body && typeof body === 'object' && !Array.isArray(body)
+    ? (body as Record<string, unknown>)
+    : {};
+}
+
+function parseUsersDatabaseSearchParams(params_obj: Record<string, unknown>) {
+  params_obj.page = String(
+    normalizePositiveIntegerParam(params_obj.page, {
+      fallback: 1,
+      min: 1,
+      max: Number.MAX_SAFE_INTEGER,
+    })
+  );
+  params_obj.pageSize = String(
+    normalizePositiveIntegerParam(params_obj.pageSize, {
+      fallback: 10,
+      min: 1,
+      max: MAX_SHORT_TEXT_LENGTH,
+    })
+  );
+
+  return SearchParamsSchema.parse(params_obj);
+}
+
+async function handleUsersDatabaseRequest(
+  request: Request,
+  { params }: Params,
+  params_obj: Record<string, unknown>
+) {
   try {
     const { wsId: id } = await params;
     const wsId = await normalizeWorkspaceId(id);
@@ -122,39 +177,7 @@ export async function GET(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
-    // Parse query params
-    const { searchParams } = new URL(request.url);
-    const params_obj: Record<string, string | string[]> = {};
-
-    searchParams.forEach((value, key) => {
-      const existing = params_obj[key];
-      if (existing) {
-        if (Array.isArray(existing)) {
-          existing.push(value);
-        } else {
-          params_obj[key] = [existing, value];
-        }
-      } else {
-        params_obj[key] = value;
-      }
-    });
-
-    params_obj.page = String(
-      normalizePositiveIntegerParam(params_obj.page, {
-        fallback: 1,
-        min: 1,
-        max: Number.MAX_SAFE_INTEGER,
-      })
-    );
-    params_obj.pageSize = String(
-      normalizePositiveIntegerParam(params_obj.pageSize, {
-        fallback: 10,
-        min: 1,
-        max: MAX_SHORT_TEXT_LENGTH,
-      })
-    );
-
-    const sp = SearchParamsSchema.parse(params_obj);
+    const sp = parseUsersDatabaseSearchParams(params_obj);
 
     // Fetch data using RPC with link_status parameter for efficient filtering
     const sbAdmin = await createAdminClient();
@@ -439,4 +462,21 @@ export async function GET(request: Request, { params }: Params) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(request: Request, context: Params) {
+  const { searchParams } = new URL(request.url);
+  return handleUsersDatabaseRequest(
+    request,
+    context,
+    collectSearchParams(searchParams)
+  );
+}
+
+export async function POST(request: Request, context: Params) {
+  return handleUsersDatabaseRequest(
+    request,
+    context,
+    await readJsonObject(request)
+  );
 }
