@@ -61,16 +61,18 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <TeachThemeProvider>
-          <TeachQueryProvider>
-            <NextIntlClientProvider>
-              {children}
-              <Suspense fallback={null}>
-                <SatelliteVersionBadge appName="Teach" />
-              </Suspense>
-            </NextIntlClientProvider>
-          </TeachQueryProvider>
-        </TeachThemeProvider>
+        <Suspense fallback={null}>
+          <NextIntlClientProvider>
+            <TeachThemeProvider>
+              <TeachQueryProvider>
+                {children}
+                <Suspense fallback={null}>
+                  <SatelliteVersionBadge appName="Teach" />
+                </Suspense>
+              </TeachQueryProvider>
+            </TeachThemeProvider>
+          </NextIntlClientProvider>
+        </Suspense>
         <TailwindIndicator />
         <ProductionIndicator />
         <StaffToolbar />

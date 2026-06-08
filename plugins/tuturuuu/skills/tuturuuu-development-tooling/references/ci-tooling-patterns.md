@@ -47,6 +47,11 @@ formatting behavior, or repo-wide verification.
 ## CI And Dependency Drift
 
 - Keep workflow Bun versions aligned with the repo `packageManager` pin.
+- Workflows that need Bun should use
+  `.github/actions/setup-bun-with-retry` instead of `oven-sh/setup-bun`
+  directly. The local action downloads the pinned Bun release with bounded
+  exponential backoff so GitHub release 5xx failures do not immediately fail
+  deploys.
 - Release Please is the monorepo source of truth for version/changelog PRs.
   Keep `release-please-config.json`, `.release-please-manifest.json`,
   `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when
@@ -55,9 +60,11 @@ formatting behavior, or repo-wide verification.
 - Keep the Release Please token fallback ordered as
   `secrets.RELEASE_PLEASE_TOKEN || github.token`; the bot token is still needed
   for generated PRs and releases to trigger downstream workflows.
-- For `bun install --frozen-lockfile` workflow steps, prefer bounded retries
-  with `bun pm cache rm` before changing dependencies when the failure is a
-  tarball extraction or cache issue.
+- Route workflow `bun install` and `bun setup` steps through
+  `bash scripts/ci/run-with-backoff.sh ...`. The helper uses bounded
+  exponential backoff and clears `bun pm cache rm` between Bun-command attempts
+  before changing dependencies when the failure is a tarball extraction or
+  cache issue.
 - Package release workflows are npm-only for now. Do not add JSR or GitHub
   Packages publish jobs, and do not wire `jsr.json` version files into Release
   Please while those registries are paused.

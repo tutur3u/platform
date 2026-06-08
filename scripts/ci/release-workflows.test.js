@@ -650,7 +650,9 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
     );
     const header = workflow.slice(0, workflow.indexOf('\njobs:'));
     const deployJob = readWorkflowJobBlock(workflowName, jobName);
-    const installIndex = workflow.indexOf('run: bun install\n');
+    const installIndex = workflow.indexOf(
+      'run: bash scripts/ci/run-with-backoff.sh bun install\n'
+    );
     const firstSecretIndex = workflow.indexOf('secrets.');
 
     assert.doesNotMatch(

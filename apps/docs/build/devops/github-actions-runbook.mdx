@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-06-02"
+updatedAt: "2026-06-08"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -110,8 +110,10 @@ These workflows:
   `TRUSTED_PREVIEW_DEPLOY_ACTORS` repository variable
 - reject production manual dispatches from non-production branches before
   install/build/deploy work starts
-- install Bun and Node 24
-- install dependencies
+- install Bun with `.github/actions/setup-bun-with-retry`, pinned to the root
+  `packageManager` Bun version and retried with exponential backoff
+- install dependencies through `scripts/ci/run-with-backoff.sh` so transient Bun
+  tarball or cache failures retry after cache cleanup
 - build selected shared workspace dependencies before Vercel resolves package exports:
   `@tuturuuu/types`, `@tuturuuu/supabase`, and `@tuturuuu/internal-api`
 - run `vercel pull`
@@ -155,10 +157,12 @@ binary build, and Docker image build.
 - `branch-name-check.yaml`
 
 The test workflows (`turbo-unit-tests.yaml` and `codecov.yaml`) run `bun setup`
-before executing tests so dependency installation and workspace package builds
-match the local setup path. Vercel workflows should invoke Turborepo through
-`bun turbo:local ...` after `bun install` so CI uses the pinned repo dependency
-instead of resolving a global or downloaded Turbo binary.
+through `scripts/ci/run-with-backoff.sh` before executing tests so dependency
+installation and workspace package builds match the local setup path while
+surviving transient tarball extraction failures. Vercel workflows should invoke
+Turborepo through `bun turbo:local ...` after the retried `bun install` so CI
+uses the pinned repo dependency instead of resolving a global or downloaded
+Turbo binary.
 
 Vercel deploy credentials must stay environment-scoped. Do not put
 `${{ secrets.* }}` values in a Vercel workflow-level `env:` block, and do not

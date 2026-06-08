@@ -223,16 +223,79 @@ test('release-please workflow uses static switchboard gating', () => {
   );
 });
 
-test('type-check workflow retries frozen Bun installs after cache cleanup', () => {
+test('workflows use the repo Bun setup and install retry helpers', () => {
+  const workflowsDir = path.join(repoRoot, '.github', 'workflows');
+  const workflowFiles = fs
+    .readdirSync(workflowsDir)
+    .filter((fileName) => fileName.endsWith('.yaml'));
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
+  );
+  const bunVersion = packageJson.packageManager.replace(/^bun@/, '');
+
+  for (const workflowFile of workflowFiles) {
+    const workflow = fs.readFileSync(
+      path.join(workflowsDir, workflowFile),
+      'utf8'
+    );
+
+    assert.doesNotMatch(
+      workflow,
+      /oven-sh\/setup-bun/,
+      `${workflowFile} must use the local Bun setup retry action`
+    );
+    assert.doesNotMatch(
+      workflow,
+      /^\s*run:\s*bun (?:install|setup)\b/m,
+      `${workflowFile} must run Bun install/setup through scripts/ci/run-with-backoff.sh`
+    );
+
+    if (workflow.includes('./.github/actions/setup-bun-with-retry')) {
+      assert.ok(
+        workflow.indexOf('actions/checkout') <
+          workflow.indexOf('./.github/actions/setup-bun-with-retry'),
+        `${workflowFile} must checkout the repo before using the local Bun setup action`
+      );
+      assert.match(
+        workflow,
+        new RegExp(`bun-version: ${bunVersion.replaceAll('.', '\\.')}`),
+        `${workflowFile} must pin Bun to packageManager`
+      );
+    }
+  }
+});
+
+test('Bun workflow helpers use bounded exponential backoff', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'type-check.yaml'),
     'utf8'
   );
+  const setupAction = fs.readFileSync(
+    path.join(
+      repoRoot,
+      '.github',
+      'actions',
+      'setup-bun-with-retry',
+      'action.yml'
+    ),
+    'utf8'
+  );
+  const setupScript = fs.readFileSync(
+    path.join(repoRoot, 'scripts', 'ci', 'setup-bun-with-backoff.sh'),
+    'utf8'
+  );
+  const retryScript = fs.readFileSync(
+    path.join(repoRoot, 'scripts', 'ci', 'run-with-backoff.sh'),
+    'utf8'
+  );
 
-  assert.match(workflow, /bun install --frozen-lockfile/);
-  assert.match(workflow, /while \[ "\$attempt" -le 3 \]/);
-  assert.match(workflow, /bun pm cache rm/);
-  assert.match(workflow, /bun install failed after 3 attempts/);
+  assert.match(workflow, /run-with-backoff\.sh bun install --frozen-lockfile/);
+  assert.match(setupAction, /setup-bun-with-backoff\.sh/);
+  assert.match(setupScript, /BUN_SETUP_MAX_ATTEMPTS/);
+  assert.match(setupScript, /delay=\$\(\(delay \* 2\)\)/);
+  assert.match(retryScript, /CI_RETRY_MAX_ATTEMPTS/);
+  assert.match(retryScript, /bun pm cache rm/);
+  assert.match(retryScript, /delay=\$\(\(delay \* 2\)\)/);
 });
 
 test('ci configuration gate runs TypeScript scripts with Node strip-types', () => {
