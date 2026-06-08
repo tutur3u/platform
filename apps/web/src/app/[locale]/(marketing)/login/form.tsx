@@ -12,7 +12,6 @@ import {
   EyeOff,
   Lock,
   Mail,
-  QrCode,
   Smartphone,
 } from '@tuturuuu/icons';
 import {
@@ -20,7 +19,6 @@ import {
   createMfaMobileApprovalChallengeWithInternalApi,
   getOtpSettings,
   pollMfaMobileApprovalChallengeWithInternalApi,
-  type QrLoginSessionPayload,
   resolveCrossAppReturnUrlWithInternalApi,
   sendOtpWithInternalApi,
   verifyOtpWithInternalApi,
@@ -63,7 +61,6 @@ import {
 import { passwordLoginAction } from './actions';
 import { InternalAppAccountConfirmation } from './internal-app-account-confirmation';
 import { InvalidReturnUrlWarning } from './invalid-return-url-warning';
-import { LoginQrCard } from './login-qr-card';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
 import { PasskeyLoginButton } from './passkey-login-button';
 import { SocialLoginButton } from './social-login-button';
@@ -119,7 +116,7 @@ const authContainerTransition = {
   ease: [0.22, 1, 0.36, 1] as const,
 };
 
-type AuthStage = 'identify' | 'otp' | 'password' | 'qr';
+type AuthStage = 'identify' | 'otp' | 'password';
 
 interface MobileMfaApprovalChallenge {
   expiresAt: string;
@@ -501,15 +498,22 @@ export default function LoginForm() {
     []
   );
 
-  const handleCaptchaSuccess = useCallback((token: string) => {
-    setCaptchaToken(token);
-    setCaptchaError(undefined);
-  }, []);
+  const handleCaptchaSuccess = useCallback(
+    (token: string) => {
+      setCaptchaToken(token);
+      setCaptchaError(undefined);
+      setPasswordRateLimitedEmail(null);
+      passwordForm.clearErrors('password');
+    },
+    [passwordForm]
+  );
 
   const handleCaptchaError = useCallback(
     (errorCode?: string) => {
       console.warn('[Turnstile] Error:', errorCode);
       resetCaptcha();
+      setPasswordRateLimitedEmail(null);
+      passwordForm.clearErrors('password');
       setCaptchaError(
         t(`login.${getTurnstileClientErrorMessageKey(errorCode)}`)
       );
@@ -521,7 +525,7 @@ export default function LoginForm() {
         }, CAPTCHA_ERROR_RETRY_DELAY);
       }
     },
-    [resetCaptcha, t]
+    [passwordForm, resetCaptcha, t]
   );
 
   const handleCaptchaTimeout = useCallback(() => {
@@ -696,7 +700,7 @@ export default function LoginForm() {
   }, [prepareReturnAppConfirmation, processNextUrl, supabase.auth, totpForm]);
 
   const completePrimarySignIn = useCallback(
-    async (source: 'otp' | 'passkey' | 'password' | 'qr') => {
+    async (source: 'otp' | 'passkey' | 'password') => {
       router.refresh();
 
       if (await needsMFA()) {
@@ -813,28 +817,6 @@ export default function LoginForm() {
     router.replace(nextPath);
     router.refresh();
   }, [requiresMFA, router, user]);
-
-  const handleQrAuthenticated = useCallback(
-    async (session: QrLoginSessionPayload) => {
-      setLoading(true);
-
-      const { error } = await supabase.auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      });
-
-      if (error) {
-        toast.error(t('login.qr_failed_title'), {
-          description: error.message,
-        });
-        setLoading(false);
-        return;
-      }
-
-      await completePrimarySignIn('qr');
-    },
-    [completePrimarySignIn, supabase.auth, t]
-  );
 
   const sendOtpMutation = useMutation({
     mutationFn: async (email: string) =>
@@ -1228,14 +1210,6 @@ export default function LoginForm() {
     openPasswordStage(normalizedEmail);
   };
 
-  const advanceToQrStage = () => {
-    setTransitionDirection(1);
-    setShowDomainPreview(false);
-    setOtpRetryAfterSeconds(0);
-    setCaptchaError(undefined);
-    setAuthStage('qr');
-  };
-
   const returnToIdentifyStage = () => {
     const currentEmail = emailForm.getValues('email');
 
@@ -1427,10 +1401,6 @@ export default function LoginForm() {
 
     if (authStage === 'password') {
       passwordForm.setFocus('password');
-      return;
-    }
-
-    if (authStage === 'qr') {
       return;
     }
 
@@ -1829,53 +1799,7 @@ export default function LoginForm() {
 
                   <LoginMethodSeparator label={t('login.or')} />
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-12 w-full rounded-2xl font-medium"
-                    onClick={advanceToQrStage}
-                    disabled={loading}
-                  >
-                    <QrCode className="size-4" />
-                    <span>{t('login.qr_title')}</span>
-                  </Button>
-
-                  <LoginMethodSeparator label={t('login.or')} />
-
                   {renderSocialLoginButtons()}
-                </motion.div>
-              ) : authStage === 'qr' ? (
-                <motion.div
-                  key="qr-auth"
-                  custom={transitionDirection}
-                  variants={authStepVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  className="space-y-6"
-                >
-                  <div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="-ml-2 w-fit rounded-full px-2.5 text-muted-foreground hover:text-foreground"
-                      onClick={returnToIdentifyStage}
-                      disabled={loading}
-                    >
-                      <ArrowLeft className="size-4" />
-                      <span>{t('common.back')}</span>
-                    </Button>
-                  </div>
-
-                  <LoginQrCard
-                    canRenderTurnstile={turnstileClientState.canRenderWidget}
-                    disabled={loading}
-                    locale={locale || 'en'}
-                    onAuthenticated={handleQrAuthenticated}
-                    requiresTurnstile={turnstileClientState.isRequired}
-                    turnstileSiteKey={turnstileSiteKey}
-                  />
                 </motion.div>
               ) : authStage === 'otp' ? (
                 <motion.div

@@ -218,6 +218,26 @@ export function isLocalE2EAuthBypassEnabled(
   );
 }
 
+export function shouldBypassSupabaseAuthCaptchaForDev(
+  env: NodeJS.ProcessEnv = process.env
+) {
+  if (isLocalE2EAuthBypassEnabled(env)) {
+    return true;
+  }
+
+  if (env.NODE_ENV !== 'development') {
+    return false;
+  }
+
+  const publicSupabaseOrigin = getOrigin(getLocalE2EPublicSupabaseUrl(env));
+  const serverSupabaseOrigin = getOrigin(getLocalE2EServerSupabaseUrl(env));
+
+  return (
+    isLocalSupabaseOrigin(publicSupabaseOrigin) &&
+    isLocalSupabaseOrigin(serverSupabaseOrigin)
+  );
+}
+
 export function isLocalE2EAuthRequestAllowed(
   request: LocalE2EAuthRequest,
   env: NodeJS.ProcessEnv = process.env

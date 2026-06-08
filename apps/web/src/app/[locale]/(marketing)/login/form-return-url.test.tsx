@@ -198,6 +198,25 @@ describe('LoginForm returnUrl navigation', () => {
     queryClient.clear();
   });
 
+  it('does not expose authenticated QR handoff on the public login form', async () => {
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
+    });
+
+    const queryClient = renderLoginForm('/');
+
+    await screen.findByRole('button', {
+      name: 'login.continue_with_email',
+    });
+
+    expect(
+      screen.queryByRole('button', { name: 'login.qr_title' })
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
   it('rejects a protocol-relative returnUrl instead of assigning external navigation', async () => {
     const queryClient = renderLoginForm('//evil.test/phish');
 

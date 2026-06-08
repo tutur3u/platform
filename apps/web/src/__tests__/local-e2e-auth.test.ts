@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isLocalE2EAuthBypassEnabled,
   isLocalE2EAuthRequestAllowed,
+  shouldBypassSupabaseAuthCaptchaForDev,
 } from '@/lib/auth/local-e2e';
 
 const localE2EEnv = {
@@ -264,6 +265,28 @@ describe('isLocalE2EAuthRequestAllowed', () => {
         }),
         localE2EEnv
       )
+    ).toBe(false);
+  });
+});
+
+describe('shouldBypassSupabaseAuthCaptchaForDev', () => {
+  it('allows local Supabase development password auth without Turnstile', () => {
+    expect(
+      shouldBypassSupabaseAuthCaptchaForDev({
+        BASE_URL: 'https://tuturuuu.localhost',
+        NODE_ENV: 'development',
+        NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
+      })
+    ).toBe(true);
+  });
+
+  it('requires Turnstile for hosted Supabase development password auth', () => {
+    expect(
+      shouldBypassSupabaseAuthCaptchaForDev({
+        BASE_URL: 'https://tuturuuu.localhost',
+        NODE_ENV: 'development',
+        NEXT_PUBLIC_SUPABASE_URL: 'https://project.supabase.co',
+      })
     ).toBe(false);
   });
 });

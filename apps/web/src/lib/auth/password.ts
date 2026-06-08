@@ -22,7 +22,7 @@ import {
 } from '@tuturuuu/utils/constants';
 import { validateEmail } from '@tuturuuu/utils/email/server';
 import { z } from 'zod';
-import { isLocalE2EAuthBypassEnabled } from '@/lib/auth/local-e2e';
+import { shouldBypassSupabaseAuthCaptchaForDev } from '@/lib/auth/local-e2e';
 import { OTP_SPAM_BLOCK_ERROR } from '@/lib/auth/otp';
 
 export const PASSWORD_LOGIN_GENERIC_ERROR = 'Invalid login credentials';
@@ -88,6 +88,10 @@ function buildPasswordLoginMetadata(options: {
   }
 
   return metadata;
+}
+
+function isSupabaseCaptchaAuthError(error: { message?: string } | null) {
+  return /captcha|captcha_token|turnstile/iu.test(error?.message ?? '');
 }
 
 async function rejectSuspiciousUserAgent(
@@ -161,7 +165,7 @@ export async function passwordLogin(
   }
 
   const turnstile = resolveTurnstileToken({
-    devMode: isLocalE2EAuthBypassEnabled() || undefined,
+    devMode: shouldBypassSupabaseAuthCaptchaForDev(),
     token: input.captchaToken,
     requireConfiguration: true,
   });
@@ -177,6 +181,13 @@ export async function passwordLogin(
   });
 
   if (error) {
+    if (isSupabaseCaptchaAuthError(error)) {
+      return {
+        body: { error: error.message },
+        status: 400,
+      };
+    }
+
     await recordPasswordLoginFailure(
       suspiciousAgentCheck.ipAddress,
       validatedEmail

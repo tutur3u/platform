@@ -35,6 +35,7 @@ const mocks = vi.hoisted(() => {
     logAbuseEvent: vi.fn(),
     recordPasswordLoginFailure: vi.fn(),
     resolveTurnstileToken: vi.fn(),
+    shouldBypassSupabaseAuthCaptchaForDev: vi.fn(),
     validateEmail: vi.fn(),
   };
 });
@@ -81,6 +82,12 @@ vi.mock('@tuturuuu/utils/email/server', () => ({
     mocks.validateEmail(...args),
 }));
 
+vi.mock('@/lib/auth/local-e2e', () => ({
+  shouldBypassSupabaseAuthCaptchaForDev: (
+    ...args: Parameters<typeof mocks.shouldBypassSupabaseAuthCaptchaForDev>
+  ) => mocks.shouldBypassSupabaseAuthCaptchaForDev(...args),
+}));
+
 describe('passwordLogin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -105,6 +112,7 @@ describe('passwordLogin', () => {
       captchaOptions: {},
       shouldBypassForDev: true,
     });
+    mocks.shouldBypassSupabaseAuthCaptchaForDev.mockReturnValue(true);
     mocks.createClient.mockResolvedValue(mocks.browserClient);
     mocks.createAdminClient.mockResolvedValue(mocks.adminClient);
     mocks.browserSignInWithPassword.mockResolvedValue({
@@ -143,6 +151,11 @@ describe('passwordLogin', () => {
     );
 
     expect(mocks.createClient).toHaveBeenCalledTimes(1);
+    expect(mocks.resolveTurnstileToken).toHaveBeenCalledWith({
+      devMode: true,
+      token: undefined,
+      requireConfiguration: true,
+    });
     expect(mocks.browserSignInWithPassword).toHaveBeenCalledWith({
       email: 'person@example.com',
       options: {},
@@ -152,5 +165,84 @@ describe('passwordLogin', () => {
       body: { success: true },
       status: 200,
     });
+  });
+
+  it('requires a Turnstile token for hosted Supabase password login in development', async () => {
+    const { passwordLogin } = await import('./password');
+
+    mocks.shouldBypassSupabaseAuthCaptchaForDev.mockReturnValue(false);
+    mocks.resolveTurnstileToken.mockReturnValue({
+      captchaOptions: { captchaToken: 'captcha-token' },
+      shouldBypassForDev: false,
+    });
+
+    await passwordLogin(
+      {
+        captchaToken: 'captcha-token',
+        client: 'web',
+        email: 'person@example.com',
+        locale: 'en',
+        password: 'password123',
+      },
+      {
+        client: 'web',
+        endpoint: '/login/actions/password-login',
+        headers: new Headers(),
+      }
+    );
+
+    expect(mocks.resolveTurnstileToken).toHaveBeenCalledWith({
+      devMode: false,
+      token: 'captcha-token',
+      requireConfiguration: true,
+    });
+    expect(mocks.browserSignInWithPassword).toHaveBeenCalledWith({
+      email: 'person@example.com',
+      options: { captchaToken: 'captcha-token' },
+      password: 'password123',
+    });
+  });
+
+  it('surfaces Supabase captcha failures without recording a password failure', async () => {
+    const { passwordLogin } = await import('./password');
+
+    mocks.shouldBypassSupabaseAuthCaptchaForDev.mockReturnValue(false);
+    mocks.resolveTurnstileToken.mockReturnValue({
+      captchaOptions: {},
+      shouldBypassForDev: false,
+    });
+    mocks.browserSignInWithPassword.mockResolvedValue({
+      data: {
+        session: null,
+        user: null,
+      },
+      error: {
+        message:
+          'captcha protection: request disallowed (no captcha_token found)',
+      },
+    });
+
+    const result = await passwordLogin(
+      {
+        client: 'web',
+        email: 'person@example.com',
+        locale: 'en',
+        password: 'password123',
+      },
+      {
+        client: 'web',
+        endpoint: '/login/actions/password-login',
+        headers: new Headers(),
+      }
+    );
+
+    expect(result).toEqual({
+      body: {
+        error:
+          'captcha protection: request disallowed (no captcha_token found)',
+      },
+      status: 400,
+    });
+    expect(mocks.recordPasswordLoginFailure).not.toHaveBeenCalled();
   });
 });
