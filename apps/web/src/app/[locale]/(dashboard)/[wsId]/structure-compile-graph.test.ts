@@ -8,6 +8,15 @@ const structureSource = readFileSync(
     encoding: 'utf8',
   }
 );
+const lazySidebarComponentsSource = readFileSync(
+  join(
+    process.cwd(),
+    'src/app/[locale]/(dashboard)/[wsId]/lazy-sidebar-components.ts'
+  ),
+  {
+    encoding: 'utf8',
+  }
+);
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -36,5 +45,27 @@ describe('[wsId] structure compile graph', () => {
     expect(structureSource).not.toMatch(
       staticImportPattern('@/hooks/use-user-config')
     );
+  });
+
+  it('loads optional sidebar helpers after hydration instead of preloading them through next/dynamic', () => {
+    for (const [componentName, modulePath] of [
+      ['RecentSidebarItems', './recent-sidebar-items'],
+      ['SidebarActiveTimer', './sidebar-active-timer'],
+    ] as const) {
+      expect(structureSource).not.toMatch(
+        new RegExp(
+          String.raw`const\s+${componentName}\s*=\s*dynamic\(\s*\(\)\s*=>[\s\S]*?import\(['"]${modulePath.replace(
+            /[.*+?^${}()|[\]\\]/gu,
+            String.raw`\$&`
+          )}['"]\)`,
+          'u'
+        )
+      );
+      expect(lazySidebarComponentsSource).toContain(`import('${modulePath}')`);
+    }
+
+    expect(structureSource).toContain("from './lazy-sidebar-components'");
+    expect(structureSource).toContain('useRecentSidebarItemsComponent');
+    expect(structureSource).toContain('useSidebarActiveTimerComponent');
   });
 });

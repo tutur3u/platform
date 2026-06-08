@@ -30,6 +30,10 @@ import {
 } from 'react';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
+import {
+  useRecentSidebarItemsComponent,
+  useSidebarActiveTimerComponent,
+} from './lazy-sidebar-components';
 import { Nav } from './nav';
 import {
   type DashboardNavigationLink,
@@ -49,20 +53,6 @@ import {
   serializeSidebarNavigationLayoutConfig,
 } from './sidebar-navigation-preferences';
 
-const RecentSidebarItems = dynamic(
-  () =>
-    import('./recent-sidebar-items').then(
-      (module) => module.RecentSidebarItems
-    ),
-  { ssr: false }
-);
-const SidebarActiveTimer = dynamic(
-  () =>
-    import('./sidebar-active-timer').then(
-      (module) => module.SidebarActiveTimer
-    ),
-  { ssr: false }
-);
 const WorkspaceSelect = dynamic(
   () => import('./workspace-select').then((module) => module.WorkspaceSelect),
   {
@@ -271,6 +261,7 @@ export function Structure({
   const { behavior, handleBehaviorChange } = useSidebar();
   const [initialized, setInitialized] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const SidebarActiveTimer = useSidebarActiveTimerComponent();
   const hydratedLinks = useMemo(
     () => hydrateDashboardNavigationIcons(links),
     [links]
@@ -307,6 +298,9 @@ export function Structure({
     staleTime: 5 * 60 * 1000,
   });
   const recentNavigationEnabled = recentNavigationValue === 'true';
+  const RecentSidebarItems = useRecentSidebarItemsComponent(
+    recentNavigationEnabled
+  );
   const effectiveNavigationLayout =
     workspaceNavigationLayout ?? accountNavigationLayout ?? null;
   const navigationPreferenceResult = useMemo(
@@ -883,7 +877,9 @@ export function Structure({
 
   const sidebarContent = (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <SidebarActiveTimer wsId={wsId} isCollapsed={isCollapsed} />
+      {SidebarActiveTimer && (
+        <SidebarActiveTimer wsId={wsId} isCollapsed={isCollapsed} />
+      )}
 
       <div className="relative min-h-0 flex-1">
         <div
@@ -905,7 +901,7 @@ export function Structure({
                 onSubMenuClick={handleNavChange}
                 onClick={handleSidebarNavigation}
               />
-              {recentNavigationEnabled && (
+              {recentNavigationEnabled && RecentSidebarItems && (
                 <RecentSidebarItems
                   wsId={wsId}
                   isCollapsed={isCollapsed}
@@ -944,7 +940,7 @@ export function Structure({
                     onSubMenuClick={handleNavChange}
                     onClick={handleSidebarNavigation}
                   />
-                  {recentNavigationEnabled && (
+                  {recentNavigationEnabled && RecentSidebarItems && (
                     <RecentSidebarItems
                       wsId={wsId}
                       isCollapsed={isCollapsed}
