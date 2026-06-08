@@ -71,7 +71,7 @@ describe('external project public folder assets', () => {
     );
   });
 
-  it('uploads linked public assets through the Tuturuuu app server', async () => {
+  it('uploads linked public assets through signed storage URLs', async () => {
     const publicDir = await mkdtemp(join(tmpdir(), 'ttr-public-assets-'));
     await mkdir(join(publicDir, 'artworks'));
     await writeFile(
@@ -79,15 +79,21 @@ describe('external project public folder assets', () => {
       'png bytes'
     );
 
-    mockFetch.mockResolvedValueOnce(
-      createMockResponse({
-        data: {
+    mockFetch
+      .mockResolvedValueOnce(
+        createMockResponse({
+          contentType: 'image/png',
           fullPath:
             'ws_123/external-projects/yoola/artworks/starter-signal/starter-signal.png',
+          headers: {
+            'Content-Type': 'image/png',
+          },
           path: 'external-projects/yoola/artworks/starter-signal/starter-signal.png',
-        },
-      })
-    );
+          signedUrl: 'https://storage.example.com/signed-upload',
+          token: 'storage-token',
+        })
+      )
+      .mockResolvedValueOnce(createMockResponse(null));
 
     const client = new EpmClient({
       apiKey: 'ttr_test_key',
@@ -119,12 +125,26 @@ describe('external project public folder assets', () => {
       expect(mockFetch.mock.calls[0]?.[0]).toBe(
         'https://example.com/api/v1/workspaces/ws_123/external-projects/assets/upload-url'
       );
-      const uploadBody = mockFetch.mock.calls[0]?.[1]?.body as FormData;
-      expect(uploadBody.get('collectionType')).toBe('artworks');
-      expect(uploadBody.get('entrySlug')).toBe('starter-signal');
-      expect(uploadBody.get('upsert')).toBe('true');
-      expect(uploadBody.get('file')).toBeInstanceOf(File);
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string)).toEqual({
+        collectionType: 'artworks',
+        contentType: 'image/png',
+        entrySlug: 'starter-signal',
+        filename: 'starter-signal.png',
+        size: 9,
+        upsert: true,
+      });
+      expect(mockFetch.mock.calls[1]).toEqual([
+        'https://storage.example.com/signed-upload',
+        expect.objectContaining({
+          cache: 'no-store',
+          headers: {
+            Authorization: 'Bearer storage-token',
+            'Content-Type': 'image/png',
+          },
+          method: 'PUT',
+        }),
+      ]);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
       expect(result.manifest.content.entries[0]?.assets?.[0]?.storagePath).toBe(
         'external-projects/yoola/artworks/starter-signal/starter-signal.png'
       );
@@ -138,15 +158,21 @@ describe('external project public folder assets', () => {
     await mkdir(join(publicDir, 'audio'));
     await writeFile(join(publicDir, 'audio', 'voice-reel.wav'), 'wav bytes');
 
-    mockFetch.mockResolvedValueOnce(
-      createMockResponse({
-        data: {
+    mockFetch
+      .mockResolvedValueOnce(
+        createMockResponse({
+          contentType: 'audio/wav',
           fullPath:
             'ws_123/external-projects/kendra/voice-reels/demo/voice-reel.wav',
+          headers: {
+            'Content-Type': 'audio/wav',
+          },
           path: 'external-projects/kendra/voice-reels/demo/voice-reel.wav',
-        },
-      })
-    );
+          signedUrl: 'https://storage.example.com/signed-audio-upload',
+          token: 'storage-token',
+        })
+      )
+      .mockResolvedValueOnce(createMockResponse(null));
 
     const client = new EpmClient({
       apiKey: 'ttr_test_key',
@@ -189,10 +215,19 @@ describe('external project public folder assets', () => {
         }
       );
 
-      const uploadBody = mockFetch.mock.calls[0]?.[1]?.body as FormData;
-      const file = uploadBody.get('file') as File;
-      expect(file.type).toBe('audio/wav');
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string)).toEqual({
+        collectionType: 'voice-reels',
+        contentType: 'audio/wav',
+        entrySlug: 'demo',
+        filename: 'voice-reel.wav',
+        size: 9,
+        upsert: true,
+      });
+      expect(mockFetch.mock.calls[1]?.[1]?.headers).toEqual({
+        Authorization: 'Bearer storage-token',
+        'Content-Type': 'audio/wav',
+      });
+      expect(mockFetch).toHaveBeenCalledTimes(2);
     } finally {
       await rm(publicDir, { force: true, recursive: true });
     }

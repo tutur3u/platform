@@ -209,11 +209,95 @@ export interface EpmClientConfig {
 }
 
 type ExternalProjectAssetUploadResponse = {
-  data?: {
-    fullPath?: string | null;
-    path?: string;
-  };
+  contentType?: string;
+  filename?: string;
+  fullPath?: string | null;
+  headers?: Record<string, string>;
+  path?: string;
+  provider?: 'r2' | 'supabase';
+  signedUrl?: string;
+  token?: string;
 };
+
+type ExternalProjectAssetUploadPayload = {
+  contentType?: string;
+  filename?: string;
+  fullPath: string | null;
+  headers?: Record<string, string>;
+  path: string;
+  provider?: 'r2' | 'supabase';
+  signedUrl: string;
+  token?: string;
+};
+
+function parseExternalProjectUploadPayload(
+  payload: ExternalProjectAssetUploadResponse
+) {
+  if (!payload.signedUrl || !payload.path) {
+    throw new Error('Missing upload URL payload');
+  }
+
+  return {
+    contentType: payload.contentType,
+    filename: payload.filename,
+    fullPath: payload.fullPath ?? null,
+    headers: payload.headers,
+    path: payload.path,
+    provider: payload.provider,
+    signedUrl: payload.signedUrl,
+    token: payload.token,
+  } satisfies ExternalProjectAssetUploadPayload;
+}
+
+async function uploadExternalProjectFileWithSignedUrl(
+  file: File,
+  uploadUrlResult: ExternalProjectAssetUploadPayload,
+  fetchImpl: typeof fetch
+) {
+  const headers: Record<string, string> = {
+    ...(uploadUrlResult.headers ?? {}),
+  };
+
+  if (!headers['Content-Type']) {
+    headers['Content-Type'] =
+      uploadUrlResult.contentType || file.type || 'application/octet-stream';
+  }
+
+  if (uploadUrlResult.token) {
+    headers.Authorization = `Bearer ${uploadUrlResult.token}`;
+  }
+
+  let uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
+    method: 'PUT',
+    cache: 'no-store',
+    headers,
+    body: file,
+  });
+
+  if (!uploadResponse.ok) {
+    const fallbackHeaders = { ...headers };
+    delete fallbackHeaders['Content-Type'];
+
+    uploadResponse = await fetchImpl(uploadUrlResult.signedUrl, {
+      method: 'PUT',
+      cache: 'no-store',
+      headers: fallbackHeaders,
+      body: file,
+    });
+  }
+
+  if (!uploadResponse.ok) {
+    const message = await uploadResponse.text().catch(() => '');
+    throw new Error(
+      `Failed to upload file (${uploadResponse.status})${message ? `: ${message}` : ''}`
+    );
+  }
+
+  return {
+    fullPath: uploadUrlResult.fullPath,
+    path: uploadUrlResult.path,
+  };
+}
 
 export class EpmClient {
   protected readonly apiKey?: string;
@@ -643,12 +727,17 @@ export class EpmClient {
       filename: string;
     }
   ) {
-    void workspaceId;
-    void payload;
-
-    throw new Error(
-      'External project asset uploads must use uploadAssetFile so workspace quota checks use the uploaded byte length.'
+    const response = await this.request<ExternalProjectAssetUploadResponse>(
+      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/assets/upload-url`,
+      {
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        requiresAuth: true,
+      }
     );
+
+    return parseExternalProjectUploadPayload(response);
   }
 
   async uploadAssetFile(
@@ -656,32 +745,19 @@ export class EpmClient {
     file: File,
     options: EpmAssetUploadOptions
   ) {
-    const formData = new FormData();
-    formData.set('collectionType', options.collectionType);
-    formData.set('entrySlug', options.entrySlug);
-    formData.set('file', file);
+    const uploadUrl = await this.createAssetUploadUrl(workspaceId, {
+      ...options,
+      contentType:
+        options.contentType || file.type || 'application/octet-stream',
+      filename: file.name,
+      size: options.size ?? file.size,
+    });
 
-    if (options.upsert === true) {
-      formData.set('upsert', 'true');
-    }
-
-    const response = await this.request<ExternalProjectAssetUploadResponse>(
-      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/assets/upload-url`,
-      {
-        body: formData,
-        method: 'POST',
-        requiresAuth: true,
-      }
+    return uploadExternalProjectFileWithSignedUrl(
+      file,
+      uploadUrl,
+      this.fetchImpl
     );
-
-    if (!response.data?.path) {
-      throw new Error('Missing upload response payload');
-    }
-
-    return {
-      fullPath: response.data.fullPath ?? null,
-      path: response.data.path,
-    };
   }
 
   async importContent(workspaceId: string) {

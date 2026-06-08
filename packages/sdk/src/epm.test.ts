@@ -379,15 +379,22 @@ describe('EpmClient', () => {
     );
   });
 
-  it('uploads asset files through the app server', async () => {
-    mockFetch.mockResolvedValueOnce(
-      createMockResponse({
-        data: {
+  it('uploads asset files directly to signed storage URLs', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        createMockResponse({
+          contentType: 'image/png',
           fullPath: 'ws_123/external-projects/yoola/artworks/entry/file.png',
+          headers: {
+            'Content-Type': 'image/png',
+          },
           path: 'external-projects/yoola/artworks/entry/file.png',
-        },
-      })
-    );
+          provider: 'supabase',
+          signedUrl: 'https://storage.example.com/signed-upload',
+          token: 'storage-token',
+        })
+      )
+      .mockResolvedValueOnce(createMockResponse(null));
 
     const client = new EpmClient({
       apiKey: 'ttr_test_key',
@@ -408,30 +415,106 @@ describe('EpmClient', () => {
     expect(mockFetch.mock.calls[0]?.[0]).toBe(
       'https://example.com/api/v1/workspaces/ws_123/external-projects/assets/upload-url'
     );
-    const body = mockFetch.mock.calls[0]?.[1]?.body as FormData;
-    expect(body.get('collectionType')).toBe('artworks');
-    expect(body.get('entrySlug')).toBe('entry');
-    expect(body.get('file')).toBe(file);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(mockFetch.mock.calls[0]?.[1]?.body as string)).toEqual({
+      collectionType: 'artworks',
+      contentType: 'image/png',
+      entrySlug: 'entry',
+      filename: 'file.png',
+      size: 5,
+    });
+    expect(mockFetch.mock.calls[1]).toEqual([
+      'https://storage.example.com/signed-upload',
+      expect.objectContaining({
+        body: file,
+        cache: 'no-store',
+        headers: {
+          Authorization: 'Bearer storage-token',
+          'Content-Type': 'image/png',
+        },
+        method: 'PUT',
+      }),
+    ]);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
-  it('disables direct external-project asset upload URL creation', async () => {
+  it('creates direct external-project asset upload URLs', async () => {
+    mockFetch.mockResolvedValueOnce(
+      createMockResponse({
+        contentType: 'image/png',
+        fullPath: 'ws_123/external-projects/yoola/artworks/entry/file.png',
+        headers: {
+          'Content-Type': 'image/png',
+        },
+        path: 'external-projects/yoola/artworks/entry/file.png',
+        provider: 'r2',
+        signedUrl: 'https://r2.example.com/signed-upload',
+      })
+    );
+
     const client = new EpmClient({
       apiKey: 'ttr_test_key',
       baseUrl: 'https://example.com/api/v1',
       fetch: mockFetch,
     });
 
-    await expect(
-      client.createAssetUploadUrl('ws_123', {
-        collectionType: 'artworks',
-        entrySlug: 'entry',
-        filename: 'file.png',
-      })
-    ).rejects.toThrow(
-      'External project asset uploads must use uploadAssetFile'
-    );
-    expect(mockFetch).not.toHaveBeenCalled();
+    const result = await client.createAssetUploadUrl('ws_123', {
+      collectionType: 'artworks',
+      contentType: 'image/png',
+      entrySlug: 'entry',
+      filename: 'file.png',
+      size: 5,
+    });
+
+    expect(result).toEqual({
+      contentType: 'image/png',
+      fullPath: 'ws_123/external-projects/yoola/artworks/entry/file.png',
+      headers: {
+        'Content-Type': 'image/png',
+      },
+      path: 'external-projects/yoola/artworks/entry/file.png',
+      provider: 'r2',
+      signedUrl: 'https://r2.example.com/signed-upload',
+      token: undefined,
+      filename: undefined,
+    });
+  });
+
+  it('retries external-project signed uploads without content type headers', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        createMockResponse({
+          contentType: 'image/png',
+          fullPath: 'ws_123/external-projects/yoola/artworks/entry/file.png',
+          headers: {
+            'Content-Type': 'image/png',
+          },
+          path: 'external-projects/yoola/artworks/entry/file.png',
+          signedUrl: 'https://storage.example.com/signed-upload',
+          token: 'storage-token',
+        })
+      )
+      .mockResolvedValueOnce(createMockResponse('bad signature', 403))
+      .mockResolvedValueOnce(createMockResponse(null));
+
+    const client = new EpmClient({
+      apiKey: 'ttr_test_key',
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
+    });
+
+    const file = new File(['hello'], 'file.png', { type: 'image/png' });
+    await client.uploadAssetFile('ws_123', file, {
+      collectionType: 'artworks',
+      entrySlug: 'entry',
+    });
+
+    expect(mockFetch.mock.calls[1]?.[1]?.headers).toEqual({
+      Authorization: 'Bearer storage-token',
+      'Content-Type': 'image/png',
+    });
+    expect(mockFetch.mock.calls[2]?.[1]?.headers).toEqual({
+      Authorization: 'Bearer storage-token',
+    });
   });
 
   it('builds navigation items from collection config for external apps like yoola', () => {
