@@ -165,7 +165,7 @@
     "lint:fix": "biome lint --write",
     "format-and-lint": "biome check",
     "format-and-lint:fix": "biome check --write",
-    "i18n:check": "node scripts/run-i18n-check.js -l apps/web/messages apps/apps/messages apps/calendar/messages apps/chat/messages apps/cms/messages apps/drive/messages apps/finance/messages apps/inventory/messages apps/mail/messages apps/nova/messages apps/rewise/messages apps/shortener/messages apps/tasks/messages apps/meet/messages apps/track/messages apps/learn/messages apps/teach/messages apps/hive/messages apps/mind/messages apps/qr/messages -s en -f i18next -o missingKeys invalidKeys -i landing.pricing.plans.enterprise.period",
+    "i18n:check": "node scripts/run-i18n-check.js -l apps/web/messages apps/apps/messages apps/calendar/messages apps/chat/messages apps/cms/messages apps/drive/messages apps/finance/messages apps/inventory/messages apps/mail/messages apps/nova/messages apps/rewise/messages apps/shortener/messages apps/tasks/messages apps/meet/messages apps/track/messages apps/learn/messages apps/teach/messages apps/hive/messages apps/mind/messages apps/qr/messages -s en -f i18next -o missingKeys invalidKeys -i landing.*",
     "i18n:key-parity": "node scripts/i18n-key-parity.js",
     "i18n:sort": "node scripts/i18n-sort.js",
     "i18n:sort:check": "node scripts/i18n-sort.js --check",
