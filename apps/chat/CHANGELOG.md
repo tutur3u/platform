@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.2](https://github.com/tutur3u/platform/compare/chat-v0.2.1...chat-v0.2.2) (2026-06-08)
+
+
+### Bug Fixes
+
+* **auth:** standardize satellite Supabase sessions ([4a96fa2](https://github.com/tutur3u/platform/commit/4a96fa24e680937dc7ae44474cfef51329e314f9))
+* **chat:** use local root workspace logo ([6c91094](https://github.com/tutur3u/platform/commit/6c91094add72acf84e50b6cd49b6301cd7f7a896))
+
+
+### Performance Improvements
+
+* **next:** centralize app dev config defaults ([669a578](https://github.com/tutur3u/platform/commit/669a578163336dc6fd6399e753328598b03c1f2a))
+
 ## [0.2.1](https://github.com/tutur3u/platform/compare/chat-v0.2.0...chat-v0.2.1) (2026-06-03)
 
 

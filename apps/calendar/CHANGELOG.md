@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/calendar-v0.3.0...calendar-v0.4.0) (2026-06-08)
+
+
+### Features
+
+* **calendar:** unify provider sync and connections UX ([5db53aa](https://github.com/tutur3u/platform/commit/5db53aa5d5d0ce915c2357cecc89e13b0c2af614))
+* **platform:** add calendar sources and personal Zalo agents ([2746e72](https://github.com/tutur3u/platform/commit/2746e7297a43def06c3c2f12b7751dea94074113))
+* **settings:** add fullscreen settings sheet ([809c78e](https://github.com/tutur3u/platform/commit/809c78e6a38ce1623249540e846c63d26cd8d3b9))
+
+
+### Bug Fixes
+
+* **auth:** stabilize satellite Supabase sessions ([231c4fa](https://github.com/tutur3u/platform/commit/231c4fac3238b94c96ad8e7a853b03ad97d166e4))
+* **auth:** standardize satellite Supabase sessions ([4a96fa2](https://github.com/tutur3u/platform/commit/4a96fa24e680937dc7ae44474cfef51329e314f9))
+* **e2e:** harden portless readiness ([ee0e373](https://github.com/tutur3u/platform/commit/ee0e373a2f37ad7d1a869a065bad4673775297ef))
+
+
+### Performance Improvements
+
+* **next:** centralize app dev config defaults ([669a578](https://github.com/tutur3u/platform/commit/669a578163336dc6fd6399e753328598b03c1f2a))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/calendar-v0.2.0...calendar-v0.3.0) (2026-06-03)
 
 

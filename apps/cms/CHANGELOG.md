@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/cms-v0.3.0...cms-v0.4.0) (2026-06-08)
+
+
+### Features
+
+* **cms:** add audio reel upload workflow ([65e8bb4](https://github.com/tutur3u/platform/commit/65e8bb42ffb9a7d953230f3427a9324fc78c48b7))
+* **platform:** add calendar sources and personal Zalo agents ([2746e72](https://github.com/tutur3u/platform/commit/2746e7297a43def06c3c2f12b7751dea94074113))
+* **settings:** add fullscreen settings sheet ([809c78e](https://github.com/tutur3u/platform/commit/809c78e6a38ce1623249540e846c63d26cd8d3b9))
+
+
+### Bug Fixes
+
+* **auth:** preserve satellite Supabase sessions ([a8b49bb](https://github.com/tutur3u/platform/commit/a8b49bb2d29f42b4a0267aadd5d2e2fd1074aeab))
+* **auth:** stabilize satellite Supabase sessions ([231c4fa](https://github.com/tutur3u/platform/commit/231c4fac3238b94c96ad8e7a853b03ad97d166e4))
+* **auth:** standardize satellite Supabase sessions ([4a96fa2](https://github.com/tutur3u/platform/commit/4a96fa24e680937dc7ae44474cfef51329e314f9))
+* **ci:** stabilize production deployment checks ([1973c9e](https://github.com/tutur3u/platform/commit/1973c9e18dd2d63d7bd3a93dbd0cf35413548c1f))
+* **cms:** stabilize root admin project test ([54ee986](https://github.com/tutur3u/platform/commit/54ee986a58472140bb87317bf4760b3f50c38c9f))
+* **tasks:** reconcile review dates and drag state ([176dcd3](https://github.com/tutur3u/platform/commit/176dcd305d8292e5cf1a2178bfe759b1074bcb54))
+
+
+### Performance Improvements
+
+* **next:** centralize app dev config defaults ([669a578](https://github.com/tutur3u/platform/commit/669a578163336dc6fd6399e753328598b03c1f2a))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/cms-v0.2.0...cms-v0.3.0) (2026-06-03)
 
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/sdk-v0.5.0...sdk-v0.6.0) (2026-06-08)
+
+
+### Features
+
+* **devbox:** bootstrap platform checkout setup ([84dbff7](https://github.com/tutur3u/platform/commit/84dbff7bac9a4b2848fc6028348fbf429c7f0896))
+* **devbox:** execute claimed runner jobs ([2d99e6c](https://github.com/tutur3u/platform/commit/2d99e6cb6b275f7ddf423a021cb1cfcb1d944235))
+
+
+### Bug Fixes
+
+* **ci:** stabilize package release workflows ([d6243c2](https://github.com/tutur3u/platform/commit/d6243c2d7ee7ae599d9f17fba4be9f9cc71a1722))
+* **devbox:** accept CLI app-session auth ([2e1080e](https://github.com/tutur3u/platform/commit/2e1080e34285399f083a6b8c17a9ee73cb8ecd5f))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/sdk-v0.4.9...sdk-v0.5.0) (2026-06-03)
 
 

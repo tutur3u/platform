@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/supabase-v0.2.3...supabase-v0.3.0) (2026-06-08)
+
+
+### Features
+
+* **auth:** share Supabase cookies across apps ([f72ec8e](https://github.com/tutur3u/platform/commit/f72ec8e7a35f13a301b95b2aa916aefbc5848e6e))
+
+
+### Bug Fixes
+
+* **auth:** clear duplicate shared supabase cookies ([32fbd04](https://github.com/tutur3u/platform/commit/32fbd046a30fadba98eba278107c334aafcd7bde))
+* **auth:** honor forwarded origin for server cookies ([37851e0](https://github.com/tutur3u/platform/commit/37851e075697152b50fc3c711d0c3aa6e8bf5d5c))
+* **auth:** preserve satellite Supabase sessions ([a8b49bb](https://github.com/tutur3u/platform/commit/a8b49bb2d29f42b4a0267aadd5d2e2fd1074aeab))
+* **auth:** stabilize satellite Supabase sessions ([231c4fa](https://github.com/tutur3u/platform/commit/231c4fac3238b94c96ad8e7a853b03ad97d166e4))
+* **ci:** align package provenance metadata ([0f7ef88](https://github.com/tutur3u/platform/commit/0f7ef8834c0054b020c3eaa1042bfcf10145ab1a))
+* **ci:** stabilize e2e portless and auth cookies ([79d146a](https://github.com/tutur3u/platform/commit/79d146ad9b9b7fbd7e9b1cdd2c5cc38cef21d72d))
+* **ci:** stabilize main checks ([5fdf019](https://github.com/tutur3u/platform/commit/5fdf019283fd9765075afea82444444429a82916))
+* **e2e:** honor forwarded localhost auth origins ([abbbf5f](https://github.com/tutur3u/platform/commit/abbbf5ff224fe2ce50a09483c17731067738c227))
+
 ## [0.2.2] - 2025-10-28
 
 ### Fixed

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.0](https://github.com/tutur3u/platform/compare/auth-v0.1.1...auth-v0.2.0) (2026-06-08)
+
+
+### Features
+
+* **auth:** share Supabase cookies across apps ([f72ec8e](https://github.com/tutur3u/platform/commit/f72ec8e7a35f13a301b95b2aa916aefbc5848e6e))
+
+
+### Bug Fixes
+
+* **auth:** clear duplicate shared supabase cookies ([32fbd04](https://github.com/tutur3u/platform/commit/32fbd046a30fadba98eba278107c334aafcd7bde))
+* **auth:** preserve satellite Supabase sessions ([a8b49bb](https://github.com/tutur3u/platform/commit/a8b49bb2d29f42b4a0267aadd5d2e2fd1074aeab))
+* **auth:** standardize satellite Supabase sessions ([4a96fa2](https://github.com/tutur3u/platform/commit/4a96fa24e680937dc7ae44474cfef51329e314f9))
+* **auth:** support supabase-first satellite sessions ([b014fcf](https://github.com/tutur3u/platform/commit/b014fcf6db8218a1b54fd79f5e13629f66cad090))
+* **ci:** unblock e2e docker builds ([7a09469](https://github.com/tutur3u/platform/commit/7a09469822261d1b82e07d969c4e61885a54d5f6))
+
 ## [0.1.1](https://github.com/tutur3u/platform/compare/auth-v0.1.0...auth-v0.1.1) (2026-06-03)
 
 

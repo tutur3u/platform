@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/nova-v0.16.0...nova-v0.17.0) (2026-06-08)
+
+
+### Features
+
+* **web:** add UI component showcase ([8fcbc6b](https://github.com/tutur3u/platform/commit/8fcbc6b4b64c3f9e9da5eb2ddd6d504a83dd2ec4))
+* **web:** merge UI component showcase ([5f4e840](https://github.com/tutur3u/platform/commit/5f4e840960a114952d728b88caf914d2e05959b3))
+
+
+### Bug Fixes
+
+* **auth:** standardize satellite Supabase sessions ([4a96fa2](https://github.com/tutur3u/platform/commit/4a96fa24e680937dc7ae44474cfef51329e314f9))
+
+
+### Performance Improvements
+
+* **next:** centralize app dev config defaults ([669a578](https://github.com/tutur3u/platform/commit/669a578163336dc6fd6399e753328598b03c1f2a))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/nova-v0.15.0...nova-v0.16.0) (2026-06-03)
 
 

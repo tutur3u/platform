@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.2.0](https://github.com/tutur3u/platform/compare/database-v1.1.0...database-v1.2.0) (2026-06-08)
+
+
+### Features
+
+* **devbox:** execute claimed runner jobs ([2d99e6c](https://github.com/tutur3u/platform/commit/2d99e6cb6b275f7ddf423a021cb1cfcb1d944235))
+* **infrastructure:** add stress test observability ([41d8ab3](https://github.com/tutur3u/platform/commit/41d8ab3b0306c96569f0428d6efbc78ccecf9d1a))
+* **platform:** add calendar sources and personal Zalo agents ([2746e72](https://github.com/tutur3u/platform/commit/2746e7297a43def06c3c2f12b7751dea94074113))
+
+
+### Bug Fixes
+
+* **finance:** restore subscription checkout flow ([1e4cf62](https://github.com/tutur3u/platform/commit/1e4cf62e4c80f15e5c25feeb2b4ff3ab659edd72))
+* **finance:** restore subscription invoice auto-products ([515f449](https://github.com/tutur3u/platform/commit/515f4499f8eb057e3dd4fb43a85186a31cbac106))
+
+
+### Performance Improvements
+
+* **tasks:** filter task boards through server RPCs ([657f445](https://github.com/tutur3u/platform/commit/657f4458cd40c2e31774c7d9ef0628f986af1838))
+
 ## [1.1.0](https://github.com/tutur3u/platform/compare/database-v1.0.0...database-v1.1.0) (2026-06-03)
 
 

@@ -1,0 +1,14 @@
+# Changelog
+
+## [0.1.1](https://github.com/tutur3u/platform/compare/shortener-v0.1.0...shortener-v0.1.1) (2026-06-08)
+
+
+### Bug Fixes
+
+* **ci:** stabilize main checks ([5fdf019](https://github.com/tutur3u/platform/commit/5fdf019283fd9765075afea82444444429a82916))
+* **ci:** stabilize shortener and crypto coverage ([62a16ee](https://github.com/tutur3u/platform/commit/62a16ee2771e6b5f99c95371db62cd39feab4d75))
+
+
+### Performance Improvements
+
+* **next:** centralize app dev config defaults ([669a578](https://github.com/tutur3u/platform/commit/669a578163336dc6fd6399e753328598b03c1f2a))

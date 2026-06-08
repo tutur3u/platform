@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/rewise-v0.16.0...rewise-v0.17.0) (2026-06-08)
+
+
+### Features
+
+* **settings:** add fullscreen settings sheet ([809c78e](https://github.com/tutur3u/platform/commit/809c78e6a38ce1623249540e846c63d26cd8d3b9))
+
+
+### Bug Fixes
+
+* **auth:** stabilize satellite Supabase sessions ([231c4fa](https://github.com/tutur3u/platform/commit/231c4fac3238b94c96ad8e7a853b03ad97d166e4))
+* **auth:** standardize satellite Supabase sessions ([4a96fa2](https://github.com/tutur3u/platform/commit/4a96fa24e680937dc7ae44474cfef51329e314f9))
+
+
+### Performance Improvements
+
+* **next:** centralize app dev config defaults ([669a578](https://github.com/tutur3u/platform/commit/669a578163336dc6fd6399e753328598b03c1f2a))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/rewise-v0.15.0...rewise-v0.16.0) (2026-06-03)
 
 

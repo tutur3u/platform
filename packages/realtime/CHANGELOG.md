@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.3](https://github.com/tutur3u/platform/compare/realtime-v0.0.2...realtime-v0.0.3) (2026-06-08)
+
+
+### Performance Improvements
+
+* **web:** split yjs-heavy server compile graph ([8420fd4](https://github.com/tutur3u/platform/commit/8420fd443bf63c9809283087a71302616ba0aed5))
+
 ## [0.0.2](https://github.com/tutur3u/platform/compare/realtime-v0.0.1...realtime-v0.0.2) (2026-06-03)
 
 
