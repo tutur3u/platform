@@ -89,7 +89,7 @@ export function useUserBooleanConfig(
   );
   const updateConfig = useUpdateUserConfig();
 
-  const value = rawValue === 'true';
+  const value = rawValue === undefined ? defaultValue : rawValue === 'true';
 
   const setValue = (newValue: boolean) => {
     updateConfig.mutate({ configId, value: newValue ? 'true' : 'false' });

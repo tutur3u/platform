@@ -9028,6 +9028,7 @@
       "display_description": "Cấu hình thành viên nào hiển thị trong giao diện điểm danh",
       "title": "Điểm danh"
     },
+    "back_to_app": "Quay lại ứng dụng",
     "calendar": {
       "colors": "Màu sắc danh mục",
       "colors_description": "Tùy chỉnh màu sắc cho các danh mục sự kiện khác nhau",
@@ -9156,6 +9157,7 @@
       "default_title_description": "Đặt tiêu đề cơ bản khi tạo báo cáo mới",
       "title": "Báo cáo"
     },
+    "search_settings_placeholder": "Tìm cài đặt...",
     "tasks": {
       "always_enabled_personal": "Tính năng này luôn được bật cho không gian làm việc cá nhân",
       "auto_assign_to_self": "Tự động gán cho bản thân",

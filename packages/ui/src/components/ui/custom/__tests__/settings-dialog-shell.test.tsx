@@ -88,11 +88,34 @@ describe('SettingsDialogShell keyboard navigation', () => {
     }));
   });
 
+  it('renders the fullscreen settings sheet chrome', () => {
+    renderShell();
+
+    const dialog = screen.getByRole('dialog');
+
+    expect(dialog).toHaveClass('h-dvh');
+    expect(dialog).toHaveClass('w-screen');
+    expect(dialog).toHaveClass('rounded-none');
+    expect(
+      screen.getAllByRole('button', { name: 'settings.back_to_app' }).length
+    ).toBeGreaterThan(0);
+  });
+
+  it('keeps settings groups expanded by default', () => {
+    renderShell();
+
+    expect(screen.getAllByText('Profile').length).toBeGreaterThan(0);
+    expect(screen.getByText('Appearance')).toBeVisible();
+    expect(screen.getByText('Forms')).toBeVisible();
+  });
+
   it('focuses settings search with slash and modifier search shortcuts', () => {
     renderShell();
 
     const dialog = screen.getByRole('dialog');
-    const searchInput = screen.getByPlaceholderText('search.search');
+    const searchInput = screen.getByPlaceholderText(
+      'settings.search_settings_placeholder'
+    );
 
     fireEvent.keyDown(dialog, { key: '/' });
     expect(searchInput).toHaveFocus();

@@ -6435,6 +6435,7 @@
       "display_description": "Configure which members appear in attendance views",
       "title": "Attendance"
     },
+    "back_to_app": "Back to app",
     "calendar": {
       "colors": "Category Colors",
       "colors_description": "Customize colors for different event categories",
@@ -6517,6 +6518,7 @@
       "default_title_description": "Set the base title used when creating new reports",
       "title": "Reports"
     },
+    "search_settings_placeholder": "Search settings...",
     "tasks": {
       "always_enabled_personal": "This is always enabled for personal workspaces",
       "auto_assign_to_self": "Auto-assign to self",
