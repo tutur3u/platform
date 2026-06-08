@@ -124,6 +124,31 @@ describe('PasskeyLoginButton', () => {
     ).toBeDisabled();
   });
 
+  it('surfaces the Turnstile error that blocks passkey sign-in', () => {
+    const onAuthenticated = vi.fn();
+
+    render(
+      <PasskeyLoginButton
+        canRenderTurnstile
+        onAuthenticated={onAuthenticated}
+        requiresTurnstile
+        turnstileError="Security verification is not authorized for this hostname."
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /continue with passkey/i })
+    );
+
+    expect(
+      screen.getByText(
+        'Security verification is not authorized for this hostname.'
+      )
+    ).toBeInTheDocument();
+    expect(mockSignInWithPasskey).not.toHaveBeenCalled();
+    expect(onAuthenticated).not.toHaveBeenCalled();
+  });
+
   it('resets Turnstile after a passkey sign-in error', async () => {
     const onAuthenticated = vi.fn();
     const onCaptchaReset = vi.fn();

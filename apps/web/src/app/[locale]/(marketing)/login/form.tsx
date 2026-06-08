@@ -1824,6 +1824,7 @@ export default function LoginForm() {
                     onAuthenticated={() => completePrimarySignIn('passkey')}
                     onCaptchaReset={resetCaptcha}
                     requiresTurnstile={turnstileClientState.isRequired}
+                    turnstileError={captchaError}
                   />
 
                   <LoginMethodSeparator label={t('login.or')} />

@@ -241,7 +241,11 @@ captcha protection enabled, passkey sign-in must send a real Turnstile token.
 The local E2E bypass is honored only when `NEXT_PUBLIC_SUPABASE_URL` points at
 local Supabase. When testing remote Supabase from `https://tuturuuu.localhost`,
 the Turnstile site key must authorize that local hostname; Cloudflare Turnstile
-error `110200` means the widget cannot mint the token Supabase requires.
+error `110200` means the widget cannot mint the token Supabase requires. The
+login UI keeps passkey sign-in blocked while that token is missing; either add
+the local hostname to the Cloudflare Turnstile widget used by the Supabase
+project, or point `NEXT_PUBLIC_SUPABASE_URL` at local Supabase for dev passkey
+testing.
 
 ### Web QR Session Handoff
 
