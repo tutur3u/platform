@@ -4,23 +4,16 @@ import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provid
 import type { WorkspaceProductTier } from '@tuturuuu/types';
 import { TaskDialogProvider } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
 import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
-import dynamic from 'next/dynamic';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
+import { useLazyClientComponent } from '@/hooks/use-lazy-client-component';
 
-const PersonalWorkspaceCollaborationBanner = dynamic(
-  () =>
-    import('./personal-workspace-collaboration-banner').then(
-      (module) => module.PersonalWorkspaceCollaborationBanner
-    ),
-  { ssr: false }
-);
-const TaskDialogManager = dynamic(
-  () =>
-    import('@tuturuuu/ui/tu-do/shared/task-dialog-manager').then(
-      (module) => module.TaskDialogManager
-    ),
-  { ssr: false }
-);
+type PersonalWorkspaceCollaborationBannerComponent = ComponentType<
+  Record<string, never>
+>;
+
+type TaskDialogManagerComponent = ComponentType<{
+  wsId: string;
+}>;
 
 interface DashboardWorkspaceProvidersProps {
   children: ReactNode;
@@ -31,6 +24,18 @@ interface DashboardWorkspaceProvidersProps {
   wsId: string;
 }
 
+function loadPersonalWorkspaceCollaborationBanner(): Promise<PersonalWorkspaceCollaborationBannerComponent> {
+  return import('./personal-workspace-collaboration-banner').then(
+    (module) => module.PersonalWorkspaceCollaborationBanner
+  );
+}
+
+function loadTaskDialogManager(): Promise<TaskDialogManagerComponent> {
+  return import('@tuturuuu/ui/tu-do/shared/task-dialog-manager').then(
+    (module) => module.TaskDialogManager
+  );
+}
+
 export function DashboardWorkspaceProviders({
   children,
   enablePresence,
@@ -39,6 +44,12 @@ export function DashboardWorkspaceProviders({
   tier,
   wsId,
 }: DashboardWorkspaceProvidersProps) {
+  const PersonalWorkspaceCollaborationBanner = useLazyClientComponent(
+    loadPersonalWorkspaceCollaborationBanner,
+    showPersonalWorkspaceCollaborationBanner
+  );
+  const TaskDialogManager = useLazyClientComponent(loadTaskDialogManager);
+
   return (
     <RealtimeLogProvider wsId={wsId}>
       <WorkspacePresenceProvider
@@ -47,11 +58,11 @@ export function DashboardWorkspaceProviders({
         enabled={enablePresence}
       >
         <TaskDialogProvider isPersonalWorkspace={isPersonalWorkspace}>
-          {showPersonalWorkspaceCollaborationBanner && (
+          {PersonalWorkspaceCollaborationBanner && (
             <PersonalWorkspaceCollaborationBanner />
           )}
           {children}
-          <TaskDialogManager wsId={wsId} />
+          {TaskDialogManager && <TaskDialogManager wsId={wsId} />}
         </TaskDialogProvider>
       </WorkspacePresenceProvider>
     </RealtimeLogProvider>

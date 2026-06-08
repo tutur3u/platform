@@ -26,6 +26,10 @@ function staticImportPattern(modulePath: string) {
 
 describe('[wsId] dashboard shell client compile graph', () => {
   it('keeps heavy dashboard shell children behind async split points', () => {
+    expect(dashboardShellClientSource).not.toMatch(
+      staticImportPattern('next/dynamic')
+    );
+
     for (const modulePath of [
       '@/lib/calendar-preferences-provider',
       './dashboard-client-providers',

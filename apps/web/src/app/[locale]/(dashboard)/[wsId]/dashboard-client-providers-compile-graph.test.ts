@@ -11,6 +11,15 @@ const dashboardClientProvidersSource = readFileSync(
     encoding: 'utf8',
   }
 );
+const dashboardWorkspaceProvidersSource = readFileSync(
+  join(
+    process.cwd(),
+    'src/app/[locale]/(dashboard)/[wsId]/dashboard-workspace-providers.tsx'
+  ),
+  {
+    encoding: 'utf8',
+  }
+);
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -26,6 +35,10 @@ function staticImportPattern(modulePath: string) {
 
 describe('[wsId] dashboard client providers compile graph', () => {
   it('keeps realtime and task provider modules behind a workspace-provider split point', () => {
+    expect(dashboardClientProvidersSource).not.toMatch(
+      staticImportPattern('next/dynamic')
+    );
+
     for (const modulePath of [
       '@tuturuuu/supabase/next/realtime-log-provider',
       '@tuturuuu/ui/tu-do/providers/task-dialog-provider',
@@ -52,6 +65,24 @@ describe('[wsId] dashboard client providers compile graph', () => {
     );
     expect(dashboardClientProvidersSource).toContain(
       'useFadeSettingInitializerComponent'
+    );
+  });
+
+  it('loads optional workspace provider children after hydration instead of through next/dynamic', () => {
+    expect(dashboardWorkspaceProvidersSource).not.toMatch(
+      staticImportPattern('next/dynamic')
+    );
+    expect(dashboardWorkspaceProvidersSource).not.toMatch(
+      staticImportPattern('./personal-workspace-collaboration-banner')
+    );
+    expect(dashboardWorkspaceProvidersSource).not.toMatch(
+      staticImportPattern('@tuturuuu/ui/tu-do/shared/task-dialog-manager')
+    );
+    expect(dashboardWorkspaceProvidersSource).toContain(
+      "import('./personal-workspace-collaboration-banner')"
+    );
+    expect(dashboardWorkspaceProvidersSource).toContain(
+      "import('@tuturuuu/ui/tu-do/shared/task-dialog-manager')"
     );
   });
 });

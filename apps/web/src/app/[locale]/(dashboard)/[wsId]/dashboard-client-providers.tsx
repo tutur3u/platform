@@ -1,15 +1,8 @@
 'use client';
 
 import type { WorkspaceProductTier } from '@tuturuuu/types';
-import dynamic from 'next/dynamic';
 import type { ComponentType, ReactNode } from 'react';
-import { useEffect, useState } from 'react';
-
-const DashboardWorkspaceProviders = dynamic(() =>
-  import('./dashboard-workspace-providers').then(
-    (module) => module.DashboardWorkspaceProviders
-  )
-);
+import { useLazyClientComponent } from '@/hooks/use-lazy-client-component';
 
 interface DashboardClientProvidersProps {
   children: ReactNode;
@@ -22,27 +15,23 @@ interface DashboardClientProvidersProps {
 
 type FadeSettingInitializerComponent = ComponentType<Record<string, never>>;
 
+type DashboardWorkspaceProvidersComponent =
+  ComponentType<DashboardClientProvidersProps>;
+
+function loadDashboardWorkspaceProviders(): Promise<DashboardWorkspaceProvidersComponent> {
+  return import('./dashboard-workspace-providers').then(
+    (module) => module.DashboardWorkspaceProviders
+  );
+}
+
+function loadFadeSettingInitializer(): Promise<FadeSettingInitializerComponent> {
+  return import('@tuturuuu/ui/tu-do/shared/fade-setting-initializer').then(
+    (module) => module.FadeSettingInitializer
+  );
+}
+
 function useFadeSettingInitializerComponent() {
-  const [FadeSettingInitializer, setFadeSettingInitializer] =
-    useState<FadeSettingInitializerComponent | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    void import('@tuturuuu/ui/tu-do/shared/fade-setting-initializer').then(
-      (module) => {
-        if (active) {
-          setFadeSettingInitializer(() => module.FadeSettingInitializer);
-        }
-      }
-    );
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return FadeSettingInitializer;
+  return useLazyClientComponent(loadFadeSettingInitializer);
 }
 
 export function DashboardClientProviders({
@@ -53,22 +42,31 @@ export function DashboardClientProviders({
   tier,
   wsId,
 }: DashboardClientProvidersProps) {
+  const DashboardWorkspaceProviders = useLazyClientComponent(
+    loadDashboardWorkspaceProviders
+  );
   const FadeSettingInitializer = useFadeSettingInitializerComponent();
+
+  const content = DashboardWorkspaceProviders ? (
+    <DashboardWorkspaceProviders
+      wsId={wsId}
+      tier={tier}
+      enablePresence={enablePresence}
+      isPersonalWorkspace={isPersonalWorkspace}
+      showPersonalWorkspaceCollaborationBanner={
+        showPersonalWorkspaceCollaborationBanner
+      }
+    >
+      {children}
+    </DashboardWorkspaceProviders>
+  ) : (
+    children
+  );
 
   return (
     <>
       {FadeSettingInitializer && <FadeSettingInitializer />}
-      <DashboardWorkspaceProviders
-        wsId={wsId}
-        tier={tier}
-        enablePresence={enablePresence}
-        isPersonalWorkspace={isPersonalWorkspace}
-        showPersonalWorkspaceCollaborationBanner={
-          showPersonalWorkspaceCollaborationBanner
-        }
-      >
-        {children}
-      </DashboardWorkspaceProviders>
+      {content}
     </>
   );
 }
