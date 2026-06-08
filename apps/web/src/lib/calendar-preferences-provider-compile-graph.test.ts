@@ -8,6 +8,12 @@ const calendarPreferencesProviderSource = readFileSync(
     encoding: 'utf8',
   }
 );
+const calendarPreferencesSettingsBridgeSource = readFileSync(
+  join(process.cwd(), 'src/lib/calendar-preferences-settings-bridge.tsx'),
+  {
+    encoding: 'utf8',
+  }
+);
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -34,15 +40,27 @@ function dynamicImportPattern(modulePath: string) {
 }
 
 describe('calendar preferences provider compile graph', () => {
+  it('loads the settings query bridge after hydration', () => {
+    expect(calendarPreferencesProviderSource).not.toMatch(
+      staticImportPattern('@tanstack/react-query')
+    );
+    expect(calendarPreferencesProviderSource).not.toMatch(
+      staticImportPattern('./calendar-preferences-settings-bridge')
+    );
+    expect(calendarPreferencesProviderSource).toMatch(
+      dynamicImportPattern('./calendar-preferences-settings-bridge')
+    );
+  });
+
   it('loads internal API clients only when calendar preference queries run', () => {
     for (const modulePath of [
       '@tuturuuu/internal-api/settings',
       '@tuturuuu/internal-api/users',
     ] as const) {
-      expect(calendarPreferencesProviderSource).not.toMatch(
+      expect(calendarPreferencesSettingsBridgeSource).not.toMatch(
         staticImportPattern(modulePath)
       );
-      expect(calendarPreferencesProviderSource).toMatch(
+      expect(calendarPreferencesSettingsBridgeSource).toMatch(
         dynamicImportPattern(modulePath)
       );
     }
