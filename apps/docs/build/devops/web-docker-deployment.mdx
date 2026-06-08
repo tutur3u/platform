@@ -84,14 +84,18 @@ This is the operational guide for the Docker-based `apps/web` runtime.
   `COMPOSE_DOCKER_CLI_BUILD=1`, `DOCKER_BUILDKIT=1`, and
   `BUILDX_NO_DEFAULT_ATTESTATIONS=1` so local blue/green image exports do not
   stall while resolving default provenance metadata.
-- The dependency stages in `apps/web/Dockerfile`, `apps/hive/Dockerfile`, and
-  `apps/hive-realtime/Dockerfile` must copy every `apps/*/package.json` and
-  `packages/*/package.json` manifest before running any frozen Bun install.
-  Adding a new workspace app or package without updating all three lists makes
-  Docker-only installs try to rewrite `bun.lock`. `bun check:docker` validates
-  this manifest parity. `apps/backend` is an independent Go module, and
-  `apps/meet-realtime` is intentionally not a workspace package; their
-  Dockerfiles do not require `bun.lock` changes when service source changes.
+- The dependency stages in `apps/web/Dockerfile`, `apps/hive/Dockerfile`,
+  `apps/hive-realtime/Dockerfile`, `apps/meet-realtime/Dockerfile`,
+  `apps/chat-realtime/Dockerfile`, and `apps/supermemory/Dockerfile` must copy
+  every `apps/*/package.json` and `packages/*/package.json` manifest before
+  running any frozen Bun install. Filtered Bun installs in these production
+  images are retry-wrapped and clear the Bun install cache before retry; keep
+  those snippets in sync with `scripts/check-docker-web.js`. Adding a new
+  workspace app or package without updating those lists makes Docker-only
+  installs try to rewrite `bun.lock`. `bun check:docker` validates this manifest
+  parity. `apps/backend` is an independent Go module, and `apps/meet-realtime`
+  is intentionally not a workspace package; their Dockerfiles do not require
+  `bun.lock` changes when service source changes.
 - The Docker web flow does not start local Supabase unless you explicitly choose `bun devx:web:docker` or `bun devrs:web:docker`.
 - By default the Docker container uses the Supabase URL already configured in `.env.local`, falling back to `apps/web/.env.local`. It should stay pointed at the cloud project for normal Tuturuuu work.
 - If that configured URL explicitly points at host-run local Supabase, the helper rewrites the server-side Supabase URL to `host.docker.internal` while leaving `NEXT_PUBLIC_SUPABASE_URL` alone for browsers.
@@ -1570,6 +1574,13 @@ Dashboard details:
   production service, the helper removes only the exact expected container name
   for the current Compose project, then retries `docker compose up`. This handles
   stale names left by interrupted rollouts without pruning unrelated containers.
+- If `docker compose up` hits a transient Docker registry or Docker Hub auth
+  timeout while pulling support images, the helper retries the Compose start
+  without treating it as a deployment failure. Tune the bounded backoff with
+  `DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS`,
+  `DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS`, and
+  `DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS`; non-transient Compose errors still
+  fail immediately.
 - Starting `bun serve:web:docker:bg:watch` now clears the persisted watcher
   status snapshot and active PID before the watcher service is force-recreated,
   but preserves any complete branch/upstream target metadata. A stale lock from

@@ -123,6 +123,18 @@ const DOCKER_CONTEXT_ARTIFACT_IGNORE_PATTERNS = [
   'apps/mobile/build/**',
 ];
 
+function getRetryWrappedBunInstallSnippets(installCommand) {
+  return [
+    'set -eu;',
+    'attempt=1;',
+    'while [ "$attempt" -le 3 ]; do',
+    `if ${installCommand}; then`,
+    'bun pm cache rm 2>/dev/null || true',
+    'bun install failed after 3 attempts. Try: docker builder prune',
+    'sleep 5;',
+  ];
+}
+
 function listWorkspacePackageJsonPaths(rootDir = ROOT_DIR, fsImpl = fs) {
   return WORKSPACE_DIRS.flatMap((workspaceDir) => {
     const absoluteWorkspaceDir = path.join(rootDir, workspaceDir);
@@ -1248,7 +1260,9 @@ function validateHiveDockerfile(
     'COPY scripts/run-hive-docker-next-build.js ./scripts/run-hive-docker-next-build.js',
     'COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun',
     'ENV DOCKER_WEB_NODE_BINARY=/usr/local/bin/node',
-    'bun install --frozen-lockfile --filter @tuturuuu/hive',
+    ...getRetryWrappedBunInstallSnippets(
+      'bun install --frozen-lockfile --filter @tuturuuu/hive'
+    ),
     'bun run --filter @tuturuuu/types build',
     'bun run --filter @tuturuuu/internal-api build',
     'bun run --filter @tuturuuu/supabase build',
@@ -1282,7 +1296,9 @@ function validateHiveRealtimeDockerfile(
     }),
   ];
   const requiredSnippets = [
-    'bun install --frozen-lockfile --production --filter @tuturuuu/hive-realtime --linker hoisted',
+    ...getRetryWrappedBunInstallSnippets(
+      'bun install --frozen-lockfile --production --filter @tuturuuu/hive-realtime --linker hoisted'
+    ),
     'COPY --from=deps /workspace/node_modules ./node_modules',
     'COPY --from=deps /workspace/apps/hive-realtime/package.json ./apps/hive-realtime/package.json',
     'CMD ["bun", "apps/hive-realtime/src/index.ts"]',
@@ -1330,7 +1346,9 @@ function validateMeetRealtimeDockerfile(
     'COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js',
     'COPY packages/realtime/package.json ./packages/realtime/package.json',
     '--mount=type=cache,id=platform-meet-realtime-bun-install,target=/root/.bun/install/cache',
-    'bun install --frozen-lockfile --production --filter @tuturuuu/realtime --linker hoisted',
+    ...getRetryWrappedBunInstallSnippets(
+      'bun install --frozen-lockfile --production --filter @tuturuuu/realtime --linker hoisted'
+    ),
     'COPY --from=deps /workspace/node_modules ./node_modules',
     'COPY packages/realtime ./packages/realtime',
     'COPY apps/meet-realtime/src ./apps/meet-realtime/src',
@@ -1379,7 +1397,9 @@ function validateChatRealtimeDockerfile(
     'COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js',
     'COPY packages/realtime/package.json ./packages/realtime/package.json',
     '--mount=type=cache,id=platform-chat-realtime-bun-install,target=/root/.bun/install/cache',
-    'bun install --frozen-lockfile --production --filter @tuturuuu/realtime --linker hoisted',
+    ...getRetryWrappedBunInstallSnippets(
+      'bun install --frozen-lockfile --production --filter @tuturuuu/realtime --linker hoisted'
+    ),
     'COPY --from=deps /workspace/node_modules ./node_modules',
     'COPY packages/realtime ./packages/realtime',
     'COPY apps/chat-realtime/src ./apps/chat-realtime/src',
@@ -1455,7 +1475,9 @@ function validateSupermemoryDockerfile(
   const requiredSnippets = [
     'FROM oven/bun:1.3.14-alpine AS deps',
     'COPY apps/supermemory/package.json ./apps/supermemory/package.json',
-    'bun install --frozen-lockfile --production --filter @tuturuuu/supermemory --linker hoisted',
+    ...getRetryWrappedBunInstallSnippets(
+      'bun install --frozen-lockfile --production --filter @tuturuuu/supermemory --linker hoisted'
+    ),
     'COPY --chown=app:app apps/supermemory/src ./apps/supermemory/src',
     'CMD ["bun", "apps/supermemory/src/server.js"]',
   ];

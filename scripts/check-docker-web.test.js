@@ -33,6 +33,7 @@ const {
   NATIVE_WEB_RUNNER_DOCKERFILE_PATH,
   NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH,
   ROOT_DIR,
+  SUPERMEMORY_DOCKERFILE_PATH,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
@@ -56,8 +57,23 @@ const {
   validateMarkitdownDockerfile,
   validateMeetRealtimeDockerfile,
   validateNativeWebRunnerDockerfile,
+  validateSupermemoryDockerfile,
   validateWatcherDockerfile,
 } = require('./check-docker-web.js');
+
+function assertRetryWrappedBunInstall(dockerfileContent, installCommand) {
+  assert.ok(dockerfileContent.includes('set -eu;'));
+  assert.ok(dockerfileContent.includes('attempt=1;'));
+  assert.ok(dockerfileContent.includes('while [ "$attempt" -le 3 ]; do'));
+  assert.ok(dockerfileContent.includes(`if ${installCommand}; then`));
+  assert.ok(dockerfileContent.includes('bun pm cache rm 2>/dev/null || true'));
+  assert.ok(
+    dockerfileContent.includes(
+      'bun install failed after 3 attempts. Try: docker builder prune'
+    )
+  );
+  assert.ok(dockerfileContent.includes('sleep 5;'));
+}
 
 test('listWorkspacePackageJsonPaths discovers current workspace manifests', () => {
   const workspacePackageJsonPaths = listWorkspacePackageJsonPaths();
@@ -224,6 +240,45 @@ test('Hive realtime Docker image copies every workspace manifest before frozen i
     validateHiveRealtimeDockerfile(driftedDockerfileContent).join('\n'),
     /apps\/hive-realtime\/Dockerfile deps stage is missing workspace package manifests: apps\/inventory\/package\.json/
   );
+});
+
+test('Production Docker images retry filtered Bun installs and clear install cache', () => {
+  const dockerfiles = [
+    {
+      content: fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8'),
+      installCommand: 'bun install --frozen-lockfile --filter @tuturuuu/hive',
+      validate: validateHiveDockerfile,
+    },
+    {
+      content: fs.readFileSync(HIVE_REALTIME_DOCKERFILE_PATH, 'utf8'),
+      installCommand:
+        'bun install --frozen-lockfile --production --filter @tuturuuu/hive-realtime --linker hoisted',
+      validate: validateHiveRealtimeDockerfile,
+    },
+    {
+      content: fs.readFileSync(MEET_REALTIME_DOCKERFILE_PATH, 'utf8'),
+      installCommand:
+        'bun install --frozen-lockfile --production --filter @tuturuuu/realtime --linker hoisted',
+      validate: validateMeetRealtimeDockerfile,
+    },
+    {
+      content: fs.readFileSync(CHAT_REALTIME_DOCKERFILE_PATH, 'utf8'),
+      installCommand:
+        'bun install --frozen-lockfile --production --filter @tuturuuu/realtime --linker hoisted',
+      validate: validateChatRealtimeDockerfile,
+    },
+    {
+      content: fs.readFileSync(SUPERMEMORY_DOCKERFILE_PATH, 'utf8'),
+      installCommand:
+        'bun install --frozen-lockfile --production --filter @tuturuuu/supermemory --linker hoisted',
+      validate: validateSupermemoryDockerfile,
+    },
+  ];
+
+  for (const { content, installCommand, validate } of dockerfiles) {
+    assert.deepEqual(validate(content), []);
+    assertRetryWrappedBunInstall(content, installCommand);
+  }
 });
 
 test('Meet realtime Docker image copies every workspace manifest before frozen install', () => {

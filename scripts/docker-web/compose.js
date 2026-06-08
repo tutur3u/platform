@@ -1,6 +1,8 @@
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 
+const { isTransientDockerRegistryError } = require('./registry-errors.js');
+
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.yml');
 const PROD_COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.prod.yml');
@@ -10,6 +12,9 @@ const DOCKER_NAME_CONFLICT_PATTERN =
   /container name\s+"\/?([^"]+)"\s+is already in use/giu;
 const DEFAULT_COMMAND_KILL_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 512_000;
+const DEFAULT_COMPOSE_UP_RETRY_MAX_ATTEMPTS = 4;
+const DEFAULT_COMPOSE_UP_RETRY_INITIAL_DELAY_MS = 5_000;
+const DEFAULT_COMPOSE_UP_RETRY_MAX_DELAY_MS = 60_000;
 
 class CommandTimeoutError extends Error {
   constructor(command, args, timeoutMs) {
@@ -46,6 +51,18 @@ function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function getPositiveIntegerEnv(env, name, fallback) {
+  const value = env?.[name];
+
+  if (typeof value !== 'string' && typeof value !== 'number') {
+    return fallback;
+  }
+
+  const parsed = Number(String(value).trim());
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function runCommand(command, args, options = {}) {
@@ -228,6 +245,7 @@ async function runComposeUpWithNameConflictRecovery({
   fsImpl,
   runCommand: run,
   services = [],
+  sleep: sleepImpl = sleep,
   upArgs,
 }) {
   const args = getComposeCommandArgs(composeFile, composeGlobalArgs, ...upArgs);
@@ -237,9 +255,26 @@ async function runComposeUpWithNameConflictRecovery({
     )
   );
   const removedContainerNames = new Set();
-  const maxAttempts = Math.max(1, services.length + 1);
+  const maxNameConflictRecoveries = services.length;
+  const maxRegistryAttempts = getPositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS',
+    DEFAULT_COMPOSE_UP_RETRY_MAX_ATTEMPTS
+  );
+  const maxRegistryDelayMs = getPositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS',
+    DEFAULT_COMPOSE_UP_RETRY_MAX_DELAY_MS
+  );
+  let registryAttempt = 1;
+  let registryDelayMs = getPositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS',
+    DEFAULT_COMPOSE_UP_RETRY_INITIAL_DELAY_MS
+  );
+  let nameConflictRecoveries = 0;
 
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+  while (true) {
     try {
       return await runChecked('docker', args, {
         env,
@@ -255,23 +290,42 @@ async function runComposeUpWithNameConflictRecovery({
           ) && !removedContainerNames.has(containerName)
       );
 
-      if (conflictNames.length === 0 || attempt === maxAttempts - 1) {
-        throw error;
+      if (
+        conflictNames.length > 0 &&
+        nameConflictRecoveries < maxNameConflictRecoveries
+      ) {
+        await runChecked('docker', ['rm', '-f', ...conflictNames], {
+          env,
+          fsImpl,
+          runCommand: run,
+        });
+
+        for (const containerName of conflictNames) {
+          removedContainerNames.add(containerName);
+        }
+
+        nameConflictRecoveries += 1;
+        continue;
       }
 
-      await runChecked('docker', ['rm', '-f', ...conflictNames], {
-        env,
-        fsImpl,
-        runCommand: run,
-      });
-
-      for (const containerName of conflictNames) {
-        removedContainerNames.add(containerName);
+      if (
+        registryAttempt < maxRegistryAttempts &&
+        isTransientDockerRegistryError(error)
+      ) {
+        process.stderr.write(
+          `Docker Compose up hit a transient Docker registry error; retrying in ${registryDelayMs}ms (attempt ${
+            registryAttempt + 1
+          }/${maxRegistryAttempts}).\n`
+        );
+        await sleepImpl(registryDelayMs);
+        registryAttempt += 1;
+        registryDelayMs = Math.min(registryDelayMs * 2, maxRegistryDelayMs);
+        continue;
       }
+
+      throw error;
     }
   }
-
-  throw new Error('Unable to recover from Docker Compose name conflicts.');
 }
 
 async function getComposeServiceContainerId(
