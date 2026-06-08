@@ -547,6 +547,15 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
   return null;
 }
 
+function isExpectedHumanAuthRateLimitPath(pathname: string) {
+  return (
+    /^\/api\/v1\/auth\/password-login(?:\/|$)/.test(pathname) ||
+    /^\/api\/v1\/auth\/mobile\/password-login(?:\/|$)/.test(pathname) ||
+    /^\/api\/v1\/auth\/otp\/(?:send|verify)(?:\/|$)/.test(pathname) ||
+    /^\/api\/v1\/auth\/mobile\/(?:send-otp|verify-otp)(?:\/|$)/.test(pathname)
+  );
+}
+
 async function blockSuspiciousAnonymousApiRequest(
   req: NextRequest
 ): Promise<NextResponse | null> {
@@ -875,6 +884,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         guardResponse.status === 429 &&
         guardResponse.headers.get('X-Proxy-Block-Reason') ===
           'route-rate-limit' &&
+        !isExpectedHumanAuthRateLimitPath(req.nextUrl.pathname) &&
         !isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) &&
         !hasAuthenticatedApiSession(req)
       ) {

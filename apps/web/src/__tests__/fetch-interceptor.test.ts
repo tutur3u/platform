@@ -230,6 +230,24 @@ describe('fetch-interceptor', () => {
     expect(mockWarning).not.toHaveBeenCalled();
   });
 
+  it('should NOT retry non-idempotent same-origin 429 responses', async () => {
+    const rate429 = new Response('', {
+      status: 429,
+      headers: { 'Retry-After': '1' },
+    });
+    const mockFetch = vi.fn().mockResolvedValueOnce(rate429);
+    globalThis.fetch = mockFetch;
+
+    installFetchInterceptor();
+    const response = await globalThis.fetch('/api/v1/auth/password-login', {
+      method: 'POST',
+    });
+
+    expect(response.status).toBe(429);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockWarning).not.toHaveBeenCalled();
+  });
+
   it('should retry same-origin relative URL requests', async () => {
     const rate429 = new Response('', {
       status: 429,

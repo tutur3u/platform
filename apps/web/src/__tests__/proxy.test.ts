@@ -517,6 +517,38 @@ describe('web proxy api handling', () => {
     );
   });
 
+  it('does not escalate human auth route-rate-limit responses into an IP block', async () => {
+    const guardResponse = NextResponse.json(
+      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: {
+          'X-Proxy-Block-Reason': 'route-rate-limit',
+          'X-RateLimit-Policy': 'password-login',
+        },
+      }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/auth/password-login', {
+        method: 'POST',
+        body: '{}',
+        headers: {
+          'user-agent': 'Mozilla/5.0',
+        },
+      })
+    );
+
+    expect(response).toBe(guardResponse);
+    expect(response.status).toBe(429);
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+      'route-rate-limit'
+    );
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+  });
+
   it('does not escalate signed-in browser route-rate-limit responses into an IP block', async () => {
     const guardResponse = NextResponse.json(
       { error: 'Too Many Requests', message: 'Rate limit exceeded' },

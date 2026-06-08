@@ -18,13 +18,13 @@ themselves.
 
 ## Trust Tiers
 
-| Tier | Operator meaning | Rate-limit behavior |
-| --- | --- | --- |
-| `trusted` | Sustained low-risk, organic usage with no recent abuse | Higher authenticated budgets |
-| `standard` | Normal authenticated activity or fail-safe default | Current authenticated budgets |
-| `watch` | Suspicious but not high-confidence abuse | Standard or slightly lower budgets |
-| `challenge_required` | Medium-risk browser mutation activity | Browser mutation routes require Turnstile step-up |
-| `restricted` | High-risk activity or manual restriction | Stricter budgets and normal abuse blocks still apply |
+| Tier                 | Operator meaning                                       | Rate-limit behavior                                  |
+| -------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
+| `trusted`            | Sustained low-risk, organic usage with no recent abuse | Higher authenticated budgets                         |
+| `standard`           | Normal authenticated activity or fail-safe default     | Current authenticated budgets                        |
+| `watch`              | Suspicious but not high-confidence abuse               | Standard or slightly lower budgets                   |
+| `challenge_required` | Medium-risk browser mutation activity                  | Browser mutation routes require Turnstile step-up    |
+| `restricted`         | High-risk activity or manual restriction               | Stricter budgets and normal abuse blocks still apply |
 
 Trust never bypasses active user suspension, active IP blocks, sensitive auth
 route protections, workspace-secret hard overrides, or severe backend abuse
@@ -63,6 +63,27 @@ limit must not create or extend `user_suspensions` for the authenticated user.
 User suspension requires manual operator action or repeated, user-attributable
 abuse counters, and automated suspensions should be expiry-bound unless a
 separate policy explicitly justifies permanence.
+
+## Shared-IP Login Traffic
+
+English centers, classrooms, and offices often put many legitimate teachers
+behind one public NAT IP. The proxy guard therefore keeps password login, OTP
+send, and OTP verify on separate auth buckets instead of sharing the generic
+mutation budget:
+
+| Policy           | Default minute/hour/day budget | Override variables                                                                                                   |
+| ---------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `password-login` | `60 / 600 / 4000`              | `API_PROXY_PASSWORD_LOGIN_LIMIT_MINUTE`, `API_PROXY_PASSWORD_LOGIN_LIMIT_HOUR`, `API_PROXY_PASSWORD_LOGIN_LIMIT_DAY` |
+| `otp-send`       | `30 / 180 / 300`               | `API_PROXY_OTP_SEND_LIMIT_MINUTE`, `API_PROXY_OTP_SEND_LIMIT_HOUR`, `API_PROXY_OTP_SEND_LIMIT_DAY`                   |
+| `otp-verify`     | `60 / 600 / 4000`              | `API_PROXY_OTP_VERIFY_LIMIT_MINUTE`, `API_PROXY_OTP_VERIFY_LIMIT_HOUR`, `API_PROXY_OTP_VERIFY_LIMIT_DAY`             |
+
+OTP send also has a shared-IP abuse guard with
+`ABUSE_OTP_SEND_IP_LIMIT_MINUTE`, `ABUSE_OTP_SEND_IP_LIMIT_HOUR`, and
+`ABUSE_OTP_SEND_IP_LIMIT_DAY`. Keep the per-email cooldown/hour/day limits in
+place; they are the primary protection against repeated sends to the same
+mailbox. Human auth route `429` responses should return `Retry-After` to the
+caller and must not be converted into `api_abuse` IP blocks by the proxy
+escalation path. Generic anonymous API route-limit hits can still escalate.
 
 ## Step-Up Challenges
 
@@ -103,6 +124,12 @@ When investigating a false positive:
 4. Add a time-bound override only when the activity is clearly organic.
 5. Revoke trust immediately if the subject later shows scripted behavior,
    account takeover indicators, or noisy API-key traffic.
+
+For a live classroom login incident, ask for the center's current public IP and
+check Infrastructure -> Abuse Intelligence for active IP blocks or abuse events
+with `api_abuse` or `password_login_failed`. If the activity is confirmed
+organic, clear the active false-positive block or reset the affected counters;
+do not relax the per-email OTP cooldown or failed-attempt protections.
 
 Manual overrides require a reason and are written to the audit signal stream.
 Prefer expiry-bound overrides for trust and watch decisions so stale operational

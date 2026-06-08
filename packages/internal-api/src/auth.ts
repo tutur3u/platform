@@ -192,10 +192,35 @@ export interface ResolveCrossAppReturnUrlResponse {
   targetApp?: string;
 }
 
+function parseRetryAfterSeconds(response: Response) {
+  if (response.status !== 429) {
+    return undefined;
+  }
+
+  const value = Number.parseInt(response.headers.get('Retry-After') ?? '', 10);
+  return Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
 async function parseAuthResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json().catch(() => null)) as T | null;
+  const retryAfter = parseRetryAfterSeconds(response);
 
   if (payload) {
+    if (
+      retryAfter !== undefined &&
+      typeof payload === 'object' &&
+      !Array.isArray(payload)
+    ) {
+      const payloadRecord = payload as Record<string, unknown>;
+
+      if (payloadRecord.retryAfter === undefined) {
+        return {
+          ...payloadRecord,
+          retryAfter,
+        } as T;
+      }
+    }
+
     return payload;
   }
 

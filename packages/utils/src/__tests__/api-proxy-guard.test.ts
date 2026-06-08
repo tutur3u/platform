@@ -667,7 +667,7 @@ describe('guardApiProxyRequest', () => {
     );
   });
 
-  it('keeps OTP sends on the strict auth bucket', async () => {
+  it('uses a classroom-friendly OTP send bucket', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -676,7 +676,7 @@ describe('guardApiProxyRequest', () => {
     mocks.isBlocked.mockResolvedValue(null);
     mocks.limit.mockResolvedValueOnce({
       success: false,
-      limit: 3,
+      limit: 30,
       remaining: 0,
       reset: Date.now() + 15_000,
     });
@@ -693,8 +693,8 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-RateLimit-Limit')).toBe('3');
-    expect(response?.headers.get('X-RateLimit-Policy')).toBe('auth');
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('30');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('otp-send');
   });
 
   it('uses a classroom-friendly bucket for cross-app return handoffs', async () => {
@@ -729,7 +729,7 @@ describe('guardApiProxyRequest', () => {
     );
   });
 
-  it('keeps verify-otp on the strict auth bucket', async () => {
+  it('uses a separate OTP verify bucket', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -738,7 +738,7 @@ describe('guardApiProxyRequest', () => {
     mocks.isBlocked.mockResolvedValue(null);
     mocks.limit.mockResolvedValueOnce({
       success: false,
-      limit: 3,
+      limit: 60,
       remaining: 0,
       reset: Date.now() + 15_000,
     });
@@ -753,11 +753,11 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-RateLimit-Limit')).toBe('3');
-    expect(response?.headers.get('X-RateLimit-Policy')).toBe('auth');
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('60');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('otp-verify');
   });
 
-  it('keeps password-login on the strict auth bucket', async () => {
+  it('uses a separate classroom-friendly password-login bucket', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -766,7 +766,7 @@ describe('guardApiProxyRequest', () => {
     mocks.isBlocked.mockResolvedValue(null);
     mocks.limit.mockResolvedValueOnce({
       success: false,
-      limit: 3,
+      limit: 60,
       remaining: 0,
       reset: Date.now() + 15_000,
     });
@@ -781,8 +781,95 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-RateLimit-Limit')).toBe('3');
-    expect(response?.headers.get('X-RateLimit-Policy')).toBe('auth');
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('60');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('password-login');
+  });
+
+  it('keeps password login, OTP send, and OTP verify on distinct limiter prefixes', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValue({
+      success: true,
+      limit: 60,
+      remaining: 59,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    await guardApiProxyRequest(makeRequest('/api/v1/auth/password-login'), {
+      prefixBase: 'proxy:test:api',
+    });
+    await guardApiProxyRequest(makeRequest('/api/v1/auth/otp/send'), {
+      prefixBase: 'proxy:test:api',
+    });
+    await guardApiProxyRequest(makeRequest('/api/v1/auth/otp/verify'), {
+      prefixBase: 'proxy:test:api',
+    });
+
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:password-login:anonymous:mutate:minute'
+    );
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:otp-send:anonymous:mutate:minute'
+    );
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:otp-verify:anonymous:mutate:minute'
+    );
+    expect(mocks.ratelimitPrefixes).not.toContain(
+      'proxy:test:api:auth:anonymous:mutate:minute'
+    );
+  });
+
+  it('honors auth-specific proxy limit environment overrides', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('API_PROXY_PASSWORD_LOGIN_LIMIT_MINUTE', '75');
+    vi.stubEnv('API_PROXY_OTP_SEND_LIMIT_MINUTE', '45');
+    vi.stubEnv('API_PROXY_OTP_VERIFY_LIMIT_MINUTE', '90');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValue({
+      success: true,
+      limit: 75,
+      remaining: 74,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    await guardApiProxyRequest(makeRequest('/api/v1/auth/password-login'), {
+      prefixBase: 'proxy:test:api',
+    });
+    await guardApiProxyRequest(makeRequest('/api/v1/auth/otp/send'), {
+      prefixBase: 'proxy:test:api',
+    });
+    await guardApiProxyRequest(makeRequest('/api/v1/auth/otp/verify'), {
+      prefixBase: 'proxy:test:api',
+    });
+
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 75,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 45,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 90,
+      window: '1 m',
+    });
   });
 
   it('uses strict high-fanout buckets for email routes', async () => {

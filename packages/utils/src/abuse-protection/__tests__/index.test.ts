@@ -20,6 +20,7 @@ import {
 describe('abuse-protection', () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllEnvs();
   });
 
   describe('extractIPFromHeaders', () => {
@@ -202,9 +203,9 @@ describe('abuse-protection', () => {
 
   describe('ABUSE_THRESHOLDS constants', () => {
     it('should have valid OTP send limits', () => {
-      expect(ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE).toBe(3);
-      expect(ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR).toBe(10);
-      expect(ABUSE_THRESHOLDS.OTP_SEND_PER_DAY).toBe(12);
+      expect(ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE).toBe(30);
+      expect(ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR).toBe(180);
+      expect(ABUSE_THRESHOLDS.OTP_SEND_PER_DAY).toBe(300);
       expect(ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS).toBe(
         15 * 60 * 1000
       );
@@ -371,6 +372,47 @@ describe('abuse-protection', () => {
       expect(secondAttempt.retryAfter).toBeGreaterThan(0);
     });
 
+    it('allows multiple unique teachers behind one shared IP', async () => {
+      const emailBase = `shared-ip-${Date.now()}`;
+
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const allowedAttempt = await checkOTPSendAllowed(
+          '198.51.100.10',
+          `${emailBase}-${attempt}@example.com`
+        );
+        expect(allowedAttempt.allowed).toBe(true);
+        await recordOTPSendSuccess(
+          '198.51.100.10',
+          `${emailBase}-${attempt}@example.com`
+        );
+      }
+    });
+
+    it('honors configured per-minute shared-IP OTP send limits', async () => {
+      vi.stubEnv('ABUSE_OTP_SEND_IP_LIMIT_MINUTE', '2');
+
+      const emailBase = `configured-minute-${Date.now()}`;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const allowedAttempt = await checkOTPSendAllowed(
+          '198.51.100.11',
+          `${emailBase}-${attempt}@example.com`
+        );
+        expect(allowedAttempt.allowed).toBe(true);
+        await recordOTPSendSuccess(
+          '198.51.100.11',
+          `${emailBase}-${attempt}@example.com`
+        );
+      }
+
+      const blockedAttempt = await checkOTPSendAllowed(
+        '198.51.100.11',
+        `${emailBase}-2@example.com`
+      );
+
+      expect(blockedAttempt.allowed).toBe(false);
+      expect(blockedAttempt.retryAfter).toBeGreaterThan(0);
+    });
+
     it('caps successful sends for the same email across distributed IPs within an hour', async () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2026-03-12T00:00:00.000Z'));
@@ -398,6 +440,8 @@ describe('abuse-protection', () => {
     it('caps slow OTP send abuse from a single IP over a day', async () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2026-03-12T00:00:00.000Z'));
+      const configuredDayLimit = 12;
+      vi.stubEnv('ABUSE_OTP_SEND_IP_LIMIT_DAY', String(configuredDayLimit));
 
       const emailBase = `slow-ip-${Date.now()}`;
       let lastAttempt = await checkOTPSendAllowed(
@@ -406,11 +450,7 @@ describe('abuse-protection', () => {
       );
       await recordOTPSendSuccess('198.51.100.20', `${emailBase}-0@example.com`);
 
-      for (
-        let attempt = 1;
-        attempt <= ABUSE_THRESHOLDS.OTP_SEND_PER_DAY;
-        attempt++
-      ) {
+      for (let attempt = 1; attempt <= configuredDayLimit; attempt++) {
         vi.advanceTimersByTime(90 * 60 * 1000);
         lastAttempt = await checkOTPSendAllowed(
           '198.51.100.20',

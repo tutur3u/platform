@@ -131,6 +131,33 @@ const AUTH_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const PASSWORD_LOGIN_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    createConfig('minute', '1 m', 60, 'API_PROXY_PASSWORD_LOGIN_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 600, 'API_PROXY_PASSWORD_LOGIN_LIMIT_HOUR'),
+    createConfig('day', '1 d', 4000, 'API_PROXY_PASSWORD_LOGIN_LIMIT_DAY'),
+  ],
+};
+
+const OTP_SEND_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    createConfig('minute', '1 m', 30, 'API_PROXY_OTP_SEND_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 180, 'API_PROXY_OTP_SEND_LIMIT_HOUR'),
+    createConfig('day', '1 d', 300, 'API_PROXY_OTP_SEND_LIMIT_DAY'),
+  ],
+};
+
+const OTP_VERIFY_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    createConfig('minute', '1 m', 60, 'API_PROXY_OTP_VERIFY_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 600, 'API_PROXY_OTP_VERIFY_LIMIT_HOUR'),
+    createConfig('day', '1 d', 4000, 'API_PROXY_OTP_VERIFY_LIMIT_DAY'),
+  ],
+};
+
 const CRON_RATE_LIMITS: RateLimitProfile = {
   get: [
     createConfig('minute', '1 m', 10, 'API_PROXY_CRON_READ_LIMIT_MINUTE'),
@@ -211,14 +238,31 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
     key: 'auth',
     matches: (req) =>
       req.nextUrl.pathname.startsWith('/api/auth/mfa/') ||
-      /^\/api\/v1\/auth\/otp\/(?:send|verify|settings)(?:\/|$)/.test(
-        req.nextUrl.pathname
-      ) ||
+      /^\/api\/v1\/auth\/otp\/settings(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: AUTH_RATE_LIMITS,
+  },
+  {
+    key: 'password-login',
+    matches: (req) =>
       /^\/api\/v1\/auth\/password-login(?:\/|$)/.test(req.nextUrl.pathname) ||
-      /^\/api\/v1\/auth\/mobile\/(?:send-otp|verify-otp|password-login)(?:\/|$)/.test(
+      /^\/api\/v1\/auth\/mobile\/password-login(?:\/|$)/.test(
         req.nextUrl.pathname
       ),
-    rateLimits: AUTH_RATE_LIMITS,
+    rateLimits: PASSWORD_LOGIN_RATE_LIMITS,
+  },
+  {
+    key: 'otp-send',
+    matches: (req) =>
+      /^\/api\/v1\/auth\/otp\/send(?:\/|$)/.test(req.nextUrl.pathname) ||
+      /^\/api\/v1\/auth\/mobile\/send-otp(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: OTP_SEND_RATE_LIMITS,
+  },
+  {
+    key: 'otp-verify',
+    matches: (req) =>
+      /^\/api\/v1\/auth\/otp\/verify(?:\/|$)/.test(req.nextUrl.pathname) ||
+      /^\/api\/v1\/auth\/mobile\/verify-otp(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: OTP_VERIFY_RATE_LIMITS,
   },
   {
     key: 'cross-app-return',

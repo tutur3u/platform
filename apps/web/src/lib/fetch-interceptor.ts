@@ -3,7 +3,7 @@
 /**
  * Global fetch interceptor for transparent 429 (rate limit) retry.
  *
- * When a **same-origin** fetch call receives a 429 response, this interceptor:
+ * When an idempotent **same-origin** fetch call receives a 429 response, this interceptor:
  * 1. Shows a debounced toast notification to the user
  * 2. Waits for the duration specified in the `Retry-After` header
  * 3. Retries the request (up to 3 times)
@@ -12,8 +12,8 @@
  * External / cross-origin requests are passed through untouched so that
  * CDN images, third-party APIs, etc. are never interfered with.
  *
- * Rate-limited requests (429) were never processed by the server,
- * so retrying is safe for any HTTP method (GET, POST, PUT, DELETE).
+ * Non-idempotent requests should handle 429 responses at the call site so one
+ * user action does not consume multiple server-side rate-limit attempts.
  *
  * i18n: Call `setRateLimitMessage(fn)` from a React component inside
  * `NextIntlClientProvider` to provide translated messages. The interceptor
@@ -73,6 +73,26 @@ function isSameOrigin(input: RequestInfo | URL): boolean {
   return true;
 }
 
+function getRequestMethod(input: RequestInfo | URL, init?: RequestInit) {
+  if (init?.method) {
+    return init.method.toUpperCase();
+  }
+
+  if (input instanceof Request) {
+    return input.method.toUpperCase();
+  }
+
+  return 'GET';
+}
+
+function shouldRetryRateLimitedRequest(
+  input: RequestInfo | URL,
+  init?: RequestInit
+) {
+  const method = getRequestMethod(input, init);
+  return method === 'GET' || method === 'HEAD';
+}
+
 let installed = false;
 
 /**
@@ -91,8 +111,13 @@ export function installFetchInterceptor() {
   ): Promise<Response> => {
     const response = await originalFetch(input, init);
 
-    // Only retry same-origin requests — never interfere with external resources
-    if (!isSameOrigin(input) || response.status !== 429) {
+    // Only retry idempotent same-origin requests — never interfere with
+    // external resources or replay mutations.
+    if (
+      !isSameOrigin(input) ||
+      response.status !== 429 ||
+      !shouldRetryRateLimitedRequest(input, init)
+    ) {
       return response;
     }
 
