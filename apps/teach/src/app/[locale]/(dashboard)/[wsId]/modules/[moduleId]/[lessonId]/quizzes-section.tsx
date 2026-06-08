@@ -181,7 +181,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
               </Label>
               <Select
                 value={questionType}
-                onValueChange={(val: any) => setQuestionType(val)}
+                onValueChange={(val: QuestionType) => setQuestionType(val)}
                 disabled={isGenerating}
               >
                 <SelectTrigger id="ai-question-type">
