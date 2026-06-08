@@ -40,6 +40,7 @@ type UseHiveStudioEngineProps = {
   currentUser: HiveUser;
   initialServers: HiveServersResponse;
   initialServerId?: string | null;
+  isAdmin: boolean;
   realtimeUrl: string;
 };
 
@@ -53,6 +54,7 @@ export function useHiveStudioEngine({
   currentUser,
   initialServers,
   initialServerId,
+  isAdmin,
   realtimeUrl,
 }: UseHiveStudioEngineProps) {
   const [serverId, setServerId] = useHivePersistedState<string | null>(
@@ -169,7 +171,7 @@ export function useHiveStudioEngine({
     [currentUser, npcs, selectedServer, selection, tool]
   );
 
-  const { realtimeClientRef, sendCursorPosition } = useHiveRealtimeSession({
+  const { sendCursorPosition } = useHiveRealtimeSession({
     currentUserId: currentUser.id,
     getOwnAwareness,
     realtimeUrl,
@@ -198,19 +200,13 @@ export function useHiveStudioEngine({
     setWorld,
     snapshotQuery,
     tool,
-    onPersisted: ({ event, world }) => {
-      realtimeClientRef.current?.send({
-        event,
-        type: 'world.event.applied',
-        world,
-      });
-    },
   });
 
   const editorActions = useHiveEditorActions({
     activeObject,
     activeTerrain,
     aiRunContext: aiContext.aiRunContext,
+    isAdmin,
     mutations,
     npcs,
     onNpcRunError: (npcId, promptMode) =>

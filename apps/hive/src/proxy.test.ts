@@ -54,6 +54,7 @@ function appSessionClaims(): AppCoordinationTokenClaims {
 
 describe('Hive proxy auth cookie cleanup', () => {
   beforeEach(() => {
+    vi.unstubAllEnvs();
     vi.mocked(guardApiProxyRequest).mockReset();
     vi.mocked(consumeVerifyTokenRequest).mockReset();
     vi.mocked(consumeVerifyTokenRequest).mockResolvedValue(null);
@@ -186,6 +187,34 @@ describe('Hive proxy auth cookie cleanup', () => {
 
     expect(response.headers.get('location')).toBeNull();
     expect(response.headers.get('x-middleware-next')).toBe('1');
+  });
+
+  it('allows protected pages with a valid shared Supabase auth cookie', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    vi.mocked(refreshAppSessionForRequest).mockResolvedValueOnce({
+      claims: appSessionClaims(),
+      ok: true,
+      refreshed: false,
+      response: NextResponse.next(),
+    });
+
+    const response = await proxy(
+      new NextRequest('https://hive.tuturuuu.localhost/dashboard', {
+        headers: {
+          cookie: 'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session',
+        },
+      })
+    );
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(refreshAppSessionForRequest).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      expect.objectContaining({ sessionMode: 'supabase-first' })
+    );
   });
 
   it('keeps generic API guard coverage for Hive product APIs', async () => {

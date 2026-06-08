@@ -2,9 +2,8 @@ import '@/lib/dayjs-setup';
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
-import { TRPCProvider } from '@/trpc/client';
 import { ClientProviders } from './client-providers';
-import { MantineThemeProvider } from './mantine-theme-provider';
+import { QueryProvider } from './query-provider';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -22,13 +21,11 @@ export function Providers({ children }: { children: ReactNode }) {
       // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
       // for more details
     >
-      <TRPCProvider>
+      <QueryProvider>
         <NextIntlClientProvider>
-          <MantineThemeProvider>
-            <ClientProviders>{children}</ClientProviders>
-          </MantineThemeProvider>
+          <ClientProviders>{children}</ClientProviders>
         </NextIntlClientProvider>
-      </TRPCProvider>
+      </QueryProvider>
     </ThemeProvider>
   );
 }

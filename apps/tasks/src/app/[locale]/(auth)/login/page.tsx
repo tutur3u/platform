@@ -1,8 +1,9 @@
 import {
-  getAppSessionClaimsFromRequest,
+  hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
+import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, TTR_URL } from '@/constants/common';
@@ -23,15 +24,19 @@ export default async function LoginPage({
   const nextPath = normalizeNextPath(params.next ?? params.nextUrl);
   const shouldRefreshCrossAppSession = params.refresh === '1';
   const requestHeaders = await headers();
-  const appSession = getAppSessionClaimsFromRequest(
-    { headers: requestHeaders },
-    { targetApp: 'tasks' }
-  );
+  const appSession = await getSatelliteAppSession('tasks');
   const hasWebAppSession = hasWebAppSessionTokenFromRequest({
     headers: requestHeaders,
   });
+  const hasSupabaseSession = hasSupportedSupabaseAuthCookie({
+    headers: requestHeaders,
+  });
 
-  if (appSession && hasWebAppSession && !shouldRefreshCrossAppSession) {
+  if (
+    appSession &&
+    (hasWebAppSession || hasSupabaseSession) &&
+    !shouldRefreshCrossAppSession
+  ) {
     redirect(nextPath);
   }
 

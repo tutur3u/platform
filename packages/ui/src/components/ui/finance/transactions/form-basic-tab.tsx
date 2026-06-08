@@ -27,6 +27,7 @@ import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 
 import type { TransactionFormValues } from './form-schema';
@@ -44,7 +45,9 @@ interface FormBasicTabProps {
   loading: boolean;
   hasFormPermission: boolean;
   originWalletDisabled?: boolean;
+  originWalletPermissionWarning?: ReactNode;
   destinationWalletDisabled?: boolean;
+  destinationWalletPermissionWarning?: ReactNode;
   isTransfer: boolean;
   suggestedExchangeRate: number | null;
   isDestinationOverridden: boolean;
@@ -73,7 +76,9 @@ export function FormBasicTab({
   loading,
   hasFormPermission,
   originWalletDisabled = false,
+  originWalletPermissionWarning,
   destinationWalletDisabled = false,
+  destinationWalletPermissionWarning,
   isTransfer,
   suggestedExchangeRate,
   isDestinationOverridden,
@@ -138,6 +143,7 @@ export function FormBasicTab({
                     })}
                   </FormDescription>
                 )}
+              {originWalletDisabled && originWalletPermissionWarning}
               <FormMessage />
             </FormItem>
           )}
@@ -192,6 +198,8 @@ export function FormBasicTab({
                     destinationWalletDisabled
                   }
                 />
+                {destinationWalletDisabled &&
+                  destinationWalletPermissionWarning}
                 <FormMessage />
               </FormItem>
             )}

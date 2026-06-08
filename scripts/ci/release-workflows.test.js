@@ -8,6 +8,8 @@ const {
   vercelWorkflows,
 } = require('./workflow-config-test-helpers.js');
 
+const PACKAGE_PROVENANCE_REPOSITORY_URL = 'https://github.com/tutur3u/platform';
+
 test('Vercel workflows grant marker permissions and record successful runs', () => {
   for (const workflowName of vercelWorkflows) {
     const workflow = fs.readFileSync(
@@ -63,6 +65,61 @@ test('Vercel workflows generate shared build metadata before building', () => {
       /bun run --silent scripts\/ci\/generate-build-metadata\.ts/
     );
   }
+});
+
+test('Platform Vercel workflows build local devbox dependency before Vercel build', () => {
+  for (const workflowName of [
+    'vercel-preview-platform.yaml',
+    'vercel-production-platform.yaml',
+  ]) {
+    const deployJob = readWorkflowJobBlock(
+      workflowName,
+      workflowName.startsWith('vercel-preview-')
+        ? 'Deploy-Preview'
+        : 'Deploy-Production'
+    );
+    const dependencyBuildIndex = deployJob.indexOf(
+      'Build workspace dependencies'
+    );
+    const vercelBuildIndex = deployJob.indexOf('Build Project Artifacts');
+
+    assert.notEqual(dependencyBuildIndex, -1);
+    assert.notEqual(vercelBuildIndex, -1);
+    assert.ok(
+      dependencyBuildIndex < vercelBuildIndex,
+      `${workflowName} must build workspace dependencies before Vercel build`
+    );
+    assert.match(deployJob, /--filter=@tuturuuu\/devbox/);
+  }
+});
+
+test('Platform production deployment waits for release package visibility', () => {
+  const deployJob = readWorkflowJobBlock(
+    'vercel-production-platform.yaml',
+    'Deploy-Production'
+  );
+  const releaseGateIndex = deployJob.indexOf('Wait for package release gate');
+  const installIndex = deployJob.indexOf('Install dependencies');
+  const vercelBuildIndex = deployJob.indexOf('Build Project Artifacts');
+
+  assert.notEqual(releaseGateIndex, -1);
+  assert.notEqual(installIndex, -1);
+  assert.notEqual(vercelBuildIndex, -1);
+  assert.ok(
+    releaseGateIndex < installIndex,
+    'platform production deploy must wait for package releases before installing dependencies'
+  );
+  assert.ok(
+    releaseGateIndex < vercelBuildIndex,
+    'platform production deploy must wait for package releases before Vercel build'
+  );
+  assert.match(
+    deployJob,
+    /node scripts\/ci\/package-release-readiness\.js wait-changed-package-versions/
+  );
+  assert.match(deployJob, /TUTURUUU_NEXT_CACHE_COMPONENTS: "0"/);
+  assert.match(deployJob, /actions:\s*read/);
+  assert.match(deployJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
 });
 
 test('mail deployment workflows do not persist checkout credentials', () => {
@@ -135,6 +192,64 @@ test('CI workflows use main instead of retired staging branch filters', () => {
     /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/
   );
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
+});
+
+test('Codecov workflow runs workspace package tests with coverage', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'codecov.yaml'),
+    'utf8'
+  );
+  const testJob = readWorkflowJobBlock('codecov.yaml', 'test');
+
+  assert.match(testJob, /run: bun turbo:local run test -- --coverage/u);
+  assert.doesNotMatch(workflow, /run: bun vitest run --coverage/u);
+});
+
+test('Biome workflow runs pinned npm Biome CLI and prints captured output when checks fail', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'biome-check.yaml'),
+    'utf8'
+  );
+  const formatJob = readWorkflowJobBlock('biome-check.yaml', 'format');
+  const lintJob = readWorkflowJobBlock('biome-check.yaml', 'lint');
+  const applyFormatJob = readWorkflowJobBlock(
+    'biome-check.yaml',
+    'apply-format'
+  );
+
+  for (const job of [formatJob, lintJob]) {
+    assert.match(job, /uses: actions\/setup-node@v6/u);
+    assert.match(job, /node-version: 24/u);
+    assert.match(job, /printf '%s\\n' "\$biome_output"/u);
+    assert.match(job, /Biome exit code \$biome_exit_code/u);
+    assert.match(
+      job,
+      /\[ "\$total_issues" -gt 0 \] \|\| \[ "\$biome_exit_code" -ne 0 \]/u
+    );
+  }
+
+  assert.doesNotMatch(workflow, /biomejs\/setup-biome@v2/u);
+  assert.match(formatJob, /npx --yes @biomejs\/biome@2\.4\.16 format \. 2>&1/u);
+  assert.match(lintJob, /npx --yes @biomejs\/biome@2\.4\.16 lint \. 2>&1/u);
+  assert.match(
+    applyFormatJob,
+    /npx --yes @biomejs\/biome@2\.4\.16 format --write \./u
+  );
+});
+
+test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', () => {
+  const verifyJob = readWorkflowJobBlock('docker-setup-check.yaml', 'verify');
+  const prePullIndex = verifyJob.indexOf('Pre-pull Docker BuildKit image');
+  const setupBuildxIndex = verifyJob.indexOf('Setup Docker Buildx');
+
+  assert.notEqual(prePullIndex, -1);
+  assert.notEqual(setupBuildxIndex, -1);
+  assert.ok(
+    prePullIndex < setupBuildxIndex,
+    'BuildKit image should be pulled before setup-buildx boots BuildKit'
+  );
+  assert.match(verifyJob, /docker pull moby\/buildkit:buildx-stable-1/u);
+  assert.match(verifyJob, /driver-opts: image=moby\/buildkit:buildx-stable-1/u);
 });
 
 test('Supabase staging migration includes every local migration when pushing', () => {
@@ -262,9 +377,9 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
   );
   assert.equal(config.packages['apps/mobile']['release-type'], 'dart');
   assert.equal(config.packages['apps/web'], undefined);
-  assert.equal(manifest['.'], '0.1.159');
-  assert.equal(manifest['apps/mobile'], '0.5.0');
-  assert.equal(manifest['packages/sdk'], '0.4.9');
+  assert.equal(manifest['.'], '0.3.0');
+  assert.equal(manifest['apps/mobile'], '0.5.1');
+  assert.equal(manifest['packages/sdk'], '0.5.0');
   assert.deepEqual(configuredReleasePaths, expectedReleasePaths);
 
   for (const [workspacePath, version] of workspaceVersions) {
@@ -309,17 +424,45 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   const e2eJob = readWorkflowJobBlock('e2e-tests.yaml', 'e2e');
   const cleanupIndex = e2eJob.indexOf('Free runner disk for Dockerized E2E');
+  const runIndex = e2eJob.indexOf('Run Playwright shard');
+  const diagnosticsIndex = e2eJob.indexOf('Collect Dockerized E2E diagnostics');
   const restoreIndex = e2eJob.indexOf('Restore cached Docker images');
   const loadIndex = e2eJob.indexOf('Load cached Docker images');
+  const diagnosticsUploadIndex = e2eJob.indexOf('Upload E2E diagnostics');
+  const uploadIndex = e2eJob.indexOf('Upload Playwright report');
 
   assert.match(
     workflow,
     /\n {2}push:\n {4}branches-ignore:\n {6}- production\n/
   );
+  assert.match(
+    e2eJob,
+    /BASE_URL: https:\/\/tuturuuu\.localhost:1355/u,
+    'E2E must exercise the shared-cookie localhost domain on the unprivileged Portless port'
+  );
+  assert.match(e2eJob, /PORTLESS_PORT: "1355"/u);
   assert.match(e2eJob, /github\.ref != 'refs\/heads\/production'/);
   assert.notEqual(cleanupIndex, -1);
+  assert.notEqual(runIndex, -1);
+  assert.notEqual(diagnosticsIndex, -1);
   assert.notEqual(restoreIndex, -1);
   assert.notEqual(loadIndex, -1);
+  assert.notEqual(diagnosticsUploadIndex, -1);
+  assert.notEqual(uploadIndex, -1);
+  assert.doesNotMatch(
+    e2eJob,
+    /name: Start Portless shared localhost proxy/u,
+    'Docker E2E runner must own Portless startup after Docker is healthy'
+  );
+  assert.doesNotMatch(
+    e2eJob,
+    /bunx portless alias tuturuuu 7803/u,
+    'Docker E2E runner must refresh the Portless alias after Docker is healthy'
+  );
+  assert.match(
+    e2eJob,
+    /tee \.\.\/\.\.\/tmp\/e2e-diagnostics\/run-playwright-shard\.log/u
+  );
   assert.ok(
     cleanupIndex < restoreIndex,
     'runner disk cleanup must happen before restoring Supabase Docker images'
@@ -328,10 +471,54 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     cleanupIndex < loadIndex,
     'runner disk cleanup must happen before loading Supabase Docker images'
   );
+  assert.ok(
+    runIndex < diagnosticsIndex,
+    'E2E diagnostics must run after the shard command can fail'
+  );
+  assert.ok(
+    diagnosticsIndex < uploadIndex,
+    'E2E diagnostics must print before artifact upload/cleanup steps'
+  );
+  assert.ok(
+    diagnosticsIndex < diagnosticsUploadIndex,
+    'E2E diagnostics must be collected before uploading the diagnostics artifact'
+  );
+  assert.ok(
+    diagnosticsUploadIndex < uploadIndex,
+    'E2E diagnostics artifact should upload before Playwright-only artifacts'
+  );
   assert.match(e2eJob, /docker system prune -af --volumes/u);
   assert.match(e2eJob, /\/usr\/share\/dotnet/u);
   assert.match(e2eJob, /\/usr\/local\/lib\/android/u);
   assert.match(e2eJob, /\/opt\/hostedtoolcache\/CodeQL/u);
+  assert.match(e2eJob, /if: \$\{\{ failure\(\) \}\}/u);
+  assert.match(
+    e2eJob,
+    /docker ps -a --filter "label=com\.docker\.compose\.project=\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}"/u
+  );
+  assert.match(
+    e2eJob,
+    /docker compose --env-file tmp\/e2e\/web\.env -f docker-compose\.web\.prod\.yml -p "\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}" ps -a/u
+  );
+  assert.match(
+    e2eJob,
+    /docker compose --env-file tmp\/e2e\/web\.env -f docker-compose\.web\.prod\.yml -p "\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}" logs --tail=1000/u
+  );
+  assert.match(
+    e2eJob,
+    /curl -i --max-time 10 "\$web_proxy_login_url" > "\$diagnostics_dir\/web-proxy-login\.txt"/u
+  );
+  assert.match(
+    e2eJob,
+    /curl -k -i --max-time 10 "\$portless_login_url" > "\$diagnostics_dir\/portless-login\.txt"/u
+  );
+  assert.match(e2eJob, /apps\/web\/test-results\/\.last-run\.json/u);
+  assert.match(
+    e2eJob,
+    /name: e2e-diagnostics-\$\{\{ matrix\.shard \}\}-of-\$\{\{ matrix\.total_shards \}\}/u
+  );
+  assert.match(e2eJob, /path: tmp\/e2e-diagnostics\//u);
+  assert.match(e2eJob, /if-no-files-found: warn/u);
 });
 
 test('Supabase production migration requires production deployment and successful staged SHA', () => {
@@ -463,7 +650,9 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
     );
     const header = workflow.slice(0, workflow.indexOf('\njobs:'));
     const deployJob = readWorkflowJobBlock(workflowName, jobName);
-    const installIndex = workflow.indexOf('run: bun install\n');
+    const installIndex = workflow.indexOf(
+      'run: bash scripts/ci/run-with-backoff.sh bun install\n'
+    );
     const firstSecretIndex = workflow.indexOf('secrets.');
 
     assert.doesNotMatch(
@@ -568,6 +757,37 @@ const packageReleaseWorkflows = [
     workflowName: 'release-ai-package.yaml',
   },
   {
+    artifactDir: 'devbox-package',
+    artifactName: 'tuturuuu-devbox-npm-package',
+    environment: 'devbox-release-production',
+    packageName: '@tuturuuu/devbox',
+    packagePath: 'packages/devbox',
+    rejectMessagePattern:
+      /@tuturuuu\/devbox releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/devbox/,
+      /run: bun run build/,
+      /run: bun run test/,
+    ],
+    workflowName: 'release-devbox-package.yaml',
+  },
+  {
+    artifactDir: 'internal-api-package',
+    artifactName: 'tuturuuu-internal-api-npm-package',
+    environment: 'internal-api-release-production',
+    packageName: '@tuturuuu/internal-api',
+    packagePath: 'packages/internal-api',
+    rejectMessagePattern:
+      /@tuturuuu\/internal-api releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /bun run --filter @tuturuuu\/types build/,
+      /working-directory: packages\/internal-api/,
+      /run: bun run build/,
+      /run: bun run test/,
+    ],
+    workflowName: 'release-internal-api-package.yaml',
+  },
+  {
     artifactDir: 'supabase-package',
     artifactName: 'tuturuuu-supabase-npm-package',
     environment: 'supabase-release-production',
@@ -636,6 +856,7 @@ const packageReleaseWorkflows = [
       /SDK releases can only run from refs\/heads\/production/,
     requiredBuildPatterns: [
       /Build SDK workspace dependencies/,
+      /bun run --filter @tuturuuu\/devbox build/,
       /bun run --filter @tuturuuu\/types build/,
       /bun run --filter @tuturuuu\/internal-api build/,
       /working-directory: packages\/sdk/,
@@ -644,6 +865,29 @@ const packageReleaseWorkflows = [
     workflowName: 'release-sdk-package.yaml',
   },
 ];
+
+test('package publish manifests expose provenance-compatible repository metadata', () => {
+  for (const {
+    packageName,
+    packagePath,
+    workflowName,
+  } of packageReleaseWorkflows) {
+    const packageJson = JSON.parse(
+      fs.readFileSync(path.join(repoRoot, packagePath, 'package.json'), 'utf8')
+    );
+
+    assert.equal(packageJson.name, packageName);
+    assert.deepEqual(
+      packageJson.repository,
+      {
+        directory: packagePath,
+        type: 'git',
+        url: PACKAGE_PROVENANCE_REPOSITORY_URL,
+      },
+      `${packagePath}/package.json repository metadata must match npm provenance for ${workflowName}`
+    );
+  }
+});
 
 test('package publish workflows release from production version bumps', () => {
   for (const {
@@ -702,11 +946,39 @@ test('package publish workflows release from production version bumps', () => {
       /if: github\.ref == 'refs\/heads\/production' && needs\.check-version-bump\.outputs\.should_release == 'true'/
     );
     assert.match(prepareJob, /if: github\.ref == 'refs\/heads\/production'/);
+    assert.match(prepareJob, /actions:\s*read/);
+    assert.match(prepareJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
     assert.match(
       prepareJob,
       /npm view "\$\{PACKAGE_NAME\}@\$\{PACKAGE_VERSION\}" version/
     );
+    const dependencyWaitIndex = prepareJob.indexOf(
+      `node scripts/ci/package-release-readiness.js wait-workspace-dependencies ${packagePath}`
+    );
     assert.match(prepareJob, /npm pack --pack-destination/);
+    const prepareManifestIndex = prepareJob.indexOf(
+      `node scripts/ci/prepare-npm-package-manifest.js ${packagePath}`
+    );
+    const packIndex = prepareJob.indexOf('npm pack --pack-destination');
+
+    assert.notEqual(
+      dependencyWaitIndex,
+      -1,
+      `${workflowName} must wait for publishable workspace dependencies before packing`
+    );
+    assert.notEqual(
+      prepareManifestIndex,
+      -1,
+      `${workflowName} must prepare npm package manifests before packing`
+    );
+    assert.ok(
+      dependencyWaitIndex < prepareManifestIndex,
+      `${workflowName} must wait for npm workspace dependencies before rewriting the publish manifest`
+    );
+    assert.ok(
+      prepareManifestIndex < packIndex,
+      `${workflowName} must rewrite workspace protocol dependencies before npm pack`
+    );
     assert.match(prepareJob, /actions\/upload-artifact@/);
     assert.doesNotMatch(prepareJob, /id-token:\s*write/);
     assert.match(
@@ -777,10 +1049,18 @@ test('package trusted publishing keeps OIDC isolated to artifact publish jobs', 
       publishJob,
       /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/
     );
+    assert.match(publishJob, /trusted publisher is configured/);
+    assert.match(publishJob, /Wait for npm publication/);
+    assert.match(
+      publishJob,
+      /npm view "\$\{EXPECTED_PACKAGE_NAME\}@\$\{EXPECTED_PACKAGE_VERSION\}" version --registry https:\/\/registry\.npmjs\.org/
+    );
+    assert.match(publishJob, /was published but did not become visible on npm/);
     assert.doesNotMatch(publishJob, /actions\/checkout@/);
     assert.doesNotMatch(publishJob, /setup-bun/);
     assert.doesNotMatch(publishJob, /\bbun install\b/);
     assert.doesNotMatch(publishJob, /\bnpm install\b/);
+    assert.doesNotMatch(publishJob, /package-release-readiness\.js/);
     assert.doesNotMatch(publishJob, /\bsecrets\./);
     assert.doesNotMatch(publishJob, /NODE_AUTH_TOKEN/);
   }

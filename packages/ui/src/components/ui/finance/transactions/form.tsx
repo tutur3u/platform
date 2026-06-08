@@ -21,6 +21,10 @@ import {
   type WorkspaceStorageListItem,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  FinancePermissionWarningContent,
+  FinancePermissionWarningDialog,
+} from '@tuturuuu/ui/finance/shared/finance-permission-warning-dialog';
 import { Form } from '@tuturuuu/ui/form';
 import { useExchangeRates } from '@tuturuuu/ui/hooks/use-exchange-rates';
 import { useFinanceTransactionPreferences } from '@tuturuuu/ui/hooks/use-finance-transaction-preferences';
@@ -69,6 +73,7 @@ export function TransactionForm({
   canUpdateConfidentialTransactions,
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
+  permissionRequestUser,
 }: TransactionFormProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -325,6 +330,43 @@ export function TransactionForm({
     isEditMode &&
     !canChangeFinanceWallets &&
     !!data?.transfer?.linked_wallet_id;
+  const createWalletPermissionWarning = (
+    <FinancePermissionWarningDialog
+      missingPermissions={['set_finance_wallets_on_create']}
+      user={permissionRequestUser}
+      trigger={
+        <Button type="button" variant="outline" size="sm">
+          {t('finance-permission-warning.open_request')}
+        </Button>
+      }
+    />
+  );
+  const editWalletPermissionWarning = (
+    <FinancePermissionWarningDialog
+      missingPermissions={['change_finance_wallets']}
+      user={permissionRequestUser}
+      trigger={
+        <Button type="button" variant="outline" size="sm">
+          {t('finance-permission-warning.open_request')}
+        </Button>
+      }
+    />
+  );
+  const confidentialPermissionWarning = (
+    <FinancePermissionWarningDialog
+      missingPermissions={[
+        isCreateMode
+          ? 'create_confidential_transactions'
+          : 'update_confidential_transactions',
+      ]}
+      user={permissionRequestUser}
+      trigger={
+        <Button type="button" variant="outline" size="sm">
+          {t('finance-permission-warning.open_request')}
+        </Button>
+      }
+    />
+  );
 
   const refreshTransactions = async () => {
     await invalidateTransactionMutationQueries(queryClient, wsId);
@@ -790,6 +832,17 @@ export function TransactionForm({
   // Disable transfer mode when editing existing non-transfer transactions
   const canToggleTransfer = !data?.id || !!data?.transfer;
 
+  if (!hasFormPermission) {
+    return (
+      <FinancePermissionWarningContent
+        missingPermissions={[
+          isCreateMode ? 'create_transactions' : 'update_transactions',
+        ]}
+        user={permissionRequestUser}
+      />
+    );
+  }
+
   return (
     <>
       <FormContentDialog
@@ -858,7 +911,13 @@ export function TransactionForm({
                 originWalletDisabled={
                   shouldLockCreateOriginWallet || shouldLockEditOriginWallet
                 }
+                originWalletPermissionWarning={
+                  shouldLockCreateOriginWallet
+                    ? createWalletPermissionWarning
+                    : editWalletPermissionWarning
+                }
                 destinationWalletDisabled={shouldLockEditDestinationWallet}
+                destinationWalletPermissionWarning={editWalletPermissionWarning}
                 isTransfer={isTransfer}
                 suggestedExchangeRate={suggestedExchangeRate}
                 isDestinationOverridden={isDestinationOverridden}
@@ -913,6 +972,7 @@ export function TransactionForm({
                 loading={loading}
                 hasFormPermission={!!hasFormPermission}
                 canManageConfidential={!!canManageConfidential}
+                confidentialPermissionWarning={confidentialPermissionWarning}
                 isTransfer={isTransfer}
                 setNewContentType={setNewContentType}
                 setNewContent={setNewContent}

@@ -1,8 +1,8 @@
 import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export type NovaPlatformRole = {
@@ -19,10 +19,7 @@ export function getNovaAppSessionUserFromRequest(
 }
 
 export async function getNovaAppSessionUserFromHeaders() {
-  return getAppSessionUserFromRequest(
-    { headers: await headers() },
-    { targetApp: 'nova' }
-  );
+  return getSatelliteAppSessionUser('nova');
 }
 
 export async function requireNovaAppSessionUser(): Promise<SupabaseUser> {

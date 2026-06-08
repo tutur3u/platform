@@ -5,12 +5,20 @@ import type { AiAgentDefinition } from '@tuturuuu/internal-api/infrastructure';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { SECRET_CLEAR_VALUE } from './ai-agents-utils';
 import { ChannelStatus } from './channel-status';
+import { ZaloPersonalActions } from './zalo-personal-actions';
 
 type Channel = AiAgentDefinition['channels'][number];
 
@@ -221,11 +229,21 @@ export function DiscordChannelFields({
 export function ZaloChannelFields({
   agentId,
   channel,
+  isPending,
+  onRefresh,
 }: {
   agentId?: string;
   channel?: Channel;
+  isPending?: boolean;
+  onRefresh?: () => void;
 }) {
   const t = useTranslations('ai-agents-settings');
+  const [accountMode, setAccountMode] = useState(
+    channel?.zaloAccountMode ?? 'official'
+  );
+  const accountModeTriggerId = agentId
+    ? `${agentId}-zaloAccountMode`
+    : 'new-zaloAccountMode';
 
   return (
     <div className="space-y-3 rounded-lg border border-border bg-background p-4">
@@ -242,32 +260,94 @@ export function ZaloChannelFields({
           name="zaloDisplayName"
           placeholder={t('fields.display_name')}
         />
-        <Input
-          defaultValue={channel?.zaloOfficialAccountId ?? ''}
-          name="zaloOfficialAccountId"
-          placeholder={t('fields.zalo_oa_id')}
-        />
+        <div className="space-y-2">
+          <Label htmlFor={accountModeTriggerId}>
+            {t('fields.zalo_account_mode')}
+          </Label>
+          <Select
+            defaultValue={accountMode}
+            name="zaloAccountMode"
+            onValueChange={(value) =>
+              setAccountMode(value === 'personal' ? 'personal' : 'official')
+            }
+          >
+            <SelectTrigger id={accountModeTriggerId}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="official">
+                {t('fields.zalo_mode_official')}
+              </SelectItem>
+              <SelectItem value="personal">
+                {t('fields.zalo_mode_personal')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Input
           defaultValue={channel?.externalChannelId ?? ''}
           name="zaloExternalChannelId"
           placeholder={t('fields.external_channel_id')}
         />
-        <div className="md:col-span-2">
-          <SensitiveSecretField
-            channel={channel}
-            label={t('fields.zalo_bot_token')}
-            name="zaloBotToken"
-            secretName="botToken"
-          />
-        </div>
-        <div className="md:col-span-2">
-          <SensitiveSecretField
-            channel={channel}
-            label={t('fields.zalo_webhook_secret')}
-            name="zaloWebhookSecret"
-            secretName="webhookSecret"
-          />
-        </div>
+        {accountMode === 'official' ? (
+          <>
+            <Input
+              defaultValue={channel?.zaloOfficialAccountId ?? ''}
+              name="zaloOfficialAccountId"
+              placeholder={t('fields.zalo_oa_id')}
+            />
+            <div className="md:col-span-2">
+              <SensitiveSecretField
+                channel={channel}
+                label={t('fields.zalo_bot_token')}
+                name="zaloBotToken"
+                secretName="botToken"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <SensitiveSecretField
+                channel={channel}
+                label={t('fields.zalo_webhook_secret')}
+                name="zaloWebhookSecret"
+                secretName="webhookSecret"
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="rounded-md border border-dynamic-yellow/30 bg-dynamic-yellow/10 p-3 text-dynamic-yellow text-sm md:col-span-2">
+              {t('zalo_personal.experimental_notice')}
+            </div>
+            <Input
+              className="font-mono"
+              defaultValue={channel?.zaloPersonalOwnId ?? ''}
+              name="zaloPersonalOwnId"
+              placeholder={t('fields.zalo_personal_own_id')}
+              readOnly
+            />
+            <div />
+            <div className="md:col-span-2">
+              <SensitiveSecretField
+                channel={channel}
+                label={t('fields.zalo_personal_cookie_json')}
+                name="zaloPersonalCookieJson"
+                secretName="personalCookieJson"
+              />
+            </div>
+            <SensitiveSecretField
+              channel={channel}
+              label={t('fields.zalo_personal_imei')}
+              name="zaloPersonalImei"
+              secretName="personalImei"
+            />
+            <SensitiveSecretField
+              channel={channel}
+              label={t('fields.zalo_personal_user_agent')}
+              name="zaloPersonalUserAgent"
+              secretName="personalUserAgent"
+            />
+          </>
+        )}
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <ToggleField
@@ -293,6 +373,12 @@ export function ZaloChannelFields({
           name="zaloHistorySyncEnabled"
         />
       </div>
+      <ZaloPersonalActions
+        agentId={agentId}
+        channel={channel}
+        disabled={isPending}
+        onRefresh={onRefresh}
+      />
     </div>
   );
 }

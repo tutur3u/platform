@@ -125,6 +125,10 @@ export function buildAgentPayload(
   const zaloChannelId =
     agent?.channels.find((channel) => channel.adapter === 'zalo')?.id ||
     `${id}-zalo`;
+  const zaloAccountMode =
+    String(formData.get('zaloAccountMode') ?? '').trim() === 'personal'
+      ? 'personal'
+      : 'official';
 
   return {
     channels: [
@@ -160,11 +164,17 @@ export function buildAgentPayload(
         id: zaloChannelId,
         secrets: {
           botToken: channelSecret(formData, 'zaloBotToken'),
+          personalCookieJson: channelSecret(formData, 'zaloPersonalCookieJson'),
+          personalImei: channelSecret(formData, 'zaloPersonalImei'),
+          personalUserAgent: channelSecret(formData, 'zaloPersonalUserAgent'),
           webhookSecret: channelSecret(formData, 'zaloWebhookSecret'),
         },
         workspaceId,
+        zaloAccountMode,
         zaloOfficialAccountId:
           String(formData.get('zaloOfficialAccountId') ?? '').trim() || null,
+        zaloPersonalOwnId:
+          String(formData.get('zaloPersonalOwnId') ?? '').trim() || null,
       },
     ],
     enabled: formData.get('enabled') === 'on',

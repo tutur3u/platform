@@ -611,6 +611,58 @@ export type Database = {
         };
         Relationships: [];
       };
+      calendar_user_workspace_preferences: {
+        Row: {
+          created_at: string;
+          default_calendar_connection_id: string | null;
+          default_provider: Database['public']['Enums']['calendar_provider'];
+          default_workspace_calendar_id: string | null;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          default_calendar_connection_id?: string | null;
+          default_provider?: Database['public']['Enums']['calendar_provider'];
+          default_workspace_calendar_id?: string | null;
+          updated_at?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          default_calendar_connection_id?: string | null;
+          default_provider?: Database['public']['Enums']['calendar_provider'];
+          default_workspace_calendar_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_user_workspace_prefe_default_workspace_calendar_i_fkey';
+            columns: ['default_workspace_calendar_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendars';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_user_workspace_preferences_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'calendar_user_workspace_preferences_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       chat_audit_events: {
         Row: {
           actor_id: string | null;
@@ -1194,6 +1246,529 @@ export type Database = {
           name?: string;
         };
         Relationships: [];
+      };
+      devbox_artifacts: {
+        Row: {
+          artifact_type: string;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          run_id: string;
+          size_bytes: number;
+          storage_path: string;
+        };
+        Insert: {
+          artifact_type: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          run_id: string;
+          size_bytes?: number;
+          storage_path: string;
+        };
+        Update: {
+          artifact_type?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          run_id?: string;
+          size_bytes?: number;
+          storage_path?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_artifacts_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_cache_evictions: {
+        Row: {
+          cache_key: string;
+          created_at: string;
+          id: string;
+          reason: string;
+          runner_id: string | null;
+          size_bytes: number;
+        };
+        Insert: {
+          cache_key: string;
+          created_at?: string;
+          id?: string;
+          reason: string;
+          runner_id?: string | null;
+          size_bytes?: number;
+        };
+        Update: {
+          cache_key?: string;
+          created_at?: string;
+          id?: string;
+          reason?: string;
+          runner_id?: string | null;
+          size_bytes?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_cache_evictions_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_cache_records: {
+        Row: {
+          cache_key: string;
+          cache_type: string;
+          compatibility: Json;
+          created_at: string;
+          id: string;
+          last_used_at: string;
+          runner_id: string | null;
+          size_bytes: number;
+        };
+        Insert: {
+          cache_key: string;
+          cache_type: string;
+          compatibility?: Json;
+          created_at?: string;
+          id?: string;
+          last_used_at?: string;
+          runner_id?: string | null;
+          size_bytes?: number;
+        };
+        Update: {
+          cache_key?: string;
+          cache_type?: string;
+          compatibility?: Json;
+          created_at?: string;
+          id?: string;
+          last_used_at?: string;
+          runner_id?: string | null;
+          size_bytes?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_cache_records_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_env_revisions: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          id: string;
+          lease_id: string;
+          removals: string[];
+          updates: Json;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          id?: string;
+          lease_id: string;
+          removals?: string[];
+          updates?: Json;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          id?: string;
+          lease_id?: string;
+          removals?: string[];
+          updates?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_env_revisions_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_env_revisions_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_env_revisions_lease_id_fkey';
+            columns: ['lease_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_leases';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_leases: {
+        Row: {
+          actor_id: string;
+          cleanup_status: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          keep: boolean;
+          profile: string | null;
+          released_at: string | null;
+          runner_id: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          actor_id: string;
+          cleanup_status?: string;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          keep?: boolean;
+          profile?: string | null;
+          released_at?: string | null;
+          runner_id?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          actor_id?: string;
+          cleanup_status?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          keep?: boolean;
+          profile?: string | null;
+          released_at?: string | null;
+          runner_id?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_leases_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_leases_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_leases_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_preview_requests: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          id: string;
+          lease_id: string;
+          method: string;
+          path: string;
+          port: number;
+          request_headers: Json;
+          response_headers: Json;
+          response_status: number | null;
+          status: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          lease_id: string;
+          method: string;
+          path: string;
+          port: number;
+          request_headers?: Json;
+          response_headers?: Json;
+          response_status?: number | null;
+          status?: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          id?: string;
+          lease_id?: string;
+          method?: string;
+          path?: string;
+          port?: number;
+          request_headers?: Json;
+          response_headers?: Json;
+          response_status?: number | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_preview_requests_lease_id_fkey';
+            columns: ['lease_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_leases';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_run_events: {
+        Row: {
+          created_at: string;
+          event_type: string;
+          id: string;
+          message: string | null;
+          metadata: Json;
+          run_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          message?: string | null;
+          metadata?: Json;
+          run_id: string;
+        };
+        Update: {
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          message?: string | null;
+          metadata?: Json;
+          run_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_run_events_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_runner_tokens: {
+        Row: {
+          created_at: string;
+          id: string;
+          revoked_at: string | null;
+          runner_id: string;
+          token_hash: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          revoked_at?: string | null;
+          runner_id: string;
+          token_hash: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          revoked_at?: string | null;
+          runner_id?: string;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_runner_tokens_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_runners: {
+        Row: {
+          actor_id: string;
+          capabilities: Json;
+          created_at: string;
+          id: string;
+          last_heartbeat_at: string | null;
+          name: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          actor_id: string;
+          capabilities?: Json;
+          created_at?: string;
+          id?: string;
+          last_heartbeat_at?: string | null;
+          name: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          actor_id?: string;
+          capabilities?: Json;
+          created_at?: string;
+          id?: string;
+          last_heartbeat_at?: string | null;
+          name?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_runners_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_runners_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      devbox_runs: {
+        Row: {
+          actor_id: string;
+          command: string[];
+          completed_at: string | null;
+          created_at: string;
+          env: Json;
+          env_files: string[];
+          exit_code: number | null;
+          id: string;
+          lease_id: string;
+          preview_ports: number[];
+          runner_id: string | null;
+          started_at: string | null;
+          status: string;
+          timeout_seconds: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          actor_id: string;
+          command: string[];
+          completed_at?: string | null;
+          created_at?: string;
+          env?: Json;
+          env_files?: string[];
+          exit_code?: number | null;
+          id?: string;
+          lease_id: string;
+          preview_ports?: number[];
+          runner_id?: string | null;
+          started_at?: string | null;
+          status?: string;
+          timeout_seconds?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          actor_id?: string;
+          command?: string[];
+          completed_at?: string | null;
+          created_at?: string;
+          env?: Json;
+          env_files?: string[];
+          exit_code?: number | null;
+          id?: string;
+          lease_id?: string;
+          preview_ports?: number[];
+          runner_id?: string | null;
+          started_at?: string | null;
+          status?: string;
+          timeout_seconds?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_runs_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_runs_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_runs_lease_id_fkey';
+            columns: ['lease_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_leases';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'devbox_runs_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runners';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      devbox_sync_artifacts: {
+        Row: {
+          created_at: string;
+          id: string;
+          lease_id: string | null;
+          manifest: Json;
+          run_id: string | null;
+          sha256: string | null;
+          size_bytes: number;
+          storage_path: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          lease_id?: string | null;
+          manifest?: Json;
+          run_id?: string | null;
+          sha256?: string | null;
+          size_bytes?: number;
+          storage_path: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          lease_id?: string | null;
+          manifest?: Json;
+          run_id?: string | null;
+          sha256?: string | null;
+          size_bytes?: number;
+          storage_path?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_sync_artifacts_lease_id_fkey';
+            columns: ['lease_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_leases';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'devbox_sync_artifacts_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runs';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       email_bounce_complaints: {
         Row: {
@@ -1976,6 +2551,152 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [];
+      };
+      infrastructure_stress_test_runs: {
+        Row: {
+          abort_reason: string | null;
+          abort_requested_at: string | null;
+          abort_requested_by: string | null;
+          control_request_id: string | null;
+          created_at: string;
+          ended_at: string | null;
+          error_message: string | null;
+          id: string;
+          profile: Json;
+          profile_id: string;
+          queued_at: string;
+          requested_by: string | null;
+          requested_by_email: string | null;
+          resource_spikes: Json;
+          result_notes: string | null;
+          samples_ingested_at: string | null;
+          started_at: string | null;
+          status: string;
+          summary: Json;
+          target_id: string;
+          target_label: string;
+          target_url: string;
+          updated_at: string;
+        };
+        Insert: {
+          abort_reason?: string | null;
+          abort_requested_at?: string | null;
+          abort_requested_by?: string | null;
+          control_request_id?: string | null;
+          created_at?: string;
+          ended_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          profile?: Json;
+          profile_id: string;
+          queued_at?: string;
+          requested_by?: string | null;
+          requested_by_email?: string | null;
+          resource_spikes?: Json;
+          result_notes?: string | null;
+          samples_ingested_at?: string | null;
+          started_at?: string | null;
+          status?: string;
+          summary?: Json;
+          target_id: string;
+          target_label: string;
+          target_url: string;
+          updated_at?: string;
+        };
+        Update: {
+          abort_reason?: string | null;
+          abort_requested_at?: string | null;
+          abort_requested_by?: string | null;
+          control_request_id?: string | null;
+          created_at?: string;
+          ended_at?: string | null;
+          error_message?: string | null;
+          id?: string;
+          profile?: Json;
+          profile_id?: string;
+          queued_at?: string;
+          requested_by?: string | null;
+          requested_by_email?: string | null;
+          resource_spikes?: Json;
+          result_notes?: string | null;
+          samples_ingested_at?: string | null;
+          started_at?: string | null;
+          status?: string;
+          summary?: Json;
+          target_id?: string;
+          target_label?: string;
+          target_url?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      infrastructure_stress_test_samples: {
+        Row: {
+          active_requests: number;
+          cpu_percent: number | null;
+          created_at: string;
+          error_rate: number | null;
+          id: number;
+          latency_p50_ms: number | null;
+          latency_p95_ms: number | null;
+          latency_p99_ms: number | null;
+          memory_bytes: number | null;
+          metadata: Json;
+          requests_per_second: number;
+          run_id: string;
+          rx_bytes: number | null;
+          sampled_at: string;
+          status_codes: Json;
+          tx_bytes: number | null;
+          virtual_users: number;
+        };
+        Insert: {
+          active_requests?: number;
+          cpu_percent?: number | null;
+          created_at?: string;
+          error_rate?: number | null;
+          id?: number;
+          latency_p50_ms?: number | null;
+          latency_p95_ms?: number | null;
+          latency_p99_ms?: number | null;
+          memory_bytes?: number | null;
+          metadata?: Json;
+          requests_per_second?: number;
+          run_id: string;
+          rx_bytes?: number | null;
+          sampled_at: string;
+          status_codes?: Json;
+          tx_bytes?: number | null;
+          virtual_users?: number;
+        };
+        Update: {
+          active_requests?: number;
+          cpu_percent?: number | null;
+          created_at?: string;
+          error_rate?: number | null;
+          id?: number;
+          latency_p50_ms?: number | null;
+          latency_p95_ms?: number | null;
+          latency_p99_ms?: number | null;
+          memory_bytes?: number | null;
+          metadata?: Json;
+          requests_per_second?: number;
+          run_id?: string;
+          rx_bytes?: number | null;
+          sampled_at?: string;
+          status_codes?: Json;
+          tx_bytes?: number | null;
+          virtual_users?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'infrastructure_stress_test_samples_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'infrastructure_stress_test_runs';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       internal_email_api_keys: {
         Row: {
@@ -3825,6 +4546,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'mind_ai_messages_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
             foreignKeyName: 'mind_ai_messages_creator_id_fkey';
             columns: ['creator_id'];
             isOneToOne: false;
@@ -3844,6 +4572,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mind_ai_threads';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_ai_messages_thread_workspace_fk';
+            columns: ['thread_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_ai_threads';
+            referencedColumns: ['id', 'ws_id'];
           },
         ];
       };
@@ -3899,6 +4634,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'mind_ai_patches_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
             foreignKeyName: 'mind_ai_patches_created_by_fkey';
             columns: ['created_by'];
             isOneToOne: false;
@@ -3918,6 +4660,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mind_ai_threads';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_ai_patches_thread_workspace_fk';
+            columns: ['thread_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_ai_threads';
+            referencedColumns: ['id', 'ws_id'];
           },
         ];
       };
@@ -3965,6 +4714,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mind_boards';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_ai_threads_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
           },
           {
             foreignKeyName: 'mind_ai_threads_creator_id_fkey';
@@ -4094,11 +4850,32 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'mind_edges_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'mind_edges_source_board_workspace_fk';
+            columns: ['source_node_id', 'board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id', 'board_id', 'ws_id'];
+          },
+          {
             foreignKeyName: 'mind_edges_source_node_id_fkey';
             columns: ['source_node_id'];
             isOneToOne: false;
             referencedRelation: 'mind_nodes';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_edges_target_board_workspace_fk';
+            columns: ['target_node_id', 'board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id', 'board_id', 'ws_id'];
           },
           {
             foreignKeyName: 'mind_edges_target_node_id_fkey';
@@ -4372,11 +5149,32 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'mind_nodes_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'mind_nodes_merged_board_workspace_fk';
+            columns: ['merged_into_node_id', 'board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id', 'board_id', 'ws_id'];
+          },
+          {
             foreignKeyName: 'mind_nodes_merged_into_node_id_fkey';
             columns: ['merged_into_node_id'];
             isOneToOne: false;
             referencedRelation: 'mind_nodes';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_nodes_parent_board_workspace_fk';
+            columns: ['parent_node_id', 'board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id', 'board_id', 'ws_id'];
           },
           {
             foreignKeyName: 'mind_nodes_parent_node_id_fkey';
@@ -4419,6 +5217,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mind_boards';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_tags_board_workspace_fk';
+            columns: ['board_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id', 'ws_id'];
           },
         ];
       };
@@ -8151,8 +8956,37 @@ export type Database = {
         Args: { p_actor_user_id: string; p_target_user_id: string };
         Returns: boolean;
       };
+      claim_next_devbox_run: {
+        Args: { p_runner_id: string };
+        Returns: {
+          actor_id: string;
+          command: string[];
+          created_at: string;
+          env: Json;
+          env_files: string[];
+          id: string;
+          lease_id: string;
+          preview_ports: number[];
+          timeout_seconds: number;
+          updated_at: string;
+        }[];
+      };
       clamp_abuse_score: { Args: { p_value: number }; Returns: number };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
+      complete_devbox_run: {
+        Args: {
+          p_exit_code: number;
+          p_run_id: string;
+          p_runner_id: string;
+          p_status: string;
+        };
+        Returns: {
+          exit_code: number;
+          id: string;
+          lease_id: string;
+          status: string;
+        }[];
+      };
       compute_abuse_risk_tier: {
         Args: { p_confidence: number; p_score: number };
         Returns: Database['public']['Enums']['abuse_risk_tier'];
@@ -8167,6 +9001,40 @@ export type Database = {
           p_search_count?: number;
         };
         Returns: number;
+      };
+      count_task_source_filter_lists: {
+        Args: {
+          p_actor_id: string;
+          p_assigned_to_me?: boolean;
+          p_assignee_ids?: string[];
+          p_board_id?: string;
+          p_closed_mode?: string;
+          p_completed_mode?: string;
+          p_display_number?: number;
+          p_due_date_from?: string;
+          p_due_date_to?: string;
+          p_estimation_max?: number;
+          p_estimation_min?: number;
+          p_has_due_date?: boolean;
+          p_include_archived_boards?: boolean;
+          p_include_deleted?: string;
+          p_include_unassigned?: boolean;
+          p_label_ids?: string[];
+          p_list_id?: string;
+          p_list_statuses?: string[];
+          p_priorities?: string[];
+          p_project_ids?: string[];
+          p_search?: string;
+          p_source_board_ids?: string[];
+          p_source_scope?: string;
+          p_source_workspace_ids?: string[];
+          p_ticket_prefix?: string;
+          p_workspace_id: string;
+        };
+        Returns: {
+          list_id: string;
+          total_count: number;
+        }[];
       };
       count_workspace_user_groups_for_table: {
         Args: {
@@ -8490,6 +9358,13 @@ export type Database = {
         Returns: string;
       };
       get_request_ip: { Args: { p_headers: Json }; Returns: unknown };
+      get_task_board_list_task_counts: {
+        Args: { p_board_id: string };
+        Returns: {
+          list_id: string;
+          task_count: number;
+        }[];
+      };
       get_transaction_tag_stats: {
         Args: { _actor_id: string; _ws_id: string };
         Returns: {
@@ -8839,16 +9714,26 @@ export type Database = {
         Args: {
           p_actor_id: string;
           p_assigned_to_me?: boolean;
+          p_assignee_ids?: string[];
           p_board_id?: string;
           p_closed_mode?: string;
           p_completed_mode?: string;
           p_display_number?: number;
+          p_due_date_from?: string;
+          p_due_date_to?: string;
+          p_estimation_max?: number;
+          p_estimation_min?: number;
+          p_has_due_date?: boolean;
           p_include_archived_boards?: boolean;
           p_include_deleted?: string;
+          p_include_unassigned?: boolean;
+          p_label_ids?: string[];
           p_limit?: number;
           p_list_id?: string;
           p_list_statuses?: string[];
           p_offset?: number;
+          p_priorities?: string[];
+          p_project_ids?: string[];
           p_search?: string;
           p_sort_by?: string;
           p_source_board_ids?: string[];
@@ -8858,6 +9743,7 @@ export type Database = {
           p_workspace_id: string;
         };
         Returns: {
+          list_id: string;
           task_id: string;
           total_count: number;
         }[];
@@ -10735,6 +11621,7 @@ export type Database = {
       };
       calendar_connections: {
         Row: {
+          access_role: string | null;
           auth_token_id: string | null;
           calendar_id: string;
           calendar_name: string;
@@ -10748,6 +11635,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          access_role?: string | null;
           auth_token_id?: string | null;
           calendar_id: string;
           calendar_name: string;
@@ -10761,6 +11649,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          access_role?: string | null;
           auth_token_id?: string | null;
           calendar_id?: string;
           calendar_name?: string;
@@ -12392,6 +13281,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_customer_workspace_fkey';
+            columns: ['ws_id', 'customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'finance_invoices_customer_workspace_fkey';
+            columns: ['ws_id', 'customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['ws_id', 'id'];
           },
           {
             foreignKeyName: 'finance_invoices_platform_creator_id_fkey';
@@ -19951,6 +20854,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_guest';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_group_attendance_member_fkey';
+            columns: ['user_id', 'group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_users';
+            referencedColumns: ['user_id', 'group_id'];
           },
           {
             foreignKeyName: 'user_group_attendance_user_id_fkey';
@@ -34608,7 +35518,8 @@ export type Database = {
         | 'view_chat'
         | 'create_chat'
         | 'manage_chat'
-        | 'moderate_chat';
+        | 'moderate_chat'
+        | 'manage_infrastructure_stress_tests';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -37349,6 +38260,7 @@ export const Constants = {
         'create_chat',
         'manage_chat',
         'moderate_chat',
+        'manage_infrastructure_stress_tests',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

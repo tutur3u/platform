@@ -14,12 +14,16 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { AppCoordinationTokenClaims } from '../app-coordination';
 import {
+  APP_SESSION_SCOPE,
+  clearAppSessionCookie,
   clearSupabaseAuthCookies,
+  createAppSessionToken,
   getAppSessionRefreshEarlySeconds,
   getAppSessionRefreshTokenFromRequest,
   getAppSessionTokenFromRequest,
   getWebAppSessionRefreshTokenFromRequest,
   getWebAppSessionTokenFromRequest,
+  hasSupportedSupabaseAuthCookie,
   verifyAppSessionRequest,
 } from '../app-session';
 import {
@@ -162,6 +166,13 @@ export function propagateAuthCookies(
   source: NextResponse,
   target: NextResponse
 ): void {
+  const setCookieHeaders = getSetCookieHeaders(source.headers);
+
+  if (setCookieHeaders.length > 0) {
+    copySetCookieHeaders(setCookieHeaders, target);
+    return;
+  }
+
   for (const cookie of source.cookies.getAll()) {
     target.cookies.set(cookie);
   }
@@ -178,7 +189,14 @@ function getSetCookieHeaders(headers: Headers) {
   }
 
   const singleHeader = headers.get('set-cookie');
-  return singleHeader ? [singleHeader] : [];
+  return singleHeader ? splitCombinedSetCookieHeader(singleHeader) : [];
+}
+
+function splitCombinedSetCookieHeader(header: string) {
+  return header
+    .split(/,\s*(?=[A-Za-z0-9!#$%&'*+\-.^_`|~]+=)/u)
+    .map((setCookie) => setCookie.trim())
+    .filter(Boolean);
 }
 
 function parseCookieHeader(cookieHeader: string | null) {
@@ -237,15 +255,33 @@ export function getRequestHeadersWithResponseCookies(
   req: NextRequest,
   response: NextResponse
 ) {
+  const headers = new Headers(req.headers);
+  const overrideHeaders = response.headers
+    .get('x-middleware-override-headers')
+    ?.split(',')
+    .map((header) => header.trim())
+    .filter(Boolean);
+
+  for (const header of overrideHeaders ?? []) {
+    const overrideValue = response.headers.get(
+      `x-middleware-request-${header}`
+    );
+
+    if (overrideValue === null) {
+      headers.delete(header);
+    } else {
+      headers.set(header, overrideValue);
+    }
+  }
+
   const setCookieHeaders = getSetCookieHeaders(response.headers);
 
   if (setCookieHeaders.length === 0) {
-    return req.headers;
+    return headers;
   }
 
-  const headers = new Headers(req.headers);
   const nextCookieHeader = updateCookieHeaderFromSetCookies(
-    req.headers.get('cookie'),
+    headers.get('cookie'),
     setCookieHeaders
   );
 
@@ -482,16 +518,110 @@ type AppSessionRefreshState =
       ok: false;
     };
 
+function createAppSessionClaimsFromSupabaseClaims(
+  claims: unknown,
+  options: {
+    now: Date;
+    targetApp: AppName | string;
+  }
+): AppCoordinationTokenClaims | null {
+  const record = asRecord(claims);
+  const sub = typeof record.sub === 'string' ? record.sub : null;
+
+  if (!sub) {
+    return null;
+  }
+
+  const nowSeconds = Math.floor(options.now.getTime() / 1000);
+  const exp = typeof record.exp === 'number' ? record.exp : nowSeconds + 3600;
+  const iat = typeof record.iat === 'number' ? record.iat : nowSeconds;
+  const sessionId =
+    typeof record.session_id === 'string' ? record.session_id : null;
+
+  return {
+    aud: 'tuturuuu-api',
+    email: typeof record.email === 'string' ? record.email : null,
+    exp,
+    iat,
+    iss: 'tuturuuu',
+    jti: sessionId ?? `supabase:${sub}:${iat}`,
+    origin_app: 'web',
+    scopes: [APP_SESSION_SCOPE],
+    sub,
+    target_app: options.targetApp,
+    typ: 'app_coordination',
+  };
+}
+
+function createSupabaseBackedAppSessionResponse(
+  req: NextRequest,
+  res: NextResponse,
+  claims: AppCoordinationTokenClaims,
+  options: {
+    now: Date;
+    targetApp: AppName | string;
+  }
+) {
+  const nowSeconds = Math.floor(options.now.getTime() / 1000);
+  const secondsUntilExpiry = claims.exp - nowSeconds;
+  const { token } = createAppSessionToken(
+    {
+      email: claims.email ?? undefined,
+      expiresInSeconds: Math.max(1, secondsUntilExpiry),
+      scopes: claims.scopes,
+      targetApp: options.targetApp,
+      userId: claims.sub,
+    },
+    { now: options.now }
+  );
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set('authorization', `Bearer ${token}`);
+  const response = createNextResponseWithRequestHeaders(requestHeaders);
+  copySetCookieHeaders(getSetCookieHeaders(res.headers), response);
+  clearAppSessionCookie(response);
+
+  return { requestHeaders, response };
+}
+
 export async function refreshAppSessionForRequest(
   req: NextRequest,
   options: {
     now?: Date;
     requireWebAppSession?: boolean;
     refreshPath?: string;
+    sessionMode?: 'app-session' | 'supabase-first';
     targetApp: AppName | string;
   }
 ): Promise<AppSessionRefreshState> {
   const now = options.now ?? new Date();
+
+  if (
+    options.sessionMode === 'supabase-first' &&
+    hasSupportedSupabaseAuthCookie(req)
+  ) {
+    const { res, claims } = await updateSession(req);
+    const appSessionClaims = createAppSessionClaimsFromSupabaseClaims(claims, {
+      now,
+      targetApp: options.targetApp,
+    });
+
+    if (appSessionClaims) {
+      const { requestHeaders, response } =
+        createSupabaseBackedAppSessionResponse(req, res, appSessionClaims, {
+          now,
+          targetApp: options.targetApp,
+        });
+
+      return {
+        claims: appSessionClaims,
+        ok: true,
+        refreshed: false,
+        requestHeaders,
+        response,
+      };
+    }
+  }
+
   const verification = verifyAppSessionRequest(req, {
     now,
     targetApp: options.targetApp,
@@ -862,6 +992,7 @@ interface CentralizedAuthOptions {
    */
   appSession?: {
     now?: Date;
+    sessionMode?: 'app-session' | 'supabase-first';
     targetApp: AppName | string;
   };
 }
@@ -907,8 +1038,58 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
         isPublicPath?.(req.nextUrl.pathname);
 
       if (appSession) {
+        if (hasSupportedSupabaseAuthCookie(req)) {
+          const { res, claims } = await updateSession(req);
+
+          if (claims) {
+            if (mfaEnabled) {
+              const mfaRedirect = await handleMFACheck(
+                req,
+                claims.aal,
+                claims.sub,
+                sessionIdFromClaims(claims),
+                webAppUrl,
+                mfaProtectedPaths,
+                mfaExcludedPaths,
+                mfaEnforceForAll
+              );
+
+              if (mfaRedirect) {
+                propagateAuthCookies(res, mfaRedirect);
+                clearAppSessionCookie(mfaRedirect);
+                return mfaRedirect;
+              }
+            }
+
+            const now = appSession.now ?? new Date();
+            const appSessionClaims = createAppSessionClaimsFromSupabaseClaims(
+              claims,
+              {
+                now,
+                targetApp: appSession.targetApp,
+              }
+            );
+
+            if (appSessionClaims) {
+              return createSupabaseBackedAppSessionResponse(
+                req,
+                res,
+                appSessionClaims,
+                {
+                  now,
+                  targetApp: appSession.targetApp,
+                }
+              ).response;
+            }
+
+            clearAppSessionCookie(res);
+            return res;
+          }
+        }
+
         const appSessionVerification = await refreshAppSessionForRequest(req, {
           now: appSession.now,
+          sessionMode: appSession.sessionMode,
           targetApp: appSession.targetApp,
         });
 

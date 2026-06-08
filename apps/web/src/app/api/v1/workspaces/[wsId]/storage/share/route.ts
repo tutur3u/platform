@@ -9,6 +9,7 @@ import {
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
 import {
+  FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,
 } from '../route-auth';
@@ -56,11 +57,13 @@ async function resolveSignedUrl(
   }
 ) {
   const { wsId } = await params;
-  const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+  const auth = await resolveWorkspaceStorageRouteAuth(request, wsId, {
+    appSessionTargets: FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
+  });
   if (!auth.ok) {
     return auth.response;
   }
-  const { normalizedWsId, permissions, userId } = auth.context;
+  const { normalizedWsId, permissions, supabase, userId } = auth.context;
 
   const sanitizedPath = sanitizePath(input.path);
   if (!sanitizedPath) {
@@ -76,6 +79,7 @@ async function resolveSignedUrl(
       normalizedWsId,
       path: sanitizedPath,
       permissions,
+      supabase,
       userId,
     });
 

@@ -36,10 +36,10 @@
     "bcrypt": "^6.0.0",
     "dayjs": "^1.11.20",
     "nanoid": "^5.1.11",
-    "next": "^16.2.6",
+    "next": "^16.2.7",
     "next-intl": "^4.13.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -47,7 +47,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^25.9.1",
-    "@types/react": "^19.2.15",
+    "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "^1.0.0",
     "postcss": "^8.5.14",

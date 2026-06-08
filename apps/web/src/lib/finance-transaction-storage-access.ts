@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { getPermissions } from '@tuturuuu/utils/workspace-helper';
 
 type PermissionsResult = Awaited<ReturnType<typeof getPermissions>>;
@@ -21,12 +22,14 @@ export async function canAccessFinanceTransactionStoragePath({
   normalizedWsId,
   path,
   permissions,
+  supabase,
   userId,
 }: {
   access: 'read' | 'write';
   normalizedWsId: string;
   path: string;
   permissions: PermissionsResult;
+  supabase: TypedSupabaseClient;
   userId: string;
 }) {
   if (!permissions) {
@@ -36,6 +39,20 @@ export async function canAccessFinanceTransactionStoragePath({
   const transactionId = getFinanceTransactionIdFromStoragePath(path);
   if (!transactionId) {
     return false;
+  }
+
+  if (access === 'read') {
+    const { data, error } = await supabase.rpc(
+      'get_wallet_transactions_with_permissions',
+      {
+        p_ws_id: normalizedWsId,
+        p_user_id: userId,
+        p_transaction_ids: [transactionId],
+        p_limit: 1,
+      }
+    );
+
+    return !error && (data?.length ?? 0) > 0;
   }
 
   const sbAdmin = await createAdminClient();
@@ -60,14 +77,6 @@ export async function canAccessFinanceTransactionStoragePath({
 
   if (transactionWorkspaceId !== normalizedWsId) {
     return false;
-  }
-
-  if (
-    access === 'read' &&
-    (permissions.containsPermission('view_transactions') ||
-      permissions.containsPermission('update_transactions'))
-  ) {
-    return true;
   }
 
   if (

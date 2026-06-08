@@ -2,6 +2,7 @@ import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
@@ -66,7 +67,7 @@ function isRootPathOrLocaleRoot(pathname: string) {
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
-  appSession: { targetApp: 'meet' },
+  appSession: { sessionMode: 'supabase-first', targetApp: 'meet' },
   webAppUrl: TTR_URL,
   publicPaths: AUTH_PUBLIC_PATHS,
   skipApiRoutes: true,
@@ -84,6 +85,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const appSessionRefresh = isLocalAuthApi
       ? null
       : await refreshAppSessionForRequest(req, {
+          sessionMode: 'supabase-first',
           targetApp: 'meet',
         });
 
@@ -131,11 +133,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     targetApp: 'meet',
   });
   const hasWebAppSession = hasWebAppSessionTokenFromRequest(authRequest);
+  const hasSupabaseSession = hasSupportedSupabaseAuthCookie(authRequest);
+  const hasSatelliteSession =
+    hasSupabaseSession || Boolean(appSession && hasWebAppSession);
   const pathSegments = getPathSegments(req.nextUrl.pathname);
   const loginSegmentIndex = isLocaleSegment(pathSegments[0]) ? 1 : 0;
   const isLoginPath = pathSegments[loginSegmentIndex] === 'login';
 
-  if (isLoginPath && appSession && hasWebAppSession) {
+  if (isLoginPath && hasSatelliteSession) {
     const nextPath = normalizeAuthRedirectPath(
       req.nextUrl.searchParams.get('next') ??
         req.nextUrl.searchParams.get('nextUrl'),
@@ -150,7 +155,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return loginRedirect;
   }
 
-  if (isRootPathOrLocaleRoot(req.nextUrl.pathname) && appSession) {
+  if (isRootPathOrLocaleRoot(req.nextUrl.pathname) && hasSatelliteSession) {
     try {
       const defaultWorkspace = await getCurrentUserDefaultWorkspace(
         withForwardedInternalApiAuth(authRequestHeaders)

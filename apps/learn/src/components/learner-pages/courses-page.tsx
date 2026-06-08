@@ -9,7 +9,10 @@ import {
   Play,
   Zap,
 } from '@tuturuuu/icons';
-import { type CourseListItem, listSharedCourses } from '@tuturuuu/internal-api';
+import {
+  listTulearnCourses,
+  type TulearnCourseSummary,
+} from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
@@ -30,8 +33,8 @@ export function CoursesPage({ wsId }: { wsId: string }) {
   const studentId = useStudentId();
   const courses = useQuery({
     enabled: Boolean(wsId),
-    queryFn: () => listSharedCourses(wsId, studentId),
-    queryKey: ['courses', wsId, studentId],
+    queryFn: () => listTulearnCourses(wsId, studentId),
+    queryKey: ['tulearn', wsId, studentId, 'courses'],
   });
 
   if (courses.isLoading) return <LoadingState />;
@@ -63,7 +66,7 @@ function CanvasCourseCard({
   index,
   wsId,
 }: {
-  course: CourseListItem;
+  course: TulearnCourseSummary;
   index: number;
   wsId: string;
 }) {

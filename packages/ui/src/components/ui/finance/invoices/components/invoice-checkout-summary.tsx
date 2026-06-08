@@ -45,7 +45,10 @@ export function InvoiceCheckoutSummary({
           <span className="text-muted-foreground">
             {t('ws-invoices.subtotal')}
           </span>
-          <FinanceDisplayAmount value={formatCurrency(subtotal, currency)} />
+          <FinanceDisplayAmount
+            alwaysShow
+            value={formatCurrency(subtotal, currency)}
+          />
         </div>
 
         {discountAmount !== undefined && discountLabel && (
@@ -54,6 +57,7 @@ export function InvoiceCheckoutSummary({
               {t('ws-invoices.discount')} ({discountLabel})
             </span>
             <FinanceDisplayAmount
+              alwaysShow
               className={discountClassName}
               value={`-${formatCurrency(discountAmount, currency)}`}
             />
@@ -65,6 +69,7 @@ export function InvoiceCheckoutSummary({
         <div className="flex justify-between font-semibold">
           <span>{t('ws-invoices.total')}</span>
           <FinanceDisplayAmount
+            alwaysShow
             value={formatCurrency(roundedTotal, currency)}
           />
         </div>
@@ -73,6 +78,7 @@ export function InvoiceCheckoutSummary({
           <div className="flex justify-between text-muted-foreground text-sm">
             <span>{t('ws-invoices.adjustment')}</span>
             <FinanceDisplayAmount
+              alwaysShow
               value={`${roundedTotal > totalBeforeRounding ? '+' : ''}${formatCurrency(
                 roundedTotal - totalBeforeRounding,
                 currency

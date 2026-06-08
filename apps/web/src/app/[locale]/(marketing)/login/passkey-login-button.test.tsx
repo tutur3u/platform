@@ -84,6 +84,30 @@ describe('PasskeyLoginButton', () => {
     });
   });
 
+  it('passes a supplied captcha token even when Turnstile is optional', async () => {
+    const onAuthenticated = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <PasskeyLoginButton
+        captchaToken="captcha-token"
+        onAuthenticated={onAuthenticated}
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /continue with passkey/i })
+    );
+
+    await waitFor(() => {
+      expect(mockSignInWithPasskey).toHaveBeenCalledWith({
+        options: {
+          captchaToken: 'captcha-token',
+        },
+      });
+      expect(onAuthenticated).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('disables passkey sign-in when required Turnstile verification is missing', () => {
     const onAuthenticated = vi.fn();
 
@@ -98,6 +122,31 @@ describe('PasskeyLoginButton', () => {
     expect(
       screen.getByRole('button', { name: /continue with passkey/i })
     ).toBeDisabled();
+  });
+
+  it('surfaces the Turnstile error that blocks passkey sign-in', () => {
+    const onAuthenticated = vi.fn();
+
+    render(
+      <PasskeyLoginButton
+        canRenderTurnstile
+        onAuthenticated={onAuthenticated}
+        requiresTurnstile
+        turnstileError="Security verification is not authorized for this hostname."
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /continue with passkey/i })
+    );
+
+    expect(
+      screen.getByText(
+        'Security verification is not authorized for this hostname.'
+      )
+    ).toBeInTheDocument();
+    expect(mockSignInWithPasskey).not.toHaveBeenCalled();
+    expect(onAuthenticated).not.toHaveBeenCalled();
   });
 
   it('resets Turnstile after a passkey sign-in error', async () => {

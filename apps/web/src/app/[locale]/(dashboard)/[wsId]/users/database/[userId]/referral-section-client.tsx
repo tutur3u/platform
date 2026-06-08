@@ -8,6 +8,12 @@ import {
   UserMinus,
   UserPlus,
 } from '@tuturuuu/icons';
+import {
+  createWorkspaceUserReferral,
+  deleteWorkspaceUserReferral,
+  listWorkspaceUserReferralCandidates,
+  listWorkspaceUserReferrals,
+} from '@tuturuuu/internal-api/users';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -66,26 +72,19 @@ export default function ReferralSectionClient({
       trimmedSearchQuery,
     ],
     queryFn: async (): Promise<{ data: WorkspaceUser[]; count: number }> => {
-      const searchParams = new URLSearchParams({ type: 'available' });
-      if (trimmedSearchQuery) {
-        searchParams.set('q', trimmedSearchQuery);
-      }
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/referrals?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) throw new Error('Failed to fetch available users');
-      const data = await response.json();
-      const users = (Array.isArray(data) ? data : []) as WorkspaceUser[];
+      const users = (await listWorkspaceUserReferralCandidates(wsId, userId, {
+        q: trimmedSearchQuery || undefined,
+      })) as WorkspaceUser[];
       return { data: users, count: users.length };
     },
-    initialData: trimmedSearchQuery
-      ? undefined
-      : {
-          data: initialAvailableUsers,
-          count: initialAvailableUsersCount,
-        },
+    enabled: canUpdateUsers,
+    initialData:
+      trimmedSearchQuery || !canUpdateUsers
+        ? undefined
+        : {
+            data: initialAvailableUsers,
+            count: initialAvailableUsersCount,
+          },
     staleTime: 5 * 60 * 1000,
   });
 
@@ -93,13 +92,8 @@ export default function ReferralSectionClient({
   const currentReferralsQuery = useQuery({
     queryKey: ['ws', wsId, 'user', userId, 'referrals', 'count'],
     queryFn: async (): Promise<number> => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/referrals`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) throw new Error('Failed to fetch referral count');
-      const data = await response.json();
-      return (data?.count || 0) as number;
+      const data = await listWorkspaceUserReferrals(wsId, userId);
+      return data.count || 0;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -108,13 +102,8 @@ export default function ReferralSectionClient({
   const referredUsersQuery = useQuery({
     queryKey: ['ws', wsId, 'user', userId, 'referrals', 'list'],
     queryFn: async (): Promise<WorkspaceUser[]> => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/referrals`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) throw new Error('Failed to fetch referred users');
-      const data = await response.json();
-      return (Array.isArray(data?.data) ? data.data : []) as WorkspaceUser[];
+      const data = await listWorkspaceUserReferrals(wsId, userId);
+      return data.data as WorkspaceUser[];
     },
     initialData: initialReferredUsers,
     staleTime: 5 * 60 * 1000,
@@ -153,18 +142,7 @@ export default function ReferralSectionClient({
 
   const referUserMutation = useMutation({
     mutationFn: async (referredUserId: string) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/referrals`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ referredUserId }),
-        }
-      );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error?.message || 'Failed to refer user');
-      }
+      await createWorkspaceUserReferral(wsId, userId, referredUserId);
       return referredUserId;
     },
     onSuccess: async (referredUserId) => {
@@ -222,16 +200,7 @@ export default function ReferralSectionClient({
 
   const unreferUserMutation = useMutation({
     mutationFn: async (referredUserId: string) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/referrals?referredUserId=${referredUserId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error?.message || 'Failed to remove referral');
-      }
+      await deleteWorkspaceUserReferral(wsId, userId, referredUserId);
       return referredUserId;
     },
     onSuccess: async () => {

@@ -1,4 +1,4 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import NavbarActions from '@tuturuuu/satellite/navbar-actions';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import { UserNav } from '@tuturuuu/satellite/user-nav';
@@ -30,10 +30,7 @@ interface LayoutProps {
 export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
   const requestHeaders = await headers();
-  const user = getAppSessionUserFromRequest(
-    { headers: requestHeaders },
-    { targetApp: 'mail' }
-  );
+  const user = await getSatelliteAppSessionUser('mail');
 
   if (!user?.id) redirect('/login');
   if (!isExactTuturuuuDotComEmail(user.email)) redirect('/not-available');

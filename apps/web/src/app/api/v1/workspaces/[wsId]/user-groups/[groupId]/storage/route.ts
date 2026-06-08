@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
@@ -6,10 +7,11 @@ import type { SessionAuthContext } from '@/lib/api-auth';
 import { withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
+import { triggerWorkspaceStorageAutoExtract } from '@/lib/workspace-storage-auto-extract';
 import {
-  createWorkspaceStorageUploadPayload,
   deleteWorkspaceStorageObjectByPath,
   listWorkspaceStorageDirectory,
+  uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
 import { validateWorkspaceStorageUploadMetadata } from '@/lib/workspace-storage-upload-policy';
@@ -121,13 +123,6 @@ export const GET = withSessionAuth<{
   { allowAppSessionAuth: { targetApp: 'teach' } }
 );
 
-const uploadUrlSchema = z.object({
-  contentType: z.string().max(255).optional(),
-  filename: z.string().min(1).max(255),
-  upsert: z.boolean().optional(),
-  size: z.number().int().min(0).optional(),
-});
-
 export const POST = withSessionAuth<{
   groupId: string;
   wsId: string;
@@ -143,46 +138,26 @@ export const POST = withSessionAuth<{
         return prepared;
       }
 
-      let payload: unknown;
+      let formData: FormData;
       try {
-        payload = await request.json();
+        formData = await request.formData();
       } catch {
         return NextResponse.json(
-          { message: 'Invalid request body' },
+          { message: 'Invalid upload body' },
           { status: 400 }
         );
       }
 
-      const parsed = uploadUrlSchema.safeParse(payload);
-      if (!parsed.success) {
-        // Include the raw payload in dev-mode responses to aid debugging of
-        // client-side issues (do not expose sensitive data in production).
-        const bodyPreview =
-          process.env.NODE_ENV === 'production'
-            ? undefined
-            : (() => {
-                try {
-                  return JSON.parse(JSON.stringify(payload));
-                } catch {
-                  return String(payload);
-                }
-              })();
-
-        return NextResponse.json(
-          {
-            message: 'Invalid request body',
-            errors: parsed.error.issues,
-            payload: bodyPreview,
-          },
-          { status: 400 }
-        );
+      const file = formData.get('file');
+      if (!(file instanceof File)) {
+        return NextResponse.json({ message: 'Missing file' }, { status: 400 });
       }
 
-      let sanitizedFilename = sanitizeFilename(parsed.data.filename);
+      let sanitizedFilename = sanitizeFilename(file.name);
 
       // If sanitization removed all characters, fall back to a safe generated name
       if (!sanitizedFilename) {
-        const original = parsed.data.filename || 'file';
+        const original = file.name || 'file';
 
         // Preserve a simple extension if present on the original filename
         const extMatch = String(original).match(/\.[a-zA-Z0-9]{1,8}$/);
@@ -199,9 +174,9 @@ export const POST = withSessionAuth<{
       }
 
       const uploadValidation = validateWorkspaceStorageUploadMetadata({
-        contentType: parsed.data.contentType,
+        contentType: file.type,
         filename: sanitizedFilename,
-        size: parsed.data.size,
+        size: file.size,
       });
       if (!uploadValidation.ok) {
         return NextResponse.json(
@@ -210,7 +185,7 @@ export const POST = withSessionAuth<{
         );
       }
 
-      if (parsed.data.upsert === true) {
+      if (formData.get('upsert') === 'true') {
         return NextResponse.json(
           { message: 'Upload overwrite is not allowed for this path' },
           { status: 403 }
@@ -218,25 +193,54 @@ export const POST = withSessionAuth<{
       }
 
       const filenameWithSuffix = `${generateRandomUUID()}-${sanitizedFilename}`;
+      const storagePath = posix.join(
+        'user-groups',
+        prepared.groupId,
+        filenameWithSuffix
+      );
 
-      const uploadPayload = await createWorkspaceStorageUploadPayload(
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = new Uint8Array(arrayBuffer);
+      const data = await uploadWorkspaceStorageFileDirect(
         prepared.normalizedWsId,
-        filenameWithSuffix,
+        storagePath,
+        buffer,
         {
-          path: `user-groups/${prepared.groupId}`,
+          contentType:
+            uploadValidation.contentType || 'application/octet-stream',
           upsert: false,
-          size: parsed.data.size,
-          contentType: uploadValidation.contentType,
         }
       );
 
+      let autoExtract = null;
+      let autoExtractError: string | null = null;
+
+      try {
+        autoExtract = await triggerWorkspaceStorageAutoExtract(
+          prepared.normalizedWsId,
+          {
+            path: data.path,
+            contentType:
+              uploadValidation.contentType || 'application/octet-stream',
+            originalFilename: sanitizedFilename,
+            requestOrigin: new URL(request.url).origin,
+          }
+        );
+      } catch (error) {
+        autoExtractError =
+          error instanceof Error
+            ? error.message
+            : 'Failed to trigger auto extraction';
+      }
+
       return NextResponse.json({
-        signedUrl: uploadPayload.signedUrl,
-        token: uploadPayload.token,
-        headers: uploadPayload.headers,
-        path: uploadPayload.path,
-        fullPath: uploadPayload.fullPath,
-        contentType: uploadPayload.contentType,
+        message: 'File uploaded successfully',
+        autoExtract,
+        autoExtractError,
+        data: {
+          path: data.path,
+          fullPath: data.fullPath,
+        },
       });
     } catch (error) {
       return mapStorageError(error);

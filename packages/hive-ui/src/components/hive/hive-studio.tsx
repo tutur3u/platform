@@ -49,6 +49,7 @@ export function HiveStudio({
     currentUser,
     initialServerId,
     initialServers,
+    isAdmin,
     realtimeUrl,
   });
   const [rightCollapsed, setRightCollapsed] = useState(true);

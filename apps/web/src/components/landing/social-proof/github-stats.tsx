@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, Code2, GitBranch, Users } from '@tuturuuu/icons';
+import { Clock, Code2, GitBranch, Users } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';

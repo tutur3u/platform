@@ -60,6 +60,8 @@ vi.mock('@marsidev/react-turnstile', async () => {
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => {
     const translations: Record<string, string> = {
+      'login.captcha_domain_not_authorized':
+        'Security verification is not authorized for this hostname.',
       'login.captcha_not_configured':
         'Security verification is not configured.',
       'login.qr_approving': 'Completing sign-in...',

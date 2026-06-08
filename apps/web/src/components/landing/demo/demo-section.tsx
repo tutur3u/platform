@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles } from '@tuturuuu/icons';
+import { Sparkles } from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';

@@ -24,11 +24,13 @@ export function AgentForm({
   agent,
   includeInternalWorkspace = false,
   isPending,
+  onRefresh,
   onSubmit,
 }: {
   agent?: AiAgentDefinition;
   includeInternalWorkspace?: boolean;
   isPending: boolean;
+  onRefresh?: () => void;
   onSubmit: (payload: SaveAiAgentPayload, reset?: () => void) => void;
 }) {
   const t = useTranslations('ai-agents-settings');
@@ -130,7 +132,12 @@ export function AgentForm({
           <DiscordChannelFields agentId={agent?.id} channel={discord} />
         </TabsContent>
         <TabsContent className="mt-4" forceMount value="zalo">
-          <ZaloChannelFields agentId={agent?.id} channel={zalo} />
+          <ZaloChannelFields
+            agentId={agent?.id}
+            channel={zalo}
+            isPending={isPending}
+            onRefresh={onRefresh}
+          />
         </TabsContent>
       </Tabs>
 

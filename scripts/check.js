@@ -3,8 +3,9 @@
 /**
  * Unified Check Runner
  *
- * Runs all quality checks (formatting, tests, type-check, i18n, migrations)
- * and displays a summary at the end.
+ * Runs all quality checks (formatting, tests, type-check, i18n, migrations),
+ * plus path-sensitive checks such as Discord Python validation, and displays a
+ * summary at the end.
  *
  * Usage:
  *   node scripts/check.js [--table] [--timing] [--details] [--run-all] [--force-now]
@@ -16,7 +17,7 @@
  */
 
 const crypto = require('node:crypto');
-const { spawn } = require('node:child_process');
+const { execFileSync, spawn } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -32,6 +33,8 @@ const runAll = process.argv.includes('--run-all');
 const forceNow = process.argv.includes('--force-now');
 const failFast = !runAll;
 const failFastRequiredChecks = new Set(['tests', 'type-check']);
+const DISCORD_PYTHON_PATH_PREFIX = 'apps/discord/';
+const DISCORD_PYTHON_WORKFLOW_PATH = '.github/workflows/discord-python-ci.yml';
 let activeCheckProcess = null;
 let activeQueueHandle = null;
 let shutdownSignalHandled = false;
@@ -43,6 +46,54 @@ const ESC = String.fromCharCode(27);
 const ANSI_REGEX = new RegExp(`${ESC}\\[[0-9;]*m`, 'g');
 function stripAnsi(str) {
   return str.replace(ANSI_REGEX, '');
+}
+
+function getLastNumberMatch(output, regex) {
+  let lastMatch = null;
+
+  for (const match of output.matchAll(regex)) {
+    lastMatch = match;
+  }
+
+  return lastMatch ? Number.parseInt(lastMatch[1], 10) : 0;
+}
+
+function parseBiomeIssueStats(output) {
+  const clean = stripAnsi(output);
+  const filesChecked = getLastNumberMatch(
+    clean,
+    /\bChecked\s+(\d+)\s+files?\b/giu
+  );
+  const errors = getLastNumberMatch(clean, /\b(\d+)\s+errors?\b/giu);
+  const warnings = getLastNumberMatch(clean, /\b(\d+)\s+warnings?\b/giu);
+  const infos = getLastNumberMatch(clean, /\b(\d+)\s+infos?\b/giu);
+  const totalFromSummary = getLastNumberMatch(
+    clean,
+    /\bFound\s+(\d+)\s+(?:lint\s+|formatting\s+)?issues?\b/giu
+  );
+  const typedTotal = errors + warnings + infos;
+
+  return {
+    errors,
+    filesChecked,
+    infos,
+    totalIssues: Math.max(typedTotal, totalFromSummary),
+    warnings,
+  };
+}
+
+function formatBiomeIssueStats(stats) {
+  return `${stats.errors} error(s), ${stats.warnings} warning(s), ${stats.infos} info(s)`;
+}
+
+function validateBiomeOutput(output) {
+  const stats = parseBiomeIssueStats(output);
+
+  if (stats.totalIssues === 0) {
+    return null;
+  }
+
+  return `Found ${stats.totalIssues} Biome issue(s): ${formatBiomeIssueStats(stats)}`;
 }
 
 /**
@@ -173,12 +224,14 @@ const checks = [
   {
     name: 'biome',
     command: 'bun',
-    args: ['biome', 'check'],
+    args: ['biome', 'check', '--error-on-warnings'],
     parseOutput: (stdout) => {
-      const clean = stripAnsi(stdout);
-      const match = clean.match(/Checked (\d+) files?/i);
-      return match ? `${match[1]} files checked` : 'Passed';
+      const stats = parseBiomeIssueStats(stdout);
+      return stats.filesChecked > 0
+        ? `${stats.filesChecked} files checked`
+        : 'Passed';
     },
+    validateOutput: validateBiomeOutput,
   },
   {
     name: 'server-console',
@@ -277,6 +330,83 @@ const checks = [
     },
   },
 ];
+
+const discordPythonCheck = {
+  name: 'discord-python',
+  command: 'node',
+  args: ['scripts/check-discord-python.js'],
+  parseOutput: (stdout) => {
+    if (stdout.includes('Discord Python checks passed')) {
+      return 'Ruff, mypy, pytest, compile/import passed';
+    }
+    return 'Passed';
+  },
+};
+
+function normalizeChangedFilePath(filePath) {
+  return filePath.trim().replace(/\\/g, '/').replace(/^\.\//, '');
+}
+
+function splitChangedFiles(output) {
+  return output.split(/\r?\n/).map(normalizeChangedFilePath).filter(Boolean);
+}
+
+function getChangedFiles(options = {}) {
+  const execFile = options.execFile ?? execFileSync;
+  const rootDir = options.rootDir ?? ROOT_DIR;
+  const changedFiles = new Set();
+  const gitCommands = [
+    ['diff', '--name-only', '--diff-filter=ACMRD', 'HEAD', '--'],
+    ['ls-files', '--others', '--exclude-standard', '--'],
+  ];
+
+  for (const args of gitCommands) {
+    try {
+      const output = execFile('git', args, {
+        cwd: rootDir,
+        encoding: 'utf8',
+      });
+
+      for (const filePath of splitChangedFiles(output)) {
+        changedFiles.add(filePath);
+      }
+    } catch {
+      // Keep bun check usable outside a Git checkout or before an initial commit.
+    }
+  }
+
+  return [...changedFiles].sort();
+}
+
+function touchesDiscordPython(files) {
+  return files.some((file) => {
+    const normalizedFile = normalizeChangedFilePath(file);
+
+    return (
+      normalizedFile === 'apps/discord' ||
+      normalizedFile.startsWith(DISCORD_PYTHON_PATH_PREFIX) ||
+      normalizedFile === DISCORD_PYTHON_WORKFLOW_PATH
+    );
+  });
+}
+
+function getActiveChecks(options = {}) {
+  const changedFiles = options.changedFiles ?? getChangedFiles(options);
+
+  if (!touchesDiscordPython(changedFiles)) {
+    return checks;
+  }
+
+  const activeChecks = [...checks];
+  const scriptTestsIndex = activeChecks.findIndex(
+    (check) => check.name === 'script-tests'
+  );
+  const insertIndex =
+    scriptTestsIndex === -1 ? activeChecks.length : scriptTestsIndex + 1;
+
+  activeChecks.splice(insertIndex, 0, discordPythonCheck);
+  return activeChecks;
+}
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -701,10 +831,17 @@ function runCheck(check, options = {}) {
     proc.on('close', (code) => {
       activeCheckProcess = null;
       const duration = Date.now() - startTime;
-      if (!streamOutput && options.forceBuffered !== true && code !== 0) {
+      const combinedOutput = stdout + stderr;
+      const validationFailure =
+        code === 0 && typeof check.validateOutput === 'function'
+          ? check.validateOutput(combinedOutput)
+          : null;
+      const success = code === 0 && !validationFailure;
+
+      if (!streamOutput && options.forceBuffered !== true && !success) {
         const failureOutput = check.formatFailureOutput
           ? check.formatFailureOutput(stdout, stderr)
-          : `${stdout}${stderr}`;
+          : combinedOutput;
         if (failureOutput) {
           process.stderr.write(
             failureOutput.endsWith('\n') ? failureOutput : `${failureOutput}\n`
@@ -713,7 +850,7 @@ function runCheck(check, options = {}) {
       } else if (
         !streamOutput &&
         options.forceBuffered !== true &&
-        code === 0 &&
+        success &&
         check.quietSuccessMessage
       ) {
         console.log(check.quietSuccessMessage);
@@ -721,10 +858,12 @@ function runCheck(check, options = {}) {
       resolve({
         duration,
         name: check.name,
-        status: code === 0 ? check.parseOutput(stdout + stderr) : 'Failed',
+        status: success
+          ? check.parseOutput(combinedOutput)
+          : (validationFailure ?? 'Failed'),
         stderr,
         stdout,
-        success: code === 0,
+        success,
       });
     });
 
@@ -935,8 +1074,9 @@ async function main(options = {}) {
     const results = [];
     let failureSeen = false;
     let failingCheckName = null;
+    const activeChecks = getActiveChecks(options);
 
-    for (const check of checks) {
+    for (const check of activeChecks) {
       const hasVisibleOutput = showDetails || false;
       if (hasVisibleOutput) {
         console.log(`${colors.dim}━━━ ${check.name} ━━━${colors.reset}\n`);
@@ -959,18 +1099,18 @@ async function main(options = {}) {
       }
 
       if (failFast && failureSeen) {
-        const pendingRequiredChecks = checks
+        const pendingRequiredChecks = activeChecks
           .slice(results.length)
           .some((pendingCheck) =>
             failFastRequiredChecks.has(pendingCheck.name)
           );
 
         if (!pendingRequiredChecks) {
-          for (let i = results.length; i < checks.length; i += 1) {
+          for (let i = results.length; i < activeChecks.length; i += 1) {
             results.push({
               cancelled: true,
               duration: 0,
-              name: checks[i].name,
+              name: activeChecks[i].name,
               status: `Skipped (fail-fast after ${failingCheckName})`,
               stderr: '',
               stdout: '',
@@ -1010,13 +1150,18 @@ if (require.main === module) {
 module.exports = {
   acquireCheckQueueLock,
   checks,
+  discordPythonCheck,
   forceClearCheckQueue,
   formatSignalError,
+  getActiveChecks,
   getCheckQueuePaths,
+  getChangedFiles,
   isProcessActive,
   listTrackedCheckProcesses,
   main,
+  parseBiomeIssueStats,
   releaseCheckQueueLock,
   runCheck,
   signalProcess,
+  touchesDiscordPython,
 };

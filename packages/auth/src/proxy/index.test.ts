@@ -14,7 +14,9 @@ import {
 import {
   consumeVerifyTokenRequest,
   createCentralizedAuthProxy,
+  getRequestHeadersWithResponseCookies,
   normalizeAuthRedirectPath,
+  propagateAuthCookies,
   refreshAppSessionForRequest,
   resolveCanonicalRequestOrigin,
 } from './index';
@@ -66,6 +68,98 @@ describe('auth proxy redirect helpers', () => {
     });
   });
 
+  it('propagates raw Set-Cookie headers for same-name auth cookie updates', () => {
+    const source = NextResponse.next();
+    const target = NextResponse.next();
+
+    source.headers.append(
+      'set-cookie',
+      'sb-test-auth-token.0=chunk; Path=/; Domain=.tuturuuu.com; SameSite=lax'
+    );
+    source.headers.append(
+      'set-cookie',
+      'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0'
+    );
+
+    propagateAuthCookies(source, target);
+
+    const setCookie = target.headers.get('set-cookie') ?? '';
+    expect(setCookie).toContain(
+      'sb-test-auth-token.0=chunk; Path=/; Domain=.tuturuuu.com'
+    );
+    expect(setCookie).toContain(
+      'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0'
+    );
+  });
+
+  it('splits combined fallback Set-Cookie headers before propagation', () => {
+    const headers = new Headers();
+    headers.append(
+      'set-cookie',
+      [
+        'sb-test-auth-token.0=chunk; Path=/; Domain=.tuturuuu.com; SameSite=lax',
+        'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+      ].join(', ')
+    );
+    Object.defineProperty(headers, 'getSetCookie', {
+      configurable: true,
+      value: undefined,
+    });
+    const source = {
+      cookies: { getAll: () => [] },
+      headers,
+    } as unknown as NextResponse;
+    const target = NextResponse.next();
+
+    propagateAuthCookies(source, target);
+
+    expect(target.headers.getSetCookie?.()).toEqual([
+      'sb-test-auth-token.0=chunk; Path=/; Domain=.tuturuuu.com; SameSite=lax',
+      'sb-test-auth-token.0=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0',
+    ]);
+  });
+
+  it('replays middleware request header overrides before satellite proxies read app sessions', () => {
+    const request = new NextRequest('https://cms.tuturuuu.com/', {
+      headers: {
+        cookie: 'theme=dark',
+      },
+    });
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('authorization', 'Bearer app-session-token');
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+
+    const headers = getRequestHeadersWithResponseCookies(request, response);
+
+    expect(headers.get('authorization')).toBe('Bearer app-session-token');
+    expect(headers.get('cookie')).toBe('theme=dark');
+  });
+
+  it('applies response cookies on top of middleware request header overrides', () => {
+    const request = new NextRequest('https://cms.tuturuuu.com/', {
+      headers: {
+        cookie: 'theme=dark',
+      },
+    });
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('authorization', 'Bearer app-session-token');
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+    response.headers.append('set-cookie', 'theme=light; Path=/');
+
+    const headers = getRequestHeadersWithResponseCookies(request, response);
+
+    expect(headers.get('authorization')).toBe('Bearer app-session-token');
+    expect(headers.get('cookie')).toBe('theme=light');
+  });
+
   it('resolves the canonical public origin from forwarded headers', () => {
     const request = new NextRequest('http://0.0.0.0:7803/dashboard', {
       headers: {
@@ -90,6 +184,21 @@ describe('auth proxy redirect helpers', () => {
         'https://tuturuuu.com'
       )
     ).toBe('/workspace/demo?tab=mail');
+  });
+
+  it('rejects slash-backslash redirects that parse as cross-origin URLs', () => {
+    expect(
+      normalizeAuthRedirectPath(
+        '/\\\\evil.example',
+        'https://learn.tuturuuu.com'
+      )
+    ).toBe('/');
+    expect(
+      normalizeAuthRedirectPath(
+        '/%5C%5Cevil.example',
+        'https://learn.tuturuuu.com'
+      )
+    ).toBe('/');
   });
 
   describe('consumeVerifyTokenRequest', () => {
@@ -394,6 +503,90 @@ describe('auth proxy redirect helpers', () => {
     expect(mocks.updateSession).not.toHaveBeenCalled();
   });
 
+  it('uses shared Supabase auth on registered Tuturuuu apps and clears app-session cookies', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    const session = createAppSessionTokenPair({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+    mocks.updateSession.mockResolvedValueOnce({
+      claims: {
+        aal: 'aal1',
+        exp: 1_767_225_600,
+        sub: 'user-1',
+      },
+      res: NextResponse.next(),
+    });
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${session.access.token}`,
+          `${APP_SESSION_REFRESH_COOKIE_NAME}=${session.refresh.token}`,
+          'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session',
+        ].join('; '),
+      },
+    });
+
+    const response = await authProxy(request);
+    const setCookie = response.headers.get('set-cookie') ?? '';
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.updateSession).toHaveBeenCalledWith(request);
+    expect(setCookie).toContain(`${APP_SESSION_COOKIE_NAME}=;`);
+    expect(setCookie).toContain(`${APP_SESSION_REFRESH_COOKIE_NAME}=;`);
+    expect(setCookie).toContain('Max-Age=0');
+    expect(getMiddlewareRequestHeader(response, 'authorization')).toMatch(
+      /^Bearer /
+    );
+  });
+
+  it('keeps the app-session fallback when shared Supabase auth has no claims', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    const { token } = createAppSessionToken({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+    mocks.updateSession.mockResolvedValueOnce({
+      claims: null,
+      res: NextResponse.next(),
+    });
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${token}`,
+          'sb-nzamlzqfdwaaxdefwraj-auth-token=stale-session',
+        ].join('; '),
+      },
+    });
+
+    const response = await authProxy(request);
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.updateSession).toHaveBeenCalledWith(request);
+    expect(response.headers.get('set-cookie') ?? '').not.toContain(
+      `${APP_SESSION_COOKIE_NAME}=;`
+    );
+    expect(getMiddlewareRequestHeader(response, 'authorization')).toBe(
+      `Bearer ${token}`
+    );
+  });
+
   it('refreshes registered app sessions when the access cookie is near expiry', async () => {
     const oldSession = createAppSessionTokenPair(
       {
@@ -532,6 +725,56 @@ describe('auth proxy redirect helpers', () => {
         method: 'POST',
       })
     );
+  });
+
+  it('uses shared Supabase auth in supabase-first refresh mode without issuing app-session cookies', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    const oldSession = createAppSessionTokenPair({
+      targetApp: 'mail',
+      userId: 'user-1',
+    });
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    mocks.updateSession.mockResolvedValueOnce({
+      claims: {
+        email: 'user@tuturuuu.com',
+        exp: 1_767_225_600,
+        iat: 1_767_222_000,
+        session_id: 'session-1',
+        sub: 'user-1',
+      },
+      res: NextResponse.next(),
+    });
+    const request = new NextRequest('https://mail.tuturuuu.com/api/messages', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${oldSession.access.token}`,
+          `${APP_SESSION_REFRESH_COOKIE_NAME}=${oldSession.refresh.token}`,
+          'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session',
+        ].join('; '),
+      },
+    });
+
+    const result = await refreshAppSessionForRequest(request, {
+      sessionMode: 'supabase-first',
+      targetApp: 'mail',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.refreshed).toBe(false);
+    expect(result.ok && result.claims.sub).toBe('user-1');
+    expect(result.ok && result.claims.target_app).toBe('mail');
+    expect(result.ok && result.response.headers.get('set-cookie')).toContain(
+      `${APP_SESSION_COOKIE_NAME}=;`
+    );
+    expect(result.ok && result.requestHeaders?.get('authorization')).toMatch(
+      /^Bearer /
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mocks.updateSession).toHaveBeenCalledWith(request);
   });
 
   it('uses the local HTTP app port for Portless app-session refresh self-fetches', async () => {

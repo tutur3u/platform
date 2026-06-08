@@ -3,9 +3,11 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
+  await connection();
+
   try {
     const supabase = await createClient(request);
     const { user, authError } = await resolveAuthenticatedSessionUser(supabase);

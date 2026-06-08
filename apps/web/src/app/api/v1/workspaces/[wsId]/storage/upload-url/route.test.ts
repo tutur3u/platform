@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   logWorkspaceStorageRouteError: vi.fn(),
   resolveTopicAnnouncementsAccess: vi.fn(),
   resolveWorkspaceStorageRouteAuth: vi.fn(),
+  validateFinanceTransactionAttachmentUploadRequest: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/utils/uuid-helper', () => ({
@@ -16,6 +17,11 @@ vi.mock('@tuturuuu/utils/uuid-helper', () => ({
 vi.mock('@/lib/finance-transaction-storage-access', () => ({
   canAccessFinanceTransactionStoragePath:
     mocks.canAccessFinanceTransactionStoragePath,
+}));
+
+vi.mock('@/lib/finance-transaction-storage-limits', () => ({
+  validateFinanceTransactionAttachmentUploadRequest:
+    mocks.validateFinanceTransactionAttachmentUploadRequest,
 }));
 
 vi.mock('@/lib/workspace-storage-provider', () => ({
@@ -45,6 +51,7 @@ vi.mock('../../topic-announcements/shared', () => ({
 }));
 
 vi.mock('../route-auth', () => ({
+  FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS: ['drive', 'finance'],
   logWorkspaceStorageRouteError: mocks.logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth: mocks.resolveWorkspaceStorageRouteAuth,
 }));
@@ -75,6 +82,9 @@ function setupAuth(permissionOptions: Parameters<typeof permissions>[0] = {}) {
     },
   });
   mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(false);
+  mocks.validateFinanceTransactionAttachmentUploadRequest.mockResolvedValue({
+    ok: true,
+  });
   mocks.resolveTopicAnnouncementsAccess.mockResolvedValue({
     context: {
       normalizedWsId: 'workspace-1',
@@ -120,6 +130,7 @@ describe('workspace storage upload-url route', () => {
     mocks.logWorkspaceStorageRouteError.mockReset();
     mocks.resolveTopicAnnouncementsAccess.mockReset();
     mocks.resolveWorkspaceStorageRouteAuth.mockReset();
+    mocks.validateFinanceTransactionAttachmentUploadRequest.mockReset();
     setupAuth();
   });
 
@@ -374,7 +385,7 @@ describe('workspace storage upload-url route', () => {
     expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 
-  it('requires external-project management before signing external-project overwrites', async () => {
+  it('rejects external-project paths through the generic Drive upload URL route', async () => {
     setupAuth({ manageDrive: true });
 
     const response = await postUploadUrl({
@@ -385,25 +396,16 @@ describe('workspace storage upload-url route', () => {
       upsert: true,
     });
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'External project uploads must use the external project asset upload route',
+    });
     expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 
-  it('allows managed external-project asset overwrites with media metadata', async () => {
+  it('does not let external-project managers mint generic signed upload URLs', async () => {
     setupAuth({ manageExternalProjects: true });
-    mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
-      contentType: 'audio/wav',
-      filename: 'voice.wav',
-      fullPath:
-        'workspace-1/external-projects/yoola/voice-reels/demo/voice.wav',
-      headers: {
-        'Content-Type': 'audio/wav',
-      },
-      path: 'external-projects/yoola/voice-reels/demo/voice.wav',
-      provider: 'supabase',
-      signedUrl: 'https://storage.example.com/upload',
-      token: 'upload-token',
-    });
 
     const response = await postUploadUrl({
       contentType: 'audio/wav',
@@ -413,16 +415,40 @@ describe('workspace storage upload-url route', () => {
       upsert: true,
     });
 
-    expect(response.status).toBe(200);
-    expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
-      'workspace-1',
-      'voice.wav',
-      {
-        contentType: 'audio/wav',
-        path: 'external-projects/yoola/voice-reels/demo',
-        size: 128,
-        upsert: true,
-      }
-    );
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'External project uploads must use the external project asset upload route',
+    });
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('rejects finance attachment upload signing when server-side attachment limits fail', async () => {
+    mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(true);
+    mocks.validateFinanceTransactionAttachmentUploadRequest.mockResolvedValue({
+      message: 'Finance attachment exceeds 50 MB limit',
+      ok: false,
+      status: 413,
+    });
+
+    const response = await postUploadUrl({
+      contentType: 'application/pdf',
+      filename: 'receipt.pdf',
+      path: 'finance/transactions/tx-1',
+      size: 50 * 1024 * 1024 + 1,
+    });
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Finance attachment exceeds 50 MB limit',
+    });
+    expect(
+      mocks.validateFinanceTransactionAttachmentUploadRequest
+    ).toHaveBeenCalledWith({
+      path: 'finance/transactions/tx-1',
+      size: 50 * 1024 * 1024 + 1,
+      wsId: 'workspace-1',
+    });
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 });

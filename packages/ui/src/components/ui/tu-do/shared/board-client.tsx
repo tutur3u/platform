@@ -14,7 +14,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
 import {
   BoardBroadcastProvider,
   type BoardRefreshOptions,
@@ -26,16 +26,20 @@ import { ProgressiveLoaderProvider } from './progressive-loader-context';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
+const BOARD_REVALIDATE_COOLDOWN_MS = 30_000;
+
 interface Props {
   boardId: string;
   workspace: Workspace;
   workspaceTier?: WorkspaceProductTier | null;
   currentUserId?: string;
   routePrefix?: string;
+  idleBottomIsland?: ReactNode;
 }
 
 export function BoardClient({
   boardId,
+  idleBottomIsland,
   workspace,
   workspaceTier,
   currentUserId,
@@ -100,7 +104,12 @@ export function BoardClient({
 
     const revalidateLoadedLists = () => {
       const now = Date.now();
-      if (isRevalidating || now - lastRevalidateAt < 1500) return;
+      if (
+        isRevalidating ||
+        now - lastRevalidateAt < BOARD_REVALIDATE_COOLDOWN_MS
+      ) {
+        return;
+      }
 
       isRevalidating = true;
       lastRevalidateAt = now;
@@ -261,6 +270,7 @@ export function BoardClient({
           workspaceLabels={workspaceLabels}
           currentUserId={currentUserId}
           canManageBoard={canManageBoard}
+          idleBottomIsland={idleBottomIsland}
         />
       </ProgressiveLoaderProvider>
     </BoardBroadcastProvider>

@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
@@ -16,6 +17,7 @@ const createConnectionSchema = z.object({
   color: z.string().max(MAX_COLOR_LENGTH).optional(),
   isEnabled: z.boolean().default(true),
   authTokenId: z.guid().optional(),
+  accessRole: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
 });
 
 const updateConnectionSchema = z
@@ -24,9 +26,11 @@ const updateConnectionSchema = z
     id: z.guid().optional(),
     calendarId: z.string().max(MAX_LONG_TEXT_LENGTH).min(1).optional(),
     wsId: z.guid().optional(),
+    authTokenId: z.guid().optional(),
     isEnabled: z.boolean().optional(),
     calendarName: z.string().max(MAX_LONG_TEXT_LENGTH).min(1).optional(),
     color: z.string().max(MAX_COLOR_LENGTH).optional(),
+    accessRole: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
   })
   .refine((data) => data.id || (data.calendarId && data.wsId), {
     message: 'Either id or both calendarId and wsId are required',
@@ -86,6 +90,30 @@ async function getConnectionWorkspaceId(supabase: any, id: string) {
 
   if (error) throw error;
   return (data as { ws_id?: string } | null)?.ws_id ?? null;
+}
+
+async function ensureWorkspaceCalendarForConnection(args: {
+  wsId: string;
+  calendarName: string;
+  color?: string | null;
+}) {
+  const sbAdmin = await createAdminClient();
+  const { data, error } = await (sbAdmin as any)
+    .schema('private')
+    .from('workspace_calendars')
+    .insert({
+      ws_id: args.wsId,
+      name: args.calendarName,
+      color: args.color || 'BLUE',
+      calendar_type: 'custom',
+      is_system: false,
+      position: 100,
+    })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return (data as { id: string }).id;
 }
 
 // GET - List calendar connections for a workspace
@@ -167,8 +195,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const { wsId, calendarId, calendarName, color, isEnabled, authTokenId } =
-      validation.data;
+    const {
+      wsId,
+      calendarId,
+      calendarName,
+      color,
+      isEnabled,
+      authTokenId,
+      accessRole,
+    } = validation.data;
     const accessError = await requireWorkspaceAccess({
       supabase,
       userId: user.id,
@@ -197,6 +232,37 @@ export async function POST(request: Request) {
       provider = authToken.provider as 'google' | 'microsoft';
     }
 
+    let duplicateQuery = supabase
+      .from('calendar_connections')
+      .select('id')
+      .eq('ws_id', wsId)
+      .eq('calendar_id', calendarId)
+      .eq('provider', provider);
+
+    duplicateQuery = authTokenId
+      ? duplicateQuery.eq('auth_token_id', authTokenId)
+      : duplicateQuery.is('auth_token_id', null);
+
+    const { data: duplicateConnection, error: duplicateError } =
+      await duplicateQuery.maybeSingle();
+
+    if (duplicateError) {
+      throw duplicateError;
+    }
+
+    if (duplicateConnection) {
+      return NextResponse.json(
+        { error: 'This calendar is already connected to this workspace' },
+        { status: 409 }
+      );
+    }
+
+    const workspaceCalendarId = await ensureWorkspaceCalendarForConnection({
+      wsId,
+      calendarName,
+      color,
+    });
+
     // Insert the calendar connection
     const { data: connection, error: insertError } = await supabase
       .from('calendar_connections')
@@ -208,7 +274,9 @@ export async function POST(request: Request) {
         is_enabled: isEnabled,
         auth_token_id: authTokenId || null,
         provider,
-      })
+        access_role: accessRole || 'writer',
+        workspace_calendar_id: workspaceCalendarId,
+      } as any)
       .select()
       .single();
 
@@ -257,7 +325,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const { id, calendarId, wsId, ...updates } = validation.data;
+    const { id, calendarId, wsId, authTokenId, ...updates } = validation.data;
     const targetWsId =
       wsId ?? (id ? await getConnectionWorkspaceId(supabase, id) : null);
 
@@ -282,6 +350,9 @@ export async function PATCH(request: Request) {
     if (updates.calendarName !== undefined)
       updateData.calendar_name = updates.calendarName;
     if (updates.color !== undefined) updateData.color = updates.color;
+    if (updates.accessRole !== undefined) {
+      (updateData as any).access_role = updates.accessRole;
+    }
 
     // Build the query based on whether we have id or calendarId+wsId
     let query = supabase.from('calendar_connections').update(updateData);
@@ -290,6 +361,9 @@ export async function PATCH(request: Request) {
       query = query.eq('id', id);
     } else if (calendarId && wsId) {
       query = query.eq('calendar_id', calendarId).eq('ws_id', wsId);
+      query = authTokenId
+        ? query.eq('auth_token_id', authTokenId)
+        : query.is('auth_token_id', null);
     }
 
     // Update the calendar connection

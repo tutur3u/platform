@@ -15,7 +15,6 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-description';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import {
@@ -37,6 +36,16 @@ import {
 } from './schema';
 
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+
+async function deriveTaskDescriptionYjsState(
+  description: string | null | undefined
+) {
+  const { deriveTaskDescriptionYjsState: deriveYjsState } = await import(
+    '@tuturuuu/utils/yjs-task-description'
+  );
+
+  return deriveYjsState(description);
+}
 
 export type TaskDetailRouteAuthContext = {
   appSession?: boolean;
@@ -893,7 +902,7 @@ export async function handleTaskDetailRoutePUT(
       ...(normalizedDescription !== undefined
         ? {
             description: normalizedDescription,
-            description_yjs_state: deriveTaskDescriptionYjsState(
+            description_yjs_state: await deriveTaskDescriptionYjsState(
               normalizedDescription
             ),
           }

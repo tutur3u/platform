@@ -98,6 +98,7 @@ export async function GET(request: Request, { params }: Params) {
       { count: 'exact' }
     )
     .eq('workspace_user_groups.ws_id', workspace.id)
+    .eq('workspace_users.ws_id', workspace.id)
     .gte('date', startDate)
     .lte('date', endDate)
     .order('date', { ascending: true })

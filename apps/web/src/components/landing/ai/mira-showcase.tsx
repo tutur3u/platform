@@ -1,6 +1,12 @@
 'use client';
 
-import { Bot, Brain, MessageSquare, Sparkles, Zap } from '@tuturuuu/icons';
+import {
+  Bot,
+  Brain,
+  MessageSquare,
+  Sparkles,
+  Zap,
+} from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';

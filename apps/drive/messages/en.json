@@ -1392,6 +1392,9 @@
     "custom_calendars": "Custom",
     "danger_zone": "Danger Zone",
     "day": "Day",
+    "default_calendar_source": "Default calendar source",
+    "default_calendar_source_desc": "New events will be created in this calendar unless you choose another source.",
+    "default_calendar_updated": "Default calendar updated",
     "degraded": "Degraded",
     "disconnect": "Disconnect",
     "e2ee": {
@@ -1625,6 +1628,7 @@
     "agent_deploy_failed": "Could not deploy agent channel",
     "agent_deploy_success": "Agent channel deployed",
     "agent_details": "Agent details",
+    "agent_diagnostics": "Diagnostics",
     "agent_disabled": "Disabled",
     "agent_discord_guild_id": "Discord guild ID",
     "agent_discord_live_test_hint": "Readiness only. For full Discord validation, set the Interactions Endpoint URL, install the app, then mention the bot in the mapped channel.",
@@ -1638,7 +1642,9 @@
     "agent_external_draft_success": "Draft ready",
     "agent_external_last_sync": "Last sync",
     "agent_external_message_count": "Messages",
+    "agent_external_no_threads": "No mirrored external threads yet",
     "agent_external_prompt_placeholder": "Optional prompt for the draft",
+    "agent_external_recent_threads": "Recent external threads",
     "agent_external_refresh_after_action": "Refreshing mirrored thread data after the action finishes.",
     "agent_external_response": "Manual response",
     "agent_external_send": "Send",
@@ -1769,6 +1775,7 @@
     "conversation_description_placeholder": "Description",
     "conversation_name_placeholder": "Conversation name",
     "conversation_pinned": "Conversation pinned",
+    "conversation_title_generate_failed": "Could not generate a conversation title",
     "conversation_types": "Conversation types",
     "conversation_unpinned": "Conversation unpinned",
     "conversation_update_failed": "Could not update conversation",
@@ -1806,7 +1813,9 @@
     "friend_requests": "Friend requests",
     "friend_requests_description": "Review people who can message you directly.",
     "friends": "Friends",
+    "generate_conversation_title": "Generate title",
     "generated_qr_code": "Generated QR code",
+    "generating_conversation_title": "Generating...",
     "group_chat": "Group chat",
     "group_name_placeholder": "Group name",
     "groups": "Groups",
@@ -6441,6 +6450,7 @@
       "display_description": "Configure which members appear in attendance views",
       "title": "Attendance"
     },
+    "back_to_app": "Back to app",
     "calendar": {
       "colors": "Category Colors",
       "colors_description": "Customize colors for different event categories",
@@ -6534,6 +6544,7 @@
       "default_title_description": "Set the base title used when creating new reports",
       "title": "Reports"
     },
+    "search_settings_placeholder": "Search settings...",
     "tasks": {
       "always_enabled_personal": "This is always enabled for personal workspaces",
       "auto_assign_to_self": "Auto-assign to self",

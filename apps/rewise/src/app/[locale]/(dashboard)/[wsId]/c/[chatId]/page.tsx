@@ -1,9 +1,8 @@
 import type { UIMessage } from '@tuturuuu/ai/types';
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { AIChat } from '@tuturuuu/types';
-import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { isCurrentUserAIWhitelisted } from '@/lib/ai-whitelist';
 import Chat from '../../chat';
@@ -25,10 +24,7 @@ export default async function AIPage({ params, searchParams }: Props) {
   const { lang: locale } = await searchParams;
 
   // Check if user is whitelisted
-  const user = getAppSessionUserFromRequest(
-    { headers: await headers() },
-    { targetApp: 'rewise' }
-  );
+  const user = await getSatelliteAppSessionUser('rewise');
   if (!user?.email) redirect('/login');
 
   if (!(await isCurrentUserAIWhitelisted())) redirect('/not-whitelisted');

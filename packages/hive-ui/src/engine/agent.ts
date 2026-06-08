@@ -1,3 +1,4 @@
+import { getHiveAgentDestructiveWorldAction } from '@tuturuuu/realtime/hive';
 import type { HiveVector3, HiveWorldData } from './types';
 import {
   addObject,
@@ -11,6 +12,10 @@ export type HiveAgentWorldResult = {
   changed: boolean;
   summary: string;
   world: HiveWorldData;
+};
+
+type HiveAgentInstructionOptions = {
+  allowDestructiveWorldActions?: boolean;
 };
 
 const riverPath = Array.from({ length: 11 }, (_, index) => ({
@@ -84,7 +89,8 @@ function placeObjects(
 
 export function applyHiveAgentInstruction(
   world: HiveWorldData,
-  prompt: string
+  prompt: string,
+  options: HiveAgentInstructionOptions = {}
 ): HiveAgentWorldResult {
   const text = prompt.trim().toLowerCase();
   if (!text) {
@@ -96,7 +102,18 @@ export function applyHiveAgentInstruction(
     };
   }
 
-  if (hasAny(text, ['clear', 'empty', 'blank'])) {
+  const destructiveAction = getHiveAgentDestructiveWorldAction(prompt);
+
+  if (destructiveAction && !options.allowDestructiveWorldActions) {
+    return {
+      actions: [],
+      changed: false,
+      summary: 'Ask a Hive admin to clear or reseed the world.',
+      world,
+    };
+  }
+
+  if (destructiveAction === 'clear') {
     return {
       actions: ['cleared the canvas'],
       changed: true,
@@ -105,7 +122,7 @@ export function applyHiveAgentInstruction(
     };
   }
 
-  if (hasAny(text, ['reset', 'reseed', 'default'])) {
+  if (destructiveAction === 'reseed') {
     return {
       actions: ['reseeded the default world'],
       changed: true,

@@ -1,8 +1,7 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { MailAppClient } from './mail-client';
 import {
@@ -37,10 +36,7 @@ export async function renderMailFolderPage(
 
 async function resolveMailWorkspaceSlug(params: MailFolderPageProps['params']) {
   const { wsId: id } = await params;
-  const user = getAppSessionUserFromRequest(
-    { headers: await headers() },
-    { targetApp: 'mail' }
-  );
+  const user = await getSatelliteAppSessionUser('mail');
 
   if (!user?.id) redirect('/login');
   if (!isExactTuturuuuDotComEmail(user.email)) redirect('/not-available');

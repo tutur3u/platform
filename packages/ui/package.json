@@ -1,7 +1,12 @@
 {
   "name": "@tuturuuu/ui",
-  "version": "0.0.4",
+  "version": "0.2.0",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tutur3u/platform",
+    "directory": "packages/ui"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -52,31 +57,31 @@
     "@streamdown/mermaid": "^1.0.2",
     "@tanstack/react-hotkeys": "^0.10.0",
     "@tanstack/react-pacer": "^0.22.1",
-    "@tanstack/react-query": "^5.100.11",
+    "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",
-    "@tanstack/react-virtual": "^3.13.25",
-    "@tiptap/core": "3.24.0",
-    "@tiptap/extension-collaboration": "3.24.0",
-    "@tiptap/extension-collaboration-caret": "3.24.0",
-    "@tiptap/extension-drag-handle-react": "3.24.0",
-    "@tiptap/extension-highlight": "3.24.0",
-    "@tiptap/extension-horizontal-rule": "3.24.0",
-    "@tiptap/extension-image": "3.24.0",
-    "@tiptap/extension-link": "3.24.0",
-    "@tiptap/extension-list": "3.24.0",
-    "@tiptap/extension-placeholder": "3.24.0",
-    "@tiptap/extension-strike": "3.24.0",
-    "@tiptap/extension-subscript": "3.24.0",
-    "@tiptap/extension-superscript": "3.24.0",
-    "@tiptap/extension-table": "3.24.0",
-    "@tiptap/extension-table-cell": "3.24.0",
-    "@tiptap/extension-table-header": "3.24.0",
-    "@tiptap/extension-table-row": "3.24.0",
-    "@tiptap/extension-text-align": "3.24.0",
-    "@tiptap/extension-youtube": "3.24.0",
-    "@tiptap/pm": "3.24.0",
-    "@tiptap/react": "3.24.0",
-    "@tiptap/starter-kit": "3.24.0",
+    "@tanstack/react-virtual": "^3.14.2",
+    "@tiptap/core": "3.25.0",
+    "@tiptap/extension-collaboration": "3.25.0",
+    "@tiptap/extension-collaboration-caret": "3.25.0",
+    "@tiptap/extension-drag-handle-react": "3.25.0",
+    "@tiptap/extension-highlight": "3.25.0",
+    "@tiptap/extension-horizontal-rule": "3.25.0",
+    "@tiptap/extension-image": "3.25.0",
+    "@tiptap/extension-link": "3.25.0",
+    "@tiptap/extension-list": "3.25.0",
+    "@tiptap/extension-placeholder": "3.25.0",
+    "@tiptap/extension-strike": "3.25.0",
+    "@tiptap/extension-subscript": "3.25.0",
+    "@tiptap/extension-superscript": "3.25.0",
+    "@tiptap/extension-table": "3.25.0",
+    "@tiptap/extension-table-cell": "3.25.0",
+    "@tiptap/extension-table-header": "3.25.0",
+    "@tiptap/extension-table-row": "3.25.0",
+    "@tiptap/extension-text-align": "3.25.0",
+    "@tiptap/extension-youtube": "3.25.0",
+    "@tiptap/pm": "3.25.0",
+    "@tiptap/react": "3.25.0",
+    "@tiptap/starter-kit": "3.25.0",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/hooks": "workspace:*",
@@ -104,16 +109,16 @@
     "lodash": "^4.18.1",
     "moment": "^2.30.1",
     "motion": "^12.40.0",
-    "next": "^16.2.6",
+    "next": "^16.2.7",
     "next-intl": "^4.13.0",
     "next-themes": "^0.4.6",
     "nuqs": "^2.8.9",
     "prosemirror-state": "^1.4.4",
     "qrcode.react": "^4.2.0",
-    "react": "^19.2.6",
+    "react": "^19.2.7",
     "react-colorful": "^5.7.0",
     "react-day-picker": "^10.0.1",
-    "react-dom": "^19.2.6",
+    "react-dom": "^19.2.7",
     "react-dropzone": "^15.0.0",
     "react-hook-form": "^7.77.0",
     "react-markdown": "^10.1.0",
@@ -128,7 +133,7 @@
     "tailwind-scrollbar": "^4.0.2",
     "tailwind-scrollbar-hide": "^4.0.0",
     "tailwindcss-animate": "^1.0.7",
-    "tiptap-extension-resize-image": "^1.4.0",
+    "tiptap-extension-resize-image": "^1.4.3",
     "use-debounce": "^10.1.1",
     "vaul": "^1.1.2",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
@@ -139,7 +144,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
     "@tailwindcss/typography": "^0.5.19",
-    "@tanstack/react-query": "^5.100.11",
+    "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -148,7 +153,7 @@
     "@types/html2canvas": "^1.0.0",
     "@types/lodash": "^4.17.24",
     "@types/node": "^25.9.1",
-    "@types/react": "^19.2.15",
+    "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
     "@types/react-resizable": "^4.0.0",
     "@types/react-syntax-highlighter": "^15.5.13",
@@ -164,7 +169,7 @@
     "vitest": "^4.1.8"
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.100.11",
+    "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-table": "^8.21.3"
   },
   "exports": {
@@ -173,6 +178,10 @@
     "./badge": {
       "types": "./src/components/ui/badge.tsx",
       "import": "./src/components/ui/badge.tsx"
+    },
+    "./button": {
+      "types": "./src/components/ui/button.tsx",
+      "import": "./src/components/ui/button.tsx"
     },
     "./command": {
       "types": "./src/components/ui/command.tsx",
@@ -193,6 +202,10 @@
     "./sheet": {
       "types": "./src/components/ui/sheet.tsx",
       "import": "./src/components/ui/sheet.tsx"
+    },
+    "./sonner": {
+      "types": "./src/components/ui/sonner.tsx",
+      "import": "./src/components/ui/sonner.tsx"
     },
     "./hooks/use-board-actions": "./src/hooks/use-board-actions.ts",
     "./hooks/*": "./src/hooks/*.ts",
@@ -355,6 +368,10 @@
     "./custom/tuturuuu-logo": {
       "types": "./src/components/ui/custom/tuturuuu-logo.tsx",
       "import": "./src/components/ui/custom/tuturuuu-logo.tsx"
+    },
+    "./custom/tuturuuu-logo-urls": {
+      "types": "./src/components/ui/custom/tuturuuu-logo-urls.ts",
+      "import": "./src/components/ui/custom/tuturuuu-logo-urls.ts"
     },
     "./custom/workspace-select": {
       "types": "./src/components/ui/custom/workspace-select.tsx",

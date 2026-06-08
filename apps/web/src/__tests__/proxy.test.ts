@@ -440,15 +440,12 @@ describe('web proxy api handling', () => {
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
   });
 
-  it('lets storage unzip callbacks bypass proxy rate limiting', async () => {
+  it('keeps storage unzip callbacks inside proxy guard enforcement', async () => {
     mocks.guardApiProxyRequest.mockResolvedValue(
       NextResponse.json(
-        { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+        { error: 'Payload Too Large', message: 'Request body exceeds limit' },
         {
-          status: 429,
-          headers: {
-            'X-Proxy-Block-Reason': 'route-rate-limit',
-          },
+          status: 413,
         }
       )
     );
@@ -469,8 +466,13 @@ describe('web proxy api handling', () => {
       )
     );
 
-    expect(response.status).toBe(200);
-    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(response.status).toBe(413);
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      {
+        prefixBase: 'proxy:web:api',
+      }
+    );
     expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
   });
 
@@ -513,6 +515,38 @@ describe('web proxy api handling', () => {
     expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
       '203.0.113.10'
     );
+  });
+
+  it('does not escalate human auth route-rate-limit responses into an IP block', async () => {
+    const guardResponse = NextResponse.json(
+      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: {
+          'X-Proxy-Block-Reason': 'route-rate-limit',
+          'X-RateLimit-Policy': 'password-login',
+        },
+      }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/auth/password-login', {
+        method: 'POST',
+        body: '{}',
+        headers: {
+          'user-agent': 'Mozilla/5.0',
+        },
+      })
+    );
+
+    expect(response).toBe(guardResponse);
+    expect(response.status).toBe(429);
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+      'route-rate-limit'
+    );
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
   });
 
   it('does not escalate signed-in browser route-rate-limit responses into an IP block', async () => {
@@ -594,41 +628,42 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
-  it('bypasses auth and locale rewriting for reserved root tilde routes', async () => {
+  it('returns a direct 404 for reserved root tilde routes', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(new NextRequest('http://localhost/~'));
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'http://localhost/__reserved-root-not-found__'
-    );
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe('/~');
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
-  it('rewrites dot-prefixed root segments before they can fall through to locale or workspace resolution', async () => {
+  it('returns a direct 404 for dot-prefixed root segments before they can fall through to locale or workspace resolution', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(
       new NextRequest('http://localhost/.well-known/traffic-advice')
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'http://localhost/__reserved-root-not-found__'
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe(
+      '/.well-known/traffic-advice'
     );
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
-  it('rewrites localized dot-prefixed workspace-like segments before they can fall through', async () => {
+  it('returns a direct 404 for localized dot-prefixed workspace-like segments before they can fall through', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(
       new NextRequest('http://localhost/en/.well-known/traffic-advice')
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'http://localhost/__reserved-root-not-found__'
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe(
+      '/en/.well-known/traffic-advice'
     );
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
@@ -818,10 +853,8 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('location')).toBeNull();
-    expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
-      'personal',
-      expect.anything()
-    );
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+    expect(mocks.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
     expect(mocks.getUserDefaultWorkspace).not.toHaveBeenCalled();
   });
@@ -898,9 +931,10 @@ describe('web proxy api handling', () => {
       new NextRequest('http://localhost/11111111-1111-4111-8111-111111111111')
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'http://localhost/__reserved-root-not-found__'
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe(
+      '/11111111-1111-4111-8111-111111111111'
     );
     expect(adminFrom).not.toHaveBeenCalled();
   });
@@ -923,9 +957,10 @@ describe('web proxy api handling', () => {
       )
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'http://localhost/__reserved-root-not-found__'
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe(
+      '/11111111-1111-4111-8111-111111111111/unknown'
     );
     expect(adminFrom).not.toHaveBeenCalled();
   });

@@ -21,13 +21,23 @@ const createClientMock = vi.fn();
 const createAdminClientMock = vi.fn();
 const getAppSessionTokenFromRequestMock = vi.fn();
 const verifyAppSessionRequestMock = vi.fn();
-const verifyCliAccessTokenMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const getPermissionsMock = vi.fn();
 const ensureDefaultPersonalTaskBoardMock = vi.fn();
 const workspacesMaybeSingleMock = vi.fn();
 const workspacesEqMock = vi.fn();
 const workspacesSelectMock = vi.fn();
+const checkRateLimitMock = vi.fn();
+const checkUserSuspensionMock = vi.fn();
+const enforceAdaptiveStepUpChallengeMock = vi.fn();
+const getAdaptiveRateLimitConfigMock = vi.fn();
+const hasAuthenticatedApiSessionMock = vi.fn();
+const isBackendRateLimitErrorMock = vi.fn();
+const isIPBlockedMock = vi.fn();
+const recordApiAuthFailureMock = vi.fn();
+const recordResponseAbuseSignalMock = vi.fn();
+const resolveWebAbuseDecisionMock = vi.fn();
+const validateAiTempAuthRequestMock = vi.fn();
 const taskBoardShareResults: Array<{ data: unknown; error: unknown }> = [];
 
 function createThenableQuery(result: { data: unknown; error: unknown }) {
@@ -92,9 +102,7 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
 }));
 
 vi.mock('@tuturuuu/auth/cli-session', () => ({
-  verifyCliAccessToken: (
-    ...args: Parameters<typeof verifyCliAccessTokenMock>
-  ) => verifyCliAccessTokenMock(...args),
+  CLI_APP_TARGET_APP: 'platform',
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -123,6 +131,59 @@ vi.mock('@/lib/tasks/default-personal-task-board', () => ({
   ) => ensureDefaultPersonalTaskBoardMock(...args),
 }));
 
+vi.mock('@tuturuuu/utils/abuse-protection', () => ({
+  extractIPFromHeaders: () => '127.0.0.1',
+  isIPBlocked: (...args: Parameters<typeof isIPBlockedMock>) =>
+    isIPBlockedMock(...args),
+  recordApiAuthFailure: (
+    ...args: Parameters<typeof recordApiAuthFailureMock>
+  ) => recordApiAuthFailureMock(...args),
+}));
+
+vi.mock('@tuturuuu/utils/abuse-protection/backend-rate-limit', () => ({
+  cascadeBackendRateLimitToProxyBan: vi.fn(),
+  isBackendRateLimitError: (
+    ...args: Parameters<typeof isBackendRateLimitErrorMock>
+  ) => isBackendRateLimitErrorMock(...args),
+}));
+
+vi.mock('@tuturuuu/utils/abuse-protection/user-suspension', () => ({
+  checkUserSuspension: (...args: Parameters<typeof checkUserSuspensionMock>) =>
+    checkUserSuspensionMock(...args),
+}));
+
+vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
+  validateAiTempAuthRequest: (
+    ...args: Parameters<typeof validateAiTempAuthRequestMock>
+  ) => validateAiTempAuthRequestMock(...args),
+}));
+
+vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
+  hasAuthenticatedApiSession: (
+    ...args: Parameters<typeof hasAuthenticatedApiSessionMock>
+  ) => hasAuthenticatedApiSessionMock(...args),
+}));
+
+vi.mock('@/lib/abuse-risk', () => ({
+  enforceAdaptiveStepUpChallenge: (
+    ...args: Parameters<typeof enforceAdaptiveStepUpChallengeMock>
+  ) => enforceAdaptiveStepUpChallengeMock(...args),
+  getAdaptiveRateLimitConfig: (
+    ...args: Parameters<typeof getAdaptiveRateLimitConfigMock>
+  ) => getAdaptiveRateLimitConfigMock(...args),
+  recordResponseAbuseSignal: (
+    ...args: Parameters<typeof recordResponseAbuseSignalMock>
+  ) => recordResponseAbuseSignalMock(...args),
+  resolveWebAbuseDecision: (
+    ...args: Parameters<typeof resolveWebAbuseDecisionMock>
+  ) => resolveWebAbuseDecisionMock(...args),
+}));
+
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: (...args: Parameters<typeof checkRateLimitMock>) =>
+    checkRateLimitMock(...args),
+}));
+
 import { GET, POST } from './route';
 
 describe('task boards route GET', () => {
@@ -138,7 +199,15 @@ describe('task boards route GET', () => {
     ensureDefaultPersonalTaskBoardMock.mockResolvedValue(null);
     getAppSessionTokenFromRequestMock.mockReturnValue(null);
     verifyAppSessionRequestMock.mockReturnValue({ ok: false });
-    verifyCliAccessTokenMock.mockReturnValue({ ok: false });
+    checkRateLimitMock.mockResolvedValue({ allowed: true, headers: {} });
+    checkUserSuspensionMock.mockResolvedValue({ suspended: false });
+    enforceAdaptiveStepUpChallengeMock.mockResolvedValue(null);
+    getAdaptiveRateLimitConfigMock.mockImplementation((config) => ({ config }));
+    hasAuthenticatedApiSessionMock.mockReturnValue(false);
+    isBackendRateLimitErrorMock.mockReturnValue(false);
+    isIPBlockedMock.mockResolvedValue(null);
+    resolveWebAbuseDecisionMock.mockResolvedValue({ action: 'allow' });
+    validateAiTempAuthRequestMock.mockResolvedValue({ status: 'missing' });
     taskBoardShareResults.length = 0;
     boardsQueryCalls.length = 0;
 
@@ -369,7 +438,7 @@ describe('task boards route GET', () => {
 
   it('allows CLI app-session tokens to list personal workspace boards', async () => {
     getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_access');
-    verifyCliAccessTokenMock.mockReturnValue({
+    verifyAppSessionRequestMock.mockReturnValue({
       claims: {
         email: 'agent@example.com',
         sub: '00000000-0000-4000-8000-000000000999',
@@ -404,9 +473,14 @@ describe('task boards route GET', () => {
       'personal',
       expect.objectContaining({ from: fromMock })
     );
+    expect(verifyAppSessionRequestMock).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      { targetApp: ['platform', 'calendar', 'tasks'] }
+    );
   });
 
   it('allows Tasks app-session tokens to list personal workspace boards', async () => {
+    getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_tasks');
     verifyAppSessionRequestMock.mockReturnValue({
       claims: {
         email: 'tasks-user@example.com',
@@ -438,11 +512,49 @@ describe('task boards route GET', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
     expect(createClientMock).not.toHaveBeenCalled();
-    expect(verifyCliAccessTokenMock).not.toHaveBeenCalled();
     expect(verifyAppSessionRequestMock).toHaveBeenCalledWith(
       expect.any(NextRequest),
-      { targetApp: ['calendar', 'tasks'] }
+      { targetApp: ['platform', 'calendar', 'tasks'] }
     );
+  });
+
+  it('rejects suspended CLI app-session callers before listing boards', async () => {
+    getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_access');
+    verifyAppSessionRequestMock.mockReturnValue({
+      claims: {
+        email: 'agent@example.com',
+        sub: '00000000-0000-4000-8000-000000000999',
+      },
+      ok: true,
+    });
+    checkUserSuspensionMock.mockResolvedValue({
+      reason: 'Suspended account',
+      suspended: true,
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/task-boards?status=all',
+        {
+          headers: {
+            Authorization: 'Bearer ttr_app_access',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'personal',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Forbidden',
+      message: 'Suspended account',
+    });
+    expect(normalizeWorkspaceIdMock).not.toHaveBeenCalled();
+    expect(boardsSelectMock).not.toHaveBeenCalled();
   });
 
   it('returns a stable duplicate-name error when creating an existing board name', async () => {

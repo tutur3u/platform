@@ -30,11 +30,35 @@ describe('CMS content model templates', () => {
     expect(templates.map((template) => template.slug)).toEqual([
       'profile',
       'blog-posts',
+      'voice-reels',
       'gallery',
       'shop-products',
       'writing-worlds',
       'social-links',
     ]);
+  });
+
+  it('defines an audio-first voice reels template', () => {
+    const template = buildCmsContentModelTemplates(strings).find(
+      (item) => item.slug === 'voice-reels'
+    );
+
+    expect(template).toBeDefined();
+    expect(template?.assetTypes).toEqual(['audio']);
+    expect(template?.blockTypes).toEqual(['markdown']);
+    expect(template?.fields.map((field) => field.key)).toEqual([
+      'category',
+      'duration',
+      'featured',
+      'style',
+      'downloadLabel',
+    ]);
+    expect(buildCollectionSchemaFromTemplate(template!).profileFields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'duration', type: 'string' }),
+        expect.objectContaining({ key: 'featured', type: 'boolean' }),
+      ])
+    );
   });
 
   it('converts template fields into a collection schema config', () => {

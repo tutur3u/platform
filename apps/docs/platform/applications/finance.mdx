@@ -1,7 +1,7 @@
 ---
-title: 'Finance'
-description: 'Shared Finance product surface across apps/web and apps/finance.'
-updatedAt: '2026-05-23'
+title: "Finance"
+description: "Shared Finance product surface across apps/web and apps/finance."
+updatedAt: "2026-06-03"
 ---
 
 ## Overview
@@ -54,6 +54,28 @@ Protected Finance APIs stay centralized in `apps/web`.
 - Finance app-session cookies are accepted by central Finance API routes and
   invoice-adjacent helper routes, then route-level permissions are enforced by
   `apps/web`.
+- Finance transaction attachment reads must authorize through the same
+  authenticated transaction visibility path as normal transaction reads. Do not
+  grant storage list, metadata, or signed-read URL access from coarse
+  `view_transactions` or `update_transactions` permissions alone; reuse
+  `get_wallet_transactions_with_permissions` with `p_transaction_ids` so wallet
+  whitelists, viewing windows, and granular income/expense permissions stay
+  aligned.
+- Finance transaction attachment uploads have server-side limits: 10 files per
+  transaction and 50 MB per file. The signed-upload route must reject
+  over-limit declared sizes before issuing a URL, and finalize must inspect the
+  actual stored object size/count and delete over-limit uploads before any
+  follow-up processing.
+- Finance transaction type filters must not classify confidential amount signs
+  for callers without `view_confidential_amount`. RPCs that accept
+  `p_transaction_type` should apply income/expense predicates only when the row
+  is non-confidential or the caller can view confidential amounts; otherwise
+  typed filters should omit those redacted rows instead of using the raw amount
+  sign.
+- Finance invoice customer IDs must be validated against `workspace_users`
+  with the route workspace before insert, and admin-backed invoice reads should
+  resolve customer display fields with an explicit `ws_id` filter instead of a
+  nested service-role join on `customer_id`.
 
 When adding new Finance behavior, update the shared Finance UI/helper first,
 then wire both host wrappers in the same change. Add or extend the protected

@@ -186,6 +186,16 @@ export interface ListWorkspaceBasicUsersResponse {
   data: WorkspaceBasicUserRecord[];
 }
 
+export interface WorkspaceReferralUserRecord extends WorkspaceBasicUserRecord {
+  has_require_attention_feedback?: boolean;
+  phone?: string | null;
+}
+
+export interface ListWorkspaceUserReferralsResponse {
+  count: number;
+  data: WorkspaceReferralUserRecord[];
+}
+
 export type WorkspaceUserPlatformLinkRepairSkipReason =
   | 'missing_email'
   | 'no_member_match'
@@ -572,6 +582,82 @@ export async function listWorkspaceBasicUsers(
         from,
         limit,
         q,
+      },
+    }
+  );
+}
+
+export async function listWorkspaceUserReferralCandidates(
+  workspaceId: string,
+  userId: string,
+  {
+    q,
+  }: {
+    q?: string;
+  } = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceReferralUserRecord[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}/referrals`,
+    {
+      cache: 'no-store',
+      query: {
+        q,
+        type: 'available',
+      },
+    }
+  );
+}
+
+export async function listWorkspaceUserReferrals(
+  workspaceId: string,
+  userId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ListWorkspaceUserReferralsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}/referrals`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceUserReferral(
+  workspaceId: string,
+  userId: string,
+  referredUserId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}/referrals`,
+    {
+      body: JSON.stringify({ referredUserId }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function deleteWorkspaceUserReferral(
+  workspaceId: string,
+  userId: string,
+  referredUserId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}/referrals`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+      query: {
+        referredUserId,
       },
     }
   );

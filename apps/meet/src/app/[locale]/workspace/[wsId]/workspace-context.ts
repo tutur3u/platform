@@ -1,14 +1,10 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export async function getMeetWorkspaceContext(id: string) {
-  const user = getAppSessionUserFromRequest(
-    { headers: await headers() },
-    { targetApp: 'meet' }
-  );
+  const user = await getSatelliteAppSessionUser('meet');
 
   if (!user?.id) redirect('/');
 

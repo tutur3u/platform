@@ -1,7 +1,7 @@
 ---
-title: 'SePay Integration'
-description: 'Architecture and implementation notes for the SePay finance integration.'
-updatedAt: '2026-04-22'
+title: "SePay Integration"
+description: "Architecture and implementation notes for the SePay finance integration."
+updatedAt: "2026-04-22"
 ---
 
 ## Goal
@@ -35,7 +35,7 @@ tokens, scopes, expiry, and connection status.
 ### `sepay_wallet_links`
 
 Maps SePay bank-account metadata to workspace wallets so webhook deliveries can
- resolve to the correct wallet without manual per-event routing.
+resolve to the correct wallet without manual per-event routing.
 
 ### `sepay_webhook_endpoints`
 
@@ -56,9 +56,12 @@ and the created `wallet_transactions.id` when processing succeeds.
   `transferAmount`.
 - `transferType: "in"` is written as a positive wallet transaction amount.
 - `transferType: "out"` is written as a negative wallet transaction amount.
-- Webhook retries reopen `failed` events immediately.
+- Webhook retries must atomically claim `failed` events by `id`, `ws_id`,
+  `status`, and empty `created_transaction_id` before creating a wallet
+  transaction. A competing retry that loses the claim is treated as a duplicate.
 - `received` events become retriable once they are older than the stale-event
-  TTL and still do not have a `created_transaction_id`.
+  TTL and still do not have a `created_transaction_id`; stale retries must use
+  the same atomic claim with a stale `received_at` predicate.
 - `processed` and `duplicate` rows are treated as non-replayable duplicates.
 - Auto-classification failures must not block ingestion; the route falls back to
   an uncategorized category.
@@ -72,11 +75,14 @@ and the created `wallet_transactions.id` when processing succeeds.
   [Secrets & Configuration](/build/devops/secrets-and-configuration).
 - The end-to-end validation flow lives in
   [SePay Testing Guide](/build/devops/sepay-testing-guide).
-- OAuth callback state is intentionally cookie-backed rather than a custom HMAC
-  payload.
+- OAuth callback state is a short-lived HMAC-signed payload bound to the
+  workspace id and stored in a callback-scoped HttpOnly cookie. The callback
+  must require the cookie value and query `state` to match before validating the
+  signature, expiry, and workspace.
 - SePay account sync follows cursor pagination and retries `429` responses using
-  SePay's `x-sepay-userapi-retry-after` header before failing the workspace
-  sync.
+  SePay's `x-sepay-userapi-retry-after` header, but request-path retry sleeps
+  are capped at 2 seconds each so sync and webhook-provisioning handlers do not
+  stay open for provider-supplied long delays.
 - Webhook provisioning only accepts numeric SePay bank-account ids
   (`bank_account_id` or numeric `id`) and best-effort deletes the remote webhook
   if local persistence of the resulting webhook id fails.

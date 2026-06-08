@@ -27,22 +27,34 @@ The Tuturuuu platform uses Supabase Auth for user authentication with support fo
 3. Client receives session token
 4. Subsequent requests include session token for RLS
 
+## Cross-App Supabase Cookies
+
+Production Tuturuuu browser sessions use one canonical Supabase auth cookie for
+the configured Supabase project and share it across `*.tuturuuu.com` by setting
+`Domain=.tuturuuu.com`. Portless local development does the same across
+`*.tuturuuu.localhost` with `Domain=.tuturuuu.localhost`.
+
+Keep the cookie host-only for plain `localhost`, preview deployments, and
+unrelated domains. Registered satellite apps still keep Tuturuuu app-session
+JWTs as a fallback and API isolation mechanism, so do not remove app-session
+refresh or handoff paths when updating shared Supabase cookie behavior.
+
 ## Sign Up
 
 ### Basic Email/Password Sign Up
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { redirect } from 'next/navigation';
+import { createClient } from "@tuturuuu/supabase/next/server";
+import { redirect } from "next/navigation";
 
 export async function signUp(formData: FormData) {
   const supabase = createClient();
 
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-  const displayName = formData.get('displayName') as string;
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const displayName = formData.get("displayName") as string;
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -59,17 +71,17 @@ export async function signUp(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect('/verify-email');
+  redirect("/verify-email");
 }
 ```
 
 ### Client Component
 
 ```tsx
-'use client';
+"use client";
 
-import { signUp } from './actions';
-import { useState } from 'react';
+import { signUp } from "./actions";
+import { useState } from "react";
 
 export function SignUpForm() {
   const [error, setError] = useState<string | null>(null);
@@ -98,16 +110,16 @@ export function SignUpForm() {
 ### Email/Password Sign In
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { redirect } from 'next/navigation';
+import { createClient } from "@tuturuuu/supabase/next/server";
+import { redirect } from "next/navigation";
 
 export async function signIn(formData: FormData) {
   const supabase = createClient();
 
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -118,18 +130,18 @@ export async function signIn(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect('/dashboard');
+  redirect("/dashboard");
 }
 ```
 
 ### OAuth Sign In
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
-export async function signInWithOAuth(provider: 'google' | 'github') {
+export async function signInWithOAuth(provider: "google" | "github") {
   const supabase = createClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -150,12 +162,12 @@ export async function signInWithOAuth(provider: 'google' | 'github') {
 Client Component:
 
 ```tsx
-'use client';
+"use client";
 
-import { signInWithOAuth } from './actions';
+import { signInWithOAuth } from "./actions";
 
 export function OAuthButtons() {
-  async function handleOAuthSignIn(provider: 'google' | 'github') {
+  async function handleOAuthSignIn(provider: "google" | "github") {
     const result = await signInWithOAuth(provider);
     if (result.url) {
       window.location.href = result.url;
@@ -164,10 +176,10 @@ export function OAuthButtons() {
 
   return (
     <div>
-      <button onClick={() => handleOAuthSignIn('google')}>
+      <button onClick={() => handleOAuthSignIn("google")}>
         Sign in with Google
       </button>
-      <button onClick={() => handleOAuthSignIn('github')}>
+      <button onClick={() => handleOAuthSignIn("github")}>
         Sign in with GitHub
       </button>
     </div>
@@ -179,9 +191,11 @@ export function OAuthButtons() {
 
 For provider-specific OAuth callbacks that need to carry ephemeral verifier or
 CSRF state across a browser redirect, prefer a short-lived HttpOnly cookie scoped
-to the callback route. Do not default to bespoke HMAC-signed state blobs when the
-server only needs to confirm that the callback matches the browser session that
-initiated the flow.
+to the callback route. When the callback binds external credentials or mutates a
+workspace, do not let the cookie value be the sole authority: use a signed,
+expiry-bound state payload that also binds the workspace or account being
+connected, then require the callback cookie and query `state` to match before
+verifying that payload.
 
 ### Passkeys
 
@@ -222,6 +236,17 @@ registration and sign-in from `https://tuturuuu.localhost`. UI-only and
 unsupported-browser paths can still be exercised without registering a
 credential.
 
+Remote Supabase development auth is different: if a cloud Supabase project has
+captcha protection enabled, passkey sign-in must send a real Turnstile token.
+The local E2E bypass is honored only when `NEXT_PUBLIC_SUPABASE_URL` points at
+local Supabase. When testing remote Supabase from `https://tuturuuu.localhost`,
+the Turnstile site key must authorize that local hostname; Cloudflare Turnstile
+error `110200` means the widget cannot mint the token Supabase requires. The
+login UI keeps passkey sign-in blocked while that token is missing; either add
+the local hostname to the Cloudflare Turnstile widget used by the Supabase
+project, or point `NEXT_PUBLIC_SUPABASE_URL` at local Supabase for dev passkey
+testing.
+
 ### Web QR Session Handoff
 
 QR-based session handoff must never be a public login bootstrap. An
@@ -255,15 +280,15 @@ the mobile approver.
 ## Sign Out
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { redirect } from 'next/navigation';
+import { createClient } from "@tuturuuu/supabase/next/server";
+import { redirect } from "next/navigation";
 
 export async function signOut() {
   const supabase = createClient();
   await supabase.auth.signOut();
-  redirect('/login');
+  redirect("/login");
 }
 ```
 
@@ -283,7 +308,7 @@ async function resolveCurrentUserId(supabase: TypedSupabaseClient) {
   const getClaims = (supabase.auth as { getClaims?: () => Promise<unknown> })
     .getClaims;
 
-  if (typeof getClaims === 'function') {
+  if (typeof getClaims === "function") {
     const { data, error } = (await getClaims.call(supabase.auth)) as {
       data?: { claims?: { sub?: string } };
       error?: unknown;
@@ -311,23 +336,23 @@ those environments.
 ### Enable TOTP MFA
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function enableMFA() {
   const supabase = createClient();
 
   // Enroll in MFA
   const { data, error } = await supabase.auth.mfa.enroll({
-    factorType: 'totp',
+    factorType: "totp",
   });
 
   if (error) throw error;
 
   return {
     qrCode: data.totp.qr_code, // Display to user
-    secret: data.totp.secret,  // For manual entry
+    secret: data.totp.secret, // For manual entry
     factorId: data.id,
   };
 }
@@ -336,9 +361,9 @@ export async function enableMFA() {
 ### Verify MFA Enrollment
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function verifyMFAEnrollment(factorId: string, code: string) {
   const supabase = createClient();
@@ -356,9 +381,9 @@ export async function verifyMFAEnrollment(factorId: string, code: string) {
 ### MFA Challenge During Sign In
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function signInWithMFA(email: string, password: string) {
   const supabase = createClient();
@@ -398,14 +423,14 @@ export async function signInWithMFA(email: string, password: string) {
 ### Verify MFA Code
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function verifyMFACode(
   factorId: string,
   challengeId: string,
-  code: string
+  code: string,
 ) {
   const supabase = createClient();
 
@@ -440,12 +465,15 @@ not satisfy the current-session binding.
 ### Get Current Session
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function getSession() {
   const supabase = createClient();
 
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
 
   if (error) throw error;
   return session;
@@ -455,12 +483,15 @@ export async function getSession() {
 ### Get Current User
 
 ```typescript
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function getCurrentUser() {
   const supabase = createClient();
 
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
   if (error || !user) {
     return null;
@@ -473,9 +504,9 @@ export async function getCurrentUser() {
 ### Refresh Session
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function refreshSession() {
   const supabase = createClient();
@@ -492,9 +523,9 @@ export async function refreshSession() {
 ### Request Password Reset
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function requestPasswordReset(email: string) {
   const supabase = createClient();
@@ -511,9 +542,9 @@ export async function requestPasswordReset(email: string) {
 ### Reset Password
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function resetPassword(newPassword: string) {
   const supabase = createClient();
@@ -532,21 +563,23 @@ export async function resetPassword(newPassword: string) {
 ### Resend Verification Email
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function resendVerificationEmail() {
   const supabase = createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user?.email) {
-    throw new Error('No user email found');
+    throw new Error("No user email found");
   }
 
   const { error } = await supabase.auth.resend({
-    type: 'signup',
+    type: "signup",
     email: user.email,
   });
 
@@ -566,7 +599,7 @@ When a new satellite app participates in centralized login, wire both sides in t
   `/verify-token` can exchange the cross-app token for a host-only
   `tuturuuu_app_session` cookie. When the satellite requires rewritten
   `apps/web` API access, use `createPOST('<app>', { verificationBaseUrl:
-  WEB_APP_URL })` so the handoff also stores the Web-issued app-session cookie.
+WEB_APP_URL })` so the handoff also stores the Web-issued app-session cookie.
 - Keep `generate_cross_app_token(...)` bound to the authenticated caller
   (`p_user_id = auth.uid()`) so verify endpoints cannot mint sessions for
   arbitrary users.
@@ -588,13 +621,13 @@ If either piece is missing, centralized login can stall on the web login spinner
 ### Generate Cross-App Token
 
 ```typescript
-import { generateCrossAppToken } from '@tuturuuu/auth/cross-app';
+import { generateCrossAppToken } from "@tuturuuu/auth/cross-app";
 
 export async function createShortenerLink(userId: string) {
   // Generate token that shortener app can verify
   const token = await generateCrossAppToken(userId, {
-    expiresIn: '1h',
-    app: 'shortener',
+    expiresIn: "1h",
+    app: "shortener",
   });
 
   return {
@@ -606,13 +639,13 @@ export async function createShortenerLink(userId: string) {
 ### Verify Cross-App Token
 
 ```typescript
-import { verifyCrossAppToken } from '@tuturuuu/auth/cross-app';
+import { verifyCrossAppToken } from "@tuturuuu/auth/cross-app";
 
 export async function handleCrossAppRequest(token: string) {
   const payload = await verifyCrossAppToken(token);
 
   if (!payload) {
-    throw new Error('Invalid token');
+    throw new Error("Invalid token");
   }
 
   // payload contains: { userId, app, exp, iat }
@@ -626,29 +659,31 @@ Protect routes using Next.js middleware:
 
 ```typescript
 // middleware.ts
-import { createDynamicClient } from '@tuturuuu/supabase/next/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { createDynamicClient } from "@tuturuuu/supabase/next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function proxy(request: NextRequest) {
   const supabase = createDynamicClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Protect dashboard routes
-  if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  if (request.nextUrl.pathname.startsWith("/dashboard") && !user) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // Redirect authenticated users from auth pages
-  if (request.nextUrl.pathname.startsWith('/login') && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  if (request.nextUrl.pathname.startsWith("/login") && user) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/signup'],
+  matcher: ["/dashboard/:path*", "/login", "/signup"],
 };
 ```
 
@@ -680,11 +715,11 @@ export default async function ProtectedPage() {
 ### useUser Hook
 
 ```tsx
-'use client';
+"use client";
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { useEffect, useState } from 'react';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { createClient } from "@tuturuuu/supabase/next/client";
+import { useEffect, useState } from "react";
+import type { SupabaseUser } from "@tuturuuu/supabase/next/user";
 
 export function useUser() {
   const [user, setUser] = useState<User | null>(null);
@@ -715,9 +750,9 @@ export function useUser() {
 ### Usage
 
 ```tsx
-'use client';
+"use client";
 
-import { useUser } from '@/hooks/useUser';
+import { useUser } from "@/hooks/useUser";
 
 export function UserProfile() {
   const { user, loading } = useUser();
@@ -734,11 +769,11 @@ export function UserProfile() {
 Link multiple auth providers to same account:
 
 ```typescript
-'use server';
+"use server";
 
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from "@tuturuuu/supabase/next/server";
 
-export async function linkIdentity(provider: 'google' | 'github') {
+export async function linkIdentity(provider: "google" | "github") {
   const supabase = createClient();
 
   const { data, error } = await supabase.auth.linkIdentity({
@@ -755,17 +790,22 @@ export async function linkIdentity(provider: 'google' | 'github') {
 ### ✅ DO
 
 1. **Always check authentication server-side**
+
    ```typescript
-   const { data: { user } } = await supabase.auth.getUser();
-   if (!user) throw new Error('Unauthorized');
+   const {
+     data: { user },
+   } = await supabase.auth.getUser();
+   if (!user) throw new Error("Unauthorized");
    ```
 
 2. **Redirect after authentication**
+
    ```typescript
-   redirect('/dashboard'); // Don't return sensitive data
+   redirect("/dashboard"); // Don't return sensitive data
    ```
 
 3. **Handle errors gracefully**
+
    ```typescript
    if (error) return { error: error.message };
    ```
@@ -778,18 +818,23 @@ export async function linkIdentity(provider: 'google' | 'github') {
 ### ❌ DON'T
 
 1. **Don't trust client-side auth state alone**
+
    ```typescript
    // ❌ Bad
-   if (localStorage.getItem('user')) { /* ... */ }
+   if (localStorage.getItem("user")) {
+     /* ... */
+   }
    ```
 
 2. **Don't expose sensitive data in auth redirects**
+
    ```typescript
    // ❌ Bad
    redirect(`/dashboard?apiKey=${apiKey}`);
    ```
 
 3. **Don't store passwords**
+
    ```typescript
    // ❌ Bad: Let Supabase handle password storage
    ```

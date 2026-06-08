@@ -276,7 +276,7 @@ export default function UserForm({
       );
     }
 
-    const fileName = generateRandomUUID();
+    const fileName = `${generateRandomUUID()}.jpg`;
     const contentType = file.type;
 
     // Get signed upload URL from backend
@@ -290,42 +290,20 @@ export default function UserForm({
       throw new Error('Failed to get signed upload URL');
     }
 
-    const { token, path } = await res.json();
+    const { signedUrl, publicUrl } = await res.json();
 
     // Upload file using the signed URL
-    const uploadRes = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/s3/object/${path}?token=${token}`,
-      {
-        method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': contentType },
-      }
-    );
+    const uploadRes = await fetch(signedUrl, {
+      method: 'PUT',
+      body: file,
+      headers: { 'Content-Type': contentType },
+    });
 
     if (!uploadRes.ok) {
       throw new Error('Failed to upload image');
     }
 
-    // Since we can't easily generate a signed read URL for 1 year from the client
-    // and we want to keep things secure, we should store the path and let the backend
-    // handle it, or use a public URL if appropriate.
-    // For now, let's use the public URL if it's a public bucket, or a standard path.
-    // In this project, it seems we use signed URLs for users.
-    // Let's check how other parts handle this.
-    // Actually, createSignedUrl was used in the original code.
-    // I will add a GET method to the avatar API to generate a signed read URL.
-
-    const readRes = await fetch(
-      `/api/v1/workspaces/${wsId}/users/avatar?path=${path}`,
-      { cache: 'no-store' }
-    );
-
-    if (!readRes.ok) {
-      throw new Error('Failed to get signed read URL');
-    }
-
-    const { signedUrl } = await readRes.json();
-    return signedUrl;
+    return publicUrl;
   }
 
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {

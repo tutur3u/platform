@@ -12,6 +12,7 @@ import {
 describe('CLI commands', () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -33,6 +34,22 @@ describe('CLI commands', () => {
     await runCli(['--version', '--no-update-check']);
 
     expect(write).toHaveBeenCalledWith(`${packageJson.version}\n`);
+  });
+
+  it('does not treat forwarded command version flags as global CLI flags', async () => {
+    vi.stubEnv(
+      'TUTURUUU_CONFIG',
+      '/tmp/tuturuuu-cli-devbox-forwarded-version-test/config.json'
+    );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await expect(
+      runCli(['box', 'run', '--no-update-check', '--', 'bun', '--version'])
+    ).rejects.toThrow('Not logged in. Run `ttr login` first.');
+
+    expect(write).not.toHaveBeenCalledWith(`${packageJson.version}\n`);
   });
 
   it('normalizes task label color names to backend hex values', () => {
@@ -117,6 +134,26 @@ describe('CLI commands', () => {
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('Finance commands use the selected workspace')
     );
+  });
+
+  it.each([
+    ['box', '--help'],
+    ['help', 'box'],
+    ['box', 'help'],
+  ])('prints devbox group help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('Usage: ttr box')
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('clone, install, start Supabase')
+    );
+    expect(write).toHaveBeenCalledWith(expect.stringContaining('--dir <path>'));
   });
 
   it.each([

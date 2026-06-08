@@ -5,7 +5,7 @@ import {
   Calendar,
   CheckCircle2,
   MessageSquare,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 

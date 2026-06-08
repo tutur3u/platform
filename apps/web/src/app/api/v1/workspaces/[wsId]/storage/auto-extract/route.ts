@@ -1,4 +1,5 @@
 import { posix } from 'node:path';
+import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -25,6 +26,28 @@ const fileUploadPayloadSchema = z.object({
   contentType: z.string().optional().default('application/octet-stream'),
   size: z.number().optional(),
 });
+
+function buildPayloadTooLargeResponse() {
+  return NextResponse.json(
+    {
+      error: 'Payload Too Large',
+      message: 'Extracted file exceeds direct callback body limit',
+    },
+    { status: 413 }
+  );
+}
+
+function rejectOversizedDirectFileCallback(request: Request) {
+  const contentLength = request.headers.get('content-length');
+  if (!contentLength) {
+    return null;
+  }
+
+  const size = Number.parseInt(contentLength, 10);
+  return Number.isFinite(size) && size > MAX_PAYLOAD_SIZE
+    ? buildPayloadTooLargeResponse()
+    : null;
+}
 
 export async function POST(
   request: Request,
@@ -74,9 +97,18 @@ export async function POST(
     }
 
     if (operation === 'file') {
+      const oversizedResponse = rejectOversizedDirectFileCallback(request);
+      if (oversizedResponse) {
+        return oversizedResponse;
+      }
+
       const contentType =
         request.headers.get('content-type') || 'application/octet-stream';
       const buffer = new Uint8Array(await request.arrayBuffer());
+
+      if (buffer.byteLength > MAX_PAYLOAD_SIZE) {
+        return buildPayloadTooLargeResponse();
+      }
 
       if (buffer.byteLength === 0) {
         return NextResponse.json(
@@ -137,6 +169,7 @@ export async function POST(
         headers: uploadPayload.headers,
         path: uploadPayload.path,
         fullPath: uploadPayload.fullPath,
+        provider: uploadPayload.provider,
       });
     }
 

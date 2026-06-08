@@ -5,15 +5,11 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { fetchWorkspaces as _fetchWorkspaces } from '@tuturuuu/ui/lib/workspace-actions';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { isPolarWorkspaceSetupEnabled } from '@/lib/polar-config';
 import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
 import { createFreeSubscription } from '@/utils/subscription-helper';
-
-export async function fetchWorkspaces() {
-  return _fetchWorkspaces();
-}
 
 export async function setupWorkspace(wsId: string) {
   const supabase = await createClient();
@@ -33,10 +29,7 @@ export async function setupWorkspace(wsId: string) {
     throw new Error('Unauthorized');
   }
 
-  const isPolarConfigured =
-    !!process.env.POLAR_WEBHOOK_SECRET && !!process.env.POLAR_ACCESS_TOKEN;
-
-  if (!isPolarConfigured) return { success: true };
+  if (!isPolarWorkspaceSetupEnabled()) return { success: true };
 
   const polar = createPolarClient();
   const sbAdmin = await createAdminClient();

@@ -1,15 +1,22 @@
 const LOCAL_E2E_AUTH_BYPASS_ENV = 'TUTURUUU_LOCAL_E2E_AUTH_BYPASS';
+const LOCAL_E2E_PUBLIC_AUTH_BYPASS_ENV =
+  'NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS';
+const LOCAL_E2E_DEFAULT_SUPABASE_URL = 'http://127.0.0.1:8001';
+const LOCAL_E2E_PORTLESS_ORIGIN = 'https://tuturuuu.localhost:1355';
 
 const LOCAL_WEB_ORIGINS = new Set([
   'http://127.0.0.1:7803',
   'http://localhost:7803',
   'https://tuturuuu.localhost',
+  LOCAL_E2E_PORTLESS_ORIGIN,
 ]);
 
 const LOCAL_REQUEST_WEB_ORIGINS = new Set([
   ...LOCAL_WEB_ORIGINS,
   'http://127.0.0.1',
   'http://localhost',
+  'http://tuturuuu.localhost',
+  'http://tuturuuu.localhost:1355',
 ]);
 
 const LOCAL_INTERNAL_WEB_ORIGINS = new Set([
@@ -92,6 +99,34 @@ function isLocalWebOrigin(origin: string | null): origin is string {
   return origin !== null && LOCAL_WEB_ORIGINS.has(origin);
 }
 
+function isLocalPortlessBackendOrigin(
+  origin: string | null,
+  env: NodeJS.ProcessEnv
+): origin is string {
+  const portlessOrigin = getOrigin(env.PORTLESS_URL);
+
+  if (!isLocalWebOrigin(portlessOrigin)) {
+    return false;
+  }
+
+  const expectedPort = env.PORT;
+  if (!expectedPort) {
+    return false;
+  }
+
+  try {
+    const url = new URL(origin ?? '');
+
+    return (
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      (url.hostname === '127.0.0.1' || url.hostname === 'localhost') &&
+      url.port === expectedPort
+    );
+  } catch {
+    return false;
+  }
+}
+
 function isLocalRequestWebOrigin(origin: string | null): origin is string {
   return origin !== null && LOCAL_REQUEST_WEB_ORIGINS.has(origin);
 }
@@ -100,12 +135,57 @@ function isLocalInternalWebOrigin(origin: string | null): origin is string {
   return origin !== null && LOCAL_INTERNAL_WEB_ORIGINS.has(origin);
 }
 
-function isAllowedRequestOrigin(origin: string | null): origin is string {
-  return isLocalRequestWebOrigin(origin) || isLocalInternalWebOrigin(origin);
+function isAllowedRequestOrigin(
+  origin: string | null,
+  env: NodeJS.ProcessEnv
+): origin is string {
+  return (
+    isLocalRequestWebOrigin(origin) ||
+    isLocalInternalWebOrigin(origin) ||
+    isLocalPortlessBackendOrigin(origin, env)
+  );
 }
 
 function isLocalSupabaseOrigin(origin: string | null): origin is string {
   return origin !== null && LOCAL_SUPABASE_ORIGINS.has(origin);
+}
+
+function getLocalE2EBypassFlag(env: NodeJS.ProcessEnv) {
+  return (
+    env[LOCAL_E2E_AUTH_BYPASS_ENV] ??
+    env[LOCAL_E2E_PUBLIC_AUTH_BYPASS_ENV] ??
+    process.env.NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS
+  );
+}
+
+function getConfiguredUrl(...values: (string | undefined)[]) {
+  return values.find((value) => value?.trim());
+}
+
+function hasLocalE2EWebOrigin(env: NodeJS.ProcessEnv) {
+  return [
+    env.BASE_URL ?? null,
+    env.PORTLESS_URL,
+    env.NEXT_PUBLIC_APP_URL,
+    env.NEXT_PUBLIC_WEB_APP_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXT_PUBLIC_WEB_APP_URL,
+  ].some((url) => isLocalWebOrigin(getOrigin(url ?? undefined)));
+}
+
+function getLocalE2EPublicSupabaseUrl(env: NodeJS.ProcessEnv) {
+  return getConfiguredUrl(
+    env.NEXT_PUBLIC_SUPABASE_URL ?? undefined,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    LOCAL_E2E_DEFAULT_SUPABASE_URL
+  );
+}
+
+function getLocalE2EServerSupabaseUrl(env: NodeJS.ProcessEnv) {
+  return (
+    getConfiguredUrl(env.SUPABASE_SERVER_URL, env.SUPABASE_URL) ??
+    getLocalE2EPublicSupabaseUrl(env)
+  );
 }
 
 function isOptionalLocalUrlHeader(
@@ -124,18 +204,35 @@ function isOptionalLocalUrlHeader(
 export function isLocalE2EAuthBypassEnabled(
   env: NodeJS.ProcessEnv = process.env
 ) {
-  if (!isEnabled(env[LOCAL_E2E_AUTH_BYPASS_ENV])) {
+  if (!isEnabled(getLocalE2EBypassFlag(env))) {
     return false;
   }
 
-  const webOrigin = getOrigin(env.BASE_URL);
-  const publicSupabaseOrigin = getOrigin(env.NEXT_PUBLIC_SUPABASE_URL);
-  const serverSupabaseOrigin = getOrigin(
-    env.SUPABASE_SERVER_URL ?? env.NEXT_PUBLIC_SUPABASE_URL
-  );
+  const publicSupabaseOrigin = getOrigin(getLocalE2EPublicSupabaseUrl(env));
+  const serverSupabaseOrigin = getOrigin(getLocalE2EServerSupabaseUrl(env));
 
   return (
-    isLocalWebOrigin(webOrigin) &&
+    hasLocalE2EWebOrigin(env) &&
+    isLocalSupabaseOrigin(publicSupabaseOrigin) &&
+    isLocalSupabaseOrigin(serverSupabaseOrigin)
+  );
+}
+
+export function shouldBypassSupabaseAuthCaptchaForDev(
+  env: NodeJS.ProcessEnv = process.env
+) {
+  if (isLocalE2EAuthBypassEnabled(env)) {
+    return true;
+  }
+
+  if (env.NODE_ENV !== 'development') {
+    return false;
+  }
+
+  const publicSupabaseOrigin = getOrigin(getLocalE2EPublicSupabaseUrl(env));
+  const serverSupabaseOrigin = getOrigin(getLocalE2EServerSupabaseUrl(env));
+
+  return (
     isLocalSupabaseOrigin(publicSupabaseOrigin) &&
     isLocalSupabaseOrigin(serverSupabaseOrigin)
   );
@@ -167,14 +264,15 @@ export function isLocalE2EAuthRequestAllowed(
     requestOrigin,
     hostOrigin,
     forwardedHostOrigin,
+    getOrigin(env.PORTLESS_URL),
   ].some(isLocalRequestWebOrigin);
 
   return (
     hasLocalPublicOrigin &&
-    (requestOrigin === null || isAllowedRequestOrigin(requestOrigin)) &&
-    (hostOrigin === null || isAllowedRequestOrigin(hostOrigin)) &&
+    (requestOrigin === null || isAllowedRequestOrigin(requestOrigin, env)) &&
+    (hostOrigin === null || isAllowedRequestOrigin(hostOrigin, env)) &&
     (forwardedHostOrigin === null ||
-      isAllowedRequestOrigin(forwardedHostOrigin)) &&
+      isAllowedRequestOrigin(forwardedHostOrigin, env)) &&
     isOptionalLocalUrlHeader(request, 'origin') &&
     isOptionalLocalUrlHeader(request, 'referer')
   );

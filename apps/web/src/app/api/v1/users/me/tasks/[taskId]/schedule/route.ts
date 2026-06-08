@@ -13,16 +13,29 @@ const USER_TASK_SCHEDULE_APP_SESSION_AUTH = {
   targetApp: ['calendar', 'tasks'],
 } as const;
 
-const schedulingSettingsSchema = z.object({
-  total_duration: z.number().positive(),
-  is_splittable: z.boolean(),
-  min_split_duration_minutes: z.number().int().nonnegative(),
-  max_split_duration_minutes: z.number().int().nonnegative(),
-  calendar_hours: z
-    .enum(['work_hours', 'personal_hours', 'meeting_hours'])
-    .nullable(),
-  auto_schedule: z.boolean(),
-});
+const schedulingSettingsSchema = z
+  .object({
+    total_duration: z.number().nonnegative().nullable().optional(),
+    is_splittable: z.boolean().nullable().optional(),
+    min_split_duration_minutes: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional(),
+    max_split_duration_minutes: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional(),
+    calendar_hours: z
+      .enum(['work_hours', 'personal_hours', 'meeting_hours'])
+      .nullable()
+      .optional(),
+    auto_schedule: z.boolean().optional(),
+  })
+  .strict();
 
 type TaskCalendarEventRow = {
   task_id: string;
@@ -328,18 +341,20 @@ export const PATCH = withSessionAuth<{ taskId: string }>(
       }
 
       const body = schedulingSettingsSchema.parse(await req.json());
+      if (Object.keys(body).length === 0) {
+        return NextResponse.json(
+          { error: 'No valid fields to update' },
+          { status: 400 }
+        );
+      }
+
       const { error } = await (supabase as any)
         .from('task_user_scheduling_settings')
         .upsert(
           {
             task_id: taskId,
             user_id: user.id,
-            total_duration: body.total_duration,
-            is_splittable: body.is_splittable,
-            min_split_duration_minutes: body.min_split_duration_minutes,
-            max_split_duration_minutes: body.max_split_duration_minutes,
-            calendar_hours: body.calendar_hours,
-            auto_schedule: body.auto_schedule,
+            ...body,
           },
           { onConflict: 'task_id,user_id' }
         );

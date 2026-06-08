@@ -1,4 +1,8 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import {
+  TUTURUUU_LOCAL_LOGO_URL,
+  TUTURUUU_REMOTE_LOGO_URL,
+} from '@tuturuuu/ui/custom/tuturuuu-logo-urls';
 
 /** Values suitable for `next/image` `src` (absolute URL or app-relative path). */
 export function isUsableNextImageSrc(
@@ -8,6 +12,10 @@ export function isUsableNextImageSrc(
   const s = value.trim();
   if (s.startsWith('//')) return false;
   return /^https?:\/\//i.test(s) || s.startsWith('/');
+}
+
+function normalizeWorkspaceImageSrcForWeb(value: string) {
+  return value === TUTURUUU_REMOTE_LOGO_URL ? TUTURUUU_LOCAL_LOGO_URL : value;
 }
 
 /**
@@ -20,7 +28,7 @@ export async function resolveWorkspaceImageSrcForNext(
   raw: string | null | undefined
 ): Promise<string | null> {
   if (!raw?.trim()) return null;
-  const s = raw.trim();
+  const s = normalizeWorkspaceImageSrcForWeb(raw.trim());
   if (isUsableNextImageSrc(s)) return s;
 
   const { data, error } = await sbAdmin.storage

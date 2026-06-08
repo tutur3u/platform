@@ -1,8 +1,8 @@
+import type { HiveRealtimeWorld } from '@tuturuuu/realtime/hive';
 import {
   encodeHiveWorldUpdate,
-  type HiveRealtimeWorld,
   mergeHiveCrdtUpdate,
-} from '@tuturuuu/realtime/hive';
+} from '@tuturuuu/realtime/hive/yjs';
 import postgres, { type Sql } from 'postgres';
 
 type HiveWorldEventRow = {

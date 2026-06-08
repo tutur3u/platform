@@ -10,10 +10,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment } from 'react';
 import { RequireAttentionName } from '@/components/users/require-attention-name';
@@ -157,16 +157,20 @@ export const getUserColumns = ({
         />
       ),
       cell: ({ row }) => {
-        const avatarUrl = row.getValue('avatar_url') as string | undefined;
+        const avatarUrl = normalizeAvatarImageSrc(
+          row.getValue('avatar_url') as string | undefined
+        );
         if (!avatarUrl) return <div className="min-w-32">-</div>;
 
         return (
-          <Image
+          // biome-ignore lint/performance/noImgElement: Supabase public avatars are served directly to avoid Next image proxy failures.
+          <img
             width={128}
             height={128}
             src={avatarUrl}
             alt="Avatar"
             className="aspect-square min-w-32 rounded-lg object-cover"
+            loading="lazy"
           />
         );
       },

@@ -1,6 +1,6 @@
 'use client';
 
-import { getCurrentUserProfile } from '@tuturuuu/internal-api';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';

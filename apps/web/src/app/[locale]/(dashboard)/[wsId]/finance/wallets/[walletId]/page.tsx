@@ -34,6 +34,7 @@ export default async function WorkspaceWalletDetailsPage({
       defaultCurrency={context.currency}
       internalApiOptions={internalApiOptions}
       permissions={context.permissions}
+      permissionRequestUser={context.user}
       workspace={context.workspace}
     />
   );

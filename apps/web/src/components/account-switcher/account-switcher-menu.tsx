@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Settings, Users } from '@tuturuuu/icons';
+import { Loader2, Settings, Users } from '@tuturuuu/icons/lucide';
 import {
   DropdownMenu,
   DropdownMenuContent,

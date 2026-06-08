@@ -1,3 +1,4 @@
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -21,7 +22,10 @@ export const generateMetadata = async ({
 
   const untitled = locale === 'vi' ? 'Kế hoạch' : 'Plan';
 
-  const plan = await getPlan(planId);
+  const user = await getSatelliteAppSessionUser('meet');
+  const plan = await getPlan(planId, {
+    actorUserId: user?.id ?? null,
+  });
   const planName = plan?.name || untitled;
 
   const title = `${planName} - Tuturuuu Meet`;

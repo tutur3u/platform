@@ -1,7 +1,7 @@
 {
   "name": "@tuturuuu/realtime",
   "license": "MIT",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publishConfig": {
     "access": "public"
   },
@@ -15,6 +15,7 @@
     "./chat/token": "./src/chat/token.ts",
     ".": "./src/index.ts",
     "./hive": "./src/hive/index.ts",
+    "./hive/yjs": "./src/hive/yjs.ts",
     "./meet": "./src/meet/index.ts",
     "./meet/token": "./src/meet/token.ts"
   },

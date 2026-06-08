@@ -364,6 +364,78 @@ describe('task journal route', () => {
     expect(userClient.from).not.toHaveBeenCalledWith('tasks');
   });
 
+  it.each([
+    {
+      name: 'rejects global journal label IDs from another workspace before task insertion',
+      labelIds: ['foreign-label'],
+      labels: [],
+    },
+    {
+      name: 'rejects reviewed task label IDs from another workspace before task insertion',
+      labelIds: undefined,
+      labels: [{ id: 'foreign-label', name: 'Foreign' }],
+    },
+  ])('$name', async ({ labelIds, labels }) => {
+    normalizeWorkspaceId.mockResolvedValue('ws-1');
+    getUser.mockResolvedValue({
+      data: { user: { id: 'user-1', email: 'dev@example.com' } },
+      error: null,
+    });
+    workspaceMemberMaybeSingle.mockResolvedValue({
+      data: { type: 'MEMBER' as const },
+      error: null,
+    });
+    listMaybeSingle.mockResolvedValue({
+      data: {
+        id: 'list-1',
+        name: 'Inbox',
+      },
+      error: null,
+    });
+    workspaceLabelsEq.mockResolvedValue({
+      data: [{ id: 'local-label', name: 'Local', color: 'blue' }],
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/tasks/journal/route'
+    );
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/tasks/journal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry: 'Follow up with the customer this week',
+          listId: 'list-1',
+          ...(labelIds ? { labelIds } : {}),
+          tasks: [
+            {
+              title: 'Follow up customer',
+              description: null,
+              priority: null,
+              labels,
+              dueDate: null,
+              estimationPoints: null,
+              projectIds: [],
+            },
+          ],
+        }),
+      }),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Invalid label IDs provided',
+      details: {
+        invalidLabelIds: ['foreign-label'],
+        message: 'One or more label IDs do not belong to this workspace',
+      },
+    });
+    expect(tasksInsert).not.toHaveBeenCalled();
+    expect(taskLabelsInsert).not.toHaveBeenCalled();
+  });
+
   it('loads workspace projects through the admin client after workspace access passes', async () => {
     normalizeWorkspaceId.mockResolvedValue('ws-1');
     getUser.mockResolvedValue({

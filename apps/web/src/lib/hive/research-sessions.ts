@@ -218,6 +218,7 @@ export async function updateHiveResearchSession(input: {
 }
 
 export async function getHiveResearchSessionExport(input: {
+  isAdmin?: boolean;
   serverId: string;
   sessionId: string;
 }) {
@@ -225,6 +226,7 @@ export async function getHiveResearchSessionExport(input: {
     getHiveResearchSession(input),
     listHiveResearchTimeline({
       filters: { limit: 500, researchSessionId: input.sessionId },
+      isAdmin: input.isAdmin,
       serverId: input.serverId,
     }),
   ]);

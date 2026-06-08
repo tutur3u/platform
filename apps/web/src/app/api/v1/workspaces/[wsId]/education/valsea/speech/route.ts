@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
+import { checkEducationWorkspaceAccess } from '@/lib/education/access';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   uploadWorkspaceStorageFileDirect,
@@ -38,28 +38,8 @@ const speechSchema = z.object({
 });
 
 async function verifyAccess(context: AuthorizedRequest, wsId: string) {
-  const resolvedWsId = resolveWorkspaceId(wsId);
-  const membership = await verifyWorkspaceMembershipType({
-    supabase: context.supabase,
-    userId: context.user.id,
-    wsId: resolvedWsId,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { message: 'Could not verify workspace membership' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json(
-      { message: "You don't have access to this workspace" },
-      { status: 403 }
-    );
-  }
-
-  return null;
+  const access = await checkEducationWorkspaceAccess({ context, wsId });
+  return access.ok ? null : access.response;
 }
 
 function getVoiceLabBaseUrl() {
@@ -106,13 +86,12 @@ export const POST = withSessionAuth<Params>(
         .json()
         .catch(() => ({}))) as LocalSpeechResponse;
       if (!response.ok || !data.audioBase64) {
-        const detail = data.detail || data.message;
+        serverLogger.error('Local speech synthesis upstream failed', {
+          hasPublicDetail: Boolean(data.detail || data.message),
+          status: response.status,
+        });
         return NextResponse.json(
-          {
-            message: detail
-              ? `Local speech synthesis failed: ${detail}`
-              : 'Local speech synthesis failed',
-          },
+          { message: 'Local speech synthesis failed' },
           { status: response.ok ? 502 : response.status }
         );
       }
@@ -151,10 +130,8 @@ export const POST = withSessionAuth<Params>(
         trace: {
           durationMs: Math.round(performance.now() - startedAt),
           engine: 'piper',
-          endpoint,
           model: data.model,
           provider: 'local-model',
-          response: data.trace,
           voiceId: data.voiceId || parsed.data.voiceId,
         },
         voiceId: data.voiceId || parsed.data.voiceId,

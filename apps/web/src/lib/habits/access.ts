@@ -1,7 +1,6 @@
 import { verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-
-export const HABITS_ENABLED_SECRET = 'ENABLE_HABITS';
+import { HABITS_ENABLED_SECRET } from './constants';
 
 export async function isHabitsEnabled(wsId: string) {
   return verifySecret({

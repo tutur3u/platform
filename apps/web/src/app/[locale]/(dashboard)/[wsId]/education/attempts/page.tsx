@@ -14,9 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION } from '@/lib/education/access';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 
 export const metadata: Metadata = {
@@ -50,6 +53,14 @@ export default async function QuizAttemptsPage({
   const t = await getTranslations();
   const { wsId: routeWsId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const permissions = await getPermissions({ wsId: resolvedWsId });
+  if (
+    !permissions ||
+    permissions.withoutPermission(EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION)
+  ) {
+    notFound();
+  }
+
   const search = await searchParams;
   const page = Math.max(parseInt(search.page || '1', 10) || 1, 1);
   const pageSize = Math.min(

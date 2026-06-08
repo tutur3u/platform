@@ -21,6 +21,7 @@ import {
   isTrustedProxyBypassRequest,
 } from '@tuturuuu/utils/api-proxy-guard';
 import {
+  PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
@@ -97,12 +98,9 @@ const WEB_APP_URL = isDev
 const OFFLINE_FALLBACK_PATH = '/~offline';
 const BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
 const RESERVED_ROOT_SEGMENT_PREFIX = '~';
-const RESERVED_ROOT_NOT_FOUND_PATH = '/__reserved-root-not-found__';
 const BLOCKED_ROOT_SEGMENT_PREFIX = '.';
 const EMAIL_ROUTE_WORKSPACE_PATTERN =
   /^\/api\/v1\/workspaces\/([^/]+)\/(?:mail\/send|users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
-const STORAGE_UNZIP_CALLBACK_PATTERN =
-  /^\/api\/v1\/workspaces\/[^/]+\/(?:storage\/auto-extract|external-projects\/webgl-packages\/extract-callback)(?:\/|$)/;
 const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
   'EMAIL_RATE_LIMIT_MINUTE',
   'EMAIL_RATE_LIMIT_HOUR',
@@ -410,14 +408,6 @@ function hasMalformedAuthorizationHeader(req: NextRequest): boolean {
   return token.length === 0 || /\s/.test(token);
 }
 
-function isStorageUnzipCallbackRequest(req: NextRequest): boolean {
-  return (
-    STORAGE_UNZIP_CALLBACK_PATTERN.test(req.nextUrl.pathname) &&
-    req.headers.get('authorization')?.toLowerCase().startsWith('bearer ') ===
-      true
-  );
-}
-
 function buildProxyBlockResponse(
   status: 400 | 401 | 429,
   reason:
@@ -555,6 +545,15 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
   }
 
   return null;
+}
+
+function isExpectedHumanAuthRateLimitPath(pathname: string) {
+  return (
+    /^\/api\/v1\/auth\/password-login(?:\/|$)/.test(pathname) ||
+    /^\/api\/v1\/auth\/mobile\/password-login(?:\/|$)/.test(pathname) ||
+    /^\/api\/v1\/auth\/otp\/(?:send|verify)(?:\/|$)/.test(pathname) ||
+    /^\/api\/v1\/auth\/mobile\/(?:send-otp|verify-otp)(?:\/|$)/.test(pathname)
+  );
 }
 
 async function blockSuspiciousAnonymousApiRequest(
@@ -759,11 +758,15 @@ function buildGuestRouteDeniedResponse(
   req: NextRequest,
   authRes: NextResponse
 ) {
-  const deniedResponse = NextResponse.rewrite(
-    new URL(RESERVED_ROOT_NOT_FOUND_PATH, req.nextUrl)
-  );
+  const deniedResponse = buildRootNotFoundResponse(req);
   propagateAuthCookies(authRes, deniedResponse);
   return deniedResponse;
+}
+
+function buildRootNotFoundResponse(req: NextRequest) {
+  const response = new NextResponse(null, { status: 404 });
+  response.headers.set('x-tuturuuu-proxy-not-found', req.nextUrl.pathname);
+  return response;
 }
 
 async function guardGuestWorkspaceRoute({
@@ -857,10 +860,6 @@ async function guardGuestWorkspaceRoute({
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
-    if (isStorageUnzipCallbackRequest(req)) {
-      return NextResponse.next();
-    }
-
     const malformedAuthCookieResponse =
       await blockMalformedApiAuthCookieRequest(req);
     if (malformedAuthCookieResponse) {
@@ -885,6 +884,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         guardResponse.status === 429 &&
         guardResponse.headers.get('X-Proxy-Block-Reason') ===
           'route-rate-limit' &&
+        !isExpectedHumanAuthRateLimitPath(req.nextUrl.pathname) &&
         !isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) &&
         !hasAuthenticatedApiSession(req)
       ) {
@@ -1163,6 +1163,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   ) {
     const workspaceSlug = pathSegments[hasLocaleInPath ? 1 : 0];
 
+    if (workspaceSlug === PERSONAL_WORKSPACE_SLUG) {
+      return handleLocaleWithAuthCookies(req, authRes);
+    }
+
     if (isWorkspaceHomeRedirectCandidate(workspaceSlug)) {
       try {
         const supabase = await createClient();
@@ -1301,15 +1305,11 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
   }
 
   if (rootDynamicSegment?.startsWith(BLOCKED_ROOT_SEGMENT_PREFIX)) {
-    return NextResponse.rewrite(
-      new URL(RESERVED_ROOT_NOT_FOUND_PATH, req.nextUrl)
-    );
+    return buildRootNotFoundResponse(req);
   }
 
   if (segments[0]?.startsWith(RESERVED_ROOT_SEGMENT_PREFIX)) {
-    return NextResponse.rewrite(
-      new URL(RESERVED_ROOT_NOT_FOUND_PATH, req.nextUrl)
-    );
+    return buildRootNotFoundResponse(req);
   }
 
   if (

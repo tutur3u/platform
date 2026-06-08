@@ -51,6 +51,10 @@ dayjs.extend(timezone);
 dayjs.extend(isoWeek);
 
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
+import {
+  type FinancePermissionRequestUser,
+  FinancePermissionWarningDialog,
+} from '@tuturuuu/ui/finance/shared/finance-permission-warning-dialog';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -92,6 +96,7 @@ interface InfiniteTransactionsListProps {
   canViewConfidentialCategory?: boolean;
   /** Hide transaction creator (useful for personal workspaces) */
   isPersonalWorkspace?: boolean;
+  permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 
 interface TransactionResponse {
@@ -133,6 +138,7 @@ export function InfiniteTransactionsList({
   canViewConfidentialDescription: _canViewConfidentialDescription,
   canViewConfidentialCategory: _canViewConfidentialCategory,
   isPersonalWorkspace,
+  permissionRequestUser,
 }: InfiniteTransactionsListProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -886,6 +892,25 @@ export function InfiniteTransactionsList({
                       </span>
                     </Button>
                   )}
+                  {canCreateTransactions === false && (
+                    <FinancePermissionWarningDialog
+                      missingPermissions={['create_transactions']}
+                      user={permissionRequestUser}
+                      trigger={
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span className="sr-only">
+                            {t('finance-permission-warning.open_request')}
+                          </span>
+                        </Button>
+                      }
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -1029,6 +1054,7 @@ export function InfiniteTransactionsList({
               canUpdateConfidentialTransactions={
                 canUpdateConfidentialTransactions
               }
+              permissionRequestUser={permissionRequestUser}
               onFinish={() => {
                 handleTransactionUpdate();
                 handleCloseDialog();
@@ -1061,6 +1087,7 @@ export function InfiniteTransactionsList({
               canCreateConfidentialTransactions={
                 canCreateConfidentialTransactions
               }
+              permissionRequestUser={permissionRequestUser}
               onFinish={() => {
                 handleTransactionUpdate();
                 setCreateForGroupDate(null);

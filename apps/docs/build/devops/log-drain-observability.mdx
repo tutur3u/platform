@@ -18,6 +18,7 @@ The monitoring navigation uses compact labels:
 - Requests
 - Resources
 - Projects
+- Stress Tests
 
 ## Runtime
 
@@ -101,7 +102,7 @@ state. The global deployment failure banner and current blocked-target summary
 come only from the latest active deployment row; older failures remain visible
 inside deployment history rows and filters.
 
-The Requests tab intentionally freezes its result window when opened. New traffic is counted in the background and offered as an explicit "show new" action, while older pages are appended automatically as the operator scrolls. This prevents live traffic from shifting the visible rows during investigation.
+The Requests tab intentionally freezes its result window when opened. New traffic is counted in the background and offered as an explicit "show new" action, while older pages are appended automatically as the operator scrolls. This prevents live traffic from shifting the visible rows during investigation. The frozen `since` and `until` cursor bounds must be applied by the Postgres log-drain query or legacy archive reader before any `ORDER BY ... LIMIT`, archive page size, or aggregate row cap so request floods after the freeze cannot evict older rows still inside the operator's investigation window.
 
 Monitoring links preserve the selected `project` query parameter so Overview, Deployments, Logs, Analytics, Observability, Cron, Requests, and Resources stay scoped to the same project while an operator moves between tabs. The project scope card on each tab is the visible source of truth for the active project, branch, hostnames, commit, and addons.
 
@@ -112,6 +113,23 @@ Each drained request stores the client IP address and user agent when those head
 ## Cron Control
 
 Infrastructure → Monitoring → Cron exposes the native Docker cron runner state, a global enable/disable switch, per-job enable/disable switches, manual run buttons, retained execution rows, and captured response/console output. Runtime overrides are stored in `tmp/docker-web/watch/control/cron-control.json`; they do not edit `apps/web/cron.config.json`, so Vercel cron config remains source-controlled while local Docker operations can pause individual jobs safely.
+
+Cron snapshot and execution history reads are available to infrastructure
+viewers, but cron mutations are operator-only. Manual run requests and global or
+per-job runtime enablement changes must go through routes guarded by
+`authorizeInfrastructureOperator` so roles with only `view_infrastructure`
+cannot change scheduler behavior.
+
+Cron log-drain wrappers must not persist unauthorized attempts. Keep
+`withCronLogDrain` configured so 401 and 403 cron responses return to callers
+without writing `requests`, `cron_runs`, or buffered `log_events`; attackers must
+not be able to fill observability storage with unauthenticated cron probes.
+
+Request-archive console lenses must store and return redacted summaries only.
+Watcher ingestion and web-side archive normalization both redact common bearer
+tokens, JWTs, sensitive key/value fields, sensitive query parameters, and email
+addresses, then cap each attached console message at 500 characters. Do not
+persist raw app-container console payloads in `blue-green-request-logs`.
 
 Cron jobs should show both the raw expression and a natural description such as "Every 15 minutes", plus the previous and next scheduled run timestamps when the runtime snapshot provides them. Cron expressions are stored as runtime config, while visible daily schedule descriptions and run timestamps are rendered in the viewer's browser timezone.
 
@@ -137,6 +155,24 @@ The internal resource sampler writes the current Docker snapshot into the log dr
 Chart gaps on the Resources tab mean a retained sampler record is missing for that time bucket; they are not automatically downtime. The Resources tab now shows sampling continuity for runtime and build metrics, including sampled buckets, gap buckets, latest retained sample age, and a live-snapshot marker for the current bucket. If the live snapshot is healthy but historical charts have gaps, inspect the Cron tab and the `infrastructure-sample-resources` job before treating the gap as runtime unavailability.
 
 Resource pressure uses the same thresholds as the dashboard: memory under 200 MB is green, 200-500 MB is amber, 500-1024 MB is orange, and anything above 1024 MB is red. CPU under 5% is green, 5-20% is amber, 20-40% is orange, and anything above 40% is red.
+
+## Stress Tests
+
+Infrastructure → Monitoring → Stress Tests queues controlled native load runs for root workspace infrastructure operators. The web app only validates permissions, writes a control request, and reads status. It must not generate load inside a Next.js route handler.
+
+Allowed targets come from `PLATFORM_STRESS_TEST_TARGETS`, a JSON array of objects with `id`, `label`, `baseUrl`, optional `defaultPath`, and optional `description`. If the variable is absent, the dashboard exposes only the local web target at `http://127.0.0.1:7803`. Do not accept arbitrary operator-entered URLs; add production, staging, or canary targets explicitly to this allowlist.
+
+Run the native worker with:
+
+```bash
+node scripts/watch-stress-tests.js
+```
+
+The web container writes queued run and abort request files only under `PLATFORM_STRESS_TEST_CONTROL_DIR` or the default `tmp/docker-web/watch/control/stress-tests`, which should resolve to the writable blue/green control mount in production. The native worker consumes those control files, writes live run state under `PLATFORM_STRESS_TEST_MONITORING_DIR` or `tmp/docker-web/stress-tests`, and tags synthetic requests with `X-Tuturuuu-Stress-Test-Run` plus a stress-test user agent. Keep the runtime/monitoring tree read-only for web containers; run directories, samples, and result files are worker-owned.
+
+Durable run summaries are stored in private Supabase tables and read only through `/api/v1/infrastructure/monitoring/stress-tests`. Completed runtime files are synced back to those private tables when the dashboard/API reads them, so rollout order stays fail-open if the migration or log-drain database is not available yet.
+
+Per-run resource samples are also copied into log-drain `usage_events` with `stress.*` metrics and `metadata.runId`. This lets operators compare RPS, latency, CPU, memory, and network spikes against the existing Requests, Logs, Deployments, and Resources tabs for the same run window.
 
 ## Troubleshooting
 

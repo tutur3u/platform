@@ -38,6 +38,7 @@ vi.mock('@tuturuuu/internal-api/auth', () => ({
   createMfaMobileApprovalChallengeWithInternalApi: vi.fn(),
   getOtpSettings: (...args: Parameters<typeof mocks.getOtpSettings>) =>
     mocks.getOtpSettings(...args),
+  passwordLoginWithInternalApi: vi.fn(),
   pollMfaMobileApprovalChallengeWithInternalApi: vi.fn(),
   resolveCrossAppReturnUrlWithInternalApi: (
     ...args: Parameters<typeof mocks.resolveCrossAppReturnUrlWithInternalApi>
@@ -46,8 +47,8 @@ vi.mock('@tuturuuu/internal-api/auth', () => ({
   verifyOtpWithInternalApi: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: () => ({
+vi.mock('@tuturuuu/supabase/next/auth-browser', () => ({
+  createAuthClient: () => ({
     auth: {
       getUser: mocks.getUser,
       mfa: {
@@ -195,6 +196,25 @@ describe('LoginForm returnUrl navigation', () => {
     });
 
     expect(mocks.assign).not.toHaveBeenCalled();
+    queryClient.clear();
+  });
+
+  it('does not expose authenticated QR handoff on the public login form', async () => {
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
+    });
+
+    const queryClient = renderLoginForm('/');
+
+    await screen.findByRole('button', {
+      name: 'login.continue_with_email',
+    });
+
+    expect(
+      screen.queryByRole('button', { name: 'login.qr_title' })
+    ).not.toBeInTheDocument();
     queryClient.clear();
   });
 

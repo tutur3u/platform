@@ -6,6 +6,7 @@ const mocks = {
   getPermissions: vi.fn(),
   getUser: vi.fn(),
   getWorkspaceConfig: vi.fn(),
+  validateInvoiceCustomer: vi.fn(),
   sbAdmin: {
     schema: vi.fn(() => ({})),
   },
@@ -43,6 +44,9 @@ vi.mock('../route', () => ({
   getCalculatedInvoiceValuesFromRpc: (
     ...args: Parameters<typeof mocks.getCalculatedInvoiceValuesFromRpc>
   ) => mocks.getCalculatedInvoiceValuesFromRpc(...args),
+  validateInvoiceCustomer: (
+    ...args: Parameters<typeof mocks.validateInvoiceCustomer>
+  ) => mocks.validateInvoiceCustomer(...args),
 }));
 
 vi.mock('@/utils/workspace-config', () => ({
@@ -85,6 +89,10 @@ describe('subscription invoice create route', () => {
       values_recalculated: false,
       rounding_applied: 0,
       allowPromotions: true,
+    });
+    mocks.validateInvoiceCustomer.mockResolvedValue({
+      customerId: 'customer-1',
+      ok: true,
     });
     mocks.getUser.mockResolvedValue({
       data: {

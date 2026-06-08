@@ -4,13 +4,15 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 
 /**
  * Get statistics about task embeddings across the entire system
  * Only accessible by Tuturuuu admins
  */
 export async function GET() {
+  await connection();
+
   try {
     const supabase = await createClient();
 

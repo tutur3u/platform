@@ -8,7 +8,6 @@ import {
   Ban,
   Box,
   Calendar,
-  Check,
   CheckCircle2,
   CircleSlash,
   Clock,
@@ -35,6 +34,7 @@ import {
   listWorkspaceTaskProjects,
   removeCurrentUserTaskPersonalPlacement,
 } from '@tuturuuu/internal-api/tasks';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -121,6 +121,7 @@ import {
   TaskPriorityMenu,
   TaskProjectsMenu,
   TaskRelatedMenu,
+  TaskSchedulingMenu,
 } from '../menus';
 import { TaskActions } from '../task-actions';
 import { TaskCustomDateDialog } from '../task-dialogs/TaskCustomDateDialog';
@@ -129,9 +130,16 @@ import { TaskNewLabelDialog } from '../task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../task-dialogs/TaskNewProjectDialog';
 import { getTaskCardParentBadgeState } from '../task-parent-badge-state';
 import { TaskCardCheckbox } from './TaskCardCheckbox';
+import {
+  getTaskCardSelectionCheckboxToneClasses,
+  TASK_CARD_OVERDUE_CHECKBOX_TONE_CLASSES,
+} from './task-card-checkbox-style';
 import { areTaskCardPropsEqual } from './task-card-comparator';
+import { shouldRenderTaskCardCompletionCheckbox } from './task-card-completion-checkbox-visibility';
+import { TaskCardIdentifierRow } from './task-card-identifier-row';
 import { mergeTaskCardLabelOptions } from './task-card-label-options';
 import { getTaskCardVisibilityState } from './task-card-visibility';
+import { TaskSchedulingBadge } from './task-scheduling-badge';
 
 export interface TaskCardProps {
   task: Task;
@@ -673,21 +681,6 @@ function TaskCardInner({
     menuOpen ||
     isOptimistic; // Disable drag for optimistic tasks until confirmed
 
-  // Debug: log drag state for newly created task
-  if (task.name === 'new task') {
-    console.log('[TaskCard Debug]', {
-      taskId: task.id,
-      editDialogOpen: dialogState.editDialogOpen,
-      deleteDialogOpen: dialogState.deleteDialogOpen,
-      customDateDialogOpen: dialogState.customDateDialogOpen,
-      newLabelDialogOpen: dialogState.newLabelDialogOpen,
-      newProjectDialogOpen: dialogState.newProjectDialogOpen,
-      menuOpen,
-      isOptimistic,
-      RESULT_dragDisabled: dragDisabled,
-    });
-  }
-
   const sortableDisabled = dragDisabled || isOverlay;
   const sortableId = isOverlay
     ? `${task.id}:drag-overlay`
@@ -768,6 +761,13 @@ function TaskCardInner({
   const isResolvedListStatus = isTaskBoardResolvedStatus(taskList?.status);
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
+  const selectionCheckboxClassName = cn(
+    getTaskCardSelectionCheckboxToneClasses(taskList?.color as SupportedColor),
+    isOverdue &&
+      !task.closed_at &&
+      !isResolvedListStatus &&
+      TASK_CARD_OVERDUE_CHECKBOX_TONE_CLASSES
+  );
 
   // Memoize description metadata to prevent unnecessary recalculations
   // This is important because descriptionMeta is used in taskBadges dependency array
@@ -1188,6 +1188,36 @@ function TaskCardInner({
       });
     }
 
+    if ((task.total_duration ?? 0) > 0) {
+      badges.push({
+        id: 'duration',
+        element: (
+          <TaskSchedulingBadge
+            key="duration"
+            autoSchedule={task.auto_schedule}
+            calendarHours={task.calendar_hours}
+            isSplittable={task.is_splittable}
+            labels={{
+              autoSchedule: taskBoardT('ws-task-boards.dialog.auto_schedule'),
+              estimatedDuration: taskBoardT(
+                'ws-task-boards.dialog.estimated_duration'
+              ),
+              meetingHours: taskBoardT('ws-task-boards.dialog.meeting_hours'),
+              personalHours: taskBoardT('ws-task-boards.dialog.personal_hours'),
+              splittable: taskBoardT('ws-task-boards.dialog.splittable'),
+              workHours: taskBoardT('ws-task-boards.dialog.work_hours'),
+            }}
+            maxSplitDurationMinutes={task.max_split_duration_minutes}
+            minSplitDurationMinutes={task.min_split_duration_minutes}
+            onElement={(element) => {
+              if (element) badgeRefs.current.set('duration', element as any);
+            }}
+            totalDuration={task.total_duration}
+          />
+        ),
+      });
+    }
+
     // Labels badge
     if (task.labels && task.labels.length > 0) {
       badges.push({
@@ -1324,6 +1354,12 @@ function TaskCardInner({
     task.priority,
     task.projects,
     task.estimation_points,
+    task.total_duration,
+    task.auto_schedule,
+    task.calendar_hours,
+    task.is_splittable,
+    task.max_split_duration_minutes,
+    task.min_split_duration_minutes,
     task.labels,
     boardConfig?.estimation_type,
     descriptionMeta.totalCheckboxes,
@@ -1336,6 +1372,7 @@ function TaskCardInner({
     blockingCount,
     relatedTaskCount,
     t,
+    taskBoardT,
     parentBadgeIdentifier,
   ]);
 
@@ -1651,65 +1688,35 @@ function TaskCardInner({
             <AlertCircle className="absolute -top-4 -right-4.5 h-3 w-3" />
           </div>
         )}
-      {/* Selection indicator */}
-      {isMultiSelectMode && (
-        <div
-          className={cn(
-            'absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-200',
-            isSelected
-              ? 'scale-110 border-primary bg-primary text-primary-foreground shadow-md'
-              : 'border-border bg-background/80 text-muted-foreground shadow-sm hover:scale-105 hover:border-primary/50'
-          )}
-        >
-          {isSelected ? (
-            <Check className="h-4 w-4 stroke-3" />
-          ) : (
-            <div className="h-2 w-2 rounded-full bg-current opacity-30" />
-          )}
-        </div>
-      )}
       <div className="p-3">
         {/* Header */}
         <div className="flex items-start gap-1">
           <div className="min-w-0 flex-1">
-            <div
-              className={cn(
-                'mb-1 flex gap-1',
-                isPersonalExternalTask ? 'flex-wrap items-center' : 'flex-col'
+            <TaskCardIdentifierRow
+              externalSourceLabel={externalSourceLabel}
+              externalSourceTitle={[
+                task.source_workspace_name,
+                task.source_board_name,
+                task.source_list_name,
+              ]
+                .filter(Boolean)
+                .join(' / ')}
+              isMultiSelectMode={isMultiSelectMode}
+              isPersonalExternalTask={isPersonalExternalTask}
+              isSelected={isSelected}
+              onSelect={(event) => onSelect?.(task.id, event)}
+              selectTaskLabel={t('select_task', { name: task.name ?? '' })}
+              selectionCheckboxClassName={selectionCheckboxClassName}
+              taskListStatus={taskList?.status}
+              ticketBadgeClassName={getTicketBadgeColorClasses(
+                taskList,
+                task.priority
               )}
-            >
-              {isPersonalExternalTask && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 min-w-0 max-w-[70%] gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-1.5 text-[10px] text-dynamic-cyan"
-                  title={[
-                    task.source_workspace_name,
-                    task.source_board_name,
-                    task.source_list_name,
-                  ]
-                    .filter(Boolean)
-                    .join(' / ')}
-                >
-                  <ExternalLink className="h-2.5 w-2.5 shrink-0" />
-                  <span className="truncate">{externalSourceLabel}</span>
-                </Badge>
-              )}
-              {/* Ticket Identifier */}
-              {taskList?.status !== 'documents' && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'w-fit px-1 py-0 font-mono text-[10px]',
-                    getTicketBadgeColorClasses(taskList, task.priority)
-                  )}
-                  title={t('ticket_id_label', {
-                    id: taskTicketIdentifier,
-                  })}
-                >
-                  {taskTicketIdentifier}
-                </Badge>
-              )}
-            </div>
+              ticketIdentifier={taskTicketIdentifier}
+              ticketTitle={t('ticket_id_label', {
+                id: taskTicketIdentifier,
+              })}
+            />
             <div className="mb-1">
               {/* Task Name */}
               <button
@@ -1876,6 +1883,47 @@ function TaskCardInner({
                       removeDueDate: t('remove_due_date'),
                     }}
                   />
+
+                  {/* Scheduling Menu */}
+                  {taskList?.status !== 'documents' && (
+                    <TaskSchedulingMenu
+                      task={task}
+                      boardId={boardId}
+                      isLoading={isLoading}
+                      onUpdate={onUpdate}
+                      onClose={() => setMenuOpen(false)}
+                      translations={{
+                        schedule: taskBoardT('ws-task-boards.dialog.schedule'),
+                        estimatedDuration: taskBoardT(
+                          'ws-task-boards.dialog.estimated_duration'
+                        ),
+                        h: taskBoardT('ws-task-boards.dialog.h'),
+                        m: taskBoardT('ws-task-boards.dialog.m'),
+                        splittable: taskBoardT(
+                          'ws-task-boards.dialog.splittable'
+                        ),
+                        minSplit: taskBoardT('ws-task-boards.dialog.min_split'),
+                        maxSplit: taskBoardT('ws-task-boards.dialog.max_split'),
+                        hourType: taskBoardT('ws-task-boards.dialog.hour_type'),
+                        workHours: taskBoardT(
+                          'ws-task-boards.dialog.work_hours'
+                        ),
+                        meetingHours: taskBoardT(
+                          'ws-task-boards.dialog.meeting_hours'
+                        ),
+                        personalHours: taskBoardT(
+                          'ws-task-boards.dialog.personal_hours'
+                        ),
+                        autoSchedule: taskBoardT(
+                          'ws-task-boards.dialog.auto_schedule'
+                        ),
+                        save: t('save'),
+                        clear: t('clear'),
+                        saved: t('saved'),
+                        error: t('error'),
+                      }}
+                    />
+                  )}
 
                   {/* Estimation Menu */}
                   {boardConfig?.estimation_type && (
@@ -2403,7 +2451,10 @@ function TaskCardInner({
               )}
 
               {/* Checkbox: hidden for documents lists */}
-              {taskList?.status !== 'documents' && (
+              {shouldRenderTaskCardCompletionCheckbox({
+                isMultiSelectMode,
+                taskListStatus: taskList?.status,
+              }) && (
                 <TaskCardCheckbox
                   task={task}
                   taskList={taskList}

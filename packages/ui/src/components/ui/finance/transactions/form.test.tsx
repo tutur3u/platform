@@ -63,6 +63,13 @@ vi.mock('@tuturuuu/internal-api/finance', () => ({
   updateWallet: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/ui/sonner', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
+
 function renderTransactionForm() {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -147,5 +154,41 @@ describe('TransactionForm', () => {
     );
 
     expect(screen.getByText('transaction-data-table.tab_basic')).toBeVisible();
+  });
+
+  it('shows a permission request when create transaction access is missing', () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TransactionsCreateSummary
+          canChangeFinanceWallets
+          canCreateConfidentialTransactions={false}
+          canCreateTransactions={false}
+          canSetFinanceWalletsOnCreate
+          createDescription="Create description"
+          createTitle="Create"
+          defaultOpen
+          description="Transactions description"
+          permissionRequestUser={{
+            displayName: 'Jane Doe',
+            id: 'user-1',
+          }}
+          pluralTitle="Transactions"
+          singularTitle="Transaction"
+          wsId="ws-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByText('create_transactions')).toBeVisible();
+    expect(screen.getByText('user-1')).toBeVisible();
+    expect(screen.getByText('Jane Doe')).toBeVisible();
   });
 });

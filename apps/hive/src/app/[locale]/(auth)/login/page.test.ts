@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getAppSessionClaimsFromRequest: vi.fn(),
+  getSatelliteSupabaseSessionUser: vi.fn(),
   getTranslations: vi.fn(),
   hasWebAppSessionTokenFromRequest: vi.fn(),
   headers: vi.fn(),
@@ -13,7 +14,12 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
   getAppSessionClaimsFromRequest: mocks.getAppSessionClaimsFromRequest,
+  getSupabaseSessionUser: mocks.getSatelliteSupabaseSessionUser,
   hasWebAppSessionTokenFromRequest: mocks.hasWebAppSessionTokenFromRequest,
+}));
+
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteSupabaseSessionUser: mocks.getSatelliteSupabaseSessionUser,
 }));
 
 vi.mock('next/headers', () => ({
@@ -62,6 +68,7 @@ describe('Hive login page redirect targets', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
+    mocks.getSatelliteSupabaseSessionUser.mockResolvedValue(null);
     mocks.getTranslations.mockResolvedValue((key: string) => key);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
     mocks.headers.mockResolvedValue(new Headers());
@@ -89,6 +96,17 @@ describe('Hive login page redirect targets', () => {
         searchParams: Promise.resolve({ next: '//evil.test/phish' }),
       })
     ).rejects.toThrow('redirect:/');
+  });
+
+  it('redirects existing Supabase sessions to the local next path', async () => {
+    mocks.getSatelliteSupabaseSessionUser.mockResolvedValue({ id: 'user-1' });
+    const LoginPage = (await import('./page')).default;
+
+    await expect(
+      LoginPage({
+        searchParams: Promise.resolve({ next: '/dashboard' }),
+      })
+    ).rejects.toThrow('redirect:/dashboard');
   });
 
   it('encodes unsafe unauthenticated handoffs with a local verifier fallback', async () => {

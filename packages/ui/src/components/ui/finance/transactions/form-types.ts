@@ -1,4 +1,5 @@
 import type { Database } from '@tuturuuu/types';
+import type { FinancePermissionRequestUser } from '../shared/finance-permission-warning-dialog';
 import type { TransactionFormValues } from './form-schema';
 
 type DbTransaction = Database['public']['Tables']['wallet_transactions']['Row'];
@@ -32,6 +33,7 @@ export interface TransactionFormProps {
   canUpdateConfidentialTransactions?: boolean;
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
+  permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 
 export type NewContentType = 'wallet' | 'transaction-category' | 'tag';

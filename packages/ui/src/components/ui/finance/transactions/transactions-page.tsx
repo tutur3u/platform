@@ -1,3 +1,8 @@
+import { Button } from '@tuturuuu/ui/button';
+import {
+  type FinancePermissionRequestUser,
+  FinancePermissionWarningDialog,
+} from '@tuturuuu/ui/finance/shared/finance-permission-warning-dialog';
 import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog-content';
 import { TransactionsCreateSummary } from '@tuturuuu/ui/finance/transactions/transactions-create-summary';
 import { TransactionsInfinitePage } from '@tuturuuu/ui/finance/transactions/transactions-infinite-page';
@@ -19,6 +24,7 @@ interface Props {
     personal?: boolean | null;
     timezone?: string | null;
   };
+  permissionRequestUser?: FinancePermissionRequestUser | null;
   openCreateDialog?: boolean;
   showTransactionTypeFilter?: boolean;
 }
@@ -28,6 +34,7 @@ export default async function TransactionsPage({
   permissions,
   wsId,
   workspace,
+  permissionRequestUser,
   openCreateDialog = false,
   showTransactionTypeFilter = false,
 }: Props) {
@@ -71,7 +78,20 @@ export default async function TransactionsPage({
     'view_confidential_category'
   );
 
-  if (!canViewTransactions) return notFound();
+  if (!canViewTransactions) {
+    return (
+      <FinancePermissionWarningDialog
+        defaultOpen
+        missingPermissions={['view_transactions']}
+        user={permissionRequestUser}
+        trigger={
+          <Button variant="outline">
+            {t('finance-permission-warning.open_request')}
+          </Button>
+        }
+      />
+    );
+  }
 
   return (
     <>
@@ -87,6 +107,7 @@ export default async function TransactionsPage({
         canChangeFinanceWallets={canChangeFinanceWallets}
         canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
         canCreateConfidentialTransactions={canCreateConfidentialTransactions}
+        permissionRequestUser={permissionRequestUser}
       />
       <Separator className="my-4" />
       <TransactionsInfinitePage
@@ -109,6 +130,7 @@ export default async function TransactionsPage({
         canViewConfidentialDescription={canViewConfidentialDescription}
         canViewConfidentialCategory={canViewConfidentialCategory}
         isPersonalWorkspace={!!resolvedWorkspace.personal}
+        permissionRequestUser={permissionRequestUser}
         showTransactionTypeFilter={showTransactionTypeFilter}
       />
     </>

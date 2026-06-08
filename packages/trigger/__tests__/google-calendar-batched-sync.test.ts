@@ -179,7 +179,7 @@ describe('Google Calendar Batched Sync', () => {
           }),
         ]),
         {
-          onConflict: 'ws_id,google_event_id',
+          onConflict: 'ws_id,provider,external_calendar_id,external_event_id',
           ignoreDuplicates: false,
         }
       );

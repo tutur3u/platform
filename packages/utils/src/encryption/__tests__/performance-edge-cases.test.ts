@@ -13,6 +13,8 @@ import {
   TEST_MASTER_KEY,
 } from './test-helpers';
 
+const SCRYPT_COVERAGE_TIMEOUT_MS = 30_000;
+
 describe('encryption-service', () => {
   setupEncryptionEnv();
 
@@ -56,33 +58,43 @@ describe('encryption-service', () => {
       });
     });
 
-    it('should benefit from key derivation cache', async () => {
-      const workspaceKey = generateWorkspaceKey();
+    it(
+      'should benefit from key derivation cache',
+      async () => {
+        const workspaceKey = generateWorkspaceKey();
 
-      // Verify cache is working: multiple calls complete without error
-      // and produce valid encrypted output (deterministic check instead of timing)
-      const encrypted1 = await encryptWorkspaceKey(
-        workspaceKey,
-        TEST_MASTER_KEY
-      );
-      const encrypted2 = await encryptWorkspaceKey(
-        workspaceKey,
-        TEST_MASTER_KEY
-      );
+        // Verify cache is working: multiple calls complete without error
+        // and produce valid encrypted output (deterministic check instead of timing)
+        const encrypted1 = await encryptWorkspaceKey(
+          workspaceKey,
+          TEST_MASTER_KEY
+        );
+        const encrypted2 = await encryptWorkspaceKey(
+          workspaceKey,
+          TEST_MASTER_KEY
+        );
 
-      // Both should be valid base64 strings
-      expect(encrypted1).toMatch(/^[A-Za-z0-9+/]+=*$/);
-      expect(encrypted2).toMatch(/^[A-Za-z0-9+/]+=*$/);
+        // Both should be valid base64 strings
+        expect(encrypted1).toMatch(/^[A-Za-z0-9+/]+=*$/);
+        expect(encrypted2).toMatch(/^[A-Za-z0-9+/]+=*$/);
 
-      // Each encryption produces different ciphertext (random IV)
-      expect(encrypted1).not.toBe(encrypted2);
+        // Each encryption produces different ciphertext (random IV)
+        expect(encrypted1).not.toBe(encrypted2);
 
-      // Both should decrypt to the same key
-      const decrypted1 = await decryptWorkspaceKey(encrypted1, TEST_MASTER_KEY);
-      const decrypted2 = await decryptWorkspaceKey(encrypted2, TEST_MASTER_KEY);
-      expect(decrypted1.equals(workspaceKey)).toBe(true);
-      expect(decrypted2.equals(workspaceKey)).toBe(true);
-    });
+        // Both should decrypt to the same key
+        const decrypted1 = await decryptWorkspaceKey(
+          encrypted1,
+          TEST_MASTER_KEY
+        );
+        const decrypted2 = await decryptWorkspaceKey(
+          encrypted2,
+          TEST_MASTER_KEY
+        );
+        expect(decrypted1.equals(workspaceKey)).toBe(true);
+        expect(decrypted2.equals(workspaceKey)).toBe(true);
+      },
+      SCRYPT_COVERAGE_TIMEOUT_MS
+    );
   });
 
   // ============================================================================

@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/auth",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -10,6 +10,7 @@
     "./app-session-policy": "./src/app-session-policy.ts",
     "./app-session": "./src/app-session.ts",
     "./cli-session": "./src/cli-session.ts",
+    "./supabase-session-user": "./src/supabase-session-user.ts",
     "./proxy": "./src/proxy/index.ts",
     "./cross-app": "./src/cross-app/index.ts",
     "./cross-app/server": "./src/cross-app/server.ts",
@@ -30,14 +31,14 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "^16.2.6",
-    "react": "^19.2.6",
+    "next": "^16.2.7",
+    "react": "^19.2.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^25.9.1",
-    "@types/react": "^19.2.15",
+    "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"

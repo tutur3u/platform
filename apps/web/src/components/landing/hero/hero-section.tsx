@@ -1,4 +1,4 @@
-import { ArrowRight, Sparkles } from '@tuturuuu/icons';
+import { ArrowRight, Sparkles } from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';

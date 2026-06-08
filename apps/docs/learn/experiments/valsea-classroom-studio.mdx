@@ -4,9 +4,11 @@ description: Experiment notes for the Education Lab Valsea integration.
 ---
 
 The Valsea Mira Voice Lab experiment lives in the web dashboard at
-`/:wsId/education/valsea`. It turns Mira-generated or user-provided classroom
-moments into local learner audio, Valsea speech intelligence, richer sentiment
-evidence, and teacher-ready learning artifacts.
+`/:wsId/education/valsea`. The page and API require the workspace
+`ENABLE_EDUCATION` secret plus the member's `ai_lab` permission. It turns
+Mira-generated or user-provided classroom moments into local learner audio,
+Valsea speech intelligence, richer sentiment evidence, and teacher-ready
+learning artifacts.
 
 ## Runtime Setup
 
@@ -76,11 +78,13 @@ to Valsea, so preview audio is never silently submitted.
 POST /api/v1/workspaces/:wsId/education/valsea/audio/upload-url
 ```
 
-The audio upload route is session-authenticated, verifies workspace membership,
-checks file type and size, applies workspace Drive capacity checks, and returns a
-short-lived signed upload URL for
+The audio upload route is session-authenticated, requires `manage_drive`, checks
+file type and declared size, applies workspace Drive capacity checks, and
+returns a short-lived signed upload URL for
 `education/valsea/audio/<timestamp>-<uuid>-<filename>` in workspace storage. The
-browser uploads selected files and live recordings there before generation.
+browser uploads selected files and live recordings there before generation. When
+generation reads a stored audio path, the route re-checks actual object metadata
+and rejects oversized stored audio before downloading or forwarding it.
 
 ## Pipeline
 
@@ -89,9 +93,11 @@ storage path. The UI has three capture sources: generated Piper audio, live
 audio through `MediaRecorder`, and uploaded audio. Every audio source is saved
 into workspace Drive storage before generation and then referenced as
 `audioStoragePath` when generation starts. Audio is capped at 10 MB before upload
-and again before being forwarded to Valsea. When audio is present, the Valsea
-transcription becomes the primary classroom source text, and the typed note
-remains visible as the pronunciation/reference phrase.
+and again before being forwarded to Valsea. The local pronunciation assessor
+also enforces its own 10 MB read limit and a decoded-duration limit before model
+inference. When audio is present, the Valsea transcription becomes the primary
+classroom source text, and the typed note remains visible as the
+pronunciation/reference phrase.
 
 For text and transcribed audio, the server runs this Valsea pipeline:
 
@@ -152,10 +158,14 @@ contract simple: a deployed stack only needs a valid Valsea API key, because the
 pronunciation model runs locally in the helper container.
 
 The assessor is resource-aware. The default model preloads at container startup;
-other models are loaded lazily when selected, exposed through `GET /models`,
-pre-loadable through `POST /models/load`, removable through `POST /models/unload`,
-and idle-unloaded after
+other models are loaded lazily when selected and exposed through `GET /models`.
+The explicit model-control endpoints, `POST /models/load` and
+`POST /models/unload`, are disabled unless
+`PRONUNCIATION_ASSESSOR_ADMIN_TOKEN` is configured, and successful calls must
+send `Authorization: Bearer <token>`. Loaded models are idle-unloaded after
 `PRONUNCIATION_ASSESSOR_IDLE_TTL_SECONDS` seconds. Set
+`PRONUNCIATION_ASSESSOR_MAX_AUDIO_SECONDS` to tune the decoded-audio cap
+(default: 120 seconds), and keep
 `PRONUNCIATION_ASSESSOR_MAX_LOADED_MODELS=1` on constrained hosts so switching
 models evicts the least recently used resident model.
 
@@ -174,6 +184,11 @@ known voice IDs such as `en_US-lessac-high`, downloads missing assets from
 and then calls Piper with the cached model path instead of passing a bare voice
 ID to the CLI.
 
+The helper must keep Piper download URLs, cache paths, and process stderr out of
+browser-visible errors. It should log sanitized diagnostics inside the service
+and return generic failure details to the web proxy; the web route should also
+avoid copying upstream `detail` or helper trace objects into its JSON response.
+
 The web route POSTs multipart form data to the assessor with `file`, `language`,
 `referenceText`, `valseaTranscript`, and `valseaResponse`. If the local assessor
 returns a compatible JSON object, the UI marks the provider as local model; if it
@@ -187,6 +202,12 @@ a short utterance such as "Haha." while the typed note is a full paragraph, the
 response is marked `insufficient_speech` or `reference_mismatch`, `words` is
 empty, and the UI shows the heard/reference transcripts instead of misleading
 red score cards.
+Character-level pronunciation alignment also has a fixed cell budget per token.
+Long single-token references fall back to linear character comparison instead of
+allocating a quadratic edit-distance trace matrix.
+Word-level transcript alignment uses the same budgeted pattern for long
+reference/heard token lists, so oversized recordings degrade to linear pairing
+instead of allocating quadratic word matrices.
 Amber scores around 75-78% mean "review this alignment" rather than "bad
 pronunciation"; they are used when ASR skipped a short filler or heard a nearby
 sound. Character feedback carries `matched`, `substituted`, `missing`, or

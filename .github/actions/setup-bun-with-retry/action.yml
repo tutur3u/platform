@@ -1,0 +1,19 @@
+name: Setup Bun with retry
+description: Install Bun with exponential backoff for transient release download failures.
+inputs:
+  bun-version:
+    description: Bun version to install.
+    required: false
+    default: 1.3.14
+  max-attempts:
+    description: Maximum install attempts.
+    required: false
+    default: "6"
+runs:
+  using: composite
+  steps:
+    - name: Install Bun with backoff
+      shell: bash
+      env:
+        BUN_SETUP_MAX_ATTEMPTS: ${{ inputs.max-attempts }}
+      run: bash scripts/ci/setup-bun-with-backoff.sh "${{ inputs.bun-version }}"

@@ -1081,6 +1081,45 @@ describe('useTaskActions', () => {
         priority: 'high',
       });
     });
+
+    it('keeps priority updates single-target when the context task is not selected', async () => {
+      const task2: Task = { ...mockTask, id: 'task-2', name: 'Task 2' };
+      const unselectedContextTask: Task = {
+        ...mockTask,
+        id: 'task-3',
+        name: 'Task 3',
+      };
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTask, task2, unselectedContextTask]
+      );
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: unselectedContextTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate: vi.fn(),
+            setIsLoading: vi.fn(),
+            setMenuOpen: vi.fn(),
+            selectedTasks: new Set(['task-1', 'task-2']),
+            isMultiSelectMode: true,
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handlePriorityChange('high');
+      });
+
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(1);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-3', {
+        priority: 'high',
+      });
+    });
   });
 
   describe('updateEstimationPoints', () => {
@@ -1273,6 +1312,85 @@ describe('useTaskActions', () => {
 
       expect(setCustomDateDialogOpen).toHaveBeenCalledWith(false);
       expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        end_date: expect.any(String),
+      });
+    });
+
+    it('delegates selected-card custom dates to the bulk updater', async () => {
+      const task2: Task = { ...mockTask, id: 'task-2', name: 'Task 2' };
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTask, task2]);
+
+      const bulkUpdateCustomDueDate = vi.fn().mockResolvedValue(undefined);
+      const testDate = new Date('2024-01-01T00:00:00');
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: mockTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate: vi.fn(),
+            setIsLoading: vi.fn(),
+            setMenuOpen: vi.fn(),
+            setCustomDateDialogOpen: vi.fn(),
+            selectedTasks: new Set(['task-1', 'task-2']),
+            isMultiSelectMode: true,
+            bulkUpdateCustomDueDate,
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleCustomDateChange(testDate);
+      });
+
+      expect(bulkUpdateCustomDueDate).toHaveBeenCalledWith(testDate);
+      expect(mockUpdateWorkspaceTask).not.toHaveBeenCalled();
+    });
+
+    it('keeps custom date updates single-target when the context task is not selected', async () => {
+      const task2: Task = { ...mockTask, id: 'task-2', name: 'Task 2' };
+      const unselectedContextTask: Task = {
+        ...mockTask,
+        id: 'task-3',
+        name: 'Task 3',
+      };
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [mockTask, task2, unselectedContextTask]
+      );
+
+      const bulkUpdateCustomDueDate = vi.fn().mockResolvedValue(undefined);
+      const testDate = new Date('2024-01-01T00:00:00');
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: unselectedContextTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: mockAvailableLists,
+            onUpdate: vi.fn(),
+            setIsLoading: vi.fn(),
+            setMenuOpen: vi.fn(),
+            setCustomDateDialogOpen: vi.fn(),
+            selectedTasks: new Set(['task-1', 'task-2']),
+            isMultiSelectMode: true,
+            bulkUpdateCustomDueDate,
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleCustomDateChange(testDate);
+      });
+
+      expect(bulkUpdateCustomDueDate).not.toHaveBeenCalled();
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledTimes(1);
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-3', {
         end_date: expect.any(String),
       });
     });

@@ -10,6 +10,9 @@ export type CmsStrings = {
   audioAssetGalleryDescription: string;
   audioAssetGalleryTitle: string;
   audioAssetLabel: string;
+  audioDropzoneDescription: string;
+  audioDropzoneTitle: string;
+  audioMetadataHint: string;
   assetsLabel: string;
   attentionTitle: string;
   backToEpmAction: string;
@@ -116,6 +119,8 @@ export type CmsStrings = {
   fieldDefinitionsDescription: string;
   fieldDefinitionsTitle: string;
   fieldDisplayNameLabel: string;
+  fieldDownloadLabel: string;
+  fieldDurationLabel: string;
   fieldFeaturedGallerySlugsLabel: string;
   fieldFeaturedLabel: string;
   fieldGenreLabel: string;
@@ -266,6 +271,8 @@ export type CmsStrings = {
   title: string;
   titleLabel: string;
   templateAppliedToast: string;
+  templateAudioReelsDescription: string;
+  templateAudioReelsTitle: string;
   templateBlogDescription: string;
   templateBlogTitle: string;
   templateGalleryDescription: string;
@@ -331,6 +338,9 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     audioAssetGalleryDescription: t('epm.audio_asset_gallery_description'),
     audioAssetGalleryTitle: t('epm.audio_asset_gallery_title'),
     audioAssetLabel: t('epm.audio_asset_label'),
+    audioDropzoneDescription: t('epm.audio_dropzone_description'),
+    audioDropzoneTitle: t('epm.audio_dropzone_title'),
+    audioMetadataHint: t('epm.audio_metadata_hint'),
     assetsLabel: t('epm.assets_label'),
     attentionTitle: t('epm.attention_title'),
     backToEpmAction: t('epm.back_to_epm_action'),
@@ -453,6 +463,8 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     fieldDefinitionsDescription: t('epm.field_definitions_description'),
     fieldDefinitionsTitle: t('epm.field_definitions_title'),
     fieldDisplayNameLabel: t('epm.field_display_name_label'),
+    fieldDownloadLabel: t('epm.field_download_label'),
+    fieldDurationLabel: t('epm.field_duration_label'),
     fieldFeaturedGallerySlugsLabel: t('epm.field_featured_gallery_slugs_label'),
     fieldFeaturedLabel: t('epm.field_featured_label'),
     fieldGenreLabel: t('epm.field_genre_label'),
@@ -605,6 +617,8 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     stringArrayFieldHint: t('epm.string_array_field_hint'),
     tabsDescription: t('epm.tabs_description'),
     templateAppliedToast: t('epm.template_applied_toast'),
+    templateAudioReelsDescription: t('epm.template_audio_reels_description'),
+    templateAudioReelsTitle: t('epm.template_audio_reels_title'),
     templateBlogDescription: t('epm.template_blog_description'),
     templateBlogTitle: t('epm.template_blog_title'),
     templateGalleryDescription: t('epm.template_gallery_description'),

@@ -48,9 +48,9 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Setup bun
-        uses: oven-sh/setup-bun@v2
+        uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: latest
+          bun-version: 1.3.14
 
       - name: Use Node.js 24
         uses: actions/setup-node@v6
@@ -58,7 +58,7 @@ jobs:
           node-version: 24
 
       - name: Install and build workspace setup
-        run: bun setup
+        run: bash scripts/ci/run-with-backoff.sh bun setup
 
       - name: Test
         run: bun run test

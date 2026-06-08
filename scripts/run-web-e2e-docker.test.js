@@ -7,20 +7,37 @@ const path = require('node:path');
 const {
   LOCAL_E2E_AUTH_BYPASS,
   LOCAL_E2E_BASE_URL,
+  LOCAL_E2E_PORTLESS_PORT,
   LOCAL_E2E_SUPERMEMORY_ENABLED,
   LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD,
   LOCAL_E2E_SUPABASE_URL,
 } = require('./e2e-local-environment.js');
 const {
+  DNS_IPV4_FIRST_NODE_OPTION,
+  DEFAULT_PORTLESS_HEALTH_URL,
+  ensurePortlessRoute,
   ensureLocalE2EEnvFile,
+  formatBlueGreenStages,
+  getPortlessCommandEnv,
+  getDockerComposeDiagnosticArgs,
   getDockerMemoryLimit,
   getE2EComposeProjectName,
+  getE2EDiagnosticLogTail,
   getDockerWebDownArgs,
   getDockerWebUpArgs,
+  getPortlessHealthUrl,
+  getPortlessProxyStartArgs,
+  getReadinessFetchOptions,
+  getWebProxyHealthUrl,
+  getWebProxyHostPort,
+  isPortlessNotReadyBody,
   isE2EComposeProjectName,
   parseE2EProjectImageTags,
+  printE2EFailureDiagnostics,
   removeE2EProjectImages,
+  routeListHasPortlessAlias,
   shouldKeepStack,
+  waitForUrl,
 } = require('./run-web-e2e-docker.js');
 
 test('getDockerWebUpArgs starts production blue-green Docker with reset local Supabase', () => {
@@ -107,6 +124,10 @@ test('ensureLocalE2EEnvFile writes a local-only web env file', () => {
     );
     assert.match(content, new RegExp(LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD));
     assert.match(content, new RegExp(`WEB_APP_URL=${LOCAL_E2E_BASE_URL}`));
+    assert.match(
+      content,
+      new RegExp(`PORTLESS_PORT=${LOCAL_E2E_PORTLESS_PORT}`)
+    );
     assert.doesNotMatch(content, /supabase\.(co|in)/iu);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -156,6 +177,589 @@ test('getE2EComposeProjectName only accepts E2E-scoped projects', () => {
     }),
     null
   );
+});
+
+test('getDockerComposeDiagnosticArgs scopes diagnostics to the E2E project', () => {
+  assert.deepEqual(
+    getDockerComposeDiagnosticArgs(
+      {
+        DOCKER_WEB_COMPOSE_PROJECT_NAME: 'ttr-e2e-local-123',
+        DOCKER_WEB_ENV_FILE: 'tmp/e2e/web.env',
+      },
+      'ps',
+      '-a'
+    ),
+    [
+      'compose',
+      '--env-file',
+      'tmp/e2e/web.env',
+      '-f',
+      path.join(path.resolve(__dirname, '..'), 'docker-compose.web.prod.yml'),
+      '-p',
+      'ttr-e2e-local-123',
+      'ps',
+      '-a',
+    ]
+  );
+  assert.deepEqual(getDockerComposeDiagnosticArgs({}, 'ps', '-a'), [
+    'compose',
+    '-f',
+    path.join(path.resolve(__dirname, '..'), 'docker-compose.web.prod.yml'),
+    'ps',
+    '-a',
+  ]);
+});
+
+test('getPortlessHealthUrl targets the browser-facing local E2E login route', () => {
+  assert.equal(getPortlessHealthUrl({}), DEFAULT_PORTLESS_HEALTH_URL);
+  assert.equal(
+    getPortlessHealthUrl({
+      BASE_URL: 'https://tuturuuu.localhost/personal/tasks?view=board',
+    }),
+    'https://tuturuuu.localhost/login'
+  );
+});
+
+test('getWebProxyHealthUrl targets the direct Docker web proxy login route', () => {
+  assert.equal(getWebProxyHostPort({}), '7803');
+  assert.equal(
+    getWebProxyHostPort({ DOCKER_WEB_PROXY_HOST_PORT: '17803' }),
+    '17803'
+  );
+  assert.equal(
+    getWebProxyHostPort({ DOCKER_WEB_PROXY_HOST_PORT: 'not-a-port' }),
+    '7803'
+  );
+  assert.equal(getWebProxyHealthUrl({}), 'http://127.0.0.1:7803/login');
+  assert.equal(
+    getWebProxyHealthUrl({
+      DOCKER_WEB_PROXY_HOST_PORT: '17803',
+    }),
+    'http://127.0.0.1:17803/login'
+  );
+  assert.equal(
+    getWebProxyHealthUrl({
+      E2E_WEB_PROXY_HEALTH_URL: 'http://docker-host.localhost/ready',
+    }),
+    'http://docker-host.localhost/ready'
+  );
+});
+
+test('getPortlessProxyStartArgs pins the wildcard proxy to the configured port', () => {
+  assert.deepEqual(getPortlessProxyStartArgs({}), [
+    'portless',
+    'proxy',
+    'start',
+    '--wildcard',
+  ]);
+  assert.deepEqual(getPortlessProxyStartArgs({ PORTLESS_PORT: '1355' }), [
+    'portless',
+    'proxy',
+    'start',
+    '--wildcard',
+    '--port',
+    '1355',
+    '--https',
+  ]);
+  assert.deepEqual(getPortlessProxyStartArgs({ PORTLESS_PORT: 'nope' }), [
+    'portless',
+    'proxy',
+    'start',
+    '--wildcard',
+  ]);
+});
+
+test('getPortlessCommandEnv makes Portless prefer IPv4 localhost resolution', () => {
+  assert.equal(
+    getPortlessCommandEnv({ PATH: 'test-path' }).NODE_OPTIONS,
+    DNS_IPV4_FIRST_NODE_OPTION
+  );
+  assert.equal(
+    getPortlessCommandEnv({
+      NODE_OPTIONS: '--trace-warnings',
+      PATH: 'test-path',
+    }).NODE_OPTIONS,
+    `--trace-warnings ${DNS_IPV4_FIRST_NODE_OPTION}`
+  );
+
+  const env = {
+    NODE_OPTIONS: `--trace-warnings ${DNS_IPV4_FIRST_NODE_OPTION}`,
+    PATH: 'test-path',
+  };
+
+  assert.equal(getPortlessCommandEnv(env), env);
+});
+
+test('routeListHasPortlessAlias requires the expected alias and proxy port', () => {
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://tuturuuu.localhost -> localhost:7803 (alias)\n',
+      {}
+    ),
+    true
+  );
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://tuturuuu.localhost -> localhost:17803 (alias)\n',
+      {}
+    ),
+    false
+  );
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://other.localhost -> localhost:7803 (alias)\n',
+      {}
+    ),
+    false
+  );
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://tuturuuu.localhost -> localhost:17803 (alias)\n',
+      { DOCKER_WEB_PROXY_HOST_PORT: '17803' }
+    ),
+    true
+  );
+});
+
+test('isPortlessNotReadyBody detects Portless placeholder responses', () => {
+  assert.equal(
+    isPortlessNotReadyBody(
+      'No app registered for <strong>tuturuuu.localhost</strong>. No apps running.'
+    ),
+    true
+  );
+  assert.equal(isPortlessNotReadyBody('<html>Login</html>'), false);
+});
+
+test('waitForUrl keeps retrying while Portless has no registered app', async () => {
+  const statuses = [];
+
+  await waitForUrl('https://tuturuuu.localhost/login', {
+    acceptedStatusCodes: [404],
+    fetchImpl: async () => {
+      statuses.push(statuses.length === 0 ? 404 : 200);
+
+      return {
+        status: statuses.at(-1),
+        text: async () =>
+          statuses.length === 1
+            ? 'No app registered for <strong>tuturuuu.localhost</strong>. No apps running.'
+            : '<html>Login</html>',
+      };
+    },
+    intervalMs: 0,
+    sleep: async () => {},
+    timeoutMs: 5_000,
+  });
+
+  assert.deepEqual(statuses, [404, 200]);
+});
+
+test('waitForUrl accepts configured app-level readiness statuses', async () => {
+  const statuses = [];
+
+  await waitForUrl('https://tuturuuu.localhost/login', {
+    acceptedStatusCodes: [404],
+    fetchImpl: async () => {
+      statuses.push(404);
+
+      return {
+        status: 404,
+        text: async () =>
+          '<html><head><title>Sign In to Tuturuuu | Tuturuuu</title></head><body><h1>404</h1></body></html>',
+      };
+    },
+    intervalMs: 0,
+    sleep: async () => {
+      throw new Error('should not retry accepted app responses');
+    },
+    timeoutMs: 5_000,
+  });
+
+  assert.deepEqual(statuses, [404]);
+});
+
+test('waitForUrl keeps retrying while the upstream returns server errors', async () => {
+  const statuses = [];
+
+  await waitForUrl('https://tuturuuu.localhost/login', {
+    acceptedStatusCodes: [404],
+    fetchImpl: async () => {
+      statuses.push(statuses.length === 0 ? 502 : 200);
+
+      return {
+        status: statuses.at(-1),
+        text: async () =>
+          statuses.length === 1
+            ? '<title>502 - Bad Gateway</title>'
+            : '<html>Login</html>',
+      };
+    },
+    intervalMs: 0,
+    sleep: async () => {},
+    timeoutMs: 5_000,
+  });
+
+  assert.deepEqual(statuses, [502, 200]);
+});
+
+test('waitForUrl uses local-only insecure TLS options for Portless readiness', async () => {
+  const seenOptions = [];
+
+  await waitForUrl('https://tuturuuu.localhost:1355/login', {
+    fetchImpl: async (_url, options = {}) => {
+      seenOptions.push(options);
+
+      return {
+        status: 200,
+        text: async () => '<html>Login</html>',
+      };
+    },
+    intervalMs: 0,
+    sleep: async () => {
+      throw new Error('should not retry a ready local response');
+    },
+    timeoutMs: 5_000,
+  });
+
+  assert.equal(seenOptions.length, 1);
+  assert.equal(seenOptions[0].redirect, 'manual');
+  assert.equal(seenOptions[0].rejectUnauthorized, false);
+});
+
+test('getReadinessFetchOptions refuses insecure TLS for non-local HTTPS origins', () => {
+  assert.equal(
+    getReadinessFetchOptions('https://tuturuuu.com/login').rejectUnauthorized,
+    undefined
+  );
+  assert.equal(
+    getReadinessFetchOptions('http://127.0.0.1:7803/login').rejectUnauthorized,
+    undefined
+  );
+  assert.equal(
+    getReadinessFetchOptions('https://tuturuuu.localhost:1355/login')
+      .rejectUnauthorized,
+    false
+  );
+});
+
+test('waitForUrl timeout keeps nested fetch failure causes visible', async () => {
+  await assert.rejects(
+    () =>
+      waitForUrl('https://tuturuuu.localhost:1355/login', {
+        fetchImpl: async () => {
+          const error = new Error('fetch failed');
+          error.cause = new Error('self-signed certificate');
+          throw error;
+        },
+        intervalMs: 0,
+        sleep: async () => {},
+        timeoutMs: 20,
+      }),
+    /Timed out waiting for https:\/\/tuturuuu\.localhost:1355\/login: fetch failed: self-signed certificate/u
+  );
+});
+
+test('ensurePortlessRoute starts the wildcard proxy and refreshes the route', async () => {
+  const calls = [];
+  const chunks = [];
+
+  await ensurePortlessRoute({
+    env: { PATH: 'test-path' },
+    output: {
+      write(chunk) {
+        chunks.push(String(chunk));
+      },
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+
+      if (args.includes('--remove')) {
+        throw new Error('route not registered yet');
+      }
+    },
+    runCommandForOutput: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+
+      return {
+        stderr: '',
+        stdout:
+          'Active routes:\n  https://tuturuuu.localhost  ->  localhost:7803  (alias)\n',
+      };
+    },
+  });
+
+  assert.deepEqual(
+    calls.map(([command, args]) => [command, args]),
+    [
+      ['bunx', ['portless', 'proxy', 'start', '--wildcard']],
+      ['bunx', ['portless', 'alias', '--remove', 'tuturuuu']],
+      ['bunx', ['portless', 'alias', 'tuturuuu', '7803', '--force']],
+      ['bunx', ['portless', 'list']],
+    ]
+  );
+  assert.ok(
+    calls.every(([, , options]) =>
+      options.env.NODE_OPTIONS.includes(DNS_IPV4_FIRST_NODE_OPTION)
+    )
+  );
+  assert.match(chunks.join(''), /https:\/\/tuturuuu\.localhost/u);
+});
+
+test('ensurePortlessRoute honors the configured proxy host and Portless ports', async () => {
+  const calls = [];
+
+  await ensurePortlessRoute({
+    env: {
+      DOCKER_WEB_PROXY_HOST_PORT: '17803',
+      PATH: 'test-path',
+      PORTLESS_PORT: '1355',
+    },
+    output: {
+      write() {},
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+    },
+    runCommandForOutput: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+
+      return {
+        stderr: '',
+        stdout:
+          'Active routes:\n  https://tuturuuu.localhost  ->  localhost:17803  (alias)\n',
+      };
+    },
+  });
+
+  assert.deepEqual(
+    calls.map(([command, args]) => [command, args]),
+    [
+      [
+        'bunx',
+        [
+          'portless',
+          'proxy',
+          'start',
+          '--wildcard',
+          '--port',
+          '1355',
+          '--https',
+        ],
+      ],
+      ['bunx', ['portless', 'alias', '--remove', 'tuturuuu']],
+      ['bunx', ['portless', 'alias', 'tuturuuu', '17803', '--force']],
+      ['bunx', ['portless', 'list']],
+    ]
+  );
+  assert.ok(
+    calls.every(([, , options]) =>
+      options.env.NODE_OPTIONS.includes(DNS_IPV4_FIRST_NODE_OPTION)
+    )
+  );
+});
+
+test('ensurePortlessRoute retries and fails when Portless does not register the alias', async () => {
+  const calls = [];
+  const chunks = [];
+  const sleeps = [];
+
+  await assert.rejects(
+    () =>
+      ensurePortlessRoute({
+        env: {
+          PATH: 'test-path',
+          PORTLESS_ALIAS_VERIFY_ATTEMPTS: '2',
+          PORTLESS_ALIAS_VERIFY_DELAY_MS: '7',
+        },
+        output: {
+          write(chunk) {
+            chunks.push(String(chunk));
+          },
+        },
+        runCommand: async (command, args, options = {}) => {
+          calls.push([command, args, options]);
+        },
+        runCommandForOutput: async (command, args, options = {}) => {
+          calls.push([command, args, options]);
+
+          return {
+            stderr: '',
+            stdout:
+              'Active routes:\n  https://other.localhost  ->  localhost:7803  (alias)\n',
+          };
+        },
+        sleep: async (ms) => {
+          sleeps.push(ms);
+        },
+      }),
+    /Portless alias tuturuuu\.localhost was not registered for localhost:7803/u
+  );
+
+  assert.deepEqual(
+    calls.map(([command, args]) => [command, args]),
+    [
+      ['bunx', ['portless', 'proxy', 'start', '--wildcard']],
+      ['bunx', ['portless', 'alias', '--remove', 'tuturuuu']],
+      ['bunx', ['portless', 'alias', 'tuturuuu', '7803', '--force']],
+      ['bunx', ['portless', 'list']],
+      ['bunx', ['portless', 'list']],
+    ]
+  );
+  assert.deepEqual(sleeps, [7]);
+  assert.match(chunks.join(''), /https:\/\/other\.localhost/u);
+});
+
+test('getE2EDiagnosticLogTail accepts positive numeric overrides only', () => {
+  assert.equal(
+    getE2EDiagnosticLogTail({ E2E_DIAGNOSTIC_LOG_TAIL: '42' }),
+    '42'
+  );
+  assert.equal(
+    getE2EDiagnosticLogTail({ E2E_DIAGNOSTIC_LOG_TAIL: '0' }),
+    '300'
+  );
+  assert.equal(
+    getE2EDiagnosticLogTail({ E2E_DIAGNOSTIC_LOG_TAIL: 'nope' }),
+    '300'
+  );
+});
+
+test('formatBlueGreenStages keeps failed stage details readable', () => {
+  assert.deepEqual(
+    formatBlueGreenStages([
+      {
+        buildServices: ['web-green'],
+        color: 'green',
+        durationMs: 123,
+        id: 'web-build',
+        serviceNames: ['web-green'],
+        status: 'succeeded',
+      },
+      {
+        failureReason: 'web-proxy returned 502',
+        id: 'proxy-reload',
+        serviceNames: ['web-proxy'],
+        status: 'failed',
+      },
+    ]),
+    [
+      '- web-build | succeeded | color=green | build=web-green | services=web-green | durationMs=123',
+      '- proxy-reload | failed | services=web-proxy | failure=web-proxy returned 502',
+    ]
+  );
+});
+
+test('printE2EFailureDiagnostics prints compose logs without masking diagnostics errors', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ttr-e2e-diag-'));
+  const calls = [];
+  const chunks = [];
+  const output = {
+    write(chunk) {
+      chunks.push(String(chunk));
+    },
+  };
+  const error = new Error('web stack failed');
+  error.blueGreenStages = [
+    {
+      failureReason: 'proxy route check failed',
+      id: 'proxy-reload',
+      serviceNames: ['web-proxy'],
+      status: 'failed',
+    },
+  ];
+
+  try {
+    const lastRunPath = path.join(
+      tempDir,
+      'apps',
+      'web',
+      'test-results',
+      '.last-run.json'
+    );
+    fs.mkdirSync(path.dirname(lastRunPath), { recursive: true });
+    fs.writeFileSync(lastRunPath, '{"status":"failed"}\n');
+
+    await printE2EFailureDiagnostics({
+      env: {
+        DOCKER_WEB_COMPOSE_PROJECT_NAME: 'ttr-e2e-local-123',
+        DOCKER_WEB_ENV_FILE: 'tmp/e2e/web.env',
+        E2E_DIAGNOSTIC_LOG_TAIL: '42',
+        GITHUB_ACTIONS: 'true',
+        UPSTASH_REDIS_REST_TOKEN: 'diagnostic-token',
+      },
+      error,
+      output,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({ args, command, options });
+
+        if (args.includes('logs')) {
+          throw new Error('docker logs unavailable');
+        }
+      },
+    });
+
+    assert.equal(calls.length, 7);
+    assert.deepEqual(calls[0].args, [
+      'ps',
+      '-a',
+      '--filter',
+      'label=com.docker.compose.project=ttr-e2e-local-123',
+      '--format',
+      'table {{.Names}}\t{{.Status}}\t{{.Image}}',
+    ]);
+    assert.deepEqual(calls[1].args.slice(0, 5), [
+      'compose',
+      '--env-file',
+      'tmp/e2e/web.env',
+      '-f',
+      path.join(path.resolve(__dirname, '..'), 'docker-compose.web.prod.yml'),
+    ]);
+    assert.deepEqual(calls[1].args.slice(5, 7), ['-p', 'ttr-e2e-local-123']);
+    assert.deepEqual(calls[1].args.slice(-2), ['ps', '-a']);
+    assert.deepEqual(calls[2].args.slice(-4), [
+      'backend',
+      'markitdown',
+      'storage-unzip-proxy',
+      'web-cron-runner',
+    ]);
+    assert.ok(calls[2].args.includes('--tail'));
+    assert.ok(calls[2].args.includes('42'));
+    assert.deepEqual(calls[3].args, [
+      '-i',
+      '--max-time',
+      '10',
+      'http://127.0.0.1:7803/login',
+    ]);
+    assert.deepEqual(calls[4].args, ['portless', 'list']);
+    assert.deepEqual(calls[5].args, [
+      '-k',
+      '-i',
+      '--max-time',
+      '10',
+      'https://tuturuuu.localhost:1355/login',
+    ]);
+    assert.deepEqual(calls[6].args, ['sb:status']);
+    assert.ok(
+      calls.every(
+        ({ options }) =>
+          options.cwd === tempDir &&
+          options.env.COMPOSE_PROJECT_NAME === 'ttr-e2e-local-123' &&
+          options.env.UPSTASH_REDIS_REST_TOKEN === 'diagnostic-token' &&
+          options.stdio === 'inherit'
+      )
+    );
+
+    const text = chunks.join('');
+    assert.match(text, /::group::E2E failure summary/u);
+    assert.match(text, /Primary failure: web stack failed/u);
+    assert.match(text, /proxy route check failed/u);
+    assert.match(text, /\{"status":"failed"\}/u);
+    assert.match(text, /Diagnostic command failed: docker logs unavailable/u);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('parseE2EProjectImageTags selects only current E2E project images', () => {

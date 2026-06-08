@@ -8,10 +8,13 @@ const {
   LOCAL_E2E_BASE_URL,
   LOCAL_E2E_CRON_SECRET,
   LOCAL_E2E_DOCKER_SUPABASE_URL,
+  LOCAL_E2E_PORTLESS_PORT,
   LOCAL_E2E_SUPERMEMORY_ENABLED,
   LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD,
   LOCAL_E2E_SUPABASE_SECRET_KEY,
   LOCAL_E2E_SUPABASE_URL,
+  LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN,
+  LOCAL_E2E_UPSTASH_REDIS_REST_URL,
   assertSafeE2EEnvironment,
   createLocalE2EEnvFileContent,
   createLocalE2EProcessEnv,
@@ -31,6 +34,22 @@ test('assertSafeE2EEnvironment accepts only local web and Supabase origins', () 
       baseUrl: LOCAL_E2E_BASE_URL,
       supabaseUrl: LOCAL_E2E_SUPABASE_URL,
     }
+  );
+});
+
+test('local E2E app URL uses Tuturuuu localhost for shared-cookie coverage', () => {
+  assert.equal(LOCAL_E2E_BASE_URL, 'https://tuturuuu.localhost:1355');
+  assert.doesNotThrow(() =>
+    assertSafeE2EEnvironment({
+      BASE_URL: 'http://localhost:7803',
+      NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
+    })
+  );
+  assert.doesNotThrow(() =>
+    assertSafeE2EEnvironment({
+      BASE_URL: 'https://tuturuuu.localhost',
+      NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
+    })
   );
 });
 
@@ -81,6 +100,8 @@ test('createLocalE2EEnvFileContent is pinned to local Docker E2E values', () => 
     content,
     new RegExp(`NEXT_PUBLIC_WEB_APP_URL=${LOCAL_E2E_BASE_URL}`)
   );
+  assert.match(content, new RegExp(`PORTLESS_URL=${LOCAL_E2E_BASE_URL}`));
+  assert.match(content, new RegExp(`PORTLESS_PORT=${LOCAL_E2E_PORTLESS_PORT}`));
   assert.match(content, new RegExp(`WEB_APP_URL=${LOCAL_E2E_BASE_URL}`));
   assert.match(
     content,
@@ -103,6 +124,18 @@ test('createLocalE2EEnvFileContent is pinned to local Docker E2E values', () => 
   assert.match(
     content,
     new RegExp(`TUTURUUU_LOCAL_E2E_AUTH_BYPASS=${LOCAL_E2E_AUTH_BYPASS}`)
+  );
+  assert.match(
+    content,
+    new RegExp(`UPSTASH_REDIS_REST_TOKEN=${LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN}`)
+  );
+  assert.match(
+    content,
+    new RegExp(`UPSTASH_REDIS_REST_URL=${LOCAL_E2E_UPSTASH_REDIS_REST_URL}`)
+  );
+  assert.match(
+    content,
+    new RegExp(`SRH_TOKEN=${LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN}`)
   );
   assert.match(
     content,
@@ -134,6 +167,8 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
   assert.equal(env.NEXT_PUBLIC_APP_URL, LOCAL_E2E_BASE_URL);
   assert.equal(env.NEXT_PUBLIC_WEB_APP_URL, LOCAL_E2E_BASE_URL);
   assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, LOCAL_E2E_SUPABASE_URL);
+  assert.equal(env.PORTLESS_URL, LOCAL_E2E_BASE_URL);
+  assert.equal(env.PORTLESS_PORT, LOCAL_E2E_PORTLESS_PORT);
   assert.equal(
     env.NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS,
     LOCAL_E2E_AUTH_BYPASS
@@ -153,6 +188,20 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
   assert.equal(env.DOCKER_WEB_ENV_FILE, 'tmp/e2e/web.env');
   assert.equal(env.DOCKER_WEB_COMPOSE_ENV_FILE, '../tmp/e2e/web.env');
   assert.equal(env.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE, '../tmp/e2e/web.env');
+  assert.equal(
+    env.DOCKER_UPSTASH_REDIS_REST_TOKEN,
+    LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN
+  );
+  assert.equal(
+    env.DOCKER_UPSTASH_REDIS_REST_URL,
+    LOCAL_E2E_UPSTASH_REDIS_REST_URL
+  );
+  assert.equal(
+    env.UPSTASH_REDIS_REST_TOKEN,
+    LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN
+  );
+  assert.equal(env.UPSTASH_REDIS_REST_URL, LOCAL_E2E_UPSTASH_REDIS_REST_URL);
+  assert.equal(env.SRH_TOKEN, LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN);
   assert.equal(env.WEB_APP_URL, LOCAL_E2E_BASE_URL);
 });
 

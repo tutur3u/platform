@@ -20,6 +20,7 @@ import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/data/repositories/crm_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/crm/utils/crm_csv_export.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -108,11 +109,6 @@ String _crmAuditSourceLabel(BuildContext context, String value) {
   }
 }
 
-String _escapeCsvCell(String? value) {
-  final normalized = (value ?? '').replaceAll('"', '""');
-  return '"$normalized"';
-}
-
 String _buildCrmCsv(List<CrmUser> users) {
   final rows = <String>[
     [
@@ -128,7 +124,7 @@ String _buildCrmCsv(List<CrmUser> users) {
       'require_attention',
       'linked_promotions_count',
       'linked_promotion_names',
-    ].map(_escapeCsvCell).join(','),
+    ].map(escapeCrmCsvCell).join(','),
   ];
 
   for (final user in users) {
@@ -146,7 +142,7 @@ String _buildCrmCsv(List<CrmUser> users) {
         user.requireAttention.toString(),
         user.linkedPromotionsCount.toString(),
         user.linkedPromotionNames,
-      ].map((value) => _escapeCsvCell(value?.toString())).join(','),
+      ].map((value) => escapeCrmCsvCell(value?.toString())).join(','),
     );
   }
 
@@ -1081,11 +1077,7 @@ class _CrmPageState extends State<CrmPage> {
 }
 
 class _CrmPill extends StatelessWidget {
-  const _CrmPill({
-    required this.icon,
-    required this.label,
-    this.tint,
-  });
+  const _CrmPill({required this.icon, required this.label, this.tint});
 
   final IconData icon;
   final String label;
@@ -1110,9 +1102,7 @@ class _CrmPill extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: theme.typography.small.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: theme.typography.small.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -1301,9 +1291,7 @@ class _CrmAuditCard extends StatelessWidget {
       child: FinancePanel(
         padding: EdgeInsets.zero,
         child: Theme(
-          data: Theme.of(
-            context,
-          ).copyWith(dividerColor: Colors.transparent),
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
             tilePadding: const EdgeInsets.symmetric(
               horizontal: 14,
@@ -1906,10 +1894,7 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
 }
 
 class _DuplicateUsersSheet extends StatefulWidget {
-  const _DuplicateUsersSheet({
-    required this.result,
-    required this.onMerge,
-  });
+  const _DuplicateUsersSheet({required this.result, required this.onMerge});
 
   final CrmDuplicateDetectionResult result;
   final Future<CrmMergeResult> Function(String sourceId, String targetId)

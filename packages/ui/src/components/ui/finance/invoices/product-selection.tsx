@@ -16,10 +16,6 @@ import { Label } from '@tuturuuu/ui/label';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import {
-  FINANCE_HIDDEN_AMOUNT,
-  useFinanceConfidentialVisibility,
-} from '../shared/use-finance-confidential-visibility';
 import type { Product, ProductInventory, SelectedProductItem } from './types';
 
 interface Props {
@@ -41,11 +37,9 @@ export function ProductSelection({
   currency = 'USD',
 }: Props) {
   const t = useTranslations();
-  const { isConfidential: areNumbersHidden } =
-    useFinanceConfidentialVisibility();
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const formatVisibleCurrency = (amount: number) =>
-    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : formatCurrency(amount, currency);
+    formatCurrency(amount, currency);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const availableInventory =
@@ -283,11 +277,9 @@ interface StockItemProps {
 
 function StockItem({ inventory, onAdd, currency = 'USD' }: StockItemProps) {
   const t = useTranslations();
-  const { isConfidential: areNumbersHidden } =
-    useFinanceConfidentialVisibility();
   const [quantity, setQuantity] = useState(1);
   const formatVisibleCurrency = (amount: number) =>
-    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : formatCurrency(amount, currency);
+    formatCurrency(amount, currency);
 
   const handleAdd = () => {
     if (

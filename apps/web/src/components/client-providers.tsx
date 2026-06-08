@@ -1,19 +1,24 @@
 'use client';
 
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
-import { FadeSettingInitializer } from '@tuturuuu/ui/tu-do/shared/fade-setting-initializer';
-import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import { AccountSwitcherKeyboardShortcut } from '@/components/account-switcher';
+import { AccountSwitcherKeyboardShortcut } from '@/components/account-switcher/keyboard-shortcut-handler';
 import { AccountSwitcherProvider } from '@/context/account-switcher-context';
-import { CalendarPreferencesProvider } from '@/lib/calendar-preferences-provider';
 import {
   installFetchInterceptor,
   setRateLimitMessage,
 } from '@/lib/fetch-interceptor';
+
+const ReactQueryDevtools = dynamic(
+  () =>
+    import('@tanstack/react-query-devtools').then(
+      (module) => module.ReactQueryDevtools
+    ),
+  { ssr: false }
+);
 
 // Install once when this module loads on the client.
 // All fetch() calls — including TanStack Query, tRPC, and raw fetch —
@@ -34,35 +39,19 @@ function FetchInterceptorI18n() {
 }
 
 export function ClientProviders({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const isSharedSurface = /^\/[^/]+\/shared(?:\/|$)/.test(pathname ?? '');
-  const isWorkspaceDashboardSurface =
-    /^\/[^/]+\/(?:personal|[0-9a-fA-F-]{8}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{4}-[0-9a-fA-F-]{12})(?:\/|$)/.test(
-      pathname ?? ''
-    );
   const content = (
     <>
       <TooltipProvider>{children}</TooltipProvider>
-      {!isSharedSurface ? <FadeSettingInitializer /> : null}
-      {!isSharedSurface ? <AccountSwitcherKeyboardShortcut /> : null}
+      <AccountSwitcherKeyboardShortcut />
       <FetchInterceptorI18n />
-      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+      {process.env.NODE_ENV === 'development' ? (
+        <ReactQueryDevtools
+          initialIsOpen={false}
+          buttonPosition="bottom-right"
+        />
+      ) : null}
     </>
   );
 
-  if (isSharedSurface) {
-    return content;
-  }
-
-  const wrappedContent = (
-    <AccountSwitcherProvider>{content}</AccountSwitcherProvider>
-  );
-
-  if (!isWorkspaceDashboardSurface) {
-    return wrappedContent;
-  }
-
-  return (
-    <CalendarPreferencesProvider>{wrappedContent}</CalendarPreferencesProvider>
-  );
+  return <AccountSwitcherProvider>{content}</AccountSwitcherProvider>;
 }

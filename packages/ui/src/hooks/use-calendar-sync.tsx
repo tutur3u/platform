@@ -28,6 +28,10 @@ type CalendarConnection = {
   calendar_name: string;
   is_enabled: boolean;
   color: string | null;
+  provider?: 'google' | 'microsoft' | string;
+  auth_token_id?: string | null;
+  workspace_calendar_id?: string | null;
+  access_role?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -161,7 +165,7 @@ type CacheUpdate = {
 export const CalendarSyncProvider = ({
   children,
   wsId,
-  experimentalGoogleToken,
+  experimentalGoogleToken: _experimentalGoogleToken,
   initialCalendarConnections = [],
 }: {
   children: React.ReactNode;
@@ -170,9 +174,7 @@ export const CalendarSyncProvider = ({
   initialCalendarConnections?: CalendarConnection[];
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
-  const [googleData, setGoogleData] = useState<WorkspaceCalendarEvent[] | null>(
-    null
-  );
+  const [googleData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [events, setEvents] = useState<CalendarEventWithHabitInfo[]>([]);
 
   const [error, setError] = useState<Error | null>(null);
@@ -184,11 +186,9 @@ export const CalendarSyncProvider = ({
   const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ state: 'idle' });
-  const prevGoogleDataRef = useRef<string>('');
   const prevDatesRef = useRef<string>('');
   const isForcedRef = useRef<boolean>(false);
   const lastSyncTimeRef = useRef<number>(0);
-  const syncDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
 
   // Calendar connections state
@@ -449,74 +449,14 @@ export const CalendarSyncProvider = ({
     refetchInterval: 60000, // Reduced from 30s to 60s to lower load
   });
 
-  // Fetch google events with caching
-  const { data: fetchedGoogleData, isLoading: isGoogleLoading } = useQuery({
+  // Legacy direct Google fetch/reconcile is disabled. Provider inbound sync is
+  // owned by the workspace sync route so account/calendar identity stays scoped.
+  const { isLoading: isGoogleLoading } = useQuery({
     queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
-    enabled:
-      !!wsId && experimentalGoogleToken?.ws_id === wsId && dates.length > 0,
+    enabled: false,
     staleTime: 30000, // Consider data fresh for 30 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-    queryFn: async () => {
-      const cacheKey = getCacheKey(dates);
-      if (!cacheKey) return null;
-
-      const cachedData = calendarCache[cacheKey];
-
-      // If we have cached data and it's not stale, return it immediately
-      if (
-        cachedData?.googleEvents &&
-        cachedData.googleEvents.length > 0 &&
-        !isCacheStaleEnhanced(cachedData.googleLastUpdated, dates)
-      ) {
-        setGoogleData(cachedData.googleEvents);
-        return cachedData.googleEvents;
-      }
-
-      // Otherwise fetch fresh data
-      const startDate = dayjs(dates[0]).startOf('day');
-      const endDate = dayjs(dates[dates.length - 1]).endOf('day');
-
-      const response = await fetch(
-        `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
-        { cache: 'no-store' }
-      );
-      const googleResponse = await response.json();
-
-      if (!response.ok) {
-        const errorMessage =
-          googleResponse.error +
-          '. ' +
-          googleResponse.googleError +
-          ': ' +
-          googleResponse.details?.reason;
-        setError(new Error(errorMessage));
-
-        // Notify user of Google Calendar fetch failure
-        toast.error('Failed to fetch Google Calendar', {
-          description:
-            errorMessage || 'Could not retrieve events from Google Calendar',
-          duration: 5000,
-        });
-
-        setSyncStatus({
-          state: 'error',
-          message: 'failed_to_fetch_google', // Translation key
-          lastSyncTime: new Date(),
-        });
-
-        return null;
-      }
-
-      // Update cache with new data
-      updateCache(cacheKey, {
-        googleEvents: googleResponse.events,
-        googleLastUpdated: Date.now(),
-      });
-
-      setGoogleData(googleResponse.events);
-      setError(null);
-      return googleResponse.events;
-    },
+    queryFn: async () => null,
     refetchInterval: 60000, // Reduced from 30s to 60s to lower load
   });
 
@@ -708,59 +648,6 @@ export const CalendarSyncProvider = ({
     [wsId, isActiveSyncOn, refresh]
   );
 
-  // Sync to Tuturuuu database when google data changes for current view (debounced)
-  useEffect(() => {
-    // If have not connected to google, don't sync
-    if (experimentalGoogleToken?.ws_id !== wsId) {
-      return;
-    }
-
-    // Convert current data to strings for comparison
-    const currentGoogleDataStr = JSON.stringify(fetchedGoogleData);
-
-    // Only sync if the data has actually changed
-    const hasDataChanged = currentGoogleDataStr !== prevGoogleDataRef.current;
-
-    if (hasDataChanged) {
-      // Clear any pending sync
-      if (syncDebounceTimerRef.current) {
-        clearTimeout(syncDebounceTimerRef.current);
-      }
-
-      // Debounce sync by 2 seconds to prevent rapid consecutive syncs
-      syncDebounceTimerRef.current = setTimeout(() => {
-        syncToTuturuuu();
-        prevGoogleDataRef.current = currentGoogleDataStr;
-      }, 2000);
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (syncDebounceTimerRef.current) {
-        clearTimeout(syncDebounceTimerRef.current);
-      }
-    };
-  }, [fetchedGoogleData, syncToTuturuuu, wsId, experimentalGoogleToken?.ws_id]);
-
-  // Trigger sync when isActiveSyncOn becomes true
-  useEffect(() => {
-    // If have not connected to google, don't sync
-    if (experimentalGoogleToken?.ws_id !== wsId) {
-      return;
-    }
-
-    // Only sync when isActiveSyncOn becomes true and we have Google data
-    if (isActiveSyncOn && fetchedGoogleData && fetchedGoogleData.length > 0) {
-      syncToTuturuuu();
-    }
-  }, [
-    isActiveSyncOn,
-    fetchedGoogleData,
-    syncToTuturuuu,
-    wsId,
-    experimentalGoogleToken?.ws_id,
-  ]);
-
   // Trigger refetch from DB when changing views (optimized to reduce load)
   useEffect(() => {
     // Skip if dates haven't actually changed
@@ -899,15 +786,15 @@ export const CalendarSyncProvider = ({
           visibleDatabaseEvents as CalendarEvent[]
         );
 
-        // Filter events by enabled calendars
-        // If no calendar connections exist (not using Google Calendar), show all events
-        // If connections exist, only show events from enabled calendars or events without a google_calendar_id
+        // Filter external events by enabled provider calendars. Local Tuturuuu
+        // events are always shown here; native calendar visibility is handled
+        // by the workspace calendar endpoints.
         const filteredEvents =
           calendarConnections.length > 0
             ? result.filter((event) => {
-                const eventCalendarId = (event as any).google_calendar_id;
-                // Show events without google_calendar_id (manually created events)
-                // Or events from enabled calendars
+                const eventCalendarId =
+                  (event as any).external_calendar_id ||
+                  (event as any).google_calendar_id;
                 return (
                   !eventCalendarId || enabledCalendarIds.has(eventCalendarId)
                 );
@@ -978,156 +865,14 @@ export const CalendarSyncProvider = ({
   }, []);
 
   const syncToGoogle = useCallback(async () => {
-    // Helper to dispatch debug logs
-    const logDebug = (
-      type: 'info' | 'success' | 'warning' | 'error',
-      message: string,
-      details?: any
-    ) => {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(
-          new CustomEvent('calendar-debug-log', {
-            detail: {
-              id: `${Date.now()}-${Math.random()}`,
-              timestamp: new Date(),
-              type,
-              message,
-              details,
-            },
-          })
-        );
-      }
-      console.log(
-        `[SYNC TO GOOGLE ${type.toUpperCase()}]`,
-        message,
-        details || ''
-      );
-    };
-
-    logDebug('info', '🚀 Starting sync to Google Calendar', {
-      wsId,
-      hasGoogleToken: !!experimentalGoogleToken,
-      dateRange: dates.map((d) => d.toISOString()),
-    });
-
-    if (!experimentalGoogleToken || !wsId) {
-      logDebug('error', 'Google Calendar not connected');
-      toast.error('Google Calendar not connected', {
-        description: 'Please connect your Google Calendar first',
-      });
-      return;
-    }
-
-    setIsSyncing(true);
+    toast.info('Provider events sync when you create or edit them.');
     setSyncStatus({
-      state: 'syncing',
-      message: 'syncing_to_google', // Translation key
+      state: 'success',
+      message: 'provider_writes_on_save',
+      lastSyncTime: new Date(),
       direction: 'tuturuuu-to-google',
     });
-
-    try {
-      const startDate = dayjs(dates[0]).startOf('day');
-      const endDate = dayjs(dates[dates.length - 1]).endOf('day');
-
-      logDebug('info', '📅 Date range for sync', {
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      });
-
-      logDebug('info', '🔍 Current events in memory', {
-        totalEvents: events.length,
-        eventsWithGoogleId: events.filter((e: any) => e.google_event_id).length,
-        eventsWithoutGoogleId: events.filter((e: any) => !e.google_event_id)
-          .length,
-      });
-
-      const requestBody = {
-        wsId,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      };
-
-      logDebug('info', '📤 Sending API request', requestBody);
-
-      const response = await fetch('/api/v1/calendar/auth/sync-to-google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
-
-      logDebug('info', '📥 API response received', {
-        status: response.status,
-        ok: response.ok,
-      });
-
-      const result = await response.json();
-
-      logDebug('info', '📊 API response data', result);
-
-      if (!response.ok) {
-        logDebug('error', 'API request failed', result);
-        throw new Error(result.error || 'Failed to sync to Google Calendar');
-      }
-
-      // Update sync status
-      setSyncStatus({
-        state: 'success',
-        message: `Synced ${result.syncedCount} event(s) to Google Calendar`,
-        lastSyncTime: new Date(),
-        direction: 'tuturuuu-to-google',
-      });
-
-      logDebug(
-        'success',
-        `✅ Sync completed: ${result.syncedCount} events synced`,
-        result
-      );
-
-      // Show success notification
-      toast.success('Synced to Google Calendar', {
-        description: `${result.syncedCount} event(s) synced successfully`,
-      });
-
-      // If there were errors, show them
-      if (result.errorCount > 0 && result.errors) {
-        logDebug(
-          'warning',
-          `⚠️ ${result.errorCount} events failed to sync`,
-          result.errors
-        );
-        toast.warning('Some events failed to sync', {
-          description: `${result.errorCount} event(s) failed. Check debug panel for details.`,
-          duration: 7000,
-        });
-      }
-
-      // Refresh to ensure we have the latest data
-      logDebug('info', '🔄 Refreshing events from database');
-      refresh();
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'An unexpected error occurred while syncing to Google';
-
-      logDebug('error', '❌ Sync failed', { error, errorMessage });
-
-      setError(error instanceof Error ? error : new Error(errorMessage));
-      setSyncStatus({
-        state: 'error',
-        message: errorMessage,
-        lastSyncTime: new Date(),
-      });
-
-      toast.error('Failed to sync to Google Calendar', {
-        description: errorMessage,
-        duration: 7000,
-      });
-    } finally {
-      setIsSyncing(false);
-      logDebug('info', '🏁 Sync operation completed');
-    }
-  }, [wsId, dates, experimentalGoogleToken, refresh, events]);
+  }, []);
 
   const value = {
     data,

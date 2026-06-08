@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { updateCronMonitoringControl } from '@/lib/infrastructure/cron-monitoring';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInfrastructureViewer } from '../../blue-green/authorization';
+import { authorizeInfrastructureOperator } from '../../blue-green/authorization';
 
 const payloadSchema = z.object({
   enabled: z.boolean(),
@@ -10,7 +10,7 @@ const payloadSchema = z.object({
 });
 
 export async function PUT(request: Request) {
-  const authorization = await authorizeInfrastructureViewer(request);
+  const authorization = await authorizeInfrastructureOperator(request);
   if (!authorization.ok) {
     return authorization.response;
   }

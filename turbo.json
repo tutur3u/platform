@@ -68,6 +68,7 @@
       "outputs": [
         ".next/**",
         "!.next/cache/**",
+        "!.next/dev/**",
         "dist/**",
         ".turbo/tsconfig.tsbuildinfo"
       ]
@@ -78,6 +79,7 @@
       "outputs": [
         ".next/**",
         "!.next/cache/**",
+        "!.next/dev/**",
         "dist/**",
         ".turbo/tsconfig.tsbuildinfo"
       ]

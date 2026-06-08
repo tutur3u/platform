@@ -14,6 +14,7 @@ export interface FinanceWorkspaceContext {
   currency: string;
   permissions: PermissionsResult;
   user: {
+    displayName?: string | null;
     email?: string | null;
     id: string;
   };
@@ -64,11 +65,23 @@ export async function getFinanceWorkspaceContext(
   if (!permissions) {
     return null;
   }
+  const financeUser = user as typeof user & {
+    displayName?: string | null;
+    display_name?: string | null;
+  };
 
   return {
     currency: currency ?? 'USD',
     permissions,
-    user,
+    user: {
+      displayName:
+        financeUser.displayName ??
+        financeUser.display_name ??
+        user.email ??
+        user.id,
+      email: user.email ?? null,
+      id: user.id,
+    },
     workspace,
     wsId: workspace.id,
   };

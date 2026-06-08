@@ -28,7 +28,6 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-description';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -46,6 +45,16 @@ import {
   applyPersonalTaskMetadata,
   loadPersonalTaskMetadata,
 } from './personal-overlays';
+
+async function deriveTaskDescriptionYjsState(
+  description: string | null | undefined
+) {
+  const { deriveTaskDescriptionYjsState: deriveYjsState } = await import(
+    '@tuturuuu/utils/yjs-task-description'
+  );
+
+  return deriveYjsState(description);
+}
 
 async function cleanupCreatedTask(
   sbAdmin: TypedSupabaseClient,
@@ -159,12 +168,33 @@ type NormalizedRouteTask = Task & {
   task_lists?: TaskRecord['task_lists'];
 };
 
+type TaskSchedulingSettingsRow = {
+  task_id: string;
+  total_duration: number | null;
+  is_splittable: boolean | null;
+  min_split_duration_minutes: number | null;
+  max_split_duration_minutes: number | null;
+  calendar_hours: Task['calendar_hours'] | null;
+  auto_schedule: boolean | null;
+};
+
 type ExternalTaskSortBy =
   | 'created-desc'
   | 'created-asc'
   | 'due-asc'
   | 'name-asc'
   | 'source-asc';
+type TaskSortBy =
+  | 'name-asc'
+  | 'name-desc'
+  | 'priority-high'
+  | 'priority-low'
+  | 'due-date-asc'
+  | 'due-date-desc'
+  | 'created-date-desc'
+  | 'created-date-asc'
+  | 'estimation-high'
+  | 'estimation-low';
 type TaskSourceScope =
   | 'all_visible'
   | 'current_board'
@@ -201,9 +231,94 @@ type PersonalTaskBoardExternalCountRow = {
 };
 
 type TaskSourceFilterIdRow = {
+  list_id: string | null;
   task_id: string | null;
   total_count: number | string | null;
 };
+
+type TaskSourceFilterListCountRow = {
+  list_id: string | null;
+  total_count: number | string | null;
+};
+
+async function loadTaskSchedulingSettingsByTaskId({
+  supabase,
+  taskIds,
+  userId,
+}: {
+  supabase: TypedSupabaseClient;
+  taskIds: string[];
+  userId: string;
+}) {
+  const uniqueTaskIds = [...new Set(taskIds.filter(Boolean))];
+  const settingsByTaskId = new Map<string, TaskSchedulingSettingsRow>();
+
+  if (uniqueTaskIds.length === 0) {
+    return settingsByTaskId;
+  }
+
+  const { data, error } = await supabase
+    .from('task_user_scheduling_settings')
+    .select(
+      `
+      task_id,
+      total_duration,
+      is_splittable,
+      min_split_duration_minutes,
+      max_split_duration_minutes,
+      calendar_hours,
+      auto_schedule
+    `
+    )
+    .eq('user_id', userId)
+    .in('task_id', uniqueTaskIds);
+
+  if (error) {
+    throw new Error('TASK_SCHEDULING_SETTINGS_QUERY_FAILED');
+  }
+
+  for (const row of (data ?? []) as TaskSchedulingSettingsRow[]) {
+    if (!row.task_id) continue;
+    settingsByTaskId.set(row.task_id, row);
+  }
+
+  return settingsByTaskId;
+}
+
+async function applyTaskSchedulingSettings({
+  supabase,
+  tasks,
+  userId,
+}: {
+  supabase: TypedSupabaseClient;
+  tasks: NormalizedRouteTask[];
+  userId: string;
+}) {
+  const settingsByTaskId = await loadTaskSchedulingSettingsByTaskId({
+    supabase,
+    taskIds: tasks.map((task) => task.id),
+    userId,
+  });
+
+  if (settingsByTaskId.size === 0) {
+    return tasks;
+  }
+
+  return tasks.map((task) => {
+    const settings = settingsByTaskId.get(task.id);
+    if (!settings) return task;
+
+    return {
+      ...task,
+      total_duration: settings.total_duration,
+      is_splittable: settings.is_splittable,
+      min_split_duration_minutes: settings.min_split_duration_minutes,
+      max_split_duration_minutes: settings.max_split_duration_minutes,
+      calendar_hours: settings.calendar_hours,
+      auto_schedule: settings.auto_schedule,
+    };
+  });
+}
 
 function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
   switch (value) {
@@ -215,6 +330,45 @@ function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
     default:
       return DEFAULT_EXTERNAL_TASK_SORT_BY;
   }
+}
+
+function parseTaskSortBy(value: string | null): TaskSortBy | undefined {
+  switch (value) {
+    case 'name-asc':
+    case 'name-desc':
+    case 'priority-high':
+    case 'priority-low':
+    case 'due-date-asc':
+    case 'due-date-desc':
+    case 'created-date-desc':
+    case 'created-date-asc':
+    case 'estimation-high':
+    case 'estimation-low':
+      return value;
+    default:
+      return undefined;
+  }
+}
+
+function parseTaskPriorities(value: string | null) {
+  if (!value) return [];
+
+  const allowed = new Set(['low', 'normal', 'high', 'critical']);
+  return Array.from(
+    new Set(
+      value
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter((entry) => allowed.has(entry))
+    )
+  );
+}
+
+function parseTaskEstimationBound(value: string | null) {
+  if (!value) return null;
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
 }
 
 function parseTaskSourceScope(value: string | null): TaskSourceScope {
@@ -326,6 +480,7 @@ async function loadAccessibleWorkspaceIds(
     .from('workspace_members')
     .select('ws_id')
     .eq('user_id', userId)
+    .eq('type', 'MEMBER')
     .in('ws_id', uniqueWorkspaceIds);
 
   if (error) {
@@ -489,7 +644,18 @@ async function loadTaskSourceFilterIds({
   closedMode,
   includeArchivedBoards,
   includeDeletedMode,
+  hasDueDate,
   externalSortBy,
+  sortBy,
+  labelIds,
+  assigneeIds,
+  projectIds,
+  priorities,
+  estimationMin,
+  estimationMax,
+  dueDateFrom,
+  dueDateTo,
+  includeUnassigned,
   limit,
   offset,
 }: {
@@ -509,7 +675,18 @@ async function loadTaskSourceFilterIds({
   closedMode: string | null;
   includeArchivedBoards: boolean;
   includeDeletedMode: 'all' | 'none' | 'only';
+  hasDueDate: boolean;
   externalSortBy: ExternalTaskSortBy;
+  sortBy?: TaskSortBy;
+  labelIds: string[];
+  assigneeIds: string[];
+  projectIds: string[];
+  priorities: string[];
+  estimationMin: number | null;
+  estimationMax: number | null;
+  dueDateFrom: string | null;
+  dueDateTo: string | null;
+  includeUnassigned: boolean;
   limit: number;
   offset: number;
 }) {
@@ -532,9 +709,19 @@ async function loadTaskSourceFilterIds({
       p_closed_mode: closedMode ?? undefined,
       p_include_archived_boards: includeArchivedBoards,
       p_include_deleted: includeDeletedMode,
-      p_sort_by: externalSortBy,
+      p_has_due_date: hasDueDate,
+      p_sort_by: sortBy ?? externalSortBy,
       p_limit: limit,
       p_offset: offset,
+      p_label_ids: labelIds.length > 0 ? labelIds : undefined,
+      p_assignee_ids: assigneeIds.length > 0 ? assigneeIds : undefined,
+      p_project_ids: projectIds.length > 0 ? projectIds : undefined,
+      p_priorities: priorities.length > 0 ? priorities : undefined,
+      p_estimation_min: estimationMin ?? undefined,
+      p_estimation_max: estimationMax ?? undefined,
+      p_due_date_from: dueDateFrom ?? undefined,
+      p_due_date_to: dueDateTo ?? undefined,
+      p_include_unassigned: includeUnassigned,
     });
 
   if (error) {
@@ -549,6 +736,108 @@ async function loadTaskSourceFilterIds({
   const count = Number(rows[0]?.total_count ?? 0);
 
   return { count: Number.isFinite(count) ? count : 0, taskIds };
+}
+
+async function loadTaskSourceFilterListCounts({
+  sbAdmin,
+  userId,
+  workspaceId,
+  boardId,
+  listId,
+  sourceScope,
+  sourceWorkspaceIds,
+  sourceBoardIds,
+  listStatuses,
+  searchQuery,
+  parsedIdentifier,
+  assignedToMe,
+  completedMode,
+  closedMode,
+  includeArchivedBoards,
+  includeDeletedMode,
+  hasDueDate,
+  labelIds,
+  assigneeIds,
+  projectIds,
+  priorities,
+  estimationMin,
+  estimationMax,
+  dueDateFrom,
+  dueDateTo,
+  includeUnassigned,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  userId: string;
+  workspaceId: string;
+  boardId: string | null;
+  listId: string | null;
+  sourceScope: TaskSourceScope;
+  sourceWorkspaceIds: string[];
+  sourceBoardIds: string[];
+  listStatuses: ExternalSourceStatus[];
+  searchQuery?: string;
+  parsedIdentifier: ReturnType<typeof parseTaskIdentifierQuery> | null;
+  assignedToMe: boolean;
+  completedMode: string | null;
+  closedMode: string | null;
+  includeArchivedBoards: boolean;
+  includeDeletedMode: 'all' | 'none' | 'only';
+  hasDueDate: boolean;
+  labelIds: string[];
+  assigneeIds: string[];
+  projectIds: string[];
+  priorities: string[];
+  estimationMin: number | null;
+  estimationMax: number | null;
+  dueDateFrom: string | null;
+  dueDateTo: string | null;
+  includeUnassigned: boolean;
+}) {
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .rpc('count_task_source_filter_lists', {
+      p_actor_id: userId,
+      p_workspace_id: workspaceId,
+      p_board_id: boardId ?? undefined,
+      p_list_id: listId ?? undefined,
+      p_source_scope: sourceScope,
+      p_source_workspace_ids: sourceWorkspaceIds,
+      p_source_board_ids: sourceBoardIds,
+      p_list_statuses: listStatuses,
+      p_search: searchQuery ?? undefined,
+      p_display_number: parsedIdentifier?.displayNumber ?? undefined,
+      p_ticket_prefix: parsedIdentifier?.ticketPrefix ?? undefined,
+      p_assigned_to_me: assignedToMe,
+      p_completed_mode: completedMode ?? undefined,
+      p_closed_mode: closedMode ?? undefined,
+      p_include_archived_boards: includeArchivedBoards,
+      p_include_deleted: includeDeletedMode,
+      p_has_due_date: hasDueDate,
+      p_label_ids: labelIds.length > 0 ? labelIds : undefined,
+      p_assignee_ids: assigneeIds.length > 0 ? assigneeIds : undefined,
+      p_project_ids: projectIds.length > 0 ? projectIds : undefined,
+      p_priorities: priorities.length > 0 ? priorities : undefined,
+      p_estimation_min: estimationMin ?? undefined,
+      p_estimation_max: estimationMax ?? undefined,
+      p_due_date_from: dueDateFrom ?? undefined,
+      p_due_date_to: dueDateTo ?? undefined,
+      p_include_unassigned: includeUnassigned,
+    });
+
+  if (error) {
+    throw new Error('TASK_SOURCE_FILTER_COUNTS_RPC_FAILED');
+  }
+
+  return ((data ?? []) as TaskSourceFilterListCountRow[]).flatMap((row) => {
+    if (!row.list_id) return [];
+    const count = Number(row.total_count ?? 0);
+    return [
+      {
+        list_id: row.list_id,
+        count: Number.isFinite(count) ? count : 0,
+      },
+    ];
+  });
 }
 
 export type TaskRouteAuthContext = {
@@ -671,14 +960,14 @@ export async function handleTaskRouteGET(
       isGuestBoardAccess = boardAccess.access.mode === 'guest';
     }
 
-    const parsedLimit = Number.parseInt(
-      url.searchParams.get('limit') ?? '',
-      10
-    );
+    const limitParam = url.searchParams.get('limit');
+    const parsedLimit = Number.parseInt(limitParam ?? '', 10);
     const limit =
-      Number.isFinite(parsedLimit) && parsedLimit > 0
-        ? Math.min(parsedLimit, 200)
-        : 100;
+      limitParam === '0'
+        ? 0
+        : Number.isFinite(parsedLimit) && parsedLimit > 0
+          ? Math.min(parsedLimit, 200)
+          : 100;
 
     const parsedOffset = Number.parseInt(
       url.searchParams.get('offset') ?? '',
@@ -702,9 +991,25 @@ export async function handleTaskRouteGET(
           : 'none';
     const includeCount = url.searchParams.get('includeCount') === 'true';
     const assignedToMe = url.searchParams.get('assignedToMe') === 'true';
+    const includeUnassigned =
+      url.searchParams.get('includeUnassigned') === 'true';
     const completedMode = url.searchParams.get('completed');
     const closedMode = url.searchParams.get('closed');
     const hasDueDate = url.searchParams.get('hasDueDate') === 'true';
+    const includeListCounts =
+      url.searchParams.get('includeListCounts') === 'true';
+    const labelIds = parseUuidList(url.searchParams.get('labelIds'));
+    const assigneeIds = parseUuidList(url.searchParams.get('assigneeIds'));
+    const projectIds = parseUuidList(url.searchParams.get('projectIds'));
+    const priorities = parseTaskPriorities(url.searchParams.get('priorities'));
+    const estimationMin = parseTaskEstimationBound(
+      url.searchParams.get('estimationMin')
+    );
+    const estimationMax = parseTaskEstimationBound(
+      url.searchParams.get('estimationMax')
+    );
+    const dueDateFrom = url.searchParams.get('dueDateFrom')?.trim() || null;
+    const dueDateTo = url.searchParams.get('dueDateTo')?.trim() || null;
     const listStatuses = parseTaskListStatuses(
       url.searchParams.get('listStatuses')
     );
@@ -728,9 +1033,17 @@ export async function handleTaskRouteGET(
     const externalSortBy = parseExternalTaskSortBy(
       url.searchParams.get('externalSortBy')
     );
+    const sortBy = parseTaskSortBy(url.searchParams.get('sortBy'));
     const parsedIdentifier = identifierQuery
       ? parseTaskIdentifierQuery(identifierQuery)
       : null;
+    const hasRpcOnlyTaskFilters =
+      labelIds.length > 0 ||
+      assigneeIds.length > 0 ||
+      projectIds.length > 0 ||
+      priorities.length > 0 ||
+      includeUnassigned ||
+      !!sortBy;
     const sourceFilterHasEmptySelection =
       sourceScope === 'external_specific' &&
       sourceWorkspaceIds.length === 0 &&
@@ -739,8 +1052,14 @@ export async function handleTaskRouteGET(
       ? getPersonalExternalStagingBoardId(listId)
       : null;
     const sourceTasksDisabled = Boolean(virtualStagingBoardId);
-
     const forTimeTracking = url.searchParams.get('forTimeTracking') === 'true';
+    const shouldUseTaskFilterRpc =
+      !sourceFilterHasEmptySelection &&
+      !sourceTasksDisabled &&
+      !forTimeTracking &&
+      (sourceScope !== 'all_visible' ||
+        hasRpcOnlyTaskFilters ||
+        includeListCounts);
 
     if (isGuestBoardAccess) {
       if (
@@ -992,13 +1311,52 @@ export async function handleTaskRouteGET(
         ? fullSelectAssignedToMe
         : fullSelect;
 
+    let listCounts: { list_id: string; count: number }[] = [];
     let sourceTasks: NormalizedRouteTask[] = [];
     let sourceTaskCount = 0;
     let loadedViaSourceFilterRpc = false;
 
+    if (includeListCounts && !sourceFilterHasEmptySelection) {
+      try {
+        listCounts = await loadTaskSourceFilterListCounts({
+          sbAdmin,
+          userId: user.id,
+          workspaceId: normalizedWorkspaceId,
+          boardId,
+          listId,
+          sourceScope,
+          sourceWorkspaceIds,
+          sourceBoardIds,
+          listStatuses,
+          searchQuery,
+          parsedIdentifier,
+          assignedToMe,
+          completedMode,
+          closedMode,
+          includeArchivedBoards,
+          includeDeletedMode,
+          hasDueDate,
+          labelIds,
+          assigneeIds,
+          projectIds,
+          priorities,
+          estimationMin,
+          estimationMax,
+          dueDateFrom,
+          dueDateTo,
+          includeUnassigned,
+        });
+      } catch {
+        return NextResponse.json(
+          { error: 'Failed to load task filter counts' },
+          { status: 500 }
+        );
+      }
+    }
+
     if (sourceFilterHasEmptySelection) {
       loadedViaSourceFilterRpc = true;
-    } else if (sourceScope !== 'all_visible' && !forTimeTracking) {
+    } else if (shouldUseTaskFilterRpc) {
       try {
         const { taskIds, count: rpcCount } = await loadTaskSourceFilterIds({
           sbAdmin,
@@ -1017,7 +1375,18 @@ export async function handleTaskRouteGET(
           closedMode,
           includeArchivedBoards,
           includeDeletedMode,
+          hasDueDate,
           externalSortBy,
+          sortBy,
+          labelIds,
+          assigneeIds,
+          projectIds,
+          priorities,
+          estimationMin,
+          estimationMax,
+          dueDateFrom,
+          dueDateTo,
+          includeUnassigned,
           limit,
           offset,
         });
@@ -1099,6 +1468,22 @@ export async function handleTaskRouteGET(
 
       if (hasDueDate) {
         query = query.not('end_date', 'is', null) as typeof query;
+      }
+
+      if (dueDateFrom) {
+        query = query.gte('end_date', dueDateFrom);
+      }
+
+      if (dueDateTo) {
+        query = query.lte('end_date', dueDateTo);
+      }
+
+      if (estimationMin !== null) {
+        query = query.gte('estimation_points', estimationMin);
+      }
+
+      if (estimationMax !== null) {
+        query = query.lte('estimation_points', estimationMax);
       }
 
       if (assignedToMe) {
@@ -1500,7 +1885,24 @@ export async function handleTaskRouteGET(
       }
     }
 
-    const tasks = [...sourceTasks, ...externalTasks];
+    let tasks: NormalizedRouteTask[];
+
+    try {
+      tasks = await applyTaskSchedulingSettings({
+        supabase,
+        tasks: [...sourceTasks, ...externalTasks],
+        userId: user.id,
+      });
+    } catch (schedulingError) {
+      console.error(
+        'Failed to load task scheduling settings:',
+        schedulingError
+      );
+      return NextResponse.json(
+        { error: 'Failed to load task scheduling settings' },
+        { status: 500 }
+      );
+    }
 
     const shouldIncludeRelationshipSummary =
       includeRelationshipSummary && !forTimeTracking;
@@ -1570,6 +1972,7 @@ export async function handleTaskRouteGET(
     return NextResponse.json({
       tasks: tasksWithRelationshipSummary,
       ...(includeCount ? { count: sourceTaskCount + externalTaskCount } : {}),
+      ...(includeListCounts ? { listCounts } : {}),
     });
   } catch (error) {
     console.error('Error fetching tasks:', error);
@@ -1825,7 +2228,7 @@ export async function handleTaskRoutePOST(
     const normalizedDescription = description?.trim() || null;
     const normalizedDescriptionYjsState =
       description_yjs_state === undefined
-        ? deriveTaskDescriptionYjsState(normalizedDescription)
+        ? await deriveTaskDescriptionYjsState(normalizedDescription)
         : description_yjs_state;
 
     const taskInsert: TaskInsert = {

@@ -58,16 +58,16 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup bun
-        uses: oven-sh/setup-bun@v2
+        uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: latest
+          bun-version: 1.3.14
 
       - uses: actions/setup-node@v6
         with:
           node-version: 24
 
       - name: Install dependencies
-        run: bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Build package
         working-directory: packages/types
@@ -82,14 +82,15 @@ jobs:
       package_version: ${{ steps.version-check.outputs.package_version }}
       should_publish: ${{ steps.version-check.outputs.should_publish }}
     permissions:
+      actions: read
       contents: read
     steps:
       - uses: actions/checkout@v6
 
       - name: Setup bun
-        uses: oven-sh/setup-bun@v2
+        uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: latest
+          bun-version: 1.3.14
 
       - uses: actions/setup-node@v6
         with:
@@ -98,7 +99,7 @@ jobs:
           package-manager-cache: false
 
       - name: Install dependencies
-        run: bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Check whether the version already exists on npm
         id: version-check
@@ -116,10 +117,20 @@ jobs:
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Wait for npm workspace dependencies
+        if: steps.version-check.outputs.should_publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/types
+
       - name: Build package
         if: steps.version-check.outputs.should_publish == 'true'
         working-directory: packages/types
         run: bun run build
+
+      - name: Prepare npm package manifest
+        if: steps.version-check.outputs.should_publish == 'true'
+        run: node scripts/ci/prepare-npm-package-manifest.js packages/types
 
       - name: Pack publish artifact
         if: steps.version-check.outputs.should_publish == 'true'
@@ -232,4 +243,35 @@ jobs:
       # exchanges it for a short-lived publish token, so no registry token
       # secret is set.
       - name: Publish package
-        run: npm publish "${{ steps.artifact.outputs.path }}" --ignore-scripts
+        env:
+          EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
+          EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
+        run: |
+          set -o pipefail
+          PUBLISH_LOG="${RUNNER_TEMP}/npm-publish.log"
+
+          if ! npm publish "${{ steps.artifact.outputs.path }}" --ignore-scripts 2>&1 | tee "$PUBLISH_LOG"; then
+            if grep -Eiq 'E404|404 Not Found|not have permission|ENEEDAUTH' "$PUBLISH_LOG"; then
+              echo "::error::npm could not publish ${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION}. Ensure the npm package exists when npm requires first-publish setup, package access is public, and the trusted publisher is configured for this repository, workflow filename, and environment."
+            fi
+
+            exit 1
+          fi
+
+      - name: Wait for npm publication
+        env:
+          EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
+          EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
+        run: |
+          for attempt in {1..60}; do
+            if npm view "${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION}" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
+              echo "${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION} is visible on npm."
+              exit 0
+            fi
+
+            echo "Waiting for ${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION} on npm (${attempt}/60)."
+            sleep 10
+          done
+
+          echo "::error::${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION} was published but did not become visible on npm before timeout."
+          exit 1

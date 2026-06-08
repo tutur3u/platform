@@ -7,6 +7,7 @@ import {
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import type { FinancePermissionRequestUser } from '@tuturuuu/ui/finance/shared/finance-permission-warning-dialog';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
@@ -47,6 +48,7 @@ interface Props {
   workspace?: {
     personal?: boolean | null;
   };
+  permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 
 export default async function WalletDetailsPage({
@@ -56,6 +58,7 @@ export default async function WalletDetailsPage({
   internalApiOptions,
   permissions,
   workspace,
+  permissionRequestUser,
 }: Props) {
   const [t, resolvedWorkspace, resolvedPermissions, resolvedDefaultCurrency] =
     await Promise.all([
@@ -164,6 +167,7 @@ export default async function WalletDetailsPage({
           canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
           canDeleteWallets={canDeleteWallets}
           isPersonalWorkspace={!!resolvedWorkspace.personal}
+          permissionRequestUser={permissionRequestUser}
         />
       </div>
       <Separator className="my-4" />
@@ -320,6 +324,7 @@ export default async function WalletDetailsPage({
           canViewConfidentialDescription={canViewConfidentialDescription}
           canViewConfidentialCategory={canViewConfidentialCategory}
           isPersonalWorkspace={!!resolvedWorkspace.personal}
+          permissionRequestUser={permissionRequestUser}
         />
       </Suspense>
     </div>

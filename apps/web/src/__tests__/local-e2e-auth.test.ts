@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isLocalE2EAuthBypassEnabled,
   isLocalE2EAuthRequestAllowed,
+  shouldBypassSupabaseAuthCaptchaForDev,
 } from '@/lib/auth/local-e2e';
 
 const localE2EEnv = {
@@ -38,6 +39,17 @@ describe('isLocalE2EAuthBypassEnabled', () => {
 
   it('allows the bypass for the local Docker web and Supabase origins', () => {
     expect(isLocalE2EAuthBypassEnabled(localE2EEnv)).toBe(true);
+  });
+
+  it('allows Portless production starts with public E2E env fallbacks', () => {
+    expect(
+      isLocalE2EAuthBypassEnabled({
+        NODE_ENV: 'test',
+        NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
+        NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS: 'true',
+        PORTLESS_URL: 'https://tuturuuu.localhost:1355',
+      })
+    ).toBe(true);
   });
 
   it('rejects the bypass when either origin is not local', () => {
@@ -111,6 +123,97 @@ describe('isLocalE2EAuthRequestAllowed', () => {
     ).toBe(true);
   });
 
+  it('allows proxied Tuturuuu localhost requests after local TLS termination', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://web-blue:7803/api/auth/dev-session', {
+          host: 'tuturuuu.localhost',
+          'x-forwarded-host': 'tuturuuu.localhost',
+          'x-forwarded-proto': 'http',
+        }),
+        {
+          ...localE2EEnv,
+          BASE_URL: 'https://tuturuuu.localhost:1355',
+          PORTLESS_URL: 'https://tuturuuu.localhost:1355',
+          SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
+        }
+      )
+    ).toBe(true);
+  });
+
+  it('allows Portless production backends when the public URL is local', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://127.0.0.1:4703/api/auth/dev-session', {
+          host: '127.0.0.1:4703',
+          origin: 'https://tuturuuu.localhost:1355',
+        }),
+        {
+          ...localE2EEnv,
+          BASE_URL: 'https://tuturuuu.localhost:1355',
+          PORT: '4703',
+          PORTLESS_URL: 'https://tuturuuu.localhost:1355',
+          SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
+        }
+      )
+    ).toBe(true);
+  });
+
+  it('allows Portless production backends with public E2E env fallbacks', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://127.0.0.1:4703/api/auth/dev-session', {
+          host: '127.0.0.1:4703',
+          origin: 'https://tuturuuu.localhost',
+        }),
+        {
+          NODE_ENV: 'test',
+          NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
+          NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS: 'true',
+          PORT: '4703',
+          PORTLESS_URL: 'https://tuturuuu.localhost',
+        }
+      )
+    ).toBe(true);
+  });
+
+  it('allows Portless production backends with forwarded https loopback origins', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('https://127.0.0.1:4703/api/auth/dev-session', {
+          host: '127.0.0.1:4703',
+          origin: 'https://tuturuuu.localhost',
+          'x-forwarded-proto': 'https',
+        }),
+        {
+          NODE_ENV: 'test',
+          NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
+          NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS: 'true',
+          PORT: '4703',
+          PORTLESS_URL: 'https://tuturuuu.localhost',
+        }
+      )
+    ).toBe(true);
+  });
+
+  it('rejects Portless backend origins when the injected port does not match', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://127.0.0.1:4704/api/auth/dev-session', {
+          host: '127.0.0.1:4704',
+          origin: 'https://tuturuuu.localhost',
+        }),
+        {
+          ...localE2EEnv,
+          BASE_URL: 'https://tuturuuu.localhost',
+          PORT: '4703',
+          PORTLESS_URL: 'https://tuturuuu.localhost',
+          SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
+        }
+      )
+    ).toBe(false);
+  });
+
   it('rejects internal Docker origins without a public local forwarded origin', () => {
     expect(
       isLocalE2EAuthRequestAllowed(
@@ -162,6 +265,28 @@ describe('isLocalE2EAuthRequestAllowed', () => {
         }),
         localE2EEnv
       )
+    ).toBe(false);
+  });
+});
+
+describe('shouldBypassSupabaseAuthCaptchaForDev', () => {
+  it('allows local Supabase development password auth without Turnstile', () => {
+    expect(
+      shouldBypassSupabaseAuthCaptchaForDev({
+        BASE_URL: 'https://tuturuuu.localhost',
+        NODE_ENV: 'development',
+        NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
+      })
+    ).toBe(true);
+  });
+
+  it('requires Turnstile for hosted Supabase development password auth', () => {
+    expect(
+      shouldBypassSupabaseAuthCaptchaForDev({
+        BASE_URL: 'https://tuturuuu.localhost',
+        NODE_ENV: 'development',
+        NEXT_PUBLIC_SUPABASE_URL: 'https://project.supabase.co',
+      })
     ).toBe(false);
   });
 });

@@ -41,4 +41,24 @@ describe('applyHiveAgentInstruction', () => {
     expect(result.changed).toBe(false);
     expect(result.world).toBe(world);
   });
+
+  it('requires destructive permission for clear and reseed prompts', () => {
+    const world = createDefaultWorld();
+
+    const blocked = applyHiveAgentInstruction(world, 'clear the world');
+    expect(blocked.changed).toBe(false);
+    expect(blocked.world).toBe(world);
+
+    const allowed = applyHiveAgentInstruction(world, 'clear the world', {
+      allowDestructiveWorldActions: true,
+    });
+    expect(allowed.changed).toBe(true);
+    expect(allowed.world.blocks).toHaveLength(0);
+
+    const reseeded = applyHiveAgentInstruction(world, 'reseed default world', {
+      allowDestructiveWorldActions: true,
+    });
+    expect(reseeded.changed).toBe(true);
+    expect(reseeded.actions).toContain('reseeded the default world');
+  });
 });

@@ -18,6 +18,7 @@ import type {
   ChatUserProfile,
   CreateChatConversationPayload,
   DeleteChatConversationResult,
+  GenerateChatConversationTitleResult,
   SendChatMessagePayload,
   SendChatMessageResult,
   SendChatMessageStreamHandlers,
@@ -133,6 +134,23 @@ export async function updateWorkspaceChatConversation(
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       method: 'PATCH',
+    }
+  );
+}
+
+export async function generateWorkspaceChatConversationTitle(
+  workspaceId: string,
+  conversationId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<GenerateChatConversationTitleResult>(
+    `${chatBasePath(workspaceId)}/conversations/${encodePathSegment(
+      conversationId
+    )}/title`,
+    {
+      cache: 'no-store',
+      method: 'POST',
     }
   );
 }

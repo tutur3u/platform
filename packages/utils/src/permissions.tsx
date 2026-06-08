@@ -111,6 +111,16 @@ export const permissionGroups = ({
                   disabled: false,
                 },
                 {
+                  id: 'manage_infrastructure_stress_tests' as PermissionId,
+                  icon: <FlaskConical />,
+                  title: t('ws-roles.manage_infrastructure_stress_tests'),
+                  description: t(
+                    'ws-roles.manage_infrastructure_stress_tests_description'
+                  ),
+                  disableOnProduction: false,
+                  disabled: false,
+                },
+                {
                   id: 'manage_external_migrations',
                   icon: <DatabaseZap />,
                   title: t('ws-roles.manage_external_migrations'),

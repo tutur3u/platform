@@ -1,12 +1,17 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  type AbortInfrastructureStressTestPayload,
+  abortInfrastructureStressTest,
   getBlueGreenMonitoringRequestArchive,
   getBlueGreenMonitoringSnapshot,
   getBlueGreenMonitoringWatcherLogArchive,
   getCronMonitoringExecutionArchive,
   getCronMonitoringSnapshot,
+  getInfrastructureStressTestSnapshot,
+  type QueueInfrastructureStressTestPayload,
+  queueInfrastructureStressTest,
 } from '@tuturuuu/internal-api/infrastructure';
 
 export function useBlueGreenMonitoringSnapshot({
@@ -149,5 +154,47 @@ export function useCronMonitoringExecutionArchive({
       }),
     refetchInterval: 1000,
     staleTime: 750,
+  });
+}
+
+const stressTestQueryKey = [
+  'infrastructure',
+  'monitoring',
+  'stress-tests',
+] as const;
+
+export function useInfrastructureStressTestSnapshot() {
+  return useQuery({
+    queryKey: stressTestQueryKey,
+    queryFn: () => getInfrastructureStressTestSnapshot(),
+    refetchInterval: (query) => (query.state.data?.activeRun ? 1000 : 10000),
+    staleTime: 750,
+  });
+}
+
+export function useQueueInfrastructureStressTest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: QueueInfrastructureStressTestPayload) =>
+      queueInfrastructureStressTest(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: stressTestQueryKey });
+    },
+  });
+}
+
+export function useAbortInfrastructureStressTest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      payload,
+      runId,
+    }: {
+      payload?: AbortInfrastructureStressTestPayload;
+      runId: string;
+    }) => abortInfrastructureStressTest(runId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: stressTestQueryKey });
+    },
   });
 }

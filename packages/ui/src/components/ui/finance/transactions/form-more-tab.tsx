@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { TransactionFormValues } from './form-schema';
 import type { NewContent, NewContentType } from './form-types';
@@ -23,6 +24,7 @@ interface FormMoreTabProps {
   loading: boolean;
   hasFormPermission: boolean;
   canManageConfidential: boolean;
+  confidentialPermissionWarning?: ReactNode;
   isTransfer: boolean;
   setNewContentType: (value: NewContentType) => void;
   setNewContent: (value: NewContent) => void;
@@ -35,6 +37,7 @@ export function FormMoreTab({
   loading,
   hasFormPermission,
   canManageConfidential,
+  confidentialPermissionWarning,
   isTransfer,
   setNewContentType,
   setNewContent,
@@ -198,6 +201,11 @@ export function FormMoreTab({
           </div>
         </div>
       )}
+
+      {!canManageConfidential &&
+        !isTransfer &&
+        hasFormPermission &&
+        confidentialPermissionWarning}
     </div>
   );
 }

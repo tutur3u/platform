@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => {
       (request: NextRequest) => request.headers
     ),
     guardApiProxyRequest: vi.fn(),
+    hasSupportedSupabaseAuthCookie: vi.fn(),
     hasWebAppSessionTokenFromRequest: vi.fn(),
     normalizeAuthRedirectPath: vi.fn(
       (_value: string | null | undefined, _origin: string, fallback: string) =>
@@ -36,6 +37,9 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   getAppSessionClaimsFromRequest: (
     ...args: Parameters<typeof mocks.getAppSessionClaimsFromRequest>
   ) => mocks.getAppSessionClaimsFromRequest(...args),
+  hasSupportedSupabaseAuthCookie: (
+    ...args: Parameters<typeof mocks.hasSupportedSupabaseAuthCookie>
+  ) => mocks.hasSupportedSupabaseAuthCookie(...args),
   hasWebAppSessionTokenFromRequest: (
     ...args: Parameters<typeof mocks.hasWebAppSessionTokenFromRequest>
   ) => mocks.hasWebAppSessionTokenFromRequest(...args),
@@ -107,6 +111,7 @@ describe('Meet proxy auth handoff', () => {
     mocks.getCurrentUserDefaultWorkspace.mockClear();
     mocks.getRequestHeadersWithResponseCookies.mockClear();
     mocks.guardApiProxyRequest.mockClear();
+    mocks.hasSupportedSupabaseAuthCookie.mockClear();
     mocks.hasWebAppSessionTokenFromRequest.mockClear();
     mocks.normalizeAuthRedirectPath.mockClear();
     mocks.propagateAuthCookies.mockClear();
@@ -120,6 +125,7 @@ describe('Meet proxy auth handoff', () => {
       (request: NextRequest) => request.headers
     );
     mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
     mocks.normalizeAuthRedirectPath.mockImplementation(
       (_value: string | null | undefined, _origin: string, fallback: string) =>
@@ -196,6 +202,24 @@ describe('Meet proxy auth handoff', () => {
       headers: request.headers,
     });
     expect(mocks.propagateAuthCookies).toHaveBeenCalled();
+  });
+
+  it('redirects Supabase-authenticated root requests to default workspace plans', async () => {
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
+      id: 'team-workspace',
+      personal: false,
+    });
+
+    const request = new NextRequest('https://meet.tuturuuu.localhost/');
+    const response = await proxy(request);
+
+    expect(response.headers.get('Location')).toBe(
+      'https://meet.tuturuuu.localhost/workspace/team-workspace/plans'
+    );
+    expect(mocks.getCurrentUserDefaultWorkspace).toHaveBeenCalledWith({
+      headers: request.headers,
+    });
   });
 
   it('redirects authenticated login requests back to the normalized next path', async () => {

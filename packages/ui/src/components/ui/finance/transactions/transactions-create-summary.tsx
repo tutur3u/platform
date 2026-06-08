@@ -1,6 +1,10 @@
 'use client';
 
 import { CreateDialogFeatureSummary } from '@tuturuuu/ui/finance/shared/create-dialog-feature-summary';
+import {
+  type FinancePermissionRequestUser,
+  FinancePermissionWarningContent,
+} from '@tuturuuu/ui/finance/shared/finance-permission-warning-dialog';
 import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
 
 interface TransactionsCreateSummaryProps {
@@ -12,6 +16,7 @@ interface TransactionsCreateSummaryProps {
   createTitle: string;
   defaultOpen?: boolean;
   description: string;
+  permissionRequestUser?: FinancePermissionRequestUser | null;
   pluralTitle: string;
   singularTitle: string;
   wsId: string;
@@ -26,6 +31,7 @@ export function TransactionsCreateSummary({
   createTitle,
   defaultOpen = false,
   description,
+  permissionRequestUser,
   pluralTitle,
   singularTitle,
   wsId,
@@ -48,8 +54,14 @@ export function TransactionsCreateSummary({
             canCreateConfidentialTransactions={
               canCreateConfidentialTransactions
             }
+            permissionRequestUser={permissionRequestUser}
           />
-        ) : undefined
+        ) : (
+          <FinancePermissionWarningContent
+            missingPermissions={['create_transactions']}
+            user={permissionRequestUser}
+          />
+        )
       }
     />
   );

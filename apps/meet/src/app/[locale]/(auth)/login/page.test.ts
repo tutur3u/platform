@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getAppSessionClaimsFromRequest: vi.fn(),
+  getSatelliteSupabaseSessionUser: vi.fn(),
   hasWebAppSessionTokenFromRequest: vi.fn(),
   headers: vi.fn(),
   normalizeAuthRedirectPath: vi.fn(),
@@ -17,6 +18,10 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
   normalizeAuthRedirectPath: mocks.normalizeAuthRedirectPath,
+}));
+
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteSupabaseSessionUser: mocks.getSatelliteSupabaseSessionUser,
 }));
 
 vi.mock('next/headers', () => ({
@@ -35,6 +40,7 @@ vi.mock('@/constants/common', () => ({
 describe('Meet login page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getSatelliteSupabaseSessionUser.mockResolvedValue(null);
     mocks.headers.mockResolvedValue(new Headers());
     mocks.normalizeAuthRedirectPath.mockReturnValue('/');
   });
@@ -77,5 +83,22 @@ describe('Meet login page', () => {
     expect(returnUrl.origin).toBe('https://meet.tuturuuu.com');
     expect(returnUrl.pathname).toBe('/verify-token');
     expect(returnUrl.searchParams.get('nextUrl')).toBe('/');
+  });
+
+  it('skips the central handoff when a Supabase session exists', async () => {
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
+    mocks.getSatelliteSupabaseSessionUser.mockResolvedValue({ id: 'user-id' });
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+    mocks.normalizeAuthRedirectPath.mockReturnValue(
+      '/workspace/personal/plans'
+    );
+
+    const LoginPage = (await import('./page')).default;
+
+    await expect(
+      LoginPage({
+        searchParams: Promise.resolve({ next: '/workspace/personal/plans' }),
+      })
+    ).rejects.toThrow('redirect:/workspace/personal/plans');
   });
 });

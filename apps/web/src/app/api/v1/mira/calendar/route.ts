@@ -10,10 +10,12 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { decryptEventsFromStorage } from '@/lib/workspace-encryption';
 
 export async function GET(request: Request) {
+  await connection();
+
   try {
     const { searchParams } = new URL(request.url);
     const wsId = searchParams.get('wsId');

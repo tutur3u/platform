@@ -17,19 +17,33 @@ import { useQueryState } from 'nuqs';
 import { useState } from 'react';
 import { useLocalStorage } from '../../../../hooks/use-local-storage';
 import { useWorkspaceConfig } from '../../../../hooks/use-workspace-config';
+import {
+  type FinancePermissionRequestUser,
+  FinancePermissionWarningDialog,
+} from '../shared/finance-permission-warning-dialog';
 import { StandardInvoice } from './standard-invoice';
 import { SubscriptionInvoice } from './subscription-invoice';
 
 interface Props {
   wsId: string;
+  canCreateInvoices?: boolean;
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
+  canReadInvoiceProducts?: boolean;
+  canReadInvoiceProductStock?: boolean;
+  canReadGroupLinkedProducts?: boolean;
+  permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 
 export default function NewInvoicePage({
   wsId,
+  canCreateInvoices = true,
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
+  canReadInvoiceProducts = true,
+  canReadInvoiceProductStock = true,
+  canReadGroupLinkedProducts = true,
+  permissionRequestUser,
 }: Props) {
   const t = useTranslations();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -81,13 +95,37 @@ export default function NewInvoicePage({
     printAfterCreateInitialized &&
     downloadImageAfterCreateInitialized;
 
-  return (
+  const pageHeader = (
     <>
       <FeatureSummary
         pluralTitle={t('ws-invoices.new_invoice')}
         singularTitle={t('ws-invoices.new_invoice')}
       />
       <Separator className="my-4" />
+    </>
+  );
+
+  if (!canCreateInvoices) {
+    return (
+      <>
+        {pageHeader}
+        <FinancePermissionWarningDialog
+          defaultOpen
+          missingPermissions={['create_invoices']}
+          user={permissionRequestUser}
+          trigger={
+            <Button variant="outline">
+              {t('finance-permission-warning.open_request')}
+            </Button>
+          }
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      {pageHeader}
       <Tabs
         value={invoiceType}
         className="w-full"
@@ -190,9 +228,12 @@ export default function NewInvoicePage({
             defaultCurrency={defaultCurrency ?? undefined}
             canChangeFinanceWallets={canChangeFinanceWallets}
             canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
+            canReadInvoiceProducts={canReadInvoiceProducts}
+            canReadInvoiceProductStock={canReadInvoiceProductStock}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
             downloadImageAfterCreate={downloadImageAfterCreate}
+            permissionRequestUser={permissionRequestUser}
           />
         </TabsContent>
         <TabsContent value="subscription" className="mt-4">
@@ -204,9 +245,13 @@ export default function NewInvoicePage({
             defaultCurrency={defaultCurrency ?? undefined}
             canChangeFinanceWallets={canChangeFinanceWallets}
             canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
+            canReadInvoiceProducts={canReadInvoiceProducts}
+            canReadInvoiceProductStock={canReadInvoiceProductStock}
+            canReadGroupLinkedProducts={canReadGroupLinkedProducts}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
             downloadImageAfterCreate={downloadImageAfterCreate}
+            permissionRequestUser={permissionRequestUser}
           />
         </TabsContent>
       </Tabs>

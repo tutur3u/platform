@@ -1,5 +1,5 @@
 import type { JSONContent } from '@tiptap/react';
-import type { Schema } from 'prosemirror-model';
+import { Node as ProseMirrorNode, type Schema } from 'prosemirror-model';
 import * as Y from 'yjs';
 
 const PROSEMIRROR_FRAGMENT_NAME = 'prosemirror';
@@ -171,14 +171,28 @@ function jsonFromYElement(element: Y.XmlElement): JSONContent {
   return node;
 }
 
+function validateJsonContent(
+  jsonContent: JSONContent,
+  schema?: Schema
+): JSONContent {
+  if (!schema) {
+    return jsonContent;
+  }
+
+  return ProseMirrorNode.fromJSON(schema, jsonContent).toJSON() as JSONContent;
+}
+
 export function convertJsonContentToYjsState(
   jsonContent: JSONContent,
-  _schema?: Schema
+  schema?: Schema
 ): Uint8Array {
   const ydoc = new Y.Doc();
   const fragment = ydoc.getXmlFragment(PROSEMIRROR_FRAGMENT_NAME);
+  const normalizedContent = validateJsonContent(jsonContent, schema);
   const content =
-    jsonContent.type === 'doc' ? (jsonContent.content ?? []) : [jsonContent];
+    normalizedContent.type === 'doc'
+      ? (normalizedContent.content ?? [])
+      : [normalizedContent];
 
   fragment.insert(0, createYChildren(content));
   return Y.encodeStateAsUpdate(ydoc);
@@ -186,15 +200,18 @@ export function convertJsonContentToYjsState(
 
 export function convertYjsStateToJsonContent(
   yjsState: Uint8Array,
-  _schema?: Schema
+  schema?: Schema
 ): JSONContent {
   const ydoc = new Y.Doc();
   Y.applyUpdate(ydoc, yjsState);
 
   const fragment = ydoc.getXmlFragment(PROSEMIRROR_FRAGMENT_NAME);
 
-  return {
-    type: 'doc',
-    content: contentFromYChildren(fragment),
-  };
+  return validateJsonContent(
+    {
+      type: 'doc',
+      content: contentFromYChildren(fragment),
+    },
+    schema
+  );
 }

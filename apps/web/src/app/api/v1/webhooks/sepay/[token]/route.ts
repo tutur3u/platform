@@ -10,7 +10,12 @@ import {
 } from '@/lib/sepay';
 import { classifyCategoryId } from './classifier';
 import { resolveEndpointByToken } from './endpoint';
-import { buildTransactionDescription, markEventFailed } from './event';
+import {
+  buildTransactionDescription,
+  claimRetriableWebhookEvent,
+  markEventFailed,
+  SEPAY_STALE_RECEIVED_EVENT_TTL_MS,
+} from './event';
 import {
   type NormalizedSepayPayload,
   normalizeSepayPayload,
@@ -35,7 +40,6 @@ type ExistingSepayWebhookEvent = {
 };
 
 const FALLBACK_DEDUPE_WINDOW_MS = 2 * 60_000;
-const STALE_RECEIVED_EVENT_TTL_MS = 5 * 60_000;
 
 function isJsonObject(
   value: Json | null | undefined
@@ -140,43 +144,6 @@ async function findExistingWebhookEvent(input: {
   return exactMatch ?? null;
 }
 
-async function reuseFailedWebhookEvent(input: {
-  endpointId: string;
-  existingEventId: string;
-  payload: NormalizedSepayPayload;
-  sbAdmin: TypedSupabaseClient;
-  walletId: string;
-  wsId: string;
-}) {
-  const { data, error } = await input.sbAdmin
-    .from('sepay_webhook_events')
-    .update({
-      created_transaction_id: null,
-      endpoint_id: input.endpointId,
-      failure_reason: null,
-      payload: input.payload.raw as Json,
-      processed_at: null,
-      received_at: new Date().toISOString(),
-      reference_code: input.payload.referenceCode,
-      sepay_event_id: input.payload.eventId,
-      status: 'received',
-      transaction_date: input.payload.transactionDate,
-      transfer_amount: input.payload.transferAmount,
-      transfer_type: input.payload.transferType,
-      wallet_id: input.walletId,
-    })
-    .eq('id', input.existingEventId)
-    .eq('ws_id', input.wsId)
-    .select('id')
-    .maybeSingle();
-
-  if (error || !data?.id) {
-    throw new Error('Failed to reopen failed SePay webhook event');
-  }
-
-  return data.id;
-}
-
 function shouldRetryReceivedEvent(existingEvent: ExistingSepayWebhookEvent) {
   if (
     existingEvent.status !== 'received' ||
@@ -191,7 +158,7 @@ function shouldRetryReceivedEvent(existingEvent: ExistingSepayWebhookEvent) {
 
   return (
     Number.isFinite(receivedAt) &&
-    Date.now() - receivedAt >= STALE_RECEIVED_EVENT_TTL_MS
+    Date.now() - receivedAt >= SEPAY_STALE_RECEIVED_EVENT_TTL_MS
   );
 }
 
@@ -253,17 +220,28 @@ async function prepareWebhookEvent(input: {
     return { eventId: existingEvent.id, shouldSkip: true as const };
   }
 
-  return {
-    eventId: await reuseFailedWebhookEvent({
-      endpointId: input.endpointId,
-      existingEventId: existingEvent.id,
-      payload: input.payload,
-      sbAdmin: input.sbAdmin,
-      walletId: input.walletId,
-      wsId: input.wsId,
-    }),
-    shouldSkip: false as const,
-  };
+  if (
+    existingEvent.status !== 'failed' &&
+    existingEvent.status !== 'received'
+  ) {
+    return { eventId: existingEvent.id, shouldSkip: true as const };
+  }
+
+  const claimedEventId = await claimRetriableWebhookEvent({
+    endpointId: input.endpointId,
+    existingEventId: existingEvent.id,
+    existingStatus: existingEvent.status,
+    payload: input.payload,
+    sbAdmin: input.sbAdmin,
+    walletId: input.walletId,
+    wsId: input.wsId,
+  });
+
+  if (!claimedEventId) {
+    return { eventId: existingEvent.id, shouldSkip: true as const };
+  }
+
+  return { eventId: claimedEventId, shouldSkip: false as const };
 }
 
 export async function POST(request: Request, { params }: Params) {

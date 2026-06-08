@@ -44,6 +44,7 @@ export interface ExternalAppsResponse {
 export type AiAgentAdapter = 'discord' | 'zalo';
 
 export type AiAgentChannelStatus = 'draft' | 'deployed' | 'error' | 'paused';
+export type AiAgentZaloAccountMode = 'official' | 'personal';
 
 export interface AiAgentSecretDescriptor {
   configured: boolean;
@@ -68,7 +69,9 @@ export interface AiAgentChannelConfig {
   discordGuildId?: string | null;
   externalChannelId?: string | null;
   historySyncEnabled?: boolean;
+  zaloAccountMode?: AiAgentZaloAccountMode;
   zaloOfficialAccountId?: string | null;
+  zaloPersonalOwnId?: string | null;
 }
 
 export interface AiAgentDefinition {
@@ -266,7 +269,9 @@ export interface SaveAiAgentPayload {
     discordGuildId?: string | null;
     externalChannelId?: string | null;
     historySyncEnabled?: boolean;
+    zaloAccountMode?: AiAgentZaloAccountMode;
     zaloOfficialAccountId?: string | null;
+    zaloPersonalOwnId?: string | null;
   }>;
   enabled?: boolean;
   id: string;
@@ -289,10 +294,36 @@ export interface AiAgentDeployResponse {
   webhookUrl: string;
 }
 
+export interface AiAgentDiagnosticCheck {
+  detail?: string | null;
+  id: string;
+  label: string;
+  ok: boolean;
+}
+
 export interface AiAgentTestResponse {
+  checks?: AiAgentDiagnosticCheck[];
   ok: boolean;
   response: string;
 }
+
+export interface AiAgentZaloPersonalStatus {
+  channelId: string;
+  connected: boolean;
+  enabled: boolean;
+  lastError: string | null;
+  lastEventAt: string | null;
+  mode: AiAgentZaloAccountMode;
+  ownId: string | null;
+  running: boolean;
+  startedAt: string | null;
+}
+
+export interface AiAgentZaloPersonalStatusResponse {
+  status: AiAgentZaloPersonalStatus;
+}
+
+export type AiAgentZaloPersonalAction = 'start' | 'stop' | 'validate';
 
 export interface RotateAiAgentChannelSecretResponse {
   secret: {
@@ -1464,8 +1495,136 @@ export interface GetBlueGreenMonitoringRequestArchiveParams
   q?: string;
   render?: 'all' | 'document' | 'rsc';
   route?: string;
+  since?: number;
   status?: string;
   traffic?: 'all' | 'external' | 'internal';
+  until?: number;
+}
+
+export type InfrastructureStressTestStatus =
+  | 'aborted'
+  | 'completed'
+  | 'failed'
+  | 'queued'
+  | 'running';
+
+export type InfrastructureStressTestProfileId =
+  | 'smoke'
+  | 'spike'
+  | 'steady'
+  | 'ramp';
+
+export interface InfrastructureStressTestTarget {
+  baseUrl: string;
+  defaultPath: string;
+  description: string | null;
+  id: string;
+  label: string;
+}
+
+export interface InfrastructureStressTestProfile {
+  concurrency: number;
+  durationSeconds: number;
+  id: InfrastructureStressTestProfileId;
+  label: string;
+  maxRequestsPerSecond: number;
+  rampSeconds: number;
+}
+
+export interface InfrastructureStressTestSummary {
+  averageRequestsPerSecond: number | null;
+  capacityJudgement: string | null;
+  errorRate: number | null;
+  estimatedSteadyUsers: number | null;
+  failureMode: string | null;
+  peakRequestsPerSecond: number | null;
+  safeRequestsPerSecond: number | null;
+  saturationPoint: string | null;
+  totalRequests: number;
+  latency: {
+    p50Ms: number | null;
+    p95Ms: number | null;
+    p99Ms: number | null;
+  };
+}
+
+export interface InfrastructureStressTestResourceSpike {
+  baseline: number | null;
+  delta: number | null;
+  metric: 'cpu' | 'memory' | 'rx' | 'tx';
+  peak: number | null;
+  recoveryMs: number | null;
+  timeToPeakMs: number | null;
+  unit: 'bytes' | 'percent';
+}
+
+export interface InfrastructureStressTestSample {
+  activeRequests: number;
+  cpuPercent: number | null;
+  errorRate: number | null;
+  latencyP50Ms: number | null;
+  latencyP95Ms: number | null;
+  latencyP99Ms: number | null;
+  memoryBytes: number | null;
+  requestsPerSecond: number;
+  rxBytes: number | null;
+  sampledAt: number;
+  statusCodes: Record<string, number>;
+  txBytes: number | null;
+  virtualUsers: number;
+}
+
+export interface InfrastructureStressTestRun {
+  abortReason: string | null;
+  abortRequestedAt: number | null;
+  createdAt: number;
+  endedAt: number | null;
+  errorMessage: string | null;
+  id: string;
+  profile: InfrastructureStressTestProfile;
+  queuedAt: number;
+  requestedBy: string | null;
+  requestedByEmail: string | null;
+  resourceSpikes: InfrastructureStressTestResourceSpike[];
+  resultNotes: string | null;
+  samples: InfrastructureStressTestSample[];
+  startedAt: number | null;
+  status: InfrastructureStressTestStatus;
+  summary: InfrastructureStressTestSummary;
+  target: InfrastructureStressTestTarget;
+  updatedAt: number;
+}
+
+export interface InfrastructureStressTestSnapshot {
+  activeRun: InfrastructureStressTestRun | null;
+  canManage: boolean;
+  profiles: InfrastructureStressTestProfile[];
+  recentRuns: InfrastructureStressTestRun[];
+  targets: InfrastructureStressTestTarget[];
+}
+
+export interface QueueInfrastructureStressTestPayload {
+  concurrency?: number;
+  durationSeconds?: number;
+  maxRequestsPerSecond?: number;
+  path?: string;
+  profileId: InfrastructureStressTestProfileId;
+  rampSeconds?: number;
+  targetId: string;
+}
+
+export interface QueueInfrastructureStressTestResponse {
+  message: string;
+  run: InfrastructureStressTestRun;
+}
+
+export interface AbortInfrastructureStressTestPayload {
+  reason?: string;
+}
+
+export interface AbortInfrastructureStressTestResponse {
+  message: string;
+  run: InfrastructureStressTestRun;
 }
 
 export async function sendInfrastructurePushTest(
@@ -1870,6 +2029,44 @@ export async function rotateAiAgentChannelSecret(
   );
 }
 
+export async function getAiAgentZaloPersonalStatus(
+  agentId: string,
+  channelId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AiAgentZaloPersonalStatusResponse>(
+    `/api/v1/infrastructure/ai-agents/${encodePathSegment(
+      agentId
+    )}/channels/${encodePathSegment(channelId)}/zalo-personal`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function runAiAgentZaloPersonalAction(
+  agentId: string,
+  channelId: string,
+  action: AiAgentZaloPersonalAction,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AiAgentZaloPersonalStatusResponse>(
+    `/api/v1/infrastructure/ai-agents/${encodePathSegment(
+      agentId
+    )}/channels/${encodePathSegment(channelId)}/zalo-personal`,
+    {
+      body: JSON.stringify({ action }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
 export async function saveAiAgentIdentityLink(
   payload: AiAgentIdentityLink,
   options?: InternalApiClientOptions
@@ -2136,12 +2333,20 @@ export async function getBlueGreenMonitoringRequestArchive(
     searchParams.set('route', params.route);
   }
 
+  if (params?.since != null) {
+    searchParams.set('since', String(params.since));
+  }
+
   if (params?.render && params.render !== 'all') {
     searchParams.set('render', params.render);
   }
 
   if (params?.traffic && params.traffic !== 'all') {
     searchParams.set('traffic', params.traffic);
+  }
+
+  if (params?.until != null) {
+    searchParams.set('until', String(params.until));
   }
 
   return client.json<BlueGreenMonitoringRequestArchive>(
@@ -2254,6 +2459,72 @@ export async function updateCronMonitoringControl(
         'Content-Type': 'application/json',
       },
       method: 'PUT',
+    }
+  );
+}
+
+export async function getInfrastructureStressTestSnapshot(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<InfrastructureStressTestSnapshot>(
+    '/api/v1/infrastructure/monitoring/stress-tests',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function queueInfrastructureStressTest(
+  payload: QueueInfrastructureStressTestPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<QueueInfrastructureStressTestResponse>(
+    '/api/v1/infrastructure/monitoring/stress-tests',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function getInfrastructureStressTestRun(
+  runId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<InfrastructureStressTestRun>(
+    `/api/v1/infrastructure/monitoring/stress-tests/${encodePathSegment(
+      runId
+    )}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function abortInfrastructureStressTest(
+  runId: string,
+  payload: AbortInfrastructureStressTestPayload = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AbortInfrastructureStressTestResponse>(
+    `/api/v1/infrastructure/monitoring/stress-tests/${encodePathSegment(
+      runId
+    )}/abort`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
     }
   );
 }

@@ -126,6 +126,10 @@ const appSessionSource = fs.readFileSync(
   path.join(ROOT, 'packages/auth/src/app-session.ts'),
   'utf8'
 );
+const authIndexSource = fs.readFileSync(
+  path.join(ROOT, 'packages/auth/src/index.ts'),
+  'utf8'
+);
 const supabaseServerSource = fs.readFileSync(
   path.join(ROOT, 'packages/supabase/src/next/server.ts'),
   'utf8'
@@ -204,6 +208,21 @@ if (
 ) {
   failures.push(
     'packages/auth/src/app-session.ts: Registered apps must share app-session Supabase auth cookie cleanup.'
+  );
+}
+
+if (
+  /@tuturuuu\/supabase\/next\/server/u.test(appSessionSource) ||
+  /getSupabaseSessionUser/u.test(appSessionSource)
+) {
+  failures.push(
+    'packages/auth/src/app-session.ts: Public app-session exports must not import Supabase server helpers that depend on next/headers.'
+  );
+}
+
+if (/\bsupabase-session-user\b/u.test(authIndexSource)) {
+  failures.push(
+    'packages/auth/src/index.ts: Server-only Supabase session helpers must not be exported from the @tuturuuu/auth root entry.'
   );
 }
 

@@ -1,0 +1,148 @@
+---
+title: 'Remote Devboxes'
+description: 'Run heavy Tuturuuu development workflows on containerized self-hosted remote runners.'
+---
+
+## Overview
+
+Remote devboxes let internal root workspace members offload expensive local work
+to self-hosted runner machines. A runner connects outbound to `tuturuuu.com`,
+receives a synced dirty checkout, runs commands in an isolated container, streams
+logs, stores artifacts, and releases the lease automatically for one-off work.
+
+V1 is intentionally self-hosted. It does not provision cloud machines. Any
+runner host should have Node.js, Bun, Docker, and Git available.
+
+## Quick Start
+
+```bash
+ttr login
+ttr box doctor
+ttr box setup
+ttr box agent register --name "ci-lab-1"
+ttr box agent start --token <runner-token>
+```
+
+`ttr box setup` is the default bootstrap for a runner host. It clones or reuses
+`https://github.com/tutur3u/platform.git` at `~/Documents/tuturuuu`, installs
+dependencies with `bun install --frozen-lockfile`, starts local Supabase with
+`bun sb:start`, verifies `supabase status -o json`, and writes local Supabase
+connection values into ignored `apps/*/.env.local` files. Secret values are
+redacted from human and JSON output. Pass `--dir <path>` for a different
+checkout and `--yes` only when the host should install detected missing
+prerequisites automatically.
+
+Run heavy commands remotely:
+
+```bash
+ttr box run -- bun check
+ttr box run -- bun sb:reset
+ttr box run -- bun test:e2e
+```
+
+By default, `ttr box run` creates an auto lease, waits for an authenticated
+runner to claim the job, streams recorded logs after completion, and releases
+the lease after one-off work. Use `--keep` for repeated sync/run work:
+
+```bash
+ttr box run --keep --preview-port 7803 -- bun test:e2e
+ttr box sync --lease <lease-id> --watch
+ttr box preview --lease <lease-id> --port 7803
+ttr box release <lease-id>
+```
+
+## Container Boundary
+
+Commands run in a per-lease Docker container or Compose project. The runner
+mounts only the synced workspace and named cache volumes. Host execution is not
+exposed in v1, and arbitrary host path mounts are blocked unless an operator
+explicitly allowlists them.
+
+Allowed remote workflows include:
+
+- `bun check`, `bun test`, and package-local Bun commands
+- `bun test:e2e` and Docker-backed Playwright workflows
+- `bun sb:start`, `bun sb:reset`, `bun sb:up`, and `bun sb:typegen`
+
+Blocked defaults include privileged Docker containers, Docker prune-all style
+commands, absolute host mounts, `sudo`, and host-destructive filesystem
+operations.
+
+## Env And Secrets
+
+Remote env is explicit. Local `.env*` files are never synced automatically.
+The setup command only prepares ignored app env files inside the runner
+checkout so local Supabase-backed apps and E2E workflows can use that runner's
+own Supabase stack.
+
+```bash
+ttr box run --env DATABASE_URL=postgres://remote -- bun check
+ttr box run --env-file .env.remote -- bun test:e2e
+ttr box env set --lease <lease-id> API_TOKEN=value
+ttr box env unset --lease <lease-id> API_TOKEN
+```
+
+Brokered env values are scoped to the run or lease, delivered only to the
+claimed runner, and redacted from command logs.
+
+## Cache Policy
+
+Runners use named cache volumes for Bun installs, Turbo, Playwright browsers,
+Supabase Docker state, package manager cache, and optional `node_modules`.
+Cache keys include the repo fingerprint, lockfile hash, runtime image digest,
+platform, command profile, Bun/Node versions, and cache schema version.
+
+Cleanup runs on runner startup, after runs, and during heartbeat maintenance.
+The runner evicts incompatible caches first, including legacy Bun install caches
+when the Bun version, lockfile hash, package profile, or cache schema changes.
+It then enforces cache budgets with least-recently-used eviction while keeping a
+small set of recent compatible caches to avoid thrashing.
+
+Operators can inspect and prune cache metadata:
+
+```bash
+ttr box cache list
+ttr box cache doctor
+ttr box cache prune
+```
+
+## Access
+
+Remote devbox API routes require a Tuturuuu CLI/app session and root workspace
+membership with `workspace_members.type = 'MEMBER'`. Guests and non-root
+workspace users cannot create runs, leases, previews, or runner tokens.
+
+## Local Executable Verification
+
+Use an isolated CLI config when testing local `apps/web` so the production CLI
+session is not overwritten:
+
+```bash
+bun sb:status
+docker exec supabase_db_tuturuuu psql -U postgres -d postgres -tAc "select to_regclass('private.devbox_leases'), exists (select 1 from supabase_migrations.schema_migrations where version = '20260603171600')"
+TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json bun ttr login --base-url http://localhost:7803
+TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json bun ttr box agent register --name local-devbox
+TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json bun ttr box agent start --token <runner-token>
+TUTURUUU_CONFIG=/tmp/ttr-devbox-local-config.json bun ttr box run -- bun --version
+```
+
+The final command should print the remote command logs and exit with the remote
+command's exit code. In local Supabase, `private.devbox_runs.status` should end
+as `succeeded` with `exit_code = 0`.
+
+## Production Readiness
+
+The production API needs migration
+`20260603171600_create_private_devboxes.sql` before any `ttr box` command can
+create leases or runs. If the CLI prints a schema-cache error such as
+`private.devbox_leases` not being found, first confirm the production migration
+workflow ran for the deployed SHA. If the table exists but PostgREST still
+returns the schema-cache error, refresh the schema cache from Supabase SQL
+Editor:
+
+```sql
+select to_regclass('private.devbox_leases');
+select version from supabase_migrations.schema_migrations
+where version = '20260603171600';
+notify pgrst, 'reload schema';
+```

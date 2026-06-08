@@ -40,6 +40,19 @@ type UseHiveRealtimeSessionProps = {
   revisionRef: MutableRefObject<number>;
 };
 
+function cleanPresenceName(value?: string | null) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+export function getHivePresenceDisplayName(currentUser: HiveUser) {
+  return (
+    cleanPresenceName(currentUser.displayName) ??
+    cleanPresenceName(currentUser.handle) ??
+    'Hive researcher'
+  );
+}
+
 export function createHiveAwareness({
   currentUser,
   cursor,
@@ -60,11 +73,7 @@ export function createHiveAwareness({
     avatarUrl: currentUser.avatarUrl ?? null,
     color: currentUser.id.endsWith('0') ? '#7cba62' : '#65a5d8',
     cursor,
-    displayName:
-      currentUser.displayName ||
-      currentUser.handle ||
-      currentUser.email ||
-      'Hive researcher',
+    displayName: getHivePresenceDisplayName(currentUser),
     focus: 'editor',
     lastSeenAt: new Date().toISOString(),
     role: selectedServer ? 'researcher' : 'member',

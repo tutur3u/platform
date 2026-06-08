@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut } from '@tuturuuu/icons';
+import { LogOut } from '@tuturuuu/icons/lucide';
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import { useAccountSwitcher } from '@/context/account-switcher-context';

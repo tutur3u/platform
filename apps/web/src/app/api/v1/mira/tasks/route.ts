@@ -5,7 +5,7 @@
 
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 
 interface RpcTask {
   task_id: string;
@@ -32,6 +32,8 @@ interface TaskList {
 }
 
 export async function GET(request: Request) {
+  await connection();
+
   try {
     const { searchParams } = new URL(request.url);
     const wsId = searchParams.get('wsId');

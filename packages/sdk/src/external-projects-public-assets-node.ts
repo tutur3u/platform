@@ -76,7 +76,6 @@ export async function uploadExternalProjectPublicFolderAssets(
 ): Promise<ExternalProjectPublicAssetSyncResult> {
   const manifest = linkExternalProjectPublicFolderAssets(manifestInput);
   const publicDir = options.publicDir ?? resolve(process.cwd(), 'public');
-  const fetchImpl = options.fetch ?? globalThis.fetch;
   const uploaded: ExternalProjectPublicAssetUpload[] = [];
   const skipped: ExternalProjectPublicAssetUpload[] = [];
 
@@ -110,44 +109,17 @@ export async function uploadExternalProjectPublicFolderAssets(
     }
 
     const contentType = contentTypeForPath(publicPath);
-    const uploadUrl = await client.createAssetUploadUrl(workspaceId, {
-      collectionType: entry.collectionSlug,
-      contentType,
-      entrySlug: entry.slug,
-      filename: upload.filename,
-      size: file.byteLength,
-      upsert: options.upsert ?? true,
-    });
-
-    let uploadResponse = await fetchImpl(uploadUrl.signedUrl, {
-      body: new Blob([new Uint8Array(file)], { type: contentType }),
-      cache: 'no-store',
-      headers: {
-        Authorization: `Bearer ${uploadUrl.token}`,
-        'Content-Type': contentType,
-      },
-      method: 'PUT',
-    });
-
-    if (!uploadResponse.ok) {
-      uploadResponse = await fetchImpl(uploadUrl.signedUrl, {
-        body: new Blob([new Uint8Array(file)], { type: contentType }),
-        cache: 'no-store',
-        headers: {
-          Authorization: `Bearer ${uploadUrl.token}`,
-        },
-        method: 'PUT',
-      });
-    }
-
-    if (!uploadResponse.ok) {
-      const message = await uploadResponse.text().catch(() => '');
-      throw new Error(
-        `Failed to upload public asset ${publicPath} (${uploadResponse.status})${
-          message ? `: ${message}` : ''
-        }`
-      );
-    }
+    await client.uploadAssetFile(
+      workspaceId,
+      new File([new Uint8Array(file)], upload.filename, {
+        type: contentType,
+      }),
+      {
+        collectionType: entry.collectionSlug,
+        entrySlug: entry.slug,
+        upsert: options.upsert ?? true,
+      }
+    );
 
     uploaded.push(upload);
   }

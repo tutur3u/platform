@@ -44,6 +44,22 @@ workspace-scoped API work.
 - Mixed Supabase/R2 upload helpers must preserve Authorization headers when
   the server issued a bearer token and relax only headers that break presigned
   PUTs.
+- Storage paths that mirror protected domain records must reuse that domain's
+  request-scoped authorization model before any admin-backed list, metadata, or
+  signed-read operation. Finance transaction attachments, for example, should
+  call `get_wallet_transactions_with_permissions` with `p_transaction_ids`
+  through the authenticated Supabase client so wallet whitelists, viewing
+  windows, and granular income/expense visibility match normal transaction
+  reads.
+- Direct-to-storage signed uploads still need server-side upload policy. Require
+  positive declared sizes before signing, enforce domain caps before issuing the
+  URL, and validate the actual stored object during finalize. When a finalized
+  object violates the policy, delete it before returning an error so understated
+  signed-upload requests cannot retain oversized files.
+- For quota-sensitive namespaces where finalize cannot reliably verify the
+  stored object, such as user-group/course storage or external-project media
+  assets, route multipart bytes through `apps/web` and upload with the measured
+  server-side byte length instead of issuing a signed upload URL.
 
 ## Validation
 

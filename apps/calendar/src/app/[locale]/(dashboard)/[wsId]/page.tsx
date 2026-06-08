@@ -1,10 +1,9 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { CalendarPageShell } from '@tuturuuu/ui/calendar-app/calendar-page-shell';
 import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
@@ -21,11 +20,7 @@ interface PageProps {
 
 export default async function CalendarPage({ params }: PageProps) {
   const { wsId, locale } = await params;
-  const requestHeaders = await headers();
-  const user = getAppSessionUserFromRequest(
-    { headers: requestHeaders },
-    { targetApp: 'calendar' }
-  );
+  const user = await getSatelliteAppSessionUser('calendar');
 
   if (!user?.id) redirect('/login');
 

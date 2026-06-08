@@ -2,9 +2,11 @@ import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-se
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
+  await connection();
+
   try {
     const { searchParams } = new URL(request.url);
     const wsId = searchParams.get('wsId');

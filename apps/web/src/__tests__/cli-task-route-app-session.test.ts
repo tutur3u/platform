@@ -42,6 +42,10 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   getAppSessionTokenFromRequest: mocks.getAppSessionTokenFromRequest,
 }));
 
+vi.mock('@tuturuuu/auth/cli-session', () => ({
+  CLI_APP_TARGET_APP: 'platform',
+}));
+
 vi.mock('@tuturuuu/apis/tu-do/tasks/route', () => ({
   handleTaskRouteGET: mocks.handleTaskRouteGET,
   handleTaskRoutePOST: mocks.handleTaskRoutePOST,
@@ -151,7 +155,30 @@ describe('workspace task API route app-session bridge', () => {
     );
   });
 
-  it('allows platform CLI and Tasks app-session auth on task board mutation routes', async () => {
+  it('allows platform CLI and Tasks app-session auth on task board collection routes', async () => {
+    await import('@/app/api/v1/workspaces/[wsId]/task-boards/route');
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
+        },
+      }
+    );
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
+        },
+      }
+    );
+  });
+
+  it('allows platform CLI and Tasks app-session auth on task board detail routes', async () => {
     await import('@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/route');
 
     expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
@@ -165,6 +192,56 @@ describe('workspace task API route app-session bridge', () => {
     );
     expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
       2,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
+        },
+      }
+    );
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      3,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
+        },
+      }
+    );
+  });
+
+  it('allows platform CLI and Tasks app-session auth on task board list routes', async () => {
+    await import(
+      '@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/lists/route'
+    );
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
+        },
+      }
+    );
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
+        },
+      }
+    );
+  });
+
+  it('allows platform CLI and Tasks app-session auth on task board list item routes', async () => {
+    await import(
+      '@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/lists/[listId]/route'
+    );
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
       expect.any(Function),
       {
         allowAppSessionAuth: {

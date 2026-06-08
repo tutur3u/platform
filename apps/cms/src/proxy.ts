@@ -2,6 +2,8 @@ import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasSupportedSupabaseAuthCookie,
+  hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
   consumeVerifyTokenRequest,
@@ -40,7 +42,7 @@ type JoinedWorkspace = NonNullable<
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
-  appSession: { targetApp: 'cms' },
+  appSession: { sessionMode: 'supabase-first', targetApp: 'cms' },
   webAppUrl: TTR_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
@@ -68,6 +70,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const appSessionRefresh = isLocalAuthApi
       ? null
       : await refreshAppSessionForRequest(req, {
+          sessionMode: 'supabase-first',
           targetApp: 'cms',
         });
 
@@ -110,12 +113,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
-  const appSession = getAppSessionClaimsFromRequest(
-    { headers: authRequestHeaders },
-    {
-      targetApp: 'cms',
-    }
-  );
+  const authRequest = { headers: authRequestHeaders };
+  const appSession = getAppSessionClaimsFromRequest(authRequest, {
+    targetApp: 'cms',
+  });
+  const hasWebAppSession = hasWebAppSessionTokenFromRequest(authRequest);
+  const hasSupabaseSession = hasSupportedSupabaseAuthCookie(authRequest);
+  const hasSatelliteSession =
+    hasSupabaseSession || Boolean(appSession && hasWebAppSession);
 
   // Handle direct navigation to workspace IDs that are personal workspaces
   // Check if the path matches /[locale]/[wsId] or /[wsId] pattern where wsId is a UUID
@@ -174,7 +179,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // If we found a potential workspace ID, check if it's a personal workspace
   if (potentialWorkspaceId) {
     try {
-      if (appSession) {
+      if (hasSatelliteSession) {
         const isPersonal = await isPersonalWorkspace(potentialWorkspaceId);
 
         if (isPersonal) {
@@ -218,85 +223,105 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     (isRootPath || isLocaleRootPath) &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
-    !isMultiAccountFlow
+    !isMultiAccountFlow &&
+    hasSatelliteSession
   ) {
     try {
-      if (appSession) {
-        const appSessionUser = {
-          email: appSession.email ?? null,
-          id: appSession.sub,
-        };
-        const [defaultWorkspace, joinedWorkspaces, rootPermissions] =
-          await Promise.all([
-            getCurrentUserDefaultWorkspace(
-              withForwardedInternalApiAuth(req.headers)
-            ),
-            getWorkspaces({ useAdmin: true, user: appSessionUser }),
-            getPermissions({ user: appSessionUser, wsId: ROOT_WORKSPACE_ID }),
-          ]);
-
-        const isRootAdmin =
-          hasRootExternalProjectsAdminPermission(rootPermissions);
-        const accessibleWorkspaces = (
-          await Promise.all(
-            (joinedWorkspaces ?? []).map(async (workspace) => {
-              if (workspace.id === ROOT_WORKSPACE_ID) {
-                return isRootAdmin ? workspace : null;
-              }
-
-              const [binding, workspacePermissions] = await Promise.all([
-                resolveWorkspaceExternalProjectBinding(workspace.id),
-                getPermissions({ user: appSessionUser, wsId: workspace.id }),
-              ]);
-
-              const canAccessWorkspace =
-                binding.enabled &&
-                Boolean(binding.canonical_project) &&
-                (workspacePermissions?.containsPermission(
-                  'manage_external_projects'
-                ) ||
-                  workspacePermissions?.containsPermission(
-                    'publish_external_projects'
-                  ) ||
-                  isRootAdmin);
-
-              return canAccessWorkspace ? workspace : null;
-            })
-          )
-        ).filter(
-          (workspace): workspace is JoinedWorkspace => workspace !== null
+      if (!appSession) {
+        const defaultWorkspace = await getCurrentUserDefaultWorkspace(
+          withForwardedInternalApiAuth(authRequestHeaders)
         );
 
-        const preferredWorkspace =
-          accessibleWorkspaces.find(
-            (workspace) => workspace.id === defaultWorkspace?.id
-          ) ??
-          accessibleWorkspaces.find(
-            (workspace) => workspace.id !== ROOT_WORKSPACE_ID
-          ) ??
-          accessibleWorkspaces[0] ??
-          null;
-
-        if (preferredWorkspace) {
-          const target = preferredWorkspace.personal
+        if (defaultWorkspace) {
+          const target = defaultWorkspace.personal
             ? 'personal'
-            : preferredWorkspace.id === ROOT_WORKSPACE_ID
+            : defaultWorkspace.id === ROOT_WORKSPACE_ID
               ? 'internal'
-              : preferredWorkspace.id;
+              : defaultWorkspace.id;
           const redirectUrl = new URL(`${localePrefix}/${target}`, req.nextUrl);
           const wsRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, wsRedirect);
           return wsRedirect;
         }
 
-        const fallbackUrl = new URL(
-          `${localePrefix}${isRootAdmin ? '/internal/projects' : '/no-access'}`,
-          req.nextUrl
-        );
+        const fallbackUrl = new URL(`${localePrefix}/no-access`, req.nextUrl);
         const fallbackRedirect = NextResponse.redirect(fallbackUrl);
         propagateAuthCookies(authRes, fallbackRedirect);
         return fallbackRedirect;
       }
+
+      const appSessionUser = {
+        email: appSession.email ?? null,
+        id: appSession.sub,
+      };
+      const [defaultWorkspace, joinedWorkspaces, rootPermissions] =
+        await Promise.all([
+          getCurrentUserDefaultWorkspace(
+            withForwardedInternalApiAuth(authRequestHeaders)
+          ),
+          getWorkspaces({ useAdmin: true, user: appSessionUser }),
+          getPermissions({ user: appSessionUser, wsId: ROOT_WORKSPACE_ID }),
+        ]);
+
+      const isRootAdmin =
+        hasRootExternalProjectsAdminPermission(rootPermissions);
+      const accessibleWorkspaces = (
+        await Promise.all(
+          (joinedWorkspaces ?? []).map(async (workspace) => {
+            if (workspace.id === ROOT_WORKSPACE_ID) {
+              return isRootAdmin ? workspace : null;
+            }
+
+            const [binding, workspacePermissions] = await Promise.all([
+              resolveWorkspaceExternalProjectBinding(workspace.id),
+              getPermissions({ user: appSessionUser, wsId: workspace.id }),
+            ]);
+
+            const canAccessWorkspace =
+              binding.enabled &&
+              Boolean(binding.canonical_project) &&
+              (workspacePermissions?.containsPermission(
+                'manage_external_projects'
+              ) ||
+                workspacePermissions?.containsPermission(
+                  'publish_external_projects'
+                ) ||
+                isRootAdmin);
+
+            return canAccessWorkspace ? workspace : null;
+          })
+        )
+      ).filter((workspace): workspace is JoinedWorkspace => workspace !== null);
+
+      const preferredWorkspace =
+        accessibleWorkspaces.find(
+          (workspace) => workspace.id === defaultWorkspace?.id
+        ) ??
+        accessibleWorkspaces.find(
+          (workspace) => workspace.id !== ROOT_WORKSPACE_ID
+        ) ??
+        accessibleWorkspaces[0] ??
+        null;
+
+      if (preferredWorkspace) {
+        const target = preferredWorkspace.personal
+          ? 'personal'
+          : preferredWorkspace.id === ROOT_WORKSPACE_ID
+            ? 'internal'
+            : preferredWorkspace.id;
+        const redirectUrl = new URL(`${localePrefix}/${target}`, req.nextUrl);
+        const wsRedirect = NextResponse.redirect(redirectUrl);
+        propagateAuthCookies(authRes, wsRedirect);
+        return wsRedirect;
+      }
+
+      const fallbackUrl = new URL(
+        `${localePrefix}${isRootAdmin ? '/internal/projects' : '/no-access'}`,
+        req.nextUrl
+      );
+      const fallbackRedirect = NextResponse.redirect(fallbackUrl);
+      propagateAuthCookies(authRes, fallbackRedirect);
+      return fallbackRedirect;
     } catch (error) {
       console.error('Error handling root path redirect:', error);
     }

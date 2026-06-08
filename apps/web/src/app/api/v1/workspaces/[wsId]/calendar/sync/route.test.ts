@@ -91,12 +91,14 @@ function createAdminSupabaseMock() {
       auth_token_id: 'google-token-id',
       calendar_id: 'primary',
       is_enabled: true,
+      workspace_calendar_id: 'google-workspace-calendar-id',
       ws_id: WS_ID,
     },
     {
       auth_token_id: 'microsoft-token-id',
       calendar_id: 'microsoft-calendar-id',
       is_enabled: true,
+      workspace_calendar_id: 'microsoft-workspace-calendar-id',
       ws_id: WS_ID,
     },
   ];
@@ -232,7 +234,8 @@ describe('workspace calendar sync route', () => {
       expect.any(Date),
       expect.any(Date),
       undefined,
-      'google-token-id'
+      'google-token-id',
+      'google-workspace-calendar-id'
     );
     expect(performIncrementalActiveSyncMock).toHaveBeenCalledTimes(1);
     expect(createGraphClientMock).toHaveBeenCalledWith(

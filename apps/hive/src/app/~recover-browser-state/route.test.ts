@@ -21,7 +21,7 @@ describe('Hive browser state recovery route', () => {
       'no-store, no-cache, must-revalidate'
     );
     expect(response.headers.get('clear-site-data')).toBe(
-      '"cache", "cookies", "storage", "executionContexts"'
+      '"cache", "storage", "executionContexts"'
     );
     expect(
       response.cookies.get('sb-resolved-kingfish-21146-auth-token')?.value

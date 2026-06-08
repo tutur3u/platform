@@ -1,3 +1,4 @@
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import MeetTogetherPlanDetailsPage from '@tuturuuu/ui/legacy/meet/planId/page';
 import { Suspense } from 'react';
 import { BASE_URL } from '@/constants/common';
@@ -8,10 +9,22 @@ interface PlanPageProps {
   }>;
 }
 
-export default async function PlanPage({ params }: PlanPageProps) {
+async function PlanPageContent({ params }: PlanPageProps) {
+  const user = await getSatelliteAppSessionUser('meet');
+
+  return (
+    <MeetTogetherPlanDetailsPage
+      actorUserId={user?.id ?? null}
+      params={params}
+      baseUrl={BASE_URL}
+    />
+  );
+}
+
+export default function PlanPage({ params }: PlanPageProps) {
   return (
     <Suspense fallback={<div className="min-h-screen" />}>
-      <MeetTogetherPlanDetailsPage params={params} baseUrl={BASE_URL} />
+      <PlanPageContent params={params} />
     </Suspense>
   );
 }

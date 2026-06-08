@@ -5,10 +5,13 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 type InfrastructureMonitoringPermission =
+  | 'manage_infrastructure_stress_tests'
   | 'manage_workspace_roles'
   | 'view_infrastructure';
 
 const INFRASTRUCTURE_OPERATOR_PERMISSION = 'manage_workspace_roles';
+const INFRASTRUCTURE_STRESS_TEST_MANAGER_PERMISSION =
+  'manage_infrastructure_stress_tests';
 
 export async function authorizeInfrastructureViewer(
   request: Request,
@@ -29,7 +32,10 @@ export async function authorizeInfrastructureViewer(
     request,
   });
 
-  if (!permissions || permissions.withoutPermission(requiredPermission)) {
+  if (
+    !permissions ||
+    permissions.withoutPermission(requiredPermission as never)
+  ) {
     return {
       ok: false as const,
       response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
@@ -46,5 +52,12 @@ export function authorizeInfrastructureOperator(request: Request) {
   return authorizeInfrastructureViewer(
     request,
     INFRASTRUCTURE_OPERATOR_PERMISSION
+  );
+}
+
+export function authorizeInfrastructureStressTestManager(request: Request) {
+  return authorizeInfrastructureViewer(
+    request,
+    INFRASTRUCTURE_STRESS_TEST_MANAGER_PERMISSION
   );
 }

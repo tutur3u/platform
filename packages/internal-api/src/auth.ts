@@ -44,6 +44,29 @@ export interface VerifyOtpResponse {
   success?: boolean;
 }
 
+export interface PasswordLoginPayload {
+  captchaToken?: string;
+  client: InternalOtpClient;
+  deviceId?: string;
+  email: string;
+  locale?: string;
+  password: string;
+}
+
+export interface PasswordLoginResponse {
+  error?: string;
+  remainingAttempts?: number;
+  retryAfter?: number;
+  session?: {
+    access_token: string;
+    expires_at: number | null;
+    expires_in: number;
+    refresh_token: string;
+    token_type: string;
+  };
+  success?: boolean;
+}
+
 export type QrLoginChallengeStatus =
   | 'approved'
   | 'consumed'
@@ -169,10 +192,35 @@ export interface ResolveCrossAppReturnUrlResponse {
   targetApp?: string;
 }
 
+function parseRetryAfterSeconds(response: Response) {
+  if (response.status !== 429) {
+    return undefined;
+  }
+
+  const value = Number.parseInt(response.headers.get('Retry-After') ?? '', 10);
+  return Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
 async function parseAuthResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json().catch(() => null)) as T | null;
+  const retryAfter = parseRetryAfterSeconds(response);
 
   if (payload) {
+    if (
+      retryAfter !== undefined &&
+      typeof payload === 'object' &&
+      !Array.isArray(payload)
+    ) {
+      const payloadRecord = payload as Record<string, unknown>;
+
+      if (payloadRecord.retryAfter === undefined) {
+        return {
+          ...payloadRecord,
+          retryAfter,
+        } as T;
+      }
+    }
+
     return payload;
   }
 
@@ -227,6 +275,22 @@ export async function verifyOtpWithInternalApi(
     method: 'POST',
   });
   return parseAuthResponse<VerifyOtpResponse>(response);
+}
+
+export async function passwordLoginWithInternalApi(
+  payload: PasswordLoginPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch('/api/v1/auth/password-login', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  });
+  return parseAuthResponse<PasswordLoginResponse>(response);
 }
 
 export async function createQrLoginChallengeWithInternalApi(

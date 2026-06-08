@@ -36,29 +36,34 @@ export function AgentExternalThreadPanel({
   const [draft, setDraft] = useState('');
   const [prompt, setPrompt] = useState('');
   const threadId = metadata.externalThreadUuid;
-  const threadQuery = useQuery({
-    enabled: Boolean(threadId),
+  const threadsQuery = useQuery({
+    enabled: Boolean(metadata.agentId && metadata.channelId),
     queryFn: async () => {
       const result = await listAiAgentExternalThreads({
         agentId: metadata.agentId,
         channelId: metadata.channelId,
       });
 
-      return result.threads.find((thread) => thread.id === threadId) ?? null;
+      return result.threads;
     },
     queryKey: [
       'chat',
-      'ai-agent-external-thread',
+      'ai-agent-external-threads',
       metadata.agentId,
       metadata.channelId,
-      threadId,
     ],
     staleTime: 30_000,
   });
+  const threads = threadsQuery.data ?? [];
+  const selectedThread = threadId
+    ? threads.find((thread) => thread.id === threadId)
+    : null;
   const syncMutation = useMutation({
-    mutationFn: () => {
-      if (!threadId) throw new Error(t('agent_external_thread_missing'));
-      return syncAiAgentExternalThread(threadId);
+    mutationFn: (targetThreadId?: string) => {
+      if (!targetThreadId) {
+        throw new Error(t('agent_external_thread_missing'));
+      }
+      return syncAiAgentExternalThread(targetThreadId);
     },
     onError: (error) =>
       toast.error(error.message || t('agent_external_sync_failed')),
@@ -73,7 +78,7 @@ export function AgentExternalThreadPanel({
           ? t('agent_external_sync_no_new')
           : t('agent_external_sync_success', { count: result.synced })
       );
-      void threadQuery.refetch();
+      void threadsQuery.refetch();
       onRefresh();
     },
   });
@@ -128,77 +133,136 @@ export function AgentExternalThreadPanel({
           />
           <KeyValue
             label={t('agent_external_last_sync')}
-            value={threadQuery.data?.lastSyncedAt ?? t('unknown')}
+            value={selectedThread?.lastSyncedAt ?? t('unknown')}
           />
         </div>
       </PanelSection>
 
-      <Button
-        className="w-full"
-        disabled={!threadId || syncMutation.isPending}
-        onClick={() => syncMutation.mutate()}
-        type="button"
-        variant="outline"
-      >
-        {syncMutation.isPending ? (
-          <LoaderCircle className="size-4 animate-spin" />
-        ) : (
-          <RefreshCw className="size-4" />
-        )}
-        {t('agent_external_sync')}
-      </Button>
-
-      <PanelSection
-        icon={<Sparkles className="size-4" />}
-        title={t('agent_external_response')}
-      >
-        <div className="space-y-2">
-          <Textarea
-            onChange={(event) => setPrompt(event.target.value)}
-            placeholder={t('agent_external_prompt_placeholder')}
-            rows={3}
-            value={prompt}
-          />
-          <Textarea
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder={t('agent_external_draft_placeholder')}
-            rows={5}
-            value={draft}
-          />
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              disabled={!threadId || draftMutation.isPending}
-              onClick={() => draftMutation.mutate()}
-              type="button"
-              variant="secondary"
-            >
-              {draftMutation.isPending ? (
-                <LoaderCircle className="size-4 animate-spin" />
-              ) : (
-                <Sparkles className="size-4" />
-              )}
-              {t('agent_external_draft')}
-            </Button>
-            <Button
-              disabled={!threadId || !draft.trim() || sendMutation.isPending}
-              onClick={() => sendMutation.mutate()}
-              type="button"
-            >
-              {sendMutation.isPending ? (
-                <LoaderCircle className="size-4 animate-spin" />
-              ) : (
-                <Send className="size-4" />
-              )}
-              {t('agent_external_send')}
-            </Button>
+      {threadId ? (
+        <Button
+          className="w-full"
+          disabled={syncMutation.isPending}
+          onClick={() => syncMutation.mutate(threadId)}
+          type="button"
+          variant="outline"
+        >
+          {syncMutation.isPending ? (
+            <LoaderCircle className="size-4 animate-spin" />
+          ) : (
+            <RefreshCw className="size-4" />
+          )}
+          {t('agent_external_sync')}
+        </Button>
+      ) : (
+        <PanelSection
+          icon={<RefreshCw className="size-4" />}
+          title={t('agent_external_recent_threads')}
+        >
+          <div className="space-y-2">
+            {threadsQuery.isLoading ? (
+              <p className="flex items-center gap-2 text-muted-foreground text-xs">
+                <LoaderCircle className="size-3.5 animate-spin" />
+                {t('loading_ai_settings')}
+              </p>
+            ) : threads.length > 0 ? (
+              threads.map((thread) => (
+                <div
+                  className="space-y-2 rounded-md border bg-muted/20 p-2"
+                  key={thread.id}
+                >
+                  <div className="min-w-0 text-xs">
+                    <div className="truncate font-medium">
+                      {thread.title || thread.externalThreadId}
+                    </div>
+                    {thread.title ? (
+                      <div className="truncate text-muted-foreground">
+                        {thread.externalThreadId}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center justify-between gap-2 text-muted-foreground text-xs">
+                    <span>
+                      {t('agent_external_message_count')}: {thread.messageCount}
+                    </span>
+                    <Button
+                      disabled={syncMutation.isPending}
+                      onClick={() => syncMutation.mutate(thread.id)}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      {syncMutation.isPending ? (
+                        <LoaderCircle className="size-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="size-3.5" />
+                      )}
+                      {t('agent_external_sync')}
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-muted-foreground text-xs">
+                {t('agent_external_no_threads')}
+              </p>
+            )}
           </div>
-          {isPending ? (
-            <p className="text-muted-foreground text-xs">
-              {t('agent_external_refresh_after_action')}
-            </p>
-          ) : null}
-        </div>
-      </PanelSection>
+        </PanelSection>
+      )}
+
+      {!threadId ? null : (
+        <PanelSection
+          icon={<Sparkles className="size-4" />}
+          title={t('agent_external_response')}
+        >
+          <div className="space-y-2">
+            <Textarea
+              onChange={(event) => setPrompt(event.target.value)}
+              placeholder={t('agent_external_prompt_placeholder')}
+              rows={3}
+              value={prompt}
+            />
+            <Textarea
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder={t('agent_external_draft_placeholder')}
+              rows={5}
+              value={draft}
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                disabled={!threadId || draftMutation.isPending}
+                onClick={() => draftMutation.mutate()}
+                type="button"
+                variant="secondary"
+              >
+                {draftMutation.isPending ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <Sparkles className="size-4" />
+                )}
+                {t('agent_external_draft')}
+              </Button>
+              <Button
+                disabled={!threadId || !draft.trim() || sendMutation.isPending}
+                onClick={() => sendMutation.mutate()}
+                type="button"
+              >
+                {sendMutation.isPending ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <Send className="size-4" />
+                )}
+                {t('agent_external_send')}
+              </Button>
+            </div>
+            {isPending ? (
+              <p className="text-muted-foreground text-xs">
+                {t('agent_external_refresh_after_action')}
+              </p>
+            ) : null}
+          </div>
+        </PanelSection>
+      )}
     </div>
   );
 }

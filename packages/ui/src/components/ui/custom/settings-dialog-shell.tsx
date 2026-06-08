@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronRight, Search } from '@tuturuuu/icons';
+import { ArrowLeft, ChevronDown, ChevronRight, Search } from '@tuturuuu/icons';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -24,6 +24,7 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import {
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogTitle,
@@ -52,7 +53,6 @@ import {
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
 import { cn } from '@tuturuuu/utils/format';
-import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
@@ -81,11 +81,11 @@ export interface SettingsDialogShellProps {
   onActiveTabChange: (tab: string) => void;
   /**
    * Group labels that should be expanded by default.
-   * All other groups will be collapsed.
-   * If not provided, only the first group expands by default.
+   * Used when expandAllAccordions is false.
+   * If not provided in that mode, only the first group expands.
    */
   primaryGroupLabels?: string[];
-  /** Override to expand all accordions (user preference) */
+  /** Override to expand all accordions (user preference). Defaults to expanded. */
   expandAllAccordions?: boolean;
   /** Enable dialog-scoped keyboard shortcuts for search and tab navigation */
   keyboardNavigation?: boolean;
@@ -111,21 +111,19 @@ function isEditableShortcutTarget(target: EventTarget | null) {
  *
  * Each app provides its own `navItems` (ordered by priority) and
  * renders tab-specific content via `children`. The `primaryGroupLabels`
- * prop controls which groups expand by default — enabling apps to
- * highlight their domain (e.g., tasks-first in Tasks, calendar-first
- * in a future calendar app).
+ * prop controls which groups expand when `expandAllAccordions` is false,
+ * enabling apps to highlight their domain while preserving a compact mode.
  */
 export function SettingsDialogShell({
   navItems,
   activeTab,
   onActiveTabChange,
   primaryGroupLabels,
-  expandAllAccordions = false,
+  expandAllAccordions = true,
   keyboardNavigation = false,
   children,
 }: SettingsDialogShellProps) {
   const t = useTranslations();
-  const { isMac, modKey } = usePlatform();
   const isMobile = useIsMobile();
   const desktopSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
@@ -275,8 +273,9 @@ export function SettingsDialogShell({
 
   return (
     <DialogContent
-      className="flex h-[90vh] flex-col overflow-hidden p-0 md:max-h-200 md:max-w-225 lg:max-h-250 lg:max-w-250 xl:max-w-300"
+      className="top-0 left-0 flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 shadow-none sm:max-w-none"
       onKeyDown={handleKeyboardNavigation}
+      showCloseButton={false}
     >
       <DialogTitle className="sr-only">{t('common.settings')}</DialogTitle>
       <DialogDescription className="sr-only">
@@ -285,23 +284,28 @@ export function SettingsDialogShell({
       <SidebarProvider className="flex h-full min-h-0 items-start">
         <Sidebar
           collapsible="none"
-          className="hidden h-full w-64 flex-col border-r bg-muted/30 md:flex"
+          className="hidden h-full w-72 flex-col border-r bg-muted/30 md:flex"
         >
-          <SidebarHeader className="z-10 p-4 pb-0">
-            <div className="relative mb-2">
+          <SidebarHeader className="z-10 gap-3 p-4 pb-0">
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-9 justify-start px-2 text-muted-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {t('settings.back_to_app')}
+              </Button>
+            </DialogClose>
+            <div className="relative">
               <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
               <SidebarInput
                 ref={desktopSearchInputRef}
-                placeholder={t('search.search')}
+                placeholder={t('settings.search_settings_placeholder')}
                 className="bg-background pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                Detected OS: {isMac ? 'macOS' : 'Windows/Linux'} ({modKey})
-              </span>
             </div>
           </SidebarHeader>
           <SidebarContent className="overflow-y-auto p-4">
@@ -358,7 +362,18 @@ export function SettingsDialogShell({
           </SidebarContent>
         </Sidebar>
         <main className="flex h-full flex-1 flex-col overflow-hidden bg-background">
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 pr-12 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6 md:pr-6">
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6">
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0 text-muted-foreground md:hidden"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">{t('settings.back_to_app')}</span>
+              </Button>
+            </DialogClose>
             <div className="flex flex-1 items-center gap-2 md:flex-initial">
               {isMobile && (
                 <Drawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -390,7 +405,7 @@ export function SettingsDialogShell({
                     <Command className="rounded-none border-0">
                       <CommandInput
                         ref={mobileSearchInputRef}
-                        placeholder={t('search.search')}
+                        placeholder={t('settings.search_settings_placeholder')}
                       />
                       <CommandList className="max-h-[50vh]">
                         <CommandEmpty>
@@ -458,7 +473,7 @@ export function SettingsDialogShell({
             </div>
           </header>
           <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
-            <div className="mx-auto w-full max-w-3xl space-y-6">
+            <div className="mx-auto w-full max-w-4xl space-y-6">
               <div className="space-y-1">
                 <h2 className="font-semibold text-lg tracking-tight">
                   {activeItem?.label}

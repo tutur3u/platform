@@ -1,10 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GET } from './route';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+type CourseRouteModule = typeof import('./route');
+
+let GET: CourseRouteModule['GET'];
 
 const mocks = vi.hoisted(() => ({
+  connection: vi.fn(),
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
-  normalizeWorkspaceId: vi.fn(),
+  getLearnerCourseDetail: vi.fn(),
+  getLearnerCourseSummaries: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
   resolveStudentForPlatformUser: vi.fn(),
   resolveTulearnSubject: vi.fn(),
@@ -14,17 +19,20 @@ const mocks = vi.hoisted(() => ({
   tulearnAccessErrorResponse: vi.fn(),
 }));
 
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+
+  return {
+    ...actual,
+    connection: () => mocks.connection(),
+  };
+});
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
     mocks.createAdminClient(...args),
   createClient: (...args: Parameters<typeof mocks.createClient>) =>
     mocks.createClient(...args),
-}));
-
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  normalizeWorkspaceId: (
-    ...args: Parameters<typeof mocks.normalizeWorkspaceId>
-  ) => mocks.normalizeWorkspaceId(...args),
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -38,6 +46,12 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 }));
 
 vi.mock('@/lib/tulearn/service', () => ({
+  getLearnerCourseDetail: (
+    ...args: Parameters<typeof mocks.getLearnerCourseDetail>
+  ) => mocks.getLearnerCourseDetail(...args),
+  getLearnerCourseSummaries: (
+    ...args: Parameters<typeof mocks.getLearnerCourseSummaries>
+  ) => mocks.getLearnerCourseSummaries(...args),
   resolveStudentForPlatformUser: (
     ...args: Parameters<typeof mocks.resolveStudentForPlatformUser>
   ) => mocks.resolveStudentForPlatformUser(...args),
@@ -49,6 +63,10 @@ vi.mock('@/lib/tulearn/service', () => ({
   ) => mocks.tulearnAccessErrorResponse(...args),
 }));
 
+beforeAll(async () => {
+  ({ GET } = await import('./route'));
+});
+
 type QueryResult = {
   data: unknown;
   error: null;
@@ -57,7 +75,6 @@ type QueryResult = {
 function createQuery(result: QueryResult) {
   const query = {
     eq: vi.fn(() => query),
-    in: vi.fn(() => query),
     maybeSingle: vi.fn(() => Promise.resolve(result)),
     order: vi.fn(() => query),
     select: vi.fn(() => query),
@@ -88,15 +105,41 @@ function createSupabaseMock(resultsByTable: Record<string, QueryResult[]>) {
 }
 
 describe('course API app-session access', () => {
+  let admin: { from: ReturnType<typeof vi.fn> };
+  let requestSupabase: { from: ReturnType<typeof vi.fn> };
+  let user: { email: string; id: string };
+
   beforeEach(() => {
     vi.clearAllMocks();
+    admin = { from: vi.fn() };
+    requestSupabase = { from: vi.fn() };
+    user = { email: 'learner@example.com', id: 'learner-1' };
     mocks.createClient.mockResolvedValue({ from: vi.fn() });
-    mocks.normalizeWorkspaceId.mockResolvedValue('ws-1');
+    mocks.createAdminClient.mockResolvedValue(admin);
     mocks.resolveSessionAuthContext.mockResolvedValue({
       ok: true,
-      supabase: { from: vi.fn() },
-      user: { email: 'learner@example.com', id: 'learner-1' },
+      supabase: requestSupabase,
+      user,
     });
+    mocks.resolveTulearnSubject.mockResolvedValue({
+      readOnly: false,
+      role: 'student',
+      studentName: 'Learner',
+      studentPlatformUserId: 'learner-1',
+      studentWorkspaceUserId: 'virtual-user-1',
+      wsId: 'ws-1',
+    });
+    mocks.getLearnerCourseSummaries.mockResolvedValue([
+      {
+        completedModules: 1,
+        description: 'Intro course',
+        id: 'course-1',
+        name: 'Physics',
+        progress: 100,
+        totalModules: 1,
+      },
+    ]);
+    mocks.connection.mockResolvedValue(undefined);
     mocks.resolveStudentForPlatformUser.mockResolvedValue({
       avatar_url: null,
       email: 'learner@example.com',
@@ -109,40 +152,7 @@ describe('course API app-session access', () => {
     mocks.tulearnAccessErrorResponse.mockReturnValue(null);
   });
 
-  it('allows linked learners to list courses without direct workspace membership', async () => {
-    const admin = createSupabaseMock({
-      course_module_completion_status: [
-        {
-          data: [{ module_id: 'module-1' }],
-          error: null,
-        },
-      ],
-      workspace_course_modules: [
-        {
-          data: [
-            {
-              group_id: 'course-1',
-              id: 'module-1',
-            },
-          ],
-          error: null,
-        },
-      ],
-      workspace_user_groups: [
-        {
-          data: [
-            {
-              description: 'Intro course',
-              id: 'course-1',
-              name: 'Physics',
-            },
-          ],
-          error: null,
-        },
-      ],
-    });
-    mocks.createAdminClient.mockResolvedValue(admin);
-
+  it('lists learner-assigned courses through the Tulearn subject', async () => {
     const request = new Request('http://localhost/api/v1/course?wsId=ws-1');
     const response = await GET(request);
 
@@ -159,56 +169,95 @@ describe('course API app-session access', () => {
       ],
     });
     expect(response.status).toBe(200);
-    expect(mocks.resolveStudentForPlatformUser).toHaveBeenCalledWith({
+    expect(mocks.resolveTulearnSubject).toHaveBeenCalledWith({
+      requestSupabase,
+      studentId: undefined,
+      user,
+      wsId: 'ws-1',
+    });
+    expect(mocks.getLearnerCourseSummaries).toHaveBeenCalledWith({
       db: admin,
-      platformUserId: 'learner-1',
+      studentPlatformUserId: 'learner-1',
+      studentWorkspaceUserId: 'virtual-user-1',
       wsId: 'ws-1',
     });
     expect(mocks.resolveSessionAuthContext).toHaveBeenCalledWith(request, {
       allowAppSessionAuth: true,
     });
-    const groupsQuery = admin.from.mock.results[0]?.value;
-    expect(groupsQuery.eq).toHaveBeenCalledWith('is_course_published', true);
+    expect(requestSupabase.from).not.toHaveBeenCalled();
   });
 
-  it('keeps published courses visible even when they have no published modules yet', async () => {
-    const admin = createSupabaseMock({
-      workspace_course_modules: [
-        {
-          data: [],
-          error: null,
-        },
-      ],
+  it('forwards the requested linked student id to subject resolution', async () => {
+    const studentId = '00000000-0000-4000-8000-000000000001';
+    const request = new Request(
+      `http://localhost/api/v1/course?wsId=ws-1&studentId=${studentId}`
+    );
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(200);
+    expect(mocks.resolveTulearnSubject).toHaveBeenCalledWith({
+      requestSupabase,
+      studentId,
+      user,
+      wsId: 'ws-1',
+    });
+  });
+
+  it('does not fall back to workspace membership when no Tulearn subject exists', async () => {
+    const accessError = new Error('no learner access');
+    mocks.resolveTulearnSubject.mockRejectedValueOnce(accessError);
+    mocks.tulearnAccessErrorResponse.mockReturnValueOnce(
+      new Response(JSON.stringify({ message: 'no learner access' }), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 403,
+      })
+    );
+    const request = new Request('http://localhost/api/v1/course?wsId=ws-1');
+
+    const response = await GET(request);
+
+    expect(response.status).toBe(403);
+    expect(mocks.getLearnerCourseSummaries).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(requestSupabase.from).not.toHaveBeenCalled();
+    expect(mocks.tulearnAccessErrorResponse).toHaveBeenCalledWith(accessError);
+  });
+
+  it('does not fall back to workspace membership for unassigned self-learner course details', async () => {
+    const courseId = '00000000-0000-4000-8000-000000000002';
+    admin = createSupabaseMock({
       workspace_user_groups: [
         {
-          data: [
-            {
-              description: 'Draft module path',
-              id: 'course-2',
-              name: 'Chemistry',
-            },
-          ],
+          data: {
+            description: 'Private course',
+            id: courseId,
+            name: 'Chemistry',
+            ws_id: 'ws-1',
+          },
           error: null,
         },
       ],
     });
     mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.getLearnerCourseDetail.mockResolvedValueOnce(null);
 
-    const request = new Request('http://localhost/api/v1/course?wsId=ws-1');
+    const request = new Request(
+      `http://localhost/api/v1/course?courseId=${courseId}`
+    );
     const response = await GET(request);
 
     await expect(response.json()).resolves.toEqual({
-      courses: [
-        {
-          completedModules: 0,
-          description: 'Draft module path',
-          id: 'course-2',
-          name: 'Chemistry',
-          progress: 0,
-          totalModules: 0,
-        },
-      ],
+      error: 'Course not found',
     });
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(404);
+    expect(mocks.getLearnerCourseDetail).toHaveBeenCalledWith({
+      courseId,
+      db: admin,
+      studentPlatformUserId: 'learner-1',
+      studentWorkspaceUserId: 'virtual-user-1',
+      wsId: 'ws-1',
+    });
+    expect(requestSupabase.from).not.toHaveBeenCalled();
   });
 });

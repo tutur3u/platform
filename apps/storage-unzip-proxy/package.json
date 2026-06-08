@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "bun run src/server.js"
+    "start": "bun run src/server.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "unzipper": "^0.12.3"

@@ -27,8 +27,18 @@ export interface MeetTogetherPlanWithParticipants extends MeetTogetherPlan {
   }>;
 }
 
+type MeetTogetherPlanRow = Record<string, unknown> & {
+  created_at?: string | null;
+  creator_id?: string | null;
+  description?: string | null;
+  id?: string | null;
+  name?: string | null;
+  ws_id?: string | null;
+};
+
 // Server component props type
 interface MeetTogetherPageProps {
+  scope?: MeetTogetherPlansScope;
   wsId?: string;
   path?: string;
   searchParams?: Promise<{
@@ -38,7 +48,10 @@ interface MeetTogetherPageProps {
   }>;
 }
 
+export type MeetTogetherPlansScope = 'workspace' | 'personal-consolidated';
+
 export async function MeetTogetherPage({
+  scope = 'workspace',
   wsId,
   path,
   searchParams,
@@ -55,7 +68,7 @@ export async function MeetTogetherPage({
     data: plans,
     user,
     totalCount,
-  } = await getData({ wsId, page, pageSize });
+  } = await getMeetTogetherPlansData({ scope, wsId, page, pageSize });
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -222,11 +235,13 @@ export async function MeetTogetherPage({
   );
 }
 
-async function getData({
+export async function getMeetTogetherPlansData({
+  scope = 'workspace',
   wsId,
   page = 1,
   pageSize = 9,
 }: {
+  scope?: MeetTogetherPlansScope;
   wsId?: string;
   page?: number;
   pageSize?: number;
@@ -241,47 +256,80 @@ async function getData({
 
   const sbAdmin = await createAdminClient();
 
-  const createdPlansQuery = sbAdmin
-    .from('meet_together_plans')
-    .select('*')
-    .eq('creator_id', user.id)
-    .order('created_at', { ascending: false });
+  const planMap = new Map<string, MeetTogetherPlan>();
+  const addPlans = (plans: MeetTogetherPlanRow[] | null | undefined) => {
+    plans?.forEach((plan) => {
+      const planId = plan.id ?? undefined;
 
-  const joinedPlansQuery = sbAdmin
-    .from('meet_together_user_timeblocks')
-    .select('...meet_together_plans!inner(*)')
-    .eq('user_id', user.id)
-    .neq('meet_together_plans.creator_id', user.id)
-    .order('created_at', {
-      ascending: false,
-      referencedTable: 'meet_together_plans',
+      if (planId && !planMap.has(planId)) {
+        planMap.set(planId, {
+          ...plan,
+          agenda_content: plan.agenda_content ?? undefined,
+          created_at: plan.created_at ?? undefined,
+          creator_id: plan.creator_id ?? undefined,
+          description: plan.description ?? undefined,
+          id: planId,
+          name: plan.name ?? undefined,
+          ws_id: plan.ws_id ?? undefined,
+        } as MeetTogetherPlan);
+      }
     });
+  };
 
-  if (wsId) {
-    createdPlansQuery.eq('ws_id', wsId);
-    joinedPlansQuery.eq('meet_together_plans.ws_id', wsId);
+  if (scope === 'personal-consolidated' && wsId) {
+    const personalPlansQuery = sbAdmin
+      .from('meet_together_plans')
+      .select('*')
+      .eq('creator_id', user.id)
+      .eq('ws_id', wsId)
+      .order('created_at', { ascending: false });
+
+    const interactedPlansQuery = sbAdmin
+      .from('meet_together_user_timeblocks')
+      .select('...meet_together_plans!inner(*)')
+      .eq('user_id', user.id)
+      .order('created_at', {
+        ascending: false,
+        referencedTable: 'meet_together_plans',
+      });
+
+    const [personalPlansResult, interactedPlansResult] = await Promise.all([
+      personalPlansQuery,
+      interactedPlansQuery,
+    ]);
+
+    addPlans(personalPlansResult.data);
+    addPlans(interactedPlansResult.data);
+  } else {
+    const createdPlansQuery = sbAdmin
+      .from('meet_together_plans')
+      .select('*')
+      .eq('creator_id', user.id)
+      .order('created_at', { ascending: false });
+
+    const joinedPlansQuery = sbAdmin
+      .from('meet_together_user_timeblocks')
+      .select('...meet_together_plans!inner(*)')
+      .eq('user_id', user.id)
+      .neq('meet_together_plans.creator_id', user.id)
+      .order('created_at', {
+        ascending: false,
+        referencedTable: 'meet_together_plans',
+      });
+
+    if (wsId) {
+      createdPlansQuery.eq('ws_id', wsId);
+      joinedPlansQuery.eq('meet_together_plans.ws_id', wsId);
+    }
+
+    const [createdPlansResult, joinedPlansResult] = await Promise.all([
+      createdPlansQuery,
+      joinedPlansQuery,
+    ]);
+
+    addPlans(createdPlansResult.data);
+    addPlans(joinedPlansResult.data);
   }
-
-  const [createdPlansResult, joinedPlansResult] = await Promise.all([
-    createdPlansQuery,
-    joinedPlansQuery,
-  ]);
-
-  const { data: createdPlans } = createdPlansResult;
-  const { data: joinedPlans } = joinedPlansResult;
-
-  // Combine and deduplicate
-  const planMap = new Map();
-  createdPlans?.forEach((plan) => {
-    if (!planMap.has(plan.id)) {
-      planMap.set(plan.id, plan);
-    }
-  });
-  joinedPlans?.forEach((plan) => {
-    if (!planMap.has(plan.id)) {
-      planMap.set(plan.id, plan);
-    }
-  });
 
   const allPlans = Array.from(planMap.values()).sort(
     (a, b) =>

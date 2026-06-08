@@ -6,10 +6,21 @@ const path = require('node:path');
 
 const {
   acquireCheckQueueLock,
+  checks,
+  discordPythonCheck,
   forceClearCheckQueue,
+  getActiveChecks,
+  getChangedFiles,
   getCheckQueuePaths,
   listTrackedCheckProcesses,
+  parseBiomeIssueStats,
+  touchesDiscordPython,
 } = require('./check.js');
+const {
+  createDiscordPythonChecks,
+  getTopLevelPythonFiles,
+  runDiscordPythonChecks,
+} = require('./check-discord-python.js');
 
 function createTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'check-queue-'));
@@ -20,6 +31,160 @@ function sleep(ms) {
     setTimeout(resolve, ms);
   });
 }
+
+test('touchesDiscordPython detects Discord app and workflow paths', () => {
+  assert.equal(touchesDiscordPython(['apps/discord/app.py']), true);
+  assert.equal(touchesDiscordPython(['apps/discord/tests/test_app.py']), true);
+  assert.equal(
+    touchesDiscordPython(['.github/workflows/discord-python-ci.yml']),
+    true
+  );
+  assert.equal(touchesDiscordPython(['apps/web/src/app/page.tsx']), false);
+});
+
+test('getChangedFiles combines tracked and untracked Git paths', () => {
+  const calls = [];
+  const files = getChangedFiles({
+    execFile: (command, args) => {
+      assert.equal(command, 'git');
+      calls.push(args);
+
+      if (args[0] === 'diff') {
+        return 'apps/discord/app.py\r\napps/web/src/app/page.tsx\n';
+      }
+
+      if (args[0] === 'ls-files') {
+        return './apps/discord/new_file.py\n';
+      }
+
+      throw new Error(`Unexpected git args: ${args.join(' ')}`);
+    },
+    rootDir: '/repo',
+  });
+
+  assert.deepEqual(calls, [
+    ['diff', '--name-only', '--diff-filter=ACMRD', 'HEAD', '--'],
+    ['ls-files', '--others', '--exclude-standard', '--'],
+  ]);
+  assert.deepEqual(files, [
+    'apps/discord/app.py',
+    'apps/discord/new_file.py',
+    'apps/web/src/app/page.tsx',
+  ]);
+});
+
+test('getActiveChecks adds Discord Python validation after script tests when Discord changes', () => {
+  const unchangedChecks = getActiveChecks({
+    changedFiles: ['apps/web/src/app/page.tsx'],
+  });
+  assert.equal(
+    unchangedChecks.some((check) => check.name === discordPythonCheck.name),
+    false
+  );
+
+  const activeChecks = getActiveChecks({
+    changedFiles: ['apps/discord/ai_agent_gateway_watcher.py'],
+  });
+  const scriptTestsIndex = activeChecks.findIndex(
+    (check) => check.name === 'script-tests'
+  );
+
+  assert.notEqual(scriptTestsIndex, -1);
+  assert.equal(activeChecks[scriptTestsIndex + 1].name, 'discord-python');
+  assert.deepEqual(discordPythonCheck.args, [
+    'scripts/check-discord-python.js',
+  ]);
+});
+
+test('Biome check treats warnings as blocking local check issues', () => {
+  const biomeCheck = checks.find((check) => check.name === 'biome');
+
+  assert.ok(biomeCheck);
+  assert.deepEqual(biomeCheck.args, ['biome', 'check', '--error-on-warnings']);
+
+  const output = [
+    'Checked 120 files in 300ms. No fixes applied.',
+    'Found 2 lint issues.',
+    '0 errors, 2 warnings, 0 infos',
+  ].join('\n');
+  const stats = parseBiomeIssueStats(output);
+
+  assert.deepEqual(stats, {
+    errors: 0,
+    filesChecked: 120,
+    infos: 0,
+    totalIssues: 2,
+    warnings: 2,
+  });
+  assert.equal(biomeCheck.parseOutput(output), '120 files checked');
+  assert.equal(
+    biomeCheck.validateOutput(output),
+    'Found 2 Biome issue(s): 0 error(s), 2 warning(s), 0 info(s)'
+  );
+});
+
+test('getTopLevelPythonFiles returns sorted top-level Python files only', () => {
+  const fakeFs = {
+    readdirSync: () => ['z.py', 'README.md', 'nested.py', 'a.py'],
+    statSync: (filePath) => ({
+      isFile: () => !filePath.endsWith('nested.py'),
+    }),
+  };
+
+  assert.deepEqual(getTopLevelPythonFiles('/discord', fakeFs), [
+    'a.py',
+    'z.py',
+  ]);
+});
+
+test('createDiscordPythonChecks mirrors blocking Discord Python CI commands', () => {
+  const checks = createDiscordPythonChecks({
+    pythonFiles: ['app.py', 'commands.py'],
+  });
+
+  assert.deepEqual(
+    checks.map((check) => [check.command, check.args]),
+    [
+      ['uv', ['sync', '--locked']],
+      ['uv', ['run', 'ruff', 'check', '.']],
+      ['uv', ['run', 'ruff', 'format', '--check', '.']],
+      ['uv', ['run', 'mypy', '.', '--config-file', 'mypy.ini']],
+      ['uv', ['run', 'pytest']],
+      ['uv', ['run', 'python', '-m', 'py_compile', 'app.py', 'commands.py']],
+      [
+        'uv',
+        [
+          'run',
+          'python',
+          '-c',
+          'import daily_report; import commands; import discord_client; import wol_reminder',
+        ],
+      ],
+    ]
+  );
+});
+
+test('runDiscordPythonChecks stops on the first failing check', () => {
+  const calls = [];
+  const exitCode = runDiscordPythonChecks({
+    checks: [
+      { name: 'First', command: 'uv', args: ['run', 'first'] },
+      { name: 'Second', command: 'uv', args: ['run', 'second'] },
+      { name: 'Third', command: 'uv', args: ['run', 'third'] },
+    ],
+    cwd: '/discord',
+    spawn: (command, args, options) => {
+      calls.push([command, args, options.cwd]);
+      return { status: calls.length === 1 ? 0 : 1 };
+    },
+  });
+
+  assert.equal(exitCode, 1);
+  assert.deepEqual(calls, [
+    ['uv', ['run', 'first'], '/discord'],
+    ['uv', ['run', 'second'], '/discord'],
+  ]);
+});
 
 test('acquireCheckQueueLock serializes queued checks in order', async () => {
   const rootDir = createTempDir();

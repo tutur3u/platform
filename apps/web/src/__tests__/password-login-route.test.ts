@@ -41,6 +41,7 @@ describe('password-login route', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          captchaToken: 'captcha-token',
           client: 'mobile',
           email: 'person@example.com',
           locale: 'en',
@@ -51,6 +52,7 @@ describe('password-login route', () => {
 
     expect(mocks.passwordLogin).toHaveBeenCalledWith(
       expect.objectContaining({
+        captchaToken: 'captcha-token',
         client: 'mobile',
         email: 'person@example.com',
         password: 'password123',

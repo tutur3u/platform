@@ -78,7 +78,7 @@ import {
   formatRelativeTime,
 } from './formatters';
 
-const requestTimeframeValues = ['1', '7', '14', '30', '0'] as const;
+const requestTimeframeValues = ['1', '7', '14', '30'] as const;
 type MonitoringTranslator = ReturnType<typeof useTranslations>;
 type EnrichedMonitoringRequest = BlueGreenMonitoringRequestLog & {
   parsedPath: ReturnType<typeof parseMonitoringRequestPath>;
@@ -352,9 +352,7 @@ export function BlueGreenMonitoringRequestsClient() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="rounded-full">
-            {timeframeDays === 0
-              ? t('requests_page.timeframe_all')
-              : t('requests_page.timeframe_days', { days: timeframeDays })}
+            {t('requests_page.timeframe_days', { days: timeframeDays })}
           </Badge>
           <Badge variant="outline" className="rounded-full">
             {formatCompactNumber(filteredRequests.length)} /{' '}
@@ -538,9 +536,7 @@ export function BlueGreenMonitoringRequestsClient() {
               })}
             </Badge>
             <Badge variant="outline" className="rounded-full">
-              {timeframeDays === 0
-                ? t('requests_page.timeframe_all')
-                : t('requests_page.timeframe_days', { days: timeframeDays })}
+              {t('requests_page.timeframe_days', { days: timeframeDays })}
             </Badge>
           </div>
         </div>
@@ -578,7 +574,6 @@ export function BlueGreenMonitoringRequestsClient() {
                 { label: t('requests_page.timeframe_7d'), value: '7' },
                 { label: t('requests_page.timeframe_14d'), value: '14' },
                 { label: t('requests_page.timeframe_30d'), value: '30' },
-                { label: t('requests_page.timeframe_all'), value: '0' },
               ]}
               value={timeframe}
             />

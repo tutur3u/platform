@@ -8,6 +8,7 @@ import { isGroupBlockedForSubscriptionInvoices } from '@/utils/workspace-config'
 import {
   type CalculatedValues,
   getCalculatedInvoiceValuesFromRpc,
+  validateInvoiceCustomer,
 } from '../route';
 
 interface Params {
@@ -220,6 +221,31 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
+    const customerValidation = await validateInvoiceCustomer({
+      customerId: customer_id,
+      sbAdmin,
+      wsId,
+    });
+    if (!customerValidation.ok) {
+      if (customerValidation.status === 500) {
+        serverLogger.error(
+          customerValidation.message,
+          customerValidation.error
+        );
+      }
+      return NextResponse.json(
+        { message: customerValidation.message },
+        { status: customerValidation.status }
+      );
+    }
+    const resolvedCustomerId = customerValidation.customerId;
+    if (!resolvedCustomerId) {
+      return NextResponse.json(
+        { message: 'Missing required fields: customer_id' },
+        { status: 400 }
+      );
+    }
+
     // Calculate values through the private database RPC
     let calculatedValues: CalculatedValues;
 
@@ -280,7 +306,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const invoiceData: any = {
       ws_id: wsId,
-      customer_id,
+      customer_id: resolvedCustomerId,
       price: roundedPrice, // Calculate from rounded values for consistency
       total_diff: roundedRounding,
       note: notes,
@@ -496,8 +522,8 @@ export async function POST(req: Request, { params }: Params) {
       unit_id: product.unit_id,
       warehouse_id: product.warehouse_id,
       amount: -product.quantity,
-      creator_id: workspaceUserId || customer_id,
-      beneficiary_id: customer_id,
+      creator_id: workspaceUserId || resolvedCustomerId,
+      beneficiary_id: resolvedCustomerId,
     }));
 
     const { error: stockError } = await sbAdmin
@@ -521,7 +547,7 @@ export async function POST(req: Request, { params }: Params) {
       invoice_id: invoiceId,
       data: {
         id: invoiceId,
-        customer_id,
+        customer_id: resolvedCustomerId,
         group_ids: groupIds,
         selected_month,
         total,

@@ -37,6 +37,33 @@ const memoryStore = new Map<string, { count: number; expiresAt: number }>();
 let redisClient: RedisClient | null = null;
 let redisInitialized = false;
 
+function parsePositiveIntEnv(name: string, fallback: number): number {
+  const rawValue = process.env[name];
+  if (!rawValue) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getOTPSendIpLimits() {
+  return {
+    perDay: parsePositiveIntEnv(
+      'ABUSE_OTP_SEND_IP_LIMIT_DAY',
+      ABUSE_THRESHOLDS.OTP_SEND_PER_DAY
+    ),
+    perHour: parsePositiveIntEnv(
+      'ABUSE_OTP_SEND_IP_LIMIT_HOUR',
+      ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR
+    ),
+    perMinute: parsePositiveIntEnv(
+      'ABUSE_OTP_SEND_IP_LIMIT_MINUTE',
+      ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE
+    ),
+  };
+}
+
 /**
  * Initialize Redis client from Upstash environment variables
  */
@@ -881,8 +908,9 @@ export async function checkOTPSendAllowed(
     getCounterWithTTL(hourlyKey),
     getCounterWithTTL(dailyKey),
   ]);
+  const ipLimits = getOTPSendIpLimits();
 
-  if (minuteState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE) {
+  if (minuteState.count >= ipLimits.perMinute) {
     // Log and potentially block
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
@@ -890,7 +918,7 @@ export async function checkOTPSendAllowed(
       metadata: { trigger: 'minute_limit' },
     });
 
-    if (minuteState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE * 2) {
+    if (minuteState.count >= ipLimits.perMinute * 2) {
       // Aggressive abuse - block IP
       void blockIP(ipAddress, 'otp_send', { trigger: 'rate_limit_exceeded' });
     }
@@ -903,7 +931,7 @@ export async function checkOTPSendAllowed(
     };
   }
 
-  if (hourlyState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_HOUR) {
+  if (hourlyState.count >= ipLimits.perHour) {
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
@@ -920,7 +948,7 @@ export async function checkOTPSendAllowed(
     };
   }
 
-  if (dailyState.count >= ABUSE_THRESHOLDS.OTP_SEND_PER_DAY) {
+  if (dailyState.count >= ipLimits.perDay) {
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
@@ -1000,7 +1028,7 @@ export async function checkOTPSendAllowed(
     allowed: true,
     remainingAttempts: Math.max(
       0,
-      ABUSE_THRESHOLDS.OTP_SEND_PER_MINUTE - (minuteState.count + 1)
+      ipLimits.perMinute - (minuteState.count + 1)
     ),
   };
 }

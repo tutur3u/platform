@@ -505,17 +505,22 @@ async function persistContext({
   response: Response | null;
 }) {
   try {
+    const endedAt = Date.now();
+    const normalizedError = error ? normalizeError(error) : null;
+    const status =
+      response?.status ??
+      (normalizedError ? 500 : context.source === 'cron' ? 200 : null);
+
+    if (!shouldPersistLogDrainContext(context, status)) {
+      return;
+    }
+
     await ensureLogDrainSchema();
     const sql = getLogDrainSqlClient();
     if (!sql) {
       return;
     }
 
-    const endedAt = Date.now();
-    const normalizedError = error ? normalizeError(error) : null;
-    const status =
-      response?.status ??
-      (normalizedError ? 500 : context.source === 'cron' ? 200 : null);
     const durationMs = Math.max(0, endedAt - context.startedAt);
     const deployment = getDeploymentMetadata();
     const projectId = context.projectId || deployment.projectId;
@@ -668,6 +673,17 @@ async function persistContext({
   } catch {
     // Logging must never break the caller.
   }
+}
+
+export function shouldPersistLogDrainContext(
+  context: Pick<LogDrainContext, 'source'>,
+  status: number | null
+) {
+  if (context.source !== 'cron') {
+    return true;
+  }
+
+  return status !== 401 && status !== 403;
 }
 
 export async function pruneOldLogDrainRecords() {

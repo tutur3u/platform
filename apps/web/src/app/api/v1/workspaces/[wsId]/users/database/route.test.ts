@@ -1,11 +1,12 @@
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const createAdminClientMock = vi.fn();
 const getPermissionsMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const adminRpcMock = vi.fn();
 const rpcRangeMock = vi.fn();
+const ORIGINAL_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof createAdminClientMock>) =>
@@ -25,7 +26,15 @@ vi.mock('@/lib/require-attention-users', () => ({
   withRequireAttentionFlag: vi.fn((users) => users),
 }));
 
-import { GET } from './route';
+import { GET, POST } from './route';
+
+afterEach(() => {
+  if (ORIGINAL_SUPABASE_URL === undefined) {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+  } else {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = ORIGINAL_SUPABASE_URL;
+  }
+});
 
 function createUsersDatabaseTableLookup() {
   return vi.fn((table: string) => {
@@ -117,6 +126,51 @@ describe('workspace users database route query parsing', () => {
       data: [],
       count: 0,
     });
+  });
+
+  it('accepts large group filters from a POST body without requiring query params', async () => {
+    const includedGroups = Array.from(
+      { length: 70 },
+      (_, index) => `included-group-${index + 1}`
+    );
+    const excludedGroups = Array.from(
+      { length: 5 },
+      (_, index) => `excluded-group-${index + 1}`
+    );
+    const request = new NextRequest(
+      'http://localhost/api/v1/workspaces/ws-1/users/database',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          page: 1,
+          pageSize: 10,
+          status: 'active',
+          linkStatus: 'virtual',
+          requireAttention: 'all',
+          groupMembership: 'all',
+          includedGroups,
+          excludedGroups,
+        }),
+      }
+    );
+
+    const response = await POST(request, {
+      params: Promise.resolve({ wsId: 'ws-1' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(adminRpcMock).toHaveBeenCalledWith(
+      'get_workspace_users',
+      expect.objectContaining({
+        included_groups: includedGroups,
+        excluded_groups: excludedGroups,
+        link_status: 'virtual',
+      }),
+      {
+        count: 'exact',
+      }
+    );
   });
 
   it('derives archival_note from note for archived private rows', async () => {
@@ -211,5 +265,50 @@ describe('workspace users database route query parsing', () => {
     });
     expect(body.data[0]).not.toHaveProperty('note');
     expect(body.data[0]).not.toHaveProperty('archival_note');
+  });
+
+  it('preserves Supabase public avatar URLs before returning rows', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL =
+      'https://current-project.supabase.co';
+    rpcRangeMock.mockResolvedValue({
+      data: [
+        {
+          id: 'user-1',
+          full_name: 'Alice',
+          avatar_url:
+            'https://old-project.supabase.co/storage/v1/object/public/avatars/alice.jpg',
+        },
+      ],
+      error: null,
+      count: 1,
+    });
+    createAdminClientMock.mockResolvedValue({
+      rpc: adminRpcMock,
+      from: createUsersDatabaseTableLookup(),
+      schema: vi.fn(() => ({
+        from: vi.fn(() => {
+          throw new Error('Unexpected private table lookup');
+        }),
+      })),
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/users/database?page=1&pageSize=10'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      data: [
+        {
+          avatar_url:
+            'https://old-project.supabase.co/storage/v1/object/public/avatars/alice.jpg',
+        },
+      ],
+    });
   });
 });

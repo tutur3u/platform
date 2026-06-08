@@ -1,6 +1,6 @@
 'use client';
 
-import type { LucideIcon } from '@tuturuuu/icons';
+import type { LucideIcon } from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
 
 interface StatCardProps {

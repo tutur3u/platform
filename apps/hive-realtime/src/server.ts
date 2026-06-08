@@ -225,20 +225,6 @@ async function handleMessage(ws: HiveWebSocket, raw: string) {
     return;
   }
 
-  if (parsed.data.type === 'world.event.applied') {
-    if (parsed.data.event.serverId !== token.serverId) {
-      send(ws, { error: 'server_mismatch', type: 'error' });
-      return;
-    }
-
-    broadcast(token.serverId, {
-      event: parsed.data.event,
-      type: 'world.event',
-      world: parsed.data.world,
-    });
-    return;
-  }
-
   await handleLegacyWorldEvent(ws, parsed.data);
 }
 

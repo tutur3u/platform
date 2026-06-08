@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle } from '@tuturuuu/icons';
+import { AlertTriangle } from '@tuturuuu/icons/lucide';
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
 import { useTranslations } from 'next-intl';

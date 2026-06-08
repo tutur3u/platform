@@ -8,7 +8,6 @@ import {
 } from './shared-form-social-image';
 
 export { contentType, size };
-export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{

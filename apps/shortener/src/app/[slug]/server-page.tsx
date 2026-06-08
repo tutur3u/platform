@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { trackLinkClick } from '@/lib/analytics';
 import { isValidUrl } from '@/lib/utils';
 import PasswordForm from './password-form';
@@ -9,6 +10,8 @@ export default async function ServerPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  await connection();
+
   const { slug } = await params;
   const sbAdmin = await createAdminClient();
 

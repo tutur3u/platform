@@ -23,7 +23,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { toast } from '../components/ui/sonner';
 import { useCalendarSync } from './use-calendar-sync';
 
 // Utility function to round time to nearest 15-minute interval
@@ -107,11 +106,18 @@ const CalendarContext = createContext<{
   deleteEvent: (eventId: string) => Promise<void>;
   isModalOpen: boolean;
   activeEvent: CalendarEvent | undefined;
+  isPreviewOpen: boolean;
+  previewEvent: CalendarEvent | undefined;
   openModal: (
     eventId?: string,
     modalType?: 'all-day' | 'event',
     options?: { defaultNewEventTab?: 'manual' | 'ai' }
   ) => void;
+  openEventEditor: (
+    eventId?: string,
+    options?: { defaultNewEventTab?: 'manual' | 'ai' }
+  ) => void;
+  closePreview: () => void;
   closeModal: () => void;
   isEditing: () => boolean;
   hideModal: () => void;
@@ -174,7 +180,11 @@ const CalendarContext = createContext<{
   deleteEvent: () => Promise.resolve(),
   isModalOpen: false,
   activeEvent: undefined,
+  isPreviewOpen: false,
+  previewEvent: undefined,
   openModal: () => undefined,
+  openEventEditor: () => undefined,
+  closePreview: () => undefined,
   closeModal: () => undefined,
   isEditing: () => false,
   hideModal: () => undefined,
@@ -362,10 +372,10 @@ async function syncTaskDurationAfterEventChange(
 
 export const CalendarProvider = ({
   ws,
-  useQuery,
+  useQuery: _useQuery,
   useQueryClient,
   children,
-  experimentalGoogleToken,
+  experimentalGoogleToken: _experimentalGoogleToken,
   readOnly = false,
 }: {
   ws?: Workspace;
@@ -391,6 +401,7 @@ export const CalendarProvider = ({
 
   // Modal state
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  const [previewEventId, setPreviewEventId] = useState<string | null>(null);
   const [isModalHidden, setModalHidden] = useState(false);
   const [pendingNewEvent, setPendingNewEvent] =
     useState<Partial<CalendarEvent> | null>(null);
@@ -615,6 +626,7 @@ export const CalendarProvider = ({
             color: eventColor as SupportedColor,
             location: event.location || '',
             locked: true,
+            source: event.source,
           }),
         }
       );
@@ -804,6 +816,7 @@ export const CalendarProvider = ({
             location: updateData.location,
           }),
           ...(updateData.locked !== undefined && { locked: updateData.locked }),
+          ...(updateData.source !== undefined && { source: updateData.source }),
         };
 
         // ws is guaranteed to be defined here (validated above at line 732)
@@ -904,6 +917,7 @@ export const CalendarProvider = ({
         'color',
         'location',
         'locked',
+        'source',
       ];
 
       const cleanedUpdates: Partial<CalendarEvent> = {};
@@ -1021,68 +1035,15 @@ export const CalendarProvider = ({
         // Just clear the pending event
         setPendingNewEvent(null);
         setActiveEventId(null);
+        setPreviewEventId(null);
         return;
       }
 
       if (!ws) throw new Error('No workspace selected');
 
-      // Find the event first to get the Google Calendar ID
       const eventToDelete = events.find(
         (e: CalendarEvent) => e.id === eventId
       ) as (CalendarEvent & { task_id?: string | null }) | undefined;
-      const googleCalendarEventId = eventToDelete?.google_event_id;
-
-      // --- Google Calendar Sync (Delete) ---
-      if (googleCalendarEventId && experimentalGoogleToken) {
-        // Check if ID exists and feature enabled
-        try {
-          const syncResponse = await fetch('/api/v1/calendar/auth/sync', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ googleCalendarEventId }),
-          });
-
-          if (!syncResponse.ok) {
-            const errorData = await syncResponse.json();
-            if (errorData.eventNotFound) {
-              console.warn(
-                `Google event ${googleCalendarEventId} not found during delete sync. Proceeding with local delete.`
-              );
-              // Don't throw, just log. The event is gone from Google anyway.
-            } else if (errorData.needsReAuth) {
-              // Notify user to re-authenticate with Google Calendar
-              toast.error('Google Calendar authentication expired', {
-                description:
-                  'Please re-authenticate your Google Calendar connection to continue syncing events.',
-                action: {
-                  label: 'Re-authenticate',
-                  onClick: () => {
-                    // Redirect to Google Calendar auth page or open auth modal
-                    // This could be enhanced to open a specific auth flow
-                    window.open(
-                      `/api/v1/calendar/auth?wsId=${ws?.id}`,
-                      '_blank'
-                    );
-                  },
-                },
-              });
-              // Continue with local delete - don't block user action
-              console.warn(
-                'Google Calendar re-authentication required, proceeding with local delete'
-              );
-            } else {
-              // Throw an error to potentially stop the local delete or notify user
-              throw new Error(
-                `Google Calendar sync (DELETE) failed: ${syncResponse.statusText} - ${JSON.stringify(errorData)}`
-              );
-            }
-          }
-        } catch (_) {
-          // Failed to sync delete with Google Calendar
-        }
-      } else if (experimentalGoogleToken && !googleCalendarEventId) {
-        // Event has no Google Calendar ID, skipping delete sync
-      }
 
       if (!ws?.id) {
         throw new Error('No workspace selected');
@@ -1116,6 +1077,7 @@ export const CalendarProvider = ({
       // Refresh the query cache after deleting an event
       refresh();
       setActiveEventId(null);
+      setPreviewEventId(null);
 
       // If this was a task-linked event, refresh task queries
       if (hasLinkedTask || hasLinkedHabit) {
@@ -1128,357 +1090,49 @@ export const CalendarProvider = ({
       refresh,
       pendingNewEvent,
       events,
-      experimentalGoogleToken,
       queryClient,
       onTaskScheduled,
       readOnly,
     ]
   );
 
-  // Automatically fetch Google Calendar events
-  const fetchGoogleCalendarEvents = async () => {
-    if (!ws?.id) {
-      throw new Error('No workspace selected');
-    }
-    const response = await fetch(`/api/v1/calendar/auth/fetch?wsId=${ws.id}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch Google Calendar events');
-    }
-    return await response.json();
-  };
-
-  // Query to fetch Google Calendar events every 1 hour
-  const { data: googleData } = useQuery({
-    queryKey: ['googleCalendarEvents', ws?.id],
-    queryFn: fetchGoogleCalendarEvents,
-    enabled: !!ws?.id && !!experimentalGoogleToken?.id,
-    refetchInterval: 1000 * 60 * 60, // Fetch every 1 hour
-    staleTime: 1000 * 60 * 60, // Data is considered fresh for 1 hour
-  });
-
-  const googleEvents = useMemo(() => googleData?.events || [], [googleData]);
-
+  const googleEvents = useMemo(() => [], []);
   const getGoogleEvents = useCallback(() => googleEvents, [googleEvents]);
 
-  // Function to synchronize local events with Google Calendar
-  const syncEvents = useCallback(
-    async (
-      progressCallback?: (progress: {
-        phase: 'delete' | 'update' | 'insert' | 'complete';
-        current: number;
-        total: number;
-        changesMade: boolean;
-      }) => void
-    ) => {
-      const workspaceId = ws?.id;
-      if (!workspaceId || !googleEvents.length || !experimentalGoogleToken)
+  // Modal management
+  const openEventEditor = useCallback(
+    (eventId?: string, options?: { defaultNewEventTab?: 'manual' | 'ai' }) => {
+      setPreviewEventId(null);
+
+      if (eventId) {
+        setActiveEventId(eventId);
+        setPendingNewEvent(null);
+        setModalHidden(false);
         return;
-
-      // Get local events that are synced with Google Calendar
-      const localGoogleEvents: CalendarEvent[] = events.filter(
-        (e: CalendarEvent) => e.google_event_id
-      );
-
-      // Create a map for faster lookups of local events
-      const localEventMap = new Map<string, CalendarEvent>();
-      localGoogleEvents.forEach((event) => {
-        if (event.google_event_id) {
-          localEventMap.set(event.google_event_id, event);
-        }
-      });
-
-      // Create a set of google_event_id from Google Calendar events for quick lookup
-      const googleEventIds: Set<string | undefined> = new Set(
-        googleEvents.map((e: { google_event_id?: string }) => e.google_event_id)
-      );
-
-      // Identify events to delete: local events not present in Google Calendar
-      const eventsToDelete = localGoogleEvents.filter(
-        (e) => e.google_event_id && !googleEventIds.has(e.google_event_id)
-      );
-
-      // Initialize batch operations - we'll perform these in a more optimized way
-      const eventsToUpdate: Array<{ id: string; data: any }> = [];
-      const eventsToInsert: Array<any> = [];
-      let changesMade = false;
-
-      // Report initial progress
-      if (progressCallback) {
-        progressCallback({
-          phase: 'delete',
-          current: 0,
-          total: eventsToDelete.length,
-          changesMade: false,
-        });
       }
 
-      // Handle events to delete
-      if (eventsToDelete.length > 0) {
-        changesMade = true;
-        // Delete events in batches for better performance
-        const batchSize = 10;
-        for (let i = 0; i < eventsToDelete.length; i += batchSize) {
-          const batch = eventsToDelete.slice(i, i + batchSize);
-          const eventIds = batch.map((e) => e.id);
+      setDefaultNewEventTab(options?.defaultNewEventTab ?? 'manual');
 
-          // Report progress
-          if (progressCallback) {
-            progressCallback({
-              phase: 'delete',
-              current: i + batch.length,
-              total: eventsToDelete.length,
-              changesMade: true,
-            });
-          }
+      const now = roundToNearest15Minutes(new Date());
+      const oneHourLater = new Date(now);
+      oneHourLater.setHours(oneHourLater.getHours() + 1);
 
-          try {
-            await Promise.all(
-              eventIds.map(async (eventId) => {
-                const response = await fetch(
-                  `/api/v1/workspaces/${workspaceId}/calendar/events/${eventId}`,
-                  {
-                    method: 'DELETE',
-                  }
-                );
+      const newEvent: Omit<CalendarEvent, 'id'> = {
+        title: '',
+        description: '',
+        start_at: now.toISOString(),
+        end_at: oneHourLater.toISOString(),
+        color: 'BLUE',
+        ws_id: ws?.id || '',
+      };
 
-                if (!response.ok) {
-                  const errorData = await response.json().catch(() => null);
-                  throw new Error(
-                    errorData?.error || 'Failed to delete calendar event'
-                  );
-                }
-              })
-            );
-          } catch (_) {
-            // Failed to delete events batch
-          }
-        }
-      }
-
-      // Gather events to update or insert
-      for (const gEvent of googleEvents) {
-        // Skip events without google_event_id
-        if (!gEvent.google_event_id) continue;
-
-        const localEvent = localEventMap.get(gEvent.google_event_id);
-
-        if (localEvent) {
-          // Check if there are any significant changes in the event details that require an update
-          // For encrypted events, we only check non-encrypted fields (dates, color)
-          // since we can't compare encrypted content with plaintext Google data
-          const isEncrypted = localEvent.is_encrypted === true;
-
-          const hasNonEncryptedChanges =
-            localEvent.start_at !== gEvent.start_at ||
-            localEvent.end_at !== gEvent.end_at ||
-            localEvent.color !== gEvent.color;
-
-          const hasContentChanges =
-            !isEncrypted &&
-            (localEvent.title !== gEvent.title ||
-              localEvent.description !== (gEvent.description || '') ||
-              localEvent.location !== (gEvent.location || ''));
-
-          const hasChanges = hasNonEncryptedChanges || hasContentChanges;
-
-          // Only update if there are actual changes
-          if (hasChanges) {
-            changesMade = true;
-
-            // For encrypted events, only update non-encrypted fields (dates, color)
-            // to preserve the encrypted title/description/location
-            if (isEncrypted) {
-              eventsToUpdate.push({
-                id: localEvent.id,
-                data: {
-                  start_at: gEvent.start_at,
-                  end_at: gEvent.end_at,
-                  color: gEvent.color || 'BLUE',
-                  // Don't update title, description, location - they are encrypted
-                },
-              });
-            } else {
-              eventsToUpdate.push({
-                id: localEvent.id,
-                data: {
-                  title: gEvent.title,
-                  description: gEvent.description || '',
-                  start_at: gEvent.start_at,
-                  end_at: gEvent.end_at,
-                  color: gEvent.color || 'BLUE',
-                  location: gEvent.location || '',
-                },
-              });
-            }
-          }
-        } else {
-          // Check for content-based duplicates before adding
-          const potentialDuplicates = events.filter(
-            (localEvent: CalendarEvent) => {
-              return (
-                localEvent.title === gEvent.title &&
-                localEvent.description === (gEvent.description || '') &&
-                localEvent.start_at === gEvent.start_at &&
-                localEvent.end_at === gEvent.end_at
-              );
-            }
-          );
-
-          if (potentialDuplicates.length > 0) {
-            if (potentialDuplicates[0]) {
-              changesMade = true;
-              // Update the existing event with the Google Event ID rather than creating a new one
-              eventsToUpdate.push({
-                id: potentialDuplicates[0].id,
-                data: {
-                  google_event_id: gEvent.google_event_id,
-                },
-              });
-              continue;
-            }
-          }
-
-          // No duplicates found, add to insert batch
-          changesMade = true;
-          eventsToInsert.push({
-            title: gEvent.title,
-            description: gEvent.description || '',
-            start_at: gEvent.start_at,
-            end_at: gEvent.end_at,
-            color: gEvent.color || 'BLUE',
-            location: gEvent.location || '',
-            ws_id: ws?.id ?? '',
-            google_event_id: gEvent.google_event_id,
-            locked: gEvent.locked || false,
-            created_at: new Date().toISOString(),
-          });
-        }
-      }
-
-      // Process batch updates
-      if (eventsToUpdate.length > 0) {
-        // Report progress for update phase
-        if (progressCallback) {
-          progressCallback({
-            phase: 'update',
-            current: 0,
-            total: eventsToUpdate.length,
-            changesMade: changesMade,
-          });
-        }
-
-        const batchSize = 5; // Smaller batch size for updates to be safer
-
-        for (let i = 0; i < eventsToUpdate.length; i += batchSize) {
-          const batch = eventsToUpdate.slice(i, i + batchSize);
-
-          // Report progress update
-          if (progressCallback) {
-            progressCallback({
-              phase: 'update',
-              current: i + batch.length,
-              total: eventsToUpdate.length,
-              changesMade: changesMade,
-            });
-          }
-
-          // Process each update one by one to ensure reliability
-          for (const item of batch) {
-            try {
-              const response = await fetch(
-                `/api/v1/workspaces/${workspaceId}/calendar/events/${item.id}`,
-                {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(item.data),
-                }
-              );
-
-              if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                throw new Error(
-                  errorData?.error || 'Failed to update calendar event'
-                );
-              }
-            } catch (_) {
-              // Failed to update event
-            }
-          }
-        }
-      }
-
-      // Process batch inserts
-      if (eventsToInsert.length > 0) {
-        // Report progress for insert phase
-        if (progressCallback) {
-          progressCallback({
-            phase: 'insert',
-            current: 0,
-            total: eventsToInsert.length,
-            changesMade: changesMade,
-          });
-        }
-
-        const batchSize = 10;
-
-        for (let i = 0; i < eventsToInsert.length; i += batchSize) {
-          const batch = eventsToInsert.slice(i, i + batchSize);
-
-          // Report progress update
-          if (progressCallback) {
-            progressCallback({
-              phase: 'insert',
-              current: i + batch.length,
-              total: eventsToInsert.length,
-              changesMade: changesMade,
-            });
-          }
-
-          try {
-            await Promise.all(
-              batch.map(async (event) => {
-                const response = await fetch(
-                  `/api/v1/workspaces/${workspaceId}/calendar/events`,
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(event),
-                  }
-                );
-
-                if (!response.ok) {
-                  const errorData = await response.json().catch(() => null);
-                  throw new Error(
-                    errorData?.error || 'Failed to insert calendar event'
-                  );
-                }
-              })
-            );
-          } catch (_) {
-            // Failed to insert events batch
-          }
-        }
-      }
-
-      // Report completion
-      if (progressCallback) {
-        progressCallback({
-          phase: 'complete',
-          current: 1,
-          total: 1,
-          changesMade: changesMade,
-        });
-      }
-
-      // Only refresh local events if changes were made
-      if (changesMade) {
-        queryClient.invalidateQueries(['calendarEvents', ws?.id]);
-      }
+      setPendingNewEvent(newEvent);
+      setActiveEventId('new');
+      setModalHidden(false);
     },
-    [googleEvents, events, ws?.id, queryClient, experimentalGoogleToken]
+    [ws?.id]
   );
 
-  // Modal management
   const openModal = useCallback(
     (
       eventId?: string,
@@ -1486,37 +1140,24 @@ export const CalendarProvider = ({
       options?: { defaultNewEventTab?: 'manual' | 'ai' }
     ) => {
       if (eventId) {
-        // Opening an existing event
-        setActiveEventId(eventId);
         setPendingNewEvent(null);
-      } else {
-        // Creating a new event
-        setDefaultNewEventTab(options?.defaultNewEventTab ?? 'manual');
-
-        const now = roundToNearest15Minutes(new Date());
-        const oneHourLater = new Date(now);
-        oneHourLater.setHours(oneHourLater.getHours() + 1);
-
-        // Create a pending new event
-        const newEvent: Omit<CalendarEvent, 'id'> = {
-          title: '',
-          description: '',
-          start_at: now.toISOString(),
-          end_at: oneHourLater.toISOString(),
-          color: 'BLUE',
-        };
-
-        setPendingNewEvent(newEvent);
-        setActiveEventId('new');
+        setActiveEventId(null);
+        setPreviewEventId(eventId);
+        return;
       }
-      setModalHidden(false);
+
+      openEventEditor(undefined, options);
     },
-    []
+    [openEventEditor]
   );
 
   const closeModal = useCallback(() => {
     setActiveEventId(null);
     setPendingNewEvent(null);
+  }, []);
+
+  const closePreview = useCallback(() => {
+    setPreviewEventId(null);
   }, []);
 
   const activeEvent = useMemo(() => {
@@ -1533,6 +1174,12 @@ export const CalendarProvider = ({
       ? events.find((e: Partial<CalendarEvent>) => e.id === activeEventId)
       : undefined;
   }, [activeEventId, events, pendingNewEvent]);
+
+  const previewEvent = useMemo(() => {
+    return previewEventId
+      ? events.find((e: Partial<CalendarEvent>) => e.id === previewEventId)
+      : undefined;
+  }, [events, previewEventId]);
 
   const isEditing = useCallback(() => !!activeEventId, [activeEventId]);
   const hideModal = useCallback(() => setModalHidden(true), []);
@@ -1565,137 +1212,64 @@ export const CalendarProvider = ({
         statusMessage?: string;
       }) => void
     ) => {
-      if (!experimentalGoogleToken || !ws?.id) {
+      if (!ws?.id) {
         return false;
       }
 
       try {
-        // First, capture current events count for comparison
-        const beforeCount = events.length;
-        const beforeGoogleCount = googleEvents.length;
-
-        // Report fetch starting
         if (progressCallback) {
           progressCallback({
             phase: 'fetch',
             current: 0,
             total: 1,
             changesMade: false,
-            statusMessage: 'Fetching events from Google Calendar...',
+            statusMessage: 'Syncing connected calendars...',
           });
         }
 
-        // Force fetch the latest events from Google with a cache-busting parameter
-        try {
-          const response = await fetch(
-            `/api/v1/calendar/auth/fetch?wsId=${ws.id}&force=true&t=${Date.now()}`
-          );
-          const data = await response.json();
-
-          if (!response.ok) {
-            // Include the full error details from Google API
-            const errorDetails = data.error || response.statusText;
-            const statusCode = response.status;
-            const googleError = data.googleError || data.details || '';
-            throw new Error(
-              `Failed to fetch Google Calendar events: ${errorDetails} (${statusCode})${googleError ? ` - Google API: ${googleError}` : ''}`
-            );
+        const response = await fetch(
+          `/api/v1/workspaces/${ws.id}/calendar/sync`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ direction: 'inbound', source: 'manual' }),
           }
+        );
 
-          // Update googleEvents directly through queryClient for faster UI response
-          queryClient.setQueryData(['googleCalendarEvents', ws?.id], data);
-
-          // Report fetch complete
-          if (progressCallback) {
-            progressCallback({
-              phase: 'fetch',
-              current: 1,
-              total: 1,
-              changesMade: data.events?.length !== beforeGoogleCount,
-              statusMessage: `Fetched ${data.events?.length || 0} events from Google Calendar`,
-            });
-          }
-        } catch (fetchError) {
-          if (progressCallback) {
-            progressCallback({
-              phase: 'fetch',
-              current: 0,
-              total: 1,
-              changesMade: false,
-              statusMessage:
-                fetchError instanceof Error
-                  ? fetchError.message
-                  : 'Failed to fetch events from Google Calendar',
-            });
-          }
-
-          // Propagate the error instead of returning false
-          throw fetchError;
+        const result = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(result?.error || 'Calendar sync failed');
         }
 
-        // Manually run the sync process with progress tracking
-        let changesMade = false;
-        await syncEvents((progress) => {
-          if (progressCallback) {
-            // Forward the progress updates
-            progressCallback({
-              ...progress,
-              statusMessage:
-                progress.phase === 'delete'
-                  ? `Removing ${progress.total} deleted events (${progress.current}/${progress.total})`
-                  : progress.phase === 'update'
-                    ? `Updating ${progress.total} events (${progress.current}/${progress.total})`
-                    : progress.phase === 'insert'
-                      ? `Adding ${progress.total} new events (${progress.current}/${progress.total})`
-                      : progress.phase === 'complete'
-                        ? 'Sync completed'
-                        : undefined,
-            });
-          }
+        const inserted =
+          (result?.summary?.google?.inserted ?? 0) +
+          (result?.summary?.microsoft?.inserted ?? 0);
+        const updated =
+          (result?.summary?.google?.updated ?? 0) +
+          (result?.summary?.microsoft?.updated ?? 0);
+        const deleted =
+          (result?.summary?.google?.deleted ?? 0) +
+          (result?.summary?.microsoft?.deleted ?? 0);
+        const changesMade = inserted + updated + deleted > 0;
 
-          // Track if any changes were made
-          if (progress.changesMade) {
-            changesMade = true;
-          }
+        await queryClient.invalidateQueries({
+          queryKey: ['databaseCalendarEvents', ws.id],
+          exact: false,
         });
 
-        // Force refresh of local events
-        if (changesMade) {
-          if (progressCallback) {
-            progressCallback({
-              phase: 'complete',
-              current: 1,
-              total: 1,
-              changesMade: true,
-              statusMessage: 'Refreshing your calendar...',
-            });
-          }
-
-          await queryClient.invalidateQueries({
-            queryKey: ['calendarEvents', ws?.id],
-            refetchType: 'all',
-          });
-        }
-
-        // Calculate changes
-        const afterCount = getEvents().length;
-        const countDifference = afterCount - beforeCount;
-
-        // Final callback with summary
         if (progressCallback) {
           progressCallback({
             phase: 'complete',
             current: 1,
             total: 1,
-            changesMade: changesMade,
+            changesMade,
             statusMessage: changesMade
-              ? `Sync complete. ${Math.abs(countDifference)} events ${countDifference >= 0 ? 'added' : 'removed'}.`
+              ? `Sync complete. ${inserted} added, ${updated} updated, ${deleted} removed.`
               : 'Sync complete. No changes needed.',
           });
         }
 
-        // Return success with indication if changes were made
-        return changesMade || beforeGoogleCount !== googleEvents.length;
+        return changesMade;
       } catch (_) {
         if (progressCallback) {
           progressCallback({
@@ -1710,15 +1284,7 @@ export const CalendarProvider = ({
         return false;
       }
     },
-    [
-      experimentalGoogleToken,
-      ws?.id,
-      events.length,
-      googleEvents.length,
-      queryClient,
-      syncEvents,
-      getEvents,
-    ]
+    [queryClient, ws?.id]
   );
 
   const [isDragging, setIsDragging] = useState(false);
@@ -1905,7 +1471,11 @@ export const CalendarProvider = ({
     // New API
     isModalOpen: !isModalHidden && activeEventId !== null,
     activeEvent,
+    isPreviewOpen: !!previewEvent,
+    previewEvent,
     openModal,
+    openEventEditor,
+    closePreview,
     closeModal,
 
     // Legacy API

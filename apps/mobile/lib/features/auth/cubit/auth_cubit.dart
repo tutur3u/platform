@@ -850,21 +850,32 @@ class AuthCubit extends Cubit<AuthState> {
     return true;
   }
 
-  Future<void> signOutAllAccounts() async {
+  Future<bool> signOutAllAccounts() async {
     _isInAddAccountFlow = false;
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     await CacheStore.instance.clearScope(userId: state.user?.id);
     await _clearInMemoryFeatureCaches(userId: state.user?.id);
     await _onBeforeSignOut?.call();
-    if (isClosed) return;
-    await _repo.signOutAllAccounts();
-    if (isClosed) return;
+    if (isClosed) return false;
+    final result = await _repo.signOutAllAccounts();
+    if (isClosed) return false;
+    if (!result.success) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: result.error ?? 'Failed to sign out',
+          errorCode: null,
+        ),
+      );
+      return false;
+    }
     emit(
       const AuthState.unauthenticated().copyWith(
         accounts: const <StoredAuthAccount>[],
         activeAccountId: null,
       ),
     );
+    return true;
   }
 
   Future<void> updateActiveAccountWorkspaceContext(String workspaceId) async {

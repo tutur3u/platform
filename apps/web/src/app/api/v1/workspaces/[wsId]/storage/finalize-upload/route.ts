@@ -2,9 +2,11 @@ import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
+import { validateFinalizedFinanceTransactionAttachment } from '@/lib/finance-transaction-storage-limits';
 import { triggerWorkspaceStorageAutoExtract } from '@/lib/workspace-storage-auto-extract';
 import type { WorkspaceStorageRouteAuthContext } from '../route-auth';
 import {
+  FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,
 } from '../route-auth';
@@ -46,11 +48,13 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId, {
+      appSessionTargets: FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
+    });
     if (!auth.ok) {
       return auth.response;
     }
-    const { normalizedWsId, permissions, userId } = auth.context;
+    const { normalizedWsId, permissions, supabase, userId } = auth.context;
 
     let payload: unknown;
     try {
@@ -82,6 +86,7 @@ export async function POST(
         normalizedWsId,
         path: sanitizedPath,
         permissions,
+        supabase,
         userId,
       }));
 
@@ -89,6 +94,18 @@ export async function POST(
       return NextResponse.json(
         { message: 'Insufficient permissions' },
         { status: 403 }
+      );
+    }
+
+    const financeAttachmentValidation =
+      await validateFinalizedFinanceTransactionAttachment({
+        path: sanitizedPath,
+        wsId: normalizedWsId,
+      });
+    if (!financeAttachmentValidation.ok) {
+      return NextResponse.json(
+        { message: financeAttachmentValidation.message },
+        { status: financeAttachmentValidation.status }
       );
     }
 

@@ -119,6 +119,120 @@ describe('TuturuuuUserClient', () => {
     vi.useRealTimers();
   });
 
+  it('does not expose the bearer token through default headers', () => {
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+    });
+
+    const headers = new Headers(client.getClientOptions().defaultHeaders);
+
+    expect(headers.get('authorization')).toBeNull();
+    expect(headers.get('x-sdk-client')).toBe('tuturuuu-cli');
+  });
+
+  it('does not attach or refresh CLI auth for cross-origin fetch requests', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-03T00:00:00.000Z'));
+
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ ok: true }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'ttr_app_old-access-token',
+      baseUrl: 'https://tuturuuu.com',
+      expiresAt: Math.floor(Date.now() / 1000) + 30,
+      fetch: fetchMock,
+      refreshToken: 'ttr_app_old-refresh-token',
+    });
+
+    await client.getClientOptions().fetch?.('https://example.com/collect', {
+      headers: {
+        Authorization: 'Bearer caller-provided-token',
+        'X-Request-ID': 'request-1',
+      },
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.com/collect',
+      expect.any(Object)
+    );
+    const requestHeaders = new Headers(fetchMock.mock.calls[0]?.[1]?.headers);
+    expect(requestHeaders.get('authorization')).toBeNull();
+    expect(requestHeaders.get('x-request-id')).toBe('request-1');
+
+    vi.useRealTimers();
+  });
+
+  it('does not refresh or retry cross-origin 401 responses', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-03T00:00:00.000Z'));
+
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response('Unauthorized', { status: 401 }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'ttr_app_old-access-token',
+      baseUrl: 'https://tuturuuu.com',
+      expiresAt: Math.floor(Date.now() / 1000) + 30,
+      fetch: fetchMock,
+      refreshToken: 'ttr_app_old-refresh-token',
+    });
+
+    const response = await client
+      .getClientOptions()
+      .fetch?.('https://example.com/unauthorized');
+
+    expect(response?.status).toBe(401);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    vi.useRealTimers();
+  });
+
+  it('still attaches refreshed CLI auth for relative platform requests', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-03T00:00:00.000Z'));
+
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({
+          session: {
+            access_token: 'ttr_app_fresh-access-token',
+            expires_at: Math.floor(Date.now() / 1000) + 3600,
+            expires_in: 3600,
+            refresh_expires_at: Math.floor(Date.now() / 1000) + 7_776_000,
+            refresh_token: 'ttr_app_fresh-refresh-token',
+            token_type: 'bearer',
+          },
+          sessionCreated: true,
+          valid: true,
+        })
+      )
+      .mockResolvedValueOnce(Response.json({ ok: true }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'ttr_app_old-access-token',
+      baseUrl: 'https://tuturuuu.com',
+      expiresAt: Math.floor(Date.now() / 1000) + 30,
+      fetch: fetchMock,
+      refreshToken: 'ttr_app_old-refresh-token',
+    });
+
+    await client.getClientOptions().fetch?.('/api/v1/workspaces');
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const requestHeaders = new Headers(fetchMock.mock.calls[1]?.[1]?.headers);
+    expect(requestHeaders.get('authorization')).toBe(
+      'Bearer ttr_app_fresh-access-token'
+    );
+
+    vi.useRealTimers();
+  });
+
   it('passes task-list status filters through task list requests', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()

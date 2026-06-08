@@ -1,7 +1,6 @@
-import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
+import { checkEducationWorkspaceAccess } from '@/lib/education/access';
 
 type Params = {
   wsId: string;
@@ -13,28 +12,8 @@ async function verifyValseaWorkspaceAccess(
   context: AuthorizedRequest,
   wsId: string
 ) {
-  const resolvedWsId = resolveWorkspaceId(wsId);
-  const membership = await verifyWorkspaceMembershipType({
-    supabase: context.supabase,
-    userId: context.user.id,
-    wsId: resolvedWsId,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { message: 'Could not verify workspace membership' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json(
-      { message: "You don't have access to this workspace" },
-      { status: 403 }
-    );
-  }
-
-  return null;
+  const access = await checkEducationWorkspaceAccess({ context, wsId });
+  return access.ok ? null : access.response;
 }
 
 async function readJsonResponse(response: Response) {

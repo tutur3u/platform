@@ -1,3 +1,4 @@
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Suspense } from 'react';
 import type { NavLink } from '@/components/navigation';
 import { UserNav } from './user-nav';
@@ -7,11 +8,13 @@ export function UserNavWrapper({
   renderCommandLauncher = true,
   renderSettingsDialog = true,
   navLinks = [],
+  user,
 }: {
   hideMetadata?: boolean;
   renderCommandLauncher?: boolean;
   renderSettingsDialog?: boolean;
   navLinks?: (NavLink | null)[];
+  user?: WorkspaceUser | null;
 }) {
   return (
     <Suspense
@@ -21,6 +24,7 @@ export function UserNavWrapper({
     >
       <UserNav
         hideMetadata={hideMetadata}
+        user={user}
         renderCommandLauncher={renderCommandLauncher}
         renderSettingsDialog={renderSettingsDialog}
         navLinks={navLinks}

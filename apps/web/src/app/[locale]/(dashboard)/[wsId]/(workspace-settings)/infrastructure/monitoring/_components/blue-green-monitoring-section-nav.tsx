@@ -9,6 +9,7 @@ import {
   Gauge,
   Logs,
   Radio,
+  Zap,
 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
@@ -83,10 +84,16 @@ export function BlueGreenMonitoringSectionNav({
       icon: Gauge,
       title: t('routes.resources.title'),
     },
+    {
+      description: t('routes.stress_tests.description'),
+      href: `${baseHref}/stress-tests`,
+      icon: Zap,
+      title: t('routes.stress_tests.title'),
+    },
   ];
 
   return (
-    <div className="grid grid-flow-dense gap-2 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
+    <div className="grid grid-flow-dense gap-2 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-9">
       {items.map((item) => {
         const Icon = item.icon;
         const isActive =

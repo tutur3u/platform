@@ -195,10 +195,12 @@ function groupNpcRuns(runs: ReturnType<typeof mapNpcRun>[]) {
 
 export async function listHiveResearchTimeline(input: {
   filters?: HiveResearchTimelineFilters;
+  isAdmin?: boolean;
   serverId: string;
 }) {
   await ensureHiveResearchSchema();
   const sql = getHiveSql();
+  const isAdmin = input.isAdmin === true;
   const limit = Math.min(Math.max(input.filters?.limit ?? 180, 1), 500);
   const sessionId = input.filters?.researchSessionId ?? null;
   const trigger = input.filters?.trigger ?? null;
@@ -247,8 +249,12 @@ export async function listHiveResearchTimeline(input: {
         runs.started_at, runs.finished_at, runs.created_at,
         runs.research_session_id, workflows.name as workflow_name
       from hive_workflow_runs runs
-      left join hive_workflows workflows on workflows.id = runs.workflow_id
+      join hive_workflows workflows
+        on workflows.id = runs.workflow_id
+        and workflows.server_id = runs.server_id
       where runs.server_id = ${input.serverId}
+        and workflows.archived_at is null
+        and (${isAdmin} or workflows.enabled = true)
         and (${sessionId}::uuid is null or runs.research_session_id = ${sessionId})
         and (${status}::text is null or runs.status = ${status})
         and (${actorUserId}::uuid is null or runs.actor_user_id = ${actorUserId})

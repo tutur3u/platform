@@ -1,14 +1,5 @@
 'use client';
 
-import {
-  listWorkspaceLabels,
-  listWorkspaceMembers,
-} from '@tuturuuu/internal-api';
-import {
-  getCurrentUserTask,
-  listWorkspaceTaskProjectsByIds,
-  resolveTaskProjectWorkspaceId,
-} from '@tuturuuu/internal-api/tasks';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -30,6 +21,20 @@ import type {
 import { useOptionalWorkspacePresenceContext } from './workspace-presence-provider';
 
 export type { PendingRelationship, PendingRelationshipType };
+
+type WorkspaceLabelSummary = {
+  id: string;
+  name: string | null;
+  color: string | null;
+  created_at: string | null;
+};
+
+type WorkspaceMemberSummary = {
+  id: string;
+  user_id?: string | null;
+  display_name?: string | null;
+  avatar_url?: string | null;
+};
 
 interface TaskDialogState {
   isOpen: boolean;
@@ -356,6 +361,10 @@ export function TaskDialogProvider({
           | undefined;
 
         try {
+          const { getCurrentUserTask } = await import(
+            '@tuturuuu/internal-api/tasks'
+          );
+
           response = await getCurrentUserTask(taskId, {
             fetch: (input, init) =>
               fetch(new URL(String(input), window.location.origin).toString(), {
@@ -526,6 +535,9 @@ export function TaskDialogProvider({
       assignee_ids?: string[];
       project_ids?: string[];
     }) => {
+      const { resolveTaskProjectWorkspaceId } = await import(
+        '@tuturuuu/internal-api/tasks'
+      );
       const workspaceId = await resolveTaskProjectWorkspaceId({
         boardId: draft.board_id ?? undefined,
         projectIds: draft.project_ids,
@@ -543,12 +555,15 @@ export function TaskDialogProvider({
         created_at: string;
       }> = [];
       if (draft.label_ids && draft.label_ids.length > 0) {
+        const { listWorkspaceLabels } = await import(
+          '@tuturuuu/internal-api/tasks'
+        );
         const data = await listWorkspaceLabels(workspaceId);
         labels = data
-          .filter((label: (typeof data)[number]) =>
+          .filter((label: WorkspaceLabelSummary) =>
             draft.label_ids?.includes(label.id)
           )
-          .map((l: (typeof data)[number]) => ({
+          .map((l: WorkspaceLabelSummary) => ({
             id: l.id,
             name: l.name ?? '',
             color: l.color ?? '',
@@ -564,12 +579,15 @@ export function TaskDialogProvider({
         avatar_url?: string | null;
       }> = [];
       if (draft.assignee_ids && draft.assignee_ids.length > 0) {
+        const { listWorkspaceMembers } = await import(
+          '@tuturuuu/internal-api/workspaces'
+        );
         const data = await listWorkspaceMembers(workspaceId);
         assignees = data
-          .filter((user: (typeof data)[number]) =>
+          .filter((user: WorkspaceMemberSummary) =>
             Boolean(user.user_id && draft.assignee_ids?.includes(user.user_id))
           )
-          .map((u: (typeof data)[number]) => ({
+          .map((u: WorkspaceMemberSummary) => ({
             id: u.id,
             user_id: u.user_id || u.id,
             display_name: u.display_name,
@@ -584,6 +602,9 @@ export function TaskDialogProvider({
         status: string | null;
       }> = [];
       if (draft.project_ids && draft.project_ids.length > 0) {
+        const { listWorkspaceTaskProjectsByIds } = await import(
+          '@tuturuuu/internal-api/tasks'
+        );
         const workspaceProjects = await listWorkspaceTaskProjectsByIds(
           workspaceId,
           draft.project_ids

@@ -1,26 +1,12 @@
-import {
-  getAppSessionClaimsFromRequest,
-  hasWebAppSessionTokenFromRequest,
-} from '@tuturuuu/auth/app-session';
-import { headers } from 'next/headers';
+import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { TeachHome } from '@/components/teach-home';
 
 export default async function TeachPage() {
-  const requestHeaders = await headers();
-  const appSession = getAppSessionClaimsFromRequest(
-    { headers: requestHeaders },
-    { targetApp: 'teach' }
-  );
-  const hasWebAppSession = hasWebAppSessionTokenFromRequest({
-    headers: requestHeaders,
-  });
-  const hasCoordinatedSession = Boolean(appSession && hasWebAppSession);
+  const appSession = await getSatelliteAppSession('teach');
 
   return (
     <TeachHome
-      dashboardHref={
-        hasCoordinatedSession ? '/dashboard' : '/login?next=/dashboard'
-      }
+      dashboardHref={appSession ? '/dashboard' : '/login?next=/dashboard'}
     />
   );
 }

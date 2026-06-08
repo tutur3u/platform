@@ -33,17 +33,17 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Setup Biome
-        uses: biomejs/setup-biome@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
         with:
-          version: 2.4.16
+          node-version: 24
 
       - name: Check Biome formatting
         id: format-check
         run: |
           # Capture biome format output and exit code
           set +e
-          biome_output=$(biome format . 2>&1)
+          biome_output=$(npx --yes @biomejs/biome@2.4.16 format . 2>&1)
           biome_exit_code=$?
           set -e
 
@@ -56,11 +56,23 @@ jobs:
           # Strip ANSI color codes first, then parse
           clean_output=$(echo "$biome_output" | sed 's/\x1b\[[0-9;]*m//g')
 
-          files_checked=$(echo "$clean_output" | grep "Checked [0-9]* files" | sed 's/Checked \([0-9]*\) files.*/\1/' || echo "0")
-          errors=$(echo "$clean_output" | grep -E "Found [0-9]+ error" | sed 's/Found \([0-9]*\) error.*/\1/' || echo "0")
-          warnings=$(echo "$clean_output" | grep -E "Found [0-9]+ warning" | sed 's/Found \([0-9]*\) warning.*/\1/' || echo "0")
-          infos=$(echo "$clean_output" | grep -E "Found [0-9]+ info" | sed 's/Found \([0-9]*\) info.*/\1/' || echo "0")
+          extract_count() {
+            printf '%s\n' "$clean_output" | sed -nE "$1" | tail -n 1
+          }
+
+          files_checked=$(extract_count 's/.*Checked ([0-9]+) files?.*/\1/p')
+          files_checked=${files_checked:-0}
+          errors=$(extract_count 's/.*\b([0-9]+) errors?\b.*/\1/p')
+          errors=${errors:-0}
+          warnings=$(extract_count 's/.*\b([0-9]+) warnings?\b.*/\1/p')
+          warnings=${warnings:-0}
+          infos=$(extract_count 's/.*\b([0-9]+) infos?\b.*/\1/p')
+          infos=${infos:-0}
           total_issues=$((errors + warnings + infos))
+          if [ "$total_issues" -eq 0 ]; then
+            total_from_summary=$(extract_count 's/.*Found ([0-9]+) (formatting |lint )?issues?.*/\1/p')
+            total_issues=${total_from_summary:-0}
+          fi
 
           echo "files_checked=$files_checked" >> $GITHUB_OUTPUT
           echo "errors=$errors" >> $GITHUB_OUTPUT
@@ -75,9 +87,12 @@ jobs:
             echo "has_issues=false" >> $GITHUB_OUTPUT
           fi
 
-          # Fail if there are any issues
-          if [ "$total_issues" -gt 0 ]; then
-            echo "::error::Found $total_issues formatting issue(s): $errors error(s), $warnings warning(s), $infos info(s)"
+          # Fail if there are any issues or Biome exits with an unparsed error.
+          if [ "$total_issues" -gt 0 ] || [ "$biome_exit_code" -ne 0 ]; then
+            echo "::group::Biome format output"
+            printf '%s\n' "$biome_output"
+            echo "::endgroup::"
+            echo "::error::Found $total_issues formatting issue(s): $errors error(s), $warnings warning(s), $infos info(s); Biome exit code $biome_exit_code"
             exit 1
           fi
 
@@ -104,17 +119,17 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Setup Biome
-        uses: biomejs/setup-biome@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
         with:
-          version: 2.4.16
+          node-version: 24
 
       - name: Check Biome linting
         id: lint-check
         run: |
           # Capture biome lint output and exit code
           set +e
-          biome_output=$(biome lint . 2>&1)
+          biome_output=$(npx --yes @biomejs/biome@2.4.16 lint . 2>&1)
           biome_exit_code=$?
           set -e
 
@@ -127,11 +142,23 @@ jobs:
           # Strip ANSI color codes first, then parse
           clean_output=$(echo "$biome_output" | sed 's/\x1b\[[0-9;]*m//g')
 
-          files_checked=$(echo "$clean_output" | grep "Checked [0-9]* files" | sed 's/Checked \([0-9]*\) files.*/\1/' || echo "0")
-          errors=$(echo "$clean_output" | grep -E "Found [0-9]+ error" | sed 's/Found \([0-9]*\) error.*/\1/' || echo "0")
-          warnings=$(echo "$clean_output" | grep -E "Found [0-9]+ warning" | sed 's/Found \([0-9]*\) warning.*/\1/' || echo "0")
-          infos=$(echo "$clean_output" | grep -E "Found [0-9]+ info" | sed 's/Found \([0-9]*\) info.*/\1/' || echo "0")
+          extract_count() {
+            printf '%s\n' "$clean_output" | sed -nE "$1" | tail -n 1
+          }
+
+          files_checked=$(extract_count 's/.*Checked ([0-9]+) files?.*/\1/p')
+          files_checked=${files_checked:-0}
+          errors=$(extract_count 's/.*\b([0-9]+) errors?\b.*/\1/p')
+          errors=${errors:-0}
+          warnings=$(extract_count 's/.*\b([0-9]+) warnings?\b.*/\1/p')
+          warnings=${warnings:-0}
+          infos=$(extract_count 's/.*\b([0-9]+) infos?\b.*/\1/p')
+          infos=${infos:-0}
           total_issues=$((errors + warnings + infos))
+          if [ "$total_issues" -eq 0 ]; then
+            total_from_summary=$(extract_count 's/.*Found ([0-9]+) (formatting |lint )?issues?.*/\1/p')
+            total_issues=${total_from_summary:-0}
+          fi
 
           echo "files_checked=$files_checked" >> $GITHUB_OUTPUT
           echo "errors=$errors" >> $GITHUB_OUTPUT
@@ -146,9 +173,12 @@ jobs:
             echo "has_issues=false" >> $GITHUB_OUTPUT
           fi
 
-          # Fail if there are any issues
-          if [ "$total_issues" -gt 0 ]; then
-            echo "::error::Found $total_issues lint issue(s): $errors error(s), $warnings warning(s), $infos info(s)"
+          # Fail if there are any issues or Biome exits with an unparsed error.
+          if [ "$total_issues" -gt 0 ] || [ "$biome_exit_code" -ne 0 ]; then
+            echo "::group::Biome lint output"
+            printf '%s\n' "$biome_output"
+            echo "::endgroup::"
+            echo "::error::Found $total_issues lint issue(s): $errors error(s), $warnings warning(s), $infos info(s); Biome exit code $biome_exit_code"
             exit 1
           fi
 
@@ -167,13 +197,13 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
-      - name: Setup Biome
-        uses: biomejs/setup-biome@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
         with:
-          version: 2.4.16
+          node-version: 24
 
       - name: Apply Biome format
-        run: biome format --write
+        run: npx --yes @biomejs/biome@2.4.16 format --write .
 
       - name: Check for changes
         id: git-check

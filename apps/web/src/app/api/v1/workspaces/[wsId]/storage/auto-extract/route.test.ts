@@ -1,3 +1,4 @@
+import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -108,6 +109,7 @@ describe('storage auto-extract callback route', () => {
         'x-amz-acl': 'private',
       },
       path: 'archive/Build/game.data',
+      provider: 'r2',
       signedUrl: 'https://storage.example.com/upload',
       token: undefined,
     });
@@ -146,6 +148,7 @@ describe('storage auto-extract callback route', () => {
         'x-amz-acl': 'private',
       },
       path: 'archive/Build/game.data',
+      provider: 'r2',
       signedUrl: 'https://storage.example.com/upload',
     });
     expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
@@ -158,6 +161,40 @@ describe('storage auto-extract callback route', () => {
         upsert: true,
       }
     );
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+  });
+
+  it('rejects oversized direct file callback bodies with valid tokens', async () => {
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/storage/auto-extract/route'
+    );
+
+    const response = await POST(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/storage/auto-extract',
+        {
+          body: 'x'.repeat(MAX_PAYLOAD_SIZE + 1),
+          headers: {
+            Authorization: 'Bearer token-1',
+            'Content-Type': 'text/plain',
+            'x-drive-auto-extract-operation': 'file',
+            'x-drive-auto-extract-path': 'archive/large.txt',
+          },
+          method: 'POST',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Payload Too Large',
+      message: 'Extracted file exceeds direct callback body limit',
+    });
     expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
   });
 });

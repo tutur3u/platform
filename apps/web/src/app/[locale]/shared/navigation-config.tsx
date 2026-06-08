@@ -20,7 +20,7 @@ import {
   Users,
   Utensils,
   Wallet,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 import type { ReactNode } from 'react';
 import { DEV_MODE } from '@/constants/common';
@@ -209,6 +209,12 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       href: '/branding',
       label: t('common.branding'),
       description: t('common.branding-description'),
+      icon: <Paintbrush className="h-4 w-4" />,
+    },
+    {
+      href: '/ui',
+      label: t('common.ui'),
+      description: t('common.ui-description'),
       icon: <Paintbrush className="h-4 w-4" />,
     },
     {

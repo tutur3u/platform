@@ -25,6 +25,7 @@ export default async function WorkspaceTransactionsPage({
       wsId={context.wsId}
       currency={context.currency}
       permissions={context.permissions}
+      permissionRequestUser={context.user}
       openCreateDialog={sp.create === 'transaction'}
       showTransactionTypeFilter
       workspace={context.workspace}

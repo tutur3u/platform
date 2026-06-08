@@ -1,9 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { convertYjsStateToJsonContent } from '../yjs-helper';
+import {
+  convertJsonContentToYjsState,
+  convertYjsStateToJsonContent,
+} from '../yjs-helper';
 import {
   deriveTaskDescriptionYjsState,
+  isValidTaskDescriptionYjsState,
   taskDescriptionSchema,
 } from '../yjs-task-description';
 
@@ -281,6 +285,22 @@ describe('deriveTaskDescriptionYjsState', () => {
 
     expect(state).not.toBeNull();
     expect(state?.length ?? 0).toBeGreaterThan(0);
+  });
+
+  it('rejects Yjs state that decodes to unsupported editor nodes', () => {
+    const malformedState = convertJsonContentToYjsState({
+      type: 'doc',
+      content: [
+        {
+          type: 'unsupportedNode',
+          content: [{ type: 'text', text: 'Invalid node' }],
+        },
+      ],
+    });
+
+    expect(isValidTaskDescriptionYjsState(Array.from(malformedState))).toBe(
+      false
+    );
   });
 
   it('handles mixed imageResize and legacy image nodes in same document', () => {

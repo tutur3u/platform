@@ -1,17 +1,63 @@
 import type { Subscription } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
 
-type MockSingleResult = Promise<{
+type MockProductLookupResult = Promise<{
+  data:
+    | {
+        pricing_model: 'seat_based' | 'fixed';
+        price_per_seat: number | null;
+      }[]
+    | null;
+  error: { message: string } | null;
+}>;
+
+type MockProductUpsertResult = Promise<{ error: null }>;
+
+type MockSubscriptionUpsertResult = Promise<{ error: null }>;
+
+const seatBasedProduct = {
+  pricing_model: 'seat_based' as const,
+  price_per_seat: 1000,
+};
+
+const fixedProduct = {
+  pricing_model: 'fixed' as const,
+  price_per_seat: null,
+};
+
+const embeddedSeatBasedPolarProduct = {
+  id: 'prod_123',
+  name: 'Pro',
+  description: 'Pro subscription',
+  recurringInterval: 'month',
+  isArchived: false,
+  metadata: { product_tier: 'PRO' },
+  prices: [
+    {
+      amountType: 'seat_based',
+      priceAmount: null,
+      seatTiers: {
+        minimumSeats: 1,
+        maximumSeats: null,
+        tiers: [{ pricePerSeat: 1000 }],
+      },
+    },
+  ],
+};
+
+type MockProductLookup = () => MockProductLookupResult;
+type MockProductUpsert = () => MockProductUpsertResult;
+type MockSubscriptionUpsert = () => MockSubscriptionUpsertResult;
+
+type MockCreditPackLookup = () => Promise<{
   data: {
     pricing_model: 'seat_based' | 'fixed';
     price_per_seat: number | null;
   } | null;
   error: null;
 }>;
-
-type MockUpsertResult = Promise<{ error: null }>;
 
 // Mock dependencies that cause issues in test environment
 vi.mock('@tuturuuu/payment/polar/next', () => ({
@@ -23,13 +69,14 @@ vi.mock('@tuturuuu/payment/polar/server', () => ({
 }));
 
 // Mock Supabase admin client
-const mockSingle = vi.fn<() => MockSingleResult>();
-const mockUpsert = vi.fn<() => MockUpsertResult>();
+const mockProductLookup = vi.fn<MockProductLookup>();
+const mockProductUpsert = vi.fn<MockProductUpsert>();
+const mockUpsert = vi.fn<MockSubscriptionUpsert>();
 
-const mockCreditPackMaybeSingle = vi.fn(() =>
+const mockCreditPackMaybeSingle = vi.fn<MockCreditPackLookup>(() =>
   Promise.resolve({ data: null, error: null })
 );
-const mockCreditPackUpsert = vi.fn<() => MockUpsertResult>();
+const mockCreditPackUpsert = vi.fn<MockSubscriptionUpsert>();
 
 const mockSupabase = {
   from: vi.fn().mockImplementation((table) => {
@@ -56,14 +103,14 @@ const mockSupabase = {
     return {
       from: vi.fn().mockImplementation((table) => {
         if (table === 'workspace_subscription_products') {
-          const chainable = {
+          return {
             select: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
-                single: mockSingle,
+                limit: mockProductLookup,
               }),
             }),
+            upsert: mockProductUpsert,
           };
-          return chainable;
         }
         return {};
       }),
@@ -90,13 +137,24 @@ describe('syncSubscriptionToDatabase', () => {
     modifiedAt: new Date('2026-01-01T00:00:00Z'),
   } as unknown as Subscription;
 
-  it('should identify seat-based pricing and save seat count', async () => {
-    // Mock product to be seat-based
-    mockSingle.mockResolvedValue({
-      data: { pricing_model: 'seat_based', price_per_seat: 1000 },
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCreditPackMaybeSingle.mockResolvedValue({ data: null, error: null });
+    mockCreditPackUpsert.mockResolvedValue({ error: null });
+    mockProductLookup.mockResolvedValue({
+      data: [seatBasedProduct],
       error: null,
     });
+    mockProductUpsert.mockResolvedValue({ error: null });
     mockUpsert.mockResolvedValue({ error: null });
+  });
+
+  it('should identify seat-based pricing and save seat count', async () => {
+    // Mock product to be seat-based
+    mockProductLookup.mockResolvedValue({
+      data: [seatBasedProduct],
+      error: null,
+    });
 
     const result = await syncSubscriptionToDatabase(
       mockSupabase,
@@ -137,11 +195,10 @@ describe('syncSubscriptionToDatabase', () => {
 
   it('should handle fixed pricing correctly', async () => {
     // Mock product to be fixed price
-    mockSingle.mockResolvedValue({
-      data: { pricing_model: 'fixed', price_per_seat: null },
+    mockProductLookup.mockResolvedValue({
+      data: [fixedProduct],
       error: null,
     });
-    mockUpsert.mockResolvedValue({ error: null });
 
     const result = await syncSubscriptionToDatabase(mockSupabase, {
       ...mockSubscription,
@@ -185,11 +242,10 @@ describe('syncSubscriptionToDatabase', () => {
   });
 
   it('should handle date conversion correctly', async () => {
-    mockSingle.mockResolvedValue({
-      data: { pricing_model: 'seat_based', price_per_seat: 1000 },
+    mockProductLookup.mockResolvedValue({
+      data: [seatBasedProduct],
       error: null,
     });
-    mockUpsert.mockResolvedValue({ error: null });
 
     const subscriptionWithStringDates = {
       ...mockSubscription,
@@ -218,6 +274,60 @@ describe('syncSubscriptionToDatabase', () => {
     );
   });
 
+  it('should sync the embedded Polar product when subscription product rows are stale', async () => {
+    mockProductLookup.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+
+    const result = await syncSubscriptionToDatabase(mockSupabase, {
+      ...mockSubscription,
+      product: embeddedSeatBasedPolarProduct,
+    } as unknown as Subscription);
+
+    expect(result.isSeatBased).toBe(true);
+    expect(result.subscriptionData!.seat_count).toBe(5);
+    expect(mockProductUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          id: 'prod_123',
+          tier: 'PRO',
+          pricing_model: 'seat_based',
+          price_per_seat: 1000,
+        }),
+      ],
+      {
+        onConflict: 'id',
+        ignoreDuplicates: false,
+      }
+    );
+    expect(mockUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          product_id: 'prod_123',
+          seat_count: 5,
+        }),
+      ],
+      {
+        onConflict: 'polar_subscription_id',
+        ignoreDuplicates: false,
+      }
+    );
+  });
+
+  it('should report ambiguous subscription product rows explicitly', async () => {
+    mockProductLookup.mockResolvedValue({
+      data: [seatBasedProduct, fixedProduct],
+      error: null,
+    });
+
+    await expect(
+      syncSubscriptionToDatabase(mockSupabase, mockSubscription)
+    ).rejects.toThrow(
+      'Subscription product lookup error for prod_123: multiple product rows matched'
+    );
+  });
+
   it('should sync AI credit pack purchases', async () => {
     const creditPackSubscription = {
       ...mockSubscription,
@@ -231,12 +341,6 @@ describe('syncSubscriptionToDatabase', () => {
       },
       currentPeriodStart: new Date('2026-03-01T00:00:00Z'),
     } as unknown as Subscription;
-
-    mockCreditPackMaybeSingle.mockResolvedValue({
-      data: null,
-      error: null,
-    });
-    mockCreditPackUpsert.mockResolvedValue({ error: null });
 
     const result = await syncSubscriptionToDatabase(
       mockSupabase,

@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
 import {
@@ -24,6 +25,11 @@ import {
   Unlock,
   X,
 } from '@tuturuuu/icons';
+import {
+  type CalendarSourceInput,
+  type CalendarSourceOption,
+  getWorkspaceCalendarDefaultSource,
+} from '@tuturuuu/internal-api';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -48,6 +54,13 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import {
@@ -61,7 +74,7 @@ import dayjs from 'dayjs';
 import ts from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import Image from 'next/image';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
@@ -88,6 +101,53 @@ const AIFormSchema = z.object({
     .default(() => Intl.DateTimeFormat().resolvedOptions().timeZone),
   smart_scheduling: z.boolean().default(true),
 });
+
+function sourceInputFromOption(
+  option?: CalendarSourceOption | null
+): CalendarSourceInput | undefined {
+  if (!option) return undefined;
+
+  if (option.provider === 'tuturuuu') {
+    return {
+      provider: 'tuturuuu',
+      workspaceCalendarId: option.workspaceCalendarId,
+    };
+  }
+
+  return {
+    provider: option.provider,
+    connectionId: option.connectionId,
+  };
+}
+
+function findEventSourceOption(
+  options: CalendarSourceOption[],
+  event: Partial<CalendarEvent>
+) {
+  if (event.provider === 'google' || event.provider === 'microsoft') {
+    return options.find((option) => {
+      if (option.provider === 'tuturuuu') return false;
+      if (option.provider !== event.provider) return false;
+      if (
+        event.source_calendar_id &&
+        option.workspaceCalendarId === event.source_calendar_id
+      ) {
+        return true;
+      }
+
+      return (
+        option.externalCalendarId ===
+        (event.external_calendar_id ?? event.google_calendar_id)
+      );
+    });
+  }
+
+  return options.find(
+    (option) =>
+      option.provider === 'tuturuuu' &&
+      option.workspaceCalendarId === event.source_calendar_id
+  );
+}
 
 export function EventModal() {
   const { toast } = useToast();
@@ -118,6 +178,23 @@ export function EventModal() {
     location: '',
     locked: false,
   });
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+
+  const wsId = activeEvent?.ws_id || event.ws_id;
+  const { data: sourceData } = useQuery({
+    queryKey: ['calendar-default-source', wsId],
+    enabled: !!wsId,
+    queryFn: () => getWorkspaceCalendarDefaultSource(wsId as string),
+    staleTime: 30_000,
+  });
+  const sourceOptions = useMemo(
+    () => sourceData?.options ?? [],
+    [sourceData?.options]
+  );
+  const selectedSourceOption =
+    sourceOptions.find((option) => option.id === selectedSourceId) ??
+    sourceData?.defaultSource ??
+    sourceOptions[0];
 
   // State for AI event generation
   const [generatedEvents, setGeneratedEvents] =
@@ -239,10 +316,19 @@ export function EventModal() {
         location: activeEvent.location || '',
         locked: activeEvent.locked || false,
         ws_id: activeEvent.ws_id,
+        provider: activeEvent.provider,
+        source_calendar_id: activeEvent.source_calendar_id,
+        external_calendar_id: activeEvent.external_calendar_id,
+        external_event_id: activeEvent.external_event_id,
         google_event_id: activeEvent.google_event_id,
+        google_calendar_id: activeEvent.google_calendar_id,
       };
 
       setEvent(cleanEventData);
+      const sourceOption = findEventSourceOption(sourceOptions, cleanEventData);
+      setSelectedSourceId(
+        sourceOption?.id ?? sourceData?.defaultSource?.id ?? null
+      );
 
       // Only check for all-day if this is an existing event (not a new one)
       if (activeEvent.id !== 'new') {
@@ -270,9 +356,11 @@ export function EventModal() {
         color: 'BLUE' as SupportedColor,
         location: '',
         locked: false,
+        ws_id: '',
       };
 
       setEvent(newEvent);
+      setSelectedSourceId(sourceData?.defaultSource?.id ?? null);
       setIsAllDay(false);
 
       // Reset AI form
@@ -282,7 +370,15 @@ export function EventModal() {
 
     // Clear any error messages
     setDateError(null);
-  }, [activeEvent, checkForOverlaps, aiForm, defaultNewEventTab, isEditing]);
+  }, [
+    activeEvent,
+    checkForOverlaps,
+    aiForm,
+    defaultNewEventTab,
+    isEditing,
+    sourceData?.defaultSource?.id,
+    sourceOptions,
+  ]);
 
   // Handle manual event save
   const handleManualSave = async () => {
@@ -309,6 +405,7 @@ export function EventModal() {
         color: event.color || 'BLUE',
         location: event.location || '',
         locked: event.locked || false,
+        source: sourceInputFromOption(selectedSourceOption),
       };
 
       if (activeEvent?.id === 'new') {
@@ -413,6 +510,7 @@ export function EventModal() {
             color: eventData.color || 'BLUE',
             location: eventData.location || '',
             locked: eventData.locked || false,
+            source: sourceInputFromOption(selectedSourceOption),
           };
 
           const savedEvent = await addEvent(calendarEvent);
@@ -926,6 +1024,52 @@ export function EventModal() {
                       onEnter={handleManualSave}
                       onChange={(value) => setEvent({ ...event, title: value })}
                     />
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label
+                          htmlFor="event-source"
+                          className="font-medium text-sm"
+                        >
+                          Calendar source
+                        </label>
+                        {selectedSourceOption && (
+                          <Badge variant="secondary" className="capitalize">
+                            {selectedSourceOption.provider}
+                          </Badge>
+                        )}
+                      </div>
+                      <Select
+                        value={selectedSourceId ?? undefined}
+                        onValueChange={(value) => setSelectedSourceId(value)}
+                        disabled={sourceOptions.length === 0 || isSaving}
+                      >
+                        <SelectTrigger id="event-source" className="w-full">
+                          <SelectValue placeholder="Choose calendar source" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sourceOptions.map((option) => (
+                            <SelectItem key={option.id} value={option.id}>
+                              <div className="flex min-w-0 items-center gap-2">
+                                <span
+                                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                  style={{
+                                    backgroundColor: option.color ?? undefined,
+                                  }}
+                                />
+                                <span className="truncate">{option.label}</span>
+                                {option.provider !== 'tuturuuu' &&
+                                  option.accountEmail && (
+                                    <span className="text-muted-foreground text-xs">
+                                      {option.accountEmail}
+                                    </span>
+                                  )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
                     {/* Date and Time Selection */}
                     <div className="space-y-2">

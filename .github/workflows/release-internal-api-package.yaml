@@ -1,0 +1,274 @@
+name: Release @tuturuuu/internal-api package
+
+on:
+  push:
+    branches: [production]
+    paths:
+      - "packages/internal-api/package.json"
+      - ".github/workflows/release-internal-api-package.yaml"
+  workflow_dispatch:
+
+jobs:
+  reject-non-production-ref:
+    if: github.ref != 'refs/heads/production'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Reject non-production release ref
+        run: |
+          echo "::error::@tuturuuu/internal-api releases can only run from refs/heads/production. Current ref: ${GITHUB_REF}."
+          exit 1
+
+  check-ci:
+    if: github.ref == 'refs/heads/production'
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: release-internal-api-package.yaml
+
+  check-version-bump:
+    needs: [check-ci]
+    if: github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - id: check
+        run: echo "should_release=true" >> $GITHUB_OUTPUT
+
+  build:
+    needs: check-version-bump
+    if: github.ref == 'refs/heads/production' && needs.check-version-bump.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Build workspace dependencies
+        run: bun run --filter @tuturuuu/types build
+
+      - name: Build package
+        working-directory: packages/internal-api
+        run: bun run build
+
+      - name: Run tests
+        working-directory: packages/internal-api
+        run: bun run test
+
+  prepare-publish-npm:
+    needs: [build]
+    if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    outputs:
+      package_name: ${{ steps.version-check.outputs.package_name }}
+      package_version: ${{ steps.version-check.outputs.package_version }}
+      should_publish: ${{ steps.version-check.outputs.should_publish }}
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Check whether the version already exists on npm
+        id: version-check
+        working-directory: packages/internal-api
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "package_name=${PACKAGE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "package_version=${PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
+
+          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "${PACKAGE_NAME}@${PACKAGE_VERSION} already exists on npm; skipping publish."
+          else
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for npm workspace dependencies
+        if: steps.version-check.outputs.should_publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/internal-api
+
+      - name: Build workspace dependencies
+        if: steps.version-check.outputs.should_publish == 'true'
+        run: bun run --filter @tuturuuu/types build
+
+      - name: Build package
+        if: steps.version-check.outputs.should_publish == 'true'
+        working-directory: packages/internal-api
+        run: bun run build
+
+      - name: Prepare npm package manifest
+        if: steps.version-check.outputs.should_publish == 'true'
+        run: node scripts/ci/prepare-npm-package-manifest.js packages/internal-api
+
+      - name: Pack publish artifact
+        if: steps.version-check.outputs.should_publish == 'true'
+        working-directory: packages/internal-api
+        run: |
+          mkdir -p "$RUNNER_TEMP/tuturuuu-internal-api-package"
+          npm pack --pack-destination "$RUNNER_TEMP/tuturuuu-internal-api-package"
+
+      - name: Upload publish artifact
+        if: steps.version-check.outputs.should_publish == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          if-no-files-found: error
+          name: tuturuuu-internal-api-npm-package
+          path: ${{ runner.temp }}/tuturuuu-internal-api-package/*.tgz
+          retention-days: 1
+
+  publish-npm:
+    needs: [prepare-publish-npm]
+    if: github.ref == 'refs/heads/production' && needs.prepare-publish-npm.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    environment: internal-api-release-production
+
+    # Trusted publishing requires the workflow to be able to mint an OIDC
+    # token. Keep dependency installation, tool upgrades, package builds, and
+    # lifecycle scripts out of this job so only the final artifact publish runs
+    # with npm publish authority.
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Check npm trusted publishing support
+        run: |
+          NPM_VERSION=$(npm --version)
+          node - "$NPM_VERSION" <<'NODE'
+          const version = process.argv[2];
+          const [major = 0, minor = 0, patch = 0] = version
+            .split('.')
+            .map((value) => Number.parseInt(value, 10));
+          const supportsTrustedPublishing =
+            major > 11 ||
+            (major === 11 && (minor > 5 || (minor === 5 && patch >= 1)));
+
+          if (!supportsTrustedPublishing) {
+            throw new Error(
+              `npm ${version} does not support trusted publishing. ` +
+                'Use Node 24 with npm 11.5.1+ instead of installing npm ' +
+                'inside the OIDC publish job.'
+            );
+          }
+
+          console.log(`npm ${version} supports trusted publishing.`);
+          NODE
+
+      - name: Download publish artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: tuturuuu-internal-api-npm-package
+          path: internal-api-package
+
+      - name: Verify package artifact
+        id: artifact
+        env:
+          EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
+          EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
+        run: |
+          PACKAGE_TARBALL=$(find internal-api-package -maxdepth 1 -name '*.tgz' -type f | sort)
+          TARBALL_COUNT=$(printf '%s\n' "$PACKAGE_TARBALL" | sed '/^$/d' | wc -l | tr -d ' ')
+
+          if [ "$TARBALL_COUNT" != "1" ]; then
+            echo "Expected exactly one package tarball, found ${TARBALL_COUNT}." >&2
+            exit 1
+          fi
+
+          node - "$PACKAGE_TARBALL" <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const tarball = process.argv[2];
+          const manifest = JSON.parse(
+            execFileSync('tar', ['-xOf', tarball, 'package/package.json'], {
+              encoding: 'utf8',
+            })
+          );
+
+          if (manifest.name !== process.env.EXPECTED_PACKAGE_NAME) {
+            throw new Error(
+              `Artifact package name mismatch: expected ` +
+                `${process.env.EXPECTED_PACKAGE_NAME}, got ${manifest.name}`
+            );
+          }
+
+          if (manifest.version !== process.env.EXPECTED_PACKAGE_VERSION) {
+            throw new Error(
+              `Artifact package version mismatch: expected ` +
+                `${process.env.EXPECTED_PACKAGE_VERSION}, got ${manifest.version}`
+            );
+          }
+
+          console.log(`Verified ${manifest.name}@${manifest.version}.`);
+          NODE
+
+          echo "path=./${PACKAGE_TARBALL}" >> "$GITHUB_OUTPUT"
+
+      # npm CLI auto-detects the GitHub Actions OIDC environment and
+      # exchanges it for a short-lived publish token, so no registry token
+      # secret is set.
+      - name: Publish package
+        env:
+          EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
+          EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
+        run: |
+          set -o pipefail
+          PUBLISH_LOG="${RUNNER_TEMP}/npm-publish.log"
+
+          if ! npm publish "${{ steps.artifact.outputs.path }}" --ignore-scripts 2>&1 | tee "$PUBLISH_LOG"; then
+            if grep -Eiq 'E404|404 Not Found|not have permission|ENEEDAUTH' "$PUBLISH_LOG"; then
+              echo "::error::npm could not publish ${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION}. Ensure the npm package exists when npm requires first-publish setup, package access is public, and the trusted publisher is configured for this repository, workflow filename, and environment."
+            fi
+
+            exit 1
+          fi
+
+      - name: Wait for npm publication
+        env:
+          EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
+          EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
+        run: |
+          for attempt in {1..60}; do
+            if npm view "${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION}" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
+              echo "${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION} is visible on npm."
+              exit 0
+            fi
+
+            echo "Waiting for ${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION} on npm (${attempt}/60)."
+            sleep 10
+          done
+
+          echo "::error::${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION} was published but did not become visible on npm before timeout."
+          exit 1

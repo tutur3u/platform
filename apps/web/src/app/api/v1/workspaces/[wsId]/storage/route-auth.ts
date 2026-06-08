@@ -1,3 +1,5 @@
+import type { AppSessionTargetApp } from '@tuturuuu/auth/app-session';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -11,6 +13,7 @@ type StoragePermissions = Awaited<ReturnType<typeof getPermissions>>;
 export interface WorkspaceStorageRouteAuthContext {
   normalizedWsId: string;
   permissions: NonNullable<StoragePermissions>;
+  supabase: TypedSupabaseClient;
   user: {
     email?: string | null;
     id: string;
@@ -18,9 +21,19 @@ export interface WorkspaceStorageRouteAuthContext {
   userId: string;
 }
 
+export const FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS = [
+  'drive',
+  'finance',
+] as const satisfies readonly AppSessionTargetApp[];
+
+export interface WorkspaceStorageRouteAuthOptions {
+  appSessionTargets?: AppSessionTargetApp | readonly AppSessionTargetApp[];
+}
+
 export async function resolveWorkspaceStorageRouteAuth(
   request: Request,
-  wsId: string
+  wsId: string,
+  options: WorkspaceStorageRouteAuthOptions = {}
 ): Promise<
   | {
       ok: true;
@@ -32,7 +45,9 @@ export async function resolveWorkspaceStorageRouteAuth(
     }
 > {
   const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: true,
+    allowAppSessionAuth: {
+      targetApp: options.appSessionTargets ?? 'drive',
+    },
   });
 
   if (!auth.ok) {
@@ -60,6 +75,7 @@ export async function resolveWorkspaceStorageRouteAuth(
     context: {
       normalizedWsId,
       permissions,
+      supabase: auth.supabase,
       user: auth.user,
       userId: auth.user.id,
     },

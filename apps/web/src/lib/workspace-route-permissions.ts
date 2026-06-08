@@ -1,5 +1,18 @@
 import type { PermissionId } from '@tuturuuu/types';
 
+const EDUCATION_ROUTE_PERMISSIONS = [
+  'manage_users',
+  'view_user_groups',
+  'view_user_groups_reports',
+  'view_user_groups_scores',
+  'view_user_groups_posts',
+] satisfies PermissionId[];
+
+const EDUCATION_ATTEMPTS_ROUTE_PERMISSIONS = [
+  'manage_users',
+  'view_user_groups_reports',
+] satisfies PermissionId[];
+
 export function getWorkspaceRoutePermissionRequirements(
   routeSegments: string[]
 ): PermissionId[] | null {
@@ -38,7 +51,9 @@ export function getWorkspaceRoutePermissionRequirements(
     case 'drive':
       return ['manage_drive'];
     case 'education':
-      return ['ai_lab'];
+      return subSection === 'attempts'
+        ? EDUCATION_ATTEMPTS_ROUTE_PERMISSIONS
+        : EDUCATION_ROUTE_PERMISSIONS;
     case 'epm':
     case 'external-projects':
       return ['manage_external_projects', 'publish_external_projects'];

@@ -4,6 +4,7 @@ import { GET } from './route';
 
 const mocks = vi.hoisted(() => ({
   listHiveResearchTimeline: vi.fn(),
+  requireHiveAccess: vi.fn(),
 }));
 
 vi.mock('@/lib/hive/research-sessions', () => ({
@@ -12,10 +13,7 @@ vi.mock('@/lib/hive/research-sessions', () => ({
 }));
 
 vi.mock('../../../_shared', () => ({
-  requireHiveAccess: vi.fn().mockResolvedValue({
-    access: { user: { id: 'user-1' } },
-    ok: true,
-  }),
+  requireHiveAccess: (...args: unknown[]) => mocks.requireHiveAccess(...args),
   withHiveRoute: (
     _request: NextRequest,
     _route: string,
@@ -26,6 +24,10 @@ vi.mock('../../../_shared', () => ({
 describe('Hive timeline route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.requireHiveAccess.mockResolvedValue({
+      access: { isAdmin: false, user: { id: 'user-1' } },
+      ok: true,
+    });
     mocks.listHiveResearchTimeline.mockResolvedValue({
       items: [
         {
@@ -67,6 +69,7 @@ describe('Hive timeline route', () => {
         trigger: 'manual',
         workflowId: 'workflow-1',
       },
+      isAdmin: false,
       serverId: 'server-1',
     });
   });

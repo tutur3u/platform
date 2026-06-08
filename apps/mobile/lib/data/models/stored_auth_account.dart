@@ -81,17 +81,33 @@ class StoredAuthAccount extends Equatable {
   }
 
   static const Object _sentinel = Object();
+  static const String _redactedSecret = '[redacted]';
 
   @override
   List<Object?> get props => [
     id,
-    refreshToken,
     lastActiveAt,
     addedAt,
-    sessionJson,
     email,
     displayName,
     avatarUrl,
     lastWorkspaceId,
   ];
+
+  @override
+  String toString() {
+    final redactedSessionJson = sessionJson == null ? null : _redactedSecret;
+
+    return 'StoredAuthAccount('
+        'id: $id, '
+        'lastActiveAt: $lastActiveAt, '
+        'addedAt: $addedAt, '
+        'sessionJson: $redactedSessionJson, '
+        'email: $email, '
+        'displayName: $displayName, '
+        'avatarUrl: $avatarUrl, '
+        'lastWorkspaceId: $lastWorkspaceId, '
+        'refreshToken: $_redactedSecret'
+        ')';
+  }
 }

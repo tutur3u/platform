@@ -1,7 +1,7 @@
 ---
 title: "Web Docker Deployment"
 description: "Run the web app in Docker for development, production, and blue/green self-hosted rollout."
-updatedAt: "2026-05-28"
+updatedAt: "2026-06-04"
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -144,8 +144,12 @@ This is the operational guide for the Docker-based `apps/web` runtime.
    Turnstile/dev-session,
 2. starts and resets the Dockerized local Supabase stack,
 3. boots `apps/web` through the production blue/green Docker flow,
-4. runs Playwright against `http://localhost:7803`, and
-5. tears down Docker web plus local Supabase unless `E2E_KEEP_DOCKER_STACK=1`.
+4. starts Portless on unprivileged HTTPS port `1355` and registers the
+   `https://tuturuuu.localhost:1355` route only after the direct Docker proxy is
+   healthy,
+5. waits for `https://tuturuuu.localhost:1355/login`, then runs Playwright
+   against that shared-cookie origin, and
+6. tears down Docker web plus local Supabase unless `E2E_KEEP_DOCKER_STACK=1`.
 
 Normal teardown passes `--volumes --rmi local` to Docker Compose and then removes
 custom image tags for the current `ttr-e2e-*` project, so per-run containers,
@@ -189,6 +193,17 @@ loading cached Supabase Docker images. Keep that cleanup ahead of the cache load
 running `docker system prune -af --volumes` after cached images are loaded would
 remove the images the shard is about to use, while skipping the cleanup can leave
 too little space for the web Docker image dependency layer.
+When an E2E shard fails, the runner prints diagnostics before teardown while the
+containers still exist. The job log includes the primary error, blue/green stage
+state, the Playwright `.last-run.json` file when available, Docker containers
+for the shard Compose project, production Compose status, recent logs for web,
+Hive, proxy, and support services, the Portless route list, a probe against the
+configured E2E `BASE_URL`, and `bun sb:status`. The workflow also has a
+failure-only diagnostic step after `Run Playwright shard` as a backstop, so the
+job output should show the failing service or stage even when Playwright report
+artifacts are incomplete. The workflow uploads diagnostics, Playwright reports,
+and `apps/web/test-results` for every non-cancelled shard so traces and
+screenshots stay available when the job output is too short.
 
 The Playwright global setup refuses non-local web origins and refuses Supabase
 origins outside `localhost`, `127.0.0.1`, or `host.docker.internal` on port
@@ -197,12 +212,20 @@ project name, but all shards still use ephemeral local Supabase rather than any
 cloud Supabase project. Because the Docker web app runs with
 `NODE_ENV=production`, the generated env file and Playwright process env also
 pin `WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`, and `NEXT_PUBLIC_APP_URL` to
-`http://localhost:7803`; otherwise central-auth redirects can escape to the
-real `tuturuuu.com` origin during setup. The auth bypass is guarded by the
+the local shared-cookie origin; otherwise central-auth redirects can escape to
+the real `tuturuuu.com` origin during setup. The auth bypass is guarded by the
 local E2E web origin, the incoming request `Host` / forwarded host / `Origin`
 headers, and both the public and server-side Supabase origins before
 server-side auth code honors it, so it must not be used as a general production
 configuration.
+
+The blue/green proxy and `apps/web` runtime both allow 64 KB request headers.
+That headroom lets the browser reach `/~recover-browser-state` or the normal
+login flow when duplicated Supabase cookies make the default header limit too
+small. If a request is still too large for the proxy to forward, nginx handles
+431/494 directly with `Clear-Site-Data` and redirects to
+`/login?browserStateReset=1`; this recovery must stay in the proxy because
+Next.js middleware cannot run after nginx rejects the header.
 
 The blue/green nginx proxy must forward the original `Host` header with its
 port intact via `$http_host`. Local E2E auth setup posts to
@@ -279,15 +302,19 @@ Blue/green deploy does this:
 3. Builds the target web image through Docker Buildx Bake using Compose-derived
    targets, then stops/removes only the old target web lane and starts the fresh
    replacement.
-4. Promotes web immediately after its healthcheck and proxy request check pass.
-   The deploy writes `tmp/docker-web/prod/active-color`, updates
-   `tmp/docker-web/prod/target-state.json`, reloads `web-proxy`, and records the
-   `web-build` / `web-promote` stages before Hive migration starts.
-5. Builds and runs Hive separately. `hive-db-migrate` gates only
-   `hive-blue`/`hive-green` and `hive-realtime`; a migration failure marks
-   `hive-migrate` failed and leaves the already promoted web color serving.
+4. Starts the target web lane after its healthcheck passes and records
+   `web-promote` as a staged target in
+   `tmp/docker-web/prod/target-state.json`. The deploy does not reload
+   `web-proxy` or write `tmp/docker-web/prod/active-color` yet.
+5. Builds and runs Hive separately. `hive-db-migrate`, the target
+   `hive-blue`/`hive-green` service, `hive-realtime`, and the Hive proxy check
+   must pass before web can be publicly promoted. A migration or Hive health
+   failure marks the Hive stage failed, leaves `active-color` on the previous
+   web lane, and keeps the staged target web lane out of public routing.
 6. Refreshes support services (`backend`, `meet-realtime`, `markitdown`,
    `storage-unzip-proxy`, and `web-cron-runner`) after web/Hive target work.
+   A support build or health failure also blocks `web-proxy` reload and leaves
+   the previous active web lane serving.
    Their build step is scoped:
    ordinary web commits build only `web-blue` or `web-green`, while Hive and
    helper images rebuild only when their source, Dockerfile, compose wiring, or
@@ -305,14 +332,14 @@ Blue/green deploy does this:
    promotions instead of re-running `compose up` against the public `:7803`
    listener. If the running proxy is missing required host ports or its
    container image no longer matches the resolved Compose image, the deploy
-   defers the forced proxy recreate until after the replacement lane is healthy.
-9. Validates the generated nginx config with `nginx -t`, then reloads nginx
-   inside the existing or freshly recreated proxy only after the new color is
-   healthy.
+   defers the forced proxy recreate until after the target web, Hive, and
+   support gates have passed.
+9. Validates the generated nginx config with `nginx -t`, then reloads or
+   recreates the proxy only after every staging gate has passed.
 10. Immediately verifies the proxy can serve the internal
-    `/__platform/drain-status` endpoint through the newly promoted color before
-    marking the new color active. This avoids false deployment failures from
-    public API middleware or rate limits.
+    `/__platform/drain-status` endpoint through the newly routed color before
+    writing `active-color` and marking the staged web target healthy. This
+    avoids false deployment failures from public API middleware or rate limits.
 11. Polls an internal drain-status endpoint on the old color and waits until it
     has no in-flight HTTP work left before demoting it to standby. This keeps
     long-running server actions, route handlers, and other open requests from
@@ -425,7 +452,14 @@ The default model preloads at container startup. Set
 first-request latency. On shared hosts, keep
 `PRONUNCIATION_ASSESSOR_MAX_LOADED_MODELS=1` and tune
 `PRONUNCIATION_ASSESSOR_IDLE_TTL_SECONDS` so idle models are unloaded before
-they hold GPU or RAM capacity unnecessarily.
+they hold GPU or RAM capacity unnecessarily. The helper rejects uploads over
+`PRONUNCIATION_ASSESSOR_MAX_UPLOAD_BYTES` (default: 10 MB) and rejects decoded
+audio longer than `PRONUNCIATION_ASSESSOR_MAX_AUDIO_SECONDS` (default: 120
+seconds) before local model inference. Leave
+`PRONUNCIATION_ASSESSOR_ADMIN_TOKEN` unset unless operators need to call
+`POST /models/load` or `POST /models/unload`; those model-control endpoints are
+disabled without the token and require `Authorization: Bearer <token>` when it
+is configured.
 
 CMS WebGL package uploads also use the `storage-unzip-proxy`, but they are a
 first-class CMS upload path rather than generic Drive automation. They require a
@@ -439,26 +473,39 @@ the web app proxy before reaching Supabase Storage or R2. The CMS client reports
 per-file upload progress during the signed upload, then calls the WebGL finalize
 route so the backend handles extraction and artifact-map persistence.
 
-The unzip proxy fans out one backend callback per extracted folder or file. File
-callbacks send the extracted bytes to the web backend, and the backend writes to
-Supabase Storage or R2 server-side. The web proxy intentionally lets the
-bearer-token protected storage auto-extract and CMS WebGL extract callback
-routes pass through without anonymous mutation rate limiting; the callback
-routes still validate the shared unzip token before creating folders or writing
-files. The proxy defaults allow ZIP downloads up to 1 GiB and extracted output
-up to 1 GiB. Operators can tune those caps with
+The unzip proxy fans out backend callbacks for extracted folders and asks the
+callback route for per-file upload URLs. Before uploading extracted bytes, the
+proxy verifies the callback response names a trusted provider and that the
+signed upload URL belongs to hosted Supabase, Cloudflare R2, or an exact
+operator-configured upload origin. It forwards only content type and generated
+bearer-token headers to the upload URL. The storage auto-extract and CMS WebGL
+extract callback routes still pass through the central API proxy guard before
+they validate the shared unzip token, so malformed, rate-limited, or oversized
+callback requests are rejected at the same cheap boundary as other API
+mutations. Direct `file` callbacks are legacy/small-file only and enforce the
+same 512 KiB body budget locally; large extracted files must use the
+`file-upload-url` callback flow. The proxy currently buffers the downloaded
+archive and each extracted file in memory, so the default caps stay
+conservative: 100 MiB ZIP downloads, 50 MiB per extracted file, and 250 MiB
+total extracted output.
+Operators can tune those caps with
 `DRIVE_UNZIP_PROXY_MAX_ARCHIVE_BYTES`,
 `DRIVE_UNZIP_PROXY_MAX_ENTRY_BYTES`,
 `DRIVE_UNZIP_PROXY_MAX_TOTAL_EXTRACTED_BYTES`, and
 `DRIVE_UNZIP_PROXY_MAX_ARCHIVE_ENTRIES`; workspace Drive quota must still be
-large enough for the uploaded archive and extracted files.
+large enough for the uploaded archive and extracted files. Set
+`DRIVE_UNZIP_PROXY_ALLOWED_UPLOAD_ORIGINS` for self-hosted Supabase or custom
+R2/S3-compatible origins, and reserve
+`DRIVE_UNZIP_PROXY_ALLOW_LOCAL_UPLOAD_ORIGINS=true` for local Supabase testing.
 
 The MarkItDown endpoint is the conversion path for uploaded workspace files.
 Do not route YouTube summaries through MarkItDown or Google Search. Google
 Gemini chat requests attach one public or unlisted YouTube URL directly as a
 native `video/mp4` file input, so the model can summarize the video through the
 provider-supported video path. Playlist/query parameters are stripped before
-the URL is attached so each request references only one video.
+the URL is attached so each request references only one video. Any legacy direct
+URL conversion path that still reaches MarkItDown must reserve and commit the
+fixed MarkItDown credit charge before the sidecar request is sent.
 
 Interrupted Docker Compose recreates can leave temporary container names such
 as `<hex>_platform-markitdown-1`. The Docker helper treats those as recoverable
@@ -511,8 +558,10 @@ The local runtime state lives in:
 These files are intentionally local-only and safe to regenerate.
 Infrastructure Monitoring → Deployments reads `target-state.json`, the watcher
 deployment history, and the latest deployment stage handoff together, so
-operators can see a partial promotion such as web serving a new commit while
-Hive remains blocked on migration. Watcher-managed deployments persist the
+operators can see staged target work such as a prepared web color while Hive or
+support gates still block public promotion. `active-color` and the generated
+proxy config remain on the previous serving web lane until the final
+`proxy-reload` stage passes. Watcher-managed deployments persist the
 `web-build`, `web-promote`, `hive-migrate`, `hive-promote`,
 `support-refresh`, and `proxy-reload` stage results into deployment history.
 Modern rows that were recorded without a stage array are inferred from final
@@ -1061,6 +1110,11 @@ instead of host ports in the Cloudflare service URL. Keep `cms.tuturuuu.com` and
 other satellite app hostnames on Vercel unless those apps are explicitly moved
 into this Docker stack.
 
+Production compose binds host-published web, Hive, Meet, and Redis ports to
+`127.0.0.1` only. Do not remove that loopback prefix during blue/green
+migration; public exposure should go through Cloudflare Tunnel or another
+controlled frontend, not the staged Docker host ports.
+
 When blue/green is deployed with `--with-cloudflared`, the watcher receives
 `DOCKER_WEB_WITH_CLOUDFLARED=1` so future auto-deploys keep the tunnel profile
 active and do not remove the `cloudflared` container as an orphan.
@@ -1244,14 +1298,17 @@ Dashboard details:
   inventory without mounting the Docker socket into `apps/web`.
 - The request archive view computes route summaries, status totals, RSC counts,
   and error totals across the selected timeframe instead of only the visible
-  page. The default timeframe is seven days, and the web API keeps a short
-  in-process aggregate cache keyed by timeframe plus telemetry log file stats so
-  pagination stays responsive while new proxy logs invalidate the cache.
+  page. The default timeframe is seven days, the API rejects unbounded or
+  oversized windows, and operators can query at most 30 days of retained request
+  logs at a time. The web API keeps a short in-process aggregate cache keyed by
+  bounded timeframe plus telemetry log file stats, but the cache stores only
+  aggregate analytics so request rows are not retained in memory between page
+  reads.
 - Drive ZIP extraction does not stream extracted file bytes back through the web
   app proxy. The unzip worker requests a per-entry signed upload URL from the
-  callback route and uploads extracted files directly to the active storage
-  backend, which avoids nginx body-size limits for large WebGL artifacts while
-  keeping folder creation and auth checks in the backend callback.
+  callback route and uploads extracted files directly to trusted storage
+  origins only, which avoids nginx body-size limits for large WebGL artifacts
+  while keeping folder creation and auth checks in the backend callback.
 - Hive is promoted with the web blue/green color: `hive-blue` and `hive-green`
   are routed from `hive.tuturuuu.com`, and `hive-realtime` serves `/realtime` with
   `HIVE_REALTIME_TOKEN_SECRET`, `HIVE_REALTIME_URL`, and
@@ -1264,29 +1321,31 @@ Dashboard details:
   Optional local LLM support runs behind the `hive-ollama` profile and is
   disabled unless operators enable the profile and Hive settings enable the
   exact `gemma4` model.
-  Production compose publishes **`7814:7814`** from `web-proxy`, not from a
-  direct Hive container, so Cloudflare tunnel traffic to `localhost:7814` always
-  reaches the currently promoted Hive color.
-  Deploys verify that the running `web-proxy` container has both host bindings
-  (`7803` and `7814`) and that its running image matches the resolved Compose
-  image before reusing it; if an older proxy was created before Hive moved
-  behind blue/green or before the nginx image pin changed, the next deploy
-  force-recreates the proxy so the host-level Cloudflare Tunnel route can reach
-  Hive on the expected proxy runtime.
+  Production compose publishes **`127.0.0.1:7814:7814`** from `web-proxy`, not
+  from a direct Hive container, so host-local or Cloudflare tunnel traffic to
+  `localhost:7814` always reaches the currently promoted Hive color without
+  exposing staged migration ports on every host interface.
+  Deploys verify that the running `web-proxy` container has the required
+  loopback host bindings (`7803`, `7814`, and `7816`) and that its running image
+  matches the resolved Compose image before reusing it; if an older proxy was
+  created before Hive moved behind blue/green or before the nginx image pin
+  changed, the next deploy force-recreates the proxy so the host-level
+  Cloudflare Tunnel route can reach Hive on the expected proxy runtime.
   The Hive color services use the same Supabase env source as `apps/web`:
   runtime env files are shared, and production image builds mount the `web_env`
   BuildKit secret so hidden-locale auth pages can prerender with the platform
   Supabase URL.
-  **Deploy coordination:** `scripts/docker-web/blue-green.js` still builds every
-  prod service in one pass, but runtime services come up before proxy handoff:
-  first the target `web-{color}`, backend, MarkItDown, storage-unzip-proxy,
-  `web-cron-runner`, and (when enabled) Redis, then `hive-{color}` and
-  `hive-realtime`. If `web-proxy` or `cloudflared` must be bootstrapped or
-  recreated for host-port changes, they start only after the target web and Hive
+  **Deploy coordination:** `scripts/docker-web/blue-green.js` still scopes prod
+  builds by changed service group, but runtime promotion happens in staged
+  order: first the target `web-{color}`, then `hive-{color}` and
+  `hive-realtime`, then refreshed support services such as backend,
+  MarkItDown, storage-unzip-proxy, `web-cron-runner`, and optional Redis-backed
+  helpers. If `web-proxy` or `cloudflared` must be bootstrapped or recreated for
+  host-port changes, they start only after target web, Hive, and support
   services are healthy, so `hive.tuturuuu.com` is not exposed with an empty
-  `hive_app_upstream`. Promotion waits for the target web color, target Hive
-  color, Hive realtime, and the first-phase support services before switching
-  nginx.
+  `hive_app_upstream` and web is not publicly switched before dependent gates
+  finish. Promotion waits for the final proxy route check before writing
+  `active-color`.
 - Every service owned by `docker-compose.web.prod.yml` should declare a
   healthcheck, either directly in compose or in the image. The resources
   inventory treats an `Up` container without Docker health metadata as healthy
@@ -1544,15 +1603,19 @@ Dashboard details:
 
 ## Browser-State 502 Recovery
 
-If some normal browsers still return Cloudflare `502 Host Error` while
-incognito works, treat it as stale client state or an auth-cookie/header-size
-problem before assuming the tunnel itself is broken.
-For Hive, the production nginx proxy serves
-`https://hive.tuturuuu.com/~recover-browser-state` directly with
-`Clear-Site-Data` so the reset path still works when stale cookies are too large
-for the Next.js app server to accept. Hive's `next start` command also runs with
-`NODE_OPTIONS=--max-http-header-size=65536` so ordinary Supabase auth-cookie
-chunking has more headroom before the app server returns `431`.
+If some normal browsers still return Cloudflare `502 Host Error`, `431`, or
+Chrome `ERR_INVALID_RESPONSE` while incognito works, treat it as stale client
+state or an auth-cookie/header-size problem before assuming the tunnel itself is
+broken. Normal browser-state recovery should use the app route: GET is a
+no-store confirmation page only, and the destructive `Clear-Site-Data` response
+happens only after a same-origin POST.
+
+Oversized request headers are different: the request may never reach Next.js.
+The production `web-proxy` therefore gives web, Hive, and Meet 64 KB request
+header headroom, maps Nginx `431`/`494` oversized-header failures to a local
+browser-state recovery response, and the Docker web app server starts with
+`--max-http-header-size=65536` so ordinary Supabase auth-cookie chunking has
+matching headroom after proxying.
 
 How to recognize each failure mode:
 
@@ -1569,11 +1632,13 @@ Recovery path:
 - Send affected users to the recovery route on the affected origin:
   `https://tuturuuu.com/~recover-browser-state` for the main app, or
   `https://hive.tuturuuu.com/~recover-browser-state` for Hive.
-- That route is public and bypasses auth/onboarding middleware.
-- It responds with `Clear-Site-Data: "cache", "cookies", "storage",
-"executionContexts"` and explicitly expires all Supabase auth cookie variants
-  for the current host before redirecting the browser back to
-  `/login?browserStateReset=1`.
+- That route is public and bypasses auth/onboarding middleware. When the
+  request can reach the app, use the confirmation form so the cookie-clearing
+  POST explicitly expires Supabase auth cookie variants for the current host.
+- If the browser is already sending too many stale cookies, the proxy catches
+  the `431`/`494` before Next.js and returns
+  `Clear-Site-Data: "cache", "cookies", "storage", "executionContexts"` while
+  redirecting the browser back to `/login?browserStateReset=1`.
 
 Operational signals:
 

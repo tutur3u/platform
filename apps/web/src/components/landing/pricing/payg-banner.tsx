@@ -1,6 +1,6 @@
 'use client';
 
-import { Rocket, Sparkles, Zap } from '@tuturuuu/icons';
+import { Rocket, Sparkles, Zap } from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 

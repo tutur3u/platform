@@ -3,10 +3,18 @@
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
+import dynamic from 'next/dynamic';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import { useCallback } from 'react';
-import { SettingsDialog } from '@/components/settings/settings-dialog';
 import { useSettingsDialogShortcut } from '@/components/settings/use-settings-dialog-shortcut';
+
+const SettingsDialog = dynamic(
+  () =>
+    import('@/components/settings/settings-dialog').then(
+      (module) => module.SettingsDialog
+    ),
+  { ssr: false }
+);
 
 interface SettingsDialogHostProps {
   wsId?: string;

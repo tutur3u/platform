@@ -38,6 +38,7 @@ import {
   TaskDueDateMenu,
   TaskMoveMenu,
   TaskPriorityMenu,
+  TaskSchedulingMenu,
 } from '../boards/boardId/menus';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { useTasksHref } from '../tasks-route-context';
@@ -87,6 +88,7 @@ export function TaskRowActionsMenu({
 }: TaskRowActionsMenuProps) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
+  const taskBoardT = useTranslations();
   const tasksHref = useTasksHref();
   const { openTask } = useTaskDialog();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -284,6 +286,37 @@ export function TaskRowActionsMenu({
                 nextWeek: t('next_week'),
                 customDate: t('custom_date'),
                 removeDueDate: t('remove_due_date'),
+              }}
+            />
+          )}
+          {taskList?.status !== 'documents' && (
+            <TaskSchedulingMenu
+              task={task}
+              boardId={boardId}
+              isLoading={isLoading}
+              onUpdate={onUpdate}
+              onClose={() => setMenuOpen(false)}
+              translations={{
+                schedule: taskBoardT('ws-task-boards.dialog.schedule'),
+                estimatedDuration: taskBoardT(
+                  'ws-task-boards.dialog.estimated_duration'
+                ),
+                h: taskBoardT('ws-task-boards.dialog.h'),
+                m: taskBoardT('ws-task-boards.dialog.m'),
+                splittable: taskBoardT('ws-task-boards.dialog.splittable'),
+                minSplit: taskBoardT('ws-task-boards.dialog.min_split'),
+                maxSplit: taskBoardT('ws-task-boards.dialog.max_split'),
+                hourType: taskBoardT('ws-task-boards.dialog.hour_type'),
+                workHours: taskBoardT('ws-task-boards.dialog.work_hours'),
+                meetingHours: taskBoardT('ws-task-boards.dialog.meeting_hours'),
+                personalHours: taskBoardT(
+                  'ws-task-boards.dialog.personal_hours'
+                ),
+                autoSchedule: taskBoardT('ws-task-boards.dialog.auto_schedule'),
+                save: t('save'),
+                clear: t('clear'),
+                saved: t('saved'),
+                error: t('error'),
               }}
             />
           )}

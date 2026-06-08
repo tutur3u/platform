@@ -5,6 +5,10 @@ import {
   type Message as SdkMessage,
   type SentMessage as SdkSentMessage,
 } from '@tuturuuu/ai/chat-sdk';
+import {
+  createZaloPersonalAdapter,
+  type ZaloPersonalAdapter,
+} from '@tuturuuu/ai/chat-sdk/zalo-personal';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
 import {
   checkAiCredits,
@@ -138,6 +142,16 @@ function adapterConfig({
   };
 }
 
+function isPersonalZaloChannel(channel: AiAgentChannelConfig) {
+  return channel.adapter === 'zalo' && channel.zaloAccountMode === 'personal';
+}
+
+function getZaloProviderAccountId(channel: AiAgentChannelConfig) {
+  return isPersonalZaloChannel(channel)
+    ? channel.zaloPersonalOwnId || channel.id
+    : channel.zaloOfficialAccountId || channel.id;
+}
+
 async function resolveMappedDiscordUser({
   channel,
   externalUserId,
@@ -181,7 +195,7 @@ async function resolveMappedPlatformUser({
       ? await resolveMappedDiscordUser({ channel, externalUserId })
       : await resolveZaloIdentity({
           externalUserId,
-          providerAccountId: channel.zaloOfficialAccountId || channel.id,
+          providerAccountId: getZaloProviderAccountId(channel),
           workspaceId: channel.workspaceId,
         });
 
@@ -458,13 +472,18 @@ Only use the configured task and calendar tools. If a tool returns a permission 
   return await thread.post(result.fullStream);
 }
 
-export async function createAiAgentChatRuntime({
+type AiAgentRuntimeBundle = {
+  chat: Awaited<ReturnType<typeof createChatSdkRuntime>>;
+  personalZaloAdapter: ZaloPersonalAdapter | null;
+};
+
+async function createAiAgentChatRuntimeBundle({
   agent,
   channel,
 }: {
   agent: AiAgentDefinition;
   channel: AiAgentChannelConfig;
-}) {
+}): Promise<AiAgentRuntimeBundle> {
   const secrets = await getChannelSecretValues({
     agentId: agent.id,
     channelId: channel.id,
@@ -488,9 +507,22 @@ export async function createAiAgentChatRuntime({
     throw new Error(`${AI_AGENT_REDIS_SECRET} is required outside dev mode.`);
   }
 
+  const personalZaloAdapter = isPersonalZaloChannel(channel)
+    ? createZaloPersonalAdapter({
+        channelId: channel.id,
+        cookieJson: secrets.personalCookieJson ?? '',
+        displayName: channel.displayName,
+        imei: secrets.personalImei ?? '',
+        language: 'vi',
+        ownId: channel.zaloPersonalOwnId ?? undefined,
+        userAgent: secrets.personalUserAgent ?? '',
+      })
+    : null;
+
   const chat = await createChatSdkRuntime({
     adapters: {
-      [channel.adapter]: adapterConfig({ channel, secrets }),
+      [channel.adapter]:
+        personalZaloAdapter ?? adapterConfig({ channel, secrets }),
     },
     concurrency: 'queue',
     dedupeTtlMs: 600_000,
@@ -561,7 +593,38 @@ export async function createAiAgentChatRuntime({
   });
   chat.onSubscribedMessage(handler);
 
+  return { chat, personalZaloAdapter };
+}
+
+export async function createAiAgentChatRuntime({
+  agent,
+  channel,
+}: {
+  agent: AiAgentDefinition;
+  channel: AiAgentChannelConfig;
+}) {
+  const { chat } = await createAiAgentChatRuntimeBundle({ agent, channel });
+
   return chat;
+}
+
+export async function createAiAgentPersonalZaloRuntime({
+  agent,
+  channel,
+}: {
+  agent: AiAgentDefinition;
+  channel: AiAgentChannelConfig;
+}) {
+  const bundle = await createAiAgentChatRuntimeBundle({ agent, channel });
+
+  if (!bundle.personalZaloAdapter) {
+    throw new Error('ai_agent_zalo_personal_channel_required');
+  }
+
+  return {
+    adapter: bundle.personalZaloAdapter,
+    chat: bundle.chat,
+  };
 }
 
 export function assertWebhookAdapter(value: string): AiAgentAdapter {

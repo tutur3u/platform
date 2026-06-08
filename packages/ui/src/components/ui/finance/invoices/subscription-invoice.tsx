@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Calculator, Loader2, Plus } from '@tuturuuu/icons';
+import { AlertTriangle, Calculator, Loader2, Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -20,12 +20,20 @@ import {
 } from 'react';
 import { useDebounce } from '../../../../hooks/use-debounce';
 import { useFinanceHref } from '../finance-route-context';
+import {
+  type FinancePermissionRequestUser,
+  FinancePermissionWarningDialog,
+} from '../shared/finance-permission-warning-dialog';
 import { useFinanceConfidentialVisibility } from '../shared/use-finance-confidential-visibility';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
 import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
 import { InvoiceContentEditor } from './components/invoice-content-editor';
 import { InvoiceCustomerSelectCard } from './components/invoice-customer-select-card';
 import { InvoicePaymentSettings } from './components/invoice-payment-settings';
+import {
+  InvoiceProductsPermissionWarning,
+  isPermissionRequestError,
+} from './components/invoice-products-permission-warning';
 import { SubscriptionAttendanceSummary } from './components/subscription-attendance-summary';
 import { SubscriptionGroupSelector } from './components/subscription-group-selector';
 import { CreatePromotionDialog } from './create-promotion-dialog';
@@ -62,6 +70,7 @@ import {
   getLinkedFinanceCategorySelection,
   getMonthStartDate,
   getSubscriptionAttendanceDisplayData,
+  isSubscriptionMonthPaidForGroup,
 } from './utils';
 
 interface Props {
@@ -75,6 +84,10 @@ interface Props {
   defaultCurrency?: 'VND' | 'USD';
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
+  canReadInvoiceProducts?: boolean;
+  canReadInvoiceProductStock?: boolean;
+  canReadGroupLinkedProducts?: boolean;
+  permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 
 export function SubscriptionInvoice({
@@ -88,6 +101,10 @@ export function SubscriptionInvoice({
   defaultCurrency = 'USD',
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
+  canReadInvoiceProducts = true,
+  canReadInvoiceProductStock = true,
+  canReadGroupLinkedProducts = true,
+  permissionRequestUser,
 }: Props) {
   const t = useTranslations();
   const locale = useLocale();
@@ -143,7 +160,11 @@ export function SubscriptionInvoice({
     isFetching: isFetchingCustomers,
     isFetchingNextPage: isFetchingMoreCustomers,
   } = useInvoiceCustomerSearch(wsId, debouncedCustomerSearch, selectedUserId);
-  const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
+  const {
+    data: products = [],
+    error: productsError,
+    isLoading: productsLoading,
+  } = useProducts(wsId);
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
   const { data: linkedPromotions = [] } = useUserLinkedPromotions(
@@ -175,6 +196,18 @@ export function SubscriptionInvoice({
     canChangeFinanceWallets,
     canSetFinanceWalletsOnCreate,
   });
+  const walletPermissionWarning =
+    isWalletSelectionLocked && permissionRequestUser ? (
+      <FinancePermissionWarningDialog
+        missingPermissions={['set_finance_wallets_on_create']}
+        user={permissionRequestUser}
+        trigger={
+          <Button type="button" variant="outline" size="sm">
+            {t('finance-permission-warning.open_request')}
+          </Button>
+        }
+      />
+    ) : null;
 
   useEffect(() => {
     if (defaultWalletId) {
@@ -211,8 +244,11 @@ export function SubscriptionInvoice({
     wsId,
     selectedUserId
   );
-  const { data: groupProducts = [], isLoading: groupProductsLoading } =
-    useMultiGroupProducts(wsId, selectedGroupIds);
+  const {
+    data: groupProducts = [],
+    error: groupProductsError,
+    isLoading: groupProductsLoading,
+  } = useMultiGroupProducts(wsId, selectedGroupIds);
 
   const { data: useAttendanceBased = true } = useInvoiceAttendanceConfig(wsId);
 
@@ -286,15 +322,15 @@ export function SubscriptionInvoice({
 
     // A month is considered paid ONLY if ALL selected groups have paid for it.
     // If ANY selected group has not paid, we allow creating an invoice.
-    return selectedGroupIds.every((groupId) => {
-      const latestInvoice = latestSubscriptionInvoices.find(
-        (inv) => inv.group_id === groupId
-      );
-      if (!latestInvoice?.valid_until) return false;
+    if (Number.isNaN(selectedMonthStart.getTime())) return false;
 
-      const validUntilMonthStart = getMonthStartDate(latestInvoice.valid_until);
-      return selectedMonthStart < validUntilMonthStart;
-    });
+    return selectedGroupIds.every((groupId) =>
+      isSubscriptionMonthPaidForGroup(
+        groupId,
+        effectiveSelectedMonth,
+        latestSubscriptionInvoices
+      )
+    );
   }, [effectiveSelectedMonth, latestSubscriptionInvoices, selectedGroupIds]);
 
   const billableAttendance = useMemo(
@@ -392,6 +428,41 @@ export function SubscriptionInvoice({
     promotionsLoading ||
     walletsLoading ||
     categoriesLoading;
+
+  const invoiceProductMissingPermissions = useMemo(() => {
+    const missingPermissions = new Set<string>();
+
+    if (!canReadInvoiceProducts || isPermissionRequestError(productsError)) {
+      missingPermissions.add('create_inventory_sales');
+      missingPermissions.add('view_inventory_catalog');
+    }
+
+    if (!canReadInvoiceProductStock) {
+      missingPermissions.add('create_inventory_sales');
+      missingPermissions.add('view_inventory_stock');
+    }
+
+    if (
+      !canReadGroupLinkedProducts ||
+      isPermissionRequestError(groupProductsError)
+    ) {
+      missingPermissions.add('create_invoices');
+      missingPermissions.add('view_user_groups');
+    }
+
+    if (isPermissionRequestError(subscriptionInvoiceContextError)) {
+      missingPermissions.add('create_invoices');
+    }
+
+    return [...missingPermissions];
+  }, [
+    canReadGroupLinkedProducts,
+    canReadInvoiceProductStock,
+    canReadInvoiceProducts,
+    groupProductsError,
+    productsError,
+    subscriptionInvoiceContextError,
+  ]);
 
   const referralDiscountMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -820,22 +891,45 @@ export function SubscriptionInvoice({
         )}
 
         {selectedGroupIds.length > 0 && !isSelectedMonthPaid && !isBlocked && (
-          <ProductSelection
-            products={products}
-            selectedProducts={subscriptionSelectedProducts}
-            onSelectedProductsChange={setSubscriptionSelectedProducts}
-            currency={defaultCurrency}
-            groupLinkedProducts={(groupProducts || [])
-              .map((item) => ({
-                productId: item.workspace_products?.id,
-                groupName:
-                  item.workspace_user_groups?.name || t('ws-invoices.no_name'),
-              }))
-              .filter(
-                (item): item is { productId: string; groupName: string } =>
-                  !!item.productId
+          <>
+            <ProductSelection
+              products={products}
+              selectedProducts={subscriptionSelectedProducts}
+              onSelectedProductsChange={setSubscriptionSelectedProducts}
+              currency={defaultCurrency}
+              groupLinkedProducts={(groupProducts || [])
+                .map((item) => ({
+                  productId: item.workspace_products?.id,
+                  groupName:
+                    item.workspace_user_groups?.name ||
+                    t('ws-invoices.no_name'),
+                }))
+                .filter(
+                  (item): item is { productId: string; groupName: string } =>
+                    !!item.productId
+                )}
+            />
+            <InvoiceProductsPermissionWarning
+              missingPermissions={invoiceProductMissingPermissions}
+              user={permissionRequestUser}
+            />
+            {!isLoadingSubscriptionData &&
+              subscriptionSelectedProducts.length === 0 && (
+                <div className="rounded-lg border border-dynamic-yellow/30 bg-dynamic-yellow/10 p-3 text-dynamic-yellow text-sm">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div>
+                      <p className="font-medium">
+                        {t('ws-invoices.month_unpaid')}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {t('ws-invoices.no_products_to_invoice')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
-          />
+          </>
         )}
 
         <InvoiceContentEditor
@@ -890,6 +984,7 @@ export function SubscriptionInvoice({
                       onWalletChange={setSelectedWalletId}
                       onCategoryChange={setSelectedCategoryId}
                       walletDisabled={isWalletSelectionLocked}
+                      walletPermissionWarning={walletPermissionWarning}
                       showPromotion
                       currency={defaultCurrency}
                       promotionsAllowed={true}

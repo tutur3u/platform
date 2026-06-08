@@ -1,7 +1,9 @@
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { listAiAgentExternalThreadConversations } from '@/lib/ai-agents/external-chat-mirror';
-import { withSessionAuth } from '@/lib/api-auth';
+import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
 import {
   listAiChatConversations,
   listRootAiAgentDiscoveryConversations,
@@ -76,6 +78,25 @@ async function listNativeChatConversations({
   }
 }
 
+async function canIncludeAiAgentAdminMetadata({
+  actorUser,
+  wsId,
+}: {
+  actorUser: SessionAuthContext['user'];
+  wsId: string;
+}) {
+  if (wsId !== ROOT_WORKSPACE_ID) {
+    return false;
+  }
+
+  const permissions = await getPermissions({
+    user: actorUser,
+    wsId: ROOT_WORKSPACE_ID,
+  });
+
+  return Boolean(permissions?.permissions.includes('manage_workspace_secrets'));
+}
+
 function isMissingArchivedChatListRpc(error: unknown) {
   const rpcError = error as { code?: string; message?: string };
   const message = rpcError.message ?? '';
@@ -122,6 +143,11 @@ export const GET = withSessionAuth<RouteParams>(
     const pagination = readPagination(url);
 
     try {
+      const includeAiAgentAdminMetadata = await canIncludeAiAgentAdminMetadata({
+        actorUser: auth.user,
+        wsId: context.context.normalizedWsId,
+      });
+
       const [
         conversations,
         aiAgentConversations,
@@ -139,6 +165,7 @@ export const GET = withSessionAuth<RouteParams>(
         }),
         archived === 'active'
           ? listRootAiAgentDiscoveryConversations({
+              includeAdminMetadata: includeAiAgentAdminMetadata,
               wsId: context.context.normalizedWsId,
             })
           : [],

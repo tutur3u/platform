@@ -65,6 +65,7 @@ ttr login
 ttr upgrade
 ttr --version
 ttr whoami
+ttr box setup
 ttr workspaces
 ttr workspaces use
 ttr boards
@@ -104,6 +105,14 @@ upgrade` to run `bun i -g tuturuuu`. Use
 `--no-update-check` for a single command or set `TUTURUUU_DISABLE_UPDATE_CHECK=1`
 to disable this notification.
 
+Use `ttr box setup` on a self-hosted devbox runner before offloading heavy
+workflows. It clones or reuses `https://github.com/tutur3u/platform.git` at
+`~/Documents/tuturuuu`, runs `bun install --frozen-lockfile`, starts local
+Supabase with `bun sb:start`, reads `supabase status -o json`, and writes
+redacted local Supabase connection values into ignored `apps/*/.env.local`
+files. Pass `--dir <path>` to choose another checkout and `--yes` to install
+detected missing prerequisites with the platform package manager.
+
 CLI sessions are dedicated Tuturuuu gateway JWTs, separate from normal browser
 and Supabase Auth sessions. The CLI stores a short-lived app-session access JWT
 plus a longer-lived refresh JWT, refreshes shortly before access-token expiry,
@@ -112,11 +121,17 @@ updates the saved config with the rotated refresh token, and retries once after 
 used directly as API bearer tokens. If refresh fails because the user no longer
 exists or the refresh JWT has expired, run `ttr login` again.
 
+The SDK fetch wrapper must attach CLI bearer tokens, refresh sessions, and retry
+`401` responses only for relative Tuturuuu API paths or absolute URLs whose
+origin exactly matches the configured CLI base URL. Cross-origin absolute URLs
+must be delegated without `Authorization` headers.
+
 Scoped help is available without login, saved config reads, or update checks:
 
 ```bash
 ttr --help
 ttr upgrade --help
+ttr box --help
 ttr finance --help
 ttr finance transactions --help
 ttr tasks --help
@@ -219,7 +234,9 @@ the keyboard. The interactive picker shows one-based indexes, colored badges
 such as `[FREE] Tuturuuu` and `[PRO] Personal`, task-list color swatches, the
 selected row, and muted metadata. Use up/down or `j`/`k` to move, space/enter to
 select, and escape/`q` to cancel. Interactive selection is disabled for `--json`
-output. Use `ttr -v` or `ttr --version` to print the installed CLI version.
+output. Picker labels, descriptions, badges, and color names derived from
+platform data must visibly escape terminal control characters before rendering.
+Use `ttr -v` or `ttr --version` to print the installed CLI version.
 
 ### Client Initialization
 
@@ -390,7 +407,7 @@ console.log(sync.uploaded.length);
 console.log(linkedManifest.content.entries[0]?.assets?.[0]?.storagePath);
 ```
 
-Set `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl` on manifest assets. The helper uploads those files through the existing external-project signed upload URL endpoint and rewrites assets to deterministic Drive paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`.
+Set `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl` on manifest assets. The helper uploads those files through the external-project asset app-server upload route, so Tuturuuu measures the actual bytes before writing storage objects, and rewrites assets to deterministic Drive paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`.
 
 Yoola-style consumers can also use the helper accessors exported from the SDK:
 

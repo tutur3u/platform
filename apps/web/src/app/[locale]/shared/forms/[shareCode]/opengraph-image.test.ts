@@ -18,10 +18,10 @@ vi.mock('./shared-form-social-image', () => ({
   createSharedFormSocialImage: mockCreateSharedFormSocialImage,
 }));
 
-import Image, { dynamic } from './opengraph-image';
+import Image from './opengraph-image';
 
 describe('opengraph-image', () => {
-  it('uses the direct shared-form snapshot loader and stays dynamic', async () => {
+  it('uses the direct shared-form snapshot loader without route segment config', async () => {
     const translate = (key: string, values?: Record<string, string>) => {
       if (key === 'shared.open_graph_alt') {
         return `alt:${values?.title ?? ''}`;
@@ -51,7 +51,6 @@ describe('opengraph-image', () => {
       params: Promise.resolve({ shareCode: 'share-1' }),
     });
 
-    expect(dynamic).toBe('force-dynamic');
     expect(mockLoadSharedFormSnapshot).toHaveBeenCalledWith('share-1');
     expect(mockCreateSharedFormSocialImage).toHaveBeenCalledWith(
       expect.objectContaining({

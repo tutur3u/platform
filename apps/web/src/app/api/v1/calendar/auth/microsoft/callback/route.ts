@@ -18,6 +18,10 @@ import {
   getMicrosoftOAuthConfig,
   isMicrosoftConfigComplete,
 } from '@/lib/calendar/microsoft-config';
+import {
+  calendarOAuthDebug,
+  calendarOAuthError,
+} from '@/lib/calendar/oauth-callback-logger';
 
 const microsoftCallbackQuerySchema = z.object({
   code: z.string().max(MAX_NAME_LENGTH).optional().nullable(),
@@ -27,7 +31,7 @@ const microsoftCallbackQuerySchema = z.object({
 });
 
 export async function GET(request: Request): Promise<NextResponse> {
-  console.log('🔍 [DEBUG] Microsoft OAuth callback route called');
+  calendarOAuthDebug('🔍 [DEBUG] Microsoft OAuth callback route called');
 
   const url = new URL(request.url);
   const queryParams = Object.fromEntries(url.searchParams.entries());
@@ -43,7 +47,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   const { code, state: wsId, error, error_description } = result.data;
 
   if (error) {
-    console.error(
+    calendarOAuthError(
       '❌ [DEBUG] Microsoft OAuth error:',
       error,
       error_description
@@ -62,12 +66,12 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   if (!wsId) {
-    console.log('❌ [DEBUG] Missing wsId in callback');
+    calendarOAuthDebug('❌ [DEBUG] Missing wsId in callback');
     return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
   }
 
   if (!code) {
-    console.log('❌ [DEBUG] Missing code in callback');
+    calendarOAuthDebug('❌ [DEBUG] Missing code in callback');
     return NextResponse.json({ error: 'No code provided' }, { status: 400 });
   }
 
@@ -76,7 +80,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   const codeVerifier = cookieStore.get('ms_pkce_verifier')?.value;
 
   if (!codeVerifier) {
-    console.error('❌ [DEBUG] Missing PKCE code verifier');
+    calendarOAuthError('❌ [DEBUG] Missing PKCE code verifier');
     const redirectUrl = new URL(`/${wsId}/calendar`, request.url);
     redirectUrl.searchParams.set('error', 'microsoft_auth_failed');
     redirectUrl.searchParams.set(
@@ -96,11 +100,13 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   try {
-    console.log('🔍 [DEBUG] Creating MSAL client...');
+    calendarOAuthDebug('🔍 [DEBUG] Creating MSAL client...');
     const msalConfig = createMsalConfig(config);
     const cca = new ConfidentialClientApplication(msalConfig);
 
-    console.log('🔍 [DEBUG] Exchanging authorization code for tokens...');
+    calendarOAuthDebug(
+      '🔍 [DEBUG] Exchanging authorization code for tokens...'
+    );
     const tokenResponse = await cca.acquireTokenByCode({
       code,
       scopes: MICROSOFT_CALENDAR_SCOPES,
@@ -109,21 +115,21 @@ export async function GET(request: Request): Promise<NextResponse> {
     });
 
     if (!tokenResponse) {
-      console.log('❌ [DEBUG] No token response from Microsoft');
+      calendarOAuthDebug('❌ [DEBUG] No token response from Microsoft');
       return NextResponse.json(
         { error: 'No token received from Microsoft' },
         { status: 500 }
       );
     }
 
-    console.log('🔍 [DEBUG] Token exchange result:', {
+    calendarOAuthDebug('🔍 [DEBUG] Token exchange result:', {
       hasAccessToken: !!tokenResponse.accessToken,
       hasAccount: !!tokenResponse.account,
       expiresOn: tokenResponse.expiresOn,
     });
 
     // Get user info from Microsoft Graph
-    console.log('🔍 [DEBUG] Fetching user info from Microsoft Graph...');
+    calendarOAuthDebug('🔍 [DEBUG] Fetching user info from Microsoft Graph...');
     const graphClient = createGraphClient(tokenResponse.accessToken);
     const userInfo = await graphClient.api('/me').get();
 
@@ -133,13 +139,13 @@ export async function GET(request: Request): Promise<NextResponse> {
       tokenResponse.account?.username;
     const accountName = userInfo.displayName || tokenResponse.account?.name;
 
-    console.log('🔍 [DEBUG] User info:', {
+    calendarOAuthDebug('🔍 [DEBUG] User info:', {
       email: accountEmail,
       name: accountName,
     });
 
     // Initialize Supabase client
-    console.log('🔍 [DEBUG] Creating Supabase client...');
+    calendarOAuthDebug('🔍 [DEBUG] Creating Supabase client...');
     const supabase = await createClient(request);
 
     // Get the current authenticated user
@@ -147,7 +153,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       await resolveAuthenticatedSessionUser(supabase);
 
     if (userError || !user) {
-      console.log('❌ [DEBUG] User not authenticated');
+      calendarOAuthDebug('❌ [DEBUG] User not authenticated');
       return NextResponse.json(
         { error: 'User not authenticated' },
         { status: 401 }
@@ -155,7 +161,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
 
     // Check if this Microsoft account is already connected
-    console.log('🔍 [DEBUG] Checking for existing Microsoft token...');
+    calendarOAuthDebug('🔍 [DEBUG] Checking for existing Microsoft token...');
     const { data: existingToken, error: fetchError } = await supabase
       .from('calendar_auth_tokens')
       .select('*')
@@ -166,7 +172,10 @@ export async function GET(request: Request): Promise<NextResponse> {
       .single();
 
     if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('❌ [DEBUG] Error fetching existing token:', fetchError);
+      calendarOAuthError(
+        '❌ [DEBUG] Error fetching existing token:',
+        fetchError
+      );
       return NextResponse.json(
         { error: 'Failed to fetch existing token' },
         { status: 500 }
@@ -180,7 +189,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const expiresAt = tokenResponse.expiresOn?.toISOString() || null;
 
     if (existingToken) {
-      console.log('🔍 [DEBUG] Updating existing Microsoft token...');
+      calendarOAuthDebug('🔍 [DEBUG] Updating existing Microsoft token...');
       const { error: updateError } = await supabase
         .from('calendar_auth_tokens')
         .update({
@@ -194,15 +203,15 @@ export async function GET(request: Request): Promise<NextResponse> {
         .eq('id', existingToken.id);
 
       if (updateError) {
-        console.error('❌ [DEBUG] Error updating token:', updateError);
+        calendarOAuthError('❌ [DEBUG] Error updating token:', updateError);
         return NextResponse.json(
           { error: 'Failed to update token' },
           { status: 500 }
         );
       }
-      console.log('✅ [DEBUG] Microsoft token updated successfully');
+      calendarOAuthDebug('✅ [DEBUG] Microsoft token updated successfully');
     } else {
-      console.log('🔍 [DEBUG] Inserting new Microsoft token...');
+      calendarOAuthDebug('🔍 [DEBUG] Inserting new Microsoft token...');
       const { error: insertError } = await supabase
         .from('calendar_auth_tokens')
         .insert({
@@ -219,18 +228,20 @@ export async function GET(request: Request): Promise<NextResponse> {
         });
 
       if (insertError) {
-        console.error('❌ [DEBUG] Error inserting token:', insertError);
+        calendarOAuthError('❌ [DEBUG] Error inserting token:', insertError);
         return NextResponse.json(
           { error: 'Failed to insert token' },
           { status: 500 }
         );
       }
-      console.log('✅ [DEBUG] Microsoft token inserted successfully');
+      calendarOAuthDebug('✅ [DEBUG] Microsoft token inserted successfully');
     }
 
     // Auto-add all calendars to calendar_connections after successful authentication
     try {
-      console.log('🔍 [DEBUG] Fetching Microsoft calendars to auto-add...');
+      calendarOAuthDebug(
+        '🔍 [DEBUG] Fetching Microsoft calendars to auto-add...'
+      );
 
       // Get the newly inserted/updated token ID
       const { data: tokenRecord } = await supabase
@@ -246,7 +257,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       if (tokenRecord?.id) {
         // Fetch all calendars for this Microsoft account
         const calendars = await fetchMicrosoftCalendars(graphClient);
-        console.log(
+        calendarOAuthDebug(
           `🔍 [DEBUG] Found ${calendars.length} Microsoft calendars to add`
         );
 
@@ -272,26 +283,26 @@ export async function GET(request: Request): Promise<NextResponse> {
             });
 
           if (upsertError) {
-            console.error(
+            calendarOAuthError(
               '⚠️ [DEBUG] Failed to batch upsert Microsoft calendar connections:',
               upsertError
             );
           } else {
-            console.log(
+            calendarOAuthDebug(
               `✅ [DEBUG] Successfully batched upserted ${connectionsToUpsert.length} Microsoft calendars`
             );
           }
         }
       }
     } catch (calendarAddError) {
-      console.error(
+      calendarOAuthError(
         '⚠️ [DEBUG] Error auto-adding Microsoft calendars:',
         calendarAddError
       );
       // Don't fail the authentication flow if calendar add fails
     }
 
-    console.log('🔍 [DEBUG] Redirecting to calendar page...');
+    calendarOAuthDebug('🔍 [DEBUG] Redirecting to calendar page...');
 
     // Create redirect response and clear the PKCE cookie
     const redirectUrl = new URL(`/${wsId}/calendar`, request.url);
@@ -305,7 +316,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     return redirectResponse;
   } catch (error) {
-    console.error('❌ [DEBUG] Error during Microsoft OAuth callback:', {
+    calendarOAuthError('❌ [DEBUG] Error during Microsoft OAuth callback:', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });

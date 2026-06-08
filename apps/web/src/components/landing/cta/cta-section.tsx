@@ -6,7 +6,7 @@ import {
   Lock,
   MessageSquare,
   Shield,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { motion } from 'framer-motion';
 import Link from 'next/link';

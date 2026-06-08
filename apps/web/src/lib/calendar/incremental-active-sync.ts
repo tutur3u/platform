@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/trigger/google-calendar-sync';
 import { NextResponse } from 'next/server';
 import { sanitizeWorkspaceCalendarEventFields } from '@/lib/calendar/sync-field-limits';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { encryptGoogleSyncEvents } from '@/lib/workspace-encryption';
 
 /**
@@ -31,7 +32,7 @@ function filterEventsByStatus(events: calendar_v3.Schema$Event[]) {
     }
   );
 
-  console.log('✅ [DEBUG] filterEventsByStatus completed:', {
+  serverLogger.debug('✅ [DEBUG] filterEventsByStatus completed:', {
     originalEventsCount: events.length,
     eventsToUpsertCount: result.eventsToUpsert.length,
     eventsToDeleteCount: result.eventsToDelete.length,
@@ -47,9 +48,13 @@ export async function performIncrementalActiveSync(
   startDate: Date,
   endDate: Date,
   globalEncryptedIds?: Set<string>,
-  authTokenId?: string | null // Optional: specific auth token ID for multi-account support
+  authTokenId?: string | null,
+  sourceCalendarId?: string | null
 ) {
   const syncStartTime = Date.now();
+  const syncTokenKey = authTokenId
+    ? `google:${authTokenId}:${calendarId}`
+    : `google:legacy:${calendarId}`;
 
   // Initialize metrics tracking
   const metrics = {
@@ -71,7 +76,7 @@ export async function performIncrementalActiveSync(
     startDate instanceof Date ? startDate : new Date(startDate);
   const endDateObj = endDate instanceof Date ? endDate : new Date(endDate);
 
-  console.log('🔍 [DEBUG] performIncrementalActiveSync called with:', {
+  serverLogger.debug('🔍 [DEBUG] performIncrementalActiveSync called with:', {
     wsId,
     userId,
     calendarId,
@@ -81,7 +86,7 @@ export async function performIncrementalActiveSync(
   });
 
   if (!wsId) {
-    console.log('❌ [DEBUG] Missing wsId, returning 400 error');
+    serverLogger.debug('❌ [DEBUG] Missing wsId, returning 400 error');
     return NextResponse.json(
       {
         error: 'Failed to fetch Google Calendar events',
@@ -99,12 +104,12 @@ export async function performIncrementalActiveSync(
   }
 
   const tokenOpStart = Date.now();
-  console.log('🔍 [DEBUG] Creating Supabase client...');
+  serverLogger.debug('🔍 [DEBUG] Creating Supabase client...');
   const supabase = await createAdminClient();
-  console.log('✅ [DEBUG] Supabase client created successfully');
+  serverLogger.debug('✅ [DEBUG] Supabase client created successfully');
 
   // Build token query based on whether we have a specific authTokenId
-  console.log('🔍 [DEBUG] Querying calendar_auth_tokens table...');
+  serverLogger.debug('🔍 [DEBUG] Querying calendar_auth_tokens table...');
   let tokenQuery = supabase
     .from('calendar_auth_tokens')
     .select('access_token, refresh_token')
@@ -113,18 +118,20 @@ export async function performIncrementalActiveSync(
   if (authTokenId) {
     // Use specific auth token for multi-account support
     tokenQuery = tokenQuery.eq('id', authTokenId);
-    console.log('🔍 [DEBUG] Using specific authTokenId:', authTokenId);
+    serverLogger.debug('🔍 [DEBUG] Using specific authTokenId:', authTokenId);
   } else {
     // Fallback to user_id query (legacy single-account behavior)
     tokenQuery = tokenQuery.eq('user_id', userId);
-    console.log('🔍 [DEBUG] Using userId for token lookup (legacy mode)');
+    serverLogger.debug(
+      '🔍 [DEBUG] Using userId for token lookup (legacy mode)'
+    );
   }
 
   const result = await tokenQuery.maybeSingle();
 
   metrics.tokenOperationsMs = Date.now() - tokenOpStart;
 
-  console.log('🔍 [DEBUG] Database query result:', {
+  serverLogger.debug('🔍 [DEBUG] Database query result:', {
     hasData: !!result.data,
     hasError: !!result.error,
     errorMessage: result.error?.message,
@@ -136,7 +143,7 @@ export async function performIncrementalActiveSync(
   const googleTokensError = result.error;
 
   if (googleTokensError) {
-    console.error('❌ [DEBUG] Database query error:', {
+    serverLogger.error('❌ [DEBUG] Database query error:', {
       error: googleTokensError,
       message: googleTokensError.message,
       details: googleTokensError.details,
@@ -148,7 +155,7 @@ export async function performIncrementalActiveSync(
 
     // If it's a not found error, handle it gracefully
     if (googleTokensError.code === 'PGRST116') {
-      console.log('❌ [DEBUG] No tokens found in database (PGRST116)');
+      serverLogger.debug('❌ [DEBUG] No tokens found in database (PGRST116)');
       return NextResponse.json(
         {
           error: 'Failed to fetch Google Calendar events',
@@ -166,7 +173,7 @@ export async function performIncrementalActiveSync(
     }
 
     // For other database errors, return 500
-    console.log('❌ [DEBUG] Other database error, returning 500');
+    serverLogger.debug('❌ [DEBUG] Other database error, returning 500');
     return NextResponse.json(
       {
         error: 'Failed to fetch Google Calendar events',
@@ -184,7 +191,7 @@ export async function performIncrementalActiveSync(
     );
   }
 
-  console.log('🔍 [DEBUG] Checking tokens...', {
+  serverLogger.debug('🔍 [DEBUG] Checking tokens...', {
     hasTokens: !!googleTokens,
     hasAccessToken: !!googleTokens?.access_token,
     hasRefreshToken: !!googleTokens?.refresh_token,
@@ -197,7 +204,7 @@ export async function performIncrementalActiveSync(
   } | null;
 
   if (!tokens?.access_token) {
-    console.error('❌ [DEBUG] No Google access token found for user:', {
+    serverLogger.error('❌ [DEBUG] No Google access token found for user:', {
       userId: userId,
       hasAccessToken: !!tokens?.access_token,
       hasRefreshToken: !!tokens?.refresh_token,
@@ -219,18 +226,18 @@ export async function performIncrementalActiveSync(
     );
   }
 
-  console.log('✅ [DEBUG] Tokens found, creating Google auth client...');
+  serverLogger.debug('✅ [DEBUG] Tokens found, creating Google auth client...');
   const auth = getGoogleAuthClient({
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token || undefined,
   });
   const calendar = google.calendar({ version: 'v3', auth });
-  console.log('✅ [DEBUG] Google Calendar client created successfully');
+  serverLogger.debug('✅ [DEBUG] Google Calendar client created successfully');
 
   try {
-    console.log('🔍 [DEBUG] Getting active sync token...');
-    const syncToken = await getSyncToken(wsId, calendarId);
-    console.log('🔍 [DEBUG] Sync token result:', {
+    serverLogger.debug('🔍 [DEBUG] Getting active sync token...');
+    const syncToken = await getSyncToken(wsId, syncTokenKey);
+    serverLogger.debug('🔍 [DEBUG] Sync token result:', {
       hasSyncToken: !!syncToken,
       syncToken,
       calendarId,
@@ -246,11 +253,13 @@ export async function performIncrementalActiveSync(
     let useDateRangeFallback = false;
 
     const googleApiFetchStart = Date.now();
-    console.log('🔍 [DEBUG] Starting to fetch events from Google Calendar...');
+    serverLogger.debug(
+      '🔍 [DEBUG] Starting to fetch events from Google Calendar...'
+    );
 
     // Try sync token first, fallback to date range if no sync token exists
     if (!syncToken) {
-      console.log(
+      serverLogger.debug(
         '🔍 [DEBUG] No sync token found, using date range fallback...'
       );
       useDateRangeFallback = true;
@@ -259,7 +268,7 @@ export async function performIncrementalActiveSync(
 
     do {
       pageCount++;
-      console.log(`🔍 [DEBUG] Fetching page ${pageCount}...`);
+      serverLogger.debug(`🔍 [DEBUG] Fetching page ${pageCount}...`);
 
       const requestParams = {
         calendarId,
@@ -273,14 +282,14 @@ export async function performIncrementalActiveSync(
         // Use date range parameters when no sync token exists
         requestParams.timeMin = startDateObj.toISOString();
         requestParams.timeMax = endDateObj.toISOString();
-        console.log('🔍 [DEBUG] Using date range parameters:', {
+        serverLogger.debug('🔍 [DEBUG] Using date range parameters:', {
           timeMin: requestParams.timeMin,
           timeMax: requestParams.timeMax,
         });
       } else {
         // Use sync token for incremental sync
         requestParams.syncToken = syncToken ?? undefined;
-        console.log('🔍 [DEBUG] Using sync token for incremental sync');
+        serverLogger.debug('🔍 [DEBUG] Using sync token for incremental sync');
       }
 
       try {
@@ -288,12 +297,12 @@ export async function performIncrementalActiveSync(
         const res = await calendar.events.list(requestParams);
         metrics.pagesFetched++;
 
-        console.log('🔍 [DEBUG] Page', pageCount, 'results:', res.data);
+        serverLogger.debug('🔍 [DEBUG] Page', pageCount, 'results:', res.data);
 
         const events = res.data.items || [];
         metrics.eventsFetchedTotal += events.length;
 
-        console.log(`🔍 [DEBUG] Page ${pageCount} results:`, {
+        serverLogger.debug(`🔍 [DEBUG] Page ${pageCount} results:`, {
           eventsCount: events.length,
           hasNextPageToken: !!res.data.nextPageToken,
           hasNextSyncToken: !!res.data.nextSyncToken,
@@ -314,7 +323,7 @@ export async function performIncrementalActiveSync(
           !useDateRangeFallback
         ) {
           metrics.retryCount++;
-          console.log(
+          serverLogger.debug(
             '🔍 [DEBUG] Sync token expired or invalid (410 error), falling back to date range...'
           );
           useDateRangeFallback = true;
@@ -322,10 +331,12 @@ export async function performIncrementalActiveSync(
 
           // Clear the sync token from database since it's invalid
           try {
-            await clearSyncToken(wsId, calendarId);
-            console.log('✅ [DEBUG] Invalid sync token cleared from database');
+            await clearSyncToken(wsId, syncTokenKey);
+            serverLogger.debug(
+              '✅ [DEBUG] Invalid sync token cleared from database'
+            );
           } catch (clearError) {
-            console.error(
+            serverLogger.error(
               '❌ [DEBUG] Error clearing invalid sync token:',
               clearError
             );
@@ -342,14 +353,16 @@ export async function performIncrementalActiveSync(
 
     metrics.googleApiFetchMs = Date.now() - googleApiFetchStart;
 
-    console.log('✅ [DEBUG] Finished fetching events:', {
+    serverLogger.debug('✅ [DEBUG] Finished fetching events:', {
       totalEvents: allEvents.length,
       hasNextSyncToken: !!nextSyncToken,
       useDateRangeFallback,
     });
 
     if (allEvents.length > 0) {
-      console.log('🔍 [DEBUG] Processing events with incrementalActiveSync...');
+      serverLogger.debug(
+        '🔍 [DEBUG] Processing events with incrementalActiveSync...'
+      );
       try {
         const result = await incrementalActiveSync(
           wsId,
@@ -357,14 +370,15 @@ export async function performIncrementalActiveSync(
           startDateObj,
           endDateObj,
           calendarId,
-          globalEncryptedIds
+          globalEncryptedIds,
+          sourceCalendarId
         );
         metrics.eventProcessingMs = result.timings.eventProcessingMs;
         metrics.databaseWritesMs = result.timings.databaseWritesMs;
         metrics.batchCount = result.timings.batchCount;
 
         const syncDuration = Date.now() - syncStartTime;
-        console.log('✅ [DEBUG] incrementalActiveSync completed:', {
+        serverLogger.debug('✅ [DEBUG] incrementalActiveSync completed:', {
           eventsInserted: result.eventsInserted,
           eventsUpdated: result.eventsUpdated,
           eventsDeleted: result.eventsDeleted,
@@ -373,9 +387,9 @@ export async function performIncrementalActiveSync(
         });
 
         if (nextSyncToken) {
-          console.log('🔍 [DEBUG] Storing next sync token...');
-          await storeSyncToken(wsId, nextSyncToken, new Date(), calendarId);
-          console.log('✅ [DEBUG] Next sync token stored successfully');
+          serverLogger.debug('🔍 [DEBUG] Storing next sync token...');
+          await storeSyncToken(wsId, nextSyncToken, new Date(), syncTokenKey);
+          serverLogger.debug('✅ [DEBUG] Next sync token stored successfully');
         }
 
         return {
@@ -383,7 +397,7 @@ export async function performIncrementalActiveSync(
           metrics,
         };
       } catch (error) {
-        console.error('❌ [DEBUG] Error in incrementalActiveSync:', {
+        serverLogger.error('❌ [DEBUG] Error in incrementalActiveSync:', {
           error: error instanceof Error ? error.message : 'Unknown error',
           stack: error instanceof Error ? error.stack : undefined,
         });
@@ -392,12 +406,14 @@ export async function performIncrementalActiveSync(
     }
 
     if (nextSyncToken) {
-      console.log('🔍 [DEBUG] No events but storing next sync token...');
-      await storeSyncToken(wsId, nextSyncToken, new Date());
-      console.log('✅ [DEBUG] Next sync token stored successfully');
+      serverLogger.debug('🔍 [DEBUG] No events but storing next sync token...');
+      await storeSyncToken(wsId, nextSyncToken, new Date(), syncTokenKey);
+      serverLogger.debug('✅ [DEBUG] Next sync token stored successfully');
     }
 
-    console.log('✅ [DEBUG] No events to process, returning empty result');
+    serverLogger.debug(
+      '✅ [DEBUG] No events to process, returning empty result'
+    );
     return {
       eventsInserted: 0,
       eventsUpdated: 0,
@@ -410,7 +426,7 @@ export async function performIncrementalActiveSync(
       },
     };
   } catch (error) {
-    console.error('❌ [DEBUG] Error in performIncrementalActiveSync:', {
+    serverLogger.error('❌ [DEBUG] Error in performIncrementalActiveSync:', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       wsId,
@@ -426,7 +442,8 @@ async function incrementalActiveSync(
   startDate: Date,
   endDate: Date,
   calendarId: string = 'primary',
-  globalEncryptedIds?: Set<string>
+  globalEncryptedIds?: Set<string>,
+  sourceCalendarId?: string | null
 ) {
   const processingStart = Date.now();
   const supabase = await createAdminClient();
@@ -436,7 +453,7 @@ async function incrementalActiveSync(
     startDate instanceof Date ? startDate : new Date(startDate);
   const endDateObj = endDate instanceof Date ? endDate : new Date(endDate);
 
-  console.log('🔍 [DEBUG] incrementalActiveSync called with:', {
+  serverLogger.debug('🔍 [DEBUG] incrementalActiveSync called with:', {
     wsId,
     calendarId,
     eventsToSyncCount: eventsToSync.length,
@@ -447,24 +464,36 @@ async function incrementalActiveSync(
   // Use the pipe to filter events by status
   const { eventsToUpsert, eventsToDelete } = filterEventsByStatus(eventsToSync);
 
-  console.log('🔍 [DEBUG] Events filtered:', {
+  serverLogger.debug('🔍 [DEBUG] Events filtered:', {
     eventsToUpsertCount: eventsToUpsert.length,
     eventsToDeleteCount: eventsToDelete.length,
   });
 
-  const formattedEventsToUpsert = eventsToUpsert.map((event) =>
-    sanitizeWorkspaceCalendarEventFields(
-      formatEventForDb(event, wsId, calendarId)
-    )
-  );
+  const formattedEventsToUpsert = eventsToUpsert.map((event) => {
+    const formatted = formatEventForDb(event, wsId, calendarId);
+    return sanitizeWorkspaceCalendarEventFields({
+      ...formatted,
+      provider: 'google' as const,
+      external_calendar_id: calendarId,
+      external_event_id: event.id,
+      source_calendar_id: sourceCalendarId ?? null,
+    });
+  });
 
   const formattedEventsToDelete = eventsToDelete.map((event) => {
-    return formatEventForDb(event, wsId, calendarId);
+    const formatted = formatEventForDb(event, wsId, calendarId);
+    return {
+      ...formatted,
+      provider: 'google' as const,
+      external_calendar_id: calendarId,
+      external_event_id: event.id,
+      source_calendar_id: sourceCalendarId ?? null,
+    };
   });
 
   const eventProcessingMs = Date.now() - processingStart;
 
-  console.log('✅ [DEBUG] Events formatted:', {
+  serverLogger.debug('✅ [DEBUG] Events formatted:', {
     formattedEventsToUpsertCount: formattedEventsToUpsert.length,
     formattedEventsToDeleteCount: formattedEventsToDelete.length,
   });
@@ -477,26 +506,30 @@ async function incrementalActiveSync(
   // before another calendar checks its encryption status
   const preDeleteEncryptedIds: Set<string> = new Set();
   if (formattedEventsToUpsert && formattedEventsToUpsert.length > 0) {
-    const googleEventIds = formattedEventsToUpsert
-      .map((e) => e.google_event_id)
+    const externalEventIds = formattedEventsToUpsert
+      .map((e) => e.external_event_id)
       .filter((id): id is string => !!id);
 
-    if (googleEventIds.length > 0) {
+    if (externalEventIds.length > 0) {
       // Query in batches to avoid URL length limits
       const QUERY_BATCH_SIZE = 100;
-      for (let i = 0; i < googleEventIds.length; i += QUERY_BATCH_SIZE) {
-        const batchIds = googleEventIds.slice(i, i + QUERY_BATCH_SIZE);
+      for (let i = 0; i < externalEventIds.length; i += QUERY_BATCH_SIZE) {
+        const batchIds = externalEventIds.slice(i, i + QUERY_BATCH_SIZE);
         const { data: existingEvents, error: batchError } = await supabase
           .from('workspace_calendar_events')
-          .select('google_event_id, is_encrypted')
+          .select('external_event_id, google_event_id, is_encrypted')
           .eq('ws_id', wsId)
-          .in('google_event_id', batchIds);
+          .eq('provider', 'google')
+          .eq('external_calendar_id', calendarId)
+          .in('external_event_id', batchIds);
 
         if (batchError) {
-          console.error(
-            `[incremental-active-sync] Failed to query encrypted events batch (wsId: ${wsId}, batchSize: ${batchIds.length}):`,
-            batchError.message
-          );
+          serverLogger.error('Failed to query encrypted Google events batch', {
+            wsId,
+            calendarId,
+            batchSize: batchIds.length,
+            error: batchError,
+          });
           // Continue to next batch - this is best-effort caching
           continue;
         }
@@ -505,22 +538,23 @@ async function incrementalActiveSync(
           existingEvents
             .filter((e) => e.is_encrypted === true)
             .forEach((e) => {
-              if (e.google_event_id) {
-                preDeleteEncryptedIds.add(e.google_event_id);
+              const externalId = e.external_event_id ?? e.google_event_id;
+              if (externalId) {
+                preDeleteEncryptedIds.add(externalId);
               }
             });
         }
       }
-      console.log('🔍 [DEBUG] Pre-delete encrypted IDs cached:', {
+      serverLogger.debug('🔍 [DEBUG] Pre-delete encrypted IDs cached:', {
         count: preDeleteEncryptedIds.size,
       });
     }
   }
 
   if (formattedEventsToDelete && formattedEventsToDelete.length > 0) {
-    console.log('🔍 [DEBUG] Deleting events...');
+    serverLogger.debug('🔍 [DEBUG] Deleting events...');
     const validEventIds = formattedEventsToDelete
-      .map((e) => e.google_event_id)
+      .map((e) => e.external_event_id ?? e.google_event_id)
       .filter((id): id is string => id !== null && id !== undefined);
 
     if (validEventIds.length > 0) {
@@ -534,7 +568,7 @@ async function incrementalActiveSync(
 
       batchCount += deleteBatches.length;
 
-      console.log(
+      serverLogger.debug(
         `🔍 [DEBUG] Deleting ${validEventIds.length} events in ${deleteBatches.length} batches`
       );
 
@@ -549,10 +583,12 @@ async function incrementalActiveSync(
         const { error: deleteError } = await supabase
           .from('workspace_calendar_events')
           .delete()
-          .in('google_event_id', batch)
-          .eq('ws_id', wsId);
+          .eq('ws_id', wsId)
+          .eq('provider', 'google')
+          .eq('external_calendar_id', calendarId)
+          .in('external_event_id', batch);
 
-        console.log(
+        serverLogger.debug(
           `🔍 [DEBUG] Delete batch ${i + 1}/${deleteBatches.length}:`,
           {
             hasError: !!deleteError,
@@ -562,12 +598,17 @@ async function incrementalActiveSync(
         );
 
         if (deleteError) {
-          console.log(`❌ [DEBUG] Delete batch ${i + 1} error:`, deleteError);
+          serverLogger.debug(
+            `❌ [DEBUG] Delete batch ${i + 1} error:`,
+            deleteError
+          );
           throw new Error(deleteError.message);
         }
       }
 
-      console.log('✅ [DEBUG] All delete batches completed successfully');
+      serverLogger.debug(
+        '✅ [DEBUG] All delete batches completed successfully'
+      );
     }
   }
 
@@ -577,7 +618,7 @@ async function incrementalActiveSync(
   };
 
   if (formattedEventsToUpsert && formattedEventsToUpsert.length > 0) {
-    console.log('🔍 [DEBUG] Upserting events...');
+    serverLogger.debug('🔍 [DEBUG] Upserting events...');
 
     // Encrypt events that need it (events that are already encrypted in DB)
     // This implements "decrypt, compare, re-encrypt" - incoming Google data
@@ -589,7 +630,7 @@ async function incrementalActiveSync(
         ? globalEncryptedIds
         : preDeleteEncryptedIds;
 
-    console.log('🔍 [DEBUG] Using encrypted IDs cache:', {
+    serverLogger.debug('🔍 [DEBUG] Using encrypted IDs cache:', {
       source:
         globalEncryptedIds && globalEncryptedIds.size > 0 ? 'global' : 'local',
       count: encryptedIdsToUse.size,
@@ -599,6 +640,7 @@ async function incrementalActiveSync(
       wsId,
       formattedEventsToUpsert as Array<{
         google_event_id: string;
+        external_event_id: string;
         title: string;
         description?: string;
         location?: string | null;
@@ -606,7 +648,7 @@ async function incrementalActiveSync(
       encryptedIdsToUse
     );
 
-    console.log('🔍 [DEBUG] Events encrypted:', {
+    serverLogger.debug('🔍 [DEBUG] Events encrypted:', {
       total: eventsWithEncryption.length,
       encrypted: eventsWithEncryption.filter((e) => e.is_encrypted).length,
     });
@@ -621,7 +663,7 @@ async function incrementalActiveSync(
 
     batchCount += batches.length;
 
-    console.log(
+    serverLogger.debug(
       `🔍 [DEBUG] Processing ${eventsWithEncryption.length} events in ${batches.length} batches`
     );
 
@@ -634,12 +676,12 @@ async function incrementalActiveSync(
       );
 
       const batchDuration = Date.now() - batchStartTime;
-      console.log(
+      serverLogger.debug(
         `✅ [DEBUG] Batch ${index + 1}/${batches.length} completed in ${batchDuration}ms`
       );
 
       if (batchError) {
-        console.log(`❌ [DEBUG] Batch ${index + 1} error:`, batchError);
+        serverLogger.debug(`❌ [DEBUG] Batch ${index + 1} error:`, batchError);
         throw new Error(batchError.message);
       }
 
@@ -657,7 +699,7 @@ async function incrementalActiveSync(
       { inserted: 0, updated: 0 }
     );
 
-    console.log(
+    serverLogger.debug(
       '✅ [DEBUG] All batches completed. Total upsert result:',
       upsertResult
     );

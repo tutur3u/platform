@@ -25,21 +25,30 @@ export default async function Page({ params }: Props) {
   if (!currentUser) redirect('/login');
 
   const supabase = await createClient();
-  const { data: soul } = await supabase
+  const { data: miraSoul } = await supabase
     .from('mira_soul')
     .select('name')
     .eq('user_id', currentUser.id)
     .maybeSingle();
+  const assistantName = miraSoul?.name?.trim() || 'Mira';
 
   return (
-    <>
-      <TaskBoardServerPage params={Promise.resolve(resolvedParams)} />
-      <TaskBoardAiChatBar
-        assistantName={soul?.name ?? 'Mira'}
-        boardId={resolvedParams.boardId}
-        currentUser={currentUser}
-        wsId={resolvedParams.wsId}
-      />
-    </>
+    <TaskBoardServerPage
+      params={Promise.resolve(resolvedParams)}
+      idleBottomIsland={
+        <TaskBoardAiChatBar
+          assistantName={assistantName}
+          boardId={resolvedParams.boardId}
+          currentUser={{
+            avatar_url: currentUser.avatar_url,
+            display_name: currentUser.display_name,
+            email: currentUser.email,
+            full_name: currentUser.full_name,
+            id: currentUser.id,
+          }}
+          wsId={resolvedParams.wsId}
+        />
+      }
+    />
   );
 }

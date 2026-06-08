@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
+  type BlockInfo,
   extractIPFromHeaders,
   isIPBlocked,
   recordApiAuthFailure,
@@ -38,6 +39,21 @@ export type AuthorizedRequest = {
   user: SupabaseUser;
   supabase: TypedSupabaseClient;
 };
+
+function buildIpBlockResponse(blockInfo: BlockInfo) {
+  const retryAfter = Math.max(
+    1,
+    Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+  );
+
+  return NextResponse.json(
+    { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+    {
+      status: 429,
+      headers: { 'Retry-After': `${retryAfter}` },
+    }
+  );
+}
 
 /**
  * @deprecated Use `withSessionAuth` instead for new routes.
@@ -198,7 +214,7 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/storage(?:\/|$)/u,
-    targetApp: ALL_SATELLITE_APP_SESSION_TARGETS,
+    targetApp: 'drive',
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/time-tracking(?:\/|$)/u,
@@ -545,28 +561,21 @@ export function withSessionAuth<T = unknown>(
     // 1. Extract IP
     const ipAddress = extractIPFromHeaders(request.headers);
 
+    let deferredApiAbuseBlock: BlockInfo | null = null;
+
     // 2. Check persistent IP block
     if (ipAddress && ipAddress !== 'unknown') {
       const blockInfo = await isIPBlocked(ipAddress);
       if (blockInfo) {
-        const authenticatedSessionRequest = hasAuthenticatedApiSession(request);
+        const authenticatedSessionMarker = hasAuthenticatedApiSession(request);
 
         // Proxy-side anonymous abuse blocks should not lock out valid signed-in
-        // browser or API sessions on normal session-authenticated routes.
-        if (
-          !(authenticatedSessionRequest && blockInfo.reason === 'api_abuse')
-        ) {
-          const retryAfter = Math.max(
-            1,
-            Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
-          );
-          return NextResponse.json(
-            { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-            {
-              status: 429,
-              headers: { 'Retry-After': `${retryAfter}` },
-            }
-          );
+        // sessions, but syntactic auth markers are not trusted by themselves.
+        // Defer api_abuse blocks only long enough to validate route auth.
+        if (blockInfo.reason === 'api_abuse' && authenticatedSessionMarker) {
+          deferredApiAbuseBlock = blockInfo;
+        } else {
+          return buildIpBlockResponse(blockInfo);
         }
       }
 
@@ -761,6 +770,10 @@ export function withSessionAuth<T = unknown>(
 
     const supabase = (await createClient(request)) as TypedSupabaseClient;
     const { user, authError } = await resolveAuthenticatedUser(supabase);
+
+    if (deferredApiAbuseBlock && (authError || !user)) {
+      return buildIpBlockResponse(deferredApiAbuseBlock);
+    }
 
     if (isBackendRateLimitError(authError)) {
       const blockInfo = await cascadeBackendRateLimitToProxyBan({

@@ -11,6 +11,7 @@ import { AgendaView } from './agenda-view';
 import { CalendarHeader } from './calendar-header';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { EventModal } from './event-modal';
+import { EventPreviewPopover } from './event-preview-popover';
 import { MonthCalendar } from './month-calendar';
 import { useCalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
@@ -664,7 +665,14 @@ export const CalendarContent = ({
         )}
       </div>
 
-      {disabled ? null : workspace && <EventModal />}
+      {disabled
+        ? null
+        : workspace && (
+            <>
+              <EventPreviewPopover />
+              <EventModal />
+            </>
+          )}
     </div>
   );
 };

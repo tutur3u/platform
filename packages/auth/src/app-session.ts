@@ -74,6 +74,7 @@ type RequestLike = Pick<Request, 'headers'> & {
     getAll?: () => Array<{ name: string }>;
     get?: (name: string) => { value?: string } | string | undefined;
   };
+  url?: string;
 };
 
 export function createAppSessionToken(
@@ -524,6 +525,106 @@ export function isSupabaseAuthCookieName(name: string) {
   return SUPABASE_AUTH_COOKIE_PATTERN.test(name);
 }
 
+function getHostnameFromHostHeader(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const [firstValue] = value.split(',').map((entry) => entry.trim());
+
+  if (!firstValue) {
+    return null;
+  }
+
+  try {
+    return new URL(`http://${firstValue}`).hostname;
+  } catch {
+    return null;
+  }
+}
+
+function getRequestHostnames(request: RequestLike) {
+  const hostnames = new Set<string>();
+
+  if (request.url) {
+    try {
+      hostnames.add(new URL(request.url).hostname);
+    } catch {
+      // Ignore malformed request URLs.
+    }
+  }
+
+  for (const headerName of ['host', 'x-forwarded-host']) {
+    const hostname = getHostnameFromHostHeader(request.headers.get(headerName));
+    if (hostname) {
+      hostnames.add(hostname);
+    }
+  }
+
+  return [...hostnames];
+}
+
+function isSharedSupabaseCookieHostname(hostname: string) {
+  return (
+    hostname === 'tuturuuu.com' ||
+    hostname.endsWith('.tuturuuu.com') ||
+    hostname === 'tuturuuu.localhost' ||
+    hostname.endsWith('.tuturuuu.localhost')
+  );
+}
+
+function getConfiguredSupabaseAuthStorageKeys() {
+  return [
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVER_URL,
+    process.env.SUPABASE_URL,
+  ]
+    .flatMap((url) => {
+      if (!url) {
+        return [];
+      }
+
+      try {
+        return [getSupabaseAuthStorageKey(url)];
+      } catch {
+        return [];
+      }
+    })
+    .filter((value, index, values) => values.indexOf(value) === index);
+}
+
+function getSupabaseAuthStorageKey(url: string) {
+  return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+}
+
+function isSupabaseAuthCookieChunkForStorageKey(
+  cookieName: string,
+  storageKey: string
+) {
+  if (cookieName === storageKey) {
+    return true;
+  }
+
+  if (!cookieName.startsWith(`${storageKey}.`)) {
+    return false;
+  }
+
+  return /^\d+$/u.test(cookieName.slice(storageKey.length + 1));
+}
+
+function shouldPreserveSupabaseAuthCookie(
+  request: RequestLike,
+  cookieName: string
+) {
+  if (!getRequestHostnames(request).some(isSharedSupabaseCookieHostname)) {
+    return false;
+  }
+
+  return getConfiguredSupabaseAuthStorageKeys().some((storageKey) =>
+    isSupabaseAuthCookieChunkForStorageKey(cookieName, storageKey)
+  );
+}
+
 function getRequestCookieNames(request: RequestLike) {
   const names = new Set<string>();
 
@@ -548,7 +649,10 @@ export function clearSupabaseAuthCookies(
   response: NextResponse
 ) {
   for (const name of getRequestCookieNames(request)) {
-    if (!isSupabaseAuthCookieName(name)) {
+    if (
+      !isSupabaseAuthCookieName(name) ||
+      shouldPreserveSupabaseAuthCookie(request, name)
+    ) {
       continue;
     }
 
@@ -560,6 +664,14 @@ export function clearSupabaseAuthCookies(
   }
 
   return response;
+}
+
+export function hasSupportedSupabaseAuthCookie(request: RequestLike) {
+  return getRequestCookieNames(request).some(
+    (name) =>
+      isSupabaseAuthCookieName(name) &&
+      shouldPreserveSupabaseAuthCookie(request, name)
+  );
 }
 
 export function createAppSessionUser(

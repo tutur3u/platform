@@ -68,6 +68,9 @@ export const formatEventForDb = (
   return {
     google_event_id: event.id,
     google_calendar_id: google_calendar_id || 'primary',
+    provider: 'google' as const,
+    external_calendar_id: google_calendar_id || 'primary',
+    external_event_id: event.id,
     title: event.summary || 'Untitled Event',
     description: event.description || '',
     start_at,
@@ -145,7 +148,7 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
         const { error } = await sbAdmin
           .from('workspace_calendar_events')
           .upsert(batch, {
-            onConflict: 'ws_id,google_event_id',
+            onConflict: 'ws_id,provider,external_calendar_id,external_event_id',
             ignoreDuplicates: false,
           });
 
@@ -191,7 +194,7 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
         const deleteConditions = batch
           .map(
             (e) =>
-              `and(ws_id.eq.${ws_id},google_event_id.eq.${e.google_event_id ?? ''})`
+              `and(ws_id.eq.${ws_id},provider.eq.google,external_calendar_id.eq.${e.external_calendar_id ?? 'primary'},external_event_id.eq.${e.external_event_id ?? ''})`
           )
           .join(',');
 

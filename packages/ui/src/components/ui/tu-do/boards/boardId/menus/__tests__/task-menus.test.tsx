@@ -1,6 +1,34 @@
-import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const taskSchedulingApiMock = vi.hoisted(() => ({
+  getCurrentUserTaskSchedule: vi.fn(),
+  updateCurrentUserTaskSchedulingSettings: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/internal-api', () => taskSchedulingApiMock);
+
+vi.mock('@tuturuuu/ui/sonner', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
+
+vi.mock('@tuturuuu/ui/switch', () => ({
+  Switch: ({ checked, disabled, onCheckedChange }: any) => (
+    <button
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onCheckedChange?.(!checked)}
+      role="switch"
+      type="button"
+    />
+  ),
+}));
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => {
@@ -28,6 +56,11 @@ import { TaskLabelsMenu } from '../task-labels-menu';
 import { TaskMoveMenu } from '../task-move-menu';
 import { TaskPriorityMenu } from '../task-priority-menu';
 import { TaskProjectsMenu } from '../task-projects-menu';
+import { TaskSchedulingMenu } from '../task-scheduling-menu';
+import {
+  formatTaskDurationLabel,
+  formatTaskSchedulingBadgeTitle,
+} from '../task-scheduling-utils';
 
 // Mock dropdown components to avoid Radix UI context issues in tests
 vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
@@ -166,6 +199,152 @@ describe('TaskDueDateMenu', () => {
     );
 
     expect(screen.getByText('Remove Due Date')).toBeInTheDocument();
+  });
+});
+
+describe('task scheduling utilities', () => {
+  it('formats compact task duration labels', () => {
+    expect(formatTaskDurationLabel(null)).toBeNull();
+    expect(formatTaskDurationLabel(0)).toBeNull();
+    expect(formatTaskDurationLabel(0.75)).toBe('45m');
+    expect(formatTaskDurationLabel(2)).toBe('2h');
+    expect(formatTaskDurationLabel(1.5)).toBe('1h 30m');
+  });
+
+  it('formats compact scheduling badge titles with split and auto-schedule details', () => {
+    expect(
+      formatTaskSchedulingBadgeTitle({
+        autoSchedule: true,
+        calendarHours: 'work_hours',
+        durationLabel: '2h',
+        isSplittable: true,
+        labels: {
+          autoSchedule: 'Auto-schedule',
+          estimatedDuration: 'Estimated Duration',
+          meetingHours: 'Meeting Hours',
+          personalHours: 'Personal Hours',
+          splittable: 'Splittable',
+          workHours: 'Work Hours',
+        },
+        maxSplitDurationMinutes: 90,
+        minSplitDurationMinutes: 30,
+      })
+    ).toBe(
+      'Estimated Duration: 2h | Work Hours | Splittable: 30m-1h 30m | Auto-schedule'
+    );
+  });
+});
+
+describe('TaskSchedulingMenu', () => {
+  beforeEach(() => {
+    taskSchedulingApiMock.getCurrentUserTaskSchedule.mockReset();
+    taskSchedulingApiMock.updateCurrentUserTaskSchedulingSettings.mockReset();
+  });
+
+  function renderSchedulingMenu(taskOverrides: Partial<Task> = {}) {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        mutations: { retry: false },
+        queries: { retry: false },
+      },
+    });
+    const task: Task = {
+      created_at: '2026-06-04T00:00:00.000Z',
+      display_number: 1,
+      id: 'task-1',
+      list_id: 'list-1',
+      name: 'Schedulable task',
+      total_duration: 1.5,
+      calendar_hours: 'work_hours',
+      auto_schedule: true,
+      ...taskOverrides,
+    };
+    const onUpdate = vi.fn();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TaskSchedulingMenu
+          boardId="board-1"
+          onUpdate={onUpdate}
+          task={task}
+          translations={{
+            autoSchedule: 'Auto-schedule',
+            clear: 'Clear',
+            estimatedDuration: 'Estimated Duration',
+            error: 'Error',
+            h: 'h',
+            hourType: 'Hour Type',
+            m: 'm',
+            maxSplit: 'Max split',
+            meetingHours: 'Meeting Hours',
+            minSplit: 'Min split',
+            personalHours: 'Personal Hours',
+            save: 'Save',
+            saved: 'Saved',
+            schedule: 'Schedule',
+            splittable: 'Splittable',
+            workHours: 'Work Hours',
+          }}
+        />
+      </QueryClientProvider>
+    );
+
+    return { onUpdate, queryClient };
+  }
+
+  it('saves personal scheduling settings from the menu', async () => {
+    taskSchedulingApiMock.updateCurrentUserTaskSchedulingSettings.mockResolvedValue(
+      { ok: true, task_ws_id: 'workspace-1' }
+    );
+    const { onUpdate } = renderSchedulingMenu();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(
+        taskSchedulingApiMock.updateCurrentUserTaskSchedulingSettings
+      ).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({
+          auto_schedule: true,
+          calendar_hours: 'work_hours',
+          is_splittable: false,
+          max_split_duration_minutes: null,
+          min_split_duration_minutes: null,
+          total_duration: 1.5,
+        })
+      )
+    );
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears personal scheduling settings from the menu', async () => {
+    taskSchedulingApiMock.updateCurrentUserTaskSchedulingSettings.mockResolvedValue(
+      { ok: true, task_ws_id: 'workspace-1' }
+    );
+    renderSchedulingMenu({
+      is_splittable: true,
+      max_split_duration_minutes: 90,
+      min_split_duration_minutes: 30,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+
+    await waitFor(() =>
+      expect(
+        taskSchedulingApiMock.updateCurrentUserTaskSchedulingSettings
+      ).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({
+          auto_schedule: false,
+          calendar_hours: null,
+          is_splittable: false,
+          max_split_duration_minutes: null,
+          min_split_duration_minutes: null,
+          total_duration: null,
+        })
+      )
+    );
   });
 });
 

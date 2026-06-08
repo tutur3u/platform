@@ -7,6 +7,42 @@ interface HelpTopic {
 }
 
 const helpTopics: Record<string, HelpTopic> = {
+  box: {
+    commands: [
+      'run -- <command>             auto-lease a remote devbox and run a command',
+      'lease                        create a warm reusable devbox lease',
+      'release <lease-id>           release a kept lease',
+      'preview --lease <id> --port  expose an authenticated HTTP preview',
+      'agent register               create a self-hosted runner token',
+      'cache list|prune             inspect or prune runner cache metadata',
+      'doctor                       inspect local runner prerequisites',
+      'setup                        clone, install, start Supabase, and wire env',
+    ],
+    description:
+      'Remote devboxes sync dirty code to containerized self-hosted runners for heavy Bun, Supabase, Docker, and e2e workflows.',
+    examples: [
+      'ttr box doctor',
+      'ttr box setup',
+      'ttr box run -- bun check',
+      'ttr box run -- bun sb:reset',
+      'ttr box run --keep --preview-port 7803 -- bun test:e2e',
+      'ttr box preview --lease <lease-id> --port 7803',
+    ],
+    options: [
+      '--runner <id>                prefer a specific runner',
+      '--lease <id>                 reuse an existing kept lease',
+      '--reuse                      reuse a compatible warm lease when possible',
+      '--keep                       keep the lease warm after the command exits',
+      '--timeout <duration>         command timeout, for example 90, 2m, or 1h',
+      '--preview-port <port>        request preview forwarding for a port',
+      '--env KEY=value              set one-off remote env values',
+      '--env-file <path>            explicitly send a remote env file',
+      '--dir <path>                 setup checkout path, defaults to ~/Documents/tuturuuu',
+      '--yes                       install detected missing prerequisites during setup',
+      '--json                       print machine-readable JSON',
+    ],
+    usage: 'ttr box <run|lease|release|preview|agent|cache|doctor|setup>',
+  },
   boards: {
     commands: [
       'list                         list boards in the current workspace',
@@ -499,6 +535,7 @@ export function getGlobalHelp() {
     '  upgrade',
     '  whoami',
     '  config set-base-url <url>',
+    '  box <run|lease|release|preview|agent|cache|doctor|setup>',
     '  finance <wallets|transactions|categories|budgets|recurring>',
     '  workspaces [list]|use [id]',
     '  boards [list]|use|create|update|delete',
@@ -524,6 +561,7 @@ export function getGlobalHelp() {
     '  ttr finance --help',
     '  ttr finance transactions --help',
     '  ttr tasks --help',
+    '  ttr box --help',
     '  ttr tasks create --help',
     '  ttr help workspaces',
     '',

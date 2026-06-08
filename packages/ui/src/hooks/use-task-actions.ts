@@ -94,6 +94,24 @@ export function useTaskActions({
     return resolveWorkspaceIdForTask(task);
   }, [resolveWorkspaceIdForTask, task]);
 
+  const getEffectiveTaskIds = useCallback(
+    (taskRecord?: Task) => {
+      if (!taskRecord) return [];
+
+      if (
+        isMultiSelectMode &&
+        selectedTasks &&
+        selectedTasks.size > 1 &&
+        selectedTasks.has(taskRecord.id)
+      ) {
+        return Array.from(selectedTasks);
+      }
+
+      return [taskRecord.id];
+    },
+    [isMultiSelectMode, selectedTasks]
+  );
+
   const getExternalMoveOptions = useCallback((targetList: TaskList) => {
     const options: {
       sourceStatus?: TaskBoardStatus;
@@ -389,13 +407,8 @@ export function useTaskActions({
 
     setIsLoading(true);
 
-    // Check if we're in multi-select mode and have multiple tasks selected
-    const shouldBulkMove =
-      isMultiSelectMode &&
-      selectedTasks &&
-      selectedTasks.size > 1 &&
-      selectedTasks.has(task.id);
-    const tasksToMove = shouldBulkMove ? Array.from(selectedTasks) : [task.id];
+    const tasksToMove = getEffectiveTaskIds(task);
+    const shouldBulkMove = tasksToMove.length > 1;
 
     // Store previous state for rollback
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
@@ -515,8 +528,7 @@ export function useTaskActions({
     task?.id,
     setIsLoading,
     setMenuOpen,
-    isMultiSelectMode,
-    selectedTasks,
+    getEffectiveTaskIds,
     queryClient,
     boardId,
     task,
@@ -531,13 +543,8 @@ export function useTaskActions({
 
     setIsLoading(true);
 
-    // Check if we're in multi-select mode and have multiple tasks selected
-    const shouldBulkMove =
-      isMultiSelectMode &&
-      selectedTasks &&
-      selectedTasks.size > 1 &&
-      selectedTasks.has(task.id);
-    const tasksToMove = shouldBulkMove ? Array.from(selectedTasks) : [task.id];
+    const tasksToMove = getEffectiveTaskIds(task);
+    const shouldBulkMove = tasksToMove.length > 1;
 
     // Store previous state for rollback
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
@@ -649,8 +656,7 @@ export function useTaskActions({
     task?.id,
     setIsLoading,
     setMenuOpen,
-    isMultiSelectMode,
-    selectedTasks,
+    getEffectiveTaskIds,
     queryClient,
     boardId,
     task,
@@ -664,15 +670,7 @@ export function useTaskActions({
     if (!task) return;
     setIsLoading(true);
 
-    // Check if we're in multi-select mode and have multiple tasks selected
-    const shouldBulkDelete =
-      isMultiSelectMode &&
-      selectedTasks &&
-      selectedTasks.size > 1 &&
-      selectedTasks.has(task.id);
-    const tasksToDelete = shouldBulkDelete
-      ? Array.from(selectedTasks)
-      : [task.id];
+    const tasksToDelete = getEffectiveTaskIds(task);
 
     const now = new Date().toISOString();
 
@@ -777,8 +775,7 @@ export function useTaskActions({
     task?.id,
     setIsLoading,
     setDeleteDialogOpen,
-    isMultiSelectMode,
-    selectedTasks,
+    getEffectiveTaskIds,
     queryClient,
     boardId,
     task,
@@ -923,15 +920,8 @@ export function useTaskActions({
 
       setIsLoading(true);
 
-      // Check if we're in multi-select mode and have multiple tasks selected
-      const shouldBulkMove =
-        isMultiSelectMode &&
-        selectedTasks &&
-        selectedTasks.size > 1 &&
-        selectedTasks.has(task.id);
-      const tasksToMove = shouldBulkMove
-        ? Array.from(selectedTasks)
-        : [task.id];
+      const tasksToMove = getEffectiveTaskIds(task);
+      const shouldBulkMove = tasksToMove.length > 1;
 
       // Store previous state for rollback
       const previousTasks = queryClient.getQueryData<Task[]>([
@@ -1127,8 +1117,7 @@ export function useTaskActions({
       availableLists,
       setIsLoading,
       setMenuOpen,
-      isMultiSelectMode,
-      selectedTasks,
+      getEffectiveTaskIds,
       queryClient,
       boardId,
       task,
@@ -1150,15 +1139,7 @@ export function useTaskActions({
         newDate = target.toISOString();
       }
 
-      // Check if we're in multi-select mode and have multiple tasks selected
-      const shouldBulkUpdate =
-        isMultiSelectMode &&
-        selectedTasks &&
-        selectedTasks.size > 1 &&
-        selectedTasks.has(task.id);
-      const tasksToUpdate = shouldBulkUpdate
-        ? Array.from(selectedTasks)
-        : [task.id];
+      const tasksToUpdate = getEffectiveTaskIds(task);
 
       setIsLoading(true);
 
@@ -1260,8 +1241,7 @@ export function useTaskActions({
       task?.id,
       setIsLoading,
       getWorkspaceId,
-      isMultiSelectMode,
-      selectedTasks,
+      getEffectiveTaskIds,
       queryClient,
       boardId,
       task,
@@ -1274,26 +1254,7 @@ export function useTaskActions({
       if (!task) return;
       if (newPriority === task.priority && !isMultiSelectMode) return;
 
-      // Check if we're in multi-select mode and have multiple tasks selected
-      const shouldBulkUpdate =
-        isMultiSelectMode &&
-        selectedTasks &&
-        selectedTasks.size > 1 &&
-        selectedTasks.has(task.id);
-      const tasksToUpdate = shouldBulkUpdate
-        ? Array.from(selectedTasks)
-        : [task.id];
-
-      console.log('🎯 handlePriorityChange called:', {
-        taskId: task.id,
-        newPriority,
-        isMultiSelectMode,
-        selectedTasksSize: selectedTasks?.size,
-        selectedTasksArray: Array.from(selectedTasks || []),
-        shouldBulkUpdate,
-        tasksToUpdate,
-        tasksToUpdateCount: tasksToUpdate.length,
-      });
+      const tasksToUpdate = getEffectiveTaskIds(task);
 
       setIsLoading(true);
 
@@ -1318,12 +1279,6 @@ export function useTaskActions({
         const succeededTaskIds: string[] = [];
         const workspaceId = await getWorkspaceId();
 
-        console.log('🔄 Executing sequential API updates:', {
-          tasksToUpdate,
-          count: tasksToUpdate.length,
-          priority: newPriority,
-        });
-
         for (const taskId of tasksToUpdate) {
           try {
             await updateWorkspaceTask(workspaceId, taskId, {
@@ -1337,11 +1292,6 @@ export function useTaskActions({
             );
           }
         }
-
-        console.log('✅ Sequential update result:', {
-          successCount: succeededTaskIds.length,
-          totalTasks: tasksToUpdate.length,
-        });
 
         if (succeededTaskIds.length === 0) {
           throw new Error('Failed to update any tasks');
@@ -1392,7 +1342,7 @@ export function useTaskActions({
 
         // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (error) {
-        console.error('❌ Failed to update priority:', error);
+        console.error('Failed to update priority:', error);
         // Rollback on error
         if (previousTasks) {
           queryClient.setQueryData(['tasks', boardId], previousTasks);
@@ -1409,12 +1359,12 @@ export function useTaskActions({
       task?.priority,
       setIsLoading,
       getWorkspaceId,
-      isMultiSelectMode,
-      selectedTasks,
+      getEffectiveTaskIds,
       queryClient,
       boardId,
       task,
       broadcast,
+      isMultiSelectMode,
     ]
   );
 
@@ -1423,20 +1373,11 @@ export function useTaskActions({
       if (!task) return;
       if (points === task.estimation_points && !isMultiSelectMode) return;
 
-      // Check if we're in multi-select mode and have multiple tasks selected
-      const shouldBulkUpdate =
-        isMultiSelectMode &&
-        selectedTasks &&
-        selectedTasks.size > 1 &&
-        selectedTasks.has(task.id);
-
       // Get current tasks from cache to filter out ones that already have the target value
       const currentTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
 
       // Filter tasks that actually need updating (don't already have the target estimation)
-      const candidateTasks = shouldBulkUpdate
-        ? Array.from(selectedTasks)
-        : [task.id];
+      const candidateTasks = getEffectiveTaskIds(task);
 
       const tasksToUpdate = currentTasks
         ? candidateTasks.filter((taskId) => {
@@ -1556,7 +1497,7 @@ export function useTaskActions({
       setEstimationSaving,
       getWorkspaceId,
       isMultiSelectMode,
-      selectedTasks,
+      getEffectiveTaskIds,
       queryClient,
       boardId,
       task,
@@ -1587,12 +1528,7 @@ export function useTaskActions({
       setIsLoading(true);
       setCustomDateDialogOpen?.(false); // Close dialog immediately when date is selected
 
-      // Check if we're in multi-select mode with multiple tasks selected
-      const shouldBulkUpdate =
-        isMultiSelectMode &&
-        selectedTasks &&
-        selectedTasks.size > 1 &&
-        selectedTasks.has(task.id);
+      const shouldBulkUpdate = getEffectiveTaskIds(task).length > 1;
 
       if (shouldBulkUpdate && bulkUpdateCustomDueDate) {
         // Use the centralized bulk update function from useBulkOperations
@@ -1655,8 +1591,7 @@ export function useTaskActions({
       getWorkspaceId,
       setIsLoading,
       setCustomDateDialogOpen,
-      isMultiSelectMode,
-      selectedTasks,
+      getEffectiveTaskIds,
       bulkUpdateCustomDueDate,
       task,
       queryClient,
@@ -1676,16 +1611,8 @@ export function useTaskActions({
           task)
         : task;
 
-      // Check if we're in multi-select mode with multiple tasks selected
-      const shouldBulkUpdate =
-        isMultiSelectMode &&
-        selectedTasks &&
-        selectedTasks.size > 1 &&
-        selectedTasks.has(currentTask.id);
-
-      const tasksToUpdate = shouldBulkUpdate
-        ? Array.from(selectedTasks)
-        : [currentTask.id];
+      const tasksToUpdate = getEffectiveTaskIds(currentTask);
+      const shouldBulkUpdate = tasksToUpdate.length > 1;
 
       setIsLoading(true);
 
@@ -1703,7 +1630,7 @@ export function useTaskActions({
 
       if (shouldBulkUpdate && previousTasks) {
         const selectedTasksData = previousTasks.filter((t) =>
-          selectedTasks?.has(t.id)
+          tasksToUpdate.includes(t.id)
         );
         // Only mark as active (to remove) if ALL selected tasks have the assignee
         active = selectedTasksData.every((t) =>
@@ -1891,8 +1818,7 @@ export function useTaskActions({
       boardId,
       queryClient,
       setIsLoading,
-      isMultiSelectMode,
-      selectedTasks,
+      getEffectiveTaskIds,
       broadcast,
       getWorkspaceId,
     ]

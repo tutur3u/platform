@@ -25,6 +25,11 @@ describe('AI agent registry codec', () => {
       secret: 'webhookSecret',
     });
     expect(getRequiredSecrets('zalo')).toEqual(['botToken', 'webhookSecret']);
+    expect(getRequiredSecrets('zalo', 'personal')).toEqual([
+      'personalCookieJson',
+      'personalImei',
+      'personalUserAgent',
+    ]);
   });
 
   it('builds redacted agent definitions from workspace secret rows', () => {
@@ -85,6 +90,50 @@ describe('AI agent registry codec', () => {
       { configured: true, lastFour: 'cret', name: 'webhookSecret' },
     ]);
     expect(JSON.stringify(agents)).not.toContain('zalo-webhook-secret');
+  });
+
+  it('builds personal Zalo channel definitions with personal required secrets', () => {
+    const agents = buildAgentDefinitions([
+      {
+        name: 'AI_AGENT_REGISTRY:support:meta',
+        value: JSON.stringify({ id: 'support', name: 'Support Agent' }),
+      },
+      {
+        name: channelMetaKey('support', 'zalo-personal'),
+        value: JSON.stringify({
+          adapter: 'zalo',
+          displayName: 'Personal Zalo',
+          status: 'deployed',
+          workspaceId: 'workspace-1',
+          zaloAccountMode: 'personal',
+          zaloPersonalOwnId: 'personal-own-id',
+        }),
+      },
+      {
+        name: channelSecretKey(
+          'support',
+          'zalo-personal',
+          'personalCookieJson'
+        ),
+        value: '[{"name":"zpsid","value":"cookie"}]',
+      },
+      {
+        name: channelSecretKey('support', 'zalo-personal', 'personalImei'),
+        value: 'imei-1',
+      },
+    ]);
+
+    expect(agents[0]?.channels[0]).toMatchObject({
+      adapter: 'zalo',
+      displayName: 'Personal Zalo',
+      zaloAccountMode: 'personal',
+      zaloPersonalOwnId: 'personal-own-id',
+    });
+    expect(agents[0]?.channels[0]?.secrets).toEqual([
+      { configured: true, lastFour: 'e"}]', name: 'personalCookieJson' },
+      { configured: true, lastFour: 'ei-1', name: 'personalImei' },
+      { configured: false, lastFour: null, name: 'personalUserAgent' },
+    ]);
   });
 
   it('preserves external chat setup options in channel metadata', () => {

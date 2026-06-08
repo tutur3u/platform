@@ -1,3 +1,4 @@
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { after, type NextRequest, NextResponse } from 'next/server';
 import { getAiAgentChannelById } from '@/lib/ai-agents/registry';
 import {
@@ -48,6 +49,27 @@ async function handleWebhook(request: NextRequest, { params }: Params) {
       return NextResponse.json(
         { error: 'AI agent channel is not deployed' },
         { status: 409 }
+      );
+    }
+
+    if (adapter === 'zalo' && channel.zaloAccountMode === 'personal') {
+      return NextResponse.json(
+        { error: 'Personal Zalo channels use the listener lifecycle API' },
+        { status: 404 }
+      );
+    }
+
+    if (
+      adapter === 'discord' &&
+      request.headers.has('x-discord-gateway-token') &&
+      channel.workspaceId !== ROOT_WORKSPACE_ID
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Discord Gateway forwarding is restricted to the internal workspace',
+        },
+        { status: 403 }
       );
     }
 

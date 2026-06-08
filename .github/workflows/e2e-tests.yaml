@@ -26,11 +26,12 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-      BASE_URL: http://localhost:7803
+      BASE_URL: https://tuturuuu.localhost:1355
       DOCKER_WEB_COMPOSE_PROJECT_NAME: ttr-e2e-${{ github.run_id }}-${{ matrix.shard }}
       E2E_SHARD_INDEX: ${{ matrix.shard }}
       E2E_TOTAL_SHARDS: ${{ matrix.total_shards }}
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:8001
+      PORTLESS_PORT: "1355"
 
     steps:
       - name: Check out code
@@ -66,9 +67,9 @@ jobs:
 
       # --- Node / Bun ---
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: latest
+          bun-version: 1.3.14
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -85,7 +86,7 @@ jobs:
             ${{ runner.os }}-turbo-
 
       - name: Install dependencies
-        run: bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Install Playwright browsers
         working-directory: apps/web
@@ -94,7 +95,81 @@ jobs:
       # --- Run E2E tests against Docker web + local Docker Supabase ---
       - name: Run Playwright shard
         working-directory: apps/web
-        run: bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }}
+        run: |
+          mkdir -p ../../tmp/e2e-diagnostics
+          set -o pipefail
+          bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }} 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+
+      - name: Collect Dockerized E2E diagnostics
+        if: ${{ failure() }}
+        run: |
+          set +e
+          diagnostics_dir="tmp/e2e-diagnostics"
+          mkdir -p "$diagnostics_dir"
+
+          {
+            printf 'run_id=%s\n' "${GITHUB_RUN_ID}"
+            printf 'job=%s\n' "${GITHUB_JOB}"
+            printf 'sha=%s\n' "${GITHUB_SHA}"
+            printf 'ref=%s\n' "${GITHUB_REF}"
+            printf 'shard=%s/%s\n' "${E2E_SHARD_INDEX}" "${E2E_TOTAL_SHARDS}"
+            printf 'base_url=%s\n' "${BASE_URL}"
+            printf 'portless_port=%s\n' "${PORTLESS_PORT}"
+            printf 'docker_web_proxy_host_port=%s\n' "${DOCKER_WEB_PROXY_HOST_PORT:-7803}"
+            printf 'compose_project=%s\n' "${DOCKER_WEB_COMPOSE_PROJECT_NAME}"
+            date -u +"collected_at=%Y-%m-%dT%H:%M:%SZ"
+          } > "$diagnostics_dir/summary.txt"
+
+          if [ -f tmp/e2e/web.env ]; then
+            sed -E 's/^([^=]+)=.*/\1=<redacted>/' tmp/e2e/web.env > "$diagnostics_dir/web-env.keys.txt"
+          else
+            echo "tmp/e2e/web.env not found" > "$diagnostics_dir/web-env.keys.txt"
+          fi
+
+          docker ps -a --filter "label=com.docker.compose.project=${DOCKER_WEB_COMPOSE_PROJECT_NAME}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" > "$diagnostics_dir/docker-containers.txt" 2>&1 || true
+          docker compose --env-file tmp/e2e/web.env -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" ps -a > "$diagnostics_dir/docker-compose-ps.txt" 2>&1 || true
+          docker compose --env-file tmp/e2e/web.env -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" logs --tail=1000 web-proxy web-blue web-green hive-blue hive-green hive-realtime meet-realtime backend markitdown storage-unzip-proxy web-cron-runner > "$diagnostics_dir/docker-compose-services.log" 2>&1 || true
+          docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" > "$diagnostics_dir/docker-images.txt" 2>&1 || true
+          web_proxy_login_url="http://127.0.0.1:${DOCKER_WEB_PROXY_HOST_PORT:-7803}/login"
+          curl -i --max-time 10 "$web_proxy_login_url" > "$diagnostics_dir/web-proxy-login.txt" 2>&1 || true
+          bunx portless list > "$diagnostics_dir/portless-list.txt" 2>&1 || true
+          portless_login_url="${BASE_URL%/}/login"
+          curl -k -i --max-time 10 "$portless_login_url" > "$diagnostics_dir/portless-login.txt" 2>&1 || true
+          bun sb:status > "$diagnostics_dir/supabase-status.txt" 2>&1 || true
+
+          if [ -f apps/web/test-results/.last-run.json ]; then
+            cp apps/web/test-results/.last-run.json "$diagnostics_dir/playwright-last-run.json"
+          else
+            echo "apps/web/test-results/.last-run.json not found" > "$diagnostics_dir/playwright-last-run.json"
+          fi
+
+          echo "::group::Docker containers for E2E project"
+          cat "$diagnostics_dir/docker-containers.txt"
+          echo "::endgroup::"
+
+          echo "::group::Docker Compose status"
+          cat "$diagnostics_dir/docker-compose-ps.txt"
+          echo "::endgroup::"
+
+          echo "::group::Docker Compose logs"
+          tail -n 300 "$diagnostics_dir/docker-compose-services.log"
+          echo "::endgroup::"
+
+          echo "::group::Docker web proxy login probe"
+          cat "$diagnostics_dir/web-proxy-login.txt"
+          echo "::endgroup::"
+
+          echo "::group::Supabase status"
+          cat "$diagnostics_dir/supabase-status.txt"
+          echo "::endgroup::"
+
+          echo "::group::Portless login probe"
+          cat "$diagnostics_dir/portless-login.txt"
+          echo "::endgroup::"
+
+          echo "::group::Playwright last run"
+          cat "$diagnostics_dir/playwright-last-run.json"
+          echo "::endgroup::"
 
       - name: Save Supabase Docker images for cache
         if: ${{ always() && matrix.shard == 1 && steps.cache-supabase.outputs.cache-hit != 'true' }}
@@ -110,6 +185,15 @@ jobs:
           key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}
 
       # --- Upload artifacts on failure ---
+      - name: Upload E2E diagnostics
+        uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: e2e-diagnostics-${{ matrix.shard }}-of-${{ matrix.total_shards }}
+          path: tmp/e2e-diagnostics/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}

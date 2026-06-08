@@ -3,7 +3,15 @@ import Link from 'next/link';
 import { Separator } from '../separator';
 import { TuturuuLogo } from './tuturuuu-logo';
 
-export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
+export function CommonFooter({
+  t,
+  devMode,
+  logoSrc,
+}: {
+  t: any;
+  devMode: boolean;
+  logoSrc?: string;
+}) {
   const TUTURUUU_URL = devMode
     ? getLocalInternalAppUrl('platform', 'http://localhost:7803')
     : 'https://tuturuuu.com';
@@ -35,6 +43,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
               width={64}
               height={64}
               alt="logo"
+              src={logoSrc}
               className="h-12 w-12"
             />
             <div className="font-semibold text-4xl">Tuturuuu</div>
@@ -165,6 +174,12 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
               className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.branding')}
+            </Link>
+            <Link
+              href={`${TUTURUUU_URL}/ui`}
+              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+            >
+              {t('common.ui')}
             </Link>
           </div>
 

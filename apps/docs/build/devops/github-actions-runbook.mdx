@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-06-02"
+updatedAt: "2026-06-08"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -110,8 +110,10 @@ These workflows:
   `TRUSTED_PREVIEW_DEPLOY_ACTORS` repository variable
 - reject production manual dispatches from non-production branches before
   install/build/deploy work starts
-- install Bun and Node 24
-- install dependencies
+- install Bun with `.github/actions/setup-bun-with-retry`, pinned to the root
+  `packageManager` Bun version and retried with exponential backoff
+- install dependencies through `scripts/ci/run-with-backoff.sh` so transient Bun
+  tarball or cache failures retry after cache cleanup
 - build selected shared workspace dependencies before Vercel resolves package exports:
   `@tuturuuu/types`, `@tuturuuu/supabase`, and `@tuturuuu/internal-api`
 - run `vercel pull`
@@ -155,10 +157,12 @@ binary build, and Docker image build.
 - `branch-name-check.yaml`
 
 The test workflows (`turbo-unit-tests.yaml` and `codecov.yaml`) run `bun setup`
-before executing tests so dependency installation and workspace package builds
-match the local setup path. Vercel workflows should invoke Turborepo through
-`bun turbo:local ...` after `bun install` so CI uses the pinned repo dependency
-instead of resolving a global or downloaded Turbo binary.
+through `scripts/ci/run-with-backoff.sh` before executing tests so dependency
+installation and workspace package builds match the local setup path while
+surviving transient tarball extraction failures. Vercel workflows should invoke
+Turborepo through `bun turbo:local ...` after the retried `bun install` so CI
+uses the pinned repo dependency instead of resolving a global or downloaded
+Turbo binary.
 
 Vercel deploy credentials must stay environment-scoped. Do not put
 `${{ secrets.* }}` values in a Vercel workflow-level `env:` block, and do not
@@ -220,7 +224,40 @@ tarball, verifies its package name and version, and runs `npm publish` without
 the matching npm trusted publisher must use this repository, the workflow
 filename, and that environment. Manual dispatch is only valid with the branch
 selector set to `production`; non-production refs are rejected before the package
-or publish jobs can start.
+or publish jobs can start. Every workflow-published package manifest must also
+declare `repository.type: "git"`,
+`repository.url: "https://github.com/tutur3u/platform"`, and
+`repository.directory` matching the package path. npm validates those fields
+against GitHub Actions provenance and rejects publishes with `E422` when the
+packed manifest has an empty or mismatched repository URL.
+
+Keep internal Tuturuuu dependencies as `workspace:*` in source package
+manifests so local builds always use the checked-out workspace. Package release
+workflows must first run
+`node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/<name>`
+so publishable Tuturuuu dependencies are visible on npm before the dependent
+tarball is packed. That wait also inspects the dependency package workflow run
+for the same production SHA and fails immediately when that related workflow has
+already failed instead of burning the full npm polling timeout. It must then
+rewrite the checked-out manifest immediately
+before `npm pack` with
+`node scripts/ci/prepare-npm-package-manifest.js packages/<name>`. That
+temporary rewrite replaces `workspace:` protocol ranges with the current
+workspace package versions so npm consumers can install the tarball. After
+`npm publish`, the publish job polls `npm view` for the exact published version
+before it reports success. If npm returns first-publish or permission errors,
+fix the npm package access and trusted publisher setup instead of skipping the
+package. If a published package depends on another release-please-managed
+Tuturuuu package, that dependency also needs its own
+`release-*-package.yaml` workflow and matching `tuturuuu.ts` entry.
+
+The platform production Vercel workflow also runs
+`node scripts/ci/package-release-readiness.js wait-changed-package-versions`
+before installing dependencies. Release-please package bumps therefore publish
+and become visible on npm before the normal production platform deployment flow
+continues. When the push payload omits changed package files, the helper fetches
+the missing base SHA before falling back to `git diff`, so shallow checkout
+depth does not break the release gate.
 
 ### Newer-commit guards
 

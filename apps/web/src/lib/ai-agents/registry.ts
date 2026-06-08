@@ -2,10 +2,13 @@ export {
   deployAiAgentChannel,
   getAiAgentById,
   getAiAgentChannelById,
+  getAiAgentChannelRequiredSecrets,
   getChannelSecretValues,
+  isAiAgentZaloPersonalEnabled,
   listAiAgents,
   markAiAgentChannelEvent,
   pauseAiAgentChannel,
+  recordAiAgentZaloPersonalConnection,
   rotateAiAgentChannelSecret,
 } from './agent-registry';
 export { saveAiAgent } from './agent-save';

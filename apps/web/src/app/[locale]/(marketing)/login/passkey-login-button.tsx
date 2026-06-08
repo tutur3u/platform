@@ -6,7 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 interface PasskeyLoginButtonProps {
   captchaToken?: string;
@@ -15,6 +15,7 @@ interface PasskeyLoginButtonProps {
   onAuthenticated: () => Promise<void>;
   onCaptchaReset?: () => void;
   requiresTurnstile?: boolean;
+  turnstileError?: string;
 }
 
 export function PasskeyLoginButton({
@@ -24,11 +25,14 @@ export function PasskeyLoginButton({
   onAuthenticated,
   onCaptchaReset,
   requiresTurnstile = false,
+  turnstileError,
 }: PasskeyLoginButtonProps) {
   const t = useTranslations('login');
+  const turnstileErrorId = useId();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const isTurnstileBlocked =
     requiresTurnstile && (!canRenderTurnstile || !captchaToken);
+  const turnstileBlockReason = isTurnstileBlocked ? turnstileError : undefined;
 
   const handlePasskeyLogin = async () => {
     if (disabled || isAuthenticating || isTurnstileBlocked) {
@@ -69,19 +73,27 @@ export function PasskeyLoginButton({
   };
 
   return (
-    <Button
-      type="button"
-      variant="outline"
-      className="h-12 w-full rounded-2xl font-medium"
-      disabled={disabled || isAuthenticating || isTurnstileBlocked}
-      onClick={handlePasskeyLogin}
-    >
-      {isAuthenticating ? (
-        <LoadingIndicator className="size-4" />
-      ) : (
-        <Fingerprint className="size-4" />
-      )}
-      <span>{t('continue_with_passkey')}</span>
-    </Button>
+    <div className="flex flex-col gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        className="h-12 w-full rounded-2xl font-medium"
+        disabled={disabled || isAuthenticating || isTurnstileBlocked}
+        onClick={handlePasskeyLogin}
+        aria-describedby={turnstileBlockReason ? turnstileErrorId : undefined}
+      >
+        {isAuthenticating ? (
+          <LoadingIndicator className="size-4" />
+        ) : (
+          <Fingerprint className="size-4" />
+        )}
+        <span>{t('continue_with_passkey')}</span>
+      </Button>
+      {turnstileBlockReason ? (
+        <p id={turnstileErrorId} className="text-destructive text-sm">
+          {turnstileBlockReason}
+        </p>
+      ) : null}
+    </div>
   );
 }

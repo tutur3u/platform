@@ -1,3 +1,7 @@
+import {
+  MAX_HIVE_OBJECT_FOOTPRINT_CELLS,
+  normalizeHiveObjectFootprint,
+} from '@tuturuuu/realtime/hive';
 import { getObjectCatalogItem } from './catalog';
 import type { HiveObject, HiveVector3 } from './types';
 
@@ -17,11 +21,7 @@ const DEFAULT_FOOTPRINT = {
 export function normalizeObjectFootprint(
   footprint: FootprintInput
 ): HiveObjectFootprint {
-  return {
-    autoExpandTerrain: !!footprint?.autoExpandTerrain,
-    depth: Math.max(1, Math.round(footprint?.depth ?? 1)),
-    width: Math.max(1, Math.round(footprint?.width ?? 1)),
-  };
+  return normalizeHiveObjectFootprint(footprint) ?? DEFAULT_FOOTPRINT;
 }
 
 export function getObjectFootprint(
@@ -64,6 +64,10 @@ export function getObjectFootprintCells({
 
   for (let x = 0; x < footprint.width; x += 1) {
     for (let z = 0; z < footprint.depth; z += 1) {
+      if (cells.length >= MAX_HIVE_OBJECT_FOOTPRINT_CELLS) {
+        return cells;
+      }
+
       cells.push({
         x: position.x + x,
         y: 0,
@@ -131,16 +135,5 @@ function getStateFootprint(state?: HiveObject['state']) {
   }
 
   const footprint = value as Record<string, unknown>;
-  const width = Number(footprint.width);
-  const depth = Number(footprint.depth);
-
-  if (!Number.isFinite(width) || !Number.isFinite(depth)) {
-    return null;
-  }
-
-  return normalizeObjectFootprint({
-    autoExpandTerrain: footprint.autoExpandTerrain === true,
-    depth,
-    width,
-  });
+  return normalizeHiveObjectFootprint(footprint);
 }

@@ -1,7 +1,7 @@
 ---
 title: 'DevOps & Deployment'
 description: 'The operational map for how Tuturuuu is built, deployed, migrated, and validated.'
-updatedAt: '2026-06-02'
+updatedAt: '2026-06-03'
 ---
 
 This section is the runbook for shipping and operating Tuturuuu. It documents the
@@ -31,6 +31,10 @@ released, or recovered.
 
 - GitHub Actions is the canonical automation layer for hosted deployments and database migrations.
 - `tuturuuu.ts` can disable individual workflows; `ci-check.yml` enforces that toggle before a job does real work.
+- `bun check` includes path-sensitive Discord Python validation when the local
+  diff touches `apps/discord/**` or `.github/workflows/discord-python-ci.yml`.
+  That path runs the same blocking checks as Discord Python CI through
+  `scripts/check-discord-python.js`.
 - Vercel handles hosted web deployments. Supabase migrations run as separate workflows; `main` drives staging schema promotion and `production` drives production schema promotion.
 - Self-hosted web deployment is Docker-based, and blue/green rollout is the supported rebuild-before-restart path.
 - Secrets live in GitHub Actions secrets/variables or local env files such as `apps/web/.env.local`. They do not belong in the repo.

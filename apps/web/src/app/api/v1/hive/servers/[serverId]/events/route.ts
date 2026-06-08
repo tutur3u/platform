@@ -1,3 +1,4 @@
+import { isHiveAdminWorldEvent } from '@tuturuuu/realtime/hive';
 import { type NextRequest, NextResponse } from 'next/server';
 import { createHiveWorldEvent } from '@/lib/hive/hive-db';
 import {
@@ -30,6 +31,16 @@ async function createEvent(request: NextRequest, serverId: string) {
     return NextResponse.json(
       { error: 'Invalid Hive event payload' },
       { status: 400 }
+    );
+  }
+
+  if (
+    !result.access.isAdmin &&
+    isHiveAdminWorldEvent(parsed.data.eventType, parsed.data.payload)
+  ) {
+    return NextResponse.json(
+      { error: 'Hive admin access required' },
+      { status: 403 }
     );
   }
 

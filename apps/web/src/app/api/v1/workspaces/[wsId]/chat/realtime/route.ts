@@ -8,9 +8,6 @@ type RouteParams = {
   wsId: string;
 };
 
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
 const encoder = new TextEncoder();
 const realtimeUnavailableEvent = `event: message\ndata: ${JSON.stringify({
   type: 'error',

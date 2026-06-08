@@ -1,42 +1,19 @@
-import {
-  loadTaskBoardGuestSharesForWorkspace,
-  summarizeTaskBoardGuestShares,
-} from '@tuturuuu/apis/tu-do/board-access';
-import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
-import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
+import type { WorkspaceProductTier } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import {
-  canShowWorkspaceInviteForNonMember,
-  getWorkspace,
-  getWorkspaceNonMemberInviteEligibility,
-} from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
-import { WorkspacePreparing } from '@/components/workspace-preparing';
+import { PROD_MODE } from '@/constants/env';
 import {
-  PROD_MODE,
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
-import { SidebarProvider } from '@/context/sidebar-context';
-import { resolveWorkspaceBrandingUrlsForNext } from '@/lib/workspace-branding-image-url';
-import NavbarActions from '../../navbar-actions';
-import { SettingsDialogHost } from '../../settings-dialog-host';
-import { UserNav } from '../../user-nav';
-import InvitationCard from './invitation-card';
-import { WorkspaceNavigationLinks } from './navigation';
-import { filterDashboardNavigationLinks } from './navigation-visibility';
-import { PersonalWorkspaceCollaborationBanner } from './personal-workspace-collaboration-banner';
-import PersonalWorkspacePrompt from './personal-workspace-prompt';
-import { Structure } from './structure';
+} from '@/constants/sidebar';
+import { isPolarWorkspaceSetupEnabled } from '@/lib/polar-config';
+import {
+  type DashboardLayoutWorkspace,
+  getDashboardLayoutData,
+} from './layout-data';
 
 interface LayoutProps {
   params: Promise<{
@@ -45,18 +22,118 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-export default async function Layout({ children, params }: LayoutProps) {
+async function createPersonalWorkspacePrompt(
+  eligibleWorkspaces: { id: string; name: string | null }[]
+) {
+  const [{ getTranslations }, { default: PersonalWorkspacePrompt }] =
+    await Promise.all([
+      import('next-intl/server'),
+      import('./personal-workspace-prompt'),
+    ]);
   const t = await getTranslations();
+
+  return (
+    <PersonalWorkspacePrompt
+      eligibleWorkspaces={eligibleWorkspaces}
+      title={t('common.personal_account')}
+      description={t('common.set_up_personal_workspace')}
+      nameRule={t('common.personal_workspace_naming_rule')}
+      createLabel={t('common.create_workspace')}
+      markLabel={t('common.mark_as_personal')}
+      selectPlaceholder={t('common.select_workspace')}
+    />
+  );
+}
+
+async function createNavigationLinks({
+  isPersonal,
+  personalOrWsId,
+  user,
+  workspaceTier,
+  wsId,
+}: {
+  isPersonal: boolean;
+  personalOrWsId: string;
+  user: WorkspaceUser;
+  workspaceTier: WorkspaceProductTier | null;
+  wsId: string;
+}) {
+  const [{ WorkspaceNavigationLinks }, { filterDashboardNavigationLinks }] =
+    await Promise.all([
+      import('./navigation'),
+      import('./navigation-visibility'),
+    ]);
+
+  const navigationLinks = await WorkspaceNavigationLinks({
+    wsId,
+    personalOrWsId,
+    isPersonal,
+    isTuturuuuUser: !!user.email?.endsWith('@tuturuuu.com'),
+    user: {
+      email: user.email ?? undefined,
+      id: user.id,
+    },
+  });
+
+  return filterDashboardNavigationLinks(navigationLinks, {
+    currentWsId: wsId,
+    prodMode: PROD_MODE,
+    userEmail: user.email,
+    workspaceTier,
+  });
+}
+
+async function NavbarActionsSlot({ user }: { user: WorkspaceUser }) {
+  const { default: NavbarActions } = await import('../../navbar-actions');
+
+  return (
+    <NavbarActions
+      renderCommandLauncher={false}
+      renderSettingsDialog={false}
+      user={user}
+    />
+  );
+}
+
+async function UserPopoverSlot({
+  user,
+  workspace,
+}: {
+  user: WorkspaceUser;
+  workspace: DashboardLayoutWorkspace;
+}) {
+  const { UserNav } = await import('../../user-nav');
+
+  return (
+    <UserNav
+      hideMetadata
+      workspace={workspace}
+      user={user}
+      renderSettingsDialog={false}
+    />
+  );
+}
+
+async function loadDashboardShellClient() {
+  const { DashboardShellClient } = await import('./dashboard-shell-client');
+
+  return DashboardShellClient;
+}
+
+export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
 
-  const workspace = await getWorkspace(id, { useAdmin: true });
+  const { user, workspace } = await getDashboardLayoutData(id);
+
+  if (!user?.id) redirect('/login');
   if (!workspace) notFound();
 
-  const isPolarConfigured =
-    !!process.env.POLAR_WEBHOOK_SECRET && !!process.env.POLAR_ACCESS_TOKEN;
-
   // Auto-assign free subscription if workspace has no active subscription
-  if (isPolarConfigured && workspace.tier === null) {
+  if (isPolarWorkspaceSetupEnabled() && workspace.tier === null) {
+    const { WorkspacePreparing } = await import(
+      '@/components/workspace-preparing'
+    );
+
     return <WorkspacePreparing wsId={workspace.id} />;
   }
 
@@ -64,12 +141,6 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,
   });
-
-  const user = await getCurrentUser();
-
-  if (!user?.id) redirect('/login');
-
-  const supabase = await createClient();
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
   const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
@@ -102,7 +173,17 @@ export default async function Layout({ children, params }: LayoutProps) {
   let isGuestWorkspace = false;
 
   if (!workspace.joined) {
-    const sbAdmin = await createAdminClient();
+    const [
+      { createAdminClient, createClient },
+      { loadTaskBoardGuestSharesForWorkspace, summarizeTaskBoardGuestShares },
+    ] = await Promise.all([
+      import('@tuturuuu/supabase/next/server'),
+      import('@tuturuuu/apis/tu-do/board-access'),
+    ]);
+    const [supabase, sbAdmin] = await Promise.all([
+      createClient(),
+      createAdminClient(),
+    ]);
     const guestShares = await loadTaskBoardGuestSharesForWorkspace({
       sbAdmin,
       user: {
@@ -116,6 +197,10 @@ export default async function Layout({ children, params }: LayoutProps) {
     if (guestSummary.boardCount > 0) {
       isGuestWorkspace = true;
     } else {
+      const {
+        canShowWorkspaceInviteForNonMember,
+        getWorkspaceNonMemberInviteEligibility,
+      } = await import('@tuturuuu/utils/workspace-helper');
       const inviteEligibility = await getWorkspaceNonMemberInviteEligibility(
         sbAdmin,
         {
@@ -132,6 +217,13 @@ export default async function Layout({ children, params }: LayoutProps) {
 
       const { allowGuestSelfJoin } = inviteEligibility;
 
+      const [
+        { resolveWorkspaceBrandingUrlsForNext },
+        { default: InvitationCard },
+      ] = await Promise.all([
+        import('@/lib/workspace-branding-image-url'),
+        import('./invitation-card'),
+      ]);
       const branding = await resolveWorkspaceBrandingUrlsForNext(sbAdmin, {
         logo_url: workspace.logo_url,
         avatar_url: workspace.avatar_url,
@@ -150,127 +242,89 @@ export default async function Layout({ children, params }: LayoutProps) {
     }
   }
 
-  // Personal workspace prompt data
-  const { data: existingPersonal } = await supabase
-    .from('workspaces')
-    .select('id')
-    .eq('personal', true)
-    .eq('creator_id', user.id)
-    .maybeSingle();
-
   let eligibleWorkspaces: { id: string; name: string | null }[] | undefined;
+  let showPersonalWorkspacePrompt = false;
+  let personalWorkspacePrompt: ReactNode = null;
 
-  if (!existingPersonal) {
-    const { data: candidates } = await supabase
+  if (!workspace.personal && !isGuestWorkspace) {
+    const { createClient } = await import('@tuturuuu/supabase/next/server');
+    const supabase = await createClient();
+    const { data: existingPersonal } = await supabase
       .from('workspaces')
-      .select('id, name, creator_id, workspace_members(count)')
-      .eq('creator_id', user.id);
-    eligibleWorkspaces = (candidates || []).filter((ws) => {
-      const memberCount = ws.workspace_members?.[0]?.count ?? 0;
-      return memberCount === 1;
-    });
+      .select('id')
+      .eq('personal', true)
+      .eq('creator_id', user.id)
+      .maybeSingle();
+
+    if (!existingPersonal) {
+      const { data: candidates } = await supabase
+        .from('workspaces')
+        .select('id, name, creator_id, workspace_members(count)')
+        .eq('creator_id', user.id);
+      eligibleWorkspaces = (candidates || []).filter((ws) => {
+        const memberCount = ws.workspace_members?.[0]?.count ?? 0;
+        return memberCount === 1;
+      });
+    }
+
+    showPersonalWorkspacePrompt = !existingPersonal;
+
+    if (showPersonalWorkspacePrompt) {
+      personalWorkspacePrompt = await createPersonalWorkspacePrompt(
+        eligibleWorkspaces || []
+      );
+    }
   }
 
-  const SHOW_PERSONAL_WORKSPACE_PROMPT = !existingPersonal && !isGuestWorkspace;
+  if (showPersonalWorkspacePrompt && eligibleWorkspaces?.length === 0) {
+    return personalWorkspacePrompt;
+  }
 
-  if (SHOW_PERSONAL_WORKSPACE_PROMPT && eligibleWorkspaces?.length === 0)
-    return (
-      <PersonalWorkspacePrompt
-        eligibleWorkspaces={eligibleWorkspaces || []}
-        title={t('common.personal_account')}
-        description={t('common.set_up_personal_workspace')}
-        nameRule={t('common.personal_workspace_naming_rule')}
-        createLabel={t('common.create_workspace')}
-        markLabel={t('common.mark_as_personal')}
-        selectPlaceholder={t('common.select_workspace')}
-      />
-    );
-
-  const navigationLinks = await WorkspaceNavigationLinks({
+  const visibleNavigationLinks = await createNavigationLinks({
     wsId,
     personalOrWsId: workspaceSlug,
     isPersonal: !!workspace.personal,
-    isTuturuuuUser: !!user.email?.endsWith('@tuturuuu.com'),
+    user,
+    workspaceTier: workspace.tier ?? null,
   });
-  const visibleNavigationLinks = filterDashboardNavigationLinks(
-    navigationLinks,
-    {
-      currentWsId: wsId,
-      prodMode: PROD_MODE,
-      userEmail: user.email,
-      workspaceTier: workspace.tier ?? null,
-    }
-  );
+  const DashboardShellClient = await loadDashboardShellClient();
 
   return (
-    <SidebarProvider initialBehavior={sidebarBehavior}>
-      {!isGuestWorkspace && (
-        <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
-      )}
-      {SHOW_PERSONAL_WORKSPACE_PROMPT && (
-        <div className="px-2 pt-2 md:px-4 md:pt-3">
-          <PersonalWorkspacePrompt
-            eligibleWorkspaces={eligibleWorkspaces || []}
-            title={t('common.personal_account')}
-            description={t('common.set_up_personal_workspace')}
-            nameRule={t('common.personal_workspace_naming_rule')}
-            createLabel={t('common.create_workspace')}
-            markLabel={t('common.mark_as_personal')}
-            selectPlaceholder={t('common.select_workspace')}
-          />
-        </div>
-      )}
-      <Structure
-        wsId={wsId}
-        user={user}
-        workspace={workspace}
-        defaultCollapsed={defaultCollapsed}
-        links={visibleNavigationLinks}
-        actions={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <NavbarActions
-              renderCommandLauncher={false}
-              renderSettingsDialog={false}
-            />
-          </Suspense>
-        }
-        userPopover={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <UserNav
-              hideMetadata
-              workspace={workspace}
-              renderSettingsDialog={false}
-              navLinks={visibleNavigationLinks}
-            />
-          </Suspense>
-        }
-      >
-        <RealtimeLogProvider wsId={wsId}>
-          <WorkspacePresenceProvider
-            wsId={wsId}
-            tier={workspace.tier ?? null}
-            enabled={!workspace.personal && !isGuestWorkspace}
-          >
-            <TaskDialogWrapper
-              isPersonalWorkspace={!!workspace.personal}
-              wsId={wsId}
-            >
-              {workspace.personal && <PersonalWorkspaceCollaborationBanner />}
-              {children}
-            </TaskDialogWrapper>
-          </WorkspacePresenceProvider>
-        </RealtimeLogProvider>
-      </Structure>
-    </SidebarProvider>
+    <DashboardShellClient
+      wsId={wsId}
+      user={user}
+      workspace={workspace}
+      defaultCollapsed={defaultCollapsed}
+      links={visibleNavigationLinks}
+      sidebarBehavior={sidebarBehavior}
+      isGuestWorkspace={isGuestWorkspace}
+      tier={workspace.tier ?? null}
+      enablePresence={!workspace.personal && !isGuestWorkspace}
+      isPersonalWorkspace={!!workspace.personal}
+      showPersonalWorkspaceCollaborationBanner={!!workspace.personal}
+      personalWorkspacePrompt={personalWorkspacePrompt}
+      actions={
+        <Suspense
+          key={user.id}
+          fallback={
+            <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+          }
+        >
+          <NavbarActionsSlot user={user} />
+        </Suspense>
+      }
+      userPopover={
+        <Suspense
+          key={user.id}
+          fallback={
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+          }
+        >
+          <UserPopoverSlot user={user} workspace={workspace} />
+        </Suspense>
+      }
+    >
+      {children}
+    </DashboardShellClient>
   );
 }

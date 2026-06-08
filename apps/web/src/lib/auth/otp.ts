@@ -36,7 +36,7 @@ import {
   getMobileVersionPolicies,
   type MobilePlatform,
 } from '@/lib/mobile-version-policy';
-import { isLocalE2EAuthBypassEnabled } from './local-e2e';
+import { shouldBypassSupabaseAuthCaptchaForDev } from './local-e2e';
 
 export const OTP_UNAVAILABLE_ERROR =
   'Verification code sign-in is unavailable right now.';
@@ -307,7 +307,7 @@ export async function sendOtp(
   }
 
   const turnstile = resolveTurnstileToken({
-    devMode: isLocalE2EAuthBypassEnabled() || undefined,
+    devMode: shouldBypassSupabaseAuthCaptchaForDev(),
     token: input.captchaToken,
     requireConfiguration: true,
   });

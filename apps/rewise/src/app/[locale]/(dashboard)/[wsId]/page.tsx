@@ -1,5 +1,4 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
-import { headers } from 'next/headers';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { redirect } from 'next/navigation';
 import { isCurrentUserAIWhitelisted } from '@/lib/ai-whitelist';
 import Chat from './chat';
@@ -13,10 +12,7 @@ interface Props {
 
 export default async function AIPage({ searchParams }: Props) {
   const { lang: locale } = await searchParams;
-  const user = getAppSessionUserFromRequest(
-    { headers: await headers() },
-    { targetApp: 'rewise' }
-  );
+  const user = await getSatelliteAppSessionUser('rewise');
   if (!user?.email) redirect('/login');
 
   const { data: chats, count } = await getChats(user);

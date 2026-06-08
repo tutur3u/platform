@@ -51,6 +51,7 @@ interface InvoicePaymentSettingsProps {
   categoryLabelClassName?: string;
   currency?: string;
   walletDisabled?: boolean;
+  walletPermissionWarning?: ReactNode;
 }
 
 export function InvoicePaymentSettings({
@@ -76,6 +77,7 @@ export function InvoicePaymentSettings({
   categoryLabelClassName = 'text-dynamic-red',
   currency = 'USD',
   walletDisabled = false,
+  walletPermissionWarning,
 }: InvoicePaymentSettingsProps) {
   const t = useTranslations();
   const shouldShowPromotion = showPromotion && promotionsAllowed;
@@ -168,6 +170,7 @@ export function InvoicePaymentSettings({
             ))}
           </SelectContent>
         </Select>
+        {walletDisabled && walletPermissionWarning}
       </div>
 
       <div className="space-y-2">

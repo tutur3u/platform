@@ -71,7 +71,7 @@ const requestSchema = z.object({
   previewOnly: z.boolean().optional(),
   tasks: z.array(providedTaskSchema).optional(),
   generatedWithAI: z.boolean().optional(),
-  labelIds: z.array(z.string()).optional(),
+  labelIds: z.array(z.string().max(MAX_NAME_LENGTH)).optional(),
   assigneeIds: z.array(z.string()).optional(),
   generateDescriptions: z.boolean().optional(),
   generatePriority: z.boolean().optional(),
@@ -493,6 +493,7 @@ async function loadLabelNameMap(supabase: TypedSupabaseClient, wsId: string) {
     string,
     { id: string; name: string; color: string }
   >();
+  const validLabelIds = new Set<string>();
   const { data: existingLabels, error: labelsError } = await supabase
     .from('workspace_task_labels')
     .select('id, name, color')
@@ -508,13 +509,40 @@ async function loadLabelNameMap(supabase: TypedSupabaseClient, wsId: string) {
   }
 
   (existingLabels ?? []).forEach((label) => {
+    validLabelIds.add(label.id);
+
     const normalized = normalizeLabelName(label.name);
     if (normalized) {
       labelNameMap.set(normalized, label);
     }
   });
 
-  return { kind: 'ok' as const, labelNameMap };
+  return { kind: 'ok' as const, labelNameMap, validLabelIds };
+}
+
+function collectIncomingLabelIds(
+  labelIds: string[] | undefined,
+  candidateTasks: CandidateTask[]
+) {
+  const incomingLabelIds = new Set<string>();
+
+  (labelIds ?? []).forEach((labelId) => {
+    const trimmed = labelId.trim();
+    if (trimmed) {
+      incomingLabelIds.add(trimmed);
+    }
+  });
+
+  for (const taskDefinition of candidateTasks) {
+    taskDefinition.labels.forEach((label) => {
+      const trimmed = label.id?.trim();
+      if (trimmed) {
+        incomingLabelIds.add(trimmed);
+      }
+    });
+  }
+
+  return incomingLabelIds;
 }
 
 // Helper: load valid project IDs for workspace
@@ -805,6 +833,24 @@ export async function POST(
       });
     }
     const labelNameMap = labelMapResult.labelNameMap;
+    const validLabelIds = labelMapResult.validLabelIds;
+
+    const invalidLabelIds = Array.from(
+      collectIncomingLabelIds(labelIds, candidateTasks)
+    ).filter((labelId) => !validLabelIds.has(labelId));
+
+    if (invalidLabelIds.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Invalid label IDs provided',
+          details: {
+            invalidLabelIds,
+            message: 'One or more label IDs do not belong to this workspace',
+          },
+        },
+        { status: 400 }
+      );
+    }
 
     // Load valid project IDs for the workspace and validate before insertion
     const projectIdsResult = await loadWorkspaceProjectIds(sbAdmin, wsId);
@@ -845,7 +891,7 @@ export async function POST(
 
     const ensureLabelId = async (label: ProvidedLabel) => {
       if (label.id) {
-        return label.id;
+        return validLabelIds.has(label.id) ? label.id : null;
       }
 
       const normalized = normalizeLabelName(label.name);
@@ -884,6 +930,7 @@ export async function POST(
       if (createdNormalized) {
         labelNameMap.set(createdNormalized, createdLabel);
       }
+      validLabelIds.add(createdLabel.id);
 
       return createdLabel.id;
     };
@@ -961,7 +1008,11 @@ export async function POST(
       );
     }
 
-    const globalLabelIdSet = new Set((labelIds ?? []).filter(Boolean));
+    const globalLabelIdSet = new Set(
+      (labelIds ?? [])
+        .map((labelId) => labelId.trim())
+        .filter((labelId) => labelId && validLabelIds.has(labelId))
+    );
     const labelAssignments: { task_id: string; label_id: string }[] = [];
 
     for (let index = 0; index < insertedTasks.length; index += 1) {

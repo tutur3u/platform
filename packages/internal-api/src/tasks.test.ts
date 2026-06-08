@@ -489,6 +489,43 @@ describe('workspace board internal-api helpers', () => {
     );
   });
 
+  it('serializes server-side task board search and filter controls', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ tasks: [], listCounts: [] }));
+
+    await listWorkspaceTasks(
+      'ws-1',
+      {
+        assigneeIds: ['user-1', 'user-2'],
+        boardId: 'board-1',
+        dueDateFrom: '2026-06-01',
+        dueDateTo: '2026-06-30',
+        estimationMax: 8,
+        estimationMin: 3,
+        includeListCounts: true,
+        includeUnassigned: true,
+        labelIds: ['label-1'],
+        limit: 0,
+        priorities: ['high', 'critical'],
+        projectIds: ['project-1'],
+        q: 'Launch',
+        sortBy: 'name-asc',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks?boardId=board-1&q=Launch&limit=0&labelIds=label-1&assigneeIds=user-1%2Cuser-2&projectIds=project-1&priorities=high%2Ccritical&estimationMin=3&estimationMax=8&dueDateFrom=2026-06-01&dueDateTo=2026-06-30&includeUnassigned=true&sortBy=name-asc&includeListCounts=true',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
   it('lists workspace tasks with external lane controls', async () => {
     const fetchMock = vi
       .fn()

@@ -75,7 +75,7 @@ export async function POST(req: Request, { params }: Params) {
   const filePath = `${wsId}/users/${fileName}`;
 
   const { data, error } = await sbAdmin.storage
-    .from('workspaces')
+    .from('avatars')
     .createSignedUploadUrl(filePath);
 
   if (error) {
@@ -86,5 +86,12 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(data);
+  const { data: publicUrlData } = sbAdmin.storage
+    .from('avatars')
+    .getPublicUrl(filePath);
+
+  return NextResponse.json({
+    ...data,
+    publicUrl: publicUrlData.publicUrl,
+  });
 }

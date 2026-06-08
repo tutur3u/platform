@@ -1,17 +1,65 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createResourceSamplingSummary,
   getBuildResources,
   parseObservabilityFilters,
   readObservabilityDeployments,
   readObservabilityLogs,
+  readObservabilityRequests,
 } from './observability';
 
 const ORIGINAL_MONITORING_DIR = process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR;
 const ORIGINAL_LOG_DRAIN_ENABLED = process.env.PLATFORM_LOG_DRAIN_ENABLED;
+const logDrainMocks = vi.hoisted(() => ({
+  ensureLogDrainSchema: vi.fn(),
+  getLogDrainSqlClient: vi.fn(),
+  pruneOldLogDrainRecords: vi.fn(),
+  queries: [] as { text: string; values: unknown[] }[],
+}));
+
+vi.mock('./log-drain', () => ({
+  ensureLogDrainSchema: (...args: unknown[]) =>
+    logDrainMocks.ensureLogDrainSchema(...args),
+  getLogDrainSqlClient: (...args: unknown[]) =>
+    logDrainMocks.getLogDrainSqlClient(...args),
+  pruneOldLogDrainRecords: (...args: unknown[]) =>
+    logDrainMocks.pruneOldLogDrainRecords(...args),
+}));
+
+function createMockLogDrainSql(results: unknown[][] = []) {
+  return vi.fn(
+    (first: TemplateStringsArray | unknown, ...values: unknown[]) => {
+      if (Array.isArray(first) && 'raw' in first) {
+        logDrainMocks.queries.push({
+          text: Array.from(first).join('?'),
+          values,
+        });
+        return Promise.resolve(results.shift() ?? []);
+      }
+
+      return first;
+    }
+  );
+}
+
+function getLogDrainQuery(match: string) {
+  const query = logDrainMocks.queries.find(({ text }) => text.includes(match));
+  expect(query).toBeDefined();
+  return query as { text: string; values: unknown[] };
+}
+
+beforeEach(() => {
+  logDrainMocks.queries.length = 0;
+  logDrainMocks.ensureLogDrainSchema.mockReset();
+  logDrainMocks.ensureLogDrainSchema.mockResolvedValue(undefined);
+  logDrainMocks.getLogDrainSqlClient.mockReset();
+  logDrainMocks.getLogDrainSqlClient.mockReturnValue(null);
+  logDrainMocks.pruneOldLogDrainRecords.mockReset();
+  logDrainMocks.pruneOldLogDrainRecords.mockResolvedValue(undefined);
+});
 
 afterEach(() => {
   if (ORIGINAL_MONITORING_DIR === undefined) {
@@ -348,6 +396,35 @@ describe('createResourceSamplingSummary', () => {
 });
 
 describe('readObservabilityLogs', () => {
+  it('applies cursor bounds inside the capped log-drain log query', async () => {
+    const since = Date.parse('2026-05-04T01:00:00.000Z');
+    const until = Date.parse('2026-05-04T02:00:00.000Z');
+    logDrainMocks.getLogDrainSqlClient.mockReturnValue(
+      createMockLogDrainSql([[]])
+    );
+
+    await readObservabilityLogs({
+      pageSize: 10,
+      since,
+      timeframeHours: 24,
+      until,
+    });
+
+    const query = getLogDrainQuery('FROM log_events');
+    expect(query.text.indexOf('log_events.created_at >')).toBeLessThan(
+      query.text.indexOf('ORDER BY log_events.created_at DESC')
+    );
+    expect(query.text.indexOf('log_events.created_at <=')).toBeLessThan(
+      query.text.indexOf('LIMIT')
+    );
+    expect(query.values).toEqual(
+      expect.arrayContaining([
+        new Date(since).toISOString(),
+        new Date(until).toISOString(),
+      ])
+    );
+  });
+
   it('caps embedded grouped events while preserving total event count', async () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'observability-capped-logs-')
@@ -574,6 +651,140 @@ describe('readObservabilityLogs', () => {
       expect(logs.items[0]?.events.map((event) => event.message)).toEqual([
         'Watcher sampled resources {',
         'buildState: idle',
+      ]);
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+});
+
+describe('readObservabilityRequests', () => {
+  it('applies cursor bounds inside the capped log-drain request query', async () => {
+    const since = Date.parse('2026-05-04T01:00:00.000Z');
+    const until = Date.parse('2026-05-04T02:00:00.000Z');
+    logDrainMocks.getLogDrainSqlClient.mockReturnValue(
+      createMockLogDrainSql([
+        [
+          {
+            cron_job_id: null,
+            deployment_color: 'blue',
+            deployment_stamp: 'deploy-window',
+            duration_ms: 42,
+            ended_at: new Date('2026-05-04T01:30:01.000Z'),
+            error_message: null,
+            id: 'req-window',
+            ip_address: '203.0.113.10',
+            log_count: 0,
+            method: 'GET',
+            path: '/api/window',
+            source: 'api',
+            started_at: new Date('2026-05-04T01:30:00.000Z'),
+            status: 200,
+            user_agent: 'vitest',
+          },
+        ],
+        [],
+      ])
+    );
+
+    const requests = await readObservabilityRequests({
+      pageSize: 10,
+      since,
+      timeframeHours: 24,
+      until,
+    });
+
+    const query = getLogDrainQuery('FROM requests');
+    expect(query.text.indexOf('requests.started_at >')).toBeLessThan(
+      query.text.indexOf('ORDER BY requests.started_at DESC')
+    );
+    expect(query.text.indexOf('requests.started_at <=')).toBeLessThan(
+      query.text.indexOf('LIMIT')
+    );
+    expect(query.values).toEqual(
+      expect.arrayContaining([
+        new Date(since).toISOString(),
+        new Date(until).toISOString(),
+      ])
+    );
+    expect(requests.items[0]?.id).toBe('req-window');
+  });
+
+  it('keeps frozen legacy request cursors from being evicted by newer floods', async () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'observability-legacy-request-cursor-')
+    );
+    const now = Date.now();
+    const until = now - 30_000;
+
+    try {
+      const watchDir = path.join(tempDir, 'watch');
+      const requestLogDir = path.join(watchDir, 'blue-green-request-logs');
+      fs.mkdirSync(requestLogDir, { recursive: true });
+      const inWindowRequests = [
+        {
+          host: 'tuturuuu.com',
+          isInternal: false,
+          method: 'GET',
+          path: '/in-window-a',
+          requestTimeMs: 20,
+          status: 200,
+          time: now - 55_000,
+        },
+        {
+          host: 'tuturuuu.com',
+          isInternal: false,
+          method: 'GET',
+          path: '/in-window-b',
+          requestTimeMs: 24,
+          status: 200,
+          time: now - 45_000,
+        },
+      ];
+      const floodRequests = Array.from({ length: 105 }, (_, index) => ({
+        host: 'tuturuuu.com',
+        isInternal: false,
+        method: 'GET',
+        path: `/flood-${index}`,
+        requestTimeMs: 4,
+        status: 200,
+        time: now - 20_000 + index,
+      }));
+      const requests = [...inWindowRequests, ...floodRequests];
+
+      fs.writeFileSync(
+        path.join(watchDir, 'blue-green-request-telemetry.state.json'),
+        JSON.stringify({
+          chunks: [
+            {
+              count: requests.length,
+              file: 'requests-1.jsonl',
+              firstRequestAt: inWindowRequests[0]?.time,
+              lastRequestAt: floodRequests.at(-1)?.time,
+            },
+          ],
+          currentChunkCount: requests.length,
+          currentChunkFile: 'requests-1.jsonl',
+          totalRecords: requests.length,
+        })
+      );
+      fs.writeFileSync(
+        path.join(requestLogDir, 'requests-1.jsonl'),
+        requests.map((entry) => JSON.stringify(entry)).join('\n')
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+      process.env.PLATFORM_LOG_DRAIN_ENABLED = 'false';
+
+      const page = await readObservabilityRequests({
+        pageSize: 10,
+        timeframeHours: 1,
+        until,
+      });
+
+      expect(page.total).toBe(2);
+      expect(page.items.map((request) => request.path)).toEqual([
+        '/in-window-b',
+        '/in-window-a',
       ]);
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });

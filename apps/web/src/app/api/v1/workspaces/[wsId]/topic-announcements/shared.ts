@@ -63,6 +63,16 @@ const OPTIONAL_TEXT_SCHEMA = z
 export const TopicAnnouncementStatusSchema = z.enum([
   'draft',
   'queued',
+  'processing',
+  'sent',
+  'failed',
+  'skipped',
+  'cancelled',
+]);
+
+const TopicAnnouncementWritableStatusSchema = z.enum([
+  'draft',
+  'queued',
   'sent',
   'failed',
   'skipped',
@@ -139,7 +149,7 @@ export const TopicAnnouncementPayloadSchema = z
       .regex(/^\d{1,2}:\d{2}(?::\d{2})?$/u)
       .nullable()
       .optional(),
-    status: TopicAnnouncementStatusSchema.optional(),
+    status: TopicAnnouncementWritableStatusSchema.optional(),
     title: z.string().trim().min(1).max(300),
     topic: z.string().trim().min(1).max(20_000),
   })

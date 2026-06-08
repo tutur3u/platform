@@ -45,6 +45,23 @@ test.describe('Authentication (unauthenticated)', () => {
     await expect(continueButton).toBeVisible({ timeout: 10_000 });
   });
 
+  test('unprefixed login page renders from a direct hard load', async ({
+    page,
+  }) => {
+    await page.goto('/login', {
+      waitUntil: 'domcontentloaded',
+    });
+
+    const emailInput = page
+      .getByPlaceholder('Enter your email or username')
+      .first();
+    await expect(emailInput).toBeVisible({ timeout: 30_000 });
+
+    await expect(
+      page.getByRole('heading', { name: /welcome back/i })
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
   test('login page exposes passkey sign-in with a graceful unsupported-browser error', async ({
     page,
   }) => {

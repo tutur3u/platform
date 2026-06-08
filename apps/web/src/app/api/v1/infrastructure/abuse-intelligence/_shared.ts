@@ -1,5 +1,9 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -36,6 +40,9 @@ export async function authorizeAbuseIntelligenceRequest(
 
   return {
     ok: true as const,
+    sbAdmin: (await createAdminClient({
+      noCookie: true,
+    })) as TypedSupabaseClient,
     supabase,
     user,
   };

@@ -1,8 +1,7 @@
 import { baseProcedure, createTRPCRouter } from '../init';
 
 // tRPC router for the web app
-// OTP authentication has been migrated to server actions
-// See: apps/web/src/app/[locale]/(marketing)/login/actions.ts
+// Login authentication uses API routes via @tuturuuu/internal-api.
 export const appRouter = createTRPCRouter({
   // Health check procedure to maintain tRPC type system compatibility
   healthCheck: baseProcedure.query(() => {

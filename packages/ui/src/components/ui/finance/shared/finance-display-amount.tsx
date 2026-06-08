@@ -8,18 +8,20 @@ import {
 interface FinanceDisplayAmountProps {
   value: string;
   className?: string;
+  alwaysShow?: boolean;
 }
 
 export function FinanceDisplayAmount({
   value,
   className,
+  alwaysShow = false,
 }: FinanceDisplayAmountProps) {
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
 
   return (
     <span className={className}>
-      {areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : value}
+      {areNumbersHidden && !alwaysShow ? FINANCE_HIDDEN_AMOUNT : value}
     </span>
   );
 }

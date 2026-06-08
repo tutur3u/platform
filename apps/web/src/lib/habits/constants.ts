@@ -1,0 +1,1 @@
+export const HABITS_ENABLED_SECRET = 'ENABLE_HABITS';

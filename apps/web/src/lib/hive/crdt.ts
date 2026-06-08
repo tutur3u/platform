@@ -1,13 +1,14 @@
 import 'server-only';
-import { mergeHiveCrdtUpdate as mergeSharedHiveCrdtUpdate } from '@tuturuuu/realtime/hive';
+import type { HiveRealtimeWorld } from '@tuturuuu/realtime/hive';
 
-export function mergeHiveCrdtUpdate(args: {
+export async function mergeHiveCrdtUpdate(args: {
   currentState?: Buffer | Uint8Array | null;
   update: Buffer | Uint8Array;
-  fallbackWorld?: Parameters<
-    typeof mergeSharedHiveCrdtUpdate
-  >[0]['fallbackWorld'];
+  fallbackWorld?: HiveRealtimeWorld | null;
 }) {
+  const { mergeHiveCrdtUpdate: mergeSharedHiveCrdtUpdate } = await import(
+    '@tuturuuu/realtime/hive/yjs'
+  );
   const merged = mergeSharedHiveCrdtUpdate({
     currentState: args.currentState ? new Uint8Array(args.currentState) : null,
     fallbackWorld: args.fallbackWorld,

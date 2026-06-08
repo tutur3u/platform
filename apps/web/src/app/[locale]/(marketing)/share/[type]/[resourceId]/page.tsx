@@ -3,8 +3,6 @@ import { notFound } from 'next/navigation';
 import { loadSharedCourseContent } from '@/lib/share/load-shared-course';
 import { CourseViewer } from './course-viewer';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: Promise<{
     type: string;

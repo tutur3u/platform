@@ -20,7 +20,7 @@ vi.mock('@tuturuuu/supabase/next/client', () => ({
   createClient: createClientMock,
 }));
 
-vi.mock('@tuturuuu/internal-api', () => ({
+vi.mock('@tuturuuu/internal-api/users', () => ({
   getCurrentUserProfile: getCurrentUserProfileMock,
 }));
 

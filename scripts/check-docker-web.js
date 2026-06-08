@@ -823,10 +823,10 @@ function validateDockerProdCompose(composeContent) {
       '/node_modules',
     '    image: nginx:1.31.0-alpine',
     '    image: cloudflare/cloudflared:latest',
-    '${' + 'DOCKER_WEB_DIRECT_HOST_PORT:-7803' + '}:7803',
-    '${' + 'DOCKER_WEB_PROXY_HOST_PORT:-7803' + '}:7803',
-    '${' + 'DOCKER_HIVE_PROXY_HOST_PORT:-7814' + '}:7814',
-    '${' + 'DOCKER_MEET_REALTIME_PROXY_HOST_PORT:-7816' + '}:7816',
+    '127.0.0.1:${' + 'DOCKER_WEB_DIRECT_HOST_PORT:-7803' + '}:7803',
+    '127.0.0.1:${' + 'DOCKER_WEB_PROXY_HOST_PORT:-7803' + '}:7803',
+    '127.0.0.1:${' + 'DOCKER_HIVE_PROXY_HOST_PORT:-7814' + '}:7814',
+    '127.0.0.1:${' + 'DOCKER_MEET_REALTIME_PROXY_HOST_PORT:-7816' + '}:7816',
     '127.0.0.1:$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379',
     '127.0.0.1:$' +
       '{' +
@@ -977,6 +977,33 @@ function validateDockerProdCompose(composeContent) {
   }
 
   const forbiddenSecuritySnippets = [
+    {
+      message:
+        'production direct web port must bind to 127.0.0.1 instead of all host interfaces',
+      snippet:
+        '      - "$' + '{' + 'DOCKER_WEB_DIRECT_HOST_PORT:-7803' + '}:7803"',
+    },
+    {
+      message:
+        'production web proxy port must bind to 127.0.0.1 instead of all host interfaces',
+      snippet:
+        '      - "$' + '{' + 'DOCKER_WEB_PROXY_HOST_PORT:-7803' + '}:7803"',
+    },
+    {
+      message:
+        'production Hive proxy port must bind to 127.0.0.1 instead of all host interfaces',
+      snippet:
+        '      - "$' + '{' + 'DOCKER_HIVE_PROXY_HOST_PORT:-7814' + '}:7814"',
+    },
+    {
+      message:
+        'production Meet realtime proxy port must bind to 127.0.0.1 instead of all host interfaces',
+      snippet:
+        '      - "$' +
+        '{' +
+        'DOCKER_MEET_REALTIME_PROXY_HOST_PORT:-7816' +
+        '}:7816"',
+    },
     {
       message:
         'production Redis native port must bind to 127.0.0.1 instead of all host interfaces',

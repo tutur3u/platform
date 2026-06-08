@@ -32,7 +32,7 @@ import { useMiraChatHotkeys } from './use-mira-chat-hotkeys';
 import { useMiraChatPersistence } from './use-mira-chat-persistence';
 import { useMiraMessageQueue } from './use-mira-message-queue';
 
-interface MiraChatPanelProps {
+export interface MiraChatPanelProps {
   wsId: string;
   taskBoardId?: string;
   autoFocusSignal?: number;

@@ -43,7 +43,7 @@ export type GuardOptions = {
 };
 
 type RateLimitBucket = {
-  limiter: Ratelimit | null;
+  limiter: RateLimiter;
   window: RateLimitWindow;
 };
 
@@ -52,11 +52,26 @@ type Limiters = {
   mutate: RateLimitBucket[];
 };
 
+type RateLimitResult = {
+  limit: number;
+  remaining: number;
+  reset: number;
+  success: boolean;
+};
+
+type RateLimiter = {
+  limit: (identifier: string) => Promise<RateLimitResult>;
+};
+
+type LocalRateLimitState = {
+  count: number;
+  reset: number;
+};
+
 const limiterCache = new Map<string, Limiters>();
-const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
+const localLimiterState = new Map<string, LocalRateLimitState>();
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
   /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
-const DISABLED_LIMITERS: Limiters = { get: [], mutate: [] };
 
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
@@ -116,6 +131,46 @@ const AUTH_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const PASSWORD_LOGIN_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    createConfig('minute', '1 m', 60, 'API_PROXY_PASSWORD_LOGIN_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 600, 'API_PROXY_PASSWORD_LOGIN_LIMIT_HOUR'),
+    createConfig('day', '1 d', 4000, 'API_PROXY_PASSWORD_LOGIN_LIMIT_DAY'),
+  ],
+};
+
+const OTP_SEND_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    createConfig('minute', '1 m', 30, 'API_PROXY_OTP_SEND_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 180, 'API_PROXY_OTP_SEND_LIMIT_HOUR'),
+    createConfig('day', '1 d', 300, 'API_PROXY_OTP_SEND_LIMIT_DAY'),
+  ],
+};
+
+const OTP_VERIFY_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    createConfig('minute', '1 m', 60, 'API_PROXY_OTP_VERIFY_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 600, 'API_PROXY_OTP_VERIFY_LIMIT_HOUR'),
+    createConfig('day', '1 d', 4000, 'API_PROXY_OTP_VERIFY_LIMIT_DAY'),
+  ],
+};
+
+const CRON_RATE_LIMITS: RateLimitProfile = {
+  get: [
+    createConfig('minute', '1 m', 10, 'API_PROXY_CRON_READ_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 60, 'API_PROXY_CRON_READ_LIMIT_HOUR'),
+    createConfig('day', '1 d', 200, 'API_PROXY_CRON_READ_LIMIT_DAY'),
+  ],
+  mutate: [
+    createConfig('minute', '1 m', 10, 'API_PROXY_CRON_MUTATE_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 60, 'API_PROXY_CRON_MUTATE_LIMIT_HOUR'),
+    createConfig('day', '1 d', 200, 'API_PROXY_CRON_MUTATE_LIMIT_DAY'),
+  ],
+};
+
 const CROSS_APP_RETURN_RATE_LIMITS: RateLimitProfile = {
   get: NO_READ_RATE_LIMITS,
   mutate: [
@@ -157,19 +212,57 @@ const FORM_SUBMISSION_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const TASK_BOARD_READ_RATE_LIMITS: RateLimitProfile = {
+  get: [
+    createConfig(
+      'minute',
+      '1 m',
+      300,
+      'API_PROXY_TASK_BOARD_READ_LIMIT_MINUTE'
+    ),
+    createConfig('hour', '1 h', 3000, 'API_PROXY_TASK_BOARD_READ_LIMIT_HOUR'),
+    createConfig('day', '1 d', 20_000, 'API_PROXY_TASK_BOARD_READ_LIMIT_DAY'),
+  ],
+  mutate: DEFAULT_MUTATE_RATE_LIMITS,
+};
+
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
+  {
+    key: 'cron',
+    matches: (req) =>
+      req.nextUrl.pathname === '/api/cron' ||
+      req.nextUrl.pathname.startsWith('/api/cron/'),
+    rateLimits: CRON_RATE_LIMITS,
+  },
   {
     key: 'auth',
     matches: (req) =>
       req.nextUrl.pathname.startsWith('/api/auth/mfa/') ||
-      /^\/api\/v1\/auth\/otp\/(?:send|verify|settings)(?:\/|$)/.test(
-        req.nextUrl.pathname
-      ) ||
+      /^\/api\/v1\/auth\/otp\/settings(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: AUTH_RATE_LIMITS,
+  },
+  {
+    key: 'password-login',
+    matches: (req) =>
       /^\/api\/v1\/auth\/password-login(?:\/|$)/.test(req.nextUrl.pathname) ||
-      /^\/api\/v1\/auth\/mobile\/(?:send-otp|verify-otp|password-login)(?:\/|$)/.test(
+      /^\/api\/v1\/auth\/mobile\/password-login(?:\/|$)/.test(
         req.nextUrl.pathname
       ),
-    rateLimits: AUTH_RATE_LIMITS,
+    rateLimits: PASSWORD_LOGIN_RATE_LIMITS,
+  },
+  {
+    key: 'otp-send',
+    matches: (req) =>
+      /^\/api\/v1\/auth\/otp\/send(?:\/|$)/.test(req.nextUrl.pathname) ||
+      /^\/api\/v1\/auth\/mobile\/send-otp(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: OTP_SEND_RATE_LIMITS,
+  },
+  {
+    key: 'otp-verify',
+    matches: (req) =>
+      /^\/api\/v1\/auth\/otp\/verify(?:\/|$)/.test(req.nextUrl.pathname) ||
+      /^\/api\/v1\/auth\/mobile\/verify-otp(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: OTP_VERIFY_RATE_LIMITS,
   },
   {
     key: 'cross-app-return',
@@ -183,6 +276,19 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
       req.method === 'POST' &&
       /^\/api\/v1\/shared\/forms\/[^/]+(?:\/|$)/.test(req.nextUrl.pathname),
     rateLimits: FORM_SUBMISSION_RATE_LIMITS,
+  },
+  {
+    key: 'task-board-read',
+    matches: (req) =>
+      (req.method === 'GET' || req.method === 'HEAD') &&
+      (/^\/api\/v1\/workspaces\/[^/]+\/tasks\/?$/u.test(req.nextUrl.pathname) ||
+        /^\/api\/v1\/workspaces\/[^/]+\/task-boards\/[^/]+\/?$/u.test(
+          req.nextUrl.pathname
+        ) ||
+        /^\/api\/v1\/workspaces\/[^/]+\/task-boards\/[^/]+\/lists\/?$/u.test(
+          req.nextUrl.pathname
+        )),
+    rateLimits: TASK_BOARD_READ_RATE_LIMITS,
   },
   {
     key: 'high-fanout',
@@ -295,7 +401,7 @@ const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
   },
 ];
 
-function createRateLimitBuckets(
+function createRedisRateLimitBuckets(
   redis: UpstashRatelimitRedisClient,
   prefixBase: string,
   kind: 'get' | 'mutate',
@@ -312,6 +418,83 @@ function createRateLimitBuckets(
   }));
 }
 
+function rateLimitDurationMs(duration: RateLimitConfig['duration']) {
+  switch (duration) {
+    case '1 m':
+      return 60_000;
+    case '1 h':
+      return 60 * 60_000;
+    case '1 d':
+      return 24 * 60 * 60_000;
+  }
+}
+
+function createLocalRateLimiter(
+  prefix: string,
+  config: RateLimitConfig
+): RateLimiter {
+  const durationMs = rateLimitDurationMs(config.duration);
+
+  return {
+    async limit(identifier: string) {
+      const now = Date.now();
+      const key = `${prefix}:${identifier}`;
+      let state = localLimiterState.get(key);
+
+      if (!state || state.reset <= now) {
+        state = {
+          count: 0,
+          reset: now + durationMs,
+        };
+      }
+
+      if (state.count >= config.limit) {
+        localLimiterState.set(key, state);
+        return {
+          limit: config.limit,
+          remaining: 0,
+          reset: state.reset,
+          success: false,
+        };
+      }
+
+      state.count += 1;
+      localLimiterState.set(key, state);
+
+      return {
+        limit: config.limit,
+        remaining: Math.max(0, config.limit - state.count),
+        reset: state.reset,
+        success: true,
+      };
+    },
+  };
+}
+
+function createLocalRateLimitBuckets(
+  prefixBase: string,
+  kind: 'get' | 'mutate',
+  configs: RateLimitConfig[]
+): RateLimitBucket[] {
+  return configs.map((config) => ({
+    window: config.window,
+    limiter: createLocalRateLimiter(
+      `${prefixBase}:local:${kind}:${config.window}`,
+      config
+    ),
+  }));
+}
+
+function createLocalRateLimiters(
+  prefixBase: string,
+  profile: RateLimitProfile
+): Limiters {
+  return {
+    get: createLocalRateLimitBuckets(prefixBase, 'get', profile.get),
+    mutate: createLocalRateLimitBuckets(prefixBase, 'mutate', profile.mutate),
+  };
+}
+
 async function getRateLimiters(
   prefixBase: string,
   profile: RateLimitProfile
@@ -324,22 +507,33 @@ async function getRateLimiters(
 
   const redis = await getUpstashRatelimitRedisClient().catch(() => null);
   if (!redis) {
-    limiterCache.set(cacheKey, DISABLED_LIMITERS);
-    return DISABLED_LIMITERS;
+    const localLimiters = createLocalRateLimiters(prefixBase, profile);
+    limiterCache.set(cacheKey, localLimiters);
+    return localLimiters;
   }
 
   const limiters = {
-    get: createRateLimitBuckets(redis, prefixBase, 'get', profile.get),
-    mutate: createRateLimitBuckets(redis, prefixBase, 'mutate', profile.mutate),
+    get: createRedisRateLimitBuckets(redis, prefixBase, 'get', profile.get),
+    mutate: createRedisRateLimitBuckets(
+      redis,
+      prefixBase,
+      'mutate',
+      profile.mutate
+    ),
   };
 
   limiterCache.set(cacheKey, limiters);
   return limiters;
 }
 
-function disableRateLimiters(cacheKey: string): Limiters {
-  limiterCache.set(cacheKey, DISABLED_LIMITERS);
-  return DISABLED_LIMITERS;
+function replaceWithLocalRateLimiters(
+  cacheKey: string,
+  prefixBase: string,
+  profile: RateLimitProfile
+): Limiters {
+  const localLimiters = createLocalRateLimiters(prefixBase, profile);
+  limiterCache.set(cacheKey, localLimiters);
+  return localLimiters;
 }
 
 function getRoutePolicy(
@@ -453,14 +647,9 @@ export function hasSupabaseSessionCookie(req: NextRequest): boolean {
     .some((cookie) => isSupabaseAuthCookieName(cookie.name, storageKeys));
 }
 
-function hasAppSessionCookie(req: NextRequest): boolean {
-  return req.cookies.has(APP_SESSION_COOKIE_NAME);
-}
-
 export function hasAuthenticatedApiSession(req: NextRequest): boolean {
   if (
     hasAuthenticatedBearerToken(req.headers) ||
-    hasAppSessionCookie(req) ||
     hasSupabaseSessionCookie(req)
   ) {
     return true;
@@ -470,10 +659,7 @@ export function hasAuthenticatedApiSession(req: NextRequest): boolean {
 }
 
 function getCallerClass(req: NextRequest): CallerClass {
-  if (hasAuthenticatedApiSession(req)) {
-    return 'authenticated';
-  }
-
+  void req;
   return 'anonymous';
 }
 
@@ -522,6 +708,37 @@ export function isTrustedProxyBypassRequest(
 
 export function clearApiProxyGuardLimiterCache() {
   limiterCache.clear();
+  localLimiterState.clear();
+}
+
+async function requestBodyExceedsLimit(
+  req: NextRequest,
+  maxBytes: number
+): Promise<boolean> {
+  const body = req.clone().body;
+  if (!body) {
+    return false;
+  }
+
+  const reader = body.getReader();
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        return false;
+      }
+
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        void reader.cancel().catch(() => {});
+        return true;
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
 }
 
 export async function guardApiProxyRequest(
@@ -537,6 +754,13 @@ export async function guardApiProxyRequest(
         { status: 413 }
       );
     }
+  }
+
+  if (await requestBodyExceedsLimit(req, MAX_PAYLOAD_SIZE)) {
+    return NextResponse.json(
+      { error: 'Payload Too Large', message: 'Request body exceeds limit' },
+      { status: 413 }
+    );
   }
 
   const routePolicies = options.routePolicies ?? DEFAULT_ROUTE_POLICIES;
@@ -580,20 +804,32 @@ export async function guardApiProxyRequest(
       );
       const limiterCacheKey = `${limiterPrefix}:${JSON.stringify(rateLimits)}`;
       const limiters = await getRateLimiters(limiterPrefix, rateLimits);
-      const activeLimiters = isRead ? limiters.get : limiters.mutate;
+      let activeLimiters = isRead ? limiters.get : limiters.mutate;
 
-      for (const { limiter, window } of activeLimiters) {
-        if (!limiter) {
-          continue;
-        }
-
-        let result: Awaited<ReturnType<Ratelimit['limit']>>;
+      for (let index = 0; index < activeLimiters.length; index += 1) {
+        const { limiter, window } = activeLimiters[index]!;
+        let result: RateLimitResult;
 
         try {
           result = await limiter.limit(ip);
         } catch {
-          disableRateLimiters(limiterCacheKey);
-          break;
+          const fallbackLimiters = replaceWithLocalRateLimiters(
+            limiterCacheKey,
+            limiterPrefix,
+            rateLimits
+          );
+          activeLimiters = isRead
+            ? fallbackLimiters.get
+            : fallbackLimiters.mutate;
+          const fallbackBucket =
+            activeLimiters[index] ??
+            activeLimiters.find((bucket) => bucket.window === window);
+
+          if (!fallbackBucket) {
+            continue;
+          }
+
+          result = await fallbackBucket.limiter.limit(ip);
         }
 
         const { success, limit, remaining, reset } = result;

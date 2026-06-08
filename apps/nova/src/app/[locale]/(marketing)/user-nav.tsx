@@ -1,10 +1,10 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import {
   getCurrentUserProfile,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { cookies as c, headers } from 'next/headers';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
+import { getNovaAppSessionUserFromHeaders } from '@/lib/app-session';
 import UserNavClient from './user-nav-client';
 
 export async function UserNav({
@@ -14,10 +14,7 @@ export async function UserNav({
 }) {
   const cookies = await c();
   const requestHeaders = await headers();
-  const appSessionUser = getAppSessionUserFromRequest(
-    { headers: requestHeaders },
-    { targetApp: 'nova' }
-  );
+  const appSessionUser = await getNovaAppSessionUserFromHeaders();
   const user = appSessionUser
     ? await getCurrentUserProfile(
         withForwardedInternalApiAuth(requestHeaders)

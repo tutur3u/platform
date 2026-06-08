@@ -7,7 +7,7 @@ import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import type { ChatConversationScope } from '@tuturuuu/ui/chat/utils';
-import { TUTURUUU_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID, toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
@@ -275,7 +275,7 @@ function WorkspaceRailButton({
   const name = workspace.name || 'Workspace';
   const avatarUrl =
     workspace.id === ROOT_WORKSPACE_ID
-      ? TUTURUUU_LOGO_URL
+      ? TUTURUUU_LOCAL_LOGO_URL
       : workspace.avatar_url || workspace.logo_url;
 
   return (

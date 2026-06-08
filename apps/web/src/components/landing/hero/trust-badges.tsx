@@ -1,6 +1,4 @@
-'use client';
-
-import { CheckCircle2 } from '@tuturuuu/icons';
+import { CheckCircle2 } from '@tuturuuu/icons/lucide';
 import { useTranslations } from 'next-intl';
 
 export function TrustBadges() {

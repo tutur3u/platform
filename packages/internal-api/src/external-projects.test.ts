@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  createWorkspaceExternalProjectAssetUploadUrl,
   createWorkspaceExternalProjectFieldDefinition,
   deleteWorkspaceExternalProjectFieldDefinition,
   listWorkspaceExternalProjectFieldDefinitions,
@@ -92,22 +93,49 @@ describe('external project upload helpers', () => {
     );
   });
 
-  it('uploads media assets through the workspace Drive signed-upload endpoints', async () => {
+  it('disables external-project media signed upload URLs', async () => {
+    const fetchMock = vi.fn();
+
+    await expect(
+      createWorkspaceExternalProjectAssetUploadUrl(
+        'ws-1',
+        {
+          adapter: 'yoola',
+          collectionType: 'artworks',
+          entrySlug: 'mine',
+          filename: 'cover.png',
+          size: 5,
+        },
+        {
+          baseUrl: 'https://web.example.com',
+          fetch: fetchMock as unknown as typeof fetch,
+        }
+      )
+    ).rejects.toThrow(
+      'External project asset uploads must use uploadWorkspaceExternalProjectAssetFile'
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uploads media assets through the app server', async () => {
     const file = new File(['cover'], 'cover.png', { type: 'image/png' });
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        createJsonResponse({
+    const uploadProgress = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        autoExtract: {
+          message: 'Uploaded file is not a ZIP archive.',
+          status: 'skipped',
+        },
+        data: {
           fullPath:
             'ws-1/external-projects/yoola/artworks/mine/upload-cover.png',
           path: 'external-projects/yoola/artworks/mine/upload-cover.png',
-          signedUrl: 'https://storage.example.com/signed-upload',
-        })
-      )
-      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' })
-      .mockResolvedValueOnce(createJsonResponse({}));
+        },
+      })
+    );
 
-    await uploadWorkspaceExternalProjectAssetFile(
+    const result = await uploadWorkspaceExternalProjectAssetFile(
       'ws-1',
       file,
       {
@@ -118,35 +146,38 @@ describe('external project upload helpers', () => {
       {
         baseUrl: 'https://web.example.com',
         fetch: fetchMock as unknown as typeof fetch,
+        onUploadProgress: uploadProgress,
       }
     );
 
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      'https://web.example.com/api/v1/workspaces/ws-1/storage/upload-url',
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/assets/upload-url',
       expect.objectContaining({
-        body: JSON.stringify({
-          filename: 'cover.png',
-          path: 'external-projects/yoola/artworks/mine',
-          size: file.size,
-          contentType: 'image/png',
-        }),
+        body: expect.any(FormData),
         cache: 'no-store',
         method: 'POST',
       })
     );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
-      'https://web.example.com/api/v1/workspaces/ws-1/storage/finalize-upload',
-      expect.objectContaining({
-        cache: 'no-store',
-        method: 'POST',
-      })
-    );
-    const finalizeOptions = fetchMock.mock.calls[2]?.[1] as { body?: string };
-    expect(JSON.parse(finalizeOptions.body ?? '{}')).toEqual({
-      contentType: 'image/png',
-      originalFilename: 'cover.png',
+    const body = fetchMock.mock.calls[0]?.[1]?.body as FormData;
+    expect(body.get('collectionType')).toBe('artworks');
+    expect(body.get('entrySlug')).toBe('mine');
+    expect(body.get('file')).toBe(file);
+    expect(body.get('upsert')).toBeNull();
+    expect(uploadProgress).toHaveBeenCalledWith({
+      loaded: file.size,
+      percent: 100,
+      total: file.size,
+    });
+    expect(result).toEqual({
+      autoExtract: {
+        message: 'Uploaded file is not a ZIP archive.',
+        status: 'skipped',
+      },
+      finalize: {
+        success: true,
+      },
+      fullPath: 'ws-1/external-projects/yoola/artworks/mine/upload-cover.png',
       path: 'external-projects/yoola/artworks/mine/upload-cover.png',
     });
   });

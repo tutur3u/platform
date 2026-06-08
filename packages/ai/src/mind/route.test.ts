@@ -229,6 +229,97 @@ describe('mind route payload validation', () => {
     expect(streamOptions?.system).toContain('orphaned nodes');
   });
 
+  it('routes Vertex-prefixed Google models through the gateway provider', async () => {
+    mocks.resolvePlanModel.mockResolvedValueOnce({
+      allocationId: 'allocation-1',
+      modelId: 'google-vertex/gemini-2.5-flash',
+      source: 'requested',
+      tier: 'PRO',
+    });
+    mocks.gateway.mockReturnValueOnce({
+      modelId: 'google-vertex/gemini-2.5-flash',
+      provider: 'gateway',
+    });
+    const route = createPOST(createAcceptedCallbacks());
+
+    const response = await route(
+      createRequest({
+        boardId: null,
+        messages: [],
+        model: 'google-vertex/gemini-2.5-flash',
+        threadId: '00000000-0000-4000-8000-000000000001',
+        wsId: 'personal',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe('stream ok');
+    expect(mocks.google).not.toHaveBeenCalled();
+    expect(mocks.gateway).toHaveBeenCalledWith(
+      'google-vertex/gemini-2.5-flash'
+    );
+
+    const streamOptions = mocks.streamText.mock.calls[0]?.[0];
+    expect(streamOptions).toMatchObject({
+      model: {
+        modelId: 'google-vertex/gemini-2.5-flash',
+        provider: 'gateway',
+      },
+    });
+    expect(streamOptions).not.toHaveProperty('providerOptions.google');
+  });
+
+  it('blocks Mind file conversion for group storage without group view permission', async () => {
+    vi.stubEnv('MARKITDOWN_ENDPOINT_URL', 'http://markitdown:8000/markitdown');
+    vi.stubEnv('MARKITDOWN_ENDPOINT_SECRET', 'secret');
+    mocks.getPermissions.mockResolvedValueOnce({
+      withoutPermission: vi.fn(
+        (permission: string) => permission === 'view_user_groups'
+      ),
+    });
+    const route = createPOST(createAcceptedCallbacks());
+
+    const response = await route(
+      createRequest({
+        boardId: null,
+        messages: [],
+        model: 'google/gemini-2.5-flash',
+        threadId: '00000000-0000-4000-8000-000000000001',
+        wsId: 'workspace-1',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe('stream ok');
+
+    const streamOptions = mocks.streamText.mock.calls[0]?.[0] as
+      | {
+          tools?: Record<
+            string,
+            {
+              execute?: (args: Record<string, unknown>) => Promise<unknown>;
+            }
+          >;
+        }
+      | undefined;
+    const convertTool = streamOptions?.tools?.convert_file_to_markdown;
+    expect(convertTool?.execute).toEqual(expect.any(Function));
+
+    const createAdminClientCalls = mocks.createAdminClient.mock.calls.length;
+    const result = await convertTool?.execute?.({
+      storagePath:
+        'workspace-1/user-groups/11111111-1111-4111-8111-111111111111/private.pdf',
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'You do not have permission to read this user-group file.',
+    });
+    expect(mocks.createAdminClient).toHaveBeenCalledTimes(
+      createAdminClientCalls
+    );
+  });
+
   it('normalizes legacy Gemini 3.1 Flash Lite preview requests before streaming', async () => {
     mocks.resolvePlanModel.mockResolvedValueOnce({
       allocationId: 'allocation-1',

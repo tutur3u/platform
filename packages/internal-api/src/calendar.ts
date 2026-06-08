@@ -5,6 +5,52 @@ import { encodePathSegment, getInternalApiClient } from './client';
 
 export interface WorkspaceCalendarEventUpdatePayload {
   locked?: boolean;
+  title?: string;
+  description?: string | null;
+  location?: string | null;
+  start_at?: string;
+  end_at?: string;
+  color?: string;
+  source?: CalendarSourceInput;
+}
+
+export type CalendarSourceInput =
+  | {
+      provider: 'tuturuuu';
+      workspaceCalendarId?: string | null;
+    }
+  | {
+      provider: 'google' | 'microsoft';
+      connectionId: string;
+    };
+
+export type CalendarSourceOption =
+  | {
+      id: string;
+      provider: 'tuturuuu';
+      workspaceCalendarId: string;
+      label: string;
+      color: string | null;
+      primary?: boolean;
+      writable: boolean;
+    }
+  | {
+      id: string;
+      provider: 'google' | 'microsoft';
+      connectionId: string;
+      workspaceCalendarId: string | null;
+      externalCalendarId: string;
+      accessRole: string | null;
+      accountEmail: string | null;
+      accountName: string | null;
+      label: string;
+      color: string | null;
+      writable: boolean;
+    };
+
+export interface CalendarDefaultSourceResponse {
+  defaultSource: CalendarSourceOption;
+  options: CalendarSourceOption[];
 }
 
 export interface WorkspaceCalendarEventCreatePayload {
@@ -16,6 +62,7 @@ export interface WorkspaceCalendarEventCreatePayload {
   color?: string;
   locked?: boolean;
   task_id?: string | null;
+  source?: CalendarSourceInput;
 }
 
 export interface SchedulePreviewRequestPayload {
@@ -104,6 +151,37 @@ export async function listCalendarConnections(
   );
 
   return response.connections ?? [];
+}
+
+export async function getWorkspaceCalendarDefaultSource(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarDefaultSourceResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/default-source`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceCalendarDefaultSource(
+  wsId: string,
+  source: CalendarSourceInput,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarDefaultSourceResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/default-source`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ source }),
+    }
+  );
 }
 
 export async function updateWorkspaceCalendarEvent(

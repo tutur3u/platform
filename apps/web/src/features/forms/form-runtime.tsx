@@ -15,7 +15,10 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import {
+  TUTURUUU_LOCAL_LOGO_URL,
+  TuturuuLogo,
+} from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { Input } from '@tuturuuu/ui/input';
 import { Progress } from '@tuturuuu/ui/progress';
@@ -216,6 +219,7 @@ function FormBrandFooter({ className }: { className?: string }) {
       )}
     >
       <TuturuuLogo
+        src={TUTURUUU_LOCAL_LOGO_URL}
         width={32}
         height={32}
         alt="Tuturuuu"

@@ -19,18 +19,17 @@ import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
-import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import { useBoardConfig, useReorderTask } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useOptionalWorkspacePresenceContext } from '../../providers/workspace-presence-provider';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import type { ListStatusFilter } from '../../shared/board-header';
 import { buildEstimationIndices } from '../../shared/estimation-mapping';
 import { BoardSelector } from '../board-selector';
-import { BulkActionsBar } from './kanban/bulk/bulk-actions-bar';
+import { BulkActionsIsland } from './kanban/bulk/bulk-actions-island';
 import { BulkCustomDateDialog } from './kanban/bulk/bulk-custom-date-dialog';
 import { BulkDeleteDialog } from './kanban/bulk/bulk-delete-dialog';
 import { useBulkOperations } from './kanban/bulk/bulk-operations';
@@ -76,6 +75,7 @@ interface Props {
   isMultiSelectMode: boolean;
   setIsMultiSelectMode: (enabled: boolean) => void;
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
+  onBulkSelectionActiveChange?: (active: boolean) => void;
 }
 
 export function KanbanBoard({
@@ -91,13 +91,13 @@ export function KanbanBoard({
   isMultiSelectMode,
   setIsMultiSelectMode,
   onExternalTasksCollapsedChange,
+  onBulkSelectionActiveChange,
 }: Props) {
   const tLayout = useTranslations('ws-task-boards.layout_settings');
   const tTasks = useTranslations('ws-tasks');
   const invalidColumnMoveMessage = tLayout.has('cannot_reorder_across_statuses')
     ? tLayout('cannot_reorder_across_statuses')
     : 'Task lists can only be reordered within the same status group';
-  const { modKey } = usePlatform();
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [bulkWorking, setBulkWorking] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -187,6 +187,17 @@ export function KanbanBoard({
     tasks,
     isMultiSelectMode,
     setIsMultiSelectMode
+  );
+
+  useEffect(() => {
+    onBulkSelectionActiveChange?.(selectedTasks.size > 0);
+  }, [onBulkSelectionActiveChange, selectedTasks.size]);
+
+  useEffect(
+    () => () => {
+      onBulkSelectionActiveChange?.(false);
+    },
+    [onBulkSelectionActiveChange]
   );
 
   // Resources Hooks
@@ -352,11 +363,9 @@ export function KanbanBoard({
 
   return (
     <div className="flex h-full flex-col">
-      <BulkActionsBar
+      <BulkActionsIsland
         selectedCount={selectedTasks.size}
-        isMultiSelectMode={isMultiSelectMode}
         bulkWorking={bulkWorking}
-        modKey={modKey}
         onClearSelection={clearSelection}
         onOpenBoardSelector={() => setBoardSelectorOpen(true)}
         menuProps={{

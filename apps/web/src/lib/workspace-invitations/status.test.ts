@@ -265,7 +265,42 @@ describe('workspace invitation status helpers', () => {
 
     expect(result).toMatchObject({
       status: 'none',
-      workspace: { id: workspaceId },
+      workspace: null,
+    });
+  });
+
+  it('does not expose personal workspace details to non-members', async () => {
+    const admin = createAdminClientMock({
+      directInvites: [
+        {
+          created_at: '2026-06-01T00:00:00.000Z',
+          type: 'MEMBER',
+          user_id: userId,
+          ws_id: workspaceId,
+        },
+      ],
+      privateEmail: null,
+      workspaces: [
+        {
+          avatar_url: 'private-avatar.png',
+          handle: 'private-personal',
+          id: workspaceId,
+          logo_url: 'private-logo.png',
+          name: 'Private Personal Workspace',
+          personal: true,
+        },
+      ],
+    });
+
+    const result = await getWorkspaceInviteStatus(admin as never, {
+      authEmail: 'user@example.com',
+      userId,
+      workspaceId,
+    });
+
+    expect(result).toEqual({
+      status: 'none',
+      workspace: null,
     });
   });
 

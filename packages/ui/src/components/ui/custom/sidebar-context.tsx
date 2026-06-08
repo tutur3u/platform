@@ -1,12 +1,9 @@
 'use client';
 
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
-import {
-  useUpdateUserConfig,
-  useUserConfig,
-} from '@tuturuuu/ui/hooks/use-user-config';
 import { setCookie } from 'cookies-next';
 import {
+  type ComponentType,
   createContext,
   type Dispatch,
   type ReactNode,
@@ -14,7 +11,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
 } from 'react';
 
@@ -22,9 +18,6 @@ export const SIDEBAR_BEHAVIOR_COOKIE_NAME = 'sidebar-behavior';
 export const SIDEBAR_BEHAVIOR_CONFIG_KEY = 'SIDEBAR_BEHAVIOR';
 
 export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover';
-
-const isValidBehavior = (value: string | undefined): value is SidebarBehavior =>
-  value === 'expanded' || value === 'collapsed' || value === 'hover';
 
 interface SidebarContextProps {
   behavior: SidebarBehavior;
@@ -42,6 +35,38 @@ export const SidebarContext = createContext<SidebarContextProps | undefined>(
 // Persistent cookie options — ensures setting survives browser restarts
 const COOKIE_OPTIONS = { maxAge: 365 * 24 * 60 * 60, path: '/' } as const;
 
+type SidebarRemoteBehaviorBridgeComponent = ComponentType<{
+  behavior: SidebarBehavior;
+  localOverride: boolean;
+  localOverrideVersion: number;
+  onApplyRemoteBehavior: (newBehavior: SidebarBehavior) => void;
+  onRemoteBehaviorAvailable: (remoteBehavior: SidebarBehavior) => void;
+  userChangeVersion: number;
+}>;
+
+function useSidebarRemoteBehaviorBridge() {
+  const [RemoteBehaviorBridge, setRemoteBehaviorBridge] =
+    useState<SidebarRemoteBehaviorBridgeComponent | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    // biome-ignore lint/suspicious/noTsIgnore: NodeNext requires .js, but Next/Turbopack resolves workspace TypeScript source here before package emit.
+    // @ts-ignore
+    void import('./sidebar-remote-behavior-bridge').then((module) => {
+      if (active) {
+        setRemoteBehaviorBridge(() => module.SidebarRemoteBehaviorBridge);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return RemoteBehaviorBridge;
+}
+
 export const SidebarProvider = ({
   children,
   initialBehavior,
@@ -54,74 +79,39 @@ export const SidebarProvider = ({
     'sidebar-local-override',
     false
   );
-  const hasAppliedRemote = useRef(false);
-  // Prevents remote sync from overwriting a user-initiated change
-  const userChangedRef = useRef(false);
-  // Allows reading current behavior inside the sync effect without
-  // adding `behavior` to its dependency array
-  const behaviorRef = useRef(behavior);
-  behaviorRef.current = behavior;
-
-  // Fetch account-wide preference
-  const { data: remoteBehavior, isSuccess: remoteLoaded } = useUserConfig(
-    SIDEBAR_BEHAVIOR_CONFIG_KEY,
-    'expanded'
+  const [remoteBehavior, setRemoteBehavior] = useState<SidebarBehavior | null>(
+    null
   );
+  const [userChangeVersion, setUserChangeVersion] = useState(0);
+  const [localOverrideVersion, setLocalOverrideVersion] = useState(0);
+  const RemoteBehaviorBridge = useSidebarRemoteBehaviorBridge();
 
-  const updateConfig = useUpdateUserConfig();
-
-  // Sync from user_configs when not locally overridden
-  useEffect(() => {
-    if (
-      !remoteLoaded ||
-      localOverride ||
-      hasAppliedRemote.current ||
-      userChangedRef.current
-    )
-      return;
-    hasAppliedRemote.current = true;
-    if (
-      isValidBehavior(remoteBehavior) &&
-      remoteBehavior !== behaviorRef.current
-    ) {
-      setBehavior(remoteBehavior);
-      setCookie(SIDEBAR_BEHAVIOR_COOKIE_NAME, remoteBehavior, COOKIE_OPTIONS);
-    }
-  }, [remoteLoaded, remoteBehavior, localOverride]);
+  const applyBehavior = useCallback((newBehavior: SidebarBehavior) => {
+    setBehavior(newBehavior);
+    setCookie(SIDEBAR_BEHAVIOR_COOKIE_NAME, newBehavior, COOKIE_OPTIONS);
+  }, []);
 
   const handleBehaviorChange = useCallback(
     (newBehavior: SidebarBehavior) => {
-      userChangedRef.current = true;
-      setBehavior(newBehavior);
-      // Always update cookie for SSR
-      setCookie(SIDEBAR_BEHAVIOR_COOKIE_NAME, newBehavior, COOKIE_OPTIONS);
-      // Save to user_configs (account-wide) unless locally overridden
+      applyBehavior(newBehavior);
+
       if (!localOverride) {
-        updateConfig.mutate({
-          configId: SIDEBAR_BEHAVIOR_CONFIG_KEY,
-          value: newBehavior,
-        });
+        setUserChangeVersion((version) => version + 1);
       }
     },
-    [localOverride, updateConfig]
+    [applyBehavior, localOverride]
   );
 
   const setLocalOverride = useCallback(
     (enabled: boolean) => {
       setLocalOverrideRaw(enabled);
-      if (!enabled && isValidBehavior(remoteBehavior)) {
-        // Turning off local override — sync to account-wide value
-        setBehavior(remoteBehavior);
-        setCookie(SIDEBAR_BEHAVIOR_COOKIE_NAME, remoteBehavior, COOKIE_OPTIONS);
-      } else if (enabled) {
-        // Turning on local override — save current behavior to account-wide first
-        updateConfig.mutate({
-          configId: SIDEBAR_BEHAVIOR_CONFIG_KEY,
-          value: behavior,
-        });
+      setLocalOverrideVersion((version) => version + 1);
+
+      if (!enabled && remoteBehavior) {
+        applyBehavior(remoteBehavior);
       }
     },
-    [setLocalOverrideRaw, remoteBehavior, behavior, updateConfig]
+    [applyBehavior, remoteBehavior, setLocalOverrideRaw]
   );
 
   return (
@@ -134,6 +124,16 @@ export const SidebarProvider = ({
         setLocalOverride,
       }}
     >
+      {RemoteBehaviorBridge && (
+        <RemoteBehaviorBridge
+          behavior={behavior}
+          localOverride={localOverride}
+          localOverrideVersion={localOverrideVersion}
+          onApplyRemoteBehavior={applyBehavior}
+          onRemoteBehaviorAvailable={setRemoteBehavior}
+          userChangeVersion={userChangeVersion}
+        />
+      )}
       {children}
     </SidebarContext.Provider>
   );

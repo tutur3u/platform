@@ -1,3 +1,5 @@
+import { getSupabaseAuthStorageKey } from './common';
+
 type CookieLike = {
   name: string;
   value: string;
@@ -11,10 +13,6 @@ const EXPIRED_COOKIE_OPTIONS = {
   maxAge: 0,
   path: '/',
 };
-
-function getSupabaseAuthStorageKey(url: string): string {
-  return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
-}
 
 function getChunkIndex(cookieName: string, storageKey: string): number | null {
   if (cookieName === storageKey) {
@@ -100,6 +98,123 @@ function hasMalformedChunkLayout(
   return false;
 }
 
+function dedupeAuthCookiesByName(authCookies: CookieLike[]) {
+  const cookiesByName = new Map<string, CookieLike>();
+  const duplicateNames = new Set<string>();
+
+  for (const cookie of authCookies) {
+    if (cookiesByName.has(cookie.name)) {
+      duplicateNames.add(cookie.name);
+    }
+
+    cookiesByName.set(cookie.name, cookie);
+  }
+
+  return {
+    duplicateNames,
+    normalizedCookies: [...cookiesByName.values()],
+  };
+}
+
+function getCookieHeaderNames(cookieHeader: string | null | undefined) {
+  if (!cookieHeader) {
+    return [];
+  }
+
+  return cookieHeader
+    .split(';')
+    .map((cookiePair) => cookiePair.trim())
+    .map((cookiePair) => {
+      const separatorIndex = cookiePair.indexOf('=');
+
+      return separatorIndex > 0
+        ? cookiePair.slice(0, separatorIndex).trim()
+        : null;
+    })
+    .filter(
+      (name): name is string => typeof name === 'string' && name.length > 0
+    );
+}
+
+function getSupabaseAuthStorageKeys(
+  urlOrUrls: string | string[] | null | undefined
+) {
+  const urls = Array.isArray(urlOrUrls) ? urlOrUrls : [urlOrUrls];
+  const storageKeys = new Set<string>();
+
+  for (const url of urls) {
+    if (!url) {
+      continue;
+    }
+
+    try {
+      storageKeys.add(getSupabaseAuthStorageKey(url));
+    } catch {
+      // Ignore invalid optional URLs. Required Supabase URLs are validated
+      // before this helper is called.
+    }
+  }
+
+  return storageKeys;
+}
+
+export function getDuplicateSupabaseAuthCookieNames(
+  cookieHeader: string | null | undefined,
+  url: string | string[] | null | undefined
+) {
+  const storageKeys = getSupabaseAuthStorageKeys(url);
+
+  if (storageKeys.size === 0) {
+    return [];
+  }
+
+  const seenNames = new Set<string>();
+  const duplicateNames = new Set<string>();
+
+  for (const name of getCookieHeaderNames(cookieHeader)) {
+    const isSupabaseAuthCookie = [...storageKeys].some(
+      (storageKey) => getChunkIndex(name, storageKey) !== null
+    );
+
+    if (!isSupabaseAuthCookie) {
+      continue;
+    }
+
+    if (seenNames.has(name)) {
+      duplicateNames.add(name);
+    }
+
+    seenNames.add(name);
+  }
+
+  return [...duplicateNames];
+}
+
+export function getSupabaseAuthCookieNames(
+  cookieHeader: string | null | undefined,
+  url: string | string[] | null | undefined
+) {
+  const storageKeys = getSupabaseAuthStorageKeys(url);
+
+  if (storageKeys.size === 0) {
+    return [];
+  }
+
+  const authCookieNames = new Set<string>();
+
+  for (const name of getCookieHeaderNames(cookieHeader)) {
+    const isSupabaseAuthCookie = [...storageKeys].some(
+      (storageKey) => getChunkIndex(name, storageKey) !== null
+    );
+
+    if (isSupabaseAuthCookie) {
+      authCookieNames.add(name);
+    }
+  }
+
+  return [...authCookieNames];
+}
+
 function decodeBase64UrlJson(cookieValue: string): unknown | null {
   const base64Body = cookieValue.slice(SUPABASE_BASE64_PREFIX.length);
   return !BASE64_URL_BODY_PATTERN.test(base64Body)
@@ -169,15 +284,31 @@ export function sanitizeSupabaseAuthCookies(
     return cookies;
   }
 
-  const combinedValue = combineAuthCookieChunks(authCookies, storageKey);
-  const malformedChunkLayout = hasMalformedChunkLayout(authCookies, storageKey);
+  const { duplicateNames, normalizedCookies } =
+    dedupeAuthCookiesByName(authCookies);
+  const combinedValue = combineAuthCookieChunks(normalizedCookies, storageKey);
+  const malformedChunkLayout = hasMalformedChunkLayout(
+    normalizedCookies,
+    storageKey
+  );
+
   if (
     (!combinedValue && !malformedChunkLayout) ||
     (combinedValue &&
       !malformedChunkLayout &&
       !isMalformedSupabaseCookieValue(combinedValue))
   ) {
-    return cookies;
+    for (const name of duplicateNames) {
+      clearCookie?.(name, EXPIRED_COOKIE_OPTIONS);
+    }
+
+    if (duplicateNames.size === 0) {
+      return cookies;
+    }
+
+    return cookies
+      .filter((cookie) => getChunkIndex(cookie.name, storageKey) === null)
+      .concat(normalizedCookies);
   }
 
   for (const cookie of authCookies) {
@@ -206,8 +337,12 @@ export function getMalformedSupabaseAuthCookieNames(
     return [];
   }
 
-  const combinedValue = combineAuthCookieChunks(authCookies, storageKey);
-  const malformedChunkLayout = hasMalformedChunkLayout(authCookies, storageKey);
+  const { normalizedCookies } = dedupeAuthCookiesByName(authCookies);
+  const combinedValue = combineAuthCookieChunks(normalizedCookies, storageKey);
+  const malformedChunkLayout = hasMalformedChunkLayout(
+    normalizedCookies,
+    storageKey
+  );
   if (
     (!combinedValue && !malformedChunkLayout) ||
     (combinedValue &&

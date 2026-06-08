@@ -1,6 +1,7 @@
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
@@ -62,6 +63,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const appSessionRefresh = isLocalAuthApi
       ? null
       : await refreshAppSessionForRequest(request, {
+          sessionMode: 'supabase-first',
           targetApp: 'inventory',
         });
 
@@ -110,6 +112,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (!isPublicPath) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {
       requireWebAppSession: true,
+      sessionMode: 'supabase-first',
       targetApp: 'inventory',
     });
     const requestWithRefresh = {
@@ -124,8 +127,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         });
     const hasWebAppSession =
       hasWebAppSessionTokenFromRequest(requestWithRefresh);
+    const hasSupabaseSession =
+      hasSupportedSupabaseAuthCookie(requestWithRefresh);
+    const hasSatelliteSession = Boolean(
+      appSession && (hasWebAppSession || hasSupabaseSession)
+    );
 
-    if (!appSession || !hasWebAppSession) {
+    if (!hasSatelliteSession) {
       const url = new URL('/login', request.url);
       url.searchParams.set('next', getNextValue(request));
 

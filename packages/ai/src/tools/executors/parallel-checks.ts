@@ -1,10 +1,27 @@
 import { google } from '@ai-sdk/google';
-import { stepCountIs, ToolLoopAgent } from 'ai';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  gateway,
+  type LanguageModelUsage,
+  stepCountIs,
+  ToolLoopAgent,
+} from 'ai';
 import { z } from 'zod';
+import { capMaxOutputTokensByCredits } from '../../credits/cap-output-tokens';
+import { checkAiCredits, deductAiCredits } from '../../credits/check-credits';
+import {
+  GEMINI_31_FLASH_LITE_MODEL,
+  isGoogleModelId,
+  toBareModelName,
+} from '../../credits/model-mapping';
+import {
+  PlanModelResolutionError,
+  resolvePlanModel,
+} from '../../credits/resolve-plan-model';
 import { withAiMemory } from '../../memory';
 import type { MiraToolContext } from '../mira-tools';
 
-const PARALLEL_CHECKS_MODEL = 'gemini-3.1-flash-lite';
+const PARALLEL_CHECKS_MODEL = GEMINI_31_FLASH_LITE_MODEL;
 
 const ParallelChecksArgsSchema = z.object({
   question: z
@@ -35,6 +52,12 @@ type CheckKind = z.infer<typeof ParallelChecksArgsSchema>['checks'] extends
 type ParallelCheckResult = {
   label: string;
   finding: string;
+};
+
+type MeteredUsage = {
+  inputTokens: number;
+  outputTokens: number;
+  reasoningTokens: number;
 };
 
 const CHECK_INSTRUCTIONS: Record<CheckKind, string> = {
@@ -69,26 +92,79 @@ ${context ? `Relevant context:\n${context}\n\n` : ''}Return:
 - "No material issues" if this perspective has nothing important`;
 }
 
+function getCreditCheckErrorMessage(creditCheck: {
+  errorCode?: string | null;
+  errorMessage?: string | null;
+}) {
+  const errorMessages: Record<string, string> = {
+    CREDIT_CHECK_FAILED: 'AI credit check failed. Please try again.',
+    CREDITS_EXHAUSTED: 'You have run out of AI credits for parallel checks.',
+    FEATURE_NOT_ALLOWED:
+      'Parallel checks are not available on your current plan.',
+    MODEL_NOT_ALLOWED:
+      'The parallel-checks model is not enabled for your workspace.',
+    NO_ALLOCATION: 'AI credits are not configured for your workspace.',
+  };
+
+  return (
+    creditCheck.errorMessage ??
+    errorMessages[creditCheck.errorCode ?? ''] ??
+    'Parallel checks are not available. Please check your AI credit settings.'
+  );
+}
+
+function normalizeTokenCount(value: number | undefined) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.trunc(value));
+}
+
+function extractMeteredUsage(usage: LanguageModelUsage): MeteredUsage {
+  return {
+    inputTokens: normalizeTokenCount(usage.inputTokens),
+    outputTokens: normalizeTokenCount(usage.outputTokens),
+    reasoningTokens: normalizeTokenCount(
+      usage.outputTokenDetails.reasoningTokens ?? usage.reasoningTokens
+    ),
+  };
+}
+
+function getPerCheckMaxOutputTokens(
+  cappedMaxOutput: number | null,
+  checkCount: number
+) {
+  if (cappedMaxOutput === null) return undefined;
+  return Math.max(1, Math.floor(cappedMaxOutput / checkCount));
+}
+
 async function runCheck({
   abortSignal,
+  billingWsId,
   check,
   context,
+  maxOutputTokens,
+  modelId,
   question,
   toolContext,
 }: {
   abortSignal?: AbortSignal;
+  billingWsId: string;
   check: CheckKind;
   context?: string;
+  maxOutputTokens?: number;
+  modelId: string;
   question: string;
   toolContext: MiraToolContext;
 }): Promise<ParallelCheckResult> {
+  const useGoogleNativeModel = isGoogleModelId(modelId);
   const agent = new ToolLoopAgent({
     model: await withAiMemory({
       addMemory: 'never',
       customId: toolContext.chatId
         ? `${toolContext.chatId}-parallel-checks-${check}`
         : `parallel-checks-${check}`,
-      model: google(PARALLEL_CHECKS_MODEL),
+      model: useGoogleNativeModel
+        ? google(toBareModelName(modelId))
+        : gateway(modelId),
       product: 'mira',
       source: 'mira_parallel_checks_tool',
       surface: 'mira_parallel_checks_tool',
@@ -97,20 +173,50 @@ async function runCheck({
     }),
     instructions: CHECK_INSTRUCTIONS[check],
     stopWhen: stepCountIs(2),
-    providerOptions: {
-      google: {
-        thinkingConfig: {
-          thinkingBudget: 0,
-          includeThoughts: false,
-        },
-      },
-    },
+    ...(useGoogleNativeModel
+      ? {
+          providerOptions: {
+            google: {
+              thinkingConfig: {
+                thinkingBudget: 0,
+                includeThoughts: false,
+              },
+            },
+          },
+        }
+      : {}),
   });
 
   const result = await agent.generate({
     prompt: buildPrompt({ check, context, question }),
     abortSignal,
+    ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
   });
+
+  const usage = extractMeteredUsage(result.totalUsage);
+  const deduction = await deductAiCredits({
+    wsId: billingWsId,
+    userId: toolContext.userId,
+    modelId,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    reasoningTokens: usage.reasoningTokens,
+    feature: 'chat',
+    metadata: {
+      source: 'mira_parallel_checks_tool',
+      check,
+      creditWsId: billingWsId,
+      routeWsId: toolContext.wsId,
+      ...(toolContext.chatId ? { chatId: toolContext.chatId } : {}),
+      ...(toolContext.workspaceContext?.wsId
+        ? { workspaceContextWsId: toolContext.workspaceContext.wsId }
+        : {}),
+    },
+  });
+
+  if (!deduction.success) {
+    throw new Error('Failed to deduct AI credits for parallel checks.');
+  }
 
   return {
     label: check,
@@ -133,14 +239,55 @@ export async function executeParallelChecks(
 
   const { context, question } = parsed.data;
   const checks = parsed.data.checks ?? DEFAULT_CHECKS;
+  const billingWsId = ctx.creditWsId ?? ctx.wsId;
 
   try {
+    const resolvedModel = await resolvePlanModel({
+      capability: 'language',
+      requestedModel: PARALLEL_CHECKS_MODEL,
+      wsId: billingWsId,
+    });
+    const modelId = resolvedModel.modelId;
+    const creditCheck = await checkAiCredits(billingWsId, modelId, 'chat', {
+      userId: ctx.userId,
+    });
+
+    if (!creditCheck.allowed) {
+      return {
+        ok: false,
+        error: getCreditCheckErrorMessage(creditCheck),
+      };
+    }
+
+    const sbAdmin = await createAdminClient();
+    const cappedMaxOutput = await capMaxOutputTokensByCredits(
+      sbAdmin,
+      modelId,
+      creditCheck.maxOutputTokens,
+      creditCheck.remainingCredits
+    );
+
+    if (cappedMaxOutput === null && creditCheck.remainingCredits <= 0) {
+      return {
+        ok: false,
+        error: 'You have run out of AI credits for parallel checks.',
+      };
+    }
+
+    const maxOutputTokens = getPerCheckMaxOutputTokens(
+      cappedMaxOutput,
+      checks.length
+    );
+
     const results = await Promise.all(
       checks.map((check) =>
         runCheck({
           abortSignal: options?.abortSignal,
+          billingWsId,
           check,
           context,
+          maxOutputTokens,
+          modelId,
           question,
           toolContext: ctx,
         })
@@ -160,6 +307,13 @@ export async function executeParallelChecks(
       checks: results,
     };
   } catch (error) {
+    if (error instanceof PlanModelResolutionError) {
+      return {
+        ok: false,
+        error: error.message,
+      };
+    }
+
     if (error instanceof DOMException && error.name === 'AbortError') {
       return {
         ok: false,

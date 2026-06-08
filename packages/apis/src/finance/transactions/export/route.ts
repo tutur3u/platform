@@ -31,21 +31,24 @@ type ExportTransactionEnrichmentRow = {
   transaction_id: string;
 };
 
-type ExportInvoiceCustomerRow = {
+type ExportInvoiceRow = {
+  customer_id: string | null;
   id: string;
   transaction_id: string | null;
-  workspace_users:
-    | {
-        display_name: string | null;
-        full_name: string | null;
-        email: string | null;
-      }
-    | {
-        display_name: string | null;
-        full_name: string | null;
-        email: string | null;
-      }[]
-    | null;
+};
+
+type ExportInvoiceCustomerProfileRow = {
+  display_name: string | null;
+  email: string | null;
+  full_name: string | null;
+  id: string;
+};
+
+type ExportInvoiceCustomerRow = {
+  customer: ExportInvoiceCustomerProfileRow | null;
+  customer_id: string | null;
+  id: string;
+  transaction_id: string | null;
 };
 
 const EXPORT_LOOKUP_CHUNK_SIZE = 100;
@@ -61,10 +64,6 @@ function getStringArray(searchParams: URLSearchParams, key: string) {
 function getPositiveInteger(value: string | null, fallback: number) {
   const parsed = Number.parseInt(value || '', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function firstOrNull<T>(value: T | T[] | null | undefined) {
-  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
 }
 
 function getTransactionType(amount: number | null) {
@@ -107,7 +106,7 @@ async function getInvoiceCustomers({
   }
 
   const sbAdmin = await createAdminClient();
-  const data: ExportInvoiceCustomerRow[] = [];
+  const invoices: ExportInvoiceRow[] = [];
 
   for (
     let index = 0;
@@ -117,12 +116,10 @@ async function getInvoiceCustomers({
     const chunk = invoiceIds.slice(index, index + EXPORT_LOOKUP_CHUNK_SIZE);
     const result = await sbAdmin
       .from('finance_invoices')
-      .select(
-        'id, transaction_id, workspace_users!finance_invoices_customer_id_fkey(display_name, full_name, email)'
-      )
+      .select('id, transaction_id, customer_id')
       .eq('ws_id', normalizedWsId)
       .in('id', chunk)
-      .returns<ExportInvoiceCustomerRow[]>();
+      .returns<ExportInvoiceRow[]>();
 
     if (result.error) {
       return {
@@ -131,11 +128,50 @@ async function getInvoiceCustomers({
       };
     }
 
-    data.push(...(result.data ?? []));
+    invoices.push(...(result.data ?? []));
+  }
+
+  const customerIds = [
+    ...new Set(
+      invoices
+        .map((invoice) => invoice.customer_id)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+  const customersById = new Map<string, ExportInvoiceCustomerProfileRow>();
+
+  for (
+    let index = 0;
+    index < customerIds.length;
+    index += EXPORT_LOOKUP_CHUNK_SIZE
+  ) {
+    const chunk = customerIds.slice(index, index + EXPORT_LOOKUP_CHUNK_SIZE);
+    const result = await sbAdmin
+      .from('workspace_users')
+      .select('id, display_name, full_name, email')
+      .eq('ws_id', normalizedWsId)
+      .in('id', chunk)
+      .returns<ExportInvoiceCustomerProfileRow[]>();
+
+    if (result.error) {
+      return {
+        data: null,
+        error: result.error,
+      };
+    }
+
+    for (const customer of result.data ?? []) {
+      customersById.set(customer.id, customer);
+    }
   }
 
   return {
-    data,
+    data: invoices.map((invoice) => ({
+      ...invoice,
+      customer: invoice.customer_id
+        ? (customersById.get(invoice.customer_id) ?? null)
+        : null,
+    })),
     error: null,
   };
 }
@@ -287,7 +323,7 @@ export async function GET(
       (transaction.invoice_id
         ? invoicesById.get(transaction.invoice_id)
         : undefined) ?? invoicesByTransactionId.get(transaction.id);
-    const invoiceCustomer = firstOrNull(invoice?.workspace_users);
+    const invoiceCustomer = invoice?.customer ?? null;
     const tagNames = tagNamesByTransactionId.get(transaction.id) ?? [];
 
     return {

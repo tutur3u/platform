@@ -34,7 +34,7 @@ export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
     value: expandSettingsAccordions,
     setValue: setExpandSettingsAccordions,
     isLoading: isLoadingExpandAccordions,
-  } = useUserBooleanConfig('EXPAND_SETTINGS_ACCORDIONS', false);
+  } = useUserBooleanConfig('EXPAND_SETTINGS_ACCORDIONS', true);
 
   return (
     <div className="space-y-8">

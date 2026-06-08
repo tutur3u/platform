@@ -54,6 +54,7 @@ import {
 import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 import { refreshCliSession } from './cli/auth';
 import { type CliSession, normalizeBaseUrl } from './cli/config';
+import { DevboxesClient } from './platform-devbox';
 import { FinanceClient } from './platform-finance';
 
 export interface TuturuuuUserClientConfig {
@@ -66,6 +67,7 @@ export interface TuturuuuUserClientConfig {
 }
 
 const SESSION_REFRESH_SKEW_MS = 60_000;
+const PROTOCOL_RELATIVE_URL_PATTERN = /^\/\//u;
 
 type CliListWorkspaceTasksOptions = ListWorkspaceTasksOptions & {
   includeArchivedBoards?: boolean;
@@ -74,6 +76,43 @@ type CliListWorkspaceTasksOptions = ListWorkspaceTasksOptions & {
 
 function getAuthorizationHeader(accessToken: string) {
   return `Bearer ${accessToken}`;
+}
+
+function getRequestInfoUrl(input: RequestInfo | URL) {
+  if (typeof input === 'string') {
+    return input;
+  }
+
+  if (input instanceof URL) {
+    return input.toString();
+  }
+
+  if (typeof Request !== 'undefined' && input instanceof Request) {
+    return input.url;
+  }
+
+  const requestLike = input as { url?: unknown };
+  return typeof requestLike.url === 'string' ? requestLike.url : null;
+}
+
+function shouldAttachSdkAuth(input: RequestInfo | URL, baseUrl: string) {
+  const requestUrl = getRequestInfoUrl(input);
+
+  if (!requestUrl) {
+    return false;
+  }
+
+  const trimmedUrl = requestUrl.trim();
+
+  if (PROTOCOL_RELATIVE_URL_PATTERN.test(trimmedUrl)) {
+    return false;
+  }
+
+  try {
+    return new URL(trimmedUrl).origin === baseUrl;
+  } catch {
+    return true;
+  }
 }
 
 export class WorkspacesClient {
@@ -421,6 +460,7 @@ export class TuturuuuUserClient {
   private refreshPromise?: Promise<CliSession>;
   private refreshToken?: string;
 
+  readonly devboxes: DevboxesClient;
   readonly finance: FinanceClient;
   readonly tasks: TasksClient;
   readonly users: UsersClient;
@@ -433,6 +473,7 @@ export class TuturuuuUserClient {
     this.fetchImpl = config.fetch || globalThis.fetch;
     this.onSessionRefresh = config.onSessionRefresh;
     this.refreshToken = config.refreshToken;
+    this.devboxes = new DevboxesClient(this.getClientOptions());
     this.finance = new FinanceClient(this);
     this.tasks = new TasksClient(this);
     this.users = new UsersClient(this);
@@ -469,11 +510,20 @@ export class TuturuuuUserClient {
     return {
       baseUrl: this.baseUrl,
       defaultHeaders: {
-        Authorization: getAuthorizationHeader(this.accessToken),
         'X-SDK-Client': 'tuturuuu-cli',
       },
       fetch: async (input, init) => {
         const headers = new Headers(init?.headers);
+        const attachAuth = shouldAttachSdkAuth(input, this.baseUrl);
+
+        if (!attachAuth) {
+          headers.delete('Authorization');
+
+          return this.fetchImpl(input, {
+            ...init,
+            headers,
+          });
+        }
 
         if (this.shouldRefreshSession()) {
           await this.refreshSession();

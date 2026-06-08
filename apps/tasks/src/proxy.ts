@@ -2,6 +2,7 @@ import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
@@ -37,7 +38,7 @@ const AUTH_PUBLIC_PATHS = [
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
-  appSession: { targetApp: 'tasks' },
+  appSession: { sessionMode: 'supabase-first', targetApp: 'tasks' },
   webAppUrl: TTR_URL,
   publicPaths: AUTH_PUBLIC_PATHS,
   skipApiRoutes: true,
@@ -54,6 +55,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const appSessionRefresh = isLocalAuthApi
       ? null
       : await refreshAppSessionForRequest(req, {
+          sessionMode: 'supabase-first',
           targetApp: 'tasks',
         });
 
@@ -101,6 +103,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     targetApp: 'tasks',
   });
   const hasWebAppSession = hasWebAppSessionTokenFromRequest(authRequest);
+  const hasSupabaseSession = hasSupportedSupabaseAuthCookie(authRequest);
+  const hasSatelliteSession =
+    hasSupabaseSession || Boolean(appSession && hasWebAppSession);
 
   // Handle direct navigation to workspace IDs that are personal workspaces
   // Check if the path matches /[locale]/[wsId] or /[wsId] pattern where wsId is a UUID
@@ -119,7 +124,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       : 0;
   const isLoginPath = pathSegments[loginSegmentIndex] === 'login';
 
-  if (isLoginPath && appSession && hasWebAppSession) {
+  if (isLoginPath && hasSatelliteSession) {
     const nextPath = normalizeAuthRedirectPath(
       req.nextUrl.searchParams.get('next') ??
         req.nextUrl.searchParams.get('nextUrl'),
@@ -179,7 +184,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // If we found a potential workspace ID, check if it's a personal workspace
   if (potentialWorkspaceId) {
     try {
-      if (appSession) {
+      if (hasSatelliteSession) {
         const isPersonal = await isPersonalWorkspace(potentialWorkspaceId);
 
         if (isPersonal) {
@@ -221,39 +226,38 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     (isRootPath || isLocaleRootPath) &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
-    !isMultiAccountFlow
+    !isMultiAccountFlow &&
+    hasSatelliteSession
   ) {
     try {
-      if (appSession) {
-        const internalApiAuth = withForwardedInternalApiAuth(req.headers);
-        const config = await getUserConfig(
-          'TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT',
-          internalApiAuth
-        );
+      const internalApiAuth = withForwardedInternalApiAuth(authRequestHeaders);
+      const config = await getUserConfig(
+        'TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT',
+        internalApiAuth
+      );
 
-        if (config?.value === 'true') {
-          const defaultWorkspace =
-            await getCurrentUserDefaultWorkspace(internalApiAuth);
+      if (config?.value === 'true') {
+        const defaultWorkspace =
+          await getCurrentUserDefaultWorkspace(internalApiAuth);
 
-          if (defaultWorkspace) {
-            const target = defaultWorkspace.personal
-              ? 'personal'
-              : defaultWorkspace.id === ROOT_WORKSPACE_ID
-                ? 'internal'
-                : defaultWorkspace.id;
-            const redirectUrl = new URL(`/${target}/tasks`, req.nextUrl);
-            const wsRedirect = NextResponse.redirect(redirectUrl);
-            propagateAuthCookies(authRes, wsRedirect);
-            return wsRedirect;
-          }
+        if (defaultWorkspace) {
+          const target = defaultWorkspace.personal
+            ? 'personal'
+            : defaultWorkspace.id === ROOT_WORKSPACE_ID
+              ? 'internal'
+              : defaultWorkspace.id;
+          const redirectUrl = new URL(`/${target}/tasks`, req.nextUrl);
+          const wsRedirect = NextResponse.redirect(redirectUrl);
+          propagateAuthCookies(authRes, wsRedirect);
+          return wsRedirect;
         }
-
-        // Default: redirect to personal tasks
-        const redirectUrl = new URL('/personal/tasks', req.nextUrl);
-        const fallbackRedirect = NextResponse.redirect(redirectUrl);
-        propagateAuthCookies(authRes, fallbackRedirect);
-        return fallbackRedirect;
       }
+
+      // Default: redirect to personal tasks
+      const redirectUrl = new URL('/personal/tasks', req.nextUrl);
+      const fallbackRedirect = NextResponse.redirect(redirectUrl);
+      propagateAuthCookies(authRes, fallbackRedirect);
+      return fallbackRedirect;
     } catch (error) {
       console.error('Error handling root path redirect:', error);
     }

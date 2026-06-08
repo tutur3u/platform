@@ -277,10 +277,9 @@ export async function getWorkspaceInviteStatus(
     admin,
     workspaceId
   );
-  const [candidateEmails, workspace, memberWorkspaceIds, directInvites] =
+  const [candidateEmails, memberWorkspaceIds, directInvites] =
     await Promise.all([
       getWorkspaceInviteCandidateEmails(admin, { authEmail, userId }),
-      fetchWorkspace(admin, normalizedWorkspaceId),
       fetchMembershipWorkspaceIds(admin, {
         userId,
         workspaceIds: [normalizedWorkspaceId],
@@ -291,26 +290,18 @@ export async function getWorkspaceInviteStatus(
       }),
     ]);
 
-  if (!workspace) {
-    return {
-      status: 'none',
-      workspace: null,
-    };
-  }
-
-  const workspaceSummary = toWorkspaceSummary(workspace);
-
   if (memberWorkspaceIds.has(normalizedWorkspaceId)) {
+    const workspace = await fetchWorkspace(admin, normalizedWorkspaceId);
+    if (!workspace) {
+      return {
+        status: 'none',
+        workspace: null,
+      };
+    }
+
     return {
       status: 'member',
-      workspace: workspaceSummary,
-    };
-  }
-
-  if (workspaceSummary.personal) {
-    return {
-      status: 'none',
-      workspace: workspaceSummary,
+      workspace: toWorkspaceSummary(workspace),
     };
   }
 
@@ -318,6 +309,24 @@ export async function getWorkspaceInviteStatus(
     candidateEmails,
     workspaceId: normalizedWorkspaceId,
   });
+
+  if (directInvites.length === 0 && emailInvites.length === 0) {
+    return {
+      status: 'none',
+      workspace: null,
+    };
+  }
+
+  const workspace = await fetchWorkspace(admin, normalizedWorkspaceId);
+
+  if (!workspace || workspace.personal === true) {
+    return {
+      status: 'none',
+      workspace: null,
+    };
+  }
+
+  const workspaceSummary = toWorkspaceSummary(workspace);
   const invitation = chooseInviteForWorkspace({
     directInvites,
     emailInvites,
@@ -327,7 +336,7 @@ export async function getWorkspaceInviteStatus(
   if (!invitation) {
     return {
       status: 'none',
-      workspace: workspaceSummary,
+      workspace: null,
     };
   }
 

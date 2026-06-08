@@ -20,6 +20,7 @@ export type InventoryWorkspaceAuthorization = {
 };
 
 type AuthorizeInventoryWorkspaceOptions = {
+  appSessionTargets?: Array<'inventory' | 'finance'>;
   requireInventoryEnabled?: boolean;
 };
 
@@ -32,7 +33,9 @@ export async function authorizeInventoryWorkspace(
   | { ok: false; response: NextResponse }
 > {
   const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: ['inventory', 'finance'] },
+    allowAppSessionAuth: {
+      targetApp: options.appSessionTargets ?? ['inventory'],
+    },
   });
 
   if (!auth.ok) return { ok: false, response: auth.response };

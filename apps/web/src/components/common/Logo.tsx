@@ -1,4 +1,7 @@
-import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import {
+  TUTURUUU_LOCAL_LOGO_URL,
+  TuturuuLogo,
+} from '@tuturuuu/ui/custom/tuturuuu-logo';
 import Link from 'next/link';
 
 interface LogoProps {
@@ -26,6 +29,7 @@ export default function Logo({
         <div className="flex-none">
           <TuturuuLogo
             alt="logo"
+            src={TUTURUUU_LOCAL_LOGO_URL}
             width={320}
             height={320}
             className="h-8 w-8"

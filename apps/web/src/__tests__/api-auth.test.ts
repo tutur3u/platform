@@ -241,7 +241,7 @@ describe('withSessionAuth', () => {
     expect(response.headers.get('Retry-After')).toBeTruthy();
   });
 
-  it('should ignore api_abuse IP blocks for authenticated session requests', async () => {
+  it('should defer api_abuse IP blocks until session requests validate', async () => {
     mockHasAuthenticatedApiSession.mockReturnValue(true);
     mockIsIPBlocked.mockResolvedValue({
       expiresAt: new Date(Date.now() + 60000),
@@ -254,6 +254,28 @@ describe('withSessionAuth', () => {
 
     expect(response.status).toBe(200);
     expect(handler).toHaveBeenCalledTimes(1);
+    expect(mockGetUser).toHaveBeenCalled();
+  });
+
+  it('should enforce api_abuse IP blocks when auth markers fail validation', async () => {
+    mockHasAuthenticatedApiSession.mockReturnValue(true);
+    mockIsIPBlocked.mockResolvedValue({
+      expiresAt: new Date(Date.now() + 60000),
+      reason: 'api_abuse',
+    });
+    mockGetUser.mockResolvedValue({
+      data: { user: null },
+      error: { message: 'Invalid JWT' },
+    });
+
+    const handler = vi.fn();
+    const wrapped = withSessionAuth(handler);
+    const response = await wrapped(makeRequest('GET'));
+
+    expect(response.status).toBe(429);
+    expect(handler).not.toHaveBeenCalled();
+    expect(mockGetUser).toHaveBeenCalled();
+    expect(mockRecordAuthFailure).not.toHaveBeenCalled();
   });
 
   it('should keep non-api_abuse IP blocks for authenticated session requests', async () => {
@@ -701,6 +723,63 @@ describe('withSessionAuth', () => {
     expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
   });
 
+  it('should bind storage APIs to the Drive app-session audience by default', async () => {
+    const { token: financeToken } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'finance',
+      userId: 'finance-user-1',
+    });
+    const financeRequest = new Request(
+      'http://localhost:3000/api/v1/workspaces/ws-1/storage/list',
+      {
+        headers: {
+          authorization: `Bearer ${financeToken}`,
+        },
+        method: 'GET',
+      }
+    ) as unknown as NextRequest;
+
+    const financeResult = await resolveSessionAuthContext(financeRequest, {
+      allowAppSessionAuth: true,
+    });
+
+    expect(financeResult.ok).toBe(false);
+    if (!financeResult.ok) {
+      expect(financeResult.response.status).toBe(401);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+
+    const { token: driveToken } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'drive',
+      userId: 'drive-user-1',
+    });
+    const driveRequest = new Request(
+      'http://localhost:3000/api/v1/workspaces/ws-1/storage/list',
+      {
+        headers: {
+          authorization: `Bearer ${driveToken}`,
+        },
+        method: 'GET',
+      }
+    ) as unknown as NextRequest;
+
+    const driveResult = await resolveSessionAuthContext(driveRequest, {
+      allowAppSessionAuth: true,
+    });
+
+    expect(driveResult.ok).toBe(true);
+    if (driveResult.ok) {
+      expect(driveResult.user.id).toBe('drive-user-1');
+      expect(driveResult.supabase).toBe(mockAdminClient);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
+  });
+
   it('should keep shared satellite API audiences path-bound', () => {
     expect(
       getDefaultAppSessionVerificationOptions(
@@ -721,26 +800,7 @@ describe('withSessionAuth', () => {
       getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/workspaces/ws-1/storage/list'
       )
-    ).toEqual({
-      targetApp: [
-        'calendar',
-        'chat',
-        'cms',
-        'drive',
-        'finance',
-        'hive',
-        'inventory',
-        'learn',
-        'mail',
-        'mind',
-        'mira',
-        'nova',
-        'rewise',
-        'tasks',
-        'teach',
-        'track',
-      ],
-    });
+    ).toEqual({ targetApp: 'drive' });
     expect(
       getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/users/me/profile'
@@ -928,6 +988,38 @@ describe('withSessionAuth', () => {
     const response = await wrapped(request);
 
     expect(response.status).toBe(401);
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('should still enforce suspension checks for valid app-session auth', async () => {
+    const session = createCliAppSession({
+      email: 'agent@example.com',
+      userId: 'app-user-1',
+    });
+    mockCheckSuspension.mockResolvedValue({
+      suspended: true,
+      reason: 'Suspended account',
+    });
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        authorization: `Bearer ${session.access.token}`,
+      },
+      method: 'GET',
+    }) as unknown as NextRequest;
+    const handler = vi.fn();
+
+    const wrapped = withSessionAuth(handler, {
+      allowAppSessionAuth: { targetApp: 'platform' },
+    });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Forbidden',
+      message: 'Suspended account',
+    });
     expect(mockGetUser).not.toHaveBeenCalled();
     expect(mockCreateAdminClient).not.toHaveBeenCalled();
     expect(handler).not.toHaveBeenCalled();

@@ -1608,6 +1608,7 @@
     "agent_deploy_failed": "Không thể deploy kênh agent",
     "agent_deploy_success": "Đã deploy kênh agent",
     "agent_details": "Chi tiết agent",
+    "agent_diagnostics": "Chẩn đoán",
     "agent_disabled": "Đã tắt",
     "agent_discord_guild_id": "ID guild Discord",
     "agent_discord_live_test_hint": "Chỉ kiểm tra độ sẵn sàng. Để kiểm thử Discord đầy đủ, hãy đặt Interactions Endpoint URL, cài ứng dụng, rồi mention bot trong kênh đã ánh xạ.",
@@ -1621,7 +1622,9 @@
     "agent_external_draft_success": "Đã tạo bản nháp",
     "agent_external_last_sync": "Đồng bộ cuối",
     "agent_external_message_count": "Tin nhắn",
+    "agent_external_no_threads": "Chưa có luồng bên ngoài được mirror",
     "agent_external_prompt_placeholder": "Prompt tùy chọn cho bản nháp",
+    "agent_external_recent_threads": "Luồng bên ngoài gần đây",
     "agent_external_refresh_after_action": "Đang làm mới dữ liệu luồng đã mirror sau khi thao tác hoàn tất.",
     "agent_external_response": "Phản hồi thủ công",
     "agent_external_send": "Gửi",
@@ -1752,6 +1755,7 @@
     "conversation_description_placeholder": "Mô tả",
     "conversation_name_placeholder": "Tên cuộc trò chuyện",
     "conversation_pinned": "Đã ghim cuộc trò chuyện",
+    "conversation_title_generate_failed": "Không thể tạo tên cuộc trò chuyện",
     "conversation_types": "Loại cuộc trò chuyện",
     "conversation_unpinned": "Đã bỏ ghim cuộc trò chuyện",
     "conversation_update_failed": "Không thể cập nhật cuộc trò chuyện",
@@ -1789,7 +1793,9 @@
     "friend_requests": "Lời mời kết bạn",
     "friend_requests_description": "Xem những người có thể nhắn tin trực tiếp với bạn.",
     "friends": "Bạn bè",
+    "generate_conversation_title": "Tạo tên",
     "generated_qr_code": "Mã QR được tạo",
+    "generating_conversation_title": "Đang tạo...",
     "group_chat": "Nhóm trò chuyện",
     "group_name_placeholder": "Tên nhóm",
     "groups": "Nhóm",
@@ -6429,6 +6435,7 @@
       "display_description": "Cấu hình thành viên nào hiển thị trong giao diện điểm danh",
       "title": "Điểm danh"
     },
+    "back_to_app": "Quay lại ứng dụng",
     "calendar": {
       "colors": "Màu sắc danh mục",
       "colors_description": "Tùy chỉnh màu sắc cho các danh mục sự kiện khác nhau",
@@ -6511,6 +6518,7 @@
       "default_title_description": "Đặt tiêu đề cơ bản khi tạo báo cáo mới",
       "title": "Báo cáo"
     },
+    "search_settings_placeholder": "Tìm cài đặt...",
     "tasks": {
       "always_enabled_personal": "Tính năng này luôn được bật cho không gian làm việc cá nhân",
       "auto_assign_to_self": "Tự động gán cho bản thân",

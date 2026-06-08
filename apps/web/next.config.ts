@@ -1,13 +1,16 @@
 import { getTurbopackConfig } from '@tuturuuu/offline/config';
-import { TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS } from '@tuturuuu/utils/portless';
-import type { NextConfig } from 'next';
+import {
+  createTuturuuuNextConfig,
+  isTuturuuuNextReactCompilerEnabled,
+} from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
 const serwistConfig = getTurbopackConfig();
 const isDockerStandaloneBuild = process.env.DOCKER_WEB_STANDALONE === '1';
-const reactCompilerEnabled =
-  !isDockerStandaloneBuild || process.env.DOCKER_WEB_REACT_COMPILER === '1';
+const reactCompilerEnabled = isDockerStandaloneBuild
+  ? process.env.DOCKER_WEB_REACT_COMPILER === '1'
+  : isTuturuuuNextReactCompilerEnabled();
 
 function parsePositiveIntegerEnv(name: string, fallback?: number) {
   const rawValue = process.env[name]?.trim();
@@ -37,18 +40,19 @@ const dockerNextBuildCpus = parsePositiveIntegerEnv(
   'DOCKER_WEB_NEXT_BUILD_CPUS',
   isDockerStandaloneBuild ? 4 : undefined
 );
-
-const nextConfig: NextConfig = {
+const cronMonitoringTraceIncludes = {
+  '/api/v1/infrastructure/monitoring/cron': ['./cron.config.json'],
+  '/api/v1/infrastructure/monitoring/cron/**': ['./cron.config.json'],
+};
+const nextConfig = createTuturuuuNextConfig({
   ...serwistConfig,
-  allowedDevOrigins: [...TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS],
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),
-  reactCompiler: reactCompilerEnabled,
-  reactStrictMode: true,
-  poweredByHeader: false,
-  typescript: {
-    ignoreBuildErrors: true,
+  outputFileTracingIncludes: {
+    ...(serwistConfig.outputFileTracingIncludes ?? {}),
+    ...cronMonitoringTraceIncludes,
   },
+  reactCompiler: reactCompilerEnabled,
   serverExternalPackages: [...(serwistConfig.serverExternalPackages ?? [])],
   experimental: {
     ...(serwistConfig.experimental ?? {}),
@@ -75,31 +79,11 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
-      },
-      {
-        protocol: 'http',
-        hostname: '127.0.0.1',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.supabase.co',
-      },
-      {
-        protocol: 'https',
-        hostname: 'avatars.githubusercontent.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'tuturuuu.com',
-      },
-      {
         protocol: 'https',
         hostname: 'models.dev',
       },
     ],
   },
-};
+});
 
 export default withNextIntl(nextConfig);

@@ -54,10 +54,16 @@ AI_AGENT_REGISTRY:<agentId>:instructions
 AI_AGENT_REGISTRY:<agentId>:channel:<channelId>:meta
 AI_AGENT_REGISTRY:<agentId>:channel:<channelId>:secret:<name>
 AI_AGENT_IDENTITY:<wsId>:zalo:<oaId>:<zaloUserId>
+AI_AGENT_ZALO_PERSONAL_ENABLED
 ```
 
 Admin APIs redact channel secrets. One-time generated values are shown only
 after rotation.
+
+Feature flags for this surface are also root workspace secrets. Experimental
+personal Zalo account support requires
+`AI_AGENT_ZALO_PERSONAL_ENABLED = true`; do not gate it with process
+environment variables.
 
 External chat history is mirrored separately in the `private` schema:
 
@@ -118,17 +124,23 @@ Use `apps/chat` as the operator smoke-test surface after deployment:
 1. Open the `internal` workspace and select the AI-agent setup conversation.
 2. Confirm setup data loads instead of the metadata-hidden notice.
 3. Run **Test** as a readiness check for required credentials and channel
-   status. This does not replace a live external-platform round trip.
+   status. The diagnostics list should pass for agent enabled, channel enabled,
+   deployed status, required secrets, webhook URL, workspace mapping, adapter
+   account mapping, and recent error state. This does not replace a live
+   external-platform round trip.
 4. For Discord, set the generated webhook URL as the Interactions Endpoint URL
    so Discord performs its endpoint verification. Then install the app and send
    a live mention/message in the mapped channel. The official references are
    [Discord interactions](https://docs.discord.com/developers/interactions/overview)
    and the
    [Discord quickstart](https://docs.discord.com/developers/quick-start/getting-started).
-5. Select a mirrored `ai-agent-thread-<uuid>` conversation and use **Sync
+5. From the setup conversation, open the **Thread** tab to list recent mirrored
+   external threads for the selected agent channel. Use **Sync external thread**
+   from that list when a mirrored thread exists.
+6. Select a mirrored `ai-agent-thread-<uuid>` conversation and use **Sync
    external thread**. A zero-message result means the adapter found no newer
    messages.
-6. Draft and send a manual response from the thread panel, then confirm the
+7. Draft and send a manual response from the thread panel, then confirm the
    mirrored conversation refreshes.
 
 ## Discord And Zalo Setup
@@ -137,9 +149,44 @@ For Discord, configure the app with the generated webhook URL, then store the
 application ID, public key, bot token, guild ID, and optional mention role IDs
 on the Discord channel.
 
+Discord message events require Gateway delivery. For a self-hosted watcher,
+run `apps/discord/ai_agent_gateway_watcher.py` with:
+
+```txt
+DISCORD_AI_AGENT_GATEWAY_BOT_TOKEN=<the AI-agent Discord bot token>
+DISCORD_AI_AGENT_GATEWAY_PLATFORM_URL=https://<platform>
+DISCORD_AI_AGENT_GATEWAY_WATCHER_SECRET=<root watcher secret>
+```
+
+Store the same `AI_AGENT_DISCORD_GATEWAY_WATCHER_SECRET` value as a root
+workspace secret in apps/web. The watcher calls the deployed apps/web watcher
+config endpoint to discover enabled, deployed Discord channel webhooks, and
+apps/web only returns channels mapped to `ROOT_WORKSPACE_ID`. Set
+`DISCORD_AI_AGENT_GATEWAY_CHANNEL_ID` when one watcher should pin a single
+root-internal Discord channel.
+
+The watcher forwards raw Gateway packets using the Chat SDK Discord forwarding
+contract (`GATEWAY_<event>` JSON plus `x-discord-gateway-token`) so apps/web
+continues to own AI-agent runtime, identity mapping, mirroring, and responses.
+Gateway-token forwarded webhook requests are rejected for non-root workspaces;
+normal Discord HTTP interactions still use the configured channel webhook path.
+Keep the bot token value in runtime secrets only.
+
+For local smoke tests, `DISCORD_AI_AGENT_GATEWAY_WEBHOOK_URL` may be set to one
+generated Discord channel webhook URL instead of using auto-discovery.
+
 For Zalo, configure the bot webhook URL in the Zalo Bot dashboard, set the
 secret token to the channel's `webhookSecret`, and store the bot token plus OA ID
 on the Zalo channel.
+
+For experimental personal Zalo account testing, set the Zalo account mode to
+`Personal account`, store the cookie JSON, IMEI, and user agent as channel
+secrets, then use **Validate login** to save the personal account ID. Personal
+Zalo channels do not receive webhooks. They use the channel listener lifecycle
+API from Infrastructure > AI Agents, and only one Zalo Web listener can be
+active per personal account at a time. Use test accounts only; the upstream
+`zca-js` package is an unofficial Zalo Web automation API and can trigger
+account locks or bans.
 
 For experimental root-internal external chatbots, choose the explicit
 `Internal` workspace option in the AI-agent workspace picker. It stores

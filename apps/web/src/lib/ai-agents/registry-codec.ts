@@ -10,6 +10,7 @@ import {
   type AiAgentChannelStatus,
   type AiAgentDefinition,
   type AiAgentIdentityLink,
+  type AiAgentZaloAccountMode,
 } from './types';
 
 export const FIELD_VALUE_LIMIT = 3900;
@@ -49,7 +50,9 @@ export type ChannelMetaRecord = {
   discordGuildId?: string | null;
   externalChannelId?: string | null;
   historySyncEnabled?: boolean;
+  zaloAccountMode?: AiAgentZaloAccountMode;
   zaloOfficialAccountId?: string | null;
+  zaloPersonalOwnId?: string | null;
 };
 
 type ParsedAgentRow =
@@ -180,9 +183,22 @@ export function parseAgentRowName(name: string): ParsedAgentRow | null {
   return null;
 }
 
-export function getRequiredSecrets(adapter: AiAgentAdapter) {
+export function normalizeZaloAccountMode(
+  value?: string | null
+): AiAgentZaloAccountMode {
+  return value === 'personal' ? 'personal' : 'official';
+}
+
+export function getRequiredSecrets(
+  adapter: AiAgentAdapter,
+  zaloAccountMode: AiAgentZaloAccountMode = 'official'
+) {
   if (adapter === 'discord') {
     return ['applicationId', 'botToken', 'publicKey'];
+  }
+
+  if (zaloAccountMode === 'personal') {
+    return ['personalCookieJson', 'personalImei', 'personalUserAgent'];
   }
 
   return ['botToken', 'webhookSecret'];
@@ -304,9 +320,12 @@ export function buildAgentDefinitions(
       const channels = [...entry.channelMeta.entries()]
         .map(([channelId, channelMeta]): AiAgentChannelConfig => {
           const adapter = normalizeAdapter(channelMeta.adapter ?? 'discord');
+          const zaloAccountMode = normalizeZaloAccountMode(
+            channelMeta.zaloAccountMode
+          );
           const secrets = entry.channelSecrets.get(channelId) ?? new Map();
           const secretNames = new Set([
-            ...getRequiredSecrets(adapter),
+            ...getRequiredSecrets(adapter, zaloAccountMode),
             ...secrets.keys(),
           ]);
 
@@ -332,7 +351,9 @@ export function buildAgentDefinitions(
             discordGuildId: channelMeta.discordGuildId ?? null,
             externalChannelId: channelMeta.externalChannelId ?? null,
             historySyncEnabled: channelMeta.historySyncEnabled ?? true,
+            zaloAccountMode,
             zaloOfficialAccountId: channelMeta.zaloOfficialAccountId ?? null,
+            zaloPersonalOwnId: channelMeta.zaloPersonalOwnId ?? null,
           };
         })
         .sort((a, b) => a.id.localeCompare(b.id));

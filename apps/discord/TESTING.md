@@ -10,6 +10,9 @@ This document describes how to run tests, linting, and type checking for the Dis
 ## Quick Start
 
 ```bash
+# From the repository root, runs Discord Python checks when apps/discord files changed
+bun check
+
 # Install dependencies
 uv sync
 
@@ -35,6 +38,11 @@ The CI pipeline automatically runs on every push or pull request that affects:
 
 - Files in `apps/discord/`
 - The workflow file `.github/workflows/discord-python-ci.yml`
+
+The root `bun check` command also detects changes to those paths and runs the
+blocking Discord Python checks through `scripts/check-discord-python.js`: locked
+`uv` install, Ruff lint, Ruff formatter check, mypy, pytest, Python compile, and
+import verification.
 
 ### CI Jobs
 

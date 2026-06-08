@@ -58,4 +58,47 @@ describe('areTaskCardPropsEqual', () => {
       )
     ).toBe(false);
   });
+
+  it('rerenders when personal scheduling duration changes', () => {
+    expect(
+      areTaskCardPropsEqual(
+        taskCardProps({ task: { ...task, total_duration: null } }),
+        taskCardProps({ task: { ...task, total_duration: 1.5 } })
+      )
+    ).toBe(false);
+  });
+
+  it('rerenders a selected card when the bulk selection grows', () => {
+    expect(
+      areTaskCardPropsEqual(
+        taskCardProps({
+          isMultiSelectMode: true,
+          isSelected: true,
+          selectedTasks: new Set(['task-1']),
+        }),
+        taskCardProps({
+          isMultiSelectMode: true,
+          isSelected: true,
+          selectedTasks: new Set(['task-1', 'task-2']),
+        })
+      )
+    ).toBe(false);
+  });
+
+  it('rerenders a selected card when the bulk selection changes with the same size', () => {
+    expect(
+      areTaskCardPropsEqual(
+        taskCardProps({
+          isMultiSelectMode: true,
+          isSelected: true,
+          selectedTasks: new Set(['task-1', 'task-2']),
+        }),
+        taskCardProps({
+          isMultiSelectMode: true,
+          isSelected: true,
+          selectedTasks: new Set(['task-1', 'task-3']),
+        })
+      )
+    ).toBe(false);
+  });
 });

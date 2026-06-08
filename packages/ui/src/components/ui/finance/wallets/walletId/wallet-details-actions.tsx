@@ -4,6 +4,7 @@ import { Pencil, Plus } from '@tuturuuu/icons';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
+import type { FinancePermissionRequestUser } from '@tuturuuu/ui/finance/shared/finance-permission-warning-dialog';
 import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { useTranslations } from 'next-intl';
@@ -21,6 +22,7 @@ interface WalletDetailsActionsProps {
   canSetFinanceWalletsOnCreate?: boolean;
   canDeleteWallets: boolean;
   isPersonalWorkspace: boolean;
+  permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 
 export function WalletDetailsActions({
@@ -34,6 +36,7 @@ export function WalletDetailsActions({
   canSetFinanceWalletsOnCreate,
   canDeleteWallets,
   isPersonalWorkspace,
+  permissionRequestUser,
 }: WalletDetailsActionsProps) {
   const t = useTranslations();
 
@@ -101,6 +104,7 @@ export function WalletDetailsActions({
                 canCreateConfidentialTransactions={
                   canCreateConfidentialTransactions
                 }
+                permissionRequestUser={permissionRequestUser}
               />
             }
           />

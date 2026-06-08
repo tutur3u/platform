@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AgentExternalThreadPanel } from './chat-agent-details-external-thread-panel';
+import type { AgentConversationMetadata } from './chat-agent-details-utils';
 
 const mocks = vi.hoisted(() => ({
   draftAiAgentExternalResponse: vi.fn(),
@@ -35,7 +36,18 @@ vi.mock('../sonner', () => ({
   },
 }));
 
-function renderPanel(onRefresh = vi.fn()) {
+function renderPanel(
+  onRefresh = vi.fn(),
+  metadata: AgentConversationMetadata = {
+    agentId: 'agent-1',
+    channelId: 'channel-1',
+    externalChannelId: 'external-channel-1',
+    externalThreadId: 'discord-thread-1',
+    externalThreadUuid: 'thread-uuid-1',
+    messageCount: 2,
+    source: 'ai-agent-external-thread',
+  }
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: { retry: false },
@@ -45,18 +57,7 @@ function renderPanel(onRefresh = vi.fn()) {
 
   render(
     <QueryClientProvider client={queryClient}>
-      <AgentExternalThreadPanel
-        metadata={{
-          agentId: 'agent-1',
-          channelId: 'channel-1',
-          externalChannelId: 'external-channel-1',
-          externalThreadId: 'discord-thread-1',
-          externalThreadUuid: 'thread-uuid-1',
-          messageCount: 2,
-          source: 'ai-agent-external-thread',
-        }}
-        onRefresh={onRefresh}
-      />
+      <AgentExternalThreadPanel metadata={metadata} onRefresh={onRefresh} />
     </QueryClientProvider>
   );
 
@@ -72,8 +73,10 @@ describe('AgentExternalThreadPanel', () => {
     mocks.listAiAgentExternalThreads.mockResolvedValue({
       threads: [
         {
+          externalThreadId: 'discord-thread-1',
           id: 'thread-uuid-1',
           lastSyncedAt: '2026-06-02T01:02:03.000Z',
+          messageCount: 2,
         },
       ],
     });
@@ -97,6 +100,33 @@ describe('AgentExternalThreadPanel', () => {
     expect(mocks.toastSuccess).toHaveBeenCalledWith(
       'agent_external_sync_no_new'
     );
+    expect(onRefresh).toHaveBeenCalled();
+  });
+
+  it('lists and syncs recent threads from an agent setup conversation', async () => {
+    const { onRefresh } = renderPanel(vi.fn(), {
+      agentId: 'agent-1',
+      channelId: 'channel-1',
+      source: 'ai-agent' as const,
+    });
+
+    await waitFor(() => {
+      expect(mocks.listAiAgentExternalThreads).toHaveBeenCalledWith({
+        agentId: 'agent-1',
+        channelId: 'channel-1',
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByText('discord-thread-1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('agent_external_sync'));
+
+    await waitFor(() => {
+      expect(mocks.syncAiAgentExternalThread).toHaveBeenCalledWith(
+        'thread-uuid-1'
+      );
+    });
     expect(onRefresh).toHaveBeenCalled();
   });
 

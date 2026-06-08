@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { createAdminClientMock, maybeSingleMock, rpcMock } = vi.hoisted(() => ({
+const { createAdminClientMock, rpcMock } = vi.hoisted(() => ({
   createAdminClientMock: vi.fn(),
-  maybeSingleMock: vi.fn(),
   rpcMock: vi.fn(),
 }));
 
@@ -25,15 +24,40 @@ import {
   getRecipientRows,
 } from './data';
 
-function createReceiverSensitiveSupabaseClient() {
+function createQuery(result: { data: unknown; error: unknown }) {
+  const eqCalls: Array<[string, unknown]> = [];
+  const query = {
+    eq: vi.fn((column: string, value: unknown) => {
+      eqCalls.push([column, value]);
+      return query;
+    }),
+    maybeSingle: vi.fn(async () => result),
+    select: vi.fn(() => query),
+  };
+
+  return {
+    eqCalls,
+    query,
+  };
+}
+
+function createReceiverSensitiveSupabaseClient({
+  groupResult = { data: null, error: null },
+  postResult = { data: null, error: null },
+}: {
+  groupResult?: { data: unknown; error: unknown };
+  postResult?: { data: unknown; error: unknown };
+} = {}) {
+  const groupQuery = createQuery(groupResult);
+  const postQuery = createQuery(postResult);
   const privateSchemaClient = {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          maybeSingle: maybeSingleMock,
-        })),
-      })),
-    })),
+    from: vi.fn((table: string) => {
+      if (table !== 'user_group_posts') {
+        throw new Error(`unexpected private table ${table}`);
+      }
+
+      return postQuery.query;
+    }),
     rpc(this: unknown, fn: string, args: Record<string, unknown>) {
       if (this !== privateSchemaClient) {
         throw new TypeError('rpc called without private schema receiver');
@@ -43,16 +67,14 @@ function createReceiverSensitiveSupabaseClient() {
     },
   };
 
-  return {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            maybeSingle: maybeSingleMock,
-          })),
-        })),
-      })),
-    })),
+  const client = {
+    from: vi.fn((table: string) => {
+      if (table !== 'workspace_user_groups') {
+        throw new Error(`unexpected public table ${table}`);
+      }
+
+      return groupQuery.query;
+    }),
     schema: vi.fn((schema: string) => {
       if (schema !== 'private') {
         throw new Error(`unexpected schema ${schema}`);
@@ -61,41 +83,85 @@ function createReceiverSensitiveSupabaseClient() {
       return privateSchemaClient;
     }),
   };
+
+  return {
+    client,
+    groupQuery,
+    postQuery,
+    privateSchemaClient,
+  };
 }
 
 describe('group post detail data helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    createAdminClientMock.mockResolvedValue(
-      createReceiverSensitiveSupabaseClient()
-    );
   });
 
-  it('loads post data from the private schema', async () => {
-    maybeSingleMock.mockResolvedValue({
-      data: { id: 'post-1', title: 'Post 1' },
-      error: null,
+  it('binds post data to the requested workspace and group', async () => {
+    const mocks = createReceiverSensitiveSupabaseClient({
+      postResult: {
+        data: { id: 'post-1', title: 'Post 1' },
+        error: null,
+      },
     });
+    createAdminClientMock.mockResolvedValue(mocks.client);
 
-    await expect(getPostData('post-1')).resolves.toEqual({
+    await expect(getPostData('ws-1', 'group-1', 'post-1')).resolves.toEqual({
       id: 'post-1',
       title: 'Post 1',
     });
+
+    expect(mocks.client.schema).toHaveBeenCalledWith('private');
+    expect(mocks.privateSchemaClient.from).toHaveBeenCalledWith(
+      'user_group_posts'
+    );
+    expect(mocks.postQuery.query.select).toHaveBeenCalledWith(
+      expect.stringContaining('workspace_user_groups!inner(ws_id)')
+    );
+    expect(mocks.postQuery.eqCalls).toEqual([
+      ['id', 'post-1'],
+      ['workspace_user_groups.ws_id', 'ws-1'],
+      ['group_id', 'group-1'],
+    ]);
+  });
+
+  it('rejects posts outside the requested workspace or group', async () => {
+    const mocks = createReceiverSensitiveSupabaseClient({
+      postResult: {
+        data: null,
+        error: null,
+      },
+    });
+    createAdminClientMock.mockResolvedValue(mocks.client);
+
+    await expect(getPostData('ws-1', 'group-1', 'post-2')).rejects.toThrow(
+      'not-found'
+    );
   });
 
   it('loads group data from the workspace group table', async () => {
-    maybeSingleMock.mockResolvedValue({
-      data: { id: 'group-1', name: 'Group 1' },
-      error: null,
+    const mocks = createReceiverSensitiveSupabaseClient({
+      groupResult: {
+        data: { id: 'group-1', name: 'Group 1' },
+        error: null,
+      },
     });
+    createAdminClientMock.mockResolvedValue(mocks.client);
 
     await expect(getGroupData('ws-1', 'group-1')).resolves.toEqual({
       id: 'group-1',
       name: 'Group 1',
     });
+
+    expect(mocks.groupQuery.eqCalls).toEqual([
+      ['ws_id', 'ws-1'],
+      ['id', 'group-1'],
+    ]);
   });
 
   it('calls the post status RPC with the private schema receiver intact', async () => {
+    const mocks = createReceiverSensitiveSupabaseClient();
+    createAdminClientMock.mockResolvedValue(mocks.client);
     rpcMock.mockResolvedValue({
       data: [
         {
@@ -141,6 +207,8 @@ describe('group post detail data helpers', () => {
   });
 
   it('calls the recipient rows RPC with the private schema receiver intact', async () => {
+    const mocks = createReceiverSensitiveSupabaseClient();
+    createAdminClientMock.mockResolvedValue(mocks.client);
     rpcMock.mockResolvedValue({
       data: [
         {
