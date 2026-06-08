@@ -33,6 +33,8 @@ const E2E_COMPOSE_PROJECT_PREFIX = 'ttr-e2e-';
 const PORTLESS_ROUTE_NAME = 'tuturuuu';
 const DEFAULT_WEB_PROXY_HOST_PORT = '7803';
 const DNS_IPV4_FIRST_NODE_OPTION = '--dns-result-order=ipv4first';
+const DEFAULT_PORTLESS_ALIAS_VERIFY_ATTEMPTS = 3;
+const DEFAULT_PORTLESS_ALIAS_VERIFY_DELAY_MS = 1_000;
 const E2E_DIAGNOSTIC_SERVICES = Object.freeze([
   'web-proxy',
   'web-blue',
@@ -218,6 +220,44 @@ function getPortlessCommandEnv(env = process.env) {
 function isPortlessNotReadyBody(body) {
   return PORTLESS_NOT_READY_PATTERNS.some((pattern) =>
     pattern.test(String(body ?? ''))
+  );
+}
+
+function getPositiveInteger(value, fallback) {
+  const parsed = Number.parseInt(String(value ?? '').trim(), 10);
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getPortlessAliasVerifyAttempts(env = process.env) {
+  return getPositiveInteger(
+    env.PORTLESS_ALIAS_VERIFY_ATTEMPTS,
+    DEFAULT_PORTLESS_ALIAS_VERIFY_ATTEMPTS
+  );
+}
+
+function getPortlessAliasVerifyDelayMs(env = process.env) {
+  return getPositiveInteger(
+    env.PORTLESS_ALIAS_VERIFY_DELAY_MS,
+    DEFAULT_PORTLESS_ALIAS_VERIFY_DELAY_MS
+  );
+}
+
+function routeListHasPortlessAlias(routeListOutput, env = process.env) {
+  const output = String(routeListOutput ?? '');
+  const hostPort = getWebProxyHostPort(env);
+  const aliasPatterns = [
+    new RegExp(`\\b${PORTLESS_ROUTE_NAME}\\.localhost\\b`, 'iu'),
+    new RegExp(`\\b${PORTLESS_ROUTE_NAME}\\b`, 'iu'),
+  ];
+  const hostPortPattern = new RegExp(
+    `(?:localhost|127\\.0\\.0\\.1):?${hostPort}\\b`,
+    'iu'
+  );
+
+  return (
+    aliasPatterns.some((pattern) => pattern.test(output)) &&
+    hostPortPattern.test(output)
   );
 }
 
@@ -604,6 +644,7 @@ async function ensurePortlessRoute({
   output = process.stderr,
   runCommand: run = runCommand,
   runCommandForOutput: runForOutput = runCommandForOutput,
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 } = {}) {
   startDiagnosticGroup('Portless shared localhost route', { env, output });
 
@@ -648,20 +689,48 @@ async function ensurePortlessRoute({
       }
     );
 
-    try {
-      const routes = await runForOutput('bunx', ['portless', 'list'], {
-        cwd: ROOT_DIR,
-        env: portlessEnv,
-      });
-      writeDiagnosticLine(output, routes.stdout.trim());
-    } catch (error) {
-      writeDiagnosticLine(
-        output,
-        `[e2e-diagnostics] Unable to list Portless routes: ${getErrorMessage(
-          error
-        )}`
-      );
+    const verifyAttempts = getPortlessAliasVerifyAttempts(env);
+    const verifyDelayMs = getPortlessAliasVerifyDelayMs(env);
+    let lastListError = null;
+    let lastRouteListOutput = '';
+
+    for (let attempt = 1; attempt <= verifyAttempts; attempt += 1) {
+      try {
+        const routes = await runForOutput('bunx', ['portless', 'list'], {
+          cwd: ROOT_DIR,
+          env: portlessEnv,
+        });
+        lastListError = null;
+        lastRouteListOutput = routes.stdout.trim();
+        writeDiagnosticLine(output, lastRouteListOutput);
+
+        if (routeListHasPortlessAlias(lastRouteListOutput, env)) {
+          return;
+        }
+      } catch (error) {
+        lastListError = error;
+        writeDiagnosticLine(
+          output,
+          `[e2e-diagnostics] Unable to list Portless routes: ${getErrorMessage(
+            error
+          )}`
+        );
+      }
+
+      if (attempt < verifyAttempts) {
+        await sleep(verifyDelayMs);
+      }
     }
+
+    const routeDetail = lastListError
+      ? getErrorMessage(lastListError)
+      : lastRouteListOutput || 'no Portless routes were returned';
+
+    throw new Error(
+      `Portless alias ${PORTLESS_ROUTE_NAME}.localhost was not registered for localhost:${getWebProxyHostPort(
+        env
+      )}: ${routeDetail}`
+    );
   } finally {
     endDiagnosticGroup({ env, output });
   }
@@ -876,6 +945,8 @@ module.exports = {
   DEFAULT_HEALTH_URL,
   DEFAULT_PORTLESS_BASE_URL,
   DEFAULT_PORTLESS_HEALTH_URL,
+  DEFAULT_PORTLESS_ALIAS_VERIFY_ATTEMPTS,
+  DEFAULT_PORTLESS_ALIAS_VERIFY_DELAY_MS,
   DEFAULT_PORTLESS_READY_STATUS_CODES,
   DEFAULT_PORTLESS_READY_TIMEOUT_MS,
   DEFAULT_WEB_PROXY_HOST_PORT,
@@ -883,6 +954,8 @@ module.exports = {
   ensurePortlessRoute,
   ensureLocalE2EEnvFile,
   formatBlueGreenStages,
+  getPortlessAliasVerifyAttempts,
+  getPortlessAliasVerifyDelayMs,
   getPortlessCommandEnv,
   getDockerComposeDiagnosticArgs,
   getDockerMemoryLimit,
@@ -900,6 +973,7 @@ module.exports = {
   parseE2EProjectImageTags,
   printE2EFailureDiagnostics,
   removeE2EProjectImages,
+  routeListHasPortlessAlias,
   runCommand,
   runCommandForOutput,
   runWebE2E,

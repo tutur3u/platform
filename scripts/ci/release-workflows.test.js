@@ -193,6 +193,46 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });
 
+test('Codecov workflow runs workspace package tests with coverage', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'codecov.yaml'),
+    'utf8'
+  );
+  const testJob = readWorkflowJobBlock('codecov.yaml', 'test');
+
+  assert.match(testJob, /run: bun turbo:local run test -- --coverage/u);
+  assert.doesNotMatch(workflow, /run: bun vitest run --coverage/u);
+});
+
+test('Biome workflow prints captured output when checks fail', () => {
+  const formatJob = readWorkflowJobBlock('biome-check.yaml', 'format');
+  const lintJob = readWorkflowJobBlock('biome-check.yaml', 'lint');
+
+  for (const job of [formatJob, lintJob]) {
+    assert.match(job, /printf '%s\\n' "\$biome_output"/u);
+    assert.match(job, /Biome exit code \$biome_exit_code/u);
+    assert.match(
+      job,
+      /\[ "\$total_issues" -gt 0 \] \|\| \[ "\$biome_exit_code" -ne 0 \]/u
+    );
+  }
+});
+
+test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', () => {
+  const verifyJob = readWorkflowJobBlock('docker-setup-check.yaml', 'verify');
+  const prePullIndex = verifyJob.indexOf('Pre-pull Docker BuildKit image');
+  const setupBuildxIndex = verifyJob.indexOf('Setup Docker Buildx');
+
+  assert.notEqual(prePullIndex, -1);
+  assert.notEqual(setupBuildxIndex, -1);
+  assert.ok(
+    prePullIndex < setupBuildxIndex,
+    'BuildKit image should be pulled before setup-buildx boots BuildKit'
+  );
+  assert.match(verifyJob, /docker pull moby\/buildkit:buildx-stable-1/u);
+  assert.match(verifyJob, /driver-opts: image=moby\/buildkit:buildx-stable-1/u);
+});
+
 test('Supabase staging migration includes every local migration when pushing', () => {
   const deployJob = readWorkflowJobBlock('supabase-staging.yaml', 'deploy');
 

@@ -6,12 +6,14 @@ const path = require('node:path');
 
 const {
   acquireCheckQueueLock,
+  checks,
   discordPythonCheck,
   forceClearCheckQueue,
   getActiveChecks,
   getChangedFiles,
   getCheckQueuePaths,
   listTrackedCheckProcesses,
+  parseBiomeIssueStats,
   touchesDiscordPython,
 } = require('./check.js');
 const {
@@ -92,6 +94,33 @@ test('getActiveChecks adds Discord Python validation after script tests when Dis
   assert.deepEqual(discordPythonCheck.args, [
     'scripts/check-discord-python.js',
   ]);
+});
+
+test('Biome check treats warnings as blocking local check issues', () => {
+  const biomeCheck = checks.find((check) => check.name === 'biome');
+
+  assert.ok(biomeCheck);
+  assert.deepEqual(biomeCheck.args, ['biome', 'check', '--error-on-warnings']);
+
+  const output = [
+    'Checked 120 files in 300ms. No fixes applied.',
+    'Found 2 lint issues.',
+    '0 errors, 2 warnings, 0 infos',
+  ].join('\n');
+  const stats = parseBiomeIssueStats(output);
+
+  assert.deepEqual(stats, {
+    errors: 0,
+    filesChecked: 120,
+    infos: 0,
+    totalIssues: 2,
+    warnings: 2,
+  });
+  assert.equal(biomeCheck.parseOutput(output), '120 files checked');
+  assert.equal(
+    biomeCheck.validateOutput(output),
+    'Found 2 Biome issue(s): 0 error(s), 2 warning(s), 0 info(s)'
+  );
 });
 
 test('getTopLevelPythonFiles returns sorted top-level Python files only', () => {

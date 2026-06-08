@@ -35,6 +35,7 @@ const {
   parseE2EProjectImageTags,
   printE2EFailureDiagnostics,
   removeE2EProjectImages,
+  routeListHasPortlessAlias,
   shouldKeepStack,
   waitForUrl,
 } = require('./run-web-e2e-docker.js');
@@ -289,6 +290,37 @@ test('getPortlessCommandEnv makes Portless prefer IPv4 localhost resolution', ()
   assert.equal(getPortlessCommandEnv(env), env);
 });
 
+test('routeListHasPortlessAlias requires the expected alias and proxy port', () => {
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://tuturuuu.localhost -> localhost:7803 (alias)\n',
+      {}
+    ),
+    true
+  );
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://tuturuuu.localhost -> localhost:17803 (alias)\n',
+      {}
+    ),
+    false
+  );
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://other.localhost -> localhost:7803 (alias)\n',
+      {}
+    ),
+    false
+  );
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://tuturuuu.localhost -> localhost:17803 (alias)\n',
+      { DOCKER_WEB_PROXY_HOST_PORT: '17803' }
+    ),
+    true
+  );
+});
+
 test('isPortlessNotReadyBody detects Portless placeholder responses', () => {
   assert.equal(
     isPortlessNotReadyBody(
@@ -525,6 +557,57 @@ test('ensurePortlessRoute honors the configured proxy host and Portless ports', 
       options.env.NODE_OPTIONS.includes(DNS_IPV4_FIRST_NODE_OPTION)
     )
   );
+});
+
+test('ensurePortlessRoute retries and fails when Portless does not register the alias', async () => {
+  const calls = [];
+  const chunks = [];
+  const sleeps = [];
+
+  await assert.rejects(
+    () =>
+      ensurePortlessRoute({
+        env: {
+          PATH: 'test-path',
+          PORTLESS_ALIAS_VERIFY_ATTEMPTS: '2',
+          PORTLESS_ALIAS_VERIFY_DELAY_MS: '7',
+        },
+        output: {
+          write(chunk) {
+            chunks.push(String(chunk));
+          },
+        },
+        runCommand: async (command, args, options = {}) => {
+          calls.push([command, args, options]);
+        },
+        runCommandForOutput: async (command, args, options = {}) => {
+          calls.push([command, args, options]);
+
+          return {
+            stderr: '',
+            stdout:
+              'Active routes:\n  https://other.localhost  ->  localhost:7803  (alias)\n',
+          };
+        },
+        sleep: async (ms) => {
+          sleeps.push(ms);
+        },
+      }),
+    /Portless alias tuturuuu\.localhost was not registered for localhost:7803/u
+  );
+
+  assert.deepEqual(
+    calls.map(([command, args]) => [command, args]),
+    [
+      ['bunx', ['portless', 'proxy', 'start', '--wildcard']],
+      ['bunx', ['portless', 'alias', '--remove', 'tuturuuu']],
+      ['bunx', ['portless', 'alias', 'tuturuuu', '7803', '--force']],
+      ['bunx', ['portless', 'list']],
+      ['bunx', ['portless', 'list']],
+    ]
+  );
+  assert.deepEqual(sleeps, [7]);
+  assert.match(chunks.join(''), /https:\/\/other\.localhost/u);
 });
 
 test('getE2EDiagnosticLogTail accepts positive numeric overrides only', () => {

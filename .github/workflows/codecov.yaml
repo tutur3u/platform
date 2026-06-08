@@ -33,7 +33,7 @@ jobs:
         run: bun setup
 
       - name: Run tests
-        run: bun vitest run --coverage
+        run: bun turbo:local run test -- --coverage
 
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v6

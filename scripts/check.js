@@ -48,6 +48,54 @@ function stripAnsi(str) {
   return str.replace(ANSI_REGEX, '');
 }
 
+function getLastNumberMatch(output, regex) {
+  let lastMatch = null;
+
+  for (const match of output.matchAll(regex)) {
+    lastMatch = match;
+  }
+
+  return lastMatch ? Number.parseInt(lastMatch[1], 10) : 0;
+}
+
+function parseBiomeIssueStats(output) {
+  const clean = stripAnsi(output);
+  const filesChecked = getLastNumberMatch(
+    clean,
+    /\bChecked\s+(\d+)\s+files?\b/giu
+  );
+  const errors = getLastNumberMatch(clean, /\b(\d+)\s+errors?\b/giu);
+  const warnings = getLastNumberMatch(clean, /\b(\d+)\s+warnings?\b/giu);
+  const infos = getLastNumberMatch(clean, /\b(\d+)\s+infos?\b/giu);
+  const totalFromSummary = getLastNumberMatch(
+    clean,
+    /\bFound\s+(\d+)\s+(?:lint\s+|formatting\s+)?issues?\b/giu
+  );
+  const typedTotal = errors + warnings + infos;
+
+  return {
+    errors,
+    filesChecked,
+    infos,
+    totalIssues: Math.max(typedTotal, totalFromSummary),
+    warnings,
+  };
+}
+
+function formatBiomeIssueStats(stats) {
+  return `${stats.errors} error(s), ${stats.warnings} warning(s), ${stats.infos} info(s)`;
+}
+
+function validateBiomeOutput(output) {
+  const stats = parseBiomeIssueStats(output);
+
+  if (stats.totalIssues === 0) {
+    return null;
+  }
+
+  return `Found ${stats.totalIssues} Biome issue(s): ${formatBiomeIssueStats(stats)}`;
+}
+
 /**
  * Calculate the display width of a string
  */
@@ -176,12 +224,14 @@ const checks = [
   {
     name: 'biome',
     command: 'bun',
-    args: ['biome', 'check'],
+    args: ['biome', 'check', '--error-on-warnings'],
     parseOutput: (stdout) => {
-      const clean = stripAnsi(stdout);
-      const match = clean.match(/Checked (\d+) files?/i);
-      return match ? `${match[1]} files checked` : 'Passed';
+      const stats = parseBiomeIssueStats(stdout);
+      return stats.filesChecked > 0
+        ? `${stats.filesChecked} files checked`
+        : 'Passed';
     },
+    validateOutput: validateBiomeOutput,
   },
   {
     name: 'server-console',
@@ -781,10 +831,17 @@ function runCheck(check, options = {}) {
     proc.on('close', (code) => {
       activeCheckProcess = null;
       const duration = Date.now() - startTime;
-      if (!streamOutput && options.forceBuffered !== true && code !== 0) {
+      const combinedOutput = stdout + stderr;
+      const validationFailure =
+        code === 0 && typeof check.validateOutput === 'function'
+          ? check.validateOutput(combinedOutput)
+          : null;
+      const success = code === 0 && !validationFailure;
+
+      if (!streamOutput && options.forceBuffered !== true && !success) {
         const failureOutput = check.formatFailureOutput
           ? check.formatFailureOutput(stdout, stderr)
-          : `${stdout}${stderr}`;
+          : combinedOutput;
         if (failureOutput) {
           process.stderr.write(
             failureOutput.endsWith('\n') ? failureOutput : `${failureOutput}\n`
@@ -793,7 +850,7 @@ function runCheck(check, options = {}) {
       } else if (
         !streamOutput &&
         options.forceBuffered !== true &&
-        code === 0 &&
+        success &&
         check.quietSuccessMessage
       ) {
         console.log(check.quietSuccessMessage);
@@ -801,10 +858,12 @@ function runCheck(check, options = {}) {
       resolve({
         duration,
         name: check.name,
-        status: code === 0 ? check.parseOutput(stdout + stderr) : 'Failed',
+        status: success
+          ? check.parseOutput(combinedOutput)
+          : (validationFailure ?? 'Failed'),
         stderr,
         stdout,
-        success: code === 0,
+        success,
       });
     });
 
@@ -1100,6 +1159,7 @@ module.exports = {
   isProcessActive,
   listTrackedCheckProcesses,
   main,
+  parseBiomeIssueStats,
   releaseCheckQueueLock,
   runCheck,
   signalProcess,
