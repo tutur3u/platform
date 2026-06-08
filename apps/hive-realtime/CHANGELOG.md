@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1](https://github.com/tutur3u/platform/compare/hive-realtime-v0.2.0...hive-realtime-v0.2.1) (2026-06-08)
+
+
+### Bug Fixes
+
+* **ci:** stabilize docker e2e setup ([b280958](https://github.com/tutur3u/platform/commit/b2809587c06ca571c804d9ad43424decc1786b73))
+
+
+### Performance Improvements
+
+* **web:** split yjs-heavy server compile graph ([8420fd4](https://github.com/tutur3u/platform/commit/8420fd443bf63c9809283087a71302616ba0aed5))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.1.0...hive-realtime-v0.2.0) (2026-06-03)
 
 

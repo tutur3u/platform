@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/meet-v0.3.0...meet-v0.4.0) (2026-06-08)
+
+
+### Features
+
+* **web:** add UI component showcase ([8fcbc6b](https://github.com/tutur3u/platform/commit/8fcbc6b4b64c3f9e9da5eb2ddd6d504a83dd2ec4))
+* **web:** merge UI component showcase ([5f4e840](https://github.com/tutur3u/platform/commit/5f4e840960a114952d728b88caf914d2e05959b3))
+
+
+### Bug Fixes
+
+* **auth:** support supabase-first satellite sessions ([b014fcf](https://github.com/tutur3u/platform/commit/b014fcf6db8218a1b54fd79f5e13629f66cad090))
+* **ci:** stabilize production deployment checks ([1973c9e](https://github.com/tutur3u/platform/commit/1973c9e18dd2d63d7bd3a93dbd0cf35413548c1f))
+
+
+### Performance Improvements
+
+* **next:** centralize app dev config defaults ([669a578](https://github.com/tutur3u/platform/commit/669a578163336dc6fd6399e753328598b03c1f2a))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/meet-v0.2.0...meet-v0.3.0) (2026-06-03)
 
 

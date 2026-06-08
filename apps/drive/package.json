@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/drive",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsgo-build.js --build",
