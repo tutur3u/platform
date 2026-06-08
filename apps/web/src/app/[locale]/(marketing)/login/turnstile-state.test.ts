@@ -4,6 +4,7 @@ import {
   isLocalSupabaseUrl,
   resolveLoginTurnstileClientState,
   shouldBypassTurnstileForLocalSupabaseDevAuth,
+  shouldHonorLocalE2EAuthBypassForLogin,
   shouldRequireTurnstileForDevAuth,
   shouldRetryTurnstileClientError,
 } from './turnstile-state';
@@ -82,6 +83,41 @@ describe('login Turnstile state', () => {
       resolveLoginTurnstileClientState({
         devMode: true,
         localE2EAuthBypass: false,
+        siteKey: 'site-key',
+        supabaseUrl: 'https://project.supabase.co',
+      })
+    ).toEqual({
+      siteKey: 'site-key',
+      isRequired: true,
+      canRenderWidget: true,
+    });
+  });
+
+  it('only honors the public local E2E bypass for local Supabase auth', () => {
+    expect(
+      shouldHonorLocalE2EAuthBypassForLogin({
+        devMode: true,
+        publicLocalE2EAuthBypass: true,
+        supabaseUrl: 'http://127.0.0.1:8001',
+      })
+    ).toBe(true);
+
+    expect(
+      shouldHonorLocalE2EAuthBypassForLogin({
+        devMode: true,
+        publicLocalE2EAuthBypass: true,
+        supabaseUrl: 'https://project.supabase.co',
+      })
+    ).toBe(false);
+
+    expect(
+      resolveLoginTurnstileClientState({
+        devMode: true,
+        localE2EAuthBypass: shouldHonorLocalE2EAuthBypassForLogin({
+          devMode: true,
+          publicLocalE2EAuthBypass: true,
+          supabaseUrl: 'https://project.supabase.co',
+        }),
         siteKey: 'site-key',
         supabaseUrl: 'https://project.supabase.co',
       })

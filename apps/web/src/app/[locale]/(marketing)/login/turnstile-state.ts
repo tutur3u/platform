@@ -46,6 +46,18 @@ export function shouldBypassTurnstileForLocalSupabaseDevAuth({
   return devMode && !localE2EAuthBypass && isLocalSupabaseUrl(supabaseUrl);
 }
 
+export function shouldHonorLocalE2EAuthBypassForLogin({
+  devMode,
+  publicLocalE2EAuthBypass,
+  supabaseUrl,
+}: {
+  devMode: boolean;
+  publicLocalE2EAuthBypass: boolean;
+  supabaseUrl?: string | null;
+}) {
+  return devMode && publicLocalE2EAuthBypass && isLocalSupabaseUrl(supabaseUrl);
+}
+
 export function resolveLoginTurnstileClientState({
   devMode,
   localE2EAuthBypass,

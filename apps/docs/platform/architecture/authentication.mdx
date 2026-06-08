@@ -236,6 +236,13 @@ registration and sign-in from `https://tuturuuu.localhost`. UI-only and
 unsupported-browser paths can still be exercised without registering a
 credential.
 
+Remote Supabase development auth is different: if a cloud Supabase project has
+captcha protection enabled, passkey sign-in must send a real Turnstile token.
+The local E2E bypass is honored only when `NEXT_PUBLIC_SUPABASE_URL` points at
+local Supabase. When testing remote Supabase from `https://tuturuuu.localhost`,
+the Turnstile site key must authorize that local hostname; Cloudflare Turnstile
+error `110200` means the widget cannot mint the token Supabase requires.
+
 ### Web QR Session Handoff
 
 QR-based session handoff must never be a public login bootstrap. An

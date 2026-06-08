@@ -70,6 +70,7 @@ import { SocialLoginButton } from './social-login-button';
 import {
   getTurnstileClientErrorMessageKey,
   resolveLoginTurnstileClientState,
+  shouldHonorLocalE2EAuthBypassForLogin,
   shouldRetryTurnstileClientError,
 } from './turnstile-state';
 
@@ -269,8 +270,13 @@ export default function LoginForm() {
 
   const defaultEmail = DEV_MODE ? 'local@tuturuuu.com' : '';
   const defaultPassword = DEV_MODE ? 'password123' : '';
-  const localE2EAuthBypass =
+  const publicLocalE2EAuthBypass =
     process.env.NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS === 'true';
+  const localE2EAuthBypass = shouldHonorLocalE2EAuthBypassForLogin({
+    devMode: DEV_MODE,
+    publicLocalE2EAuthBypass,
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  });
 
   const emailForm = useForm({
     mode: 'onChange',
