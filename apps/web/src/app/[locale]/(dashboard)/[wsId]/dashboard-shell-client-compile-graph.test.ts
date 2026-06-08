@@ -38,4 +38,16 @@ describe('[wsId] dashboard shell client compile graph', () => {
       expect(dashboardShellClientSource).toContain(`import('${modulePath}')`);
     }
   });
+
+  it('loads the dashboard settings host after hydration instead of preloading it through next/dynamic', () => {
+    expect(dashboardShellClientSource).not.toMatch(
+      /dynamic\(\s*\(\)\s*=>\s*import\(['"]\.\/dashboard-settings-dialog-host['"]\)/u
+    );
+    expect(dashboardShellClientSource).toMatch(
+      /import\(['"]\.\/dashboard-settings-dialog-host['"]\)/u
+    );
+    expect(dashboardShellClientSource).toContain(
+      'useDashboardSettingsDialogHost'
+    );
+  });
 });
