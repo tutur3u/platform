@@ -23,6 +23,10 @@ import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
 import { InvoiceContentEditor } from './components/invoice-content-editor';
 import { InvoiceCustomerSelectCard } from './components/invoice-customer-select-card';
 import { InvoicePaymentSettings } from './components/invoice-payment-settings';
+import {
+  InvoiceProductsPermissionWarning,
+  isPermissionRequestError,
+} from './components/invoice-products-permission-warning';
 import { InvoiceUserHistoryAccordion } from './components/invoice-user-history-accordion';
 import { CreatePromotionDialog } from './create-promotion-dialog';
 import type { AvailablePromotion } from './hooks';
@@ -55,6 +59,8 @@ interface Props {
   defaultCurrency?: 'VND' | 'USD';
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
+  canReadInvoiceProducts?: boolean;
+  canReadInvoiceProductStock?: boolean;
   permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 
@@ -67,6 +73,8 @@ export function StandardInvoice({
   defaultCurrency = 'USD',
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
+  canReadInvoiceProducts = true,
+  canReadInvoiceProductStock = true,
   permissionRequestUser,
 }: Props) {
   const t = useTranslations();
@@ -95,7 +103,11 @@ export function StandardInvoice({
     isFetching: isFetchingCustomers,
     isFetchingNextPage: isFetchingMoreCustomers,
   } = useInvoiceCustomerSearch(wsId, debouncedCustomerSearch, selectedUserId);
-  const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
+  const {
+    data: products = [],
+    error: productsError,
+    isLoading: productsLoading,
+  } = useProducts(wsId);
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
   const { data: promotionsAllowed = true } = useInvoicePromotionConfig(wsId);
@@ -185,6 +197,22 @@ export function StandardInvoice({
     walletsLoading ||
     categoriesLoading ||
     userGroupsLoading;
+
+  const invoiceProductMissingPermissions = useMemo(() => {
+    const missingPermissions = new Set<string>();
+
+    if (!canReadInvoiceProducts || isPermissionRequestError(productsError)) {
+      missingPermissions.add('create_inventory_sales');
+      missingPermissions.add('view_inventory_catalog');
+    }
+
+    if (!canReadInvoiceProductStock) {
+      missingPermissions.add('create_inventory_sales');
+      missingPermissions.add('view_inventory_stock');
+    }
+
+    return [...missingPermissions];
+  }, [canReadInvoiceProductStock, canReadInvoiceProducts, productsError]);
 
   const referralDiscountMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -457,12 +485,18 @@ export function StandardInvoice({
         </InvoiceCustomerSelectCard>
 
         {!isBlocked && (
-          <ProductSelection
-            products={products}
-            selectedProducts={selectedProducts}
-            onSelectedProductsChange={setSelectedProducts}
-            currency={defaultCurrency}
-          />
+          <div className="space-y-3">
+            <ProductSelection
+              products={products}
+              selectedProducts={selectedProducts}
+              onSelectedProductsChange={setSelectedProducts}
+              currency={defaultCurrency}
+            />
+            <InvoiceProductsPermissionWarning
+              missingPermissions={invoiceProductMissingPermissions}
+              user={permissionRequestUser}
+            />
+          </div>
         )}
       </div>
       <div className="space-y-6">

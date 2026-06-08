@@ -26,7 +26,8 @@ import { useState } from 'react';
 import {
   type GroupPaymentStatus,
   getGroupPaymentStatus,
-  getMonthStartDate,
+  getSubscriptionCoverageInvoiceForGroup,
+  isSubscriptionMonthPaidForGroup,
   parseLocalCalendarDate,
 } from '../utils';
 
@@ -45,18 +46,6 @@ type UserGroupItem = {
 function hasSchedule(group: UserGroupItem['workspace_user_groups']): boolean {
   const sessions = group?.sessions;
   return Array.isArray(sessions) && sessions.length > 0;
-}
-
-function isMonthPaidForGroup(
-  groupId: string,
-  selectedMonth: string,
-  latestInvoices: LatestInvoice[]
-): boolean {
-  const inv = latestInvoices.find((i) => i.group_id === groupId);
-  if (!inv?.valid_until) return false;
-  const monthStart = getMonthStartDate(selectedMonth);
-  const validUntilStart = getMonthStartDate(inv.valid_until);
-  return monthStart < validUntilStart;
 }
 
 interface SubscriptionGroupSelectorProps {
@@ -267,10 +256,11 @@ export function SubscriptionGroupSelector({
                 const group = groupItem.workspace_user_groups;
                 if (!group) return null;
                 const isSelected = selectedGroupIds.includes(group.id);
-                const latestInvoice = latestSubscriptionInvoices.find(
-                  (inv) => inv.group_id === group.id
+                const latestInvoice = getSubscriptionCoverageInvoiceForGroup(
+                  latestSubscriptionInvoices,
+                  group.id
                 );
-                const isMonthPaid = isMonthPaidForGroup(
+                const isMonthPaid = isSubscriptionMonthPaidForGroup(
                   group.id,
                   selectedMonth,
                   latestSubscriptionInvoices
@@ -312,10 +302,12 @@ export function SubscriptionGroupSelector({
                       const group = groupItem.workspace_user_groups;
                       if (!group) return null;
                       const isSelected = selectedGroupIds.includes(group.id);
-                      const latestInvoice = latestSubscriptionInvoices.find(
-                        (inv) => inv.group_id === group.id
-                      );
-                      const isMonthPaid = isMonthPaidForGroup(
+                      const latestInvoice =
+                        getSubscriptionCoverageInvoiceForGroup(
+                          latestSubscriptionInvoices,
+                          group.id
+                        );
+                      const isMonthPaid = isSubscriptionMonthPaidForGroup(
                         group.id,
                         selectedMonth,
                         latestSubscriptionInvoices

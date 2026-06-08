@@ -9,6 +9,12 @@ interface Params {
   }>;
 }
 
+function getComparableTimestamp(value: string | null | undefined) {
+  if (!value) return 0;
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
   const access = await getFinanceRouteContext(
@@ -122,15 +128,27 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const sortedRows = (latestInvoicesResponse.data ?? [])
+    .filter(
+      (row) =>
+        row.finance_invoices?.completed_at &&
+        getComparableTimestamp(row.finance_invoices?.valid_until) > 0
+    )
     .slice()
     .sort((a, b) => {
-      const aDate = a.finance_invoices?.created_at
-        ? new Date(a.finance_invoices.created_at).getTime()
-        : 0;
-      const bDate = b.finance_invoices?.created_at
-        ? new Date(b.finance_invoices.created_at).getTime()
-        : 0;
-      return bDate - aDate;
+      const aValidUntil = getComparableTimestamp(
+        a.finance_invoices?.valid_until
+      );
+      const bValidUntil = getComparableTimestamp(
+        b.finance_invoices?.valid_until
+      );
+
+      if (aValidUntil !== bValidUntil) {
+        return bValidUntil - aValidUntil;
+      }
+
+      const aCreatedAt = getComparableTimestamp(a.finance_invoices?.created_at);
+      const bCreatedAt = getComparableTimestamp(b.finance_invoices?.created_at);
+      return bCreatedAt - aCreatedAt;
     });
 
   const latestInvoicesMap = new Map<

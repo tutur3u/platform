@@ -5,6 +5,7 @@ import type { UserGroup } from '../utils';
 import {
   formatMonthLabel,
   getAttendanceStats,
+  getSubscriptionCoverageInvoiceForGroup,
   getTotalSessionsForGroups,
   parseLocalCalendarDate,
 } from '../utils';
@@ -72,8 +73,9 @@ export function useSubscriptionInvoiceContent({
       if (!group) return;
 
       const groupName = group.workspace_user_groups?.name || 'Unknown Group';
-      const latestInvoice = latestSubscriptionInvoices.find(
-        (inv) => inv.group_id === groupId
+      const latestInvoice = getSubscriptionCoverageInvoiceForGroup(
+        latestSubscriptionInvoices,
+        groupId
       );
 
       const startMonth = latestInvoice?.valid_until
@@ -126,9 +128,12 @@ export function useSubscriptionInvoiceContent({
     let autoNotes: string | null = null;
     if (selectedGroupIds.length > 0 && userAttendance.length > 0) {
       const filteredAttendance = userAttendance.filter((a) => {
-        const latestInvoice = latestSubscriptionInvoices.find(
-          (inv) => inv.group_id === a.group_id
-        );
+        const latestInvoice = a.group_id
+          ? getSubscriptionCoverageInvoiceForGroup(
+              latestSubscriptionInvoices,
+              a.group_id
+            )
+          : undefined;
         if (!latestInvoice?.valid_until) return true;
         const validUntil = parseLocalCalendarDate(latestInvoice.valid_until);
         const attendanceDate = parseLocalCalendarDate(a.date);

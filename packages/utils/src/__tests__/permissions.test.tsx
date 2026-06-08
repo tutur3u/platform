@@ -1,8 +1,25 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { permissions } from '../permissions';
 
 describe('workspace permission catalog', () => {
   const workspaceId = '11111111-1111-4111-8111-111111111111';
+  const repoRoot = process.cwd().endsWith('/packages/utils')
+    ? resolve(process.cwd(), '../..')
+    : process.cwd();
+  const invoiceProductPermissionIds = [
+    'adjust_inventory_stock',
+    'create_inventory_sales',
+    'manage_inventory_catalog',
+    'manage_inventory_setup',
+    'view_inventory_analytics',
+    'view_inventory_audit_logs',
+    'view_inventory_catalog',
+    'view_inventory_dashboard',
+    'view_inventory_sales',
+    'view_inventory_stock',
+  ];
 
   it('keeps workspace role forms scoped by default', () => {
     const permissionIds = permissions({
@@ -29,5 +46,36 @@ describe('workspace permission catalog', () => {
     expect(permissionIds).toContain('manage_external_migrations');
     expect(permissionIds).toContain('manage_workspace_secrets');
     expect(new Set(permissionIds).size).toBe(permissionIds.length);
+  });
+
+  it('exposes invoice product troubleshooting permissions in workspace roles', () => {
+    const permissionIds = permissions({
+      wsId: workspaceId,
+      user: null,
+    }).map((permission) => permission.id);
+
+    for (const permissionId of invoiceProductPermissionIds) {
+      expect(permissionIds).toContain(permissionId);
+    }
+  });
+
+  it('keeps Finance app role translations for invoice product permissions', () => {
+    const locales = ['en', 'vi'];
+
+    for (const locale of locales) {
+      const messages = JSON.parse(
+        readFileSync(
+          resolve(repoRoot, `apps/finance/messages/${locale}.json`),
+          'utf8'
+        )
+      ) as { 'ws-roles': Record<string, string> };
+
+      for (const permissionId of invoiceProductPermissionIds) {
+        expect(messages['ws-roles'][permissionId]?.length).toBeGreaterThan(0);
+        expect(
+          messages['ws-roles'][`${permissionId}_description`]?.length
+        ).toBeGreaterThan(0);
+      }
+    }
   });
 });

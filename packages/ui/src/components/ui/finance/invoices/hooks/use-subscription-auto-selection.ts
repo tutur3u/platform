@@ -18,10 +18,11 @@ import type { UserGroup } from '../utils';
 import {
   getEffectiveAttendanceDays,
   getEffectiveDays,
-  getMonthStartDate,
   getSessionsForMonth,
   getSessionsUntilMonth,
+  getSubscriptionCoverageInvoiceForGroup,
   getTotalSessionsForGroups,
+  isSubscriptionMonthPaidForGroup,
   parseLocalCalendarDate,
 } from '../utils';
 
@@ -174,19 +175,19 @@ const computeGroupAttendanceDaysMap = (
     );
     if (!group) continue;
 
-    const latestInvoice = latestSubscriptionInvoices.find(
-      (inv) => inv.group_id === groupId
+    const latestInvoice = getSubscriptionCoverageInvoiceForGroup(
+      latestSubscriptionInvoices,
+      groupId
     );
     const validUntil = latestInvoice?.valid_until
       ? parseLocalCalendarDate(latestInvoice.valid_until)
       : null;
 
-    const isGroupPaid = (() => {
-      if (!validUntil) return false;
-      const selectedMonthStart = getMonthStartDate(selectedMonth);
-      const validUntilMonthStart = getMonthStartDate(validUntil);
-      return selectedMonthStart < validUntilMonthStart;
-    })();
+    const isGroupPaid = isSubscriptionMonthPaidForGroup(
+      groupId,
+      selectedMonth,
+      latestSubscriptionInvoices
+    );
 
     const sessionsArray = group.workspace_user_groups?.sessions || [];
     const groupSessions = isGroupPaid

@@ -4,6 +4,8 @@ import {
   getBillableSessionsForGroups,
   getLinkedFinanceCategorySelection,
   getSubscriptionAttendanceDisplayData,
+  getSubscriptionCoverageInvoiceForGroup,
+  isSubscriptionMonthPaidForGroup,
   type UserGroup,
 } from './utils';
 
@@ -132,6 +134,54 @@ describe('subscription invoice attendance display data', () => {
     });
     expect(result.totalSessions).toBe(2);
     expect(result.attendanceRate).toBe(50);
+  });
+});
+
+describe('subscription invoice coverage', () => {
+  it('treats valid_until as the exclusive first unpaid month', () => {
+    const latestInvoices = [{ group_id: groupId, valid_until: '2026-06-01' }];
+
+    expect(
+      isSubscriptionMonthPaidForGroup(groupId, '2026-05', latestInvoices)
+    ).toBe(true);
+    expect(
+      isSubscriptionMonthPaidForGroup(groupId, '2026-06', latestInvoices)
+    ).toBe(false);
+  });
+
+  it('treats null and invalid valid_until values as unpaid', () => {
+    expect(
+      isSubscriptionMonthPaidForGroup(groupId, '2026-05', [
+        { group_id: groupId, valid_until: null },
+      ])
+    ).toBe(false);
+    expect(
+      isSubscriptionMonthPaidForGroup(groupId, '2026-05', [
+        { group_id: groupId, valid_until: 'not-a-date' },
+      ])
+    ).toBe(false);
+  });
+
+  it('uses the furthest valid_until over the newest created_at', () => {
+    const latestInvoices = [
+      {
+        created_at: '2026-06-10T00:00:00.000Z',
+        group_id: groupId,
+        valid_until: '2026-06-01',
+      },
+      {
+        created_at: '2026-05-10T00:00:00.000Z',
+        group_id: groupId,
+        valid_until: '2026-07-01',
+      },
+    ];
+
+    expect(
+      getSubscriptionCoverageInvoiceForGroup(latestInvoices, groupId)
+    ).toEqual(latestInvoices[1]);
+    expect(
+      isSubscriptionMonthPaidForGroup(groupId, '2026-06', latestInvoices)
+    ).toBe(true);
   });
 });
 

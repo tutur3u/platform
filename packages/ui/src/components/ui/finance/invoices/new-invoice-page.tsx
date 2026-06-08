@@ -29,6 +29,9 @@ interface Props {
   canCreateInvoices?: boolean;
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
+  canReadInvoiceProducts?: boolean;
+  canReadInvoiceProductStock?: boolean;
+  canReadGroupLinkedProducts?: boolean;
   permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 
@@ -37,6 +40,9 @@ export default function NewInvoicePage({
   canCreateInvoices = true,
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
+  canReadInvoiceProducts = true,
+  canReadInvoiceProductStock = true,
+  canReadGroupLinkedProducts = true,
   permissionRequestUser,
 }: Props) {
   const t = useTranslations();
@@ -222,6 +228,8 @@ export default function NewInvoicePage({
             defaultCurrency={defaultCurrency ?? undefined}
             canChangeFinanceWallets={canChangeFinanceWallets}
             canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
+            canReadInvoiceProducts={canReadInvoiceProducts}
+            canReadInvoiceProductStock={canReadInvoiceProductStock}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
             downloadImageAfterCreate={downloadImageAfterCreate}
@@ -237,6 +245,9 @@ export default function NewInvoicePage({
             defaultCurrency={defaultCurrency ?? undefined}
             canChangeFinanceWallets={canChangeFinanceWallets}
             canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
+            canReadInvoiceProducts={canReadInvoiceProducts}
+            canReadInvoiceProductStock={canReadInvoiceProductStock}
+            canReadGroupLinkedProducts={canReadGroupLinkedProducts}
             createMultipleInvoices={createMultipleInvoices}
             printAfterCreate={printAfterCreate}
             downloadImageAfterCreate={downloadImageAfterCreate}

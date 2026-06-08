@@ -38,6 +38,10 @@ const pendingInvoicePaidCoverageMigrationPath = resolve(
   repoRoot,
   'apps/database/supabase/migrations/20260606092544_subscription_invoice_paid_coverage.sql'
 );
+const pendingInvoiceValidUntilCoverageMigrationPath = resolve(
+  repoRoot,
+  'apps/database/supabase/migrations/20260608085024_subscription_invoice_valid_until_coverage.sql'
+);
 const bundleRepositoryPath = resolve(
   repoRoot,
   'apps/web/src/lib/inventory/commerce/bundles.ts'
@@ -271,6 +275,31 @@ describe('inventory commerce migration contract', () => {
       'create or replace function public.get_pending_invoices_base'
     );
     expect(source).toContain('and fi.completed_at is not null');
+    expect(source).toContain(
+      'revoke all on function public.get_pending_invoices_base'
+    );
+    expect(source).toContain(
+      'grant execute on function public.get_pending_invoices_base'
+    );
+    expect(source).toContain("notify pgrst, 'reload schema'");
+  });
+
+  it('uses furthest valid_until as pending invoice paid coverage', () => {
+    expect(existsSync(pendingInvoiceValidUntilCoverageMigrationPath)).toBe(
+      true
+    );
+
+    const source = readFileSync(
+      pendingInvoiceValidUntilCoverageMigrationPath,
+      'utf8'
+    );
+
+    expect(source).toContain(
+      'create or replace function public.get_pending_invoices_base'
+    );
+    expect(source).toContain('and fi.completed_at is not null');
+    expect(source).toContain('fi.valid_until desc');
+    expect(source).toContain('fi.created_at desc');
     expect(source).toContain(
       'revoke all on function public.get_pending_invoices_base'
     );
