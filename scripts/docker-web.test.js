@@ -1899,6 +1899,58 @@ test('buildBlueGreenServices can build Compose targets with Buildx Bake', async 
   ]);
 });
 
+test('buildBlueGreenServices retries transient Docker registry build failures with backoff', async () => {
+  const calls = [];
+  const delays = [];
+  let buildAttempts = 0;
+
+  await buildBlueGreenServices({
+    buildStrategy: 'bake',
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+      DOCKER_WEB_BUILD_RETRY_INITIAL_DELAY_MS: '1',
+      DOCKER_WEB_BUILD_RETRY_MAX_DELAY_MS: '4',
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.stdio, options.teeOutput]);
+
+      if (args[0] === 'buildx' && args[1] === 'bake') {
+        buildAttempts += 1;
+
+        return buildAttempts < 3
+          ? {
+              code: 1,
+              signal: null,
+              stderr:
+                'ERROR: failed to solve: node:24-bookworm-slim: failed to fetch oauth token: unexpected status from POST request to https://auth.docker.io/token: 504 Gateway Timeout: error code: 504',
+              stdout: '',
+            }
+          : { code: 0, signal: null, stderr: '', stdout: '' };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-blue'],
+    sleep: async (delayMs) => {
+      delays.push(delayMs);
+    },
+  });
+
+  assert.equal(buildAttempts, 3);
+  assert.deepEqual(delays, [1, 2]);
+  assert.deepEqual(
+    calls
+      .filter(([, args]) => args[0] === 'buildx' && args[1] === 'bake')
+      .map(([, , stdio, teeOutput]) => [stdio, teeOutput]),
+    [
+      ['pipe', true],
+      ['pipe', true],
+      ['pipe', true],
+    ]
+  );
+});
+
 test('buildBlueGreenServices can package host-built web artifacts', async () => {
   const calls = [];
   const env = {

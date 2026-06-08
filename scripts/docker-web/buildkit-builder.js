@@ -36,6 +36,9 @@ const AUTO_BUILD_MEMORY_HEADROOM_BYTES = 512 * 1024 * 1024;
 const DEFAULT_AUTO_BUILD_MEMORY = '12g';
 const LOW_DOCKER_MEMORY_THRESHOLD_BYTES = 10 * BYTES_PER_GIB;
 const LARGE_DOCKER_MEMORY_THRESHOLD_BYTES = 16 * BYTES_PER_GIB;
+const DEFAULT_BUILDKIT_COMPOSE_UP_MAX_ATTEMPTS = 4;
+const DEFAULT_BUILDKIT_COMPOSE_UP_INITIAL_DELAY_MS = 5_000;
+const DEFAULT_BUILDKIT_COMPOSE_UP_MAX_DELAY_MS = 60_000;
 
 function parsePositiveNumber(value) {
   if (typeof value === 'number') {
@@ -64,6 +67,18 @@ function parsePositiveInteger(value) {
   }
 
   return parsed;
+}
+
+function getPositiveIntegerEnv(env, name, fallback) {
+  const parsed = parsePositiveInteger(env?.[name]);
+
+  return parsed ?? fallback;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function parseMemoryToBytes(value) {
@@ -412,6 +427,82 @@ function getBuildkitComposeEnv(config, env) {
   };
 }
 
+function isTransientDockerRegistryError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  const referencesDockerRegistry =
+    /(?:registry-1\.docker\.io|auth\.docker\.io|docker\.io\/v2\/|\/manifests\/)/iu.test(
+      message
+    );
+  const isNetworkTimeout =
+    /(?:context deadline exceeded|Client\.Timeout exceeded|request canceled|TLS handshake timeout|i\/o timeout|connection reset by peer|unexpected EOF|temporary failure|network is unreachable)/iu.test(
+      message
+    );
+  const isRegistryServerError =
+    /(?:502 Bad Gateway|503 Service Unavailable|504 Gateway Timeout|unexpected status .*5\d\d)/iu.test(
+      message
+    );
+
+  return (
+    referencesDockerRegistry && (isNetworkTimeout || isRegistryServerError)
+  );
+}
+
+function isTransientBuildkitComposeUpError(error) {
+  return isTransientDockerRegistryError(error);
+}
+
+async function runBuildkitComposeUpWithBackoff({
+  args,
+  env,
+  fsImpl,
+  runCommand: run,
+  sleep: sleepImpl = sleep,
+}) {
+  const maxAttempts = getPositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_BUILDKIT_UP_MAX_ATTEMPTS',
+    DEFAULT_BUILDKIT_COMPOSE_UP_MAX_ATTEMPTS
+  );
+  const maxDelayMs = getPositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_BUILDKIT_UP_MAX_DELAY_MS',
+    DEFAULT_BUILDKIT_COMPOSE_UP_MAX_DELAY_MS
+  );
+  let delayMs = getPositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_BUILDKIT_UP_INITIAL_DELAY_MS',
+    DEFAULT_BUILDKIT_COMPOSE_UP_INITIAL_DELAY_MS
+  );
+  let attempt = 1;
+
+  while (attempt <= maxAttempts) {
+    try {
+      return await runChecked('docker', args, {
+        env,
+        fsImpl,
+        runCommand: run,
+        stdio: 'pipe',
+        teeOutput: true,
+      });
+    } catch (error) {
+      if (attempt >= maxAttempts || !isTransientBuildkitComposeUpError(error)) {
+        throw error;
+      }
+
+      process.stderr.write(
+        `BuildKit compose startup hit a transient Docker registry error; retrying in ${delayMs}ms (attempt ${
+          attempt + 1
+        }/${maxAttempts}).\n`
+      );
+      await sleepImpl(delayMs);
+      attempt += 1;
+      delayMs = Math.min(delayMs * 2, maxDelayMs);
+    }
+  }
+
+  throw new Error('Unable to start BuildKit compose service.');
+}
+
 async function ensureBuildkitComposeService({
   composeFile,
   composeGlobalArgs = [],
@@ -419,6 +510,7 @@ async function ensureBuildkitComposeService({
   env,
   fsImpl,
   runCommand: run,
+  sleep: sleepImpl,
 }) {
   if (!composeFile) {
     return env;
@@ -426,9 +518,8 @@ async function ensureBuildkitComposeService({
 
   const composeEnv = getBuildkitComposeEnv(config, env);
 
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
+  await runBuildkitComposeUpWithBackoff({
+    args: getComposeCommandArgs(
       composeFile,
       composeGlobalArgs,
       'up',
@@ -436,12 +527,11 @@ async function ensureBuildkitComposeService({
       '--no-build',
       BUILDKIT_SERVICE_NAME
     ),
-    {
-      env: composeEnv,
-      fsImpl,
-      runCommand: run,
-    }
-  );
+    env: composeEnv,
+    fsImpl,
+    runCommand: run,
+    sleep: sleepImpl,
+  });
   await waitForComposeServiceHealthy(BUILDKIT_SERVICE_NAME, {
     composeFile,
     composeGlobalArgs,
@@ -462,6 +552,7 @@ async function ensureBuildkitBuilder(
     paths = null,
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
+    sleep: sleepImpl,
   } = {}
 ) {
   paths ??= getBuildkitPaths(rootDir);
@@ -484,6 +575,7 @@ async function ensureBuildkitBuilder(
     env,
     fsImpl,
     runCommand: run,
+    sleep: sleepImpl,
   });
   const fingerprint = getBuilderConfigFingerprint(config);
   const state = readBuilderState(paths, fsImpl);
@@ -892,6 +984,8 @@ module.exports = {
   getAutoBuildMemory,
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
+  isTransientDockerRegistryError,
+  isTransientBuildkitComposeUpError,
   isBuildStallTimeoutError,
   isBunTarballExtractionError,
   isCachedBuildError,

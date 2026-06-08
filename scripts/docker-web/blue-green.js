@@ -31,6 +31,7 @@ const {
   isBuildStallTimeoutError,
   isBunTarballExtractionError,
   isCachedBuildError,
+  isTransientDockerRegistryError,
   cleanupBuildkitAfterBuild,
   recoverBuildkitBunInstallCache,
 } = require('./buildkit-builder.js');
@@ -94,6 +95,9 @@ const BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES = Object.freeze([
   'web-cron-runner',
 ]);
 const BLUE_GREEN_BUILD_HASH_VERSION = 1;
+const DEFAULT_BLUE_GREEN_BUILD_RETRY_MAX_ATTEMPTS = 4;
+const DEFAULT_BLUE_GREEN_BUILD_RETRY_INITIAL_DELAY_MS = 5_000;
+const DEFAULT_BLUE_GREEN_BUILD_RETRY_MAX_DELAY_MS = 60_000;
 const BLUE_GREEN_FORCE_SUPPORT_BUILD_PATHS = Object.freeze([
   '.dockerignore',
   'bun.lock',
@@ -717,6 +721,12 @@ function generateBlueGreenDeploymentStamp(date = new Date()) {
     .toISOString()
     .replace(/\.\d{3}Z$/u, 'Z')
     .replace(/[:.]/gu, '-');
+}
+
+function getPositiveIntegerEnv(env, name, fallback) {
+  const parsed = Number.parseInt(String(env?.[name] ?? '').trim(), 10);
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function cleanEnvString(value) {
@@ -1975,6 +1985,7 @@ async function buildBlueGreenServices({
   rootDir = ROOT_DIR,
   runCommand: run,
   services,
+  sleep: sleepImpl = sleep,
 }) {
   const timeoutMs = getBlueGreenBuildTimeoutMs(env);
   const buildServiceBatches = getBlueGreenBuildServiceBatches(services, env);
@@ -2044,9 +2055,53 @@ async function buildBlueGreenServices({
       await runChecked('docker', args, {
         env,
         runCommand: run,
+        stdio: 'pipe',
+        teeOutput: true,
         timeoutMs,
       });
     }
+  };
+
+  const runBuildBatchesWithDockerRegistryBackoff = async ({
+    noCache = false,
+  } = {}) => {
+    const maxAttempts = getPositiveIntegerEnv(
+      env,
+      'DOCKER_WEB_BUILD_RETRY_MAX_ATTEMPTS',
+      DEFAULT_BLUE_GREEN_BUILD_RETRY_MAX_ATTEMPTS
+    );
+    const maxDelayMs = getPositiveIntegerEnv(
+      env,
+      'DOCKER_WEB_BUILD_RETRY_MAX_DELAY_MS',
+      DEFAULT_BLUE_GREEN_BUILD_RETRY_MAX_DELAY_MS
+    );
+    let delayMs = getPositiveIntegerEnv(
+      env,
+      'DOCKER_WEB_BUILD_RETRY_INITIAL_DELAY_MS',
+      DEFAULT_BLUE_GREEN_BUILD_RETRY_INITIAL_DELAY_MS
+    );
+    let attempt = 1;
+
+    while (attempt <= maxAttempts) {
+      try {
+        return await runBuildBatches({ noCache });
+      } catch (error) {
+        if (attempt >= maxAttempts || !isTransientDockerRegistryError(error)) {
+          throw error;
+        }
+
+        process.stderr.write(
+          `Blue/green Docker build hit a transient Docker registry error; retrying in ${delayMs}ms (attempt ${
+            attempt + 1
+          }/${maxAttempts}).\n`
+        );
+        await sleepImpl(delayMs);
+        attempt += 1;
+        delayMs = Math.min(delayMs * 2, maxDelayMs);
+      }
+    }
+
+    throw new Error('Unable to build blue/green services.');
   };
 
   await restartBuildkitBeforeBlueGreenBuild({
@@ -2057,7 +2112,7 @@ async function buildBlueGreenServices({
   });
 
   try {
-    await runBuildBatches();
+    await runBuildBatchesWithDockerRegistryBackoff();
   } catch (error) {
     const isRecoverableBuildError =
       isBunTarballExtractionError(error) ||
@@ -2082,7 +2137,7 @@ async function buildBlueGreenServices({
       runCommand: run,
     });
 
-    await runBuildBatches({ noCache: true });
+    await runBuildBatchesWithDockerRegistryBackoff({ noCache: true });
   }
 }
 
