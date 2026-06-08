@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   getDuplicateSupabaseAuthCookieNames,
   getMalformedSupabaseAuthCookieNames,
+  getSupabaseAuthCookieNames,
   sanitizeSupabaseAuthCookies,
 } from '../auth-cookie-sanitizer';
 
@@ -86,5 +87,19 @@ describe('auth-cookie-sanitizer', () => {
         supabaseUrl
       )
     ).toEqual([]);
+  });
+
+  it('detects possible Supabase auth names from a single raw cookie header entry', () => {
+    expect(
+      getSupabaseAuthCookieNames(
+        [
+          'theme=dark',
+          'sb-test-auth-token=shared',
+          'sb-test-auth-token.0=chunk',
+          'sb-other-auth-token=ignored',
+        ].join('; '),
+        supabaseUrl
+      )
+    ).toEqual(['sb-test-auth-token', 'sb-test-auth-token.0']);
   });
 });

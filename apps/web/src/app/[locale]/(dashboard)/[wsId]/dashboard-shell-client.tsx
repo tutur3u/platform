@@ -114,9 +114,7 @@ export function DashboardShellClient({
     >
       {children}
     </DashboardClientProviders>
-  ) : (
-    children
-  );
+  ) : null;
 
   const structuredContent = Structure ? (
     <Structure

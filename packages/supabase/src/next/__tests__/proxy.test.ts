@@ -249,6 +249,32 @@ describe('Supabase Proxy', () => {
     );
   });
 
+  it('expires possible host-only Supabase cookies for shared-domain requests without duplicate header entries', async () => {
+    mockRequest.url = 'http://web-blue:7803';
+    mockRequest.headers = new Map([
+      ['host', 'tuturuuu.localhost'],
+      ['x-forwarded-host', 'tuturuuu.localhost'],
+      ['x-forwarded-proto', 'http'],
+      ['cookie', ['theme=dark', 'sb-test-auth-token=shared'].join('; ')],
+    ]);
+
+    await updateSession(mockRequest as any);
+
+    expect(nextResponseMocks.hostOnlyClearForNames).toHaveBeenCalledWith(
+      ['sb-test-auth-token'],
+      expect.objectContaining({
+        domain: '.tuturuuu.localhost',
+        path: '/',
+        sameSite: 'lax',
+        secure: false,
+      })
+    );
+    expect(nextResponseMocks.headerAppend).toHaveBeenCalledWith(
+      'set-cookie',
+      'sb-test-auth-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=Lax'
+    );
+  });
+
   it('should clear malformed Supabase auth cookies before getClaims', async () => {
     mockRequest.cookies.getAll = () => [
       {

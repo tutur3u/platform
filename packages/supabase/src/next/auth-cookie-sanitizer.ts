@@ -190,6 +190,31 @@ export function getDuplicateSupabaseAuthCookieNames(
   return [...duplicateNames];
 }
 
+export function getSupabaseAuthCookieNames(
+  cookieHeader: string | null | undefined,
+  url: string | string[] | null | undefined
+) {
+  const storageKeys = getSupabaseAuthStorageKeys(url);
+
+  if (storageKeys.size === 0) {
+    return [];
+  }
+
+  const authCookieNames = new Set<string>();
+
+  for (const name of getCookieHeaderNames(cookieHeader)) {
+    const isSupabaseAuthCookie = [...storageKeys].some(
+      (storageKey) => getChunkIndex(name, storageKey) !== null
+    );
+
+    if (isSupabaseAuthCookie) {
+      authCookieNames.add(name);
+    }
+  }
+
+  return [...authCookieNames];
+}
+
 function decodeBase64UrlJson(cookieValue: string): unknown | null {
   const base64Body = cookieValue.slice(SUPABASE_BASE64_PREFIX.length);
   return !BASE64_URL_BODY_PATTERN.test(base64Body)

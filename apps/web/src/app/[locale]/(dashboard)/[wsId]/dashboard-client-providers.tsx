@@ -59,9 +59,7 @@ export function DashboardClientProviders({
     >
       {children}
     </DashboardWorkspaceProviders>
-  ) : (
-    children
-  );
+  ) : null;
 
   return (
     <>

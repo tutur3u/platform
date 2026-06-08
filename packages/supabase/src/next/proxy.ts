@@ -3,8 +3,8 @@ import type { Database } from '@tuturuuu/types';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import {
-  getDuplicateSupabaseAuthCookieNames,
   getMalformedSupabaseAuthCookieNames,
+  getSupabaseAuthCookieNames,
   sanitizeSupabaseAuthCookies,
 } from './auth-cookie-sanitizer';
 import {
@@ -72,8 +72,8 @@ export async function updateSession(request: NextRequest): Promise<{
       url,
       process.env.NEXT_PUBLIC_SUPABASE_URL,
     ].filter((candidate): candidate is string => Boolean(candidate));
-    const duplicateAuthCookieNames = cookieOptions.domain
-      ? getDuplicateSupabaseAuthCookieNames(
+    const possibleHostOnlyAuthCookieNames = cookieOptions.domain
+      ? getSupabaseAuthCookieNames(
           request.headers.get('cookie'),
           duplicateAuthCookieUrls
         )
@@ -115,7 +115,7 @@ export async function updateSession(request: NextRequest): Promise<{
     const { data } = await supabase.auth.getClaims();
 
     getHostOnlyCookieClearHeadersForNames(
-      duplicateAuthCookieNames,
+      possibleHostOnlyAuthCookieNames,
       cookieOptions
     ).forEach((header) => {
       supabaseResponse.headers.append('set-cookie', header);

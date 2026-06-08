@@ -78,6 +78,28 @@ describe('login Turnstile state', () => {
     });
   });
 
+  it('keeps configured Turnstile disabled for production-built local Supabase E2E auth', () => {
+    expect(
+      shouldBypassTurnstileForLocalSupabaseDevAuth({
+        devMode: false,
+        localE2EAuthBypass: false,
+        supabaseUrl: 'http://127.0.0.1:8001',
+      })
+    ).toBe(true);
+    expect(
+      resolveLoginTurnstileClientState({
+        devMode: false,
+        localE2EAuthBypass: false,
+        siteKey: 'site-key',
+        supabaseUrl: 'http://127.0.0.1:8001',
+      })
+    ).toEqual({
+      siteKey: 'site-key',
+      isRequired: false,
+      canRenderWidget: false,
+    });
+  });
+
   it('keeps configured Turnstile enabled for remote dev auth', () => {
     expect(
       resolveLoginTurnstileClientState({

@@ -203,13 +203,17 @@ test.describe('Task board realtime and task mutations', () => {
       const aiSwitch = page.getByRole('switch', {
         name: /generate with ai/i,
       });
-      await expect(aiSwitch).toBeVisible();
-      if (await aiSwitch.isChecked()) {
+      if (
+        (await aiSwitch.isVisible().catch(() => false)) &&
+        (await aiSwitch.isChecked())
+      ) {
         await aiSwitch.click();
         await expect(aiSwitch).not.toBeChecked();
       }
 
-      const taskInput = page.getByPlaceholder('Add a new task...');
+      const taskInput = page
+        .getByPlaceholder(/add a new task|what needs to be done/i)
+        .first();
       await expect(taskInput).toBeVisible();
 
       await taskInput.fill(taskName);

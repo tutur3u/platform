@@ -35,7 +35,6 @@ export function shouldRequireTurnstileForDevAuth({
 }
 
 export function shouldBypassTurnstileForLocalSupabaseDevAuth({
-  devMode,
   localE2EAuthBypass,
   supabaseUrl,
 }: {
@@ -43,7 +42,7 @@ export function shouldBypassTurnstileForLocalSupabaseDevAuth({
   localE2EAuthBypass: boolean;
   supabaseUrl?: string | null;
 }) {
-  return devMode && !localE2EAuthBypass && isLocalSupabaseUrl(supabaseUrl);
+  return !localE2EAuthBypass && isLocalSupabaseUrl(supabaseUrl);
 }
 
 export function shouldHonorLocalE2EAuthBypassForLogin({
@@ -77,7 +76,7 @@ export function resolveLoginTurnstileClientState({
     });
 
   return resolveTurnstileClientState({
-    devMode: devMode || localE2EAuthBypass,
+    devMode: devMode || localE2EAuthBypass || bypassLocalSupabaseTurnstile,
     requireInDev: shouldRequireTurnstileForDevAuth({
       devMode,
       localE2EAuthBypass,
