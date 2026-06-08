@@ -42,4 +42,16 @@ describe('[wsId] dashboard client providers compile graph', () => {
       "import('./dashboard-workspace-providers')"
     );
   });
+
+  it('loads fade setting setup after hydration instead of preloading it through next/dynamic', () => {
+    expect(dashboardClientProvidersSource).not.toMatch(
+      /const\s+FadeSettingInitializer\s*=\s*dynamic\(\s*\(\)\s*=>[\s\S]*?import\(['"]@tuturuuu\/ui\/tu-do\/shared\/fade-setting-initializer['"]\)/u
+    );
+    expect(dashboardClientProvidersSource).toContain(
+      "import('@tuturuuu/ui/tu-do/shared/fade-setting-initializer')"
+    );
+    expect(dashboardClientProvidersSource).toContain(
+      'useFadeSettingInitializerComponent'
+    );
+  });
 });

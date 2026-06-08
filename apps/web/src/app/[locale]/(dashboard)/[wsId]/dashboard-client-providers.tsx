@@ -2,15 +2,9 @@
 
 import type { WorkspaceProductTier } from '@tuturuuu/types';
 import dynamic from 'next/dynamic';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 
-const FadeSettingInitializer = dynamic(
-  () =>
-    import('@tuturuuu/ui/tu-do/shared/fade-setting-initializer').then(
-      (module) => module.FadeSettingInitializer
-    ),
-  { ssr: false }
-);
 const DashboardWorkspaceProviders = dynamic(() =>
   import('./dashboard-workspace-providers').then(
     (module) => module.DashboardWorkspaceProviders
@@ -26,6 +20,31 @@ interface DashboardClientProvidersProps {
   wsId: string;
 }
 
+type FadeSettingInitializerComponent = ComponentType<Record<string, never>>;
+
+function useFadeSettingInitializerComponent() {
+  const [FadeSettingInitializer, setFadeSettingInitializer] =
+    useState<FadeSettingInitializerComponent | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    void import('@tuturuuu/ui/tu-do/shared/fade-setting-initializer').then(
+      (module) => {
+        if (active) {
+          setFadeSettingInitializer(() => module.FadeSettingInitializer);
+        }
+      }
+    );
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return FadeSettingInitializer;
+}
+
 export function DashboardClientProviders({
   children,
   enablePresence,
@@ -34,9 +53,11 @@ export function DashboardClientProviders({
   tier,
   wsId,
 }: DashboardClientProvidersProps) {
+  const FadeSettingInitializer = useFadeSettingInitializerComponent();
+
   return (
     <>
-      <FadeSettingInitializer />
+      {FadeSettingInitializer && <FadeSettingInitializer />}
       <DashboardWorkspaceProviders
         wsId={wsId}
         tier={tier}
