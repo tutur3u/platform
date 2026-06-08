@@ -369,6 +369,10 @@
       "types": "./src/components/ui/custom/tuturuuu-logo.tsx",
       "import": "./src/components/ui/custom/tuturuuu-logo.tsx"
     },
+    "./custom/tuturuuu-logo-urls": {
+      "types": "./src/components/ui/custom/tuturuuu-logo-urls.ts",
+      "import": "./src/components/ui/custom/tuturuuu-logo-urls.ts"
+    },
     "./custom/workspace-select": {
       "types": "./src/components/ui/custom/workspace-select.tsx",
       "import": "./src/components/ui/custom/workspace-select.tsx"
