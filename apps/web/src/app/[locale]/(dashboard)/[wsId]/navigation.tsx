@@ -10,7 +10,7 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { notFound } from 'next/navigation';
 import { DEV_MODE } from '@/constants/common';
 import { createTierRequirement } from '@/lib/feature-tiers';
-import { HABITS_ENABLED_SECRET } from '@/lib/habits/access';
+import { HABITS_ENABLED_SECRET } from '@/lib/habits/constants';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';

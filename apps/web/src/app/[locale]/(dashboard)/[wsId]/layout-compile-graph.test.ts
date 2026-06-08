@@ -14,6 +14,12 @@ const layoutDataSource = readFileSync(
     encoding: 'utf8',
   }
 );
+const navigationSource = readFileSync(
+  join(process.cwd(), 'src/app/[locale]/(dashboard)/[wsId]/navigation.tsx'),
+  {
+    encoding: 'utf8',
+  }
+);
 
 const forbiddenStaticImports = [
   '@tuturuuu/supabase/next/server',
@@ -65,6 +71,15 @@ describe('[wsId] layout compile graph', () => {
     );
     expect(layoutDataSource).toContain(
       "import('@tuturuuu/supabase/next/server')"
+    );
+  });
+
+  it('keeps habits runtime access helpers out of dashboard navigation imports', () => {
+    expect(navigationSource).not.toMatch(
+      staticImportPattern('@/lib/habits/access')
+    );
+    expect(navigationSource).toMatch(
+      staticImportPattern('@/lib/habits/constants')
     );
   });
 });
