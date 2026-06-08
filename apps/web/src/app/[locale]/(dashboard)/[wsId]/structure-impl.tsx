@@ -24,7 +24,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { PROD_MODE } from '@/constants/env';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/sidebar';
 import { useSidebar } from '@/context/sidebar-context';
 import {
   useRecentSidebarItemsComponent,

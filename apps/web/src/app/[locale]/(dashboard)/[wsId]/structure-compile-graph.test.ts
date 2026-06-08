@@ -54,6 +54,10 @@ describe('[wsId] structure compile graph', () => {
   });
 
   it('keeps sidebar preference data helpers behind async split points', () => {
+    expect(structureImplSource).not.toMatch(
+      staticImportPattern('@/constants/common')
+    );
+
     for (const modulePath of [
       '@tuturuuu/internal-api/users',
       '@tuturuuu/ui/sonner',

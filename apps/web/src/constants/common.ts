@@ -1,13 +1,19 @@
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+import { DEV_MODE, PROD_MODE } from './env';
 import { APP_PUBLIC_PATHS } from './public_paths';
+import {
+  MAIN_CONTENT_SIZE_COOKIE_NAME,
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+  SIDEBAR_SIZE_COOKIE_NAME,
+} from './sidebar';
 
 export const GITHUB_OWNER = 'tutur3u';
 export const GITHUB_REPO = 'platform';
 
 export const PORT = process.env.PORT || 7803;
 
-export const DEV_MODE = process.env.NODE_ENV === 'development';
-export const PROD_MODE = process.env.NODE_ENV === 'production';
+export { DEV_MODE, PROD_MODE };
 
 export const PUBLIC_PATHS = APP_PUBLIC_PATHS;
 
@@ -33,10 +39,12 @@ export const CMS_APP_URL =
 
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';
-export const SIDEBAR_COLLAPSED_COOKIE_NAME = 'sidebar-collapsed';
-export const SIDEBAR_SIZE_COOKIE_NAME = 'sidebar-size';
-export const MAIN_CONTENT_SIZE_COOKIE_NAME = 'main-content-size';
-export const SIDEBAR_BEHAVIOR_COOKIE_NAME = 'sidebar-behavior';
+export {
+  MAIN_CONTENT_SIZE_COOKIE_NAME,
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+  SIDEBAR_SIZE_COOKIE_NAME,
+};
 
 export const ENABLE_KEYBOARD_SHORTCUTS = false;
 

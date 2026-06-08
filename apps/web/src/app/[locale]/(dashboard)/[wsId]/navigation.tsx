@@ -8,7 +8,7 @@ import {
 } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { notFound } from 'next/navigation';
-import { DEV_MODE } from '@/constants/common';
+import { DEV_MODE } from '@/constants/env';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/constants';
 import { getMailAppOrigin } from '@/lib/mail-app-url';

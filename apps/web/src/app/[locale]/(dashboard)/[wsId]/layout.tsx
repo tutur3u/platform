@@ -4,11 +4,11 @@ import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
+import { PROD_MODE } from '@/constants/env';
 import {
-  PROD_MODE,
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
+} from '@/constants/sidebar';
 import {
   type DashboardLayoutWorkspace,
   getDashboardLayoutData,

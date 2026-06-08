@@ -27,6 +27,7 @@ const forbiddenStaticImports = [
   '@tuturuuu/utils/workspace-helper',
   '../../navbar-actions',
   '../../user-nav',
+  '@/constants/common',
   './dashboard-client-providers',
   './dashboard-settings-dialog-host',
   './navigation',
@@ -78,6 +79,9 @@ describe('[wsId] layout compile graph', () => {
   });
 
   it('keeps habits runtime access helpers out of dashboard navigation imports', () => {
+    expect(navigationSource).not.toMatch(
+      staticImportPattern('@/constants/common')
+    );
     expect(navigationSource).not.toMatch(
       staticImportPattern('@/lib/habits/access')
     );
