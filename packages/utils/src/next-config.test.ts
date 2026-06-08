@@ -3,6 +3,7 @@ import {
   createTuturuuuNextConfig,
   isTuturuuuNextReactCompilerEnabled,
   resolveTuturuuuWebAppUrl,
+  TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS,
   TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS,
   trimTrailingSlashes,
 } from './next-config';
@@ -12,6 +13,10 @@ describe('createTuturuuuNextConfig', () => {
     const config = createTuturuuuNextConfig();
 
     expect(config.allowedDevOrigins).toContain('tuturuuu.localhost');
+    expect(config.cacheComponents).toBe(true);
+    expect(config.images?.remotePatterns).toEqual(
+      TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS
+    );
     expect(config.poweredByHeader).toBe(false);
     expect(config.reactStrictMode).toBe(true);
     expect(config.typescript?.ignoreBuildErrors).toBe(true);
@@ -30,8 +35,31 @@ describe('createTuturuuuNextConfig', () => {
     ]);
   });
 
+  it('dedupes image remote patterns while preserving app additions', () => {
+    const config = createTuturuuuNextConfig({
+      images: {
+        remotePatterns: [
+          ...TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS,
+          {
+            protocol: 'https',
+            hostname: 'models.dev',
+          },
+        ],
+      },
+    });
+
+    expect(config.images?.remotePatterns).toEqual([
+      ...TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS,
+      {
+        protocol: 'https',
+        hostname: 'models.dev',
+      },
+    ]);
+  });
+
   it('preserves app-specific config overrides', () => {
     const config = createTuturuuuNextConfig({
+      cacheComponents: false,
       reactCompiler: true,
       transpilePackages: ['@tuturuuu/ui'],
       experimental: {
@@ -42,6 +70,7 @@ describe('createTuturuuuNextConfig', () => {
       },
     });
 
+    expect(config.cacheComponents).toBe(false);
     expect(config.reactCompiler).toBe(true);
     expect(config.transpilePackages).toEqual(['@tuturuuu/ui']);
     expect(config.experimental?.cpus).toBe(2);

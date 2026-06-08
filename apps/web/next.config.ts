@@ -46,7 +46,6 @@ const cronMonitoringTraceIncludes = {
 };
 const nextConfig = createTuturuuuNextConfig({
   ...serwistConfig,
-  cacheComponents: true,
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),
   outputFileTracingIncludes: {
@@ -79,26 +78,6 @@ const nextConfig = createTuturuuuNextConfig({
   ],
   images: {
     remotePatterns: [
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-      },
-      {
-        protocol: 'http',
-        hostname: '127.0.0.1',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.supabase.co',
-      },
-      {
-        protocol: 'https',
-        hostname: 'avatars.githubusercontent.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'tuturuuu.com',
-      },
       {
         protocol: 'https',
         hostname: 'models.dev',

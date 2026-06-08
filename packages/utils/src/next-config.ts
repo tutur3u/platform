@@ -12,6 +12,34 @@ export const TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS = [
   'lucide-react',
 ] as const;
 
+type NextImageConfig = NonNullable<NextConfig['images']>;
+type NextImageRemotePattern = NonNullable<
+  NextImageConfig['remotePatterns']
+>[number];
+
+export const TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS = [
+  {
+    protocol: 'http',
+    hostname: 'localhost',
+  },
+  {
+    protocol: 'http',
+    hostname: '127.0.0.1',
+  },
+  {
+    protocol: 'https',
+    hostname: '**.supabase.co',
+  },
+  {
+    protocol: 'https',
+    hostname: 'avatars.githubusercontent.com',
+  },
+  {
+    protocol: 'https',
+    hostname: 'tuturuuu.com',
+  },
+] satisfies NextImageRemotePattern[];
+
 const TRUTHY_ENV_VALUES = new Set(['1', 'true', 'yes', 'on']);
 const FALSY_ENV_VALUES = new Set(['0', 'false', 'no', 'off']);
 
@@ -20,6 +48,23 @@ function mergeStringArrays(
   second: readonly string[] | undefined
 ) {
   return Array.from(new Set([...(first ?? []), ...(second ?? [])]));
+}
+
+function getRemotePatternKey(pattern: NextImageRemotePattern) {
+  return pattern instanceof URL ? pattern.toString() : JSON.stringify(pattern);
+}
+
+function mergeRemotePatterns(
+  first: readonly NextImageRemotePattern[] | undefined,
+  second: readonly NextImageRemotePattern[] | undefined
+) {
+  const merged = new Map<string, NextImageRemotePattern>();
+
+  for (const pattern of [...(first ?? []), ...(second ?? [])]) {
+    merged.set(getRemotePatternKey(pattern), pattern);
+  }
+
+  return Array.from(merged.values());
 }
 
 function readBooleanEnvOverride(value: string | undefined) {
@@ -54,16 +99,25 @@ export function isTuturuuuNextReactCompilerEnabled(
 
 export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
   const experimentalConfig = config.experimental ?? {};
+  const imageConfig = config.images ?? {};
 
   return {
     reactCompiler: isTuturuuuNextReactCompilerEnabled(),
     reactStrictMode: true,
     poweredByHeader: false,
     ...config,
+    cacheComponents: config.cacheComponents ?? true,
     allowedDevOrigins: mergeStringArrays(
       TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS,
       config.allowedDevOrigins
     ),
+    images: {
+      ...imageConfig,
+      remotePatterns: mergeRemotePatterns(
+        TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS,
+        imageConfig.remotePatterns
+      ),
+    },
     typescript: {
       ignoreBuildErrors: true,
       ...config.typescript,
