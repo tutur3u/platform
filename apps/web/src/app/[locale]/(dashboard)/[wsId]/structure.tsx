@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Archive, ArrowLeft } from '@tuturuuu/icons/lucide';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
@@ -397,7 +396,7 @@ export function Structure({
     const archivedNavigationLink: NavLink = {
       id: 'archived_navigation',
       title: t('settings.preferences.sidebar_layout.archived_title'),
-      icon: <Archive className="h-5 w-5" />,
+      icon: <DashboardNavigationIcon className="h-5 w-5" name="Archive" />,
       preferenceArchivedItems: navigationPreferenceResult.archivedLinks.map(
         (archivedLink) => ({
           ...archivedLink,
@@ -795,7 +794,7 @@ export function Structure({
 
   const backButton: NavLink = {
     title: t('common.back'),
-    icon: <ArrowLeft className="h-4 w-4" />,
+    icon: <DashboardNavigationIcon className="h-4 w-4" name="ArrowLeft" />,
     onClick: handleNavBack,
     isBack: true,
   };

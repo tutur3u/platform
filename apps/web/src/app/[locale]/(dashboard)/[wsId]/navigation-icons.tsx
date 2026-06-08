@@ -7,6 +7,7 @@ type IconComponent = ComponentType<{ className?: string }>;
 
 const NAVIGATION_ICON_NAMES = [
   'Archive',
+  'ArrowLeft',
   'BadgeDollarSign',
   'Banknote',
   'Bell',
