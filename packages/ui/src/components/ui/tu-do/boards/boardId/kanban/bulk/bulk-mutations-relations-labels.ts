@@ -7,7 +7,13 @@ import { toast } from '@tuturuuu/ui/sonner';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
-import { getInternalApiOptions } from './bulk-operation-utils';
+import {
+  getInternalApiOptions,
+  restoreBoardTaskCaches,
+  restoreFailedBoardTasks,
+  snapshotBoardTaskCaches,
+  updateBoardTaskCaches,
+} from './bulk-operation-utils';
 
 export function useBulkAddLabel(
   queryClient: QueryClient,
@@ -52,8 +58,9 @@ export function useBulkAddLabel(
     },
     onMutate: async ({ labelId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-      const current = (previousTasks as Task[] | undefined) || [];
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
+      const current = cacheSnapshot.previousTasks || [];
       const labelMeta = workspaceLabels.find((l) => l.id === labelId);
 
       const missingTaskIds = taskIds.filter((id) => {
@@ -61,34 +68,31 @@ export function useBulkAddLabel(
         return !task?.labels?.some((l) => l.id === labelId);
       });
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) => {
-            if (!missingTaskIds.includes(task.id)) return task;
-            return {
-              ...task,
-              labels: [
-                ...(task.labels || []),
-                {
-                  id: labelId,
-                  ws_id: wsId || labelMeta?.ws_id || '',
-                  name: labelMeta?.name || i18n?.defaultLabelName() || 'Label',
-                  color: labelMeta?.color || '#3b82f6',
-                  created_at: new Date().toISOString(),
-                },
-              ],
-            } as Task;
-          });
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) => {
+          if (!missingTaskIds.includes(task.id)) return task;
+          return {
+            ...task,
+            labels: [
+              ...(task.labels || []),
+              {
+                id: labelId,
+                ws_id: wsId || labelMeta?.ws_id || '',
+                name: labelMeta?.name || i18n?.defaultLabelName() || 'Label',
+                color: labelMeta?.color || '#3b82f6',
+                created_at: new Date().toISOString(),
+              },
+            ],
+          } as Task;
+        });
+      });
 
-      return { previousTasks, modifiedTaskIds: missingTaskIds };
+      return { ...cacheSnapshot, modifiedTaskIds: missingTaskIds };
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk add label failed', error);
       toast.error(
@@ -100,22 +104,13 @@ export function useBulkAddLabel(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       const modifiedTaskIds = context?.modifiedTaskIds ?? data.taskIds;
       const succeededModifiedTaskIds = modifiedTaskIds.filter(
@@ -199,34 +194,32 @@ export function useBulkRemoveLabel(
     },
     onMutate: async ({ labelId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-      const current = (previousTasks as Task[] | undefined) || [];
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
+      const current = cacheSnapshot.previousTasks || [];
       const modifiedTaskIds = taskIds.filter((id) => {
         const task = current.find((ct) => ct.id === id);
         return !!task?.labels?.some((label) => label.id === labelId);
       });
       const taskIdSet = new Set(taskIds);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) =>
-            taskIdSet.has(task.id)
-              ? {
-                  ...task,
-                  labels: (task.labels || []).filter((l) => l.id !== labelId),
-                }
-              : task
-          );
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) =>
+          taskIdSet.has(task.id)
+            ? {
+                ...task,
+                labels: (task.labels || []).filter((l) => l.id !== labelId),
+              }
+            : task
+        );
+      });
 
-      return { previousTasks, modifiedTaskIds };
+      return { ...cacheSnapshot, modifiedTaskIds };
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk remove label failed', error);
       toast.error(
@@ -239,22 +232,13 @@ export function useBulkRemoveLabel(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       const modifiedTaskIds = context?.modifiedTaskIds ?? data.taskIds;
       const succeededModifiedTaskIds = modifiedTaskIds.filter(

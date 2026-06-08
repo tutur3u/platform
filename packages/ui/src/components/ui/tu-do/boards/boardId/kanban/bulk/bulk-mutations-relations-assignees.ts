@@ -1,15 +1,18 @@
 'use client';
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
-import { bulkWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
 import type { WorkspaceMember } from './bulk-operation-types';
 import {
+  bulkWorkspaceTasksByEffectiveWorkspace,
   getInternalApiOptions,
   getTaskForRelationMutation,
+  restoreFailedBoardTasks,
+  snapshotBoardTaskCaches,
+  updateBoardTaskCaches,
 } from './bulk-operation-utils';
 
 export function useBulkAddAssignee(
@@ -80,17 +83,17 @@ export function useBulkAddAssignee(
         }
       }
 
-      const result = await bulkWorkspaceTasks(
-        wsId,
-        {
-          taskIds,
-          operation: {
-            type: 'add_assignee',
-            assigneeId,
-          },
+      const result = await bulkWorkspaceTasksByEffectiveWorkspace({
+        queryClient,
+        boardId,
+        defaultWorkspaceId: wsId,
+        taskIds,
+        operation: {
+          type: 'add_assignee',
+          assigneeId,
         },
-        apiOptions
-      );
+        options: apiOptions,
+      });
 
       if (result.successCount === 0) {
         throw new Error(
@@ -128,8 +131,9 @@ export function useBulkAddAssignee(
     },
     onMutate: async ({ assigneeId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-      const current = (previousTasks as Task[] | undefined) || [];
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
+      const current = cacheSnapshot.previousTasks || [];
 
       const missingTaskIds = taskIds.filter((id) => {
         const task = current.find((ct) => ct.id === id);
@@ -144,42 +148,28 @@ export function useBulkAddAssignee(
         avatar_url: undefined,
       };
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) => {
-            if (!missingTaskIds.includes(task.id)) return task;
-            return {
-              ...task,
-              assignees: [...(task.assignees || []), assigneeData],
-            } as Task;
-          });
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) => {
+          if (!missingTaskIds.includes(task.id)) return task;
+          return {
+            ...task,
+            assignees: [...(task.assignees || []), assigneeData],
+          } as Task;
+        });
+      });
 
-      return { previousTasks, modifiedTaskIds: missingTaskIds };
+      return { ...cacheSnapshot, modifiedTaskIds: missingTaskIds };
     },
     onError: (error, variables, context) => {
-      if (context?.previousTasks) {
-        const previousTaskMap = new Map(
-          ((context.previousTasks as Task[] | undefined) ?? []).map((task) => [
-            task.id,
-            task,
-          ])
-        );
-        const requestedTaskIdSet = new Set(variables.taskIds);
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!requestedTaskIdSet.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
+      if (context) {
+        restoreFailedBoardTasks({
+          queryClient,
+          boardId,
+          previousTasks: context.previousTasks,
+          previousFullTasks: context.previousFullTasks,
+          failedTaskIds: variables.taskIds,
+        });
       }
 
       console.error('Bulk add assignee failed', error);
@@ -188,26 +178,13 @@ export function useBulkAddAssignee(
       );
     },
     onSuccess: (data, _variables, context) => {
-      if (
-        data.failedTaskIds.length > 0 &&
-        Array.isArray(context?.previousTasks)
-      ) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            const failedIdSet = new Set(data.failedTaskIds);
-            return old.map((task) => {
-              if (!failedIdSet.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds: data.failedTaskIds,
+      });
 
       const modifiedTaskIdSet = new Set(
         context?.modifiedTaskIds ?? data.succeededTaskIds
@@ -217,22 +194,17 @@ export function useBulkAddAssignee(
       );
 
       if (data.updatedAssigneesByTaskId.size > 0) {
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              const updatedAssignees = data.updatedAssigneesByTaskId.get(
-                task.id
-              );
-              if (!updatedAssignees) return task;
-              return {
-                ...task,
-                assignees: updatedAssignees,
-              };
-            });
-          }
-        );
+        updateBoardTaskCaches(queryClient, boardId, (old) => {
+          if (!old) return old;
+          return old.map((task) => {
+            const updatedAssignees = data.updatedAssigneesByTaskId.get(task.id);
+            if (!updatedAssignees) return task;
+            return {
+              ...task,
+              assignees: updatedAssignees,
+            };
+          });
+        });
       }
 
       for (const tid of succeededModifiedTaskIds) {
@@ -280,17 +252,17 @@ export function useBulkRemoveAssignee(
     }) => {
       const apiOptions = getInternalApiOptions();
 
-      const result = await bulkWorkspaceTasks(
-        wsId,
-        {
-          taskIds,
-          operation: {
-            type: 'remove_assignee',
-            assigneeId,
-          },
+      const result = await bulkWorkspaceTasksByEffectiveWorkspace({
+        queryClient,
+        boardId,
+        defaultWorkspaceId: wsId,
+        taskIds,
+        operation: {
+          type: 'remove_assignee',
+          assigneeId,
         },
-        apiOptions
-      );
+        options: apiOptions,
+      });
 
       const successCount = result.successCount;
       const succeededTaskIds = [...result.succeededTaskIds];
@@ -314,8 +286,9 @@ export function useBulkRemoveAssignee(
     },
     onMutate: async ({ assigneeId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-      const current = (previousTasks as Task[] | undefined) || [];
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
+      const current = cacheSnapshot.previousTasks || [];
       const modifiedTaskIds = taskIds.filter((id) => {
         const task = current.find((ct) => ct.id === id);
         return !!task?.assignees?.some(
@@ -324,45 +297,31 @@ export function useBulkRemoveAssignee(
       });
       const taskIdSet = new Set(taskIds);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) =>
-            taskIdSet.has(task.id)
-              ? {
-                  ...task,
-                  assignees: (task.assignees || []).filter(
-                    (a) => a.id !== assigneeId
-                  ),
-                }
-              : task
-          );
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) =>
+          taskIdSet.has(task.id)
+            ? {
+                ...task,
+                assignees: (task.assignees || []).filter(
+                  (a) => a.id !== assigneeId
+                ),
+              }
+            : task
+        );
+      });
 
-      return { previousTasks, modifiedTaskIds };
+      return { ...cacheSnapshot, modifiedTaskIds };
     },
     onError: (error, variables, context) => {
-      if (context?.previousTasks) {
-        const previousTaskMap = new Map(
-          ((context.previousTasks as Task[] | undefined) ?? []).map((task) => [
-            task.id,
-            task,
-          ])
-        );
-        const requestedTaskIdSet = new Set(variables.taskIds);
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!requestedTaskIdSet.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
+      if (context) {
+        restoreFailedBoardTasks({
+          queryClient,
+          boardId,
+          previousTasks: context.previousTasks,
+          previousFullTasks: context.previousFullTasks,
+          failedTaskIds: variables.taskIds,
+        });
       }
 
       console.error('Bulk remove assignee failed', error);
@@ -372,26 +331,13 @@ export function useBulkRemoveAssignee(
       );
     },
     onSuccess: (data, _variables, context) => {
-      if (
-        data.failedTaskIds.length > 0 &&
-        Array.isArray(context?.previousTasks)
-      ) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            const failedIdSet = new Set(data.failedTaskIds);
-            return old.map((task) => {
-              if (!failedIdSet.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds: data.failedTaskIds,
+      });
 
       const modifiedTaskIdSet = new Set(
         context?.modifiedTaskIds ?? data.succeededTaskIds

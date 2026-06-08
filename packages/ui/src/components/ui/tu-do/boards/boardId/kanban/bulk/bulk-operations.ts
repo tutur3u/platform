@@ -29,6 +29,7 @@ import {
 } from './bulk-mutations-updates';
 import { useBulkOperationI18n } from './bulk-operation-i18n';
 import type { BulkOperationsConfig } from './bulk-operation-types';
+import { getBulkTaskWorkspaceGroups } from './bulk-operation-utils';
 
 export function useBulkOperations(config: BulkOperationsConfig) {
   const i18n = useBulkOperationI18n();
@@ -290,7 +291,13 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     bulkDeleteTasks: async () => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await deleteMutation.mutateAsync({ taskIds });
+      const workspaceGroups = getBulkTaskWorkspaceGroups({
+        queryClient,
+        boardId,
+        defaultWorkspaceId: wsId,
+        taskIds,
+      });
+      await deleteMutation.mutateAsync({ taskIds, workspaceGroups });
     },
     bulkMoveToBoard: async (targetBoardId: string, targetListId: string) => {
       const taskIds = Array.from(selectedTasks);
