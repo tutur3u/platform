@@ -56,7 +56,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: createClientMock,
 }));
 
-vi.mock('@tuturuuu/trigger', () => ({
+vi.mock('@tuturuuu/trigger/google-calendar-full-sync', () => ({
   performFullSyncForWorkspace: fullSyncMock,
 }));
 

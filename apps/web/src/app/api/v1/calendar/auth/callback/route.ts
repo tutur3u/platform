@@ -1,7 +1,6 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { performFullSyncForWorkspace } from '@tuturuuu/trigger';
 import { NextResponse } from 'next/server';
 import {
   buildGoogleCalendarPostAuthRedirectUrl,
@@ -11,6 +10,14 @@ import {
   calendarOAuthDebug,
   calendarOAuthError,
 } from '@/lib/calendar/oauth-callback-logger';
+
+async function loadPerformFullSyncForWorkspace() {
+  const { performFullSyncForWorkspace } = await import(
+    '@tuturuuu/trigger/google-calendar-full-sync'
+  );
+
+  return performFullSyncForWorkspace;
+}
 
 export async function GET(request: Request) {
   calendarOAuthDebug('🔍 [DEBUG] OAuth callback route called');
@@ -224,6 +231,9 @@ export async function GET(request: Request) {
       calendarOAuthDebug(
         `[${wsId}] Starting full sync after Google Calendar connection...`
       );
+
+      const performFullSyncForWorkspace =
+        await loadPerformFullSyncForWorkspace();
 
       // Test if the function is available
       calendarOAuthDebug(

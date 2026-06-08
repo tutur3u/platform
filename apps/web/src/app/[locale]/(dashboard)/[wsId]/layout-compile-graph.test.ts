@@ -48,12 +48,15 @@ function staticImportPattern(modulePath: string) {
 
 describe('[wsId] layout compile graph', () => {
   it('keeps heavy dashboard shell modules out of static layout imports', () => {
+    expect(layoutSource).not.toMatch(staticImportPattern('next/dynamic'));
+
     for (const modulePath of forbiddenStaticImports) {
       expect(layoutSource).not.toMatch(staticImportPattern(modulePath));
     }
   });
 
   it('loads dashboard navigation through an async split point', () => {
+    expect(layoutSource).toContain("import('./dashboard-shell-client')");
     expect(layoutSource).toContain("import('./navigation')");
     expect(layoutSource).toContain("import('./navigation-visibility')");
   });

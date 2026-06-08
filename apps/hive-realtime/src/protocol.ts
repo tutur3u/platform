@@ -5,5 +5,5 @@ export {
   type HiveRealtimeClientMessage,
   type HiveRealtimeServerMessage,
   hiveRealtimeClientMessageSchema,
-  mergeHiveCrdtUpdate,
 } from '@tuturuuu/realtime/hive';
+export { mergeHiveCrdtUpdate } from '@tuturuuu/realtime/hive/yjs';

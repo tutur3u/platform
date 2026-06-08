@@ -1,6 +1,5 @@
 import postgres, { type Sql } from 'postgres';
 import 'server-only';
-import { encodeHiveWorldUpdate } from '@tuturuuu/realtime/hive';
 import type { Json } from '@tuturuuu/types/db';
 import type {
   HiveAccessRequestRow,
@@ -458,6 +457,9 @@ export async function createHiveWorldEvent(input: {
 }) {
   const sql = getHiveSql();
   return sql.begin(async (tx) => {
+    const { encodeHiveWorldUpdate } = await import(
+      '@tuturuuu/realtime/hive/yjs'
+    );
     const [state] = await tx<HiveWorldStateRow[]>`
       insert into hive_world_states (server_id, world_data)
       values (${input.serverId}, ${tx.json(asHiveJson(DEFAULT_WORLD))})

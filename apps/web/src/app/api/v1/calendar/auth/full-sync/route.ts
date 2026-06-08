@@ -1,4 +1,3 @@
-import { performFullSyncForWorkspace } from '@tuturuuu/trigger/google-calendar-full-sync';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -9,6 +8,14 @@ import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 const fullSyncSchema = z.object({
   wsId: z.string().max(MAX_NAME_LENGTH),
 });
+
+async function loadPerformFullSyncForWorkspace() {
+  const { performFullSyncForWorkspace } = await import(
+    '@tuturuuu/trigger/google-calendar-full-sync'
+  );
+
+  return performFullSyncForWorkspace;
+}
 
 export async function POST(request: Request) {
   try {
@@ -62,6 +69,7 @@ export async function POST(request: Request) {
     }
 
     // Perform the full sync directly
+    const performFullSyncForWorkspace = await loadPerformFullSyncForWorkspace();
     const events = await performFullSyncForWorkspace(
       'primary',
       wsId,

@@ -28,7 +28,6 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-description';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -46,6 +45,16 @@ import {
   applyPersonalTaskMetadata,
   loadPersonalTaskMetadata,
 } from './personal-overlays';
+
+async function deriveTaskDescriptionYjsState(
+  description: string | null | undefined
+) {
+  const { deriveTaskDescriptionYjsState: deriveYjsState } = await import(
+    '@tuturuuu/utils/yjs-task-description'
+  );
+
+  return deriveYjsState(description);
+}
 
 async function cleanupCreatedTask(
   sbAdmin: TypedSupabaseClient,
@@ -2219,7 +2228,7 @@ export async function handleTaskRoutePOST(
     const normalizedDescription = description?.trim() || null;
     const normalizedDescriptionYjsState =
       description_yjs_state === undefined
-        ? deriveTaskDescriptionYjsState(normalizedDescription)
+        ? await deriveTaskDescriptionYjsState(normalizedDescription)
         : description_yjs_state;
 
     const taskInsert: TaskInsert = {

@@ -1,4 +1,3 @@
-import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import { describe, expect, it } from 'vitest';
 import { updateTaskDescriptionSchema } from './schema';
 
@@ -27,21 +26,11 @@ describe('updateTaskDescriptionSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects Yjs state that decodes to unsupported editor nodes', () => {
-    const malformedState = convertJsonContentToYjsState({
-      type: 'doc',
-      content: [
-        {
-          type: 'unsupportedNode',
-          content: [{ type: 'text', text: 'Invalid node' }],
-        },
-      ],
-    });
-
+  it('keeps Yjs state payloads as lightweight byte arrays at schema parse time', () => {
     const result = updateTaskDescriptionSchema.safeParse({
-      description_yjs_state: Array.from(malformedState),
+      description_yjs_state: [1, 2, 3],
     });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 });

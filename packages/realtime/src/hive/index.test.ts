@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
 import {
-  applyWorldToHiveDoc,
   base64ToBytes,
   bytesToBase64,
-  encodeHiveWorldUpdate,
   hiveRealtimeAwarenessSchema,
+} from './index';
+import {
+  applyWorldToHiveDoc,
+  encodeHiveWorldUpdate,
   mergeHiveCrdtUpdate,
   worldFromHiveDoc,
-} from './index';
+} from './yjs';
 
 const baseWorld = {
   blocks: [

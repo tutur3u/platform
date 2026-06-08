@@ -9,7 +9,6 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-description';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { paramsSchema, updateTaskDescriptionSchema } from './schema';
@@ -29,6 +28,26 @@ async function fetchPersistedTaskDescription(
     .select('id, description, description_yjs_state')
     .eq('id', taskId)
     .maybeSingle();
+}
+
+async function deriveTaskDescriptionYjsState(
+  description: string | null | undefined
+) {
+  const { deriveTaskDescriptionYjsState: deriveYjsState } = await import(
+    '@tuturuuu/utils/yjs-task-description'
+  );
+
+  return deriveYjsState(description);
+}
+
+async function validateTaskDescriptionYjsState(
+  yjsState: number[] | null | undefined
+) {
+  const { isValidTaskDescriptionYjsState } = await import(
+    '@tuturuuu/utils/yjs-task-description'
+  );
+
+  return isValidTaskDescriptionYjsState(yjsState);
 }
 
 async function requireWorkspaceTaskAccess(
@@ -166,6 +185,26 @@ export async function PATCH(
 
     const { sbAdmin, taskId, user } = access;
     const body = updateTaskDescriptionSchema.parse(await request.json());
+    if (
+      body.description_yjs_state !== undefined &&
+      !(await validateTaskDescriptionYjsState(body.description_yjs_state))
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Invalid request data',
+          details: [
+            {
+              code: 'custom',
+              message:
+                'Task description Yjs state is not compatible with the editor schema',
+              path: ['description_yjs_state'],
+            },
+          ],
+        },
+        { status: 400 }
+      );
+    }
+
     const normalizedDescription =
       body.description !== undefined
         ? body.description?.trim() || null
@@ -174,7 +213,7 @@ export async function PATCH(
       body.description_yjs_state !== undefined
         ? body.description_yjs_state
         : normalizedDescription !== undefined
-          ? deriveTaskDescriptionYjsState(normalizedDescription)
+          ? await deriveTaskDescriptionYjsState(normalizedDescription)
           : undefined;
 
     const updatePayload = {

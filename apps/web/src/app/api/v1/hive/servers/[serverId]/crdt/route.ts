@@ -65,7 +65,7 @@ async function postCrdtUpdate(request: NextRequest, serverId: string) {
   }
 
   const update = fromBase64(parsed.data.update);
-  const merged = mergeHiveCrdtUpdate({
+  const merged = await mergeHiveCrdtUpdate({
     currentState: state?.crdt_state,
     fallbackWorld: parsed.data.world ?? null,
     update,

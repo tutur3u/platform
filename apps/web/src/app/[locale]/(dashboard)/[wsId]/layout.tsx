@@ -1,7 +1,6 @@
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import dynamic from 'next/dynamic';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
@@ -14,12 +13,6 @@ import {
   type DashboardLayoutWorkspace,
   getDashboardLayoutData,
 } from './layout-data';
-
-const DashboardShellClient = dynamic(() =>
-  import('./dashboard-shell-client').then(
-    (module) => module.DashboardShellClient
-  )
-);
 
 interface LayoutProps {
   params: Promise<{
@@ -118,6 +111,12 @@ async function UserPopoverSlot({
       renderSettingsDialog={false}
     />
   );
+}
+
+async function loadDashboardShellClient() {
+  const { DashboardShellClient } = await import('./dashboard-shell-client');
+
+  return DashboardShellClient;
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
@@ -290,6 +289,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     user,
     workspaceTier: workspace.tier ?? null,
   });
+  const DashboardShellClient = await loadDashboardShellClient();
 
   return (
     <DashboardShellClient
