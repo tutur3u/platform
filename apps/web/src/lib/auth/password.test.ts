@@ -145,7 +145,7 @@ describe('passwordLogin', () => {
       },
       {
         client: 'web',
-        endpoint: '/login/actions/password-login',
+        endpoint: '/api/v1/auth/password-login',
         headers: new Headers(),
       }
     );
@@ -186,7 +186,7 @@ describe('passwordLogin', () => {
       },
       {
         client: 'web',
-        endpoint: '/login/actions/password-login',
+        endpoint: '/api/v1/auth/password-login',
         headers: new Headers(),
       }
     );
@@ -231,7 +231,7 @@ describe('passwordLogin', () => {
       },
       {
         client: 'web',
-        endpoint: '/login/actions/password-login',
+        endpoint: '/api/v1/auth/password-login',
         headers: new Headers(),
       }
     );

@@ -38,6 +38,7 @@ vi.mock('@tuturuuu/internal-api/auth', () => ({
   createMfaMobileApprovalChallengeWithInternalApi: vi.fn(),
   getOtpSettings: (...args: Parameters<typeof mocks.getOtpSettings>) =>
     mocks.getOtpSettings(...args),
+  passwordLoginWithInternalApi: vi.fn(),
   pollMfaMobileApprovalChallengeWithInternalApi: vi.fn(),
   resolveCrossAppReturnUrlWithInternalApi: (
     ...args: Parameters<typeof mocks.resolveCrossAppReturnUrlWithInternalApi>

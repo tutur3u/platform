@@ -18,6 +18,7 @@ import {
   createCrossAppReturnUrlWithInternalApi,
   createMfaMobileApprovalChallengeWithInternalApi,
   getOtpSettings,
+  passwordLoginWithInternalApi,
   pollMfaMobileApprovalChallengeWithInternalApi,
   resolveCrossAppReturnUrlWithInternalApi,
   sendOtpWithInternalApi,
@@ -58,7 +59,6 @@ import {
   type AuthOAuthProvider,
   getAuthOAuthProviderOptions,
 } from '@/lib/auth/oauth-providers';
-import { passwordLoginAction } from './actions';
 import { InternalAppAccountConfirmation } from './internal-app-account-confirmation';
 import { InvalidReturnUrlWarning } from './invalid-return-url-warning';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
@@ -819,13 +819,8 @@ export default function LoginForm() {
   }, [requiresMFA, router, user]);
 
   const sendOtpMutation = useMutation({
-    mutationFn: async (email: string) =>
-      sendOtpWithInternalApi({
-        captchaToken,
-        client: 'web',
-        email,
-        locale: locale || 'en',
-      }),
+    mutationFn: (payload: Parameters<typeof sendOtpWithInternalApi>[0]) =>
+      sendOtpWithInternalApi(payload),
   });
 
   const verifyOtpMutation = useMutation({
@@ -836,6 +831,11 @@ export default function LoginForm() {
         locale: locale || 'en',
         otp,
       }),
+  });
+
+  const passwordLoginMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof passwordLoginWithInternalApi>[0]) =>
+      passwordLoginWithInternalApi(payload),
   });
 
   const sendEmailOtp = async () => {
@@ -851,7 +851,12 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const result = await sendOtpMutation.mutateAsync(normalizedEmail);
+      const result = await sendOtpMutation.mutateAsync({
+        captchaToken,
+        client: 'web',
+        email: normalizedEmail,
+        locale,
+      });
       resetCaptcha();
 
       if (result.error) {
@@ -934,11 +939,12 @@ export default function LoginForm() {
     setPasswordRateLimitedEmail(null);
 
     try {
-      const result = await passwordLoginAction({
-        email: data.email,
-        password: data.password,
-        locale,
+      const result = await passwordLoginMutation.mutateAsync({
         captchaToken,
+        client: 'web',
+        email: data.email,
+        locale,
+        password: data.password,
       });
 
       resetCaptcha();
