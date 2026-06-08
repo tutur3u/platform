@@ -41,10 +41,10 @@ jobs:
             tuturuuu.ts
           sparse-checkout-cone-mode: false
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
         with:
-          bun-version: latest
+          node-version: 24
 
       - name: Compute changed files
         id: changed_files
@@ -53,7 +53,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           WORKFLOW_NAME: ${{ inputs.workflow_name }}
         run: |
-          bun run --silent scripts/ci/resolve-changed-files.ts
+          node --experimental-strip-types scripts/ci/resolve-changed-files.ts
 
       - name: Check Configuration
         id: check_config
@@ -70,4 +70,4 @@ jobs:
             exit 0
           fi
 
-          bun run --silent scripts/ci/check-workflow-config.ts
+          node --experimental-strip-types scripts/ci/check-workflow-config.ts

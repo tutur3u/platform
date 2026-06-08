@@ -90,6 +90,7 @@ jobs:
       - name: Build Project Artifacts
         if: steps.check_commits.outputs.skip_build != 'true'
         env:
+          TUTURUUU_NEXT_CACHE_COMPONENTS: "0"
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}

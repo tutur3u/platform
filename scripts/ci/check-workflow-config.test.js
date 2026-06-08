@@ -235,6 +235,29 @@ test('type-check workflow retries frozen Bun installs after cache cleanup', () =
   assert.match(workflow, /bun install failed after 3 attempts/);
 });
 
+test('ci configuration gate runs TypeScript scripts with Node strip-types', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'ci-check.yml'),
+    'utf8'
+  );
+
+  assert.match(workflow, /uses: actions\/setup-node@v6/);
+  assert.match(workflow, /node-version: 24/);
+  assert.match(
+    workflow,
+    /node --experimental-strip-types scripts\/ci\/resolve-changed-files\.ts/
+  );
+  assert.match(
+    workflow,
+    /node --experimental-strip-types scripts\/ci\/check-workflow-config\.ts/
+  );
+  assert.doesNotMatch(workflow, /oven-sh\/setup-bun@v2/);
+  assert.doesNotMatch(
+    workflow,
+    /bun run --silent scripts\/ci\/(?:resolve-changed-files|check-workflow-config)\.ts/
+  );
+});
+
 test('disabled ci entries still skip regardless of affected status', () => {
   const output = execFileSync(
     'bun',

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createTuturuuuNextConfig,
+  isTuturuuuNextCacheComponentsEnabled,
   isTuturuuuNextReactCompilerEnabled,
   resolveTuturuuuWebAppUrl,
   TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS,
@@ -75,6 +76,25 @@ describe('createTuturuuuNextConfig', () => {
     expect(config.transpilePackages).toEqual(['@tuturuuu/ui']);
     expect(config.experimental?.cpus).toBe(2);
     expect(config.typescript?.ignoreBuildErrors).toBe(false);
+  });
+});
+
+describe('isTuturuuuNextCacheComponentsEnabled', () => {
+  it('keeps cache components enabled by default', () => {
+    expect(isTuturuuuNextCacheComponentsEnabled({})).toBe(true);
+  });
+
+  it('honors explicit environment overrides', () => {
+    expect(
+      isTuturuuuNextCacheComponentsEnabled({
+        TUTURUUU_NEXT_CACHE_COMPONENTS: '0',
+      })
+    ).toBe(false);
+    expect(
+      isTuturuuuNextCacheComponentsEnabled({
+        TUTURUUU_NEXT_CACHE_COMPONENTS: '1',
+      })
+    ).toBe(true);
   });
 });
 

@@ -117,6 +117,7 @@ test('Platform production deployment waits for release package visibility', () =
     deployJob,
     /node scripts\/ci\/package-release-readiness\.js wait-changed-package-versions/
   );
+  assert.match(deployJob, /TUTURUUU_NEXT_CACHE_COMPONENTS: "0"/);
   assert.match(deployJob, /actions:\s*read/);
   assert.match(deployJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
 });
@@ -204,11 +205,21 @@ test('Codecov workflow runs workspace package tests with coverage', () => {
   assert.doesNotMatch(workflow, /run: bun vitest run --coverage/u);
 });
 
-test('Biome workflow prints captured output when checks fail', () => {
+test('Biome workflow runs pinned npm Biome CLI and prints captured output when checks fail', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'biome-check.yaml'),
+    'utf8'
+  );
   const formatJob = readWorkflowJobBlock('biome-check.yaml', 'format');
   const lintJob = readWorkflowJobBlock('biome-check.yaml', 'lint');
+  const applyFormatJob = readWorkflowJobBlock(
+    'biome-check.yaml',
+    'apply-format'
+  );
 
   for (const job of [formatJob, lintJob]) {
+    assert.match(job, /uses: actions\/setup-node@v6/u);
+    assert.match(job, /node-version: 24/u);
     assert.match(job, /printf '%s\\n' "\$biome_output"/u);
     assert.match(job, /Biome exit code \$biome_exit_code/u);
     assert.match(
@@ -216,6 +227,14 @@ test('Biome workflow prints captured output when checks fail', () => {
       /\[ "\$total_issues" -gt 0 \] \|\| \[ "\$biome_exit_code" -ne 0 \]/u
     );
   }
+
+  assert.doesNotMatch(workflow, /biomejs\/setup-biome@v2/u);
+  assert.match(formatJob, /npx --yes @biomejs\/biome@2\.4\.16 format \. 2>&1/u);
+  assert.match(lintJob, /npx --yes @biomejs\/biome@2\.4\.16 lint \. 2>&1/u);
+  assert.match(
+    applyFormatJob,
+    /npx --yes @biomejs\/biome@2\.4\.16 format --write \./u
+  );
 });
 
 test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', () => {

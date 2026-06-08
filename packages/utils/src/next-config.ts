@@ -97,6 +97,14 @@ export function isTuturuuuNextReactCompilerEnabled(
   return env.NODE_ENV !== 'development';
 }
 
+export function isTuturuuuNextCacheComponentsEnabled(
+  env: Environment = process.env
+) {
+  const override = readBooleanEnvOverride(env.TUTURUUU_NEXT_CACHE_COMPONENTS);
+
+  return override ?? true;
+}
+
 export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
   const experimentalConfig = config.experimental ?? {};
   const imageConfig = config.images ?? {};
@@ -106,7 +114,8 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
     reactStrictMode: true,
     poweredByHeader: false,
     ...config,
-    cacheComponents: config.cacheComponents ?? true,
+    cacheComponents:
+      config.cacheComponents ?? isTuturuuuNextCacheComponentsEnabled(),
     allowedDevOrigins: mergeStringArrays(
       TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS,
       config.allowedDevOrigins

@@ -272,27 +272,35 @@ describe('RootExternalProjectsAdminClient', () => {
     ROOT_ADMIN_INTERACTION_TIMEOUT_MS
   );
 
-  it('saves a disconnected project connection from the details dialog', async () => {
-    renderClient();
+  it(
+    'saves a disconnected project connection from the details dialog',
+    async () => {
+      renderClient();
 
-    fireEvent.click(screen.getByText('Yoola Studio').closest('button')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save connection' }));
+      fireEvent.click(screen.getByText('Yoola Studio').closest('button')!);
+      fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save connection' }));
 
-    await waitFor(() => {
-      expect(
-        internalApiMocks.updateWorkspaceExternalProjectBinding
-      ).toHaveBeenCalledWith('ws-yoola', null);
-    });
-  });
+      await waitFor(() => {
+        expect(
+          internalApiMocks.updateWorkspaceExternalProjectBinding
+        ).toHaveBeenCalledWith('ws-yoola', null);
+      });
+    },
+    ROOT_ADMIN_INTERACTION_TIMEOUT_MS
+  );
 
-  it('opens template management as a secondary dialog', () => {
-    renderClient();
+  it(
+    'opens template management as a secondary dialog',
+    () => {
+      renderClient();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Manage templates' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Manage templates' }));
 
-    expect(screen.getByRole('dialog')).not.toBeNull();
-    expect(screen.getByText('Template manager')).not.toBeNull();
-    expect(screen.getByText('New site template')).not.toBeNull();
-  });
+      expect(screen.getByRole('dialog')).not.toBeNull();
+      expect(screen.getByText('Template manager')).not.toBeNull();
+      expect(screen.getByText('New site template')).not.toBeNull();
+    },
+    ROOT_ADMIN_INTERACTION_TIMEOUT_MS
+  );
 });

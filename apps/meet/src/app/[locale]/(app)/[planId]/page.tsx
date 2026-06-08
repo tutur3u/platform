@@ -9,16 +9,22 @@ interface PlanPageProps {
   }>;
 }
 
-export default async function PlanPage({ params }: PlanPageProps) {
+async function PlanPageContent({ params }: PlanPageProps) {
   const user = await getSatelliteAppSessionUser('meet');
 
   return (
+    <MeetTogetherPlanDetailsPage
+      actorUserId={user?.id ?? null}
+      params={params}
+      baseUrl={BASE_URL}
+    />
+  );
+}
+
+export default function PlanPage({ params }: PlanPageProps) {
+  return (
     <Suspense fallback={<div className="min-h-screen" />}>
-      <MeetTogetherPlanDetailsPage
-        actorUserId={user?.id ?? null}
-        params={params}
-        baseUrl={BASE_URL}
-      />
+      <PlanPageContent params={params} />
     </Suspense>
   );
 }
