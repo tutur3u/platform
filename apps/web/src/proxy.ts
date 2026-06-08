@@ -98,7 +98,6 @@ const WEB_APP_URL = isDev
 const OFFLINE_FALLBACK_PATH = '/~offline';
 const BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
 const RESERVED_ROOT_SEGMENT_PREFIX = '~';
-const RESERVED_ROOT_NOT_FOUND_PATH = '/__reserved-root-not-found__';
 const BLOCKED_ROOT_SEGMENT_PREFIX = '.';
 const EMAIL_ROUTE_WORKSPACE_PATTERN =
   /^\/api\/v1\/workspaces\/([^/]+)\/(?:mail\/send|users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
@@ -750,11 +749,15 @@ function buildGuestRouteDeniedResponse(
   req: NextRequest,
   authRes: NextResponse
 ) {
-  const deniedResponse = NextResponse.rewrite(
-    new URL(RESERVED_ROOT_NOT_FOUND_PATH, req.nextUrl)
-  );
+  const deniedResponse = buildRootNotFoundResponse(req);
   propagateAuthCookies(authRes, deniedResponse);
   return deniedResponse;
+}
+
+function buildRootNotFoundResponse(req: NextRequest) {
+  const response = new NextResponse(null, { status: 404 });
+  response.headers.set('x-tuturuuu-proxy-not-found', req.nextUrl.pathname);
+  return response;
 }
 
 async function guardGuestWorkspaceRoute({
@@ -1292,15 +1295,11 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
   }
 
   if (rootDynamicSegment?.startsWith(BLOCKED_ROOT_SEGMENT_PREFIX)) {
-    return NextResponse.rewrite(
-      new URL(RESERVED_ROOT_NOT_FOUND_PATH, req.nextUrl)
-    );
+    return buildRootNotFoundResponse(req);
   }
 
   if (segments[0]?.startsWith(RESERVED_ROOT_SEGMENT_PREFIX)) {
-    return NextResponse.rewrite(
-      new URL(RESERVED_ROOT_NOT_FOUND_PATH, req.nextUrl)
-    );
+    return buildRootNotFoundResponse(req);
   }
 
   if (

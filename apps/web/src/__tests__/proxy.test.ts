@@ -596,41 +596,42 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
-  it('bypasses auth and locale rewriting for reserved root tilde routes', async () => {
+  it('returns a direct 404 for reserved root tilde routes', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(new NextRequest('http://localhost/~'));
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'http://localhost/__reserved-root-not-found__'
-    );
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe('/~');
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
-  it('rewrites dot-prefixed root segments before they can fall through to locale or workspace resolution', async () => {
+  it('returns a direct 404 for dot-prefixed root segments before they can fall through to locale or workspace resolution', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(
       new NextRequest('http://localhost/.well-known/traffic-advice')
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'http://localhost/__reserved-root-not-found__'
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe(
+      '/.well-known/traffic-advice'
     );
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
-  it('rewrites localized dot-prefixed workspace-like segments before they can fall through', async () => {
+  it('returns a direct 404 for localized dot-prefixed workspace-like segments before they can fall through', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(
       new NextRequest('http://localhost/en/.well-known/traffic-advice')
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'http://localhost/__reserved-root-not-found__'
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe(
+      '/en/.well-known/traffic-advice'
     );
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
@@ -898,9 +899,10 @@ describe('web proxy api handling', () => {
       new NextRequest('http://localhost/11111111-1111-4111-8111-111111111111')
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'http://localhost/__reserved-root-not-found__'
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe(
+      '/11111111-1111-4111-8111-111111111111'
     );
     expect(adminFrom).not.toHaveBeenCalled();
   });
@@ -923,9 +925,10 @@ describe('web proxy api handling', () => {
       )
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'http://localhost/__reserved-root-not-found__'
+    expect(response.status).toBe(404);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('x-tuturuuu-proxy-not-found')).toBe(
+      '/11111111-1111-4111-8111-111111111111/unknown'
     );
     expect(adminFrom).not.toHaveBeenCalled();
   });
