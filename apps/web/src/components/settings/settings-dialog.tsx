@@ -358,7 +358,7 @@ export function SettingsDialog({
           label: t('settings.tasks.general'),
           icon: CheckSquare,
           description: t('settings.tasks.general_description'),
-          keywords: ['Tasks', 'General'],
+          keywords: ['Tasks', 'General', 'Review', 'Due date'],
         },
       ],
     },

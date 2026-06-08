@@ -463,10 +463,12 @@ export function useKanbanDnd({
         'tasks-full',
         boardId,
       ]);
+      const previousTask = previousTasks?.find((item) => item.id === task.id);
+      const previousFullTask = previousFullTasks?.find(
+        (item) => item.id === task.id
+      );
 
       setBoardTaskCache(queryClient, boardId, nextTask);
-
-      setOptimisticUpdateInProgress((prev) => new Set(prev).add(task.id));
 
       try {
         const response = isStagingTarget
@@ -494,19 +496,34 @@ export function useKanbanDnd({
 
         return savedTask;
       } catch (error) {
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-        }
-        if (previousFullTasks) {
-          queryClient.setQueryData(['tasks-full', boardId], previousFullTasks);
-        }
+        const restoreTaskInCache = (
+          queryKey: unknown[],
+          previousTaskValue: Task | undefined,
+          previousCache: Task[] | undefined
+        ) => {
+          queryClient.setQueryData<Task[]>(queryKey, (currentTasks) => {
+            if (!currentTasks) return previousCache;
+
+            if (!previousTaskValue) {
+              return currentTasks.filter((item) => item.id !== task.id);
+            }
+
+            const hasTask = currentTasks.some((item) => item.id === task.id);
+            if (!hasTask) return [...currentTasks, previousTaskValue];
+
+            return currentTasks.map((item) =>
+              item.id === task.id ? previousTaskValue : item
+            );
+          });
+        };
+
+        restoreTaskInCache(['tasks', boardId], previousTask, previousTasks);
+        restoreTaskInCache(
+          ['tasks-full', boardId],
+          previousFullTask,
+          previousFullTasks
+        );
         throw error;
-      } finally {
-        setOptimisticUpdateInProgress((prev) => {
-          const next = new Set(prev);
-          next.delete(task.id);
-          return next;
-        });
       }
     },
     [boardId, queryClient]
@@ -1143,6 +1160,31 @@ export function useKanbanDnd({
           (activeTaskForDrop.sort_key ?? MAX_SAFE_INTEGER_SORT) !== newSortKey);
 
       let shouldPreservePendingAfterDragReset = false;
+      const persistPersonalPlacementMove = (
+        task: Task,
+        sortKey: number | null,
+        order?: {
+          previousTaskId?: string | null;
+          nextTaskId?: string | null;
+        }
+      ) => {
+        const pendingTaskIds = [task.id];
+        markTaskIdsPending(pendingTaskIds);
+        shouldPreservePendingAfterDragReset = true;
+
+        void movePersonalPlacementTask(task, targetListId, sortKey, order)
+          .catch((error) => {
+            console.error('Failed to update personal task placement:', error);
+            rollbackOptimisticDropPreview();
+            toast.error(
+              personalPlacementUpdateFailedMessage ??
+                'Failed to update personal task placement'
+            );
+          })
+          .finally(() => {
+            clearPendingTaskIds(pendingTaskIds);
+          });
+      };
 
       if (needsUpdate) {
         if (isMultiSelectMode && selectedTasks.size > 1) {
@@ -1206,7 +1248,7 @@ export function useKanbanDnd({
           try {
             for (const task of sortedTasksToMove) {
               if (targetIsExternalStaging) {
-                await movePersonalPlacementTask(task, targetListId, null);
+                persistPersonalPlacementMove(task, null);
                 continue;
               }
 
@@ -1327,11 +1369,7 @@ export function useKanbanDnd({
               }
 
               if (usesPersonalPlacement(task)) {
-                await movePersonalPlacementTask(
-                  task,
-                  targetListId,
-                  batchSortKey
-                );
+                persistPersonalPlacementMove(task, batchSortKey);
               } else {
                 const pendingTaskIds = [task.id];
                 markTaskIdsPending(pendingTaskIds);
@@ -1374,23 +1412,11 @@ export function useKanbanDnd({
           clearSelection();
         } else {
           if (activeUsesPersonalPlacement || targetIsExternalStaging) {
-            try {
-              await movePersonalPlacementTask(
-                activeTaskForDrop,
-                targetListId,
-                newSortKey,
-                personalPlacementOrder
-              );
-            } catch (error) {
-              console.error('Failed to update personal task placement:', error);
-              rollbackOptimisticDropPreview();
-              toast.error(
-                personalPlacementUpdateFailedMessage ??
-                  'Failed to update personal task placement'
-              );
-              resetDragState(true);
-              return;
-            }
+            persistPersonalPlacementMove(
+              activeTaskForDrop,
+              newSortKey,
+              personalPlacementOrder
+            );
           } else {
             const repairedTaskSortKeys =
               optimisticDropPreview?.repairedTaskSortKeys ?? [];

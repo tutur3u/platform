@@ -47,6 +47,8 @@ const HOTKEY_GO_TO_LIST: ['G', 'L'] = ['G', 'L'];
 const HOTKEY_GO_TO_TIMELINE: ['G', 'T'] = ['G', 'T'];
 const EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX =
   'personal-board-external-tasks-collapsed';
+const CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX =
+  'task-board-closed-list-collapsed';
 const DEFAULT_TASK_FILTERS: TaskFilters = {
   labels: [],
   assignees: [],
@@ -70,6 +72,10 @@ function hasAssignedExternalTasks(tasks: Task[], boardId: string) {
       task.list_id === externalStagingListId ||
       Boolean(task.source_workspace_id)
   );
+}
+
+function getClosedTaskListCollapsedStorageKey(boardId: string, listId: string) {
+  return `${CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX}:${boardId}:${listId}`;
 }
 
 interface Props {
@@ -101,6 +107,9 @@ export function BoardViews({
   const effectiveWorkspaceId = board.ws_id ?? workspace.id;
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [externalTasksCollapsed, setExternalTasksCollapsed] = useState(false);
+  const [closedTaskListsCollapsed, setClosedTaskListsCollapsed] = useState<
+    Record<string, boolean>
+  >({});
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');
@@ -311,6 +320,54 @@ export function BoardViews({
     [board.id, workspace.personal]
   );
 
+  useEffect(() => {
+    const closedLists = boardLists.filter(
+      (list) => !list.deleted && list.status === 'closed'
+    );
+
+    if (closedLists.length === 0) {
+      setClosedTaskListsCollapsed({});
+      return;
+    }
+
+    setClosedTaskListsCollapsed((previous) => {
+      const next: Record<string, boolean> = {};
+
+      for (const list of closedLists) {
+        const storedValue =
+          typeof window === 'undefined'
+            ? null
+            : window.localStorage.getItem(
+                getClosedTaskListCollapsedStorageKey(board.id, list.id)
+              );
+
+        next[list.id] =
+          storedValue === null
+            ? (previous[list.id] ?? true)
+            : storedValue === 'true';
+      }
+
+      return next;
+    });
+  }, [board.id, boardLists]);
+
+  const handleTaskListCollapsedChange = useCallback(
+    (listId: string, collapsed: boolean) => {
+      setClosedTaskListsCollapsed((previous) => ({
+        ...previous,
+        [listId]: collapsed,
+      }));
+
+      if (typeof window === 'undefined') return;
+
+      window.localStorage.setItem(
+        getClosedTaskListCollapsedStorageKey(board.id, listId),
+        String(collapsed)
+      );
+    },
+    [board.id]
+  );
+
   const externalStagingList = useMemo<TaskList | null>(() => {
     if (!workspace.personal) return null;
 
@@ -337,11 +394,20 @@ export function BoardViews({
   ]);
 
   const activeLists = useMemo(() => {
-    const realLists = boardLists.filter((list) => !list.deleted);
+    const realLists = boardLists
+      .filter((list) => !list.deleted)
+      .map((list) =>
+        list.status === 'closed'
+          ? {
+              ...list,
+              is_collapsed: closedTaskListsCollapsed[list.id] ?? true,
+            }
+          : list
+      );
     return externalStagingList
       ? [externalStagingList, ...realLists]
       : realLists;
-  }, [boardLists, externalStagingList]);
+  }, [boardLists, closedTaskListsCollapsed, externalStagingList]);
 
   const { data: filteredListCounts, isFetching: isFilteredListCountsFetching } =
     useQuery({
@@ -520,6 +586,7 @@ export function BoardViews({
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
+            onTaskListCollapsedChange={handleTaskListCollapsedChange}
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
           />
         );
@@ -561,6 +628,7 @@ export function BoardViews({
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
+            onTaskListCollapsedChange={handleTaskListCollapsedChange}
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
           />
         );

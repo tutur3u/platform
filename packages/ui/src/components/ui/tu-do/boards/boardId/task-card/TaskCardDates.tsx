@@ -3,13 +3,18 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
+import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { cn } from '@tuturuuu/utils/format';
-import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
 import { memo } from 'react';
+import {
+  shouldShowTaskDueDate,
+  shouldShowTaskStartDate,
+  TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID,
+} from '../../../shared/task-due-date-visibility';
 import {
   formatSmartDate,
   isFutureDate,
@@ -29,25 +34,37 @@ export const TaskCardDates = memo(function TaskCardDates({
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
   const { timeFormat } = useCalendarPreferences();
+  const { value: showReviewDueDates } = useUserBooleanConfig(
+    TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID,
+    false
+  );
   const timePattern = getTimeFormatPattern(timeFormat);
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
   const taskIsOverdue = isOverdue(endDate);
-
-  // Hide dates when the list itself represents resolved work.
-  if (isTaskBoardResolvedStatus(taskList?.status)) {
-    return null;
-  }
+  const shouldRenderStartDate = shouldShowTaskStartDate({
+    completedAt: task.completed_at,
+    closedAt: task.closed_at,
+    listStatus: taskList?.status,
+    startDate: task.start_date,
+  });
+  const shouldRenderDueDate = shouldShowTaskDueDate({
+    completedAt: task.completed_at,
+    closedAt: task.closed_at,
+    dueDate: task.end_date,
+    listStatus: taskList?.status,
+    showReviewDueDates,
+  });
 
   // Don't render if no dates
-  if (!startDate && !endDate) {
+  if (!shouldRenderStartDate && !shouldRenderDueDate) {
     return null;
   }
 
   return (
     <div className="mb-1 space-y-0.5 text-[10px] leading-snug">
       {/* Show start only if in the future (hide historical start for visual simplicity) */}
-      {startDate && isFutureDate(startDate) && (
+      {shouldRenderStartDate && startDate && isFutureDate(startDate) && (
         <div className="flex items-center gap-1 text-muted-foreground">
           <Clock className="h-2.5 w-2.5 shrink-0" />
           <span className="truncate">
@@ -65,7 +82,7 @@ export const TaskCardDates = memo(function TaskCardDates({
           </span>
         </div>
       )}
-      {endDate && (
+      {shouldRenderDueDate && endDate && (
         <div
           className={cn(
             'flex items-center gap-1',

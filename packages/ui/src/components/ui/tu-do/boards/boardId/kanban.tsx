@@ -75,6 +75,7 @@ interface Props {
   isMultiSelectMode: boolean;
   setIsMultiSelectMode: (enabled: boolean) => void;
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
+  onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
   onBulkSelectionActiveChange?: (active: boolean) => void;
 }
 
@@ -91,6 +92,7 @@ export function KanbanBoard({
   isMultiSelectMode,
   setIsMultiSelectMode,
   onExternalTasksCollapsedChange,
+  onTaskListCollapsedChange,
   onBulkSelectionActiveChange,
 }: Props) {
   const tLayout = useTranslations('ws-task-boards.layout_settings');
@@ -449,6 +451,7 @@ export function KanbanBoard({
             deadlineLabels={deadlineLabels}
             deadlineSections={deadlineSections}
             onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
+            onTaskListCollapsedChange={onTaskListCollapsedChange}
           />
 
           <DragOverlay dropAnimation={null}>
