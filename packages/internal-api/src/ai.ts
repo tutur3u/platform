@@ -357,7 +357,12 @@ export async function generateWorkspaceCourseModulesFromStorage(
 export interface GenerateQuizFromLessonPayload {
   lessonId: string;
   context?: string;
-  questionType?: 'multiple_choice' | 'true_false' | 'matching' | 'ordering' | 'mix';
+  questionType?:
+    | 'multiple_choice'
+    | 'true_false'
+    | 'matching'
+    | 'ordering'
+    | 'mix';
   count?: number;
 }
 
@@ -373,19 +378,15 @@ export async function generateQuizFromLesson(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<GenerateQuizFromLessonResponse>(
-    '/api/ai/quiz',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        wsId: workspaceId,
-        ...payload,
-      }),
-      cache: 'no-store',
-    }
-  );
+  return client.json<GenerateQuizFromLessonResponse>('/api/ai/quiz', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      wsId: workspaceId,
+      ...payload,
+    }),
+    cache: 'no-store',
+  });
 }
-

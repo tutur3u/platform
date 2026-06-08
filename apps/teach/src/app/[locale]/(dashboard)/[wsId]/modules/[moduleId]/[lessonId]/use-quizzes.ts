@@ -1,7 +1,10 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getWorkspaceQuizzes, generateQuizFromLesson } from '@tuturuuu/internal-api';
+import {
+  getWorkspaceQuizzes,
+  generateQuizFromLesson,
+} from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 
@@ -17,11 +20,18 @@ export function useQuizzes(wsId: string, lessonId: string) {
   });
 
   const generateMutation = useMutation({
-    mutationFn: (payload: {
-      questionType?: 'multiple_choice' | 'true_false' | 'matching' | 'ordering' | 'mix';
-      count?: number;
-      context?: string;
-    } = {}) => generateQuizFromLesson(wsId, { lessonId, ...payload }),
+    mutationFn: (
+      payload: {
+        questionType?:
+          | 'multiple_choice'
+          | 'true_false'
+          | 'matching'
+          | 'ordering'
+          | 'mix';
+        count?: number;
+        context?: string;
+      } = {}
+    ) => generateQuizFromLesson(wsId, { lessonId, ...payload }),
     onSuccess: (res) => {
       if (res.success) {
         toast.success(t('ws-quizzes.generation_success'));

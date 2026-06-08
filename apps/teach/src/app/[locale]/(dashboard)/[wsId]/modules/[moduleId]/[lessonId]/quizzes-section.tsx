@@ -31,13 +31,18 @@ interface Props {
   lessonId: string; // The course module ID
 }
 
-type QuestionType = 'multiple_choice' | 'true_false' | 'matching' | 'ordering' | 'mix';
+type QuestionType =
+  | 'multiple_choice'
+  | 'true_false'
+  | 'matching'
+  | 'ordering'
+  | 'mix';
 
 export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
   const t = useTranslations();
   const [creating, setCreating] = useState(false);
   const [showAiDialog, setShowAiDialog] = useState(false);
-  
+
   // Dialog configuration states
   const [questionType, setQuestionType] = useState<QuestionType>('mix');
   const [count, setCount] = useState<number>(5);
@@ -152,7 +157,10 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
       )}
 
       {/* AI Quiz Generation configuration Dialog */}
-      <Dialog open={showAiDialog} onOpenChange={(open) => !isGenerating && setShowAiDialog(open)}>
+      <Dialog
+        open={showAiDialog}
+        onOpenChange={(open) => !isGenerating && setShowAiDialog(open)}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -160,14 +168,17 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
               {t('ws-quizzes.generate_with_ai')}
             </DialogTitle>
             <DialogDescription>
-              Configure the type and quantity of questions to generate from this lesson.
+              Configure the type and quantity of questions to generate from this
+              lesson.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             {/* Question Type */}
             <div className="space-y-2">
-              <Label htmlFor="ai-question-type">{t('ws-quizzes.question_type')}</Label>
+              <Label htmlFor="ai-question-type">
+                {t('ws-quizzes.question_type')}
+              </Label>
               <Select
                 value={questionType}
                 onValueChange={(val: any) => setQuestionType(val)}
@@ -178,10 +189,18 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="mix">Mix Types</SelectItem>
-                  <SelectItem value="multiple_choice">{t('ws-quizzes.multiple_choice')}</SelectItem>
-                  <SelectItem value="true_false">{t('ws-quizzes.true_false')}</SelectItem>
-                  <SelectItem value="matching">{t('ws-quizzes.matching')}</SelectItem>
-                  <SelectItem value="ordering">{t('ws-quizzes.ordering')}</SelectItem>
+                  <SelectItem value="multiple_choice">
+                    {t('ws-quizzes.multiple_choice')}
+                  </SelectItem>
+                  <SelectItem value="true_false">
+                    {t('ws-quizzes.true_false')}
+                  </SelectItem>
+                  <SelectItem value="matching">
+                    {t('ws-quizzes.matching')}
+                  </SelectItem>
+                  <SelectItem value="ordering">
+                    {t('ws-quizzes.ordering')}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -195,14 +214,20 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
                 min={1}
                 max={20}
                 value={count}
-                onChange={(e) => setCount(Math.min(20, Math.max(1, parseInt(e.target.value) || 1)))}
+                onChange={(e) =>
+                  setCount(
+                    Math.min(20, Math.max(1, parseInt(e.target.value) || 1))
+                  )
+                }
                 disabled={isGenerating}
               />
             </div>
 
             {/* Custom context */}
             <div className="space-y-2">
-              <Label htmlFor="ai-teacher-context">Additional Context (Optional)</Label>
+              <Label htmlFor="ai-teacher-context">
+                Additional Context (Optional)
+              </Label>
               <Textarea
                 id="ai-teacher-context"
                 placeholder="e.g. Focus on coding examples, make it hard, etc."
