@@ -15,6 +15,12 @@ type MockBulkPayload = {
   operation: unknown;
 };
 
+function getEndOfTodayIso() {
+  const date = new Date();
+  date.setHours(23, 59, 59, 999);
+  return date.toISOString();
+}
+
 vi.mock('next-intl', () => ({
   useTranslations: () => {
     const translate = (key: string, values?: Record<string, unknown>) =>
@@ -190,10 +196,10 @@ describe('bulk mutations with personal external tasks', () => {
       'due date',
       async (result: Awaited<ReturnType<typeof renderBulkOperations>>) =>
         result.current.bulkUpdateDueDate('today'),
-      {
+      () => ({
         type: 'update_fields',
-        updates: { end_date: '2026-04-09T16:59:59.999Z' },
-      },
+        updates: { end_date: getEndOfTodayIso() },
+      }),
     ],
     [
       'estimation',
@@ -206,6 +212,8 @@ describe('bulk mutations with personal external tasks', () => {
     ],
   ])('groups %s updates by each task source workspace', async (_, run, operation) => {
     const result = await renderBulkOperations();
+    const expectedOperation =
+      typeof operation === 'function' ? operation() : operation;
 
     await act(async () => {
       await run(result);
@@ -217,7 +225,7 @@ describe('bulk mutations with personal external tasks', () => {
       'personal-ws',
       {
         taskIds: ['local-task'],
-        operation,
+        operation: expectedOperation,
       },
       expect.anything()
     );
@@ -226,7 +234,7 @@ describe('bulk mutations with personal external tasks', () => {
       'source-ws',
       {
         taskIds: ['external-task'],
-        operation,
+        operation: expectedOperation,
       },
       expect.anything()
     );
