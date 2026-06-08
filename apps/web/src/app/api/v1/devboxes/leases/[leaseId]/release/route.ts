@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
 import { releaseDevboxLease } from '@/lib/devboxes/store';
+import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 export async function POST(
   request: NextRequest,
@@ -15,14 +16,9 @@ export async function POST(
   try {
     return NextResponse.json(await releaseDevboxLease(leaseId));
   } catch (error) {
-    return NextResponse.json(
-      {
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Failed to release devbox lease',
-      },
-      { status: 500 }
+    return createDevboxRouteErrorResponse(
+      error,
+      'Failed to release devbox lease'
     );
   }
 }

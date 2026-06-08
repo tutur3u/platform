@@ -195,4 +195,28 @@ describe('devbox runs route', () => {
     expect(fromMock).toHaveBeenCalledWith('devbox_leases');
     expect(fromMock).toHaveBeenCalledWith('devbox_runs');
   });
+
+  it('returns an actionable readiness error when devbox tables are missing', async () => {
+    resolveAuthenticatedSessionUserMock.mockResolvedValue({
+      user: { id: 'user-1' },
+    });
+    getPermissionsMock.mockResolvedValue(createPermissionsResult('MEMBER'));
+    insertMock.mockResolvedValueOnce({
+      error: {
+        message:
+          "Could not find the table 'private.devbox_leases' in the schema cache",
+      },
+    });
+
+    const response = await POST(
+      createRunRequest({ command: ['bun', '--version'] })
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      message: expect.stringContaining(
+        'Remote devboxes are not ready: Supabase is missing private devbox tables'
+      ),
+    });
+  });
 });

@@ -9,11 +9,18 @@ import {
   parseDevboxEnvAssignments,
 } from '@tuturuuu/devbox';
 import type { TuturuuuUserClient } from '../platform';
-import type { DevboxRunPayload } from '../platform-devbox';
+import {
+  type DevboxRunPayload,
+  type DevboxRunResponse,
+  pollDevboxAgentJobs,
+} from '../platform-devbox';
 import { type FlagValue, getFlag } from './args';
 import { normalizeBaseUrl } from './config';
+import { executeDevboxAgentJob } from './devbox-runner';
 
 const DEFAULT_ONE_OFF_TIMEOUT_SECONDS = 30 * 60;
+const DEVBOX_RUN_POLL_INTERVAL_MS = 1000;
+const DEVBOX_RUN_POLL_GRACE_MS = 30_000;
 
 export function collectRepeatedFlagValues(argv: string[], flagName: string) {
   const values: string[] = [];
@@ -132,6 +139,43 @@ function printDevboxRun(
   for (const line of response.logs ?? []) {
     process.stdout.write(`${line}\n`);
   }
+}
+
+function isTerminalRunStatus(status: string) {
+  return ['cancelled', 'failed', 'succeeded'].includes(status);
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForDevboxRun({
+  client,
+  initial,
+  timeoutSeconds,
+}: {
+  client: TuturuuuUserClient;
+  initial: DevboxRunResponse;
+  timeoutSeconds?: number;
+}) {
+  const deadline =
+    Date.now() +
+    (timeoutSeconds ?? DEFAULT_ONE_OFF_TIMEOUT_SECONDS) * 1000 +
+    DEVBOX_RUN_POLL_GRACE_MS;
+  let latest = initial;
+
+  while (!isTerminalRunStatus(latest.run.status)) {
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `Timed out waiting for devbox run ${initial.run.id} to finish.`
+      );
+    }
+
+    await sleep(DEVBOX_RUN_POLL_INTERVAL_MS);
+    latest = await client.devboxes.getRun(initial.run.id);
+  }
+
+  return latest;
 }
 
 async function createDoctorReport() {
@@ -283,9 +327,12 @@ export async function runDevboxCommand({
   }
 
   if (resolvedAction === 'run') {
-    const response = await client.devboxes.createRun(
-      createDevboxRunPayload({ argv, flags })
-    );
+    const payload = createDevboxRunPayload({ argv, flags });
+    const response = await waitForDevboxRun({
+      client,
+      initial: await client.devboxes.createRun(payload),
+      timeoutSeconds: payload.timeoutSeconds,
+    });
     if (json) {
       printJson(response);
       return;
@@ -448,26 +495,26 @@ async function runDevboxAgentLoop({
       );
     }
 
-    const pollResponse = await fetch(
-      new URL('/api/v1/devboxes/agents/poll', origin),
-      {
-        headers,
-      }
-    );
+    const pollResponse = await pollDevboxAgentJobs({
+      baseUrl: origin,
+      token,
+    });
     if (!pollResponse.ok) {
       throw new Error(
-        `Devbox agent poll failed: ${formatResponseStatus(pollResponse)}`
+        `Devbox agent poll failed: ${formatResponseStatus(pollResponse.response)}`
       );
     }
 
-    const payload = (await pollResponse.json().catch(() => ({ jobs: [] }))) as {
-      jobs?: unknown[];
-    };
-
-    if (payload.jobs?.length) {
+    if (pollResponse.jobs.length) {
       process.stdout.write(
-        `Received ${payload.jobs.length} devbox job(s); execution support is handled by the runner runtime.\n`
+        `Received ${pollResponse.jobs.length} devbox job(s).\n`
       );
+      for (const job of pollResponse.jobs) {
+        await executeDevboxAgentJob(job, {
+          baseUrl: origin,
+          token,
+        });
+      }
     }
 
     if (once) {

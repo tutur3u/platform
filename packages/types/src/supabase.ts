@@ -1599,6 +1599,7 @@ export type Database = {
           id: string;
           lease_id: string;
           preview_ports: number[];
+          runner_id: string | null;
           started_at: string | null;
           status: string;
           timeout_seconds: number | null;
@@ -1615,6 +1616,7 @@ export type Database = {
           id?: string;
           lease_id: string;
           preview_ports?: number[];
+          runner_id?: string | null;
           started_at?: string | null;
           status?: string;
           timeout_seconds?: number | null;
@@ -1631,6 +1633,7 @@ export type Database = {
           id?: string;
           lease_id?: string;
           preview_ports?: number[];
+          runner_id?: string | null;
           started_at?: string | null;
           status?: string;
           timeout_seconds?: number | null;
@@ -1656,6 +1659,13 @@ export type Database = {
             columns: ['lease_id'];
             isOneToOne: false;
             referencedRelation: 'devbox_leases';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'devbox_runs_runner_id_fkey';
+            columns: ['runner_id'];
+            isOneToOne: false;
+            referencedRelation: 'devbox_runners';
             referencedColumns: ['id'];
           },
         ];
@@ -8894,8 +8904,37 @@ export type Database = {
         Args: { p_actor_user_id: string; p_target_user_id: string };
         Returns: boolean;
       };
+      claim_next_devbox_run: {
+        Args: { p_runner_id: string };
+        Returns: {
+          actor_id: string;
+          command: string[];
+          created_at: string;
+          env: Json;
+          env_files: string[];
+          id: string;
+          lease_id: string;
+          preview_ports: number[];
+          timeout_seconds: number;
+          updated_at: string;
+        }[];
+      };
       clamp_abuse_score: { Args: { p_value: number }; Returns: number };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
+      complete_devbox_run: {
+        Args: {
+          p_exit_code: number;
+          p_run_id: string;
+          p_runner_id: string;
+          p_status: string;
+        };
+        Returns: {
+          exit_code: number;
+          id: string;
+          lease_id: string;
+          status: string;
+        }[];
+      };
       compute_abuse_risk_tier: {
         Args: { p_confidence: number; p_score: number };
         Returns: Database['public']['Enums']['abuse_risk_tier'];

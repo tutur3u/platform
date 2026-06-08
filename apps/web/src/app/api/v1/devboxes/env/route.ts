@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
 import { updateDevboxEnv } from '@/lib/devboxes/store';
+import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 const EnvSchema = z.object({
   leaseId: z.string().trim().min(1),
@@ -22,10 +23,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json(
-    await updateDevboxEnv({
-      actorId: authorization.user.id,
-      ...parsed.data,
-    })
-  );
+  try {
+    return NextResponse.json(
+      await updateDevboxEnv({
+        actorId: authorization.user.id,
+        ...parsed.data,
+      })
+    );
+  } catch (error) {
+    return createDevboxRouteErrorResponse(error, 'Failed to update devbox env');
+  }
 }

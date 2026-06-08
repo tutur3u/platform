@@ -32,6 +32,31 @@ export interface DevboxRunResponse {
   };
 }
 
+export interface DevboxAgentJob {
+  command: string[];
+  createdAt?: string;
+  env?: DevboxEnv;
+  envFiles?: string[];
+  leaseId: string;
+  previewPorts?: number[];
+  runId: string;
+  timeoutSeconds?: number | null;
+  updatedAt?: string;
+}
+
+export interface DevboxAgentEventPayload {
+  completion?: {
+    exitCode: number;
+    status: 'cancelled' | 'failed' | 'succeeded';
+  };
+  events?: {
+    eventType?: string;
+    message?: string;
+    metadata?: Record<string, unknown>;
+  }[];
+  runId: string;
+}
+
 export interface DevboxLeasePayload {
   profile?: string;
   runnerId?: string;
@@ -148,4 +173,48 @@ export class DevboxesClient {
       method: 'POST',
     });
   }
+}
+
+export async function pollDevboxAgentJobs({
+  baseUrl,
+  fetch: fetchImpl = globalThis.fetch,
+  token,
+}: {
+  baseUrl: string;
+  fetch?: typeof fetch;
+  token: string;
+}) {
+  const response = await fetchImpl(
+    new URL('/api/v1/devboxes/agents/poll', baseUrl),
+    {
+      headers: {
+        'X-Devbox-Runner-Token': token,
+      },
+    }
+  );
+  if (!response.ok) return { ok: false as const, response };
+
+  const payload = (await response.json()) as { jobs?: DevboxAgentJob[] };
+  return { jobs: payload.jobs ?? [], ok: true as const };
+}
+
+export async function recordDevboxAgentEvents({
+  baseUrl,
+  fetch: fetchImpl = globalThis.fetch,
+  payload,
+  token,
+}: {
+  baseUrl: string;
+  fetch?: typeof fetch;
+  payload: DevboxAgentEventPayload;
+  token: string;
+}) {
+  return fetchImpl(new URL('/api/v1/devboxes/agents/events', baseUrl), {
+    body: JSON.stringify(payload),
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Devbox-Runner-Token': token,
+    },
+    method: 'POST',
+  });
 }

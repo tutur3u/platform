@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { TuturuuuUserClient } from '../platform';
 import {
   collectRepeatedFlagValues,
   createDevboxRunPayload,
@@ -9,6 +10,8 @@ import {
 
 describe('devbox CLI helpers', () => {
   afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -144,5 +147,113 @@ describe('devbox CLI helpers', () => {
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain(
       '/api/v1/devboxes/agents/poll'
     );
+  });
+
+  it('waits for queued devbox runs to complete before printing logs', async () => {
+    vi.useFakeTimers();
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    const client = {
+      devboxes: {
+        createRun: vi.fn().mockResolvedValue({
+          lease: { id: 'lease-1', status: 'active' },
+          run: {
+            command: ['bun', '--version'],
+            exitCode: null,
+            id: 'run-1',
+            status: 'queued',
+          },
+        }),
+        getRun: vi.fn().mockResolvedValue({
+          logs: ['remote$ bun --version', '1.3.14'],
+          run: {
+            command: ['bun', '--version'],
+            exitCode: 0,
+            id: 'run-1',
+            status: 'succeeded',
+          },
+        }),
+      },
+    } as unknown as TuturuuuUserClient;
+
+    const run = runDevboxCommand({
+      action: 'run',
+      argv: ['box', 'run', '--', 'bun', '--version'],
+      client,
+      flags: {},
+      json: false,
+    });
+    await vi.advanceTimersByTimeAsync(1000);
+    await run;
+
+    expect(client.devboxes.getRun).toHaveBeenCalledWith('run-1');
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('Devbox run run-1 succeeded')
+    );
+    expect(write).toHaveBeenCalledWith('remote$ bun --version\n');
+    expect(write).toHaveBeenCalledWith('1.3.14\n');
+  });
+
+  it('executes claimed jobs in one-shot agents', async () => {
+    const eventPayloads: unknown[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.includes('/api/v1/devboxes/agents/heartbeat')) {
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (url.includes('/api/v1/devboxes/agents/poll')) {
+        return new Response(
+          JSON.stringify({
+            jobs: [
+              {
+                command: [
+                  process.execPath,
+                  '-e',
+                  'process.stdout.write("agent-ok")',
+                ],
+                leaseId: 'lease-1',
+                runId: 'run-1',
+                timeoutSeconds: 10,
+              },
+            ],
+          })
+        );
+      }
+      if (url.includes('/api/v1/devboxes/agents/events')) {
+        eventPayloads.push(
+          JSON.parse(String((init as RequestInit | undefined)?.body ?? '{}'))
+        );
+        return new Response(JSON.stringify({ ok: true }));
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    await runDevboxCommand({
+      action: 'agent',
+      argv: ['box', 'agent', 'start'],
+      baseUrl: 'http://localhost:7903',
+      flags: { once: true, token: 'runner-token' },
+      json: false,
+    });
+
+    expect(eventPayloads).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          events: [
+            expect.objectContaining({
+              message: expect.stringContaining('remote$'),
+            }),
+          ],
+          runId: 'run-1',
+        }),
+        expect.objectContaining({
+          completion: { exitCode: 0, status: 'succeeded' },
+          runId: 'run-1',
+        }),
+      ])
+    );
+    expect(JSON.stringify(eventPayloads)).toContain('agent-ok');
   });
 });

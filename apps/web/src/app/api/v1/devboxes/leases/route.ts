@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
 import { createDevboxLease } from '@/lib/devboxes/store';
+import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 const CreateLeaseSchema = z.object({
   profile: z.string().trim().min(1).optional(),
@@ -33,14 +34,9 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Failed to create devbox lease',
-      },
-      { status: 500 }
+    return createDevboxRouteErrorResponse(
+      error,
+      'Failed to create devbox lease'
     );
   }
 }

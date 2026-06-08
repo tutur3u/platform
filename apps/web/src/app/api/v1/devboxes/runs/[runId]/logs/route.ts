@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
 import { listDevboxRunLogs } from '@/lib/devboxes/store';
+import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 export async function GET(
   request: NextRequest,
@@ -15,12 +16,6 @@ export async function GET(
   try {
     return NextResponse.json(await listDevboxRunLogs(runId));
   } catch (error) {
-    return NextResponse.json(
-      {
-        message:
-          error instanceof Error ? error.message : 'Failed to list run logs',
-      },
-      { status: 500 }
-    );
+    return createDevboxRouteErrorResponse(error, 'Failed to list run logs');
   }
 }

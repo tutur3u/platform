@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
 import { createDevboxRun, listDevboxRuns } from '@/lib/devboxes/store';
+import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 const CreateRunSchema = z.object({
   command: z.array(z.string().trim().min(1)).min(1),
@@ -27,13 +28,7 @@ export async function GET(request: NextRequest) {
   try {
     return NextResponse.json(await listDevboxRuns(authorization.user.id));
   } catch (error) {
-    return NextResponse.json(
-      {
-        message:
-          error instanceof Error ? error.message : 'Failed to list devbox runs',
-      },
-      { status: 500 }
-    );
+    return createDevboxRouteErrorResponse(error, 'Failed to list devbox runs');
   }
 }
 
@@ -69,14 +64,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      {
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Failed to create devbox run',
-      },
-      { status: 500 }
-    );
+    return createDevboxRouteErrorResponse(error, 'Failed to create devbox run');
   }
 }

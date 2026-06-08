@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeDevboxRootMember } from '@/lib/devboxes/authorization';
 import { registerDevboxAgent } from '@/lib/devboxes/store';
+import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 const RegisterAgentSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -31,14 +32,9 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Failed to register devbox runner',
-      },
-      { status: 500 }
+    return createDevboxRouteErrorResponse(
+      error,
+      'Failed to register devbox runner'
     );
   }
 }

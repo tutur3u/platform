@@ -1,8 +1,13 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createPrivateDevboxClient,
+  type DevboxPrivateSchemaClient,
+  type DevboxStorageErrorLike,
+  getDevboxStorageError,
+} from './store-utils';
 
 type PrivateTableClient = {
-  insert: (value: unknown) => Promise<{ error: { message?: string } | null }>;
+  insert: (value: unknown) => Promise<{ error: DevboxStorageErrorLike }>;
   select: (columns?: string) => {
     eq: (
       column: string,
@@ -14,7 +19,7 @@ type PrivateTableClient = {
       ) => {
         limit: (count: number) => Promise<{
           data: unknown[] | null;
-          error: { message?: string } | null;
+          error: DevboxStorageErrorLike;
         }>;
       };
     };
@@ -23,12 +28,8 @@ type PrivateTableClient = {
     eq: (
       column: string,
       value: string
-    ) => Promise<{ error: { message?: string } | null }>;
+    ) => Promise<{ error: DevboxStorageErrorLike }>;
   };
-};
-
-type PrivateSchemaClient = {
-  from: (table: string) => PrivateTableClient;
 };
 
 export interface CreateDevboxRunInput {
@@ -53,27 +54,30 @@ export interface CreateDevboxLeaseInput {
 }
 
 function getPrivateSchemaClient(client: unknown) {
-  return (
-    client as {
-      schema: (schema: string) => PrivateSchemaClient;
-    }
-  ).schema('private');
+  return client as DevboxPrivateSchemaClient;
 }
 
-function getErrorMessage(error: { message?: string } | null) {
-  return error?.message ?? 'Unknown devbox storage error';
+function getPrivateTable(
+  client: DevboxPrivateSchemaClient,
+  table: string
+): PrivateTableClient {
+  return client.from(table) as PrivateTableClient;
 }
 
 export async function createDevboxRun(input: CreateDevboxRunInput) {
-  const admin = await createAdminClient({ noCookie: true });
-  const privateClient = getPrivateSchemaClient(admin);
+  const privateClient = getPrivateSchemaClient(
+    await createPrivateDevboxClient()
+  );
   const now = new Date().toISOString();
   const leaseId = input.leaseId ?? randomUUID();
   const runId = randomUUID();
   const leaseMode = input.leaseId ? 'existing' : (input.leaseMode ?? 'auto');
 
   if (leaseMode === 'auto') {
-    const { error } = await privateClient.from('devbox_leases').insert({
+    const { error } = await getPrivateTable(
+      privateClient,
+      'devbox_leases'
+    ).insert({
       actor_id: input.actorId,
       created_at: now,
       expires_at: input.keep
@@ -87,11 +91,11 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
     });
 
     if (error) {
-      throw new Error(getErrorMessage(error));
+      throw getDevboxStorageError(error);
     }
   }
 
-  const { error } = await privateClient.from('devbox_runs').insert({
+  const { error } = await getPrivateTable(privateClient, 'devbox_runs').insert({
     actor_id: input.actorId,
     command: input.command,
     created_at: now,
@@ -106,7 +110,7 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
   });
 
   if (error) {
-    throw new Error(getErrorMessage(error));
+    throw getDevboxStorageError(error);
   }
 
   return {
@@ -124,11 +128,15 @@ export async function createDevboxRun(input: CreateDevboxRunInput) {
 }
 
 export async function createDevboxLease(input: CreateDevboxLeaseInput) {
-  const admin = await createAdminClient({ noCookie: true });
-  const privateClient = getPrivateSchemaClient(admin);
+  const privateClient = getPrivateSchemaClient(
+    await createPrivateDevboxClient()
+  );
   const now = new Date().toISOString();
   const leaseId = randomUUID();
-  const { error } = await privateClient.from('devbox_leases').insert({
+  const { error } = await getPrivateTable(
+    privateClient,
+    'devbox_leases'
+  ).insert({
     actor_id: input.actorId,
     created_at: now,
     expires_at: new Date(
@@ -143,7 +151,7 @@ export async function createDevboxLease(input: CreateDevboxLeaseInput) {
   });
 
   if (error) {
-    throw new Error(getErrorMessage(error));
+    throw getDevboxStorageError(error);
   }
 
   return {
@@ -155,10 +163,10 @@ export async function createDevboxLease(input: CreateDevboxLeaseInput) {
 }
 
 export async function releaseDevboxLease(leaseId: string) {
-  const admin = await createAdminClient({ noCookie: true });
-  const privateClient = getPrivateSchemaClient(admin);
-  const { error } = await privateClient
-    .from('devbox_leases')
+  const privateClient = getPrivateSchemaClient(
+    await createPrivateDevboxClient()
+  );
+  const { error } = await getPrivateTable(privateClient, 'devbox_leases')
     .update({
       released_at: new Date().toISOString(),
       status: 'released',
@@ -167,17 +175,17 @@ export async function releaseDevboxLease(leaseId: string) {
     .eq('id', leaseId);
 
   if (error) {
-    throw new Error(getErrorMessage(error));
+    throw getDevboxStorageError(error);
   }
 
   return { message: `Devbox lease ${leaseId} released.` };
 }
 
 export async function stopDevboxRun(runId: string) {
-  const admin = await createAdminClient({ noCookie: true });
-  const privateClient = getPrivateSchemaClient(admin);
-  const { error } = await privateClient
-    .from('devbox_runs')
+  const privateClient = getPrivateSchemaClient(
+    await createPrivateDevboxClient()
+  );
+  const { error } = await getPrivateTable(privateClient, 'devbox_runs')
     .update({
       status: 'cancel_requested',
       updated_at: new Date().toISOString(),
@@ -185,24 +193,27 @@ export async function stopDevboxRun(runId: string) {
     .eq('id', runId);
 
   if (error) {
-    throw new Error(getErrorMessage(error));
+    throw getDevboxStorageError(error);
   }
 
   return { message: `Devbox run ${runId} cancellation requested.` };
 }
 
 export async function listDevboxRunLogs(runId: string) {
-  const admin = await createAdminClient({ noCookie: true });
-  const privateClient = getPrivateSchemaClient(admin);
-  const { data, error } = await privateClient
-    .from('devbox_run_events')
+  const privateClient = getPrivateSchemaClient(
+    await createPrivateDevboxClient()
+  );
+  const { data, error } = await getPrivateTable(
+    privateClient,
+    'devbox_run_events'
+  )
     .select('message')
     .eq('run_id', runId)
     .order('created_at', { ascending: true })
     .limit(1000);
 
   if (error) {
-    throw new Error(getErrorMessage(error));
+    throw getDevboxStorageError(error);
   }
 
   return {
@@ -229,14 +240,18 @@ export async function registerDevboxAgent(input: {
   actorId: string;
   name: string;
 }) {
-  const admin = await createAdminClient({ noCookie: true });
-  const privateClient = getPrivateSchemaClient(admin);
+  const privateClient = getPrivateSchemaClient(
+    await createPrivateDevboxClient()
+  );
   const now = new Date().toISOString();
   const runnerId = randomUUID();
   const token = `tdbx_${randomBytes(32).toString('hex')}`;
   const tokenHash = createHash('sha256').update(token).digest('hex');
 
-  const runnerResult = await privateClient.from('devbox_runners').insert({
+  const runnerResult = await getPrivateTable(
+    privateClient,
+    'devbox_runners'
+  ).insert({
     actor_id: input.actorId,
     created_at: now,
     id: runnerId,
@@ -246,10 +261,13 @@ export async function registerDevboxAgent(input: {
   });
 
   if (runnerResult.error) {
-    throw new Error(getErrorMessage(runnerResult.error));
+    throw getDevboxStorageError(runnerResult.error);
   }
 
-  const tokenResult = await privateClient.from('devbox_runner_tokens').insert({
+  const tokenResult = await getPrivateTable(
+    privateClient,
+    'devbox_runner_tokens'
+  ).insert({
     created_at: now,
     id: randomUUID(),
     runner_id: runnerId,
@@ -257,7 +275,7 @@ export async function registerDevboxAgent(input: {
   });
 
   if (tokenResult.error) {
-    throw new Error(getErrorMessage(tokenResult.error));
+    throw getDevboxStorageError(tokenResult.error);
   }
 
   return {
@@ -275,9 +293,13 @@ export async function updateDevboxEnv(input: {
   removals?: string[];
   updates?: Record<string, string>;
 }) {
-  const admin = await createAdminClient({ noCookie: true });
-  const privateClient = getPrivateSchemaClient(admin);
-  const { error } = await privateClient.from('devbox_env_revisions').insert({
+  const privateClient = getPrivateSchemaClient(
+    await createPrivateDevboxClient()
+  );
+  const { error } = await getPrivateTable(
+    privateClient,
+    'devbox_env_revisions'
+  ).insert({
     actor_id: input.actorId,
     created_at: new Date().toISOString(),
     id: randomUUID(),
@@ -287,25 +309,28 @@ export async function updateDevboxEnv(input: {
   });
 
   if (error) {
-    throw new Error(getErrorMessage(error));
+    throw getDevboxStorageError(error);
   }
 
   return { revision: Date.now() };
 }
 
 export async function verifyDevboxRunnerToken(token: string) {
-  const admin = await createAdminClient({ noCookie: true });
-  const privateClient = getPrivateSchemaClient(admin);
+  const privateClient = getPrivateSchemaClient(
+    await createPrivateDevboxClient()
+  );
   const tokenHash = createHash('sha256').update(token).digest('hex');
-  const { data, error } = await privateClient
-    .from('devbox_runner_tokens')
+  const { data, error } = await getPrivateTable(
+    privateClient,
+    'devbox_runner_tokens'
+  )
     .select('runner_id')
     .eq('token_hash', tokenHash)
     .order('created_at', { ascending: false })
     .limit(1);
 
   if (error) {
-    throw new Error(getErrorMessage(error));
+    throw getDevboxStorageError(error);
   }
 
   const first = data?.[0];
@@ -318,17 +343,17 @@ export async function verifyDevboxRunnerToken(token: string) {
 }
 
 export async function listDevboxRuns(actorId: string) {
-  const admin = await createAdminClient({ noCookie: true });
-  const privateClient = getPrivateSchemaClient(admin);
-  const { data, error } = await privateClient
-    .from('devbox_runs')
-    .select('id,status,command,exit_code,created_at,lease_id')
+  const privateClient = getPrivateSchemaClient(
+    await createPrivateDevboxClient()
+  );
+  const { data, error } = await getPrivateTable(privateClient, 'devbox_runs')
+    .select('id,status,command,exit_code,created_at,lease_id,runner_id')
     .eq('actor_id', actorId)
     .order('created_at', { ascending: false })
     .limit(50);
 
   if (error) {
-    throw new Error(getErrorMessage(error));
+    throw getDevboxStorageError(error);
   }
 
   return {
