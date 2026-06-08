@@ -154,6 +154,7 @@ const mockTasks: Task[] = [
 const mockWorkspaceLabels: WorkspaceLabel[] = [];
 
 function renderBoardViews(overrides?: {
+  idleBottomIsland?: React.ReactNode;
   lists?: TaskList[];
   tasks?: Task[];
   workspace?: { id: string; personal: boolean };
@@ -176,6 +177,7 @@ function renderBoardViews(overrides?: {
           tasks={overrides?.tasks ?? mockTasks}
           workspace={(overrides?.workspace ?? mockWorkspace) as any}
           workspaceLabels={mockWorkspaceLabels}
+          idleBottomIsland={overrides?.idleBottomIsland}
         />
       </HotkeysProvider>
     </QueryClientProvider>
@@ -235,6 +237,51 @@ describe('BoardViews', () => {
     await waitFor(() => {
       expect(screen.getByTestId('kanban-view')).toBeInTheDocument();
     });
+  });
+
+  it('toggles the idle bottom island around active kanban bulk selection', async () => {
+    renderBoardViews({
+      idleBottomIsland: <div data-testid="idle-bottom-island" />,
+    });
+
+    expect(screen.getByTestId('idle-bottom-island')).toBeInTheDocument();
+
+    act(() => {
+      kanbanBoardProps?.onBulkSelectionActiveChange?.(true);
+    });
+
+    expect(screen.queryByTestId('idle-bottom-island')).toBeNull();
+
+    act(() => {
+      kanbanBoardProps?.onBulkSelectionActiveChange?.(false);
+    });
+
+    expect(screen.getByTestId('idle-bottom-island')).toBeInTheDocument();
+  });
+
+  it('keeps the idle bottom island visible outside kanban view', async () => {
+    renderBoardViews({
+      idleBottomIsland: <div data-testid="idle-bottom-island" />,
+    });
+
+    act(() => {
+      kanbanBoardProps?.onBulkSelectionActiveChange?.(true);
+      boardHeaderProps?.onViewChange('list');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('list-view')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('idle-bottom-island')).toBeInTheDocument();
+
+    act(() => {
+      boardHeaderProps?.onViewChange('timeline');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('timeline-view')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('idle-bottom-island')).toBeInTheDocument();
   });
 
   it('creates a task from the first visible list with the board filters when pressing C', () => {

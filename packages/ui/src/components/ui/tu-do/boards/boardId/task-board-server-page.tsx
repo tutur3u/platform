@@ -2,6 +2,7 @@ import { BoardClient } from '@tuturuuu/ui/tu-do/shared/board-client';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
+import type { ReactNode } from 'react';
 
 interface Props {
   params: Promise<{
@@ -10,6 +11,7 @@ interface Props {
   }>;
   /** Route prefix for tasks URLs. Defaults to '/tasks' (web app). Set to '' for satellite apps. */
   routePrefix?: string;
+  idleBottomIsland?: ReactNode;
 }
 
 /**
@@ -18,6 +20,7 @@ interface Props {
  * Used by both apps/web and apps/tasks.
  */
 export default async function TaskBoardServerPage({
+  idleBottomIsland,
   params,
   routePrefix = '/tasks',
 }: Props) {
@@ -36,6 +39,7 @@ export default async function TaskBoardServerPage({
       workspaceTier={(workspace as any)?.tier ?? null}
       currentUserId={user.id}
       routePrefix={routePrefix}
+      idleBottomIsland={idleBottomIsland}
     />
   );
 }

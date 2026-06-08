@@ -34,6 +34,7 @@ import {
   listWorkspaceTaskProjects,
   removeCurrentUserTaskPersonalPlacement,
 } from '@tuturuuu/internal-api/tasks';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -129,7 +130,12 @@ import { TaskNewLabelDialog } from '../task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../task-dialogs/TaskNewProjectDialog';
 import { getTaskCardParentBadgeState } from '../task-parent-badge-state';
 import { TaskCardCheckbox } from './TaskCardCheckbox';
+import {
+  getTaskCardSelectionCheckboxToneClasses,
+  TASK_CARD_OVERDUE_CHECKBOX_TONE_CLASSES,
+} from './task-card-checkbox-style';
 import { areTaskCardPropsEqual } from './task-card-comparator';
+import { shouldRenderTaskCardCompletionCheckbox } from './task-card-completion-checkbox-visibility';
 import { TaskCardIdentifierRow } from './task-card-identifier-row';
 import { mergeTaskCardLabelOptions } from './task-card-label-options';
 import { getTaskCardVisibilityState } from './task-card-visibility';
@@ -755,6 +761,13 @@ function TaskCardInner({
   const isResolvedListStatus = isTaskBoardResolvedStatus(taskList?.status);
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
+  const selectionCheckboxClassName = cn(
+    getTaskCardSelectionCheckboxToneClasses(taskList?.color as SupportedColor),
+    isOverdue &&
+      !task.closed_at &&
+      !isResolvedListStatus &&
+      TASK_CARD_OVERDUE_CHECKBOX_TONE_CLASSES
+  );
 
   // Memoize description metadata to prevent unnecessary recalculations
   // This is important because descriptionMeta is used in taskBadges dependency array
@@ -1693,6 +1706,7 @@ function TaskCardInner({
               isSelected={isSelected}
               onSelect={(event) => onSelect?.(task.id, event)}
               selectTaskLabel={t('select_task', { name: task.name ?? '' })}
+              selectionCheckboxClassName={selectionCheckboxClassName}
               taskListStatus={taskList?.status}
               ticketBadgeClassName={getTicketBadgeColorClasses(
                 taskList,
@@ -2437,7 +2451,10 @@ function TaskCardInner({
               )}
 
               {/* Checkbox: hidden for documents lists */}
-              {taskList?.status !== 'documents' && (
+              {shouldRenderTaskCardCompletionCheckbox({
+                isMultiSelectMode,
+                taskListStatus: taskList?.status,
+              }) && (
                 <TaskCardCheckbox
                   task={task}
                   taskList={taskList}

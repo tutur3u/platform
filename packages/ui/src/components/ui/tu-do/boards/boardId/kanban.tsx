@@ -22,7 +22,7 @@ import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferen
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import { useBoardConfig, useReorderTask } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useOptionalWorkspacePresenceContext } from '../../providers/workspace-presence-provider';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
@@ -75,6 +75,7 @@ interface Props {
   isMultiSelectMode: boolean;
   setIsMultiSelectMode: (enabled: boolean) => void;
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
+  onBulkSelectionActiveChange?: (active: boolean) => void;
 }
 
 export function KanbanBoard({
@@ -90,6 +91,7 @@ export function KanbanBoard({
   isMultiSelectMode,
   setIsMultiSelectMode,
   onExternalTasksCollapsedChange,
+  onBulkSelectionActiveChange,
 }: Props) {
   const tLayout = useTranslations('ws-task-boards.layout_settings');
   const tTasks = useTranslations('ws-tasks');
@@ -185,6 +187,17 @@ export function KanbanBoard({
     tasks,
     isMultiSelectMode,
     setIsMultiSelectMode
+  );
+
+  useEffect(() => {
+    onBulkSelectionActiveChange?.(selectedTasks.size > 0);
+  }, [onBulkSelectionActiveChange, selectedTasks.size]);
+
+  useEffect(
+    () => () => {
+      onBulkSelectionActiveChange?.(false);
+    },
+    [onBulkSelectionActiveChange]
   );
 
   // Resources Hooks

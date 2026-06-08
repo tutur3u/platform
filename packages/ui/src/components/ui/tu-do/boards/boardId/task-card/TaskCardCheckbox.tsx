@@ -5,8 +5,11 @@ import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { type MouseEvent, memo } from 'react';
-import { getListColorClasses } from '../../../utils/taskColorUtils';
 import { isOverdue } from '../../../utils/taskDateUtils';
+import {
+  getTaskCardCheckboxToneClasses,
+  TASK_CARD_OVERDUE_CHECKBOX_TONE_CLASSES,
+} from './task-card-checkbox-style';
 
 interface TaskCardCheckboxProps {
   task: Task;
@@ -31,11 +34,11 @@ export const TaskCardCheckbox = memo(function TaskCardCheckbox({
         'h-4 w-4 flex-none transition-all duration-200',
         'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
         'hover:scale-110 hover:border-primary/50',
-        getListColorClasses(taskList?.color as SupportedColor),
+        getTaskCardCheckboxToneClasses(taskList?.color as SupportedColor),
         taskIsOverdue &&
           !task.closed_at &&
           !isInResolvedList &&
-          'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
+          TASK_CARD_OVERDUE_CHECKBOX_TONE_CLASSES
       )}
       disabled={isLoading}
       onCheckedChange={onToggle}

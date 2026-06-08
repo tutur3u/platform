@@ -14,7 +14,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
 import {
   BoardBroadcastProvider,
   type BoardRefreshOptions,
@@ -34,10 +34,12 @@ interface Props {
   workspaceTier?: WorkspaceProductTier | null;
   currentUserId?: string;
   routePrefix?: string;
+  idleBottomIsland?: ReactNode;
 }
 
 export function BoardClient({
   boardId,
+  idleBottomIsland,
   workspace,
   workspaceTier,
   currentUserId,
@@ -268,6 +270,7 @@ export function BoardClient({
           workspaceLabels={workspaceLabels}
           currentUserId={currentUserId}
           canManageBoard={canManageBoard}
+          idleBottomIsland={idleBottomIsland}
         />
       </ProgressiveLoaderProvider>
     </BoardBroadcastProvider>

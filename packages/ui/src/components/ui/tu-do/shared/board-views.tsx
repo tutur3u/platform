@@ -23,6 +23,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import {
+  type ReactNode,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -80,6 +81,7 @@ interface Props {
   workspaceLabels: WorkspaceLabel[];
   canManageBoard?: boolean;
   currentUserId?: string;
+  idleBottomIsland?: ReactNode;
 }
 
 export function BoardViews({
@@ -90,6 +92,7 @@ export function BoardViews({
   lists,
   canManageBoard = true,
   currentUserId,
+  idleBottomIsland,
 }: Props) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
@@ -107,6 +110,8 @@ export function BoardViews({
   >({});
   const [recycleBinOpen, setRecycleBinOpen] = useState(false);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [kanbanBulkSelectionActive, setKanbanBulkSelectionActive] =
+    useState(false);
   const { createTask } = useTaskDialog();
   const sourceScope = filters.sourceScope ?? 'all_visible';
   const sourceWorkspaceIds = filters.sourceWorkspaceIds ?? [];
@@ -515,6 +520,7 @@ export function BoardViews({
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
+            onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
           />
         );
       case 'list':
@@ -555,10 +561,15 @@ export function BoardViews({
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
+            onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
           />
         );
     }
   };
+
+  const showIdleBottomIsland =
+    !!idleBottomIsland &&
+    (currentView !== 'kanban' || !kanbanBulkSelectionActive);
 
   return (
     <div className="-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col md:-mx-4">
@@ -583,6 +594,7 @@ export function BoardViews({
         hideActions={!canManageBoard}
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
+      {showIdleBottomIsland ? idleBottomIsland : null}
 
       <RecycleBinPanel
         open={recycleBinOpen}
