@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAiAgentById } from '@/lib/ai-agents/registry';
+import {
+  getAiAgentById,
+  getAiAgentChannelRequiredSecrets,
+  isAiAgentZaloPersonalEnabled,
+} from '@/lib/ai-agents/registry';
 import type {
   AiAgentChannelConfig,
   AiAgentDefinition,
@@ -58,7 +62,11 @@ async function testAgentChannel(request: NextRequest, { params }: Params) {
       );
     }
 
-    const checks = buildChannelDiagnostics({ agent, channel });
+    const checks = await buildChannelDiagnostics({
+      agent,
+      channel,
+      db: access.sbAdmin,
+    });
     const failed = checks.filter((check) => !check.ok);
 
     return NextResponse.json({
@@ -83,23 +91,34 @@ async function testAgentChannel(request: NextRequest, { params }: Params) {
   }
 }
 
-function buildChannelDiagnostics({
+async function buildChannelDiagnostics({
   agent,
   channel,
+  db,
 }: {
   agent: AiAgentDefinition;
   channel: AiAgentChannelConfig;
-}): AiAgentDiagnosticCheck[] {
-  const missingSecrets = requiredSecretNames(channel).filter((name) => {
-    const secret = channel.secrets.find((item) => item.name === name);
-    return !secret?.configured;
-  });
+  db?: Parameters<typeof isAiAgentZaloPersonalEnabled>[0];
+}): Promise<AiAgentDiagnosticCheck[]> {
+  const personalZalo =
+    channel.adapter === 'zalo' && channel.zaloAccountMode === 'personal';
+  const personalZaloEnabled = personalZalo
+    ? await isAiAgentZaloPersonalEnabled(db)
+    : true;
+  const missingSecrets = getAiAgentChannelRequiredSecrets(channel).filter(
+    (name) => {
+      const secret = channel.secrets.find((item) => item.name === name);
+      return !secret?.configured;
+    }
+  );
   const hasAdapterAccount =
     channel.adapter === 'discord'
       ? Boolean(channel.discordGuildId?.trim())
-      : Boolean(channel.zaloOfficialAccountId?.trim());
+      : personalZalo
+        ? Boolean(channel.zaloPersonalOwnId?.trim())
+        : Boolean(channel.zaloOfficialAccountId?.trim());
 
-  return [
+  const checks: AiAgentDiagnosticCheck[] = [
     {
       detail: agent.enabled ? null : 'Enable the agent before deployment.',
       id: 'agent_enabled',
@@ -129,11 +148,25 @@ function buildChannelDiagnostics({
       label: 'Required secrets',
       ok: missingSecrets.length === 0,
     },
+    ...(personalZalo
+      ? [
+          {
+            detail: personalZaloEnabled
+              ? 'Personal Zalo listener support is enabled.'
+              : 'Set root workspace secret AI_AGENT_ZALO_PERSONAL_ENABLED to true.',
+            id: 'zalo_personal_feature_flag',
+            label: 'Personal Zalo feature flag',
+            ok: personalZaloEnabled,
+          },
+        ]
+      : []),
     {
-      detail: channel.webhookUrl || 'Deploy the channel to generate a webhook.',
-      id: 'webhook_url',
-      label: 'Webhook URL',
-      ok: Boolean(channel.webhookUrl),
+      detail: personalZalo
+        ? 'Personal Zalo channels use the listener lifecycle API.'
+        : channel.webhookUrl || 'Deploy the channel to generate a webhook.',
+      id: personalZalo ? 'listener_lifecycle' : 'webhook_url',
+      label: personalZalo ? 'Listener lifecycle' : 'Webhook URL',
+      ok: personalZalo || Boolean(channel.webhookUrl),
     },
     {
       detail: channel.workspaceId || 'Choose a workspace for this channel.',
@@ -145,13 +178,18 @@ function buildChannelDiagnostics({
       detail:
         channel.adapter === 'discord'
           ? channel.discordGuildId || 'Set the Discord guild ID.'
-          : channel.zaloOfficialAccountId ||
-            'Set the Zalo official account ID.',
+          : personalZalo
+            ? channel.zaloPersonalOwnId ||
+              'Validate the personal Zalo login to save the account ID.'
+            : channel.zaloOfficialAccountId ||
+              'Set the Zalo official account ID.',
       id: 'adapter_account',
       label:
         channel.adapter === 'discord'
           ? 'Discord guild mapping'
-          : 'Zalo account mapping',
+          : personalZalo
+            ? 'Personal Zalo account mapping'
+            : 'Zalo account mapping',
       ok: hasAdapterAccount,
     },
     {
@@ -167,12 +205,8 @@ function buildChannelDiagnostics({
       ok: true,
     },
   ];
-}
 
-function requiredSecretNames(channel: AiAgentChannelConfig) {
-  return channel.adapter === 'discord'
-    ? ['applicationId', 'publicKey', 'botToken']
-    : ['botToken', 'webhookSecret'];
+  return checks;
 }
 
 export async function POST(request: NextRequest, context: Params) {

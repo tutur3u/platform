@@ -10,6 +10,8 @@ import {
   channelMetaKey,
   channelSecretKey,
   FIELD_VALUE_LIMIT,
+  getRequiredSecrets,
+  normalizeZaloAccountMode,
   parseAgentRowName,
   stringifyField,
 } from './registry-codec';
@@ -20,6 +22,7 @@ import {
 import {
   AI_AGENT_REDIS_SECRET,
   AI_AGENT_REGISTRY_PREFIX,
+  AI_AGENT_ZALO_PERSONAL_ENABLED_SECRET,
   type AiAgentAdapter,
   type AiAgentChannelConfig,
   type AiAgentDeployResult,
@@ -115,7 +118,9 @@ async function updateChannelMeta({
     discordGuildId: channel.discordGuildId ?? null,
     externalChannelId: channel.externalChannelId ?? null,
     historySyncEnabled: channel.historySyncEnabled ?? true,
+    zaloAccountMode: channel.zaloAccountMode ?? 'official',
     zaloOfficialAccountId: channel.zaloOfficialAccountId ?? null,
+    zaloPersonalOwnId: channel.zaloPersonalOwnId ?? null,
   };
 
   await replaceSecretRows({
@@ -154,6 +159,13 @@ export async function deployAiAgentChannel({
   const missing = channel.secrets
     .filter((secret) => !secret.configured)
     .map((secret) => secret.name);
+  if (
+    channel.adapter === 'zalo' &&
+    normalizeZaloAccountMode(channel.zaloAccountMode) === 'personal' &&
+    !(await isAiAgentZaloPersonalEnabled(db))
+  ) {
+    missing.push(AI_AGENT_ZALO_PERSONAL_ENABLED_SECRET);
+  }
   const redisConfigured = resolveAiAgentRedisUrl({
     rootSecret: await getRootSecretValue(AI_AGENT_REDIS_SECRET, db),
   });
@@ -258,6 +270,49 @@ export async function markAiAgentChannelEvent({
   });
 }
 
+export async function isAiAgentZaloPersonalEnabled(db?: TypedSupabaseClient) {
+  const value = await getRootSecretValue(
+    AI_AGENT_ZALO_PERSONAL_ENABLED_SECRET,
+    db
+  );
+
+  return value?.trim().toLowerCase() === 'true';
+}
+
+export async function recordAiAgentZaloPersonalConnection({
+  agentId,
+  channelId,
+  db,
+  error,
+  ownId,
+}: {
+  agentId: string;
+  channelId: string;
+  db?: TypedSupabaseClient;
+  error?: string | null;
+  ownId?: string | null;
+}) {
+  const agent = await getAiAgentById({ agentId, db });
+  const channel = agent?.channels.find(
+    (candidate) => candidate.id === assertId(channelId, 'channel_id')
+  );
+
+  if (!agent || !channel) {
+    throw new Error('agent_channel_not_found');
+  }
+
+  await updateChannelMeta({
+    agentId: agent.id,
+    channel,
+    db,
+    meta: {
+      lastError: error ?? null,
+      lastEventAt: new Date().toISOString(),
+      ...(ownId ? { zaloPersonalOwnId: ownId } : {}),
+    },
+  });
+}
+
 export async function rotateAiAgentChannelSecret({
   agentId,
   channelId,
@@ -332,5 +387,16 @@ export async function getChannelSecretValues({
         ? [[parsed.secret, row.value]]
         : [];
     })
+  );
+}
+
+export function getAiAgentChannelRequiredSecrets(
+  channel: AiAgentChannelConfig
+) {
+  return getRequiredSecrets(
+    channel.adapter,
+    channel.adapter === 'zalo'
+      ? normalizeZaloAccountMode(channel.zaloAccountMode)
+      : 'official'
   );
 }

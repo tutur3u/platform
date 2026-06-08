@@ -19,10 +19,7 @@ Input <-> Omni-channel <-> Tuturuuu Digest <-> Coordinator <-> Internal Apps <->
 Import the Chat SDK boundary from:
 
 ```ts
-import {
-  createChatSdkRuntime,
-  createChatTools,
-} from '@tuturuuu/ai/chat-sdk';
+import { createChatSdkRuntime, createChatTools } from "@tuturuuu/ai/chat-sdk";
 ```
 
 The boundary re-exports Chat SDK core types and the `chat/ai` tool helpers, then
@@ -80,7 +77,7 @@ factory.
 
 ```ts
 const chat = await createChatSdkRuntime({
-  userName: 'mira',
+  userName: "mira",
   adapters: {
     slack: true,
     zalo: {
@@ -89,7 +86,7 @@ const chat = await createChatSdkRuntime({
     },
   },
   state: {
-    id: 'redis',
+    id: "redis",
     config: { url: process.env.REDIS_URL },
   },
 });
@@ -109,7 +106,7 @@ Expose the selected chat runtime to AI SDK calls with Chat SDK tools:
 ```ts
 const tools = createChatTools({
   chat,
-  preset: 'messenger',
+  preset: "messenger",
 });
 ```
 
@@ -128,5 +125,7 @@ Chat SDK adapter accepts the post.
 When an operator clicks sync in Infrastructure > AI Agents, apps/web creates
 the configured Chat SDK runtime, opens the external thread handle, and consumes
 recent `thread.messages` when the adapter supports history fetch. Discord can
-return recent messages with the right bot scopes; Zalo currently behaves as a
-webhook-first adapter, so the mirror is populated by received events.
+return recent messages with the right bot scopes. Official Zalo behaves as a
+webhook-first adapter, so the mirror is populated by received events. Personal
+Zalo channels use the experimental `zca-js` listener and can fetch group chat
+history when the personal account session supports it.

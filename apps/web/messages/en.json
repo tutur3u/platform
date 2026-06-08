@@ -643,9 +643,12 @@
       "save": "Save",
       "send": "Send",
       "show": "Show",
+      "start_zalo_personal": "Start listener",
+      "stop_zalo_personal": "Stop listener",
       "sync": "Sync",
       "test": "Test",
-      "undo": "Undo"
+      "undo": "Undo",
+      "validate_zalo_personal": "Validate login"
     },
     "channels": {
       "discord": "Discord",
@@ -681,8 +684,15 @@
       "name": "Name",
       "platform_user_id": "Tuturuuu user ID",
       "workspace_id": "Workspace ID",
+      "zalo_account_mode": "Zalo account mode",
       "zalo_bot_token": "Zalo bot token",
+      "zalo_mode_official": "Official account",
+      "zalo_mode_personal": "Personal account",
       "zalo_oa_id": "Zalo OA ID",
+      "zalo_personal_cookie_json": "Zalo personal cookie JSON",
+      "zalo_personal_imei": "Zalo personal IMEI",
+      "zalo_personal_own_id": "Personal Zalo account ID",
+      "zalo_personal_user_agent": "Zalo personal user agent",
       "zalo_user_id": "Zalo user ID",
       "zalo_webhook_secret": "Zalo webhook secret"
     },
@@ -709,7 +719,13 @@
       "send_success": "Manual response sent",
       "sync_error": "External sync failed",
       "sync_success": "External sync complete",
-      "test_error": "Test failed"
+      "test_error": "Test failed",
+      "zalo_personal_start_error": "Personal Zalo listener start failed",
+      "zalo_personal_start_success": "Personal Zalo listener started",
+      "zalo_personal_stop_error": "Personal Zalo listener stop failed",
+      "zalo_personal_stop_success": "Personal Zalo listener stopped",
+      "zalo_personal_validate_error": "Personal Zalo login validation failed",
+      "zalo_personal_validate_success": "Personal Zalo login validated"
     },
     "new_agent": {
       "title": "New agent"
@@ -747,6 +763,16 @@
       "internal": "Internal",
       "search_placeholder": "Search workspace by name or ID...",
       "select": "Select workspace"
+    },
+    "zalo_personal": {
+      "disabled_notice": "Set root workspace secret AI_AGENT_ZALO_PERSONAL_ENABLED to true before validating or starting the listener.",
+      "enabled_notice": "Listener actions use the saved personal Zalo credentials for this channel.",
+      "experimental_notice": "Personal Zalo support is experimental and uses an unofficial Zalo Web automation API. Use only test accounts.",
+      "feature_disabled": "Flag disabled",
+      "own_id": "Own ID",
+      "running": "Running",
+      "stopped": "Stopped",
+      "title": "Personal Zalo listener"
     }
   },
   "ai-credits": {
@@ -3145,6 +3171,9 @@
     "custom_calendars": "Custom",
     "danger_zone": "Danger Zone",
     "day": "Day",
+    "default_calendar_source": "Default calendar source",
+    "default_calendar_source_desc": "New events use this calendar unless you choose another source.",
+    "default_calendar_updated": "Default calendar updated",
     "degraded": "Degraded",
     "disconnect": "Disconnect",
     "e2ee": {

@@ -2,13 +2,19 @@ import type { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  getAiAgentChannelRequiredSecrets: vi.fn(),
   getAiAgentById: vi.fn(),
+  isAiAgentZaloPersonalEnabled: vi.fn(),
   requireAiAgentAdmin: vi.fn(),
   warn: vi.fn(),
 }));
 
 vi.mock('@/lib/ai-agents/registry', () => ({
+  getAiAgentChannelRequiredSecrets: (...args: unknown[]) =>
+    mocks.getAiAgentChannelRequiredSecrets(...args),
   getAiAgentById: (...args: unknown[]) => mocks.getAiAgentById(...args),
+  isAiAgentZaloPersonalEnabled: (...args: unknown[]) =>
+    mocks.isAiAgentZaloPersonalEnabled(...args),
 }));
 
 vi.mock('../../access', () => ({
@@ -87,7 +93,15 @@ describe('AI agent channel test route', () => {
       ok: true,
       sbAdmin: { id: 'admin-client' },
     });
+    mocks.getAiAgentChannelRequiredSecrets.mockImplementation((input) =>
+      input.adapter === 'discord'
+        ? ['applicationId', 'publicKey', 'botToken']
+        : input.zaloAccountMode === 'personal'
+          ? ['personalCookieJson', 'personalImei', 'personalUserAgent']
+          : ['botToken', 'webhookSecret']
+    );
     mocks.getAiAgentById.mockResolvedValue(agent());
+    mocks.isAiAgentZaloPersonalEnabled.mockResolvedValue(true);
   });
 
   it('returns structured diagnostics for a deployed channel', async () => {
@@ -131,6 +145,58 @@ describe('AI agent channel test route', () => {
           detail: expect.stringContaining('publicKey'),
           id: 'required_secrets',
           ok: false,
+        }),
+      ]),
+      ok: false,
+    });
+  });
+
+  it('checks personal Zalo feature flag and personal credentials', async () => {
+    mocks.getAiAgentById.mockResolvedValue(
+      agent({
+        channels: [
+          channel({
+            adapter: 'zalo',
+            discordGuildId: null,
+            secrets: [
+              {
+                configured: true,
+                lastFour: 'json',
+                name: 'personalCookieJson',
+              },
+              { configured: true, lastFour: 'mei1', name: 'personalImei' },
+              {
+                configured: true,
+                lastFour: 'ent1',
+                name: 'personalUserAgent',
+              },
+            ],
+            webhookUrl:
+              'https://example.com/api/v1/webhooks/ai-agents/zalo/channel-1',
+            zaloAccountMode: 'personal',
+            zaloPersonalOwnId: 'own-1',
+          }),
+        ],
+      })
+    );
+    mocks.isAiAgentZaloPersonalEnabled.mockResolvedValue(false);
+
+    const response = await callRoute();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      checks: expect.arrayContaining([
+        expect.objectContaining({
+          id: 'zalo_personal_feature_flag',
+          ok: false,
+        }),
+        expect.objectContaining({
+          id: 'listener_lifecycle',
+          ok: true,
+        }),
+        expect.objectContaining({
+          id: 'adapter_account',
+          ok: true,
         }),
       ]),
       ok: false,

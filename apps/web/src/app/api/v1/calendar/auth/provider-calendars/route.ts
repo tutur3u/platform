@@ -6,6 +6,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const querySchema = z.object({
@@ -124,10 +125,11 @@ export async function GET(request: Request) {
         calendars.push(...accountCalendars);
       }
     } catch (error) {
-      console.error(
-        `Failed to fetch provider calendars for ${token.provider}:${token.id}`,
-        error
-      );
+      serverLogger.warn('Failed to fetch provider calendars', {
+        provider: token.provider,
+        tokenId: token.id,
+        error,
+      });
       byAccount[token.id] = [];
     }
   }

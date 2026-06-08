@@ -12,6 +12,19 @@ export interface CalendarEvent {
   location?: string;
   scheduling_note?: string;
   locked?: boolean;
+  provider?: 'tuturuuu' | 'google' | 'microsoft' | null;
+  source_calendar_id?: string | null;
+  external_calendar_id?: string | null;
+  external_event_id?: string | null;
+  source?:
+    | {
+        provider: 'tuturuuu';
+        workspaceCalendarId?: string | null;
+      }
+    | {
+        provider: 'google' | 'microsoft';
+        connectionId: string;
+      };
   google_event_id?: string;
   google_calendar_id?: string; // The Google Calendar ID this event belongs to (e.g., 'primary', 'work@gmail.com')
 

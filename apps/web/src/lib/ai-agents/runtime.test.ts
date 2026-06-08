@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   createChatSdkRuntime: vi.fn(),
   createMiraStreamTools: vi.fn(),
+  createZaloPersonalAdapter: vi.fn(),
   deductAiCredits: vi.fn(),
   getChannelSecretValues: vi.fn(),
   getPermissions: vi.fn(),
@@ -33,6 +34,12 @@ vi.mock('@tuturuuu/ai/chat-sdk', () => ({
   createChatSdkRuntime: (
     ...args: Parameters<typeof mocks.createChatSdkRuntime>
   ) => mocks.createChatSdkRuntime(...args),
+}));
+
+vi.mock('@tuturuuu/ai/chat-sdk/zalo-personal', () => ({
+  createZaloPersonalAdapter: (
+    ...args: Parameters<typeof mocks.createZaloPersonalAdapter>
+  ) => mocks.createZaloPersonalAdapter(...args),
 }));
 
 vi.mock('@tuturuuu/ai/credits/cap-output-tokens', () => ({
@@ -394,5 +401,44 @@ describe('AI agent runtime billing controls', () => {
     expect(mocks.checkAiCredits).not.toHaveBeenCalled();
     expect(thread.startTyping).not.toHaveBeenCalled();
     expect(mocks.stream).not.toHaveBeenCalled();
+  });
+
+  it('uses a zca-js personal adapter for personal Zalo channels', async () => {
+    const personalAdapter = {
+      handleWebhook: vi.fn(),
+      name: 'zalo',
+    };
+    mocks.createZaloPersonalAdapter.mockReturnValueOnce(personalAdapter);
+    mocks.getChannelSecretValues.mockResolvedValueOnce({
+      personalCookieJson: '[{"name":"zpsid","value":"cookie"}]',
+      personalImei: 'imei-1',
+      personalUserAgent: 'agent-1',
+    });
+
+    await createAiAgentChatRuntime({
+      agent,
+      channel: {
+        ...channel,
+        zaloAccountMode: 'personal',
+        zaloPersonalOwnId: 'own-1',
+      },
+    });
+
+    expect(mocks.createZaloPersonalAdapter).toHaveBeenCalledWith({
+      channelId: 'channel-1',
+      cookieJson: '[{"name":"zpsid","value":"cookie"}]',
+      displayName: 'Zalo Support',
+      imei: 'imei-1',
+      language: 'vi',
+      ownId: 'own-1',
+      userAgent: 'agent-1',
+    });
+    expect(mocks.createChatSdkRuntime).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        adapters: {
+          zalo: personalAdapter,
+        },
+      })
+    );
   });
 });

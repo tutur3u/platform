@@ -15,6 +15,7 @@ import {
   instructionChunkKey,
   normalizeAdapter,
   normalizeTools,
+  normalizeZaloAccountMode,
   type SecretRow,
   splitLongValue,
   stringifyField,
@@ -57,10 +58,16 @@ function normalizeChannelInput(
       channel.externalChannelId?.trim() || existing?.externalChannelId || null,
     historySyncEnabled:
       channel.historySyncEnabled ?? existing?.historySyncEnabled ?? true,
+    zaloAccountMode:
+      adapter === 'zalo'
+        ? normalizeZaloAccountMode(channel.zaloAccountMode)
+        : undefined,
     zaloOfficialAccountId:
       channel.zaloOfficialAccountId?.trim() ||
       existing?.zaloOfficialAccountId ||
       null,
+    zaloPersonalOwnId:
+      channel.zaloPersonalOwnId?.trim() || existing?.zaloPersonalOwnId || null,
   } satisfies ChannelMetaRecord;
 }
 
@@ -152,7 +159,9 @@ export async function saveAiAgent({
       discordGuildId: channel.discordGuildId ?? null,
       externalChannelId: channel.externalChannelId ?? null,
       historySyncEnabled: channel.historySyncEnabled ?? true,
+      zaloAccountMode: channel.zaloAccountMode ?? 'official',
       zaloOfficialAccountId: channel.zaloOfficialAccountId ?? null,
+      zaloPersonalOwnId: channel.zaloPersonalOwnId ?? null,
     })) ??
     [];
 
@@ -177,7 +186,12 @@ export async function saveAiAgent({
         .map((secret) => [secret.name, null as string | null]) ?? []
     );
     const secretNames = new Set([
-      ...getRequiredSecrets(channel.adapter),
+      ...getRequiredSecrets(
+        channel.adapter,
+        channel.adapter === 'zalo'
+          ? normalizeZaloAccountMode(channel.zaloAccountMode)
+          : 'official'
+      ),
       ...Object.keys(input?.secrets ?? {}),
       ...priorSecrets.keys(),
     ]);

@@ -643,9 +643,12 @@
       "save": "Lưu",
       "send": "Gửi",
       "show": "Hiện",
+      "start_zalo_personal": "Bắt đầu listener",
+      "stop_zalo_personal": "Dừng listener",
       "sync": "Đồng bộ",
       "test": "Kiểm tra",
-      "undo": "Hoàn tác"
+      "undo": "Hoàn tác",
+      "validate_zalo_personal": "Xác thực đăng nhập"
     },
     "channels": {
       "discord": "Discord",
@@ -681,8 +684,15 @@
       "name": "Tên",
       "platform_user_id": "ID người dùng Tuturuuu",
       "workspace_id": "ID không gian",
+      "zalo_account_mode": "Chế độ tài khoản Zalo",
       "zalo_bot_token": "Token bot Zalo",
+      "zalo_mode_official": "Official account",
+      "zalo_mode_personal": "Tài khoản cá nhân",
       "zalo_oa_id": "ID OA Zalo",
+      "zalo_personal_cookie_json": "Cookie JSON Zalo cá nhân",
+      "zalo_personal_imei": "IMEI Zalo cá nhân",
+      "zalo_personal_own_id": "ID tài khoản Zalo cá nhân",
+      "zalo_personal_user_agent": "User agent Zalo cá nhân",
       "zalo_user_id": "ID người dùng Zalo",
       "zalo_webhook_secret": "Bí mật webhook Zalo"
     },
@@ -709,7 +719,13 @@
       "send_success": "Đã gửi phản hồi thủ công",
       "sync_error": "Đồng bộ bên ngoài thất bại",
       "sync_success": "Đã đồng bộ bên ngoài",
-      "test_error": "Kiểm tra thất bại"
+      "test_error": "Kiểm tra thất bại",
+      "zalo_personal_start_error": "Bắt đầu listener Zalo cá nhân thất bại",
+      "zalo_personal_start_success": "Đã bắt đầu listener Zalo cá nhân",
+      "zalo_personal_stop_error": "Dừng listener Zalo cá nhân thất bại",
+      "zalo_personal_stop_success": "Đã dừng listener Zalo cá nhân",
+      "zalo_personal_validate_error": "Xác thực đăng nhập Zalo cá nhân thất bại",
+      "zalo_personal_validate_success": "Đã xác thực đăng nhập Zalo cá nhân"
     },
     "new_agent": {
       "title": "Agent mới"
@@ -747,6 +763,16 @@
       "internal": "Nội bộ",
       "search_placeholder": "Tìm không gian theo tên hoặc ID...",
       "select": "Chọn không gian"
+    },
+    "zalo_personal": {
+      "disabled_notice": "Đặt mã bí mật gốc AI_AGENT_ZALO_PERSONAL_ENABLED thành true trước khi xác thực hoặc bắt đầu listener.",
+      "enabled_notice": "Thao tác listener dùng thông tin đăng nhập Zalo cá nhân đã lưu cho kênh này.",
+      "experimental_notice": "Hỗ trợ Zalo cá nhân đang thử nghiệm và dùng API tự động hóa Zalo Web không chính thức. Chỉ dùng tài khoản thử nghiệm.",
+      "feature_disabled": "Chưa bật flag",
+      "own_id": "Own ID",
+      "running": "Đang chạy",
+      "stopped": "Đã dừng",
+      "title": "Listener Zalo cá nhân"
     }
   },
   "ai-credits": {
@@ -3145,6 +3171,9 @@
     "custom_calendars": "Tùy chỉnh",
     "danger_zone": "Vùng nguy hiểm",
     "day": "Ngày",
+    "default_calendar_source": "Nguồn lịch mặc định",
+    "default_calendar_source_desc": "Sự kiện mới sẽ dùng lịch này trừ khi bạn chọn nguồn khác.",
+    "default_calendar_updated": "Đã cập nhật lịch mặc định",
     "degraded": "Suy giảm",
     "disconnect": "Ngắt kết nối",
     "e2ee": {

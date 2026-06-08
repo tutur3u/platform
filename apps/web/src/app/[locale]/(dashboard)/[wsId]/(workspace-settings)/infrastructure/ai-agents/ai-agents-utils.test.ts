@@ -73,6 +73,31 @@ describe('AI agent settings payload builder', () => {
     });
   });
 
+  it('builds personal Zalo account credentials from the admin form', () => {
+    const formData = new FormData();
+    formData.set('id', 'support');
+    formData.set('name', 'Support Agent');
+    formData.set('workspaceId', 'workspace-1');
+    formData.set('discordDisplayName', 'Discord');
+    formData.set('zaloDisplayName', 'Zalo Personal');
+    formData.set('zaloAccountMode', 'personal');
+    formData.set('zaloPersonalOwnId', 'own-1');
+    formData.set('zaloPersonalCookieJson', '[{"name":"zpsid"}]');
+    formData.set('zaloPersonalImei', 'imei-1');
+    formData.set('zaloPersonalUserAgent', 'agent-1');
+
+    expect(buildAgentPayload(formData).channels?.[1]).toMatchObject({
+      adapter: 'zalo',
+      secrets: {
+        personalCookieJson: '[{"name":"zpsid"}]',
+        personalImei: 'imei-1',
+        personalUserAgent: 'agent-1',
+      },
+      zaloAccountMode: 'personal',
+      zaloPersonalOwnId: 'own-1',
+    });
+  });
+
   it('keeps blank secrets unchanged and sends the clear sentinel as null', () => {
     const formData = new FormData();
     formData.set('id', 'support');

@@ -1865,6 +1865,9 @@
     "custom_calendars": "Custom",
     "danger_zone": "Danger Zone",
     "day": "Day",
+    "default_calendar_source": "Default calendar source",
+    "default_calendar_source_desc": "New events will be created in this calendar unless you choose another source.",
+    "default_calendar_updated": "Default calendar updated",
     "degraded": "Degraded",
     "disconnect": "Disconnect",
     "e2ee": {

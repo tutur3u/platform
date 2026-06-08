@@ -15,10 +15,35 @@ import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
 import {
+  deleteProviderEvent,
+  moveProviderEvent,
+  updateProviderEvent,
+} from '@/lib/calendar/provider-writes';
+import {
+  resolveCalendarSource,
+  resolveCalendarSourceForEvent,
+} from '@/lib/calendar/source-resolver';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
   decryptEventFromStorage,
   encryptEventForStorage,
   getWorkspaceKey,
 } from '@/lib/workspace-encryption';
+
+const CalendarSourceSchema = z.discriminatedUnion('provider', [
+  z.object({
+    provider: z.literal('tuturuuu'),
+    workspaceCalendarId: z.guid().optional().nullable(),
+  }),
+  z.object({
+    provider: z.literal('google'),
+    connectionId: z.guid(),
+  }),
+  z.object({
+    provider: z.literal('microsoft'),
+    connectionId: z.guid(),
+  }),
+]);
 
 const updateEventSchema = z.object({
   title: z.string().max(MAX_NAME_LENGTH).optional(),
@@ -28,6 +53,7 @@ const updateEventSchema = z.object({
   end_at: z.string().datetime().optional(),
   color: z.string().max(MAX_COLOR_LENGTH).optional(),
   locked: z.boolean().optional(),
+  source: CalendarSourceSchema.optional(),
 });
 
 interface Params {
@@ -107,7 +133,7 @@ export async function GET(request: Request, { params }: Params) {
 
     return NextResponse.json(decryptedEvent);
   } catch (error) {
-    console.error('Calendar event API error:', error);
+    serverLogger.error('Calendar event API error', { wsId, eventId, error });
     return NextResponse.json(
       { error: 'An error occurred while processing your request' },
       { status: 500 }
@@ -119,10 +145,9 @@ export async function PUT(request: Request, { params }: Params) {
   const { wsId: rawWsId, eventId } = await params;
   const access = await authorizeWorkspaceCalendarEventAccess(request, rawWsId);
   if ('error' in access) return access.error;
-  const { sbAdmin, wsId } = access;
+  const { sbAdmin, wsId, userId } = access;
 
   try {
-    // Validate UUIDs
     try {
       z.guid().parse(wsId);
       z.guid().parse(eventId);
@@ -145,37 +170,121 @@ export async function PUT(request: Request, { params }: Params) {
 
     const updates = validationResult.data;
 
-    // Get workspace encryption key (read-only, does not auto-create)
-    // This ensures encryption only happens if E2EE was explicitly enabled
-    const workspaceKey = await getWorkspaceKey(wsId);
+    const { data: existingEvent, error: existingError } = await sbAdmin
+      .from('workspace_calendar_events')
+      .select('*')
+      .eq('id', eventId)
+      .eq('ws_id', wsId)
+      .single();
 
-    // Check if any sensitive fields are being updated
+    if (existingError) {
+      if (existingError.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      }
+      throw existingError;
+    }
+
+    const decryptedExisting = await decryptEventFromStorage(
+      existingEvent,
+      wsId
+    );
+    const workspaceKey = await getWorkspaceKey(wsId);
     const hasSensitiveUpdates =
       updates.title !== undefined ||
       updates.description !== undefined ||
       updates.location !== undefined;
+    const hasSourceUpdate = updates.source !== undefined;
 
-    // Build update object with only the fields that were provided
     const updatePayload: TablesUpdate<'workspace_calendar_events'> = {};
+    const nextPlainEvent = {
+      title: updates.title ?? decryptedExisting.title ?? '',
+      description: updates.description ?? decryptedExisting.description ?? '',
+      location: updates.location ?? decryptedExisting.location ?? '',
+      start_at: updates.start_at ?? existingEvent.start_at,
+      end_at: updates.end_at ?? existingEvent.end_at,
+    };
 
-    // Handle sensitive fields with encryption
-    // CRITICAL: When E2EE is enabled and the existing event is NOT encrypted,
-    // we must encrypt ALL sensitive fields (not just the updated ones) to avoid
-    // a mixed state where is_encrypted=true but some fields remain as plaintext.
+    const currentSource = await resolveCalendarSourceForEvent({
+      sbAdmin,
+      wsId,
+      userId,
+      event: existingEvent,
+    });
+    const targetSource = hasSourceUpdate
+      ? await resolveCalendarSource({
+          sbAdmin,
+          wsId,
+          userId,
+          source: updates.source ?? null,
+        })
+      : currentSource;
+
+    const sourceChanged =
+      currentSource.provider !== targetSource.provider ||
+      (targetSource.provider !== 'tuturuuu' &&
+        currentSource.provider !== 'tuturuuu' &&
+        currentSource.externalCalendarId !== targetSource.externalCalendarId) ||
+      (targetSource.provider === 'tuturuuu' &&
+        currentSource.provider === 'tuturuuu' &&
+        currentSource.workspaceCalendarId !== targetSource.workspaceCalendarId);
+
+    const touchesProviderFields =
+      updates.title !== undefined ||
+      updates.description !== undefined ||
+      updates.location !== undefined ||
+      updates.start_at !== undefined ||
+      updates.end_at !== undefined ||
+      sourceChanged;
+
+    let providerResult: Awaited<ReturnType<typeof moveProviderEvent>> = null;
+    if (touchesProviderFields) {
+      if (sourceChanged) {
+        providerResult = await moveProviderEvent({
+          fromSource: currentSource,
+          toSource: targetSource,
+          existingEvent,
+          event: nextPlainEvent,
+        });
+      } else if (targetSource.provider !== 'tuturuuu') {
+        providerResult = await updateProviderEvent({
+          source: targetSource,
+          existingEvent,
+          event: nextPlainEvent,
+        });
+      }
+    }
+
+    if (hasSourceUpdate || sourceChanged || providerResult) {
+      updatePayload.provider = targetSource.provider;
+      updatePayload.source_calendar_id = targetSource.workspaceCalendarId;
+
+      if (targetSource.provider === 'tuturuuu') {
+        updatePayload.external_calendar_id = null;
+        updatePayload.external_event_id = null;
+        updatePayload.google_calendar_id = null;
+        updatePayload.google_event_id = null;
+      } else {
+        const externalCalendarId =
+          providerResult?.externalCalendarId ??
+          existingEvent.external_calendar_id ??
+          existingEvent.google_calendar_id;
+        const externalEventId =
+          providerResult?.externalEventId ??
+          existingEvent.external_event_id ??
+          existingEvent.google_event_id;
+
+        updatePayload.external_calendar_id = externalCalendarId;
+        updatePayload.external_event_id = externalEventId;
+        updatePayload.google_calendar_id =
+          targetSource.provider === 'google' ? externalCalendarId : null;
+        updatePayload.google_event_id =
+          targetSource.provider === 'google' ? externalEventId : null;
+      }
+    }
+
     if (hasSensitiveUpdates && workspaceKey) {
-      // Fetch the existing event to check its encryption state
-      const { data: existingEvent, error: fetchError } = await sbAdmin
-        .from('workspace_calendar_events')
-        .select('title, description, location, is_encrypted')
-        .eq('id', eventId)
-        .eq('ws_id', wsId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
       const isCurrentlyEncrypted = existingEvent?.is_encrypted === true;
 
-      // Helper interface for type safety
       interface EncryptableEventFields {
         title: string;
         description: string;
@@ -211,43 +320,23 @@ export async function PUT(request: Request, { params }: Params) {
         // Keep is_encrypted = true (already encrypted)
         updatePayload.is_encrypted = true;
       } else {
-        // Event is NOT encrypted but E2EE is enabled for workspace
-        // Must encrypt ALL sensitive fields to avoid mixed plaintext/encrypted state
-        // Decrypt existing fields first (they're plaintext, so just use as-is)
         const encryptedFields = await encryptEventForStorage(
           wsId,
           {
-            title: updates.title ?? existingEvent?.title ?? '',
-            description:
-              updates.description ?? existingEvent?.description ?? '',
-            location: updates.location ?? existingEvent?.location ?? undefined,
+            title: nextPlainEvent.title,
+            description: nextPlainEvent.description,
+            location: nextPlainEvent.location,
           },
           workspaceKey
         );
 
-        // Always update all sensitive fields when transitioning to encrypted
         updatePayload.title = encryptedFields.title;
         updatePayload.description = encryptedFields.description;
         updatePayload.location = encryptedFields.location;
         updatePayload.is_encrypted = true;
       }
     } else if (hasSensitiveUpdates) {
-      // No encryption key available - check if the existing event is encrypted
-      // to avoid data corruption (encrypted fields becoming unreadable gibberish)
-      const { data: existingEvent, error: fetchError } = await sbAdmin
-        .from('workspace_calendar_events')
-        .select('is_encrypted')
-        .eq('id', eventId)
-        .eq('ws_id', wsId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
       if (existingEvent?.is_encrypted === true) {
-        // CRITICAL: Cannot update an encrypted event without the encryption key
-        // If we proceeded, we'd either:
-        // 1. Set is_encrypted=false but leave non-updated fields as encrypted blobs (data corruption)
-        // 2. Or only update some fields while others remain encrypted (inconsistent state)
         return NextResponse.json(
           {
             error:
@@ -258,7 +347,6 @@ export async function PUT(request: Request, { params }: Params) {
         );
       }
 
-      // Event is not encrypted - safe to update as plaintext
       if (updates.title !== undefined) {
         updatePayload.title = updates.title;
       }
@@ -268,10 +356,8 @@ export async function PUT(request: Request, { params }: Params) {
       if (updates.location !== undefined) {
         updatePayload.location = updates.location;
       }
-      // is_encrypted remains false (event was never encrypted)
     }
 
-    // Handle non-sensitive fields - only include if provided
     if (updates.start_at !== undefined) {
       updatePayload.start_at = updates.start_at;
     }
@@ -285,7 +371,6 @@ export async function PUT(request: Request, { params }: Params) {
       updatePayload.locked = updates.locked;
     }
 
-    // Only proceed if there are fields to update
     if (Object.keys(updatePayload).length === 0) {
       return NextResponse.json(
         { error: 'No valid fields provided for update' },
@@ -311,26 +396,26 @@ export async function PUT(request: Request, { params }: Params) {
       throw error;
     }
 
-    // If sensitive fields were updated, we need to return decrypted values
-    // For fields not updated, we must decrypt the stored (encrypted) values first
     if (hasSensitiveUpdates) {
-      // Decrypt the stored event to get plaintext for any fields not in updates
       const decryptedStored = await decryptEventFromStorage(data, wsId);
 
       return NextResponse.json({
         ...data,
-        // Use update value if provided, otherwise use decrypted stored value
         title: updates.title ?? decryptedStored.title,
         description: updates.description ?? decryptedStored.description,
         location: updates.location ?? decryptedStored.location,
       });
     }
 
-    // For non-sensitive updates, decrypt and return the full event
     const decryptedEvent = await decryptEventFromStorage(data, wsId);
     return NextResponse.json(decryptedEvent);
   } catch (error) {
-    console.error('Calendar event API error:', error);
+    const message = error instanceof Error ? error.message : '';
+    if (message.toLowerCase().includes('source is unavailable or read-only')) {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+
+    serverLogger.error('Calendar event API error', { wsId, eventId, error });
     return NextResponse.json(
       { error: 'An error occurred while processing your request' },
       { status: 500 }
@@ -345,6 +430,37 @@ export async function DELETE(request: Request, { params }: Params) {
   const { sbAdmin, wsId, userId } = access;
 
   try {
+    const { data: existingEvent, error: existingError } = await sbAdmin
+      .from('workspace_calendar_events')
+      .select('*')
+      .eq('id', eventId)
+      .eq('ws_id', wsId)
+      .single();
+
+    if (existingError) {
+      if (existingError.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      }
+      throw existingError;
+    }
+
+    if (
+      existingEvent.provider === 'google' ||
+      existingEvent.provider === 'microsoft'
+    ) {
+      const source = await resolveCalendarSourceForEvent({
+        sbAdmin,
+        wsId,
+        userId,
+        event: existingEvent,
+      });
+
+      await deleteProviderEvent({
+        source,
+        existingEvent,
+      });
+    }
+
     const [linkedHabitResult, linkedTaskResult] = await Promise.all([
       sbAdmin
         .from('habit_calendar_events')
@@ -386,7 +502,12 @@ export async function DELETE(request: Request, { params }: Params) {
       skippedHabitId: linkedHabitResult.data?.habit_id ?? null,
     });
   } catch (error) {
-    console.error('Calendar event API error:', error);
+    const message = error instanceof Error ? error.message : '';
+    if (message.toLowerCase().includes('source is unavailable or read-only')) {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+
+    serverLogger.error('Calendar event API error', { wsId, eventId, error });
     return NextResponse.json(
       { error: 'An error occurred while processing your request' },
       { status: 500 }

@@ -34,7 +34,9 @@ const channelSchema = z.object({
   discordGuildId: z.string().trim().max(128).nullable().optional(),
   externalChannelId: z.string().trim().max(255).nullable().optional(),
   historySyncEnabled: z.boolean().optional(),
+  zaloAccountMode: z.enum(['official', 'personal']).optional(),
   zaloOfficialAccountId: z.string().trim().max(128).nullable().optional(),
+  zaloPersonalOwnId: z.string().trim().max(128).nullable().optional(),
 });
 
 const agentSchema = z.object({

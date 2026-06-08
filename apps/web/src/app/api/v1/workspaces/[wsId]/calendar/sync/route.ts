@@ -13,6 +13,7 @@ import { validate } from 'uuid';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
 import { sanitizeWorkspaceCalendarEventFields } from '@/lib/calendar/sync-field-limits';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface RouteParams {
   wsId: string;
@@ -31,6 +32,8 @@ type CalendarConnectionRow = {
   calendar_id: string;
   color?: string | null;
   auth_token_id?: string | null;
+  workspace_calendar_id?: string | null;
+  access_role?: string | null;
 };
 type ExistingExternalEventRow = {
   id: string;
@@ -135,7 +138,7 @@ async function clearStaleRunningSyncRuns(sbAdmin: any, wsId: string) {
     .lt('start_time', staleThresholdIso);
 
   if (error) {
-    console.error('Failed to clear stale calendar sync runs', {
+    serverLogger.error('Failed to clear stale calendar sync runs', {
       wsId,
       error,
     });
@@ -189,7 +192,7 @@ async function syncMicrosoftInbound(args: {
   for (const token of tokens) {
     const { data: connections, error: connectionError } = await args.sbAdmin
       .from('calendar_connections')
-      .select('calendar_id, color')
+      .select('calendar_id, color, workspace_calendar_id, access_role')
       .eq('ws_id', args.wsId)
       .eq('auth_token_id', token.id)
       .eq('is_enabled', true);
@@ -207,7 +210,9 @@ async function syncMicrosoftInbound(args: {
         args.rangeEnd
       );
 
-      const eventIds = new Set(events.map((event) => event.id));
+      const eventIds = new Set(
+        events.filter((event) => !event.isCancelled).map((event) => event.id)
+      );
       const payload = events
         .filter((event) => !event.isCancelled)
         .map((event) => {
@@ -229,9 +234,9 @@ async function syncMicrosoftInbound(args: {
             provider: 'microsoft' as const,
             external_event_id: event.id,
             external_calendar_id: connection.calendar_id,
-            source_calendar_id: connection.calendar_id,
-            google_event_id: event.id,
-            google_calendar_id: connection.calendar_id,
+            source_calendar_id: connection.workspace_calendar_id ?? null,
+            google_event_id: null,
+            google_calendar_id: null,
           });
         });
 
@@ -326,7 +331,7 @@ async function syncGoogleInbound(args: {
 
   const { data: connections, error: connectionError } = await args.sbAdmin
     .from('calendar_connections')
-    .select('calendar_id, auth_token_id')
+    .select('calendar_id, auth_token_id, workspace_calendar_id, access_role')
     .eq('ws_id', args.wsId)
     .eq('is_enabled', true)
     .in('auth_token_id', googleTokenIds);
@@ -351,7 +356,8 @@ async function syncGoogleInbound(args: {
       new Date(args.rangeStart),
       new Date(args.rangeEnd),
       undefined,
-      connection.auth_token_id
+      connection.auth_token_id,
+      connection.workspace_calendar_id ?? null
     );
 
     if (result instanceof NextResponse) {
@@ -443,7 +449,7 @@ export async function POST(
       .single();
 
     if (dashboardInsertError || !dashboardRow) {
-      console.error('Failed to insert calendar sync dashboard row', {
+      serverLogger.error('Failed to insert calendar sync dashboard row', {
         wsId,
         direction,
         source,
@@ -515,7 +521,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error('Error in workspace calendar sync route:', error);
+    serverLogger.error('Error in workspace calendar sync route', { error });
     if (sbAdmin && dashboardRunId) {
       await sbAdmin
         .from('calendar_sync_dashboard')

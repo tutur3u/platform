@@ -52,6 +52,13 @@ async function handleWebhook(request: NextRequest, { params }: Params) {
       );
     }
 
+    if (adapter === 'zalo' && channel.zaloAccountMode === 'personal') {
+      return NextResponse.json(
+        { error: 'Personal Zalo channels use the listener lifecycle API' },
+        { status: 404 }
+      );
+    }
+
     if (
       adapter === 'discord' &&
       request.headers.has('x-discord-gateway-token') &&

@@ -33,6 +33,10 @@ export const AI_AGENT_ALLOWED_TOOLS = [
 export type AiAgentAllowedTool = (typeof AI_AGENT_ALLOWED_TOOLS)[number];
 
 export type AiAgentChannelStatus = 'draft' | 'deployed' | 'error' | 'paused';
+export type AiAgentZaloAccountMode = 'official' | 'personal';
+
+export const AI_AGENT_ZALO_PERSONAL_ENABLED_SECRET =
+  'AI_AGENT_ZALO_PERSONAL_ENABLED' as const;
 
 export interface AiAgentSecretDescriptor {
   configured: boolean;
@@ -57,7 +61,9 @@ export interface AiAgentChannelConfig {
   discordGuildId?: string | null;
   externalChannelId?: string | null;
   historySyncEnabled?: boolean;
+  zaloAccountMode?: AiAgentZaloAccountMode;
   zaloOfficialAccountId?: string | null;
+  zaloPersonalOwnId?: string | null;
 }
 
 export interface AiAgentDefinition {
@@ -86,7 +92,9 @@ export interface SaveAiAgentChannelInput {
   discordGuildId?: string | null;
   externalChannelId?: string | null;
   historySyncEnabled?: boolean;
+  zaloAccountMode?: AiAgentZaloAccountMode;
   zaloOfficialAccountId?: string | null;
+  zaloPersonalOwnId?: string | null;
 }
 
 export interface SaveAiAgentInput {
@@ -119,6 +127,18 @@ export interface AiAgentTestResult {
   checks?: AiAgentDiagnosticCheck[];
   ok: boolean;
   response: string;
+}
+
+export interface AiAgentZaloPersonalStatus {
+  channelId: string;
+  connected: boolean;
+  enabled: boolean;
+  lastError: string | null;
+  lastEventAt: string | null;
+  mode: AiAgentZaloAccountMode;
+  ownId: string | null;
+  running: boolean;
+  startedAt: string | null;
 }
 
 export interface AiAgentIdentityLink {

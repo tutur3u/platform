@@ -199,6 +199,7 @@ export function AiAgentsClient({ initialData }: { initialData: AiAgentsData }) {
                 agent={agent}
                 includeInternalWorkspace
                 isPending={isPending}
+                onRefresh={refresh}
                 onSubmit={(payload) => saveMutation.mutate(payload)}
               />
               <AgentOperations

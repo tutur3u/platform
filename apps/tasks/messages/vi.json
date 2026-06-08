@@ -1474,6 +1474,9 @@
     "custom_calendars": "Tùy chỉnh",
     "danger_zone": "Vùng nguy hiểm",
     "day": "Ngày",
+    "default_calendar_source": "Nguồn lịch mặc định",
+    "default_calendar_source_desc": "Sự kiện mới sẽ được tạo trong lịch này trừ khi bạn chọn nguồn khác.",
+    "default_calendar_updated": "Đã cập nhật lịch mặc định",
     "degraded": "Suy giảm",
     "disconnect": "Ngắt kết nối",
     "e2ee": {

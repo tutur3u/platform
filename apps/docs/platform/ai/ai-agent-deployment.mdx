@@ -54,10 +54,16 @@ AI_AGENT_REGISTRY:<agentId>:instructions
 AI_AGENT_REGISTRY:<agentId>:channel:<channelId>:meta
 AI_AGENT_REGISTRY:<agentId>:channel:<channelId>:secret:<name>
 AI_AGENT_IDENTITY:<wsId>:zalo:<oaId>:<zaloUserId>
+AI_AGENT_ZALO_PERSONAL_ENABLED
 ```
 
 Admin APIs redact channel secrets. One-time generated values are shown only
 after rotation.
+
+Feature flags for this surface are also root workspace secrets. Experimental
+personal Zalo account support requires
+`AI_AGENT_ZALO_PERSONAL_ENABLED = true`; do not gate it with process
+environment variables.
 
 External chat history is mirrored separately in the `private` schema:
 
@@ -172,6 +178,15 @@ generated Discord channel webhook URL instead of using auto-discovery.
 For Zalo, configure the bot webhook URL in the Zalo Bot dashboard, set the
 secret token to the channel's `webhookSecret`, and store the bot token plus OA ID
 on the Zalo channel.
+
+For experimental personal Zalo account testing, set the Zalo account mode to
+`Personal account`, store the cookie JSON, IMEI, and user agent as channel
+secrets, then use **Validate login** to save the personal account ID. Personal
+Zalo channels do not receive webhooks. They use the channel listener lifecycle
+API from Infrastructure > AI Agents, and only one Zalo Web listener can be
+active per personal account at a time. Use test accounts only; the upstream
+`zca-js` package is an unofficial Zalo Web automation API and can trigger
+account locks or bans.
 
 For experimental root-internal external chatbots, choose the explicit
 `Internal` workspace option in the AI-agent workspace picker. It stores

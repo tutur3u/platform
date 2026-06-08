@@ -17,6 +17,11 @@ import {
   Target,
   Trash2,
 } from '@tuturuuu/icons';
+import {
+  type CalendarSourceOption,
+  getWorkspaceCalendarDefaultSource,
+  updateWorkspaceCalendarDefaultSource,
+} from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -52,6 +57,13 @@ import {
 } from '../../dialog';
 import { Input } from '../../input';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../select';
 import { Separator } from '../../separator';
 import { toast } from '../../sonner';
 import { Switch } from '../../switch';
@@ -98,6 +110,20 @@ interface ManualSyncResponse {
   code?: string;
   error?: string;
   retryAfterSeconds?: number | null;
+}
+
+function sourceInputFromOption(option: CalendarSourceOption) {
+  if (option.provider === 'tuturuuu') {
+    return {
+      provider: 'tuturuuu' as const,
+      workspaceCalendarId: option.workspaceCalendarId,
+    };
+  }
+
+  return {
+    provider: option.provider,
+    connectionId: option.connectionId,
+  };
 }
 
 export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
@@ -204,6 +230,37 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
       }>;
     },
     staleTime: 15_000,
+  });
+
+  const { data: defaultSourceData } = useQuery({
+    queryKey: ['calendar-default-source', wsId],
+    queryFn: () => getWorkspaceCalendarDefaultSource(wsId),
+    staleTime: 30_000,
+  });
+
+  const defaultSourceMutation = useMutation({
+    mutationFn: async (sourceId: string) => {
+      const option = defaultSourceData?.options.find(
+        (candidate) => candidate.id === sourceId
+      );
+      if (!option) throw new Error('Calendar source is unavailable');
+
+      return updateWorkspaceCalendarDefaultSource(
+        wsId,
+        sourceInputFromOption(option)
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['calendar-default-source', wsId],
+      });
+      toast.success(
+        t('default_calendar_updated') || 'Default calendar updated'
+      );
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update default calendar');
+    },
   });
 
   // Fetch current user's email
@@ -355,7 +412,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
       }
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success(
         t('calendar_data_reset') || 'Calendar data reset successfully'
       );
@@ -377,7 +434,6 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
       });
       // Refresh the page to reload server data
       router.refresh();
-      console.log('Reset results:', data);
     },
     onError: (error: Error) => {
       toast.error(
@@ -451,6 +507,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
       color: string | null;
       connectionExists: boolean;
       accountId?: string;
+      accessRole?: string;
     }
   ) => {
     const newState = !currentState;
@@ -469,6 +526,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
             color: calendarData.color,
             isEnabled: true,
             authTokenId: calendarData.accountId,
+            accessRole: calendarData.accessRole,
           }),
         });
 
@@ -483,7 +541,9 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                 // Use calendar_id to find the connection since we don't have the connection ID
                 calendarId: calendarData.calendar_id,
                 wsId,
+                authTokenId: calendarData.accountId,
                 isEnabled: true,
+                accessRole: calendarData.accessRole,
               }),
             });
 
@@ -501,12 +561,6 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
               toast.error(t('toggle_failed'));
             }
           } else {
-            const errorText = await response.text().catch(() => '');
-            console.error('Failed to create connection:', {
-              status: response.status,
-              statusText: response.statusText,
-              rawText: errorText,
-            });
             toast.error(t('toggle_failed'));
           }
         } else {
@@ -623,7 +677,8 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
       acc[account.id] = apiCalendars.map((apiCal) => {
         // Find existing connection for this calendar
         const existingConnection = calendarConnections.find(
-          (conn) => conn.calendar_id === apiCal.id
+          (conn) =>
+            conn.calendar_id === apiCal.id && conn.auth_token_id === account.id
         );
 
         return {
@@ -636,6 +691,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
           isFromAPI: true,
           connectionExists: !!existingConnection,
           accountId: account.id,
+          accessRole: apiCal.accessRole,
         };
       });
 
@@ -653,6 +709,7 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
         isFromAPI: boolean;
         connectionExists: boolean;
         accountId: string;
+        accessRole: string;
       }>
     >
   );
@@ -700,6 +757,54 @@ export default function CalendarConnectionsUnified({ wsId }: { wsId: string }) {
                   </DialogHeader>
 
                   <div className="space-y-4 py-4">
+                    <div className="space-y-2 rounded-md border p-3">
+                      <div>
+                        <h4 className="font-medium text-sm">
+                          {t('default_calendar_source') ||
+                            'Default calendar source'}
+                        </h4>
+                        <p className="text-muted-foreground text-xs">
+                          {t('default_calendar_source_desc') ||
+                            'New events use this calendar unless you choose another source.'}
+                        </p>
+                      </div>
+                      <Select
+                        value={defaultSourceData?.defaultSource?.id}
+                        onValueChange={(value) =>
+                          defaultSourceMutation.mutate(value)
+                        }
+                        disabled={
+                          !defaultSourceData?.options.length ||
+                          defaultSourceMutation.isPending
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Choose default calendar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {defaultSourceData?.options.map((option) => (
+                            <SelectItem key={option.id} value={option.id}>
+                              <div className="flex min-w-0 items-center gap-2">
+                                <span
+                                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                  style={{
+                                    backgroundColor: option.color ?? undefined,
+                                  }}
+                                />
+                                <span className="truncate">{option.label}</span>
+                                <Badge
+                                  variant="secondary"
+                                  className="capitalize"
+                                >
+                                  {option.provider}
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     {/* Tuturuuu Calendars Section */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">

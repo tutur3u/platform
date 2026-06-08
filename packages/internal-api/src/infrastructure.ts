@@ -44,6 +44,7 @@ export interface ExternalAppsResponse {
 export type AiAgentAdapter = 'discord' | 'zalo';
 
 export type AiAgentChannelStatus = 'draft' | 'deployed' | 'error' | 'paused';
+export type AiAgentZaloAccountMode = 'official' | 'personal';
 
 export interface AiAgentSecretDescriptor {
   configured: boolean;
@@ -68,7 +69,9 @@ export interface AiAgentChannelConfig {
   discordGuildId?: string | null;
   externalChannelId?: string | null;
   historySyncEnabled?: boolean;
+  zaloAccountMode?: AiAgentZaloAccountMode;
   zaloOfficialAccountId?: string | null;
+  zaloPersonalOwnId?: string | null;
 }
 
 export interface AiAgentDefinition {
@@ -266,7 +269,9 @@ export interface SaveAiAgentPayload {
     discordGuildId?: string | null;
     externalChannelId?: string | null;
     historySyncEnabled?: boolean;
+    zaloAccountMode?: AiAgentZaloAccountMode;
     zaloOfficialAccountId?: string | null;
+    zaloPersonalOwnId?: string | null;
   }>;
   enabled?: boolean;
   id: string;
@@ -301,6 +306,24 @@ export interface AiAgentTestResponse {
   ok: boolean;
   response: string;
 }
+
+export interface AiAgentZaloPersonalStatus {
+  channelId: string;
+  connected: boolean;
+  enabled: boolean;
+  lastError: string | null;
+  lastEventAt: string | null;
+  mode: AiAgentZaloAccountMode;
+  ownId: string | null;
+  running: boolean;
+  startedAt: string | null;
+}
+
+export interface AiAgentZaloPersonalStatusResponse {
+  status: AiAgentZaloPersonalStatus;
+}
+
+export type AiAgentZaloPersonalAction = 'start' | 'stop' | 'validate';
 
 export interface RotateAiAgentChannelSecretResponse {
   secret: {
@@ -1997,6 +2020,44 @@ export async function rotateAiAgentChannelSecret(
     )}/channels/${encodePathSegment(channelId)}/secrets`,
     {
       body: JSON.stringify({ name, value }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function getAiAgentZaloPersonalStatus(
+  agentId: string,
+  channelId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AiAgentZaloPersonalStatusResponse>(
+    `/api/v1/infrastructure/ai-agents/${encodePathSegment(
+      agentId
+    )}/channels/${encodePathSegment(channelId)}/zalo-personal`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function runAiAgentZaloPersonalAction(
+  agentId: string,
+  channelId: string,
+  action: AiAgentZaloPersonalAction,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AiAgentZaloPersonalStatusResponse>(
+    `/api/v1/infrastructure/ai-agents/${encodePathSegment(
+      agentId
+    )}/channels/${encodePathSegment(channelId)}/zalo-personal`,
+    {
+      body: JSON.stringify({ action }),
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',

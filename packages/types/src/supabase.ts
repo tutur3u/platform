@@ -611,6 +611,58 @@ export type Database = {
         };
         Relationships: [];
       };
+      calendar_user_workspace_preferences: {
+        Row: {
+          created_at: string;
+          default_calendar_connection_id: string | null;
+          default_provider: Database['public']['Enums']['calendar_provider'];
+          default_workspace_calendar_id: string | null;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          default_calendar_connection_id?: string | null;
+          default_provider?: Database['public']['Enums']['calendar_provider'];
+          default_workspace_calendar_id?: string | null;
+          updated_at?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          default_calendar_connection_id?: string | null;
+          default_provider?: Database['public']['Enums']['calendar_provider'];
+          default_workspace_calendar_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_user_workspace_prefe_default_workspace_calendar_i_fkey';
+            columns: ['default_workspace_calendar_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendars';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_user_workspace_preferences_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'calendar_user_workspace_preferences_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       chat_audit_events: {
         Row: {
           actor_id: string | null;
@@ -11569,6 +11621,7 @@ export type Database = {
       };
       calendar_connections: {
         Row: {
+          access_role: string | null;
           auth_token_id: string | null;
           calendar_id: string;
           calendar_name: string;
@@ -11582,6 +11635,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          access_role?: string | null;
           auth_token_id?: string | null;
           calendar_id: string;
           calendar_name: string;
@@ -11595,6 +11649,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          access_role?: string | null;
           auth_token_id?: string | null;
           calendar_id?: string;
           calendar_name?: string;
