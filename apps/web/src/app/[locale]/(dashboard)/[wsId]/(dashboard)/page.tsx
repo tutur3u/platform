@@ -1,17 +1,22 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import LoadingStatisticCard from '@/components/loading-statistic-card';
-
-const MiraDashboardClient = dynamic(
-  () => import('./components/mira-dashboard-client'),
-  {
-    loading: () => <LoadingStatisticCard />,
-  }
-);
+import MiraDashboardClient from './components/mira-dashboard-client';
 
 const DEFAULT_ASSISTANT_NAME = 'Mira';
+
+function DashboardInsightFallback() {
+  return (
+    <div className="group animate-pulse rounded-lg border">
+      <div className="p-1 text-center font-semibold text-lg text-transparent">
+        ...
+      </div>
+      <div className="m-2 mt-0 flex items-center justify-center rounded border border-foreground/5 bg-foreground/5 p-4 font-bold text-2xl text-transparent">
+        ...
+      </div>
+    </div>
+  );
+}
 
 async function DashboardInsightsSlot({
   userId,
@@ -124,7 +129,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
         initialAssistantName={DEFAULT_ASSISTANT_NAME}
         wsId={wsId}
       >
-        <Suspense fallback={<LoadingStatisticCard />}>
+        <Suspense fallback={<DashboardInsightFallback />}>
           <DashboardInsightsSlot wsId={wsId} userId={currentUser.id} />
         </Suspense>
       </MiraDashboardClient>

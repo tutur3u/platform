@@ -8,6 +8,12 @@ const structureSource = readFileSync(
     encoding: 'utf8',
   }
 );
+const structureImplSource = readFileSync(
+  join(process.cwd(), 'src/app/[locale]/(dashboard)/[wsId]/structure-impl.tsx'),
+  {
+    encoding: 'utf8',
+  }
+);
 const lazySidebarComponentsSource = readFileSync(
   join(
     process.cwd(),
@@ -31,18 +37,34 @@ function staticImportPattern(modulePath: string) {
 }
 
 describe('[wsId] structure compile graph', () => {
+  it('keeps the route-level structure import as a thin post-hydration wrapper', () => {
+    for (const modulePath of [
+      '@tanstack/react-query',
+      '@tuturuuu/ui/custom/structure',
+      './nav',
+      './navigation-icons',
+      './sidebar-navigation-preferences',
+      './structure-impl',
+    ] as const) {
+      expect(structureSource).not.toMatch(staticImportPattern(modulePath));
+    }
+
+    expect(structureSource).toContain("import('./structure-impl')");
+    expect(structureSource).toContain('useStructureImplComponent');
+  });
+
   it('keeps sidebar preference data helpers behind async split points', () => {
     for (const modulePath of [
       '@tuturuuu/internal-api/users',
       '@tuturuuu/ui/sonner',
     ] as const) {
-      expect(structureSource).not.toMatch(staticImportPattern(modulePath));
-      expect(structureSource).toContain(`import('${modulePath}')`);
+      expect(structureImplSource).not.toMatch(staticImportPattern(modulePath));
+      expect(structureImplSource).toContain(`import('${modulePath}')`);
     }
   });
 
   it('does not pull the shared user-config hook into the workspace shell', () => {
-    expect(structureSource).not.toMatch(
+    expect(structureImplSource).not.toMatch(
       staticImportPattern('@/hooks/use-user-config')
     );
   });
@@ -64,8 +86,8 @@ describe('[wsId] structure compile graph', () => {
       expect(lazySidebarComponentsSource).toContain(`import('${modulePath}')`);
     }
 
-    expect(structureSource).toContain("from './lazy-sidebar-components'");
-    expect(structureSource).toContain('useRecentSidebarItemsComponent');
-    expect(structureSource).toContain('useSidebarActiveTimerComponent');
+    expect(structureImplSource).toContain("from './lazy-sidebar-components'");
+    expect(structureImplSource).toContain('useRecentSidebarItemsComponent');
+    expect(structureImplSource).toContain('useSidebarActiveTimerComponent');
   });
 });

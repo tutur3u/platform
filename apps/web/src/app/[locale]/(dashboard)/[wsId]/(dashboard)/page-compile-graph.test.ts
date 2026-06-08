@@ -30,6 +30,16 @@ function staticImportPattern(modulePath: string) {
 }
 
 describe('[wsId] dashboard page compile graph', () => {
+  it('imports only the thin Mira client wrapper at the route entry', () => {
+    expect(pageSource).not.toMatch(staticImportPattern('next/dynamic'));
+    expect(pageSource).not.toMatch(
+      staticImportPattern('@/components/loading-statistic-card')
+    );
+    expect(pageSource).toMatch(
+      staticImportPattern('./components/mira-dashboard-client')
+    );
+  });
+
   it('keeps auth and workspace helper modules behind async split points', () => {
     for (const modulePath of forbiddenStaticImports) {
       expect(pageSource).not.toMatch(staticImportPattern(modulePath));
