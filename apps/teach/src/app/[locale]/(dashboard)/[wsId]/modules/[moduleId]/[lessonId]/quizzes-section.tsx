@@ -216,7 +216,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
                 value={count}
                 onChange={(e) =>
                   setCount(
-                    Math.min(20, Math.max(1, parseInt(e.target.value) || 1))
+                    Math.min(20, Math.max(1, parseInt(e.target.value, 10) || 1))
                   )
                 }
                 disabled={isGenerating}
