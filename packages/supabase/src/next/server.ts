@@ -91,6 +91,12 @@ async function getRequestUrlFromHeaders() {
   }
 }
 
+function resolveRequestUrlFromRequest(
+  request: Pick<Request, 'headers'> & Partial<Pick<Request, 'url'>>
+) {
+  return resolveRequestUrlFromHeaders(request.headers) ?? request.url ?? null;
+}
+
 async function createGenericClient<T = Database>(
   isAdmin: boolean,
   requestUrl?: string | URL | null
@@ -251,7 +257,10 @@ export async function createClient<T = Database>(
       );
     }
 
-    const userClient = await createGenericClient<T>(false, request.url);
+    const userClient = await createGenericClient<T>(
+      false,
+      resolveRequestUrlFromRequest(request)
+    );
 
     return wrapRequestClientForProxyOnlyTables(
       userClient,
@@ -306,7 +315,10 @@ export async function createDynamicClient<T = Database>(
       );
     }
 
-    const userClient = await createGenericClient<T>(false, request.url);
+    const userClient = await createGenericClient<T>(
+      false,
+      resolveRequestUrlFromRequest(request)
+    );
 
     return wrapRequestClientForProxyOnlyTables(
       userClient,

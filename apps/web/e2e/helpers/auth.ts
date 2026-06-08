@@ -97,6 +97,7 @@ export async function authenticateTestUser(page: Page): Promise<void> {
   try {
     await authenticateViaDevSession(page);
   } catch {
+    await clearAuthStateForPasswordFallback(page);
     previousOtpState = await setWebOtpEnabled(false);
 
     try {
@@ -145,6 +146,16 @@ async function authenticateViaDevSession(page: Page): Promise<void> {
     );
   }
   await verifyAuthenticatedSession(page);
+}
+
+async function clearAuthStateForPasswordFallback(page: Page): Promise<void> {
+  await page.context().clearCookies();
+  await page
+    .evaluate(() => {
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+    })
+    .catch(() => undefined);
 }
 
 async function authenticateViaPasswordUi(page: Page): Promise<void> {
