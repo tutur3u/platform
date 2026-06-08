@@ -59,7 +59,8 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
         context: teacherContext,
       },
       {
-        onSuccess: () => {
+        onSuccess: (res: any) => {
+          if (!res?.success) return;
           setShowAiDialog(false);
           // Reset dialog states
           setQuestionType('mix');
@@ -168,8 +169,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
               {t('ws-quizzes.generate_with_ai')}
             </DialogTitle>
             <DialogDescription>
-              Configure the type and quantity of questions to generate from this
-              lesson.
+              {t('ws-quizzes.generate_with_ai_description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -188,7 +188,9 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mix">Mix Types</SelectItem>
+                  <SelectItem value="mix">
+                    {t('ws-quizzes.mix_types')}
+                  </SelectItem>
                   <SelectItem value="multiple_choice">
                     {t('ws-quizzes.multiple_choice')}
                   </SelectItem>

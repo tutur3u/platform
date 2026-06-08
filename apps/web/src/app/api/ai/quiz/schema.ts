@@ -11,11 +11,8 @@ export const QUIZ_GENERATION_PROMPT = `You are an expert Academic Curriculum Des
    - Include clear explanations for the answers if possible.
    - The score field MUST be an integer between 1 and 10 (do NOT generate extremely large numbers).`;
 
-export const GeneratedQuizSchema = z.object({
+const BaseQuizSchema = z.object({
   question: z.string().describe('The quiz question text.'),
-  type: z
-    .enum(['multiple_choice', 'true_false', 'matching', 'ordering'])
-    .describe('The question type.'),
   score: z
     .number()
     .int()
@@ -25,56 +22,60 @@ export const GeneratedQuizSchema = z.object({
     .describe(
       'Point value for this question (MUST be an integer between 1 and 10, default is 1).'
     ),
-  // Multiple choice fields
-  options: z
-    .array(z.string())
-    .min(2)
-    .max(6)
-    .optional()
-    .describe(
-      'List of options for multiple choice questions. Required if type is multiple_choice.'
-    ),
-  correct_option_index: z
-    .number()
-    .int()
-    .nonnegative()
-    .optional()
-    .describe(
-      'Index of the correct option for multiple choice (0-indexed). Required if type is multiple_choice.'
-    ),
-  // True/false fields
-  correct_boolean: z
-    .boolean()
-    .optional()
-    .describe(
-      'Correct answer for true/false questions. Required if type is true_false.'
-    ),
-  // Matching fields
-  matching_pairs: z
-    .array(
-      z.object({
-        left: z.string().describe('Left item'),
-        right: z.string().describe('Right matched item'),
-      })
-    )
-    .optional()
-    .describe(
-      'Pairs of items that match each other. Required if type is matching.'
-    ),
-  // Ordering fields
-  ordering_items: z
-    .array(z.string())
-    .min(2)
-    .optional()
-    .describe(
-      'Items in their correct ordered sequence. Required if type is ordering.'
-    ),
-  // Universal explanation
   explanation: z
     .string()
     .optional()
     .describe('Explanation of the correct answer.'),
 });
+
+export const GeneratedQuizSchema = z.discriminatedUnion('type', [
+  BaseQuizSchema.extend({
+    type: z.literal('multiple_choice').describe('The question type.'),
+    options: z
+      .array(z.string())
+      .min(2)
+      .max(6)
+      .describe('List of options for multiple choice questions.'),
+    correct_option_index: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe('Index of the correct option for multiple choice (0-indexed).'),
+  }).superRefine((data, ctx) => {
+    if (data.correct_option_index >= data.options.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'correct_option_index must be less than the number of options',
+        path: ['correct_option_index'],
+      });
+    }
+  }),
+  BaseQuizSchema.extend({
+    type: z.literal('true_false').describe('The question type.'),
+    correct_boolean: z
+      .boolean()
+      .describe('Correct answer for true/false questions.'),
+  }),
+  BaseQuizSchema.extend({
+    type: z.literal('matching').describe('The question type.'),
+    matching_pairs: z
+      .array(
+        z.object({
+          left: z.string().describe('Left item'),
+          right: z.string().describe('Right matched item'),
+        })
+      )
+      .min(1)
+      .describe('Pairs of items that match each other.'),
+  }),
+  BaseQuizSchema.extend({
+    type: z.literal('ordering').describe('The question type.'),
+    ordering_items: z
+      .array(z.string())
+      .min(2)
+      .describe('Items in their correct ordered sequence.'),
+  }),
+]);
 
 export const QuizGenerationSchema = z.object({
   quizzes: z
