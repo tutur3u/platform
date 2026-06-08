@@ -11,6 +11,15 @@ const pageSource = readFileSync(
     encoding: 'utf8',
   }
 );
+const quickActionsSource = readFileSync(
+  join(
+    process.cwd(),
+    'src/app/[locale]/(dashboard)/[wsId]/(dashboard)/user-groups/quick-actions.tsx'
+  ),
+  {
+    encoding: 'utf8',
+  }
+);
 
 const forbiddenStaticImports = [
   '@tuturuuu/utils/user-helper',
@@ -49,5 +58,25 @@ describe('[wsId] dashboard page compile graph', () => {
   it('loads the dashboard access helpers through async imports', () => {
     expect(pageSource).toContain("import('@tuturuuu/utils/user-helper')");
     expect(pageSource).toContain("import('@tuturuuu/utils/workspace-helper')");
+  });
+
+  it('keeps optional user-group quick action UI behind its feature flag', () => {
+    for (const modulePath of [
+      '@tuturuuu/icons/lucide',
+      '@tuturuuu/ui/separator',
+      '@tuturuuu/utils/format',
+      '@tuturuuu/utils/workspace-helper',
+      'next-intl/server',
+      './quick-actions-content',
+    ] as const) {
+      expect(quickActionsSource).not.toMatch(staticImportPattern(modulePath));
+    }
+
+    expect(quickActionsSource).toMatch(
+      /import\(\s*['"]@tuturuuu\/supabase\/next\/server['"]\s*\)/u
+    );
+    expect(quickActionsSource).toMatch(
+      /import\(\s*['"]\.\/quick-actions-content['"]\s*\)/u
+    );
   });
 });
