@@ -142,7 +142,7 @@ export function SettingsDialog({
           initialCalendarConnections={calendarConnections}
         >
           <div className="h-full">
-            <CalendarConnectionsUnified wsId={wsId} />
+            <CalendarConnectionsUnified wsId={wsId} variant="settings" />
           </div>
         </CalendarSyncProvider>
       )}

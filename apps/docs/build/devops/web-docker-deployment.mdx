@@ -634,6 +634,8 @@ runs stay auditable. The workspace sync route is responsible for provider
 fan-out: Google connections are selected from active Google auth-token rows, and
 Microsoft connections are selected from active Microsoft auth-token rows. Do not
 reimplement provider-specific calendar fetching inside the cron wrapper.
+The job should run every 15 minutes from `apps/web/cron.config.json`; Calendar
+provider sync should not be scheduled through Trigger.dev in production.
 
 ## Auto-Deploy Watcher
 

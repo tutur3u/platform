@@ -40,7 +40,7 @@
       "enabled": true,
       "id": "calendar-provider-sync",
       "path": "/api/cron/calendar/provider-sync",
-      "schedule": "0 */12 * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "description": "Run the calendar smart scheduling worker.",

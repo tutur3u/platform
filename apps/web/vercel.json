@@ -29,7 +29,7 @@
     },
     {
       "path": "/api/cron/calendar/provider-sync",
-      "schedule": "0 */12 * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/cron/calendar/smart-schedule",

@@ -14,9 +14,9 @@ import {
 
 // Use vi.hoisted to properly hoist the storage variables
 type TaskRunFn = (...args: any[]) => any;
-const { taskRunFunctions, scheduledTaskRunFunctions } = vi.hoisted(() => ({
+const { taskRunFunctions, schedulesTaskMock } = vi.hoisted(() => ({
   taskRunFunctions: {} as Record<string, TaskRunFn>,
-  scheduledTaskRunFunctions: {} as Record<string, TaskRunFn>,
+  schedulesTaskMock: vi.fn(),
 }));
 
 // Mock dependencies
@@ -29,27 +29,16 @@ vi.mock('@trigger.dev/sdk/v3', () => ({
     };
   }),
   schedules: {
-    task: vi.fn((config) => {
-      scheduledTaskRunFunctions[config.id] = config.run;
-      return {
-        ...config,
-        trigger: vi.fn(),
-      };
-    }),
+    task: schedulesTaskMock,
   },
-}));
-
-vi.mock('../src/google-calendar-sync', () => ({
-  getWorkspacesForSync: vi.fn(),
 }));
 
 vi.mock('../src/unified-schedule-helper', () => ({
   unifiedScheduleHelper: vi.fn(),
 }));
 
-import { getWorkspacesForSync } from '../src/google-calendar-sync';
 // Import module to trigger task registration (some variables may appear unused)
-import { unifiedScheduleTask } from '../src/unified-schedule';
+import '../src/unified-schedule';
 import { unifiedScheduleHelper } from '../src/unified-schedule-helper';
 
 describe('Unified Schedule', () => {
@@ -69,6 +58,10 @@ describe('Unified Schedule', () => {
   });
 
   describe('unifiedScheduleTask', () => {
+    it('does not register a Trigger.dev scheduled cron task', () => {
+      expect(schedulesTaskMock).not.toHaveBeenCalled();
+    });
+
     it('should return success when helper succeeds', async () => {
       const mockResult = {
         success: true,
@@ -136,83 +129,6 @@ describe('Unified Schedule', () => {
         windowDays: undefined,
         forceReschedule: undefined,
       });
-    });
-  });
-
-  describe('unifiedScheduleTrigger', () => {
-    it('should trigger tasks for all workspaces', async () => {
-      const mockWorkspaces = [{ ws_id: 'ws-1' }, { ws_id: 'ws-2' }];
-      (getWorkspacesForSync as Mock).mockResolvedValue(mockWorkspaces);
-
-      const mockTrigger = vi.fn().mockResolvedValue({ id: 'handle-id' });
-      unifiedScheduleTask.trigger = mockTrigger;
-
-      const runFn = scheduledTaskRunFunctions['unified-schedule'];
-      const result = await runFn!();
-
-      expect(getWorkspacesForSync).toHaveBeenCalled();
-      expect(mockTrigger).toHaveBeenCalledTimes(2);
-      expect(result.totalWorkspaces).toBe(2);
-      expect(result.triggered).toBe(2);
-      expect(result.failed).toBe(0);
-    });
-
-    it('should pass correct options to trigger', async () => {
-      const mockWorkspaces = [{ ws_id: 'test-ws' }];
-      (getWorkspacesForSync as Mock).mockResolvedValue(mockWorkspaces);
-
-      const mockTrigger = vi.fn().mockResolvedValue({ id: 'handle-id' });
-      unifiedScheduleTask.trigger = mockTrigger;
-
-      const runFn = scheduledTaskRunFunctions['unified-schedule'];
-      await runFn!();
-
-      expect(mockTrigger).toHaveBeenCalledWith(
-        {
-          ws_id: 'test-ws',
-          windowDays: 30,
-          forceReschedule: false,
-        },
-        { concurrencyKey: 'unified-schedule-test-ws' }
-      );
-    });
-
-    it('should handle empty workspace list', async () => {
-      (getWorkspacesForSync as Mock).mockResolvedValue([]);
-
-      const runFn = scheduledTaskRunFunctions['unified-schedule'];
-      const result = await runFn!();
-
-      expect(result.totalWorkspaces).toBe(0);
-      expect(result.triggered).toBe(0);
-      expect(result.results.length).toBe(0);
-    });
-
-    it('should handle individual trigger failures', async () => {
-      const mockWorkspaces = [{ ws_id: 'ws-1' }, { ws_id: 'ws-2' }];
-      (getWorkspacesForSync as Mock).mockResolvedValue(mockWorkspaces);
-
-      const mockTrigger = vi
-        .fn()
-        .mockResolvedValueOnce({ id: 'handle-1' })
-        .mockRejectedValueOnce(new Error('Trigger failed'));
-
-      unifiedScheduleTask.trigger = mockTrigger;
-
-      const runFn = scheduledTaskRunFunctions['unified-schedule'];
-      const result = await runFn!();
-
-      expect(result.totalWorkspaces).toBe(2);
-      expect(result.triggered).toBe(1);
-      expect(result.failed).toBe(1);
-    });
-
-    it('should throw when getWorkspacesForSync fails', async () => {
-      (getWorkspacesForSync as Mock).mockRejectedValue(new Error('DB error'));
-
-      const runFn = scheduledTaskRunFunctions['unified-schedule'];
-
-      await expect(runFn!()).rejects.toThrow('DB error');
     });
   });
 

@@ -6,6 +6,7 @@ import type {
 } from '@tuturuuu/types';
 import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
+import CalendarConnectionsUnified from '../../calendar-app/components/calendar-connections-unified';
 import { CalendarContent } from './calendar-content';
 import {
   type CalendarSettings,
@@ -26,6 +27,7 @@ export const SmartCalendar = ({
   overlay,
   initialSettings,
   onSaveSettings,
+  showConnectionsManager = true,
 }: {
   t: any;
   locale: string;
@@ -46,12 +48,22 @@ export const SmartCalendar = ({
   overlay?: React.ReactNode;
   initialSettings?: Partial<CalendarSettings>;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
+  showConnectionsManager?: boolean;
 }) => {
   const handleSaveSettings = async (newSettings: CalendarSettings) => {
     if (onSaveSettings) {
       await onSaveSettings(newSettings);
     }
   };
+  const headerExtras =
+    showConnectionsManager && workspace?.id ? (
+      <>
+        <CalendarConnectionsUnified wsId={workspace.id} />
+        {extras}
+      </>
+    ) : (
+      extras
+    );
 
   return (
     <CalendarProvider
@@ -73,7 +85,7 @@ export const SmartCalendar = ({
           enableHeader={enableHeader}
           experimentalGoogleToken={experimentalGoogleToken}
           externalState={externalState}
-          extras={extras}
+          extras={headerExtras}
           overlay={overlay}
         />
       </CalendarSettingsProvider>

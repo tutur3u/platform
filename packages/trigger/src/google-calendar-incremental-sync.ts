@@ -1,10 +1,8 @@
-import { schedules, task } from '@trigger.dev/sdk/v3';
+import { task } from '@trigger.dev/sdk/v3';
 import { type calendar_v3, google } from '@tuturuuu/google';
 import {
   getGoogleAuthClient,
   getSyncToken,
-  getWorkspacesForSync,
-  type SyncOrchestratorResult,
   storeSyncToken,
   syncWorkspaceBatched,
 } from './google-calendar-sync';
@@ -105,60 +103,6 @@ export const googleCalendarIncrementalSync = task({
   },
 });
 
-export const googleCalendarIncrementalSyncOrchestrator = schedules.task({
-  id: 'google-calendar-incremental-sync-orchestrator',
-  cron: {
-    // every 1 minute
-    pattern: '* * * * *',
-  },
-  run: async () => {
-    console.log('=== Starting incremental sync orchestrator ===');
-
-    try {
-      const workspaces = await getWorkspacesForSync();
-      console.log(
-        `Found ${workspaces.length} workspaces to sync incrementally`
-      );
-
-      const results: SyncOrchestratorResult[] = [];
-
-      for (const workspace of workspaces) {
-        try {
-          const handle = await googleCalendarIncrementalSync.trigger(
-            workspace,
-            {
-              concurrencyKey: `google-calendar-incremental-sync-${workspace.ws_id}`,
-            }
-          );
-
-          results.push({
-            ws_id: workspace.ws_id,
-            handle,
-            status: 'triggered',
-          });
-        } catch (error) {
-          console.error(
-            `[${workspace.ws_id}] Error triggering incremental sync:`,
-            error
-          );
-          results.push({
-            ws_id: workspace.ws_id,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            status: 'failed',
-          });
-        }
-      }
-
-      console.log('=== Incremental sync orchestrator completed ===');
-      return results;
-    } catch (error) {
-      console.error('Error in incremental sync orchestrator:', error);
-      throw error;
-    }
-  },
-});
-
 export const googleCalendarIncrementalSyncTasks = [
   googleCalendarIncrementalSync,
-  googleCalendarIncrementalSyncOrchestrator,
 ];
