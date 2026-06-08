@@ -9,7 +9,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -17,6 +17,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const PROJECT_REF_PATH = resolve(__dirname, '../supabase/.temp/project-ref');
+const ENV_CANDIDATE_PATHS = [
+  resolve(__dirname, '../../web/.env.local'),
+  resolve(__dirname, '../../teach/.env.local'),
+  resolve(__dirname, '../../.env.local'),
+  resolve(__dirname, '../../../.env.local'),
+];
 
 // Buckets created by migrations that must be deleted before reset
 const BUCKETS_TO_DELETE = [
@@ -36,7 +42,42 @@ function readProjectRef() {
   }
 }
 
+function readEnvValueFromFile(filePath, key) {
+  try {
+    if (!existsSync(filePath)) {
+      return null;
+    }
+
+    const content = readFileSync(filePath, 'utf-8');
+    const match = content.match(new RegExp(`^${key}=(.+)$`, 'm'));
+
+    return match ? match[1].trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+function getEnvServiceRoleKey() {
+  return (
+    process.env.SUPABASE_SERVICE_KEY?.trim() ||
+    process.env.SUPABASE_SECRET_KEY?.trim() ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
+    ENV_CANDIDATE_PATHS.flatMap((filePath) => [
+      readEnvValueFromFile(filePath, 'SUPABASE_SERVICE_KEY'),
+      readEnvValueFromFile(filePath, 'SUPABASE_SECRET_KEY'),
+      readEnvValueFromFile(filePath, 'SUPABASE_SERVICE_ROLE_KEY'),
+    ]).find(Boolean) ||
+    null
+  );
+}
+
 function getServiceRoleKey(projectRef) {
+  const envServiceRoleKey = getEnvServiceRoleKey();
+
+  if (envServiceRoleKey) {
+    return envServiceRoleKey;
+  }
+
   try {
     const output = execFileSync(
       'bun',
@@ -62,6 +103,9 @@ function getServiceRoleKey(projectRef) {
     return serviceRole.api_key;
   } catch (error) {
     console.error('\n❌ Error: Could not retrieve service role key');
+    console.error(
+      '   Set SUPABASE_SERVICE_KEY or SUPABASE_SECRET_KEY in your shell or apps/web/.env.local / apps/teach/.env.local to avoid the Supabase API-keys lookup.'
+    );
     console.error(`   ${error.message}\n`);
     process.exit(1);
   }

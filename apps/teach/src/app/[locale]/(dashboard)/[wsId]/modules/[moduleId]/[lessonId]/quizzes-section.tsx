@@ -1,7 +1,6 @@
 'use client';
 
 import { ListTodo, Loader2, Plus, Sparkles } from '@tuturuuu/icons';
-import { Separator } from '@tuturuuu/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -10,9 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Label } from '@tuturuuu/ui/label';
 import { Input } from '@tuturuuu/ui/input';
-import { Textarea } from '@tuturuuu/ui/textarea';
+import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -20,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import ClientQuizzes from './client-quizzes';

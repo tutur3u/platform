@@ -5,7 +5,7 @@ project_id = "tuturuuu"
 [api]
 enabled = true
 # Port to use for the API URL.
-port = 8001
+port = 8021
 # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
 # endpoints. `public` is always included.
 schemas = ["public", "graphql_public", "storage", "private"]
