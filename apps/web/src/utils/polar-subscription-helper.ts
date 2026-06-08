@@ -1,7 +1,9 @@
 import type { Subscription } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
+import type { WorkspaceSubscriptionProduct } from '@tuturuuu/types/db';
 import { addDays } from 'date-fns';
+import { syncProductToDatabase } from '@/utils/polar-product-helper';
 import {
   isAiCreditPackProduct,
   parseCreditPackTokens,
@@ -13,28 +15,91 @@ function privateSchema(supabase: TypedSupabaseClient) {
   return supabase.schema('private');
 }
 
+type SubscriptionProductPricing = Pick<
+  WorkspaceSubscriptionProduct,
+  'pricing_model' | 'price_per_seat'
+>;
+
+function isSubscriptionProductPricing(
+  product: unknown
+): product is SubscriptionProductPricing {
+  return (
+    !!product &&
+    typeof product === 'object' &&
+    'pricing_model' in product &&
+    'price_per_seat' in product
+  );
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+async function lookupSubscriptionProduct(
+  supabase: TypedSupabaseClient,
+  productId: string
+): Promise<SubscriptionProductPricing | null> {
+  const { data: products, error: productError } = await privateSchema(supabase)
+    .from('workspace_subscription_products')
+    .select('pricing_model, price_per_seat')
+    .eq('id', productId)
+    .limit(2);
+
+  if (productError) {
+    throw new Error(
+      `Subscription product lookup error for ${productId}: ${productError.message}`
+    );
+  }
+
+  if ((products?.length ?? 0) > 1) {
+    throw new Error(
+      `Subscription product lookup error for ${productId}: multiple product rows matched`
+    );
+  }
+
+  return products?.[0] ?? null;
+}
+
+async function resolveSubscriptionProduct(
+  supabase: TypedSupabaseClient,
+  subscription: Subscription
+): Promise<SubscriptionProductPricing> {
+  const existingProduct = await lookupSubscriptionProduct(
+    supabase,
+    subscription.product.id
+  );
+
+  if (existingProduct) return existingProduct;
+
+  try {
+    const syncedProduct = await syncProductToDatabase(
+      supabase,
+      subscription.product
+    );
+
+    if (isSubscriptionProductPricing(syncedProduct)) {
+      return {
+        pricing_model: syncedProduct.pricing_model,
+        price_per_seat: syncedProduct.price_per_seat,
+      };
+    }
+  } catch (error) {
+    throw new Error(
+      `Subscription product ${subscription.product.id} not found and product sync failed: ${getErrorMessage(error)}`
+    );
+  }
+
+  throw new Error(
+    `Subscription product ${subscription.product.id} did not resolve to a workspace subscription product`
+  );
+}
+
 async function upsertSubscription(
   supabase: TypedSupabaseClient,
   wsId: string,
   subscription: Subscription
 ) {
-  const { data: product, error: productError } = await privateSchema(supabase)
-    .from('workspace_subscription_products')
-    .select('pricing_model, price_per_seat')
-    .eq('id', subscription.product.id)
-    .single();
-
-  if (productError) {
-    throw new Error(
-      `Subscription product lookup error: ${productError.message}`
-    );
-  }
-
-  if (!product) {
-    throw new Error(
-      `Subscription product ${subscription.product.id} not found`
-    );
-  }
+  const product = await resolveSubscriptionProduct(supabase, subscription);
 
   const isSeatBased = product.pricing_model === 'seat_based';
   const seatCount = isSeatBased ? (subscription.seats ?? 1) : null;

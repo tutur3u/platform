@@ -9,6 +9,7 @@ import {
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/sidebar';
+import { isPolarWorkspaceSetupEnabled } from '@/lib/polar-config';
 import {
   type DashboardLayoutWorkspace,
   getDashboardLayoutData,
@@ -127,11 +128,8 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!user?.id) redirect('/login');
   if (!workspace) notFound();
 
-  const isPolarConfigured =
-    !!process.env.POLAR_WEBHOOK_SECRET && !!process.env.POLAR_ACCESS_TOKEN;
-
   // Auto-assign free subscription if workspace has no active subscription
-  if (isPolarConfigured && workspace.tier === null) {
+  if (isPolarWorkspaceSetupEnabled() && workspace.tier === null) {
     const { WorkspacePreparing } = await import(
       '@/components/workspace-preparing'
     );
