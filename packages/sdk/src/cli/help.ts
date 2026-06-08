@@ -16,12 +16,13 @@ const helpTopics: Record<string, HelpTopic> = {
       'agent register               create a self-hosted runner token',
       'cache list|prune             inspect or prune runner cache metadata',
       'doctor                       inspect local runner prerequisites',
-      'setup                        print setup guidance for runner prerequisites',
+      'setup                        clone, install, start Supabase, and wire env',
     ],
     description:
       'Remote devboxes sync dirty code to containerized self-hosted runners for heavy Bun, Supabase, Docker, and e2e workflows.',
     examples: [
       'ttr box doctor',
+      'ttr box setup',
       'ttr box run -- bun check',
       'ttr box run -- bun sb:reset',
       'ttr box run --keep --preview-port 7803 -- bun test:e2e',
@@ -36,6 +37,8 @@ const helpTopics: Record<string, HelpTopic> = {
       '--preview-port <port>        request preview forwarding for a port',
       '--env KEY=value              set one-off remote env values',
       '--env-file <path>            explicitly send a remote env file',
+      '--dir <path>                 setup checkout path, defaults to ~/Documents/tuturuuu',
+      '--yes                       install detected missing prerequisites during setup',
       '--json                       print machine-readable JSON',
     ],
     usage: 'ttr box <run|lease|release|preview|agent|cache|doctor|setup>',

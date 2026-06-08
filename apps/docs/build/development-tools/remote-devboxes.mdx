@@ -23,6 +23,15 @@ ttr box agent register --name "ci-lab-1"
 ttr box agent start --token <runner-token>
 ```
 
+`ttr box setup` is the default bootstrap for a runner host. It clones or reuses
+`https://github.com/tutur3u/platform.git` at `~/Documents/tuturuuu`, installs
+dependencies with `bun install --frozen-lockfile`, starts local Supabase with
+`bun sb:start`, verifies `supabase status -o json`, and writes local Supabase
+connection values into ignored `apps/*/.env.local` files. Secret values are
+redacted from human and JSON output. Pass `--dir <path>` for a different
+checkout and `--yes` only when the host should install detected missing
+prerequisites automatically.
+
 Run heavy commands remotely:
 
 ```bash
@@ -62,6 +71,9 @@ operations.
 ## Env And Secrets
 
 Remote env is explicit. Local `.env*` files are never synced automatically.
+The setup command only prepares ignored app env files inside the runner
+checkout so local Supabase-backed apps and E2E workflows can use that runner's
+own Supabase stack.
 
 ```bash
 ttr box run --env DATABASE_URL=postgres://remote -- bun check

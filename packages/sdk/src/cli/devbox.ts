@@ -1,22 +1,17 @@
-import { spawn, spawnSync } from 'node:child_process';
-import { platform } from 'node:os';
 import {
-  createDevboxSetupPlan,
   type DevboxEnv,
-  type DevboxSetupPackageManager,
-  type DevboxSetupTool,
   evaluateDevboxCommandPolicy,
   parseDevboxEnvAssignments,
 } from '@tuturuuu/devbox';
 import type { TuturuuuUserClient } from '../platform';
-import {
-  type DevboxRunPayload,
-  type DevboxRunResponse,
-  pollDevboxAgentJobs,
-} from '../platform-devbox';
+import type { DevboxRunPayload, DevboxRunResponse } from '../platform-devbox';
 import { type FlagValue, getFlag } from './args';
-import { normalizeBaseUrl } from './config';
-import { executeDevboxAgentJob } from './devbox-runner';
+import { runDevboxAgentLoop } from './devbox-agent';
+import {
+  createDevboxDoctorReport,
+  printDevboxDoctorReport,
+} from './devbox-doctor';
+import { runDevboxSetupCommand } from './devbox-setup';
 
 const DEFAULT_ONE_OFF_TIMEOUT_SECONDS = 30 * 60;
 const DEVBOX_RUN_POLL_INTERVAL_MS = 1000;
@@ -178,87 +173,6 @@ async function waitForDevboxRun({
   return latest;
 }
 
-async function createDoctorReport() {
-  const tools = {
-    bun: getToolVersion('bun', ['--version']),
-    docker: getToolVersion('docker', ['--version']),
-    git: getToolVersion('git', ['--version']),
-    node: getToolVersion('node', ['--version']) ?? process.versions.node,
-  };
-  const missingTools = Object.entries(tools)
-    .filter(([, version]) => !version)
-    .map(([tool]) => tool as DevboxSetupTool);
-  const packageManager = detectPackageManager();
-  const setupPlan =
-    missingTools.length > 0 && packageManager
-      ? createDevboxSetupPlan({
-          missingTools,
-          packageManager,
-          platform: platform(),
-        })
-      : null;
-
-  return {
-    containerized: true,
-    missingTools,
-    packageManager,
-    setupCommands: setupPlan?.commands ?? [],
-    status: missingTools.length > 0 ? 'needs-setup' : 'ok',
-    tools,
-  };
-}
-
-function getToolVersion(command: string, args: string[]) {
-  const result = spawnSync(command, args, {
-    encoding: 'utf8',
-    shell: false,
-  });
-
-  if (result.status !== 0) return null;
-  return (result.stdout || result.stderr).trim().split('\n')[0]?.trim() || null;
-}
-
-function commandExists(command: string) {
-  return (
-    spawnSync(command, ['--version'], {
-      encoding: 'utf8',
-      shell: false,
-    }).status === 0
-  );
-}
-
-function detectPackageManager(): DevboxSetupPackageManager | null {
-  const currentPlatform = platform();
-
-  if (currentPlatform === 'darwin' && commandExists('brew')) return 'brew';
-  if (currentPlatform === 'win32' && commandExists('winget')) return 'winget';
-
-  for (const candidate of ['apt-get', 'dnf', 'pacman'] as const) {
-    if (commandExists(candidate)) return candidate;
-  }
-
-  return null;
-}
-
-function runInstallerCommand(command: string[]) {
-  return new Promise<void>((resolve, reject) => {
-    const child = spawn(command[0]!, command.slice(1), {
-      shell: false,
-      stdio: 'inherit',
-    });
-
-    child.on('error', reject);
-    child.on('exit', (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`${command.join(' ')} exited with ${code}`));
-    });
-  });
-}
-
-function formatResponseStatus(response: Response) {
-  return `${response.status}${response.statusText ? ` ${response.statusText}` : ''}`;
-}
-
 export async function runDevboxCommand({
   action,
   argv,
@@ -276,39 +190,13 @@ export async function runDevboxCommand({
 }) {
   const resolvedAction = action || 'list';
 
-  if (resolvedAction === 'doctor' || resolvedAction === 'setup') {
-    const report = await createDoctorReport();
-    if (json) {
-      printJson(report);
-      return;
-    }
-    if (resolvedAction === 'setup' && report.setupCommands.length > 0) {
-      process.stdout.write(
-        `${[
-          'Devbox setup plan',
-          `Package manager: ${report.packageManager ?? 'not detected'}`,
-          ...report.setupCommands.map((command) => `  ${command.join(' ')}`),
-        ].join('\n')}\n`
-      );
+  if (resolvedAction === 'doctor') {
+    printDevboxDoctorReport(await createDevboxDoctorReport(), json);
+    return;
+  }
 
-      if (flags.yes === true) {
-        for (const command of report.setupCommands) {
-          await runInstallerCommand(command);
-        }
-      }
-      return;
-    }
-
-    process.stdout.write(
-      `${[
-        'Devbox doctor',
-        `Node.js: ${report.tools.node ?? 'missing'}`,
-        `Bun: ${report.tools.bun ?? 'missing'}`,
-        `Docker: ${report.tools.docker ?? 'missing'}`,
-        `Git: ${report.tools.git ?? 'missing'}`,
-        'Execution: containerized',
-      ].join('\n')}\n`
-    );
+  if (resolvedAction === 'setup') {
+    await runDevboxSetupCommand({ flags, json });
     return;
   }
 
@@ -456,71 +344,4 @@ export async function runDevboxCommand({
   }
 
   throw new Error(`Unsupported devbox command: ${resolvedAction}`);
-}
-
-async function runDevboxAgentLoop({
-  baseUrl,
-  once,
-  token,
-}: {
-  baseUrl?: string;
-  once?: boolean;
-  token?: string;
-}) {
-  if (!token) {
-    throw new Error(
-      'Missing runner token. Run `ttr box agent register` with a logged-in account, then start with --token or TUTURUUU_DEVBOX_RUNNER_TOKEN.'
-    );
-  }
-
-  const origin = normalizeBaseUrl(baseUrl);
-  const headers = {
-    'X-Devbox-Runner-Token': token,
-  };
-
-  process.stdout.write('Starting Tuturuuu devbox agent.\n');
-
-  let running = true;
-  while (running) {
-    const heartbeatResponse = await fetch(
-      new URL('/api/v1/devboxes/agents/heartbeat', origin),
-      {
-        headers,
-        method: 'POST',
-      }
-    );
-    if (!heartbeatResponse.ok) {
-      throw new Error(
-        `Devbox agent heartbeat failed: ${formatResponseStatus(heartbeatResponse)}`
-      );
-    }
-
-    const pollResponse = await pollDevboxAgentJobs({
-      baseUrl: origin,
-      token,
-    });
-    if (!pollResponse.ok) {
-      throw new Error(
-        `Devbox agent poll failed: ${formatResponseStatus(pollResponse.response)}`
-      );
-    }
-
-    if (pollResponse.jobs.length) {
-      process.stdout.write(
-        `Received ${pollResponse.jobs.length} devbox job(s).\n`
-      );
-      for (const job of pollResponse.jobs) {
-        await executeDevboxAgentJob(job, {
-          baseUrl: origin,
-          token,
-        });
-      }
-    }
-
-    if (once) {
-      running = false;
-      continue;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-  }
 }

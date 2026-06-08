@@ -252,6 +252,25 @@ confirming a trusted-publisher release works end to end, the npm package
 settings should keep `Require two-factor authentication and disallow tokens`
 enabled so the package cannot be published with classic tokens.
 
+### Devbox Setup
+
+Use `ttr box setup` on self-hosted runner machines before offloading expensive
+checks, Supabase workflows, or E2E suites. The command clones or reuses
+`https://github.com/tutur3u/platform.git` at `~/Documents/tuturuuu`, runs
+`bun install --frozen-lockfile`, starts the local Supabase stack with
+`bun sb:start`, reads `supabase status -o json`, and upserts local Supabase
+connection values into ignored `apps/*/.env.local` files with secret values
+redacted from CLI output.
+
+```bash
+ttr box doctor
+ttr box setup
+ttr box setup --dir ~/Documents/tuturuuu
+```
+
+`ttr box doctor` stays read-only. Use `ttr box setup --yes` only when the host
+should install detected missing prerequisites through its package manager.
+
 ### Scoped Help
 
 Use scoped help when you know the area but not the exact flags. Help commands do
@@ -260,6 +279,7 @@ not require login, do not read the saved config, and do not run the update check
 ```bash
 ttr --help
 ttr upgrade --help
+ttr box --help
 ttr finance --help
 ttr finance transactions --help
 ttr tasks --help

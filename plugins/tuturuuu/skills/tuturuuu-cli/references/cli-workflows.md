@@ -70,6 +70,7 @@ ttr upgrade
 ttr -v
 ttr whoami
 ttr whoami --json
+ttr box setup
 ttr workspaces
 ttr workspaces --json --no-update-check
 ttr workspaces use
@@ -100,6 +101,24 @@ has been selected.
 
 Interactive picker rows use one-based indexes and tier/status badges before the
 name, such as `[FREE] Tuturuuu` or `[PRO] Personal`.
+
+## Devbox Bootstrap
+
+Use `ttr box setup` before offloading heavy workflows to a self-hosted devbox
+runner. The command clones or reuses `https://github.com/tutur3u/platform.git`
+at `~/Documents/tuturuuu`, runs `bun install --frozen-lockfile`, starts local
+Supabase with `bun sb:start`, reads `supabase status -o json`, and writes
+redacted local Supabase connection values into ignored `apps/*/.env.local`
+files.
+
+```bash
+ttr box doctor
+ttr box setup
+ttr box setup --dir ~/Documents/tuturuuu
+```
+
+`ttr box doctor` is read-only. Use `ttr box setup --yes` only when the host
+should install detected missing prerequisites through its package manager.
 
 ## SDK Client Surfaces
 

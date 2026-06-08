@@ -137,6 +137,26 @@ describe('CLI commands', () => {
   });
 
   it.each([
+    ['box', '--help'],
+    ['help', 'box'],
+    ['box', 'help'],
+  ])('prints devbox group help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('Usage: ttr box')
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('clone, install, start Supabase')
+    );
+    expect(write).toHaveBeenCalledWith(expect.stringContaining('--dir <path>'));
+  });
+
+  it.each([
     ['finance', 'transactions', '--help'],
     ['help', 'finance', 'transactions'],
     ['finance', 'help', 'transactions'],

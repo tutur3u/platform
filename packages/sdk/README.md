@@ -65,6 +65,7 @@ ttr login
 ttr upgrade
 ttr --version
 ttr whoami
+ttr box setup
 ttr workspaces
 ttr workspaces use
 ttr boards
@@ -104,6 +105,14 @@ upgrade` to run `bun i -g tuturuuu`. Use
 `--no-update-check` for a single command or set `TUTURUUU_DISABLE_UPDATE_CHECK=1`
 to disable this notification.
 
+Use `ttr box setup` on a self-hosted devbox runner before offloading heavy
+workflows. It clones or reuses `https://github.com/tutur3u/platform.git` at
+`~/Documents/tuturuuu`, runs `bun install --frozen-lockfile`, starts local
+Supabase with `bun sb:start`, reads `supabase status -o json`, and writes
+redacted local Supabase connection values into ignored `apps/*/.env.local`
+files. Pass `--dir <path>` to choose another checkout and `--yes` to install
+detected missing prerequisites with the platform package manager.
+
 CLI sessions are dedicated Tuturuuu gateway JWTs, separate from normal browser
 and Supabase Auth sessions. The CLI stores a short-lived app-session access JWT
 plus a longer-lived refresh JWT, refreshes shortly before access-token expiry,
@@ -122,6 +131,7 @@ Scoped help is available without login, saved config reads, or update checks:
 ```bash
 ttr --help
 ttr upgrade --help
+ttr box --help
 ttr finance --help
 ttr finance transactions --help
 ttr tasks --help
