@@ -8,7 +8,6 @@ import {
   Ban,
   Box,
   Calendar,
-  Check,
   CheckCircle2,
   CircleSlash,
   Clock,
@@ -131,6 +130,7 @@ import { TaskNewProjectDialog } from '../task-dialogs/TaskNewProjectDialog';
 import { getTaskCardParentBadgeState } from '../task-parent-badge-state';
 import { TaskCardCheckbox } from './TaskCardCheckbox';
 import { areTaskCardPropsEqual } from './task-card-comparator';
+import { TaskCardIdentifierRow } from './task-card-identifier-row';
 import { mergeTaskCardLabelOptions } from './task-card-label-options';
 import { getTaskCardVisibilityState } from './task-card-visibility';
 import { TaskSchedulingBadge } from './task-scheduling-badge';
@@ -674,21 +674,6 @@ function TaskCardInner({
     dialogState.newProjectDialogOpen ||
     menuOpen ||
     isOptimistic; // Disable drag for optimistic tasks until confirmed
-
-  // Debug: log drag state for newly created task
-  if (task.name === 'new task') {
-    console.log('[TaskCard Debug]', {
-      taskId: task.id,
-      editDialogOpen: dialogState.editDialogOpen,
-      deleteDialogOpen: dialogState.deleteDialogOpen,
-      customDateDialogOpen: dialogState.customDateDialogOpen,
-      newLabelDialogOpen: dialogState.newLabelDialogOpen,
-      newProjectDialogOpen: dialogState.newProjectDialogOpen,
-      menuOpen,
-      isOptimistic,
-      RESULT_dragDisabled: dragDisabled,
-    });
-  }
 
   const sortableDisabled = dragDisabled || isOverlay;
   const sortableId = isOverlay
@@ -1690,65 +1675,34 @@ function TaskCardInner({
             <AlertCircle className="absolute -top-4 -right-4.5 h-3 w-3" />
           </div>
         )}
-      {/* Selection indicator */}
-      {isMultiSelectMode && (
-        <div
-          className={cn(
-            'absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-200',
-            isSelected
-              ? 'scale-110 border-primary bg-primary text-primary-foreground shadow-md'
-              : 'border-border bg-background/80 text-muted-foreground shadow-sm hover:scale-105 hover:border-primary/50'
-          )}
-        >
-          {isSelected ? (
-            <Check className="h-4 w-4 stroke-3" />
-          ) : (
-            <div className="h-2 w-2 rounded-full bg-current opacity-30" />
-          )}
-        </div>
-      )}
       <div className="p-3">
         {/* Header */}
         <div className="flex items-start gap-1">
           <div className="min-w-0 flex-1">
-            <div
-              className={cn(
-                'mb-1 flex gap-1',
-                isPersonalExternalTask ? 'flex-wrap items-center' : 'flex-col'
+            <TaskCardIdentifierRow
+              externalSourceLabel={externalSourceLabel}
+              externalSourceTitle={[
+                task.source_workspace_name,
+                task.source_board_name,
+                task.source_list_name,
+              ]
+                .filter(Boolean)
+                .join(' / ')}
+              isMultiSelectMode={isMultiSelectMode}
+              isPersonalExternalTask={isPersonalExternalTask}
+              isSelected={isSelected}
+              onSelect={(event) => onSelect?.(task.id, event)}
+              selectTaskLabel={t('select_task', { name: task.name ?? '' })}
+              taskListStatus={taskList?.status}
+              ticketBadgeClassName={getTicketBadgeColorClasses(
+                taskList,
+                task.priority
               )}
-            >
-              {isPersonalExternalTask && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 min-w-0 max-w-[70%] gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-1.5 text-[10px] text-dynamic-cyan"
-                  title={[
-                    task.source_workspace_name,
-                    task.source_board_name,
-                    task.source_list_name,
-                  ]
-                    .filter(Boolean)
-                    .join(' / ')}
-                >
-                  <ExternalLink className="h-2.5 w-2.5 shrink-0" />
-                  <span className="truncate">{externalSourceLabel}</span>
-                </Badge>
-              )}
-              {/* Ticket Identifier */}
-              {taskList?.status !== 'documents' && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'w-fit px-1 py-0 font-mono text-[10px]',
-                    getTicketBadgeColorClasses(taskList, task.priority)
-                  )}
-                  title={t('ticket_id_label', {
-                    id: taskTicketIdentifier,
-                  })}
-                >
-                  {taskTicketIdentifier}
-                </Badge>
-              )}
-            </div>
+              ticketIdentifier={taskTicketIdentifier}
+              ticketTitle={t('ticket_id_label', {
+                id: taskTicketIdentifier,
+              })}
+            />
             <div className="mb-1">
               {/* Task Name */}
               <button
