@@ -33,7 +33,7 @@
     "setup:mobile": "cd apps/mobile && flutter pub get && flutter pub upgrade",
     "ttr": "bun packages/sdk/src/cli/index.ts",
     "git-sync": "node scripts/git-sync.js",
-    "turbo:local": "bun --no-install run turbo --",
+    "turbo:local": "bunx --no-install turbo",
     "build": "bun turbo:local run build",
     "build:android": "cd apps/mobile && flutter build aab --dart-define-from-file=.env.production --flavor production --target lib/main_production.dart",
     "build:android:dev": "cd apps/mobile && flutter build aab --dart-define-from-file=.env --flavor development --target lib/main_development.dart",
