@@ -549,6 +549,7 @@ module.exports = {
   getComposeServiceContainerId,
   getContainerHealthStatus,
   getComposeServiceContainerName,
+  getPositiveIntegerEnv,
   hasComposeProfile,
   hasComposeServiceContainer,
   isComposeServiceHealthy,
@@ -556,6 +557,7 @@ module.exports = {
   runComposeUpWithNameConflictRecovery,
   runChecked,
   runCommand,
+  sleep,
   stopComposeServicesIfPresent,
   waitForComposeServiceHealthy,
 };
