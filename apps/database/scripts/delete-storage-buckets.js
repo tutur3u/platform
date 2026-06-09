@@ -17,11 +17,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const PROJECT_REF_PATH = resolve(__dirname, '../supabase/.temp/project-ref');
-const ENV_CANDIDATE_PATHS = [
-  resolve(__dirname, '../../web/.env.local'),
-  resolve(__dirname, '../../teach/.env.local'),
-  resolve(__dirname, '../../.env.local'),
-  resolve(__dirname, '../../../.env.local'),
+const ENV_CANDIDATE_FILES = [
+  ['apps/web/.env.local', resolve(__dirname, '../../web/.env.local')],
+  ['apps/teach/.env.local', resolve(__dirname, '../../teach/.env.local')],
+  ['apps/.env.local', resolve(__dirname, '../../.env.local')],
+  ['.env.local', resolve(__dirname, '../../../.env.local')],
 ];
 
 // Buckets created by migrations that must be deleted before reset
@@ -49,12 +49,25 @@ function readEnvValueFromFile(filePath, key) {
     }
 
     const content = readFileSync(filePath, 'utf-8');
-    const match = content.match(new RegExp(`^${key}=(.+)$`, 'm'));
+    const match = content.match(
+      new RegExp(`^\\s*(?:export\\s+)?${key}\\s*=\\s*(.*)$`, 'm')
+    );
 
-    return match ? match[1].trim() : null;
+    return match ? normalizeEnvValue(match[1]) : null;
   } catch {
     return null;
   }
+}
+
+function normalizeEnvValue(rawValue) {
+  const value = rawValue.trim();
+  const quotedValue = value.match(/^(['"])(.*?)\1\s*(?:#.*)?$/);
+
+  if (quotedValue) {
+    return quotedValue[2].trim();
+  }
+
+  return value.replace(/\s+#.*$/, '').trim();
 }
 
 function getEnvServiceRoleKey() {
@@ -62,7 +75,7 @@ function getEnvServiceRoleKey() {
     process.env.SUPABASE_SERVICE_KEY?.trim() ||
     process.env.SUPABASE_SECRET_KEY?.trim() ||
     process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
-    ENV_CANDIDATE_PATHS.flatMap((filePath) => [
+    ENV_CANDIDATE_FILES.flatMap(([, filePath]) => [
       readEnvValueFromFile(filePath, 'SUPABASE_SERVICE_KEY'),
       readEnvValueFromFile(filePath, 'SUPABASE_SECRET_KEY'),
       readEnvValueFromFile(filePath, 'SUPABASE_SERVICE_ROLE_KEY'),
@@ -104,7 +117,7 @@ function getServiceRoleKey(projectRef) {
   } catch (error) {
     console.error('\n❌ Error: Could not retrieve service role key');
     console.error(
-      '   Set SUPABASE_SERVICE_KEY or SUPABASE_SECRET_KEY in your shell or apps/web/.env.local / apps/teach/.env.local to avoid the Supabase API-keys lookup.'
+      `   Set SUPABASE_SERVICE_KEY, SUPABASE_SECRET_KEY, or SUPABASE_SERVICE_ROLE_KEY in your shell or one of: ${ENV_CANDIDATE_FILES.map(([label]) => label).join(', ')}.`
     );
     console.error(`   ${error.message}\n`);
     process.exit(1);
