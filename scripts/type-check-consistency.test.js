@@ -71,3 +71,25 @@ test('workspace tsgo build type-check scripts use the cache-invalidation wrapper
 
   assert.deepEqual(invalidScripts, []);
 });
+
+test('workspace build and dev scripts use tsgo instead of legacy tsc', () => {
+  const invalidScripts = [];
+
+  for (const packageJsonPath of getWorkspacePackageJsonPaths()) {
+    const packageJson = readJson(packageJsonPath);
+
+    for (const scriptName of ['build', 'dev']) {
+      const script = packageJson.scripts?.[scriptName];
+
+      if (typeof script === 'string' && /\btsc\b/.test(script)) {
+        invalidScripts.push({
+          file: packageJsonPath,
+          script: scriptName,
+          command: script,
+        });
+      }
+    }
+  }
+
+  assert.deepEqual(invalidScripts, []);
+});

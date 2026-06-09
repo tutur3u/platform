@@ -1,4 +1,10 @@
+import type { BuildOptions } from 'esbuild-wasm';
 import type { NextResponse } from 'next/server';
+
+type ServiceWorkerEsbuildOptions = Pick<
+  BuildOptions,
+  'define' | 'supported' | 'target'
+>;
 
 export interface SerwistRouteConfig {
   /**
@@ -49,6 +55,11 @@ export interface SerwistRouteConfig {
      */
     distDir?: string;
   };
+
+  /**
+   * Options forwarded to Serwist's esbuild worker bundle.
+   */
+  esbuildOptions?: ServiceWorkerEsbuildOptions;
 }
 
 export interface SerwistRouteResult {

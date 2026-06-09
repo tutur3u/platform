@@ -84,8 +84,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
-    "dev": "tsc --project tsconfig.build.json --watch --incremental",
+    "build": "tsgo --project tsconfig.build.json",
+    "dev": "tsgo --project tsconfig.build.json --watch --incremental",
     "ttr": "bun src/cli/index.ts",
     "type-check": "tsgo --project tsconfig.build.json",
     "clean": "rm -rf dist .turbo tsconfig.build.tsbuildinfo",

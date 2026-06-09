@@ -14,7 +14,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
+    "build": "tsgo --project tsconfig.build.json",
     "clean": "rm -rf dist .turbo tsconfig.build.tsbuildinfo",
     "prepack": "bun run clean && bun run build",
     "test": "vitest run",

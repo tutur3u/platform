@@ -1,5 +1,36 @@
 import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import {
+  type GetManifestOptionsComplete,
+  getFileManifestEntries,
+  type ManifestEntryWithSize,
+  rebasePath,
+} from '@serwist/build';
+import { NextResponse } from 'next/server';
 import type { SerwistRouteConfig, SerwistRouteResult } from './types';
+
+const isDev = process.env.NODE_ENV === 'development';
+const contentTypeMap: Record<string, string> = {
+  '.js': 'application/javascript',
+  '.map': 'application/json; charset=UTF-8',
+};
+
+function normalizeDistDir(distDir: string): string {
+  let normalized = distDir.startsWith('/') ? distDir.slice(1) : distDir;
+
+  if (!normalized.endsWith('/')) {
+    normalized += '/';
+  }
+
+  return normalized;
+}
+
+function generateGlobPatterns(distDir: string): string[] {
+  return [
+    `${distDir}static/**/*.{js,css,html,ico,apng,png,avif,jpg,jpeg,jfif,pjpeg,pjp,gif,svg,webp,json,webmanifest}`,
+    'public/**/*',
+  ];
+}
 
 /**
  * Gets the current git revision hash for cache busting.
@@ -14,22 +45,6 @@ function getGitRevision(): string {
   } catch {
     return crypto.randomUUID();
   }
-}
-
-// Cached promise for the lazy-loaded @serwist/turbopack module
-let turbopackModulePromise: Promise<
-  typeof import('@serwist/turbopack')
-> | null = null;
-
-/**
- * Lazily loads the @serwist/turbopack module.
- * This defers esbuild-wasm initialization until runtime.
- */
-async function getTurbopackModule() {
-  if (!turbopackModulePromise) {
-    turbopackModulePromise = import('@serwist/turbopack');
-  }
-  return turbopackModulePromise;
 }
 
 /**
@@ -60,6 +75,7 @@ export function createSerwistRoute(
     disableInDev = true,
     globDirectory = '.',
     nextConfig = {},
+    esbuildOptions = {},
   } = config;
 
   // Skip in development if disabled
@@ -78,45 +94,153 @@ export function createSerwistRoute(
     };
   }
 
-  // Configuration for the Turbopack route
-  const turbopackConfig = {
-    swSrc,
+  const cwd = process.cwd();
+  const distDir = normalizeDistDir(nextConfig.distDir ?? '.next');
+  const swSrcPath = path.isAbsolute(swSrc)
+    ? swSrc
+    : path.join(/* turbopackIgnore: true */ cwd, swSrc);
+  const buildConfig: GetManifestOptionsComplete & {
+    cwd: string;
+    swSrc: string;
+    injectionPoint: string;
+    nextConfig: {
+      assetPrefix?: string;
+      basePath: string;
+      distDir: string;
+    };
+    esbuildOptions: NonNullable<SerwistRouteConfig['esbuildOptions']>;
+  } = {
+    cwd,
+    swSrc: swSrcPath,
+    injectionPoint: 'self.__SW_MANIFEST',
     globDirectory,
+    globFollow: true,
+    globIgnores: [
+      '**/node_modules/**/*',
+      rebasePath({
+        file: swSrcPath,
+        baseDirectory: globDirectory,
+      }),
+    ],
+    globPatterns: generateGlobPatterns(distDir),
+    globStrict: true,
+    disablePrecacheManifest: false,
+    maximumFileSizeToCacheInBytes: 2097152,
+    dontCacheBustURLsMatching: new RegExp(`^${distDir}static/`),
     additionalPrecacheEntries: [{ url: offlineFallbackUrl, revision }],
+    esbuildOptions: {
+      // esbuild-wasm 0.28 refuses to downlevel destructuring for Serwist's
+      // legacy default target list during production route generation.
+      target: 'es2020',
+      ...esbuildOptions,
+    },
     nextConfig: {
       basePath: nextConfig.basePath ?? '/',
-      distDir: nextConfig.distDir ?? '.next',
+      distDir,
       assetPrefix: nextConfig.assetPrefix,
     },
+    manifestTransforms: [
+      (manifestEntries: ManifestEntryWithSize[]) => {
+        const manifest = manifestEntries.map((entry) => {
+          if (entry.url.startsWith(distDir)) {
+            entry.url = `${nextConfig.assetPrefix ?? ''}/_next/${entry.url.slice(
+              distDir.length
+            )}`;
+          }
+
+          if (entry.url.startsWith('public/')) {
+            entry.url = path.posix.join(
+              nextConfig.basePath ?? '/',
+              entry.url.slice(7)
+            );
+          }
+
+          return entry;
+        });
+
+        return { manifest, warnings: [] };
+      },
+    ],
   };
 
-  // Cached result from @serwist/turbopack
-  let cachedResult: ReturnType<
-    typeof import('@serwist/turbopack').createSerwistRoute
-  > | null = null;
+  let outputFiles: Map<string, string> | null = null;
 
-  // Helper to get or create the cached result
-  const getResult = async () => {
-    if (!cachedResult) {
-      const { createSerwistRoute: createTurbopackRoute } =
-        await getTurbopackModule();
-      cachedResult = createTurbopackRoute(turbopackConfig);
+  const loadOutputFiles = async () => {
+    if (outputFiles) {
+      return outputFiles;
     }
-    return cachedResult;
+
+    const { manifestEntries } = await getFileManifestEntries({
+      ...buildConfig,
+      disablePrecacheManifest: isDev,
+      additionalPrecacheEntries: isDev
+        ? []
+        : buildConfig.additionalPrecacheEntries,
+    });
+    const manifestString =
+      manifestEntries === undefined
+        ? 'undefined'
+        : JSON.stringify(manifestEntries, null, 2);
+    const esbuild = await import('esbuild-wasm');
+    const result = await esbuild.build({
+      sourcemap: true,
+      format: 'esm',
+      target: 'es2020',
+      treeShaking: true,
+      minify: !isDev,
+      bundle: true,
+      ...buildConfig.esbuildOptions,
+      platform: 'browser',
+      define: {
+        ...buildConfig.esbuildOptions.define,
+        [buildConfig.injectionPoint]: manifestString,
+      },
+      outdir: buildConfig.cwd,
+      write: false,
+      entryNames: '[name]',
+      assetNames: '[name]-[hash]',
+      chunkNames: '[name]-[hash]',
+      entryPoints: [
+        {
+          in: buildConfig.swSrc,
+          out: 'sw',
+        },
+      ],
+    });
+
+    if (result.errors.length > 0) {
+      throw new Error('Failed to build the service worker.');
+    }
+
+    outputFiles = new Map(
+      result.outputFiles.map((outputFile) => [outputFile.path, outputFile.text])
+    );
+    return outputFiles;
   };
 
-  // Return a lazy wrapper that defers the actual @serwist/turbopack initialization
+  // Return a lazy wrapper that defers service-worker bundling until the route
+  // is generated or requested.
   return {
     dynamic: 'force-static',
     dynamicParams: false,
     revalidate: false,
     generateStaticParams: async () => {
-      const result = await getResult();
-      return result.generateStaticParams();
+      const files = await loadOutputFiles();
+      return [...files.keys()].map((filePath) => ({
+        path: path.relative(buildConfig.cwd, filePath),
+      }));
     },
-    GET: async (request, context) => {
-      const result = await getResult();
-      return result.GET(request, context);
+    GET: async (_, context) => {
+      const { path: filePath } = await context.params;
+      const files = await loadOutputFiles();
+
+      return new NextResponse(files.get(path.join(buildConfig.cwd, filePath)), {
+        headers: {
+          'Content-Type':
+            contentTypeMap[path.extname(filePath)] ?? 'text/plain',
+          'Service-Worker-Allowed': '/',
+        },
+      }) as unknown as ReturnType<SerwistRouteResult['GET']>;
     },
   };
 }

@@ -7,8 +7,8 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.build.json",
-    "dev": "tsc --project tsconfig.build.json --watch --incremental",
+    "build": "tsgo --project tsconfig.build.json",
+    "dev": "tsgo --project tsconfig.build.json --watch --incremental",
     "type-check": "tsgo --project tsconfig.build.json",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build",

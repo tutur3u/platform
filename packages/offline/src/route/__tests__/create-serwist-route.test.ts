@@ -1,17 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock @serwist/turbopack before importing the module under test
-vi.mock('@serwist/turbopack', () => ({
-  createSerwistRoute: vi.fn((config) => ({
-    dynamic: 'force-static',
-    dynamicParams: false,
-    revalidate: false,
-    generateStaticParams: async () => [{ path: 'sw.js' }],
-    GET: async () => ({
-      status: 200,
-      headers: new Headers({ 'Content-Type': 'application/javascript' }),
-    }),
-    _config: config, // Expose config for testing
+vi.mock('@serwist/build', () => ({
+  getFileManifestEntries: vi.fn(async () => ({
+    count: 1,
+    manifestEntries: [],
+    size: 0,
+    warnings: [],
+  })),
+  rebasePath: vi.fn(({ file }) => file),
+}));
+
+vi.mock('esbuild-wasm', () => ({
+  build: vi.fn(async () => ({
+    errors: [],
+    outputFiles: [
+      {
+        path: `${process.cwd()}/sw.js`,
+        text: 'self.__SW_MANIFEST=[];',
+      },
+    ],
+    warnings: [],
   })),
 }));
 
@@ -58,8 +66,6 @@ describe('createSerwistRoute', () => {
     const result = createSerwistRoute({ disableInDev: false });
 
     expect(result.GET).toBeDefined();
-    // The handler should be from the mocked createSerwistRoute, not the dev stub
-    // With lazy loading, we need to call GET to trigger the module load
     const response = await result.GET({} as never, {
       params: Promise.resolve({ path: 'sw.js' }),
     });
@@ -69,20 +75,61 @@ describe('createSerwistRoute', () => {
   it('should use custom swSrc path', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     const { createSerwistRoute } = await import('../create-serwist-route.js');
-    const { createSerwistRoute: mockCreateSerwistRoute } = await import(
-      '@serwist/turbopack'
-    );
+    const { build } = await import('esbuild-wasm');
 
     const result = createSerwistRoute({ swSrc: 'custom/sw.ts' });
 
-    // With lazy loading, the mock isn't called until we invoke a handler
     await result.GET({} as never, {
       params: Promise.resolve({ path: 'sw.js' }),
     });
 
-    expect(mockCreateSerwistRoute).toHaveBeenCalledWith(
+    expect(build).toHaveBeenCalledWith(
       expect.objectContaining({
-        swSrc: 'custom/sw.ts',
+        entryPoints: [
+          expect.objectContaining({
+            in: expect.stringContaining('custom/sw.ts'),
+          }),
+        ],
+      })
+    );
+  });
+
+  it('should use a modern esbuild target by default', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const { createSerwistRoute } = await import('../create-serwist-route.js');
+    const { build } = await import('esbuild-wasm');
+
+    const result = createSerwistRoute();
+
+    await result.GET({} as never, {
+      params: Promise.resolve({ path: 'sw.js' }),
+    });
+
+    expect(build).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: 'es2020',
+      })
+    );
+  });
+
+  it('should allow custom esbuild options', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const { createSerwistRoute } = await import('../create-serwist-route.js');
+    const { build } = await import('esbuild-wasm');
+
+    const result = createSerwistRoute({
+      esbuildOptions: {
+        target: 'es2022',
+      },
+    });
+
+    await result.GET({} as never, {
+      params: Promise.resolve({ path: 'sw.js' }),
+    });
+
+    expect(build).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: 'es2022',
       })
     );
   });
@@ -90,20 +137,17 @@ describe('createSerwistRoute', () => {
   it('should include offline fallback URL in precache entries', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     const { createSerwistRoute } = await import('../create-serwist-route.js');
-    const { createSerwistRoute: mockCreateSerwistRoute } = await import(
-      '@serwist/turbopack'
-    );
+    const { getFileManifestEntries } = await import('@serwist/build');
 
     const result = createSerwistRoute({
       offlineFallbackUrl: '/custom-offline',
     });
 
-    // Trigger lazy load
     await result.GET({} as never, {
       params: Promise.resolve({ path: 'sw.js' }),
     });
 
-    expect(mockCreateSerwistRoute).toHaveBeenCalledWith(
+    expect(getFileManifestEntries).toHaveBeenCalledWith(
       expect.objectContaining({
         additionalPrecacheEntries: expect.arrayContaining([
           expect.objectContaining({ url: '/custom-offline' }),
@@ -115,18 +159,15 @@ describe('createSerwistRoute', () => {
   it('should use provided revision', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     const { createSerwistRoute } = await import('../create-serwist-route.js');
-    const { createSerwistRoute: mockCreateSerwistRoute } = await import(
-      '@serwist/turbopack'
-    );
+    const { getFileManifestEntries } = await import('@serwist/build');
 
     const result = createSerwistRoute({ revision: 'test-revision-abc' });
 
-    // Trigger lazy load
     await result.GET({} as never, {
       params: Promise.resolve({ path: 'sw.js' }),
     });
 
-    expect(mockCreateSerwistRoute).toHaveBeenCalledWith(
+    expect(getFileManifestEntries).toHaveBeenCalledWith(
       expect.objectContaining({
         additionalPrecacheEntries: expect.arrayContaining([
           expect.objectContaining({ revision: 'test-revision-abc' }),
@@ -138,18 +179,15 @@ describe('createSerwistRoute', () => {
   it('should use default offline fallback URL /~offline', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     const { createSerwistRoute } = await import('../create-serwist-route.js');
-    const { createSerwistRoute: mockCreateSerwistRoute } = await import(
-      '@serwist/turbopack'
-    );
+    const { getFileManifestEntries } = await import('@serwist/build');
 
     const result = createSerwistRoute();
 
-    // Trigger lazy load
     await result.GET({} as never, {
       params: Promise.resolve({ path: 'sw.js' }),
     });
 
-    expect(mockCreateSerwistRoute).toHaveBeenCalledWith(
+    expect(getFileManifestEntries).toHaveBeenCalledWith(
       expect.objectContaining({
         additionalPrecacheEntries: expect.arrayContaining([
           expect.objectContaining({ url: '/~offline' }),
