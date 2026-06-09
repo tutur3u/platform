@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/ui-v0.3.0...ui-v0.3.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* **finance:** reduce invoice create read fanout ([69ae9e9](https://github.com/tutur3u/platform/commit/69ae9e904ce6c6d06085e05ffa17ec59a80ee451))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/ui-v0.2.0...ui-v0.3.0) (2026-06-08)
 
 

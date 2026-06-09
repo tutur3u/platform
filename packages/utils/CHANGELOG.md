@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/utils-v0.3.0...utils-v0.3.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* **ci:** recover releases and package tsgo builds ([d82b846](https://github.com/tutur3u/platform/commit/d82b846c6232d9fb72b7d2aa808020bc24292a19))
+* **ci:** restore local supabase e2e port ([f91a4fe](https://github.com/tutur3u/platform/commit/f91a4fed2143a5a4ee8f616ad70bbaf1fa8f2157))
+* **ci:** retry transient supabase reset ([3a04a48](https://github.com/tutur3u/platform/commit/3a04a4815b844f27dfa3006fafe3fb0b8ae65f3d))
+* **ci:** split supabase reset retry helper ([d1ca984](https://github.com/tutur3u/platform/commit/d1ca984bbffa81b8fc191f97f526310092a5c4f4))
+* **external-projects:** expose storage analytics ([fd0b1f4](https://github.com/tutur3u/platform/commit/fd0b1f4b9a7da02dcc3fcb74497f05e7dfb1a8d5))
+* **finance:** reduce invoice create read fanout ([69ae9e9](https://github.com/tutur3u/platform/commit/69ae9e904ce6c6d06085e05ffa17ec59a80ee451))
+* **tooling:** address review feedback ([dd26db4](https://github.com/tutur3u/platform/commit/dd26db488cd06434a7d192d58ca9ea488d1040ba))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/utils-v0.2.0...utils-v0.3.0) (2026-06-08)
 
 
