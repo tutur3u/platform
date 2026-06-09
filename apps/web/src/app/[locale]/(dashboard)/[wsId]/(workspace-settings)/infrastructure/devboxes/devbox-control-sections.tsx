@@ -20,6 +20,7 @@ import {
   revokeDevboxRunnerAction,
   stopDevboxRunAction,
 } from './actions';
+import { RunnerCapabilitiesCell } from './devbox-runner-capabilities';
 
 type DevboxControlTranslator = (key: string) => string;
 
@@ -115,6 +116,7 @@ export function RunnersTable({
         <TableRow>
           <TableHead>{t('columns.runner')}</TableHead>
           <TableHead>{t('columns.status')}</TableHead>
+          <TableHead>{t('columns.environment')}</TableHead>
           <TableHead>{t('columns.last_heartbeat')}</TableHead>
           <TableHead>{t('columns.updated')}</TableHead>
           <TableHead>{t('columns.actor')}</TableHead>
@@ -123,7 +125,7 @@ export function RunnersTable({
       </TableHeader>
       <TableBody>
         {runners.length === 0 ? (
-          <EmptyRow colSpan={canManage ? 6 : 5} label={t('empty.runners')} />
+          <EmptyRow colSpan={canManage ? 7 : 6} label={t('empty.runners')} />
         ) : (
           runners.map((runner) => (
             <TableRow key={runner.id}>
@@ -135,6 +137,12 @@ export function RunnersTable({
               </TableCell>
               <TableCell>
                 <StatusBadge status={runner.status} />
+              </TableCell>
+              <TableCell>
+                <RunnerCapabilitiesCell
+                  capabilities={runner.capabilities}
+                  t={t}
+                />
               </TableCell>
               <TableCell>{formatDate(runner.last_heartbeat_at)}</TableCell>
               <TableCell>{formatDate(runner.updated_at)}</TableCell>

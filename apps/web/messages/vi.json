@@ -5446,12 +5446,28 @@
       "revoke": "Thu hồi",
       "stop": "Dừng"
     },
+    "capabilities": {
+      "bun": "Bun",
+      "cli": "CLI",
+      "cores": "nhân",
+      "cpu": "CPU",
+      "docker": "Docker",
+      "free": "trống",
+      "git": "Git",
+      "load": "Tải",
+      "node": "Node",
+      "os": "HĐH",
+      "ram": "RAM",
+      "unreported": "Chưa báo cáo",
+      "uptime": "Uptime"
+    },
     "columns": {
       "actions": "Thao tác",
       "actor": "Người thực hiện",
       "cache": "Cache",
       "command": "Lệnh",
       "created": "Đã tạo",
+      "environment": "Môi trường",
       "event": "Sự kiện",
       "exit_code": "Mã thoát",
       "expires": "Hết hạn",

@@ -21,6 +21,36 @@ export interface DevboxAgentExecutionOptions {
   token: string;
 }
 
+const DEVBOX_CHILD_BASE_ENV_KEYS = [
+  'BUN_INSTALL',
+  'CI',
+  'FORCE_COLOR',
+  'HOME',
+  'HTTP_PROXY',
+  'HTTPS_PROXY',
+  'LANG',
+  'LC_ALL',
+  'LOGNAME',
+  'NODE_EXTRA_CA_CERTS',
+  'NO_COLOR',
+  'NO_PROXY',
+  'PATH',
+  'SHELL',
+  'SSL_CERT_DIR',
+  'SSL_CERT_FILE',
+  'TEMP',
+  'TERM',
+  'TMP',
+  'TMPDIR',
+  'USER',
+  'XDG_CACHE_HOME',
+  'XDG_CONFIG_HOME',
+  'XDG_DATA_HOME',
+  'http_proxy',
+  'https_proxy',
+  'no_proxy',
+] as const;
+
 function formatResponseStatus(response: Response) {
   return `${response.status}${response.statusText ? ` ${response.statusText}` : ''}`;
 }
@@ -112,6 +142,24 @@ function getExitCode(code: number | null, signal: NodeJS.Signals | null) {
   return signal ? 128 : 1;
 }
 
+function createDevboxChildBaseEnv(source: NodeJS.ProcessEnv) {
+  const env: NodeJS.ProcessEnv = {};
+
+  for (const key of DEVBOX_CHILD_BASE_ENV_KEYS) {
+    const value = source[key];
+    if (typeof value === 'string') env[key] = value;
+  }
+
+  if (!env.PATH && typeof process.env.PATH === 'string') {
+    env.PATH = process.env.PATH;
+  }
+  if (!env.HOME && typeof process.env.HOME === 'string') {
+    env.HOME = process.env.HOME;
+  }
+
+  return env;
+}
+
 export async function executeDevboxAgentJob(
   job: DevboxAgentJob,
   options: DevboxAgentExecutionOptions
@@ -132,7 +180,9 @@ export async function executeDevboxAgentJob(
 
   await postAgentEvents({
     ...eventOptions,
-    events: [{ message: `remote$ ${command.join(' ')}` }],
+    events: [
+      { message: redactDevboxSecrets(`remote$ ${command.join(' ')}`, jobEnv) },
+    ],
   });
 
   if (!policy.allowed) {
@@ -152,7 +202,7 @@ export async function executeDevboxAgentJob(
   const child = spawn(command[0]!, command.slice(1), {
     cwd,
     env: {
-      ...(options.env ?? process.env),
+      ...createDevboxChildBaseEnv(options.env ?? process.env),
       ...jobEnv,
     },
     shell: false,

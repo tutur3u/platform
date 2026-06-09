@@ -14,6 +14,10 @@ import {
 import { runDevboxSetupCommand } from './devbox-setup';
 
 const DEFAULT_ONE_OFF_TIMEOUT_SECONDS = 30 * 60;
+const DEFAULT_UPGRADE_TIMEOUT_SECONDS = 10 * 60;
+const DEFAULT_WEB_CWD = 'apps/web';
+const DEFAULT_WEB_PORT = 7803;
+const DEFAULT_CLOUDFLARED_IMAGE = 'cloudflare/cloudflared:latest';
 const DEVBOX_RUN_POLL_INTERVAL_MS = 1000;
 const DEVBOX_RUN_POLL_GRACE_MS = 30_000;
 
@@ -79,6 +83,141 @@ function parseEnvFiles(flags: Record<string, FlagValue>) {
     .filter(Boolean);
 }
 
+function shellQuote(value: string) {
+  return `'${value.replace(/'/gu, "'\\''")}'`;
+}
+
+function parsePositiveIntegerFlag({
+  defaultValue,
+  flagName,
+  value,
+}: {
+  defaultValue: number;
+  flagName: string;
+  value: string | undefined;
+}) {
+  if (!value) return defaultValue;
+
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`Invalid --${flagName} value: ${value}`);
+  }
+
+  return parsed;
+}
+
+function getRequiredEnvironmentValue({
+  flagName,
+  name,
+  targetName,
+}: {
+  flagName: string;
+  name: string;
+  targetName: string;
+}) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `Missing environment variable ${name} for --${flagName}. Set it locally before queueing the devbox run.`
+    );
+  }
+
+  return { [targetName]: value };
+}
+
+function collectDevboxEnv({
+  argv,
+  flags,
+  requireCloudflaredToken = false,
+}: {
+  argv: string[];
+  flags: Record<string, FlagValue>;
+  requireCloudflaredToken?: boolean;
+}) {
+  const envAssignments = collectRepeatedFlagValues(argv, 'env');
+  const env: DevboxEnv =
+    envAssignments.length > 0 ? parseDevboxEnvAssignments(envAssignments) : {};
+  const databaseUrl = getFlag(flags, 'database-url');
+  const databaseUrlEnv = getFlag(flags, 'database-url-env');
+  if (databaseUrl && databaseUrlEnv) {
+    throw new Error(
+      'Use either --database-url or --database-url-env, not both.'
+    );
+  }
+
+  if (databaseUrlEnv) {
+    Object.assign(
+      env,
+      getRequiredEnvironmentValue({
+        flagName: 'database-url-env',
+        name: databaseUrlEnv,
+        targetName: 'DATABASE_URL',
+      })
+    );
+  } else if (databaseUrl) {
+    env.DATABASE_URL = databaseUrl;
+  }
+
+  const cloudflaredTokenEnv =
+    getFlag(flags, 'cloudflared-token-env') ?? getFlag(flags, 'token-env');
+  if (requireCloudflaredToken || cloudflaredTokenEnv) {
+    if (!cloudflaredTokenEnv) {
+      throw new Error(
+        'Cloudflared tunnel runs require --cloudflared-token-env <env>.'
+      );
+    }
+    Object.assign(
+      env,
+      getRequiredEnvironmentValue({
+        flagName: 'cloudflared-token-env',
+        name: cloudflaredTokenEnv,
+        targetName: 'CLOUDFLARED_TOKEN',
+      })
+    );
+  }
+
+  return Object.keys(env).length > 0 ? env : undefined;
+}
+
+function createDevboxCommandPayload({
+  command,
+  defaultKeep = false,
+  defaultPreviewPorts = [],
+  defaultTimeoutSeconds,
+  env,
+  flags,
+}: {
+  command: string[];
+  defaultKeep?: boolean;
+  defaultPreviewPorts?: number[];
+  defaultTimeoutSeconds?: number;
+  env?: DevboxEnv;
+  flags: Record<string, FlagValue>;
+}): DevboxRunPayload {
+  const policy = evaluateDevboxCommandPolicy(command);
+  if (!policy.allowed) {
+    throw new Error(policy.reason);
+  }
+
+  const leaseId = getFlag(flags, 'lease');
+  const previewPorts = parsePreviewPorts(getFlag(flags, 'preview-port'));
+  const timeoutSeconds =
+    parseDurationSeconds(getFlag(flags, 'timeout')) ?? defaultTimeoutSeconds;
+
+  return {
+    command,
+    ...(env ? { env } : {}),
+    envFiles: parseEnvFiles(flags),
+    keep: flags.keep === true || defaultKeep,
+    leaseMode: leaseId ? 'existing' : 'auto',
+    ...(leaseId ? { leaseId } : {}),
+    previewPorts: previewPorts.length > 0 ? previewPorts : defaultPreviewPorts,
+    reuse: flags.reuse === true,
+    runnerId: getFlag(flags, 'runner'),
+    ...(timeoutSeconds ? { timeoutSeconds } : {}),
+  };
+}
+
 export function createDevboxRunPayload({
   argv,
   flags,
@@ -91,32 +230,126 @@ export function createDevboxRunPayload({
     throw new Error('Missing remote command. Use `ttr box run -- <command>`.');
   }
 
-  const policy = evaluateDevboxCommandPolicy(command);
-  if (!policy.allowed) {
-    throw new Error(policy.reason);
-  }
+  const env = collectDevboxEnv({ argv, flags });
+  return createDevboxCommandPayload({
+    command,
+    defaultTimeoutSeconds: DEFAULT_ONE_OFF_TIMEOUT_SECONDS,
+    env,
+    flags,
+  });
+}
 
-  const leaseId = getFlag(flags, 'lease');
-  const envAssignments = collectRepeatedFlagValues(argv, 'env');
-  const env: DevboxEnv | undefined =
-    envAssignments.length > 0
-      ? parseDevboxEnvAssignments(envAssignments)
+function createBuildCommand(flags: Record<string, FlagValue>) {
+  const cwd = getFlag(flags, 'cwd');
+  const buildCommand = getFlag(flags, 'build-command');
+
+  if (buildCommand) return ['bash', '-c', buildCommand];
+  if (cwd) return ['bun', 'run', '--cwd', cwd, 'build'];
+  return ['bun', 'run', 'build'];
+}
+
+export function createDevboxBuildPayload({
+  argv,
+  flags,
+}: {
+  argv: string[];
+  flags: Record<string, FlagValue>;
+}): DevboxRunPayload {
+  return createDevboxCommandPayload({
+    command: createBuildCommand(flags),
+    env: collectDevboxEnv({ argv, flags }),
+    flags,
+  });
+}
+
+function createCloudflaredDockerCommand(flags: Record<string, FlagValue>) {
+  const image =
+    getFlag(flags, 'cloudflared-image') ?? DEFAULT_CLOUDFLARED_IMAGE;
+  return `docker run --rm --network host ${shellQuote(
+    image
+  )} tunnel run --token "$CLOUDFLARED_TOKEN"`;
+}
+
+function createServeScript(flags: Record<string, FlagValue>) {
+  const cwd = getFlag(flags, 'cwd') ?? DEFAULT_WEB_CWD;
+  const port = parsePositiveIntegerFlag({
+    defaultValue: DEFAULT_WEB_PORT,
+    flagName: 'port',
+    value: getFlag(flags, 'port'),
+  });
+  const buildCommand =
+    flags['no-build'] === true
+      ? undefined
+      : (getFlag(flags, 'build-command') ??
+        `bun run --cwd ${shellQuote(cwd)} build`);
+  const serveCommand =
+    getFlag(flags, 'serve-command') ??
+    `PORT=${port} bun run --cwd ${shellQuote(cwd)} start:app`;
+  const cloudflaredCommand =
+    flags.cloudflared === true ||
+    getFlag(flags, 'cloudflared-token-env') ||
+    getFlag(flags, 'token-env')
+      ? createCloudflaredDockerCommand(flags)
       : undefined;
+  const lines = [
+    'set -euo pipefail',
+    buildCommand,
+    `${serveCommand} &`,
+    'APP_PID=$!',
+    'cleanup() {',
+    `  kill "$APP_PID" "\${TUNNEL_PID:-}" 2>/dev/null || true`,
+    '}',
+    'trap cleanup INT TERM EXIT',
+    cloudflaredCommand ? `${cloudflaredCommand} &` : undefined,
+    cloudflaredCommand ? 'TUNNEL_PID=$!' : undefined,
+    cloudflaredCommand ? 'wait -n "$APP_PID" "$TUNNEL_PID"' : 'wait "$APP_PID"',
+  ].filter(Boolean);
 
   return {
-    command,
-    ...(env ? { env } : {}),
-    envFiles: parseEnvFiles(flags),
-    keep: flags.keep === true,
-    leaseMode: leaseId ? 'existing' : 'auto',
-    ...(leaseId ? { leaseId } : {}),
-    previewPorts: parsePreviewPorts(getFlag(flags, 'preview-port')),
-    reuse: flags.reuse === true,
-    runnerId: getFlag(flags, 'runner'),
-    timeoutSeconds:
-      parseDurationSeconds(getFlag(flags, 'timeout')) ??
-      DEFAULT_ONE_OFF_TIMEOUT_SECONDS,
+    command: ['bash', '-c', lines.join('\n')],
+    port,
+    usesCloudflared: Boolean(cloudflaredCommand),
   };
+}
+
+export function createDevboxServePayload({
+  argv,
+  flags,
+}: {
+  argv: string[];
+  flags: Record<string, FlagValue>;
+}): DevboxRunPayload {
+  const serve = createServeScript(flags);
+  return createDevboxCommandPayload({
+    command: serve.command,
+    defaultKeep: true,
+    defaultPreviewPorts: [serve.port],
+    env: collectDevboxEnv({
+      argv,
+      flags,
+      requireCloudflaredToken: serve.usesCloudflared,
+    }),
+    flags,
+  });
+}
+
+export function createDevboxTunnelPayload({
+  argv,
+  flags,
+}: {
+  argv: string[];
+  flags: Record<string, FlagValue>;
+}): DevboxRunPayload {
+  return createDevboxCommandPayload({
+    command: ['bash', '-c', createCloudflaredDockerCommand(flags)],
+    defaultKeep: true,
+    env: collectDevboxEnv({
+      argv,
+      flags,
+      requireCloudflaredToken: true,
+    }),
+    flags,
+  });
 }
 
 function printJson(value: unknown) {
@@ -154,13 +387,13 @@ async function waitForDevboxRun({
   timeoutSeconds?: number;
 }) {
   const deadline =
-    Date.now() +
-    (timeoutSeconds ?? DEFAULT_ONE_OFF_TIMEOUT_SECONDS) * 1000 +
-    DEVBOX_RUN_POLL_GRACE_MS;
+    typeof timeoutSeconds === 'number'
+      ? Date.now() + timeoutSeconds * 1000 + DEVBOX_RUN_POLL_GRACE_MS
+      : undefined;
   let latest = initial;
 
   while (!isTerminalRunStatus(latest.run.status)) {
-    if (Date.now() >= deadline) {
+    if (deadline && Date.now() >= deadline) {
       throw new Error(
         `Timed out waiting for devbox run ${initial.run.id} to finish.`
       );
@@ -171,6 +404,64 @@ async function waitForDevboxRun({
   }
 
   return latest;
+}
+
+function createDevboxUpgradePayload(flags: Record<string, FlagValue>) {
+  return {
+    command: ['bun', 'i', '-g', 'tuturuuu'],
+    keep: false,
+    leaseMode: 'auto' as const,
+    runnerId: getFlag(flags, 'runner'),
+    timeoutSeconds:
+      parseDurationSeconds(getFlag(flags, 'timeout')) ??
+      DEFAULT_UPGRADE_TIMEOUT_SECONDS,
+  };
+}
+
+async function createAndPrintDevboxRun({
+  client,
+  json,
+  payload,
+  wait = true,
+}: {
+  client: TuturuuuUserClient;
+  json: boolean;
+  payload: DevboxRunPayload;
+  wait?: boolean;
+}) {
+  const initial = await client.devboxes.createRun(payload);
+  if (!wait) {
+    if (json) {
+      printJson(initial);
+      return;
+    }
+    printDevboxRun(initial);
+    process.stdout.write(`Use \`ttr box logs ${initial.run.id}\` for logs.\n`);
+    process.stdout.write(
+      `Use \`ttr box stop ${initial.run.id}\` to stop it.\n`
+    );
+    const firstPreviewPort = payload.previewPorts?.[0];
+    if (initial.lease?.id && firstPreviewPort) {
+      process.stdout.write(
+        `Use \`ttr box preview --lease ${initial.lease.id} --port ${firstPreviewPort}\` for the authenticated preview.\n`
+      );
+    }
+    return;
+  }
+
+  const response = await waitForDevboxRun({
+    client,
+    initial,
+    timeoutSeconds: payload.timeoutSeconds,
+  });
+  if (json) {
+    printJson(response);
+    return;
+  }
+  printDevboxRun(response);
+  if (typeof response.run.exitCode === 'number') {
+    process.exitCode = response.run.exitCode;
+  }
 }
 
 export async function runDevboxCommand({
@@ -196,7 +487,7 @@ export async function runDevboxCommand({
   }
 
   if (resolvedAction === 'setup') {
-    await runDevboxSetupCommand({ flags, json });
+    await runDevboxSetupCommand({ client, flags, json });
     return;
   }
 
@@ -216,19 +507,41 @@ export async function runDevboxCommand({
 
   if (resolvedAction === 'run') {
     const payload = createDevboxRunPayload({ argv, flags });
-    const response = await waitForDevboxRun({
+    await createAndPrintDevboxRun({ client, json, payload });
+    return;
+  }
+
+  if (resolvedAction === 'build') {
+    const payload = createDevboxBuildPayload({ argv, flags });
+    await createAndPrintDevboxRun({ client, json, payload });
+    return;
+  }
+
+  if (resolvedAction === 'serve') {
+    const payload = createDevboxServePayload({ argv, flags });
+    await createAndPrintDevboxRun({
       client,
-      initial: await client.devboxes.createRun(payload),
-      timeoutSeconds: payload.timeoutSeconds,
+      json,
+      payload,
+      wait: flags.wait === true,
     });
-    if (json) {
-      printJson(response);
-      return;
-    }
-    printDevboxRun(response);
-    if (typeof response.run.exitCode === 'number') {
-      process.exitCode = response.run.exitCode;
-    }
+    return;
+  }
+
+  if (resolvedAction === 'tunnel') {
+    const payload = createDevboxTunnelPayload({ argv, flags });
+    await createAndPrintDevboxRun({
+      client,
+      json,
+      payload,
+      wait: flags.wait === true,
+    });
+    return;
+  }
+
+  if (resolvedAction === 'upgrade') {
+    const payload = createDevboxUpgradePayload(flags);
+    await createAndPrintDevboxRun({ client, json, payload });
     return;
   }
 

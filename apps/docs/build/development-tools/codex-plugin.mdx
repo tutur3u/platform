@@ -75,6 +75,12 @@ codex plugin marketplace add ./
   durable workflow learnings that should benefit future Tuturuuu contributors
   and assistants, including Turborepo/Next cache boundaries, local dev-speed
   diagnostics, release-please workflow, and package release automation rules.
+- `$tuturuuu-devbox-ops`: operational guidance for `ttr box` setup, runner
+  registration, one-shot smoke tests, 24/7 system services, runner-token
+  cleanup, CLI upgrades, and infrastructure devbox observability.
+- `$tuturuuu-validation-offload`: validation strategy guidance for deciding
+  when to run focused tests, `bun check`, Supabase, Docker, or browser-heavy
+  workflows through internal devboxes instead of the local agent session.
 - `$tuturuuu-web-release`: `apps/web` release badge metadata, blue/green
   runtime snapshot fallback, `PLATFORM_BUILD_*` precedence, and
   `TUTURUUU_PLATFORM_VERSION` bump guidance for every authored platform commit,
@@ -108,6 +114,7 @@ The CI check currently verifies:
 - dedicated prompt coverage for satellite app UX and app-session workflows
 - dedicated prompt coverage for native local E2E auth and dev-session debugging
 - dedicated prompt coverage for shared-worktree coordination and agent handoff
+- dedicated prompt coverage for devbox runner operations and validation offload
 - dedicated prompt coverage for web release badge metadata
 - durable CI tooling guidance for npm package release auto-recovery
 - durable CI tooling guidance for Supabase CLI setup retry and GitHub-tokened
@@ -189,6 +196,8 @@ python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-cli-tasks
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-cli-finance
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-development-tooling
+python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-devbox-ops
+python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-validation-offload
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-web-release
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-mobile-task-board
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-database

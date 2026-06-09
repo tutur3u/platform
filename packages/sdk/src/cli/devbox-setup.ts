@@ -1,19 +1,21 @@
-import { mkdir, readdir, stat } from 'node:fs/promises';
-import { homedir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { join } from 'node:path';
 import {
   createLocalSupabaseEnv,
   DEFAULT_DEVBOX_REPOSITORY_URL,
-  getDefaultDevboxCheckoutPath,
-  isTuturuuuPlatformRepositoryUrl,
   parseLocalSupabaseStatus,
   redactDevboxSupabaseEnv,
 } from '@tuturuuu/devbox';
+import type { TuturuuuUserClient } from '../platform';
 import { type FlagValue, getFlag } from './args';
 import {
   createDevboxDoctorReport,
   type DevboxDoctorReport,
 } from './devbox-doctor';
+import {
+  type DevboxSetupConfirm,
+  ensurePlatformCheckout,
+  resolveDevboxCheckout,
+} from './devbox-setup-checkout';
 import {
   type DevboxSetupCommandRunner,
   defaultDevboxSetupRunCommand,
@@ -23,13 +25,29 @@ import {
   type DevboxSetupEnvTarget,
   writeLocalSupabaseEnvFiles,
 } from './devbox-setup-env';
+import {
+  type DevboxRunnerSetupResult,
+  type DevboxServiceManager,
+  setupDevboxRunner,
+} from './devbox-setup-service';
 
 export interface DevboxSetupOptions {
+  agent?: boolean;
+  cloneInto?: string;
+  client?: TuturuuuUserClient;
+  confirm?: DevboxSetupConfirm;
+  cwd?: string;
   dir?: string;
   doctorReport?: DevboxDoctorReport;
+  env?: Record<string, string | undefined>;
   json?: boolean;
+  runnerName?: string;
   runCommand?: DevboxSetupCommandRunner;
+  service?: boolean;
+  serviceManager?: DevboxServiceManager;
+  serviceUser?: string;
   stdout?: (value: string) => void;
+  tokenFile?: string;
   yes?: boolean;
 }
 
@@ -37,6 +55,7 @@ export interface DevboxSetupReport extends DevboxDoctorReport {
   checkout: {
     path: string;
     repository: string;
+    source: 'clone-into' | 'current' | 'default' | 'explicit';
     status: 'cloned' | 'reused';
   };
   commands: {
@@ -49,18 +68,13 @@ export interface DevboxSetupReport extends DevboxDoctorReport {
     targets: DevboxSetupEnvTarget[];
     values: ReturnType<typeof redactDevboxSupabaseEnv>;
   };
+  runner?: DevboxRunnerSetupResult;
   status: 'ok';
   supabase: {
     apiUrl: string;
     dbUrl: '[REDACTED]' | null;
     studioUrl: string | null;
   };
-}
-
-function expandHomePath(value: string) {
-  if (value === '~') return homedir();
-  if (value.startsWith('~/')) return join(homedir(), value.slice(2));
-  return value;
 }
 
 async function runRequiredCommand({
@@ -99,67 +113,6 @@ async function runRequiredCommand({
   return result;
 }
 
-async function pathExists(pathname: string) {
-  try {
-    await stat(pathname);
-    return true;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
-    throw error;
-  }
-}
-
-async function isEmptyDirectory(pathname: string) {
-  try {
-    return (await readdir(pathname)).length === 0;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
-    throw error;
-  }
-}
-
-async function ensurePlatformCheckout({
-  checkoutDir,
-  json,
-  runCommand,
-}: {
-  checkoutDir: string;
-  json?: boolean;
-  runCommand: DevboxSetupCommandRunner;
-}) {
-  const exists = await pathExists(checkoutDir);
-  const canClone = !exists || (await isEmptyDirectory(checkoutDir));
-
-  if (canClone) {
-    await mkdir(dirname(checkoutDir), { recursive: true });
-    await runRequiredCommand({
-      args: ['clone', DEFAULT_DEVBOX_REPOSITORY_URL, checkoutDir],
-      command: 'git',
-      json,
-      name: 'Clone Tuturuuu platform',
-      runCommand,
-    });
-    return 'cloned' as const;
-  }
-
-  const remoteResult = await runCommand(
-    'git',
-    ['-C', checkoutDir, 'config', '--get', 'remote.origin.url'],
-    { capture: true, json }
-  );
-
-  if (
-    remoteResult.code !== 0 ||
-    !isTuturuuuPlatformRepositoryUrl(remoteResult.stdout)
-  ) {
-    throw new Error(
-      `Refusing to use ${checkoutDir}. It must be empty, missing, or a clone of ${DEFAULT_DEVBOX_REPOSITORY_URL}.`
-    );
-  }
-
-  return 'reused' as const;
-}
-
 function printJson(value: unknown, stdout: (value: string) => void) {
   stdout(`${JSON.stringify(value, null, 2)}\n`);
 }
@@ -196,7 +149,15 @@ function printSetupReport(
       `Supabase Studio: ${report.supabase.studioUrl ?? 'unavailable'}`,
       `Supabase DB: ${report.supabase.dbUrl ? 'available' : 'unavailable'}`,
       `Env files: ${report.env.targets.length} target(s), ${changedTargets.length} changed; values redacted`,
-    ].join('\n')}\n`
+      report.runner
+        ? `Runner: ${report.runner.runner.name} (${report.runner.runner.id}); token stored at ${report.runner.tokenFile}`
+        : null,
+      report.runner?.service
+        ? `Runner service: ${report.runner.service.manager} installed at ${report.runner.service.definitionPath}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join('\n')}\n`
   );
 }
 
@@ -206,9 +167,6 @@ export async function runDevboxSetup(
   const runCommand = options.runCommand ?? defaultDevboxSetupRunCommand;
   const stdout =
     options.stdout ?? ((value: string) => process.stdout.write(value));
-  const checkoutDir = resolve(
-    expandHomePath(options.dir?.trim() || getDefaultDevboxCheckoutPath())
-  );
   let doctor = options.doctorReport ?? (await createDevboxDoctorReport());
 
   if (doctor.missingTools.length > 0) {
@@ -244,6 +202,16 @@ export async function runDevboxSetup(
     }
   }
 
+  const checkout = await resolveDevboxCheckout({
+    cloneInto: options.cloneInto,
+    confirm: options.confirm,
+    cwd: options.cwd,
+    dir: options.dir,
+    env: options.env ?? process.env,
+    json: options.json,
+    runCommand,
+  });
+  const checkoutDir = checkout.path;
   const commands: DevboxSetupReport['commands'] = [];
   const checkoutStatus = await ensurePlatformCheckout({
     checkoutDir,
@@ -297,11 +265,19 @@ export async function runDevboxSetup(
     checkoutDir,
     env,
   });
+  const runner = await setupDevboxRunner({
+    checkoutDir,
+    options: {
+      ...options,
+      runCommand,
+    },
+  });
   const report: DevboxSetupReport = {
     ...doctor,
     checkout: {
       path: checkoutDir,
       repository: DEFAULT_DEVBOX_REPOSITORY_URL,
+      source: checkout.source,
       status: checkoutStatus,
     },
     commands,
@@ -309,6 +285,7 @@ export async function runDevboxSetup(
       targets: envTargets,
       values: redactDevboxSupabaseEnv(env),
     },
+    ...(runner ? { runner } : {}),
     status: 'ok',
     supabase: {
       apiUrl: supabaseStatus.apiUrl,
@@ -324,15 +301,35 @@ export async function runDevboxSetup(
 }
 
 export async function runDevboxSetupCommand({
+  client,
   flags,
   json,
 }: {
+  client?: TuturuuuUserClient;
   flags: Record<string, FlagValue>;
   json: boolean;
 }) {
+  const serviceManager = getFlag(flags, 'service-manager');
+  if (
+    serviceManager &&
+    !['auto', 'launchd', 'systemd'].includes(serviceManager)
+  ) {
+    throw new Error(
+      'Invalid --service-manager value. Use auto, systemd, or launchd.'
+    );
+  }
+
   await runDevboxSetup({
+    agent: flags.agent === true,
+    client,
+    cloneInto: getFlag(flags, 'clone-into'),
     dir: getFlag(flags, 'dir'),
     json,
+    runnerName: getFlag(flags, 'runner-name'),
+    service: flags.service === true,
+    serviceManager: serviceManager as DevboxServiceManager | undefined,
+    serviceUser: getFlag(flags, 'service-user'),
+    tokenFile: getFlag(flags, 'token-file'),
     yes: flags.yes === true,
   });
 }

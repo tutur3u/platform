@@ -19,18 +19,57 @@ runner host should have Node.js, Bun, Docker, and Git available.
 ttr login
 ttr box doctor
 ttr box setup
+ttr box setup --dir .
+ttr box setup --dir . --clone-into ./tuturuuu
 ttr box agent register --name "ci-lab-1"
 ttr box agent start --token <runner-token>
+ttr box upgrade --runner <runner-id>
 ```
 
-`ttr box setup` is the default bootstrap for a runner host. It clones or reuses
-`https://github.com/tutur3u/platform.git` at `~/Documents/tuturuuu`, installs
-dependencies with `bun install --frozen-lockfile`, starts local Supabase with
-`bun sb:start`, verifies `supabase status -o json`, and writes local Supabase
-connection values into ignored `apps/*/.env.local` files. Secret values are
-redacted from human and JSON output. Pass `--dir <path>` for a different
-checkout and `--yes` only when the host should install detected missing
-prerequisites automatically.
+`ttr box setup` is the default bootstrap for a runner host. It first checks
+whether the current directory is already a Tuturuuu platform checkout. If it is,
+setup reuses that checkout. Otherwise it can clone or reuse
+`https://github.com/tutur3u/platform.git`, install dependencies with
+`bun install --frozen-lockfile`, start local Supabase with `bun sb:start`,
+verify `supabase status -o json`, and write local Supabase connection values
+into ignored `apps/*/.env.local` files. Secret values are redacted from human
+and JSON output.
+
+Pass `--dir <path>` for a specific checkout. If the target exists but is not a
+valid Tuturuuu checkout, interactive setup asks whether it should clone into a
+nested `tuturuuu` directory. In non-interactive shells, pass
+`--clone-into <path>` explicitly:
+
+```bash
+ttr box setup --dir . --clone-into ./tuturuuu
+```
+
+Use `--yes` only when the host should install detected missing prerequisites
+automatically. Runner registration and service installation are separate
+choices.
+
+To register the machine and install a boot-starting runner service in one
+non-interactive command after login:
+
+```bash
+ttr box setup --agent --service --runner-name "$(hostname)-devbox" --yes
+```
+
+The setup command stores the runner token in a restricted local env file and
+installs a system-level runner service on Linux systemd or macOS launchd. The
+service starts after reboot and restarts automatically if the runner exits.
+Runner heartbeats report a small observability snapshot, including `ttr`, Bun,
+Node, Docker, Git, OS, CPU, RAM, load average, and uptime. Root workspace admins
+can inspect those fields from Infrastructure > Devboxes.
+
+Upgrade a runner's global CLI through the same brokered queue:
+
+```bash
+ttr box upgrade --runner <runner-id>
+```
+
+The upgrade command queues `bun i -g tuturuuu` for the selected runner, waits
+for completion, and returns the remote command logs and exit code.
 
 Run heavy commands remotely:
 
@@ -38,6 +77,7 @@ Run heavy commands remotely:
 ttr box run -- bun check
 ttr box run -- bun sb:reset
 ttr box run -- bun test:e2e
+ttr box build --cwd apps/web
 ```
 
 By default, `ttr box run` creates an auto lease, waits for an authenticated
@@ -50,6 +90,49 @@ ttr box sync --lease <lease-id> --watch
 ttr box preview --lease <lease-id> --port 7803
 ttr box release <lease-id>
 ```
+
+## Build, Serve, And Tunnel
+
+Use `ttr box build` for common build workloads without spelling the full remote
+command every time:
+
+```bash
+ttr box build
+ttr box build --cwd apps/web
+ttr box build --build-command "bun turbo:local run build -F @tuturuuu/web"
+```
+
+Use `ttr box serve` when the remote devbox should build an app, start the
+server, and keep the run alive. It defaults to `apps/web` on port `7803`, stores
+the preview port on the run, and returns immediately unless `--wait` is passed:
+
+```bash
+ttr box serve --cwd apps/web --port 7803
+ttr box preview --lease <lease-id> --port 7803
+ttr box logs <run-id>
+ttr box stop <run-id>
+```
+
+`ttr box build`, `ttr box serve`, and `ttr box tunnel` do not set a remote
+command timeout by default. Pass `--timeout <duration>` only when the run should
+be killed automatically.
+
+To expose a served app through a Cloudflare tunnel, keep the token in a local
+environment variable and pass the variable name to the devbox. The queued
+command references `$CLOUDFLARED_TOKEN`; the raw token is delivered only as
+run-scoped env and is redacted from logs.
+
+```bash
+export CLOUDFLARED_TOKEN=<token-from-cloudflare>
+ttr box serve --cloudflared --cloudflared-token-env CLOUDFLARED_TOKEN
+ttr box tunnel --cloudflared-token-env CLOUDFLARED_TOKEN
+```
+
+`ttr box tunnel` runs a dockerized `cloudflare/cloudflared` container with host
+networking on the runner. The command policy blocks inline `cloudflared
+--token ...` arguments, so operators should use `--cloudflared-token-env` or
+another local environment variable indirection rather than pasting raw tokens
+into commands.
 
 ## Container Boundary
 
@@ -77,6 +160,8 @@ own Supabase stack.
 
 ```bash
 ttr box run --env DATABASE_URL=postgres://remote -- bun check
+ttr box run --database-url-env DEVBOX_DATABASE_URL -- bun check
+ttr box serve --database-url-env DEVBOX_DATABASE_URL
 ttr box run --env-file .env.remote -- bun test:e2e
 ttr box env set --lease <lease-id> API_TOKEN=value
 ttr box env unset --lease <lease-id> API_TOKEN
@@ -84,6 +169,12 @@ ttr box env unset --lease <lease-id> API_TOKEN
 
 Brokered env values are scoped to the run or lease, delivered only to the
 claimed runner, and redacted from command logs.
+
+For split-resource development, run Supabase or another database on one devbox,
+publish its reachable URL as `DEVBOX_DATABASE_URL` on the operator machine, and
+queue the app devbox with `--database-url-env DEVBOX_DATABASE_URL`. This lets a
+database-heavy runner and a Next.js runner share work while the current machine
+only brokers commands and opens previews.
 
 ## Cache Policy
 

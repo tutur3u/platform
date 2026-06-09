@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu Devbox Ops"
+  short_description: "Operate ttr box runners, services, and smoke tests"
+  default_prompt: "Set up and smoke test this devbox runner safely."

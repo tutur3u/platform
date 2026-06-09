@@ -5,16 +5,35 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TuturuuuUserClient } from '../platform';
 import {
   collectRepeatedFlagValues,
+  createDevboxBuildPayload,
   createDevboxRunPayload,
+  createDevboxServePayload,
+  createDevboxTunnelPayload,
   extractDevboxForwardedCommand,
   parseDurationSeconds,
   runDevboxCommand,
 } from './devbox';
+import { executeDevboxAgentJob } from './devbox-runner';
 import { runDevboxSetup } from './devbox-setup';
 import {
   type DevboxSetupCommandRunner,
   redactDevboxSetupOutput,
 } from './devbox-setup-command';
+
+vi.mock('./devbox-agent-capabilities', () => ({
+  createDevboxAgentCapabilities: vi.fn(async () => ({
+    cli: { name: 'ttr', version: '0.2.0' },
+    os: { arch: 'arm64', platform: 'darwin', release: '25.0.0' },
+    resources: {
+      cpu: { cores: 10, model: 'Apple' },
+      loadAverage: [1, 2, 3],
+      memory: { freeBytes: 1024, totalBytes: 2048 },
+      uptimeSeconds: 120,
+    },
+    runtimes: { bun: '1.3.14', node: 'v26.0.0' },
+    tools: { docker: 'Docker version 29.0.0', git: 'git version 2.54.0' },
+  })),
+}));
 
 const doctorOk = {
   containerized: true as const,
@@ -118,7 +137,115 @@ describe('devbox CLI helpers', () => {
     });
   });
 
+  it('can forward DATABASE_URL from a local env var into a remote run', () => {
+    vi.stubEnv('REMOTE_DEVBOX_DATABASE_URL', 'postgres://remote-db');
+
+    expect(
+      createDevboxRunPayload({
+        argv: [
+          'box',
+          'run',
+          '--database-url-env',
+          'REMOTE_DEVBOX_DATABASE_URL',
+          '--',
+          'bun',
+          'check',
+        ],
+        flags: {
+          'database-url-env': 'REMOTE_DEVBOX_DATABASE_URL',
+        },
+      })
+    ).toMatchObject({
+      command: ['bun', 'check'],
+      env: {
+        DATABASE_URL: 'postgres://remote-db',
+      },
+    });
+  });
+
+  it('queues package build commands on devboxes', () => {
+    const payload = createDevboxBuildPayload({
+      argv: ['box', 'build', '--cwd', 'apps/web'],
+      flags: { cwd: 'apps/web' },
+    });
+
+    expect(payload).toMatchObject({
+      command: ['bun', 'run', '--cwd', 'apps/web', 'build'],
+      keep: false,
+      leaseMode: 'auto',
+      previewPorts: [],
+    });
+    expect(payload).not.toHaveProperty('timeoutSeconds');
+  });
+
+  it('creates a kept serve payload with cloudflared and forwarded database env', () => {
+    vi.stubEnv('DEVBOX_DATABASE_URL', 'postgres://devbox-db');
+    vi.stubEnv('DEVBOX_CLOUDFLARED_TOKEN', 'cloudflare-secret-token');
+
+    const payload = createDevboxServePayload({
+      argv: ['box', 'serve'],
+      flags: {
+        cloudflared: true,
+        'cloudflared-token-env': 'DEVBOX_CLOUDFLARED_TOKEN',
+        'database-url-env': 'DEVBOX_DATABASE_URL',
+      },
+    });
+    const script = payload.command[2] ?? '';
+
+    expect(payload).toMatchObject({
+      env: {
+        CLOUDFLARED_TOKEN: 'cloudflare-secret-token',
+        DATABASE_URL: 'postgres://devbox-db',
+      },
+      keep: true,
+      leaseMode: 'auto',
+      previewPorts: [7803],
+    });
+    expect(payload).not.toHaveProperty('timeoutSeconds');
+    expect(payload.command.slice(0, 2)).toEqual(['bash', '-c']);
+    expect(script).toContain("bun run --cwd 'apps/web' build");
+    expect(script).toContain("PORT=7803 bun run --cwd 'apps/web' start:app");
+    expect(script).toContain('cloudflare/cloudflared:latest');
+    expect(script).toContain('$CLOUDFLARED_TOKEN');
+    expect(script).not.toContain('cloudflare-secret-token');
+  });
+
+  it('queues dockerized cloudflared tunnel runs with token env only', () => {
+    vi.stubEnv('DEVBOX_CLOUDFLARED_TOKEN', 'cloudflare-secret-token');
+
+    const payload = createDevboxTunnelPayload({
+      argv: ['box', 'tunnel'],
+      flags: { 'cloudflared-token-env': 'DEVBOX_CLOUDFLARED_TOKEN' },
+    });
+    const script = payload.command[2] ?? '';
+
+    expect(payload).toMatchObject({
+      env: {
+        CLOUDFLARED_TOKEN: 'cloudflare-secret-token',
+      },
+      keep: true,
+      leaseMode: 'auto',
+      previewPorts: [],
+    });
+    expect(payload).not.toHaveProperty('timeoutSeconds');
+    expect(script).toContain('docker run --rm --network host');
+    expect(script).toContain('cloudflare/cloudflared:latest');
+    expect(script).toContain('$CLOUDFLARED_TOKEN');
+    expect(script).not.toContain('cloudflare-secret-token');
+  });
+
+  it('requires cloudflared tunnel tokens to come from local env vars', () => {
+    expect(() =>
+      createDevboxTunnelPayload({
+        argv: ['box', 'tunnel'],
+        flags: {},
+      })
+    ).toThrow('Cloudflared tunnel runs require');
+  });
+
   it('explains that agent start needs a registered runner token', async () => {
+    vi.stubEnv('TUTURUUU_DEVBOX_RUNNER_TOKEN', '');
+
     await expect(
       runDevboxCommand({
         action: 'agent',
@@ -167,6 +294,14 @@ describe('devbox CLI helpers', () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
       '/api/v1/devboxes/agents/heartbeat'
     );
+    expect(
+      JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit)?.body))
+    ).toMatchObject({
+      capabilities: {
+        cli: { name: 'ttr', version: '0.2.0' },
+        runtimes: { bun: '1.3.14', node: 'v26.0.0' },
+      },
+    });
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain(
       '/api/v1/devboxes/agents/poll'
     );
@@ -216,6 +351,74 @@ describe('devbox CLI helpers', () => {
     );
     expect(write).toHaveBeenCalledWith('remote$ bun --version\n');
     expect(write).toHaveBeenCalledWith('1.3.14\n');
+  });
+
+  it('queues CLI upgrades as remote devbox runs', async () => {
+    const client = {
+      devboxes: {
+        createRun: vi.fn().mockResolvedValue({
+          logs: ['remote$ bun i -g tuturuuu', 'updated'],
+          run: {
+            command: ['bun', 'i', '-g', 'tuturuuu'],
+            exitCode: 0,
+            id: 'run-upgrade',
+            status: 'succeeded',
+          },
+        }),
+      },
+    } as unknown as TuturuuuUserClient;
+
+    await runDevboxCommand({
+      action: 'upgrade',
+      argv: ['box', 'upgrade'],
+      client,
+      flags: { runner: 'runner-1', timeout: '2m' },
+      json: true,
+    });
+
+    expect(client.devboxes.createRun).toHaveBeenCalledWith({
+      command: ['bun', 'i', '-g', 'tuturuuu'],
+      keep: false,
+      leaseMode: 'auto',
+      runnerId: 'runner-1',
+      timeoutSeconds: 120,
+    });
+  });
+
+  it('does not wait for serve runs unless requested', async () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    const client = {
+      devboxes: {
+        createRun: vi.fn().mockResolvedValue({
+          lease: { id: 'lease-serve', status: 'active' },
+          run: {
+            command: ['bash', '-lc', 'serve'],
+            exitCode: null,
+            id: 'run-serve',
+            status: 'queued',
+          },
+        }),
+        getRun: vi.fn(),
+      },
+    } as unknown as TuturuuuUserClient;
+
+    await runDevboxCommand({
+      action: 'serve',
+      argv: ['box', 'serve'],
+      client,
+      flags: {},
+      json: false,
+    });
+
+    expect(client.devboxes.getRun).not.toHaveBeenCalled();
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('Use `ttr box logs run-serve`')
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('ttr box preview --lease lease-serve --port 7803')
+    );
   });
 
   it('executes claimed jobs in one-shot agents', async () => {
@@ -278,6 +481,105 @@ describe('devbox CLI helpers', () => {
       ])
     );
     expect(JSON.stringify(eventPayloads)).toContain('agent-ok');
+  });
+
+  it('redacts explicit job env values from the remote command event', async () => {
+    const eventPayloads: unknown[] = [];
+    const fetchMock = vi.fn(
+      async (_input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+        eventPayloads.push(
+          JSON.parse(String((init as RequestInit | undefined)?.body ?? '{}'))
+        );
+        return new Response(JSON.stringify({ ok: true }));
+      }
+    );
+
+    const result = await executeDevboxAgentJob(
+      {
+        command: [
+          process.execPath,
+          '-e',
+          'process.stdout.write("secret-redacted")',
+          'sensitive-command-secret',
+        ],
+        env: { SECRET_TOKEN: 'sensitive-command-secret' },
+        envFiles: [],
+        leaseId: 'lease-secret',
+        runId: 'run-secret',
+        timeoutSeconds: 10,
+      },
+      {
+        baseUrl: 'http://localhost:7903',
+        env: {
+          HOME: tmpdir(),
+          PATH: process.env.PATH,
+        },
+        fetch: fetchMock as unknown as typeof fetch,
+        token: 'runner-token',
+      }
+    );
+    const serializedEvents = JSON.stringify(eventPayloads);
+
+    expect(result).toEqual({ exitCode: 0, status: 'succeeded' });
+    expect(serializedEvents).toContain('remote$');
+    expect(serializedEvents).toContain('[REDACTED]');
+    expect(serializedEvents).toContain('secret-redacted');
+    expect(serializedEvents).not.toContain('sensitive-command-secret');
+  });
+
+  it('does not leak ambient agent env into claimed jobs', async () => {
+    const eventPayloads: unknown[] = [];
+    const fetchMock = vi.fn(
+      async (_input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+        eventPayloads.push(
+          JSON.parse(String((init as RequestInit | undefined)?.body ?? '{}'))
+        );
+        return new Response(JSON.stringify({ ok: true }));
+      }
+    );
+
+    const result = await executeDevboxAgentJob(
+      {
+        command: [
+          process.execPath,
+          '-e',
+          [
+            'const blocked = [',
+            "'NEXT_PUBLIC_TURNSTILE_SITE_KEY',",
+            "'TUTURUUU_DEVBOX_RUNNER_TOKEN'",
+            '].filter((name) => process.env[name]);',
+            'if (blocked.length || process.env.EXPLICIT_JOB_ENV !== "expected") {',
+            'process.stderr.write(JSON.stringify({ blocked, explicit: process.env.EXPLICIT_JOB_ENV ?? null }));',
+            'process.exit(1);',
+            '}',
+            'process.stdout.write("env-isolated");',
+          ].join(''),
+        ],
+        env: { EXPLICIT_JOB_ENV: 'expected' },
+        envFiles: [],
+        leaseId: 'lease-env',
+        runId: 'run-env',
+        timeoutSeconds: 10,
+      },
+      {
+        baseUrl: 'http://localhost:7903',
+        env: {
+          HOME: tmpdir(),
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site-key',
+          PATH: process.env.PATH,
+          TUTURUUU_DEVBOX_RUNNER_TOKEN: 'runner-token',
+        },
+        fetch: fetchMock as unknown as typeof fetch,
+        token: 'runner-token',
+      }
+    );
+
+    const serializedEvents = JSON.stringify(eventPayloads);
+
+    expect(result).toEqual({ exitCode: 0, status: 'succeeded' });
+    expect(serializedEvents).toContain('env-isolated');
+    expect(serializedEvents).not.toContain('site-key');
+    expect(serializedEvents).not.toContain('runner-token');
   });
 
   it('redacts Supabase setup keys from streamed command output', () => {

@@ -138,14 +138,19 @@ function toClaimedJob(row: DevboxClaimedRunRow) {
   };
 }
 
-export async function heartbeatDevboxRunner(runnerId: string) {
+export async function heartbeatDevboxRunner(
+  runnerId: string,
+  capabilities?: unknown
+) {
   const privateClient = await createPrivateDevboxClient();
+  const update = {
+    ...(capabilities ? { capabilities } : {}),
+    last_heartbeat_at: new Date().toISOString(),
+    status: 'online',
+    updated_at: new Date().toISOString(),
+  };
   const { error } = await getPrivateTable(privateClient, 'devbox_runners')
-    .update({
-      last_heartbeat_at: new Date().toISOString(),
-      status: 'online',
-      updated_at: new Date().toISOString(),
-    })
+    .update(update)
     .eq('id', runnerId);
 
   if (error) {

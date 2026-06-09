@@ -1,5 +1,6 @@
 import { pollDevboxAgentJobs } from '../platform-devbox';
 import { normalizeBaseUrl } from './config';
+import { createDevboxAgentCapabilities } from './devbox-agent-capabilities';
 import { executeDevboxAgentJob } from './devbox-runner';
 
 function formatResponseStatus(response: Response) {
@@ -30,10 +31,15 @@ export async function runDevboxAgentLoop({
 
   let running = true;
   while (running) {
+    const capabilities = await createDevboxAgentCapabilities();
     const heartbeatResponse = await fetch(
       new URL('/api/v1/devboxes/agents/heartbeat', origin),
       {
-        headers,
+        body: JSON.stringify({ capabilities }),
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
         method: 'POST',
       }
     );

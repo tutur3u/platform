@@ -55,10 +55,40 @@ describe('devbox agent routes', () => {
     const response = await heartbeat(createRequest());
 
     expect(response.status).toBe(200);
-    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith('runner-1');
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith(
+      'runner-1',
+      undefined
+    );
     await expect(response.json()).resolves.toEqual({
       message: 'heartbeat accepted',
     });
+  });
+
+  it('records runner heartbeat capabilities', async () => {
+    heartbeatDevboxRunnerMock.mockResolvedValue({
+      message: 'heartbeat accepted',
+    });
+
+    const capabilities = {
+      cli: { name: 'ttr', version: '0.2.0' },
+      os: { arch: 'arm64', platform: 'darwin', release: '25.0.0' },
+      resources: {
+        cpu: { cores: 10, model: 'Apple' },
+        loadAverage: [1, 2, 3],
+        memory: { freeBytes: 1024, totalBytes: 2048 },
+        uptimeSeconds: 120,
+      },
+      runtimes: { bun: '1.3.14', node: 'v26.0.0' },
+      tools: { docker: 'Docker version 29.0.0', git: 'git version 2.54.0' },
+    };
+
+    const response = await heartbeat(createRequest({ capabilities }));
+
+    expect(response.status).toBe(200);
+    expect(heartbeatDevboxRunnerMock).toHaveBeenCalledWith(
+      'runner-1',
+      capabilities
+    );
   });
 
   it('claims queued jobs for the authenticated runner', async () => {

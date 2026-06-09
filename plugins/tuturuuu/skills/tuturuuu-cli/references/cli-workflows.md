@@ -105,20 +105,32 @@ name, such as `[FREE] Tuturuuu` or `[PRO] Personal`.
 ## Devbox Bootstrap
 
 Use `ttr box setup` before offloading heavy workflows to a self-hosted devbox
-runner. The command clones or reuses `https://github.com/tutur3u/platform.git`
-at `~/Documents/tuturuuu`, runs `bun install --frozen-lockfile`, starts local
-Supabase with `bun sb:start`, reads `supabase status -o json`, and writes
-redacted local Supabase connection values into ignored `apps/*/.env.local`
-files.
+runner. The command first checks whether the current directory is a valid
+Tuturuuu platform checkout. If it is not, interactive setup can clone into a
+nested `tuturuuu` directory, while non-interactive setup should pass
+`--clone-into <path>` explicitly. It runs `bun install --frozen-lockfile`,
+starts local Supabase with `bun sb:start`, reads `supabase status -o json`, and
+writes redacted local Supabase connection values into ignored
+`apps/*/.env.local` files.
 
 ```bash
 ttr box doctor
 ttr box setup
+ttr box setup --dir .
+ttr box setup --dir . --clone-into ./tuturuuu
 ttr box setup --dir ~/Documents/tuturuuu
+ttr box setup --agent --service --runner-name "$(hostname)-devbox" --yes
+ttr box upgrade --runner <runner-id>
 ```
 
 `ttr box doctor` is read-only. Use `ttr box setup --yes` only when the host
 should install detected missing prerequisites through its package manager.
+Runner registration and boot-starting system service installation require
+explicit `--agent`/`--service` flags or interactive confirmation after setup.
+Runner heartbeats update the Infrastructure > Devboxes control surface with
+CLI/runtime versions, Docker/Git versions, OS, CPU, RAM, load average, and
+uptime. Use `ttr box upgrade --runner <runner-id>` to queue `bun i -g tuturuuu`
+on a specific runner through the same brokered run path.
 
 ## SDK Client Surfaces
 

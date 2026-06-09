@@ -5446,12 +5446,28 @@
       "revoke": "Revoke",
       "stop": "Stop"
     },
+    "capabilities": {
+      "bun": "Bun",
+      "cli": "CLI",
+      "cores": "cores",
+      "cpu": "CPU",
+      "docker": "Docker",
+      "free": "free",
+      "git": "Git",
+      "load": "Load",
+      "node": "Node",
+      "os": "OS",
+      "ram": "RAM",
+      "unreported": "Not reported",
+      "uptime": "Uptime"
+    },
     "columns": {
       "actions": "Actions",
       "actor": "Actor",
       "cache": "Cache",
       "command": "Command",
       "created": "Created",
+      "environment": "Environment",
       "event": "Event",
       "exit_code": "Exit code",
       "expires": "Expires",

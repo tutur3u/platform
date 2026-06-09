@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu Validation Offload"
+  short_description: "Choose and run heavy validation through devboxes"
+  default_prompt: "Offload the heavy validation for this change to devboxes."

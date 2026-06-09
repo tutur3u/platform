@@ -1,4 +1,11 @@
+import { isIPBlocked } from '@tuturuuu/utils/abuse-protection';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  createAuditRecord,
+  logEmailAbuseEvent,
+  updateAuditRecord,
+} from '../email-audit';
+import { EmailService } from '../email-service';
 
 vi.mock('@tuturuuu/utils/abuse-protection', async (importOriginal) => {
   const actual =
@@ -19,13 +26,23 @@ vi.mock('../email-audit', () => {
 });
 
 describe('EmailService abuse enforcement', () => {
+  const createAuditRecordMock = vi.mocked(createAuditRecord);
+  const isIPBlockedMock = vi.mocked(isIPBlocked);
+  const logEmailAbuseEventMock = vi.mocked(logEmailAbuseEvent);
+  const updateAuditRecordMock = vi.mocked(updateAuditRecord);
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    createAuditRecordMock.mockReset();
+    createAuditRecordMock.mockResolvedValue('audit-1');
+    isIPBlockedMock.mockReset();
+    isIPBlockedMock.mockResolvedValue(null);
+    logEmailAbuseEventMock.mockReset();
+    logEmailAbuseEventMock.mockResolvedValue(undefined);
+    updateAuditRecordMock.mockReset();
+    updateAuditRecordMock.mockResolvedValue(true);
   });
 
   it('counts send attempts even when provider fails', async () => {
-    const { EmailService } = await import('../email-service');
-
     const service = new EmailService({
       provider: 'ses',
       credentials: {
@@ -78,13 +95,7 @@ describe('EmailService abuse enforcement', () => {
   });
 
   it('creates an audit record when blocked by IP', async () => {
-    const { isIPBlocked } = await import('@tuturuuu/utils/abuse-protection');
-    const { createAuditRecord, updateAuditRecord } = await import(
-      '../email-audit'
-    );
-    const { EmailService } = await import('../email-service');
-
-    vi.mocked(isIPBlocked).mockResolvedValueOnce({
+    isIPBlockedMock.mockResolvedValueOnce({
       id: 'block-1',
       blockLevel: 2,
       reason: 'manual',
@@ -129,7 +140,7 @@ describe('EmailService abuse enforcement', () => {
 
     expect(result.success).toBe(false);
     expect(result.auditId).toBe('audit-1');
-    expect(createAuditRecord).toHaveBeenCalledTimes(1);
-    expect(updateAuditRecord).toHaveBeenCalledTimes(1);
+    expect(createAuditRecordMock).toHaveBeenCalledTimes(1);
+    expect(updateAuditRecordMock).toHaveBeenCalledTimes(1);
   });
 });

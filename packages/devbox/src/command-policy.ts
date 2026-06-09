@@ -19,6 +19,56 @@ function normalizeCommandPart(value: string) {
   return value.trim().toLowerCase();
 }
 
+function stripShellQuotes(value: string) {
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1);
+  }
+
+  return trimmed;
+}
+
+function isShellEnvReference(value: string) {
+  const stripped = stripShellQuotes(value);
+  return stripped.startsWith('$') || stripped.startsWith('${');
+}
+
+function isCloudflaredCommand(command: string[]) {
+  return command.some((part) =>
+    normalizeCommandPart(part).includes('cloudflared')
+  );
+}
+
+function hasInlineCloudflaredToken(command: string[]) {
+  for (let index = 0; index < command.length; index++) {
+    const part = command[index] ?? '';
+    const normalized = normalizeCommandPart(part);
+
+    if (normalized === '--token') {
+      const next = command[index + 1];
+      if (next && !isShellEnvReference(next)) return true;
+    }
+
+    if (normalized.startsWith('--token=')) {
+      const value = part.slice('--token='.length);
+      if (value && !isShellEnvReference(value)) return true;
+    }
+
+    const tokenMatches = part.matchAll(
+      /--token(?:=|\s+)(?:"([^"]*)"|'([^']*)'|([^\s;&|]+))/giu
+    );
+    for (const match of tokenMatches) {
+      const value = match[1] ?? match[2] ?? match[3] ?? '';
+      if (value && !isShellEnvReference(value)) return true;
+    }
+  }
+
+  return false;
+}
+
 function isAbsoluteHostMount(value: string) {
   const [, mountTarget = value] = value.includes(':')
     ? value.split(':', 1)
@@ -122,6 +172,18 @@ export function evaluateDevboxCommandPolicy(
       allowed: false,
       category: 'blocked',
       reason: 'git reset --hard is blocked for synced devbox workspaces.',
+    };
+  }
+
+  if (
+    isCloudflaredCommand(normalized) &&
+    hasInlineCloudflaredToken(normalized)
+  ) {
+    return {
+      allowed: false,
+      category: 'blocked',
+      reason:
+        'Cloudflared tunnel tokens must be passed through a devbox environment variable, not inline command arguments.',
     };
   }
 

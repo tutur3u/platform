@@ -926,11 +926,13 @@ export async function runCli(argv = process.argv.slice(2)) {
 
   if (group === 'box') {
     const client =
-      action === 'doctor' ||
-      action === 'setup' ||
-      (action === 'agent' && firstId === 'start')
+      action === 'doctor' || (action === 'agent' && firstId === 'start')
         ? undefined
-        : getClient(config);
+        : action === 'setup'
+          ? config.session
+            ? getClient(config)
+            : undefined
+          : getClient(config);
     await runDevboxCommand({
       action,
       argv,
