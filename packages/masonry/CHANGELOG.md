@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/tutur3u/platform/compare/masonry-v0.4.1...masonry-v0.4.2) (2026-06-09)
+
+
+### Bug Fixes
+
+* **ci:** recover releases and package tsgo builds ([d82b846](https://github.com/tutur3u/platform/commit/d82b846c6232d9fb72b7d2aa808020bc24292a19))
+
 ## [0.3.10] - 2025-11-07
 
 ### Changed
@@ -247,4 +254,3 @@
 
 ### Fixed
 - Measurement correlation after redistribution
-

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/tutur3u/platform/compare/types-v0.4.0...types-v0.4.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* **ci:** recover releases and package tsgo builds ([d82b846](https://github.com/tutur3u/platform/commit/d82b846c6232d9fb72b7d2aa808020bc24292a19))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/types-v0.3.0...types-v0.4.0) (2026-06-08)
 
 

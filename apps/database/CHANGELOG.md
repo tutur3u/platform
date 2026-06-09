@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/tutur3u/platform/compare/database-v1.2.0...database-v1.2.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* **ci:** restore local supabase e2e port ([f91a4fe](https://github.com/tutur3u/platform/commit/f91a4fed2143a5a4ee8f616ad70bbaf1fa8f2157))
+* **tooling:** address review feedback ([dd26db4](https://github.com/tutur3u/platform/commit/dd26db488cd06434a7d192d58ca9ea488d1040ba))
+
 ## [1.2.0](https://github.com/tutur3u/platform/compare/database-v1.1.0...database-v1.2.0) (2026-06-08)
 
 
