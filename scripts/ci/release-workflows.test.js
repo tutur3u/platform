@@ -299,7 +299,21 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   assert.match(releaseJob, /contents:\s*write/);
   assert.match(releaseJob, /issues:\s*write/);
   assert.match(releaseJob, /pull-requests:\s*write/);
+  assert.match(releaseJob, /uses: actions\/checkout@v4/);
+  assert.match(releaseJob, /ref: production/);
+  assert.match(
+    releaseJob,
+    /node scripts\/ci\/release-please-overflow-recovery\.js --target-branch production/
+  );
+  assert.match(
+    releaseJob,
+    /GITHUB_TOKEN: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \|\| github\.token \}\}/
+  );
   assert.match(releaseJob, /uses: googleapis\/release-please-action@v5/);
+  assert.ok(
+    releaseJob.indexOf('Recover overflow release notes') <
+      releaseJob.indexOf('Create or update release PR')
+  );
   assert.match(
     releaseJob,
     /token: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \|\| github\.token \}\}/

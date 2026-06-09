@@ -31,6 +31,17 @@ jobs:
       issues: write
       pull-requests: write
     steps:
+      - name: Checkout release automation
+        uses: actions/checkout@v4
+        with:
+          ref: production
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+
+      - name: Recover overflow release notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+        run: node scripts/ci/release-please-overflow-recovery.js --target-branch production
+
       - name: Create or update release PR
         uses: googleapis/release-please-action@v5
         with:

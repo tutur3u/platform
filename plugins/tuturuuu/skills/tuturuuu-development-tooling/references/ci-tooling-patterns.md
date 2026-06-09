@@ -60,6 +60,12 @@ formatting behavior, or repo-wide verification.
 - Keep the Release Please token fallback ordered as
   `secrets.RELEASE_PLEASE_TOKEN || github.token`; the bot token is still needed
   for generated PRs and releases to trigger downstream workflows.
+- Keep the Release Please overflow recovery step before
+  `googleapis/release-please-action@v5`. It runs
+  `node scripts/ci/release-please-overflow-recovery.js --target-branch production`
+  to recreate a missing `release-notes.md` companion branch when a merged
+  pending release PR body points at an overflow notes file that GitHub no longer
+  has.
 - Route workflow `bun install` and `bun setup` steps through
   `bash scripts/ci/run-with-backoff.sh ...`. The helper uses bounded
   exponential backoff and clears `bun pm cache rm` between Bun-command attempts
@@ -106,6 +112,10 @@ formatting behavior, or repo-wide verification.
   URL with `E422` while verifying the sigstore provenance bundle.
 - If local type-check passes but CI fails from stale incremental state, rerun
   with forced cache invalidation before changing unrelated code.
+- Workspace packages with direct `tsgo` build scripts must declare
+  `@typescript/native-preview` in their own `devDependencies`. Filtered Docker
+  installs such as the Hive production image do not install root-only dev tools,
+  so package-owned build scripts cannot rely on the root `tsgo` binary.
 - Do not patch unrelated packages just because `bun check` fails outside the
   owned scope. Run focused verification and report the blocker.
 - Package subpath imports must be covered by the package `exports`; do not

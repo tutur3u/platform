@@ -93,3 +93,25 @@ test('workspace build and dev scripts use tsgo instead of legacy tsc', () => {
 
   assert.deepEqual(invalidScripts, []);
 });
+
+test('workspace tsgo build scripts own the native preview binary', () => {
+  const invalidPackages = [];
+
+  for (const packageJsonPath of getWorkspacePackageJsonPaths()) {
+    const packageJson = readJson(packageJsonPath);
+    const buildScript = packageJson.scripts?.build;
+
+    if (typeof buildScript !== 'string' || !/\btsgo\b/.test(buildScript)) {
+      continue;
+    }
+
+    if (!packageJson.devDependencies?.['@typescript/native-preview']) {
+      invalidPackages.push({
+        file: packageJsonPath,
+        script: buildScript,
+      });
+    }
+  }
+
+  assert.deepEqual(invalidPackages, []);
+});

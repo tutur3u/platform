@@ -231,6 +231,16 @@ declare `repository.type: "git"`,
 against GitHub Actions provenance and rejects publishes with `E422` when the
 packed manifest has an empty or mismatched repository URL.
 
+Release Please can move an oversized generated pull request body into
+`release-notes.md` on a companion
+`release-please--branches--<branch>--release-notes` branch. The workflow runs
+`node scripts/ci/release-please-overflow-recovery.js --target-branch production`
+before `googleapis/release-please-action@v5`; when a merged pending release PR
+still points at a missing overflow file, the script recreates the branch and
+file from the merged manifest bump and current `production` changelogs, then the
+normal Release Please action can create the releases. If the script reports
+`skipped`, inspect the pending labels and merged release PR body before retrying.
+
 Keep internal Tuturuuu dependencies as `workspace:*` in source package
 manifests so local builds always use the checked-out workspace. Package release
 workflows must first run
@@ -258,6 +268,11 @@ and become visible on npm before the normal production platform deployment flow
 continues. When the push payload omits changed package files, the helper fetches
 the missing base SHA before falling back to `git diff`, so shallow checkout
 depth does not break the release gate.
+
+Filtered production Docker installs only include the selected app and the
+dependencies that app needs. Workspace packages with direct `tsgo` build scripts
+must declare `@typescript/native-preview` in their own `devDependencies`; do not
+rely on the root devDependency for production Docker builds.
 
 ### Newer-commit guards
 
