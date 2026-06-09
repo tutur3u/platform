@@ -119,7 +119,7 @@ export function TaskSection({
 
   const handleTaskSelect = (task: TaskSearchResult) => {
     // Track in recent items
-    addRecentTask(task.id, task.name, task.board_name);
+    addRecentTask(task.id, task.name, task.board_name ?? undefined);
 
     // Close command palette
     onSelect?.();

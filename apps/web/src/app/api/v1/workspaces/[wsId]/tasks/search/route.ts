@@ -8,13 +8,27 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { validateRequestBody } from '@/lib/api-middleware';
 
 interface Params {
   params: Promise<{
     wsId: string;
   }>;
 }
+
+const searchTasksBodySchema = z.object({
+  matchCount: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .default(50)
+    .transform((value) => Math.min(value, 50)),
+  matchThreshold: z.number().min(0).max(1).optional().default(0.3),
+  query: z.string().trim().min(1),
+});
 
 /**
  * Enhance search query with context and expanded terms
@@ -70,7 +84,7 @@ function enhanceSearchQuery(query: string): string {
   return Array.from(expandedTerms).join(' ');
 }
 
-export async function POST(req: Request, { params }: Params) {
+export async function POST(req: NextRequest, { params }: Params) {
   try {
     const supabase = await createClient(req);
     const { wsId: id } = await params;
@@ -104,21 +118,15 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
+    const bodyResult = await validateRequestBody(req, searchTasksBodySchema);
+    if (!('data' in bodyResult)) return bodyResult;
+
+    const { query, matchThreshold, matchCount } = bodyResult.data;
+
     const sbAdmin = await createAdminClient();
 
-    // Get search query from request body
-    const body = await req.json();
-    const { query, matchThreshold = 0.3, matchCount = 50 } = body;
-
-    if (!query || typeof query !== 'string') {
-      return NextResponse.json(
-        { message: 'Query is required' },
-        { status: 400 }
-      );
-    }
-
     // Enhance query with context for better semantic matching
-    const enhancedQuery = enhanceSearchQuery(query.trim());
+    const enhancedQuery = enhanceSearchQuery(query);
 
     const embeddingResult = await createMeteredTextEmbedding({
       metadata: {
@@ -142,7 +150,7 @@ export async function POST(req: Request, { params }: Params) {
     // Call the hybrid match_tasks function with both embedding and text
     const { data, error } = await sbAdmin.rpc('match_tasks', {
       query_embedding: JSON.stringify(embeddingResult.embedding),
-      query_text: query.trim(), // Pass original query for full-text search
+      query_text: query, // Pass original query for full-text search
       match_threshold: matchThreshold,
       match_count: matchCount,
       filter_ws_id: wsId,

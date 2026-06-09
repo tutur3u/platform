@@ -235,6 +235,41 @@ export interface WorkspaceTasksResponse {
   };
 }
 
+export interface WorkspaceTaskSearchResult {
+  archived?: boolean | null;
+  assignees?: {
+    avatar_url?: string | null;
+    display_name?: string | null;
+    id: string;
+  }[];
+  board_name?: string | null;
+  completed?: boolean;
+  created_at?: string | null;
+  description?: string | null;
+  end_date?: string | null;
+  id: string;
+  is_assigned_to_current_user?: boolean;
+  list_id?: string | null;
+  list_name?: string | null;
+  list_status?: string | null;
+  name: string;
+  priority?: TaskPriority | null;
+  similarity?: number;
+  start_date?: string | null;
+}
+
+export interface SearchWorkspaceTasksPayload {
+  matchCount?: number;
+  matchThreshold?: number;
+  query: string;
+}
+
+export interface SearchWorkspaceTasksResponse {
+  message?: string;
+  reason?: string;
+  tasks: WorkspaceTaskSearchResult[];
+}
+
 function joinQueryList(values?: string[]) {
   return values && values.length > 0 ? values.join(',') : undefined;
 }
@@ -1076,6 +1111,25 @@ export async function listWorkspaceTasks(
         includeCount: options?.includeCount,
         includeListCounts: options?.includeListCounts,
       },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function searchWorkspaceTasks(
+  workspaceId: string,
+  payload: SearchWorkspaceTasksPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<SearchWorkspaceTasksResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/search`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
       cache: 'no-store',
     }
   );

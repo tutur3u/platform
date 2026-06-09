@@ -166,6 +166,40 @@ const APP_SEARCH_ITEMS: readonly LaunchableApp[] = LAUNCHABLE_APPS.map(
 const REMOTE_WORKSPACE_SEARCH_LIMIT = 50;
 const VISIBLE_WORKSPACE_SEARCH_LIMIT = 20;
 
+const commandLauncherInstanceRegistry = new Map<LaunchableAppSlug, symbol[]>();
+
+function registerCommandLauncherInstance(
+  currentApp: LaunchableAppSlug,
+  instanceId: symbol
+) {
+  const instances = commandLauncherInstanceRegistry.get(currentApp) ?? [];
+  commandLauncherInstanceRegistry.set(currentApp, [...instances, instanceId]);
+}
+
+function unregisterCommandLauncherInstance(
+  currentApp: LaunchableAppSlug,
+  instanceId: symbol
+) {
+  const nextInstances = (
+    commandLauncherInstanceRegistry.get(currentApp) ?? []
+  ).filter((registeredId) => registeredId !== instanceId);
+
+  if (nextInstances.length === 0) {
+    commandLauncherInstanceRegistry.delete(currentApp);
+    return;
+  }
+
+  commandLauncherInstanceRegistry.set(currentApp, nextInstances);
+}
+
+function isActiveCommandLauncherInstance(
+  currentApp: LaunchableAppSlug,
+  instanceId: symbol
+) {
+  const instances = commandLauncherInstanceRegistry.get(currentApp) ?? [];
+  return instances.at(-1) === instanceId;
+}
+
 function workspaceToSearchItem(
   workspace: LauncherWorkspace
 ): WorkspaceSearchItem {
@@ -246,6 +280,7 @@ export function GlobalCommandLauncher({
   workspacePathResolver,
 }: GlobalCommandLauncherProps) {
   const labels = { ...DEFAULT_LABELS, ...labelOverrides };
+  const instanceId = useMemo(() => Symbol('GlobalCommandLauncher'), []);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -255,7 +290,11 @@ export function GlobalCommandLauncher({
   const closeLauncher = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
+    registerCommandLauncherInstance(currentApp, instanceId);
+
     const onKeyDown = (event: KeyboardEvent) => {
+      if (!isActiveCommandLauncherInstance(currentApp, instanceId)) return;
+
       if (
         event.key.toLowerCase() === 'k' &&
         (event.metaKey || event.ctrlKey) &&
@@ -269,6 +308,8 @@ export function GlobalCommandLauncher({
     };
 
     const onCommandLauncherEvent = (event: Event) => {
+      if (!isActiveCommandLauncherInstance(currentApp, instanceId)) return;
+
       const action = (event as GlobalCommandLauncherEvent).detail?.action;
 
       if (action === 'open') setOpen(true);
@@ -288,8 +329,9 @@ export function GlobalCommandLauncher({
         GLOBAL_COMMAND_LAUNCHER_EVENT,
         onCommandLauncherEvent
       );
+      unregisterCommandLauncherInstance(currentApp, instanceId);
     };
-  }, []);
+  }, [currentApp, instanceId]);
 
   useEffect(() => {
     if (!open) setQuery('');

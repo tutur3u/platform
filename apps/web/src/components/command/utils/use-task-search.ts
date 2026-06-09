@@ -1,25 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import {
+  searchWorkspaceTasks,
+  type WorkspaceTaskSearchResult,
+} from '@tuturuuu/internal-api/tasks';
 import * as React from 'react';
 
-export interface TaskSearchResult {
-  id: string;
-  name: string;
-  description?: string;
-  board_name?: string;
-  list_name?: string;
-  list_status?: string;
-  priority?: 'critical' | 'high' | 'normal' | 'low' | null;
-  completed: boolean;
-  start_date?: string;
-  end_date?: string;
-  created_at?: string;
-  assignees?: {
-    id: string;
-    display_name?: string;
-    avatar_url?: string;
-  }[];
-  is_assigned_to_current_user?: boolean;
-}
+export type TaskSearchResult = WorkspaceTaskSearchResult;
 
 /**
  * Validates if a string is a valid UUID
@@ -70,7 +56,12 @@ export function useTaskSearch(
     queryFn: async () => {
       if (!wsId) return [];
 
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks?limit=20`);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/tasks?limit=20`,
+        {
+          cache: 'no-store',
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch recent tasks');
@@ -89,23 +80,12 @@ export function useTaskSearch(
     queryFn: async () => {
       if (!wsId || !debouncedQuery) return [];
 
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: debouncedQuery,
-          matchCount: 20,
-        }),
+      const data = await searchWorkspaceTasks(wsId, {
+        query: debouncedQuery,
+        matchCount: 20,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to search tasks');
-      }
-
-      const data = await response.json();
-      return (data.tasks || data.results || []) as TaskSearchResult[];
+      return (data.tasks || []) as TaskSearchResult[];
     },
     enabled: enabled && hasQuery && isValidWorkspace,
     staleTime: 30000, // 30 seconds

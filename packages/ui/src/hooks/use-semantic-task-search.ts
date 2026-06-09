@@ -1,16 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import {
+  searchWorkspaceTasks,
+  type WorkspaceTaskSearchResult,
+} from '@tuturuuu/internal-api/tasks';
 
-interface SemanticSearchResult {
-  id: string;
-  name: string;
-  description: string | null;
-  list_id: string;
-  start_date: string | null;
-  end_date: string | null;
-  completed: boolean;
-  archived: boolean;
-  similarity: number;
-}
+type SemanticSearchResult = WorkspaceTaskSearchResult;
 
 interface UseSemanticTaskSearchOptions {
   wsId: string;
@@ -41,28 +35,11 @@ export function useSemanticTaskSearch({
       }
 
       try {
-        // Call the API endpoint to perform semantic search
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/tasks/search`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              query: query.trim(),
-              matchThreshold,
-              matchCount,
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          console.error('Semantic search failed:', await response.text());
-          return [];
-        }
-
-        const data = await response.json();
+        const data = await searchWorkspaceTasks(wsId, {
+          query: query.trim(),
+          matchThreshold,
+          matchCount,
+        });
         return (data.tasks || []) as SemanticSearchResult[];
       } catch (error) {
         console.error('Error performing semantic search:', error);

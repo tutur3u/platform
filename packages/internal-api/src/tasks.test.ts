@@ -18,6 +18,7 @@ import {
   listWorkspaceTasks,
   partitionTaskProjectLinks,
   removeCurrentUserTaskPersonalPlacement,
+  searchWorkspaceTasks,
   unlinkWorkspaceTaskProjectTask,
   updateWorkspaceLabel,
   updateWorkspaceTaskBoard,
@@ -117,6 +118,36 @@ describe('workspace board internal-api helpers', () => {
           generateDescriptions: true,
           generateLabels: true,
           generatePriority: true,
+        }),
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('searches workspace tasks through the semantic search route', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        tasks: [{ id: 'task-1', name: 'Deadline review' }],
+      })
+    );
+
+    await searchWorkspaceTasks(
+      'ws-1',
+      { query: 'deadline review', matchCount: 20, matchThreshold: 0.3 },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks/search',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          query: 'deadline review',
+          matchCount: 20,
+          matchThreshold: 0.3,
         }),
         cache: 'no-store',
       })

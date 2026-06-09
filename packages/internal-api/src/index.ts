@@ -854,6 +854,9 @@ export {
   removeCurrentUserTaskPersonalPlacement,
   removeWorkspaceTaskLabel,
   resolveTaskProjectWorkspaceId,
+  type SearchWorkspaceTasksPayload,
+  type SearchWorkspaceTasksResponse,
+  searchWorkspaceTasks,
   type UpdateWorkspaceTaskBoardEstimationPayload,
   updateWorkspaceLabel,
   updateWorkspaceTask,
@@ -867,6 +870,7 @@ export {
   type WorkspaceTaskBoardSharePermission,
   type WorkspaceTaskBoardSharesResponse,
   type WorkspaceTaskJournalResponse,
+  type WorkspaceTaskSearchResult,
 } from './tasks';
 export {
   type CurrentUserTaskScheduleResponse,

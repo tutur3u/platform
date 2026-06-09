@@ -60,8 +60,11 @@ const workspaces = [
 function renderLauncher({
   currentApp = 'calendar',
   currentWorkspaceId = 'personal-id',
+  duplicateCount = 1,
   onNavigate = vi.fn(),
-}: Partial<Parameters<typeof GlobalCommandLauncher>[0]> = {}) {
+}: Partial<Parameters<typeof GlobalCommandLauncher>[0]> & {
+  duplicateCount?: number;
+} = {}) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -73,18 +76,21 @@ function renderLauncher({
   render(
     <QueryClientProvider client={queryClient}>
       <input aria-label="Editor" />
-      <GlobalCommandLauncher
-        currentApp={currentApp}
-        currentWorkspaceId={currentWorkspaceId}
-        navItems={[
-          {
-            href: '/personal/tasks',
-            keywords: ['Project boards'],
-            title: 'Task Boards',
-          },
-        ]}
-        onNavigate={onNavigate}
-      />
+      {Array.from({ length: duplicateCount }, (_, index) => (
+        <GlobalCommandLauncher
+          currentApp={currentApp}
+          currentWorkspaceId={currentWorkspaceId}
+          key={index}
+          navItems={[
+            {
+              href: '/personal/tasks',
+              keywords: ['Project boards'],
+              title: 'Task Boards',
+            },
+          ]}
+          onNavigate={onNavigate}
+        />
+      ))}
     </QueryClientProvider>
   );
 
@@ -115,6 +121,32 @@ describe('GlobalCommandLauncher', () => {
       expect(screen.getAllByText('Current').length).toBeGreaterThanOrEqual(2)
     );
   }, 10_000);
+
+  it('opens only one same-app launcher from duplicate Ctrl+K listeners', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher({ duplicateCount: 2 });
+
+    fireEvent.keyDown(document, { ctrlKey: true, key: 'k' });
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByPlaceholderText('Search apps, workspaces, and pages...')
+      ).toHaveLength(1);
+    });
+  });
+
+  it('opens only one same-app launcher from the global open event', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher({ duplicateCount: 2 });
+
+    openGlobalCommandLauncher();
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByPlaceholderText('Search apps, workspaces, and pages...')
+      ).toHaveLength(1);
+    });
+  });
 
   it('does not render the visible helper footer or current context panel', async () => {
     listWorkspaces.mockResolvedValue(workspaces);
