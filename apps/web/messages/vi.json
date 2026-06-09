@@ -5440,6 +5440,68 @@
     "vs": "so với",
     "yesterday": "Hôm qua"
   },
+  "devbox-control": {
+    "actions": {
+      "release": "Giải phóng",
+      "revoke": "Thu hồi",
+      "stop": "Dừng"
+    },
+    "columns": {
+      "actions": "Thao tác",
+      "actor": "Người thực hiện",
+      "cache": "Cache",
+      "command": "Lệnh",
+      "created": "Đã tạo",
+      "event": "Sự kiện",
+      "exit_code": "Mã thoát",
+      "expires": "Hết hạn",
+      "keep": "Giữ lại",
+      "last_heartbeat": "Heartbeat cuối",
+      "last_used": "Dùng lần cuối",
+      "lease": "Lease",
+      "run": "Run",
+      "runner": "Runner",
+      "size": "Dung lượng",
+      "status": "Trạng thái",
+      "updated": "Đã cập nhật"
+    },
+    "description": "Theo dõi runner devbox từ xa, công việc đang chờ, lease, log, trạng thái cache và token trong một bề mặt vận hành chỉ dành cho root.",
+    "empty": {
+      "caches": "Chưa có bản ghi cache devbox.",
+      "events": "Chưa có sự kiện run devbox.",
+      "leases": "Chưa có lease devbox.",
+      "runners": "Chưa có runner devbox.",
+      "runs": "Chưa có run devbox."
+    },
+    "labels": {
+      "default_profile": "Profile mặc định",
+      "no": "Không",
+      "production": "Production",
+      "yes": "Có"
+    },
+    "metrics": {
+      "active_leases": "Lease đang hoạt động",
+      "active_runners": "Runner đang hoạt động",
+      "active_tokens": "Token đang hoạt động",
+      "failed_runs": "Run thất bại",
+      "queued_runs": "Run đang chờ",
+      "running_runs": "Run đang chạy",
+      "total_runs": "Tổng số run"
+    },
+    "sections": {
+      "caches": "Cache runner",
+      "caches_description": "Các bản ghi cache gần đây do runner tự host báo cáo.",
+      "events": "Sự kiện gần đây",
+      "events_description": "Log và sự kiện vòng đời mới nhất được ghi bởi các job devbox.",
+      "leases": "Lease",
+      "leases_description": "Lease dùng lại và lease một lần hiện có trong broker.",
+      "runners": "Runner",
+      "runners_description": "Runner tự host, trạng thái heartbeat, quyền sở hữu và điều khiển token.",
+      "runs": "Run",
+      "runs_description": "Các job devbox gần đây ở trạng thái đang chờ, đang chạy, đã hủy, thất bại và hoàn tất."
+    },
+    "title": "Điều khiển Devbox"
+  },
   "documents": {
     "cancel": "Hủy",
     "create": "Tạo",
@@ -7465,6 +7527,7 @@
     "backups": "Sao lưu",
     "blocked_ips": "IP bị chặn",
     "changelog": "Nhật ký thay đổi",
+    "devboxes": "Devbox",
     "email_audit": "Nhật ký email",
     "email_blacklist": "Danh sách đen email",
     "email_templates": "Mẫu Email",

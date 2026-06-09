@@ -587,20 +587,29 @@ function normalizeHelpAction(group: string, action?: string) {
   return action;
 }
 
+function normalizeHelpGroup(group: string) {
+  return group === 'devbox' ? 'box' : group;
+}
+
 export function getHelpOutput(group?: string, action?: string) {
   if (!group) {
     return getGlobalHelp();
   }
 
-  const normalizedAction = normalizeHelpAction(group, action);
-  const actionTopic = actionHelpTopics[group]?.[normalizedAction || ''];
+  const normalizedGroup = normalizeHelpGroup(group);
+  const normalizedAction = normalizeHelpAction(normalizedGroup, action);
+  const actionTopic =
+    actionHelpTopics[normalizedGroup]?.[normalizedAction || ''];
   if (actionTopic) {
-    return `${formatHelp(actionTopic, `ttr ${group} ${normalizedAction}`)}\n`;
+    return `${formatHelp(
+      actionTopic,
+      `ttr ${normalizedGroup} ${normalizedAction}`
+    )}\n`;
   }
 
-  const topic = helpTopics[group];
+  const topic = helpTopics[normalizedGroup];
   if (topic) {
-    return `${formatHelp(topic, `ttr ${group}`)}\n`;
+    return `${formatHelp(topic, `ttr ${normalizedGroup}`)}\n`;
   }
 
   return `${getGlobalHelp()}Unknown help topic: ${group}\n`;

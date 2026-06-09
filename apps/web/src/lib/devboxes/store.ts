@@ -13,6 +13,20 @@ type PrivateTableClient = {
       column: string,
       value: string
     ) => {
+      is: (
+        column: string,
+        value: null
+      ) => {
+        order: (
+          column: string,
+          options?: { ascending?: boolean }
+        ) => {
+          limit: (count: number) => Promise<{
+            data: unknown[] | null;
+            error: DevboxStorageErrorLike;
+          }>;
+        };
+      };
       order: (
         column: string,
         options?: { ascending?: boolean }
@@ -326,6 +340,7 @@ export async function verifyDevboxRunnerToken(token: string) {
   )
     .select('runner_id')
     .eq('token_hash', tokenHash)
+    .is('revoked_at', null)
     .order('created_at', { ascending: false })
     .limit(1);
 

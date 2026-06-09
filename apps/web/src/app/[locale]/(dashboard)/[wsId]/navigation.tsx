@@ -1518,6 +1518,12 @@ export async function WorkspaceNavigationLinks({
               icon: createDashboardNavigationIcon('Radio', 'h-5 w-5'),
             },
             {
+              title: t('infrastructure-tabs.devboxes'),
+              href: `/${personalOrWsId}/infrastructure/devboxes`,
+              icon: createDashboardNavigationIcon('Box', 'h-5 w-5'),
+              sectionLabel: t('infrastructure-tabs.operations'),
+            },
+            {
               title: t('infrastructure-tabs.monitoring'),
               href: `/${personalOrWsId}/infrastructure/monitoring`,
               icon: createDashboardNavigationIcon('Cctv', 'h-5 w-5'),

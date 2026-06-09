@@ -5440,6 +5440,68 @@
     "vs": "vs.",
     "yesterday": "Yesterday"
   },
+  "devbox-control": {
+    "actions": {
+      "release": "Release",
+      "revoke": "Revoke",
+      "stop": "Stop"
+    },
+    "columns": {
+      "actions": "Actions",
+      "actor": "Actor",
+      "cache": "Cache",
+      "command": "Command",
+      "created": "Created",
+      "event": "Event",
+      "exit_code": "Exit code",
+      "expires": "Expires",
+      "keep": "Keep",
+      "last_heartbeat": "Last heartbeat",
+      "last_used": "Last used",
+      "lease": "Lease",
+      "run": "Run",
+      "runner": "Runner",
+      "size": "Size",
+      "status": "Status",
+      "updated": "Updated"
+    },
+    "description": "Observe remote devbox runners, queued work, leases, logs, cache state, and token health from one root-only operations surface.",
+    "empty": {
+      "caches": "No cache records found.",
+      "events": "No devbox run events found.",
+      "leases": "No devbox leases found.",
+      "runners": "No devbox runners found.",
+      "runs": "No devbox runs found."
+    },
+    "labels": {
+      "default_profile": "Default profile",
+      "no": "No",
+      "production": "Production",
+      "yes": "Yes"
+    },
+    "metrics": {
+      "active_leases": "Active leases",
+      "active_runners": "Active runners",
+      "active_tokens": "Active tokens",
+      "failed_runs": "Failed runs",
+      "queued_runs": "Queued runs",
+      "running_runs": "Running runs",
+      "total_runs": "Total runs"
+    },
+    "sections": {
+      "caches": "Runner caches",
+      "caches_description": "Recent cache records reported by self-hosted runners.",
+      "events": "Recent events",
+      "events_description": "Latest log and lifecycle events recorded by devbox jobs.",
+      "leases": "Leases",
+      "leases_description": "Reusable and one-off leases currently known to the broker.",
+      "runners": "Runners",
+      "runners_description": "Self-hosted runners, heartbeat status, ownership, and token control.",
+      "runs": "Runs",
+      "runs_description": "Recent queued, running, cancelled, failed, and completed devbox jobs."
+    },
+    "title": "Devbox Control"
+  },
   "documents": {
     "cancel": "Cancel",
     "create": "Create",
@@ -7465,6 +7527,7 @@
     "backups": "Backups",
     "blocked_ips": "Blocked IPs",
     "changelog": "Changelog",
+    "devboxes": "Devboxes",
     "email_audit": "Email Audit",
     "email_blacklist": "Email Blacklist",
     "email_templates": "Email Templates",

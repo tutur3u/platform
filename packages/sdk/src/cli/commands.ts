@@ -805,7 +805,8 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
 
   const { flags, positionals } = parseArgs(argv);
-  const [group, rawAction, rawFirstId] = positionals;
+  const [rawGroup, rawAction, rawFirstId] = positionals;
+  const group = rawGroup === 'devbox' ? 'box' : rawGroup;
   const helpRequested =
     flags.help === true ||
     argv.includes('-h') ||

@@ -52,6 +52,17 @@ describe('CLI commands', () => {
     expect(write).not.toHaveBeenCalledWith(`${packageJson.version}\n`);
   });
 
+  it('accepts devbox as an alias for box run commands', async () => {
+    vi.stubEnv(
+      'TUTURUUU_CONFIG',
+      '/tmp/tuturuuu-cli-devbox-alias-test/config.json'
+    );
+
+    await expect(
+      runCli(['devbox', 'run', '--no-update-check', '--', 'bun', '--version'])
+    ).rejects.toThrow('Not logged in. Run `ttr login` first.');
+  });
+
   it('normalizes task label color names to backend hex values', () => {
     expect(normalizeLabelColor()).toBe('#6B7280');
     expect(normalizeLabelColor('red')).toBe('#DC2626');
@@ -140,6 +151,9 @@ describe('CLI commands', () => {
     ['box', '--help'],
     ['help', 'box'],
     ['box', 'help'],
+    ['devbox', '--help'],
+    ['help', 'devbox'],
+    ['devbox', 'help'],
   ])('prints devbox group help for %s', async (...args) => {
     const write = vi
       .spyOn(process.stdout, 'write')
