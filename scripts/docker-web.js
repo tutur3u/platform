@@ -110,6 +110,115 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const CLOUDFLARED_SERVICE = 'cloudflared';
 const LOW_DOCKER_MEMORY_BUILDKIT_RESTART_THRESHOLD_BYTES =
   10 * 1024 * 1024 * 1024;
+const DEFAULT_SUPABASE_RESET_RETRY_MAX_ATTEMPTS = 4;
+const DEFAULT_SUPABASE_RESET_RETRY_INITIAL_DELAY_MS = 5_000;
+const DEFAULT_SUPABASE_RESET_RETRY_MAX_DELAY_MS = 60_000;
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function getPositiveIntegerEnv(env, name, fallback) {
+  const value = env?.[name];
+
+  if (typeof value !== 'string' && typeof value !== 'number') {
+    return fallback;
+  }
+
+  const parsed = Number(String(value).trim());
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getErrorText(error) {
+  if (!error || typeof error !== 'object') {
+    return String(error);
+  }
+
+  return [
+    error instanceof Error ? error.message : String(error),
+    typeof error.stderr === 'string' ? error.stderr : '',
+    typeof error.stdout === 'string' ? error.stdout : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+function isTransientSupabaseResetError(error) {
+  const message = getErrorText(error);
+
+  return /(?:Error status\s+(?:429|5\d\d)\b|(?:\b(?:429|5\d\d)\b.*(?:upstream|server|gateway|unavailable|too many requests))|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|fetch failed|temporary failure|TLS handshake timeout|i\/o timeout|connection reset by peer|context deadline exceeded|Client\.Timeout exceeded|request canceled|unexpected EOF|network is unreachable)/iu.test(
+    message
+  );
+}
+
+async function stopSupabaseBestEffort({ env, fsImpl, runCommand: run }) {
+  try {
+    await runChecked('bun', ['sb:stop'], {
+      env,
+      fsImpl,
+      runCommand: run,
+      stdio: 'pipe',
+      teeOutput: true,
+    });
+  } catch (error) {
+    process.stderr.write(
+      `Supabase reset retry cleanup failed; continuing: ${getErrorText(
+        error
+      )}\n`
+    );
+  }
+}
+
+async function runSupabaseResetWithRetry({
+  env,
+  fsImpl,
+  runCommand: run,
+  sleep: sleepImpl = sleep,
+}) {
+  const maxAttempts = getPositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_SUPABASE_RESET_RETRY_MAX_ATTEMPTS',
+    DEFAULT_SUPABASE_RESET_RETRY_MAX_ATTEMPTS
+  );
+  const maxDelayMs = getPositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_SUPABASE_RESET_RETRY_MAX_DELAY_MS',
+    DEFAULT_SUPABASE_RESET_RETRY_MAX_DELAY_MS
+  );
+  let delayMs = getPositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_SUPABASE_RESET_RETRY_INITIAL_DELAY_MS',
+    DEFAULT_SUPABASE_RESET_RETRY_INITIAL_DELAY_MS
+  );
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await runChecked('bun', ['sb:reset'], {
+        env,
+        fsImpl,
+        runCommand: run,
+        stdio: 'pipe',
+        teeOutput: true,
+      });
+    } catch (error) {
+      if (attempt >= maxAttempts || !isTransientSupabaseResetError(error)) {
+        throw error;
+      }
+
+      process.stderr.write(
+        `Supabase reset hit a transient error; stopping local Supabase and retrying in ${delayMs}ms (attempt ${
+          attempt + 1
+        }/${maxAttempts}).\n`
+      );
+      await stopSupabaseBestEffort({ env, fsImpl, runCommand: run });
+      await sleepImpl(delayMs);
+      delayMs = Math.min(delayMs * 2, maxDelayMs);
+    }
+  }
+}
 
 async function getCurrentGitCommitMetadata({
   env,
@@ -762,6 +871,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   const envFilePath = options.envFilePath ?? parsed.envFilePath;
   const processImpl = options.processImpl ?? process;
   const now = options.now ?? (() => Date.now());
+  const sleepImpl = options.sleep ?? sleep;
   ensureCloudflaredProfileFromEnv(parsed, env);
   const withRedis = hasComposeProfile(parsed.composeGlobalArgs, 'redis');
   const withCloudflared = hasComposeProfile(
@@ -915,10 +1025,11 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     }
 
     if (parsed.resetSupabase) {
-      await runChecked('bun', ['sb:reset'], {
+      await runSupabaseResetWithRetry({
         env,
         fsImpl,
         runCommand: run,
+        sleep: sleepImpl,
       });
     }
   } catch (error) {
