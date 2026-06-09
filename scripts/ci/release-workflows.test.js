@@ -320,6 +320,9 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
       'utf8'
     )
   );
+  const platformVersion = fs
+    .readFileSync(path.join(repoRoot, 'platform-version.txt'), 'utf8')
+    .trim();
   const workspacePaths = ['apps', 'packages']
     .flatMap((workspaceDir) =>
       fs
@@ -377,9 +380,10 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
   );
   assert.equal(config.packages['apps/mobile']['release-type'], 'dart');
   assert.equal(config.packages['apps/web'], undefined);
-  assert.equal(manifest['.'], '0.3.0');
+  assert.match(platformVersion, /^\d+\.\d+\.\d+$/);
+  assert.equal(manifest['.'], platformVersion);
   assert.equal(manifest['apps/mobile'], '0.5.1');
-  assert.equal(manifest['packages/sdk'], '0.5.0');
+  assert.equal(manifest['packages/sdk'], workspaceVersions.get('packages/sdk'));
   assert.deepEqual(configuredReleasePaths, expectedReleasePaths);
 
   for (const [workspacePath, version] of workspaceVersions) {

@@ -9,6 +9,5 @@ export {
 export {
   unifiedScheduleManualTrigger,
   unifiedScheduleTask,
-  unifiedScheduleTrigger,
 } from './unified-schedule';
 export { unifiedScheduleHelper } from './unified-schedule-helper';

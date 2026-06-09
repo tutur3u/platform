@@ -1,7 +1,7 @@
 ---
-title: 'Calendar'
-description: 'Shared Calendar product surface across apps/web and apps/calendar.'
-updatedAt: '2026-05-23'
+title: "Calendar"
+description: "Shared Calendar product surface across apps/web and apps/calendar."
+updatedAt: "2026-06-08"
 ---
 
 ## Overview
@@ -97,3 +97,17 @@ inside its settings dialog under Calendar -> Integrations. It should fetch the
 initial connection state through `@tuturuuu/internal-api/calendar` and render the
 shared Calendar connections UI inside `CalendarSyncProvider` rather than
 forking host-local connection controls.
+
+## Provider Sync
+
+Calendar provider sync is scheduled by `apps/web` cron, not Trigger.dev. The
+shared source of truth is `apps/web/cron.config.json`; `calendar-provider-sync`
+must stay at `*/15 * * * *` and `apps/web/vercel.json` must be regenerated from
+that file with `node scripts/sync-web-crons.js`.
+
+The cron wrapper at `/api/cron/calendar/provider-sync` must keep calling
+`/api/v1/workspaces/:wsId/calendar/sync` through `INTERNAL_WEB_API_ORIGIN` when
+available. The workspace sync route owns Google and Microsoft fan-out, running
+locks, cron cooldown behavior, and `calendar_sync_dashboard` audit rows. Do not
+add provider-specific fetch logic or Trigger.dev scheduled calendar jobs outside
+that route family.

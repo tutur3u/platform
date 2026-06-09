@@ -2,12 +2,17 @@
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
 import { bulkWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
-import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
 import type { WorkspaceProject } from './bulk-operation-types';
-import { getInternalApiOptions } from './bulk-operation-utils';
+import {
+  getInternalApiOptions,
+  restoreBoardTaskCaches,
+  restoreFailedBoardTasks,
+  snapshotBoardTaskCaches,
+  updateBoardTaskCaches,
+} from './bulk-operation-utils';
 
 export function useBulkAddProject(
   queryClient: QueryClient,
@@ -52,8 +57,9 @@ export function useBulkAddProject(
     },
     onMutate: async ({ projectId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-      const current = (previousTasks as Task[] | undefined) || [];
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
+      const current = cacheSnapshot.previousTasks || [];
       const projectMeta = workspaceProjects.find((p) => p.id === projectId);
 
       const missingTaskIds = taskIds.filter((id) => {
@@ -61,35 +67,30 @@ export function useBulkAddProject(
         return !task?.projects?.some((p) => p.id === projectId);
       });
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) => {
-            if (!missingTaskIds.includes(task.id)) return task;
-            return {
-              ...task,
-              projects: [
-                ...(task.projects || []),
-                {
-                  id: projectId,
-                  name:
-                    projectMeta?.name ||
-                    i18n?.defaultProjectName() ||
-                    'Project',
-                  status: projectMeta?.status ?? 'unknown',
-                },
-              ],
-            };
-          });
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) => {
+          if (!missingTaskIds.includes(task.id)) return task;
+          return {
+            ...task,
+            projects: [
+              ...(task.projects || []),
+              {
+                id: projectId,
+                name:
+                  projectMeta?.name || i18n?.defaultProjectName() || 'Project',
+                status: projectMeta?.status ?? 'unknown',
+              },
+            ],
+          };
+        });
+      });
 
-      return { previousTasks, modifiedTaskIds: missingTaskIds };
+      return { ...cacheSnapshot, modifiedTaskIds: missingTaskIds };
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk add project failed', error);
       toast.error(
@@ -101,22 +102,13 @@ export function useBulkAddProject(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       const modifiedTaskIds = context?.modifiedTaskIds ?? data.taskIds;
       const succeededModifiedTaskIds = modifiedTaskIds.filter(
@@ -211,8 +203,9 @@ export function useBulkRemoveProject(
     },
     onMutate: async ({ projectId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-      const current = (previousTasks as Task[] | undefined) || [];
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
+      const current = cacheSnapshot.previousTasks || [];
       const modifiedTaskIds = taskIds.filter((id) => {
         const task = current.find((ct) => ct.id === id);
         if (!task) {
@@ -223,28 +216,25 @@ export function useBulkRemoveProject(
       });
       const taskIdSet = new Set(taskIds);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) =>
-            taskIdSet.has(task.id)
-              ? {
-                  ...task,
-                  projects: (task.projects || []).filter(
-                    (p) => p.id !== projectId
-                  ),
-                }
-              : task
-          );
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) =>
+          taskIdSet.has(task.id)
+            ? {
+                ...task,
+                projects: (task.projects || []).filter(
+                  (p) => p.id !== projectId
+                ),
+              }
+            : task
+        );
+      });
 
-      return { previousTasks, modifiedTaskIds };
+      return { ...cacheSnapshot, modifiedTaskIds };
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk remove project failed', error);
       toast.error(
@@ -257,22 +247,13 @@ export function useBulkRemoveProject(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       const modifiedTaskIds = context?.modifiedTaskIds ?? data.succeededTaskIds;
       const modifiedTaskIdSet = new Set(modifiedTaskIds);

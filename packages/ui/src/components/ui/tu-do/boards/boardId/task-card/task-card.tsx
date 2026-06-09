@@ -49,6 +49,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
+import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import {
   HoverCard,
@@ -93,6 +94,11 @@ import { AssigneeSelect } from '../../../shared/assignee-select';
 import { useBoardBroadcast } from '../../../shared/board-broadcast-context';
 import { CreateListDialog } from '../../../shared/create-list-dialog';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
+import {
+  shouldShowTaskDueDate,
+  shouldShowTaskStartDate,
+  TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID,
+} from '../../../shared/task-due-date-visibility';
 import { TaskEstimationDisplay } from '../../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../../shared/task-labels-display';
 import { TaskShareDialog } from '../../../shared/task-share-dialog';
@@ -194,6 +200,10 @@ function TaskCardInner({
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
   const { weekStartsOn, timeFormat } = useCalendarPreferences();
+  const { value: showReviewDueDates } = useUserBooleanConfig(
+    TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID,
+    false
+  );
   const timePattern = getTimeFormatPattern(timeFormat);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -757,7 +767,22 @@ function TaskCardInner({
   };
 
   const now = new Date();
-  const isOverdue = task.end_date && new Date(task.end_date) < now;
+  const shouldRenderDueDate = shouldShowTaskDueDate({
+    completedAt: task.completed_at,
+    closedAt: task.closed_at,
+    dueDate: task.end_date,
+    listStatus: taskList?.status,
+    showReviewDueDates,
+  });
+  const shouldRenderStartDate = shouldShowTaskStartDate({
+    completedAt: task.completed_at,
+    closedAt: task.closed_at,
+    listStatus: taskList?.status,
+    startDate: task.start_date,
+  });
+  const isOverdue = Boolean(
+    shouldRenderDueDate && task.end_date && new Date(task.end_date) < now
+  );
   const isResolvedListStatus = isTaskBoardResolvedStatus(taskList?.status);
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
@@ -2217,11 +2242,10 @@ function TaskCardInner({
           )}
         </div>
         {/* Dates Section (improved layout & conditional rendering) */}
-        {/* Hide dates when the list itself represents resolved work. */}
-        {(startDate || endDate) && !isResolvedListStatus && (
+        {(shouldRenderStartDate || shouldRenderDueDate) && (
           <div className="mb-1 space-y-0.5 text-[10px] leading-snug">
             {/* Show start only if in the future (hide historical start for visual simplicity) */}
-            {startDate && startDate > now && (
+            {shouldRenderStartDate && startDate && startDate > now && (
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Clock className="h-2.5 w-2.5 shrink-0" />
                 <span className="truncate">
@@ -2239,7 +2263,7 @@ function TaskCardInner({
                 </span>
               </div>
             )}
-            {endDate && (
+            {shouldRenderDueDate && endDate && (
               <div
                 className={cn(
                   'flex items-center gap-1',

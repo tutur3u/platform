@@ -2,11 +2,19 @@
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
 import { bulkWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
-import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
-import { getInternalApiOptions } from './bulk-operation-utils';
+import {
+  type BulkTaskWorkspaceGroup,
+  bulkWorkspaceTasksByEffectiveWorkspace,
+  getInternalApiOptions,
+  restoreBoardTaskCaches,
+  restoreDeletedBoardTasks,
+  restoreFailedBoardTasks,
+  snapshotBoardTaskCaches,
+  updateBoardTaskCaches,
+} from './bulk-operation-utils';
 
 export function useBulkClearLabels(
   queryClient: QueryClient,
@@ -38,24 +46,22 @@ export function useBulkClearLabels(
     },
     onMutate: async ({ taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) =>
-            taskIdSet.has(task.id) ? { ...task, labels: [] } : task
-          );
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) =>
+          taskIdSet.has(task.id) ? { ...task, labels: [] } : task
+        );
+      });
 
-      return { previousTasks };
+      return cacheSnapshot;
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk clear labels failed', error);
       toast.error(
@@ -68,22 +74,13 @@ export function useBulkClearLabels(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       const succeededTaskIds = data.taskIds.filter(
         (taskId) => !failedTaskIds.has(taskId)
@@ -147,24 +144,22 @@ export function useBulkClearProjects(
     },
     onMutate: async ({ taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) =>
-            taskIdSet.has(task.id) ? { ...task, projects: [] } : task
-          );
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) =>
+          taskIdSet.has(task.id) ? { ...task, projects: [] } : task
+        );
+      });
 
-      return { previousTasks };
+      return cacheSnapshot;
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk clear projects failed', error);
       toast.error(
@@ -177,22 +172,13 @@ export function useBulkClearProjects(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       const succeededTaskIds = data.taskIds.filter(
         (taskId) => !failedTaskIds.has(taskId)
@@ -237,14 +223,14 @@ export function useBulkClearAssignees(
     mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
       const apiOptions = getInternalApiOptions();
 
-      const result = await bulkWorkspaceTasks(
-        wsId,
-        {
-          taskIds,
-          operation: { type: 'clear_assignees' },
-        },
-        apiOptions
-      );
+      const result = await bulkWorkspaceTasksByEffectiveWorkspace({
+        queryClient,
+        boardId,
+        defaultWorkspaceId: wsId,
+        taskIds,
+        operation: { type: 'clear_assignees' },
+        options: apiOptions,
+      });
 
       if (result.successCount === 0 && taskIds.length > 0) {
         throw new Error(
@@ -256,24 +242,22 @@ export function useBulkClearAssignees(
     },
     onMutate: async ({ taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) =>
-            taskIdSet.has(task.id) ? { ...task, assignees: [] } : task
-          );
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) =>
+          taskIdSet.has(task.id) ? { ...task, assignees: [] } : task
+        );
+      });
 
-      return { previousTasks };
+      return cacheSnapshot;
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk clear assignees failed', error);
       toast.error(
@@ -286,22 +270,13 @@ export function useBulkClearAssignees(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       const succeededTaskIds = data.taskIds.filter(
         (taskId) => !failedTaskIds.has(taskId)
@@ -345,20 +320,27 @@ export function useBulkDeleteTasks(
   i18n?: BulkOperationI18n
 ) {
   return useMutation({
-    mutationFn: async ({ taskIds }: { taskIds: string[] }) => {
+    mutationFn: async ({
+      taskIds,
+      workspaceGroups,
+    }: {
+      taskIds: string[];
+      workspaceGroups?: BulkTaskWorkspaceGroup[];
+    }) => {
       const apiOptions = getInternalApiOptions();
 
-      const result = await bulkWorkspaceTasks(
-        wsId,
-        {
-          taskIds,
-          operation: {
-            type: 'update_fields',
-            updates: { deleted: true },
-          },
+      const result = await bulkWorkspaceTasksByEffectiveWorkspace({
+        queryClient,
+        boardId,
+        defaultWorkspaceId: wsId,
+        taskIds,
+        operation: {
+          type: 'update_fields',
+          updates: { deleted: true },
         },
-        apiOptions
-      );
+        options: apiOptions,
+        workspaceGroups,
+      });
 
       if (result.successCount === 0 && taskIds.length > 0) {
         throw new Error(`Failed to delete all ${taskIds.length} tasks`);
@@ -368,22 +350,20 @@ export function useBulkDeleteTasks(
     },
     onMutate: async ({ taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.filter((task) => !taskIdSet.has(task.id));
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.filter((task) => !taskIdSet.has(task.id));
+      });
 
-      return { previousTasks };
+      return cacheSnapshot;
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk delete failed', error);
       toast.error(
@@ -395,48 +375,13 @@ export function useBulkDeleteTasks(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            const existing = old ?? [];
-            const existingById = new Map(
-              existing.map((task) => [task.id, task])
-            );
-            const previousTasks = context.previousTasks as Task[];
-            const previousOrder = new Map(
-              previousTasks.map((task, index) => [task.id, index])
-            );
-
-            for (const previousTask of previousTasks) {
-              if (!failedTaskIds.has(previousTask.id)) {
-                continue;
-              }
-
-              existingById.set(previousTask.id, previousTask);
-            }
-
-            return Array.from(existingById.values()).sort((a, b) => {
-              const aIndex = previousOrder.get(a.id);
-              const bIndex = previousOrder.get(b.id);
-
-              if (typeof aIndex === 'number' && typeof bIndex === 'number') {
-                return aIndex - bIndex;
-              }
-
-              if (typeof aIndex === 'number') {
-                return -1;
-              }
-
-              if (typeof bIndex === 'number') {
-                return 1;
-              }
-
-              return 0;
-            });
-          }
-        );
-      }
+      restoreDeletedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       const succeededTaskIds = data.taskIds.filter(
         (taskId) => !failedTaskIds.has(taskId)

@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/learn",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsgo-build.js --build",
@@ -23,7 +23,7 @@
     "sb:typegen": "cd ../database && bun sb:typegen"
   },
   "dependencies": {
-    "@formatjs/intl-localematcher": "^0.8.9",
+    "@formatjs/intl-localematcher": "^0.8.10",
     "@gsap/react": "^2.1.2",
     "@tanstack/react-query": "^5.101.0",
     "@tuturuuu/ai": "workspace:*",
@@ -52,8 +52,8 @@
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
-    "@types/node": "^25.9.1",
-    "@types/react": "^19.2.16",
+    "@types/node": "^25.9.2",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "babel-plugin-react-compiler": "^1.0.0",

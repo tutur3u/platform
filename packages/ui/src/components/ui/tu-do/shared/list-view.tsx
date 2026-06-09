@@ -42,6 +42,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
   Table,
@@ -53,7 +54,6 @@ import {
 } from '@tuturuuu/ui/table';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import Image from 'next/image';
@@ -69,6 +69,10 @@ import {
   type ListViewSortOrder,
   sortListViewTasks,
 } from './list-view-sorting';
+import {
+  shouldShowTaskDueDate,
+  TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID,
+} from './task-due-date-visibility';
 import { TaskRowActionsMenu } from './task-row-actions-menu';
 
 interface Props {
@@ -114,6 +118,10 @@ export function ListView({
   const queryClient = useQueryClient();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
+  const { value: showReviewDueDates } = useUserBooleanConfig(
+    TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID,
+    false
+  );
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [sortField, setSortField] = useState<ListViewSortField>('created_at');
   const [sortOrder, setSortOrder] = useState<ListViewSortOrder>('desc');
@@ -474,15 +482,17 @@ export function ListView({
               <TableBody>
                 {displayedTasks.map((task) => {
                   const taskList = getTaskList(task);
-                  const taskIsInResolvedList = isTaskBoardResolvedStatus(
-                    taskList?.status
-                  );
+                  const taskDueDateVisible = shouldShowTaskDueDate({
+                    completedAt: task.completed_at,
+                    closedAt: task.closed_at,
+                    dueDate: task.end_date,
+                    listStatus: taskList?.status,
+                    showReviewDueDates,
+                  });
                   const taskIsPastDue = Boolean(
                     task.end_date &&
                       isPast(new Date(task.end_date)) &&
-                      !task.closed_at &&
-                      !task.completed_at &&
-                      !taskIsInResolvedList
+                      taskDueDateVisible
                   );
                   const isExternalSource = Boolean(
                     task.source_board_id && task.source_board_id !== boardId
@@ -656,7 +666,7 @@ export function ListView({
                       )}
                       {columnVisibility.end_date && (
                         <TableCell className="px-2 py-0">
-                          {task.end_date && !taskIsInResolvedList && (
+                          {taskDueDateVisible && task.end_date && (
                             <div className="flex items-center gap-1.5">
                               <span
                                 className={cn(

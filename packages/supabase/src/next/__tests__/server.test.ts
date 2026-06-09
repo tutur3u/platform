@@ -25,17 +25,21 @@ vi.mock('../common', () => ({
     url: 'https://test.supabase.co',
     key: useSecretKey ? 'test-secret-key' : 'test-publishable-key',
   }),
-  getSupabaseCookieOptions: (
-    url: string,
-    requestUrl?: string | URL | null
-  ) => ({
-    ...(requestUrl?.toString().includes('tuturuuu.com')
-      ? { domain: '.tuturuuu.com', secure: true }
-      : {}),
-    name: `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
-    path: '/',
-    sameSite: 'lax',
-  }),
+  getSupabaseCookieOptions: (url: string, requestUrl?: string | URL | null) => {
+    const requestUrlText = requestUrl?.toString() ?? '';
+
+    return {
+      ...(requestUrlText.includes('tuturuuu.localhost')
+        ? { domain: '.tuturuuu.localhost', secure: false }
+        : {}),
+      ...(requestUrlText.includes('tuturuuu.com')
+        ? { domain: '.tuturuuu.com', secure: true }
+        : {}),
+      name: `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
+      path: '/',
+      sameSite: 'lax',
+    };
+  },
   getSupabaseAuthStorageKey: (url: string) =>
     `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
 }));
@@ -135,6 +139,29 @@ describe('Supabase Server Client', () => {
           cookieOptions: expect.objectContaining({
             domain: '.tuturuuu.com',
             secure: true,
+          }),
+        })
+      );
+    });
+
+    it('uses forwarded request headers for request-bound cookie auth', async () => {
+      const mockRequest = {
+        headers: new Headers({
+          'x-forwarded-host': 'tuturuuu.localhost:1355',
+          'x-forwarded-proto': 'https',
+        }),
+        url: 'http://web-blue:7803/api/v1/users/me/profile',
+      };
+
+      await createClient(mockRequest);
+
+      expect(createServerClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-publishable-key',
+        expect.objectContaining({
+          cookieOptions: expect.objectContaining({
+            domain: '.tuturuuu.localhost',
+            secure: false,
           }),
         })
       );
@@ -527,6 +554,29 @@ describe('Supabase Server Client', () => {
           cookieOptions: expect.objectContaining({
             domain: '.tuturuuu.com',
             secure: true,
+          }),
+        })
+      );
+    });
+
+    it('uses forwarded request headers for request-bound dynamic cookie auth', async () => {
+      const mockRequest = {
+        headers: new Headers({
+          'x-forwarded-host': 'tuturuuu.localhost:1355',
+          'x-forwarded-proto': 'https',
+        }),
+        url: 'http://web-blue:7803/tasks',
+      };
+
+      await createDynamicClient(mockRequest);
+
+      expect(createServerClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-publishable-key',
+        expect.objectContaining({
+          cookieOptions: expect.objectContaining({
+            domain: '.tuturuuu.localhost',
+            secure: false,
           }),
         })
       );

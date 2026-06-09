@@ -1,8 +1,14 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { getWorkspaceMock, listCalendarConnectionsMock } = vi.hoisted(() => ({
   getWorkspaceMock: vi.fn(),
@@ -24,8 +30,13 @@ vi.mock('@tuturuuu/internal-api/workspaces', () => ({
 vi.mock(
   '@tuturuuu/ui/calendar-app/components/calendar-connections-unified',
   () => ({
-    default: ({ wsId }: { wsId: string }) => (
-      <div data-testid="calendar-connections-manager">{wsId}</div>
+    default: ({ wsId, variant }: { wsId: string; variant?: string }) => (
+      <div
+        data-testid="calendar-connections-manager"
+        data-variant={variant ?? 'compact'}
+      >
+        {wsId}
+      </div>
     ),
   })
 );
@@ -102,6 +113,11 @@ vi.mock('@tuturuuu/ui/hooks/use-user-config', () => ({
 
 import { SettingsDialog } from './settings-dialog';
 
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
+
 function renderSettingsDialog() {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -128,6 +144,20 @@ function renderSettingsDialog() {
 }
 
 describe('Calendar settings dialog', () => {
+  it('shows lunar settings and the integrations tab', () => {
+    getWorkspaceMock.mockResolvedValue({ id: 'workspace-1' });
+    listCalendarConnectionsMock.mockResolvedValue([]);
+
+    renderSettingsDialog();
+
+    expect(screen.getByText('lunar calendar')).toBeTruthy();
+    expect(
+      screen.getByRole('button', {
+        name: 'settings.calendar.integrations',
+      })
+    ).toBeTruthy();
+  });
+
   it('shows the calendar integrations tab and mounts the connections manager', async () => {
     getWorkspaceMock.mockResolvedValue({ id: 'workspace-1' });
     listCalendarConnectionsMock.mockResolvedValue([
@@ -142,9 +172,9 @@ describe('Calendar settings dialog', () => {
       })
     );
 
-    expect(
-      (await screen.findByTestId('calendar-connections-manager')).textContent
-    ).toBe('workspace-1');
+    const manager = await screen.findByTestId('calendar-connections-manager');
+    expect(manager.textContent).toBe('workspace-1');
+    expect(manager.getAttribute('data-variant')).toBe('settings');
     await waitFor(() =>
       expect(listCalendarConnectionsMock).toHaveBeenCalledWith('workspace-1')
     );

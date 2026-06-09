@@ -16,6 +16,7 @@ const {
   getBuildkitPaths,
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
+  isTransientBuildkitComposeUpError,
   isBunTarballExtractionError,
   LEGACY_BUILDER_NAMES,
   normalizeBuilderConfig,
@@ -135,6 +136,33 @@ test('renderBuildkitConfig writes max parallelism in BuildKit TOML format', () =
   assert.equal(
     renderBuildkitConfig(2),
     ['[worker.oci]', '  max-parallelism = 2', ''].join('\n')
+  );
+});
+
+test('isTransientBuildkitComposeUpError detects Docker registry timeouts only', () => {
+  assert.equal(
+    isTransientBuildkitComposeUpError(
+      new Error(
+        'buildkit Error Head "https://registry-1.docker.io/v2/moby/buildkit/manifests/buildx-stable-1": Get "https://auth.docker.io/token?service=registry.docker.io": context deadline exceeded (Client.Timeout exceeded while awaiting headers)'
+      )
+    ),
+    true
+  );
+  assert.equal(
+    isTransientBuildkitComposeUpError(
+      new Error(
+        'ERROR: failed to solve: node:24-bookworm-slim: failed to fetch oauth token: unexpected status from POST request to https://auth.docker.io/token: 504 Gateway Timeout: error code: 504'
+      )
+    ),
+    true
+  );
+  assert.equal(
+    isTransientBuildkitComposeUpError(
+      new Error(
+        'Error response from daemon: pull access denied for moby/buildkit, repository does not exist or may require docker login'
+      )
+    ),
+    false
   );
 });
 
@@ -493,6 +521,102 @@ test('ensureBuildkitBuilder creates a capped buildx builder and persists state',
           call.args[5] === 'remote' &&
           call.args.includes(`tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`)
       )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('ensureBuildkitBuilder retries transient BuildKit compose startup with backoff', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'buildkit-builder-retry-')
+  );
+  const calls = [];
+  const delays = [];
+  let composeUpAttempts = 0;
+
+  try {
+    const env = await ensureBuildkitBuilder(
+      {
+        cpus: '2',
+        maxParallelism: '1',
+        memory: '4g',
+      },
+      {
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs: ['--profile', 'redis'],
+        env: {
+          DOCKER_WEB_BUILDKIT_UP_INITIAL_DELAY_MS: '1',
+          DOCKER_WEB_BUILDKIT_UP_MAX_DELAY_MS: '4',
+          PATH: 'test-path',
+        },
+        rootDir: tempDir,
+        runCommand: async (command, args, options = {}) => {
+          calls.push({
+            args,
+            command,
+            stdio: options.stdio ?? 'inherit',
+            teeOutput: options.teeOutput ?? false,
+          });
+
+          if (
+            command === 'docker' &&
+            args[0] === 'compose' &&
+            args.includes('up') &&
+            args.includes(BUILDKIT_SERVICE_NAME)
+          ) {
+            composeUpAttempts += 1;
+
+            return composeUpAttempts < 3
+              ? {
+                  code: 1,
+                  signal: null,
+                  stderr:
+                    'buildkit Error Head "https://registry-1.docker.io/v2/moby/buildkit/manifests/buildx-stable-1": Get "https://auth.docker.io/token?service=registry.docker.io": context deadline exceeded (Client.Timeout exceeded while awaiting headers)',
+                  stdout: '',
+                }
+              : { code: 0, signal: null, stderr: '', stdout: '' };
+          }
+
+          if (args.includes('ps') && args.includes(BUILDKIT_SERVICE_NAME)) {
+            return {
+              code: 0,
+              signal: null,
+              stderr: '',
+              stdout: 'buildkit-id\n',
+            };
+          }
+
+          if (args[0] === 'inspect' && args.includes('buildkit-id')) {
+            return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+          }
+
+          if (args[0] === 'buildx' && args[1] === 'inspect') {
+            return { code: 1, signal: null, stderr: '', stdout: '' };
+          }
+
+          return { code: 0, signal: null, stderr: '', stdout: '' };
+        },
+        sleep: async (delayMs) => {
+          delays.push(delayMs);
+        },
+      }
+    );
+
+    assert.equal(env.BUILDX_BUILDER, DEFAULT_BUILDER_NAME);
+    assert.equal(composeUpAttempts, 3);
+    assert.deepEqual(delays, [1, 2]);
+    assert.equal(
+      calls.filter(
+        (call) =>
+          call.command === 'docker' &&
+          call.args[0] === 'compose' &&
+          call.args.includes('up') &&
+          call.args.includes(BUILDKIT_SERVICE_NAME) &&
+          call.stdio === 'pipe' &&
+          call.teeOutput
+      ).length,
+      3
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });

@@ -1899,6 +1899,58 @@ test('buildBlueGreenServices can build Compose targets with Buildx Bake', async 
   ]);
 });
 
+test('buildBlueGreenServices retries transient Docker registry build failures with backoff', async () => {
+  const calls = [];
+  const delays = [];
+  let buildAttempts = 0;
+
+  await buildBlueGreenServices({
+    buildStrategy: 'bake',
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+      DOCKER_WEB_BUILD_RETRY_INITIAL_DELAY_MS: '1',
+      DOCKER_WEB_BUILD_RETRY_MAX_DELAY_MS: '4',
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.stdio, options.teeOutput]);
+
+      if (args[0] === 'buildx' && args[1] === 'bake') {
+        buildAttempts += 1;
+
+        return buildAttempts < 3
+          ? {
+              code: 1,
+              signal: null,
+              stderr:
+                'ERROR: failed to solve: node:24-bookworm-slim: failed to fetch oauth token: unexpected status from POST request to https://auth.docker.io/token: 504 Gateway Timeout: error code: 504',
+              stdout: '',
+            }
+          : { code: 0, signal: null, stderr: '', stdout: '' };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-blue'],
+    sleep: async (delayMs) => {
+      delays.push(delayMs);
+    },
+  });
+
+  assert.equal(buildAttempts, 3);
+  assert.deepEqual(delays, [1, 2]);
+  assert.deepEqual(
+    calls
+      .filter(([, args]) => args[0] === 'buildx' && args[1] === 'bake')
+      .map(([, , stdio, teeOutput]) => [stdio, teeOutput]),
+    [
+      ['pipe', true],
+      ['pipe', true],
+      ['pipe', true],
+    ]
+  );
+});
+
 test('buildBlueGreenServices can package host-built web artifacts', async () => {
   const calls = [];
   const env = {
@@ -4283,6 +4335,114 @@ test('runComposeUpWithNameConflictRecovery removes stale Compose recreate temp c
         args[2] === tempName
     )
   );
+});
+
+test('runComposeUpWithNameConflictRecovery retries transient Docker registry pulls', async () => {
+  const calls = [];
+  const delays = [];
+  let upAttempts = 0;
+  const transientRegistryError =
+    'Error response from daemon: Head "https://registry-1.docker.io/v2/library/redis/manifests/7-alpine": ' +
+    'Get "https://auth.docker.io/token?account=githubactions&scope=repository%3Alibrary%2Fredis%3Apull&service=registry.docker.io": ' +
+    'net/http: request canceled (Client.Timeout exceeded while awaiting headers)';
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (command === 'docker' && args[0] === 'compose' && args.includes('up')) {
+      upAttempts += 1;
+
+      if (upAttempts < 3) {
+        return {
+          code: 1,
+          signal: null,
+          stderr: transientRegistryError,
+          stdout: '',
+        };
+      }
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  await runComposeUpWithNameConflictRecovery({
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      COMPOSE_PROJECT_NAME: 'platform',
+      DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS: '10',
+      DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS: '3',
+      DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS: '20',
+      PATH: 'test-path',
+    },
+    runCommand,
+    services: ['web-blue', 'redis'],
+    sleep: async (delayMs) => {
+      delays.push(delayMs);
+    },
+    upArgs: [
+      'up',
+      '--detach',
+      '--no-build',
+      '--remove-orphans',
+      'web-blue',
+      'redis',
+    ],
+  });
+
+  assert.equal(upAttempts, 3);
+  assert.deepEqual(delays, [10, 20]);
+  assert.ok(
+    !calls.some(([command, args]) => command === 'docker' && args[0] === 'rm')
+  );
+});
+
+test('runComposeUpWithNameConflictRecovery does not retry non-transient Compose failures', async () => {
+  const delays = [];
+  let upAttempts = 0;
+
+  const runCommand = async (command, args) => {
+    if (command === 'docker' && args[0] === 'compose' && args.includes('up')) {
+      upAttempts += 1;
+
+      return {
+        code: 1,
+        signal: null,
+        stderr:
+          'Error response from daemon: invalid mount config for type "bind"',
+        stdout: '',
+      };
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  await assert.rejects(
+    runComposeUpWithNameConflictRecovery({
+      composeFile: PROD_COMPOSE_FILE,
+      env: {
+        COMPOSE_PROJECT_NAME: 'platform',
+        DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS: '3',
+        PATH: 'test-path',
+      },
+      runCommand,
+      services: ['web-blue', 'redis'],
+      sleep: async (delayMs) => {
+        delays.push(delayMs);
+      },
+      upArgs: [
+        'up',
+        '--detach',
+        '--no-build',
+        '--remove-orphans',
+        'web-blue',
+        'redis',
+      ],
+    }),
+    /invalid mount config/u
+  );
+
+  assert.equal(upAttempts, 1);
+  assert.deepEqual(delays, []);
 });
 
 test('runDockerWebWorkflow switches traffic to the new color after it becomes healthy', async () => {

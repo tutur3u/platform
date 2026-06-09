@@ -35,14 +35,13 @@ import {
   DATABASE_FEATURED_GROUPS_CONFIG_ID,
   parseWorkspaceConfigIdList,
 } from '@tuturuuu/internal-api/workspace-configs';
-import type {
-  CalendarConnection,
-  Workspace,
-  WorkspaceCalendarGoogleTokenClient,
-} from '@tuturuuu/types';
+import type { CalendarConnection, Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import CalendarConnectionsUnified from '@tuturuuu/ui/calendar-app/components/calendar-connections-unified';
+import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -63,6 +62,7 @@ import AppearanceSettings from './appearance-settings';
 import { ApprovalsSettings } from './approvals/approvals-settings';
 import AttendanceDisplaySettings from './attendance/attendance-display-settings';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
+import { CalendarSettingsLayout } from './calendar/calendar-settings-layout';
 import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 import DebtLoanSettings from './finance/debt-loan-settings';
 import DefaultCurrencySettings from './finance/default-currency-settings';
@@ -224,26 +224,6 @@ export function SettingsDialog({
     normalizedDefaultTab,
   ]);
 
-  // Fetch calendar token when workspace is available (using TanStack Query)
-  const { data: calendarToken } = useQuery({
-    queryKey: ['calendar-token', workspace?.id],
-    queryFn: async () => {
-      if (!workspace?.id) return null;
-
-      const payload = await apiFetch<{
-        tokens?: WorkspaceCalendarGoogleTokenClient | null;
-      }>(`/api/v1/calendar/auth/tokens?wsId=${workspace.id}`, {
-        cache: 'no-store',
-      });
-
-      return payload.tokens ?? null;
-    },
-    enabled: !!workspace?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
-
   // Fetch calendar connections when workspace is available (using TanStack Query)
   const { data: calendarConnections } = useQuery({
     queryKey: ['calendar-connections', workspace?.id],
@@ -358,7 +338,7 @@ export function SettingsDialog({
           label: t('settings.tasks.general'),
           icon: CheckSquare,
           description: t('settings.tasks.general_description'),
-          keywords: ['Tasks', 'General'],
+          keywords: ['Tasks', 'General', 'Review', 'Due date'],
         },
       ],
     },
@@ -488,6 +468,13 @@ export function SettingsDialog({
             label: t('settings.calendar.title'),
             items: [
               {
+                name: 'calendar_general',
+                label: t('settings.calendar.general'),
+                icon: CalendarDays,
+                description: t('settings.calendar.general_description'),
+                keywords: ['Calendar', 'General', 'Lunar'],
+              },
+              {
                 name: 'calendar_hours',
                 label: t('settings.calendar.hours'),
                 icon: Clock,
@@ -502,11 +489,11 @@ export function SettingsDialog({
                 keywords: ['Calendar', 'Colors', 'Categories'],
               },
               {
-                name: 'calendar_google',
+                name: 'calendar_integrations',
                 label: t('settings.calendar.integrations'),
                 icon: CalendarDays,
                 description: t('settings.calendar.integrations_description'),
-                keywords: ['Calendar', 'Integrations', 'Google'],
+                keywords: ['Calendar', 'Integrations', 'Google', 'Outlook'],
               },
             ],
           },
@@ -950,15 +937,43 @@ export function SettingsDialog({
 
         {activeTab === 'referrals' && wsId && <ReferralSettings wsId={wsId} />}
 
-        {activeTab.startsWith('calendar_') && wsId && (
-          <CalendarSettingsContent
-            section={activeTab}
-            wsId={wsId}
-            workspace={workspace}
-            calendarToken={calendarToken}
-            calendarConnections={calendarConnections || []}
-          />
+        {activeTab === 'calendar_general' && (
+          <div className="h-full">
+            <CalendarSettingsLayout
+              title={t('settings.calendar.general')}
+              description={t('settings.calendar.general_description')}
+              hideActions
+            >
+              <LunarCalendarSettings />
+            </CalendarSettingsLayout>
+          </div>
         )}
+
+        {activeTab === 'calendar_integrations' && wsId && (
+          <CalendarSyncProvider
+            wsId={wsId}
+            initialCalendarConnections={calendarConnections || []}
+          >
+            <div className="h-full">
+              <CalendarSettingsLayout
+                title={t('settings.calendar.integrations')}
+                description={t('settings.calendar.integrations_description')}
+                hideActions
+              >
+                <CalendarConnectionsUnified wsId={wsId} variant="settings" />
+              </CalendarSettingsLayout>
+            </div>
+          </CalendarSyncProvider>
+        )}
+
+        {(activeTab === 'calendar_hours' || activeTab === 'calendar_colors') &&
+          wsId && (
+            <CalendarSettingsContent
+              section={activeTab}
+              wsId={wsId}
+              workspace={workspace}
+            />
+          )}
 
         {activeTab === 'break_types' && wsId && (
           <WorkspaceBreakTypesSettings wsId={wsId} />

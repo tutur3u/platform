@@ -20,6 +20,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID } from '../../tu-do/shared/task-due-date-visibility';
 
 interface TaskSettingsData {
   task_auto_assign_to_self: boolean;
@@ -67,6 +68,12 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
     isLoading: openDefaultBoardLoading,
     isPending: openDefaultBoardPending,
   } = useUserBooleanConfig('TASKS_OPEN_DEFAULT_BOARD', true);
+  const {
+    value: showReviewDueDates,
+    setValue: setShowReviewDueDates,
+    isLoading: showReviewDueDatesLoading,
+    isPending: showReviewDueDatesPending,
+  } = useUserBooleanConfig(TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID, false);
 
   const { data: submitShortcut, isLoading: submitShortcutLoading } =
     useUserConfig('TASK_SUBMIT_SHORTCUT', 'enter');
@@ -199,6 +206,17 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             checked={openDefaultBoard}
             onCheckedChange={setOpenDefaultBoard}
             disabled={openDefaultBoardLoading || openDefaultBoardPending}
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('show_review_due_dates')}
+          description={t('show_review_due_dates_description')}
+        >
+          <Switch
+            checked={showReviewDueDates}
+            onCheckedChange={setShowReviewDueDates}
+            disabled={showReviewDueDatesLoading || showReviewDueDatesPending}
           />
         </SettingItemTab>
         <Separator />

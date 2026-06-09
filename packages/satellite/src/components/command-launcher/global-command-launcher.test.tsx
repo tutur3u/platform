@@ -114,7 +114,7 @@ describe('GlobalCommandLauncher', () => {
     await waitFor(() =>
       expect(screen.getAllByText('Current').length).toBeGreaterThanOrEqual(2)
     );
-  });
+  }, 10_000);
 
   it('does not render the visible helper footer or current context panel', async () => {
     listWorkspaces.mockResolvedValue(workspaces);

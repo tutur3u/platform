@@ -40,8 +40,13 @@ import {
   type ListPaginationState,
   useProgressiveLoader,
 } from '../../shared/progressive-loader-context';
+import { getListTextColorClass } from '../../utils/taskColorUtils';
 import { normalizeBoardText } from './board-text-utils';
 import type { DragPreviewPosition } from './kanban/dnd/use-kanban-dnd';
+import {
+  isClosedTaskListColumnCollapsed,
+  isKanbanColumnCollapsed,
+} from './kanban/kanban-column-collapse';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import type { TaskFilters } from './task-filter';
@@ -168,6 +173,7 @@ interface BoardColumnProps {
   workspaceId?: string;
   wsId: string;
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
+  onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
 }
 
 export function BoardColumn({
@@ -193,6 +199,7 @@ export function BoardColumn({
   workspaceId,
   wsId,
   onExternalTasksCollapsedChange,
+  onTaskListCollapsedChange,
 }: BoardColumnProps) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
@@ -211,6 +218,8 @@ export function BoardColumn({
   const [externalSortBy, setExternalSortBy] = useState<ExternalTaskSortBy>(
     DEFAULT_EXTERNAL_TASK_SORT_BY
   );
+  const isClosedCollapsed = isClosedTaskListColumnCollapsed(column);
+  const isColumnCollapsed = isKanbanColumnCollapsed(column);
   const hasActiveFilters =
     !!filters &&
     (filters.labels.length > 0 ||
@@ -291,7 +300,7 @@ export function BoardColumn({
   useEffect(() => {
     if (
       !isExternalStaging ||
-      isExternalCollapsed ||
+      isColumnCollapsed ||
       !listState ||
       listState.isInitialLoad ||
       listState.isLoading ||
@@ -303,7 +312,7 @@ export function BoardColumn({
     loadColumnPage(0);
   }, [
     externalOptionsSignature,
-    isExternalCollapsed,
+    isColumnCollapsed,
     isExternalStaging,
     listState,
     listState?.isInitialLoad,
@@ -315,7 +324,7 @@ export function BoardColumn({
   // cache was cleared, refetch page 0 for this list so cards reappear.
   useEffect(() => {
     if (
-      isExternalCollapsed ||
+      isColumnCollapsed ||
       !listState ||
       listState.isLoading ||
       hasActiveFilters
@@ -334,7 +343,7 @@ export function BoardColumn({
     recoveryRequestedRef.current = false;
   }, [
     hasActiveFilters,
-    isExternalCollapsed,
+    isColumnCollapsed,
     listState,
     listState?.isLoading,
     listState?.totalCount,
@@ -481,22 +490,45 @@ export function BoardColumn({
     });
   };
 
-  if (isExternalCollapsed) {
+  if (isColumnCollapsed) {
+    const collapsedListName = translateListName(column.name);
+    const expandLabel = isExternalCollapsed
+      ? tTasks('expand_external_tasks')
+      : tTasks('expand_task_list', { name: collapsedListName });
+    const collapsedTextColor = isExternalCollapsed
+      ? 'text-dynamic-cyan'
+      : getListTextColorClass(column.color as SupportedColor);
+
     return (
       <Card
         ref={composedRef}
         style={style}
         className={cn(
-          'group flex h-full w-14 shrink-0 snap-start flex-col items-center rounded-xl border border-dynamic-cyan/45 border-dashed bg-dynamic-cyan/[0.035] transition-all duration-200',
-          'touch-none select-none overflow-hidden hover:shadow-md'
+          'group flex h-full w-14 shrink-0 snap-start flex-col items-center rounded-xl border border-dashed transition-all duration-200',
+          'touch-none select-none overflow-hidden hover:shadow-md',
+          isExternalCollapsed
+            ? 'border-dynamic-cyan/45 bg-dynamic-cyan/[0.035]'
+            : colorClass
         )}
       >
         <button
           type="button"
-          className="flex h-full w-full flex-col items-center gap-3 rounded-xl px-1 py-3 text-dynamic-cyan transition-colors hover:bg-dynamic-cyan/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-cyan/40"
-          title={tTasks('expand_external_tasks')}
-          aria-label={tTasks('expand_external_tasks')}
-          onClick={() => onExternalTasksCollapsedChange?.(false)}
+          className={cn(
+            'flex h-full w-full flex-col items-center gap-3 rounded-xl px-1 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2',
+            isExternalCollapsed
+              ? 'text-dynamic-cyan hover:bg-dynamic-cyan/10 focus-visible:ring-dynamic-cyan/40'
+              : `${collapsedTextColor} hover:bg-muted/40 focus-visible:ring-primary/40`
+          )}
+          title={expandLabel}
+          aria-label={expandLabel}
+          onClick={() => {
+            if (isExternalCollapsed) {
+              onExternalTasksCollapsedChange?.(false);
+              return;
+            }
+
+            onTaskListCollapsedChange?.(column.id, false);
+          }}
         >
           <ChevronRight className="h-4 w-4 shrink-0" />
           <Badge
@@ -509,7 +541,7 @@ export function BoardColumn({
             className="max-h-48 truncate font-medium text-[11px]"
             style={{ writingMode: 'vertical-rl' }}
           >
-            {translateListName(column.name)}
+            {collapsedListName}
           </span>
         </button>
       </Card>
@@ -688,19 +720,41 @@ export function BoardColumn({
               </Button>
             </>
           ) : (
-            <ListActions
-              listId={column.id}
-              listName={column.name}
-              listStatus={column.status}
-              listColor={column.color as SupportedColor}
-              tasks={tasks}
-              boardId={boardId}
-              wsId={wsId}
-              onUpdate={handleUpdate}
-              onSelectAll={handleSelectAll}
-              isEditOpen={isEditOpen}
-              onEditOpenChange={setIsEditOpen}
-            />
+            <>
+              {isClosedCollapsed || column.status === 'closed' ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  className={cn(
+                    'h-7 w-7 p-0 hover:bg-muted/40',
+                    getListTextColorClass(column.color as SupportedColor)
+                  )}
+                  title={tTasks('collapse_task_list', {
+                    name: translateListName(column.name),
+                  })}
+                  aria-label={tTasks('collapse_task_list', {
+                    name: translateListName(column.name),
+                  })}
+                  onClick={() => onTaskListCollapsedChange?.(column.id, true)}
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </Button>
+              ) : null}
+              <ListActions
+                listId={column.id}
+                listName={column.name}
+                listStatus={column.status}
+                listColor={column.color as SupportedColor}
+                tasks={tasks}
+                boardId={boardId}
+                wsId={wsId}
+                onUpdate={handleUpdate}
+                onSelectAll={handleSelectAll}
+                isEditOpen={isEditOpen}
+                onEditOpenChange={setIsEditOpen}
+              />
+            </>
           )}
         </div>
       </div>

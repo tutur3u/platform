@@ -13,7 +13,7 @@ export interface WorkspaceUploadUrlResponse {
   token?: string;
   headers?: Record<string, string>;
   path?: string;
-  fullPath?: string;
+  fullPath?: string | null;
   filename?: string;
   contentType?: string;
   provider?: 'r2' | 'supabase';
@@ -316,7 +316,7 @@ export async function uploadFileWithSignedUrl(
   };
 }
 
-function parseSignedUploadPayload(payload: WorkspaceUploadUrlResponse) {
+export function parseSignedUploadPayload(payload: WorkspaceUploadUrlResponse) {
   if (!payload.signedUrl || !payload.path) {
     throw new Error('Missing upload URL payload');
   }

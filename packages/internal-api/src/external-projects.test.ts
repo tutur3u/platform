@@ -93,47 +93,89 @@ describe('external project upload helpers', () => {
     );
   });
 
-  it('disables external-project media signed upload URLs', async () => {
-    const fetchMock = vi.fn();
-
-    await expect(
-      createWorkspaceExternalProjectAssetUploadUrl(
-        'ws-1',
-        {
-          adapter: 'yoola',
-          collectionType: 'artworks',
-          entrySlug: 'mine',
-          filename: 'cover.png',
-          size: 5,
-        },
-        {
-          baseUrl: 'https://web.example.com',
-          fetch: fetchMock as unknown as typeof fetch,
-        }
-      )
-    ).rejects.toThrow(
-      'External project asset uploads must use uploadWorkspaceExternalProjectAssetFile'
-    );
-
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it('uploads media assets through the app server', async () => {
-    const file = new File(['cover'], 'cover.png', { type: 'image/png' });
-    const uploadProgress = vi.fn();
-    const fetchMock = vi.fn().mockResolvedValue(
+  it('creates external-project media signed upload URLs', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
       createJsonResponse({
-        autoExtract: {
-          message: 'Uploaded file is not a ZIP archive.',
-          status: 'skipped',
+        contentType: 'image/png',
+        filename: 'cover.png',
+        fullPath: 'ws-1/external-projects/yoola/artworks/mine/cover.png',
+        headers: {
+          'Content-Type': 'image/png',
         },
-        data: {
-          fullPath:
-            'ws-1/external-projects/yoola/artworks/mine/upload-cover.png',
-          path: 'external-projects/yoola/artworks/mine/upload-cover.png',
-        },
+        path: 'external-projects/yoola/artworks/mine/cover.png',
+        provider: 'supabase',
+        signedUrl: 'https://storage.example.com/signed-upload',
+        token: 'storage-token',
       })
     );
+
+    const result = await createWorkspaceExternalProjectAssetUploadUrl(
+      'ws-1',
+      {
+        adapter: 'yoola',
+        collectionType: 'artworks',
+        contentType: 'image/png',
+        entrySlug: 'mine',
+        filename: 'cover.png',
+        size: 5,
+      },
+      {
+        baseUrl: 'https://web.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(result).toEqual({
+      contentType: 'image/png',
+      filename: 'cover.png',
+      fullPath: 'ws-1/external-projects/yoola/artworks/mine/cover.png',
+      headers: {
+        'Content-Type': 'image/png',
+      },
+      path: 'external-projects/yoola/artworks/mine/cover.png',
+      provider: 'supabase',
+      signedUrl: 'https://storage.example.com/signed-upload',
+      token: 'storage-token',
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/assets/upload-url',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(init.body as string)).toEqual({
+      collectionType: 'artworks',
+      contentType: 'image/png',
+      entrySlug: 'mine',
+      filename: 'cover.png',
+      size: 5,
+    });
+    expect(new Headers(init.headers).get('Content-Type')).toBe(
+      'application/json'
+    );
+  });
+
+  it('uploads media assets directly to signed storage URLs', async () => {
+    const file = new File(['cover'], 'cover.png', { type: 'image/png' });
+    const uploadProgress = vi.fn();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          contentType: 'image/png',
+          fullPath: 'ws-1/external-projects/yoola/artworks/mine/cover.png',
+          headers: {
+            'Content-Type': 'image/png',
+          },
+          path: 'external-projects/yoola/artworks/mine/cover.png',
+          provider: 'supabase',
+          signedUrl: 'https://storage.example.com/signed-upload',
+          token: 'storage-token',
+        })
+      )
+      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' });
 
     const result = await uploadWorkspaceExternalProjectAssetFile(
       'ws-1',
@@ -150,35 +192,94 @@ describe('external project upload helpers', () => {
       }
     );
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
       'https://web.example.com/api/v1/workspaces/ws-1/external-projects/assets/upload-url',
       expect.objectContaining({
-        body: expect.any(FormData),
+        body: JSON.stringify({
+          collectionType: 'artworks',
+          contentType: 'image/png',
+          entrySlug: 'mine',
+          filename: 'cover.png',
+          size: 5,
+          upsert: undefined,
+        }),
         cache: 'no-store',
         method: 'POST',
       })
     );
-    const body = fetchMock.mock.calls[0]?.[1]?.body as FormData;
-    expect(body.get('collectionType')).toBe('artworks');
-    expect(body.get('entrySlug')).toBe('mine');
-    expect(body.get('file')).toBe(file);
-    expect(body.get('upsert')).toBeNull();
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://storage.example.com/signed-upload',
+      expect.objectContaining({
+        body: file,
+        cache: 'no-store',
+        headers: {
+          Authorization: 'Bearer storage-token',
+          'Content-Type': 'image/png',
+        },
+        method: 'PUT',
+      })
+    );
     expect(uploadProgress).toHaveBeenCalledWith({
       loaded: file.size,
       percent: 100,
       total: file.size,
     });
     expect(result).toEqual({
-      autoExtract: {
-        message: 'Uploaded file is not a ZIP archive.',
-        status: 'skipped',
+      fullPath: 'ws-1/external-projects/yoola/artworks/mine/cover.png',
+      path: 'external-projects/yoola/artworks/mine/cover.png',
+    });
+  });
+
+  it('uploads media assets with R2 header-only signed payloads', async () => {
+    const file = new File(['cover'], 'cover.png', { type: 'image/png' });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          contentType: 'image/png',
+          fullPath: 'ws-1/external-projects/yoola/artworks/mine/cover.png',
+          headers: {
+            'Content-Type': 'image/png',
+          },
+          path: 'external-projects/yoola/artworks/mine/cover.png',
+          provider: 'r2',
+          signedUrl: 'https://r2.example.com/signed-upload',
+        })
+      )
+      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' });
+
+    const result = await uploadWorkspaceExternalProjectAssetFile(
+      'ws-1',
+      file,
+      {
+        adapter: 'yoola',
+        collectionType: 'artworks',
+        entrySlug: 'mine',
       },
-      finalize: {
-        success: true,
-      },
-      fullPath: 'ws-1/external-projects/yoola/artworks/mine/upload-cover.png',
-      path: 'external-projects/yoola/artworks/mine/upload-cover.png',
+      {
+        baseUrl: 'https://web.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://r2.example.com/signed-upload',
+      expect.objectContaining({
+        body: file,
+        cache: 'no-store',
+        headers: {
+          'Content-Type': 'image/png',
+        },
+        method: 'PUT',
+      })
+    );
+    expect(result).toEqual({
+      fullPath: 'ws-1/external-projects/yoola/artworks/mine/cover.png',
+      path: 'external-projects/yoola/artworks/mine/cover.png',
     });
   });
 });

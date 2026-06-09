@@ -80,6 +80,28 @@ describe('readCronMonitoringSnapshot', () => {
     }
   });
 
+  it('keeps calendar provider sync on the shared 15-minute cadence', () => {
+    const repoRootConfigPath = path.join(
+      ORIGINAL_CWD,
+      'apps',
+      'web',
+      'cron.config.json'
+    );
+    const appRootConfigPath = path.join(ORIGINAL_CWD, 'cron.config.json');
+    process.env.PLATFORM_WEB_CRON_CONFIG_PATH = fs.existsSync(
+      repoRootConfigPath
+    )
+      ? repoRootConfigPath
+      : appRootConfigPath;
+
+    const snapshot = readCronMonitoringSnapshot();
+    const calendarProviderSync = snapshot.jobs.find(
+      (job) => job.id === 'calendar-provider-sync'
+    );
+
+    expect(calendarProviderSync?.schedule).toBe('*/15 * * * *');
+  });
+
   it('merges queued requests and live processing runs into the snapshot', () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'cron-monitoring-runs-')

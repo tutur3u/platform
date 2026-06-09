@@ -13,6 +13,7 @@ export interface TaskList {
   color: SupportedColor;
   position: number;
   href?: string;
+  is_collapsed?: boolean;
   is_external_staging?: boolean;
   is_external_collapsed?: boolean;
 }

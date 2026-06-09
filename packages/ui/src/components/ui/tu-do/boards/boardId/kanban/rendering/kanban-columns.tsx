@@ -12,6 +12,7 @@ import { BoardColumn } from '../../board-column';
 import type { TaskFilters } from '../../task-filter';
 import { TaskListForm } from '../../task-list-form';
 import type { DragPreviewPosition } from '../dnd/use-kanban-dnd';
+import { isKanbanColumnCollapsed } from '../kanban-column-collapse';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import { getKanbanColumnWidth } from './kanban-column-width';
 import {
@@ -50,6 +51,7 @@ interface KanbanColumnsProps {
   boardRef: React.RefObject<HTMLDivElement | null>;
   columnsId: string[];
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
+  onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
   deadlineLabels?: KanbanDeadlineLabels;
   deadlineSections?: KanbanDeadlineSections;
 }
@@ -79,14 +81,13 @@ export function KanbanColumns({
   boardRef,
   columnsId,
   onExternalTasksCollapsedChange,
+  onTaskListCollapsedChange,
   deadlineLabels,
   deadlineSections,
 }: KanbanColumnsProps) {
   const realColumns = columns.filter((column) => !column.is_external_staging);
   const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
-  const collapsedColumnCount = columns.filter(
-    (column) => column.is_external_collapsed
-  ).length;
+  const collapsedColumnCount = columns.filter(isKanbanColumnCollapsed).length;
   const dynamicColumnWidth = getKanbanColumnWidth({
     columnCount: columns.length,
     collapsedColumnCount,
@@ -207,6 +208,7 @@ export function KanbanColumns({
                 workspaceId={workspaceId}
                 wsId={workspaceId}
                 onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
+                onTaskListCollapsedChange={onTaskListCollapsedChange}
               />
             );
           })}

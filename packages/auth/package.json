@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/auth",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -37,8 +37,8 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.1",
-    "@types/react": "^19.2.16",
+    "@types/node": "^25.9.2",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"

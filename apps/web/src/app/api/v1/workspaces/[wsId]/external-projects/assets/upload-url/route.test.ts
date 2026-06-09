@@ -1,11 +1,9 @@
-import { File as NodeFile } from 'node:buffer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  createWorkspaceStorageUploadPayload: vi.fn(),
   generateRandomUUID: vi.fn(() => 'upload-id'),
   requireWorkspaceExternalProjectAccess: vi.fn(),
-  triggerWorkspaceStorageAutoExtract: vi.fn(),
-  uploadWorkspaceStorageFileDirect: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/utils/uuid-helper', () => ({
@@ -24,12 +22,9 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/workspace-storage-auto-extract', () => ({
-  triggerWorkspaceStorageAutoExtract: mocks.triggerWorkspaceStorageAutoExtract,
-}));
-
 vi.mock('@/lib/workspace-storage-provider', () => ({
-  uploadWorkspaceStorageFileDirect: mocks.uploadWorkspaceStorageFileDirect,
+  createWorkspaceStorageUploadPayload:
+    mocks.createWorkspaceStorageUploadPayload,
   WorkspaceStorageError: class WorkspaceStorageError extends Error {
     constructor(
       message: string,
@@ -40,57 +35,46 @@ vi.mock('@/lib/workspace-storage-provider', () => ({
   },
 }));
 
-function createUploadRequest({
-  collectionType,
-  entrySlug,
-  file,
-  upsert,
-}: {
-  collectionType: string;
-  entrySlug: string;
-  file: File;
-  upsert?: string;
-}) {
-  return {
-    formData: async () => ({
-      get: (key: string) => {
-        if (key === 'collectionType') return collectionType;
-        if (key === 'entrySlug') return entrySlug;
-        if (key === 'file') return file;
-        if (key === 'upsert') return upsert ?? null;
-        return null;
+function createJsonRequest(payload: unknown) {
+  return new Request(
+    'http://localhost/api/v1/workspaces/workspace-1/external-projects/assets/upload-url',
+    {
+      body: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json',
       },
-    }),
-    url: 'http://localhost/api/v1/workspaces/workspace-1/external-projects/assets/upload-url',
-  } as unknown as Request;
+      method: 'POST',
+    }
+  );
 }
 
-function createJsonRequest() {
-  return {
-    formData: async () => {
-      throw new Error('Invalid form data');
-    },
-    url: 'http://localhost/api/v1/workspaces/workspace-1/external-projects/assets/upload-url',
-  } as unknown as Request;
+function createMultipartRequest() {
+  const formData = new FormData();
+  formData.set('collectionType', 'voice-reels');
+  formData.set('entrySlug', 'demo');
+  formData.set('file', new Blob(['voice']), 'voice.wav');
+
+  return new Request(
+    'http://localhost/api/v1/workspaces/workspace-1/external-projects/assets/upload-url',
+    {
+      body: formData,
+      method: 'POST',
+    }
+  );
 }
 
-async function postAssetUploadFile(input: {
-  collectionType: string;
-  entrySlug: string;
-  file: File;
-  upsert?: string;
-}) {
+async function postAssetUploadJson(payload: unknown) {
   const { POST } = await import('./route');
 
-  return POST(createUploadRequest(input), {
+  return POST(createJsonRequest(payload), {
     params: Promise.resolve({ wsId: 'workspace-1' }),
   });
 }
 
-async function postAssetUploadJson() {
+async function postAssetUploadMultipart() {
   const { POST } = await import('./route');
 
-  return POST(createJsonRequest(), {
+  return POST(createMultipartRequest(), {
     params: Promise.resolve({ wsId: 'workspace-1' }),
   });
 }
@@ -98,11 +82,9 @@ async function postAssetUploadJson() {
 describe('external project asset upload-url route', () => {
   beforeEach(() => {
     vi.resetModules();
-    vi.stubGlobal('File', NodeFile);
     mocks.generateRandomUUID.mockClear();
     mocks.requireWorkspaceExternalProjectAccess.mockReset();
-    mocks.triggerWorkspaceStorageAutoExtract.mockReset();
-    mocks.uploadWorkspaceStorageFileDirect.mockReset();
+    mocks.createWorkspaceStorageUploadPayload.mockReset();
     mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
       binding: {
         adapter: 'yoola',
@@ -110,115 +92,145 @@ describe('external project asset upload-url route', () => {
       normalizedWorkspaceId: 'workspace-1',
       ok: true,
     });
-    mocks.uploadWorkspaceStorageFileDirect.mockResolvedValue({
+    mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
+      contentType: 'audio/wav',
+      filename: 'voice.wav',
       fullPath:
         'workspace-1/external-projects/yoola/voice-reels/demo/voice.wav',
+      headers: {
+        'Content-Type': 'audio/wav',
+      },
       path: 'external-projects/yoola/voice-reels/demo/voice.wav',
-    });
-    mocks.triggerWorkspaceStorageAutoExtract.mockResolvedValue({
-      archivePath: 'external-projects/yoola/voice-reels/demo/voice.wav',
-      message: 'Uploaded file is not a ZIP archive.',
-      status: 'skipped',
+      provider: 'supabase',
+      signedUrl: 'https://storage.example.com/upload',
+      token: 'storage-token',
     });
   });
 
-  it('uploads managed external-project assets through the app server', async () => {
-    const file = new NodeFile(['voice'], 'voice.wav', {
-      type: 'audio/wav',
-    }) as File;
-    const response = await postAssetUploadFile({
+  it('creates managed external-project signed upload URLs', async () => {
+    const response = await postAssetUploadJson({
       collectionType: 'voice-reels',
+      contentType: 'audio/wav',
       entrySlug: 'demo',
-      file,
-      upsert: 'true',
+      filename: 'voice.wav',
+      size: 5,
+      upsert: true,
     });
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      autoExtract: {
-        archivePath: 'external-projects/yoola/voice-reels/demo/voice.wav',
-        message: 'Uploaded file is not a ZIP archive.',
-        status: 'skipped',
-      },
-      autoExtractError: null,
       contentType: 'audio/wav',
-      data: {
-        fullPath:
-          'workspace-1/external-projects/yoola/voice-reels/demo/voice.wav',
-        path: 'external-projects/yoola/voice-reels/demo/voice.wav',
-      },
       filename: 'voice.wav',
+      fullPath:
+        'workspace-1/external-projects/yoola/voice-reels/demo/voice.wav',
+      headers: {
+        'Content-Type': 'audio/wav',
+      },
+      path: 'external-projects/yoola/voice-reels/demo/voice.wav',
+      provider: 'supabase',
+      signedUrl: 'https://storage.example.com/upload',
+      token: 'storage-token',
     });
-    expect(mocks.uploadWorkspaceStorageFileDirect).toHaveBeenCalledWith(
+    expect(mocks.generateRandomUUID).not.toHaveBeenCalled();
+    expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
       'workspace-1',
-      'external-projects/yoola/voice-reels/demo/voice.wav',
-      expect.any(Uint8Array),
+      'voice.wav',
       {
         contentType: 'audio/wav',
+        path: 'external-projects/yoola/voice-reels/demo',
+        size: 5,
         upsert: true,
       }
     );
-    const uploadedBytes = mocks.uploadWorkspaceStorageFileDirect.mock
-      .calls[0]?.[2] as Uint8Array;
-    expect(uploadedBytes.byteLength).toBe(5);
   });
 
-  it('rejects legacy signed upload URL JSON requests before storage writes', async () => {
-    const response = await postAssetUploadJson();
+  it('rejects multipart upload bodies before signing', async () => {
+    const response = await postAssetUploadMultipart();
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       error: 'Invalid upload body',
     });
-    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 
-  it('rejects empty external-project uploads before storage writes', async () => {
-    const response = await postAssetUploadFile({
+  it('rejects unauthorized external-project uploads before signing', async () => {
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValueOnce({
+      ok: false,
+      response: Response.json({ error: 'Forbidden' }, { status: 403 }),
+    });
+
+    const response = await postAssetUploadJson({
       collectionType: 'voice-reels',
+      contentType: 'audio/wav',
       entrySlug: 'demo',
-      file: new NodeFile([], 'voice.wav', { type: 'audio/wav' }) as File,
+      filename: 'voice.wav',
+      size: 5,
+    });
+
+    expect(response.status).toBe(403);
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('rejects missing or empty external-project upload sizes before signing', async () => {
+    const response = await postAssetUploadJson({
+      collectionType: 'voice-reels',
+      contentType: 'audio/wav',
+      entrySlug: 'demo',
+      filename: 'voice.wav',
+      size: 0,
     });
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       error: 'File is empty',
     });
-    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 
-  it('rejects disallowed external-project file types before storage writes', async () => {
-    const response = await postAssetUploadFile({
+  it('rejects disallowed external-project file types before signing', async () => {
+    const response = await postAssetUploadJson({
       collectionType: 'voice-reels',
+      contentType: 'application/octet-stream',
       entrySlug: 'demo',
-      file: new NodeFile(['echo hi'], 'script.sh', {
-        type: 'application/octet-stream',
-      }) as File,
+      filename: 'script.sh',
+      size: 7,
     });
 
     expect(response.status).toBe(415);
     await expect(response.json()).resolves.toEqual({
       error: 'File type not allowed',
     });
-    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 
-  it('randomizes filenames when overwrites are not requested', async () => {
-    const response = await postAssetUploadFile({
+  it('randomizes signed upload filenames when overwrites are not requested', async () => {
+    mocks.createWorkspaceStorageUploadPayload.mockResolvedValueOnce({
+      contentType: 'image/png',
+      filename: 'upload-id-starter-signal.png',
+      fullPath:
+        'workspace-1/external-projects/yoola/artworks/starter-signal/upload-id-starter-signal.png',
+      path: 'external-projects/yoola/artworks/starter-signal/upload-id-starter-signal.png',
+      provider: 'r2',
+      signedUrl: 'https://r2.example.com/upload',
+    });
+
+    const response = await postAssetUploadJson({
       collectionType: 'artworks',
+      contentType: 'image/png',
       entrySlug: 'starter-signal',
-      file: new NodeFile(['png'], 'starter-signal.png', {
-        type: 'image/png',
-      }) as File,
+      filename: 'starter-signal.png',
+      size: 3,
     });
 
     expect(response.status).toBe(200);
-    expect(mocks.uploadWorkspaceStorageFileDirect).toHaveBeenCalledWith(
+    expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
       'workspace-1',
-      'external-projects/yoola/artworks/starter-signal/upload-id-starter-signal.png',
-      expect.any(Uint8Array),
+      'upload-id-starter-signal.png',
       {
         contentType: 'image/png',
+        path: 'external-projects/yoola/artworks/starter-signal',
+        size: 3,
         upsert: false,
       }
     );

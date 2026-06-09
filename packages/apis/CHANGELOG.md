@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.12](https://github.com/tutur3u/platform/compare/apis-v0.0.11...apis-v0.0.12) (2026-06-08)
+
+
+### Bug Fixes
+
+* **tasks:** avoid RPC for simple board search ([7a2aeea](https://github.com/tutur3u/platform/commit/7a2aeeae77852cb7b8d5bec7ef0775a67cfe3e71))
+* **tasks:** hydrate task scheduling settings ([e5d0a1f](https://github.com/tutur3u/platform/commit/e5d0a1f70e8ae7686b3f6dc169374029e2af5a68))
+
+
+### Performance Improvements
+
+* **tasks:** filter task boards through server RPCs ([657f445](https://github.com/tutur3u/platform/commit/657f4458cd40c2e31774c7d9ef0628f986af1838))
+* **web:** split yjs-heavy server compile graph ([8420fd4](https://github.com/tutur3u/platform/commit/8420fd443bf63c9809283087a71302616ba0aed5))
+
 ## [0.0.11](https://github.com/tutur3u/platform/compare/apis-v0.0.10...apis-v0.0.11) (2026-06-03)
 
 

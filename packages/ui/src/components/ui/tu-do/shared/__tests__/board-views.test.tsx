@@ -135,6 +135,19 @@ const mockLists: TaskList[] = [
   },
 ];
 
+const closedList: TaskList = {
+  archived: false,
+  board_id: 'board-1',
+  color: 'PURPLE',
+  created_at: '2026-03-07T00:00:00.000Z',
+  creator_id: 'user-1',
+  deleted: false,
+  id: 'list-closed',
+  name: 'Closed',
+  position: 2,
+  status: 'closed',
+};
+
 const mockTasks: Task[] = [
   {
     assignees: [],
@@ -402,6 +415,63 @@ describe('BoardViews', () => {
           'personal-board-external-tasks-collapsed:board-1'
         )
       ).toBe('false');
+    });
+  });
+
+  it('collapses closed task lists by default', () => {
+    renderBoardViews({
+      lists: [...mockLists, closedList],
+    });
+
+    expect(
+      kanbanBoardProps?.lists.find((list) => list.id === 'list-closed')
+    ).toEqual(
+      expect.objectContaining({
+        is_collapsed: true,
+        status: 'closed',
+      })
+    );
+  });
+
+  it('persists the collapsed closed task list state per board and list', async () => {
+    window.localStorage.setItem(
+      'task-board-closed-list-collapsed:board-1:list-closed',
+      'false'
+    );
+
+    renderBoardViews({
+      lists: [...mockLists, closedList],
+    });
+
+    await waitFor(() => {
+      expect(
+        kanbanBoardProps?.lists.find((list) => list.id === 'list-closed')
+      ).toEqual(
+        expect.objectContaining({
+          is_collapsed: false,
+          status: 'closed',
+        })
+      );
+    });
+
+    act(() => {
+      kanbanBoardProps?.onTaskListCollapsedChange?.('list-closed', true);
+    });
+
+    await waitFor(() => {
+      expect(
+        window.localStorage.getItem(
+          'task-board-closed-list-collapsed:board-1:list-closed'
+        )
+      ).toBe('true');
+      expect(
+        kanbanBoardProps?.lists.find((list) => list.id === 'list-closed')
+      ).toEqual(
+        expect.objectContaining({
+          is_collapsed: true,
+          status: 'closed',
+        })
+      );
     });
   });
 

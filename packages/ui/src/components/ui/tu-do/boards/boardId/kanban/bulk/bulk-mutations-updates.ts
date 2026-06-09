@@ -1,14 +1,18 @@
 'use client';
 
 import { type QueryClient, useMutation } from '@tanstack/react-query';
-import { bulkWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
 import {
+  bulkWorkspaceTasksByEffectiveWorkspace,
   getInternalApiOptions,
   resolveDueDatePreset,
+  restoreBoardTaskCaches,
+  restoreFailedBoardTasks,
+  snapshotBoardTaskCaches,
+  updateBoardTaskCaches,
 } from './bulk-operation-utils';
 
 export function useBulkUpdatePriority(
@@ -28,17 +32,17 @@ export function useBulkUpdatePriority(
     }) => {
       const apiOptions = getInternalApiOptions();
 
-      const result = await bulkWorkspaceTasks(
-        wsId,
-        {
-          taskIds,
-          operation: {
-            type: 'update_fields',
-            updates: { priority },
-          },
+      const result = await bulkWorkspaceTasksByEffectiveWorkspace({
+        queryClient,
+        boardId,
+        defaultWorkspaceId: wsId,
+        taskIds,
+        operation: {
+          type: 'update_fields',
+          updates: { priority },
         },
-        apiOptions
-      );
+        options: apiOptions,
+      });
 
       if (result.successCount === 0) {
         throw new Error(
@@ -56,22 +60,20 @@ export function useBulkUpdatePriority(
     },
     onMutate: async ({ priority, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => (taskIdSet.has(t.id) ? { ...t, priority } : t));
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((t) => (taskIdSet.has(t.id) ? { ...t, priority } : t));
+      });
 
-      return { previousTasks };
+      return cacheSnapshot;
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk priority update failed', error);
       toast.error(
@@ -84,22 +86,13 @@ export function useBulkUpdatePriority(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       for (const tid of data.succeededTaskIds) {
         broadcast?.('task:upsert', {
@@ -147,17 +140,17 @@ export function useBulkUpdateEstimation(
     }) => {
       const apiOptions = getInternalApiOptions();
 
-      const result = await bulkWorkspaceTasks(
-        wsId,
-        {
-          taskIds,
-          operation: {
-            type: 'update_fields',
-            updates: { estimation_points: points },
-          },
+      const result = await bulkWorkspaceTasksByEffectiveWorkspace({
+        queryClient,
+        boardId,
+        defaultWorkspaceId: wsId,
+        taskIds,
+        operation: {
+          type: 'update_fields',
+          updates: { estimation_points: points },
         },
-        apiOptions
-      );
+        options: apiOptions,
+      });
 
       if (result.successCount === 0) {
         throw new Error(
@@ -175,24 +168,22 @@ export function useBulkUpdateEstimation(
     },
     onMutate: async ({ points, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, estimation_points: points } : t
-          );
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((t) =>
+          taskIdSet.has(t.id) ? { ...t, estimation_points: points } : t
+        );
+      });
 
-      return { previousTasks };
+      return cacheSnapshot;
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk estimation update failed', error);
       toast.error(
@@ -205,22 +196,13 @@ export function useBulkUpdateEstimation(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       for (const tid of data.succeededTaskIds) {
         broadcast?.('task:upsert', {
@@ -270,17 +252,17 @@ export function useBulkUpdateDueDate(
       const newDate = resolveDueDatePreset(preset, weekStartsOn);
       const apiOptions = getInternalApiOptions();
 
-      const result = await bulkWorkspaceTasks(
-        wsId,
-        {
-          taskIds,
-          operation: {
-            type: 'update_fields',
-            updates: { end_date: newDate },
-          },
+      const result = await bulkWorkspaceTasksByEffectiveWorkspace({
+        queryClient,
+        boardId,
+        defaultWorkspaceId: wsId,
+        taskIds,
+        operation: {
+          type: 'update_fields',
+          updates: { end_date: newDate },
         },
-        apiOptions
-      );
+        options: apiOptions,
+      });
 
       if (result.successCount === 0) {
         throw new Error(
@@ -298,25 +280,23 @@ export function useBulkUpdateDueDate(
     },
     onMutate: async ({ preset, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const newDate = resolveDueDatePreset(preset, weekStartsOn);
       const taskIdSet = new Set(taskIds);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, end_date: newDate } : t
-          );
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((t) =>
+          taskIdSet.has(t.id) ? { ...t, end_date: newDate } : t
+        );
+      });
 
-      return { previousTasks };
+      return cacheSnapshot;
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk due date update failed', error);
       toast.error(
@@ -329,22 +309,13 @@ export function useBulkUpdateDueDate(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       for (const tid of data.succeededTaskIds) {
         broadcast?.('task:upsert', {
@@ -393,17 +364,17 @@ export function useBulkUpdateCustomDueDate(
       const newDate = date ? date.toISOString() : null;
       const apiOptions = getInternalApiOptions();
 
-      const result = await bulkWorkspaceTasks(
-        wsId,
-        {
-          taskIds,
-          operation: {
-            type: 'update_fields',
-            updates: { end_date: newDate },
-          },
+      const result = await bulkWorkspaceTasksByEffectiveWorkspace({
+        queryClient,
+        boardId,
+        defaultWorkspaceId: wsId,
+        taskIds,
+        operation: {
+          type: 'update_fields',
+          updates: { end_date: newDate },
         },
-        apiOptions
-      );
+        options: apiOptions,
+      });
 
       if (result.successCount === 0) {
         throw new Error(
@@ -421,25 +392,23 @@ export function useBulkUpdateCustomDueDate(
     },
     onMutate: async ({ date, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const newDate = date ? date.toISOString() : null;
       const taskIdSet = new Set(taskIds);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, end_date: newDate } : t
-          );
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((t) =>
+          taskIdSet.has(t.id) ? { ...t, end_date: newDate } : t
+        );
+      });
 
-      return { previousTasks };
+      return cacheSnapshot;
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk custom due date update failed', error);
       toast.error(
@@ -452,22 +421,13 @@ export function useBulkUpdateCustomDueDate(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        failedTaskIds,
+      });
 
       for (const tid of data.succeededTaskIds) {
         broadcast?.('task:upsert', {

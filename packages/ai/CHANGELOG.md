@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.0](https://github.com/tutur3u/platform/compare/ai-v0.0.12...ai-v0.1.0) (2026-06-08)
+
+
+### Features
+
+* **platform:** add calendar sources and personal Zalo agents ([2746e72](https://github.com/tutur3u/platform/commit/2746e7297a43def06c3c2f12b7751dea94074113))
+
+
+### Bug Fixes
+
+* **ci:** stabilize package release workflows ([d6243c2](https://github.com/tutur3u/platform/commit/d6243c2d7ee7ae599d9f17fba4be9f9cc71a1722))
+
 ## [0.0.12](https://github.com/tutur3u/platform/compare/ai-v0.0.11...ai-v0.0.12) (2026-06-03)
 
 

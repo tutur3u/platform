@@ -10719,6 +10719,8 @@
       "hours_description": "Cấu hình giờ làm việc, giờ họp và múi giờ của bạn",
       "integrations": "Tích hợp",
       "integrations_description": "Kết nối Google Calendar và các dịch vụ khác",
+      "show_lunar_calendar": "Hiển thị Âm lịch",
+      "show_lunar_calendar_description": "Hiển thị ngày âm lịch trên lịch. Tự động bật cho người dùng Việt Nam.",
       "smart": "Tính năng thông minh",
       "smart_description": "Cấu hình lập lịch và quản lý tác vụ hỗ trợ bởi AI",
       "title": "Lịch"
@@ -11003,6 +11005,8 @@
       "open_default_board_description": "Khi bật, không gian làm việc cá nhân sẽ mở thẳng bảng Tasks mặc định thay vì dừng ở bộ chọn bảng",
       "settings_update_failed": "Không thể cập nhật cài đặt nhiệm vụ",
       "settings_updated": "Đã cập nhật cài đặt nhiệm vụ",
+      "show_review_due_dates": "Hiện ngày hạn trong danh sách review",
+      "show_review_due_dates_description": "Hiển thị ngày hạn trên nhiệm vụ trong danh sách review, đồng thời vẫn giữ nhiệm vụ đã xong và đã đóng gọn gàng",
       "submit_shortcut": "Phím tắt gửi",
       "submit_shortcut_cmd_enter": "⌘/Ctrl + Enter",
       "submit_shortcut_description": "Chọn phím tắt dùng để gửi tác vụ từ ô nhập nhanh và hộp thoại",
@@ -18982,6 +18986,7 @@
     "cmd_tomorrow": "Ngày mai",
     "cmd_upgrade_to_use": "Nâng cấp để sử dụng",
     "collapse_external_tasks": "Thu gọn Công việc bên ngoài",
+    "collapse_task_list": "Thu gọn {name}",
     "complete_by_end_of_day": "Hoàn thành trước cuối ngày",
     "completed": "Đã hoàn thành",
     "continue": "Tiếp tục",
@@ -19023,6 +19028,7 @@
       "task_title_empty": "Tiêu đề nhiệm vụ không được để trống"
     },
     "expand_external_tasks": "Mở rộng Công việc bên ngoài",
+    "expand_task_list": "Mở rộng {name}",
     "external_task": "Công việc bên ngoài",
     "external_tasks": "Công việc bên ngoài",
     "external_tasks_drag_affordance": "Kéo vào một danh sách cá nhân để lên kế hoạch tại đây. Kéo lại về Công việc bên ngoài để bỏ khỏi kế hoạch.",

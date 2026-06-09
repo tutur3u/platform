@@ -24,9 +24,10 @@ import {
   type InternalApiClientOptions,
   resolveInternalApiUrl,
 } from './client';
-import type {
-  WorkspaceStorageAutoExtractResult,
-  WorkspaceStorageUploadProgress,
+import {
+  parseSignedUploadPayload,
+  uploadFileWithSignedUrl,
+  type WorkspaceStorageUploadProgress,
 } from './storage';
 
 type CanonicalExternalProjectUpsertPayload = {
@@ -95,12 +96,15 @@ type WorkspaceExternalProjectFieldDefinitionPayload = {
 
 type ExternalProjectUploadUrlResponse = {
   archivePath?: string;
+  contentType?: string;
+  filename?: string;
   headers?: Record<string, string>;
   proxyUploadUrl?: string;
   signedUrl?: string;
   token?: string;
   path?: string;
   fullPath?: string | null;
+  provider?: 'r2' | 'supabase';
 };
 
 type ExternalProjectUploadUrlPayload = {
@@ -111,15 +115,6 @@ type ExternalProjectUploadUrlPayload = {
   token?: string;
   path: string;
   fullPath: string | null;
-};
-
-type ExternalProjectDirectUploadResponse = {
-  autoExtract?: WorkspaceStorageAutoExtractResult;
-  autoExtractError?: string | null;
-  data?: {
-    fullPath?: string | null;
-    path?: string;
-  };
 };
 
 type ExternalProjectUploadProgressHandler = (
@@ -695,13 +690,27 @@ export async function createWorkspaceExternalProjectAssetUploadUrl(
   },
   options?: InternalApiClientOptions
 ) {
-  void workspaceId;
-  void payload;
-  void options;
-
-  throw new Error(
-    'External project asset uploads must use uploadWorkspaceExternalProjectAssetFile so workspace quota checks use the uploaded byte length.'
+  const client = getInternalApiClient(options);
+  const response = await client.json<ExternalProjectUploadUrlResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/assets/upload-url`,
+    {
+      body: JSON.stringify({
+        collectionType: payload.collectionType,
+        contentType: payload.contentType,
+        entrySlug: payload.entrySlug,
+        filename: payload.filename,
+        size: payload.size,
+        upsert: payload.upsert,
+      }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
   );
+
+  return parseSignedUploadPayload(response);
 }
 
 export async function uploadWorkspaceExternalProjectAssetFile(
@@ -715,48 +724,29 @@ export async function uploadWorkspaceExternalProjectAssetFile(
   },
   options?: ExternalProjectUploadOptions
 ) {
-  const client = getInternalApiClient(options);
-  const formData = new FormData();
-  formData.set('collectionType', payload.collectionType);
-  formData.set('entrySlug', payload.entrySlug);
-  formData.set('file', file);
-
-  if (payload.upsert === true) {
-    formData.set('upsert', 'true');
-  }
-
-  const response = await client.json<ExternalProjectDirectUploadResponse>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/assets/upload-url`,
+  const fetchImpl = options?.fetch ?? globalThis.fetch;
+  const uploadUrlResult = await createWorkspaceExternalProjectAssetUploadUrl(
+    workspaceId,
     {
-      body: formData,
-      cache: 'no-store',
-      method: 'POST',
-    }
+      collectionType: payload.collectionType,
+      contentType: file.type || 'application/octet-stream',
+      entrySlug: payload.entrySlug,
+      filename: file.name,
+      size: file.size,
+      upsert: payload.upsert,
+    },
+    options
   );
 
-  if (!response.data?.path) {
-    throw new Error('Missing upload response payload');
-  }
-
-  options?.onUploadProgress?.({
-    loaded: file.size,
-    percent: 100,
-    total: file.size,
-  });
-
-  return {
-    autoExtract: response.autoExtract,
-    finalize: response.autoExtractError
-      ? {
-          error: response.autoExtractError,
-          success: false,
-        }
-      : {
-          success: true,
-        },
-    fullPath: response.data.fullPath ?? null,
-    path: response.data.path,
-  };
+  return uploadFileWithSignedUrl(
+    file,
+    uploadUrlResult,
+    fetchImpl,
+    options?.onUploadProgress
+  ) as Promise<{
+    fullPath: string | null;
+    path: string;
+  }>;
 }
 
 export async function createWorkspaceExternalProjectWebglPackageUploadUrl(
