@@ -635,6 +635,18 @@ minute, 3000 per hour, and 20000 per day, and can be tuned with
 `API_PROXY_TASK_BOARD_READ_LIMIT_HOUR`, and
 `API_PROXY_TASK_BOARD_READ_LIMIT_DAY`.
 
+Finance invoice creation support reads use a separate
+`finance-invoice-create-read` proxy bucket for the shared-IP burst created by
+the new invoice flow. It covers GET/HEAD reads for customer search, products,
+wallets, transaction categories, promotions, invoice default settings, linked
+products, user group data, user promotion data, invoice history, and
+subscription context. Invoice creation mutations remain on the default mutation
+policy. The defaults are 600 requests per minute, 6000 per hour, and 40000 per
+day, and can be tuned with
+`API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_MINUTE`,
+`API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_HOUR`, and
+`API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_DAY`.
+
 ```typescript
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';

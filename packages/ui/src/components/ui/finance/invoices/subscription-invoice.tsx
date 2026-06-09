@@ -132,6 +132,10 @@ export function SubscriptionInvoice({
 
   const [customerSearch, setCustomerSearch] = useState('');
   const [debouncedCustomerSearch] = useDebounce(customerSearch, 300);
+  const [subscriptionSelectedProducts, setSubscriptionSelectedProducts] =
+    useState<SelectedProductItem[]>([]);
+  const hasSelectedGroups = selectedGroupIds.length > 0;
+  const hasSelectedProducts = subscriptionSelectedProducts.length > 0;
 
   const updateSearchParam = useCallback(
     (key: string, value: string) => {
@@ -164,23 +168,37 @@ export function SubscriptionInvoice({
     data: products = [],
     error: productsError,
     isLoading: productsLoading,
-  } = useProducts(wsId);
-  const { data: availablePromotions = [], isLoading: promotionsLoading } =
-    useAvailablePromotions(wsId, selectedUserId);
+  } = useProducts(wsId, {
+    enabled: canReadInvoiceProducts && hasSelectedGroups,
+  });
+  const { data: availablePromotions = [] } = useAvailablePromotions(
+    wsId,
+    selectedUserId,
+    {
+      enabled: hasSelectedProducts,
+    }
+  );
   const { data: linkedPromotions = [] } = useUserLinkedPromotions(
     wsId,
-    selectedUserId
+    selectedUserId,
+    { enabled: hasSelectedProducts }
   );
   const { data: referralDiscountRows = [] } = useUserReferralDiscounts(
     wsId,
-    selectedUserId
+    selectedUserId,
+    { enabled: hasSelectedProducts }
   );
-  const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
-  const { data: categories = [], isLoading: categoriesLoading } =
-    useCategories(wsId);
+  const { data: wallets = [] } = useWallets(wsId, {
+    enabled: hasSelectedProducts,
+  });
+  const { data: categories = [] } = useCategories(wsId, {
+    enabled: hasSelectedProducts,
+  });
 
   // Blocked groups check
-  const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId);
+  const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId, {
+    enabled: hasSelectedGroups,
+  });
 
   const isBlocked = useMemo(
     () => selectedGroupIds.some((groupId) => blockedGroupIds.includes(groupId)),
@@ -235,10 +253,6 @@ export function SubscriptionInvoice({
   // Track previous user ID to detect user changes (skip initial mount for reset)
   const prevUserIdRef = useRef<string | null>(null);
 
-  // Product selection state
-  const [subscriptionSelectedProducts, setSubscriptionSelectedProducts] =
-    useState<SelectedProductItem[]>([]);
-
   // Subscription-specific queries
   const { data: userGroups = [], isLoading: userGroupsLoading } = useUserGroups(
     wsId,
@@ -248,9 +262,13 @@ export function SubscriptionInvoice({
     data: groupProducts = [],
     error: groupProductsError,
     isLoading: groupProductsLoading,
-  } = useMultiGroupProducts(wsId, selectedGroupIds);
+  } = useMultiGroupProducts(wsId, selectedGroupIds, {
+    enabled: canReadGroupLinkedProducts,
+  });
 
-  const { data: useAttendanceBased = true } = useInvoiceAttendanceConfig(wsId);
+  const { data: useAttendanceBased = true } = useInvoiceAttendanceConfig(wsId, {
+    enabled: hasSelectedGroups,
+  });
 
   const availableMonthOptions = useMemo(
     () =>
@@ -422,12 +440,7 @@ export function SubscriptionInvoice({
     subscriptionInvoiceContextLoading ||
     groupProductsLoading;
 
-  const isLoadingData =
-    usersLoading ||
-    productsLoading ||
-    promotionsLoading ||
-    walletsLoading ||
-    categoriesLoading;
+  const isLoadingData = usersLoading || productsLoading;
 
   const invoiceProductMissingPermissions = useMemo(() => {
     const missingPermissions = new Set<string>();
