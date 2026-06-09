@@ -46,9 +46,9 @@ jobs:
 
       # --- Supabase local stack ---
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v2
+        uses: ./.github/actions/setup-supabase-cli-with-retry
         with:
-          version: latest
+          github-token: ${{ github.token }}
 
       - name: Get Supabase CLI version
         id: supabase-version

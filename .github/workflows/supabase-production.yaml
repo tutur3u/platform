@@ -154,9 +154,10 @@ jobs:
         with:
           ref: ${{ needs.evaluate-prerequisites.outputs.target_sha }}
 
-      - uses: supabase/setup-cli@v2
+      - name: Setup Supabase CLI
+        uses: ./.github/actions/setup-supabase-cli-with-retry
         with:
-          version: latest
+          github-token: ${{ github.token }}
 
       - name: Deploy migrations to production
         run: |

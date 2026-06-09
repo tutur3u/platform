@@ -1,0 +1,60 @@
+name: Setup Supabase CLI with retry
+description: Install the Supabase CLI with GitHub-tokened release lookup and bounded exponential backoff.
+inputs:
+  version:
+    description: Supabase CLI version to install. Leave empty to use the version pinned by the repo lockfile.
+    required: false
+    default: ""
+  github-token:
+    description: GitHub token used by supabase/setup-cli to avoid anonymous release API limits.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup Supabase CLI (attempt 1)
+      id: setup-1
+      uses: supabase/setup-cli@v2
+      continue-on-error: true
+      with:
+        version: ${{ inputs.version }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Back off before Supabase CLI setup retry 2
+      if: steps.setup-1.outcome == 'failure'
+      shell: bash
+      run: sleep 5
+
+    - name: Setup Supabase CLI (attempt 2)
+      id: setup-2
+      if: steps.setup-1.outcome == 'failure'
+      uses: supabase/setup-cli@v2
+      continue-on-error: true
+      with:
+        version: ${{ inputs.version }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Back off before Supabase CLI setup retry 3
+      if: steps.setup-1.outcome == 'failure' && steps.setup-2.outcome == 'failure'
+      shell: bash
+      run: sleep 10
+
+    - name: Setup Supabase CLI (attempt 3)
+      id: setup-3
+      if: steps.setup-1.outcome == 'failure' && steps.setup-2.outcome == 'failure'
+      uses: supabase/setup-cli@v2
+      continue-on-error: true
+      with:
+        version: ${{ inputs.version }}
+        github-token: ${{ inputs.github-token }}
+
+    - name: Back off before Supabase CLI setup retry 4
+      if: steps.setup-1.outcome == 'failure' && steps.setup-2.outcome == 'failure' && steps.setup-3.outcome == 'failure'
+      shell: bash
+      run: sleep 20
+
+    - name: Setup Supabase CLI (attempt 4)
+      if: steps.setup-1.outcome == 'failure' && steps.setup-2.outcome == 'failure' && steps.setup-3.outcome == 'failure'
+      uses: supabase/setup-cli@v2
+      with:
+        version: ${{ inputs.version }}
+        github-token: ${{ inputs.github-token }}

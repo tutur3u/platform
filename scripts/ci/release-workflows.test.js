@@ -201,7 +201,11 @@ test('Codecov workflow runs workspace package tests with coverage', () => {
   );
   const testJob = readWorkflowJobBlock('codecov.yaml', 'test');
 
-  assert.match(testJob, /run: bun turbo:local run test -- --coverage/u);
+  assert.match(
+    testJob,
+    /run: bash scripts\/ci\/run-with-backoff\.sh bun turbo:local run test -- --coverage/u
+  );
+  assert.match(testJob, /CI_RETRY_MAX_ATTEMPTS: "2"/u);
   assert.doesNotMatch(workflow, /run: bun vitest run --coverage/u);
 });
 

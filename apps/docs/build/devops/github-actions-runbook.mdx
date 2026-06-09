@@ -134,6 +134,13 @@ These workflows:
 These cover staging schema promotion, production schema promotion, and generated
 type verification.
 
+Database workflows that install the Supabase CLI use
+`.github/actions/setup-supabase-cli-with-retry` after checkout. The local action
+passes `github.token` through to `supabase/setup-cli@v2`, leaves `version` empty
+so the repo-pinned Supabase CLI version is used instead of the anonymous
+`latest` release lookup, and retries failed setup attempts with bounded
+exponential backoff.
+
 ### Docker automation
 
 - `docker-setup-check.yaml`
@@ -159,10 +166,12 @@ binary build, and Docker image build.
 The test workflows (`turbo-unit-tests.yaml` and `codecov.yaml`) run `bun setup`
 through `scripts/ci/run-with-backoff.sh` before executing tests so dependency
 installation and workspace package builds match the local setup path while
-surviving transient tarball extraction failures. Vercel workflows should invoke
-Turborepo through `bun turbo:local ...` after the retried `bun install` so CI
-uses the pinned repo dependency instead of resolving a global or downloaded
-Turbo binary.
+surviving transient tarball extraction failures. The Codecov coverage test run
+also uses the helper with a two-attempt cap so transient runner interruptions
+such as exit code `130` retry once without masking deterministic test failures.
+Vercel workflows should invoke Turborepo through `bun turbo:local ...` after the
+retried `bun install` so CI uses the pinned repo dependency instead of resolving
+a global or downloaded Turbo binary.
 
 Vercel deploy credentials must stay environment-scoped. Do not put
 `${{ secrets.* }}` values in a Vercel workflow-level `env:` block, and do not

@@ -57,9 +57,10 @@ jobs:
       STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
     steps:
       - uses: actions/checkout@v6
-      - uses: supabase/setup-cli@v2
+      - name: Setup Supabase CLI
+        uses: ./.github/actions/setup-supabase-cli-with-retry
         with:
-          version: latest
+          github-token: ${{ github.token }}
 
       - name: Deploy migrations to staging
         run: |

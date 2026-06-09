@@ -33,7 +33,11 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun setup
 
       - name: Run tests
-        run: bun turbo:local run test -- --coverage
+        env:
+          CI_RETRY_MAX_ATTEMPTS: "2"
+          CI_RETRY_INITIAL_DELAY_SECONDS: "15"
+          CI_RETRY_MAX_DELAY_SECONDS: "15"
+        run: bash scripts/ci/run-with-backoff.sh bun turbo:local run test -- --coverage
 
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v7

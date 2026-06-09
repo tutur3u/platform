@@ -298,6 +298,61 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   assert.match(retryScript, /delay=\$\(\(delay \* 2\)\)/);
 });
 
+test('Supabase CLI workflows use tokenized retry setup', () => {
+  const workflowsDir = path.join(repoRoot, '.github', 'workflows');
+  const workflowFiles = fs
+    .readdirSync(workflowsDir)
+    .filter((fileName) => fileName.endsWith('.yaml'));
+  const setupAction = fs.readFileSync(
+    path.join(
+      repoRoot,
+      '.github',
+      'actions',
+      'setup-supabase-cli-with-retry',
+      'action.yml'
+    ),
+    'utf8'
+  );
+
+  for (const workflowFile of workflowFiles) {
+    const workflow = fs.readFileSync(
+      path.join(workflowsDir, workflowFile),
+      'utf8'
+    );
+
+    assert.doesNotMatch(
+      workflow,
+      /uses: supabase\/setup-cli@v2/,
+      `${workflowFile} must use the local Supabase CLI setup retry action`
+    );
+
+    if (workflow.includes('./.github/actions/setup-supabase-cli-with-retry')) {
+      assert.ok(
+        workflow.indexOf('actions/checkout') <
+          workflow.indexOf('./.github/actions/setup-supabase-cli-with-retry'),
+        `${workflowFile} must checkout the repo before using the local Supabase CLI setup action`
+      );
+      assert.match(
+        workflow,
+        /github-token: \$\{\{ github\.token \}\}/,
+        `${workflowFile} must pass github.token to avoid anonymous Supabase CLI release API limits`
+      );
+      assert.doesNotMatch(
+        workflow,
+        /version: latest/,
+        `${workflowFile} must not resolve the Supabase CLI through the unauthenticated latest-release path`
+      );
+    }
+  }
+
+  assert.match(setupAction, /uses: supabase\/setup-cli@v2/);
+  assert.match(setupAction, /github-token: \$\{\{ inputs\.github-token \}\}/);
+  assert.match(setupAction, /continue-on-error: true/);
+  assert.match(setupAction, /run: sleep 5/);
+  assert.match(setupAction, /run: sleep 10/);
+  assert.match(setupAction, /run: sleep 20/);
+});
+
 test('ci configuration gate runs TypeScript scripts with Node strip-types', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'ci-check.yml'),

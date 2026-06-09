@@ -52,6 +52,12 @@ formatting behavior, or repo-wide verification.
   directly. The local action downloads the pinned Bun release with bounded
   exponential backoff so GitHub release 5xx failures do not immediately fail
   deploys.
+- Workflows that need the Supabase CLI should use
+  `.github/actions/setup-supabase-cli-with-retry` instead of
+  `supabase/setup-cli@v2` directly. Pass `github.token`, leave `version` empty
+  so the repo-pinned Supabase CLI version is used, and keep the action's
+  bounded backoff so GitHub release API rate limits or transient setup failures
+  do not immediately fail E2E, type verification, or migration workflows.
 - Release Please is the monorepo source of truth for version/changelog PRs.
   Keep `release-please-config.json`, `.release-please-manifest.json`,
   `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when
@@ -71,6 +77,11 @@ formatting behavior, or repo-wide verification.
   exponential backoff and clears `bun pm cache rm` between Bun-command attempts
   before changing dependencies when the failure is a tarball extraction or
   cache issue.
+- Coverage workflows may also route long `bun turbo:local run test -- --coverage`
+  commands through `scripts/ci/run-with-backoff.sh` when logs show a transient
+  runner interruption such as exit code `130`. Keep the retry cap low, normally
+  two attempts, so deterministic test failures are not obscured by repeated
+  full-suite runs.
 - Package release workflows are npm-only for now. Do not add JSR or GitHub
   Packages publish jobs, and do not wire `jsr.json` version files into Release
   Please while those registries are paused.
