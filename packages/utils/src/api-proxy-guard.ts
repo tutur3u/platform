@@ -72,6 +72,14 @@ const limiterCache = new Map<string, Limiters>();
 const localLimiterState = new Map<string, LocalRateLimitState>();
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
   /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
+const UUID_PATH_SEGMENT =
+  '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}';
+const FINANCE_INVOICE_CREATE_SUPPORT_READ_PATH_PATTERN = new RegExp(
+  `^/api/v1/workspaces/[^/]+/(?:finance/invoices(?:/subscription/context)?|inventory/products|promotions|settings/(?:configs|[^/]+)|user-groups(?:/linked-products|/${UUID_PATH_SEGMENT}/linked-products)|users(?:/${UUID_PATH_SEGMENT}(?:/(?:linked-promotions|referral-discounts|user-groups))?)?|wallets)/?$`,
+  'u'
+);
+const FINANCE_INVOICE_TRANSACTION_CATEGORIES_PATH_PATTERN =
+  /^\/api\/workspaces\/[^/]+\/transactions\/categories\/?$/u;
 
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
@@ -226,6 +234,45 @@ const TASK_BOARD_READ_RATE_LIMITS: RateLimitProfile = {
   mutate: DEFAULT_MUTATE_RATE_LIMITS,
 };
 
+const FINANCE_INVOICE_CREATE_READ_RATE_LIMITS: RateLimitProfile = {
+  get: [
+    createConfig(
+      'minute',
+      '1 m',
+      600,
+      'API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_MINUTE'
+    ),
+    createConfig(
+      'hour',
+      '1 h',
+      6000,
+      'API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_HOUR'
+    ),
+    createConfig(
+      'day',
+      '1 d',
+      40_000,
+      'API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_DAY'
+    ),
+  ],
+  mutate: DEFAULT_MUTATE_RATE_LIMITS,
+};
+
+function isFinanceInvoiceCreateSupportRead(req: NextRequest) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return false;
+  }
+
+  return (
+    FINANCE_INVOICE_CREATE_SUPPORT_READ_PATH_PATTERN.test(
+      req.nextUrl.pathname
+    ) ||
+    FINANCE_INVOICE_TRANSACTION_CATEGORIES_PATH_PATTERN.test(
+      req.nextUrl.pathname
+    )
+  );
+}
+
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
   {
     key: 'cron',
@@ -289,6 +336,11 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
           req.nextUrl.pathname
         )),
     rateLimits: TASK_BOARD_READ_RATE_LIMITS,
+  },
+  {
+    key: 'finance-invoice-create-read',
+    matches: isFinanceInvoiceCreateSupportRead,
+    rateLimits: FINANCE_INVOICE_CREATE_READ_RATE_LIMITS,
   },
   {
     key: 'high-fanout',

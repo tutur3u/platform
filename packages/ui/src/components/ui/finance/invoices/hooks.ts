@@ -173,6 +173,16 @@ const INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION_CONFIG_ID =
   'INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION';
 const INVOICE_USE_ATTENDANCE_BASED_CALCULATION_CONFIG_ID =
   'INVOICE_USE_ATTENDANCE_BASED_CALCULATION';
+const INVOICE_STATIC_QUERY_STALE_TIME = 5 * 60 * 1000;
+const INVOICE_STATIC_QUERY_GC_TIME = 10 * 60 * 1000;
+
+type InvoiceQueryOptions = {
+  enabled?: boolean;
+};
+
+function isInvoiceQueryEnabled(options?: InvoiceQueryOptions) {
+  return options?.enabled !== false;
+}
 
 // ==================== INVOICES DATA FETCHING ====================
 
@@ -376,34 +386,50 @@ export const useUsersWithSelectableGroups = (wsId: string) => {
   });
 };
 
-export const useProducts = (wsId: string) => {
+export const useProducts = (wsId: string, options?: InvoiceQueryOptions) => {
   return useQuery({
     queryKey: ['products', wsId],
     queryFn: () => listInvoiceProductsWithInternalApi(wsId),
+    enabled: !!wsId && isInvoiceQueryEnabled(options),
+    staleTime: INVOICE_STATIC_QUERY_STALE_TIME,
+    gcTime: INVOICE_STATIC_QUERY_GC_TIME,
+    refetchOnWindowFocus: false,
   });
 };
 
-export const usePromotions = (wsId: string) => {
+export const usePromotions = (wsId: string, options?: InvoiceQueryOptions) => {
   return useQuery({
     queryKey: ['promotions', wsId],
     queryFn: async () => {
       const data = await listPromotionsWithInternalApi(wsId);
       return data.filter((promotion) => promotion.promo_type !== 'REFERRAL');
     },
+    enabled: !!wsId && isInvoiceQueryEnabled(options),
+    staleTime: INVOICE_STATIC_QUERY_STALE_TIME,
+    gcTime: INVOICE_STATIC_QUERY_GC_TIME,
+    refetchOnWindowFocus: false,
   });
 };
 
-export const useWallets = (wsId: string) => {
+export const useWallets = (wsId: string, options?: InvoiceQueryOptions) => {
   return useQuery({
     queryKey: ['wallets', wsId],
     queryFn: () => listWallets(wsId),
+    enabled: !!wsId && isInvoiceQueryEnabled(options),
+    staleTime: INVOICE_STATIC_QUERY_STALE_TIME,
+    gcTime: INVOICE_STATIC_QUERY_GC_TIME,
+    refetchOnWindowFocus: false,
   });
 };
 
-export const useCategories = (wsId: string) => {
+export const useCategories = (wsId: string, options?: InvoiceQueryOptions) => {
   return useQuery({
     queryKey: ['categories', wsId],
     queryFn: () => listTransactionCategories(wsId),
+    enabled: !!wsId && isInvoiceQueryEnabled(options),
+    staleTime: INVOICE_STATIC_QUERY_STALE_TIME,
+    gcTime: INVOICE_STATIC_QUERY_GC_TIME,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -511,7 +537,10 @@ export const useSubscriptionInvoiceContext = (
 
 // Get workspace config for attendance-based invoice calculation
 // Returns true if attendance-based calculation should be used (default), false if all sessions should be included
-export const useInvoiceAttendanceConfig = (wsId: string) => {
+export const useInvoiceAttendanceConfig = (
+  wsId: string,
+  options?: InvoiceQueryOptions
+) => {
   return useQuery({
     queryKey: ['invoice-attendance-config', wsId],
     queryFn: async () => {
@@ -533,7 +562,7 @@ export const useInvoiceAttendanceConfig = (wsId: string) => {
         return true;
       }
     },
-    enabled: !!wsId,
+    enabled: !!wsId && isInvoiceQueryEnabled(options),
     staleTime: 5 * 60 * 1000, // 5 minutes - config doesn't change often
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -543,7 +572,10 @@ export const useInvoiceAttendanceConfig = (wsId: string) => {
 
 // Get workspace config for allowing promotions for standard invoices
 // Returns true if promotions are allowed for standard invoices (default), false otherwise
-export const useInvoicePromotionConfig = (wsId: string) => {
+export const useInvoicePromotionConfig = (
+  wsId: string,
+  options?: InvoiceQueryOptions
+) => {
   return useQuery({
     queryKey: ['invoice-promotion-config', wsId],
     queryFn: async () => {
@@ -565,7 +597,7 @@ export const useInvoicePromotionConfig = (wsId: string) => {
         return true;
       }
     },
-    enabled: !!wsId,
+    enabled: !!wsId && isInvoiceQueryEnabled(options),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -575,7 +607,10 @@ export const useInvoicePromotionConfig = (wsId: string) => {
 
 // Get workspace config for blocked groups from creating invoices
 // Returns array of blocked group IDs
-export const useInvoiceBlockedGroups = (wsId: string) => {
+export const useInvoiceBlockedGroups = (
+  wsId: string,
+  options?: InvoiceQueryOptions
+) => {
   return useQuery({
     queryKey: ['invoice-blocked-groups', wsId],
     queryFn: async () => {
@@ -592,7 +627,7 @@ export const useInvoiceBlockedGroups = (wsId: string) => {
         return [];
       }
     },
-    enabled: !!wsId,
+    enabled: !!wsId && isInvoiceQueryEnabled(options),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -601,11 +636,15 @@ export const useInvoiceBlockedGroups = (wsId: string) => {
 };
 
 // Get User's Group Products with improved caching
-export const useUserGroupProducts = (wsId: string, groupId: string) => {
+export const useUserGroupProducts = (
+  wsId: string,
+  groupId: string,
+  options?: InvoiceQueryOptions
+) => {
   return useQuery({
     queryKey: ['user-group-products', wsId, groupId],
     queryFn: () => listUserGroupProductsWithInternalApi(wsId, groupId),
-    enabled: !!wsId && !!groupId,
+    enabled: !!wsId && !!groupId && isInvoiceQueryEnabled(options),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -614,14 +653,18 @@ export const useUserGroupProducts = (wsId: string, groupId: string) => {
 };
 
 // Get multiple groups' linked products combined (for multi-group selection)
-export const useMultiGroupProducts = (wsId: string, groupIds: string[]) => {
+export const useMultiGroupProducts = (
+  wsId: string,
+  groupIds: string[],
+  options?: InvoiceQueryOptions
+) => {
   return useQuery({
     queryKey: ['multi-group-products', wsId, groupIds],
     queryFn: async () => {
       if (groupIds.length === 0) return [];
       return listMultiGroupProductsWithInternalApi(wsId, groupIds);
     },
-    enabled: !!wsId && groupIds.length > 0,
+    enabled: !!wsId && groupIds.length > 0 && isInvoiceQueryEnabled(options),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -630,11 +673,15 @@ export const useMultiGroupProducts = (wsId: string, groupIds: string[]) => {
 };
 
 // Get User's Linked Promotion
-export const useUserLinkedPromotions = (wsId: string, userId: string) => {
+export const useUserLinkedPromotions = (
+  wsId: string,
+  userId: string,
+  options?: InvoiceQueryOptions
+) => {
   return useQuery({
     queryKey: ['user-linked-promotions', wsId, userId],
     queryFn: () => listUserLinkedPromotionsWithInternalApi(wsId, userId),
-    enabled: !!wsId && !!userId,
+    enabled: !!wsId && !!userId && isInvoiceQueryEnabled(options),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -643,7 +690,11 @@ export const useUserLinkedPromotions = (wsId: string, userId: string) => {
 };
 
 // Per-user referral discounts (percent) from view
-export const useUserReferralDiscounts = (wsId: string, userId: string) => {
+export const useUserReferralDiscounts = (
+  wsId: string,
+  userId: string,
+  options?: InvoiceQueryOptions
+) => {
   return useQuery({
     queryKey: ['user-referral-discounts', wsId, userId],
     queryFn: async () => {
@@ -658,7 +709,7 @@ export const useUserReferralDiscounts = (wsId: string, userId: string) => {
         })) || []
       );
     },
-    enabled: !!wsId && !!userId,
+    enabled: !!wsId && !!userId && isInvoiceQueryEnabled(options),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
@@ -678,7 +729,11 @@ export type AvailablePromotion = {
   current_uses?: number | null;
 };
 
-export const useAvailablePromotions = (wsId: string, userId: string) => {
+export const useAvailablePromotions = (
+  wsId: string,
+  userId: string,
+  options?: InvoiceQueryOptions
+) => {
   return useQuery({
     queryKey: ['available-promotions', wsId, userId],
     queryFn: async () => {
@@ -743,7 +798,7 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
 
       return Array.from(resultMap.values()) as AvailablePromotion[];
     },
-    enabled: !!wsId && !!userId,
+    enabled: !!wsId && !!userId && isInvoiceQueryEnabled(options),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,

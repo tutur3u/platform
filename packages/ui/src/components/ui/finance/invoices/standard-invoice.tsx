@@ -91,6 +91,10 @@ export function StandardInvoice({
   const [selectedUserId, setSelectedUserId] = useQueryState('user_id', {
     defaultValue: '',
   });
+  const [selectedProducts, setSelectedProducts] = useState<
+    SelectedProductItem[]
+  >([]);
+  const hasSelectedProducts = selectedProducts.length > 0;
 
   // Data queries
   const {
@@ -107,24 +111,38 @@ export function StandardInvoice({
     data: products = [],
     error: productsError,
     isLoading: productsLoading,
-  } = useProducts(wsId);
-  const { data: availablePromotions = [], isLoading: promotionsLoading } =
-    useAvailablePromotions(wsId, selectedUserId);
-  const { data: promotionsAllowed = true } = useInvoicePromotionConfig(wsId);
+  } = useProducts(wsId, { enabled: canReadInvoiceProducts });
+  const { data: availablePromotions = [] } = useAvailablePromotions(
+    wsId,
+    selectedUserId,
+    {
+      enabled: hasSelectedProducts,
+    }
+  );
+  const { data: promotionsAllowed = true } = useInvoicePromotionConfig(wsId, {
+    enabled: !!selectedUserId && hasSelectedProducts,
+  });
   const { data: linkedPromotions = [] } = useUserLinkedPromotions(
     wsId,
-    selectedUserId
+    selectedUserId,
+    { enabled: hasSelectedProducts }
   );
   const { data: referralDiscountRows = [] } = useUserReferralDiscounts(
     wsId,
-    selectedUserId
+    selectedUserId,
+    { enabled: hasSelectedProducts }
   );
-  const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
-  const { data: categories = [], isLoading: categoriesLoading } =
-    useCategories(wsId);
+  const { data: wallets = [] } = useWallets(wsId, {
+    enabled: hasSelectedProducts,
+  });
+  const { data: categories = [] } = useCategories(wsId, {
+    enabled: hasSelectedProducts,
+  });
 
   // Blocked groups check
-  const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId);
+  const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId, {
+    enabled: !!selectedUserId,
+  });
   const { data: userGroups = [], isLoading: userGroupsLoading } = useUserGroups(
     wsId,
     selectedUserId
@@ -146,9 +164,6 @@ export function StandardInvoice({
   }, [selectedUserId, blockedGroupIds, userGroups]);
 
   // State management
-  const [selectedProducts, setSelectedProducts] = useState<
-    SelectedProductItem[]
-  >([]);
   const [selectedWalletId, setSelectedWalletId] = useState<string>(
     defaultWalletId || ''
   );
@@ -190,13 +205,7 @@ export function StandardInvoice({
           (promotion: AvailablePromotion) =>
             promotion.id === selectedPromotionId
         );
-  const isLoadingData =
-    usersLoading ||
-    productsLoading ||
-    promotionsLoading ||
-    walletsLoading ||
-    categoriesLoading ||
-    userGroupsLoading;
+  const isLoadingData = usersLoading || productsLoading || userGroupsLoading;
 
   const invoiceProductMissingPermissions = useMemo(() => {
     const missingPermissions = new Set<string>();

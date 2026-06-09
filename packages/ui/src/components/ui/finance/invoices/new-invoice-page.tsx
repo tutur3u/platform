@@ -16,13 +16,19 @@ import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
 import { useLocalStorage } from '../../../../hooks/use-local-storage';
-import { useWorkspaceConfig } from '../../../../hooks/use-workspace-config';
+import { useWorkspaceConfigs } from '../../../../hooks/use-workspace-config';
 import {
   type FinancePermissionRequestUser,
   FinancePermissionWarningDialog,
 } from '../shared/finance-permission-warning-dialog';
 import { StandardInvoice } from './standard-invoice';
 import { SubscriptionInvoice } from './subscription-invoice';
+
+const INVOICE_DEFAULT_CONFIG_IDS = [
+  'default_wallet_id',
+  'DEFAULT_SUBSCRIPTION_CATEGORY_ID',
+  'DEFAULT_CURRENCY',
+] as const;
 
 interface Props {
   wsId: string;
@@ -61,21 +67,15 @@ export default function NewInvoicePage({
     },
   });
 
-  const { data: defaultWalletId } = useWorkspaceConfig<string>(
+  const { data: defaultConfigs = {} } = useWorkspaceConfigs(
     wsId,
-    'default_wallet_id'
+    INVOICE_DEFAULT_CONFIG_IDS
   );
-
-  const { data: defaultCategoryId } = useWorkspaceConfig<string>(
-    wsId,
-    'DEFAULT_SUBSCRIPTION_CATEGORY_ID'
-  );
-
-  const { data: defaultCurrency } = useWorkspaceConfig<'VND' | 'USD'>(
-    wsId,
-    'DEFAULT_CURRENCY',
-    'USD'
-  );
+  const defaultWalletId = defaultConfigs.default_wallet_id ?? undefined;
+  const defaultCategoryId =
+    defaultConfigs.DEFAULT_SUBSCRIPTION_CATEGORY_ID ?? undefined;
+  const defaultCurrency =
+    defaultConfigs.DEFAULT_CURRENCY === 'VND' ? 'VND' : 'USD';
 
   const [
     createMultipleInvoices,
@@ -222,37 +222,41 @@ export default function NewInvoicePage({
         </div>
 
         <TabsContent value="standard" className="mt-4">
-          <StandardInvoice
-            wsId={wsId}
-            defaultWalletId={defaultWalletId ?? undefined}
-            defaultCurrency={defaultCurrency ?? undefined}
-            canChangeFinanceWallets={canChangeFinanceWallets}
-            canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
-            canReadInvoiceProducts={canReadInvoiceProducts}
-            canReadInvoiceProductStock={canReadInvoiceProductStock}
-            createMultipleInvoices={createMultipleInvoices}
-            printAfterCreate={printAfterCreate}
-            downloadImageAfterCreate={downloadImageAfterCreate}
-            permissionRequestUser={permissionRequestUser}
-          />
+          {invoiceType === 'standard' ? (
+            <StandardInvoice
+              wsId={wsId}
+              defaultWalletId={defaultWalletId}
+              defaultCurrency={defaultCurrency}
+              canChangeFinanceWallets={canChangeFinanceWallets}
+              canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
+              canReadInvoiceProducts={canReadInvoiceProducts}
+              canReadInvoiceProductStock={canReadInvoiceProductStock}
+              createMultipleInvoices={createMultipleInvoices}
+              printAfterCreate={printAfterCreate}
+              downloadImageAfterCreate={downloadImageAfterCreate}
+              permissionRequestUser={permissionRequestUser}
+            />
+          ) : null}
         </TabsContent>
         <TabsContent value="subscription" className="mt-4">
-          <SubscriptionInvoice
-            wsId={wsId}
-            prefillAmount={prefillAmount}
-            defaultWalletId={defaultWalletId ?? undefined}
-            defaultCategoryId={defaultCategoryId ?? undefined}
-            defaultCurrency={defaultCurrency ?? undefined}
-            canChangeFinanceWallets={canChangeFinanceWallets}
-            canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
-            canReadInvoiceProducts={canReadInvoiceProducts}
-            canReadInvoiceProductStock={canReadInvoiceProductStock}
-            canReadGroupLinkedProducts={canReadGroupLinkedProducts}
-            createMultipleInvoices={createMultipleInvoices}
-            printAfterCreate={printAfterCreate}
-            downloadImageAfterCreate={downloadImageAfterCreate}
-            permissionRequestUser={permissionRequestUser}
-          />
+          {invoiceType === 'subscription' ? (
+            <SubscriptionInvoice
+              wsId={wsId}
+              prefillAmount={prefillAmount}
+              defaultWalletId={defaultWalletId}
+              defaultCategoryId={defaultCategoryId}
+              defaultCurrency={defaultCurrency}
+              canChangeFinanceWallets={canChangeFinanceWallets}
+              canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
+              canReadInvoiceProducts={canReadInvoiceProducts}
+              canReadInvoiceProductStock={canReadInvoiceProductStock}
+              canReadGroupLinkedProducts={canReadGroupLinkedProducts}
+              createMultipleInvoices={createMultipleInvoices}
+              printAfterCreate={printAfterCreate}
+              downloadImageAfterCreate={downloadImageAfterCreate}
+              permissionRequestUser={permissionRequestUser}
+            />
+          ) : null}
         </TabsContent>
       </Tabs>
     </>

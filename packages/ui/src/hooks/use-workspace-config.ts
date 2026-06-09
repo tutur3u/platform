@@ -28,7 +28,10 @@ export const useWorkspaceConfig = <T>(
   });
 };
 
-export const useWorkspaceConfigs = (wsId: string, configIds: string[]) => {
+export const useWorkspaceConfigs = (
+  wsId: string,
+  configIds: readonly string[]
+) => {
   return useQuery({
     queryKey: ['workspace-configs', wsId, configIds],
     queryFn: async () => {
@@ -43,7 +46,8 @@ export const useWorkspaceConfigs = (wsId: string, configIds: string[]) => {
       return data ?? {};
     },
     enabled: !!wsId && configIds.length > 0,
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
     placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
   });
 };
