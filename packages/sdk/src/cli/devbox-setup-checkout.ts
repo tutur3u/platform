@@ -120,8 +120,9 @@ export function canPromptDevboxSetup(options: {
   env?: Record<string, string | undefined>;
   json?: boolean;
 }) {
-  if (options.json || options.env?.CI === 'true') return false;
+  if (options.json) return false;
   if (options.confirm) return true;
+  if (options.env?.CI === 'true') return false;
   return Boolean(process.stdin.isTTY && process.stderr.isTTY);
 }
 
