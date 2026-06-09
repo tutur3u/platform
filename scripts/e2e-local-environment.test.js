@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 
 const {
@@ -22,6 +23,48 @@ const {
   toComposeFragmentEnvFilePath,
   toRootRelativePath,
 } = require('./e2e-local-environment.js');
+
+function readSupabaseConfigApiPort() {
+  const configPath = path.join(
+    __dirname,
+    '..',
+    'apps',
+    'database',
+    'supabase',
+    'config.toml'
+  );
+  const config = fs.readFileSync(configPath, 'utf8');
+  const match = config.match(/^\[api\][\s\S]*?^port\s*=\s*(\d+)\s*$/m);
+
+  assert.ok(match, 'Supabase config must declare [api].port');
+
+  return match[1];
+}
+
+function readE2EWorkflowSupabaseUrl() {
+  const workflowPath = path.join(
+    __dirname,
+    '..',
+    '.github',
+    'workflows',
+    'e2e-tests.yaml'
+  );
+  const workflow = fs.readFileSync(workflowPath, 'utf8');
+  const match = workflow.match(/^\s*NEXT_PUBLIC_SUPABASE_URL:\s*(\S+)\s*$/m);
+
+  assert.ok(match, 'E2E workflow must declare NEXT_PUBLIC_SUPABASE_URL');
+
+  return match[1];
+}
+
+test('local Supabase URLs match the Supabase API port contract', () => {
+  const supabaseApiPort = readSupabaseConfigApiPort();
+  const workflowSupabaseUrl = readE2EWorkflowSupabaseUrl();
+
+  assert.equal(new URL(LOCAL_E2E_SUPABASE_URL).port, supabaseApiPort);
+  assert.equal(new URL(LOCAL_E2E_DOCKER_SUPABASE_URL).port, supabaseApiPort);
+  assert.equal(workflowSupabaseUrl, LOCAL_E2E_SUPABASE_URL);
+});
 
 test('assertSafeE2EEnvironment accepts only local web and Supabase origins', () => {
   assert.deepEqual(
