@@ -79,7 +79,12 @@ formatting behavior, or repo-wide verification.
   `node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/<name>`
   so release-please package bumps wait for publishable workspace dependencies
   to be visible on npm. The wait must inspect the dependency package workflow
-  run for the same SHA and fail immediately if that workflow already failed.
+  run for the same SHA across push and workflow dispatch runs. If no matching
+  run exists yet, it must dispatch the dependency workflow once with
+  `workflow_dispatch`, then keep polling npm. If the related workflow already
+  failed or dispatch is denied, fail immediately instead of burning the full
+  npm polling timeout. The prepare job therefore needs `actions: write`, while
+  `id-token: write` remains isolated to the final publish job.
   Then run
   `node scripts/ci/prepare-npm-package-manifest.js packages/<name>` so packed
   artifacts contain concrete npm-compatible versions instead of `workspace:`

@@ -1,6 +1,6 @@
 {
   "name": "tuturuuu",
-  "version": "0.2.18",
+  "version": "0.2.19",
   "description": "Codex operating guidance, CMS studio workflows, satellite app UX, native E2E auth debugging, scoped commits, CLI support, validation, CI, and focused workflows for the Tuturuuu platform monorepo.",
   "author": {
     "name": "Tuturuuu",
@@ -15,7 +15,7 @@
   "interface": {
     "displayName": "Tuturuuu",
     "shortDescription": "Keep Tuturuuu platform work aligned with repo conventions.",
-    "longDescription": "Provides Codex skills for safe Tuturuuu platform development, including repo-wide workflow rules, CMS and branded content studio guidance, standalone satellite app UX, native-machine local E2E auth debugging, apps/web release badge metadata and version bump guidance, dedicated shared-worktree agent coordination with archived context support and completed-note archiving, scoped Conventional Commit follow-through, native ttr CLI install and SDK-backed workflows, focused ttr task workflows, finance CRUD, finance read diagnostics, pagination commands, wrapped finance response normalization, ttr-first task capture, Flutter mobile task-board guidance, Supabase database patterns, CI/docs maintenance, review-comment follow-through, plugin validation, and incremental tooling improvements.",
+    "longDescription": "Provides Codex skills for safe Tuturuuu platform development, including repo-wide workflow rules, CMS and branded content studio guidance, standalone satellite app UX, native-machine local E2E auth debugging, apps/web release badge metadata and version bump guidance, dedicated shared-worktree agent coordination with archived context support and completed-note archiving, scoped Conventional Commit follow-through, native ttr CLI install and SDK-backed workflows, focused ttr task workflows, finance CRUD, finance read diagnostics, pagination commands, wrapped finance response normalization, ttr-first task capture, Flutter mobile task-board guidance, Supabase database patterns, CI/docs maintenance, package release auto-recovery, review-comment follow-through, plugin validation, and incremental tooling improvements.",
     "developerName": "Tuturuuu",
     "category": "Productivity",
     "capabilities": [
@@ -42,6 +42,7 @@
       "Mobile task-board support",
       "Database change guidance",
       "CI and docs validation",
+      "Package release auto-recovery",
       "Review comment resolution",
       "Development tooling improvement"
     ],

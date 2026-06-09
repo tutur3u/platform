@@ -213,7 +213,6 @@ function buildWorkflowRunsUrl({ env = process.env, workflowName }) {
     ''
   );
   const params = new URLSearchParams({
-    event: env.GITHUB_EVENT_NAME || 'push',
     per_page: '20',
   });
 
@@ -222,6 +221,29 @@ function buildWorkflowRunsUrl({ env = process.env, workflowName }) {
   }
 
   return `${apiUrl}/repos/${env.GITHUB_REPOSITORY}/actions/workflows/${encodeURIComponent(workflowName)}/runs?${params}`;
+}
+
+function getWorkflowDispatchRef(env = process.env) {
+  if (env.GITHUB_REF_NAME) return env.GITHUB_REF_NAME;
+
+  const ref = env.GITHUB_REF;
+
+  if (ref?.startsWith('refs/heads/')) {
+    return ref.slice('refs/heads/'.length);
+  }
+
+  return null;
+}
+
+function buildWorkflowDispatchUrl({ env = process.env, workflowName }) {
+  if (!env.GITHUB_REPOSITORY || !workflowName) return null;
+
+  const apiUrl = (env.GITHUB_API_URL || DEFAULT_GITHUB_API_URL).replace(
+    /\/$/u,
+    ''
+  );
+
+  return `${apiUrl}/repos/${env.GITHUB_REPOSITORY}/actions/workflows/${encodeURIComponent(workflowName)}/dispatches`;
 }
 
 async function getRelatedWorkflowRunStatus({
@@ -264,7 +286,7 @@ async function getRelatedWorkflowRunStatus({
       )[0];
 
     if (!workflowRun) {
-      return { state: 'unknown' };
+      return { state: 'missing' };
     }
 
     if (workflowRun.status === 'completed') {
@@ -297,6 +319,59 @@ async function getRelatedWorkflowRunStatus({
   }
 }
 
+async function dispatchRelatedWorkflow({
+  env = process.env,
+  fetchImpl = globalThis.fetch,
+  logger = console,
+  workflowName,
+}) {
+  const url = buildWorkflowDispatchUrl({ env, workflowName });
+  const token = getGitHubToken(env);
+  const ref = getWorkflowDispatchRef(env);
+
+  if (!url || !token || !ref || typeof fetchImpl !== 'function') {
+    throw new Error(
+      `Unable to dispatch ${workflowName}: missing GitHub repository, token, ref, or fetch implementation.`
+    );
+  }
+
+  const response = await fetchImpl(url, {
+    body: JSON.stringify({
+      ref,
+    }),
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'tuturuuu-package-release-readiness',
+    },
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    let body = '';
+
+    try {
+      body = await response.text();
+    } catch {
+      body = '';
+    }
+
+    throw new Error(
+      `Unable to dispatch ${workflowName} on ${ref}: ` +
+        `${response.status} ${response.statusText}${body ? ` ${body}` : ''}. ` +
+        'Ensure the workflow has workflow_dispatch enabled and this job has actions: write permission.'
+    );
+  }
+
+  logger.log(`Dispatched ${workflowName} on ${ref}.`);
+
+  return {
+    ref,
+    state: 'dispatched',
+  };
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -311,9 +386,17 @@ async function waitForPackageVersion({
   packageVersion,
   relatedWorkflow,
   registry = DEFAULT_REGISTRY,
+  dispatchWorkflow = dispatchRelatedWorkflow,
   versionExists = packageVersionExists,
 }) {
+  let recoveryDispatchStarted = false;
+
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    if (versionExists({ packageName, packageVersion, registry })) {
+      logger.log(`${packageName}@${packageVersion} is visible on npm.`);
+      return true;
+    }
+
     if (relatedWorkflow?.workflowName) {
       const workflowStatus = await getRelatedWorkflowStatus({
         env,
@@ -328,11 +411,15 @@ async function waitForPackageVersion({
             `Run: ${workflowStatus.url ?? '(unavailable)'}`
         );
       }
-    }
 
-    if (versionExists({ packageName, packageVersion, registry })) {
-      logger.log(`${packageName}@${packageVersion} is visible on npm.`);
-      return true;
+      if (workflowStatus.state === 'missing' && !recoveryDispatchStarted) {
+        await dispatchWorkflow({
+          env,
+          logger,
+          workflowName: relatedWorkflow.workflowName,
+        });
+        recoveryDispatchStarted = true;
+      }
     }
 
     if (attempt < attempts) {
@@ -635,6 +722,8 @@ module.exports = {
   DEFAULT_WAIT_DELAY_MS,
   FAILED_WORKFLOW_CONCLUSIONS,
   buildWorkflowRunsUrl,
+  buildWorkflowDispatchUrl,
+  dispatchRelatedWorkflow,
   getBeforeRefFromEventPayload,
   getChangedFiles,
   getChangedFilesFromEventPayload,

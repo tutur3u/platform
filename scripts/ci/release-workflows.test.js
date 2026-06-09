@@ -964,7 +964,7 @@ test('package publish workflows release from production version bumps', () => {
       /if: github\.ref == 'refs\/heads\/production' && needs\.check-version-bump\.outputs\.should_release == 'true'/
     );
     assert.match(prepareJob, /if: github\.ref == 'refs\/heads\/production'/);
-    assert.match(prepareJob, /actions:\s*read/);
+    assert.match(prepareJob, /actions:\s*write/);
     assert.match(prepareJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
     assert.match(
       prepareJob,

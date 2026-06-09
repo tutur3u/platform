@@ -74,7 +74,7 @@ jobs:
       package_version: ${{ steps.version-check.outputs.package_version }}
       should_publish: ${{ steps.version-check.outputs.should_publish }}
     permissions:
-      actions: read
+      actions: write
       contents: read
     steps:
       - uses: actions/checkout@v6

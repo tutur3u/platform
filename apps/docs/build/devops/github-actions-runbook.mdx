@@ -247,8 +247,11 @@ workflows must first run
 `node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/<name>`
 so publishable Tuturuuu dependencies are visible on npm before the dependent
 tarball is packed. That wait also inspects the dependency package workflow run
-for the same production SHA and fails immediately when that related workflow has
-already failed instead of burning the full npm polling timeout. It must then
+for the same production SHA across push and workflow-dispatch recovery runs. If
+the dependency workflow is missing for that SHA, the wait dispatches it once and
+continues polling npm. If that related workflow has already failed or dispatch
+is denied, the wait fails immediately instead of burning the full npm polling
+timeout. It must then
 rewrite the checked-out manifest immediately
 before `npm pack` with
 `node scripts/ci/prepare-npm-package-manifest.js packages/<name>`. That
