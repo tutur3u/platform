@@ -55,6 +55,17 @@ const {
   waitForComposeServiceHealthy,
 } = require('./docker-web/compose.js');
 const {
+  DEFAULT_SUPABASE_RESET_RETRY_INITIAL_DELAY_MS,
+  DEFAULT_SUPABASE_RESET_RETRY_MAX_ATTEMPTS,
+  DEFAULT_SUPABASE_RESET_RETRY_MAX_DELAY_MS,
+  getErrorText,
+  getPositiveIntegerEnv,
+  isTransientSupabaseResetError,
+  runSupabaseResetWithRetry,
+  sleep,
+  stopSupabaseBestEffort,
+} = require('./docker-web/supabase-reset.js');
+const {
   DOCKER_BACKEND_INTERNAL_URL,
   DOCKER_HOST_ALIAS,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
@@ -762,6 +773,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   const envFilePath = options.envFilePath ?? parsed.envFilePath;
   const processImpl = options.processImpl ?? process;
   const now = options.now ?? (() => Date.now());
+  const sleepImpl = options.sleep ?? sleep;
   ensureCloudflaredProfileFromEnv(parsed, env);
   const withRedis = hasComposeProfile(parsed.composeGlobalArgs, 'redis');
   const withCloudflared = hasComposeProfile(
@@ -915,10 +927,11 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     }
 
     if (parsed.resetSupabase) {
-      await runChecked('bun', ['sb:reset'], {
+      await runSupabaseResetWithRetry({
         env,
         fsImpl,
         runCommand: run,
+        sleep: sleepImpl,
       });
     }
   } catch (error) {
@@ -1153,6 +1166,9 @@ module.exports = {
   CLOUDFLARED_SERVICE,
   COMPOSE_FILE,
   DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
+  DEFAULT_SUPABASE_RESET_RETRY_INITIAL_DELAY_MS,
+  DEFAULT_SUPABASE_RESET_RETRY_MAX_ATTEMPTS,
+  DEFAULT_SUPABASE_RESET_RETRY_MAX_DELAY_MS,
   DOCKER_HOST_ALIAS,
   DOCKER_BACKEND_INTERNAL_URL,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
@@ -1191,11 +1207,14 @@ module.exports = {
   getContainerHealthStatus,
   getDockerSupermemoryRuntime,
   getChangedFilesBetweenCommits,
+  getErrorText,
   getInPlaceProdServices,
   getLatestSuccessfulDeploymentCommitHash,
   getNextBlueGreenColor,
+  getPositiveIntegerEnv,
   hasComposeProfile,
   hasComposeServiceContainer,
+  isTransientSupabaseResetError,
   isComposeServiceHealthy,
   isBlueGreenColor,
   main,
@@ -1212,6 +1231,9 @@ module.exports = {
   runDockerWebWorkflow,
   runComposeUpWithNameConflictRecovery,
   runChecked,
+  runSupabaseResetWithRetry,
+  sleep,
+  stopSupabaseBestEffort,
   stripUnquotedInlineComment,
   testBlueGreenProxyRouting,
   testBlueGreenHiveProxyRouting,

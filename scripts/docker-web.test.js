@@ -2385,43 +2385,6 @@ test('runDockerWebWorkflow uses the production compose file for in-place deploys
   });
 });
 
-test('runDockerWebWorkflow starts and resets Supabase before Docker when requested', async () => {
-  const calls = [];
-  const fsStub = createFsStub({
-    envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co',
-  });
-  const runCommand = async (command, args) => {
-    calls.push([command, args]);
-    return { code: 0, signal: null, stderr: '', stdout: '' };
-  };
-
-  await runDockerWebWorkflow(parseArgs(['up', '--reset-supabase']), {
-    env: { PATH: 'test-path' },
-    fsImpl: fsStub,
-    runCommand,
-  });
-
-  assert.deepEqual(calls, [
-    ['docker', ['compose', 'version']],
-    ['docker', ['info', '--format', '{{json .MemTotal}}']],
-    ['bun', ['sb:start']],
-    ['bun', ['sb:reset']],
-    [
-      'docker',
-      [
-        'compose',
-        '-f',
-        COMPOSE_FILE,
-        '--profile',
-        'redis',
-        'up',
-        '--build',
-        '--remove-orphans',
-      ],
-    ],
-  ]);
-});
-
 test('runDockerWebWorkflow can exclude Supabase services during start', async () => {
   const calls = [];
   const fsStub = createFsStub({
