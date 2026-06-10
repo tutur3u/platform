@@ -20,6 +20,7 @@ export default async function ChatWorkspacePage({
       <ChatWorkspace
         currentUserId={user.id}
         defaultConversationScope={getDefaultChatConversationScope(workspace)}
+        enableRootIntegrations
         showSidebar={false}
         variant="standalone"
         wsId={workspace.id}

@@ -235,6 +235,13 @@ export function getChatConversationSections({
       },
       {
         conversations: conversations.filter(
+          (conversation) => conversation.type === 'channel'
+        ),
+        label: labels.channel,
+        sectionType: 'channel' as const,
+      },
+      {
+        conversations: conversations.filter(
           (conversation) => conversation.type === 'ai'
         ),
         label: labels.ai,

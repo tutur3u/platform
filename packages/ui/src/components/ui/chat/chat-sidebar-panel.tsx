@@ -1,5 +1,5 @@
 import type { ChatConversation } from '@tuturuuu/internal-api';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ChatSidebar } from './chat-sidebar';
 import { CreateConversationDialog } from './create-conversation-dialog';
@@ -8,6 +8,7 @@ import {
   useChatMessageSearch,
   useInfiniteChatConversations,
 } from './hooks';
+import { type ChatDetailsTarget, replaceChatSelection } from './selection';
 import {
   CHAT_CONVERSATION_TYPE_FILTERS,
   type ChatConversationArchiveFilter,
@@ -26,6 +27,7 @@ interface ChatSidebarPanelProps {
   createOpen?: boolean;
   currentUserId: string;
   defaultConversationScope?: ChatConversationScope;
+  enableRootIntegrations?: boolean;
   isCollapsed: boolean;
   onCreateOpenChange?: (open: boolean) => void;
   onSearchChange?: (value: string) => void;
@@ -40,6 +42,7 @@ export function ChatSidebarPanel({
   createOpen: controlledCreateOpen,
   currentUserId,
   defaultConversationScope = 'personal',
+  enableRootIntegrations,
   isCollapsed,
   onCreateOpenChange,
   onSearchChange,
@@ -48,6 +51,7 @@ export function ChatSidebarPanel({
   wsId,
 }: ChatSidebarPanelProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [internalSearchValue, setInternalSearchValue] = useState('');
   const [internalCreateOpen, setInternalCreateOpen] = useState(false);
@@ -101,6 +105,11 @@ export function ChatSidebarPanel({
     wsId,
     conversationScope
   );
+  const requestedConversationPending = Boolean(
+    requestedConversationId &&
+      !scopedConversationIdList.includes(requestedConversationId) &&
+      conversationsQuery.isFetching
+  );
   const selectedConversationId = resolveChatConversationSelection({
     conversationIds: scopedConversationIdList,
     requestedConversationId,
@@ -116,37 +125,41 @@ export function ChatSidebarPanel({
   useEffect(() => {
     if (!selectedConversationId) return;
     if (!storedSelectionLoaded && !requestedConversationId) return;
+    if (requestedConversationPending) return;
 
     localStorage.setItem(selectionStorageKey, selectedConversationId);
     if (requestedConversationId === selectedConversationId) return;
 
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set('conversationId', selectedConversationId);
-    const nextQuery = nextParams.toString();
-    window.history.replaceState(
-      null,
-      '',
-      nextQuery ? `${pathname}?${nextQuery}` : pathname
-    );
+    replaceChatSelection({
+      conversationId: selectedConversationId,
+      pathname,
+      router,
+      searchParams,
+      storageKey: selectionStorageKey,
+    });
   }, [
     pathname,
     requestedConversationId,
+    router,
     searchParams,
     selectedConversationId,
     selectionStorageKey,
     storedSelectionLoaded,
+    requestedConversationPending,
   ]);
 
-  function selectConversation(conversationId: string) {
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set('conversationId', conversationId);
-    const nextQuery = nextParams.toString();
-    window.history.replaceState(
-      null,
-      '',
-      nextQuery ? `${pathname}?${nextQuery}` : pathname
-    );
-    localStorage.setItem(selectionStorageKey, conversationId);
+  function selectConversation(
+    conversationId: string,
+    details: ChatDetailsTarget = null
+  ) {
+    replaceChatSelection({
+      conversationId,
+      details,
+      pathname,
+      router,
+      searchParams,
+      storageKey: selectionStorageKey,
+    });
     closeOnMobile?.();
   }
 
@@ -183,7 +196,11 @@ export function ChatSidebarPanel({
         conversationScope={conversationScope}
         defaultType={getChatConversationTypesForScope(conversationScope)[0]}
         currentUserId={currentUserId}
+        enableRootIntegrations={enableRootIntegrations}
         onCreated={handleCreated}
+        onIntegrationCreated={(conversationId) =>
+          selectConversation(conversationId, 'agent')
+        }
         onOpenChange={setCreateOpen}
         open={createOpen}
         wsId={wsId}

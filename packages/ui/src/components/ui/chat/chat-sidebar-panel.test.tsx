@@ -1,11 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ChatConversation } from '@tuturuuu/internal-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatSidebarPanel } from './chat-sidebar-panel';
 
 const mocks = vi.hoisted(() => ({
   chatSidebarProps: null as Record<string, unknown> | null,
+  createDialogProps: null as Record<string, unknown> | null,
   fetchNextPage: vi.fn(),
+  routerReplace: vi.fn(),
   useChatMessageSearch: vi.fn(),
   useInfiniteChatConversations: vi.fn(),
 }));
@@ -16,6 +18,9 @@ vi.mock('next-intl', () => ({
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/personal',
+  useRouter: () => ({
+    replace: mocks.routerReplace,
+  }),
   useSearchParams: () => new URLSearchParams('scope=personal'),
 }));
 
@@ -36,7 +41,10 @@ vi.mock('./chat-sidebar', () => ({
 }));
 
 vi.mock('./create-conversation-dialog', () => ({
-  CreateConversationDialog: () => null,
+  CreateConversationDialog: (props: Record<string, unknown>) => {
+    mocks.createDialogProps = props;
+    return null;
+  },
 }));
 
 vi.mock('./hooks', () => ({
@@ -71,6 +79,8 @@ describe('ChatSidebarPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.chatSidebarProps = null;
+    mocks.createDialogProps = null;
+    window.localStorage.clear();
     mocks.useChatMessageSearch.mockReturnValue({ data: [] });
     mocks.useInfiniteChatConversations.mockReturnValue({
       data: {
@@ -106,5 +116,49 @@ describe('ChatSidebarPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'load more' }));
 
     expect(mocks.fetchNextPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('updates Next router state when auto-selecting the first conversation', async () => {
+    render(
+      <ChatSidebarPanel
+        currentUserId="user-1"
+        isCollapsed={false}
+        wsId="personal"
+      />
+    );
+
+    await waitFor(() => {
+      expect(mocks.routerReplace).toHaveBeenCalledWith(
+        '/personal?scope=personal&conversationId=conversation-1',
+        { scroll: false }
+      );
+    });
+  });
+
+  it('opens agent details when an integration returns a virtual conversation', async () => {
+    render(
+      <ChatSidebarPanel
+        currentUserId="user-1"
+        enableRootIntegrations
+        isCollapsed={false}
+        wsId="personal"
+      />
+    );
+
+    await waitFor(() => {
+      expect(mocks.createDialogProps).toBeTruthy();
+    });
+    mocks.routerReplace.mockClear();
+
+    (
+      mocks.createDialogProps?.onIntegrationCreated as
+        | ((conversationId: string) => void)
+        | undefined
+    )?.('ai-agent-chat-integrations-chat-zalo-personal');
+
+    expect(mocks.routerReplace).toHaveBeenCalledWith(
+      '/personal?scope=personal&conversationId=ai-agent-chat-integrations-chat-zalo-personal&details=agent',
+      { scroll: false }
+    );
   });
 });

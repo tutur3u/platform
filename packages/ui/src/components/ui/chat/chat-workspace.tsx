@@ -8,7 +8,7 @@ import type {
   ChatMessage,
 } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '../badge';
@@ -40,6 +40,7 @@ import {
 } from './hooks';
 import { MessageComposer } from './message-composer';
 import { MessageList } from './message-list';
+import { type ChatDetailsTarget, replaceChatSelection } from './selection';
 import {
   CHAT_CONVERSATION_TYPE_FILTERS,
   type ChatConversationArchiveFilter,
@@ -57,6 +58,7 @@ interface ChatWorkspaceProps {
   className?: string;
   defaultConversationScope?: ChatConversationScope;
   currentUserId: string;
+  enableRootIntegrations?: boolean;
   showSidebar?: boolean;
   variant?: 'standalone' | 'web';
   wsId: string;
@@ -66,12 +68,14 @@ export function ChatWorkspace({
   className,
   defaultConversationScope,
   currentUserId,
+  enableRootIntegrations,
   showSidebar = true,
   variant = 'web',
   wsId,
 }: ChatWorkspaceProps) {
   const t = useTranslations('chat');
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
@@ -119,20 +123,34 @@ export function ChatWorkspace({
   const selectionStorageKey = conversationScope
     ? getChatSelectionStorageKey(wsId, conversationScope)
     : null;
+  const requestedConversationPending = Boolean(
+    requestedConversationId &&
+      !conversationIds.has(requestedConversationId) &&
+      conversationsQuery.isFetching
+  );
   const selectedConversationId = resolveChatConversationSelection({
     conversationIds: conversationIdList,
     requestedConversationId,
     storedConversationId,
   });
-  const selectedConversation = useMemo(
-    () =>
-      (selectedConversationId && conversationIds.has(selectedConversationId)
-        ? conversations.find((item) => item.id === selectedConversationId)
-        : null) ??
-      conversations[0] ??
-      null,
-    [conversationIds, conversations, selectedConversationId]
-  );
+  const selectedConversation = useMemo(() => {
+    if (requestedConversationPending) return null;
+
+    if (selectedConversationId && conversationIds.has(selectedConversationId)) {
+      return (
+        conversations.find((item) => item.id === selectedConversationId) ??
+        conversations[0] ??
+        null
+      );
+    }
+
+    return conversations[0] ?? null;
+  }, [
+    conversationIds,
+    conversations,
+    requestedConversationPending,
+    selectedConversationId,
+  ]);
   const activeConversationId = selectedConversation?.id ?? null;
   const activeNativeConversationId = isPostgresUuid(activeConversationId)
     ? activeConversationId
@@ -208,7 +226,12 @@ export function ChatWorkspace({
   const latestPersistedMessageId = isPostgresUuid(latestMessageId)
     ? latestMessageId
     : null;
-  const detailsOpen = Boolean(sharedContentOpen && activeConversationId);
+  const requestedDetails = searchParams.get('details');
+  const agentDetailsOpen =
+    requestedDetails === 'agent' && selectedAgentReadOnly;
+  const detailsOpen = Boolean(
+    (sharedContentOpen || agentDetailsOpen) && activeConversationId
+  );
 
   useChatRealtime(wsId);
 
@@ -227,6 +250,7 @@ export function ChatWorkspace({
   useEffect(() => {
     if (!activeConversationId) return;
     if (!storedSelectionLoaded && !requestedConversationId) return;
+    if (requestedConversationPending) return;
 
     if (selectionStorageKey) {
       localStorage.setItem(selectionStorageKey, activeConversationId);
@@ -234,21 +258,22 @@ export function ChatWorkspace({
 
     if (requestedConversationId === activeConversationId) return;
 
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set('conversationId', activeConversationId);
-    const nextQuery = nextParams.toString();
-    window.history.replaceState(
-      null,
-      '',
-      nextQuery ? `${pathname}?${nextQuery}` : pathname
-    );
+    replaceChatSelection({
+      conversationId: activeConversationId,
+      pathname,
+      router,
+      searchParams,
+      storageKey: selectionStorageKey,
+    });
   }, [
     activeConversationId,
     pathname,
     requestedConversationId,
+    router,
     searchParams,
     selectionStorageKey,
     storedSelectionLoaded,
+    requestedConversationPending,
   ]);
 
   useEffect(() => {
@@ -310,18 +335,19 @@ export function ChatWorkspace({
     }
   }
 
-  function selectConversation(conversationId: string) {
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set('conversationId', conversationId);
-    const nextQuery = nextParams.toString();
-    window.history.replaceState(
-      null,
-      '',
-      nextQuery ? `${pathname}?${nextQuery}` : pathname
-    );
-    if (selectionStorageKey) {
-      localStorage.setItem(selectionStorageKey, conversationId);
-    }
+  function selectConversation(
+    conversationId: string,
+    details: ChatDetailsTarget = null
+  ) {
+    replaceChatSelection({
+      conversationId,
+      details,
+      pathname,
+      router,
+      searchParams,
+      storageKey: selectionStorageKey,
+    });
+    setSharedContentOpen(details === 'agent');
   }
 
   function handleCreated(conversation: ChatConversation) {
@@ -358,14 +384,13 @@ export function ChatWorkspace({
     try {
       await deleteConversation.mutateAsync(conversationId);
       if (clearSelection) {
-        const nextParams = new URLSearchParams(searchParams.toString());
-        nextParams.delete('conversationId');
-        const nextQuery = nextParams.toString();
-        window.history.replaceState(
-          null,
-          '',
-          nextQuery ? `${pathname}?${nextQuery}` : pathname
-        );
+        replaceChatSelection({
+          conversationId: null,
+          pathname,
+          router,
+          searchParams,
+          storageKey: selectionStorageKey,
+        });
       }
       toast.success(t('conversation_archived'));
     } catch {
@@ -480,11 +505,23 @@ export function ChatWorkspace({
           isUpdatingConversation={updateConversation.isPending}
           onDeleteConversation={handleDeleteConversation}
           onGenerateConversationTitle={handleGenerateConversationTitle}
-          onToggleSharedContent={() =>
-            setSharedContentOpen((current) => !current)
-          }
+          onToggleSharedContent={() => {
+            if (requestedDetails) {
+              replaceChatSelection({
+                conversationId: activeConversationId,
+                pathname,
+                router,
+                searchParams,
+                storageKey: selectionStorageKey,
+              });
+              setSharedContentOpen(false);
+              return;
+            }
+
+            setSharedContentOpen((current) => !current);
+          }}
           onUpdateConversation={handleUpdateConversation}
-          sharedContentOpen={sharedContentOpen}
+          sharedContentOpen={detailsOpen}
           title={selectedTitle}
         />
 
@@ -565,7 +602,11 @@ export function ChatWorkspace({
             : undefined
         }
         currentUserId={currentUserId}
+        enableRootIntegrations={enableRootIntegrations}
         onCreated={handleCreated}
+        onIntegrationCreated={(conversationId) =>
+          selectConversation(conversationId, 'agent')
+        }
         onOpenChange={setCreateOpen}
         open={createOpen}
         wsId={wsId}
