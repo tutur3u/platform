@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/utils-v0.4.0...utils-v0.5.0) (2026-06-10)
+
+
+### Features
+
+* **devbox:** add runner service repair command ([c4ea7a1](https://github.com/tutur3u/platform/commit/c4ea7a13d5d9f3b07f98cb7de3c5612f599690fb))
+* **inventory:** add storefront checkout app ([8a9f9b4](https://github.com/tutur3u/platform/commit/8a9f9b4bbe576af34a4db0956308b5b51fa1f099))
+
+
+### Bug Fixes
+
+* **chat:** harden production auth handoff ([8d2ba61](https://github.com/tutur3u/platform/commit/8d2ba61d817bb98f8b4b5880ea8ac802006e4a51))
+* **devbox:** export runner token in service wrapper ([c0f0cb9](https://github.com/tutur3u/platform/commit/c0f0cb9184eaacef1e37ab540d330d6f7b4f6c62))
+* **web:** expose finance transfer migration route ([2aa8732](https://github.com/tutur3u/platform/commit/2aa8732b0ca1018c10f36bd81a63fa05da1b6971))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/utils-v0.3.1...utils-v0.4.0) (2026-06-10)
 
 

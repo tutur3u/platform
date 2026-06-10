@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/sdk-v0.7.0...sdk-v0.8.0) (2026-06-10)
+
+
+### Features
+
+* **devbox:** add runner service repair command ([c4ea7a1](https://github.com/tutur3u/platform/commit/c4ea7a13d5d9f3b07f98cb7de3c5612f599690fb))
+
+
+### Bug Fixes
+
+* **devbox:** export runner token in service wrapper ([c0f0cb9](https://github.com/tutur3u/platform/commit/c0f0cb9184eaacef1e37ab540d330d6f7b4f6c62))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/sdk-v0.6.1...sdk-v0.7.0) (2026-06-10)
 
 

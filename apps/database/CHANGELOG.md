@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.0](https://github.com/tutur3u/platform/compare/database-v1.3.0...database-v1.4.0) (2026-06-10)
+
+
+### Features
+
+* **inventory:** add storefront checkout app ([8a9f9b4](https://github.com/tutur3u/platform/commit/8a9f9b4bbe576af34a4db0956308b5b51fa1f099))
+* **mobile:** add deployment vault CI flow ([b1d21eb](https://github.com/tutur3u/platform/commit/b1d21eb1e30d74b412e4687b095004c21cf03dd1))
+* **web:** store multi-account sessions server-side ([2359f35](https://github.com/tutur3u/platform/commit/2359f35a849488f5b6c4070b87dbff8de2d8c9c4))
+
 ## [1.3.0](https://github.com/tutur3u/platform/compare/database-v1.2.1...database-v1.3.0) (2026-06-10)
 
 

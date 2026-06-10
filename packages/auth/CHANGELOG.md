@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/tutur3u/platform/compare/auth-v0.2.0...auth-v0.2.1) (2026-06-10)
+
+
+### Bug Fixes
+
+* **chat:** harden production auth handoff ([8d2ba61](https://github.com/tutur3u/platform/commit/8d2ba61d817bb98f8b4b5880ea8ac802006e4a51))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/auth-v0.1.1...auth-v0.2.0) (2026-06-08)
 
 

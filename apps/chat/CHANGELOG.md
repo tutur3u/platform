@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/chat-v0.2.2...chat-v0.3.0) (2026-06-10)
+
+
+### Features
+
+* **chat:** add personal channels and root integrations ([fb5e753](https://github.com/tutur3u/platform/commit/fb5e7534588c7015449313fc4a752b70732f227e))
+* **chat:** add Zalo QR personal sync ([f86e710](https://github.com/tutur3u/platform/commit/f86e710a39a790c44ba35c5a43f785dc1f66e27e))
+* **chat:** merge personal channels and root integrations ([22d50ce](https://github.com/tutur3u/platform/commit/22d50ce0d75e36e0beaa973ef59cbd296e22dc35))
+
+
+### Bug Fixes
+
+* **chat:** harden production auth handoff ([8d2ba61](https://github.com/tutur3u/platform/commit/8d2ba61d817bb98f8b4b5880ea8ac802006e4a51))
+
 ## [0.2.2](https://github.com/tutur3u/platform/compare/chat-v0.2.1...chat-v0.2.2) (2026-06-08)
 
 

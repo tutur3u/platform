@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/tutur3u/platform/compare/ai-v0.1.0...ai-v0.2.0) (2026-06-10)
+
+
+### Features
+
+* **chat:** add Zalo QR personal sync ([f86e710](https://github.com/tutur3u/platform/commit/f86e710a39a790c44ba35c5a43f785dc1f66e27e))
+
 ## [0.1.0](https://github.com/tutur3u/platform/compare/ai-v0.0.12...ai-v0.1.0) (2026-06-08)
 
 

@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/platform-v0.5.0...platform-v0.6.0) (2026-06-10)
+
+
+### Features
+
+* **chat:** add personal channels and root integrations ([fb5e753](https://github.com/tutur3u/platform/commit/fb5e7534588c7015449313fc4a752b70732f227e))
+* **chat:** merge personal channels and root integrations ([22d50ce](https://github.com/tutur3u/platform/commit/22d50ce0d75e36e0beaa973ef59cbd296e22dc35))
+* **devbox:** add runner service repair command ([c4ea7a1](https://github.com/tutur3u/platform/commit/c4ea7a13d5d9f3b07f98cb7de3c5612f599690fb))
+* **infrastructure:** automate production promotion ([6b6a368](https://github.com/tutur3u/platform/commit/6b6a3685615c9aca9d957564cae46e9ea81e44a0))
+* **inventory:** add storefront checkout app ([8a9f9b4](https://github.com/tutur3u/platform/commit/8a9f9b4bbe576af34a4db0956308b5b51fa1f099))
+* **mobile:** add deployment vault CI flow ([b1d21eb](https://github.com/tutur3u/platform/commit/b1d21eb1e30d74b412e4687b095004c21cf03dd1))
+* **web:** store multi-account sessions server-side ([2359f35](https://github.com/tutur3u/platform/commit/2359f35a849488f5b6c4070b87dbff8de2d8c9c4))
+
+
+### Bug Fixes
+
+* **auth:** align web session cookies across supabase origins ([d939a05](https://github.com/tutur3u/platform/commit/d939a055e2ad240b5040ef4ec0aee49267e0bc0f))
+* **auth:** keep login usable during bootstrap ([d0306d4](https://github.com/tutur3u/platform/commit/d0306d455be47d0c964835fe6ef2069c35b4bcba))
+* **auth:** require external app workspace membership ([ddc0cbb](https://github.com/tutur3u/platform/commit/ddc0cbba9846903129526bf86c7132ea9a127fbe))
+* **chat:** harden production auth handoff ([8d2ba61](https://github.com/tutur3u/platform/commit/8d2ba61d817bb98f8b4b5880ea8ac802006e4a51))
+* **deploy:** email first watcher build failure ([65ac420](https://github.com/tutur3u/platform/commit/65ac42078122bd3e8e5e2f713e2facf8f23b78fa))
+* **devbox:** export runner token in service wrapper ([c0f0cb9](https://github.com/tutur3u/platform/commit/c0f0cb9184eaacef1e37ab540d330d6f7b4f6c62))
+* **docker:** copy storefront workspace manifest ([36b64da](https://github.com/tutur3u/platform/commit/36b64da16be15ab917d2af06947c5fc29bbcb0ab))
+* **mobile:** allow vault routes under cache components ([b1b287c](https://github.com/tutur3u/platform/commit/b1b287c244a0b75de0c8a748bec52b3a59c51a2c))
+* **tooling:** delegate release merge checks to hooks ([48bbfe8](https://github.com/tutur3u/platform/commit/48bbfe86dbc457a583d726e85f592c498b926451))
+* **web:** expose finance transfer migration route ([2aa8732](https://github.com/tutur3u/platform/commit/2aa8732b0ca1018c10f36bd81a63fa05da1b6971))
+* **web:** isolate login otp settings ([f8299aa](https://github.com/tutur3u/platform/commit/f8299aa5e8156910229a77540fb166eeb4a9d538))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/platform-v0.4.1...platform-v0.5.0) (2026-06-10)
 
 

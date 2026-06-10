@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/rewise-v0.17.0...rewise-v0.18.0) (2026-06-10)
+
+
+### Features
+
+* **chat:** add personal channels and root integrations ([fb5e753](https://github.com/tutur3u/platform/commit/fb5e7534588c7015449313fc4a752b70732f227e))
+* **chat:** add Zalo QR personal sync ([f86e710](https://github.com/tutur3u/platform/commit/f86e710a39a790c44ba35c5a43f785dc1f66e27e))
+* **chat:** merge personal channels and root integrations ([22d50ce](https://github.com/tutur3u/platform/commit/22d50ce0d75e36e0beaa973ef59cbd296e22dc35))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/rewise-v0.16.0...rewise-v0.17.0) (2026-06-08)
 
 

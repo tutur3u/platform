@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3](https://github.com/tutur3u/platform/compare/supabase-v0.3.2...supabase-v0.3.3) (2026-06-10)
+
+
+### Bug Fixes
+
+* **auth:** align web session cookies across supabase origins ([d939a05](https://github.com/tutur3u/platform/commit/d939a055e2ad240b5040ef4ec0aee49267e0bc0f))
+
 ## [0.3.2](https://github.com/tutur3u/platform/compare/supabase-v0.3.1...supabase-v0.3.2) (2026-06-10)
 
 
