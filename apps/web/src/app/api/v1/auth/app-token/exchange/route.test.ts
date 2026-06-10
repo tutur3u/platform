@@ -550,12 +550,36 @@ describe('app token exchange route', () => {
     expect(response.status).toBe(403);
   });
 
-  it('allows root EPM admins to exchange for linked workspace app tokens', async () => {
+  it('rejects root EPM admins without linked workspace membership', async () => {
     mockRegisteredApp(['external-projects:*']);
     mocks.createAdminClient.mockResolvedValue(
       createAdminClientMock({
         rootPermissions: ['manage_external_projects'],
         workspaceMember: false,
+        workspacePermissions: [],
+      })
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:*'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ error: 'Forbidden' });
+  });
+
+  it('allows root EPM admins who are also linked workspace members', async () => {
+    mockRegisteredApp(['external-projects:*']);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({
+        rootPermissions: ['manage_external_projects'],
+        workspaceMember: true,
         workspacePermissions: [],
       })
     );

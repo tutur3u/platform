@@ -191,8 +191,11 @@ CLI-only APIs.
    complete it with `fetch`.
 6. For external-project scopes, Tuturuuu validates that the workspace has an
    enabled external-project binding, that the binding's canonical adapter
-   matches the registered external app ID, and that the user has the required
-   EPM permission in that workspace. Root EPM admins remain an override.
+   matches the registered external app ID, that the user is a direct `MEMBER`
+   of the linked workspace, and that the user has the required EPM permission
+   in that workspace. Root EPM admins can manage app registrations and
+   bindings from the platform infrastructure UI, but they cannot enter or call a
+   linked external app unless they are also members of that linked workspace.
 7. If the user is not yet a workspace member but has a pending
    `workspace_invites` or `workspace_email_invites` row for the requested
    workspace, the exchange returns `403` with
@@ -209,7 +212,11 @@ never require production Supabase keys. Third-party or custom Supabase JWT paths
 are not used for registered internal apps; Tuturuuu JWTs stay at the gateway and
 internal API layer. External-project admin apps must store the returned
 authorized workspace ID in their encrypted local admin session and reject the
-session if it no longer matches the app's configured linked workspace.
+session if it no longer matches the app's configured linked workspace. They
+should also revalidate stored local sessions against a protected
+external-project API route before rendering admin UI or proxying admin API
+calls; if Tuturuuu returns `401`, `403`, or `404`, the app must clear its local
+session and send the user through the central login flow again.
 
 The centralized login page validates external and internal `returnUrl` targets
 before it renders the normal sign-in form or account-confirmation handoff. If the

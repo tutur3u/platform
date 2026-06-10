@@ -27,6 +27,7 @@ const {
   workspaceMocks: {
     getPermissions: vi.fn(),
     normalizeWorkspaceId: vi.fn(),
+    verifyWorkspaceMembershipType: vi.fn(),
   },
 }));
 
@@ -49,6 +50,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: workspaceMocks.getPermissions,
   normalizeWorkspaceId: workspaceMocks.normalizeWorkspaceId,
+  verifyWorkspaceMembershipType: workspaceMocks.verifyWorkspaceMembershipType,
 }));
 
 vi.mock('./store', () => storeMocks);
@@ -265,6 +267,10 @@ describe('external project access auth dispatch', () => {
     vi.clearAllMocks();
 
     workspaceMocks.normalizeWorkspaceId.mockResolvedValue(workspaceId);
+    workspaceMocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      membershipType: 'MEMBER',
+      ok: true,
+    });
     workspaceMocks.getPermissions.mockImplementation(
       async ({ wsId }: { wsId: string }) =>
         createPermissionsResult(
@@ -359,6 +365,143 @@ describe('external project access auth dispatch', () => {
     expect(
       appCoordinationMocks.verifyAppCoordinationToken
     ).toHaveBeenCalledWith('ttr_app_external');
+  });
+
+  it('rejects scoped external app-token auth for root admins without linked workspace membership', async () => {
+    const fixture = createAdminFixture({
+      adapter: 'yoola',
+      id: 'yoola-main',
+      is_active: true,
+    });
+    const request = createAccessRequest('ttr_app_external');
+
+    supabaseMocks.createAdminClient.mockResolvedValue(fixture.admin);
+    workspaceMocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: 'membership_missing',
+      ok: false,
+    });
+    workspaceMocks.getPermissions.mockImplementation(
+      async ({ wsId }: { wsId: string }) =>
+        createPermissionsResult(
+          wsId === ROOT_WORKSPACE_ID ? ['manage_external_projects'] : [],
+          wsId
+        )
+    );
+    appCoordinationMocks.getBearerAppCoordinationToken.mockReturnValue(
+      'ttr_app_external'
+    );
+    appSessionMocks.getAppSessionTokenFromRequest.mockReturnValue(
+      'ttr_app_external'
+    );
+    appSessionMocks.verifyAppSessionRequest.mockReturnValue({
+      error: 'App session missing required scope',
+      ok: false,
+    });
+    appCoordinationMocks.verifyAppCoordinationToken.mockReturnValue({
+      claims: externalAppTokenClaims,
+      ok: true,
+    });
+
+    const access = await requireWorkspaceExternalProjectAccess({
+      mode: 'read',
+      request,
+      wsId: workspaceId,
+    });
+
+    expect(access.ok).toBe(false);
+    if (!access.ok) {
+      expect(access.response.status).toBe(403);
+      await expect(access.response.json()).resolves.toEqual({
+        error: 'Forbidden',
+      });
+    }
+  });
+
+  it('allows root EPM admins with linked workspace membership through scoped external app-token auth', async () => {
+    const fixture = createAdminFixture({
+      adapter: 'yoola',
+      id: 'yoola-main',
+      is_active: true,
+    });
+    const request = createAccessRequest('ttr_app_external');
+
+    supabaseMocks.createAdminClient.mockResolvedValue(fixture.admin);
+    workspaceMocks.getPermissions.mockImplementation(
+      async ({ wsId }: { wsId: string }) =>
+        createPermissionsResult(
+          wsId === ROOT_WORKSPACE_ID ? ['manage_external_projects'] : [],
+          wsId
+        )
+    );
+    appCoordinationMocks.getBearerAppCoordinationToken.mockReturnValue(
+      'ttr_app_external'
+    );
+    appSessionMocks.getAppSessionTokenFromRequest.mockReturnValue(
+      'ttr_app_external'
+    );
+    appSessionMocks.verifyAppSessionRequest.mockReturnValue({
+      error: 'App session missing required scope',
+      ok: false,
+    });
+    appCoordinationMocks.verifyAppCoordinationToken.mockReturnValue({
+      claims: externalAppTokenClaims,
+      ok: true,
+    });
+
+    const access = await requireWorkspaceExternalProjectAccess({
+      mode: 'read',
+      request,
+      wsId: workspaceId,
+    });
+
+    expect(access.ok).toBe(true);
+    if (access.ok) {
+      expect(access.rootPermissions?.containsPermission).toHaveBeenCalledWith(
+        'manage_external_projects'
+      );
+    }
+  });
+
+  it('rejects stale CMS app-session auth after linked workspace membership is removed', async () => {
+    const fixture = createAdminFixture({
+      adapter: 'yoola',
+      id: 'yoola-main',
+      is_active: true,
+    });
+    const request = createAccessRequest('ttr_app_cms_session');
+
+    supabaseMocks.createAdminClient.mockResolvedValue(fixture.admin);
+    workspaceMocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: 'membership_missing',
+      ok: false,
+    });
+    appCoordinationMocks.getBearerAppCoordinationToken.mockReturnValue(
+      'ttr_app_cms_session'
+    );
+    appSessionMocks.getAppSessionTokenFromRequest.mockReturnValue(
+      'ttr_app_cms_session'
+    );
+    appSessionMocks.verifyAppSessionRequest.mockReturnValue({
+      claims: cmsAppSessionClaims,
+      ok: true,
+    });
+
+    const access = await requireWorkspaceExternalProjectAccess({
+      mode: 'read',
+      request,
+      wsId: workspaceId,
+    });
+
+    expect(access.ok).toBe(false);
+    if (!access.ok) {
+      expect(access.response.status).toBe(403);
+      await expect(access.response.json()).resolves.toEqual({
+        error: 'Forbidden',
+      });
+    }
+    expect(
+      appCoordinationMocks.verifyAppCoordinationToken
+    ).not.toHaveBeenCalled();
   });
 
   it('returns unauthorized for an invalid app session without falling through to Supabase auth', async () => {

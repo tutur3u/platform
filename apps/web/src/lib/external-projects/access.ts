@@ -28,6 +28,7 @@ import {
   getPermissions,
   normalizeWorkspaceId,
   type PermissionsResult,
+  verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
@@ -429,7 +430,7 @@ type ExternalProjectAppTokenExchangeAuthorization =
       code?: 'PENDING_WORKSPACE_INVITE';
       normalizedWorkspaceId?: string;
       ok: false;
-      status: 400 | 403 | 404;
+      status: 400 | 403 | 404 | 500;
     };
 
 function hasWorkspaceExternalProjectPermission(
@@ -564,6 +565,84 @@ export function getExternalProjectModeForScopes(
   return 'manage';
 }
 
+async function authorizeLinkedWorkspaceMember({
+  admin,
+  authEmail,
+  includeInviteStatus = false,
+  userId,
+  workspaceId,
+}: {
+  admin: AdminDb;
+  authEmail?: string | null;
+  includeInviteStatus?: boolean;
+  userId: string;
+  workspaceId: string;
+}): Promise<
+  | { ok: true }
+  | {
+      code?: 'PENDING_WORKSPACE_INVITE';
+      error: string;
+      normalizedWorkspaceId?: string;
+      ok: false;
+      status: 403 | 500;
+    }
+> {
+  const membership = await verifyWorkspaceMembershipType({
+    requiredType: 'MEMBER',
+    supabase: admin,
+    userId,
+    wsId: workspaceId,
+  });
+
+  if (membership.ok) {
+    return { ok: true };
+  }
+
+  if (membership.error === 'membership_lookup_failed') {
+    return {
+      error: 'Failed to verify workspace membership',
+      ok: false,
+      status: 500,
+    };
+  }
+
+  if (includeInviteStatus) {
+    const inviteStatus = await getWorkspaceInviteStatus(admin, {
+      authEmail: authEmail ?? null,
+      userId,
+      workspaceId,
+    });
+
+    if (inviteStatus.status === 'pending_invite') {
+      return {
+        code: 'PENDING_WORKSPACE_INVITE',
+        error: 'Pending workspace invitation',
+        normalizedWorkspaceId: workspaceId,
+        ok: false,
+        status: 403,
+      };
+    }
+  }
+
+  return {
+    error: 'Forbidden',
+    ok: false,
+    status: 403,
+  };
+}
+
+function createLinkedWorkspaceMemberErrorResponse(
+  authorization: Exclude<
+    Awaited<ReturnType<typeof authorizeLinkedWorkspaceMember>>,
+    { ok: true }
+  >
+) {
+  return NextResponse.json(
+    { error: authorization.error },
+    { status: authorization.status }
+  );
+}
+
 export async function authorizeExternalProjectAppTokenExchange({
   admin,
   appId,
@@ -634,6 +713,18 @@ export async function authorizeExternalProjectAppTokenExchange({
     };
   }
 
+  const memberAuthorization = await authorizeLinkedWorkspaceMember({
+    admin,
+    authEmail,
+    includeInviteStatus: true,
+    userId,
+    workspaceId: normalizedWorkspaceId,
+  });
+
+  if (!memberAuthorization.ok) {
+    return memberAuthorization;
+  }
+
   const [workspacePermissions, rootPermissions] = await Promise.all([
     getPermissionsForUserId({
       admin,
@@ -652,22 +743,6 @@ export async function authorizeExternalProjectAppTokenExchange({
     hasRootExternalProjectsAdminPermission(rootPermissions);
 
   if (!allowed) {
-    const inviteStatus = await getWorkspaceInviteStatus(admin, {
-      authEmail: authEmail ?? null,
-      userId,
-      workspaceId: normalizedWorkspaceId,
-    });
-
-    if (inviteStatus.status === 'pending_invite') {
-      return {
-        code: 'PENDING_WORKSPACE_INVITE',
-        error: 'Pending workspace invitation',
-        normalizedWorkspaceId,
-        ok: false,
-        status: 403,
-      };
-    }
-
     return {
       error: 'Forbidden',
       ok: false,
@@ -723,6 +798,19 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppToken({
     userId: verification.claims.sub,
     wsId,
   });
+  const memberAuthorization = await authorizeLinkedWorkspaceMember({
+    admin,
+    userId: verification.claims.sub,
+    workspaceId: normalizedWorkspaceId,
+  });
+
+  if (!memberAuthorization.ok) {
+    return {
+      ok: false as const,
+      response: createLinkedWorkspaceMemberErrorResponse(memberAuthorization),
+    };
+  }
+
   const [workspacePermissions, rootPermissions] = await Promise.all([
     getPermissionsForUserId({
       admin,
@@ -795,6 +883,19 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppSession({
     userId: verification.claims.sub,
     wsId,
   });
+  const memberAuthorization = await authorizeLinkedWorkspaceMember({
+    admin,
+    userId: verification.claims.sub,
+    workspaceId: normalizedWorkspaceId,
+  });
+
+  if (!memberAuthorization.ok) {
+    return {
+      ok: false as const,
+      response: createLinkedWorkspaceMemberErrorResponse(memberAuthorization),
+    };
+  }
+
   const [workspacePermissions, rootPermissions] = await Promise.all([
     getPermissionsForUserId({
       admin,
@@ -903,6 +1004,19 @@ async function requireWorkspaceExternalProjectAccessWithAppToken({
     };
   }
 
+  const memberAuthorization = await authorizeLinkedWorkspaceMember({
+    admin,
+    userId: verification.claims.sub,
+    workspaceId: normalizedWorkspaceId,
+  });
+
+  if (!memberAuthorization.ok) {
+    return {
+      ok: false as const,
+      response: createLinkedWorkspaceMemberErrorResponse(memberAuthorization),
+    };
+  }
+
   const allowed =
     hasWorkspaceExternalProjectPermission(workspacePermissions, mode) ||
     hasRootExternalProjectsAdminPermission(rootPermissions);
@@ -989,6 +1103,19 @@ async function requireWorkspaceExternalProjectAccessWithAppSession({
         { error: 'External project studio unavailable for this workspace' },
         { status: 404 }
       ),
+    };
+  }
+
+  const memberAuthorization = await authorizeLinkedWorkspaceMember({
+    admin,
+    userId: verification.claims.sub,
+    workspaceId: normalizedWorkspaceId,
+  });
+
+  if (!memberAuthorization.ok) {
+    return {
+      ok: false as const,
+      response: createLinkedWorkspaceMemberErrorResponse(memberAuthorization),
     };
   }
 
