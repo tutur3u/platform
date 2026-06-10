@@ -246,6 +246,17 @@ const checks = [
     parseOutput: () => 'Registered app auth surfaces use app sessions',
   },
   {
+    name: 'mobile-dependency-compat',
+    command: 'node',
+    args: ['scripts/check-mobile-dependencies.js'],
+    parseOutput: (stdout) => {
+      if (stdout.includes('Mobile dependency compatibility checks passed')) {
+        return 'Apple CI-compatible dependency locks';
+      }
+      return 'Passed';
+    },
+  },
+  {
     name: 'script-tests',
     command: 'bun',
     args: ['run', 'test:scripts'],

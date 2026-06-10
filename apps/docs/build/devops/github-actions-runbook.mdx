@@ -322,6 +322,12 @@ after Flutter setup. Keep the iOS CI path on CocoaPods while `image_cropper` and
 package ranges; otherwise Flutter 3.44+ can fail before the simulator build
 with an Xcode package dependency resolution error.
 
+Root `bun check` runs `scripts/check-mobile-dependencies.js` to catch mobile
+dependency versions known to fail Apple CI before the native build starts. Keep
+`connectivity_plus` pinned to `7.0.0` while the iOS/macOS build workflows use
+Xcode 16.4, because `7.1.1` references `NWPath.isUltraConstrained`, which is not
+available in that SDK.
+
 ## Fast Triage Checklist
 
 1. Check whether `ci-check.yml` disabled the workflow through `tuturuuu.ts`.

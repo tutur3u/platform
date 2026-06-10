@@ -13,7 +13,7 @@ dependencies:
   cached_network_image: ^3.4.1
   camera: ^0.12.0+1
   cloudflare_turnstile: ^3.6.2
-  connectivity_plus: ^7.1.1
+  connectivity_plus: 7.0.0
   crypto: ^3.0.7
   cupertino_icons: ^1.0.9
   dart_quill_delta: ^10.8.3

@@ -56,6 +56,17 @@ const colors = {
 // Check definitions — mirrors the CI's very_good_workflows pipeline
 const checks = [
   {
+    name: 'mobile-dependency-compat',
+    command: 'node',
+    args: ['scripts/check-mobile-dependencies.js'],
+    parseOutput: (stdout) => {
+      if (stdout.includes('Mobile dependency compatibility checks passed')) {
+        return 'Apple CI-compatible dependency locks';
+      }
+      return 'Passed';
+    },
+  },
+  {
     name: 'dart-format',
     command: TURBO_COMMAND,
     args: [...TURBO_ARGS, 'run', 'dart-format', '--filter=@tuturuuu/mobile'],

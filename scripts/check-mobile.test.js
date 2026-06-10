@@ -4,6 +4,12 @@ const { EventEmitter } = require('node:events');
 const path = require('node:path');
 
 const { checks, resolvePubCache, runCheck } = require('./check-mobile.js');
+const {
+  collectMobileDependencyCompatibilityIssues,
+  compareVersions,
+  getDirectDependencyConstraint,
+  getLockedPackageVersion,
+} = require('./check-mobile-dependencies.js');
 
 function createMockProc() {
   const proc = new EventEmitter();
@@ -102,8 +108,16 @@ test('runCheck prints buffered output when a check fails', async () => {
 });
 
 test('mobile checks invoke local turbo through bun', () => {
-  assert.equal(checks[0].command, 'bun');
-  assert.deepEqual(checks[0].args.slice(0, 1), ['turbo:local']);
+  const dartFormatCheck = checks.find((check) => check.name === 'dart-format');
+
+  assert.ok(dartFormatCheck);
+  assert.equal(dartFormatCheck.command, 'bun');
+  assert.deepEqual(dartFormatCheck.args.slice(0, 1), ['turbo:local']);
+});
+
+test('mobile checks include dependency compatibility before Flutter checks', () => {
+  assert.equal(checks[0].name, 'mobile-dependency-compat');
+  assert.deepEqual(checks[0].args, ['scripts/check-mobile-dependencies.js']);
 });
 
 test('resolvePubCache prefers explicit PUB_CACHE', () => {
@@ -134,4 +148,72 @@ test('resolvePubCache derives macOS fallback cache path', () => {
   );
 
   assert.equal(value, path.join('/Users/Test', '.pub-cache'));
+});
+
+test('mobile dependency compatibility parses pubspec constraints and lock versions', () => {
+  const pubspecText = [
+    'dependencies:',
+    '  connectivity_plus: 7.0.0',
+    '  flutter:',
+    '    sdk: flutter',
+    '',
+  ].join('\n');
+  const lockText = [
+    'packages:',
+    '  connectivity_plus:',
+    '    dependency: "direct main"',
+    '    description:',
+    '      name: connectivity_plus',
+    '      url: "https://pub.dev"',
+    '    source: hosted',
+    '    version: "7.0.0"',
+    '  other_package:',
+    '    version: "1.0.0"',
+    '',
+  ].join('\n');
+
+  assert.equal(
+    getDirectDependencyConstraint(pubspecText, 'connectivity_plus'),
+    '7.0.0'
+  );
+  assert.equal(getLockedPackageVersion(lockText, 'connectivity_plus'), '7.0.0');
+  assert.deepEqual(
+    collectMobileDependencyCompatibilityIssues({ lockText, pubspecText }),
+    []
+  );
+});
+
+test('mobile dependency compatibility rejects connectivity_plus Apple CI regression', () => {
+  const pubspecText = ['dependencies:', '  connectivity_plus: ^7.1.1', ''].join(
+    '\n'
+  );
+  const lockText = [
+    'packages:',
+    '  connectivity_plus:',
+    '    dependency: "direct main"',
+    '    description:',
+    '      name: connectivity_plus',
+    '    source: hosted',
+    '    version: "7.1.1"',
+    '',
+  ].join('\n');
+
+  const issues = collectMobileDependencyCompatibilityIssues({
+    lockText,
+    pubspecText,
+  });
+
+  assert.equal(issues.length, 2);
+  assert.ok(issues[0].includes('must pin connectivity_plus to 7.0.0'));
+  assert.ok(issues[1].includes('must resolve connectivity_plus 7.0.0'));
+  assert.ok(
+    issues.every((issue) => issue.includes('NWPath.isUltraConstrained'))
+  );
+});
+
+test('compareVersions orders semantic version strings numerically', () => {
+  assert.equal(compareVersions('7.1.1', '7.1.0'), 1);
+  assert.equal(compareVersions('7.0.0', '7.0.0'), 0);
+  assert.equal(compareVersions('7.0.0', '7.1.1'), -1);
+  assert.equal(compareVersions('7.10.0', '7.2.0'), 1);
 });
