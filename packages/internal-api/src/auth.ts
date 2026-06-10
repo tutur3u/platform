@@ -1,4 +1,8 @@
-import { getInternalApiClient, type InternalApiClientOptions } from './client';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+  type InternalApiClientOptions,
+} from './client';
 
 export type InternalOtpClient = 'mobile' | 'tulearn' | 'web';
 export type InternalOtpPlatform = 'android' | 'ios';
@@ -192,6 +196,48 @@ export interface ResolveCrossAppReturnUrlResponse {
   targetApp?: string;
 }
 
+export interface WebAccountMetadata {
+  addedAt: number | null;
+  avatarUrl: string | null;
+  displayName: string | null;
+  lastActiveAt: number | null;
+  lastRoute: string | null;
+  lastWorkspaceId: string | null;
+}
+
+export interface WebAccountSummary {
+  email: string | null;
+  id: string;
+  metadata: WebAccountMetadata;
+}
+
+export interface WebAccountsResponse {
+  accounts: WebAccountSummary[];
+  activeAccountId: string | null;
+}
+
+export interface WebAccountMutationResponse extends WebAccountsResponse {
+  accountId?: string;
+  error?: string;
+  redirectTo?: string;
+  success: boolean;
+}
+
+export interface SaveCurrentWebAccountPayload {
+  returnUrl?: string | null;
+  route?: string | null;
+}
+
+export interface SwitchWebAccountPayload {
+  currentRoute?: string | null;
+  targetRoute?: string | null;
+}
+
+export interface UpdateCurrentWebAccountPayload {
+  route?: string | null;
+  workspaceId?: string | null;
+}
+
 function parseRetryAfterSeconds(response: Response) {
   if (response.status !== 429) {
     return undefined;
@@ -291,6 +337,103 @@ export async function passwordLoginWithInternalApi(
     method: 'POST',
   });
   return parseAuthResponse<PasswordLoginResponse>(response);
+}
+
+export async function listWebAccountsWithInternalApi(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WebAccountsResponse>('/api/v1/auth/accounts', {
+    cache: 'no-store',
+  });
+}
+
+export async function saveCurrentWebAccountWithInternalApi(
+  payload: SaveCurrentWebAccountPayload = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch('/api/v1/auth/accounts/current', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  });
+  return parseAuthResponse<WebAccountMutationResponse>(response);
+}
+
+export async function updateCurrentWebAccountWithInternalApi(
+  payload: UpdateCurrentWebAccountPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WebAccountsResponse>('/api/v1/auth/accounts/current', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'PATCH',
+  });
+}
+
+export async function switchWebAccountWithInternalApi(
+  accountId: string,
+  payload: SwitchWebAccountPayload = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch('/api/v1/auth/accounts/switch', {
+    body: JSON.stringify({
+      ...payload,
+      accountId,
+    }),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  });
+  return parseAuthResponse<WebAccountMutationResponse>(response);
+}
+
+export async function removeWebAccountWithInternalApi(
+  accountId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch(
+    `/api/v1/auth/accounts/${encodePathSegment(accountId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
+  return parseAuthResponse<WebAccountMutationResponse>(response);
+}
+
+export async function logoutCurrentWebAccountWithInternalApi(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch('/api/v1/auth/accounts/logout', {
+    cache: 'no-store',
+    method: 'POST',
+  });
+  return parseAuthResponse<WebAccountMutationResponse>(response);
+}
+
+export async function logoutAllWebAccountsWithInternalApi(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch('/api/v1/auth/accounts/logout-all', {
+    cache: 'no-store',
+    method: 'POST',
+  });
+  return parseAuthResponse<WebAccountMutationResponse>(response);
 }
 
 export async function createQrLoginChallengeWithInternalApi(

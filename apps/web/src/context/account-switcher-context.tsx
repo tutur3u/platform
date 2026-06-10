@@ -1,17 +1,22 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
-  AccountOperationResult,
-  AddAccountOptions,
-  SessionStore,
-  SessionStoreEvent,
-  StoredAccountWithEmail,
-  SwitchAccountOptions,
-} from '@tuturuuu/auth';
-import { createSessionStore } from '@tuturuuu/auth';
-import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
+  SaveCurrentWebAccountPayload,
+  WebAccountMutationResponse,
+  WebAccountSummary,
+} from '@tuturuuu/internal-api/auth';
+import {
+  listWebAccountsWithInternalApi,
+  logoutAllWebAccountsWithInternalApi,
+  logoutCurrentWebAccountWithInternalApi,
+  removeWebAccountWithInternalApi,
+  saveCurrentWebAccountWithInternalApi,
+  switchWebAccountWithInternalApi,
+  updateCurrentWebAccountWithInternalApi,
+} from '@tuturuuu/internal-api/auth';
 import { toast } from '@tuturuuu/ui/sonner';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   createContext,
@@ -20,897 +25,329 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
-  useState,
 } from 'react';
+import { isPersistableMultiAccountRoutePath } from '@/lib/auth/multi-account/routes';
+
+const ACCOUNTS_QUERY_KEY = ['auth', 'web-accounts'] as const;
+const LEGACY_MULTI_SESSION_STORAGE_KEY = 'tuturuuu_multi_session_store';
+
+export interface AccountOperationResult {
+  accountId?: string;
+  error?: string;
+  redirectTo?: string;
+  success: boolean;
+}
+
+export interface AddAccountOptions extends SaveCurrentWebAccountPayload {
+  switchImmediately?: boolean;
+}
+
+export interface SwitchAccountOptions {
+  targetRoute?: string;
+  targetWorkspaceId?: string;
+}
 
 interface AccountSwitcherContextValue {
-  /** All stored accounts with email (decrypted from session) */
-  accounts: StoredAccountWithEmail[];
-  /** Currently active account ID */
+  accounts: WebAccountSummary[];
   activeAccountId: string | null;
-  /** Whether the store is initialized */
+  addAccount: (options?: AddAccountOptions) => Promise<AccountOperationResult>;
   isInitialized: boolean;
-  /** Whether an account operation is in progress */
   isLoading: boolean;
-  /** Add a new account */
-  addAccount: (
-    session: SupabaseSession,
-    options?: AddAccountOptions
-  ) => Promise<AccountOperationResult>;
-  /** Remove an account */
+  logout: () => Promise<void>;
+  logoutAll: () => Promise<void>;
+  refreshAccounts: () => Promise<void>;
   removeAccount: (accountId: string) => Promise<AccountOperationResult>;
-  /** Switch to a different account */
   switchAccount: (
     accountId: string,
     options?: SwitchAccountOptions
   ) => Promise<AccountOperationResult>;
-  /** Update current account's workspace context */
   updateWorkspaceContext: (
     workspaceId: string,
     route?: string
   ) => Promise<void>;
-  /** Logout current account (switches to another if available) */
-  logout: () => Promise<void>;
-  /** Logout all accounts */
-  logoutAll: () => Promise<void>;
-  /** Refresh accounts list */
-  refreshAccounts: () => Promise<void>;
 }
 
 const AccountSwitcherContext = createContext<
   AccountSwitcherContextValue | undefined
 >(undefined);
 
-/**
- * Special routes that should not be saved as workspace context
- */
-const SPECIAL_ROUTES = [
-  'settings',
-  'login',
-  'onboarding',
-  'add-account',
-] as const;
-
 interface AccountSwitcherProviderProps {
   children: ReactNode;
+}
+
+function toAccountOperationResult(
+  response: WebAccountMutationResponse
+): AccountOperationResult {
+  return {
+    accountId: response.accountId,
+    error: response.error,
+    redirectTo: response.redirectTo,
+    success: response.success,
+  };
+}
+
+function getRedirectTarget(response: AccountOperationResult) {
+  return response.redirectTo && response.redirectTo.trim().length > 0
+    ? response.redirectTo
+    : null;
 }
 
 export function AccountSwitcherProvider({
   children,
 }: AccountSwitcherProviderProps): JSX.Element {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const t = useTranslations('account_switcher');
-  const [store, setStore] = useState<SessionStore | null>(null);
-  const [accounts, setAccounts] = useState<StoredAccountWithEmail[]>([]);
-  const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const initializingRef = useRef(false);
+  const lastSyncedRouteRef = useRef<string | null>(null);
 
-  // Stable ref for refreshAccounts to prevent infinite loops
-  const refreshAccountsRef = useRef<(() => Promise<void>) | null>(null);
+  const currentRoute = useMemo(() => {
+    const queryString = searchParams.toString();
+    return `${pathname}${queryString ? `?${queryString}` : ''}`;
+  }, [pathname, searchParams]);
+  const currentPersistableRoute = useMemo(
+    () =>
+      isPersistableMultiAccountRoutePath(currentRoute) ? currentRoute : null,
+    [currentRoute]
+  );
 
-  // Refresh accounts list from store (with emails from encrypted sessions)
-  const refreshAccounts = useCallback(async () => {
-    if (!store) return;
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[refreshAccounts] Refreshing accounts...');
-    }
-    const storedAccounts = await store.getAccountsWithEmail();
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        '[refreshAccounts] Loaded accounts count:',
-        storedAccounts.length
-      );
-    }
-    setAccounts(storedAccounts);
+  const accountsQuery = useQuery({
+    queryFn: () => listWebAccountsWithInternalApi(),
+    queryKey: ACCOUNTS_QUERY_KEY,
+    retry: 1,
+    staleTime: 30_000,
+  });
 
-    const activeId = store.getActiveAccountId();
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[refreshAccounts] Has active account:', !!activeId);
-    }
-    setActiveAccountId(activeId);
-  }, [store]);
+  const invalidateAccounts = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY });
+  }, [queryClient]);
 
-  // Keep the ref updated with the latest refreshAccounts function
+  const navigateAfterMutation = useCallback(
+    async (response: AccountOperationResult) => {
+      await invalidateAccounts();
+      const target = getRedirectTarget(response);
+
+      if (target) {
+        window.location.assign(target);
+        return;
+      }
+
+      router.refresh();
+    },
+    [invalidateAccounts, router]
+  );
+
+  const saveCurrentMutation = useMutation({
+    mutationFn: (payload?: SaveCurrentWebAccountPayload) =>
+      saveCurrentWebAccountWithInternalApi(payload),
+    onSuccess: () => invalidateAccounts(),
+  });
+  const updateCurrentMutation = useMutation({
+    mutationFn: (
+      payload: Parameters<typeof updateCurrentWebAccountWithInternalApi>[0]
+    ) => updateCurrentWebAccountWithInternalApi(payload),
+    onSuccess: () => invalidateAccounts(),
+  });
+  const switchMutation = useMutation({
+    mutationFn: ({
+      accountId,
+      targetRoute,
+    }: {
+      accountId: string;
+      targetRoute?: string;
+    }) =>
+      switchWebAccountWithInternalApi(accountId, {
+        currentRoute,
+        targetRoute,
+      }),
+  });
+  const removeMutation = useMutation({
+    mutationFn: (accountId: string) =>
+      removeWebAccountWithInternalApi(accountId),
+  });
+  const logoutMutation = useMutation({
+    mutationFn: () => logoutCurrentWebAccountWithInternalApi(),
+  });
+  const logoutAllMutation = useMutation({
+    mutationFn: () => logoutAllWebAccountsWithInternalApi(),
+  });
+
   useEffect(() => {
-    refreshAccountsRef.current = refreshAccounts;
-  }, [refreshAccounts]);
-
-  // Initialize the session store
-  // Runs only once on mount to prevent infinite loops
-  useEffect(() => {
-    // Prevent multiple simultaneous initializations
-    if (initializingRef.current) return;
-    initializingRef.current = true;
-
-    let mounted = true;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-    const initStore = async () => {
-      try {
-        // Set a timeout to prevent infinite hangs
-        timeoutId = setTimeout(() => {
-          if (mounted && !isInitialized) {
-            console.warn(
-              'Session store initialization timeout - marking as initialized'
-            );
-            setIsInitialized(true);
-          }
-        }, 5000); // 5 second timeout
-
-        const sessionStore = await createSessionStore();
-        if (!mounted) return;
-
-        setStore(sessionStore);
-
-        // Load initial accounts (with emails from encrypted sessions)
-        const storedAccounts = await sessionStore.getAccountsWithEmail();
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Loaded stored accounts count:', storedAccounts.length);
-        }
-        if (!mounted) return;
-
-        setAccounts(storedAccounts);
-
-        // Get current session to sync with store
-        const { createClient } = await import('@tuturuuu/supabase/next/client');
-        const client = createClient();
-        const {
-          data: { session: currentSession },
-        } = await client.auth.getSession();
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Current session exists:', !!currentSession);
-        }
-
-        // Only auto-add current session if not on login/auth pages
-        // Use stricter matching to avoid false positives
-        const isAuthPage =
-          /\/login(\/|$)/.test(pathname) ||
-          /\/add-account(\/|$)/.test(pathname);
-
-        // Sync activeAccountId with current session
-        if (currentSession) {
-          const currentUserId = currentSession.user.id;
-          const storedActiveId = sessionStore.getActiveAccountId();
-
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Has stored active account:', !!storedActiveId);
-          }
-
-          // Check if current session is in the store
-          const currentAccountInStore = storedAccounts.some(
-            (acc) => acc.id === currentUserId
-          );
-
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Current account in store:', currentAccountInStore);
-          }
-
-          // If current session is not in store and we're not on an auth page, add it
-          if (!currentAccountInStore && !isAuthPage) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Adding current session to store (not on auth page)');
-            }
-            await sessionStore.addAccount(currentSession, {
-              switchImmediately: true,
-            });
-            // Reload accounts - IMPORTANT: Update both store reference AND state
-            const updatedAccounts = await sessionStore.getAccountsWithEmail();
-            if (process.env.NODE_ENV === 'development') {
-              console.log(
-                'After adding, accounts count:',
-                updatedAccounts.length
-              );
-            }
-            if (!mounted) return;
-            setAccounts(updatedAccounts);
-            setActiveAccountId(currentUserId);
-          } else {
-            // Even if account exists, make sure state is up to date
-            // This fixes the issue where accounts don't refresh after adding
-            const currentAccounts = await sessionStore.getAccountsWithEmail();
-            if (currentAccounts.length !== storedAccounts.length) {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('Account count changed, refreshing state:', {
-                  old: storedAccounts.length,
-                  new: currentAccounts.length,
-                });
-              }
-              setAccounts(currentAccounts);
-            }
-
-            // If the current session doesn't match the stored active account,
-            // update the store to match reality
-            if (storedActiveId !== currentUserId) {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('Syncing active account (mismatch detected)');
-              }
-              await sessionStore.switchAccount(currentUserId);
-            }
-
-            setActiveAccountId(currentUserId);
-          }
-
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Set active account:', !!currentUserId);
-          }
-        } else {
-          setActiveAccountId(sessionStore.getActiveAccountId());
-        }
-
-        if (timeoutId !== undefined) clearTimeout(timeoutId);
-        if (!mounted) return;
-        setIsInitialized(true);
-
-        // Handle store events (defined inside useEffect to use stable ref)
-        const handleStoreEvent = (event: SessionStoreEvent) => {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(
-              '[handleStoreEvent] Session store event type:',
-              event.type
-            );
-          }
-
-          if (
-            event.type === 'account-added' ||
-            event.type === 'account-removed'
-          ) {
-            // Refresh accounts list
-            if (process.env.NODE_ENV === 'development') {
-              console.log(
-                '[handleStoreEvent] Refreshing accounts due to:',
-                event.type
-              );
-            }
-            refreshAccountsRef.current?.();
-          } else if (event.type === 'account-switched') {
-            // Update active account
-            if (process.env.NODE_ENV === 'development') {
-              console.log('[handleStoreEvent] Switching active account');
-            }
-            setActiveAccountId(event.toId);
-          } else if (event.type === 'session-refreshed') {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('[handleStoreEvent] Session refreshed for account');
-            }
-            // Optionally refresh accounts to get updated metadata
-            refreshAccountsRef.current?.();
-          }
-        };
-
-        // Listen for store events (in-process)
-        const unsubscribe = sessionStore.on(handleStoreEvent);
-
-        // Listen for storage events from other tabs (cross-tab sync)
-        const handleStorageChange = (event: StorageEvent) => {
-          if (
-            event.key?.includes('tuturuuu_multi_session_store') &&
-            event.newValue !== event.oldValue
-          ) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log(
-                '[storage event] Detected store change from other tab'
-              );
-            }
-            refreshAccountsRef.current?.();
-          }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-
-        return () => {
-          unsubscribe?.();
-          window.removeEventListener('storage', handleStorageChange);
-        };
-      } catch (error) {
-        console.error('Failed to initialize session store:', error);
-        if (timeoutId !== undefined) clearTimeout(timeoutId);
-        if (mounted) {
-          setIsInitialized(true); // Mark as initialized even on error
-        }
-      }
-    };
-
-    const unsubscribePromise = initStore();
-    return () => {
-      mounted = false;
-      initializingRef.current = false;
-      if (timeoutId !== undefined) clearTimeout(timeoutId);
-      unsubscribePromise.then((unsubscribe) => unsubscribe?.());
-    };
-  }, [isInitialized, pathname]); // Run only once on mount - event handlers use stable refreshAccountsRef
-
-  // Handle account switch navigation
-  const handleAccountSwitch = useCallback(
-    async (
-      accountId: string,
-      session: SupabaseSession,
-      options?: SwitchAccountOptions
-    ) => {
-      try {
-        // Update Supabase client session (sign out + sign in with refresh token)
-        const { createClient, switchClientSession } = await import(
-          '@tuturuuu/supabase/next/client'
-        );
-        const client = createClient();
-        const freshSession = await switchClientSession(client, session);
-
-        // If the session was refreshed, update the stored session
-        if (
-          store &&
-          (freshSession.access_token !== session.access_token ||
-            freshSession.refresh_token !== session.refresh_token)
-        ) {
-          await store.updateAccountSession(accountId, freshSession);
-        }
-      } catch (error) {
-        // If switching failed, remove the account and notify user
-        console.error('[handleAccountSwitch] Failed to switch session:', error);
-
-        if (store) {
-          // Remove the failed account
-          await store.removeAccount(accountId);
-          await refreshAccounts();
-
-          // Show error message to user
-          toast.error(t('session_expired'), {
-            description: t('session_expired_description'),
-          });
-        }
-
-        // Re-throw to let the caller handle the error
-        throw error;
-      }
-
-      // Determine navigation target
-      // Default to '/' which will auto-redirect to root workspace if user is logged in
-      // Locale is automatically handled by proxy.ts with 'as-needed' strategy
-      let targetPath = '/';
-
-      if (options?.targetRoute) {
-        targetPath = options.targetRoute;
-      } else if (options?.targetWorkspaceId) {
-        targetPath = `/${options.targetWorkspaceId}`;
-      } else {
-        // Use remembered workspace and route if available
-        const account = accounts.find((acc) => acc.id === accountId);
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            '[handleAccountSwitch] Account has metadata:',
-            !!account?.metadata
-          );
-        }
-
-        if (account?.metadata.lastRoute) {
-          // Use exact last route
-          targetPath = account.metadata.lastRoute;
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[handleAccountSwitch] Using remembered route');
-          }
-        } else if (account?.metadata.lastWorkspaceId) {
-          // Construct workspace URL (locale will be auto-added by proxy if needed)
-          targetPath = `/${account.metadata.lastWorkspaceId}`;
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[handleAccountSwitch] Using remembered workspace');
-          }
-        } else {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[handleAccountSwitch] Using default path');
-          }
-        }
-      }
-
-      // Force a hard refresh to reload all server components
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[handleAccountSwitch] Redirecting...');
-      }
-      window.location.href = targetPath;
-    },
-    [accounts, store, refreshAccounts, t]
-  );
-
-  // Add a new account
-  const addAccount = useCallback(
-    async (
-      session: SupabaseSession,
-      options?: AddAccountOptions
-    ): Promise<AccountOperationResult> => {
-      if (!store) {
-        console.error('[addAccount] Store not initialized');
-        return { success: false, error: 'Store not initialized' };
-      }
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[addAccount] Adding account with options:', !!options);
-      }
-
-      setIsLoading(true);
-      try {
-        const result = await store.addAccount(session, options);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[addAccount] Store result success:', result.success);
-        }
-
-        if (result.success && result.accountId) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[addAccount] Refreshing accounts after add...');
-          }
-          await refreshAccounts();
-
-          // If switching immediately, handle navigation
-          if (options?.switchImmediately) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log(
-                '[addAccount] Switching immediately to new account...'
-              );
-            }
-            const switchOptions: SwitchAccountOptions | undefined =
-              options?.workspaceId
-                ? { targetWorkspaceId: options.workspaceId }
-                : undefined;
-            await handleAccountSwitch(result.accountId, session, switchOptions);
-          }
-        }
-
-        return result;
-      } catch (error) {
-        console.error('[addAccount] Error:', error);
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        };
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [store, refreshAccounts, handleAccountSwitch]
-  );
-
-  // Helper function to safely switch session without removing account on failure
-  const safeSwitchSession = useCallback(
-    async (accountId: string, session: SupabaseSession): Promise<boolean> => {
-      try {
-        const { createClient, switchClientSession } = await import(
-          '@tuturuuu/supabase/next/client'
-        );
-        const client = createClient();
-        const freshSession = await switchClientSession(client, session);
-
-        // Update the session if it was refreshed
-        if (
-          store &&
-          (freshSession.access_token !== session.access_token ||
-            freshSession.refresh_token !== session.refresh_token)
-        ) {
-          await store.updateAccountSession(accountId, freshSession);
-        }
-
-        return true;
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            `[safeSwitchSession] Failed to switch session for account: ${accountId}`,
-            error
-          );
-        }
-        return false;
-      }
-    },
-    [store]
-  );
-
-  // Helper function to fallback to an available account after a failed switch
-  const fallbackToAvailableAccount = useCallback(
-    async (previousAccountId: string | null) => {
-      if (!store) return;
-
-      try {
-        const remainingAccounts = await store.getAccounts();
-
-        if (remainingAccounts.length === 0) {
-          // No accounts left, redirect to login
-          if (process.env.NODE_ENV === 'development') {
-            console.log(
-              '[fallbackToAvailableAccount] No accounts left, redirecting to login'
-            );
-          }
-          router.push('/login');
-          return;
-        }
-
-        // Build priority list: previous account first, then others
-        const accountsToTry = previousAccountId
-          ? [
-              previousAccountId,
-              ...remainingAccounts
-                .map((acc) => acc.id)
-                .filter((id) => id !== previousAccountId),
-            ]
-          : remainingAccounts.map((acc) => acc.id);
-
-        // Try each account until one succeeds
-        for (const accountId of accountsToTry) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(
-              `[fallbackToAvailableAccount] Trying to switch to account: ${accountId}`
-            );
-          }
-
-          const accountSession = await store.getAccountSession(accountId);
-          if (!accountSession) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log(
-                `[fallbackToAvailableAccount] No session found for account: ${accountId}`
-              );
-            }
-            // Remove account without session
-            try {
-              await store.removeAccount(accountId);
-              await refreshAccounts();
-            } catch (removeError) {
-              console.error(
-                `[fallbackToAvailableAccount] Failed to remove account: ${accountId}`,
-                removeError
-              );
-            }
-            continue; // Try next account
-          }
-
-          // Try to switch to this account using safe switch
-          const switched = await safeSwitchSession(
-            accountId,
-            accountSession.session
-          );
-
-          if (switched) {
-            // Update store to mark this as active
-            await store.switchAccount(accountId);
-
-            // Success! Navigate to root to reload with new session
-            if (process.env.NODE_ENV === 'development') {
-              console.log(
-                `[fallbackToAvailableAccount] Successfully switched to account: ${accountId}`
-              );
-            }
-            window.location.href = '/';
-            return;
-          } else {
-            // This account failed, remove it and try next one
-            if (process.env.NODE_ENV === 'development') {
-              console.log(
-                `[fallbackToAvailableAccount] Failed to switch to account: ${accountId}, removing`
-              );
-            }
-            try {
-              await store.removeAccount(accountId);
-              await refreshAccounts();
-            } catch (removeError) {
-              console.error(
-                `[fallbackToAvailableAccount] Failed to remove account: ${accountId}`,
-                removeError
-              );
-            }
-            // Continue to next account
-          }
-        }
-
-        // If we couldn't switch to any account, redirect to login
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            '[fallbackToAvailableAccount] Could not switch to any account, redirecting to login'
-          );
-        }
-        router.push('/login');
-      } catch (error) {
-        console.error(
-          '[fallbackToAvailableAccount] Error during fallback:',
-          error
-        );
-        // On error, redirect to login as last resort
-        router.push('/login');
-      }
-    },
-    [store, router, refreshAccounts, safeSwitchSession]
-  );
-
-  // Forward declare switchAccount for removeAccount
-  const switchAccountRef = useRef<
-    | ((
-        accountId: string,
-        options?: SwitchAccountOptions
-      ) => Promise<AccountOperationResult>)
-    | null
-  >(null);
-
-  // Remove an account
-  const removeAccount = useCallback(
-    async (accountId: string): Promise<AccountOperationResult> => {
-      if (!store) {
-        return { success: false, error: 'Store not initialized' };
-      }
-
-      setIsLoading(true);
-      try {
-        const result = await store.removeAccount(accountId);
-
-        if (result.success) {
-          await refreshAccounts();
-
-          // If we removed the active account, need to switch or logout
-          if (activeAccountId === accountId) {
-            const remainingAccounts = await store.getAccounts();
-            if (remainingAccounts.length > 0 && remainingAccounts[0]) {
-              // Switch to first remaining account
-              if (switchAccountRef.current) {
-                await switchAccountRef.current(remainingAccounts[0].id);
-              }
-            } else {
-              // No accounts left, redirect to login
-              router.push('/login');
-            }
-          }
-        }
-
-        return result;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [store, activeAccountId, refreshAccounts, router]
-  );
-
-  // Switch to a different account
-  const switchAccount = useCallback(
-    async (
-      accountId: string,
-      options?: SwitchAccountOptions
-    ): Promise<AccountOperationResult> => {
-      if (!store) {
-        return { success: false, error: 'Store not initialized' };
-      }
-
-      setIsLoading(true);
-
-      // Store the current active account to fallback to if switch fails
-      const previousAccountId = activeAccountId;
-
-      try {
-        // Get the account session
-        const accountSession = await store.getAccountSession(accountId);
-        if (!accountSession) {
-          // Account session not found, remove the account
-          await store.removeAccount(accountId);
-          await refreshAccounts();
-
-          toast.error(t('account_not_found'), {
-            description: t('account_not_found_description'),
-          });
-
-          // Fallback to previous account or another available account
-          await fallbackToAvailableAccount(previousAccountId);
-
-          return { success: false, error: 'Account session not found' };
-        }
-
-        // Update current account's workspace context before switching
-        if (activeAccountId) {
-          // Extract workspace ID from pathname
-          // Expected pattern: /[locale]/[wsId]/... or /[wsId]/...
-          // Route groups like (dashboard) don't appear in URLs
-          // This regex matches the second path segment, which is typically the workspace ID
-          const pathMatch = pathname.match(/^\/[^/]+\/([^/]+)/);
-          const workspaceId = pathMatch?.[1];
-
-          // Only proceed if we successfully extracted a workspace ID
-          if (workspaceId) {
-            // Only save if it's not a special route (settings, login, etc.)
-            const isSpecialRoute = SPECIAL_ROUTES.includes(
-              workspaceId as (typeof SPECIAL_ROUTES)[number]
-            );
-            if (!isSpecialRoute) {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('[switchAccount] Saving workspace context');
-              }
-              // Verify account still exists before updating metadata
-              const account = await store.getAccount(activeAccountId);
-              if (account) {
-                await store.updateAccountMetadata(activeAccountId, {
-                  lastWorkspaceId: workspaceId,
-                  lastRoute: pathname,
-                });
-              }
-            }
-          }
-        }
-
-        // Switch the account in the store
-        const result = await store.switchAccount(accountId);
-
-        if (result.success) {
-          try {
-            await handleAccountSwitch(
-              accountId,
-              accountSession.session,
-              options
-            );
-          } catch (error) {
-            // handleAccountSwitch already removed the account and showed toast
-            // Fallback to previous account or another available account
-            await fallbackToAvailableAccount(previousAccountId);
-
-            // Return failure result
-            return {
-              success: false,
-              error:
-                error instanceof Error
-                  ? error.message
-                  : 'Failed to switch account',
-            };
-          }
-        }
-
-        return result;
-      } catch (error) {
-        console.error('[switchAccount] Unexpected error:', error);
-
-        // On any unexpected error, remove the account to keep things working
-        try {
-          await store.removeAccount(accountId);
-          await refreshAccounts();
-
-          toast.error(t('switch_failed'), {
-            description: t('switch_failed_description'),
-          });
-
-          // Fallback to previous account or another available account
-          await fallbackToAvailableAccount(previousAccountId);
-        } catch (removeError) {
-          console.error(
-            '[switchAccount] Failed to remove account:',
-            removeError
-          );
-        }
-
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        };
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [
-      store,
-      activeAccountId,
-      pathname,
-      handleAccountSwitch,
-      refreshAccounts,
-      t,
-      fallbackToAvailableAccount,
-    ]
-  );
-
-  // Update ref after switchAccount is defined
-  useEffect(() => {
-    switchAccountRef.current = switchAccount;
-  }, [switchAccount]);
-
-  // Update workspace context for current account
-  const updateWorkspaceContext = useCallback(
-    async (workspaceId: string, route?: string) => {
-      if (!store || !activeAccountId) return;
-
-      await store.updateAccountMetadata(activeAccountId, {
-        lastWorkspaceId: workspaceId,
-        lastRoute: route ?? pathname,
-      });
-    },
-    [store, activeAccountId, pathname]
-  );
-
-  // Logout current account (switches to another if available)
-  const logout = useCallback(async () => {
-    if (!store || !activeAccountId) {
-      // No active account, just sign out from Supabase
-      await fetch('/api/ai/temp-auth/revoke', {
-        method: 'POST',
-        cache: 'no-store',
-      }).catch(() => undefined);
-      const { createClient } = await import('@tuturuuu/supabase/next/client');
-      const client = createClient();
-      await client.auth.signOut({ scope: 'local' });
-      router.push('/login');
+    const legacyValue = window.localStorage.getItem(
+      LEGACY_MULTI_SESSION_STORAGE_KEY
+    );
+
+    if (!legacyValue) {
       return;
     }
 
-    setIsLoading(true);
-    try {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[logout] Logging out current account');
-      }
+    window.localStorage.removeItem(LEGACY_MULTI_SESSION_STORAGE_KEY);
+    toast.info(t('legacy_reauth_required'), {
+      description: t('legacy_reauth_required_description'),
+    });
+  }, [t]);
 
-      // Get remaining accounts before removing current one
-      const allAccounts = await store.getAccounts();
-      const otherAccounts = allAccounts.filter(
-        (acc) => acc.id !== activeAccountId
-      );
+  useEffect(() => {
+    const activeAccountId = accountsQuery.data?.activeAccountId;
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[logout] Other accounts available:', otherAccounts.length);
-      }
-
-      // Remove current account from store (this will auto-switch if others exist)
-      await fetch('/api/ai/temp-auth/revoke', {
-        method: 'POST',
-        cache: 'no-store',
-      }).catch(() => undefined);
-      await removeAccount(activeAccountId);
-
-      // If no other accounts, sign out from Supabase and redirect to login
-      if (otherAccounts.length === 0) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[logout] No other accounts, signing out completely');
-        }
-        const { createClient } = await import('@tuturuuu/supabase/next/client');
-        const client = createClient();
-        await client.auth.signOut({ scope: 'local' });
-        router.push('/login');
-      } else {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[logout] Switched to another account');
-        }
-        // removeAccount already handles switching to another account
-        // Just refresh to ensure UI is updated
-        router.refresh();
-      }
-    } finally {
-      setIsLoading(false);
+    if (
+      !activeAccountId ||
+      !currentPersistableRoute ||
+      lastSyncedRouteRef.current === currentPersistableRoute
+    ) {
+      return;
     }
-  }, [store, activeAccountId, removeAccount, router]);
 
-  // Logout all accounts
+    lastSyncedRouteRef.current = currentPersistableRoute;
+    updateCurrentMutation.mutate({
+      route: currentPersistableRoute,
+    });
+  }, [
+    accountsQuery.data?.activeAccountId,
+    currentPersistableRoute,
+    updateCurrentMutation,
+  ]);
+
+  const addAccount = useCallback(
+    async (
+      options: AddAccountOptions = {}
+    ): Promise<AccountOperationResult> => {
+      try {
+        const { switchImmediately: shouldNavigate, ...payload } = options;
+        const route =
+          payload.route ??
+          payload.returnUrl ??
+          currentPersistableRoute ??
+          currentRoute;
+        const response = await saveCurrentMutation.mutateAsync({
+          ...payload,
+          route,
+        });
+        const result = toAccountOperationResult(response);
+
+        if (shouldNavigate) {
+          await navigateAfterMutation(result);
+        }
+
+        return result;
+      } catch (error) {
+        return {
+          error:
+            error instanceof Error ? error.message : 'Failed to add account',
+          success: false,
+        };
+      }
+    },
+    [
+      currentPersistableRoute,
+      currentRoute,
+      navigateAfterMutation,
+      saveCurrentMutation,
+    ]
+  );
+
+  const switchAccount = useCallback(
+    async (
+      accountId: string,
+      options: SwitchAccountOptions = {}
+    ): Promise<AccountOperationResult> => {
+      const targetRoute =
+        options.targetRoute ??
+        (options.targetWorkspaceId
+          ? `/${options.targetWorkspaceId}`
+          : undefined);
+
+      try {
+        const response = await switchMutation.mutateAsync({
+          accountId,
+          targetRoute,
+        });
+        const result = toAccountOperationResult(response);
+
+        if (result.success) {
+          await navigateAfterMutation(result);
+        }
+
+        return result;
+      } catch (error) {
+        return {
+          error:
+            error instanceof Error ? error.message : 'Failed to switch account',
+          success: false,
+        };
+      }
+    },
+    [navigateAfterMutation, switchMutation]
+  );
+
+  const removeAccount = useCallback(
+    async (accountId: string): Promise<AccountOperationResult> => {
+      try {
+        const response = await removeMutation.mutateAsync(accountId);
+        const result = toAccountOperationResult(response);
+
+        if (result.success) {
+          await navigateAfterMutation(result);
+        }
+
+        return result;
+      } catch (error) {
+        return {
+          error:
+            error instanceof Error ? error.message : 'Failed to remove account',
+          success: false,
+        };
+      }
+    },
+    [navigateAfterMutation, removeMutation]
+  );
+
+  const updateWorkspaceContext = useCallback(
+    async (workspaceId: string, route?: string) => {
+      await updateCurrentMutation.mutateAsync({
+        route: route ?? currentRoute,
+        workspaceId,
+      });
+    },
+    [currentRoute, updateCurrentMutation]
+  );
+
+  const logout = useCallback(async () => {
+    const response = await logoutMutation.mutateAsync();
+    await navigateAfterMutation(toAccountOperationResult(response));
+  }, [logoutMutation, navigateAfterMutation]);
+
   const logoutAll = useCallback(async () => {
-    if (!store) return;
+    const response = await logoutAllMutation.mutateAsync();
+    await navigateAfterMutation(toAccountOperationResult(response));
+  }, [logoutAllMutation, navigateAfterMutation]);
 
-    setIsLoading(true);
-    try {
-      // Sign out from Supabase (revokes current session)
-      await fetch('/api/ai/temp-auth/revoke', {
-        method: 'POST',
-        cache: 'no-store',
-      }).catch(() => undefined);
-      const { createClient } = await import('@tuturuuu/supabase/next/client');
-      const client = createClient();
-      await client.auth.signOut();
-
-      // Clear all stored accounts
-      await store.clearAll();
-      setAccounts([]);
-      setActiveAccountId(null);
-
-      // Redirect to login
-      router.push('/login');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [store, router]);
+  const refreshAccounts = useCallback(async () => {
+    await invalidateAccounts();
+  }, [invalidateAccounts]);
 
   const value: AccountSwitcherContextValue = {
-    accounts,
-    activeAccountId,
-    isInitialized,
-    isLoading,
+    accounts: accountsQuery.data?.accounts ?? [],
+    activeAccountId: accountsQuery.data?.activeAccountId ?? null,
     addAccount,
-    removeAccount,
-    switchAccount,
-    updateWorkspaceContext,
+    isInitialized: !accountsQuery.isLoading,
+    isLoading:
+      accountsQuery.isLoading ||
+      saveCurrentMutation.isPending ||
+      updateCurrentMutation.isPending ||
+      switchMutation.isPending ||
+      removeMutation.isPending ||
+      logoutMutation.isPending ||
+      logoutAllMutation.isPending,
     logout,
     logoutAll,
     refreshAccounts,
+    removeAccount,
+    switchAccount,
+    updateWorkspaceContext,
   };
 
   return (
@@ -920,15 +357,14 @@ export function AccountSwitcherProvider({
   );
 }
 
-/**
- * Hook to access the account switcher context
- */
 export function useAccountSwitcher(): AccountSwitcherContextValue {
   const context = useContext(AccountSwitcherContext);
+
   if (!context) {
     throw new Error(
       'useAccountSwitcher must be used within AccountSwitcherProvider'
     );
   }
+
   return context;
 }

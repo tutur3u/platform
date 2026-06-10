@@ -18,8 +18,9 @@ import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { type MouseEvent, useEffect, useState } from 'react';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
+import { prepareAddAccountAndNavigate } from './utils';
 
 interface AccountSwitcherModalProps {
   open: boolean;
@@ -69,32 +70,24 @@ export function AccountSwitcherModal({
       await switchAccount(accountId);
       // Success feedback will be shown after navigation
     } catch (error) {
-      console.error('[AccountSwitcherModal] Failed to switch account:', error);
       toast.error(
         t('account_switcher.switch_error') ||
-          'Failed to switch account. Please try again.'
+          'Failed to switch account. Please try again.',
+        {
+          description: error instanceof Error ? error.message : undefined,
+        }
       );
     } finally {
       setIsSwitching(false);
     }
   };
 
-  const handleRemoveAccount = async (
-    accountId: string,
-    e: React.MouseEvent
-  ) => {
+  const handleRemoveAccount = async (accountId: string, e: MouseEvent) => {
     e.stopPropagation(); // Prevent triggering switch
     if (isLoading || isRemoving) return;
 
     setIsRemoving(true);
     try {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(
-          '[AccountSwitcherModal] Removing account (count before):',
-          accounts.length
-        );
-      }
-
       await removeAccount(accountId);
 
       // Show success message
@@ -103,10 +96,12 @@ export function AccountSwitcherModal({
           'Account removed successfully'
       );
     } catch (error) {
-      console.error('[AccountSwitcherModal] Failed to remove account:', error);
       toast.error(
         t('account_switcher.account_removed_error') ||
-          'Failed to remove account. Please try again.'
+          'Failed to remove account. Please try again.',
+        {
+          description: error instanceof Error ? error.message : undefined,
+        }
       );
     } finally {
       setIsRemoving(false);
@@ -118,20 +113,16 @@ export function AccountSwitcherModal({
 
     setIsAddingAccount(true);
     try {
-      // Use lazy import to avoid SSR issues
-      const { createClient } = await import('@tuturuuu/supabase/next/client');
-      const { prepareAddAccountAndNavigate } = await import('./utils');
-
       await prepareAddAccountAndNavigate({
-        createClient,
-        addAccount,
-        accounts,
+        saveCurrentAccount: addAccount,
       });
     } catch (error) {
-      console.error('[AccountSwitcherModal] Failed to add account:', error);
       toast.error(
         t('account_switcher.account_added_error') ||
-          'Failed to add account. Please try again.'
+          'Failed to add account. Please try again.',
+        {
+          description: error instanceof Error ? error.message : undefined,
+        }
       );
     } finally {
       setIsAddingAccount(false);
@@ -203,7 +194,7 @@ export function AccountSwitcherModal({
                       <div className="flex items-start gap-3 pr-8">
                         <Avatar className="h-10 w-10">
                           <AvatarImage
-                            src={account.metadata.avatarUrl}
+                            src={account.metadata.avatarUrl ?? undefined}
                             alt={displayName}
                           />
                           <AvatarFallback className="bg-foreground/10 font-medium">
@@ -239,7 +230,8 @@ export function AccountSwitcherModal({
                             )}
                             {account.metadata.lastWorkspaceId && (
                               <span className="truncate">
-                                WS: {account.metadata.lastWorkspaceId}
+                                {t('account_switcher.last_workspace')}:{' '}
+                                {account.metadata.lastWorkspaceId}
                               </span>
                             )}
                           </div>

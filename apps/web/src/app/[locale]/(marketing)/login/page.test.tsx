@@ -3,6 +3,8 @@ import React, { type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import Login from './page';
 
+const redirectMock = vi.hoisted(() => vi.fn());
+
 vi.mock('@tuturuuu/ui/custom/tuturuuu-logo', () => ({
   TUTURUUU_LOCAL_LOGO_URL: '/media/logos/tuturuuu.png',
 }));
@@ -67,6 +69,10 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('next/navigation', () => ({
+  redirect: (...args: Parameters<typeof redirectMock>) => redirectMock(...args),
+}));
+
 vi.mock('framer-motion', () => {
   const createMotionComponent =
     (tag: keyof React.JSX.IntrinsicElements) =>
@@ -106,6 +112,24 @@ async function renderLoginPage(
 }
 
 describe('Login page', () => {
+  it('forwards OAuth callback codes to the auth callback route', async () => {
+    redirectMock.mockImplementationOnce((url: string) => {
+      throw new Error(`redirect:${url}`);
+    });
+
+    await expect(
+      Login({
+        searchParams: Promise.resolve({
+          code: 'callback-code',
+          multiAccount: 'true',
+          returnUrl: '/en/personal/tasks',
+        }),
+      })
+    ).rejects.toThrow(
+      'redirect:/api/auth/callback?code=callback-code&multiAccount=true&returnUrl=%2Fen%2Fpersonal%2Ftasks'
+    );
+  });
+
   it('renders the login shell from a direct hard load', async () => {
     await renderLoginPage();
 
@@ -139,8 +163,7 @@ describe('Login page', () => {
 
   it('renders the Chat app header for Chat verifier return URLs', async () => {
     await renderLoginPage({
-      returnUrl:
-        'https://chat.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
+      returnUrl: 'https://chat.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
     });
 
     expect(screen.getByText('Chat')).toBeInTheDocument();

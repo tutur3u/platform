@@ -50,8 +50,9 @@ export function RemoveAccountDialog({
         );
       }
     } catch (error) {
-      console.error('Failed to remove account:', error);
-      toast.error(t('account_switcher.account_removed_error'));
+      toast.error(t('account_switcher.account_removed_error'), {
+        description: error instanceof Error ? error.message : undefined,
+      });
     } finally {
       setIsRemoving(false);
     }

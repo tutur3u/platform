@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { passwordLoginWithInternalApi } from './auth';
+import {
+  listWebAccountsWithInternalApi,
+  logoutAllWebAccountsWithInternalApi,
+  passwordLoginWithInternalApi,
+  saveCurrentWebAccountWithInternalApi,
+  switchWebAccountWithInternalApi,
+} from './auth';
 
 function createJsonResponse(
   payload: unknown,
@@ -76,5 +82,113 @@ describe('auth internal API helpers', () => {
       error: 'Too Many Requests',
       retryAfter: 35,
     });
+  });
+
+  it('loads web multi-account summaries without caching', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        accounts: [],
+        activeAccountId: null,
+      })
+    );
+
+    await listWebAccountsWithInternalApi({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/auth/accounts',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('saves the current web account through the server vault route', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        accounts: [],
+        activeAccountId: 'user-1',
+        success: true,
+      })
+    );
+    const payload = {
+      returnUrl: '/en/personal/tasks',
+      route: '/en/personal/tasks',
+    };
+
+    await saveCurrentWebAccountWithInternalApi(payload, {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/auth/accounts/current',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('switches web accounts through the server vault route', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        accounts: [],
+        activeAccountId: 'user-2',
+        success: true,
+      })
+    );
+
+    await switchWebAccountWithInternalApi(
+      'user-2',
+      {
+        currentRoute: '/en/personal/tasks',
+        targetRoute: '/en/personal/calendar',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/auth/accounts/switch',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+
+    const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(requestInit.body))).toEqual({
+      accountId: 'user-2',
+      currentRoute: '/en/personal/tasks',
+      targetRoute: '/en/personal/calendar',
+    });
+  });
+
+  it('logs out all web accounts through the server vault route', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        accounts: [],
+        activeAccountId: null,
+        success: true,
+      })
+    );
+
+    await logoutAllWebAccountsWithInternalApi({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/auth/accounts/logout-all',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
   });
 });

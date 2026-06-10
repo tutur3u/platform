@@ -5,10 +5,9 @@ import { AccountSwitcherModal } from '@/components/account-switcher/account-swit
 const mockAccounts = [
   {
     id: 'user-1',
-    encryptedSession: 'encrypted-session-1',
     email: 'user1@test.com',
-    addedAt: Date.now() - 86400000,
     metadata: {
+      addedAt: Date.now() - 86400000,
       displayName: 'User One',
       avatarUrl: 'https://avatar.test/1.jpg',
       lastActiveAt: Date.now() - 3600000, // 1 hour ago
@@ -18,12 +17,13 @@ const mockAccounts = [
   },
   {
     id: 'user-2',
-    encryptedSession: 'encrypted-session-2',
     email: 'user2@test.com',
-    addedAt: Date.now() - 172800000,
     metadata: {
+      addedAt: Date.now() - 172800000,
       displayName: 'User Two',
+      avatarUrl: null,
       lastActiveAt: Date.now() - 7200000, // 2 hours ago
+      lastRoute: null,
       lastWorkspaceId: 'workspace-2',
     },
   },
@@ -49,24 +49,6 @@ vi.mock('@/context/account-switcher-context', () => ({
     logout: vi.fn(),
     logoutAll: vi.fn(),
     refreshAccounts: vi.fn(),
-  }),
-}));
-
-// Mock Supabase
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: () => ({
-    auth: {
-      getSession: vi.fn().mockResolvedValue({
-        data: {
-          session: {
-            user: { id: 'user-1', email: 'user1@test.com' },
-            access_token: 'token',
-            refresh_token: 'refresh',
-          },
-        },
-        error: null,
-      }),
-    },
   }),
 }));
 
@@ -329,6 +311,10 @@ describe('AccountSwitcherModal', () => {
       await waitFor(() => {
         // Should check if current session exists
         // Then navigate to login
+        expect(mockAddAccount).toHaveBeenCalledWith({
+          route: '/test-workspace',
+          switchImmediately: false,
+        });
         expect(mockLocationHref).toContain('/login');
         expect(mockLocationHref).toContain('multiAccount=true');
       });

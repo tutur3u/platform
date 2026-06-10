@@ -1,7 +1,7 @@
 'use client';
 
-import type { StoredAccountWithEmail } from '@tuturuuu/auth';
 import { RefreshCcw } from '@tuturuuu/icons';
+import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
@@ -186,7 +186,7 @@ export function StoredAccountSwitchList({
   onSwitchAccount,
   switchingAccountId,
 }: {
-  accounts: StoredAccountWithEmail[];
+  accounts: WebAccountSummary[];
   disabled: boolean;
   fallbackAccountName: string;
   onSwitchAccount: (accountId: string) => void;

@@ -1,7 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { ArrowRightLeft, Loader2, Trash2 } from '@tuturuuu/icons';
+import { ArrowRightLeft, Loader2, LogOut, Trash2 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -28,6 +27,7 @@ export function AccountManagementCard(): JSX.Element {
     accounts,
     activeAccountId,
     isLoading,
+    logoutAll,
     switchAccount,
     refreshAccounts,
   } = useAccountSwitcher();
@@ -35,19 +35,11 @@ export function AccountManagementCard(): JSX.Element {
   const [switchingAccountId, setSwitchingAccountId] = useState<string | null>(
     null
   );
+  const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
 
   const sortedAccounts = [...accounts].sort(
     (a, b) => (b.metadata.lastActiveAt ?? 0) - (a.metadata.lastActiveAt ?? 0)
   );
-
-  useQuery({
-    queryKey: ['account-management-refresh'],
-    queryFn: async () => {
-      await refreshAccounts();
-      return null;
-    },
-    refetchOnWindowFocus: false,
-  });
 
   const handleSwitchAccount = async (accountId: string) => {
     setSwitchingAccountId(accountId);
@@ -55,9 +47,22 @@ export function AccountManagementCard(): JSX.Element {
       await switchAccount(accountId);
       // Navigation will happen automatically in switchAccount
     } catch (error) {
-      console.error('Failed to switch account:', error);
-      toast.error(t('account_switcher.switch_account_error'));
+      toast.error(t('account_switcher.switch_account_error'), {
+        description: error instanceof Error ? error.message : undefined,
+      });
       setSwitchingAccountId(null);
+    }
+  };
+
+  const handleLogoutAll = async () => {
+    setIsLoggingOutAll(true);
+    try {
+      await logoutAll();
+    } catch (error) {
+      toast.error(t('account_switcher.logout_all_error'), {
+        description: error instanceof Error ? error.message : undefined,
+      });
+      setIsLoggingOutAll(false);
     }
   };
 
@@ -93,7 +98,7 @@ export function AccountManagementCard(): JSX.Element {
                 const displayName =
                   account.metadata.displayName ||
                   account.email ||
-                  'Unknown User';
+                  t('account_switcher.unknown_user');
                 const initials = getInitials(displayName);
                 const lastActive =
                   account.metadata.lastActiveAt != null
@@ -108,7 +113,7 @@ export function AccountManagementCard(): JSX.Element {
                     <div className="flex items-start gap-4 py-4">
                       <Avatar className="h-12 w-12">
                         <AvatarImage
-                          src={account.metadata.avatarUrl}
+                          src={account.metadata.avatarUrl ?? undefined}
                           alt={displayName}
                         />
                         <AvatarFallback>{initials}</AvatarFallback>
@@ -187,6 +192,21 @@ export function AccountManagementCard(): JSX.Element {
               <div className="pt-2">
                 <AddAccountButton />
               </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleLogoutAll}
+                disabled={isLoggingOutAll}
+                className="w-full justify-start gap-2"
+              >
+                {isLoggingOutAll ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut className="h-4 w-4 text-dynamic-red" />
+                )}
+                {t('account_switcher.logout_all')}
+              </Button>
             </div>
           )}
         </CardContent>

@@ -61,4 +61,17 @@ describe('auth callback route', () => {
       'https://tuturuuu.com/mail?tab=inbox'
     );
   });
+
+  it('routes multi-account callbacks through add-account with a safe returnUrl', async () => {
+    const returnUrl = encodeURIComponent('/en/personal/tasks?view=board');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/auth/callback?code=oauth-code&multiAccount=true&returnUrl=${returnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/add-account?returnUrl=%2Fen%2Fpersonal%2Ftasks%3Fview%3Dboard'
+    );
+  });
 });

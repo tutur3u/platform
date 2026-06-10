@@ -1065,7 +1065,7 @@ export default function LoginForm() {
     const returnUrl = searchParams.get('returnUrl');
     const nextUrl = searchParams.get('nextUrl');
     const multiAccount = searchParams.get('multiAccount');
-    let redirectURL = `${window.location.origin}/login`;
+    let redirectURL = `${window.location.origin}/api/auth/callback`;
     const searchParamsArray = [];
 
     if (returnUrl) {

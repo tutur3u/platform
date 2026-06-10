@@ -1,13 +1,13 @@
 'use client';
 
-import type { StoredAccountWithEmail } from '@tuturuuu/auth';
 import { Check } from '@tuturuuu/icons/lucide';
+import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 
 interface AccountItemProps {
-  account: StoredAccountWithEmail;
+  account: WebAccountSummary;
   isActive: boolean;
   onClick?: () => void;
 }
@@ -16,7 +16,9 @@ export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
   const t = useTranslations();
 
   const displayName =
-    account.metadata.displayName || account.email || 'Unknown User';
+    account.metadata.displayName ||
+    account.email ||
+    t('account_switcher.unknown_user');
   const initials = displayName
     .trim()
     .split(' ')
@@ -33,7 +35,10 @@ export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
       className="flex w-full items-center gap-3 rounded-lg p-2 transition-colors hover:bg-dynamic-blue/10"
     >
       <Avatar className="h-8 w-8">
-        <AvatarImage src={account.metadata.avatarUrl} alt={displayName} />
+        <AvatarImage
+          src={account.metadata.avatarUrl ?? undefined}
+          alt={displayName}
+        />
         <AvatarFallback className="text-xs">{initials}</AvatarFallback>
       </Avatar>
 

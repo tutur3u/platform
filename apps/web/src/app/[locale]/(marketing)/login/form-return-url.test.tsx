@@ -262,7 +262,9 @@ describe('LoginForm returnUrl navigation', () => {
       );
     });
 
-    expect(mocks.resolveCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
+    expect(
+      mocks.resolveCrossAppReturnUrlWithInternalApi
+    ).not.toHaveBeenCalled();
     expect(mocks.refreshSession).toHaveBeenCalled();
     expect(mocks.assign).toHaveBeenCalledWith(tokenizedChatReturnUrl);
     queryClient.clear();

@@ -7329,6 +7329,89 @@ export type Database = {
           },
         ];
       };
+      web_account_devices: {
+        Row: {
+          active_user_id: string | null;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          last_seen_at: string;
+          revoked_at: string | null;
+          secret_hash: string;
+        };
+        Insert: {
+          active_user_id?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          last_seen_at?: string;
+          revoked_at?: string | null;
+          secret_hash: string;
+        };
+        Update: {
+          active_user_id?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          last_seen_at?: string;
+          revoked_at?: string | null;
+          secret_hash?: string;
+        };
+        Relationships: [];
+      };
+      web_account_sessions: {
+        Row: {
+          avatar_url: string | null;
+          created_at: string;
+          device_id: string;
+          display_name: string | null;
+          email: string | null;
+          last_active_at: string;
+          last_route: string | null;
+          last_workspace_id: string | null;
+          session_ciphertext: string;
+          session_expires_at: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          avatar_url?: string | null;
+          created_at?: string;
+          device_id: string;
+          display_name?: string | null;
+          email?: string | null;
+          last_active_at?: string;
+          last_route?: string | null;
+          last_workspace_id?: string | null;
+          session_ciphertext: string;
+          session_expires_at?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          avatar_url?: string | null;
+          created_at?: string;
+          device_id?: string;
+          display_name?: string | null;
+          email?: string | null;
+          last_active_at?: string;
+          last_route?: string | null;
+          last_workspace_id?: string | null;
+          session_ciphertext?: string;
+          session_expires_at?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'web_account_sessions_device_id_fkey';
+            columns: ['device_id'];
+            isOneToOne: false;
+            referencedRelation: 'web_account_devices';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_calendar_sync_log: {
         Row: {
           created_at: string;

@@ -1,5 +1,6 @@
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
+import { redirect } from 'next/navigation';
 import { BASE_URL, DEV_MODE } from '@/constants/common';
 import { LoginContent, type LoginDomain } from './login-content';
 
@@ -71,8 +72,37 @@ const getReturnUrlDomain = (url: string | undefined) => {
   }
 };
 
+const appendSearchParam = (
+  searchParams: URLSearchParams,
+  key: string,
+  value: string | string[] | undefined
+) => {
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      searchParams.append(key, entry);
+    }
+    return;
+  }
+
+  if (value !== undefined) {
+    searchParams.set(key, value);
+  }
+};
+
 export default async function Login({ searchParams }: LoginProps) {
   const params = await searchParams;
+  const code = getSingleSearchParam(params.code);
+
+  if (code) {
+    const callbackParams = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(params)) {
+      appendSearchParam(callbackParams, key, value);
+    }
+
+    redirect(`/api/auth/callback?${callbackParams.toString()}`);
+  }
+
   const returnUrl = getSingleSearchParam(params.returnUrl);
   const multiAccount = getSingleSearchParam(params.multiAccount) === 'true';
 

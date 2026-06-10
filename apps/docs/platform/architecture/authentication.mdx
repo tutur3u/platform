@@ -39,6 +39,19 @@ unrelated domains. Registered satellite apps still keep Tuturuuu app-session
 JWTs as a fallback and API isolation mechanism, so do not remove app-session
 refresh or handoff paths when updating shared Supabase cookie behavior.
 
+## Web Multi-Account Sessions
+
+`apps/web` stores multi-account sessions in a server-owned vault instead of
+browser `localStorage`. The browser keeps only an HttpOnly device cookie and
+loads account summaries from `/api/v1/auth/accounts`; Supabase access and
+refresh tokens remain encrypted in `private.web_account_sessions`.
+
+Use `WEB_MULTI_ACCOUNT_SESSION_SECRET` for vault encryption when available. If
+it is not configured, the server falls back to `SUPABASE_SECRET_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`, then `SUPABASE_SERVICE_KEY`. Never expose those
+values to client components or upload legacy browser-stored sessions into the
+vault; users should re-add accounts after storage migrations.
+
 ## Sign Up
 
 ### Basic Email/Password Sign Up

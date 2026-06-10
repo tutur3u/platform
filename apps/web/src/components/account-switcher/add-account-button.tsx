@@ -1,7 +1,6 @@
 'use client';
 
 import { Plus } from '@tuturuuu/icons/lucide';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -10,16 +9,14 @@ import { prepareAddAccountAndNavigate } from './utils';
 
 export function AddAccountButton() {
   const t = useTranslations();
-  const { addAccount, accounts } = useAccountSwitcher();
+  const { addAccount } = useAccountSwitcher();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAddAccount = async () => {
     setIsLoading(true);
     try {
       await prepareAddAccountAndNavigate({
-        createClient,
-        addAccount,
-        accounts,
+        saveCurrentAccount: addAccount,
       });
     } catch (_error) {
       // prepareAddAccountAndNavigate handles navigation even on error,
