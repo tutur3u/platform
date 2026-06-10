@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React, { type ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import LoginForm from './form';
 
 const mocks = vi.hoisted(() => ({
@@ -123,13 +123,15 @@ vi.mock('framer-motion', () => {
   };
 });
 
-function setWindowLocation(search = '') {
+function setWindowLocation(search = '', origin = 'https://tuturuuu.com') {
+  const url = new URL(`/login${search}`, origin);
+
   Object.defineProperty(window, 'location', {
     configurable: true,
     value: {
       assign: mocks.assign,
-      href: `https://tuturuuu.com/login${search}`,
-      origin: 'https://tuturuuu.com',
+      href: url.toString(),
+      origin: url.origin,
       pathname: '/login',
       reload: mocks.reload,
       search,
@@ -137,7 +139,7 @@ function setWindowLocation(search = '') {
   });
 }
 
-function renderLoginForm(returnUrl: string) {
+function renderLoginForm(returnUrl: string, options: { origin?: string } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: { retry: false },
@@ -147,7 +149,7 @@ function renderLoginForm(returnUrl: string) {
   const search = `?returnUrl=${encodeURIComponent(returnUrl)}`;
 
   mocks.searchParams = new URLSearchParams(search);
-  setWindowLocation(search);
+  setWindowLocation(search, options.origin);
 
   render(
     <QueryClientProvider client={queryClient}>
@@ -186,6 +188,11 @@ describe('LoginForm returnUrl navigation', () => {
     mocks.resolveCrossAppReturnUrlWithInternalApi.mockResolvedValue({
       error: 'Invalid returnUrl',
     });
+    mocks.signInWithOAuth.mockResolvedValue({ error: null });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('keeps a single-slash returnUrl inside the web app', async () => {
@@ -215,6 +222,54 @@ describe('LoginForm returnUrl navigation', () => {
     expect(
       screen.queryByRole('button', { name: 'login.qr_title' })
     ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('renders the public auth controls while Supabase user bootstrap is pending', async () => {
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockReturnValue(new Promise(() => undefined));
+
+    const queryClient = renderLoginForm('/');
+
+    await screen.findByRole('button', {
+      name: 'login.continue_with_email',
+    });
+    expect(
+      screen.getByPlaceholderText('login.email_username_placeholder')
+    ).toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('does not use a wildcard browser origin for social OAuth callbacks', async () => {
+    vi.stubEnv('WEB_APP_URL', '');
+    vi.stubEnv('NEXT_PUBLIC_WEB_APP_URL', '');
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', '');
+    vi.stubEnv('COOLIFY_URL', '');
+    vi.stubEnv('COOLIFY_FQDN', '');
+    vi.stubEnv('PORT', '7803');
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockReturnValue(new Promise(() => undefined));
+
+    const queryClient = renderLoginForm('/', {
+      origin: 'http://0.0.0.0:7803',
+    });
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: /login\.continue_with_google/u,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mocks.signInWithOAuth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            redirectTo: 'http://localhost:7803/api/auth/callback?returnUrl=%2F',
+          }),
+          provider: 'google',
+        })
+      );
+    });
     queryClient.clear();
   });
 

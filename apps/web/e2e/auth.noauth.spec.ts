@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
+  clearMailpitMessages,
   completeOtpStage,
   fetchOtpSettings,
   openPasswordStage,
@@ -45,6 +46,27 @@ test.describe('Authentication (unauthenticated)', () => {
     await expect(continueButton).toBeVisible({ timeout: 10_000 });
   });
 
+  test('login page remains usable while Supabase user lookup stalls', async ({
+    page,
+  }) => {
+    await page.route(/\/auth\/v1\/user(?:\?|$)/u, () => new Promise(() => {}));
+
+    await page.goto(`/${DEFAULT_LOCALE}/login`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    const emailInput = page
+      .getByPlaceholder('Enter your email or username')
+      .first();
+    await expect(emailInput).toBeVisible({ timeout: 30_000 });
+
+    const continueButton = page
+      .locator('form button[type="submit"]')
+      .filter({ hasText: /continue/i })
+      .first();
+    await expect(continueButton).toBeVisible({ timeout: 10_000 });
+  });
+
   test('unprefixed login page renders from a direct hard load', async ({
     page,
   }) => {
@@ -70,11 +92,24 @@ test.describe('Authentication (unauthenticated)', () => {
         configurable: true,
         value: undefined,
       });
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: undefined,
+      });
     });
 
     await page.goto(`/${DEFAULT_LOCALE}/login`, {
       waitUntil: 'domcontentloaded',
     });
+
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            `${typeof window.PublicKeyCredential}:${typeof navigator.credentials?.get}`
+        )
+      )
+      .toBe('undefined:undefined');
 
     const passkeyButton = page.getByRole('button', {
       name: /continue with passkey/i,
@@ -158,6 +193,13 @@ test.describe('Authentication (unauthenticated)', () => {
 
     try {
       const otpStageOnlyEmail = `otp-stage-only-${Date.now()}@tuturuuu.com`;
+      await page.route('**/api/v1/auth/otp/send', async (route) => {
+        await route.fulfill({
+          contentType: 'application/json',
+          status: 200,
+          body: JSON.stringify({ success: true }),
+        });
+      });
 
       await page.goto(`/${DEFAULT_LOCALE}/login`, {
         waitUntil: 'domcontentloaded',
@@ -247,6 +289,7 @@ test.describe('Authentication (unauthenticated)', () => {
     const previousOtpState = await setWebOtpEnabled(true);
 
     try {
+      await clearMailpitMessages();
       const otpEmail = `otp-login-${Date.now()}@tuturuuu.com`;
 
       await page.goto(`/${DEFAULT_LOCALE}/login`, {

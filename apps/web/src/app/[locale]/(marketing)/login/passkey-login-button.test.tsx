@@ -30,6 +30,7 @@ vi.mock('next-intl', () => ({
     const translations: Record<string, string> = {
       continue_with_passkey: 'Continue with passkey',
       passkey_failed: 'Passkey sign-in failed',
+      passkey_try_again: 'Please try again.',
     };
 
     return translations[key] ?? key;
@@ -40,6 +41,16 @@ describe('PasskeyLoginButton', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSignInWithPasskey.mockResolvedValue({ data: { session: {} } });
+    Object.defineProperty(window, 'PublicKeyCredential', {
+      configurable: true,
+      value: vi.fn(),
+    });
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      value: {
+        get: vi.fn(),
+      },
+    });
   });
 
   it('starts passkey sign-in and completes the primary login flow', async () => {
@@ -199,5 +210,25 @@ describe('PasskeyLoginButton', () => {
       });
       expect(onAuthenticated).not.toHaveBeenCalled();
     });
+  });
+
+  it('fails fast when the browser does not support passkeys', () => {
+    const onAuthenticated = vi.fn();
+    Object.defineProperty(window, 'PublicKeyCredential', {
+      configurable: true,
+      value: undefined,
+    });
+
+    render(<PasskeyLoginButton onAuthenticated={onAuthenticated} />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /continue with passkey/i })
+    );
+
+    expect(mockToastError).toHaveBeenCalledWith('Passkey sign-in failed', {
+      description: 'Please try again.',
+    });
+    expect(mockSignInWithPasskey).not.toHaveBeenCalled();
+    expect(onAuthenticated).not.toHaveBeenCalled();
   });
 });

@@ -75,6 +75,16 @@ export async function fetchOtpCodeFromMailpit(
   return null;
 }
 
+export async function clearMailpitMessages(): Promise<void> {
+  try {
+    await fetch(`${MAILPIT_API_URL}/messages`, {
+      method: 'DELETE',
+    });
+  } catch {
+    // Mailpit may be unavailable for tests that do not need email inspection.
+  }
+}
+
 /**
  * Authenticates via local dev-session and saves browser state.
  *

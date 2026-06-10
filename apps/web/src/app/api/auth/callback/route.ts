@@ -4,6 +4,7 @@ import { MAX_NAME_LENGTH, MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveAuthRedirectOrigin } from '@/app/[locale]/(marketing)/login/auth-redirect-origin';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
@@ -101,6 +102,10 @@ async function validateRedirectUrl(
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestUrl = new URL(request.url);
+  const redirectOrigin = resolveAuthRedirectOrigin({
+    currentOrigin: requestUrl.origin,
+    request,
+  });
 
   // Parse and validate query parameters
   const parseResult = queryParamsSchema.safeParse({
@@ -114,7 +119,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     serverLogger.warn('[auth/callback] Invalid query parameters', {
       error: parseResult.error.message,
     });
-    return NextResponse.redirect(new URL('/onboarding', requestUrl.origin));
+    return NextResponse.redirect(new URL('/onboarding', redirectOrigin));
   }
 
   const {
@@ -141,19 +146,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       });
       // Return safe error response without leaking details
       return NextResponse.redirect(
-        new URL('/login?error=auth_failed', requestUrl.origin)
+        new URL('/login?error=auth_failed', redirectOrigin)
       );
     }
   }
 
   // If in multi-account mode, redirect to the add-account page
   if (multiAccount) {
-    const addAccountUrl = new URL('/add-account', requestUrl.origin);
+    const addAccountUrl = new URL('/add-account', redirectOrigin);
     if (_returnUrl) {
-      const validated = await validateRedirectUrl(
-        _returnUrl,
-        requestUrl.origin
-      );
+      const validated = await validateRedirectUrl(_returnUrl, redirectOrigin);
       if (validated) {
         addAccountUrl.searchParams.set('returnUrl', validated.url);
       }
@@ -163,13 +165,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   // Handle returnUrl with cross-app token generation for external apps
   if (_returnUrl) {
-    const validated = await validateRedirectUrl(_returnUrl, requestUrl.origin);
+    const validated = await validateRedirectUrl(_returnUrl, redirectOrigin);
 
     if (validated) {
       if (validated.isExternal && validated.targetApp) {
         // External app - return to the login page first so the user confirms
         // the active platform account before a cross-app token is generated.
-        const loginUrl = new URL('/login', requestUrl.origin);
+        const loginUrl = new URL('/login', redirectOrigin);
         loginUrl.searchParams.set('returnUrl', validated.url);
         return NextResponse.redirect(loginUrl);
       }
@@ -177,7 +179,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       // Same-origin URL - redirect directly
       const redirectUrl = validated.url.startsWith('http')
         ? new URL(validated.url)
-        : new URL(validated.url, requestUrl.origin);
+        : new URL(validated.url, redirectOrigin);
 
       return NextResponse.redirect(redirectUrl);
     }
@@ -190,7 +192,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const defaultPath = normalizedNextUrl
     ? `/${normalizedNextUrl}`
     : '/onboarding';
-  const redirectUrl = new URL(defaultPath, requestUrl.origin);
+  const redirectUrl = new URL(defaultPath, redirectOrigin);
 
   return NextResponse.redirect(redirectUrl);
 }

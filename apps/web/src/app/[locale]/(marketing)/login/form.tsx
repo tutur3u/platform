@@ -59,6 +59,7 @@ import {
   type AuthOAuthProvider,
   getAuthOAuthProviderOptions,
 } from '@/lib/auth/oauth-providers';
+import { resolveAuthRedirectOrigin } from './auth-redirect-origin';
 import { InternalAppAccountConfirmation } from './internal-app-account-confirmation';
 import { InvalidReturnUrlWarning } from './invalid-return-url-warning';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
@@ -389,6 +390,7 @@ export default function LoginForm() {
       ? returnUrlValidationFailure
       : resolvedReturnUrlFailure;
   const hasActiveReturnUrlFailure = Boolean(activeReturnUrlFailure);
+  const canRenderAuthSurface = readyForAuth || !initialized;
 
   const createMobileMfaChallengeMutation = useMutation({
     mutationFn: () =>
@@ -1065,26 +1067,26 @@ export default function LoginForm() {
     const returnUrl = searchParams.get('returnUrl');
     const nextUrl = searchParams.get('nextUrl');
     const multiAccount = searchParams.get('multiAccount');
-    let redirectURL = `${window.location.origin}/api/auth/callback`;
-    const searchParamsArray = [];
+    const redirectUrl = new URL(
+      '/api/auth/callback',
+      resolveAuthRedirectOrigin({
+        currentOrigin: window.location.origin,
+      })
+    );
 
     if (returnUrl) {
-      searchParamsArray.push(`returnUrl=${encodeURIComponent(returnUrl)}`);
+      redirectUrl.searchParams.set('returnUrl', returnUrl);
     }
 
     if (nextUrl) {
-      searchParamsArray.push(`nextUrl=${encodeURIComponent(nextUrl)}`);
+      redirectUrl.searchParams.set('nextUrl', nextUrl);
     }
 
     if (multiAccount === 'true') {
-      searchParamsArray.push('multiAccount=true');
+      redirectUrl.searchParams.set('multiAccount', 'true');
     }
 
-    if (searchParamsArray.length > 0) {
-      redirectURL += `?${searchParamsArray.join('&')}`;
-    }
-
-    return redirectURL;
+    return redirectUrl.toString();
   }, [searchParams]);
 
   const handleOAuthLogin = useCallback(
@@ -1397,7 +1399,7 @@ export default function LoginForm() {
   ]);
 
   useEffect(() => {
-    if (!initialized || !readyForAuth || requiresMFA) {
+    if (!canRenderAuthSurface || requiresMFA) {
       return;
     }
 
@@ -1414,15 +1416,14 @@ export default function LoginForm() {
     emailForm.setFocus('email');
   }, [
     authStage,
+    canRenderAuthSurface,
     emailForm,
-    initialized,
     otpForm,
     passwordForm,
-    readyForAuth,
     requiresMFA,
   ]);
 
-  if (!initialized || !readyForAuth) {
+  if (!canRenderAuthSurface) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <LoadingIndicator />

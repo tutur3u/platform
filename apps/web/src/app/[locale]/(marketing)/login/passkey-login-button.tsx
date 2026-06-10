@@ -39,6 +39,16 @@ export function PasskeyLoginButton({
       return;
     }
 
+    if (
+      typeof window.PublicKeyCredential === 'undefined' ||
+      typeof navigator.credentials?.get !== 'function'
+    ) {
+      toast.error(t('passkey_failed'), {
+        description: t('passkey_try_again'),
+      });
+      return;
+    }
+
     setIsAuthenticating(true);
 
     try {
