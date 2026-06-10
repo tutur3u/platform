@@ -67,7 +67,7 @@ export async function getAssignedCourseIds({
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
     .select(
-      'group_id, workspace_user_groups!inner(id, ws_id, archived, is_guest, is_course_published)'
+      'group_id, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(id, ws_id, archived, is_guest, is_course_published)'
     )
     .eq('user_id', studentWorkspaceUserId)
     .eq('workspace_user_groups.ws_id', wsId)

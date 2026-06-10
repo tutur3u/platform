@@ -282,7 +282,9 @@ async function handleUsersDatabaseRequest(
         await Promise.all([
           sbAdmin
             .from('workspace_user_groups_users')
-            .select('user_id, workspace_user_groups!inner(is_guest, ws_id)')
+            .select(
+              'user_id, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(is_guest, ws_id)'
+            )
             .eq('workspace_user_groups.ws_id', wsId)
             .eq('workspace_user_groups.is_guest', true)
             .in('user_id', workspaceUserIds),

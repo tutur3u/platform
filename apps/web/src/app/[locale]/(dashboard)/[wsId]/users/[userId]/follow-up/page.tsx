@@ -71,10 +71,11 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
           .eq('id', userId)
           .maybeSingle();
 
-        // Fetch user's groups for report context
         const { data: userGroups } = await supabase
           .from('workspace_user_groups_users')
-          .select('group:workspace_user_groups!inner(id, name, ws_id)')
+          .select(
+            'group:workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(id, name, ws_id)'
+          )
           .eq('user_id', userId)
           .eq('group.ws_id', wsId);
 

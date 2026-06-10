@@ -130,7 +130,7 @@ export const GET = withSessionAuth(
     const queryBuilder = context.supabase
       .from('workspace_user_groups')
       .select(
-        'id, name, description, cert_template, created_at, archived, ending_date, is_course_published, sessions, starting_date, workspace_course_modules(id), workspace_user_groups_users(user_id)',
+        'id, name, description, cert_template, created_at, archived, ending_date, is_course_published, sessions, starting_date, workspace_course_modules(id), workspace_user_groups_users!workspace_user_roles_users_role_id_fkey(user_id)',
         { count: 'exact' }
       )
       .eq('ws_id', access.normalizedWsId)

@@ -46,7 +46,9 @@ async function getDataWithApiKey({
 
   const mainQuery = sbAdmin
     .from('workspace_user_groups_users')
-    .select('*, workspace_user_groups!inner(*)')
+    .select(
+      '*, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(*)'
+    )
     .eq('workspace_user_groups.ws_id', wsId)
     .eq('user_id', userId);
 
@@ -92,7 +94,9 @@ async function getDataFromSession({
 
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
-    .select('*, workspace_user_groups!inner(*)')
+    .select(
+      '*, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(*)'
+    )
     .eq('workspace_user_groups.ws_id', normalizedWsId)
     .eq('user_id', userId);
 
