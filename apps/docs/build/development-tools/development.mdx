@@ -115,20 +115,37 @@ subdomain instead of relying on its fallback port. The app package `dev`
 scripts run `portless`, and the underlying framework command remains available
 through `dev:app` for direct port-based debugging.
 
+Root app-specific commands such as `bun dev:chat`, `bun dev:calendar`, and
+`bun dev:edu` reuse app servers that are already running. The launcher checks
+active Portless routes first, then the app's default localhost port; if it finds
+a direct localhost listener, it tries to register a matching Portless alias so
+cross-app auth can still use the `*.tuturuuu.localhost` URL. Pass `--force` or
+`--no-reuse` when you intentionally want the command to include already-running
+app workspaces.
+
+`bun dev:chat` also manages the local chat realtime sidecar. It reuses
+`localhost:7817` when a sidecar is already running; otherwise it starts
+`apps/chat-realtime` so `apps/web` can proxy chat SSE traffic for `apps/chat`.
+
 | App | Local URL |
 | --- | --- |
 | Platform | `https://tuturuuu.localhost` |
 | Calendar | `https://calendar.tuturuuu.localhost` |
+| Chat | `https://chat.tuturuuu.localhost` |
 | CMS | `https://cms.tuturuuu.localhost` |
+| Drive | `https://drive.tuturuuu.localhost` |
 | External | `https://external.tuturuuu.localhost` |
 | Finance | `https://finance.tuturuuu.localhost` |
 | Hive | `https://hive.tuturuuu.localhost` |
 | Hive Realtime | `https://realtime.hive.tuturuuu.localhost` |
 | Inventory | `https://inventory.tuturuuu.localhost` |
 | Learn | `https://learn.tuturuuu.localhost` |
+| Mail | `https://mail.tuturuuu.localhost` |
 | Meet | `https://meet.tuturuuu.localhost` |
+| Mind | `https://mind.tuturuuu.localhost` |
 | Nova | `https://nova.tuturuuu.localhost` |
 | Playground | `https://playground.tuturuuu.localhost` |
+| QR | `https://qr.tuturuuu.localhost` |
 | Rewise | `https://rewise.tuturuuu.localhost` |
 | Shortener | `https://shortener.tuturuuu.localhost` |
 | Tasks | `https://tasks.tuturuuu.localhost` |

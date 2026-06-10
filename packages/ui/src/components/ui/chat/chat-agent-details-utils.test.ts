@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAgentPayload,
   readAgentConversationMetadata,
+  secretNamesForChannel,
 } from './chat-agent-details-utils';
 
 function conversation(metadata: Record<string, unknown>): ChatConversation {
@@ -156,6 +157,78 @@ describe('buildAgentPayload', () => {
       instructions: 'Updated instructions',
       modelId: 'updated-model',
       name: 'Updated name',
+    });
+  });
+
+  it('preserves personal Zalo channel mode and credentials when saving setup edits', () => {
+    const agent: AiAgentDefinition = {
+      channels: [
+        {
+          adapter: 'zalo',
+          autoRespond: true,
+          displayName: 'Personal Zalo',
+          enabled: true,
+          externalChannelId: 'zalo-thread',
+          historySyncEnabled: true,
+          id: 'zalo-personal',
+          lastDeployedAt: null,
+          lastError: null,
+          lastEventAt: null,
+          mentionRoleIds: [],
+          secrets: [
+            {
+              configured: true,
+              lastFour: 'json',
+              name: 'personalCookieJson',
+            },
+          ],
+          status: 'deployed',
+          webhookUrl: null,
+          workspaceId: 'workspace-1',
+          zaloAccountMode: 'personal',
+          zaloPersonalOwnId: 'own-1',
+        },
+      ],
+      createdAt: null,
+      enabled: true,
+      id: 'agent-1',
+      instructions: 'Old instructions',
+      modelId: 'old-model',
+      name: 'Old name',
+      temperature: null,
+      tools: [],
+      updatedAt: null,
+    };
+    const formData = new FormData();
+    formData.set('agentEnabled', 'on');
+    formData.set('name', 'Updated name');
+    formData.set('modelId', 'updated-model');
+    formData.set('instructions', 'Updated instructions');
+    formData.set('channelDisplayName', 'Personal Zalo');
+    formData.set('channelEnabled', 'on');
+    formData.set('channelAutoRespond', 'on');
+    formData.set('channelHistorySyncEnabled', 'on');
+    formData.set('externalChannelId', 'zalo-thread');
+    formData.set('workspaceId', 'workspace-1');
+    formData.set('zaloPersonalOwnId', 'own-1');
+
+    expect(secretNamesForChannel(agent.channels[0]!)).toEqual([
+      'personalCookieJson',
+      'personalImei',
+      'personalUserAgent',
+    ]);
+    expect(
+      buildAgentPayload(formData, agent, agent.channels[0]!)
+    ).toMatchObject({
+      channels: [
+        {
+          adapter: 'zalo',
+          id: 'zalo-personal',
+          zaloAccountMode: 'personal',
+          zaloOfficialAccountId: null,
+          zaloPersonalOwnId: 'own-1',
+        },
+      ],
     });
   });
 });

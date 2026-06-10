@@ -21,11 +21,16 @@ vi.mock('next-intl', () => ({
 }));
 
 vi.mock('@tuturuuu/internal-api/infrastructure', () => ({
+  abortAiAgentZaloPersonalQrLogin: vi.fn(),
   deployAiAgentChannel: vi.fn(),
+  getAiAgentZaloPersonalQrLoginStatus: vi.fn(),
+  getAiAgentZaloPersonalStatus: vi.fn(),
   listAiAgents: (...args: unknown[]) => mocks.listAiAgents(...args),
   pauseAiAgentChannel: vi.fn(),
   rotateAiAgentChannelSecret: vi.fn(),
+  runAiAgentZaloPersonalAction: vi.fn(),
   saveAiAgent: vi.fn(),
+  startAiAgentZaloPersonalQrLogin: vi.fn(),
   testAiAgentChannel: vi.fn(),
 }));
 

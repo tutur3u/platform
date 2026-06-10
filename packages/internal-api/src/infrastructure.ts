@@ -320,10 +320,105 @@ export interface AiAgentZaloPersonalStatus {
 }
 
 export interface AiAgentZaloPersonalStatusResponse {
+  phoneSyncJob?: AiAgentZaloPersonalPhoneSyncJobSnapshot | null;
   status: AiAgentZaloPersonalStatus;
 }
 
-export type AiAgentZaloPersonalAction = 'start' | 'stop' | 'validate';
+export interface AiAgentZaloPersonalHistorySyncResult {
+  exhausted: boolean;
+  failedGroupHistories: number;
+  groupMessages: number;
+  groupsScanned: number;
+  pageCount: number;
+  synced: number;
+  threads: number;
+  timedOut: boolean;
+  userMessages: number;
+}
+
+export type AiAgentZaloPersonalPhoneSyncStatus =
+  | 'completed'
+  | 'completed_no_payload'
+  | 'failed'
+  | 'partial'
+  | 'waiting_for_phone';
+
+export interface AiAgentZaloPersonalPhoneSyncResult {
+  approvalRequested: boolean;
+  cleaned: boolean;
+  error: string | null;
+  groupMessages: number;
+  pullAttempts: number;
+  requestAccepted: boolean;
+  requestHttpError: string | null;
+  requestViaHttp: boolean;
+  requestViaWebSocket: boolean;
+  status: AiAgentZaloPersonalPhoneSyncStatus;
+  synced: number;
+  threads: number;
+  userMessages: number;
+}
+
+export interface AiAgentZaloPersonalPhoneSyncJobSnapshot {
+  completedAt: string | null;
+  error: string | null;
+  startedAt: string;
+  status: 'completed' | 'failed' | 'running';
+  sync: AiAgentZaloPersonalPhoneSyncResult | null;
+}
+
+export type AiAgentZaloPersonalSyncResult =
+  | AiAgentZaloPersonalHistorySyncResult
+  | AiAgentZaloPersonalPhoneSyncResult;
+
+export interface AiAgentZaloPersonalActionResponse {
+  phoneSyncJob?: AiAgentZaloPersonalPhoneSyncJobSnapshot | null;
+  status: AiAgentZaloPersonalStatus;
+  sync?: AiAgentZaloPersonalSyncResult;
+}
+
+export type AiAgentZaloPersonalAction =
+  | 'start'
+  | 'stop'
+  | 'sync-history'
+  | 'sync-phone'
+  | 'validate';
+
+export type AiAgentZaloPersonalQrLoginStatus =
+  | 'pending'
+  | 'qr_generated'
+  | 'scanned'
+  | 'credentials_ready'
+  | 'authenticated'
+  | 'persisted'
+  | 'expired'
+  | 'declined'
+  | 'aborted'
+  | 'failed';
+
+export interface AiAgentZaloPersonalQrScannedProfile {
+  avatar: string | null;
+  displayName: string | null;
+}
+
+export interface AiAgentZaloPersonalQrLoginSession {
+  agentId: string;
+  channelId: string;
+  createdAt: string;
+  error: string | null;
+  expiresAt: string | null;
+  mode: AiAgentZaloAccountMode;
+  ownId: string | null;
+  qrImageDataUrl: string | null;
+  scannedProfile: AiAgentZaloPersonalQrScannedProfile | null;
+  sessionId: string;
+  status: AiAgentZaloPersonalQrLoginStatus;
+  updatedAt: string;
+}
+
+export interface AiAgentZaloPersonalQrLoginResponse {
+  session: AiAgentZaloPersonalQrLoginSession;
+}
 
 export interface RotateAiAgentChannelSecretResponse {
   secret: {
@@ -2052,7 +2147,7 @@ export async function runAiAgentZaloPersonalAction(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<AiAgentZaloPersonalStatusResponse>(
+  return client.json<AiAgentZaloPersonalActionResponse>(
     `/api/v1/infrastructure/ai-agents/${encodePathSegment(
       agentId
     )}/channels/${encodePathSegment(channelId)}/zalo-personal`,
@@ -2063,6 +2158,62 @@ export async function runAiAgentZaloPersonalAction(
         'Content-Type': 'application/json',
       },
       method: 'POST',
+    }
+  );
+}
+
+export async function startAiAgentZaloPersonalQrLogin(
+  agentId: string,
+  channelId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AiAgentZaloPersonalQrLoginResponse>(
+    `/api/v1/infrastructure/ai-agents/${encodePathSegment(
+      agentId
+    )}/channels/${encodePathSegment(channelId)}/zalo-personal/qr-login`,
+    {
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function getAiAgentZaloPersonalQrLoginStatus(
+  agentId: string,
+  channelId: string,
+  sessionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AiAgentZaloPersonalQrLoginResponse>(
+    `/api/v1/infrastructure/ai-agents/${encodePathSegment(
+      agentId
+    )}/channels/${encodePathSegment(
+      channelId
+    )}/zalo-personal/qr-login?sessionId=${encodeURIComponent(sessionId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function abortAiAgentZaloPersonalQrLogin(
+  agentId: string,
+  channelId: string,
+  sessionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AiAgentZaloPersonalQrLoginResponse>(
+    `/api/v1/infrastructure/ai-agents/${encodePathSegment(
+      agentId
+    )}/channels/${encodePathSegment(
+      channelId
+    )}/zalo-personal/qr-login?sessionId=${encodeURIComponent(sessionId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
     }
   );
 }

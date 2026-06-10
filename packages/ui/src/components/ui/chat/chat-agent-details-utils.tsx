@@ -78,10 +78,10 @@ export function PanelSection({
   title: string;
 }) {
   return (
-    <section className="space-y-3 rounded-md border bg-muted/10 p-3">
-      <h3 className="flex items-center gap-2 font-medium text-sm">
-        {icon}
-        {title}
+    <section className="min-w-0 space-y-3 overflow-hidden rounded-md border bg-muted/10 p-3">
+      <h3 className="flex min-w-0 items-center gap-2 font-medium text-sm">
+        <span className="shrink-0">{icon}</span>
+        <span className="min-w-0 truncate">{title}</span>
       </h3>
       {children}
     </section>
@@ -108,7 +108,7 @@ export function Field({
 export function KeyValue({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3 text-sm">
-      <span className="text-muted-foreground">{label}</span>
+      <span className="shrink-0 text-muted-foreground">{label}</span>
       <span className="min-w-0 truncate font-medium">{value}</span>
     </div>
   );
@@ -169,10 +169,59 @@ export function secretNamesForChannel(channel: AiAgentChannelConfig) {
   const required =
     channel.adapter === 'discord'
       ? ['applicationId', 'publicKey', 'botToken']
-      : ['botToken', 'webhookSecret'];
+      : isPersonalZaloChannel(channel)
+        ? ['personalCookieJson', 'personalImei', 'personalUserAgent']
+        : ['botToken', 'webhookSecret'];
   return [
     ...new Set([...required, ...channel.secrets.map((item) => item.name)]),
   ];
+}
+
+export function isPersonalZaloChannel(channel: AiAgentChannelConfig) {
+  return channel.adapter === 'zalo' && channel.zaloAccountMode === 'personal';
+}
+
+const ZALO_PERSONAL_ERROR_KEYS = {
+  ai_agent_zalo_personal_channel_required:
+    'agent_zalo_personal_channel_required',
+  zalo_personal_cookie_json_invalid: 'agent_zalo_personal_cookie_json_invalid',
+  zalo_personal_credentials_missing: 'agent_zalo_personal_credentials_missing',
+  zalo_personal_feature_disabled: 'agent_zalo_personal_feature_disabled',
+  zalo_personal_phone_sync_timed_out: 'agent_zalo_personal_sync_phone_failed',
+  zalo_personal_phone_sync_no_payload:
+    'agent_zalo_personal_sync_phone_no_payload',
+  zalo_personal_phone_sync_waiting_for_phone:
+    'agent_zalo_personal_sync_phone_waiting',
+  zalo_personal_web_sync_browser_unavailable:
+    'agent_zalo_personal_sync_web_browser_unavailable',
+  zalo_personal_web_sync_failed: 'agent_zalo_personal_sync_web_failed',
+  zalo_personal_web_sync_login_required:
+    'agent_zalo_personal_sync_web_login_required',
+  zalo_personal_web_sync_timed_out: 'agent_zalo_personal_sync_web_timed_out',
+  zalo_personal_web_sync_waiting_for_phone:
+    'agent_zalo_personal_sync_phone_waiting',
+  zalo_personal_qr_aborted: 'agent_zalo_personal_qr_aborted',
+  zalo_personal_qr_credentials_missing:
+    'agent_zalo_personal_qr_credentials_missing',
+  zalo_personal_qr_declined: 'agent_zalo_personal_qr_declined',
+  zalo_personal_qr_expired: 'agent_zalo_personal_qr_expired',
+} as const;
+
+export function formatZaloPersonalError(
+  error: string | null | undefined,
+  t: ReturnType<typeof useTranslations>
+) {
+  if (!error) return null;
+
+  const key =
+    ZALO_PERSONAL_ERROR_KEYS[error as keyof typeof ZALO_PERSONAL_ERROR_KEYS];
+  if (key) return t(key);
+
+  if (error.startsWith('zalo_personal_qr_')) {
+    return t('agent_zalo_personal_qr_failed');
+  }
+
+  return error;
 }
 
 export async function copyToClipboard(
@@ -212,17 +261,30 @@ function buildSelectedChannelPayload(
       String(formData.get('workspaceId') ?? '').trim() || channel.workspaceId,
   };
 
-  return channel.adapter === 'discord'
-    ? {
-        ...base,
-        discordGuildId:
-          String(formData.get('discordGuildId') ?? '').trim() || null,
-      }
-    : {
-        ...base,
-        zaloOfficialAccountId:
-          String(formData.get('zaloOfficialAccountId') ?? '').trim() || null,
-      };
+  if (channel.adapter === 'discord') {
+    return {
+      ...base,
+      discordGuildId:
+        String(formData.get('discordGuildId') ?? '').trim() || null,
+    };
+  }
+
+  const zaloAccountMode = channel.zaloAccountMode ?? 'official';
+
+  return {
+    ...base,
+    zaloAccountMode,
+    zaloOfficialAccountId:
+      zaloAccountMode === 'official'
+        ? String(formData.get('zaloOfficialAccountId') ?? '').trim() || null
+        : null,
+    zaloPersonalOwnId:
+      zaloAccountMode === 'personal'
+        ? String(formData.get('zaloPersonalOwnId') ?? '').trim() ||
+          channel.zaloPersonalOwnId ||
+          null
+        : null,
+  };
 }
 
 function buildExistingChannelPayload(
@@ -241,15 +303,27 @@ function buildExistingChannelPayload(
     workspaceId: channel.workspaceId,
   };
 
-  return channel.adapter === 'discord'
-    ? {
-        ...base,
-        discordGuildId: channel.discordGuildId ?? null,
-      }
-    : {
-        ...base,
-        zaloOfficialAccountId: channel.zaloOfficialAccountId ?? null,
-      };
+  if (channel.adapter === 'discord') {
+    return {
+      ...base,
+      discordGuildId: channel.discordGuildId ?? null,
+    };
+  }
+
+  const zaloAccountMode = channel.zaloAccountMode ?? 'official';
+
+  return {
+    ...base,
+    zaloAccountMode,
+    zaloOfficialAccountId:
+      zaloAccountMode === 'official'
+        ? (channel.zaloOfficialAccountId ?? null)
+        : null,
+    zaloPersonalOwnId:
+      zaloAccountMode === 'personal'
+        ? (channel.zaloPersonalOwnId ?? null)
+        : null,
+  };
 }
 
 function readSecretPayload(formData: FormData) {

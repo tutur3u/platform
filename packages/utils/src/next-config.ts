@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next';
 import { getLocalInternalAppUrl } from './internal-domains';
-import { TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS } from './portless';
+import { getTuturuuuPortlessAllowedDevOrigins } from './portless';
 
 type Environment = Record<string, string | undefined>;
 
@@ -117,7 +117,7 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
     cacheComponents:
       config.cacheComponents ?? isTuturuuuNextCacheComponentsEnabled(),
     allowedDevOrigins: mergeStringArrays(
-      TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS,
+      getTuturuuuPortlessAllowedDevOrigins(),
       config.allowedDevOrigins
     ),
     images: {

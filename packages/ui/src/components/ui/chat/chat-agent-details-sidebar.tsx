@@ -155,7 +155,10 @@ export function ChatAgentDetailsSidebar({
   if (!open) return null;
 
   return (
-    <aside className="hidden w-96 min-w-0 shrink-0 overflow-hidden border-l bg-background md:flex md:flex-col">
+    <aside
+      className="hidden w-96 min-w-0 shrink-0 overflow-hidden border-l bg-background md:flex md:flex-col"
+      data-chat-agent-details-sidebar="true"
+    >
       <Tabs
         className="min-h-0 flex-1 gap-0"
         defaultValue="setup"
@@ -192,7 +195,7 @@ export function ChatAgentDetailsSidebar({
           </TabsList>
         </div>
 
-        <ScrollArea className="min-h-0 flex-1">
+        <ScrollArea className="[&_[data-radix-scroll-area-viewport]>div]:!block [&_[data-radix-scroll-area-viewport]>div]:!min-w-0 min-h-0 min-w-0 flex-1 overflow-hidden [&_[data-radix-scroll-area-viewport]>div]:w-full [&_[data-radix-scroll-area-viewport]>div]:max-w-full">
           {renderContent({
             agentsError: agentsQuery.error,
             agentsLoading: agentsQuery.isLoading,
@@ -263,7 +266,7 @@ function renderContent({
 
   if (agentsLoading) {
     return (
-      <div className="flex items-center justify-center p-6 text-muted-foreground text-sm">
+      <div className="flex min-w-0 items-center justify-center p-6 text-muted-foreground text-sm">
         <LoaderCircle className="mr-2 size-4 animate-spin" />
         {t('loading_ai_settings')}
       </div>
@@ -285,7 +288,10 @@ function renderContent({
 
   return (
     <>
-      <TabsContent className="m-0 p-3" value={'setup' satisfies AgentTab}>
+      <TabsContent
+        className="m-0 min-w-0 max-w-full overflow-hidden p-3"
+        value={'setup' satisfies AgentTab}
+      >
         <AgentSetupForm
           agent={agent}
           channel={channel}
@@ -293,13 +299,18 @@ function renderContent({
           onSubmit={onSave}
         />
       </TabsContent>
-      <TabsContent className="m-0 p-3" value={'operations' satisfies AgentTab}>
+      <TabsContent
+        className="m-0 min-w-0 max-w-full overflow-hidden p-3"
+        value={'operations' satisfies AgentTab}
+      >
         <AgentOperationsPanel
+          agentId={agent.id}
           channel={channel}
           isPending={isPending}
           onCopySecret={onCopySecret}
           onDeploy={onDeploy}
           onPause={onPause}
+          onRefresh={onRefresh}
           onRotateSecret={onRotateSecret}
           onTest={onTest}
           secretPreview={secretPreview}
@@ -307,7 +318,10 @@ function renderContent({
         />
       </TabsContent>
       {tabs.includes('thread') ? (
-        <TabsContent className="m-0 p-3" value={'thread' satisfies AgentTab}>
+        <TabsContent
+          className="m-0 min-w-0 max-w-full overflow-hidden p-3"
+          value={'thread' satisfies AgentTab}
+        >
           <AgentExternalThreadPanel metadata={metadata} onRefresh={onRefresh} />
         </TabsContent>
       ) : null}
@@ -323,7 +337,7 @@ function SidebarNotice({
   secondary?: string | null;
 }) {
   return (
-    <div className="space-y-2 p-4 text-sm">
+    <div className="min-w-0 space-y-2 overflow-hidden p-4 text-sm">
       <p className="text-muted-foreground">{message}</p>
       {secondary ? (
         <p className="break-words rounded-md border bg-muted/20 p-2 text-muted-foreground text-xs">

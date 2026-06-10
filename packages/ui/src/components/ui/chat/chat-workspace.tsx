@@ -5,6 +5,7 @@ import type {
   ChatAttachment,
   ChatAttachmentDraft,
   ChatConversation,
+  ChatMessage,
 } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -152,11 +153,17 @@ export function ChatWorkspace({
     conversationId: selectedVirtualReadOnly ? null : activeConversationId,
     wsId,
   });
+  const fetchedMessages = selectedVirtualReadOnly
+    ? []
+    : flattenChatMessagePages(messagesQuery.data);
   const messages = selectedVirtualReadOnly
     ? selectedConversation?.latestMessage
       ? [selectedConversation.latestMessage]
       : []
-    : flattenChatMessagePages(messagesQuery.data);
+    : mergeConversationLatestMessage(
+        fetchedMessages,
+        selectedConversation?.latestMessage
+      );
   const sendMessage = useSendChatMessage({
     conversationId: activeConversationId,
     currentUserId,
@@ -565,6 +572,29 @@ export function ChatWorkspace({
       />
     </section>
   );
+}
+
+function mergeConversationLatestMessage(
+  messages: ChatMessage[],
+  latestMessage?: ChatMessage | null
+) {
+  if (
+    !latestMessage ||
+    messages.some((message) => message.id === latestMessage.id)
+  ) {
+    return messages;
+  }
+
+  return [...messages, latestMessage].sort(
+    (left, right) =>
+      readChatMessageTimestamp(left.createdAt) -
+      readChatMessageTimestamp(right.createdAt)
+  );
+}
+
+function readChatMessageTimestamp(value: string) {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
 const POSTGRES_UUID_PATTERN =

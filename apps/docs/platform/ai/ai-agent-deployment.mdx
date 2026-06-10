@@ -103,14 +103,17 @@ Infrastructure > AI Agents is the full setup and operations surface:
 - Configure Discord and Zalo credentials, workspace mapping, auto-response, and
   history sync per channel.
 - Inspect mirrored external threads and messages.
-- Trigger an on-demand external history sync when the adapter supports it.
+- Trigger an on-demand external history sync when the adapter supports it,
+  including phone-approved transfer sync for personal Zalo accounts.
 - Generate a draft with a custom operator prompt and mirrored history context.
 - Send the reviewed draft back to the external platform exactly as edited.
 
 Discord can fetch recent thread/channel history through the Chat SDK adapter
-when the bot token has the required scopes. Zalo history fetch support is
-limited, so Zalo mirrors primarily rely on webhook/runtime events until the
-adapter can fetch historical messages.
+when the bot token has the required scopes. Official Zalo channels still rely on
+webhook/runtime events. Personal Zalo channels can import Zalo Web-visible
+history through **Sync history** and can request phone-approved mobile transfer
+history through **Sync phone** when older messages are only present on the
+paired mobile device.
 
 The same external-thread operations are available from `apps/chat` for root
 AI-agent admins when an external AI-agent thread is selected: sync external
@@ -134,13 +137,19 @@ Use `apps/chat` as the operator smoke-test surface after deployment:
    [Discord interactions](https://docs.discord.com/developers/interactions/overview)
    and the
    [Discord quickstart](https://docs.discord.com/developers/quick-start/getting-started).
-5. From the setup conversation, open the **Thread** tab to list recent mirrored
+5. For personal Zalo, set the channel to `Personal account`, open the
+   operations tab, run **Pair QR**, scan the QR code from the Zalo mobile app,
+   then run **Validate**, **Sync history**, **Sync phone**, **Deploy**, and
+   **Start**. Approve the transfer-sync prompt on the phone when **Sync phone**
+   requests it. Use a second Zalo account or group sender for the live
+   inbound-message test.
+6. From the setup conversation, open the **Thread** tab to list recent mirrored
    external threads for the selected agent channel. Use **Sync external thread**
    from that list when a mirrored thread exists.
-6. Select a mirrored `ai-agent-thread-<uuid>` conversation and use **Sync
+7. Select a mirrored `ai-agent-thread-<uuid>` conversation and use **Sync
    external thread**. A zero-message result means the adapter found no newer
    messages.
-7. Draft and send a manual response from the thread panel, then confirm the
+8. Draft and send a manual response from the thread panel, then confirm the
    mirrored conversation refreshes.
 
 ## Discord And Zalo Setup
@@ -180,13 +189,28 @@ secret token to the channel's `webhookSecret`, and store the bot token plus OA I
 on the Zalo channel.
 
 For experimental personal Zalo account testing, set the Zalo account mode to
-`Personal account`, store the cookie JSON, IMEI, and user agent as channel
-secrets, then use **Validate login** to save the personal account ID. Personal
-Zalo channels do not receive webhooks. They use the channel listener lifecycle
-API from Infrastructure > AI Agents, and only one Zalo Web listener can be
-active per personal account at a time. Use test accounts only; the upstream
-`zca-js` package is an unofficial Zalo Web automation API and can trigger
-account locks or bans.
+`Personal account`, then use **Pair QR** from the `apps/chat` setup
+conversation or the shared AI-agent operations panel. The QR flow runs
+`zca-js` `loginQR()` server-side, stores `personalCookieJson`, `personalImei`,
+and `personalUserAgent` as channel secrets, and records `zaloPersonalOwnId`
+after confirmation. The browser receives only QR/session status, never raw
+cookies, IMEI, or user agent values.
+
+Manual cookie JSON, IMEI, and user agent entry remains a fallback for local
+debugging. After either setup path, use **Validate** to confirm login, then
+use **Sync history** to import Zalo Web-visible personal user and group threads
+into Tuturuuu Chat. When the mobile device owns additional history, use
+**Sync phone** and approve the transfer-sync request in the Zalo mobile app.
+The phone-transfer action is owned by `apps/web`; `apps/chat` reaches it only
+through the internal API proxy, and the browser never receives cookies, IMEI,
+user agent values, private transfer keys, or raw transfer payloads. Historical
+sync persists mirrored conversations and messages only; it does not trigger AI
+auto-responses for old messages. Deploy the channel and use **Start**/**Stop**
+for the live listener lifecycle.
+Personal Zalo channels do not receive webhooks, and only one Zalo Web listener
+can be active per personal account at a time. Use test accounts only; the
+upstream `zca-js` package is an unofficial Zalo Web automation API and can
+trigger account locks or bans.
 
 For experimental root-internal external chatbots, choose the explicit
 `Internal` workspace option in the AI-agent workspace picker. It stores

@@ -12,6 +12,7 @@ import {
 export type ChatSdkPlatformAdapterFactory = (config?: unknown) => Adapter;
 export type ChatSdkStateAdapterFactory = (config?: unknown) => StateAdapter;
 export type ChatSdkAdapterModule = Record<string, unknown>;
+type ChatSdkPackageLoader = () => Promise<ChatSdkAdapterModule>;
 
 export type ChatSdkPlatformAdapterInput =
   | Adapter
@@ -37,6 +38,21 @@ export interface CreateChatSdkRuntimeOptions
   state: ChatSdkStateAdapterInput;
 }
 
+const CHAT_SDK_PACKAGE_LOADERS: Record<string, ChatSdkPackageLoader> = {
+  '@chat-adapter/state-ioredis': async () =>
+    (await import('@chat-adapter/state-ioredis')) as ChatSdkAdapterModule,
+  '@chat-adapter/state-memory': async () =>
+    (await import('@chat-adapter/state-memory')) as ChatSdkAdapterModule,
+  '@chat-adapter/state-pg': async () =>
+    (await import('@chat-adapter/state-pg')) as ChatSdkAdapterModule,
+  '@chat-adapter/state-redis': async () =>
+    (await import('@chat-adapter/state-redis')) as ChatSdkAdapterModule,
+  'chat-state-cloudflare-do': async () =>
+    (await import('chat-state-cloudflare-do')) as ChatSdkAdapterModule,
+  'chat-state-mysql': async () =>
+    (await import('chat-state-mysql')) as ChatSdkAdapterModule,
+};
+
 async function loadChatSdkFactory(
   packageName: string,
   factoryExport: string
@@ -44,7 +60,9 @@ async function loadChatSdkFactory(
   let adapterModule: ChatSdkAdapterModule;
 
   try {
-    adapterModule = (await import(packageName)) as ChatSdkAdapterModule;
+    adapterModule = CHAT_SDK_PACKAGE_LOADERS[packageName]
+      ? await CHAT_SDK_PACKAGE_LOADERS[packageName]()
+      : ((await import(packageName)) as ChatSdkAdapterModule);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 

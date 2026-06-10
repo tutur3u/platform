@@ -23,6 +23,27 @@ describe('createTuturuuuNextConfig', () => {
     expect(config.typescript?.ignoreBuildErrors).toBe(true);
   });
 
+  it('allows the exact worktree-prefixed Portless host for Next dev assets', () => {
+    const originalPortlessUrl = process.env.PORTLESS_URL;
+
+    try {
+      process.env.PORTLESS_URL =
+        'https://zalo-qr-chat-setup.chat.tuturuuu.localhost';
+
+      const config = createTuturuuuNextConfig();
+
+      expect(config.allowedDevOrigins).toContain(
+        'zalo-qr-chat-setup.chat.tuturuuu.localhost'
+      );
+    } finally {
+      if (originalPortlessUrl === undefined) {
+        delete process.env.PORTLESS_URL;
+      } else {
+        process.env.PORTLESS_URL = originalPortlessUrl;
+      }
+    }
+  });
+
   it('dedupes optimized package imports while preserving app additions', () => {
     const config = createTuturuuuNextConfig({
       experimental: {

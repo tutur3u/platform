@@ -20,9 +20,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useState } from 'react';
+import {
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+  useEffect,
+  useState,
+} from 'react';
 import { TTR_URL } from '@/constants/common';
 import { ChatContextRail } from './chat-context-rail';
+
+const AGENT_DETAILS_AUTO_COLLAPSE_WIDTH = 1400;
 
 interface StructureProps {
   actions: ReactNode;
@@ -124,40 +132,28 @@ export function Structure({
         </Link>
       }
       mobileHeaderDivider={false}
-      sidebarContentAfter={({ closeOnMobile, expandSidebar, isCollapsed }) =>
-        isCollapsed ? (
-          <ChatContextRail
-            collapsed
-            closeOnMobile={closeOnMobile}
-            defaultConversationScope={defaultConversationScope}
-            onExpand={expandSidebar}
-            wsId={wsId}
-          />
-        ) : (
-          <div className="flex min-h-0 flex-1 overflow-hidden">
-            <ChatContextRail
-              closeOnMobile={closeOnMobile}
-              defaultConversationScope={defaultConversationScope}
-              wsId={wsId}
-            />
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-              <ChatSidebarPanel
-                archiveFilter={archiveFilter}
-                closeOnMobile={closeOnMobile}
-                createOpen={createOpen}
-                currentUserId={currentUserId}
-                defaultConversationScope={defaultConversationScope}
-                isCollapsed={isCollapsed}
-                onCreateOpenChange={setCreateOpen}
-                onSearchChange={setSearchValue}
-                searchValue={searchValue}
-                selectedTypes={selectedTypes}
-                wsId={wsId}
-              />
-            </div>
-          </div>
-        )
-      }
+      sidebarContentAfter={({
+        closeOnMobile,
+        expandSidebar,
+        isCollapsed,
+        setIsCollapsed,
+      }) => (
+        <ChatResponsiveSidebar
+          archiveFilter={archiveFilter}
+          closeOnMobile={closeOnMobile}
+          createOpen={createOpen}
+          currentUserId={currentUserId}
+          defaultConversationScope={defaultConversationScope}
+          expandSidebar={expandSidebar}
+          isCollapsed={isCollapsed}
+          onCreateOpenChange={setCreateOpen}
+          onSearchChange={setSearchValue}
+          searchValue={searchValue}
+          selectedTypes={selectedTypes}
+          setIsCollapsed={setIsCollapsed}
+          wsId={wsId}
+        />
+      )}
       sidebarExpandedWidth="22rem"
       sidebarHeaderClassName="border-foreground/10 border-b"
       sidebarHeaderHeight="4rem"
@@ -171,6 +167,105 @@ export function Structure({
     >
       {children}
     </SidebarStructure>
+  );
+}
+
+function ChatResponsiveSidebar({
+  archiveFilter,
+  closeOnMobile,
+  createOpen,
+  currentUserId,
+  defaultConversationScope,
+  expandSidebar,
+  isCollapsed,
+  onCreateOpenChange,
+  onSearchChange,
+  searchValue,
+  selectedTypes,
+  setIsCollapsed,
+  wsId,
+}: {
+  archiveFilter: ChatConversationArchiveFilter;
+  closeOnMobile?: () => void;
+  createOpen: boolean;
+  currentUserId: string;
+  defaultConversationScope: ChatConversationScope;
+  expandSidebar?: () => void;
+  isCollapsed: boolean;
+  onCreateOpenChange: (open: boolean) => void;
+  onSearchChange: (value: string) => void;
+  searchValue: string;
+  selectedTypes: ChatConversation['type'][];
+  setIsCollapsed?: Dispatch<SetStateAction<boolean>>;
+  wsId: string;
+}) {
+  useEffect(() => {
+    if (!setIsCollapsed) return;
+
+    const maybeCollapseForAgentDetails = () => {
+      const agentDetailsOpen = document.querySelector(
+        '[data-chat-agent-details-sidebar="true"]'
+      );
+
+      if (
+        agentDetailsOpen &&
+        window.innerWidth < AGENT_DETAILS_AUTO_COLLAPSE_WIDTH
+      ) {
+        setIsCollapsed(true);
+      }
+    };
+
+    maybeCollapseForAgentDetails();
+
+    window.addEventListener('resize', maybeCollapseForAgentDetails);
+
+    const observer = new MutationObserver(maybeCollapseForAgentDetails);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      window.removeEventListener('resize', maybeCollapseForAgentDetails);
+      observer.disconnect();
+    };
+  }, [setIsCollapsed]);
+
+  if (isCollapsed) {
+    return (
+      <ChatContextRail
+        collapsed
+        closeOnMobile={closeOnMobile}
+        defaultConversationScope={defaultConversationScope}
+        onExpand={expandSidebar}
+        wsId={wsId}
+      />
+    );
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 overflow-hidden">
+      <ChatContextRail
+        closeOnMobile={closeOnMobile}
+        defaultConversationScope={defaultConversationScope}
+        wsId={wsId}
+      />
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <ChatSidebarPanel
+          archiveFilter={archiveFilter}
+          closeOnMobile={closeOnMobile}
+          createOpen={createOpen}
+          currentUserId={currentUserId}
+          defaultConversationScope={defaultConversationScope}
+          isCollapsed={isCollapsed}
+          onCreateOpenChange={onCreateOpenChange}
+          onSearchChange={onSearchChange}
+          searchValue={searchValue}
+          selectedTypes={selectedTypes}
+          wsId={wsId}
+        />
+      </div>
+    </div>
   );
 }
 

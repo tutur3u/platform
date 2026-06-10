@@ -27,6 +27,7 @@ import { Textarea } from '../textarea';
 import {
   buildAgentPayload,
   Field,
+  isPersonalZaloChannel,
   PanelSection,
   secretNamesForChannel,
 } from './chat-agent-details-utils';
@@ -192,6 +193,19 @@ export function AgentSetupForm({
                 />
               </Field>
             </>
+          ) : isPersonalZaloChannel(channel) ? (
+            <Field
+              id="agent-zalo-personal-own-id"
+              label={t('agent_zalo_personal_own_id')}
+            >
+              <Input
+                className="font-mono"
+                defaultValue={channel.zaloPersonalOwnId ?? ''}
+                id="agent-zalo-personal-own-id"
+                name="zaloPersonalOwnId"
+                readOnly
+              />
+            </Field>
           ) : (
             <Field id="agent-zalo-oa" label={t('agent_zalo_oa_id')}>
               <Input

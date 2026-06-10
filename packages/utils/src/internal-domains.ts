@@ -1,4 +1,7 @@
-import { getTuturuuuPortlessAppOrigin } from './portless';
+import {
+  getTuturuuuPortlessAppOrigin,
+  TUTURUUU_PORTLESS_APP_HOSTS,
+} from './portless';
 
 export const PRODUCTION_INTERNAL_APP_DOMAINS = [
   {
@@ -264,10 +267,11 @@ export type AppDomainUrlMatch = AppDomain & {
 };
 
 export function getPortlessInternalAppUrl(appName: AppName) {
-  return (
-    PORTLESS_INTERNAL_APP_DOMAINS.find((domain) => domain.name === appName)
-      ?.url ?? null
-  );
+  return appName in TUTURUUU_PORTLESS_APP_HOSTS
+    ? getTuturuuuPortlessAppOrigin(
+        appName as keyof typeof TUTURUUU_PORTLESS_APP_HOSTS
+      )
+    : null;
 }
 
 export function getLocalInternalAppUrl(appName: AppName, legacyUrl: string) {
@@ -353,6 +357,29 @@ function canUpgradeToRegisteredHttpsOrigin(value: URL, registeredUrl: URL) {
   );
 }
 
+const PORTLESS_APP_HOSTS = new Set(Object.values(TUTURUUU_PORTLESS_APP_HOSTS));
+
+function matchesPrefixedPortlessOrigin(value: URL, registeredUrl: URL) {
+  if (
+    value.protocol !== registeredUrl.protocol ||
+    value.port !== registeredUrl.port ||
+    !PORTLESS_APP_HOSTS.has(registeredUrl.hostname) ||
+    PORTLESS_APP_HOSTS.has(value.hostname)
+  ) {
+    return false;
+  }
+
+  const suffix = `.${registeredUrl.hostname}`;
+
+  if (!value.hostname.endsWith(suffix)) {
+    return false;
+  }
+
+  const prefix = value.hostname.slice(0, -suffix.length);
+
+  return Boolean(prefix) && !prefix.includes('.');
+}
+
 function serializeUrl(value: URL) {
   return value.pathname === '/' && !value.search && !value.hash
     ? value.origin
@@ -367,6 +394,13 @@ function matchesAppDomainUrl(value: URL, domain: AppDomain) {
   }
 
   if (value.origin === registeredUrl.origin) {
+    return true;
+  }
+
+  if (
+    domain.kind === 'internal' &&
+    matchesPrefixedPortlessOrigin(value, registeredUrl)
+  ) {
     return true;
   }
 

@@ -192,9 +192,5 @@ test('root education dev script starts Learn, Teach, and Web together', () => {
   const pkg = readJson(path.join(repoRoot, 'package.json'));
   const devEduScript = pkg.scripts['dev:edu'];
 
-  assert.equal(typeof devEduScript, 'string');
-  assert.match(devEduScript, /^bun turbo:local run dev /u);
-  assert.match(devEduScript, /-F @tuturuuu\/learn\b/u);
-  assert.match(devEduScript, /-F @tuturuuu\/teach\b/u);
-  assert.match(devEduScript, /-F @tuturuuu\/web\b/u);
+  assert.equal(devEduScript, 'node scripts/dev-workspaces.js edu');
 });

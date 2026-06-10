@@ -353,7 +353,7 @@ function patchCachedMessage(
   );
 }
 
-function patchCachedMessages(
+export function patchCachedMessages(
   queryClient: QueryClient,
   wsId: string,
   conversationId: string,

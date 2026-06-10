@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { resolveAppUrl, resolveInternalAppUrl } from '../app-url';
 import {
+  getAppDomainByUrl,
   getLocalInternalAppUrl,
   getPortlessInternalAppUrl,
 } from '../internal-domains';
 import {
+  getTuturuuuPortlessAppOrigin,
   TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS,
   TUTURUUU_PORTLESS_APP_ORIGINS,
 } from '../portless';
@@ -60,6 +62,31 @@ describe('resolveInternalAppUrl', () => {
         fallback: 'http://localhost:7812',
       })
     ).toBe('https://learn.tuturuuu.localhost');
+  });
+
+  it('recognizes worktree-prefixed Portless origins as registered app URLs', () => {
+    expect(
+      resolveInternalAppUrl({
+        appName: 'chat',
+        candidates: ['https://zalo-qr-chat-setup.chat.tuturuuu.localhost'],
+        fallback: 'http://localhost:7821',
+      })
+    ).toBe('https://zalo-qr-chat-setup.chat.tuturuuu.localhost');
+    expect(
+      resolveInternalAppUrl({
+        appName: 'platform',
+        candidates: [
+          'https://zalo-qr-chat-setup.chat.tuturuuu.localhost',
+          'https://zalo-qr-chat-setup.tuturuuu.localhost',
+        ],
+        fallback: 'http://localhost:7803',
+      })
+    ).toBe('https://zalo-qr-chat-setup.tuturuuu.localhost');
+    expect(
+      getAppDomainByUrl(
+        'https://zalo-qr-chat-setup.chat.tuturuuu.localhost/verify-token'
+      )?.name
+    ).toBe('chat');
   });
 
   it('canonicalizes production internal app URLs to their registered HTTPS origins', () => {
@@ -145,6 +172,31 @@ describe('getLocalInternalAppUrl', () => {
     expect(getLocalInternalAppUrl(appName, 'http://localhost:9999')).toBe(
       expectedUrl
     );
+  });
+
+  it('uses the current Portless worktree prefix for local peer app defaults', () => {
+    const originalPortlessUrl = process.env.PORTLESS_URL;
+
+    try {
+      process.env.PORTLESS_URL =
+        'https://zalo-qr-chat-setup.chat.tuturuuu.localhost';
+
+      expect(getTuturuuuPortlessAppOrigin('platform')).toBe(
+        'https://zalo-qr-chat-setup.tuturuuu.localhost'
+      );
+      expect(getPortlessInternalAppUrl('chat')).toBe(
+        'https://zalo-qr-chat-setup.chat.tuturuuu.localhost'
+      );
+      expect(getLocalInternalAppUrl('tasks', 'http://localhost:7809')).toBe(
+        'https://zalo-qr-chat-setup.tasks.tuturuuu.localhost'
+      );
+    } finally {
+      if (originalPortlessUrl === undefined) {
+        delete process.env.PORTLESS_URL;
+      } else {
+        process.env.PORTLESS_URL = originalPortlessUrl;
+      }
+    }
   });
 });
 

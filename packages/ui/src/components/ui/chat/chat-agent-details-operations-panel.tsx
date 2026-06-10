@@ -21,9 +21,12 @@ import { Button } from '../button';
 import { Input } from '../input';
 import {
   copyToClipboard,
+  formatZaloPersonalError,
+  isPersonalZaloChannel,
   KeyValue,
   PanelSection,
 } from './chat-agent-details-utils';
+import { AgentZaloPersonalPanel } from './chat-agent-details-zalo-personal-panel';
 
 const DIAGNOSTIC_LABEL_KEYS = {
   adapter_account: 'agent_diagnostic_adapter_account',
@@ -32,27 +35,33 @@ const DIAGNOSTIC_LABEL_KEYS = {
   channel_enabled: 'agent_diagnostic_channel_enabled',
   last_error: 'agent_diagnostic_last_error',
   last_event: 'agent_diagnostic_last_event',
+  listener_lifecycle: 'agent_diagnostic_listener_lifecycle',
   required_secrets: 'agent_diagnostic_required_secrets',
   webhook_url: 'agent_diagnostic_webhook_url',
   workspace_mapping: 'agent_diagnostic_workspace_mapping',
+  zalo_personal_feature_flag: 'agent_diagnostic_zalo_personal_feature_flag',
 } as const;
 
 export function AgentOperationsPanel({
+  agentId,
   channel,
   isPending,
   onCopySecret,
   onDeploy,
   onPause,
+  onRefresh,
   onRotateSecret,
   onTest,
   secretPreview,
   testResult,
 }: {
+  agentId: string;
   channel: AiAgentChannelConfig;
   isPending: boolean;
   onCopySecret: () => void;
   onDeploy: () => void;
   onPause: () => void;
+  onRefresh: () => void;
   onRotateSecret: () => void;
   onTest: (prompt?: string) => void;
   secretPreview: { label: string; value: string } | null;
@@ -61,6 +70,14 @@ export function AgentOperationsPanel({
   const t = useTranslations('chat');
   const [testPrompt, setTestPrompt] = useState('');
   const webhookUrl = channel.webhookUrl;
+  const isPersonalZalo = isPersonalZaloChannel(channel);
+  const lastError =
+    isPersonalZalo &&
+    channel.lastError === 'zalo_personal_phone_sync_waiting_for_phone'
+      ? null
+      : isPersonalZalo
+        ? formatZaloPersonalError(channel.lastError, t)
+        : channel.lastError;
   const diagnosticLabel = (
     check: NonNullable<AiAgentTestResponse['checks']>[number]
   ) => {
@@ -71,12 +88,12 @@ export function AgentOperationsPanel({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4 overflow-hidden">
       <PanelSection
         icon={<Webhook className="size-4" />}
         title={t('agent_channel')}
       >
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2 overflow-hidden">
           <KeyValue label={t('agent_channel_id')} value={channel.id} />
           <KeyValue label={t('agent_adapter')} value={channel.adapter} />
           <KeyValue
@@ -105,15 +122,15 @@ export function AgentOperationsPanel({
               </Button>
             </div>
           ) : null}
-          {channel.lastError ? (
-            <p className="rounded-md border border-dynamic-red/20 bg-dynamic-red/5 p-2 text-dynamic-red text-xs">
-              {channel.lastError}
+          {lastError ? (
+            <p className="break-words rounded-md border border-dynamic-red/20 bg-dynamic-red/5 p-2 text-dynamic-red text-xs">
+              {lastError}
             </p>
           ) : null}
         </div>
       </PanelSection>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid min-w-0 grid-cols-2 gap-2">
         <Button disabled={isPending} onClick={onDeploy} size="sm" type="button">
           <Play className="size-4" />
           {t('agent_deploy')}
@@ -129,6 +146,15 @@ export function AgentOperationsPanel({
           {t('agent_pause')}
         </Button>
       </div>
+
+      {isPersonalZalo ? (
+        <AgentZaloPersonalPanel
+          agentId={agentId}
+          channel={channel}
+          isPending={isPending}
+          onRefresh={onRefresh}
+        />
+      ) : null}
 
       <PanelSection
         icon={<FlaskConical className="size-4" />}
@@ -157,7 +183,9 @@ export function AgentOperationsPanel({
           <p className="text-muted-foreground text-xs leading-5">
             {channel.adapter === 'discord'
               ? t('agent_discord_live_test_hint')
-              : t('agent_live_test_hint')}
+              : isPersonalZalo
+                ? t('agent_zalo_personal_live_test_hint')
+                : t('agent_live_test_hint')}
           </p>
         </div>
       </PanelSection>
@@ -194,7 +222,7 @@ export function AgentOperationsPanel({
         </PanelSection>
       ) : null}
 
-      {channel.adapter === 'zalo' ? (
+      {channel.adapter === 'zalo' && !isPersonalZalo ? (
         <PanelSection
           icon={<RotateCw className="size-4" />}
           title={t('agent_rotate_secret')}

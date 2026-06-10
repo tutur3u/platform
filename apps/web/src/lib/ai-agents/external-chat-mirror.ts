@@ -3,8 +3,9 @@ import 'server-only';
 import { randomUUID } from 'node:crypto';
 import type {
   Message as SdkMessage,
+  Thread as SdkRuntimeThread,
   SentMessage as SdkSentMessage,
-  Thread as SdkThread,
+  ThreadInfo as SdkThread,
 } from '@tuturuuu/ai/chat-sdk';
 import {
   type ChatConversation,
@@ -169,6 +170,33 @@ export async function listAiAgentExternalThreadMessages({
   );
 }
 
+export async function persistAiAgentExternalSdkThread({
+  agent,
+  channel,
+  thread,
+}: {
+  agent: AiAgentDefinition;
+  channel: AiAgentChannelConfig;
+  thread: SdkThread | SdkRuntimeThread;
+}) {
+  const threadMetadata = readRecord(
+    (thread as { metadata?: unknown }).metadata
+  );
+  const threadTitle =
+    readString(threadMetadata?.threadTitle) ??
+    readString(threadMetadata?.threadName) ??
+    readString(threadMetadata?.channelName) ??
+    channel.displayName;
+
+  return await upsertAiAgentExternalSdkThread({
+    agent,
+    channel,
+    externalChannelId: thread.channelId || channel.externalChannelId,
+    externalThreadId: thread.id,
+    threadTitle,
+  });
+}
+
 export async function persistAiAgentExternalSdkMessage({
   agent,
   channel,
@@ -182,40 +210,41 @@ export async function persistAiAgentExternalSdkMessage({
   direction: 'inbound' | 'outbound';
   message: SdkMessage | SdkSentMessage;
   platformUserId?: string | null;
-  thread: SdkThread;
+  thread: SdkThread | SdkRuntimeThread;
 }) {
   const externalThreadId = thread.id || message.threadId;
   const externalChannelId =
     thread.channelId || channel.externalChannelId || channel.id;
+  const raw = toSafeJsonRecord(message.raw);
+  const rawData = readRecord(raw.data);
+  const threadMetadata = readRecord(
+    (thread as { metadata?: unknown }).metadata
+  );
   const threadTitle =
-    readString(readRecord(message.raw)?.threadName) ??
-    readString(readRecord(message.raw)?.channelName) ??
+    readString(raw.threadTitle) ??
+    readString(raw.threadName) ??
+    readString(raw.channelName) ??
+    readString(threadMetadata?.threadTitle) ??
+    readString(threadMetadata?.threadName) ??
+    readString(threadMetadata?.channelName) ??
+    readString(rawData?.threadName) ??
+    readString(rawData?.channelName) ??
+    (message.author.isMe ? null : readString(message.author.fullName)) ??
+    (message.author.isMe ? null : readString(message.author.userName)) ??
     channel.displayName;
 
-  const savedThread = await callPrivateChatRpc<AiAgentExternalThread>(
-    'ai_agent_external_upsert_thread',
-    {
-      p_adapter: channel.adapter,
-      p_agent_id: agent.id,
-      p_channel_id: channel.id,
-      p_external_channel_id: externalChannelId,
-      p_external_thread_id: externalThreadId,
-      p_metadata: {
-        agentName: agent.name,
-        autoRespond: channel.autoRespond ?? true,
-        channelDisplayName: channel.displayName,
-        historySyncEnabled: channel.historySyncEnabled ?? true,
-      },
-      p_title: threadTitle,
-      p_ws_id: channel.workspaceId,
-    }
-  );
+  const savedThread = await upsertAiAgentExternalSdkThread({
+    agent,
+    channel,
+    externalChannelId,
+    externalThreadId,
+    threadTitle,
+  });
 
   const createdAt =
     message.metadata.dateSent instanceof Date
       ? message.metadata.dateSent.toISOString()
       : new Date().toISOString();
-  const raw = toSafeJsonRecord(message.raw);
   const externalMessageId = readString(message.id) || randomUUID();
 
   return await callPrivateChatRpc<ChatMessage>(
@@ -239,6 +268,39 @@ export async function persistAiAgentExternalSdkMessage({
       p_platform_user_id: platformUserId,
       p_raw: raw,
       p_thread_id: savedThread.id,
+    }
+  );
+}
+
+async function upsertAiAgentExternalSdkThread({
+  agent,
+  channel,
+  externalChannelId,
+  externalThreadId,
+  threadTitle,
+}: {
+  agent: AiAgentDefinition;
+  channel: AiAgentChannelConfig;
+  externalChannelId?: string | null;
+  externalThreadId: string;
+  threadTitle: string | null;
+}) {
+  return await callPrivateChatRpc<AiAgentExternalThread>(
+    'ai_agent_external_upsert_thread',
+    {
+      p_adapter: channel.adapter,
+      p_agent_id: agent.id,
+      p_channel_id: channel.id,
+      p_external_channel_id: externalChannelId || channel.id,
+      p_external_thread_id: externalThreadId,
+      p_metadata: {
+        agentName: agent.name,
+        autoRespond: channel.autoRespond ?? true,
+        channelDisplayName: channel.displayName,
+        historySyncEnabled: channel.historySyncEnabled ?? true,
+      },
+      p_title: threadTitle,
+      p_ws_id: channel.workspaceId,
     }
   );
 }

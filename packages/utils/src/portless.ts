@@ -34,6 +34,90 @@ export const TUTURUUU_PORTLESS_APP_ORIGINS = {
 export type TuturuuuPortlessAppName =
   keyof typeof TUTURUUU_PORTLESS_APP_ORIGINS;
 
-export function getTuturuuuPortlessAppOrigin(appName: TuturuuuPortlessAppName) {
-  return TUTURUUU_PORTLESS_APP_ORIGINS[appName];
+export const TUTURUUU_PORTLESS_APP_HOSTS = Object.fromEntries(
+  Object.entries(TUTURUUU_PORTLESS_APP_ORIGINS).map(([appName, origin]) => [
+    appName,
+    new URL(origin).hostname,
+  ])
+) as {
+  [K in TuturuuuPortlessAppName]: string;
+};
+
+function getPortlessWorktreePrefix(portlessUrl?: string) {
+  if (!portlessUrl) {
+    return null;
+  }
+
+  let hostname: string;
+
+  try {
+    hostname = new URL(portlessUrl).hostname;
+  } catch {
+    return null;
+  }
+
+  for (const baseHost of Object.values(TUTURUUU_PORTLESS_APP_HOSTS).sort(
+    (a, b) => b.length - a.length
+  )) {
+    if (hostname === baseHost) {
+      return null;
+    }
+
+    const suffix = `.${baseHost}`;
+
+    if (!hostname.endsWith(suffix)) {
+      continue;
+    }
+
+    const prefix = hostname.slice(0, -suffix.length);
+
+    if (prefix && !prefix.includes('.')) {
+      return prefix;
+    }
+  }
+
+  return null;
+}
+
+function getPortlessHostname(portlessUrl?: string) {
+  if (!portlessUrl) {
+    return null;
+  }
+
+  try {
+    return new URL(portlessUrl).hostname;
+  } catch {
+    return null;
+  }
+}
+
+export function getTuturuuuPortlessAllowedDevOrigins(
+  portlessUrl = process.env.PORTLESS_URL
+) {
+  const portlessHostname = getPortlessHostname(portlessUrl);
+  const origins: string[] = [...TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS];
+
+  if (
+    portlessHostname &&
+    (portlessHostname === TUTURUUU_PORTLESS_ROOT_HOST ||
+      portlessHostname.endsWith(`.${TUTURUUU_PORTLESS_ROOT_HOST}`))
+  ) {
+    origins.push(portlessHostname);
+  }
+
+  return Array.from(new Set(origins));
+}
+
+export function getTuturuuuPortlessAppOrigin(
+  appName: TuturuuuPortlessAppName,
+  options: {
+    portlessUrl?: string;
+  } = {}
+) {
+  const host = TUTURUUU_PORTLESS_APP_HOSTS[appName];
+  const prefix = getPortlessWorktreePrefix(
+    options.portlessUrl ?? process.env.PORTLESS_URL
+  );
+
+  return `https://${prefix ? `${prefix}.${host}` : host}`;
 }

@@ -3,6 +3,7 @@
 import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import type { ChatConversation, ChatMessage } from '@tuturuuu/internal-api';
 import { useEffect } from 'react';
+import { mergeCachedMessages, patchCachedMessages } from './hooks-messages';
 import { chatQueryKeys } from './query-keys';
 
 type ChatRealtimeEvent =
@@ -137,21 +138,17 @@ function patchMessage(
   wsId: string,
   message: ChatMessage
 ) {
-  queryClient.setQueriesData<ChatMessage[]>(
-    {
-      queryKey: [
-        ...chatQueryKeys.all(wsId),
-        'messages',
-        message.conversationId,
-      ],
-    },
-    (current = []) => {
-      const existingIndex = current.findIndex((item) => item.id === message.id);
-      if (existingIndex < 0) return [...current, message];
-
-      return current.map((item, index) =>
-        index === existingIndex ? message : item
-      );
-    }
+  patchCachedMessages(queryClient, wsId, message.conversationId, (current) =>
+    mergeCachedMessages(current, [message])
   );
+  queryClient.invalidateQueries({
+    queryKey: [...chatQueryKeys.all(wsId), 'messages', message.conversationId],
+  });
+  queryClient.invalidateQueries({
+    queryKey: [
+      ...chatQueryKeys.all(wsId),
+      'messages-infinite',
+      message.conversationId,
+    ],
+  });
 }

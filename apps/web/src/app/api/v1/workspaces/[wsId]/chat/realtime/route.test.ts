@@ -58,6 +58,7 @@ function createRouteContext() {
 describe('chat realtime route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.auth.user.id = 'user-1';
     mocks.resolveChatRouteContext.mockResolvedValue({
       context: { normalizedWsId: 'workspace-1' },
       ok: true,
@@ -90,6 +91,30 @@ describe('chat realtime route', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/event-stream');
     expect(response.headers.get('cache-control')).toContain('no-store');
+    await expect(response.text()).resolves.toContain('"type":"ready"');
+  });
+
+  it('normalizes local dev user ids before signing subscriptions', async () => {
+    mocks.auth.user.id = '00000000-0000-0000-0000-000000000001';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response('event: message\ndata: {"type":"ready"}\n\n', {
+            headers: { 'Content-Type': 'text/event-stream' },
+            status: 200,
+          })
+      )
+    );
+
+    const { GET } = await import('./route');
+    const response = await GET(createRequest() as never, createRouteContext());
+
+    expect(response.status).toBe(200);
+    expect(mocks.getChatRealtimeSubscribeUrl).toHaveBeenCalledWith({
+      userId: '00000000-0000-4000-8000-000000000001',
+      wsId: 'workspace-1',
+    });
     await expect(response.text()).resolves.toContain('"type":"ready"');
   });
 

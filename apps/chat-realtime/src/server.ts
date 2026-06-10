@@ -20,11 +20,14 @@ type WorkspaceRoom = {
 };
 
 type ServerOptions = {
+  idleTimeout?: number;
   port?: number;
 };
 
 const rooms = new Map<string, WorkspaceRoom>();
 const encoder = new TextEncoder();
+const HEARTBEAT_INTERVAL_MS = 25_000;
+const SSE_IDLE_TIMEOUT_SECONDS = 60;
 
 function getRoom(wsId: string) {
   const existing = rooms.get(wsId);
@@ -84,7 +87,7 @@ function createRealtimeStream(token: ChatRealtimeTokenPayload) {
         if (client) {
           send(client, { sentAt: new Date().toISOString(), type: 'ping' });
         }
-      }, 25_000);
+      }, HEARTBEAT_INTERVAL_MS);
     },
   });
 }
@@ -144,6 +147,7 @@ export function createChatRealtimeServer(options: ServerOptions = {}) {
         },
       });
     },
+    idleTimeout: options.idleTimeout ?? SSE_IDLE_TIMEOUT_SECONDS,
     port: options.port ?? Number(process.env.PORT ?? 7817),
   });
 }

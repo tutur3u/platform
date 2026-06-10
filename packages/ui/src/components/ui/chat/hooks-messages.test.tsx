@@ -1,6 +1,12 @@
+import { QueryClient } from '@tanstack/react-query';
 import type { ChatMessage } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
-import { mergeCachedMessages } from './hooks-messages';
+import {
+  type ChatMessagesPage,
+  mergeCachedMessages,
+  patchCachedMessages,
+} from './hooks-messages';
+import { chatQueryKeys } from './query-keys';
 
 function createMessage(overrides: Partial<ChatMessage> = {}): ChatMessage {
   return {
@@ -63,5 +69,43 @@ describe('mergeCachedMessages', () => {
         [userMessage, assistantMessage]
       ).map(({ id }) => id)
     ).toEqual(['message-user', 'message-assistant']);
+  });
+});
+
+describe('patchCachedMessages', () => {
+  it('patches infinite message pages used by the chat workspace', () => {
+    const queryClient = new QueryClient();
+    const wsId = 'workspace-1';
+    const conversationId = 'conversation-1';
+    const message = createMessage();
+    const queryKey = chatQueryKeys.messagesInfinite(wsId, conversationId, 80);
+
+    queryClient.setQueryData<{
+      pageParams: (string | null)[];
+      pages: ChatMessagesPage[];
+    }>(queryKey, {
+      pageParams: [null],
+      pages: [
+        {
+          hasMore: false,
+          limit: 80,
+          messages: [],
+          nextBefore: null,
+        },
+      ],
+    });
+
+    patchCachedMessages(queryClient, wsId, conversationId, (current) =>
+      mergeCachedMessages(current, [message])
+    );
+
+    expect(
+      queryClient
+        .getQueryData<{
+          pageParams: (string | null)[];
+          pages: ChatMessagesPage[];
+        }>(queryKey)
+        ?.pages[0]?.messages.map(({ id }) => id)
+    ).toEqual(['message-1']);
   });
 });

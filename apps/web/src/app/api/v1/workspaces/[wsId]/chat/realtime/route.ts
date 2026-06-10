@@ -19,6 +19,9 @@ const realtimeHeaders = {
   'Content-Type': 'text/event-stream; charset=utf-8',
   'X-Accel-Buffering': 'no',
 };
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
+const LOCAL_DEV_REALTIME_USER_ID = '00000000-0000-4000-8000-000000000001';
 
 function createRealtimeResponse(stream: ReadableStream<Uint8Array>) {
   return new NextResponse(stream, {
@@ -43,6 +46,13 @@ function createRealtimeUnavailableResponse() {
   );
 }
 
+function resolveRealtimeSubscribeUserId(userId: string) {
+  if (UUID_PATTERN.test(userId)) return userId;
+  if (process.env.NODE_ENV !== 'production') return LOCAL_DEV_REALTIME_USER_ID;
+
+  return userId;
+}
+
 export const GET = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
     const context = await resolveChatRouteContext({
@@ -55,7 +65,7 @@ export const GET = withSessionAuth<RouteParams>(
     let upstreamUrl: URL;
     try {
       upstreamUrl = getChatRealtimeSubscribeUrl({
-        userId: auth.user.id,
+        userId: resolveRealtimeSubscribeUserId(auth.user.id),
         wsId: context.context.normalizedWsId,
       }).url;
     } catch (error) {
