@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0](https://github.com/tutur3u/platform/compare/apis-v0.0.12...apis-v0.1.0) (2026-06-10)
+
+
+### Features
+
+* **cli:** add host switching and finance transfers ([6c732c1](https://github.com/tutur3u/platform/commit/6c732c13fae9173e97cadb0b4534f37d42908a92))
+
 ## [0.0.12](https://github.com/tutur3u/platform/compare/apis-v0.0.11...apis-v0.0.12) (2026-06-08)
 
 

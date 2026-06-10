@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/types-v0.4.1...types-v0.5.0) (2026-06-10)
+
+
+### Features
+
+* **cli:** add host switching and finance transfers ([6c732c1](https://github.com/tutur3u/platform/commit/6c732c13fae9173e97cadb0b4534f37d42908a92))
+
+
+### Bug Fixes
+
+* **ci:** auto-recover package release dependencies ([40b2539](https://github.com/tutur3u/platform/commit/40b25390c903194a3c85cc627c737a4acd0d6fa9))
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/types-v0.4.0...types-v0.4.1) (2026-06-09)
 
 

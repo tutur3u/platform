@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/tutur3u/platform/compare/ui-v0.3.1...ui-v0.3.2) (2026-06-10)
+
+
+### Bug Fixes
+
+* **web:** harden task search and command launcher ([e4f8fd2](https://github.com/tutur3u/platform/commit/e4f8fd28bd78eabb0aa38182af2a32b85b5bf3e0))
+
 ## [0.3.1](https://github.com/tutur3u/platform/compare/ui-v0.3.0...ui-v0.3.1) (2026-06-09)
 
 

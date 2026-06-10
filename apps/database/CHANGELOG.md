@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/tutur3u/platform/compare/database-v1.2.1...database-v1.3.0) (2026-06-10)
+
+
+### Features
+
+* **cli:** add host switching and finance transfers ([6c732c1](https://github.com/tutur3u/platform/commit/6c732c13fae9173e97cadb0b4534f37d42908a92))
+
 ## [1.2.1](https://github.com/tutur3u/platform/compare/database-v1.2.0...database-v1.2.1) (2026-06-09)
 
 
