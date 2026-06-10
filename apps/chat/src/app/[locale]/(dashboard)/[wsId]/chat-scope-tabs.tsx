@@ -3,7 +3,7 @@
 import { Bot, Hash, MessageCircle } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
@@ -37,6 +37,7 @@ const scopes: {
 export function ChatScopeTabs() {
   const t = useTranslations('chat');
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const activeScope =
     searchParams.get('scope') === 'workspaces' ? 'workspaces' : 'personal';
@@ -46,11 +47,9 @@ export function ChatScopeTabs() {
     nextParams.set('scope', scope);
     nextParams.delete('conversationId');
     const nextQuery = nextParams.toString();
-    window.history.replaceState(
-      null,
-      '',
-      nextQuery ? `${pathname}?${nextQuery}` : pathname
-    );
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+      scroll: false,
+    });
   }
 
   return (

@@ -160,7 +160,10 @@ export async function listRootAiAgentDiscoveryConversations({
   });
 }
 
-function toVirtualAiAgentConversationId(agentId: string, channelId: string) {
+export function toVirtualAiAgentConversationId(
+  agentId: string,
+  channelId: string
+) {
   const digest = createHash('sha256')
     .update(`${agentId}:${channelId}`)
     .digest('hex')

@@ -4,7 +4,10 @@ import { getChatConversationSections } from './chat-sidebar';
 
 function conversation(
   type: ChatConversation['type'],
-  id = `${type}-conversation`
+  id = `${type}-conversation`,
+  metadata: ChatConversation['metadata'] = type === 'ai'
+    ? { source: 'personal-ai-chat' }
+    : {}
 ): ChatConversation {
   return {
     aiEnabled: type === 'ai',
@@ -16,7 +19,7 @@ function conversation(
     latestMessage: null,
     memberCount: 1,
     members: [],
-    metadata: type === 'ai' ? { source: 'personal-ai-chat' } : {},
+    metadata,
     title: null,
     type,
     unreadCount: 0,
@@ -31,8 +34,10 @@ describe('chat sidebar conversation sections', () => {
       conversations: [
         conversation('direct'),
         conversation('group'),
+        conversation('channel', 'channel-conversation', {
+          scope: 'personal',
+        }),
         conversation('ai'),
-        conversation('channel'),
       ],
       labels: {
         ai: 'AI agents',
@@ -53,6 +58,11 @@ describe('chat sidebar conversation sections', () => {
         conversations: [{ id: 'group-conversation' }],
         label: 'Groups',
         sectionType: 'group',
+      },
+      {
+        conversations: [{ id: 'channel-conversation' }],
+        label: 'Channels',
+        sectionType: 'channel',
       },
       {
         conversations: [{ id: 'ai-conversation' }],

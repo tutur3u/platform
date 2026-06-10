@@ -1,6 +1,9 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { listRootAiAgentDiscoveryConversations } from './agent-discovery';
+import {
+  listRootAiAgentDiscoveryConversations,
+  toVirtualAiAgentConversationId,
+} from './agent-discovery';
 
 vi.mock('server-only', () => ({}));
 
@@ -99,5 +102,17 @@ describe('AI agent chat discovery', () => {
     expect(payload).not.toContain('webhookUrl');
     expect(payload).not.toContain('"status":');
     expect(payload).not.toContain('workspaceId');
+  });
+
+  it('builds stable opaque virtual conversation IDs', () => {
+    expect(toVirtualAiAgentConversationId('agent-1', 'channel-1')).toBe(
+      toVirtualAiAgentConversationId('agent-1', 'channel-1')
+    );
+    expect(toVirtualAiAgentConversationId('agent-1', 'channel-1')).toMatch(
+      /^ai-agent-[a-f0-9]{32}$/u
+    );
+    expect(toVirtualAiAgentConversationId('agent-1', 'channel-1')).not.toBe(
+      toVirtualAiAgentConversationId('agent-1', 'channel-2')
+    );
   });
 });

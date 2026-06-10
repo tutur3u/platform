@@ -257,6 +257,7 @@ function ChatResponsiveSidebar({
           createOpen={createOpen}
           currentUserId={currentUserId}
           defaultConversationScope={defaultConversationScope}
+          enableRootIntegrations
           isCollapsed={isCollapsed}
           onCreateOpenChange={onCreateOpenChange}
           onSearchChange={onSearchChange}

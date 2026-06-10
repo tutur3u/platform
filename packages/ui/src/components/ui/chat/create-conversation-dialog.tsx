@@ -5,8 +5,9 @@ import type {
   ChatConversation,
   ChatConversationType,
   ChatUserProfile,
+  CreateChatIntegrationResponse,
 } from '@tuturuuu/internal-api';
-import { InternalApiError } from '@tuturuuu/internal-api';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { Button } from '../button';
@@ -20,8 +21,15 @@ import {
 } from '../dialog';
 import { Input } from '../input';
 import { toast } from '../sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../tabs';
 import { Textarea } from '../textarea';
 import { ConversationTypeSelector } from './conversation-type-selector';
+import {
+  getConversationMetadata,
+  getCreateConversationErrorDescription,
+  StepTitle,
+} from './create-conversation-dialog-utils';
+import { CreateIntegrationPanel } from './create-integration-panel';
 import { DirectoryUserPicker } from './directory-user-picker';
 import {
   useChatDirectory,
@@ -34,6 +42,7 @@ import {
 } from './utils';
 
 type CreateConversationStep = 'details' | 'members' | 'type';
+type CreateConversationMode = 'conversation' | 'integrations';
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
@@ -43,7 +52,9 @@ interface CreateConversationDialogProps {
   conversationScope?: ChatConversationScope;
   currentUserId: string;
   defaultType?: ChatConversationType;
+  enableRootIntegrations?: boolean;
   onCreated: (conversation: ChatConversation) => void;
+  onIntegrationCreated?: (conversationId: string) => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
   wsId: string;
@@ -54,7 +65,9 @@ export function CreateConversationDialog({
   conversationScope,
   currentUserId,
   defaultType,
+  enableRootIntegrations,
   onCreated,
+  onIntegrationCreated,
   onOpenChange,
   open,
   wsId,
@@ -82,6 +95,7 @@ export function CreateConversationDialog({
   const [directoryQuery, setDirectoryQuery] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<ChatUserProfile[]>([]);
   const [step, setStep] = useState<CreateConversationStep>('type');
+  const [mode, setMode] = useState<CreateConversationMode>('conversation');
   const { data: directoryUsers = [], isFetching } = useChatDirectory({
     enabled: open && (type === 'direct' || type === 'group'),
     query: directoryQuery,
@@ -120,6 +134,8 @@ export function CreateConversationDialog({
   const requiresTitle = type === 'group' || type === 'channel';
   const needsMembers = type === 'direct' || type === 'group';
   const needsDetails = type !== 'direct';
+  const showRootIntegrations =
+    Boolean(enableRootIntegrations) && wsId === ROOT_WORKSPACE_ID;
   const missingParticipants =
     (type === 'direct' && validSelectedUsers.length !== 1) ||
     (type === 'group' && validSelectedUsers.length < 1);
@@ -135,6 +151,7 @@ export function CreateConversationDialog({
     setDirectoryQuery('');
     setSelectedUsers([]);
     setStep('type');
+    setMode('conversation');
   }
 
   async function handleCreateFriendRequest(email: string) {
@@ -155,10 +172,7 @@ export function CreateConversationDialog({
       const { conversation } = await createConversation.mutateAsync({
         aiEnabled: type === 'ai',
         description: description.trim() || null,
-        metadata:
-          conversationScope === 'personal' && type === 'ai'
-            ? { source: 'personal-ai-chat' }
-            : undefined,
+        metadata: getConversationMetadata(conversationScope, type),
         participantUserIds: validSelectedUsers.map((user) => user.id),
         title: title.trim() || null,
         type,
@@ -171,6 +185,12 @@ export function CreateConversationDialog({
         description: getCreateConversationErrorDescription(error, t),
       });
     }
+  }
+
+  function handleIntegrationCreated(result: CreateChatIntegrationResponse) {
+    reset();
+    onIntegrationCreated?.(result.conversationId);
+    onOpenChange(false);
   }
 
   function getNextStep() {
@@ -195,6 +215,127 @@ export function CreateConversationDialog({
         (type === 'group' && validSelectedUsers.length < 1)
       ));
   const showSubmit = !nextStep;
+  const conversationForm = (
+    <form className="flex min-h-0 flex-col gap-4" onSubmit={handleSubmit}>
+      {step === 'type' ? (
+        <div className="grid gap-3">
+          <StepTitle
+            description={t('step_type_description')}
+            title={t('step_type')}
+          />
+          <ConversationTypeSelector
+            allowedTypes={effectiveAllowedTypes}
+            onTypeChange={(nextType) => {
+              setType(nextType);
+              if (nextType === 'direct') {
+                setSelectedUsers((current) => current.slice(0, 1));
+              }
+            }}
+            type={type}
+          />
+        </div>
+      ) : null}
+
+      {step === 'members' ? (
+        <div className="grid gap-3">
+          <StepTitle
+            description={
+              type === 'direct'
+                ? t('step_members_direct_description')
+                : t('step_members_group_description')
+            }
+            title={t('step_members')}
+          />
+          <DirectoryUserPicker
+            canCreateFriendRequest={conversationScope !== 'workspaces'}
+            directoryQuery={directoryQuery}
+            filteredUsers={filteredUsers}
+            isFetching={isFetching}
+            isCreatingFriendRequest={createFriendRequest.isPending}
+            onDirectoryQueryChange={setDirectoryQuery}
+            onCreateFriendRequest={handleCreateFriendRequest}
+            onRemoveUser={(userId) =>
+              setSelectedUsers((current) =>
+                current.filter((item) => item.id !== userId)
+              )
+            }
+            onSelectUser={(user) =>
+              setSelectedUsers((current) =>
+                type === 'direct' ? [user] : [...current, user]
+              )
+            }
+            selectedUsers={selectedUsers}
+          />
+        </div>
+      ) : null}
+
+      {step === 'details' ? (
+        <div className="grid gap-3">
+          <StepTitle
+            description={t('step_details_description')}
+            title={t('step_details')}
+          />
+          <Input
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder={
+              type === 'channel'
+                ? t('channel_name_placeholder')
+                : type === 'ai'
+                  ? t('agent_name_placeholder')
+                  : t('group_name_placeholder')
+            }
+            value={title}
+          />
+          {(type === 'group' || type === 'channel' || type === 'ai') && (
+            <Textarea
+              className="min-h-24"
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder={t('conversation_description_placeholder')}
+              value={description}
+            />
+          )}
+        </div>
+      ) : null}
+
+      <DialogFooter>
+        <Button
+          onClick={() => {
+            reset();
+            onOpenChange(false);
+          }}
+          type="button"
+          variant="outline"
+        >
+          {t('cancel')}
+        </Button>
+        {previousStep ? (
+          <Button
+            onClick={() => setStep(previousStep)}
+            type="button"
+            variant="outline"
+          >
+            {t('back')}
+          </Button>
+        ) : null}
+        {showSubmit ? (
+          <Button disabled={shouldDisableSubmit} type="submit">
+            {createConversation.isPending && (
+              <LoaderCircle className="size-4 animate-spin" />
+            )}
+            {t('create')}
+          </Button>
+        ) : (
+          <Button
+            disabled={!canContinue}
+            onClick={() => nextStep && setStep(nextStep)}
+            type="button"
+          >
+            {t('next')}
+          </Button>
+        )}
+      </DialogFooter>
+    </form>
+  );
 
   return (
     <Dialog
@@ -205,173 +346,38 @@ export function CreateConversationDialog({
       }}
     >
       <DialogContent className="max-h-[min(42rem,calc(100vh-2rem))] overflow-hidden sm:max-w-2xl">
-        <form className="flex min-h-0 flex-col gap-4" onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{t('new_conversation')}</DialogTitle>
-            <DialogDescription>
-              {t('new_conversation_description')}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{t('new_conversation')}</DialogTitle>
+          <DialogDescription>
+            {t('new_conversation_description')}
+          </DialogDescription>
+        </DialogHeader>
 
-          {step === 'type' ? (
-            <div className="grid gap-3">
-              <StepTitle
-                description={t('step_type_description')}
-                title={t('step_type')}
-              />
-              <ConversationTypeSelector
-                allowedTypes={effectiveAllowedTypes}
-                onTypeChange={(nextType) => {
-                  setType(nextType);
-                  if (nextType === 'direct') {
-                    setSelectedUsers((current) => current.slice(0, 1));
-                  }
-                }}
-                type={type}
-              />
-            </div>
-          ) : null}
-
-          {step === 'members' ? (
-            <div className="grid gap-3">
-              <StepTitle
-                description={
-                  type === 'direct'
-                    ? t('step_members_direct_description')
-                    : t('step_members_group_description')
-                }
-                title={t('step_members')}
-              />
-              <DirectoryUserPicker
-                canCreateFriendRequest={conversationScope !== 'workspaces'}
-                directoryQuery={directoryQuery}
-                filteredUsers={filteredUsers}
-                isFetching={isFetching}
-                isCreatingFriendRequest={createFriendRequest.isPending}
-                onDirectoryQueryChange={setDirectoryQuery}
-                onCreateFriendRequest={handleCreateFriendRequest}
-                onRemoveUser={(userId) =>
-                  setSelectedUsers((current) =>
-                    current.filter((item) => item.id !== userId)
-                  )
-                }
-                onSelectUser={(user) =>
-                  setSelectedUsers((current) =>
-                    type === 'direct' ? [user] : [...current, user]
-                  )
-                }
-                selectedUsers={selectedUsers}
-              />
-            </div>
-          ) : null}
-
-          {step === 'details' ? (
-            <div className="grid gap-3">
-              <StepTitle
-                description={t('step_details_description')}
-                title={t('step_details')}
-              />
-              <Input
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder={
-                  type === 'channel'
-                    ? t('channel_name_placeholder')
-                    : type === 'ai'
-                      ? t('agent_name_placeholder')
-                      : t('group_name_placeholder')
-                }
-                value={title}
-              />
-              {(type === 'group' || type === 'channel' || type === 'ai') && (
-                <Textarea
-                  className="min-h-24"
-                  onChange={(event) => setDescription(event.target.value)}
-                  placeholder={t('conversation_description_placeholder')}
-                  value={description}
-                />
-              )}
-            </div>
-          ) : null}
-
-          <DialogFooter>
-            <Button
-              onClick={() => {
-                reset();
-                onOpenChange(false);
-              }}
-              type="button"
-              variant="outline"
-            >
-              {t('cancel')}
-            </Button>
-            {previousStep ? (
-              <Button
-                onClick={() => setStep(previousStep)}
-                type="button"
-                variant="outline"
-              >
-                {t('back')}
-              </Button>
-            ) : null}
-            {showSubmit ? (
-              <Button disabled={shouldDisableSubmit} type="submit">
-                {createConversation.isPending && (
-                  <LoaderCircle className="size-4 animate-spin" />
-                )}
-                {t('create')}
-              </Button>
-            ) : (
-              <Button
-                disabled={!canContinue}
-                onClick={() => nextStep && setStep(nextStep)}
-                type="button"
-              >
-                {t('next')}
-              </Button>
-            )}
-          </DialogFooter>
-        </form>
+        {showRootIntegrations ? (
+          <Tabs
+            className="min-h-0"
+            onValueChange={(value) => setMode(value as CreateConversationMode)}
+            value={mode}
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="conversation">
+                {t('tab_conversations')}
+              </TabsTrigger>
+              <TabsTrigger value="integrations">
+                {t('tab_integrations')}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent className="mt-4" value="conversation">
+              {conversationForm}
+            </TabsContent>
+            <TabsContent className="mt-4" value="integrations">
+              <CreateIntegrationPanel onCreated={handleIntegrationCreated} />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          conversationForm
+        )}
       </DialogContent>
     </Dialog>
   );
-}
-
-function StepTitle({
-  description,
-  title,
-}: {
-  description: string;
-  title: string;
-}) {
-  return (
-    <div>
-      <h3 className="font-medium text-sm">{title}</h3>
-      <p className="mt-1 text-muted-foreground text-xs">{description}</p>
-    </div>
-  );
-}
-
-function getCreateConversationErrorDescription(
-  error: unknown,
-  t: ReturnType<typeof useTranslations>
-) {
-  if (!(error instanceof InternalApiError)) return undefined;
-
-  if (error.message.includes('chat_target_not_invitable')) {
-    return t('conversation_create_target_not_invitable');
-  }
-
-  if (error.message.includes('chat_direct_requires_one_target')) {
-    return t('conversation_create_direct_requires_one_target');
-  }
-
-  if (error.message.includes('chat_group_requires_members')) {
-    return t('conversation_create_group_requires_members');
-  }
-
-  if (error.message.includes('chat_permission_required')) {
-    return t('conversation_create_permission_required');
-  }
-
-  return error.message;
 }

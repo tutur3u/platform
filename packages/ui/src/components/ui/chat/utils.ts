@@ -25,6 +25,10 @@ export function normalizeChatConversationScope(
 export function getChatConversationScope(
   conversation: Pick<ChatConversation, 'metadata' | 'type'>
 ): ChatConversationScope {
+  if (conversation.metadata?.scope === 'personal') {
+    return 'personal';
+  }
+
   if (conversation.type === 'direct' || conversation.type === 'group') {
     return 'personal';
   }
@@ -59,7 +63,9 @@ export function isChatConversation(value: unknown): value is ChatConversation {
 export function getChatConversationTypesForScope(
   scope: ChatConversationScope
 ): ChatConversationType[] {
-  return scope === 'personal' ? ['direct', 'group', 'ai'] : ['channel', 'ai'];
+  return scope === 'personal'
+    ? ['direct', 'group', 'channel', 'ai']
+    : ['channel', 'ai'];
 }
 
 export function filterChatConversationsByScope(

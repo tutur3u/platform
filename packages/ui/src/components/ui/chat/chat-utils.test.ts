@@ -181,6 +181,11 @@ describe('chat utils', () => {
     const direct = conversation({ id: 'direct-1', type: 'direct' });
     const group = conversation({ id: 'group-1', type: 'group' });
     const channel = conversation({ id: 'channel-1', type: 'channel' });
+    const personalChannel = conversation({
+      id: 'personal-channel-1',
+      metadata: { scope: 'personal' },
+      type: 'channel',
+    });
     const ai = conversation({ id: 'ai-1', type: 'ai' });
 
     expect(normalizeChatConversationScope('workspaces')).toBe('workspaces');
@@ -188,6 +193,7 @@ describe('chat utils', () => {
     expect(getChatConversationTypesForScope('personal')).toEqual([
       'direct',
       'group',
+      'channel',
       'ai',
     ]);
     expect(getChatConversationTypesForScope('workspaces')).toEqual([
@@ -206,6 +212,7 @@ describe('chat utils', () => {
         [
           direct,
           group,
+          personalChannel,
           channel,
           conversation({
             id: 'ai-chat-1',
@@ -220,7 +227,13 @@ describe('chat utils', () => {
         ],
         'personal'
       ).map((item) => item.id)
-    ).toEqual(['direct-1', 'group-1', 'ai-chat-1', 'personal-ai-1']);
+    ).toEqual([
+      'direct-1',
+      'group-1',
+      'personal-channel-1',
+      'ai-chat-1',
+      'personal-ai-1',
+    ]);
     expect(
       filterChatConversationsByScope(
         [

@@ -286,6 +286,19 @@ export interface SaveAiAgentResponse {
   agent: AiAgentDefinition;
 }
 
+export type ChatIntegrationKind = 'discord' | 'zalo-official' | 'zalo-personal';
+
+export interface CreateChatIntegrationPayload {
+  displayName?: string;
+  kind: ChatIntegrationKind;
+}
+
+export interface CreateChatIntegrationResponse {
+  agent: AiAgentDefinition;
+  channel: AiAgentChannelConfig;
+  conversationId: string;
+}
+
 export interface AiAgentDeployResponse {
   agent: AiAgentDefinition;
   channel: AiAgentChannelConfig;
@@ -2041,6 +2054,24 @@ export async function saveAiAgent(
     },
     method: 'POST',
   });
+}
+
+export async function createChatIntegration(
+  payload: CreateChatIntegrationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CreateChatIntegrationResponse>(
+    '/api/v1/infrastructure/ai-agents/chat-integrations',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
 }
 
 export async function deployAiAgentChannel(

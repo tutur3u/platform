@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createAIWhitelistDomain,
   createAIWhitelistEmail,
+  createChatIntegration,
   deleteAIWhitelistDomain,
   deleteAIWhitelistEmail,
   deployAiAgentChannel,
@@ -425,6 +426,34 @@ describe('AI agent internal API helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/infrastructure/ai-agents',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('creates managed chat integrations through the AI agent API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        agent: { channels: [], id: 'chat-integrations' },
+        channel: { id: 'chat-zalo-personal' },
+        conversationId: 'ai-agent-1234',
+      })
+    );
+    const payload = {
+      displayName: 'Personal Zalo',
+      kind: 'zalo-personal' as const,
+    };
+
+    await createChatIntegration(payload, {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai-agents/chat-integrations',
       expect.objectContaining({
         body: JSON.stringify(payload),
         cache: 'no-store',

@@ -124,7 +124,7 @@ export function ChatContextRail({
     const nextPath = `/${nextSlug}${nextQuery ? `?${nextQuery}` : ''}`;
 
     if (pathname === `/${nextSlug}`) {
-      window.history.replaceState(null, '', nextPath);
+      router.replace(nextPath, { scroll: false });
     } else {
       router.push(nextPath);
     }
