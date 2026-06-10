@@ -10,6 +10,10 @@ const {
   getDirectDependencyConstraint,
   getLockedPackageVersion,
 } = require('./check-mobile-dependencies.js');
+const {
+  EXPECTED_IOS_DEPLOYMENT_TARGET,
+  collectMobileIosProjectIssues,
+} = require('./check-mobile-ios-project.js');
 
 function createMockProc() {
   const proc = new EventEmitter();
@@ -115,9 +119,11 @@ test('mobile checks invoke local turbo through bun', () => {
   assert.deepEqual(dartFormatCheck.args.slice(0, 1), ['turbo:local']);
 });
 
-test('mobile checks include dependency compatibility before Flutter checks', () => {
+test('mobile checks include project validators before Flutter checks', () => {
   assert.equal(checks[0].name, 'mobile-dependency-compat');
   assert.deepEqual(checks[0].args, ['scripts/check-mobile-dependencies.js']);
+  assert.equal(checks[1].name, 'mobile-ios-project-settings');
+  assert.deepEqual(checks[1].args, ['scripts/check-mobile-ios-project.js']);
 });
 
 test('resolvePubCache prefers explicit PUB_CACHE', () => {
@@ -276,4 +282,41 @@ test('compareVersions orders semantic version strings numerically', () => {
   assert.equal(compareVersions('7.0.0', '7.1.1'), -1);
   assert.equal(compareVersions('7.10.0', '7.2.0'), 1);
   assert.equal(compareVersions('12.4.0', '12.3.0'), 1);
+});
+
+test('mobile iOS project settings accepts Xcode recommended settings', () => {
+  const projectText = [
+    'buildSettings = {',
+    `  IPHONEOS_DEPLOYMENT_TARGET = "${EXPECTED_IOS_DEPLOYMENT_TARGET}";`,
+    '};',
+  ].join('\n');
+
+  assert.deepEqual(collectMobileIosProjectIssues({ projectText }), []);
+});
+
+test('mobile iOS project settings rejects stale Xcode recommendations', () => {
+  const projectText = [
+    'buildSettings = {',
+    '  ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;',
+    '  EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;',
+    '  IPHONEOS_DEPLOYMENT_TARGET = 13.0;',
+    '};',
+  ].join('\n');
+
+  const issues = collectMobileIosProjectIssues({ projectText });
+
+  assert.equal(issues.length, 3);
+  assert.ok(
+    issues.some((issue) =>
+      issue.includes('ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES')
+    )
+  );
+  assert.ok(
+    issues.some((issue) => issue.includes('EMBEDDED_CONTENT_CONTAINS_SWIFT'))
+  );
+  assert.ok(
+    issues.some((issue) =>
+      issue.includes('must use $(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)')
+    )
+  );
 });

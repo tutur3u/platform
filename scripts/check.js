@@ -257,6 +257,17 @@ const checks = [
     },
   },
   {
+    name: 'mobile-ios-project-settings',
+    command: 'node',
+    args: ['scripts/check-mobile-ios-project.js'],
+    parseOutput: (stdout) => {
+      if (stdout.includes('Mobile iOS project settings checks passed')) {
+        return 'Xcode recommended project settings';
+      }
+      return 'Passed';
+    },
+  },
+  {
     name: 'script-tests',
     command: 'bun',
     args: ['run', 'test:scripts'],

@@ -118,6 +118,28 @@ test('bun check always includes mobile dependency compatibility validation', () 
   assert.ok(mobileDependencyIndex < scriptTestsIndex);
 });
 
+test('bun check always includes mobile iOS project settings validation', () => {
+  const activeChecks = getActiveChecks({
+    changedFiles: ['apps/web/src/app/page.tsx'],
+  });
+  const mobileIosProjectCheck = activeChecks.find(
+    (check) => check.name === 'mobile-ios-project-settings'
+  );
+  const scriptTestsIndex = activeChecks.findIndex(
+    (check) => check.name === 'script-tests'
+  );
+  const mobileIosProjectIndex = activeChecks.findIndex(
+    (check) => check.name === 'mobile-ios-project-settings'
+  );
+
+  assert.ok(mobileIosProjectCheck);
+  assert.deepEqual(mobileIosProjectCheck.args, [
+    'scripts/check-mobile-ios-project.js',
+  ]);
+  assert.ok(mobileIosProjectIndex > -1);
+  assert.ok(mobileIosProjectIndex < scriptTestsIndex);
+});
+
 test('Biome check treats warnings as blocking local check issues', () => {
   const biomeCheck = checks.find((check) => check.name === 'biome');
 

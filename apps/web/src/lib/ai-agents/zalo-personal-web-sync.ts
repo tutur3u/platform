@@ -200,7 +200,7 @@ async function seedZaloWebSession(
     await context.addCookies(cookies);
   }
 
-  await context.addInitScript((storedImei) => {
+  await context.addInitScript((storedImei: string) => {
     window.localStorage.setItem('imei', storedImei);
     window.localStorage.setItem('z_uuid', storedImei);
     window.localStorage.setItem('zclientid', storedImei);
