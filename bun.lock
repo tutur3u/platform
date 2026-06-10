@@ -195,7 +195,7 @@
     },
     "apps/database": {
       "name": "@tuturuuu/database",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "devDependencies": {
         "supabase": "^2.105.0",
         "typescript": "^6.0.3",
@@ -1258,7 +1258,7 @@
     },
     "packages/apis": {
       "name": "@tuturuuu/apis",
-      "version": "0.0.12",
+      "version": "0.1.0",
       "dependencies": {
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/payment": "workspace:*",
@@ -1301,7 +1301,7 @@
     },
     "packages/devbox": {
       "name": "@tuturuuu/devbox",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^25.9.2",
@@ -1312,7 +1312,7 @@
     },
     "packages/email-service": {
       "name": "@tuturuuu/email-service",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.1063.0",
         "@tuturuuu/supabase": "workspace:*",
@@ -1440,7 +1440,7 @@
     },
     "packages/internal-api": {
       "name": "@tuturuuu/internal-api",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "dependencies": {
         "@tuturuuu/types": "workspace:*",
       },
@@ -1454,7 +1454,7 @@
     },
     "packages/masonry": {
       "name": "@tuturuuu/masonry",
-      "version": "0.4.2",
+      "version": "0.4.3",
       "dependencies": {
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
@@ -1579,7 +1579,7 @@
     },
     "packages/satellite": {
       "name": "@tuturuuu/satellite",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "dependencies": {
         "@radix-ui/react-dialog": "^1.1.16",
         "@radix-ui/react-tooltip": "^1.2.9",
@@ -1612,7 +1612,7 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.6.1",
+      "version": "0.7.0",
       "bin": {
         "ttr": "./dist/cli/index.js",
         "tuturuuu": "./dist/cli/index.js",
@@ -1634,7 +1634,7 @@
     },
     "packages/supabase": {
       "name": "@tuturuuu/supabase",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "dependencies": {
         "@supabase/ssr": "^0.10.3",
         "@supabase/supabase-js": "^2.107.0",
@@ -1707,7 +1707,7 @@
     },
     "packages/types": {
       "name": "@tuturuuu/types",
-      "version": "0.4.1",
+      "version": "0.5.0",
       "dependencies": {
         "@tiptap/react": "3.26.0",
         "react": "^19.2.7",
@@ -1728,7 +1728,7 @@
     },
     "packages/ui": {
       "name": "@tuturuuu/ui",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -1888,7 +1888,7 @@
     },
     "packages/utils": {
       "name": "@tuturuuu/utils",
-      "version": "0.3.1",
+      "version": "0.4.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@noble/ciphers": "^2.2.0",
