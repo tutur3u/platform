@@ -105,13 +105,17 @@ const helpTopics: Record<string, HelpTopic> = {
     commands: [
       'set-base-url <url>           target a local or staging web origin',
     ],
-    examples: ['ttr config set-base-url http://localhost:7803'],
+    examples: [
+      'ttr config set-base-url http://localhost:7803',
+      'ttr host use local --port 7803',
+    ],
     usage: 'ttr config set-base-url <url>',
   },
   finance: {
     commands: [
-      'wallets [list|get|create|update|delete]',
+      'wallets [list|get|balance|create|update|delete]',
       'transactions [list|get|create|update|delete|export|stats]',
+      'transfers [create|update|migrate]',
       'categories [list|get|create|update|delete]',
       'budgets [list|status|create|update|delete]',
       'recurring [list|upcoming|create|update|delete]',
@@ -120,8 +124,10 @@ const helpTopics: Record<string, HelpTopic> = {
       'Finance commands use the selected workspace and the same authenticated internal APIs as the web app.',
     examples: [
       'ttr finance wallets',
+      'ttr finance wallets balance --all',
       'ttr finance transactions --page-size 10',
       'ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09',
+      'ttr finance transfers migrate --from-transaction <tx-id> --to-transaction <tx-id> --from-wallet <wallet-id> --to-wallet <wallet-id> --amount 150000 --taken-at 2026-05-09',
       'ttr finance categories create "Travel" --expense --color blue',
       'ttr finance budgets status',
     ],
@@ -132,6 +138,29 @@ const helpTopics: Record<string, HelpTopic> = {
       '--json                       print machine-readable JSON',
     ],
     usage: 'ttr finance <resource> [action] [id] [options]',
+  },
+  host: {
+    commands: [
+      'current                      show the active Tuturuuu origin',
+      'list                         show built-in host targets',
+      'use <production|prod|local|localhost|url>',
+    ],
+    description:
+      'Switches the Tuturuuu CLI target origin. Changing origins clears the saved session and selected workspace context.',
+    examples: [
+      'ttr host current',
+      'ttr host use production',
+      'ttr host use local',
+      'ttr host use local --port 7803',
+      'ttr host use local --portless --port 1355',
+      'ttr host use https://staging.example.com',
+    ],
+    options: [
+      '--port <port>                use http://localhost:<port> for local targets',
+      '--portless                   with --port, use https://tuturuuu.localhost:<port>',
+      '--json                       print machine-readable JSON',
+    ],
+    usage: 'ttr host [current|list|use] [target] [options]',
   },
   labels: {
     commands: [
@@ -346,6 +375,7 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
       ],
       options: [
         '--name <name>               category name; positional text is also accepted',
+        '--description <text>        category description',
         '--expense                   mark as expense category',
         '--income                    mark as income category',
         '--icon <name>               icon name',
@@ -402,10 +432,34 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
       usage:
         'ttr finance transactions [list|get|create|update|delete|export|stats|category-breakdown|spending-trends] [id]',
     },
+    transfers: {
+      examples: [
+        'ttr finance transfers create --from-wallet <wallet-id> --to-wallet <wallet-id> --amount 150000 --taken-at 2026-05-09',
+        'ttr finance transfers update --from-transaction <tx-id> --to-transaction <tx-id> --from-wallet <wallet-id> --to-wallet <wallet-id> --amount 150000 --taken-at 2026-05-09',
+        'ttr finance transfers migrate --from-transaction <tx-id> --to-transaction <tx-id> --from-wallet <wallet-id> --to-wallet <wallet-id> --amount 150000 --taken-at 2026-05-09',
+      ],
+      options: [
+        '--from-wallet <id>          origin wallet id',
+        '--to-wallet <id>            destination wallet id',
+        '--from-transaction <id>     origin transaction id for update/migrate',
+        '--to-transaction <id>       destination transaction id for update/migrate',
+        '--amount <number>           source amount; source transaction is stored negative',
+        '--destination-amount <num>  destination amount for cross-currency transfers',
+        '--taken-at <iso>            transfer date/time',
+        '--description <text>        transfer description',
+        '--tags <ids>                comma-separated tag ids',
+        '--report-opt-in <boolean>   include in reports',
+        '--json-payload <json>       explicit payload override',
+        '--json                      print machine-readable JSON',
+      ],
+      usage: 'ttr finance transfers [create|update|migrate] [options]',
+    },
     wallets: {
       examples: [
         'ttr finance wallets',
         'ttr finance wallets get <wallet-id>',
+        'ttr finance wallets balance <wallet-id>',
+        'ttr finance wallets balance --all',
         'ttr finance wallets create "Cash" --currency VND --balance 0 --type STANDARD',
         'ttr finance wallets update <wallet-id> --name "Operating Cash"',
       ],
@@ -419,11 +473,12 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
         '--limit <number>            credit limit',
         '--statement-date <number>   credit statement day',
         '--payment-date <number>     credit payment day',
+        '--all                       show balance for all accessible wallets',
         '--page <n>, --page-size <n> paginate list output',
         '--json-payload <json>       explicit payload override',
         '--json                      print machine-readable JSON',
       ],
-      usage: 'ttr finance wallets [list|get|create|update|delete] [id]',
+      usage: 'ttr finance wallets [list|get|balance|create|update|delete] [id]',
     },
   },
   tasks: {
@@ -564,9 +619,10 @@ export function getGlobalHelp() {
     '  logout',
     '  upgrade',
     '  whoami',
+    '  host [current|list|use]',
     '  config set-base-url <url>',
     '  box <run|lease|release|preview|agent|cache|doctor|setup>',
-    '  finance <wallets|transactions|categories|budgets|recurring>',
+    '  finance <wallets|transactions|transfers|categories|budgets|recurring>',
     '  workspaces [list]|use [id]',
     '  boards [list]|use|create|update|delete',
     '  lists [list]|use|create|update --board <id>',
@@ -590,6 +646,7 @@ export function getGlobalHelp() {
     'Scoped help:',
     '  ttr finance --help',
     '  ttr finance transactions --help',
+    '  ttr host --help',
     '  ttr tasks --help',
     '  ttr box --help',
     '  ttr tasks create --help',

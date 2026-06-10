@@ -15,6 +15,7 @@ interface Params {
 const TransactionCategoryCreateSchema = z.object({
   name: z.string().min(1),
   is_expense: z.boolean(),
+  description: z.string().nullable().optional(),
   icon: z.string().nullable().optional(),
   color: z.string().nullable().optional(),
 });
@@ -55,7 +56,7 @@ export async function GET(
         .order('name', { ascending: true })
     : sbAdmin
         .from('transaction_categories')
-        .select('id,name,is_expense,icon,color')
+        .select('id,name,description,is_expense,icon,color')
         .eq('ws_id', normalizedWsId)
         .order('name', { ascending: true });
 
@@ -110,6 +111,7 @@ export async function POST(
     .insert({
       ws_id: normalizedWsId,
       name: data.name,
+      description: data.description ?? null,
       is_expense: data.is_expense,
       icon: data.icon ?? null,
       color: data.color ?? null,

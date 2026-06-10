@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   authProxy: vi.fn(),
+  verifyCliAccessToken: vi.fn(),
   guardApiProxyRequest: vi.fn(),
   hasAuthenticatedApiSession: vi.fn(),
   isTrustedProxyBypassRequest: vi.fn(),
@@ -22,11 +23,18 @@ const mocks = vi.hoisted(() => ({
   normalizeWorkspaceId: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
   getUserDefaultWorkspace: vi.fn(),
+  isExactTuturuuuDotComEmail: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
   createCentralizedAuthProxy: () => mocks.authProxy,
   propagateAuthCookies: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/auth/cli-session', () => ({
+  verifyCliAccessToken: (
+    ...args: Parameters<typeof mocks.verifyCliAccessToken>
+  ) => mocks.verifyCliAccessToken(...args),
 }));
 
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
@@ -88,6 +96,12 @@ vi.mock('@tuturuuu/utils/user-helper', () => ({
   getUserDefaultWorkspace: (
     ...args: Parameters<typeof mocks.getUserDefaultWorkspace>
   ) => mocks.getUserDefaultWorkspace(...args),
+}));
+
+vi.mock('@tuturuuu/utils/email/client', () => ({
+  isExactTuturuuuDotComEmail: (
+    ...args: Parameters<typeof mocks.isExactTuturuuuDotComEmail>
+  ) => mocks.isExactTuturuuuDotComEmail(...args),
 }));
 
 describe('web proxy api handling', () => {
@@ -159,6 +173,11 @@ describe('web proxy api handling', () => {
     mocks.recordMalformedAuthCookieEdge.mockResolvedValue(null);
     mocks.recordSuspiciousApiRequestEdge.mockResolvedValue(null);
     mocks.isTrustedProxyBypassRequest.mockReturnValue(false);
+    mocks.verifyCliAccessToken.mockReturnValue({
+      error: 'invalid token',
+      ok: false,
+    });
+    mocks.isExactTuturuuuDotComEmail.mockReturnValue(false);
     mocks.isPersonalWorkspace.mockResolvedValue(false);
     mocks.normalizeWorkspaceId.mockImplementation(async (wsId: string) => wsId);
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
@@ -190,9 +209,94 @@ describe('web proxy api handling', () => {
     expect(response).toBe(guardResponse);
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(
       expect.any(NextRequest),
-      { prefixBase: 'proxy:web:api' }
+      expect.objectContaining({
+        prefixBase: 'proxy:web:api',
+        trustedBypassRules: expect.any(Array),
+      })
     );
     expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('adds a trusted proxy guard bypass only for verified exact Tuturuuu CLI tokens', async () => {
+    mocks.verifyCliAccessToken.mockReturnValue({
+      claims: {
+        email: 'member@tuturuuu.com',
+      },
+      ok: true,
+    });
+    mocks.isExactTuturuuuDotComEmail.mockReturnValue(true);
+
+    const { proxy } = await import('../proxy');
+    await proxy(
+      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
+        method: 'GET',
+        headers: {
+          authorization: 'Bearer ttr_app_valid',
+          'user-agent': 'Mozilla/5.0',
+        },
+      })
+    );
+
+    const options = mocks.guardApiProxyRequest.mock.calls[0]?.[1];
+    const rule = options?.trustedBypassRules?.[0];
+
+    expect(
+      rule?.matches(
+        '/api/v1/users/me/configs/demo',
+        new Headers({
+          authorization: 'Bearer ttr_app_valid',
+        })
+      )
+    ).toBe(true);
+    expect(mocks.verifyCliAccessToken).toHaveBeenCalledWith('ttr_app_valid');
+    expect(mocks.isExactTuturuuuDotComEmail).toHaveBeenCalledWith(
+      'member@tuturuuu.com'
+    );
+  });
+
+  it('denies proxy guard bypass for non-Tuturuuu or tampered CLI tokens', async () => {
+    const { proxy } = await import('../proxy');
+    await proxy(
+      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
+        method: 'GET',
+        headers: {
+          authorization: 'Bearer ttr_app_invalid',
+          'user-agent': 'Mozilla/5.0',
+        },
+      })
+    );
+
+    const options = mocks.guardApiProxyRequest.mock.calls[0]?.[1];
+    const rule = options?.trustedBypassRules?.[0];
+
+    mocks.verifyCliAccessToken.mockReturnValueOnce({
+      claims: {
+        email: 'member@example.com',
+      },
+      ok: true,
+    });
+    mocks.isExactTuturuuuDotComEmail.mockReturnValueOnce(false);
+    expect(
+      rule?.matches(
+        '/api/v1/users/me/configs/demo',
+        new Headers({
+          authorization: 'Bearer ttr_app_non_tuturuuu',
+        })
+      )
+    ).toBe(false);
+
+    mocks.verifyCliAccessToken.mockReturnValueOnce({
+      error: 'signature mismatch',
+      ok: false,
+    });
+    expect(
+      rule?.matches(
+        '/api/v1/users/me/configs/demo',
+        new Headers({
+          authorization: 'Bearer ttr_app_tampered',
+        })
+      )
+    ).toBe(false);
   });
 
   it('lets oversized API payloads reach the proxy guard so they return 413 instead of suspicious-request 400', async () => {
@@ -469,9 +573,10 @@ describe('web proxy api handling', () => {
     expect(response.status).toBe(413);
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(
       expect.any(NextRequest),
-      {
+      expect.objectContaining({
         prefixBase: 'proxy:web:api',
-      }
+        trustedBypassRules: expect.any(Array),
+      })
     );
     expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
   });

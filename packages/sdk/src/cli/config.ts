@@ -32,6 +32,24 @@ export interface ConfigPathOptions {
 }
 
 export const DEFAULT_BASE_URL = 'https://tuturuuu.com';
+export const PORTLESS_LOCAL_BASE_URL = 'https://tuturuuu.localhost';
+export const LOCAL_BASE_URL_ENV_KEYS = [
+  'TUTURUUU_LOCAL_BASE_URL',
+  'PORTLESS_URL',
+  'WEB_APP_URL',
+  'NEXT_PUBLIC_WEB_APP_URL',
+  'NEXT_PUBLIC_APP_URL',
+] as const;
+
+export interface NormalizeBaseUrlOptions {
+  inferLocalhostProtocol?: boolean;
+}
+
+export interface ResolveHostOptions {
+  env?: Record<string, string | undefined>;
+  port?: string;
+  portless?: boolean;
+}
 
 function stripTrailingSlash(value: string) {
   return value.replace(/\/+$/u, '');
@@ -51,7 +69,20 @@ function normalizeBrowserSafeOrigin(origin: string) {
   return stripTrailingSlash(url.origin);
 }
 
-export function normalizeBaseUrl(value?: string) {
+function isBareLocalhost(value: string) {
+  return /^(?:localhost|127\.0\.0\.1|\[?::1\]?)(?::\d+)?$/iu.test(value);
+}
+
+function inferProtocol(value: string, options: NormalizeBaseUrlOptions) {
+  return options.inferLocalhostProtocol && isBareLocalhost(value)
+    ? 'http'
+    : 'https';
+}
+
+export function normalizeBaseUrl(
+  value?: string,
+  options: NormalizeBaseUrlOptions = {}
+) {
   if (!value?.trim()) {
     return DEFAULT_BASE_URL;
   }
@@ -59,9 +90,119 @@ export function normalizeBaseUrl(value?: string) {
   const trimmed = value.trim();
   const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//iu.test(trimmed)
     ? trimmed
-    : `https://${trimmed}`;
+    : `${inferProtocol(trimmed, options)}://${trimmed}`;
 
   return normalizeBrowserSafeOrigin(new URL(withProtocol).origin);
+}
+
+export function normalizeHostBaseUrl(value?: string) {
+  return normalizeBaseUrl(value, { inferLocalhostProtocol: true });
+}
+
+function isSafeLocalHost(hostname: string) {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '::1' ||
+    hostname.endsWith('.localhost')
+  );
+}
+
+export function isSafeLocalBaseUrl(value?: string) {
+  if (!value?.trim()) return false;
+
+  try {
+    const url = new URL(normalizeHostBaseUrl(value));
+    return (
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      isSafeLocalHost(url.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function getEnvLocalBaseUrl(
+  env: Record<string, string | undefined> = process.env
+) {
+  for (const key of LOCAL_BASE_URL_ENV_KEYS) {
+    const value = env[key];
+    if (isSafeLocalBaseUrl(value)) {
+      return normalizeHostBaseUrl(value);
+    }
+  }
+}
+
+function normalizePort(value?: string) {
+  if (!value?.trim()) return undefined;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65_535) {
+    throw new Error(`Invalid port: ${value}`);
+  }
+  return String(parsed);
+}
+
+function withPort(baseUrl: string, port?: string) {
+  const normalizedPort = normalizePort(port);
+  if (!normalizedPort) return baseUrl;
+
+  const url = new URL(baseUrl);
+  url.port = normalizedPort;
+  return stripTrailingSlash(url.origin);
+}
+
+export function resolveCliHostBaseUrl(
+  target?: string,
+  options: ResolveHostOptions = {}
+) {
+  const normalizedTarget = target?.trim().toLowerCase();
+
+  if (
+    normalizedTarget === 'production' ||
+    normalizedTarget === 'prod' ||
+    normalizedTarget === undefined ||
+    normalizedTarget === ''
+  ) {
+    if (options.port || options.portless) {
+      throw new Error('Ports are only supported for local host targets.');
+    }
+    return DEFAULT_BASE_URL;
+  }
+
+  if (normalizedTarget === 'local' || normalizedTarget === 'localhost') {
+    const baseUrl = options.port
+      ? options.portless
+        ? PORTLESS_LOCAL_BASE_URL
+        : 'http://localhost'
+      : getEnvLocalBaseUrl(options.env) || PORTLESS_LOCAL_BASE_URL;
+    return withPort(baseUrl, options.port);
+  }
+
+  if (options.port || options.portless) {
+    throw new Error('Ports are only supported for local host targets.');
+  }
+
+  return normalizeHostBaseUrl(target);
+}
+
+export function clearHostScopedConfig(
+  config: CliConfig,
+  nextBaseUrl: string
+): CliConfig {
+  const currentBaseUrl = normalizeHostBaseUrl(config.baseUrl);
+  const normalizedNextBaseUrl = normalizeHostBaseUrl(nextBaseUrl);
+
+  if (currentBaseUrl === normalizedNextBaseUrl) {
+    return {
+      ...config,
+      baseUrl: normalizedNextBaseUrl,
+    };
+  }
+
+  return {
+    baseUrl: normalizedNextBaseUrl,
+    updateCheck: config.updateCheck,
+  };
 }
 
 export function getDefaultConfigPath(
@@ -103,7 +244,7 @@ export async function readCliConfig(
     const raw = await readFile(path, 'utf8');
     const parsed = JSON.parse(raw) as Partial<CliConfig>;
     return {
-      baseUrl: normalizeBaseUrl(parsed.baseUrl),
+      baseUrl: normalizeHostBaseUrl(parsed.baseUrl),
       currentBoardId: parsed.currentBoardId,
       currentLabelId: parsed.currentLabelId,
       currentListId: parsed.currentListId,
@@ -132,7 +273,7 @@ export async function writeCliConfig(
     `${JSON.stringify(
       {
         ...config,
-        baseUrl: normalizeBaseUrl(config.baseUrl),
+        baseUrl: normalizeHostBaseUrl(config.baseUrl),
       },
       null,
       2

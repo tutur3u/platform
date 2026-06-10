@@ -796,6 +796,16 @@ function financeRows(data: unknown, resource?: string) {
           Currency: asString(row.currency),
         };
       });
+    case 'wallet-balances':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.name, 'Untitled wallet'),
+          Id: asString(row.id),
+          Balance: formatFinanceAmount(row.balance),
+          Currency: asString(row.currency),
+        };
+      });
     case 'transactions':
       return rows.map((item) => {
         const row = asRecord(item);
@@ -815,6 +825,7 @@ function financeRows(data: unknown, resource?: string) {
           Name: asString(row.name, 'Untitled category'),
           Id: asString(row.id),
           Type: row.is_expense === false ? 'income' : 'expense',
+          Description: asString(row.description),
           Amount: formatFinanceAmount(row.amount),
           Count: row.transaction_count ?? '',
           Color: asString(row.color),
@@ -857,6 +868,15 @@ function financeRows(data: unknown, resource?: string) {
           Active: row.is_active === false ? 'no' : 'yes',
         };
       });
+    case 'transfers':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Message: asString(row.message),
+          From: asString(row.from_transaction_id),
+          To: asString(row.to_transaction_id),
+        };
+      });
     default:
       return rows.map(asRecord);
   }
@@ -864,6 +884,36 @@ function financeRows(data: unknown, resource?: string) {
 
 function renderFinance(data: unknown, resource?: string) {
   const record = asRecord(data);
+  if (
+    resource === 'wallet-balances' &&
+    Array.isArray(record.wallets) &&
+    Array.isArray(record.totals)
+  ) {
+    process.stdout.write(`${color.bold('Wallets')}\n`);
+    renderTable(financeRows(record.wallets, resource));
+    process.stdout.write(`${color.bold('Totals')}\n`);
+    renderTable(
+      asArray(record.totals).map((item) => {
+        const row = asRecord(item);
+        return {
+          Currency: asString(row.currency),
+          Balance: formatFinanceAmount(row.balance),
+        };
+      })
+    );
+    return;
+  }
+
+  if (resource === 'wallet-balances' && record.id) {
+    renderTable(financeRows([record], resource));
+    return;
+  }
+
+  if (resource === 'transfers' && record.message) {
+    renderTable(financeRows([record], resource));
+    return;
+  }
+
   if (Array.isArray(data) || Array.isArray(record.data)) {
     renderTable(financeRows(data, resource));
     const paginationText = getPaginationText(record);

@@ -1,6 +1,7 @@
 import type { Entity } from './Entity';
 
 export interface TransactionCategory extends Entity {
+  description?: string | null;
   is_expense?: boolean;
   ws_id?: string;
   icon?: string | null;

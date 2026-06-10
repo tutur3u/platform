@@ -1,4 +1,5 @@
 import { match } from '@formatjs/intl-localematcher';
+import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
 import {
   createCentralizedAuthProxy,
   propagateAuthCookies,
@@ -25,6 +26,7 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import {
   isPersonalWorkspace,
@@ -368,6 +370,35 @@ function looksLikeSupabaseJwt(token: string): boolean {
 
 function looksLikeWorkspaceApiKey(token: string): boolean {
   return /^ttr_[A-Za-z0-9_-]+$/.test(token);
+}
+
+function getBearerToken(headers: Headers) {
+  const authHeader = headers.get('authorization')?.trim();
+  if (!authHeader?.toLowerCase().startsWith('bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.slice(7).trim();
+  return token || null;
+}
+
+function isTrustedCliTuturuuuRateLimitBypass(
+  _pathname: string,
+  headers: Headers
+) {
+  const token = getBearerToken(headers);
+  if (!token?.startsWith('ttr_app_')) {
+    return false;
+  }
+
+  try {
+    const verification = verifyCliAccessToken(token);
+    return (
+      verification.ok && isExactTuturuuuDotComEmail(verification.claims.email)
+    );
+  } catch {
+    return false;
+  }
 }
 
 function hasLikelyAuthenticatedApiCredential(req: NextRequest): boolean {
@@ -878,6 +909,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
     const guardResponse = await guardApiProxyRequest(req, {
       prefixBase: 'proxy:web:api',
+      trustedBypassRules: [
+        {
+          matches: isTrustedCliTuturuuuRateLimitBypass,
+        },
+      ],
     });
     if (guardResponse) {
       if (

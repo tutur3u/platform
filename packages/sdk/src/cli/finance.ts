@@ -11,6 +11,7 @@ import {
   getSpendingTrendsQuery,
   getTransactionListQuery,
   getTransactionPayload,
+  getTransferPayload,
   getWalletPayload,
 } from './finance-payloads';
 import { handleRecurring } from './finance-recurring';
@@ -40,6 +41,34 @@ async function handleWallets(input: FinanceCommandInput, action: string) {
       ),
       {
         financeResource: 'wallets',
+        group: 'finance',
+        json,
+      }
+    );
+    return;
+  }
+  if (action === 'balance') {
+    if (flags.all === true) {
+      render(
+        getWalletBalanceSummary(await client.finance.listWallets(workspaceId)),
+        {
+          financeResource: 'wallet-balances',
+          group: 'finance',
+          json,
+        }
+      );
+      return;
+    }
+
+    render(
+      getWalletBalanceView(
+        await client.finance.getWallet(
+          workspaceId,
+          getRequiredFinanceId(action, 'wallets', id)
+        )
+      ),
+      {
+        financeResource: 'wallet-balances',
         group: 'finance',
         json,
       }
@@ -92,6 +121,52 @@ async function handleWallets(input: FinanceCommandInput, action: string) {
     return;
   }
   throw new Error(`Unknown finance wallets action: ${action}`);
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object'
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asString(value: unknown) {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function asNumber(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function getWalletBalanceView(wallet: unknown) {
+  const record = asRecord(wallet);
+  return {
+    id: asString(record.id),
+    name: asString(record.name),
+    balance: asNumber(record.balance) ?? 0,
+    currency: asString(record.currency),
+  };
+}
+
+function getWalletBalanceSummary(wallets: unknown[]) {
+  const balanceRows = wallets.map(getWalletBalanceView);
+  const totalsByCurrency = new Map<string, number>();
+
+  for (const wallet of balanceRows) {
+    const currency = wallet.currency || 'UNKNOWN';
+    totalsByCurrency.set(
+      currency,
+      (totalsByCurrency.get(currency) ?? 0) + wallet.balance
+    );
+  }
+
+  return {
+    wallets: balanceRows,
+    totals: [...totalsByCurrency.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([currency, balance]) => ({ currency, balance })),
+  };
 }
 
 async function handleTransactions(input: FinanceCommandInput, action: string) {
@@ -282,6 +357,45 @@ async function handleCategories(input: FinanceCommandInput, action: string) {
   throw new Error(`Unknown finance categories action: ${action}`);
 }
 
+async function handleTransfers(input: FinanceCommandInput, action: string) {
+  const { client, flags, json, workspaceId } = input;
+
+  if (action === 'create') {
+    render(
+      await client.finance.createTransfer(
+        workspaceId,
+        getTransferPayload(flags)
+      ),
+      { financeResource: 'transfers', group: 'finance', json }
+    );
+    return;
+  }
+
+  if (action === 'update') {
+    render(
+      await client.finance.updateTransfer(
+        workspaceId,
+        getTransferPayload(flags, { includeTransactionIds: true })
+      ),
+      { financeResource: 'transfers', group: 'finance', json }
+    );
+    return;
+  }
+
+  if (action === 'migrate') {
+    render(
+      await client.finance.migrateTransfer(
+        workspaceId,
+        getTransferPayload(flags, { includeTransactionIds: true })
+      ),
+      { financeResource: 'transfers', group: 'finance', json }
+    );
+    return;
+  }
+
+  throw new Error(`Unknown finance transfers action: ${action}`);
+}
+
 async function handleBudgets(input: FinanceCommandInput, action: string) {
   const { client, flags, json, positionals, workspaceId } = input;
   const id = positionals[3];
@@ -348,7 +462,7 @@ export async function runFinanceCommand(input: FinanceCommandInput) {
 
   if (!resource) {
     throw new Error(
-      'Missing finance resource. Use wallets, transactions, categories, budgets, or recurring.'
+      'Missing finance resource. Use wallets, transactions, transfers, categories, budgets, or recurring.'
     );
   }
 
@@ -361,6 +475,8 @@ export async function runFinanceCommand(input: FinanceCommandInput) {
       return handleRecurring(input, action);
     case 'transactions':
       return handleTransactions(input, action);
+    case 'transfers':
+      return handleTransfers(input, action);
     case 'wallets':
       return handleWallets(input, action);
     default:

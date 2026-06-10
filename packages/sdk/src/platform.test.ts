@@ -296,6 +296,84 @@ describe('TuturuuuUserClient', () => {
     );
   });
 
+  it('passes finance transfer migration requests through the authenticated internal API client', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ message: 'success' }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.finance.migrateTransfer('ws-1', {
+      origin_transaction_id: 'origin-tx',
+      destination_transaction_id: 'destination-tx',
+      origin_wallet_id: 'origin-wallet',
+      destination_wallet_id: 'destination-wallet',
+      amount: 125_000,
+      destination_amount: 126_000,
+      description: 'Migrated transfer',
+      taken_at: '2026-03-30T08:00:00.000Z',
+      tag_ids: ['tag-1'],
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/workspaces/ws-1/transfers',
+      expect.objectContaining({
+        body: JSON.stringify({
+          origin_transaction_id: 'origin-tx',
+          destination_transaction_id: 'destination-tx',
+          origin_wallet_id: 'origin-wallet',
+          destination_wallet_id: 'destination-wallet',
+          amount: 125_000,
+          destination_amount: 126_000,
+          description: 'Migrated transfer',
+          taken_at: '2026-03-30T08:00:00.000Z',
+          tag_ids: ['tag-1'],
+        }),
+        cache: 'no-store',
+        method: 'PATCH',
+      })
+    );
+    const requestInit = fetchMock.mock.calls[0]?.[1];
+    expect(new Headers(requestInit?.headers).get('authorization')).toBe(
+      'Bearer access-token'
+    );
+  });
+
+  it('passes category descriptions through finance category creation', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ message: 'success' }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.finance.createTransactionCategory('ws-1', {
+      name: 'Travel',
+      description: 'Trips and commuting',
+      is_expense: true,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/workspaces/ws-1/transactions/categories',
+      expect.objectContaining({
+        body: JSON.stringify({
+          name: 'Travel',
+          description: 'Trips and commuting',
+          is_expense: true,
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
   it('adds pagination metadata to finance transaction exports', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({

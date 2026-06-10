@@ -38,6 +38,7 @@ describe('transaction categories route', () => {
       data: [
         {
           color: null,
+          description: 'School payments',
           icon: null,
           id: 'category-1',
           is_expense: true,
@@ -56,6 +57,7 @@ describe('transaction categories route', () => {
       data: [
         {
           amount: 1200,
+          description: 'School payments',
           id: 'category-1',
           name: 'Tuition',
           transaction_count: 4,
@@ -104,6 +106,7 @@ describe('transaction categories route', () => {
     await expect(response.json()).resolves.toEqual([
       {
         color: null,
+        description: 'School payments',
         icon: null,
         id: 'category-1',
         is_expense: true,
@@ -112,7 +115,7 @@ describe('transaction categories route', () => {
     ]);
     expect(mocks.rpc).not.toHaveBeenCalled();
     expect(mocks.categoriesSelect).toHaveBeenCalledWith(
-      'id,name,is_expense,icon,color'
+      'id,name,description,is_expense,icon,color'
     );
     expect(mocks.categoriesEq).toHaveBeenCalledWith('ws_id', 'ws-1');
   });
@@ -144,6 +147,7 @@ describe('transaction categories route', () => {
     await expect(response.json()).resolves.toEqual([
       {
         amount: 1200,
+        description: 'School payments',
         id: 'category-1',
         name: 'Tuition',
         transaction_count: 4,
@@ -182,5 +186,125 @@ describe('transaction categories route', () => {
 
     expect(response.status).toBe(403);
     expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('creates transaction categories with descriptions', async () => {
+    const insert = vi.fn((payload) => ({
+      select: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            id: 'category-2',
+            ...payload,
+          },
+          error: null,
+        }),
+      })),
+    }));
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: withPermissions(['create_transactions']),
+        sbAdmin: {
+          from: vi.fn((table: string) => {
+            if (table !== 'transaction_categories') {
+              throw new Error(`Unexpected table: ${table}`);
+            }
+
+            return { insert };
+          }),
+        },
+      },
+    });
+
+    const { POST } = await import('./route.js');
+    const response = await POST(
+      new Request(
+        'http://localhost/api/workspaces/ws-1/transactions/categories',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'Travel',
+            description: 'Trips and commuting',
+            is_expense: true,
+            icon: 'plane',
+            color: 'blue',
+          }),
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(insert).toHaveBeenCalledWith({
+      ws_id: 'ws-1',
+      name: 'Travel',
+      description: 'Trips and commuting',
+      is_expense: true,
+      icon: 'plane',
+      color: 'blue',
+    });
+    await expect(response.json()).resolves.toEqual({
+      message: 'success',
+      data: {
+        ws_id: 'ws-1',
+        id: 'category-2',
+        name: 'Travel',
+        description: 'Trips and commuting',
+        is_expense: true,
+        icon: 'plane',
+        color: 'blue',
+      },
+    });
+  });
+
+  it('updates transaction category descriptions', async () => {
+    const secondEq = vi.fn().mockResolvedValue({ error: null });
+    const firstEq = vi.fn(() => ({ eq: secondEq }));
+    const update = vi.fn(() => ({ eq: firstEq }));
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: withPermissions(['update_transactions']),
+        sbAdmin: {
+          from: vi.fn((table: string) => {
+            if (table !== 'transaction_categories') {
+              throw new Error(`Unexpected table: ${table}`);
+            }
+
+            return { update };
+          }),
+        },
+      },
+    });
+
+    const { PUT } = await import('./categoryId/route.js');
+    const response = await PUT(
+      new Request(
+        'http://localhost/api/workspaces/ws-1/transactions/categories/category-2',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            description: 'Updated description',
+          }),
+        }
+      ),
+      {
+        params: Promise.resolve({
+          categoryId: 'category-2',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(update).toHaveBeenCalledWith({
+      description: 'Updated description',
+    });
+    expect(firstEq).toHaveBeenCalledWith('id', 'category-2');
+    expect(secondEq).toHaveBeenCalledWith('ws_id', 'ws-1');
   });
 });

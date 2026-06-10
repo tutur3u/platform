@@ -419,6 +419,7 @@ export interface TransactionPayload {
 
 export interface TransactionCategoryPayload {
   name?: string;
+  description?: string | null;
   is_expense?: boolean;
   icon?: string | null;
   color?: string | null;
@@ -627,7 +628,7 @@ export interface FinanceTransferPayload {
   destination_amount?: number;
   description?: string;
   taken_at: string | Date;
-  report_opt_in: boolean;
+  report_opt_in?: boolean;
   tag_ids?: string[];
 }
 
@@ -635,6 +636,8 @@ export interface FinanceTransferUpdatePayload extends FinanceTransferPayload {
   origin_transaction_id: string;
   destination_transaction_id: string;
 }
+
+export type FinanceTransferMigratePayload = FinanceTransferUpdatePayload;
 
 export interface FinanceTransferResponse {
   message: string;
@@ -1422,6 +1425,25 @@ export async function updateTransfer(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transfers`,
     {
       method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function migrateTransfer(
+  workspaceId: string,
+  payload: FinanceTransferMigratePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<FinanceTransferResponse>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/transfers`,
+    {
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },

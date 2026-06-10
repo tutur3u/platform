@@ -22,10 +22,12 @@ import {
 } from './auth';
 import {
   type CliConfig,
+  clearHostScopedConfig,
   DEFAULT_BASE_URL,
   getDefaultConfigPath,
-  normalizeBaseUrl,
+  normalizeHostBaseUrl,
   readCliConfig,
+  resolveCliHostBaseUrl,
   writeCliConfig,
 } from './config';
 import { runDevboxCommand } from './devbox';
@@ -584,7 +586,7 @@ async function saveSession(config: CliConfig, token: string) {
 }
 
 async function login(flags: Record<string, FlagValue>, config: CliConfig) {
-  config.baseUrl = normalizeBaseUrl(
+  config.baseUrl = normalizeHostBaseUrl(
     getFlag(flags, 'base-url') || config.baseUrl
   );
   const directToken = getFlag(flags, 'token');
@@ -609,6 +611,105 @@ async function login(flags: Record<string, FlagValue>, config: CliConfig) {
   }
 
   await saveSession(config, await receiveTokenFromBrowser(config.baseUrl));
+}
+
+function getHostSwitchPort(flags: Record<string, FlagValue>) {
+  return getFlag(flags, 'port');
+}
+
+async function runHostCommand({
+  action,
+  config,
+  firstId,
+  flags,
+  json,
+}: {
+  action?: string;
+  config: CliConfig;
+  firstId?: string;
+  flags: Record<string, FlagValue>;
+  json: boolean;
+}) {
+  if (action === 'current' || !action) {
+    render(
+      {
+        baseUrl: config.baseUrl,
+        configPath: getDefaultConfigPath(),
+      },
+      { group: 'host', json }
+    );
+    return;
+  }
+
+  if (action === 'list') {
+    const localBaseUrl = resolveCliHostBaseUrl('local', {
+      env: process.env,
+      port: getHostSwitchPort(flags),
+      portless: flags.portless === true,
+    });
+
+    render(
+      [
+        {
+          alias: 'production',
+          baseUrl: DEFAULT_BASE_URL,
+          current: normalizeHostBaseUrl(config.baseUrl) === DEFAULT_BASE_URL,
+        },
+        {
+          alias: 'local',
+          baseUrl: localBaseUrl,
+          current: normalizeHostBaseUrl(config.baseUrl) === localBaseUrl,
+        },
+      ],
+      { group: 'host', json }
+    );
+    return;
+  }
+
+  if (action === 'use') {
+    if (!firstId) {
+      throw new Error(
+        'Missing host target. Use production, prod, local, localhost, or a URL.'
+      );
+    }
+
+    const nextBaseUrl = resolveCliHostBaseUrl(firstId, {
+      env: process.env,
+      port: getHostSwitchPort(flags),
+      portless: flags.portless === true,
+    });
+    const nextConfig = clearHostScopedConfig(config, nextBaseUrl);
+    const changed =
+      normalizeHostBaseUrl(config.baseUrl) !==
+      normalizeHostBaseUrl(nextBaseUrl);
+    await writeCliConfig(nextConfig);
+
+    if (json) {
+      render(
+        {
+          baseUrl: nextConfig.baseUrl,
+          changed,
+          contextCleared: changed,
+        },
+        { group: 'host', json }
+      );
+      return;
+    }
+
+    process.stdout.write(
+      `${[
+        `Host set to ${nextConfig.baseUrl}`,
+        changed
+          ? 'Saved session and selected workspace context were cleared.'
+          : null,
+      ]
+        .filter(Boolean)
+        .join('\n')}\n`
+    );
+    return;
+  }
+
+  throw new Error(`Unknown host action: ${action}`);
 }
 
 function getPayload(flags: Record<string, FlagValue>) {
@@ -868,6 +969,11 @@ export async function runCli(argv = process.argv.slice(2)) {
     return;
   }
 
+  if (group === 'host') {
+    await runHostCommand({ action, config, firstId, flags, json });
+    return;
+  }
+
   if (group === 'whoami') {
     const loggedIn = !!config.session?.accessToken;
     let profile = null;
@@ -919,8 +1025,10 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
 
   if (group === 'config' && action === 'set-base-url' && firstId) {
-    await writeCliConfig({ ...config, baseUrl: normalizeBaseUrl(firstId) });
-    process.stdout.write(`Base URL set to ${normalizeBaseUrl(firstId)}\n`);
+    const nextBaseUrl = normalizeHostBaseUrl(firstId);
+    const nextConfig = clearHostScopedConfig(config, nextBaseUrl);
+    await writeCliConfig(nextConfig);
+    process.stdout.write(`Base URL set to ${nextConfig.baseUrl}\n`);
     return;
   }
 

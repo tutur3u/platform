@@ -2,6 +2,7 @@ export type FinanceResource =
   | 'budgets'
   | 'categories'
   | 'recurring'
+  | 'transfers'
   | 'transactions'
   | 'wallets';
 
@@ -22,6 +23,9 @@ export function normalizeFinanceResource(
     case 'transaction':
     case 'transactions':
       return 'transactions';
+    case 'transfer':
+    case 'transfers':
+      return 'transfers';
     case 'wallet':
     case 'wallets':
       return 'wallets';

@@ -1,5 +1,8 @@
 import type {
   FinanceBudgetUpsertPayload,
+  FinanceTransferMigratePayload,
+  FinanceTransferPayload,
+  FinanceTransferUpdatePayload,
   ListTransactionsQuery,
   RecurringTransactionPayload,
   TransactionCategoryPayload,
@@ -172,9 +175,107 @@ export function getCategoryPayload(
   );
   assignDefined(payload, 'icon', pickFinanceString(flags, 'icon'));
   assignDefined(payload, 'color', pickFinanceString(flags, 'color'));
+  assignDefined(
+    payload,
+    'description',
+    pickFinanceString(flags, 'description')
+  );
   assignDefined(payload, 'is_expense', parseBoolean(flags.expense));
   if (flags.income === true) payload.is_expense = false;
   return mergePayload(payload, flags) as TransactionCategoryPayload;
+}
+
+export function getTransferPayload(
+  flags: Record<string, FlagValue>,
+  options: { includeTransactionIds: true }
+): FinanceTransferUpdatePayload | FinanceTransferMigratePayload;
+export function getTransferPayload(
+  flags: Record<string, FlagValue>,
+  options?: { includeTransactionIds?: false }
+): FinanceTransferPayload;
+export function getTransferPayload(
+  flags: Record<string, FlagValue>,
+  options: { includeTransactionIds?: boolean } = {}
+) {
+  const payload: Record<string, unknown> = {};
+  assignDefined(
+    payload,
+    'origin_wallet_id',
+    pickFinanceString(
+      flags,
+      'origin-wallet',
+      'origin-wallet-id',
+      'from-wallet',
+      'from-wallet-id'
+    )
+  );
+  assignDefined(
+    payload,
+    'destination_wallet_id',
+    pickFinanceString(
+      flags,
+      'destination-wallet',
+      'destination-wallet-id',
+      'to-wallet',
+      'to-wallet-id'
+    )
+  );
+  assignDefined(
+    payload,
+    'amount',
+    parseFinanceNumber(pickFinanceString(flags, 'amount'))
+  );
+  assignDefined(
+    payload,
+    'destination_amount',
+    parseFinanceNumber(
+      pickFinanceString(flags, 'destination-amount', 'to-amount')
+    )
+  );
+  assignDefined(
+    payload,
+    'description',
+    pickFinanceString(flags, 'description')
+  );
+  assignDefined(
+    payload,
+    'taken_at',
+    pickFinanceString(flags, 'taken-at', 'date')
+  );
+  assignDefined(payload, 'report_opt_in', parseBoolean(flags['report-opt-in']));
+  assignDefined(payload, 'tag_ids', parseCsv(pickFinanceString(flags, 'tags')));
+
+  if (options.includeTransactionIds) {
+    assignDefined(
+      payload,
+      'origin_transaction_id',
+      pickFinanceString(
+        flags,
+        'origin-transaction',
+        'origin-transaction-id',
+        'from-transaction',
+        'from-transaction-id'
+      )
+    );
+    assignDefined(
+      payload,
+      'destination_transaction_id',
+      pickFinanceString(
+        flags,
+        'destination-transaction',
+        'destination-transaction-id',
+        'to-transaction',
+        'to-transaction-id'
+      )
+    );
+  }
+
+  const merged = mergePayload(payload, flags);
+  return options.includeTransactionIds
+    ? (merged as unknown as
+        | FinanceTransferUpdatePayload
+        | FinanceTransferMigratePayload)
+    : (merged as unknown as FinanceTransferPayload);
 }
 
 export function getBudgetPayload(

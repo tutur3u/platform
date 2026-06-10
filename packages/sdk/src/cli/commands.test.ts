@@ -1,3 +1,6 @@
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import packageJson from '../../package.json';
 import {
@@ -67,6 +70,250 @@ describe('CLI commands', () => {
     expect(normalizeLabelColor()).toBe('#6B7280');
     expect(normalizeLabelColor('red')).toBe('#DC2626');
     expect(normalizeLabelColor('#0D9488')).toBe('#0D9488');
+  });
+
+  async function writeTestConfig(config: Record<string, unknown>) {
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-cli-test-'));
+    const path = join(dir, 'config.json');
+    await writeFile(path, `${JSON.stringify(config, null, 2)}\n`);
+    vi.stubEnv('TUTURUUU_CONFIG', path);
+    return path;
+  }
+
+  it('switches hosts and clears saved session context when the origin changes', async () => {
+    const configPath = await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentBoardId: 'board-1',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'host',
+      'use',
+      'local',
+      '--port',
+      '7803',
+      '--no-update-check',
+    ]);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('Host set to http://localhost:7803')
+    );
+    await expect(
+      readFile(configPath, 'utf8').then(JSON.parse)
+    ).resolves.toEqual({
+      baseUrl: 'http://localhost:7803',
+    });
+  });
+
+  it('prints the current host without requiring login', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.localhost',
+    });
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(['host', 'current', '--json', '--no-update-check']);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('"baseUrl": "https://tuturuuu.localhost"')
+    );
+  });
+
+  it('fetches wallet balance through the current workspace wallet read', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        id: 'wallet-1',
+        name: 'Cash',
+        balance: 1250,
+        currency: 'USD',
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'finance',
+      'wallets',
+      'balance',
+      'wallet-1',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/workspaces/ws-1/wallets/wallet-1',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('fetches all wallet balances from the fresh wallet list', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json([
+        {
+          id: 'wallet-1',
+          name: 'Cash',
+          balance: 100,
+          currency: 'USD',
+        },
+        {
+          id: 'wallet-2',
+          name: 'Savings',
+          balance: 50,
+          currency: 'USD',
+        },
+      ])
+    );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'finance',
+      'wallets',
+      'balance',
+      '--all',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/wallets',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('"balance": 150')
+    );
+  });
+
+  it('builds transfer migration payloads from CLI flags', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ message: 'success' }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'finance',
+      'transfers',
+      'migrate',
+      '--from-transaction',
+      'origin-tx',
+      '--to-transaction',
+      'destination-tx',
+      '--from-wallet',
+      'origin-wallet',
+      '--to-wallet',
+      'destination-wallet',
+      '--amount',
+      '25',
+      '--destination-amount',
+      '26',
+      '--taken-at',
+      '2026-03-30T08:00:00.000Z',
+      '--description',
+      'Migrated transfer',
+      '--tags',
+      'tag-1,tag-2',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/workspaces/ws-1/transfers',
+      expect.objectContaining({
+        body: JSON.stringify({
+          origin_wallet_id: 'origin-wallet',
+          destination_wallet_id: 'destination-wallet',
+          amount: 25,
+          destination_amount: 26,
+          description: 'Migrated transfer',
+          taken_at: '2026-03-30T08:00:00.000Z',
+          tag_ids: ['tag-1', 'tag-2'],
+          origin_transaction_id: 'origin-tx',
+          destination_transaction_id: 'destination-tx',
+        }),
+        cache: 'no-store',
+        method: 'PATCH',
+      })
+    );
+  });
+
+  it('builds category description payloads from CLI flags', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ message: 'success' }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'finance',
+      'categories',
+      'create',
+      'Travel',
+      '--expense',
+      '--description',
+      'Trips and commuting',
+      '--color',
+      'blue',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/workspaces/ws-1/transactions/categories',
+      expect.objectContaining({
+        body: JSON.stringify({
+          name: 'Travel',
+          color: 'blue',
+          description: 'Trips and commuting',
+          is_expense: true,
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
   });
 
   it.each([
@@ -188,6 +435,27 @@ describe('CLI commands', () => {
     );
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('ttr finance transactions create')
+    );
+  });
+
+  it.each([
+    ['finance', 'transfers', '--help'],
+    ['help', 'finance', 'transfers'],
+    ['finance', 'help', 'transfers'],
+  ])('prints finance transfer help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Usage: ttr finance transfers [create|update|migrate] [options]'
+      )
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('--from-transaction <id>')
     );
   });
 

@@ -51,9 +51,34 @@ export interface TransactionPayload {
 
 export interface TransactionCategoryPayload {
   name?: string;
+  description?: string | null;
   is_expense?: boolean;
   icon?: string | null;
   color?: string | null;
+}
+
+export interface FinanceTransferPayload {
+  origin_wallet_id: string;
+  destination_wallet_id: string;
+  amount: number;
+  destination_amount?: number;
+  description?: string;
+  taken_at: string | Date;
+  report_opt_in?: boolean;
+  tag_ids?: string[];
+}
+
+export interface FinanceTransferUpdatePayload extends FinanceTransferPayload {
+  origin_transaction_id: string;
+  destination_transaction_id: string;
+}
+
+export type FinanceTransferMigratePayload = FinanceTransferUpdatePayload;
+
+export interface FinanceTransferResponse {
+  message: string;
+  from_transaction_id?: string;
+  to_transaction_id?: string;
 }
 
 export interface RecurringTransactionPayload {
@@ -192,6 +217,13 @@ export class FinanceClient {
   ) {
     return this.api<unknown>(
       `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories`,
+      { body: payload, method: 'POST' }
+    );
+  }
+
+  createTransfer(workspaceId: string, payload: FinanceTransferPayload) {
+    return this.api<FinanceTransferResponse>(
+      `/api/workspaces/${encodePathSegment(workspaceId)}/transfers`,
       { body: payload, method: 'POST' }
     );
   }
@@ -382,6 +414,20 @@ export class FinanceClient {
     return this.api<{ message: string }>(
       `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories/${encodePathSegment(categoryId)}`,
       { body: payload, method: 'PUT' }
+    );
+  }
+
+  updateTransfer(workspaceId: string, payload: FinanceTransferUpdatePayload) {
+    return this.api<FinanceTransferResponse>(
+      `/api/workspaces/${encodePathSegment(workspaceId)}/transfers`,
+      { body: payload, method: 'PUT' }
+    );
+  }
+
+  migrateTransfer(workspaceId: string, payload: FinanceTransferMigratePayload) {
+    return this.api<FinanceTransferResponse>(
+      `/api/workspaces/${encodePathSegment(workspaceId)}/transfers`,
+      { body: payload, method: 'PATCH' }
     );
   }
 

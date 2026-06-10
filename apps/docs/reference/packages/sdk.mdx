@@ -95,6 +95,8 @@ ttr login
 ttr upgrade
 ttr --version
 ttr whoami
+ttr host current
+ttr host use local --port 7803
 ttr workspaces
 ttr workspaces use
 ttr boards
@@ -109,8 +111,10 @@ ttr tasks done <task-id>
 ttr tasks close <task-id>
 ttr tasks update <task-id> --json-payload '{"completed":true}'
 ttr finance wallets
+ttr finance wallets balance --all
 ttr finance transactions --page-size 10
 ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09
+ttr finance transfers migrate --from-transaction <tx-id> --to-transaction <tx-id> --from-wallet <wallet-id> --to-wallet <wallet-id> --amount 150000 --taken-at 2026-05-09
 ttr finance budgets status
 ```
 
@@ -121,8 +125,17 @@ session and selected workspace, board, list, task, label, and project in the OS
 app config directory. `personal` is the default workspace after login and when
 no workspace has been selected:
 
-If you target a local web origin with `ttr config set-base-url`, prefer a
-browser-safe host such as `http://localhost:7803`. The CLI normalizes
+Use `ttr host use` to switch between Tuturuuu origins. `production` and `prod`
+resolve to `https://tuturuuu.com`; `local` and `localhost` prefer safe local
+environment URLs from `TUTURUUU_LOCAL_BASE_URL`, `PORTLESS_URL`, `WEB_APP_URL`,
+`NEXT_PUBLIC_WEB_APP_URL`, or `NEXT_PUBLIC_APP_URL`, then fall back to
+`https://tuturuuu.localhost`. Pass `--port <port>` for
+`http://localhost:<port>`, or `--portless --port <port>` for
+`https://tuturuuu.localhost:<port>`. Changing origins clears the saved session
+and selected workspace context because both are origin-specific.
+
+`ttr config set-base-url <url>` remains available for compatibility and uses the
+same host normalization and context-clearing behavior. The CLI normalizes
 `0.0.0.0` and unspecified IPv6 origins to `localhost` so the browser login flow
 does not open a blocked address.
 
@@ -145,8 +158,8 @@ ttr login --copy
 
 Open the printed URL in an authenticated browser, copy the returned CLI token,
 and paste it into the terminal. Set `TUTURUUU_CONFIG` to use a custom config
-file, or use `ttr config set-base-url <url>` to target a local or staging web
-origin.
+file, or use `ttr host use <target>` to target a local, production, or explicit
+URL origin.
 
 The CLI checks the npm registry at most once per hour and writes a notice to
 stderr when a newer `tuturuuu` version is available. This keeps `--json` output
@@ -371,6 +384,8 @@ resolution, and finance permission checks on the same path.
 ttr finance wallets
 ttr finance wallets --page 2 --page-size 10
 ttr finance wallets get <wallet-id>
+ttr finance wallets balance <wallet-id>
+ttr finance wallets balance --all
 ttr finance wallets create "Cash" --currency VND --balance 0 --type STANDARD
 ttr finance wallets update <wallet-id> --name "Operating Cash"
 ttr finance wallets delete <wallet-id>
@@ -385,8 +400,13 @@ ttr finance transactions delete <transaction-id>
 ttr finance transactions export --wallets <wallet-id> --start 2026-05-01 --end 2026-05-31
 ttr finance transactions stats --start 2026-05-01 --end 2026-05-31
 
+# Transfer creation, update, and id-preserving migration.
+ttr finance transfers create --from-wallet <wallet-id> --to-wallet <wallet-id> --amount 150000 --taken-at 2026-05-09
+ttr finance transfers update --from-transaction <tx-id> --to-transaction <tx-id> --from-wallet <wallet-id> --to-wallet <wallet-id> --amount 150000 --taken-at 2026-05-09
+ttr finance transfers migrate --from-transaction <tx-id> --to-transaction <tx-id> --from-wallet <wallet-id> --to-wallet <wallet-id> --amount 150000 --taken-at 2026-05-09
+
 # Categories, budgets, and recurring transactions.
-ttr finance categories create "Travel" --expense --color blue
+ttr finance categories create "Travel" --expense --color blue --description "Trips and commuting"
 ttr finance budgets create "Marketing" --amount 1000000 --period monthly --start-date 2026-05-01
 ttr finance budgets status
 ttr finance recurring create "Rent" --amount 5000000 --wallet <wallet-id> --frequency monthly --start-date 2026-05-01

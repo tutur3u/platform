@@ -5,10 +5,16 @@ const mocks = vi.hoisted(() => {
   const getWorkspaceConfig = vi.fn();
   const normalizeWorkspaceId = vi.fn();
   const linkedUserSingle = vi.fn();
+  const linkedTransferToIn = vi.fn();
   const walletIn = vi.fn();
+  const adminTransactionSelectIn = vi.fn();
+  const adminTransactionUpsert = vi.fn();
+  const sessionTransactionWalletIn = vi.fn();
   const transactionInsertSingle = vi.fn();
   const transferInsert = vi.fn();
+  const transferDeleteSecondEq = vi.fn();
   const tagInsert = vi.fn();
+  const tagDeleteIn = vi.fn();
 
   const sessionSupabase = {
     auth: {
@@ -34,6 +40,16 @@ const mocks = vi.hoisted(() => {
               eq: vi.fn(() => ({
                 maybeSingle: vi.fn(),
               })),
+            })),
+          })),
+        };
+      }
+
+      if (table === 'wallet_transactions') {
+        return {
+          select: vi.fn(() => ({
+            in: vi.fn(() => ({
+              in: sessionTransactionWalletIn,
             })),
           })),
         };
@@ -80,19 +96,33 @@ const mocks = vi.hoisted(() => {
             in: vi.fn(),
           })),
           select: vi.fn(() => ({
-            in: vi.fn(),
+            in: adminTransactionSelectIn,
           })),
+          upsert: adminTransactionUpsert,
         };
       }
 
       if (table === 'workspace_wallet_transfers') {
         return {
           insert: transferInsert,
+          select: vi.fn(() => ({
+            in: vi.fn(() => ({
+              in: linkedTransferToIn,
+            })),
+          })),
+          delete: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: transferDeleteSecondEq,
+            })),
+          })),
         };
       }
 
       if (table === 'wallet_transaction_tags') {
         return {
+          delete: vi.fn(() => ({
+            in: tagDeleteIn,
+          })),
           insert: tagInsert,
         };
       }
@@ -104,13 +134,19 @@ const mocks = vi.hoisted(() => {
 
   return {
     adminSupabase,
+    adminTransactionSelectIn,
+    adminTransactionUpsert,
     getPermissions,
     getWorkspaceConfig,
+    linkedTransferToIn,
     linkedUserSingle,
     normalizeWorkspaceId,
     sessionSupabase,
+    sessionTransactionWalletIn,
     tagInsert,
+    tagDeleteIn,
     transactionInsertSingle,
+    transferDeleteSecondEq,
     transferInsert,
     walletIn,
   };
@@ -184,6 +220,45 @@ describe('transfers route', () => {
           currency: 'USD',
         },
       ],
+      error: null,
+    });
+    mocks.linkedTransferToIn.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    mocks.adminTransactionSelectIn.mockResolvedValue({
+      data: [
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          wallet_id: '11111111-1111-1111-1111-111111111111',
+        },
+        {
+          id: '22222222-2222-4222-8222-222222222222',
+          wallet_id: '22222222-2222-2222-2222-222222222222',
+        },
+      ],
+      error: null,
+    });
+    mocks.sessionTransactionWalletIn.mockResolvedValue({
+      data: [
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          wallet_id: '11111111-1111-1111-1111-111111111111',
+        },
+        {
+          id: '22222222-2222-4222-8222-222222222222',
+          wallet_id: '22222222-2222-2222-2222-222222222222',
+        },
+      ],
+      error: null,
+    });
+    mocks.adminTransactionUpsert.mockResolvedValue({
+      error: null,
+    });
+    mocks.transferDeleteSecondEq.mockResolvedValue({
+      error: null,
+    });
+    mocks.tagDeleteIn.mockResolvedValue({
       error: null,
     });
     mocks.transactionInsertSingle
@@ -321,5 +396,195 @@ describe('transfers route', () => {
       from_transaction_id: 'from-tx-1',
       to_transaction_id: 'to-tx-1',
     });
+  });
+
+  it('migrates existing transactions into an id-preserving transfer', async () => {
+    const { PATCH } = await import('./route.js');
+
+    const response = await PATCH(
+      new Request('http://localhost/api/workspaces/ws-1/transfers', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          origin_transaction_id: '11111111-1111-4111-8111-111111111111',
+          destination_transaction_id: '22222222-2222-4222-8222-222222222222',
+          origin_wallet_id: '11111111-1111-1111-1111-111111111111',
+          destination_wallet_id: '22222222-2222-2222-2222-222222222222',
+          amount: 25,
+          taken_at: '2026-03-30T08:00:00.000Z',
+          description: 'Migrated transfer',
+          report_opt_in: true,
+          tag_ids: ['33333333-3333-4333-8333-333333333333'],
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      message: 'success',
+      from_transaction_id: '11111111-1111-4111-8111-111111111111',
+      to_transaction_id: '22222222-2222-4222-8222-222222222222',
+    });
+    expect(mocks.transferInsert).toHaveBeenCalledWith({
+      from_transaction_id: '11111111-1111-4111-8111-111111111111',
+      to_transaction_id: '22222222-2222-4222-8222-222222222222',
+    });
+    expect(mocks.adminTransactionUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          id: '11111111-1111-4111-8111-111111111111',
+          amount: -25,
+          category_id: null,
+          description: 'Migrated transfer',
+          report_opt_in: true,
+          wallet_id: '11111111-1111-1111-1111-111111111111',
+        }),
+        expect.objectContaining({
+          id: '22222222-2222-4222-8222-222222222222',
+          amount: 25,
+          category_id: null,
+          description: 'Migrated transfer',
+          report_opt_in: true,
+          wallet_id: '22222222-2222-2222-2222-222222222222',
+        }),
+      ],
+      { onConflict: 'id' }
+    );
+    expect(mocks.tagDeleteIn).toHaveBeenCalledWith('transaction_id', [
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+    ]);
+    expect(mocks.tagInsert).toHaveBeenCalledWith([
+      {
+        transaction_id: '11111111-1111-4111-8111-111111111111',
+        tag_id: '33333333-3333-4333-8333-333333333333',
+      },
+      {
+        transaction_id: '22222222-2222-4222-8222-222222222222',
+        tag_id: '33333333-3333-4333-8333-333333333333',
+      },
+    ]);
+  });
+
+  it('rejects transfer migration for an already-linked pair', async () => {
+    mocks.linkedTransferToIn.mockResolvedValueOnce({
+      data: [
+        {
+          from_transaction_id: '11111111-1111-4111-8111-111111111111',
+          to_transaction_id: '22222222-2222-4222-8222-222222222222',
+        },
+      ],
+      error: null,
+    });
+    const { PATCH } = await import('./route.js');
+
+    const response = await PATCH(
+      new Request('http://localhost/api/workspaces/ws-1/transfers', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          origin_transaction_id: '11111111-1111-4111-8111-111111111111',
+          destination_transaction_id: '22222222-2222-4222-8222-222222222222',
+          origin_wallet_id: '11111111-1111-1111-1111-111111111111',
+          destination_wallet_id: '22222222-2222-2222-2222-222222222222',
+          amount: 25,
+          taken_at: '2026-03-30T08:00:00.000Z',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Transfer pair is already linked',
+    });
+    expect(mocks.adminTransactionUpsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects transfer migration with the same transaction id', async () => {
+    const { PATCH } = await import('./route.js');
+
+    const response = await PATCH(
+      new Request('http://localhost/api/workspaces/ws-1/transfers', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          origin_transaction_id: '11111111-1111-4111-8111-111111111111',
+          destination_transaction_id: '11111111-1111-4111-8111-111111111111',
+          origin_wallet_id: '11111111-1111-1111-1111-111111111111',
+          destination_wallet_id: '22222222-2222-2222-2222-222222222222',
+          amount: 25,
+          taken_at: '2026-03-30T08:00:00.000Z',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.transferInsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects cross-currency transfer migration without a destination amount', async () => {
+    mocks.walletIn.mockResolvedValueOnce({
+      data: [
+        {
+          id: '11111111-1111-1111-1111-111111111111',
+          currency: 'USD',
+        },
+        {
+          id: '22222222-2222-2222-2222-222222222222',
+          currency: 'EUR',
+        },
+      ],
+      error: null,
+    });
+    const { PATCH } = await import('./route.js');
+
+    const response = await PATCH(
+      new Request('http://localhost/api/workspaces/ws-1/transfers', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          origin_transaction_id: '11111111-1111-4111-8111-111111111111',
+          destination_transaction_id: '22222222-2222-4222-8222-222222222222',
+          origin_wallet_id: '11111111-1111-1111-1111-111111111111',
+          destination_wallet_id: '22222222-2222-2222-2222-222222222222',
+          amount: 25,
+          taken_at: '2026-03-30T08:00:00.000Z',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Destination amount is required for cross-currency transfers',
+    });
+    expect(mocks.transferInsert).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { getDefaultConfigPath, normalizeBaseUrl } from './config';
+import {
+  clearHostScopedConfig,
+  DEFAULT_BASE_URL,
+  getDefaultConfigPath,
+  getEnvLocalBaseUrl,
+  normalizeBaseUrl,
+  normalizeHostBaseUrl,
+  PORTLESS_LOCAL_BASE_URL,
+  resolveCliHostBaseUrl,
+} from './config';
 
 describe('CLI config path resolution', () => {
   it('uses the explicit config path when TUTURUUU_CONFIG is set', () => {
@@ -56,5 +65,72 @@ describe('CLI config path resolution', () => {
     expect(normalizeBaseUrl('https://tuturuuu.com/')).toBe(
       'https://tuturuuu.com'
     );
+  });
+
+  it('infers http for bare localhost origins in CLI host mode', () => {
+    expect(normalizeHostBaseUrl('localhost:7803')).toBe(
+      'http://localhost:7803'
+    );
+    expect(normalizeHostBaseUrl('tuturuuu.localhost')).toBe(
+      PORTLESS_LOCAL_BASE_URL
+    );
+  });
+
+  it('resolves host aliases and local port variants', () => {
+    expect(resolveCliHostBaseUrl('production')).toBe(DEFAULT_BASE_URL);
+    expect(resolveCliHostBaseUrl('prod')).toBe(DEFAULT_BASE_URL);
+    expect(resolveCliHostBaseUrl('local', { env: {} })).toBe(
+      PORTLESS_LOCAL_BASE_URL
+    );
+    expect(resolveCliHostBaseUrl('localhost', { port: '7803' })).toBe(
+      'http://localhost:7803'
+    );
+    expect(
+      resolveCliHostBaseUrl('local', { port: '1355', portless: true })
+    ).toBe('https://tuturuuu.localhost:1355');
+  });
+
+  it('uses safe local env urls in precedence order', () => {
+    expect(
+      getEnvLocalBaseUrl({
+        NEXT_PUBLIC_APP_URL: 'http://localhost:7803',
+        PORTLESS_URL: 'https://tuturuuu.localhost:1355',
+        TUTURUUU_LOCAL_BASE_URL: 'https://example.com',
+      })
+    ).toBe('https://tuturuuu.localhost:1355');
+    expect(
+      resolveCliHostBaseUrl('local', {
+        env: {
+          WEB_APP_URL: 'http://localhost:17803',
+        },
+      })
+    ).toBe('http://localhost:17803');
+  });
+
+  it('clears session and selected context when changing host origin', () => {
+    expect(
+      clearHostScopedConfig(
+        {
+          baseUrl: DEFAULT_BASE_URL,
+          currentBoardId: 'board-1',
+          currentWorkspaceId: 'ws-1',
+          session: {
+            accessToken: 'access',
+            refreshToken: 'refresh',
+          },
+          updateCheck: {
+            checkedAt: '2026-06-10T00:00:00.000Z',
+            latestVersion: '1.0.0',
+          },
+        },
+        'http://localhost:7803'
+      )
+    ).toEqual({
+      baseUrl: 'http://localhost:7803',
+      updateCheck: {
+        checkedAt: '2026-06-10T00:00:00.000Z',
+        latestVersion: '1.0.0',
+      },
+    });
   });
 });
