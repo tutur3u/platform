@@ -1034,7 +1034,9 @@ export async function runCli(argv = process.argv.slice(2)) {
 
   if (group === 'box') {
     const client =
-      action === 'doctor' || (action === 'agent' && firstId === 'start')
+      action === 'doctor' ||
+      action === 'repair' ||
+      (action === 'agent' && firstId === 'start')
         ? undefined
         : action === 'setup'
           ? config.session

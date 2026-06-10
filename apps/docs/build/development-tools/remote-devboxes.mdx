@@ -23,6 +23,7 @@ ttr box setup --dir .
 ttr box setup --dir . --clone-into ./tuturuuu
 ttr box agent register --name "ci-lab-1"
 ttr box agent start --token <runner-token>
+ttr box repair --dir .
 ttr box upgrade --runner <runner-id>
 TUTURUUU_DEVBOX_RUNNER_TOKEN=<runner-token> ttr box shutdown
 ```
@@ -79,30 +80,20 @@ sudo journalctl -u tuturuuu-devbox-runner.service -n 80 --no-pager
 ```
 
 The runner service reads its token from the local `devbox-runner.env` file. If
-the journal shows a missing runner token on an existing installation, inspect
-the wrapper in the Tuturuuu CLI config directory and make sure the token file is
-sourced with automatic export enabled:
-
-```sh
-set -a
-. "$HOME/.config/tuturuuu/devbox-runner.env"
-set +a
-```
-
-Then restart the service:
-
-```bash
-sudo systemctl restart tuturuuu-devbox-runner.service
-```
-
-After upgrading to a fixed CLI, `ttr box setup --agent --service` will generate
-that wrapper shape for new or rotated registrations. Rerunning it registers a
-new runner token, so revoke the old runner if you use setup as the repair path:
+the journal shows a missing runner token or stale wrapper, upgrade the CLI and
+repair the service. Repair reuses the existing token file; it does not register
+a new runner token or create another runner row.
 
 ```bash
 ttr upgrade
-ttr box setup --dir . --agent --service --runner-name "$(hostname)-devbox" --yes
-sudo systemctl restart tuturuuu-devbox-runner.service
+ttr box repair --dir .
+```
+
+Use dry-run first when you want to confirm the checkout, token file, service
+manager, wrapper path, and service path without writing files or calling sudo:
+
+```bash
+ttr box repair --dir . --dry-run
 ```
 
 Upgrade a runner's global CLI through the same brokered queue:

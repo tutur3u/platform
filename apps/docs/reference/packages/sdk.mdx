@@ -278,11 +278,15 @@ redacted from CLI output.
 ```bash
 ttr box doctor
 ttr box setup
-ttr box setup --dir ~/Documents/tuturuuu
+ttr box setup --dir .
+ttr box repair --dir .
+ttr box repair --dir . --dry-run
 ```
 
 `ttr box doctor` stays read-only. Use `ttr box setup --yes` only when the host
 should install detected missing prerequisites through its package manager.
+Use `ttr box repair --dir .` after a CLI upgrade to repair an existing runner
+service without registering a new runner token.
 
 ### Scoped Help
 

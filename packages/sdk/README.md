@@ -106,12 +106,17 @@ upgrade` to run `bun i -g tuturuuu`. Use
 to disable this notification.
 
 Use `ttr box setup` on a self-hosted devbox runner before offloading heavy
-workflows. It clones or reuses `https://github.com/tutur3u/platform.git` at
-`~/Documents/tuturuuu`, runs `bun install --frozen-lockfile`, starts local
-Supabase with `bun sb:start`, reads `supabase status -o json`, and writes
-redacted local Supabase connection values into ignored `apps/*/.env.local`
-files. Pass `--dir <path>` to choose another checkout and `--yes` to install
-detected missing prerequisites with the platform package manager.
+workflows. It clones or reuses `https://github.com/tutur3u/platform.git`, runs
+`bun install --frozen-lockfile`, starts local Supabase with `bun sb:start`,
+reads `supabase status -o json`, and writes redacted local Supabase connection
+values into ignored `apps/*/.env.local` files. Pass `--dir <path>` to choose a
+checkout and `--yes` to install detected missing prerequisites with the platform
+package manager.
+
+Use `ttr box repair --dir .` on an already registered runner to regenerate the
+runner wrapper and system service from the existing local token file without
+registering a new runner token. Add `--dry-run` to inspect the repair plan
+without writing service files or calling `sudo`.
 
 CLI sessions are dedicated Tuturuuu gateway JWTs, separate from normal browser
 and Supabase Auth sessions. The CLI stores a short-lived app-session access JWT

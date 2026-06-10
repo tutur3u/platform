@@ -16,6 +16,7 @@ import {
   createDevboxDoctorReport,
   printDevboxDoctorReport,
 } from './devbox-doctor';
+import { runDevboxRepairCommand } from './devbox-repair';
 import { runDevboxSetupCommand } from './devbox-setup';
 
 const DEFAULT_ONE_OFF_TIMEOUT_SECONDS = 30 * 60;
@@ -543,6 +544,11 @@ export async function runDevboxCommand({
 
   if (resolvedAction === 'setup') {
     await runDevboxSetupCommand({ client, flags, json });
+    return;
+  }
+
+  if (resolvedAction === 'repair') {
+    await runDevboxRepairCommand({ flags, json });
     return;
   }
 

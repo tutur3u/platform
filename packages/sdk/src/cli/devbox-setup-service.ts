@@ -63,7 +63,9 @@ export function getDefaultRunnerTokenFile(configPath = getDefaultConfigPath()) {
   return join(dirname(configPath), 'devbox-runner.env');
 }
 
-function getDefaultRunnerWrapperFile(configPath = getDefaultConfigPath()) {
+export function getDefaultRunnerWrapperFile(
+  configPath = getDefaultConfigPath()
+) {
   return join(dirname(configPath), 'devbox-runner.sh');
 }
 
@@ -79,7 +81,7 @@ function getDefaultServiceDefinitionFile(
   );
 }
 
-function resolveServiceManager(
+export function resolveDevboxServiceManager(
   manager: DevboxServiceManager | undefined,
   currentPlatform = platform()
 ): Exclude<DevboxServiceManager, 'auto'> {
@@ -188,7 +190,7 @@ export async function installDevboxRunnerService({
   serviceUser,
   tokenFile,
 }: InstallDevboxRunnerServiceOptions) {
-  const resolvedManager = resolveServiceManager(manager);
+  const resolvedManager = resolveDevboxServiceManager(manager);
   const resolvedServiceUser = serviceUser?.trim() || userInfo().username;
   const wrapperPath = await writeRunnerWrapper({ checkoutDir, tokenFile });
   const definitionPath = getDefaultServiceDefinitionFile(resolvedManager);
@@ -292,6 +294,43 @@ export async function installDevboxRunnerService({
     manager: resolvedManager,
     wrapperPath,
   };
+}
+
+export async function restartDevboxRunnerService({
+  json,
+  manager,
+  runCommand,
+}: {
+  json?: boolean;
+  manager?: DevboxServiceManager;
+  runCommand: DevboxSetupCommandRunner;
+}) {
+  const resolvedManager = resolveDevboxServiceManager(manager);
+
+  if (resolvedManager === 'systemd') {
+    await runRequiredServiceCommand({
+      args: ['systemctl', 'restart', 'tuturuuu-devbox-runner.service'],
+      command: 'sudo',
+      json,
+      name: 'Restart systemd devbox runner service',
+      runCommand,
+    });
+  } else {
+    await runRequiredServiceCommand({
+      args: [
+        'launchctl',
+        'kickstart',
+        '-k',
+        'system/com.tuturuuu.devbox-runner',
+      ],
+      command: 'sudo',
+      json,
+      name: 'Restart launchd devbox runner service',
+      runCommand,
+    });
+  }
+
+  return { manager: resolvedManager };
 }
 
 async function confirmSetupStep(

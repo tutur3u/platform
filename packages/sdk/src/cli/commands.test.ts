@@ -414,6 +414,9 @@ describe('CLI commands', () => {
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('clone, install, start Supabase')
     );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('repair an existing runner service')
+    );
     expect(write).toHaveBeenCalledWith(expect.stringContaining('--dir <path>'));
   });
 

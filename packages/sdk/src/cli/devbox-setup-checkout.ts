@@ -81,7 +81,7 @@ async function getGitRoot({
   return root ? root : null;
 }
 
-async function isValidPlatformCheckout({
+export async function isValidPlatformCheckout({
   checkoutDir,
   json,
   runCommand,
@@ -214,6 +214,62 @@ export async function resolveDevboxCheckout(
     path: resolve(expandHomePath(getDefaultDevboxCheckoutPath())),
     source: 'default',
   };
+}
+
+export async function resolveExistingDevboxCheckout(
+  options: Pick<DevboxCheckoutOptions, 'cwd' | 'dir' | 'json' | 'runCommand'>
+): Promise<DevboxCheckoutSelection> {
+  const cwd = resolve(options.cwd ?? process.cwd());
+  const explicitDir = options.dir?.trim();
+
+  if (explicitDir) {
+    const targetDir = resolveFromCwd(explicitDir, cwd);
+    if (
+      await isValidPlatformCheckout({
+        checkoutDir: targetDir,
+        json: options.json,
+        runCommand: options.runCommand,
+      })
+    ) {
+      return { path: targetDir, source: 'explicit' };
+    }
+
+    throw new Error(
+      `${targetDir} is not a Tuturuuu platform checkout. Run \`ttr box setup --dir ${explicitDir}\` first or pass --dir <checkout>.`
+    );
+  }
+
+  const gitRoot = await getGitRoot({
+    cwd,
+    json: options.json,
+    runCommand: options.runCommand,
+  });
+
+  if (
+    gitRoot &&
+    (await isValidPlatformCheckout({
+      checkoutDir: gitRoot,
+      json: options.json,
+      runCommand: options.runCommand,
+    }))
+  ) {
+    return { path: gitRoot, source: 'current' };
+  }
+
+  const defaultDir = resolve(expandHomePath(getDefaultDevboxCheckoutPath()));
+  if (
+    await isValidPlatformCheckout({
+      checkoutDir: defaultDir,
+      json: options.json,
+      runCommand: options.runCommand,
+    })
+  ) {
+    return { path: defaultDir, source: 'default' };
+  }
+
+  throw new Error(
+    'No existing Tuturuuu platform checkout was found. Run `ttr box setup` first or pass --dir <checkout>.'
+  );
 }
 
 export async function ensurePlatformCheckout({

@@ -130,3 +130,8 @@ or the matching launchd log paths on macOS. A missing runner-token error usually
 means the service wrapper sourced `devbox-runner.env` without exporting it; the
 wrapper must source token files under `set -a` before execing
 `ttr box agent start`.
+
+Use `ttr box repair --dir .` after upgrading the CLI to regenerate the wrapper
+and system service from the existing token file without registering a new runner
+row. Use `ttr box repair --dir . --dry-run` when checking a host remotely before
+allowing service-file writes or sudo restart commands.
