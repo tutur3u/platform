@@ -9,8 +9,6 @@ import {
 } from '@/lib/mobile-deployment/store';
 import { assertMobileDeploymentFileKind } from '@/lib/mobile-deployment/validation';
 
-export const runtime = 'nodejs';
-
 function errorResponse(error: unknown) {
   if (error instanceof MobileDeploymentStoreError) {
     return NextResponse.json(

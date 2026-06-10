@@ -9,8 +9,6 @@ import {
   revokeMobileDeploymentCiToken,
 } from '@/lib/mobile-deployment/store';
 
-export const runtime = 'nodejs';
-
 const ParamsSchema = z.object({
   tokenId: z.guid(),
 });

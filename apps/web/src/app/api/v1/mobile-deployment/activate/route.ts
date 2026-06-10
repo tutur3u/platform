@@ -8,8 +8,6 @@ import {
   MobileDeploymentStoreError,
 } from '@/lib/mobile-deployment/store';
 
-export const runtime = 'nodejs';
-
 export async function POST(request: Request) {
   const mutationError = validateJsonMutation(request);
   if (mutationError) {

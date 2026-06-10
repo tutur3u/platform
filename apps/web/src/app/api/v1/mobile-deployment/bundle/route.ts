@@ -12,8 +12,6 @@ import {
   MobileDeploymentStoreError,
 } from '@/lib/mobile-deployment/store';
 
-export const runtime = 'nodejs';
-
 function noStoreJson(body: unknown, status = 200) {
   return NextResponse.json(body, {
     headers: {

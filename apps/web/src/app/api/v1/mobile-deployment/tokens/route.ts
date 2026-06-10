@@ -13,8 +13,6 @@ import {
   MobileDeploymentStoreError,
 } from '@/lib/mobile-deployment/store';
 
-export const runtime = 'nodejs';
-
 const IssueTokenSchema = z.object({
   expiresInDays: z.coerce.number().int().min(1).max(365).default(90),
   name: z.string().trim().min(1).max(120),

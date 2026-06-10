@@ -16,8 +16,6 @@ import {
 } from '@/lib/mobile-deployment/store';
 import { assertMobileDeploymentScalarName } from '@/lib/mobile-deployment/validation';
 
-export const runtime = 'nodejs';
-
 const SavePayloadSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('replace_env'),
