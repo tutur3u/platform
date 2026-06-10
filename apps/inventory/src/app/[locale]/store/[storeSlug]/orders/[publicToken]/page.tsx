@@ -1,4 +1,5 @@
-import { PublicStorefrontClient } from '@/components/storefront/public-storefront-client';
+import { redirect } from 'next/navigation';
+import { STOREFRONT_APP_URL } from '@/constants/common';
 
 export default async function PublicStorefrontOrderPage({
   params,
@@ -6,11 +7,5 @@ export default async function PublicStorefrontOrderPage({
   params: Promise<{ publicToken: string; storeSlug: string }>;
 }) {
   const { publicToken, storeSlug } = await params;
-  return (
-    <PublicStorefrontClient
-      mode="order"
-      publicToken={publicToken}
-      storeSlug={storeSlug}
-    />
-  );
+  redirect(`${STOREFRONT_APP_URL}/store/${storeSlug}/orders/${publicToken}`);
 }

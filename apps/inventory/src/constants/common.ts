@@ -36,6 +36,18 @@ export const INVENTORY_APP_URL = resolveInternalAppUrl({
   fallback: DEFAULT_INVENTORY_APP_URL,
 });
 
+export const STOREFRONT_APP_URL = resolveInternalAppUrl({
+  appName: 'storefront',
+  candidates: [
+    process.env.STOREFRONT_APP_URL,
+    process.env.NEXT_PUBLIC_STOREFRONT_APP_URL,
+  ],
+  fallback:
+    process.env.NODE_ENV === 'production'
+      ? 'https://storefront.tuturuuu.com'
+      : getLocalInternalAppUrl('storefront', 'http://localhost:7822'),
+});
+
 export const BASE_URL = INVENTORY_APP_URL;
 export const API_URL = process.env.API_URL || `${BASE_URL}/api`;
 

@@ -24,6 +24,7 @@ import type {
   InventoryStatusOption,
 } from './operator-types';
 import { OverviewPanel } from './overview-panel';
+import { PolarSettingsPanel } from './polar-settings-panel';
 import { ProductsTable } from './products-table';
 import { SimpleRows } from './simple-rows';
 import { useInventoryData } from './use-inventory-data';
@@ -143,6 +144,9 @@ export function InventoryOperatorClient({
     view === 'checkouts' ? data.checkouts : null,
     view === 'sales' ? data.sales : null,
     view === 'audits' ? data.audits : null,
+    ['checkouts', 'overview', 'storefront'].includes(view)
+      ? data.polarSettings
+      : null,
   ].flatMap((query) =>
     query
       ? [
@@ -184,6 +188,7 @@ export function InventoryOperatorClient({
         <OverviewPanel
           bundles={bundles}
           lowStock={lowStock}
+          polarSettings={data.polarSettings.data}
           products={products}
           storefronts={storefronts}
         />
@@ -197,6 +202,7 @@ export function InventoryOperatorClient({
         <>
           <SimpleRows rows={storefronts} type="storefronts" />
           <StorefrontForm wsId={wsId} />
+          <PolarSettingsPanel wsId={wsId} />
         </>
       ) : null}
       {!isLoading && !isError && view === 'bundles' ? (
@@ -210,6 +216,7 @@ export function InventoryOperatorClient({
           <div className="border-border border-b p-4">
             <CheckoutFeeCalculator />
           </div>
+          <PolarSettingsPanel wsId={wsId} />
           <SimpleRows rows={data.checkouts.data?.data ?? []} type="checkouts" />
         </>
       ) : null}

@@ -43,6 +43,7 @@ export async function listStorefronts(
       storefront.name,
       storefront.description,
       storefront.status,
+      storefront.visibility,
       storefront.hero_image_url,
       storefront.accent_color,
       storefront.currency,
@@ -93,6 +94,7 @@ export async function createStorefront(
       name,
       description,
       status,
+      visibility,
       hero_image_url,
       accent_color,
       currency
@@ -103,6 +105,7 @@ export async function createStorefront(
       ${payload.name},
       ${payload.description ?? null},
       ${payload.status ?? 'draft'},
+      ${payload.visibility ?? 'public'},
       ${payload.heroImageUrl ?? null},
       ${payload.accentColor ?? null},
       ${payload.currency ?? 'USD'}
@@ -114,6 +117,7 @@ export async function createStorefront(
       name,
       description,
       status,
+      visibility,
       hero_image_url,
       accent_color,
       currency,
@@ -142,6 +146,7 @@ export async function updateStorefront(
       name = coalesce(${payload.name ?? null}, name),
       description = ${payload.description ?? null},
       status = coalesce(${payload.status ?? null}, status),
+      visibility = coalesce(${payload.visibility ?? null}, visibility),
       hero_image_url = ${payload.heroImageUrl ?? null},
       accent_color = ${payload.accentColor ?? null},
       currency = coalesce(${payload.currency ?? null}, currency)
@@ -154,6 +159,7 @@ export async function updateStorefront(
       name,
       description,
       status,
+      visibility,
       hero_image_url,
       accent_color,
       currency,

@@ -848,6 +848,38 @@
         "unzipper": "^0.12.3",
       },
     },
+    "apps/storefront": {
+      "name": "@tuturuuu/storefront",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tanstack/react-query": "^5.101.0",
+        "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/offline": "workspace:*",
+        "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "@tuturuuu/vercel": "workspace:*",
+        "next": "^16.2.7",
+        "next-intl": "^4.13.0",
+        "next-themes": "^0.4.6",
+        "nuqs": "^2.8.9",
+        "react": "^19.2.7",
+        "react-dom": "^19.2.7",
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@tailwindcss/postcss": "^4.3.0",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^25.9.2",
+        "@types/react": "^19.2.17",
+        "@types/react-dom": "^19.2.3",
+        "babel-plugin-react-compiler": "^1.0.0",
+        "postcss": "^8.5.14",
+        "typescript": "^6.0.3",
+      },
+    },
     "apps/supermemory": {
       "name": "@tuturuuu/supermemory",
       "dependencies": {
@@ -3433,6 +3465,8 @@
     "@tuturuuu/shortener": ["@tuturuuu/shortener@workspace:apps/shortener"],
 
     "@tuturuuu/storage-unzip-proxy": ["@tuturuuu/storage-unzip-proxy@workspace:apps/storage-unzip-proxy"],
+
+    "@tuturuuu/storefront": ["@tuturuuu/storefront@workspace:apps/storefront"],
 
     "@tuturuuu/supabase": ["@tuturuuu/supabase@workspace:packages/supabase"],
 

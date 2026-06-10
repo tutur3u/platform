@@ -32,6 +32,10 @@
       "name": "inventory.tuturuuu",
       "script": "dev:app"
     },
+    "apps/storefront": {
+      "name": "storefront.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/hive": {
       "name": "hive.tuturuuu",
       "script": "dev:app"

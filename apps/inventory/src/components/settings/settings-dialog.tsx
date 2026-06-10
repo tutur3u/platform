@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Boxes,
   CalendarDays,
+  CircleDollarSign,
   Paintbrush,
   PanelLeft,
   User,
@@ -19,6 +20,7 @@ import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { PolarSettingsPanel } from '@/components/operator/polar-settings-panel';
 import { useSidebar } from '@/context/sidebar-context';
 
 interface SettingsDialogProps {
@@ -60,6 +62,13 @@ export function SettingsDialog({
           icon: Boxes,
           description: t('settings.inventory.general_description'),
           keywords: ['Inventory', 'Catalog', 'Stock', 'Storefront'],
+        },
+        {
+          name: 'inventory_polar',
+          label: t('settings.inventory.polar'),
+          icon: CircleDollarSign,
+          description: t('settings.inventory.polar_description'),
+          keywords: ['Polar', 'Checkout', 'Storefront', 'Payments'],
         },
       ],
     },
@@ -134,6 +143,12 @@ export function SettingsDialog({
               </span>
             </SettingItemTab>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'inventory_polar' && wsId && (
+        <div className="h-full">
+          <PolarSettingsPanel wsId={wsId} />
         </div>
       )}
 

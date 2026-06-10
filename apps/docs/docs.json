@@ -112,6 +112,7 @@
                   "platform/applications/drive",
                   "platform/applications/finance",
                   "platform/applications/inventory",
+                  "platform/applications/storefront",
                   "platform/applications/mail",
                   "platform/applications/shiraoki",
                   "platform/applications/nova",

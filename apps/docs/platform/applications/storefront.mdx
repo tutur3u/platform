@@ -1,0 +1,34 @@
+---
+title: Storefront
+description: Public and private inventory storefronts with Polar checkout.
+---
+
+`apps/storefront` is the buyer-facing Inventory commerce app. Operators manage
+catalog, stock, storefront visibility, and Polar settings in `apps/inventory`;
+buyers browse, cart, and start checkout from `storefront.tuturuuu.com`.
+
+## Hosts
+
+- Production: `https://storefront.tuturuuu.com`
+- Local Portless: `https://storefront.tuturuuu.localhost`
+- Local fallback port: `7822`
+
+The Storefront app rewrites `/api/*` to `apps/web`, matching other satellite
+apps. It does not read Supabase directly from client code.
+
+## Access
+
+Published public storefronts are readable anonymously. Published private
+storefronts require a Tuturuuu app session and workspace membership; guest-type
+workspace members are accepted.
+
+## Polar Checkout
+
+Each workspace can save sandbox and production Polar organization tokens from
+Inventory settings. Tokens are encrypted server-side and only masked metadata is
+returned to clients.
+
+Storefront checkout reserves inventory first, creates a Polar checkout session
+with the workspace-owned private one-time product, and redirects the buyer to
+Polar. If Polar checkout creation fails after reservation, the reservation is
+released immediately.

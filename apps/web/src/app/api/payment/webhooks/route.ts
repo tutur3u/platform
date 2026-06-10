@@ -1,8 +1,18 @@
-import type { Order, Product, Subscription } from '@tuturuuu/payment/polar';
+import type {
+  Checkout,
+  Order,
+  Product,
+  Subscription,
+} from '@tuturuuu/payment/polar';
 import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { upsertSubscriptionError } from '@/app/api/payment/migrations/helper';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  syncInventoryPolarCheckout,
+  syncInventoryPolarOrder,
+} from '@/lib/inventory/commerce/polar';
 import { syncOrderToDatabase } from '@/utils/polar-order-helper';
 import { syncProductToDatabase } from '@/utils/polar-product-helper';
 import { assignSeatsToAllMembers } from '@/utils/polar-seat-helper';
@@ -44,6 +54,30 @@ export async function reportInitialUsage(wsId: string, customerId: string) {
 
 export const POST = Webhooks({
   webhookSecret: process.env.POLAR_WEBHOOK_SECRET || '',
+
+  onCheckoutCreated: async (payload) => {
+    try {
+      await syncInventoryPolarCheckout(payload.data as Checkout);
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      serverLogger.error('Webhook: Checkout created error', {
+        error: errorMessage,
+      });
+      throw new Response('Internal Server Error', { status: 500 });
+    }
+  },
+
+  onCheckoutUpdated: async (payload) => {
+    try {
+      await syncInventoryPolarCheckout(payload.data as Checkout);
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      serverLogger.error('Webhook: Checkout updated error', {
+        error: errorMessage,
+      });
+      throw new Response('Internal Server Error', { status: 500 });
+    }
+  },
 
   onProductCreated: async (payload) => {
     try {
@@ -310,6 +344,10 @@ export const POST = Webhooks({
   onOrderCreated: async (payload) => {
     try {
       const sbAdmin = await createAdminClient();
+      if (await syncInventoryPolarOrder(payload.data as Order)) {
+        return;
+      }
+
       await syncOrderToDatabase(sbAdmin, payload.data as Order);
 
       console.log(`Webhook: Order created: ${payload.data.id}`);
@@ -324,6 +362,10 @@ export const POST = Webhooks({
   onOrderUpdated: async (payload) => {
     try {
       const sbAdmin = await createAdminClient();
+      if (await syncInventoryPolarOrder(payload.data as Order)) {
+        return;
+      }
+
       await syncOrderToDatabase(sbAdmin, payload.data as Order);
 
       console.log(`Webhook: Order updated: ${payload.data.id}`);

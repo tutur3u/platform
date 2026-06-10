@@ -67,6 +67,7 @@ export async function getPublicStorefront(slug: string) {
       storefront.name,
       storefront.description,
       storefront.status,
+      storefront.visibility,
       storefront.hero_image_url,
       storefront.accent_color,
       storefront.currency,

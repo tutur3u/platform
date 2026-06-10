@@ -1,0 +1,32 @@
+{
+  "storefront": {
+    "add": "Thêm",
+    "bundleAvailability": "Combo",
+    "cart": "Giỏ hàng",
+    "checkout": "Thanh toán",
+    "checkoutError": "Không thể bắt đầu thanh toán Polar.",
+    "emptyCart": "Thêm ít nhất một mặt hàng trước khi thanh toán.",
+    "fallbackDescription": "Có sẵn từ cửa hàng của workspace này.",
+    "form": {
+      "email": "Email",
+      "name": "Tên",
+      "note": "Ghi chú đơn hàng",
+      "phone": "Số điện thoại"
+    },
+    "loading": "Đang tải cửa hàng...",
+    "notFound": "Không tìm thấy cửa hàng.",
+    "order": "Đơn hàng",
+    "orderErrorDescription": "Không thể tải đơn hàng. Vui lòng thử lại sau.",
+    "orderErrorTitle": "Đơn hàng không khả dụng",
+    "orderStatus": "Trạng thái: {status}",
+    "privateStore": "Cửa hàng riêng tư",
+    "publicStore": "Cửa hàng công khai",
+    "reservedCopy": "Tồn kho được giữ chỗ trước khi mở thanh toán Polar.",
+    "reserve": "Tiếp tục với Polar",
+    "reserving": "Đang chuẩn bị thanh toán...",
+    "retry": "Thử lại",
+    "storefrontErrorDescription": "Bạn có thể cần đăng nhập, hoặc cửa hàng này không khả dụng.",
+    "storefrontErrorTitle": "Cửa hàng không khả dụng",
+    "total": "Tổng cộng"
+  }
+}

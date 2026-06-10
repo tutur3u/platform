@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   getInventoryOverview,
+  getInventoryPolarSettings,
   listInventoryAuditLogs,
   listInventoryBundles,
   listInventoryCheckouts,
@@ -80,6 +81,11 @@ export function useInventoryData(wsId: string, view: InventoryOperatorView) {
     queryFn: () => listInventoryAuditLogs(wsId, { limit: 50 }),
     queryKey: ['inventory', wsId, 'audits'],
   });
+  const polarSettings = useQuery({
+    enabled: ['checkouts', 'overview', 'storefront'].includes(view),
+    queryFn: () => getInventoryPolarSettings(wsId),
+    queryKey: ['inventory', wsId, 'polar-settings'],
+  });
 
   return {
     audits,
@@ -87,6 +93,7 @@ export function useInventoryData(wsId: string, view: InventoryOperatorView) {
     checkouts,
     filters,
     overview,
+    polarSettings,
     products,
     sales,
     setFilters,

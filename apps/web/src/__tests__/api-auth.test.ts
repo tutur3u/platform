@@ -820,6 +820,7 @@ describe('withSessionAuth', () => {
         'mira',
         'nova',
         'rewise',
+        'storefront',
         'tasks',
         'teach',
         'track',

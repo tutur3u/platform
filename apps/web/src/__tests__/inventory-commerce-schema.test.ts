@@ -42,6 +42,10 @@ const pendingInvoiceValidUntilCoverageMigrationPath = resolve(
   repoRoot,
   'apps/database/supabase/migrations/20260608085024_subscription_invoice_valid_until_coverage.sql'
 );
+const inventoryPolarMigrationPath = resolve(
+  repoRoot,
+  'apps/database/supabase/migrations/20260610163000_inventory_storefront_polar.sql'
+);
 const bundleRepositoryPath = resolve(
   repoRoot,
   'apps/web/src/lib/inventory/commerce/bundles.ts'
@@ -94,6 +98,37 @@ describe('inventory commerce migration contract', () => {
         `grant execute on function public.${functionName}`
       );
     }
+  });
+
+  it('adds storefront visibility and private Polar checkout configuration', () => {
+    const source = readFileSync(inventoryPolarMigrationPath, 'utf8');
+
+    expect(source).toContain('alter table private.inventory_storefronts');
+    expect(source).toContain('visibility text not null default');
+    expect(source).toContain('inventory_storefronts_visibility_check');
+    expect(source).toContain(
+      'create table if not exists private.inventory_polar_integrations'
+    );
+    expect(source).toContain(
+      'create table if not exists private.inventory_polar_settings'
+    );
+    expect(source).toContain('access_token_encrypted text not null');
+    expect(source).not.toContain('access_token text');
+    expect(source).toContain(
+      'alter table private.inventory_polar_integrations enable row level security'
+    );
+    expect(source).toContain(
+      'alter table private.inventory_polar_settings enable row level security'
+    );
+    expect(source).toContain(
+      'revoke all on table private.inventory_polar_integrations'
+    );
+    expect(source).toContain(
+      'grant all on table private.inventory_polar_integrations to service_role'
+    );
+    expect(source).toContain('complete_inventory_checkout_session_payment');
+    expect(source).toContain('polar_checkout_id');
+    expect(source).toContain('polar_order_id');
   });
 
   it('hardens bundle components and checkout reservations by workspace scope', () => {

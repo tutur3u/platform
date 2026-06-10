@@ -14,6 +14,7 @@ const targetApps = [
   ['drive', '@tuturuuu/drive'],
   ['finance', '@tuturuuu/finance'],
   ['inventory', '@tuturuuu/inventory'],
+  ['storefront', '@tuturuuu/storefront'],
   ['mail', '@tuturuuu/mail'],
   ['meet', '@tuturuuu/meet'],
   ['mind', '@tuturuuu/mind'],
@@ -35,6 +36,7 @@ const vercelWorkflows = [
   'drive',
   'finance',
   'inventory',
+  'storefront',
   'mail',
   'meet',
   'mind',
@@ -118,6 +120,7 @@ function createFixtureRoot() {
       ],
       finance: ['@tuturuuu/satellite'],
       inventory: ['@tuturuuu/satellite'],
+      storefront: ['@tuturuuu/satellite'],
       learn: ['@tuturuuu/ui'],
       mail: [
         '@tuturuuu/auth',

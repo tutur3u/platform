@@ -906,15 +906,39 @@
         "creating": "Đang tạo...",
         "price": "Giá",
         "slug": "slug",
-        "storeName": "Tên cửa hàng"
+        "storeName": "Tên cửa hàng",
+        "visibilityPrivate": "Riêng tư",
+        "visibilityPublic": "Công khai"
       },
       "metrics": {
         "bundles": "Combo",
         "lowStock": "Sắp hết hàng",
+        "polarReady": "Polar sẵn sàng",
         "products": "Sản phẩm",
         "storefronts": "Cửa hàng"
       },
       "openStore": "Mở cửa hàng",
+      "polar": {
+        "description": "Lưu token Polar của workspace và chọn môi trường thanh toán cho đơn cửa hàng.",
+        "environment": {
+          "production": "Production",
+          "sandbox": "Sandbox"
+        },
+        "notConfigured": "Chưa lưu token",
+        "pending": "Đang chờ",
+        "productionDefault": "Mặc định production",
+        "productMissing": "Chưa tạo sản phẩm checkout.",
+        "productReady": "Sản phẩm {productId}",
+        "ready": "Sẵn sàng",
+        "saveError": "Không thể lưu cài đặt Polar.",
+        "saveSuccess": "Đã lưu cài đặt Polar.",
+        "saveToken": "Lưu token",
+        "saving": "Đang lưu...",
+        "testingDefault": "Mặc định testing",
+        "title": "Thanh toán Polar",
+        "tokenEnding": "Token kết thúc bằng {last4}",
+        "tokenPlaceholder": "Polar organization access token"
+      },
       "search": "Tìm trong kho",
       "states": {
         "errorDescription": "Hãy làm mới chế độ xem này hoặc thử lại sau khi API hoạt động ổn định.",
@@ -1639,6 +1663,8 @@
     "inventory": {
       "general": "Chung",
       "general_description": "Thông tin workspace và tùy chọn Inventory",
+      "polar": "Thanh toán Polar",
+      "polar_description": "Thông tin checkout và môi trường mặc định của workspace",
       "title": "Inventory",
       "workspace_name": "Workspace",
       "workspace_name_description": "Workspace đang vận hành bảng điều khiển Inventory này."

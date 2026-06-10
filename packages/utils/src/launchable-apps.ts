@@ -177,6 +177,18 @@ export const LAUNCHABLE_APPS = [
     workspacePathResolver: workspaceRootPath,
   },
   {
+    aliases: ['Store', 'Shop', 'Cart'],
+    appRoot: 'apps/storefront',
+    category: 'operations',
+    defaultPath: '/store/demo',
+    localhostOrigin: 'http://localhost:7822',
+    packageName: '@tuturuuu/storefront',
+    portlessApp: 'storefront',
+    productionUrl: 'https://storefront.tuturuuu.com',
+    slug: 'storefront',
+    title: 'Storefront',
+  },
+  {
     aliases: ['Study', 'Student'],
     appRoot: 'apps/learn',
     category: 'learning',

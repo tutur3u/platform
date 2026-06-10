@@ -22,6 +22,7 @@
   "apps/redis": "1.0.0",
   "apps/rewise": "0.17.0",
   "apps/shortener": "0.1.1",
+  "apps/storefront": "0.1.0",
   "apps/tasks": "0.4.0",
   "apps/teach": "0.1.2",
   "apps/track": "0.4.0",

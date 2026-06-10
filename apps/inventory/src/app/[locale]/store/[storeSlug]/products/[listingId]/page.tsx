@@ -1,4 +1,5 @@
-import { PublicStorefrontClient } from '@/components/storefront/public-storefront-client';
+import { redirect } from 'next/navigation';
+import { STOREFRONT_APP_URL } from '@/constants/common';
 
 export default async function PublicStorefrontProductPage({
   params,
@@ -6,11 +7,5 @@ export default async function PublicStorefrontProductPage({
   params: Promise<{ listingId: string; storeSlug: string }>;
 }) {
   const { listingId, storeSlug } = await params;
-  return (
-    <PublicStorefrontClient
-      listingId={listingId}
-      mode="product"
-      storeSlug={storeSlug}
-    />
-  );
+  redirect(`${STOREFRONT_APP_URL}/store/${storeSlug}/products/${listingId}`);
 }

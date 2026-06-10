@@ -1,4 +1,5 @@
-import { PublicStorefrontClient } from '@/components/storefront/public-storefront-client';
+import { redirect } from 'next/navigation';
+import { STOREFRONT_APP_URL } from '@/constants/common';
 
 export default async function PublicStorefrontCheckoutPage({
   params,
@@ -6,5 +7,5 @@ export default async function PublicStorefrontCheckoutPage({
   params: Promise<{ storeSlug: string }>;
 }) {
   const { storeSlug } = await params;
-  return <PublicStorefrontClient mode="checkout" storeSlug={storeSlug} />;
+  redirect(`${STOREFRONT_APP_URL}/store/${storeSlug}/checkout`);
 }

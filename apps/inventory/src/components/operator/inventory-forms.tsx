@@ -5,6 +5,7 @@ import { Plus } from '@tuturuuu/icons';
 import {
   createInventoryBundle,
   createInventoryStorefront,
+  type InventoryStorefrontVisibility,
 } from '@tuturuuu/internal-api/inventory';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
@@ -15,13 +16,21 @@ export function StorefrontForm({ wsId }: { wsId: string }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
+  const [visibility, setVisibility] =
+    useState<InventoryStorefrontVisibility>('public');
   const mutation = useMutation({
     mutationFn: () =>
-      createInventoryStorefront(wsId, { name, slug, status: 'draft' }),
+      createInventoryStorefront(wsId, {
+        name,
+        slug,
+        status: 'draft',
+        visibility,
+      }),
     onError: () => toast.error(t('forms.createStorefrontError')),
     onSuccess: () => {
       setName('');
       setSlug('');
+      setVisibility('public');
       toast.success(t('forms.createStorefrontSuccess'));
       queryClient.invalidateQueries({
         queryKey: ['inventory', wsId, 'storefronts'],
@@ -34,7 +43,7 @@ export function StorefrontForm({ wsId }: { wsId: string }) {
 
   return (
     <form
-      className="grid gap-2 border-border border-t p-3 lg:grid-cols-[1fr_1fr_auto]"
+      className="grid gap-2 border-border border-t p-3 lg:grid-cols-[1fr_1fr_140px_auto]"
       onSubmit={(event: FormEvent) => {
         event.preventDefault();
         mutation.mutate();
@@ -52,6 +61,16 @@ export function StorefrontForm({ wsId }: { wsId: string }) {
         placeholder={t('forms.slug')}
         value={slug}
       />
+      <select
+        className="h-9 rounded-md border border-border bg-background px-3 text-sm"
+        onChange={(event) =>
+          setVisibility(event.target.value as InventoryStorefrontVisibility)
+        }
+        value={visibility}
+      >
+        <option value="public">{t('forms.visibilityPublic')}</option>
+        <option value="private">{t('forms.visibilityPrivate')}</option>
+      </select>
       <button
         className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-dynamic-blue px-3 font-medium text-dynamic-blue-foreground text-sm disabled:opacity-50"
         disabled={!name || !slug || mutation.isPending}

@@ -1,0 +1,20 @@
+{
+  "extends": "@tuturuuu/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@tuturuuu/internal-api": ["../../packages/internal-api/src/index.ts"],
+      "@tuturuuu/internal-api/*": ["../../packages/internal-api/src/*"]
+    },
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src", ".next/types/**/*.ts", "global.d.ts", "messages"],
+  "exclude": ["node_modules", "dist", ".turbo"]
+}

@@ -35,6 +35,22 @@ describe('resolveInternalApiUrl', () => {
     );
   });
 
+  it('ignores Storefront NEXT_PUBLIC_APP_URL values on the server', () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://storefront.tuturuuu.com');
+    vi.stubEnv('NODE_ENV', 'production');
+
+    expect(resolveInternalApiUrl('/api/v1/workspaces')).toBe(
+      'https://tuturuuu.com/api/v1/workspaces'
+    );
+
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:7822');
+    vi.stubEnv('NODE_ENV', 'development');
+
+    expect(resolveInternalApiUrl('/api/v1/workspaces')).toBe(
+      'https://tuturuuu.localhost/api/v1/workspaces'
+    );
+  });
+
   it('keeps explicit Web API origins ahead of satellite app URLs', () => {
     vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://web.internal.example.com');
     vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://chat.tuturuuu.com');

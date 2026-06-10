@@ -1,0 +1,32 @@
+{
+  "storefront": {
+    "add": "Add",
+    "bundleAvailability": "Bundle",
+    "cart": "Cart",
+    "checkout": "Checkout",
+    "checkoutError": "Unable to start Polar checkout.",
+    "emptyCart": "Add at least one item before checkout.",
+    "fallbackDescription": "Available from this workspace storefront.",
+    "form": {
+      "email": "Email",
+      "name": "Name",
+      "note": "Order note",
+      "phone": "Phone"
+    },
+    "loading": "Loading storefront...",
+    "notFound": "Storefront not found.",
+    "order": "Order",
+    "orderErrorDescription": "The order could not be loaded. Try again in a moment.",
+    "orderErrorTitle": "Order unavailable",
+    "orderStatus": "Status: {status}",
+    "privateStore": "Private storefront",
+    "publicStore": "Public storefront",
+    "reservedCopy": "Inventory is reserved before Polar checkout opens.",
+    "reserve": "Continue to Polar",
+    "reserving": "Preparing checkout...",
+    "retry": "Retry",
+    "storefrontErrorDescription": "You may need to sign in, or this storefront is unavailable.",
+    "storefrontErrorTitle": "Storefront unavailable",
+    "total": "Total"
+  }
+}

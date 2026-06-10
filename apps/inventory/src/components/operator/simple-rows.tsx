@@ -8,7 +8,7 @@ import type {
   InventoryStorefront,
 } from '@tuturuuu/internal-api/inventory';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
+import { STOREFRONT_APP_URL } from '@/constants/common';
 import { currency } from './operator-format';
 import { EmptyRow } from './operator-shell';
 
@@ -70,12 +70,12 @@ export function SimpleRows({
             </div>
             {value ? <StatusBadge value={value} /> : <span />}
             {type === 'storefronts' && 'slug' in anyRow ? (
-              <Link
+              <a
                 className="text-dynamic-blue text-xs"
-                href={`/store/${String(anyRow.slug)}`}
+                href={`${STOREFRONT_APP_URL}/store/${String(anyRow.slug)}`}
               >
                 {t('openStore')}
-              </Link>
+              </a>
             ) : null}
           </div>
         );

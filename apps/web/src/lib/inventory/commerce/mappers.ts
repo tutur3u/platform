@@ -5,9 +5,12 @@ import type {
   InventoryCheckoutSession,
   InventoryCheckoutStatus,
   InventoryListingStatus,
+  InventoryPolarCheckoutStatus,
+  InventoryPolarEnvironment,
   InventoryStorefront,
   InventoryStorefrontListing,
   InventoryStorefrontStatus,
+  InventoryStorefrontVisibility,
 } from '@tuturuuu/internal-api/inventory';
 
 export type StorefrontRow = {
@@ -22,6 +25,7 @@ export type StorefrontRow = {
   slug: string;
   status: InventoryStorefrontStatus;
   updated_at: string | null;
+  visibility: InventoryStorefrontVisibility;
   ws_id: string;
 };
 
@@ -89,11 +93,18 @@ export type CheckoutRow = {
   id: string;
   note: string | null;
   platform_fee_amount: number;
+  polar_checkout_id: string | null;
+  polar_checkout_url: string | null;
+  polar_environment: InventoryPolarEnvironment | null;
+  polar_order_id: string | null;
+  polar_product_id: string | null;
+  polar_status: InventoryPolarCheckoutStatus | null;
   processing_fee_estimate_amount: number;
   public_token: string;
   status: InventoryCheckoutStatus;
   subtotal_amount: number;
   total_amount: number;
+  ws_id: string;
 };
 
 export type CheckoutLineRow = {
@@ -130,6 +141,7 @@ export function mapStorefront(row: StorefrontRow): InventoryStorefront {
     slug: row.slug,
     status: row.status,
     updatedAt: row.updated_at,
+    visibility: row.visibility,
     wsId: row.ws_id,
   };
 }
@@ -212,6 +224,7 @@ export function mapCheckout(
     expiresAt: row.expires_at,
     financeInvoiceId: row.finance_invoice_id,
     id: row.id,
+    wsId: row.ws_id,
     lines: lines.map((line) => ({
       bundleId: line.bundle_id,
       id: line.id,
@@ -226,6 +239,12 @@ export function mapCheckout(
     })),
     note: row.note,
     platformFeeAmount: row.platform_fee_amount,
+    polarCheckoutId: row.polar_checkout_id,
+    polarCheckoutUrl: row.polar_checkout_url,
+    polarEnvironment: row.polar_environment,
+    polarOrderId: row.polar_order_id,
+    polarProductId: row.polar_product_id,
+    polarStatus: row.polar_status,
     processingFeeEstimateAmount: row.processing_fee_estimate_amount,
     publicToken: row.public_token,
     status: row.status,

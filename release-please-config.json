@@ -70,6 +70,10 @@
       "component": "inventory",
       "package-name": "@tuturuuu/inventory"
     },
+    "apps/storefront": {
+      "component": "storefront",
+      "package-name": "@tuturuuu/storefront"
+    },
     "apps/learn": {
       "component": "learn",
       "package-name": "@tuturuuu/learn"

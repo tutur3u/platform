@@ -906,15 +906,39 @@
         "creating": "Creating...",
         "price": "Price",
         "slug": "slug",
-        "storeName": "Store name"
+        "storeName": "Store name",
+        "visibilityPrivate": "Private",
+        "visibilityPublic": "Public"
       },
       "metrics": {
         "bundles": "Bundles",
         "lowStock": "Low stock",
+        "polarReady": "Polar ready",
         "products": "Products",
         "storefronts": "Storefronts"
       },
       "openStore": "Open store",
+      "polar": {
+        "description": "Save workspace-owned Polar tokens and choose checkout environments for storefront orders.",
+        "environment": {
+          "production": "Production",
+          "sandbox": "Sandbox"
+        },
+        "notConfigured": "No token saved",
+        "pending": "Pending",
+        "productionDefault": "Production default",
+        "productMissing": "Checkout product has not been created.",
+        "productReady": "Product {productId}",
+        "ready": "Ready",
+        "saveError": "Could not save Polar settings.",
+        "saveSuccess": "Polar settings saved.",
+        "saveToken": "Save token",
+        "saving": "Saving...",
+        "testingDefault": "Testing default",
+        "title": "Polar checkout",
+        "tokenEnding": "Token ending in {last4}",
+        "tokenPlaceholder": "Polar organization access token"
+      },
       "search": "Search inventory",
       "states": {
         "errorDescription": "Refresh this view or try again after the API recovers.",
@@ -1639,6 +1663,8 @@
     "inventory": {
       "general": "General",
       "general_description": "Workspace identity and Inventory preferences",
+      "polar": "Polar checkout",
+      "polar_description": "Workspace checkout credentials and environment defaults",
       "title": "Inventory",
       "workspace_name": "Workspace",
       "workspace_name_description": "The workspace currently powering this Inventory console."

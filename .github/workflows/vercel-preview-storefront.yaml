@@ -1,0 +1,91 @@
+name: Vercel Storefront Preview Deployment
+on:
+  workflow_dispatch:
+    inputs:
+      preview_ref:
+        description: Branch, tag, or SHA to deploy to preview.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: vercel-preview-storefront.yaml
+    permissions:
+      contents: read
+      deployments: read
+
+  Deploy-Preview:
+    needs: [check-ci]
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && contains(format(',{0},', vars.TRUSTED_PREVIEW_DEPLOY_ACTORS), format(',{0},', github.actor)) && needs.check-ci.outputs.should_run == 'true'
+    environment: vercel-preview-storefront
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+          ref: ${{ inputs.preview_ref }}
+
+      - name: Confirm preview ref
+        id: check_commits
+        run: |
+          echo "Deploying preview ref ${{ inputs.preview_ref }}."
+          echo "skip_build=false" >> $GITHUB_OUTPUT
+
+      - name: Setup bun
+        if: steps.check_commits.outputs.skip_build != 'true'
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Use Node.js 24
+        if: steps.check_commits.outputs.skip_build != 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Install Vercel CLI
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        if: steps.check_commits.outputs.skip_build != 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STOREFRONT_PROJECT_ID }}
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build workspace dependencies
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
+
+      - name: Generate shared build metadata
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+
+      - name: Build Project Artifacts
+        if: steps.check_commits.outputs.skip_build != 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STOREFRONT_PROJECT_ID }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Record successful Vercel deployment marker
+        if: steps.check_commits.outputs.skip_build != 'true'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VERCEL_WORKFLOW_NAME: vercel-preview-storefront.yaml
+        run: bun run --silent scripts/ci/record-vercel-deployment.ts

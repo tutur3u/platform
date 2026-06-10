@@ -7,6 +7,8 @@ export const StorefrontStatusSchema = z.enum([
   'archived',
 ]);
 
+export const StorefrontVisibilitySchema = z.enum(['public', 'private']);
+
 export const ListingStatusSchema = z.enum([
   'draft',
   'published',
@@ -27,6 +29,8 @@ export const CheckoutStatusSchema = z.enum([
   'cancelled',
   'expired',
 ]);
+
+export const PolarEnvironmentSchema = z.enum(['sandbox', 'production']);
 
 export const listQuerySchema = <T extends z.ZodEnum>(statusSchema: T) =>
   z.object({
@@ -49,6 +53,7 @@ export const storefrontPayloadSchema = z.object({
     .max(100)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   status: StorefrontStatusSchema.optional(),
+  visibility: StorefrontVisibilitySchema.optional(),
 });
 
 export const storefrontPatchSchema = storefrontPayloadSchema.partial();
@@ -112,3 +117,15 @@ export const checkoutCreatePayloadSchema = z.object({
     .min(1),
   note: z.string().trim().max(2000).nullable().optional(),
 });
+
+export const polarSettingsPayloadSchema = z
+  .object({
+    accessToken: z.string().trim().min(1).max(4096).optional(),
+    environment: PolarEnvironmentSchema.optional(),
+    productionEnvironment: PolarEnvironmentSchema.optional(),
+    testingEnvironment: PolarEnvironmentSchema.optional(),
+  })
+  .refine(
+    (value) => !value.accessToken || value.environment,
+    'environment is required when accessToken is provided'
+  );

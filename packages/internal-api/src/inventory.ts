@@ -20,6 +20,8 @@ export type InventoryStorefrontStatus =
   | 'paused'
   | 'archived';
 
+export type InventoryStorefrontVisibility = 'private' | 'public';
+
 export type InventoryListingStatus =
   | 'draft'
   | 'published'
@@ -41,6 +43,7 @@ export type InventoryStorefront = {
   name: string;
   description: string | null;
   status: InventoryStorefrontStatus;
+  visibility: InventoryStorefrontVisibility;
   heroImageUrl: string | null;
   accentColor: string | null;
   currency: string;
@@ -117,6 +120,7 @@ export type InventoryCheckoutLine = {
 
 export type InventoryCheckoutSession = {
   id: string;
+  wsId: string;
   publicToken: string;
   status: InventoryCheckoutStatus;
   customerName: string;
@@ -132,7 +136,50 @@ export type InventoryCheckoutSession = {
   expiresAt: string | null;
   completedAt: string | null;
   financeInvoiceId: string | null;
+  polarCheckoutId: string | null;
+  polarCheckoutUrl: string | null;
+  polarEnvironment: InventoryPolarEnvironment | null;
+  polarOrderId: string | null;
+  polarProductId: string | null;
+  polarStatus: InventoryPolarCheckoutStatus | null;
   lines: InventoryCheckoutLine[];
+};
+
+export type InventoryPolarEnvironment = 'production' | 'sandbox';
+
+export type InventoryPolarCheckoutStatus =
+  | 'cancelled'
+  | 'checkout_created'
+  | 'expired'
+  | 'failed'
+  | 'paid'
+  | 'pending';
+
+export type InventoryPolarIntegrationStatus = 'error' | 'pending' | 'ready';
+
+export type InventoryPolarIntegration = {
+  environment: InventoryPolarEnvironment;
+  accessTokenLast4: string | null;
+  accessTokenFingerprint: string | null;
+  polarProductId: string | null;
+  polarProductName: string;
+  status: InventoryPolarIntegrationStatus;
+  lastValidatedAt: string | null;
+  lastError: string | null;
+  updatedAt: string | null;
+};
+
+export type InventoryPolarSettings = {
+  testingEnvironment: InventoryPolarEnvironment;
+  productionEnvironment: InventoryPolarEnvironment;
+  integrations: InventoryPolarIntegration[];
+};
+
+export type InventoryPolarSettingsPayload = {
+  environment?: InventoryPolarEnvironment;
+  accessToken?: string;
+  testingEnvironment?: InventoryPolarEnvironment;
+  productionEnvironment?: InventoryPolarEnvironment;
 };
 
 export type InventoryOverviewResponse = {
@@ -252,6 +299,7 @@ export type InventoryStorefrontPayload = {
   name: string;
   description?: string | null;
   status?: InventoryStorefrontStatus;
+  visibility?: InventoryStorefrontVisibility;
   heroImageUrl?: string | null;
   accentColor?: string | null;
   currency?: string;
@@ -335,6 +383,7 @@ export type InventoryPublicStorefrontResponse = {
 
 export type InventoryCheckoutResponse = {
   checkout: InventoryCheckoutSession;
+  checkoutUrl: string | null;
 };
 
 function workspaceInventoryPath(wsId: string, suffix: string) {
@@ -820,6 +869,31 @@ export function listInventoryCheckouts(
     cache: 'no-store',
     query: asQuery(query),
   });
+}
+
+export function getInventoryPolarSettings(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryPolarSettings>(
+    workspaceInventoryPath(wsId, '/polar-settings'),
+    { cache: 'no-store' }
+  );
+}
+
+export function updateInventoryPolarSettings(
+  wsId: string,
+  payload: InventoryPolarSettingsPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryPolarSettings>(
+    workspaceInventoryPath(wsId, '/polar-settings'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PUT',
+    }
+  );
 }
 
 export function getInventoryPublicStorefront(

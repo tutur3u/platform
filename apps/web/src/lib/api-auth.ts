@@ -178,6 +178,7 @@ const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'mira',
   'nova',
   'rewise',
+  'storefront',
   'tasks',
   'teach',
   'track',

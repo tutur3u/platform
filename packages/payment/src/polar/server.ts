@@ -17,11 +17,21 @@ import { Polar } from '@tuturuuu/payment/polar';
  * @returns Polar client configured for production or sandbox environment
  * @see https://polar.sh/docs/api/overview for authentication details
  */
-export const createPolarClient = () => {
-  const sandbox = process.env.POLAR_SANDBOX === 'true';
+type CreatePolarClientOptions = {
+  accessToken?: string;
+  environment?: 'production' | 'sandbox';
+  sandbox?: boolean;
+};
+
+export const createPolarClient = (options: CreatePolarClientOptions = {}) => {
+  const sandbox =
+    options.environment === 'sandbox' ||
+    options.sandbox === true ||
+    (options.environment !== 'production' &&
+      process.env.POLAR_SANDBOX === 'true');
 
   return new Polar({
-    accessToken: process.env.POLAR_ACCESS_TOKEN || '',
+    accessToken: options.accessToken ?? process.env.POLAR_ACCESS_TOKEN ?? '',
     server: sandbox ? 'sandbox' : 'production',
   });
 };

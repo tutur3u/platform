@@ -52,6 +52,10 @@ const DEV_TARGETS = Object.freeze({
     apps: ['inventory', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase', '@tuturuuu/internal-api'],
   },
+  storefront: {
+    apps: ['storefront', 'web'],
+    shared: ['@tuturuuu/types', '@tuturuuu/supabase', '@tuturuuu/internal-api'],
+  },
   learn: {
     apps: ['learn', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],

@@ -65,6 +65,7 @@ export async function listCheckouts(
   const rows = await sql<CheckoutRow[]>`
     select
       id,
+      ws_id,
       public_token,
       status,
       customer_name,
@@ -79,7 +80,13 @@ export async function listCheckouts(
       total_amount,
       expires_at::text as expires_at,
       completed_at::text as completed_at,
-      finance_invoice_id
+      finance_invoice_id,
+      polar_checkout_id,
+      polar_order_id,
+      polar_environment,
+      polar_product_id,
+      polar_checkout_url,
+      polar_status
     from private.inventory_checkout_sessions
     where ws_id = ${wsId}
       and (${status}::text is null or status = ${status})
@@ -121,6 +128,7 @@ export async function getCheckoutByPublicToken(publicToken: string) {
   const [row] = await sql<CheckoutRow[]>`
     select
       id,
+      ws_id,
       public_token,
       status,
       customer_name,
@@ -135,7 +143,13 @@ export async function getCheckoutByPublicToken(publicToken: string) {
       total_amount,
       expires_at::text as expires_at,
       completed_at::text as completed_at,
-      finance_invoice_id
+      finance_invoice_id,
+      polar_checkout_id,
+      polar_order_id,
+      polar_environment,
+      polar_product_id,
+      polar_checkout_url,
+      polar_status
     from private.inventory_checkout_sessions
     where public_token = ${publicToken}
     limit 1

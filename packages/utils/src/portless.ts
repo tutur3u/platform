@@ -26,6 +26,7 @@ export const TUTURUUU_PORTLESS_APP_ORIGINS = {
   qr: `https://qr.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   rewise: `https://rewise.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   shortener: `https://shortener.${TUTURUUU_PORTLESS_ROOT_HOST}`,
+  storefront: `https://storefront.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   tasks: `https://tasks.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   teach: `https://teach.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   track: `https://track.${TUTURUUU_PORTLESS_ROOT_HOST}`,
