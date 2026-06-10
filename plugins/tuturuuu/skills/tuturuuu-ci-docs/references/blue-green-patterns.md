@@ -23,6 +23,24 @@ infrastructure dashboard changes.
   fast-forward pulls, and stop if the checked-out branch changes.
 - Dirty or diverged worktrees should be logged and skipped instead of forcing
   merges.
+- Production watchers can auto-promote `main` to `production` only when
+  `production` is a fast-forward ancestor of `main`, the newest `main` commit is
+  at least 10 minutes old, and every latest GitHub check/status for that SHA is
+  complete and non-failing with at least one reported CI signal. Record the
+  promotion state under `tmp/docker-web/watch` and poll the gates every 5
+  seconds.
+- Prebuild the newest fast-forward `main` candidate on standby before CI is
+  green when GitHub checks are inspectable, but never update `production` until
+  the promotion gates pass or an authorized manual override request bypasses
+  only the CI/age gates.
+- Dashboard promotion and revert controls must flow through control request
+  files, stay operator-authorized, respect dirty-worktree/build-lock/divergence
+  safety gates, and avoid native browser dialogs.
+- Keep the 5 newest unique successful deployed blue/green image tags for cached
+  instant revert. Cached revert should use the no-build recovery path, record
+  deployment kind `instant-revert`, and write a deployment pin so auto-promotion
+  does not immediately overwrite the rollback. Older retained deployments fall
+  back to the rollback-pin path and may rebuild.
 - PID locks need explicit fail/resume/replace behavior. Stale Git
   `index.lock` files may be auto-removed only when the error is an index-lock
   conflict and the lock is old enough to be safe.
@@ -62,6 +80,11 @@ infrastructure dashboard changes.
   support builds, starts, and health gates. This keeps local-only E2E shards from
   pulling the private enterprise image while production remains enabled by
   default.
+- Completed migration containers such as `hive-db-migrate` and
+  `supermemory-db-migrate` should be removed by Compose service labels, not only
+  `docker compose ps` output, because one-off run containers can remain stopped
+  under names like `tuturuuu-hive-db-migrate-*` and make the cluster look
+  unhealthy after a successful migration.
 
 ## Observability
 

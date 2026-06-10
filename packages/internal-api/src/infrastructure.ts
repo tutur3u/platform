@@ -858,6 +858,72 @@ export interface BlueGreenInstantRolloutRequest {
   requestedByEmail: string | null;
 }
 
+export interface BlueGreenProductionPromoteRequest {
+  bypassChecks: true;
+  bypassDelay: true;
+  kind: 'production-promote';
+  requestedAt: string;
+  requestedBy: string;
+  requestedByEmail: string | null;
+  sourceBranch: 'main';
+  targetBranch: 'production';
+}
+
+export interface BlueGreenDeploymentRevertRequest {
+  commitHash: string;
+  commitShortHash: string | null;
+  commitSubject: string | null;
+  deploymentStamp: string | null;
+  imageTag: string | null;
+  instant: boolean;
+  kind: 'deployment-revert';
+  requestedAt: string;
+  requestedBy: string;
+  requestedByEmail: string | null;
+}
+
+export interface BlueGreenProductionPromotionState {
+  ci: {
+    completed: number;
+    failing: number;
+    pending: number;
+    state: 'failing' | 'missing' | 'passing' | 'pending' | 'unavailable';
+    total: number;
+    unavailableReason: string | null;
+  };
+  decision: {
+    blockedReasons: string[];
+    bypassed: boolean;
+    ready: boolean;
+    status: string | null;
+  };
+  kind: 'production-promotion-state';
+  main: {
+    committedAt: string | null;
+    hash: string | null;
+    shortHash: string | null;
+    subject: string | null;
+  } | null;
+  nextCheckAt: number | null;
+  prebuild: {
+    imageTag: string | null;
+    status: string | null;
+    updatedAt: number | null;
+  } | null;
+  production: {
+    committedAt: string | null;
+    hash: string | null;
+    shortHash: string | null;
+    subject: string | null;
+  } | null;
+  queuedRequest: BlueGreenProductionPromoteRequest | null;
+  requiredDelayMs: number;
+  sourceBranch: 'main';
+  targetBranch: 'production';
+  updatedAt: string | null;
+  waitRemainingMs: number | null;
+}
+
 export interface BlueGreenWatcherRecoveryRequest {
   kind: 'watcher-recovery';
   projectBranch: string | null;
@@ -1153,9 +1219,11 @@ export interface BlueGreenMonitoringSnapshot {
     };
   };
   control: {
+    deploymentRevertRequest: BlueGreenDeploymentRevertRequest | null;
     deploymentPin: BlueGreenDeploymentPin | null;
     dockerRecoverySettings: BlueGreenDockerRecoverySettings;
     instantRolloutRequest: BlueGreenInstantRolloutRequest | null;
+    productionPromoteRequest: BlueGreenProductionPromoteRequest | null;
   };
   deployments: BlueGreenMonitoringDeployment[];
   buildCache: BlueGreenBuildCache;
@@ -1164,6 +1232,7 @@ export interface BlueGreenMonitoringSnapshot {
     limit: number;
     total: number;
   };
+  productionPromotion: BlueGreenProductionPromotionState | null;
   dockerResources: {
     allContainers: BlueGreenMonitoringDockerContainer[];
     containers: BlueGreenMonitoringContainerResource[];
@@ -1242,6 +1311,22 @@ export interface BlueGreenMonitoringSnapshot {
 export interface RequestBlueGreenInstantRolloutResponse {
   message: string;
   request: BlueGreenInstantRolloutRequest;
+}
+
+export interface RequestBlueGreenProductionPromoteResponse {
+  message: string;
+  request: BlueGreenProductionPromoteRequest;
+}
+
+export interface RequestBlueGreenDeploymentRevertPayload {
+  commitHash: string;
+  imageTag?: string | null;
+  instant?: boolean;
+}
+
+export interface RequestBlueGreenDeploymentRevertResponse {
+  message: string;
+  request: BlueGreenDeploymentRevertRequest;
 }
 
 export interface RequestBlueGreenWatcherRecoveryPayload {
@@ -3177,6 +3262,37 @@ export async function requestBlueGreenInstantRollout(
     '/api/v1/infrastructure/monitoring/blue-green/instant-rollout',
     {
       cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function requestBlueGreenProductionPromote(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<RequestBlueGreenProductionPromoteResponse>(
+    '/api/v1/infrastructure/monitoring/blue-green/production-promote',
+    {
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function requestBlueGreenDeploymentRevert(
+  payload: RequestBlueGreenDeploymentRevertPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<RequestBlueGreenDeploymentRevertResponse>(
+    '/api/v1/infrastructure/monitoring/blue-green/deployment-revert',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       method: 'POST',
     }
   );

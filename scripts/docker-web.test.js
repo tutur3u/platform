@@ -94,6 +94,44 @@ function isHiveDbMigrateRun(command, args) {
   );
 }
 
+function createCommandResult(stdout = '') {
+  return { code: 0, signal: null, stderr: '', stdout };
+}
+
+function getMigrationCleanupService(command, args) {
+  if (command !== 'docker' || args[0] !== 'ps' || !args.includes('-aq')) {
+    return null;
+  }
+
+  const serviceFilter = args.find((arg) =>
+    String(arg).startsWith('label=com.docker.compose.service=')
+  );
+
+  return serviceFilter?.split('=').at(-1) ?? null;
+}
+
+function isMigrationCleanupRm(command, args) {
+  return command === 'docker' && args[0] === 'rm' && args[1] === '-f';
+}
+
+function migrationCleanupResult(command, args) {
+  const serviceName = getMigrationCleanupService(command, args);
+
+  if (serviceName === 'hive-db-migrate') {
+    return createCommandResult('hive-db-migrate-123\n');
+  }
+
+  if (serviceName === 'supermemory-db-migrate') {
+    return createCommandResult('supermemory-db-migrate-123\n');
+  }
+
+  if (isMigrationCleanupRm(command, args)) {
+    return createCommandResult('');
+  }
+
+  return null;
+}
+
 test('getBlueGreenDeploymentBuildServices builds only the web lane for web-only changes', () => {
   assert.deepEqual(
     getBlueGreenDeploymentBuildServices({
@@ -2535,6 +2573,9 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
   const runCommand = async (command, args, options = {}) => {
     calls.push([command, args, options.env]);
 
+    const cleanupResult = migrationCleanupResult(command, args);
+    if (cleanupResult) return cleanupResult;
+
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
     }
@@ -2759,6 +2800,9 @@ test('runDockerWebWorkflow does not recursively start watcher from watcher deplo
 
   const runCommand = async (command, args, _options = {}) => {
     calls.push([command, args]);
+
+    const cleanupResult = migrationCleanupResult(command, args);
+    if (cleanupResult) return cleanupResult;
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
@@ -3708,6 +3752,9 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
     const key = `${command} ${args.join(' ')}`;
     calls.push(key);
 
+    const cleanupResult = migrationCleanupResult(command, args);
+    if (cleanupResult) return cleanupResult;
+
     if (command === 'docker' && args[0] === 'ps') {
       return resultFor('');
     }
@@ -3860,14 +3907,24 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
       (call) =>
         call.includes(' up --detach --no-build') && call.includes(' hive-green')
     );
-    const hiveMigrationCleanupIndex = calls.indexOf(
-      `docker compose -f ${PROD_COMPOSE_FILE} rm --stop -f hive-db-migrate`
+    const hiveMigrationCleanupIndex = calls.findIndex(
+      (call, index) =>
+        index > hiveUpIndex && call === 'docker rm -f hive-db-migrate-123'
+    );
+    const supermemoryMigrationCleanupIndex = calls.findIndex(
+      (call, index) =>
+        index > hiveUpIndex &&
+        call === 'docker rm -f supermemory-db-migrate-123'
     );
 
     assert.ok(hiveUpIndex >= 0, 'expected Hive services to start');
     assert.ok(
       hiveMigrationCleanupIndex > hiveUpIndex,
       'expected dependency-started Hive migration cleanup after Hive starts'
+    );
+    assert.ok(
+      supermemoryMigrationCleanupIndex > hiveUpIndex,
+      'expected dependency-started Supermemory migration cleanup after Hive starts'
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -4427,6 +4484,9 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
   const runCommand = async (command, args) => {
     calls.push([command, args]);
 
+    const cleanupResult = migrationCleanupResult(command, args);
+    if (cleanupResult) return cleanupResult;
+
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
     }
@@ -4674,9 +4734,18 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
       calls.some(
         ([command, args]) =>
           command === 'docker' &&
-          args[0] === 'compose' &&
-          args.includes('rm') &&
-          args.at(-1) === 'hive-db-migrate'
+          args[0] === 'rm' &&
+          args[1] === '-f' &&
+          args.includes('hive-db-migrate-123')
+      )
+    );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'rm' &&
+          args[1] === '-f' &&
+          args.includes('supermemory-db-migrate-123')
       )
     );
   } finally {
@@ -4703,6 +4772,9 @@ test('runDockerWebWorkflow ignores stale active colors without live containers',
 
   const runCommand = async (command, args) => {
     calls.push([command, args]);
+
+    const cleanupResult = migrationCleanupResult(command, args);
+    if (cleanupResult) return cleanupResult;
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
@@ -4818,6 +4890,9 @@ test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before star
   const runCommand = async (command, args) => {
     calls.push([command, args]);
 
+    const cleanupResult = migrationCleanupResult(command, args);
+    if (cleanupResult) return cleanupResult;
+
     if (command === 'docker' && args[0] === 'image') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
     }
@@ -4923,10 +4998,6 @@ test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before star
     }
 
     if (isHiveDbMigrateRun(command, args)) {
-      return { code: 0, signal: null, stderr: '', stdout: '' };
-    }
-
-    if (args.includes('rm') && args.at(-1) === 'hive-db-migrate') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
     }
 

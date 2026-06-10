@@ -4,6 +4,7 @@ import type {
   BlueGreenBuildCache,
   BlueGreenBuildCacheHistoryEntry,
   BlueGreenDeploymentPin,
+  BlueGreenDeploymentRevertRequest,
   BlueGreenDeploymentStage,
   BlueGreenDeploymentStageStatus,
   BlueGreenDeploymentTarget,
@@ -23,6 +24,8 @@ import type {
   BlueGreenMonitoringStatus,
   BlueGreenMonitoringWatcherHealth,
   BlueGreenMonitoringWatcherLog,
+  BlueGreenProductionPromoteRequest,
+  BlueGreenProductionPromotionState,
   BlueGreenTargetRuntime,
 } from '@tuturuuu/internal-api/infrastructure';
 import { normalizeBlueGreenDockerRecoverySettings } from './blue-green-monitoring-controls';
@@ -40,7 +43,7 @@ const DOCKER_WEB_ENV_KEY = 'PLATFORM_BLUE_GREEN_MONITORING_DIR';
 const DEFAULT_ARCHIVE_PAGE_SIZE = 25;
 export const DEFAULT_REQUEST_ARCHIVE_TIMEFRAME_DAYS = 7;
 export const MAX_REQUEST_ARCHIVE_TIMEFRAME_DAYS = 30;
-const DEFAULT_RECOVERY_CACHE_LIMIT = 3;
+const DEFAULT_RECOVERY_CACHE_LIMIT = 5;
 const MAX_REQUEST_CONSOLE_MESSAGE_LENGTH = 500;
 const MAX_ARCHIVE_PAGE_SIZE = 100;
 const REQUEST_ARCHIVE_AGGREGATE_CACHE_TTL_MS = 10_000;
@@ -1331,6 +1334,189 @@ function normalizeInstantRolloutRequest(
   };
 }
 
+function normalizeProductionPromoteRequest(
+  value: unknown
+): BlueGreenProductionPromoteRequest | null {
+  const record = toRecord(value);
+  const requestedAt =
+    typeof record?.requestedAt === 'string' && record.requestedAt.length > 0
+      ? record.requestedAt
+      : null;
+  const requestedBy =
+    typeof record?.requestedBy === 'string' && record.requestedBy.length > 0
+      ? record.requestedBy
+      : null;
+
+  if (
+    record?.kind !== 'production-promote' ||
+    record.sourceBranch !== 'main' ||
+    record.targetBranch !== 'production' ||
+    record.bypassChecks !== true ||
+    record.bypassDelay !== true ||
+    !requestedAt ||
+    !requestedBy
+  ) {
+    return null;
+  }
+
+  return {
+    bypassChecks: true,
+    bypassDelay: true,
+    kind: 'production-promote',
+    requestedAt,
+    requestedBy,
+    requestedByEmail:
+      typeof record.requestedByEmail === 'string'
+        ? record.requestedByEmail
+        : null,
+    sourceBranch: 'main',
+    targetBranch: 'production',
+  };
+}
+
+function normalizeDeploymentRevertRequest(
+  value: unknown
+): BlueGreenDeploymentRevertRequest | null {
+  const record = toRecord(value);
+  const commitHash =
+    typeof record?.commitHash === 'string' && record.commitHash.length >= 7
+      ? record.commitHash
+      : null;
+  const requestedAt =
+    typeof record?.requestedAt === 'string' && record.requestedAt.length > 0
+      ? record.requestedAt
+      : null;
+  const requestedBy =
+    typeof record?.requestedBy === 'string' && record.requestedBy.length > 0
+      ? record.requestedBy
+      : null;
+
+  if (
+    record?.kind !== 'deployment-revert' ||
+    !commitHash ||
+    typeof record.instant !== 'boolean' ||
+    !requestedAt ||
+    !requestedBy
+  ) {
+    return null;
+  }
+
+  return {
+    commitHash,
+    commitShortHash:
+      typeof record.commitShortHash === 'string'
+        ? record.commitShortHash
+        : null,
+    commitSubject:
+      typeof record.commitSubject === 'string' ? record.commitSubject : null,
+    deploymentStamp:
+      typeof record.deploymentStamp === 'string'
+        ? record.deploymentStamp
+        : null,
+    imageTag: typeof record.imageTag === 'string' ? record.imageTag : null,
+    instant: record.instant,
+    kind: 'deployment-revert',
+    requestedAt,
+    requestedBy,
+    requestedByEmail:
+      typeof record.requestedByEmail === 'string'
+        ? record.requestedByEmail
+        : null,
+  };
+}
+
+function normalizePromotionCommit(
+  value: unknown
+): BlueGreenProductionPromotionState['main'] {
+  const record = toRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  return {
+    committedAt:
+      typeof record.committedAt === 'string' ? record.committedAt : null,
+    hash: typeof record.hash === 'string' ? record.hash : null,
+    shortHash: typeof record.shortHash === 'string' ? record.shortHash : null,
+    subject: typeof record.subject === 'string' ? record.subject : null,
+  };
+}
+
+function normalizeProductionPromotionState(
+  value: unknown
+): BlueGreenProductionPromotionState | null {
+  const record = toRecord(value);
+
+  if (record?.kind !== 'production-promotion-state') {
+    return null;
+  }
+
+  const ciRecord = toRecord(record.ci);
+  const decisionRecord = toRecord(record.decision);
+  const prebuildRecord = toRecord(record.prebuild);
+  const ciState =
+    ciRecord?.state === 'passing' ||
+    ciRecord?.state === 'pending' ||
+    ciRecord?.state === 'failing' ||
+    ciRecord?.state === 'missing' ||
+    ciRecord?.state === 'unavailable'
+      ? ciRecord.state
+      : 'unavailable';
+
+  return {
+    ci: {
+      completed: toFiniteNumber(ciRecord?.completed) ?? 0,
+      failing: toFiniteNumber(ciRecord?.failing) ?? 0,
+      pending: toFiniteNumber(ciRecord?.pending) ?? 0,
+      state: ciState,
+      total: toFiniteNumber(ciRecord?.total) ?? 0,
+      unavailableReason:
+        typeof ciRecord?.unavailableReason === 'string'
+          ? ciRecord.unavailableReason
+          : null,
+    },
+    decision: {
+      blockedReasons: normalizeStringArray(decisionRecord?.blockedReasons),
+      bypassed:
+        typeof decisionRecord?.bypassed === 'boolean'
+          ? decisionRecord.bypassed
+          : false,
+      ready:
+        typeof decisionRecord?.ready === 'boolean'
+          ? decisionRecord.ready
+          : false,
+      status:
+        typeof decisionRecord?.status === 'string'
+          ? decisionRecord.status
+          : null,
+    },
+    kind: 'production-promotion-state',
+    main: normalizePromotionCommit(record.main),
+    nextCheckAt: toFiniteNumber(record.nextCheckAt),
+    prebuild: prebuildRecord
+      ? {
+          imageTag:
+            typeof prebuildRecord.imageTag === 'string'
+              ? prebuildRecord.imageTag
+              : null,
+          status:
+            typeof prebuildRecord.status === 'string'
+              ? prebuildRecord.status
+              : null,
+          updatedAt: toFiniteNumber(prebuildRecord.updatedAt),
+        }
+      : null,
+    production: normalizePromotionCommit(record.production),
+    queuedRequest: normalizeProductionPromoteRequest(record.queuedRequest),
+    requiredDelayMs: toFiniteNumber(record.requiredDelayMs) ?? 600_000,
+    sourceBranch: 'main',
+    targetBranch: 'production',
+    updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : null,
+    waitRemainingMs: toFiniteNumber(record.waitRemainingMs),
+  };
+}
+
 function normalizeDockerHealth(
   value: unknown,
   status?: unknown
@@ -1668,6 +1854,32 @@ export function readBlueGreenMonitoringSnapshot({
       fsImpl
     )
   );
+  const productionPromoteRequest = normalizeProductionPromoteRequest(
+    readJsonFile<Record<string, unknown>>(
+      path.join(
+        watchDir,
+        'control',
+        'blue-green-production-promote.request.json'
+      ),
+      fsImpl
+    )
+  );
+  const deploymentRevertRequest = normalizeDeploymentRevertRequest(
+    readJsonFile<Record<string, unknown>>(
+      path.join(
+        watchDir,
+        'control',
+        'blue-green-deployment-revert.request.json'
+      ),
+      fsImpl
+    )
+  );
+  const productionPromotion = normalizeProductionPromotionState(
+    readJsonFile<Record<string, unknown>>(
+      path.join(watchDir, 'blue-green-production-promotion.state.json'),
+      fsImpl
+    )
+  );
   const dockerRecoverySettings = normalizeBlueGreenDockerRecoverySettings(
     readJsonFile<BlueGreenDockerRecoverySettings>(
       path.join(
@@ -1807,9 +2019,11 @@ export function readBlueGreenMonitoringSnapshot({
       },
     },
     control: {
+      deploymentRevertRequest,
       deploymentPin,
       dockerRecoverySettings,
       instantRolloutRequest,
+      productionPromoteRequest,
     },
     buildCache,
     dockerResources: {
@@ -1844,6 +2058,7 @@ export function readBlueGreenMonitoringSnapshot({
     deployments: deployments as BlueGreenMonitoringSnapshot['deployments'],
     recoveryCache:
       recoveryCache as BlueGreenMonitoringSnapshot['recoveryCache'],
+    productionPromotion,
     overview: {
       averageBuildDurationMs:
         buildDurations.length > 0

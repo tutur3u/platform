@@ -2220,6 +2220,7 @@ export function ObservabilityDashboardClient({
           isLoading={deploymentsQuery.isLoading}
           loaded={deployments.length}
           onLoadMore={() => void deploymentsQuery.fetchNextPage()}
+          snapshot={watcherQuery.data ?? null}
           total={deploymentsTotal}
         />
       )}

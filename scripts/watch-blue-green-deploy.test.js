@@ -38,6 +38,7 @@ const {
   MIGRATION_STAGING_PORT_ENV,
   MAX_GIT_FAILURE_BACKOFF_MS,
   MAX_FAILED_DEPLOYMENTS_PER_COMMIT,
+  MAX_RECOVERY_CACHE_IMAGES,
   SELF_WATCHED_FILES,
   WATCH_ARGS_FILE,
   WATCH_PENDING_DEPLOY_ENV,
@@ -86,6 +87,8 @@ const {
   runBlueGreenDeploy,
   runPendingDeployAfterRestart,
   runDeployWatchIteration,
+  runDeploymentRevertRequestIteration,
+  runProductionPromotionIteration,
   runDeployWatchLoop,
   runWatcherCommand,
   removeStaleGitLock,
@@ -186,9 +189,44 @@ function createResult(stdout = '', { code = 0, stderr = '' } = {}) {
   };
 }
 
+function getMigrationCleanupService(command, args) {
+  if (command !== 'docker' || args[0] !== 'ps' || !args.includes('-aq')) {
+    return null;
+  }
+
+  const serviceFilter = args.find((arg) =>
+    String(arg).startsWith('label=com.docker.compose.service=')
+  );
+
+  return serviceFilter?.split('=').at(-1) ?? null;
+}
+
+function migrationCleanupResult(command, args) {
+  const serviceName = getMigrationCleanupService(command, args);
+
+  if (serviceName === 'hive-db-migrate') {
+    return createResult('hive-db-migrate-123\n');
+  }
+
+  if (serviceName === 'supermemory-db-migrate') {
+    return createResult('supermemory-db-migrate-123\n');
+  }
+
+  if (command === 'docker' && args[0] === 'rm' && args[1] === '-f') {
+    return createResult('');
+  }
+
+  return null;
+}
+
 function createRunCommandMock(responses) {
   return async (command, args) => {
     const key = `${command} ${args.join(' ')}`;
+    const cleanupResult = migrationCleanupResult(command, args);
+
+    if (cleanupResult) {
+      return cleanupResult;
+    }
 
     if (command === 'git' && args[0] === 'diff' && args[1] === '--name-only') {
       return createResult('apps/web/src/app/page.tsx\n');
@@ -3230,6 +3268,529 @@ test('runDeployWatchIteration deploys a pinned rollback without fetching upstrea
   }
 });
 
+test('runProductionPromotionIteration lets manual promote bypass only CI and age gates', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-production-promote-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const githubRequests = [];
+  const checkedAt = Date.parse('2026-06-10T10:00:00.000Z');
+  const mainHash = 'bbb2222222222222222222222222222222222222';
+  const productionHash = 'aaa1111111111111111111111111111111111111';
+
+  try {
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(
+      paths.productionPromoteRequestFile,
+      JSON.stringify(
+        {
+          bypassChecks: true,
+          bypassDelay: true,
+          kind: 'production-promote',
+          requestedAt: '2026-06-10T10:00:00.000Z',
+          requestedBy: 'user-1',
+          requestedByEmail: 'ops@platform.test',
+          sourceBranch: 'main',
+          targetBranch: 'production',
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    const runCommand = async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      if (
+        key ===
+        'git fetch origin refs/heads/main:refs/remotes/origin/main refs/heads/production:refs/remotes/origin/production'
+      ) {
+        return createResult('');
+      }
+
+      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/main') {
+        return createResult(
+          `${mainHash}\nbbb222\nFresh main candidate\n2026-06-10T09:59:30.000Z\n`
+        );
+      }
+
+      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/production') {
+        return createResult(
+          `${productionHash}\naaa111\nCurrent production\n2026-06-10T09:30:00.000Z\n`
+        );
+      }
+
+      if (
+        key === `git merge-base --is-ancestor ${productionHash} ${mainHash}`
+      ) {
+        return createResult('');
+      }
+
+      if (key === 'git config --get remote.origin.url') {
+        return createResult('git@github.com:tutur3u/platform.git\n');
+      }
+
+      if (
+        key ===
+        'git fetch origin refs/heads/production:refs/remotes/origin/production'
+      ) {
+        return createResult('');
+      }
+
+      if (key === 'git merge --ff-only origin/production') {
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    };
+
+    const githubRequestJson = async (requestPath, options = {}) => {
+      githubRequests.push({
+        body: options.body ?? null,
+        method: options.method ?? 'GET',
+        requestPath,
+      });
+
+      if (requestPath.includes('/check-runs')) {
+        return {
+          check_runs: [{ conclusion: 'failure', status: 'completed' }],
+        };
+      }
+
+      if (requestPath.endsWith('/status')) {
+        return {
+          statuses: [{ context: 'legacy-ci', state: 'failure' }],
+        };
+      }
+
+      if (options.method === 'PATCH') {
+        return { object: { sha: mainHash } };
+      }
+
+      throw new Error(`Unexpected GitHub request: ${requestPath}`);
+    };
+
+    const result = await runProductionPromotionIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        attachRuntime: async (state) => state,
+        checkedAt,
+        env: { GITHUB_TOKEN: 'test-token' },
+        fsImpl: fs,
+        githubRequestJson,
+        log: { info() {}, warn() {} },
+        now: () => checkedAt,
+        paths,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    const state = JSON.parse(
+      fs.readFileSync(paths.productionPromotionStateFile, 'utf8')
+    );
+    const patchRequest = githubRequests.find(
+      (request) => request.method === 'PATCH'
+    );
+
+    assert.equal(result.status, 'production-promoted');
+    assert.equal(state.decision.bypassed, true);
+    assert.equal(state.decision.status, 'manual-promoted');
+    assert.equal(state.production.hash, mainHash);
+    assert.equal(state.nextCheckAt, checkedAt + 5_000);
+    assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
+    assert.deepEqual(patchRequest.body, {
+      force: false,
+      sha: mainHash,
+    });
+    assert.ok(
+      calls.includes(
+        'git fetch origin refs/heads/production:refs/remotes/origin/production'
+      )
+    );
+    assert.ok(calls.includes('git merge --ff-only origin/production'));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeploymentRevertRequestIteration uses cached no-build recovery and pins the selected commit', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-cached-revert-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const composeProjectName = path.basename(tempDir);
+  const cachedImageTag = `${composeProjectName}-web-cache:old123`;
+  const calls = [];
+  const pendingStates = [];
+  const request = {
+    commitHash: 'old123456789old123456789old123456789old1',
+    commitShortHash: 'old123',
+    commitSubject: 'Known good cached image',
+    deploymentStamp: 'deploy-old123',
+    imageTag: cachedImageTag,
+    instant: true,
+    kind: 'deployment-revert',
+    requestedAt: '2026-06-10T10:05:00.000Z',
+    requestedBy: 'user-1',
+    requestedByEmail: 'ops@platform.test',
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(paths.blueGreen.stateFile, 'blue\n', 'utf8');
+    fs.writeFileSync(
+      paths.blueGreen.deploymentStampFile,
+      'deploy-current\n',
+      'utf8'
+    );
+    fs.writeFileSync(
+      paths.deploymentRevertRequestFile,
+      JSON.stringify(request, null, 2),
+      'utf8'
+    );
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: Date.parse('2026-06-10T09:00:00.000Z'),
+          activeColor: 'blue',
+          buildDurationMs: 20_000,
+          commitHash: request.commitHash,
+          commitShortHash: request.commitShortHash,
+          commitSubject: request.commitSubject,
+          deploymentStamp: request.deploymentStamp,
+          finishedAt: Date.parse('2026-06-10T09:00:00.000Z'),
+          imageTag: cachedImageTag,
+          startedAt: Date.parse('2026-06-10T08:59:40.000Z'),
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+
+    const runCommand = async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      const cleanupResult = migrationCleanupResult(command, args);
+      if (cleanupResult) return cleanupResult;
+
+      if (key === `docker image inspect ${cachedImageTag}`) {
+        return createResult('');
+      }
+
+      if (
+        key === `docker tag ${cachedImageTag} ${composeProjectName}-web-blue`
+      ) {
+        return createResult('');
+      }
+
+      if (
+        key === `docker tag ${cachedImageTag} ${composeProjectName}-web-green`
+      ) {
+        return createResult('');
+      }
+
+      if (
+        key ===
+        `docker ps -aq --filter name=^/${composeProjectName}-hive-1$ --format {{.ID}}`
+      ) {
+        return createResult('');
+      }
+
+      if (key === prodComposeHiveDbMigrateKey()) {
+        return createResult('');
+      }
+
+      if (key === prodComposePsAllKey('hive-db-migrate')) {
+        return createResult('');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue hive-blue hive-realtime meet-realtime`
+      ) {
+        return createResult('');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green hive-green`
+      ) {
+        return createResult('');
+      }
+
+      const serviceIds = new Map([
+        [BLUE_GREEN_PROXY_SERVICE, 'proxy-123'],
+        ['web-blue', 'blue-123'],
+        ['hive-blue', 'hive-blue-123'],
+        ['hive-realtime', 'hive-realtime-123'],
+        ['meet-realtime', 'meet-realtime-123'],
+        ['web-green', 'green-123'],
+        ['hive-green', 'hive-green-123'],
+      ]);
+
+      for (const [serviceName, id] of serviceIds) {
+        if (
+          key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q ${serviceName}`
+        ) {
+          return createResult(`${id}\n`);
+        }
+      }
+
+      if (
+        key.startsWith(
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} '
+        )
+      ) {
+        return createResult('healthy\n');
+      }
+
+      if (
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t` ||
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload` ||
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status` ||
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7814/login`
+      ) {
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    };
+
+    const result = await runDeploymentRevertRequestIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      request,
+      {
+        attachRuntime: async (state, history = null) => ({
+          ...state,
+          deployments: history ?? readDeploymentHistory(paths, fs),
+        }),
+        checkedAt: Date.parse('2026-06-10T10:05:00.000Z'),
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: () => Date.parse('2026-06-10T10:05:10.000Z'),
+        onDeploymentStart: (state) => pendingStates.push(state),
+        paths,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(
+      result.status,
+      'instant-reverted',
+      result.error instanceof Error ? result.error.message : undefined
+    );
+
+    const pin = JSON.parse(fs.readFileSync(paths.deploymentPinFile, 'utf8'));
+
+    assert.equal(result.deployments[0].deploymentKind, 'instant-revert');
+    assert.equal(result.deployments[0].imageTag, cachedImageTag);
+    assert.equal(pin.commitHash, request.commitHash);
+    assert.equal(pin.deploymentStamp, 'deploy-current');
+    assert.equal(fs.existsSync(paths.deploymentRevertRequestFile), false);
+    assert.equal(
+      pendingStates[0].pendingDeployment.deploymentKind,
+      'instant-revert'
+    );
+    assert.ok(
+      calls.includes(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue hive-blue hive-realtime meet-realtime`
+      )
+    );
+    assert.ok(
+      calls.includes(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green hive-green`
+      )
+    );
+    assert.equal(
+      calls.some((call) => call.startsWith('bun ')),
+      false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeploymentRevertRequestIteration falls back to rollback pin when no cached image is retained', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-uncached-revert-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  const request = {
+    commitHash: 'old123456789old123456789old123456789old1',
+    commitShortHash: 'old123',
+    commitSubject: 'Known good uncached image',
+    deploymentStamp: 'deploy-old123',
+    imageTag: null,
+    instant: false,
+    kind: 'deployment-revert',
+    requestedAt: '2026-06-10T10:05:00.000Z',
+    requestedBy: 'user-1',
+    requestedByEmail: 'ops@platform.test',
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.writeFileSync(
+      paths.deploymentRevertRequestFile,
+      JSON.stringify(request, null, 2),
+      'utf8'
+    );
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: Date.parse('2026-06-10T10:00:00.000Z'),
+          activeColor: 'blue',
+          buildDurationMs: 20_000,
+          commitHash: 'new9999999999999999999999999999999999999',
+          commitShortHash: 'new999',
+          commitSubject: 'Current production',
+          finishedAt: Date.parse('2026-06-10T10:00:00.000Z'),
+          startedAt: Date.parse('2026-06-10T09:59:40.000Z'),
+          status: 'successful',
+        },
+        {
+          activatedAt: Date.parse('2026-06-10T09:00:00.000Z'),
+          activeColor: 'green',
+          buildDurationMs: 20_000,
+          commitHash: request.commitHash,
+          commitShortHash: request.commitShortHash,
+          commitSubject: request.commitSubject,
+          deploymentStamp: request.deploymentStamp,
+          finishedAt: Date.parse('2026-06-10T09:00:00.000Z'),
+          startedAt: Date.parse('2026-06-10T08:59:40.000Z'),
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+
+    const runCommand = async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      if (key === 'git status --porcelain') {
+        return createResult('');
+      }
+
+      if (key === 'git rev-parse HEAD') {
+        return createResult('new9999999999999999999999999999999999999\n');
+      }
+
+      if (key === `git checkout --detach ${request.commitHash}`) {
+        return createResult('');
+      }
+
+      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+        return createResult(
+          `${request.commitHash}\nold123\nKnown good uncached image\n2026-06-10T09:00:00.000Z\n`
+        );
+      }
+
+      if (
+        key ===
+        `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      ) {
+        fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+        fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
+        fs.writeFileSync(
+          paths.blueGreen.deploymentStampFile,
+          'deploy-rollback\n',
+          'utf8'
+        );
+        return createResult('');
+      }
+
+      if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    };
+
+    const result = await runDeploymentRevertRequestIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      request,
+      {
+        checkedAt: Date.parse('2026-06-10T10:05:00.000Z'),
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: () => Date.parse('2026-06-10T10:05:10.000Z'),
+        paths,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    const pin = JSON.parse(fs.readFileSync(paths.deploymentPinFile, 'utf8'));
+
+    assert.equal(result.status, 'pinned-deployed');
+    assert.equal(result.deployments[0].deploymentKind, 'rollback-pin');
+    assert.equal(pin.commitHash, request.commitHash);
+    assert.equal(fs.existsSync(paths.deploymentRevertRequestFile), false);
+    assert.ok(
+      calls.includes(
+        `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      )
+    );
+    assert.equal(
+      calls.some((call) => call.includes('--no-build')),
+      false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('recovery cache retains five successful build images for instant revert', () => {
+  assert.equal(MAX_RECOVERY_CACHE_IMAGES, 5);
+});
+
 test('runDeployWatchIteration returns from detached HEAD when the deployment pin is cleared', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-pin-clear-'));
   const paths = getWatchPaths(tempDir);
@@ -4254,6 +4815,9 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       const key = `${command} ${args.join(' ')}`;
       calls.push(key);
 
+      const cleanupResult = migrationCleanupResult(command, args);
+      if (cleanupResult) return cleanupResult;
+
       if (
         command === 'git' &&
         args[0] === 'diff' &&
@@ -4382,6 +4946,9 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
     const runCommand = async (command, args) => {
       const key = `${command} ${args.join(' ')}`;
       calls.push(key);
+
+      const cleanupResult = migrationCleanupResult(command, args);
+      if (cleanupResult) return cleanupResult;
 
       if (key === 'git rev-parse --abbrev-ref HEAD') {
         return createResult('main\n');

@@ -10,6 +10,7 @@ const {
   hasComposeProfile,
   hasComposeServiceContainer,
   isComposeServiceHealthy,
+  removeComposeServiceContainersByLabelIfPresent,
   removeComposeServicesIfPresent,
   runComposeUpWithNameConflictRecovery,
   runChecked,
@@ -55,6 +56,11 @@ const BLUE_GREEN_DRAIN_TIMEOUT_MS = 5 * 60_000;
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const CLOUDFLARED_SERVICE = 'cloudflared';
 const HIVE_DB_MIGRATE_SERVICE = 'hive-db-migrate';
+const SUPERMEMORY_DB_MIGRATE_SERVICE = 'supermemory-db-migrate';
+const DB_MIGRATE_SERVICES = Object.freeze([
+  HIVE_DB_MIGRATE_SERVICE,
+  SUPERMEMORY_DB_MIGRATE_SERVICE,
+]);
 const PLATFORM_BUILD_METADATA_ENV_NAMES = Object.freeze([
   'PLATFORM_BUILD_BUILT_AT',
   'PLATFORM_BUILD_COMMIT_HASH',
@@ -2163,39 +2169,16 @@ async function runHiveDbForwardMigrations({
   );
 }
 
-async function removeHiveDbMigrateContainerIfPresent({
+async function removeDbMigrateContainersIfPresent({
   composeFile,
-  composeGlobalArgs = [],
   env,
   runCommand: run,
 }) {
-  if (
-    !(await hasComposeServiceContainer(HIVE_DB_MIGRATE_SERVICE, {
-      composeFile,
-      composeGlobalArgs,
-      env,
-      includeStopped: true,
-      runCommand: run,
-    }))
-  ) {
-    return;
-  }
-
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
-      composeFile,
-      composeGlobalArgs,
-      'rm',
-      '--stop',
-      '-f',
-      HIVE_DB_MIGRATE_SERVICE
-    ),
-    {
-      env,
-      runCommand: run,
-    }
-  );
+  await removeComposeServiceContainersByLabelIfPresent(DB_MIGRATE_SERVICES, {
+    composeFile,
+    env,
+    runCommand: run,
+  });
 }
 
 async function runHiveDbForwardMigrationsAndCleanup({
@@ -2213,9 +2196,8 @@ async function runHiveDbForwardMigrationsAndCleanup({
     });
   } catch (error) {
     try {
-      await removeHiveDbMigrateContainerIfPresent({
+      await removeDbMigrateContainersIfPresent({
         composeFile,
-        composeGlobalArgs,
         env,
         runCommand: run,
       });
@@ -2225,9 +2207,8 @@ async function runHiveDbForwardMigrationsAndCleanup({
     throw error;
   }
 
-  await removeHiveDbMigrateContainerIfPresent({
+  await removeDbMigrateContainersIfPresent({
     composeFile,
-    composeGlobalArgs,
     env,
     runCommand: run,
   });
@@ -3329,9 +3310,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             ...hiveServices,
           ],
         });
-        await removeHiveDbMigrateContainerIfPresent({
+        await removeDbMigrateContainersIfPresent({
           composeFile,
-          composeGlobalArgs: parsed.composeGlobalArgs,
           env: targetEnv,
           runCommand: run,
         });
@@ -3747,9 +3727,8 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
         ...standbyPhase1,
       ],
     });
-    await removeHiveDbMigrateContainerIfPresent({
+    await removeDbMigrateContainersIfPresent({
       composeFile,
-      composeGlobalArgs: parsed.composeGlobalArgs,
       env: standbyEnv,
       runCommand: run,
     });
@@ -3922,9 +3901,8 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
       ...activeServices,
     ],
   });
-  await removeHiveDbMigrateContainerIfPresent({
+  await removeDbMigrateContainersIfPresent({
     composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
     env: activeEnv,
     runCommand: run,
   });

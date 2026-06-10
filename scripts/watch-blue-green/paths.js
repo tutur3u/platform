@@ -44,9 +44,21 @@ const WATCH_INSTANT_ROLLOUT_REQUEST_FILE = path.join(
   WATCH_CONTROL_DIR,
   'blue-green-instant-rollout.request.json'
 );
+const WATCH_PRODUCTION_PROMOTE_REQUEST_FILE = path.join(
+  WATCH_CONTROL_DIR,
+  'blue-green-production-promote.request.json'
+);
+const WATCH_DEPLOYMENT_REVERT_REQUEST_FILE = path.join(
+  WATCH_CONTROL_DIR,
+  'blue-green-deployment-revert.request.json'
+);
 const WATCH_DEPLOYMENT_PIN_FILE = path.join(
   WATCH_CONTROL_DIR,
   'blue-green-deployment-pin.json'
+);
+const WATCH_PRODUCTION_PROMOTION_STATE_FILE = path.join(
+  WATCH_RUNTIME_DIR,
+  'blue-green-production-promotion.state.json'
 );
 const WATCH_REQUEST_LOG_DIR = path.join(
   WATCH_RUNTIME_DIR,
@@ -88,6 +100,11 @@ function getWatchPaths(rootDir = ROOT_DIR, env = process.env) {
       runtimeDir,
       'blue-green-deployment-build.lock'
     ),
+    deploymentRevertRequestFile: path.join(
+      runtimeDir,
+      'control',
+      'blue-green-deployment-revert.request.json'
+    ),
     deploymentPinFile: path.join(
       runtimeDir,
       'control',
@@ -108,6 +125,15 @@ function getWatchPaths(rootDir = ROOT_DIR, env = process.env) {
     pendingDeployFile: path.join(
       runtimeDir,
       'blue-green-auto-deploy.pending-deploy.json'
+    ),
+    productionPromoteRequestFile: path.join(
+      runtimeDir,
+      'control',
+      'blue-green-production-promote.request.json'
+    ),
+    productionPromotionStateFile: path.join(
+      runtimeDir,
+      'blue-green-production-promotion.state.json'
     ),
     requestLogDir: path.join(runtimeDir, 'blue-green-request-logs'),
     requestSummaryFile: path.join(
@@ -133,10 +159,13 @@ module.exports = {
   WATCH_ARGS_FILE,
   WATCH_CONTROL_DIR,
   WATCH_DEPLOYMENT_BUILD_LOCK_FILE,
+  WATCH_DEPLOYMENT_REVERT_REQUEST_FILE,
   WATCH_DEPLOYMENT_PIN_FILE,
   WATCH_DEPLOYMENT_STAGES_FILE,
   WATCH_HISTORY_FILE,
   WATCH_INSTANT_ROLLOUT_REQUEST_FILE,
+  WATCH_PRODUCTION_PROMOTE_REQUEST_FILE,
+  WATCH_PRODUCTION_PROMOTION_STATE_FILE,
   WATCH_LOCK_FILE,
   WATCH_LOG_FILE,
   WATCH_PENDING_DEPLOY_FILE,

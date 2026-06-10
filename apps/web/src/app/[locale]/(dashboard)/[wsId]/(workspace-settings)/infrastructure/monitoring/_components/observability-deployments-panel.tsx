@@ -1,9 +1,14 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   Clock,
+  GitBranch,
+  Loader2,
   RefreshCw,
+  Rocket,
+  RotateCcw,
   Search,
   SlidersHorizontal,
   TriangleAlert,
@@ -11,14 +16,29 @@ import {
 import type {
   BlueGreenDeploymentStage,
   BlueGreenDeploymentTarget,
+  BlueGreenMonitoringDeployment,
+  BlueGreenMonitoringSnapshot,
   ObservabilityDeployment,
+} from '@tuturuuu/internal-api/infrastructure';
+import {
+  requestBlueGreenDeploymentRevert,
+  requestBlueGreenProductionPromote,
 } from '@tuturuuu/internal-api/infrastructure';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 
 type StageStatus = BlueGreenDeploymentStage['status'];
 type StageDisplayStatus = StageStatus | 'not-applicable';
@@ -64,6 +84,49 @@ function timeLabel(value: number | null | undefined) {
     minute: '2-digit',
     month: 'short',
   }).format(value);
+}
+
+function durationLabel(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return '-';
+
+  const seconds = Math.ceil(value / 1000);
+  if (seconds < 60) return `${seconds}s`;
+
+  return `${Math.ceil(seconds / 60)}m`;
+}
+
+function findCachedDeployment(
+  cache: BlueGreenMonitoringSnapshot['recoveryCache'] | null | undefined,
+  commitHash: string | null | undefined
+) {
+  return (
+    cache?.deployments.find(
+      (deployment) =>
+        deployment.commitHash && deployment.commitHash === commitHash
+    ) ?? null
+  );
+}
+
+function getRollbackTargets(
+  deployments: BlueGreenMonitoringDeployment[]
+): BlueGreenMonitoringDeployment[] {
+  const seen = new Set<string>();
+
+  return deployments
+    .filter((deployment) => deployment.status === 'successful')
+    .filter((deployment) => {
+      if (!deployment.commitHash || seen.has(deployment.commitHash)) {
+        return false;
+      }
+
+      seen.add(deployment.commitHash);
+      return true;
+    })
+    .sort(
+      (left, right) =>
+        (right.finishedAt ?? right.activatedAt ?? right.startedAt ?? 0) -
+        (left.finishedAt ?? left.activatedAt ?? left.startedAt ?? 0)
+    );
 }
 
 function selectClassName() {
@@ -263,6 +326,7 @@ export function ObservabilityDeploymentsPanel({
   isLoading,
   loaded,
   onLoadMore,
+  snapshot,
   total,
 }: {
   deployments: ObservabilityDeployment[];
@@ -272,14 +336,20 @@ export function ObservabilityDeploymentsPanel({
   isLoading: boolean;
   loaded: number;
   onLoadMore: () => void;
+  snapshot: BlueGreenMonitoringSnapshot | null;
   total: number;
 }) {
   const t = useTranslations('blue-green-monitoring.observability');
+  const rootT = useTranslations('blue-green-monitoring');
+  const queryClient = useQueryClient();
   const [target, setTarget] = useState<TargetFilter>('all');
   const [status, setStatus] = useState('all');
   const [stage, setStage] = useState<StageFilter>('all');
   const [cacheMode, setCacheMode] = useState<CacheMode>('all');
   const [q, setQ] = useState('');
+  const [confirmAction, setConfirmAction] = useState<
+    'promote' | 'revert' | null
+  >(null);
   const stageLabels: Record<StageKey, string> = {
     'hive-migrate': t('deployments.stages.hive-migrate'),
     'hive-promote': t('deployments.stages.hive-promote'),
@@ -326,9 +396,260 @@ export function ObservabilityDeploymentsPanel({
   );
   const cacheHits = currentDeployment?.stageSummary.cacheHitCount ?? 0;
   const rebuilds = currentDeployment?.stageSummary.rebuildCount ?? 0;
+  const rollbackTargets = useMemo(
+    () => getRollbackTargets(snapshot?.deployments ?? []),
+    [snapshot?.deployments]
+  );
+  const [selectedRollbackHash, setSelectedRollbackHash] = useState(
+    rollbackTargets[0]?.commitHash ?? ''
+  );
+  const selectedRollbackTarget =
+    rollbackTargets.find(
+      (deployment) => deployment.commitHash === selectedRollbackHash
+    ) ??
+    rollbackTargets[0] ??
+    null;
+  const selectedCachedRollback = findCachedDeployment(
+    snapshot?.recoveryCache,
+    selectedRollbackTarget?.commitHash
+  );
+  const promotionState = snapshot?.productionPromotion ?? null;
+  const queuedProductionPromote =
+    snapshot?.control.productionPromoteRequest ?? promotionState?.queuedRequest;
+  const queuedDeploymentRevert = snapshot?.control.deploymentRevertRequest;
+  const promoteMutation = useMutation({
+    mutationFn: () => requestBlueGreenProductionPromote(),
+    onSuccess: async () => {
+      toast.success(rootT('controls.production_promote_success'));
+      setConfirmAction(null);
+      await queryClient.invalidateQueries({
+        queryKey: ['infrastructure', 'monitoring', 'blue-green'],
+      });
+    },
+    onError: () => {
+      toast.error(rootT('controls.production_promote_error'));
+    },
+  });
+  const revertMutation = useMutation({
+    mutationFn: () =>
+      requestBlueGreenDeploymentRevert({
+        commitHash: selectedRollbackTarget?.commitHash ?? '',
+        imageTag: selectedCachedRollback?.imageTag ?? null,
+        instant: Boolean(selectedCachedRollback?.imageTag),
+      }),
+    onSuccess: async () => {
+      toast.success(rootT('controls.deployment_revert_success'));
+      setConfirmAction(null);
+      await queryClient.invalidateQueries({
+        queryKey: ['infrastructure', 'monitoring', 'blue-green'],
+      });
+    },
+    onError: () => {
+      toast.error(rootT('controls.deployment_revert_error'));
+    },
+  });
+  const promoteDisabled =
+    !snapshot ||
+    promoteMutation.isPending ||
+    Boolean(queuedProductionPromote) ||
+    snapshot.watcher.health !== 'live';
+  const revertDisabled =
+    !selectedRollbackTarget ||
+    revertMutation.isPending ||
+    Boolean(queuedDeploymentRevert);
+  const confirmTitle =
+    confirmAction === 'promote'
+      ? rootT('controls.production_promote_confirm_title')
+      : rootT('controls.deployment_revert_confirm_title');
+  const confirmDescription =
+    confirmAction === 'promote'
+      ? rootT('controls.production_promote_confirm_description')
+      : rootT('controls.deployment_revert_confirm_description', {
+          commit:
+            selectedRollbackTarget?.commitShortHash ??
+            selectedRollbackTarget?.commitHash?.slice(0, 12) ??
+            rootT('states.unknown'),
+          mode: selectedCachedRollback?.imageTag
+            ? rootT('controls.deployment_revert_mode_instant')
+            : rootT('controls.deployment_revert_mode_rebuild'),
+        });
 
   return (
     <div className="space-y-4">
+      {snapshot ? (
+        <section className="rounded-lg border border-border bg-background p-4">
+          <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">
+                  {rootT('controls.production_promote_badge')}
+                </Badge>
+                <Badge variant="outline">
+                  {promotionState?.decision.status ?? rootT('states.unknown')}
+                </Badge>
+                {queuedProductionPromote ? (
+                  <Badge
+                    className="border-dynamic-yellow/35 bg-dynamic-yellow/10 text-dynamic-yellow"
+                    variant="outline"
+                  >
+                    {rootT('controls.production_promote_queued')}
+                  </Badge>
+                ) : null}
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-lg">
+                  {rootT('controls.production_promote_title')}
+                </h3>
+                <p className="mt-1 text-muted-foreground text-sm">
+                  {rootT('controls.production_promote_description')}
+                </p>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-4">
+                <PromotionMetric
+                  label={rootT('controls.production_main_commit')}
+                  value={
+                    promotionState?.main?.shortHash ??
+                    snapshot.watcher.latestCommit?.shortHash ??
+                    rootT('states.unknown')
+                  }
+                />
+                <PromotionMetric
+                  label={rootT('controls.production_branch_commit')}
+                  value={
+                    promotionState?.production?.shortHash ??
+                    rootT('states.unknown')
+                  }
+                />
+                <PromotionMetric
+                  label={rootT('controls.production_ci_status')}
+                  value={
+                    promotionState
+                      ? rootT(
+                          `controls.production_ci_${promotionState.ci.state}`
+                        )
+                      : rootT('states.unknown')
+                  }
+                />
+                <PromotionMetric
+                  label={rootT('controls.production_wait_remaining')}
+                  value={durationLabel(promotionState?.waitRemainingMs)}
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2 text-xs">
+                <StatusBadge
+                  icon={<GitBranch className="h-3.5 w-3.5" />}
+                  text={rootT('controls.production_prebuild_status', {
+                    status:
+                      promotionState?.prebuild?.status ?? rootT('states.none'),
+                  })}
+                />
+                <StatusBadge
+                  icon={<Clock className="h-3.5 w-3.5" />}
+                  text={rootT('controls.production_next_check', {
+                    time: timeLabel(promotionState?.nextCheckAt),
+                  })}
+                />
+              </div>
+
+              <Button
+                disabled={promoteDisabled}
+                onClick={() => setConfirmAction('promote')}
+              >
+                {promoteMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Rocket className="mr-2 h-4 w-4" />
+                )}
+                {queuedProductionPromote
+                  ? rootT('controls.production_promote_queued')
+                  : rootT('controls.production_promote_action')}
+              </Button>
+            </div>
+
+            <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+              <div>
+                <h3 className="font-semibold text-base">
+                  {rootT('controls.deployment_revert_title')}
+                </h3>
+                <p className="mt-1 text-muted-foreground text-sm">
+                  {rootT('controls.deployment_revert_description', {
+                    count: snapshot.recoveryCache.limit,
+                  })}
+                </p>
+              </div>
+
+              <select
+                className={cn(selectClassName(), 'w-full')}
+                disabled={rollbackTargets.length === 0}
+                onChange={(event) =>
+                  setSelectedRollbackHash(event.target.value)
+                }
+                value={selectedRollbackTarget?.commitHash ?? ''}
+              >
+                {rollbackTargets.map((deployment) => {
+                  const cached = findCachedDeployment(
+                    snapshot.recoveryCache,
+                    deployment.commitHash
+                  );
+                  return (
+                    <option
+                      key={deployment.commitHash}
+                      value={deployment.commitHash ?? ''}
+                    >
+                      {deployment.commitShortHash ??
+                        deployment.commitHash?.slice(0, 12)}{' '}
+                      {deployment.commitSubject ?? rootT('states.none')}{' '}
+                      {cached
+                        ? rootT('controls.deployment_revert_option_cached')
+                        : rootT('controls.deployment_revert_option_rebuild')}
+                    </option>
+                  );
+                })}
+              </select>
+
+              <div className="flex flex-wrap gap-2">
+                <Badge
+                  className={
+                    selectedCachedRollback
+                      ? 'border-dynamic-green/35 bg-dynamic-green/10 text-dynamic-green'
+                      : 'border-dynamic-yellow/35 bg-dynamic-yellow/10 text-dynamic-yellow'
+                  }
+                  variant="outline"
+                >
+                  {selectedCachedRollback
+                    ? rootT('controls.deployment_revert_mode_instant')
+                    : rootT('controls.deployment_revert_mode_rebuild')}
+                </Badge>
+                {queuedDeploymentRevert ? (
+                  <Badge variant="outline">
+                    {rootT('controls.deployment_revert_queued')}
+                  </Badge>
+                ) : null}
+              </div>
+
+              <Button
+                className="w-full"
+                disabled={revertDisabled}
+                onClick={() => setConfirmAction('revert')}
+                variant="outline"
+              >
+                {revertMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                )}
+                {selectedCachedRollback
+                  ? rootT('controls.deployment_revert_instant_action')
+                  : rootT('controls.deployment_revert_rebuild_action')}
+              </Button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {activeDeployment && activeStage ? (
         <div className="flex gap-3 rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/10 p-3 text-sm">
           <Clock className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-blue" />
@@ -605,6 +926,65 @@ export function ObservabilityDeploymentsPanel({
           )}
         </div>
       </section>
+
+      <Dialog
+        onOpenChange={(open) => {
+          if (!open) setConfirmAction(null);
+        }}
+        open={confirmAction != null}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{confirmTitle}</DialogTitle>
+            <DialogDescription>{confirmDescription}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              onClick={() => setConfirmAction(null)}
+              type="button"
+              variant="outline"
+            >
+              {rootT('controls.confirm_cancel')}
+            </Button>
+            <Button
+              disabled={promoteMutation.isPending || revertMutation.isPending}
+              onClick={() => {
+                if (confirmAction === 'promote') {
+                  promoteMutation.mutate();
+                } else if (confirmAction === 'revert') {
+                  revertMutation.mutate();
+                }
+              }}
+              type="button"
+            >
+              {promoteMutation.isPending || revertMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {confirmAction === 'promote'
+                ? rootT('controls.production_promote_confirm_action')
+                : rootT('controls.deployment_revert_confirm_action')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function PromotionMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border/60 bg-muted/20 p-3">
+      <div className="text-muted-foreground text-xs">{label}</div>
+      <div className="mt-1 truncate font-semibold text-sm">{value}</div>
+    </div>
+  );
+}
+
+function StatusBadge({ icon, text }: { icon: ReactNode; text: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background px-2 py-1 text-muted-foreground">
+      {icon}
+      {text}
+    </span>
   );
 }

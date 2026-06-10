@@ -97,9 +97,10 @@ async function getCommitMetadata(
       runCommand: run,
     })
   ).trim();
-  const [hash, shortHash, subject] = out.split('\n');
+  const [hash, shortHash, subject, committedAt] = out.split('\n');
 
   return {
+    committedAt: committedAt ?? null,
     hash: hash ?? '',
     shortHash: shortHash ?? '',
     subject: subject ?? '',

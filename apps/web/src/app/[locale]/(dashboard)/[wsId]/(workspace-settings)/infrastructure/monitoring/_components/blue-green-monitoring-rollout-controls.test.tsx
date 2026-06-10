@@ -111,6 +111,7 @@ function createSnapshot(overrides: SnapshotOverrides = {}) {
       total: 0,
     },
     control: {
+      deploymentRevertRequest: null,
       deploymentPin: null,
       dockerRecoverySettings: {
         dockerRecoveryPollMs: 5000,
@@ -130,6 +131,7 @@ function createSnapshot(overrides: SnapshotOverrides = {}) {
         updatedByEmail: null,
       },
       instantRolloutRequest: null,
+      productionPromoteRequest: null,
     },
     dockerResources: {
       allContainers: [],
@@ -209,9 +211,10 @@ function createSnapshot(overrides: SnapshotOverrides = {}) {
     },
     recoveryCache: {
       deployments: [],
-      limit: 3,
+      limit: 5,
       total: 0,
     },
+    productionPromotion: null,
     source: {
       historyAvailable: true,
       monitoringDirAvailable: true,

@@ -8,6 +8,10 @@ type FsLike = Pick<
 
 const DOCKER_WEB_CONTROL_ENV_KEY = 'PLATFORM_BLUE_GREEN_CONTROL_DIR';
 const INSTANT_ROLLOUT_REQUEST_FILE = 'blue-green-instant-rollout.request.json';
+const PRODUCTION_PROMOTE_REQUEST_FILE =
+  'blue-green-production-promote.request.json';
+const DEPLOYMENT_REVERT_REQUEST_FILE =
+  'blue-green-deployment-revert.request.json';
 const DEPLOYMENT_PIN_FILE = 'blue-green-deployment-pin.json';
 const WATCHER_RECOVERY_REQUEST_FILE =
   'blue-green-watcher-recovery.request.json';
@@ -24,6 +28,30 @@ const DEFAULT_DOCKER_EMAIL_ALERT_COOLDOWN_MS = 30 * 60_000;
 
 export interface BlueGreenInstantRolloutRequest {
   kind: 'sync-standby';
+  requestedAt: string;
+  requestedBy: string;
+  requestedByEmail: string | null;
+}
+
+export interface BlueGreenProductionPromoteRequest {
+  bypassChecks: true;
+  bypassDelay: true;
+  kind: 'production-promote';
+  requestedAt: string;
+  requestedBy: string;
+  requestedByEmail: string | null;
+  sourceBranch: 'main';
+  targetBranch: 'production';
+}
+
+export interface BlueGreenDeploymentRevertRequest {
+  commitHash: string;
+  commitShortHash: string | null;
+  commitSubject: string | null;
+  deploymentStamp: string | null;
+  imageTag: string | null;
+  instant: boolean;
+  kind: 'deployment-revert';
   requestedAt: string;
   requestedBy: string;
   requestedByEmail: string | null;
@@ -292,6 +320,155 @@ export function readBlueGreenInstantRolloutRequest({
       typeof parsed.requestedBy === 'string'
     ) {
       return parsed as BlueGreenInstantRolloutRequest;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+export function queueBlueGreenProductionPromoteRequest(
+  {
+    requestedAt = new Date().toISOString(),
+    requestedBy,
+    requestedByEmail,
+  }: {
+    requestedAt?: string;
+    requestedBy: string;
+    requestedByEmail: string | null;
+  },
+  { fsImpl = fs }: { fsImpl?: FsLike } = {}
+) {
+  const controlDir = resolveMonitoringControlDir(fsImpl);
+  const request: BlueGreenProductionPromoteRequest = {
+    bypassChecks: true,
+    bypassDelay: true,
+    kind: 'production-promote',
+    requestedAt,
+    requestedBy,
+    requestedByEmail,
+    sourceBranch: 'main',
+    targetBranch: 'production',
+  };
+
+  fsImpl.mkdirSync(controlDir.path, { recursive: true });
+  fsImpl.writeFileSync(
+    path.join(controlDir.path, PRODUCTION_PROMOTE_REQUEST_FILE),
+    JSON.stringify(request, null, 2),
+    'utf8'
+  );
+
+  return request;
+}
+
+export function readBlueGreenProductionPromoteRequest({
+  fsImpl = fs,
+}: {
+  fsImpl?: FsLike;
+} = {}) {
+  const controlDir = resolveMonitoringControlDir(fsImpl);
+  const filePath = path.join(controlDir.path, PRODUCTION_PROMOTE_REQUEST_FILE);
+
+  if (!fsImpl.existsSync(filePath)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(fsImpl.readFileSync(filePath, 'utf8'));
+
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed) &&
+      parsed.kind === 'production-promote' &&
+      parsed.sourceBranch === 'main' &&
+      parsed.targetBranch === 'production' &&
+      parsed.bypassChecks === true &&
+      parsed.bypassDelay === true &&
+      typeof parsed.requestedAt === 'string' &&
+      typeof parsed.requestedBy === 'string'
+    ) {
+      return parsed as BlueGreenProductionPromoteRequest;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+export function queueBlueGreenDeploymentRevertRequest(
+  {
+    commitHash,
+    commitShortHash = null,
+    commitSubject = null,
+    deploymentStamp = null,
+    imageTag = null,
+    instant,
+    requestedAt = new Date().toISOString(),
+    requestedBy,
+    requestedByEmail,
+  }: Omit<BlueGreenDeploymentRevertRequest, 'kind' | 'requestedAt'> & {
+    requestedAt?: string;
+  },
+  { fsImpl = fs }: { fsImpl?: FsLike } = {}
+) {
+  if (commitHash.trim().length < 7) {
+    throw new Error('A valid deployment commit hash is required.');
+  }
+
+  const controlDir = resolveMonitoringControlDir(fsImpl);
+  const request: BlueGreenDeploymentRevertRequest = {
+    commitHash,
+    commitShortHash,
+    commitSubject,
+    deploymentStamp,
+    imageTag,
+    instant,
+    kind: 'deployment-revert',
+    requestedAt,
+    requestedBy,
+    requestedByEmail,
+  };
+
+  fsImpl.mkdirSync(controlDir.path, { recursive: true });
+  fsImpl.writeFileSync(
+    path.join(controlDir.path, DEPLOYMENT_REVERT_REQUEST_FILE),
+    JSON.stringify(request, null, 2),
+    'utf8'
+  );
+
+  return request;
+}
+
+export function readBlueGreenDeploymentRevertRequest({
+  fsImpl = fs,
+}: {
+  fsImpl?: FsLike;
+} = {}) {
+  const controlDir = resolveMonitoringControlDir(fsImpl);
+  const filePath = path.join(controlDir.path, DEPLOYMENT_REVERT_REQUEST_FILE);
+
+  if (!fsImpl.existsSync(filePath)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(fsImpl.readFileSync(filePath, 'utf8'));
+
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed) &&
+      parsed.kind === 'deployment-revert' &&
+      typeof parsed.commitHash === 'string' &&
+      parsed.commitHash.length >= 7 &&
+      typeof parsed.instant === 'boolean' &&
+      typeof parsed.requestedAt === 'string' &&
+      typeof parsed.requestedBy === 'string'
+    ) {
+      return parsed as BlueGreenDeploymentRevertRequest;
     }
   } catch {
     return null;

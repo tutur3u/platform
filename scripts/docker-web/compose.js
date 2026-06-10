@@ -379,6 +379,60 @@ async function hasComposeServiceContainer(
   return containerId.length > 0;
 }
 
+async function listComposeServiceContainerIdsByLabel(
+  serviceName,
+  { composeFile, env, runCommand: run }
+) {
+  const result = await runChecked(
+    'docker',
+    [
+      'ps',
+      '-aq',
+      '--filter',
+      `label=com.docker.compose.project=${getComposeProjectName(composeFile, env)}`,
+      '--filter',
+      `label=com.docker.compose.service=${serviceName}`,
+      '--format',
+      '{{.ID}}',
+    ],
+    {
+      env,
+      runCommand: run,
+      stdio: 'pipe',
+    }
+  );
+
+  return result.stdout
+    .split(/\s+/u)
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+async function removeComposeServiceContainersByLabelIfPresent(
+  serviceNames,
+  { composeFile, env, runCommand: run }
+) {
+  for (const serviceName of serviceNames) {
+    const containerIds = await listComposeServiceContainerIdsByLabel(
+      serviceName,
+      {
+        composeFile,
+        env,
+        runCommand: run,
+      }
+    );
+
+    if (containerIds.length === 0) {
+      continue;
+    }
+
+    await runChecked('docker', ['rm', '-f', ...containerIds], {
+      env,
+      runCommand: run,
+    });
+  }
+}
+
 async function isComposeServiceHealthy(
   serviceName,
   { composeFile, composeGlobalArgs = [], env, runCommand: run }
@@ -553,6 +607,8 @@ module.exports = {
   hasComposeProfile,
   hasComposeServiceContainer,
   isComposeServiceHealthy,
+  listComposeServiceContainerIdsByLabel,
+  removeComposeServiceContainersByLabelIfPresent,
   removeComposeServicesIfPresent,
   runComposeUpWithNameConflictRecovery,
   runChecked,

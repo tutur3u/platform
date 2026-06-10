@@ -4,9 +4,13 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   clearBlueGreenDeploymentPin,
+  queueBlueGreenDeploymentRevertRequest,
+  queueBlueGreenProductionPromoteRequest,
   readBlueGreenDeploymentPin,
+  readBlueGreenDeploymentRevertRequest,
   readBlueGreenDockerRecoveryAlertState,
   readBlueGreenDockerRecoverySettings,
+  readBlueGreenProductionPromoteRequest,
   writeBlueGreenDeploymentPin,
   writeBlueGreenDockerRecoveryAlertState,
   writeBlueGreenDockerRecoverySettings,
@@ -54,6 +58,54 @@ describe('blue-green monitoring controls', () => {
       clearBlueGreenDeploymentPin();
 
       expect(readBlueGreenDeploymentPin()).toBeNull();
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('persists production promote and deployment revert requests', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-promote-revert-')
+    );
+
+    try {
+      process.env.PLATFORM_BLUE_GREEN_CONTROL_DIR = tempDir;
+
+      const promote = queueBlueGreenProductionPromoteRequest({
+        requestedAt: '2026-06-10T10:00:00.000Z',
+        requestedBy: 'user-1',
+        requestedByEmail: 'ops@platform.test',
+      });
+      const revert = queueBlueGreenDeploymentRevertRequest({
+        commitHash: 'old123456789',
+        commitShortHash: 'old1234',
+        commitSubject: 'Known good deployment',
+        deploymentStamp: 'deploy-old',
+        imageTag: 'platform-web-cache:old1234',
+        instant: true,
+        requestedAt: '2026-06-10T10:05:00.000Z',
+        requestedBy: 'user-2',
+        requestedByEmail: null,
+      });
+
+      expect(promote).toMatchObject({
+        bypassChecks: true,
+        kind: 'production-promote',
+        sourceBranch: 'main',
+      });
+      expect(readBlueGreenProductionPromoteRequest()).toMatchObject({
+        requestedBy: 'user-1',
+        targetBranch: 'production',
+      });
+      expect(revert).toMatchObject({
+        commitHash: 'old123456789',
+        instant: true,
+        kind: 'deployment-revert',
+      });
+      expect(readBlueGreenDeploymentRevertRequest()).toMatchObject({
+        commitShortHash: 'old1234',
+        imageTag: 'platform-web-cache:old1234',
+      });
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }

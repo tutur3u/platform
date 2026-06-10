@@ -83,9 +83,14 @@ const {
   updatePlatformProjectDeploymentStatus,
 } = require('./projects.js');
 const {
+  clearDeploymentRevertRequest,
   clearInstantRolloutRequest,
+  clearProductionPromoteRequest,
+  readDeploymentRevertRequest,
   readDeploymentPin,
   readInstantRolloutRequest,
+  readProductionPromoteRequest,
+  writeDeploymentPin,
 } = require('./control.js');
 const {
   DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
@@ -156,6 +161,16 @@ const {
   CONTAINER_REFRESH_WATCHED_FILES,
   SELF_WATCHED_FILES,
 } = require('./deploy-watcher-watched-paths.js');
+const {
+  createProductionPromotionState,
+  evaluateProductionPromotion,
+  fastForwardLocalProduction,
+  fetchProductionPromotionRefs,
+  getGitHubCiSummary,
+  getGitHubRepository,
+  updateProductionRefToMain,
+  writeProductionPromotionState,
+} = require('./production-promotion.js');
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
 const DEFAULT_STANDBY_REFRESH_AFTER_MS = 15 * 60_000;
 const DEFAULT_LOCK_CONFLICT_ACTION = 'fail';
@@ -163,7 +178,7 @@ const DEFAULT_REPLACE_WATCHER_TIMEOUT_MS = 5_000;
 const CONTAINER_SELF_RESTART_EXIT_CODE = 75;
 const CONTAINER_REFRESH_EXIT_CODE = 76;
 const MAX_FAILED_DEPLOYMENTS_PER_COMMIT = 3;
-const MAX_RECOVERY_CACHE_IMAGES = 3;
+const MAX_RECOVERY_CACHE_IMAGES = 5;
 const DOCKER_DAEMON_RECOVERY_POLL_MS_ENV =
   'DOCKER_WEB_WATCHER_DOCKER_RECOVERY_POLL_MS';
 const DOCKER_DAEMON_RECOVERY_TIMEOUT_MS_ENV =
@@ -2060,6 +2075,7 @@ async function runDetachedCommitFullBlueGreenDeploy({
 async function runDetachedParentFallbackStandbyRefresh({
   checkedAt,
   deployCommit,
+  deploymentKind = 'parent-fallback-standby-refresh',
   env,
   envFilePath = WEB_ENV_FILE,
   fsImpl = fs,
@@ -2088,7 +2104,7 @@ async function runDetachedParentFallbackStandbyRefresh({
       latestCommit: deployCommit,
       pendingDeployment: createPendingDeploymentEntry({
         activeColor: standbyRefreshCandidate.standbyColor,
-        deploymentKind: 'parent-fallback-standby-refresh',
+        deploymentKind,
         latestCommit: deployCommit,
         startedAt: refreshStartedAt,
         status: 'building',
@@ -2139,7 +2155,7 @@ async function runDetachedParentFallbackStandbyRefresh({
           commitHash: deployCommit.hash,
           commitShortHash: deployCommit.shortHash,
           commitSubject: deployCommit.subject,
-          deploymentKind: 'parent-fallback-standby-refresh',
+          deploymentKind,
           deploymentStamp,
           finishedAt: refreshFinishedAt,
           ...(imageTag ? { imageTag } : {}),
@@ -2168,7 +2184,7 @@ async function runDetachedParentFallbackStandbyRefresh({
           commitHash: deployCommit.hash,
           commitShortHash: deployCommit.shortHash,
           commitSubject: deployCommit.subject,
-          deploymentKind: 'parent-fallback-standby-refresh',
+          deploymentKind,
           finishedAt: refreshFinishedAt,
           startedAt: refreshStartedAt,
           status: 'failed',
@@ -3125,6 +3141,248 @@ async function mirrorExistingWatchSession(
   }
 }
 
+function findSuccessfulDeploymentByCommit(deployments = [], commitHash) {
+  return deployments.find(
+    (entry) => entry?.status === 'successful' && entry.commitHash === commitHash
+  );
+}
+
+function createDeploymentPinFromRevertRequest(request, deployment) {
+  return {
+    activeColor: deployment.activeColor ?? null,
+    commitHash: deployment.commitHash,
+    commitShortHash:
+      deployment.commitShortHash ?? deployment.commitHash.slice(0, 12),
+    commitSubject: deployment.commitSubject ?? null,
+    deploymentStamp: deployment.deploymentStamp ?? null,
+    kind: 'deployment-pin',
+    requestedAt: request.requestedAt,
+    requestedBy: request.requestedBy,
+    requestedByEmail: request.requestedByEmail ?? null,
+  };
+}
+
+async function runDeploymentRevertRequestIteration(
+  target,
+  request,
+  {
+    attachRuntime,
+    checkedAt,
+    deployCommand = DEFAULT_DEPLOY_COMMAND,
+    env,
+    envFilePath = WEB_ENV_FILE,
+    fsImpl = fs,
+    log = console,
+    now = () => Date.now(),
+    onDeploymentStart = () => {},
+    paths = getWatchPaths(),
+    platformProjectDeploymentStatusUpdater = updatePlatformProjectDeploymentStatus,
+    platformProjectReader = readPlatformProject,
+    processImpl = process,
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  const deploymentHistory = readDeploymentHistory(paths, fsImpl);
+  const deployment = findSuccessfulDeploymentByCommit(
+    deploymentHistory,
+    request.commitHash
+  );
+
+  if (!deployment) {
+    clearDeploymentRevertRequest({ fsImpl, paths });
+    log.warn?.(
+      `Ignoring deployment revert request for ${request.commitHash.slice(0, 12)} because no successful retained deployment matches it.`
+    );
+    return attachRuntime({
+      checkedAt,
+      status: 'revert-target-missing',
+    });
+  }
+
+  const pin = createDeploymentPinFromRevertRequest(request, deployment);
+  const cachedImageTag =
+    typeof deployment.imageTag === 'string' &&
+    deployment.imageTag.length > 0 &&
+    (request.imageTag == null || request.imageTag === deployment.imageTag)
+      ? deployment.imageTag
+      : null;
+
+  if (!cachedImageTag) {
+    writeDeploymentPin(pin, { fsImpl, paths });
+    clearDeploymentRevertRequest({ fsImpl, paths });
+    log.warn?.(
+      `Reverting production to ${pin.commitShortHash} through rollback pin; no cached image is retained for an instant revert.`
+    );
+    return runPinnedDeploymentIteration(target, pin, {
+      deployCommand,
+      env,
+      envFilePath,
+      fsImpl,
+      log,
+      now,
+      onDeploymentStart,
+      paths,
+      platformProjectDeploymentStatusUpdater,
+      platformProjectReader,
+      rootDir,
+      runCommand: run,
+    });
+  }
+
+  const latestCommit = {
+    hash: deployment.commitHash,
+    shortHash: deployment.commitShortHash ?? deployment.commitHash.slice(0, 7),
+    subject: deployment.commitSubject ?? 'Cached production revert',
+  };
+  const startedAt = now();
+
+  onDeploymentStart({
+    checkedAt,
+    latestCommit,
+    pendingDeployment: createPendingDeploymentEntry({
+      activeColor: deployment.activeColor ?? null,
+      deploymentKind: 'instant-revert',
+      latestCommit,
+      startedAt,
+      status: 'deploying',
+    }),
+  });
+
+  try {
+    log.warn?.(
+      `Instant reverting production to ${latestCommit.shortHash} from cached image ${cachedImageTag}.`
+    );
+    const recovery = await runBlueGreenCachedRecovery({
+      cachedImageTag,
+      env,
+      envFilePath,
+      fsImpl,
+      latestCommit,
+      now,
+      paths,
+      processImpl,
+      rootDir,
+      runCommand: run,
+    });
+    const finishedAt = now();
+    const history = appendDeploymentHistory(
+      {
+        activatedAt: finishedAt,
+        activeColor: recovery.activeColor,
+        buildDurationMs: Math.max(0, finishedAt - startedAt),
+        commitHash: latestCommit.hash,
+        commitShortHash: latestCommit.shortHash,
+        commitSubject: latestCommit.subject,
+        deploymentKind: 'instant-revert',
+        deploymentStamp: recovery.deploymentStamp,
+        finishedAt,
+        imageTag: recovery.cachedImageTag,
+        revertedBy: request.requestedBy,
+        revertedByEmail: request.requestedByEmail ?? null,
+        startedAt,
+        status: 'successful',
+      },
+      {
+        fsImpl,
+        paths,
+      }
+    );
+    await pruneBlueGreenRecoveryCacheImages(history, {
+      env,
+      extraImageTag: recovery.cachedImageTag,
+      log,
+      runCommand: run,
+    });
+    writeDeploymentPin(
+      {
+        ...pin,
+        activeColor: recovery.activeColor,
+        deploymentStamp: recovery.deploymentStamp,
+      },
+      { fsImpl, paths }
+    );
+    clearDeploymentRevertRequest({ fsImpl, paths });
+
+    const migration = await finalizeComposeProjectMigrationIfRequested({
+      env,
+      log,
+      now,
+      rootDir,
+      runCommand: run,
+    });
+
+    return attachRuntime(
+      {
+        cachedImageTag,
+        checkedAt,
+        latestCommit,
+        migration,
+        status: 'instant-reverted',
+      },
+      history
+    );
+  } catch (error) {
+    if (error instanceof DeploymentBuildLockConflictError) {
+      const activeConflict = getConflictFromDeploymentBuildLockError(
+        error,
+        now
+      );
+      logActiveDeploymentDeferralOnce(
+        `Instant revert for ${latestCommit.shortHash} is waiting because another deployment is already active`,
+        activeConflict,
+        { fsImpl, log, paths }
+      );
+      return attachRuntime(
+        createDeploymentActiveResult(activeConflict, {
+          checkedAt,
+          error,
+          latestCommit,
+        })
+      );
+    }
+
+    const finishedAt = now();
+    const history = await appendFailedDeploymentHistoryAndNotify(
+      {
+        buildDurationMs: Math.max(0, finishedAt - startedAt),
+        commitHash: latestCommit.hash,
+        commitShortHash: latestCommit.shortHash,
+        commitSubject: latestCommit.subject,
+        deploymentKind: 'instant-revert',
+        finishedAt,
+        revertedBy: request.requestedBy,
+        revertedByEmail: request.requestedByEmail ?? null,
+        startedAt,
+        status: 'failed',
+      },
+      error,
+      {
+        env,
+        fsImpl,
+        log,
+        paths,
+        target,
+      }
+    );
+
+    clearDeploymentRevertRequest({ fsImpl, paths });
+    log.error?.(
+      `Instant revert for ${latestCommit.shortHash} failed: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    return attachRuntime(
+      {
+        checkedAt,
+        error,
+        latestCommit,
+        status: 'instant-revert-failed',
+      },
+      history
+    );
+  }
+}
+
 async function runPinnedDeploymentIteration(
   target,
   deploymentPin,
@@ -3376,6 +3634,312 @@ async function runPinnedDeploymentIteration(
   }
 }
 
+async function runProductionPromotionIteration(
+  target,
+  {
+    attachRuntime,
+    checkedAt,
+    env,
+    envFilePath = WEB_ENV_FILE,
+    fsImpl = fs,
+    githubRequestJson = null,
+    log = console,
+    now = () => Date.now(),
+    onDeploymentStart = () => {},
+    paths = getWatchPaths(),
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  if (target.branch !== 'production') {
+    return null;
+  }
+
+  const request = readProductionPromoteRequest(paths, fsImpl);
+  let refs;
+
+  try {
+    refs = await fetchProductionPromotionRefs({
+      env,
+      remote: target.remote,
+      rootDir,
+      runCommand: run,
+      targetBranch: target.branch,
+    });
+  } catch (error) {
+    writeProductionPromotionState(
+      createProductionPromotionState({
+        ci: {
+          completed: 0,
+          failing: 0,
+          pending: 0,
+          state: 'unavailable',
+          total: 0,
+          unavailableReason:
+            error instanceof Error ? error.message : String(error),
+        },
+        evaluation: {
+          blockedReasons: ['git-unavailable'],
+          bypassed: Boolean(request),
+          ready: false,
+          waitRemainingMs: null,
+        },
+        now: checkedAt,
+        request,
+        status: 'git-unavailable',
+        target,
+      }),
+      { fsImpl, paths }
+    );
+    log.warn?.(
+      `Unable to inspect main -> production promotion state: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return request
+      ? attachRuntime({
+          checkedAt,
+          error,
+          status: 'production-promotion-failed',
+        })
+      : null;
+  }
+
+  const deploymentHistory = readDeploymentHistory(paths, fsImpl);
+  const cachedDeployment = getLatestCachedSuccessfulDeployment(
+    deploymentHistory,
+    refs.main.hash
+  );
+  const repository = await getGitHubRepository({
+    env,
+    rootDir,
+    runCommand: run,
+  }).catch(() => null);
+  const ci = await getGitHubCiSummary({
+    env,
+    mainHash: refs.main.hash,
+    owner: repository?.owner,
+    repo: repository?.repo,
+    ...(githubRequestJson ? { requestJson: githubRequestJson } : {}),
+  });
+  const prebuild = cachedDeployment
+    ? {
+        imageTag: cachedDeployment.imageTag ?? null,
+        status: 'cached',
+        updatedAt: cachedDeployment.finishedAt ?? null,
+      }
+    : {
+        imageTag: null,
+        status:
+          refs.main.hash === refs.production.hash ? 'not-needed' : 'missing',
+        updatedAt: null,
+      };
+  const evaluation = evaluateProductionPromotion({
+    ci,
+    isFastForward: refs.fastForward,
+    main: refs.main,
+    now: checkedAt,
+    prebuild,
+    production: refs.production,
+    request,
+  });
+  const stateStatus = evaluation.ready
+    ? request
+      ? 'manual-ready'
+      : 'ready'
+    : refs.main.hash === refs.production.hash
+      ? 'up-to-date'
+      : 'waiting';
+
+  writeProductionPromotionState(
+    createProductionPromotionState({
+      ci,
+      evaluation,
+      main: refs.main,
+      now: checkedAt,
+      prebuild,
+      production: refs.production,
+      request,
+      status: stateStatus,
+      target,
+    }),
+    { fsImpl, paths }
+  );
+
+  if (
+    refs.main.hash &&
+    refs.production.hash &&
+    refs.main.hash !== refs.production.hash &&
+    refs.fastForward &&
+    !cachedDeployment &&
+    !request &&
+    ci.state !== 'unavailable' &&
+    !hasReachedDeploymentFailureLimit(deploymentHistory, refs.main.hash)
+  ) {
+    const runtimeSnapshot = await attachRuntime({
+      checkedAt,
+      latestCommit: refs.main,
+      status: 'production-prebuild-check',
+    });
+    const standbyRefreshCandidate = getStandbyRefreshCandidate(
+      runtimeSnapshot,
+      refs.main,
+      {
+        now: checkedAt,
+        refreshAfterMs: 0,
+      }
+    );
+
+    if (standbyRefreshCandidate) {
+      log.info?.(
+        `Prebuilding production candidate ${refs.main.shortHash} on standby ${standbyRefreshCandidate.standbyColor}.`
+      );
+      const prebuildResult = await runDetachedParentFallbackStandbyRefresh({
+        checkedAt,
+        deployCommit: refs.main,
+        deploymentKind: 'production-prebuild',
+        env,
+        envFilePath,
+        fsImpl,
+        log,
+        now,
+        onDeploymentStart,
+        paths,
+        rootDir,
+        runCommand: run,
+        standbyRefreshCandidate,
+        targetBranch: target.branch,
+      });
+
+      const prebuiltDeployment = prebuildResult.history?.find?.(
+        (entry) =>
+          entry?.commitHash === refs.main.hash &&
+          typeof entry?.imageTag === 'string'
+      );
+
+      writeProductionPromotionState(
+        createProductionPromotionState({
+          ci,
+          evaluation,
+          main: refs.main,
+          now: now(),
+          prebuild: {
+            imageTag: prebuiltDeployment?.imageTag ?? null,
+            status: prebuildResult.success ? 'prebuilt' : 'failed',
+            updatedAt: now(),
+          },
+          production: refs.production,
+          request,
+          status: prebuildResult.success ? 'prebuilt' : 'prebuild-failed',
+          target,
+        }),
+        { fsImpl, paths }
+      );
+
+      return attachRuntime(
+        {
+          checkedAt,
+          error: prebuildResult.error,
+          latestCommit: refs.main,
+          status: prebuildResult.success
+            ? 'production-prebuilt'
+            : 'production-prebuild-failed',
+        },
+        prebuildResult.history
+      );
+    }
+  }
+
+  if (!evaluation.ready) {
+    if (
+      request &&
+      evaluation.blockedReasons.some((reason) =>
+        ['not-fast-forward', 'up-to-date'].includes(reason)
+      )
+    ) {
+      clearProductionPromoteRequest({ fsImpl, paths });
+    }
+
+    return null;
+  }
+
+  try {
+    await updateProductionRefToMain({
+      env,
+      mainHash: refs.main.hash,
+      owner: repository?.owner,
+      repo: repository?.repo,
+      ...(githubRequestJson ? { requestJson: githubRequestJson } : {}),
+    });
+    await fastForwardLocalProduction({
+      env,
+      remote: target.remote,
+      rootDir,
+      runCommand: run,
+      targetBranch: target.branch,
+    });
+    clearProductionPromoteRequest({ fsImpl, paths });
+
+    const promotedState = createProductionPromotionState({
+      ci,
+      evaluation,
+      main: refs.main,
+      now: now(),
+      prebuild,
+      production: refs.main,
+      request: null,
+      status: request ? 'manual-promoted' : 'promoted',
+      target,
+    });
+    writeProductionPromotionState(promotedState, { fsImpl, paths });
+    log.info?.(
+      `Promoted production to main ${refs.main.shortHash} via GitHub ref update.`
+    );
+
+    return attachRuntime({
+      checkedAt,
+      latestCommit: refs.main,
+      productionPromotion: promotedState,
+      status: 'production-promoted',
+    });
+  } catch (error) {
+    if (request) {
+      clearProductionPromoteRequest({ fsImpl, paths });
+    }
+
+    const failedState = createProductionPromotionState({
+      ci,
+      evaluation: {
+        ...evaluation,
+        blockedReasons: [
+          ...evaluation.blockedReasons,
+          error instanceof Error ? error.message : String(error),
+        ],
+        ready: false,
+      },
+      main: refs.main,
+      now: now(),
+      prebuild,
+      production: refs.production,
+      request: request ? null : request,
+      status: 'promote-failed',
+      target,
+    });
+    writeProductionPromotionState(failedState, { fsImpl, paths });
+    log.warn?.(
+      `Production promotion for ${refs.main.shortHash} failed: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    return request
+      ? attachRuntime({
+          checkedAt,
+          error,
+          latestCommit: refs.main,
+          productionPromotion: failedState,
+          status: 'production-promotion-failed',
+        })
+      : null;
+  }
+}
+
 async function runDeployWatchIteration(
   target,
   {
@@ -3460,6 +4024,32 @@ async function runDeployWatchIteration(
   }
 
   const deploymentPin = readDeploymentPin(paths, fsImpl);
+  const deploymentRevertRequest = readDeploymentRevertRequest(paths, fsImpl);
+
+  if (deploymentRevertRequest) {
+    return runDeploymentRevertRequestIteration(
+      target,
+      deploymentRevertRequest,
+      {
+        attachRuntime,
+        checkedAt,
+        deployCommand,
+        env,
+        envFilePath,
+        fsImpl,
+        log,
+        now,
+        onDeploymentStart,
+        paths,
+        platformProjectDeploymentStatusUpdater:
+          updatePlatformProjectDeploymentStatus,
+        platformProjectReader,
+        processImpl,
+        rootDir,
+        runCommand: run,
+      }
+    );
+  }
 
   if (deploymentPin) {
     return runPinnedDeploymentIteration(target, deploymentPin, {
@@ -3526,6 +4116,28 @@ async function runDeployWatchIteration(
       checkedAt,
       status: 'dirty',
     });
+  }
+
+  const productionPromotionResult = await runProductionPromotionIteration(
+    target,
+    {
+      attachRuntime,
+      checkedAt,
+      env,
+      envFilePath,
+      fsImpl,
+      log,
+      now,
+      onDeploymentStart,
+      paths,
+      processImpl,
+      rootDir,
+      runCommand: run,
+    }
+  );
+
+  if (productionPromotionResult) {
+    return productionPromotionResult;
   }
 
   try {
@@ -6247,6 +6859,7 @@ module.exports = {
   DISPLAY_DEPLOYMENTS,
   MAX_GIT_FAILURE_BACKOFF_MS,
   MAX_FAILED_DEPLOYMENTS_PER_COMMIT,
+  MAX_RECOVERY_CACHE_IMAGES,
   MAX_DEPLOYMENTS,
   MAX_EVENTS,
   MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
@@ -6274,6 +6887,7 @@ module.exports = {
   appendDeploymentHistory,
   buildDashboardView,
   clearInstantRolloutRequest,
+  clearProductionPromoteRequest,
   clearWatchStatus,
   clearContainerManagedWatcherState,
   clearPendingDeployRequest,
@@ -6327,6 +6941,7 @@ module.exports = {
   readDeploymentHistory,
   readDockerDaemonRecoverySettings,
   readInstantRolloutRequest,
+  readProductionPromoteRequest,
   readPendingDeployRequest,
   readWatchArgsFile,
   readWatchLock,
@@ -6339,6 +6954,8 @@ module.exports = {
   runBlueGreenDeploy,
   runPendingDeployAfterRestart,
   runDeployWatchIteration,
+  runDeploymentRevertRequestIteration,
+  runProductionPromotionIteration,
   runDeployWatchLoop,
   runWatcherCommand,
   removeStaleGitLock,

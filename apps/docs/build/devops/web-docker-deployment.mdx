@@ -1204,33 +1204,66 @@ Behavior:
     blue/green builds. If platform, standby, recovery, or another imported
     project build is already active, the project poll is deferred instead of
     starting a second Docker build.
-15. If watcher runtime code such as `scripts/watch-blue-green-deploy.js`,
+15. When the locked branch is `production`, the watcher also evaluates
+    `main` for production promotion every 5 seconds. It prebuilds the newest
+    fast-forward `main` candidate on the standby lane before CI is green when
+    GitHub checks are inspectable, then updates `production` to `main` only
+    after the `main` commit is at least 10 minutes old and every latest GitHub
+    check run/status is non-failing with at least one CI signal. The promotion
+    writes `tmp/docker-web/watch/blue-green-production-promotion.state.json`
+    with the main/production SHAs, age gate, CI summary, prebuild state, next
+    evaluation time, and latest decision. Missing `GITHUB_TOKEN`, missing
+    GitHub repository metadata, dirty worktrees, deployment locks, divergent
+    `production`, or an active rollback pin block automatic promotion.
+16. Infrastructure operators can queue
+    `tmp/docker-web/watch/control/blue-green-production-promote.request.json`
+    from the deployments dashboard to promote `main` immediately. Manual
+    promotion bypasses only the CI-green and 10 minute age gates; it still uses
+    a non-forced GitHub `production` ref update, requires a fast-forward
+    ancestry relationship, and leaves normal post-switch blue/green health
+    checks in the deploy path.
+17. Infrastructure operators can queue
+    `tmp/docker-web/watch/control/blue-green-deployment-revert.request.json`
+    to revert production to a retained successful deployment. The watcher keeps
+    the 5 newest unique successful deployed image tags for instant revert; a
+    cached revert retags the selected image, starts active/standby with
+    `--no-build`, health-checks through the normal proxy path, records
+    deployment kind `instant-revert`, and writes a deployment pin so automatic
+    promotion does not immediately overwrite the rollback. Older retained
+    deployments remain revertable through the existing rollback pin path, which
+    may rebuild because no cached image is available.
+18. After forward database migrations finish, blue/green workflows remove
+    completed `hive-db-migrate` and `supermemory-db-migrate` containers by
+    Compose service labels. This catches stopped one-off `docker compose run`
+    containers such as `tuturuuu-hive-db-migrate-*` that can otherwise make the
+    Docker cluster look unhealthy even after the migration succeeded.
+19. If watcher runtime code such as `scripts/watch-blue-green-deploy.js`,
     `scripts/docker-web/blue-green.js`, or `scripts/docker-web/env.js` changed
     in the pulled revision, the current watcher does not deploy from the old
     process. It releases its lock, spawns a replacement watcher with the same
     CLI args, and exits first.
-16. The replacement watcher refreshes the live `web-proxy` nginx config and
+20. The replacement watcher refreshes the live `web-proxy` nginx config and
     workers in place if blue/green is already serving traffic, verifies proxy
     routing through `/__platform/drain-status`, and only then starts the new
     blue/green build/promotion.
-17. If compose or helper-image wiring changed, including
+21. If compose or helper-image wiring changed, including
     `docker-compose.web.prod.yml`, Hive service files, MarkItDown service files,
     `apps/storage-unzip-proxy` package/source files, or
     `apps/web/docker/cron-runner*`, the containerized watcher recreates its own
     compose service before the pending deploy handoff. The deploy then includes
     only the affected buildable helper images in the blue/green build command
     instead of rebuilding every service on every commit.
-18. Retries recoverable Git command failures instead of exiting. The first retry
+22. Retries recoverable Git command failures instead of exiting. The first retry
     waits 1 minute, then the watcher backs off exponentially on consecutive Git
     failures up to a 15 minute ceiling.
-19. Caps deployment attempts at 3 failures per commit. A recovered pending
+23. Caps deployment attempts at 3 failures per commit. A recovered pending
     handoff failure is recorded, the pending request is cleared, and the
     watcher keeps polling; once the cap is reached, that commit reports
     `retry-limited` until a new commit is available or an operator pins a
     different deployment.
-20. Stops immediately if the checked-out branch changes while the watcher is
+24. Stops immediately if the checked-out branch changes while the watcher is
     running.
-21. If another watcher already owns the lock, a new invocation can fail with
+25. If another watcher already owns the lock, a new invocation can fail with
     guidance, mirror the active watcher with `--resume-if-running`, or replace
     it with `--replace-existing`.
 
