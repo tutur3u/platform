@@ -134,6 +134,7 @@ function getReturnAppName(returnApp: string | null) {
   if (returnApp === 'learn') return 'Learn';
   if (returnApp === 'tulearn') return 'Learn';
   if (returnApp === 'teach') return 'Teach';
+  if (returnApp === 'chat') return 'Chat';
   if (returnApp === 'nova') return 'Nova';
   if (returnApp === 'cms') return 'CMS';
   if (returnApp === 'inventory') return 'Inventory';

@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { resolveInternalAppUrl } from './app-url';
 import { getLocalInternalAppUrl } from './internal-domains';
 import { getTuturuuuPortlessAllowedDevOrigins } from './portless';
 
@@ -162,6 +163,20 @@ export function isTuturuuuNextDeployedEnvironment(
   );
 }
 
+function resolveNextPublicPlatformAppUrl(env: Environment) {
+  if (!env.NEXT_PUBLIC_APP_URL) {
+    return undefined;
+  }
+
+  const resolvedUrl = resolveInternalAppUrl({
+    appName: 'platform',
+    candidates: [env.NEXT_PUBLIC_APP_URL],
+    fallback: '',
+  });
+
+  return resolvedUrl || undefined;
+}
+
 export function resolveTuturuuuWebAppUrl({
   centralPort,
   env = process.env,
@@ -180,9 +195,9 @@ export function resolveTuturuuuWebAppUrl({
 
   return trimTrailingSlashes(
     env.INTERNAL_WEB_API_ORIGIN ||
-      env.NEXT_PUBLIC_WEB_APP_URL ||
       env.WEB_APP_URL ||
-      env.NEXT_PUBLIC_APP_URL ||
+      env.NEXT_PUBLIC_WEB_APP_URL ||
+      resolveNextPublicPlatformAppUrl(env) ||
       (isTuturuuuNextDeployedEnvironment(env) ? productionUrl : localUrl)
   );
 }

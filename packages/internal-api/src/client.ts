@@ -22,6 +22,46 @@ export type InternalApiClientOptions = {
 type HeaderAccessor = Pick<Headers, 'get'>;
 const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
 const SUPABASE_AUTH_COOKIE_PATTERN = /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
+const KNOWN_CUSTOM_SATELLITE_HOSTS = new Set(['nova.ai.vn', 'rewise.me']);
+const KNOWN_NON_PLATFORM_TUTURUUU_HOSTS = new Set([
+  'apps.tuturuuu.com',
+  'cms.tuturuuu.com',
+  'calendar.tuturuuu.com',
+  'chat.tuturuuu.com',
+  'drive.tuturuuu.com',
+  'mail.tuturuuu.com',
+  'meet.tuturuuu.com',
+  'qr.tuturuuu.com',
+  'mira.tuturuuu.com',
+  'tasks.tuturuuu.com',
+  'finance.tuturuuu.com',
+  'inventory.tuturuuu.com',
+  'track.tuturuuu.com',
+  'learn.tuturuuu.com',
+  'teach.tuturuuu.com',
+  'hive.tuturuuu.com',
+  'mind.tuturuuu.com',
+]);
+const KNOWN_NON_PLATFORM_LOCALHOST_PORTS = new Set([
+  '7804',
+  '7805',
+  '7806',
+  '7807',
+  '7808',
+  '7809',
+  '7810',
+  '7811',
+  '7812',
+  '7813',
+  '7814',
+  '7815',
+  '7816',
+  '7817',
+  '7818',
+  '7819',
+  '7820',
+  '7821',
+]);
 
 export class InternalApiError extends Error {
   constructor(
@@ -61,6 +101,47 @@ function resolveConfiguredOrigin(value?: string): string | null {
     : `https://${firstValue}`;
 
   return tryParseAbsoluteUrl(normalized)?.origin ?? null;
+}
+
+function isKnownNonPlatformSatelliteOrigin(origin: string) {
+  const url = tryParseAbsoluteUrl(origin);
+
+  if (!url) {
+    return false;
+  }
+
+  const hostname = url.hostname.toLowerCase();
+
+  if (KNOWN_CUSTOM_SATELLITE_HOSTS.has(hostname)) {
+    return true;
+  }
+
+  if (KNOWN_NON_PLATFORM_TUTURUUU_HOSTS.has(hostname)) {
+    return true;
+  }
+
+  if (hostname.endsWith('.tuturuuu.localhost')) {
+    return true;
+  }
+
+  if (
+    ['localhost', '127.0.0.1', '::1', '[::1]'].includes(hostname) &&
+    KNOWN_NON_PLATFORM_LOCALHOST_PORTS.has(url.port)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function resolveNextPublicAppUrlAsWebOrigin() {
+  const origin = resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL);
+
+  if (!origin || isKnownNonPlatformSatelliteOrigin(origin)) {
+    return null;
+  }
+
+  return origin;
 }
 
 export function encodePathSegment(value: string) {
@@ -119,7 +200,7 @@ export function getConfiguredInternalApiBaseUrl() {
     resolveConfiguredOrigin(process.env.INTERNAL_WEB_API_ORIGIN) ||
       resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
       resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
-      resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
+      resolveNextPublicAppUrlAsWebOrigin() ||
       resolveConfiguredOrigin(process.env.COOLIFY_URL) ||
       resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
       (isProductionDeployment()

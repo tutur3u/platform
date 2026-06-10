@@ -191,6 +191,38 @@ describe('resolveTuturuuuWebAppUrl', () => {
       })
     ).toBe('https://tuturuuu.com');
   });
+
+  it('ignores known satellite NEXT_PUBLIC_APP_URL values when resolving the Web app URL', () => {
+    expect(
+      resolveTuturuuuWebAppUrl({
+        env: {
+          NEXT_PUBLIC_APP_URL: 'https://chat.tuturuuu.com',
+          NODE_ENV: 'production',
+        },
+      })
+    ).toBe('https://tuturuuu.com');
+  });
+
+  it('keeps explicit Web origins authoritative over satellite app URLs', () => {
+    expect(
+      resolveTuturuuuWebAppUrl({
+        env: {
+          NEXT_PUBLIC_APP_URL: 'https://chat.tuturuuu.com',
+          WEB_APP_URL: 'https://web.internal.example.com/',
+        },
+      })
+    ).toBe('https://web.internal.example.com');
+  });
+
+  it('allows platform NEXT_PUBLIC_APP_URL values as Web app URLs', () => {
+    expect(
+      resolveTuturuuuWebAppUrl({
+        env: {
+          NEXT_PUBLIC_APP_URL: 'https://tuturuuu.com/',
+        },
+      })
+    ).toBe('https://tuturuuu.com');
+  });
 });
 
 describe('trimTrailingSlashes', () => {

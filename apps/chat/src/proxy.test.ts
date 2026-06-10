@@ -128,6 +128,27 @@ describe('Chat proxy auth handoff', () => {
     );
   });
 
+  it('sends unauthenticated production protected pages to the local Chat login handoff', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValueOnce({
+      claims: null,
+      ok: false,
+      refreshed: false,
+      response: NextResponse.next(),
+    });
+    const request = new NextRequest('https://chat.tuturuuu.com/personal');
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBe(
+      'https://chat.tuturuuu.com/login?next=%2Fpersonal'
+    );
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
+      requireWebAppSession: true,
+      sessionMode: 'supabase-first',
+      targetApp: 'chat',
+    });
+  });
+
   it('allows protected pages when both local and Web app-session cookies are present', async () => {
     mocks.refreshAppSessionForRequest.mockResolvedValueOnce({
       claims: appSessionClaims(),

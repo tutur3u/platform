@@ -136,4 +136,15 @@ describe('Login page', () => {
     expect(screen.getByText('Powered by Learn')).toBeInTheDocument();
     expect(screen.getByTestId('login-form')).toBeInTheDocument();
   });
+
+  it('renders the Chat app header for Chat verifier return URLs', async () => {
+    await renderLoginPage({
+      returnUrl:
+        'https://chat.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
+    });
+
+    expect(screen.getByText('Chat')).toBeInTheDocument();
+    expect(screen.getByText('Powered by Chat')).toBeInTheDocument();
+    expect(screen.getByTestId('login-form')).toBeInTheDocument();
+  });
 });

@@ -124,6 +124,29 @@ describe('cross-app return route', () => {
     expect(returnUrl.searchParams.get('token')).toBe('cross-app-token');
   });
 
+  it('routes Chat production verifier returns with a chat target app token', async () => {
+    const response = await POST(
+      createRequest(
+        'https://chat.tuturuuu.com/verify-token?nextUrl=%2Fpersonal'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      returnUrl: string;
+      targetApp: string;
+    };
+    const returnUrl = new URL(body.returnUrl);
+
+    expect(body.targetApp).toBe('chat');
+    expect(returnUrl.origin).toBe('https://chat.tuturuuu.com');
+    expect(returnUrl.pathname).toBe('/verify-token');
+    expect(returnUrl.searchParams.get('nextUrl')).toBe('/personal');
+    expect(returnUrl.searchParams.get('token')).toBe('cross-app-token');
+    expect(returnUrl.searchParams.get('originApp')).toBe('web');
+    expect(returnUrl.searchParams.get('targetApp')).toBe('chat');
+  });
+
   it('resolves the root platform URL when supplied over http', async () => {
     const response = await POST(
       createRequest('http://tuturuuu.com', { generateToken: false })

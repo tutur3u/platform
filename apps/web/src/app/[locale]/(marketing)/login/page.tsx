@@ -9,6 +9,13 @@ const DOMAINS = {
     href: BASE_URL,
     logo: TUTURUUU_LOCAL_LOGO_URL,
   },
+  CHAT: {
+    name: 'Chat',
+    href: DEV_MODE
+      ? getTuturuuuPortlessAppOrigin('chat')
+      : 'https://chat.tuturuuu.com',
+    logo: TUTURUUU_LOCAL_LOGO_URL,
+  },
   NOVA: {
     name: 'Nova',
     href: DEV_MODE

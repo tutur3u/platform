@@ -242,6 +242,32 @@ describe('LoginForm returnUrl navigation', () => {
     queryClient.clear();
   });
 
+  it('creates a tokenized Chat verifier return URL for authenticated Chat returns', async () => {
+    const chatReturnUrl =
+      'https://chat.tuturuuu.com/verify-token?nextUrl=%2Fpersonal';
+    const tokenizedChatReturnUrl =
+      'https://chat.tuturuuu.com/verify-token?nextUrl=%2Fpersonal&token=cross-app-token&originApp=web&targetApp=chat';
+    mocks.createCrossAppReturnUrlWithInternalApi.mockResolvedValue({
+      returnUrl: tokenizedChatReturnUrl,
+      targetApp: 'chat',
+    });
+
+    const queryClient = renderLoginForm(chatReturnUrl);
+
+    await waitFor(() => {
+      expect(mocks.createCrossAppReturnUrlWithInternalApi).toHaveBeenCalledWith(
+        {
+          returnUrl: chatReturnUrl,
+        }
+      );
+    });
+
+    expect(mocks.resolveCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
+    expect(mocks.refreshSession).toHaveBeenCalled();
+    expect(mocks.assign).toHaveBeenCalledWith(tokenizedChatReturnUrl);
+    queryClient.clear();
+  });
+
   it('requires confirmation for configured external app returnUrls', async () => {
     const originalPublicExternalDomains =
       process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS;
