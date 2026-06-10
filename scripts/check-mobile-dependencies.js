@@ -19,6 +19,14 @@ const APPLE_CI_COMPATIBILITY_RULES = [
     reason:
       'connectivity_plus 7.1.1 uses NWPath.isUltraConstrained, which fails the current Xcode 16.4 iOS/macOS CI SDK builds.',
   },
+  {
+    firstIncompatibleVersion: '12.4.0',
+    packageName: 'device_info_plus',
+    requiredConstraint: '12.3.0',
+    requiredLockVersion: '12.3.0',
+    reason:
+      'device_info_plus 12.4.0 uses NSProcessInfo.isiOSAppOnVision, which fails the current Xcode 16.4 iOS simulator CI SDK build.',
+  },
 ];
 
 function normalizeVersion(version) {

@@ -17,7 +17,7 @@ dependencies:
   crypto: ^3.0.7
   cupertino_icons: ^1.0.9
   dart_quill_delta: ^10.8.3
-  device_info_plus: ^12.4.0
+  device_info_plus: 12.3.0
   equatable: ^2.0.8
   file_picker: ^11.0.2
   firebase_analytics: ^12.2.0

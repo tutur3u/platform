@@ -154,6 +154,7 @@ test('mobile dependency compatibility parses pubspec constraints and lock versio
   const pubspecText = [
     'dependencies:',
     '  connectivity_plus: 7.0.0',
+    '  device_info_plus: 12.3.0',
     '  flutter:',
     '    sdk: flutter',
     '',
@@ -167,6 +168,13 @@ test('mobile dependency compatibility parses pubspec constraints and lock versio
     '      url: "https://pub.dev"',
     '    source: hosted',
     '    version: "7.0.0"',
+    '  device_info_plus:',
+    '    dependency: "direct main"',
+    '    description:',
+    '      name: device_info_plus',
+    '      url: "https://pub.dev"',
+    '    source: hosted',
+    '    version: "12.3.0"',
     '  other_package:',
     '    version: "1.0.0"',
     '',
@@ -176,7 +184,12 @@ test('mobile dependency compatibility parses pubspec constraints and lock versio
     getDirectDependencyConstraint(pubspecText, 'connectivity_plus'),
     '7.0.0'
   );
+  assert.equal(
+    getDirectDependencyConstraint(pubspecText, 'device_info_plus'),
+    '12.3.0'
+  );
   assert.equal(getLockedPackageVersion(lockText, 'connectivity_plus'), '7.0.0');
+  assert.equal(getLockedPackageVersion(lockText, 'device_info_plus'), '12.3.0');
   assert.deepEqual(
     collectMobileDependencyCompatibilityIssues({ lockText, pubspecText }),
     []
@@ -201,6 +214,16 @@ test('mobile dependency compatibility rejects connectivity_plus Apple CI regress
   const issues = collectMobileDependencyCompatibilityIssues({
     lockText,
     pubspecText,
+    rules: [
+      {
+        firstIncompatibleVersion: '7.1.1',
+        packageName: 'connectivity_plus',
+        requiredConstraint: '7.0.0',
+        requiredLockVersion: '7.0.0',
+        reason:
+          'connectivity_plus 7.1.1 uses NWPath.isUltraConstrained, which fails the current Xcode 16.4 iOS/macOS CI SDK builds.',
+      },
+    ],
   });
 
   assert.equal(issues.length, 2);
@@ -211,9 +234,46 @@ test('mobile dependency compatibility rejects connectivity_plus Apple CI regress
   );
 });
 
+test('mobile dependency compatibility rejects device_info_plus Apple CI regression', () => {
+  const pubspecText = ['dependencies:', '  device_info_plus: ^12.4.0', ''].join(
+    '\n'
+  );
+  const lockText = [
+    'packages:',
+    '  device_info_plus:',
+    '    dependency: "direct main"',
+    '    description:',
+    '      name: device_info_plus',
+    '    source: hosted',
+    '    version: "12.4.0"',
+    '',
+  ].join('\n');
+
+  const issues = collectMobileDependencyCompatibilityIssues({
+    lockText,
+    pubspecText,
+    rules: [
+      {
+        firstIncompatibleVersion: '12.4.0',
+        packageName: 'device_info_plus',
+        requiredConstraint: '12.3.0',
+        requiredLockVersion: '12.3.0',
+        reason:
+          'device_info_plus 12.4.0 uses NSProcessInfo.isiOSAppOnVision, which fails the current Xcode 16.4 iOS simulator CI SDK build.',
+      },
+    ],
+  });
+
+  assert.equal(issues.length, 2);
+  assert.ok(issues[0].includes('must pin device_info_plus to 12.3.0'));
+  assert.ok(issues[1].includes('must resolve device_info_plus 12.3.0'));
+  assert.ok(issues.every((issue) => issue.includes('isiOSAppOnVision')));
+});
+
 test('compareVersions orders semantic version strings numerically', () => {
   assert.equal(compareVersions('7.1.1', '7.1.0'), 1);
   assert.equal(compareVersions('7.0.0', '7.0.0'), 0);
   assert.equal(compareVersions('7.0.0', '7.1.1'), -1);
   assert.equal(compareVersions('7.10.0', '7.2.0'), 1);
+  assert.equal(compareVersions('12.4.0', '12.3.0'), 1);
 });

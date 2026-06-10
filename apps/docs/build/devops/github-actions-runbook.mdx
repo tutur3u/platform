@@ -323,10 +323,11 @@ package ranges; otherwise Flutter 3.44+ can fail before the simulator build
 with an Xcode package dependency resolution error.
 
 Root `bun check` runs `scripts/check-mobile-dependencies.js` to catch mobile
-dependency versions known to fail Apple CI before the native build starts. Keep
-`connectivity_plus` pinned to `7.0.0` while the iOS/macOS build workflows use
-Xcode 16.4, because `7.1.1` references `NWPath.isUltraConstrained`, which is not
-available in that SDK.
+dependency versions known to fail Apple CI before the native build starts. While
+the iOS/macOS build workflows use Xcode 16.4, keep `connectivity_plus` pinned to
+`7.0.0` because `7.1.1` references `NWPath.isUltraConstrained`, and keep
+`device_info_plus` pinned to `12.3.0` because `12.4.0` references
+`NSProcessInfo.isiOSAppOnVision`; those symbols are not available in that CI SDK.
 
 ## Fast Triage Checklist
 
