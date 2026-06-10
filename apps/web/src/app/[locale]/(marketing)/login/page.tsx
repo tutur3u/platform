@@ -1,7 +1,14 @@
+import { normalizeClientRedirectPath } from '@tuturuuu/auth/cross-app';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 import { redirect } from 'next/navigation';
 import { BASE_URL, DEV_MODE } from '@/constants/common';
+import {
+  getLocalE2ESupabaseBrowserConfig,
+  isLocalE2EAuthBypassEnabled,
+} from '@/lib/auth/local-e2e';
 import { LoginContent, type LoginDomain } from './login-content';
 
 const DOMAINS = {
@@ -89,6 +96,46 @@ const appendSearchParam = (
   }
 };
 
+const getSafeLocalRedirectPath = (value: string | undefined) => {
+  const normalizedPath = normalizeClientRedirectPath(value, '');
+
+  if (!normalizedPath) {
+    return null;
+  }
+
+  try {
+    const parsedPath = new URL(normalizedPath, 'https://tuturuuu.local');
+
+    return parsedPath.pathname.endsWith('/login') ? null : normalizedPath;
+  } catch {
+    return null;
+  }
+};
+
+const getAuthenticatedLoginRedirectPath = (params: LoginSearchParams) => {
+  if (getSingleSearchParam(params.multiAccount) === 'true') {
+    return null;
+  }
+
+  const returnUrl = getSingleSearchParam(params.returnUrl);
+  if (returnUrl) {
+    return getSafeLocalRedirectPath(returnUrl);
+  }
+
+  return getSafeLocalRedirectPath(getSingleSearchParam(params.nextUrl)) ?? '/';
+};
+
+async function hasAuthenticatedSession() {
+  try {
+    const supabase = await createClient();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+    return Boolean(user);
+  } catch {
+    return false;
+  }
+}
+
 export default async function Login({ searchParams }: LoginProps) {
   const params = await searchParams;
   const code = getSingleSearchParam(params.code);
@@ -105,6 +152,11 @@ export default async function Login({ searchParams }: LoginProps) {
 
   const returnUrl = getSingleSearchParam(params.returnUrl);
   const multiAccount = getSingleSearchParam(params.multiAccount) === 'true';
+  const authenticatedRedirectPath = getAuthenticatedLoginRedirectPath(params);
+
+  if (authenticatedRedirectPath && (await hasAuthenticatedSession())) {
+    redirect(authenticatedRedirectPath);
+  }
 
   const returnUrlDomain = getReturnUrlDomain(returnUrl);
 
@@ -113,11 +165,16 @@ export default async function Login({ searchParams }: LoginProps) {
         domain.href.includes(returnUrlDomain)
       )
     : DOMAINS.TUTURUUU;
+  const localE2EAuthBypass = isLocalE2EAuthBypassEnabled();
 
   return (
     <LoginContent
       currentDomain={currentDomain ?? null}
+      localE2EAuthBypass={localE2EAuthBypass}
       multiAccount={multiAccount}
+      runtimeSupabaseConfig={
+        localE2EAuthBypass ? getLocalE2ESupabaseBrowserConfig() : null
+      }
       tuturuuuDomain={DOMAINS.TUTURUUU}
     />
   );

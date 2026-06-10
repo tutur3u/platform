@@ -192,6 +192,27 @@ needs a different Node heap bucket. Keep this as a local/debug escape hatch; CI
 and production watchers should keep building the web image entirely inside
 Docker.
 
+When a production blue/green web image was just built locally with
+`bun serve:web:docker:bg`, Dockerized E2E can reuse that image instead of
+building `apps/web` again:
+
+```bash
+E2E_DOCKER_REUSE_WEB_IMAGE=1 bun test:e2e:web:docker -- e2e/multi-account.noauth.spec.ts --project=chromium-no-auth
+```
+
+The runner reads `tmp/docker-web/prod/active-color` and retags the matching
+`tuturuuu-web-<color>` image into the isolated `ttr-e2e-*` Compose project for
+both `web-blue` and `web-green`, then skips the web build stage. When the same
+local blue/green build also left the support images behind, the runner retags
+`hive-<color>`, `hive-realtime`, `backend`, `meet-realtime`, `markitdown`,
+`storage-unzip-proxy`, `supermemory`, and `web-cron-runner` into the E2E
+project and skips those support builds too. If any support image is missing, E2E
+falls back to the normal support-service build path while still reusing the web
+image. Use this only when the source image was built from the current checkout.
+Set `E2E_DOCKER_REUSE_WEB_IMAGE_SOURCE=<image>` to reuse a specific web image
+tag, or `E2E_DOCKER_REUSE_WEB_IMAGE_COLOR=blue|green|auto` when the active-color
+file is not the lane you want.
+
 On GitHub-hosted runners, the E2E workflow frees disk before restoring or
 loading cached Supabase Docker images. Keep that cleanup ahead of the cache load:
 running `docker system prune -af --volumes` after cached images are loaded would

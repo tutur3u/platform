@@ -469,7 +469,9 @@ describe('dev-session route', () => {
 
   it('mirrors Docker E2E sessions to the public Supabase browser cookie key', async () => {
     mocks.devMode = false;
-    stubLocalE2EEnv();
+    stubLocalE2EEnv({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://nzamlzqfdwaaxdefwraj.supabase.co',
+    });
     const session = {
       access_token: 'access-token',
       expires_at: 1_763_456_789,

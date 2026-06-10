@@ -20,6 +20,13 @@ const SHARED_COOKIE_DOMAINS = [
     secure: false,
   },
 ] as const;
+const OPTIONAL_AUTH_COOKIE_URL_ENV_KEYS = [
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'SUPABASE_SERVER_URL',
+  'SUPABASE_URL',
+] as const;
+const NEXT_PUBLIC_ENV_PREFIX = 'NEXT_PUBLIC';
+const LOCAL_E2E_DEFAULT_SUPABASE_URL = 'http://127.0.0.1:8001';
 type HostOnlyCookieClearHeaderOptions = Pick<
   CookieOptions,
   'path' | 'sameSite' | 'secure'
@@ -44,6 +51,36 @@ function normalizeUrlLike(value: string | URL | null | undefined) {
   }
 }
 
+function getRuntimePublicEnvValue(name: string) {
+  return process.env[`${NEXT_PUBLIC_ENV_PREFIX}_${name}`];
+}
+
+function isEnabled(value?: string) {
+  return /^(1|true|yes)$/iu.test(String(value ?? ''));
+}
+
+function isLocalSupabaseUrl(value: string | URL | null | undefined) {
+  const parsedUrl = normalizeUrlLike(value);
+
+  return (
+    parsedUrl?.protocol === 'http:' &&
+    parsedUrl.port === '8001' &&
+    (parsedUrl.hostname === '127.0.0.1' ||
+      parsedUrl.hostname === 'localhost' ||
+      parsedUrl.hostname === 'host.docker.internal')
+  );
+}
+
+function getLocalE2ECookieNameUrl() {
+  if (!isEnabled(process.env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS)) {
+    return null;
+  }
+
+  const serverUrl = process.env.SUPABASE_SERVER_URL ?? process.env.SUPABASE_URL;
+
+  return isLocalSupabaseUrl(serverUrl) ? LOCAL_E2E_DEFAULT_SUPABASE_URL : null;
+}
+
 function getConfiguredAppUrl() {
   if (typeof window !== 'undefined' && window.location?.href) {
     return window.location.href;
@@ -51,8 +88,8 @@ function getConfiguredAppUrl() {
 
   return (
     process.env.PORTLESS_URL ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.NEXT_PUBLIC_WEB_APP_URL ??
+    getRuntimePublicEnvValue('APP_URL') ??
+    getRuntimePublicEnvValue('WEB_APP_URL') ??
     process.env.WEB_APP_URL ??
     process.env.VERCEL_URL ??
     null
@@ -116,6 +153,58 @@ function resolveSharedCookieDomain(url: string | URL | null | undefined) {
 
 export function getSupabaseAuthStorageKey(url: string): string {
   return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+}
+
+function getSupabaseCookieNameUrl(supabaseUrl: string) {
+  const localE2ESupabaseUrl = getLocalE2ECookieNameUrl();
+
+  if (localE2ESupabaseUrl) {
+    return localE2ESupabaseUrl;
+  }
+
+  const publicSupabaseUrl = getRuntimePublicEnvValue('SUPABASE_URL');
+
+  if (publicSupabaseUrl && normalizeUrlLike(publicSupabaseUrl)) {
+    return publicSupabaseUrl;
+  }
+
+  return supabaseUrl;
+}
+
+export function getSupabaseAuthCookieUrls(supabaseUrl: string) {
+  const urls = [
+    getSupabaseCookieNameUrl(supabaseUrl),
+    supabaseUrl,
+    ...OPTIONAL_AUTH_COOKIE_URL_ENV_KEYS.map((key) =>
+      key.startsWith(`${NEXT_PUBLIC_ENV_PREFIX}_`)
+        ? getRuntimePublicEnvValue(key.slice(NEXT_PUBLIC_ENV_PREFIX.length + 1))
+        : process.env[key]
+    ),
+  ];
+  const seenStorageKeys = new Set<string>();
+  const authCookieUrls: string[] = [];
+
+  for (const url of urls) {
+    if (!url) {
+      continue;
+    }
+
+    try {
+      const storageKey = getSupabaseAuthStorageKey(url);
+
+      if (seenStorageKeys.has(storageKey)) {
+        continue;
+      }
+
+      seenStorageKeys.add(storageKey);
+      authCookieUrls.push(url);
+    } catch {
+      // Ignore invalid optional URLs. The primary Supabase URL is validated by
+      // checkEnvVariables before this helper is used in auth code.
+    }
+  }
+
+  return authCookieUrls;
 }
 
 function getSafeCookiePath(path: string | undefined) {
@@ -233,7 +322,7 @@ export function getSupabaseCookieOptions(
 ): CookieOptionsWithName {
   const sharedCookieDomain = resolveSharedCookieDomain(requestUrl);
   const options: CookieOptionsWithName = {
-    name: getSupabaseAuthStorageKey(supabaseUrl),
+    name: getSupabaseAuthStorageKey(getSupabaseCookieNameUrl(supabaseUrl)),
     path: '/',
     sameSite: 'lax',
   };
@@ -257,11 +346,13 @@ export function checkEnvVariables({
   const url =
     typeof window === 'undefined'
       ? (process.env.SUPABASE_SERVER_URL ??
-        process.env.NEXT_PUBLIC_SUPABASE_URL)
+        getRuntimePublicEnvValue('SUPABASE_URL'))
       : process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = useSecretKey
     ? process.env.SUPABASE_SECRET_KEY
-    : process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    : typeof window === 'undefined'
+      ? getRuntimePublicEnvValue('SUPABASE_PUBLISHABLE_KEY')
+      : process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url) throw Error('Missing Supabase URL');
   if (!key) throw Error(`Missing Supabase key`);

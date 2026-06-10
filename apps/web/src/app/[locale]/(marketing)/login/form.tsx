@@ -176,8 +176,22 @@ function LoginMethodSeparator({ label }: { label: string }) {
   );
 }
 
-export default function LoginForm() {
-  const supabase = createAuthClient();
+type LoginFormProps = {
+  localE2EAuthBypass?: boolean;
+  runtimeSupabaseConfig?: {
+    supabasePublishableKey: string;
+    supabaseUrl: string;
+  } | null;
+};
+
+export default function LoginForm({
+  localE2EAuthBypass: runtimeLocalE2EAuthBypass = false,
+  runtimeSupabaseConfig = null,
+}: LoginFormProps) {
+  const supabase = useMemo(
+    () => createAuthClient(runtimeSupabaseConfig ?? undefined),
+    [runtimeSupabaseConfig]
+  );
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
@@ -272,11 +286,13 @@ export default function LoginForm() {
   const defaultPassword = DEV_MODE ? 'password123' : '';
   const publicLocalE2EAuthBypass =
     process.env.NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS === 'true';
-  const localE2EAuthBypass = shouldHonorLocalE2EAuthBypassForLogin({
+  const browserLocalE2EAuthBypass = shouldHonorLocalE2EAuthBypassForLogin({
     devMode: DEV_MODE,
     publicLocalE2EAuthBypass,
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
   });
+  const localE2EAuthBypass =
+    runtimeLocalE2EAuthBypass || browserLocalE2EAuthBypass;
 
   const emailForm = useForm({
     mode: 'onChange',
@@ -362,6 +378,8 @@ export default function LoginForm() {
   });
   const turnstileSiteKey = turnstileClientState.siteKey;
   const emailValue = emailForm.watch('email');
+  const passwordEmailValue = passwordForm.watch('email');
+  const passwordValue = passwordForm.watch('password');
   const otpValue = otpForm.watch('otp');
   const webOtpEnabled = otpSettingsQuery.data?.otpEnabled ?? false;
   const formatDiagnosticDescription = useCallback(
@@ -382,6 +400,10 @@ export default function LoginForm() {
       ? `${emailValue.trim()}@tuturuuu.com`
       : null;
   const emailIsValid = emailSchema.safeParse(emailValue).success;
+  const passwordCredentialsAreValid = passwordFormSchema.safeParse({
+    email: passwordEmailValue,
+    password: passwordValue,
+  }).success;
   const isCaptchaBlockingPasswordSubmit =
     turnstileClientState.isRequired &&
     (!turnstileClientState.canRenderWidget ||
@@ -754,7 +776,15 @@ export default function LoginForm() {
         return;
       }
 
-      window.location.reload();
+      try {
+        await processNextUrl();
+      } catch (navError) {
+        console.error(
+          `[login:${source}] Navigation error after successful login:`,
+          navError
+        );
+        window.location.href = '/';
+      }
     },
     [
       needsMFA,
@@ -2110,7 +2140,7 @@ export default function LoginForm() {
                         className="h-12 w-full rounded-2xl font-medium shadow-lg"
                         disabled={
                           loading ||
-                          !passwordForm.formState.isValid ||
+                          !passwordCredentialsAreValid ||
                           isCaptchaBlockingPasswordSubmit
                         }
                       >

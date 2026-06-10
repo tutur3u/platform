@@ -1,6 +1,5 @@
 const LOCAL_E2E_AUTH_BYPASS_ENV = 'TUTURUUU_LOCAL_E2E_AUTH_BYPASS';
-const LOCAL_E2E_PUBLIC_AUTH_BYPASS_ENV =
-  'NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS';
+const NEXT_PUBLIC_ENV_PREFIX = 'NEXT_PUBLIC';
 const LOCAL_E2E_DEFAULT_SUPABASE_URL = 'http://127.0.0.1:8001';
 const LOCAL_E2E_PORTLESS_ORIGIN = 'https://tuturuuu.localhost:1355';
 
@@ -41,6 +40,10 @@ type LocalE2EAuthRequest = {
 
 function isEnabled(value?: string) {
   return /^(1|true|yes)$/iu.test(String(value ?? ''));
+}
+
+function getRuntimePublicEnvValue(name: string, env: NodeJS.ProcessEnv) {
+  return env[`${NEXT_PUBLIC_ENV_PREFIX}_${name}`];
 }
 
 function getOrigin(value?: string) {
@@ -153,8 +156,8 @@ function isLocalSupabaseOrigin(origin: string | null): origin is string {
 function getLocalE2EBypassFlag(env: NodeJS.ProcessEnv) {
   return (
     env[LOCAL_E2E_AUTH_BYPASS_ENV] ??
-    env[LOCAL_E2E_PUBLIC_AUTH_BYPASS_ENV] ??
-    process.env.NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS
+    getRuntimePublicEnvValue('TUTURUUU_LOCAL_E2E_AUTH_BYPASS', env) ??
+    getRuntimePublicEnvValue('TUTURUUU_LOCAL_E2E_AUTH_BYPASS', process.env)
   );
 }
 
@@ -166,19 +169,56 @@ function hasLocalE2EWebOrigin(env: NodeJS.ProcessEnv) {
   return [
     env.BASE_URL ?? null,
     env.PORTLESS_URL,
-    env.NEXT_PUBLIC_APP_URL,
-    env.NEXT_PUBLIC_WEB_APP_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.NEXT_PUBLIC_WEB_APP_URL,
+    getRuntimePublicEnvValue('APP_URL', env),
+    getRuntimePublicEnvValue('WEB_APP_URL', env),
+    getRuntimePublicEnvValue('APP_URL', process.env),
+    getRuntimePublicEnvValue('WEB_APP_URL', process.env),
   ].some((url) => isLocalWebOrigin(getOrigin(url ?? undefined)));
 }
 
-function getLocalE2EPublicSupabaseUrl(env: NodeJS.ProcessEnv) {
-  return getConfiguredUrl(
-    env.NEXT_PUBLIC_SUPABASE_URL ?? undefined,
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    LOCAL_E2E_DEFAULT_SUPABASE_URL
+export function getLocalE2EPublicSupabaseUrl(
+  env: NodeJS.ProcessEnv = process.env
+): string {
+  const serverSupabaseUrl = getConfiguredUrl(
+    env.SUPABASE_SERVER_URL,
+    env.SUPABASE_URL
   );
+
+  if (
+    isEnabled(getLocalE2EBypassFlag(env)) &&
+    isLocalSupabaseOrigin(getOrigin(serverSupabaseUrl))
+  ) {
+    return LOCAL_E2E_DEFAULT_SUPABASE_URL;
+  }
+
+  return (
+    getConfiguredUrl(
+      getRuntimePublicEnvValue('SUPABASE_URL', env),
+      getRuntimePublicEnvValue('SUPABASE_URL', process.env)
+    ) ?? LOCAL_E2E_DEFAULT_SUPABASE_URL
+  );
+}
+
+export function getLocalE2ESupabaseBrowserConfig(
+  env: NodeJS.ProcessEnv = process.env
+) {
+  if (!isLocalE2EAuthBypassEnabled(env)) {
+    return null;
+  }
+
+  const supabasePublishableKey = getConfiguredUrl(
+    getRuntimePublicEnvValue('SUPABASE_PUBLISHABLE_KEY', env),
+    getRuntimePublicEnvValue('SUPABASE_PUBLISHABLE_KEY', process.env)
+  );
+
+  if (!supabasePublishableKey) {
+    return null;
+  }
+
+  return {
+    supabasePublishableKey,
+    supabaseUrl: getLocalE2EPublicSupabaseUrl(env),
+  };
 }
 
 function getLocalE2EServerSupabaseUrl(env: NodeJS.ProcessEnv) {

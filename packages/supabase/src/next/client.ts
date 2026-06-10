@@ -2,6 +2,7 @@ import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types';
 import type { TypedSupabaseClient } from '../types';
 import {
+  type BrowserSupabaseClientConfig,
   createBaseBrowserClient,
   createBaseClientWithSession,
   createBaseDynamicBrowserClient,
@@ -86,18 +87,24 @@ function assertDeprecatedBrowserClientAllowed() {
  * @deprecated Use `@tuturuuu/internal-api` for CRUD/storage, or
  * `@tuturuuu/supabase/next/realtime-browser` for temporary realtime exceptions.
  */
-export function createDynamicClient(): SupabaseClient<any> {
+export function createDynamicClient(
+  config?: BrowserSupabaseClientConfig
+): SupabaseClient<any> {
   assertDeprecatedBrowserClientAllowed();
-  return wrapDirectClientForProxyOnlyTables(createBaseDynamicBrowserClient());
+  return wrapDirectClientForProxyOnlyTables(
+    createBaseDynamicBrowserClient(config)
+  );
 }
 
 /**
  * @deprecated Use `@tuturuuu/internal-api` for CRUD/storage, or
  * `@tuturuuu/supabase/next/auth-browser` for temporary auth exceptions.
  */
-export function createClient<T = Database>(): SupabaseClient<T> {
+export function createClient<T = Database>(
+  config?: BrowserSupabaseClientConfig
+): SupabaseClient<T> {
   assertDeprecatedBrowserClientAllowed();
-  return wrapDirectClientForProxyOnlyTables(createBaseBrowserClient<T>());
+  return wrapDirectClientForProxyOnlyTables(createBaseBrowserClient<T>(config));
 }
 
 /**
@@ -105,10 +112,11 @@ export function createClient<T = Database>(): SupabaseClient<T> {
  * Used for multi-account support
  */
 export async function createClientWithSession<T = Database>(
-  session: Session
+  session: Session,
+  config?: BrowserSupabaseClientConfig
 ): Promise<SupabaseClient<T>> {
   assertDeprecatedBrowserClientAllowed();
-  const client = await createBaseClientWithSession<T>(session);
+  const client = await createBaseClientWithSession<T>(session, config);
   return wrapDirectClientForProxyOnlyTables(client);
 }
 

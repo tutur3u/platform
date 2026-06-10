@@ -15,6 +15,9 @@ const {
 const {
   DNS_IPV4_FIRST_NODE_OPTION,
   DEFAULT_PORTLESS_HEALTH_URL,
+  DEFAULT_PORTLESS_PROXY_TLS_MARKER,
+  DEFAULT_REUSABLE_WEB_IMAGE_COLOR,
+  DEFAULT_REUSABLE_WEB_IMAGE_PROJECT,
   ensurePortlessRoute,
   ensureLocalE2EEnvFile,
   formatBlueGreenStages,
@@ -28,13 +31,28 @@ const {
   getPortlessHealthUrl,
   getPortlessProxyStartArgs,
   getReadinessFetchOptions,
+  getDockerImageRefCandidates,
+  getReusableWebImageProject,
+  getReusableWebImageRef,
+  getReusableWebImageSource,
+  getReusableWebImageTargets,
+  getReusableHiveImageRef,
+  getReusableSupportImageRef,
+  getReusableSupportImageSpecs,
   getWebProxyHealthUrl,
   getWebProxyHostPort,
+  isPortlessProxyConfigMismatchError,
+  isPortlessProxyStartExitError,
   isPortlessNotReadyBody,
   isE2EComposeProjectName,
   parseE2EProjectImageTags,
+  prepareReusableWebImage,
+  prepareReusableSupportImages,
   printE2EFailureDiagnostics,
+  readReusableWebImageColor,
   removeE2EProjectImages,
+  removePortlessProxyTlsMarker,
+  resolveReusableWebImageSourceFromList,
   routeListHasPortlessAlias,
   shouldKeepStack,
   waitForUrl,
@@ -87,6 +105,21 @@ test('getDockerWebDownArgs stops the same production blue-green Docker stack', (
     '--rmi',
     'local',
   ]);
+  assert.deepEqual(
+    getDockerWebDownArgs('tmp/e2e/web.env', {
+      DOCKER_WEB_REUSED_WEB_IMAGE_SOURCE: 'tuturuuu-web-blue',
+    }),
+    [
+      'down',
+      '--mode',
+      'prod',
+      '--strategy',
+      'blue-green',
+      '--env-file',
+      'tmp/e2e/web.env',
+      '--volumes',
+    ]
+  );
 });
 
 test('ensureLocalE2EEnvFile writes a local-only web env file', () => {
@@ -138,6 +171,319 @@ test('shouldKeepStack supports explicit local debugging opt-in', () => {
   assert.equal(shouldKeepStack({}), false);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: '1' }), true);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: 'true' }), true);
+  assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: 'on' }), true);
+  assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: 'false' }), false);
+});
+
+test('getReusableWebImageSource defaults to the active serve:web:docker:bg lane', () => {
+  const fsImpl = {
+    existsSync: () => true,
+    readFileSync: () => 'green\n',
+  };
+
+  assert.equal(
+    getReusableWebImageProject({}),
+    DEFAULT_REUSABLE_WEB_IMAGE_PROJECT
+  );
+  assert.equal(
+    getReusableWebImageProject({
+      E2E_DOCKER_REUSE_WEB_IMAGE_PROJECT: 'platform-prod',
+    }),
+    'platform-prod'
+  );
+  assert.equal(readReusableWebImageColor({ env: {}, fsImpl }), 'green');
+  assert.equal(
+    getReusableWebImageSource(
+      {
+        E2E_DOCKER_REUSE_WEB_IMAGE: '1',
+        E2E_DOCKER_REUSE_WEB_IMAGE_PROJECT: 'platform-prod',
+      },
+      { fsImpl }
+    ),
+    'platform-prod-web-green'
+  );
+});
+
+test('getReusableWebImageSource supports explicit source and color overrides', () => {
+  assert.equal(getReusableWebImageSource({}), null);
+  assert.equal(
+    getReusableWebImageSource({ E2E_DOCKER_REUSE_WEB_IMAGE: 'false' }),
+    null
+  );
+  assert.equal(
+    getReusableWebImageSource({
+      E2E_DOCKER_REUSE_WEB_IMAGE: 'registry.local/web:debug',
+    }),
+    'registry.local/web:debug'
+  );
+  assert.equal(
+    getReusableWebImageSource({
+      E2E_DOCKER_REUSE_WEB_IMAGE: '1',
+      E2E_DOCKER_REUSE_WEB_IMAGE_COLOR: 'blue',
+      E2E_DOCKER_REUSE_WEB_IMAGE_SOURCE: 'tuturuuu-web-custom:latest',
+    }),
+    'tuturuuu-web-custom:latest'
+  );
+  assert.equal(
+    readReusableWebImageColor({
+      env: { E2E_DOCKER_REUSE_WEB_IMAGE_COLOR: 'green' },
+    }),
+    'green'
+  );
+  assert.equal(
+    readReusableWebImageColor({
+      activeColorFile: '/tmp/missing-active-color',
+      env: { E2E_DOCKER_REUSE_WEB_IMAGE_COLOR: 'auto' },
+      fsImpl: {
+        existsSync: () => false,
+      },
+    }),
+    DEFAULT_REUSABLE_WEB_IMAGE_COLOR
+  );
+  assert.throws(
+    () =>
+      readReusableWebImageColor({
+        env: { E2E_DOCKER_REUSE_WEB_IMAGE_COLOR: 'purple' },
+      }),
+    /must be "blue", "green", or "auto"/u
+  );
+});
+
+test('prepareReusableWebImage retags the source image for both E2E lanes', async () => {
+  const calls = [];
+  const chunks = [];
+  const output = {
+    write(chunk) {
+      chunks.push(String(chunk));
+    },
+  };
+  const env = {
+    E2E_DOCKER_REUSE_WEB_IMAGE_SOURCE: 'tuturuuu-web-blue',
+    PATH: 'test-path',
+  };
+
+  assert.deepEqual(getReusableWebImageTargets('ttr-e2e-local-123'), [
+    'ttr-e2e-local-123-web-blue',
+    'ttr-e2e-local-123-web-green',
+  ]);
+  assert.equal(getReusableWebImageRef('tuturuuu', 'blue'), 'tuturuuu-web-blue');
+
+  await prepareReusableWebImage({
+    env,
+    output,
+    projectName: 'ttr-e2e-local-123',
+    runCommand: async (command, args, options = {}) => {
+      calls.push({ args, command, env: options.env });
+    },
+    runCommandForOutput: async (command, args, options = {}) => {
+      calls.push({ args, command, env: options.env });
+      return { stderr: '', stdout: '[]\n' };
+    },
+  });
+
+  assert.deepEqual(
+    calls.map(({ command, args }) => [command, args]),
+    [
+      ['docker', ['image', 'inspect', 'tuturuuu-web-blue']],
+      ['docker', ['tag', 'tuturuuu-web-blue', 'ttr-e2e-local-123-web-blue']],
+      ['docker', ['tag', 'tuturuuu-web-blue', 'ttr-e2e-local-123-web-green']],
+    ]
+  );
+  assert.ok(calls.every((call) => call.env === env));
+  assert.match(
+    chunks.join(''),
+    /Reusing Docker web image tuturuuu-web-blue as ttr-e2e-local-123-web-blue, ttr-e2e-local-123-web-green/u
+  );
+});
+
+test('prepareReusableWebImage resolves source tags through docker image ls fallback', async () => {
+  const calls = [];
+
+  assert.deepEqual(getDockerImageRefCandidates('tuturuuu-web-blue'), [
+    'tuturuuu-web-blue',
+    'tuturuuu-web-blue:latest',
+  ]);
+  assert.deepEqual(getDockerImageRefCandidates('registry:5000/web'), [
+    'registry:5000/web',
+    'registry:5000/web:latest',
+  ]);
+  assert.deepEqual(getDockerImageRefCandidates('repo/web:debug'), [
+    'repo/web:debug',
+  ]);
+  assert.equal(
+    resolveReusableWebImageSourceFromList(
+      'tuturuuu-web-blue',
+      'tuturuuu-web-blue:latest sha256:source-id\n'
+    ),
+    'sha256:source-id'
+  );
+
+  const result = await prepareReusableWebImage({
+    env: {
+      E2E_DOCKER_REUSE_WEB_IMAGE_SOURCE: 'tuturuuu-web-blue',
+      PATH: 'test-path',
+    },
+    output: {
+      write() {},
+    },
+    projectName: 'ttr-e2e-local-456',
+    runCommand: async (command, args) => {
+      calls.push({ args, command });
+    },
+    runCommandForOutput: async (command, args) => {
+      calls.push({ args, command });
+
+      if (args[0] === 'image' && args[1] === 'inspect') {
+        if (args[2] === 'tuturuuu-web-blue') {
+          throw new Error('No such image: tuturuuu-web-blue');
+        }
+
+        return { stderr: '', stdout: '[]\n' };
+      }
+
+      return {
+        stderr: '',
+        stdout: 'tuturuuu-web-blue:latest sha256:source-id\n',
+      };
+    },
+  });
+
+  assert.equal(result.sourceRef, 'sha256:source-id');
+  assert.deepEqual(
+    calls.map(({ command, args }) => [command, args]),
+    [
+      ['docker', ['image', 'inspect', 'tuturuuu-web-blue']],
+      [
+        'docker',
+        ['image', 'ls', '--format', '{{.Repository}}:{{.Tag}} {{.ID}}'],
+      ],
+      ['docker', ['image', 'inspect', 'sha256:source-id']],
+      ['docker', ['tag', 'sha256:source-id', 'ttr-e2e-local-456-web-blue']],
+      ['docker', ['tag', 'sha256:source-id', 'ttr-e2e-local-456-web-green']],
+    ]
+  );
+});
+
+test('prepareReusableSupportImages retags a complete blue-green support image set', async () => {
+  const calls = [];
+  const chunks = [];
+  const output = {
+    write(chunk) {
+      chunks.push(String(chunk));
+    },
+  };
+  const env = {
+    E2E_DOCKER_REUSE_WEB_IMAGE: '1',
+    E2E_DOCKER_REUSE_WEB_IMAGE_COLOR: 'blue',
+    E2E_DOCKER_REUSE_WEB_IMAGE_PROJECT: 'tuturuuu',
+    PATH: 'test-path',
+  };
+  const specs = getReusableSupportImageSpecs({
+    sourceColor: 'blue',
+    sourceProject: 'tuturuuu',
+    targetProject: 'ttr-e2e-local-789',
+  });
+
+  assert.equal(
+    getReusableHiveImageRef('tuturuuu', 'blue'),
+    'tuturuuu-hive-blue'
+  );
+  assert.equal(
+    getReusableSupportImageRef('tuturuuu', 'backend'),
+    'tuturuuu-backend'
+  );
+  assert.deepEqual(specs[0], {
+    source: 'tuturuuu-hive-blue',
+    targets: ['ttr-e2e-local-789-hive-blue', 'ttr-e2e-local-789-hive-green'],
+  });
+
+  const result = await prepareReusableSupportImages({
+    env,
+    output,
+    projectName: 'ttr-e2e-local-789',
+    runCommand: async (command, args, options = {}) => {
+      calls.push({ args, command, env: options.env });
+    },
+    runCommandForOutput: async (command, args, options = {}) => {
+      calls.push({ args, command, env: options.env });
+      return { stderr: '', stdout: '[]\n' };
+    },
+  });
+
+  assert.equal(result.complete, true);
+  assert.deepEqual(result.missing, []);
+  assert.ok(calls.every((call) => call.env === env));
+  assert.ok(
+    calls.some(
+      ({ command, args }) =>
+        command === 'docker' &&
+        args.join(' ') === 'tag tuturuuu-hive-blue ttr-e2e-local-789-hive-green'
+    )
+  );
+  assert.ok(
+    calls.some(
+      ({ command, args }) =>
+        command === 'docker' &&
+        args.join(' ') ===
+          'tag tuturuuu-web-cron-runner ttr-e2e-local-789-web-cron-runner'
+    )
+  );
+  assert.match(
+    chunks.join(''),
+    /Reusing Docker support images from tuturuuu blue as/u
+  );
+});
+
+test('prepareReusableSupportImages falls back when the support image set is incomplete', async () => {
+  const calls = [];
+  const chunks = [];
+  const output = {
+    write(chunk) {
+      chunks.push(String(chunk));
+    },
+  };
+  const env = {
+    E2E_DOCKER_REUSE_WEB_IMAGE: '1',
+    E2E_DOCKER_REUSE_WEB_IMAGE_COLOR: 'blue',
+    E2E_DOCKER_REUSE_WEB_IMAGE_PROJECT: 'tuturuuu',
+    PATH: 'test-path',
+  };
+
+  const result = await prepareReusableSupportImages({
+    env,
+    output,
+    projectName: 'ttr-e2e-local-987',
+    runCommand: async (command, args, options = {}) => {
+      calls.push({ args, command, env: options.env });
+    },
+    runCommandForOutput: async (command, args, options = {}) => {
+      calls.push({ args, command, env: options.env });
+
+      if (args[0] === 'image' && args[1] === 'inspect') {
+        if (args[2] === 'tuturuuu-supermemory') {
+          throw new Error('No such image: tuturuuu-supermemory');
+        }
+
+        return { stderr: '', stdout: '[]\n' };
+      }
+
+      return {
+        stderr: '',
+        stdout: 'tuturuuu-backend:latest sha256:backend\n',
+      };
+    },
+  });
+
+  assert.equal(result.complete, false);
+  assert.deepEqual(result.missing, ['tuturuuu-supermemory']);
+  assert.ok(
+    calls.every(
+      ({ args }) =>
+        args.join(' ') !==
+        'tag tuturuuu-supermemory ttr-e2e-local-987-supermemory'
+    )
+  );
+  assert.match(chunks.join(''), /Support services will be built normally/u);
 });
 
 test('getDockerMemoryLimit reads Docker Desktop memory when available', async () => {
@@ -288,6 +634,86 @@ test('getPortlessCommandEnv makes Portless prefer IPv4 localhost resolution', ()
   };
 
   assert.equal(getPortlessCommandEnv(env), env);
+});
+
+test('removePortlessProxyTlsMarker clears stale local proxy markers', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ttr-portless-'));
+  const markerPath = path.join(tempDir, 'proxy.tls');
+  const chunks = [];
+
+  try {
+    fs.writeFileSync(markerPath, '1');
+
+    assert.ok(DEFAULT_PORTLESS_PROXY_TLS_MARKER.endsWith('proxy.tls'));
+    assert.equal(
+      removePortlessProxyTlsMarker({
+        markerPath,
+        output: {
+          write(chunk) {
+            chunks.push(String(chunk));
+          },
+        },
+      }),
+      true
+    );
+    assert.equal(fs.existsSync(markerPath), false);
+    assert.match(chunks.join(''), /Removed stale Portless TLS marker/u);
+    assert.equal(
+      removePortlessProxyTlsMarker({
+        markerPath,
+        output: {
+          write() {},
+        },
+      }),
+      false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('isPortlessProxyConfigMismatchError detects recoverable proxy config conflicts', () => {
+  assert.equal(
+    isPortlessProxyConfigMismatchError(
+      new Error(
+        'Proxy is already running on port 1355 with a different config.\nrequested HTTPS, but the running proxy is using HTTP'
+      )
+    ),
+    true
+  );
+  assert.equal(
+    isPortlessProxyConfigMismatchError(new Error('portless failed')),
+    false
+  );
+});
+
+test('isPortlessProxyStartExitError detects spawned proxy start exits', () => {
+  const proxyStartArgs = [
+    'portless',
+    'proxy',
+    'start',
+    '--wildcard',
+    '--port',
+    '1355',
+    '--https',
+  ];
+
+  assert.equal(
+    isPortlessProxyStartExitError(
+      new Error(
+        'bunx portless proxy start --wildcard --port 1355 --https exited with 1'
+      ),
+      proxyStartArgs
+    ),
+    true
+  );
+  assert.equal(
+    isPortlessProxyStartExitError(
+      new Error('bunx portless alias tuturuuu 7803 --force exited with 1'),
+      proxyStartArgs
+    ),
+    false
+  );
 });
 
 test('routeListHasPortlessAlias requires the expected alias and proxy port', () => {
@@ -557,6 +983,83 @@ test('ensurePortlessRoute honors the configured proxy host and Portless ports', 
       options.env.NODE_OPTIONS.includes(DNS_IPV4_FIRST_NODE_OPTION)
     )
   );
+});
+
+test('ensurePortlessRoute restarts Portless when proxy config differs', async () => {
+  const calls = [];
+  const chunks = [];
+  let startAttempts = 0;
+
+  await ensurePortlessRoute({
+    env: {
+      PATH: 'test-path',
+      PORTLESS_PORT: '1355',
+    },
+    output: {
+      write(chunk) {
+        chunks.push(String(chunk));
+      },
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+
+      if (
+        args.join(' ') === 'portless proxy start --wildcard --port 1355 --https'
+      ) {
+        startAttempts += 1;
+
+        if (startAttempts === 1) {
+          throw new Error(
+            'Proxy is already running on port 1355 with a different config.\nrequested HTTPS, but the running proxy is using HTTP'
+          );
+        }
+      }
+    },
+    runCommandForOutput: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+
+      return {
+        stderr: '',
+        stdout:
+          'Active routes:\n  https://tuturuuu.localhost:1355  ->  localhost:7803  (alias)\n',
+      };
+    },
+  });
+
+  assert.deepEqual(
+    calls.map(([command, args]) => [command, args]),
+    [
+      [
+        'bunx',
+        [
+          'portless',
+          'proxy',
+          'start',
+          '--wildcard',
+          '--port',
+          '1355',
+          '--https',
+        ],
+      ],
+      ['bunx', ['portless', 'proxy', 'stop']],
+      [
+        'bunx',
+        [
+          'portless',
+          'proxy',
+          'start',
+          '--wildcard',
+          '--port',
+          '1355',
+          '--https',
+        ],
+      ],
+      ['bunx', ['portless', 'alias', '--remove', 'tuturuuu']],
+      ['bunx', ['portless', 'alias', 'tuturuuu', '7803', '--force']],
+      ['bunx', ['portless', 'list']],
+    ]
+  );
+  assert.match(chunks.join(''), /Restarting Portless proxy/u);
 });
 
 test('ensurePortlessRoute retries and fails when Portless does not register the alias', async () => {

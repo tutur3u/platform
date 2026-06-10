@@ -3,6 +3,7 @@ import {
   checkEnvVariables,
   getHostOnlyCookieClearHeaders,
   getHostOnlyCookieClearHeadersForNames,
+  getSupabaseAuthCookieUrls,
   getSupabaseAuthStorageKey,
   getSupabaseCookieOptions,
 } from '../common';
@@ -130,6 +131,13 @@ describe('common', () => {
   describe('getSupabaseCookieOptions', () => {
     const supabaseUrl = 'https://nzamlzqfdwaaxdefwraj.supabase.co';
 
+    beforeEach(() => {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.SUPABASE_SERVER_URL;
+      delete process.env.SUPABASE_URL;
+      delete process.env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS;
+    });
+
     it('shares cookies across production Tuturuuu subdomains', () => {
       expect(
         getSupabaseCookieOptions(supabaseUrl, 'https://tasks.tuturuuu.com')
@@ -228,6 +236,85 @@ describe('common', () => {
         sameSite: 'lax',
         secure: true,
       });
+    });
+
+    it('uses the public Supabase URL for the browser auth cookie name', () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:8001';
+
+      expect(
+        getSupabaseCookieOptions(
+          'http://host.docker.internal:8001',
+          'https://tuturuuu.localhost'
+        )
+      ).toEqual({
+        domain: '.tuturuuu.localhost',
+        name: 'sb-127-auth-token',
+        path: '/',
+        sameSite: 'lax',
+        secure: false,
+      });
+    });
+
+    it('uses the local E2E public Supabase URL for reused production-built images', () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL =
+        'https://nzamlzqfdwaaxdefwraj.supabase.co';
+      process.env.SUPABASE_SERVER_URL = 'http://host.docker.internal:8001';
+      process.env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS = 'true';
+
+      expect(
+        getSupabaseCookieOptions(
+          'http://host.docker.internal:8001',
+          'https://tuturuuu.localhost'
+        )
+      ).toEqual({
+        domain: '.tuturuuu.localhost',
+        name: 'sb-127-auth-token',
+        path: '/',
+        sameSite: 'lax',
+        secure: false,
+      });
+    });
+  });
+
+  describe('getSupabaseAuthCookieUrls', () => {
+    beforeEach(() => {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.SUPABASE_SERVER_URL;
+      delete process.env.SUPABASE_URL;
+      delete process.env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS;
+    });
+
+    it('returns the public Supabase URL first and keeps server URLs compatible', () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:8001';
+      process.env.SUPABASE_SERVER_URL = 'http://host.docker.internal:8001';
+
+      expect(
+        getSupabaseAuthCookieUrls('http://host.docker.internal:8001')
+      ).toEqual(['http://127.0.0.1:8001', 'http://host.docker.internal:8001']);
+    });
+
+    it('deduplicates compatible URLs that produce the same storage key', () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:8001';
+      process.env.SUPABASE_SERVER_URL = 'http://127.0.0.1:8001';
+
+      expect(getSupabaseAuthCookieUrls('http://127.0.0.1:8001')).toEqual([
+        'http://127.0.0.1:8001',
+      ]);
+    });
+
+    it('reads reused production-built image cookies from the local E2E public key first', () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL =
+        'https://nzamlzqfdwaaxdefwraj.supabase.co';
+      process.env.SUPABASE_SERVER_URL = 'http://host.docker.internal:8001';
+      process.env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS = 'true';
+
+      expect(
+        getSupabaseAuthCookieUrls('http://host.docker.internal:8001')
+      ).toEqual([
+        'http://127.0.0.1:8001',
+        'http://host.docker.internal:8001',
+        'https://nzamlzqfdwaaxdefwraj.supabase.co',
+      ]);
     });
   });
 

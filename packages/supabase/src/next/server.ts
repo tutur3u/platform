@@ -7,6 +7,7 @@ import { cookies, headers } from 'next/headers';
 import { sanitizeSupabaseAuthCookies } from './auth-cookie-sanitizer';
 import {
   checkEnvVariables,
+  getSupabaseAuthCookieUrls,
   getSupabaseCookieOptions,
   type SupabaseCookie,
 } from './common';
@@ -17,27 +18,47 @@ import {
 
 const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
 const APP_SESSION_BEARER_PREFIX = 'ttr_app_';
+const SUPABASE_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
 
 function createCookieHandler(
   cookieStore: ReadonlyRequestCookies,
-  url: string
+  url: string,
+  cookieOptions: ReturnType<typeof getSupabaseCookieOptions>
 ): {
   getAll(): RequestCookie[];
   setAll(cookiesToSet: SupabaseCookie[]): void;
 } {
+  const authCookieUrls = getSupabaseAuthCookieUrls(url);
+  const mirrorCookieOptions = {
+    domain: cookieOptions.domain,
+    path: cookieOptions.path,
+    sameSite: cookieOptions.sameSite,
+    secure: cookieOptions.secure,
+  };
+
   return {
     getAll() {
-      return sanitizeSupabaseAuthCookies(cookieStore.getAll(), url, (name) => {
-        try {
-          cookieStore.set(name, '', {
-            expires: new Date(0),
-            maxAge: 0,
-            path: '/',
-          });
-        } catch {
-          // Ignore cookie clearing failures in read-only contexts.
+      return sanitizeSupabaseAuthCookies(
+        cookieStore.getAll(),
+        authCookieUrls,
+        (name, options) => {
+          try {
+            cookieStore.set(name, '', options);
+          } catch {
+            // Ignore cookie clearing failures in read-only contexts.
+          }
+        },
+        (name, value) => {
+          try {
+            cookieStore.set(name, value, {
+              ...mirrorCookieOptions,
+              maxAge: SUPABASE_SESSION_COOKIE_MAX_AGE_SECONDS,
+            });
+          } catch {
+            // Ignore cookie mirroring failures in read-only contexts.
+          }
         }
-      });
+      );
     },
     setAll(cookiesToSet: SupabaseCookie[]) {
       try {
@@ -104,8 +125,9 @@ async function createGenericClient<T = Database>(
   const { url, key } = checkEnvVariables({ useSecretKey: isAdmin });
   const cookieStore = await cookies();
   const resolvedRequestUrl = requestUrl ?? (await getRequestUrlFromHeaders());
+  const cookieOptions = getSupabaseCookieOptions(url, resolvedRequestUrl);
   return createServerClient<T>(url, key, {
-    cookieOptions: getSupabaseCookieOptions(url, resolvedRequestUrl),
+    cookieOptions,
     cookies: isAdmin
       ? {
           getAll() {
@@ -114,7 +136,7 @@ async function createGenericClient<T = Database>(
 
           setAll(_: SupabaseCookie[]) {},
         }
-      : createCookieHandler(cookieStore, url),
+      : createCookieHandler(cookieStore, url, cookieOptions),
   });
 }
 

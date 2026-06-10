@@ -97,6 +97,7 @@ vi.mock('../common', () => ({
       ),
   getHostOnlyCookieClearHeadersForNames:
     nextResponseMocks.hostOnlyClearForNames,
+  getSupabaseAuthCookieUrls: vi.fn((url: string) => [url]),
   getSupabaseAuthStorageKey: (url: string) =>
     `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
 }));
@@ -113,6 +114,9 @@ describe('Supabase Proxy', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.SUPABASE_SERVER_URL;
+    delete process.env.SUPABASE_URL;
     mockRequest.url = 'http://localhost:7803';
     mockRequest.headers = new Map();
     mockRequest.cookies.getAll = () => [];
@@ -291,6 +295,44 @@ describe('Supabase Proxy', () => {
     expect(mockRequest.cookies.set).toHaveBeenCalledWith(
       'sb-test-auth-token',
       ''
+    );
+  });
+
+  it('mirrors compatible server-key cookies into the canonical public key before getClaims', async () => {
+    const common = await import('../common');
+    const session = JSON.stringify({
+      access_token: 'jwt.with.dots',
+      refresh_token: 'refresh',
+    });
+    vi.mocked(common.getSupabaseAuthCookieUrls).mockReturnValueOnce([
+      'http://127.0.0.1:8001',
+      'http://host.docker.internal:8001',
+    ]);
+    mockRequest.cookies.getAll = () => [
+      {
+        name: 'sb-host-auth-token',
+        value: session,
+      },
+    ];
+
+    await updateSession(mockRequest as any);
+
+    const cookieHandler = (createServerClient as any).mock.calls[0][2].cookies;
+    expect(cookieHandler.getAll()).toEqual([
+      { name: 'sb-127-auth-token', value: session },
+    ]);
+    expect(mockRequest.cookies.set).toHaveBeenCalledWith(
+      'sb-127-auth-token',
+      session
+    );
+    expect(nextResponseMocks.cookieSet).toHaveBeenCalledWith(
+      'sb-127-auth-token',
+      session,
+      expect.objectContaining({
+        maxAge: 34_560_000,
+        path: '/',
+        sameSite: 'lax',
+      })
     );
   });
 

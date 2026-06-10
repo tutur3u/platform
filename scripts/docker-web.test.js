@@ -58,6 +58,8 @@ const {
   getBlueGreenWebServiceImageTag,
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
+  isBlueGreenSupportBuildSkipped,
+  isBlueGreenWebBuildSkipped,
   isBlueGreenSupermemoryEnabled,
   isNativeWebBuildEnabled,
   readBlueGreenTargetState,
@@ -177,6 +179,58 @@ test('blue-green support services honor explicit Supermemory disablement', () =>
       targetColor: 'green',
     }),
     ['web-green']
+  );
+});
+
+test('blue-green web build skipping only accepts explicit truthy values', () => {
+  assert.equal(isBlueGreenWebBuildSkipped({}), false);
+  assert.equal(
+    isBlueGreenWebBuildSkipped({ DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD: '1' }),
+    true
+  );
+  assert.equal(
+    isBlueGreenWebBuildSkipped({
+      DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD: 'true',
+    }),
+    true
+  );
+  assert.equal(
+    isBlueGreenWebBuildSkipped({ DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD: 'on' }),
+    true
+  );
+  assert.equal(
+    isBlueGreenWebBuildSkipped({
+      DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD: 'false',
+    }),
+    false
+  );
+});
+
+test('blue-green support build skipping only accepts explicit truthy values', () => {
+  assert.equal(isBlueGreenSupportBuildSkipped({}), false);
+  assert.equal(
+    isBlueGreenSupportBuildSkipped({
+      DOCKER_WEB_SKIP_BLUE_GREEN_SUPPORT_BUILD: '1',
+    }),
+    true
+  );
+  assert.equal(
+    isBlueGreenSupportBuildSkipped({
+      DOCKER_WEB_SKIP_BLUE_GREEN_SUPPORT_BUILD: 'true',
+    }),
+    true
+  );
+  assert.equal(
+    isBlueGreenSupportBuildSkipped({
+      DOCKER_WEB_SKIP_BLUE_GREEN_SUPPORT_BUILD: 'on',
+    }),
+    true
+  );
+  assert.equal(
+    isBlueGreenSupportBuildSkipped({
+      DOCKER_WEB_SKIP_BLUE_GREEN_SUPPORT_BUILD: 'false',
+    }),
+    false
   );
 });
 
@@ -2778,6 +2832,228 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
         rootDir: tempDir,
       },
     ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runBlueGreenProdWorkflow promotes pretagged images without rebuilding them', async () => {
+  const calls = [];
+  let webGreenStarted = false;
+  const startedServices = new Set();
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-reuse-web-image-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getBlueGreenPaths(tempDir);
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+  writeBlueGreenActiveColor('blue', paths);
+
+  const resultFor = (stdout = '') => ({
+    code: 0,
+    signal: null,
+    stderr: '',
+    stdout,
+  });
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (args.includes('ps') && args.at(-1) === 'web') {
+      return resultFor('');
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-blue') {
+      return resultFor('blue-123\n');
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'web-green') {
+      return resultFor(webGreenStarted ? 'green-123\n' : '');
+    }
+
+    if (
+      args.includes('ps') &&
+      [
+        'backend',
+        'hive-green',
+        'hive-realtime',
+        'markitdown',
+        'meet-realtime',
+        'storage-unzip-proxy',
+        'supermemory',
+        'web-cron-runner',
+      ].includes(args.at(-1))
+    ) {
+      const serviceName = args.at(-1);
+
+      return resultFor(
+        startedServices.has(serviceName) ? `${serviceName}-123\n` : ''
+      );
+    }
+
+    if (args.includes('ps') && args.at(-1) === BLUE_GREEN_PROXY_SERVICE) {
+      return resultFor('proxy-123\n');
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{json .NetworkSettings.Ports}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor(`${BLUE_GREEN_PROXY_PORTS_JSON}\n`);
+    }
+
+    if (args.includes('config') && args.includes('--format')) {
+      return resultFor(
+        JSON.stringify({
+          services: {
+            [BLUE_GREEN_PROXY_SERVICE]: { image: 'nginx:1.31.0-alpine' },
+          },
+        })
+      );
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{.Config.Image}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor('nginx:1.31.0-alpine\n');
+    }
+
+    if (args[0] === 'inspect') {
+      return resultFor('healthy\n');
+    }
+
+    if (args.includes('build') || args[0] === 'buildx') {
+      throw new Error(`Unexpected build command: ${key}`);
+    }
+
+    if (args.includes('up') && args.includes('web-green')) {
+      webGreenStarted = true;
+      return resultFor('');
+    }
+
+    if (args.includes('up')) {
+      for (const serviceName of [
+        'backend',
+        'hive-green',
+        'hive-realtime',
+        'markitdown',
+        'meet-realtime',
+        'storage-unzip-proxy',
+        'supermemory',
+        'web-cron-runner',
+      ]) {
+        if (args.includes(serviceName)) {
+          startedServices.add(serviceName);
+        }
+      }
+
+      return resultFor('');
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes('web-blue') &&
+      args.includes('node')
+    ) {
+      return resultFor(JSON.stringify({ inflightRequests: 0 }));
+    }
+
+    if (args.includes('exec') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
+      return resultFor('');
+    }
+
+    if (args.includes('stop') || args.includes('rm')) {
+      return resultFor('');
+    }
+
+    return resultFor('');
+  };
+
+  try {
+    const result = await runBlueGreenProdWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: [],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        changedFiles: [
+          'apps/web/src/app/page.tsx',
+          'apps/hive/src/app/page.tsx',
+          'apps/backend/cmd/backend/main.go',
+        ],
+        env: {
+          DOCKER_WEB_SKIP_BLUE_GREEN_SUPPORT_BUILD: '1',
+          DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD: '1',
+          PATH: 'test-path',
+        },
+        envFilePath,
+        proxyDrainMs: 0,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.deepEqual(
+      result.stages
+        .filter((stage) =>
+          [
+            'web-build',
+            'web-promote',
+            'hive-promote',
+            'support-refresh',
+          ].includes(stage.id)
+        )
+        .map((stage) => ({
+          id: stage.id,
+          skippedReason: stage.skippedReason,
+          status: stage.status,
+        })),
+      [
+        {
+          id: 'web-build',
+          skippedReason: 'reusing prebuilt web image',
+          status: 'skipped',
+        },
+        {
+          id: 'web-promote',
+          skippedReason: null,
+          status: 'succeeded',
+        },
+        {
+          id: 'hive-promote',
+          skippedReason: null,
+          status: 'succeeded',
+        },
+        {
+          id: 'support-refresh',
+          skippedReason: null,
+          status: 'succeeded',
+        },
+      ]
+    );
+    assert.equal(
+      calls.some((call) => call.includes(' build web-green')),
+      false
+    );
+    assert.ok(
+      calls.some(
+        (call) =>
+          call.includes(' up --detach --no-build') &&
+          call.includes(' web-green')
+      )
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

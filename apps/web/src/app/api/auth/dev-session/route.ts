@@ -8,6 +8,7 @@ import { checkIfUserExists, validateEmail } from '@tuturuuu/utils/email/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
 import {
+  getLocalE2EPublicSupabaseUrl,
   isLocalE2EAuthBypassEnabled,
   isLocalE2EAuthRequestAllowed,
 } from '@/lib/auth/local-e2e';
@@ -149,7 +150,7 @@ function mirrorLocalE2ESupabaseBrowserCookie(
     return;
   }
 
-  const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publicSupabaseUrl = getLocalE2EPublicSupabaseUrl();
   const serverSupabaseUrl =
     process.env.SUPABASE_SERVER_URL ?? publicSupabaseUrl;
   const publicStorageKey = getSupabaseAuthStorageKeyOrNull(publicSupabaseUrl);

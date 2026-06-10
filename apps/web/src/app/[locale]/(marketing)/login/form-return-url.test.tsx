@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import React, { type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import LoginForm from './form';
@@ -17,6 +23,7 @@ const mocks = vi.hoisted(() => ({
   getOtpSettings: vi.fn(),
   getUser: vi.fn(),
   mfaAssuranceLevel: vi.fn(),
+  passwordLoginWithInternalApi: vi.fn(),
   refreshSession: vi.fn(),
   reload: vi.fn(),
   resolveCrossAppReturnUrlWithInternalApi: vi.fn(),
@@ -38,7 +45,9 @@ vi.mock('@tuturuuu/internal-api/auth', () => ({
   createMfaMobileApprovalChallengeWithInternalApi: vi.fn(),
   getOtpSettings: (...args: Parameters<typeof mocks.getOtpSettings>) =>
     mocks.getOtpSettings(...args),
-  passwordLoginWithInternalApi: vi.fn(),
+  passwordLoginWithInternalApi: (
+    ...args: Parameters<typeof mocks.passwordLoginWithInternalApi>
+  ) => mocks.passwordLoginWithInternalApi(...args),
   pollMfaMobileApprovalChallengeWithInternalApi: vi.fn(),
   resolveCrossAppReturnUrlWithInternalApi: (
     ...args: Parameters<typeof mocks.resolveCrossAppReturnUrlWithInternalApi>
@@ -139,14 +148,13 @@ function setWindowLocation(search = '', origin = 'https://tuturuuu.com') {
   });
 }
 
-function renderLoginForm(returnUrl: string, options: { origin?: string } = {}) {
+function renderLoginFormSearch(search = '', options: { origin?: string } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: { retry: false },
       queries: { retry: false },
     },
   });
-  const search = `?returnUrl=${encodeURIComponent(returnUrl)}`;
 
   mocks.searchParams = new URLSearchParams(search);
   setWindowLocation(search, options.origin);
@@ -158,6 +166,12 @@ function renderLoginForm(returnUrl: string, options: { origin?: string } = {}) {
   );
 
   return queryClient;
+}
+
+function renderLoginForm(returnUrl: string, options: { origin?: string } = {}) {
+  return renderLoginFormSearch(`?returnUrl=${encodeURIComponent(returnUrl)}`, {
+    origin: options.origin,
+  });
 }
 
 describe('LoginForm returnUrl navigation', () => {
@@ -188,6 +202,7 @@ describe('LoginForm returnUrl navigation', () => {
     mocks.resolveCrossAppReturnUrlWithInternalApi.mockResolvedValue({
       error: 'Invalid returnUrl',
     });
+    mocks.passwordLoginWithInternalApi.mockResolvedValue({ success: true });
     mocks.signInWithOAuth.mockResolvedValue({ error: null });
   });
 
@@ -270,6 +285,46 @@ describe('LoginForm returnUrl navigation', () => {
         })
       );
     });
+    queryClient.clear();
+  });
+
+  it('navigates home after password login without a returnUrl', async () => {
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
+    });
+
+    const queryClient = renderLoginFormSearch();
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'login.use_password_instead',
+      })
+    );
+    const passwordInput = await screen.findByPlaceholderText(
+      'login.password_placeholder'
+    );
+    fireEvent.change(passwordInput, {
+      target: { value: 'password1234' },
+    });
+
+    const signInButton = await screen.findByRole('button', {
+      name: 'login.sign_in',
+    });
+    // The unit harness does not always hydrate RHF formState.isValid after the
+    // async stage switch, so clear the DOM-only disabled flag to exercise submit.
+    (signInButton as HTMLButtonElement).disabled = false;
+    await act(async () => {
+      fireEvent.click(signInButton);
+    });
+
+    await waitFor(() => {
+      expect(mocks.passwordLoginWithInternalApi).toHaveBeenCalled();
+    });
+    expect(mocks.routerPush).toHaveBeenCalledWith('/');
+    expect(mocks.routerRefresh).toHaveBeenCalled();
+    expect(mocks.reload).not.toHaveBeenCalled();
     queryClient.clear();
   });
 

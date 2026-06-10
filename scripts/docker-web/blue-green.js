@@ -2275,6 +2275,14 @@ function isNativeWebBuildEnabled(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_BUILD);
 }
 
+function isBlueGreenWebBuildSkipped(env = {}) {
+  return isTruthyEnvValue(env.DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD);
+}
+
+function isBlueGreenSupportBuildSkipped(env = {}) {
+  return isTruthyEnvValue(env.DOCKER_WEB_SKIP_BLUE_GREEN_SUPPORT_BUILD);
+}
+
 function getComposeProjectNameFromGlobalArgs(composeGlobalArgs = []) {
   for (let index = 0; index < composeGlobalArgs.length; index += 1) {
     const arg = composeGlobalArgs[index];
@@ -3074,6 +3082,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     deploymentStamp,
     latestCommit: options.latestCommit,
   });
+  const skipWebBuild = isBlueGreenWebBuildSkipped(targetEnv);
+  const skipSupportBuild = isBlueGreenSupportBuildSkipped(targetEnv);
   const bakeFile =
     options.bakeFile ?? getBlueGreenBakeFile(options.rootDir ?? ROOT_DIR);
   const buildStrategy = options.buildStrategy ?? 'compose';
@@ -3165,17 +3175,25 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
         'web already serving current commit'
       );
     } else {
-      await runBlueGreenStage(stages, 'web-build', async () => {
-        await buildBlueGreenServices({
-          bakeFile,
-          buildStrategy,
-          composeFile,
-          composeGlobalArgs: parsed.composeGlobalArgs,
-          env: targetEnv,
-          runCommand: run,
-          services: webBuildServices,
+      if (skipWebBuild) {
+        markBlueGreenStageSkipped(
+          stages,
+          'web-build',
+          'reusing prebuilt web image'
+        );
+      } else {
+        await runBlueGreenStage(stages, 'web-build', async () => {
+          await buildBlueGreenServices({
+            bakeFile,
+            buildStrategy,
+            composeFile,
+            composeGlobalArgs: parsed.composeGlobalArgs,
+            env: targetEnv,
+            runCommand: run,
+            services: webBuildServices,
+          });
         });
-      });
+      }
 
       await runBlueGreenStage(stages, 'web-promote', async () => {
         await stopComposeServicesIfPresent(['web'], {
@@ -3255,15 +3273,17 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     });
 
     if (hiveBuildServices.length > 0) {
-      await buildBlueGreenServices({
-        bakeFile,
-        buildStrategy,
-        composeFile,
-        composeGlobalArgs: parsed.composeGlobalArgs,
-        env: targetEnv,
-        runCommand: run,
-        services: hiveBuildServices,
-      });
+      if (!skipSupportBuild) {
+        await buildBlueGreenServices({
+          bakeFile,
+          buildStrategy,
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
+          runCommand: run,
+          services: hiveBuildServices,
+        });
+      }
 
       await runBlueGreenStage(stages, 'hive-migrate', async () => {
         await runHiveDbForwardMigrationsAndCleanup({
@@ -3380,15 +3400,17 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
 
     if (supportBuildServices.length > 0) {
       await runBlueGreenStage(stages, 'support-refresh', async () => {
-        await buildBlueGreenServices({
-          bakeFile,
-          buildStrategy,
-          composeFile,
-          composeGlobalArgs: parsed.composeGlobalArgs,
-          env: targetEnv,
-          runCommand: run,
-          services: supportBuildServices,
-        });
+        if (!skipSupportBuild) {
+          await buildBlueGreenServices({
+            bakeFile,
+            buildStrategy,
+            composeFile,
+            composeGlobalArgs: parsed.composeGlobalArgs,
+            env: targetEnv,
+            runCommand: run,
+            services: supportBuildServices,
+          });
+        }
 
         await runComposeUpWithNameConflictRecovery({
           composeFile,
@@ -4072,6 +4094,8 @@ module.exports = {
   getComposeServiceRunningImage,
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
+  isBlueGreenSupportBuildSkipped,
+  isBlueGreenWebBuildSkipped,
   isBlueGreenSupermemoryEnabled,
   readBlueGreenDeploymentStamp,
   readBlueGreenSupportBuildHashHistory,

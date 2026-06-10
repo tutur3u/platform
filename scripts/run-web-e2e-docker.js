@@ -3,6 +3,7 @@
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const https = require('node:https');
+const os = require('node:os');
 const path = require('node:path');
 
 const {
@@ -35,6 +36,11 @@ const DEFAULT_WEB_PROXY_HOST_PORT = '7803';
 const DNS_IPV4_FIRST_NODE_OPTION = '--dns-result-order=ipv4first';
 const DEFAULT_PORTLESS_ALIAS_VERIFY_ATTEMPTS = 3;
 const DEFAULT_PORTLESS_ALIAS_VERIFY_DELAY_MS = 1_000;
+const DEFAULT_PORTLESS_RUNTIME_DIR = path.join(os.homedir(), '.portless');
+const DEFAULT_PORTLESS_PROXY_TLS_MARKER = path.join(
+  DEFAULT_PORTLESS_RUNTIME_DIR,
+  'proxy.tls'
+);
 const E2E_DIAGNOSTIC_SERVICES = Object.freeze([
   'web-proxy',
   'web-blue',
@@ -52,6 +58,25 @@ const PORTLESS_NOT_READY_PATTERNS = Object.freeze([
   /No app registered/iu,
   /No apps running/iu,
 ]);
+const BLUE_GREEN_COLORS = Object.freeze(['blue', 'green']);
+const DEFAULT_REUSABLE_WEB_IMAGE_PROJECT = 'tuturuuu';
+const DEFAULT_REUSABLE_WEB_IMAGE_COLOR = 'blue';
+const REUSABLE_SUPPORT_IMAGE_SERVICES = Object.freeze([
+  'backend',
+  'hive-realtime',
+  'meet-realtime',
+  'markitdown',
+  'storage-unzip-proxy',
+  'supermemory',
+  'web-cron-runner',
+]);
+const BLUE_GREEN_ACTIVE_COLOR_FILE = path.join(
+  ROOT_DIR,
+  'tmp',
+  'docker-web',
+  'prod',
+  'active-color'
+);
 
 function getDockerWebUpArgs(envFilePath, env = process.env) {
   return [
@@ -72,8 +97,8 @@ function getDockerWebUpArgs(envFilePath, env = process.env) {
   ];
 }
 
-function getDockerWebDownArgs(envFilePath) {
-  return [
+function getDockerWebDownArgs(envFilePath, env = process.env) {
+  const args = [
     'down',
     '--mode',
     'prod',
@@ -82,9 +107,13 @@ function getDockerWebDownArgs(envFilePath) {
     '--env-file',
     envFilePath,
     '--volumes',
-    '--rmi',
-    'local',
   ];
+
+  if (!env.DOCKER_WEB_REUSED_WEB_IMAGE_SOURCE) {
+    args.push('--rmi', 'local');
+  }
+
+  return args;
 }
 
 function getErrorMessage(error) {
@@ -215,6 +244,55 @@ function getPortlessCommandEnv(env = process.env) {
     ...env,
     NODE_OPTIONS: [...options, DNS_IPV4_FIRST_NODE_OPTION].join(' '),
   };
+}
+
+function removePortlessProxyTlsMarker({
+  fsImpl = fs,
+  markerPath = DEFAULT_PORTLESS_PROXY_TLS_MARKER,
+  output = process.stderr,
+} = {}) {
+  try {
+    if (!fsImpl.existsSync(markerPath)) {
+      return false;
+    }
+
+    fsImpl.rmSync(markerPath, { force: true });
+    writeDiagnosticLine(
+      output,
+      `[e2e-diagnostics] Removed stale Portless TLS marker at ${markerPath}.`
+    );
+
+    return true;
+  } catch (error) {
+    writeDiagnosticLine(
+      output,
+      `[e2e-diagnostics] Unable to remove Portless TLS marker at ${markerPath}: ${getErrorMessage(
+        error
+      )}`
+    );
+
+    return false;
+  }
+}
+
+function isPortlessProxyConfigMismatchError(error) {
+  const message = getErrorMessage(error);
+
+  return (
+    /proxy is already running on port/iu.test(message) &&
+    /different config/iu.test(message)
+  );
+}
+
+function isPortlessProxyStartExitError(error, args = []) {
+  const message = getErrorMessage(error);
+  const command = `bunx ${args.join(' ')}`;
+
+  return (
+    args.slice(0, 3).join(' ') === 'portless proxy start' &&
+    message.includes(command) &&
+    /exited with (?:\d+|error)/iu.test(message)
+  );
 }
 
 function isPortlessNotReadyBody(body) {
@@ -650,11 +728,39 @@ async function ensurePortlessRoute({
 
   try {
     const portlessEnv = getPortlessCommandEnv(env);
+    const proxyStartArgs = getPortlessProxyStartArgs(env);
 
-    await run('bunx', getPortlessProxyStartArgs(env), {
-      cwd: ROOT_DIR,
-      env: portlessEnv,
-    });
+    removePortlessProxyTlsMarker({ output });
+
+    try {
+      await run('bunx', proxyStartArgs, {
+        cwd: ROOT_DIR,
+        env: portlessEnv,
+      });
+    } catch (error) {
+      if (
+        !isPortlessProxyConfigMismatchError(error) &&
+        !isPortlessProxyStartExitError(error, proxyStartArgs)
+      ) {
+        throw error;
+      }
+
+      writeDiagnosticLine(
+        output,
+        `[e2e-diagnostics] Restarting Portless proxy with requested HTTPS settings: ${getErrorMessage(
+          error
+        )}`
+      );
+      await run('bunx', ['portless', 'proxy', 'stop'], {
+        cwd: ROOT_DIR,
+        env: portlessEnv,
+      });
+      removePortlessProxyTlsMarker({ output });
+      await run('bunx', proxyStartArgs, {
+        cwd: ROOT_DIR,
+        env: portlessEnv,
+      });
+    }
 
     try {
       await run(
@@ -744,8 +850,16 @@ function ensureLocalE2EEnvFile(envFilePath) {
   });
 }
 
+function isTruthyEnvValue(value) {
+  return /^(1|true|yes|on)$/iu.test(String(value ?? '').trim());
+}
+
+function isFalsyEnvValue(value) {
+  return /^(0|false|no|off)$/iu.test(String(value ?? '').trim());
+}
+
 function shouldKeepStack(env = process.env) {
-  return /^(1|true|yes)$/iu.test(String(env.E2E_KEEP_DOCKER_STACK ?? ''));
+  return isTruthyEnvValue(env.E2E_KEEP_DOCKER_STACK);
 }
 
 function isE2EComposeProjectName(projectName) {
@@ -758,6 +872,345 @@ function isE2EComposeProjectName(projectName) {
 function getE2EComposeProjectName(env = process.env) {
   const projectName = env.DOCKER_WEB_COMPOSE_PROJECT_NAME;
   return isE2EComposeProjectName(projectName) ? projectName : null;
+}
+
+function normalizeBlueGreenColor(value) {
+  const color = String(value ?? '')
+    .trim()
+    .toLowerCase();
+
+  return BLUE_GREEN_COLORS.includes(color) ? color : null;
+}
+
+function readReusableWebImageColor({
+  activeColorFile = BLUE_GREEN_ACTIVE_COLOR_FILE,
+  env = process.env,
+  fsImpl = fs,
+} = {}) {
+  const explicitColor = String(env.E2E_DOCKER_REUSE_WEB_IMAGE_COLOR ?? '')
+    .trim()
+    .toLowerCase();
+
+  if (explicitColor && explicitColor !== 'auto') {
+    const color = normalizeBlueGreenColor(explicitColor);
+
+    if (!color) {
+      throw new Error(
+        'E2E_DOCKER_REUSE_WEB_IMAGE_COLOR must be "blue", "green", or "auto".'
+      );
+    }
+
+    return color;
+  }
+
+  try {
+    if (fsImpl.existsSync(activeColorFile)) {
+      return (
+        normalizeBlueGreenColor(fsImpl.readFileSync(activeColorFile, 'utf8')) ??
+        DEFAULT_REUSABLE_WEB_IMAGE_COLOR
+      );
+    }
+  } catch {
+    return DEFAULT_REUSABLE_WEB_IMAGE_COLOR;
+  }
+
+  return DEFAULT_REUSABLE_WEB_IMAGE_COLOR;
+}
+
+function getReusableWebImageProject(env = process.env) {
+  const projectName = String(
+    env.E2E_DOCKER_REUSE_WEB_IMAGE_PROJECT ?? DEFAULT_REUSABLE_WEB_IMAGE_PROJECT
+  ).trim();
+
+  return projectName || DEFAULT_REUSABLE_WEB_IMAGE_PROJECT;
+}
+
+function getReusableWebImageRef(projectName, color) {
+  const normalizedColor = normalizeBlueGreenColor(color);
+
+  if (!normalizedColor) {
+    throw new Error(`Unsupported blue/green color "${color}".`);
+  }
+
+  return `${projectName}-web-${normalizedColor}`;
+}
+
+function getReusableHiveImageRef(projectName, color) {
+  const normalizedColor = normalizeBlueGreenColor(color);
+
+  if (!normalizedColor) {
+    throw new Error(`Unsupported blue/green color "${color}".`);
+  }
+
+  return `${projectName}-hive-${normalizedColor}`;
+}
+
+function getReusableSupportImageRef(projectName, serviceName) {
+  const service = String(serviceName ?? '').trim();
+
+  if (!REUSABLE_SUPPORT_IMAGE_SERVICES.includes(service)) {
+    throw new Error(`Unsupported reusable support service "${serviceName}".`);
+  }
+
+  return `${projectName}-${service}`;
+}
+
+function getReusableWebImageSource(env = process.env, options = {}) {
+  const explicitSource = String(
+    env.E2E_DOCKER_REUSE_WEB_IMAGE_SOURCE ?? ''
+  ).trim();
+
+  if (explicitSource) {
+    return explicitSource;
+  }
+
+  const value = String(env.E2E_DOCKER_REUSE_WEB_IMAGE ?? '').trim();
+
+  if (!value || isFalsyEnvValue(value)) {
+    return null;
+  }
+
+  if (!isTruthyEnvValue(value)) {
+    return value;
+  }
+
+  return getReusableWebImageRef(
+    getReusableWebImageProject(env),
+    readReusableWebImageColor({
+      activeColorFile: options.activeColorFile,
+      env,
+      fsImpl: options.fsImpl ?? fs,
+    })
+  );
+}
+
+function getReusableWebImageTargets(projectName) {
+  if (!isE2EComposeProjectName(projectName)) {
+    throw new Error(
+      'Reusable Docker web image targets require a ttr-e2e-* Compose project.'
+    );
+  }
+
+  return BLUE_GREEN_COLORS.map((color) =>
+    getReusableWebImageRef(projectName, color)
+  );
+}
+
+function getReusableSupportImageSpecs({
+  sourceColor = DEFAULT_REUSABLE_WEB_IMAGE_COLOR,
+  sourceProject = DEFAULT_REUSABLE_WEB_IMAGE_PROJECT,
+  targetProject,
+} = {}) {
+  if (!isE2EComposeProjectName(targetProject)) {
+    throw new Error(
+      'Reusable Docker support image targets require a ttr-e2e-* Compose project.'
+    );
+  }
+
+  return [
+    {
+      source: getReusableHiveImageRef(sourceProject, sourceColor),
+      targets: BLUE_GREEN_COLORS.map((color) =>
+        getReusableHiveImageRef(targetProject, color)
+      ),
+    },
+    ...REUSABLE_SUPPORT_IMAGE_SERVICES.map((serviceName) => ({
+      source: getReusableSupportImageRef(sourceProject, serviceName),
+      targets: [getReusableSupportImageRef(targetProject, serviceName)],
+    })),
+  ];
+}
+
+function hasExplicitDockerImageTag(imageRef) {
+  const ref = String(imageRef ?? '').trim();
+
+  if (!ref || ref.includes('@')) {
+    return true;
+  }
+
+  return ref.lastIndexOf(':') > ref.lastIndexOf('/');
+}
+
+function getDockerImageRefCandidates(imageRef) {
+  const ref = String(imageRef ?? '').trim();
+
+  if (!ref) {
+    return [];
+  }
+
+  const candidates = [ref];
+
+  if (!hasExplicitDockerImageTag(ref)) {
+    candidates.push(`${ref}:latest`);
+  }
+
+  return candidates;
+}
+
+function resolveReusableWebImageSourceFromList(imageRef, imageListOutput) {
+  const candidates = new Set(getDockerImageRefCandidates(imageRef));
+
+  for (const line of String(imageListOutput ?? '').split(/\r?\n/u)) {
+    const [repositoryTag, imageId] = line.trim().split(/\s+/u);
+
+    if (repositoryTag && candidates.has(repositoryTag)) {
+      return imageId || repositoryTag;
+    }
+  }
+
+  return null;
+}
+
+async function inspectReusableWebImageSource({
+  env = process.env,
+  runCommandForOutput: runForOutput = runCommandForOutput,
+  source,
+} = {}) {
+  try {
+    await runForOutput('docker', ['image', 'inspect', source], { env });
+    return source;
+  } catch (directInspectError) {
+    const imageList = await runForOutput(
+      'docker',
+      ['image', 'ls', '--format', '{{.Repository}}:{{.Tag}} {{.ID}}'],
+      { env }
+    );
+    const resolvedSource = resolveReusableWebImageSourceFromList(
+      source,
+      imageList.stdout
+    );
+
+    if (!resolvedSource) {
+      throw directInspectError;
+    }
+
+    await runForOutput('docker', ['image', 'inspect', resolvedSource], {
+      env,
+    });
+
+    return resolvedSource;
+  }
+}
+
+async function prepareReusableWebImage({
+  env = process.env,
+  output = process.stderr,
+  projectName = getE2EComposeProjectName(env),
+  runCommand: run = runCommand,
+  runCommandForOutput: runForOutput = runCommandForOutput,
+  ...sourceOptions
+} = {}) {
+  const source = getReusableWebImageSource(env, sourceOptions);
+
+  if (!source) {
+    return null;
+  }
+
+  const targets = getReusableWebImageTargets(projectName);
+  const sourceRef = await inspectReusableWebImageSource({
+    env,
+    runCommandForOutput: runForOutput,
+    source,
+  });
+
+  for (const target of targets) {
+    await run('docker', ['tag', sourceRef, target], { env });
+  }
+
+  if (output) {
+    writeDiagnosticLine(
+      output,
+      `[e2e-diagnostics] Reusing Docker web image ${source}${
+        sourceRef === source ? '' : ` (${sourceRef})`
+      } as ${targets.join(', ')}.`
+    );
+  }
+
+  return { source, sourceRef, targets };
+}
+
+async function prepareReusableSupportImages({
+  env = process.env,
+  output = process.stderr,
+  projectName = getE2EComposeProjectName(env),
+  runCommand: run = runCommand,
+  runCommandForOutput: runForOutput = runCommandForOutput,
+  ...sourceOptions
+} = {}) {
+  if (!getReusableWebImageSource(env, sourceOptions)) {
+    return null;
+  }
+
+  const sourceProject = getReusableWebImageProject(env);
+  const sourceColor = readReusableWebImageColor({
+    activeColorFile: sourceOptions.activeColorFile,
+    env,
+    fsImpl: sourceOptions.fsImpl ?? fs,
+  });
+  const specs = getReusableSupportImageSpecs({
+    sourceColor,
+    sourceProject,
+    targetProject: projectName,
+  });
+  const missing = [];
+  const retagged = [];
+
+  for (const spec of specs) {
+    let sourceRef;
+
+    try {
+      sourceRef = await inspectReusableWebImageSource({
+        env,
+        runCommandForOutput: runForOutput,
+        source: spec.source,
+      });
+    } catch {
+      missing.push(spec.source);
+      continue;
+    }
+
+    for (const target of spec.targets) {
+      await run('docker', ['tag', sourceRef, target], { env });
+    }
+
+    retagged.push({ ...spec, sourceRef });
+  }
+
+  if (missing.length > 0) {
+    if (output) {
+      writeDiagnosticLine(
+        output,
+        `[e2e-diagnostics] Reusable Docker support image set incomplete; missing ${missing.join(
+          ', '
+        )}. Support services will be built normally.`
+      );
+    }
+
+    return {
+      complete: false,
+      missing,
+      retagged,
+      targets: retagged.flatMap((spec) => spec.targets),
+    };
+  }
+
+  const targets = retagged.flatMap((spec) => spec.targets);
+
+  if (output) {
+    writeDiagnosticLine(
+      output,
+      `[e2e-diagnostics] Reusing Docker support images from ${sourceProject} ${sourceColor} as ${targets.join(
+        ', '
+      )}.`
+    );
+  }
+
+  return {
+    complete: true,
+    missing: [],
+    retagged,
+    targets,
+  };
 }
 
 function parseE2EProjectImageTags(imageListOutput, projectName) {
@@ -836,7 +1289,7 @@ async function removeE2EProjectImages({
 
 async function stopDockerizedE2E({ env, envFilePath }) {
   await runDockerWebWorkflow(
-    parseDockerWebArgs(getDockerWebDownArgs(envFilePath)),
+    parseDockerWebArgs(getDockerWebDownArgs(envFilePath, env)),
     {
       env,
       envFilePath,
@@ -878,6 +1331,27 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
   }
 
   assertSafeE2EEnvironment(env);
+
+  const reusableWebImage = await prepareReusableWebImage({ env });
+  const reusableSupportImages = reusableWebImage
+    ? await prepareReusableSupportImages({ env })
+    : null;
+
+  if (reusableWebImage) {
+    env = {
+      ...env,
+      DOCKER_WEB_REUSED_WEB_IMAGE_SOURCE: reusableWebImage.source,
+      DOCKER_WEB_REUSED_WEB_IMAGE_TARGETS: reusableWebImage.targets.join(','),
+      DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD: '1',
+      ...(reusableSupportImages?.complete
+        ? {
+            DOCKER_WEB_REUSED_SUPPORT_IMAGE_TARGETS:
+              reusableSupportImages.targets.join(','),
+            DOCKER_WEB_SKIP_BLUE_GREEN_SUPPORT_BUILD: '1',
+          }
+        : {}),
+    };
+  }
 
   let stackTouched = false;
   let runError = null;
@@ -947,8 +1421,11 @@ module.exports = {
   DEFAULT_PORTLESS_HEALTH_URL,
   DEFAULT_PORTLESS_ALIAS_VERIFY_ATTEMPTS,
   DEFAULT_PORTLESS_ALIAS_VERIFY_DELAY_MS,
+  DEFAULT_PORTLESS_PROXY_TLS_MARKER,
   DEFAULT_PORTLESS_READY_STATUS_CODES,
   DEFAULT_PORTLESS_READY_TIMEOUT_MS,
+  DEFAULT_REUSABLE_WEB_IMAGE_COLOR,
+  DEFAULT_REUSABLE_WEB_IMAGE_PROJECT,
   DEFAULT_WEB_PROXY_HOST_PORT,
   E2E_COMPOSE_PROJECT_PREFIX,
   ensurePortlessRoute,
@@ -966,12 +1443,27 @@ module.exports = {
   getPortlessHealthUrl,
   getPortlessProxyStartArgs,
   getReadinessFetchOptions,
+  getDockerImageRefCandidates,
+  getReusableWebImageProject,
+  getReusableWebImageRef,
+  getReusableWebImageSource,
+  getReusableWebImageTargets,
+  getReusableHiveImageRef,
+  getReusableSupportImageRef,
+  getReusableSupportImageSpecs,
   getWebProxyHealthUrl,
   getWebProxyHostPort,
+  isPortlessProxyConfigMismatchError,
+  isPortlessProxyStartExitError,
   isPortlessNotReadyBody,
   isE2EComposeProjectName,
   parseE2EProjectImageTags,
+  prepareReusableWebImage,
+  prepareReusableSupportImages,
   printE2EFailureDiagnostics,
+  readReusableWebImageColor,
+  removePortlessProxyTlsMarker,
+  resolveReusableWebImageSourceFromList,
   removeE2EProjectImages,
   routeListHasPortlessAlias,
   runCommand,

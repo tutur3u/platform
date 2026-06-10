@@ -63,6 +63,11 @@ const ONBOARDING_BYPASS_PATHS = [
 ];
 
 const isDev = process.env.NODE_ENV !== 'production';
+const NEXT_PUBLIC_ENV_PREFIX = 'NEXT_PUBLIC';
+
+function getRuntimePublicEnvValue(name: string) {
+  return process.env[`${NEXT_PUBLIC_ENV_PREFIX}_${name}`];
+}
 
 function resolveConfiguredOrigin(value?: string) {
   if (!value) {
@@ -92,8 +97,8 @@ function resolveConfiguredOrigin(value?: string) {
 const WEB_APP_URL = isDev
   ? BASE_URL
   : resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
-    resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
-    resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
+    resolveConfiguredOrigin(getRuntimePublicEnvValue('WEB_APP_URL')) ||
+    resolveConfiguredOrigin(getRuntimePublicEnvValue('APP_URL')) ||
     resolveConfiguredOrigin(process.env.COOLIFY_URL) ||
     resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
     'https://tuturuuu.com';
@@ -487,7 +492,7 @@ async function blockMalformedApiAuthCookieRequest(
 
   const malformedCookieNames = getMalformedSupabaseAuthCookieNames(
     req.cookies.getAll(),
-    process.env.NEXT_PUBLIC_SUPABASE_URL
+    getRuntimePublicEnvValue('SUPABASE_URL')
   );
 
   if (malformedCookieNames.length === 0) {

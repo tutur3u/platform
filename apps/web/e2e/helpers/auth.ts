@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import {
   AUTH_STATE_PATH,
   DASHBOARD_URL,
@@ -177,10 +177,9 @@ async function authenticateViaPasswordUi(page: Page): Promise<void> {
   await passwordInput.clear();
   await passwordInput.fill(TEST_USER.password);
 
-  await page
-    .getByRole('button', { name: /sign in/i })
-    .first()
-    .click();
+  const signInButton = page.getByRole('button', { name: /sign in/i }).first();
+  await expect(signInButton).toBeEnabled({ timeout: 10_000 });
+  await signInButton.click();
 
   await verifyAuthenticatedSession(page);
 }
@@ -240,36 +239,41 @@ export async function openPasswordStage(
   await emailInput.waitFor({ state: 'visible', timeout: 60_000 });
   await emailInput.clear();
   await emailInput.fill(email);
+  await expect(emailInput).toHaveValue(email);
 
   const passwordInput = page.getByPlaceholder('Enter your password');
-  if (await passwordInput.isVisible()) {
-    return passwordInput;
-  }
+  if (!(await passwordInput.isVisible())) {
+    const continueButton = page
+      .locator('form button[type="submit"]')
+      .filter({ hasText: /continue/i })
+      .first();
+    await continueButton.waitFor({ state: 'visible', timeout: 30_000 });
+    await continueButton.waitFor({ enabled: true, timeout: 10_000 });
+    await continueButton.click();
 
-  const continueButton = page
-    .locator('form button[type="submit"]')
-    .filter({ hasText: /continue/i })
-    .first();
-  await continueButton.waitFor({ state: 'visible', timeout: 30_000 });
-  await continueButton.waitFor({ enabled: true, timeout: 10_000 });
-  await continueButton.click();
+    // Wait for the form transition to complete.
+    await page.waitForTimeout(1_000);
 
-  // Wait for the form transition to complete.
-  await page.waitForTimeout(1_000);
+    // If OTP is enabled, the form transitions to an OTP entry stage.
+    // Click "Use password instead" to fall back to password authentication.
+    const usePasswordInstead = page.getByRole('button', {
+      name: /use password instead/i,
+    });
 
-  // If OTP is enabled, the form transitions to an OTP entry stage.
-  // Click "Use password instead" to fall back to password authentication.
-  const usePasswordInstead = page.getByRole('button', {
-    name: /use password instead/i,
-  });
-
-  if (
-    await usePasswordInstead.isVisible({ timeout: 5_000 }).catch(() => false)
-  ) {
-    await usePasswordInstead.click();
+    if (
+      await usePasswordInstead.isVisible({ timeout: 5_000 }).catch(() => false)
+    ) {
+      await usePasswordInstead.click();
+    }
   }
 
   await passwordInput.waitFor({ state: 'visible', timeout: 30_000 });
+
+  await expect(
+    page.locator('input[readonly][aria-readonly="true"]').first()
+  ).toHaveValue(email, {
+    timeout: 10_000,
+  });
 
   return passwordInput;
 }

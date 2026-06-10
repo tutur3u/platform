@@ -4,6 +4,15 @@ type CookieLike = {
   name: string;
   value: string;
 };
+type ClearCookie = (
+  name: string,
+  options?: { expires?: Date; maxAge?: number; path?: string }
+) => void;
+type MirrorCookie = (name: string, value: string) => void;
+type ValidAuthCookieGroup = {
+  normalizedCookies: CookieLike[];
+  storageKey: string;
+};
 
 const SUPABASE_BASE64_PREFIX = 'base64-';
 const BASE64_URL_BODY_PATTERN = /^[A-Za-z0-9_-]*$/;
@@ -158,6 +167,84 @@ function getSupabaseAuthStorageKeys(
   return storageKeys;
 }
 
+function getAuthCookiesForStorageKey(
+  cookies: CookieLike[],
+  storageKey: string
+) {
+  return cookies.filter(
+    (cookie) => getChunkIndex(cookie.name, storageKey) !== null
+  );
+}
+
+function isAuthCookieForAnyStorageKey(
+  cookieName: string,
+  storageKeys: Iterable<string>
+) {
+  return [...storageKeys].some(
+    (storageKey) => getChunkIndex(cookieName, storageKey) !== null
+  );
+}
+
+function clearAuthCookies(
+  authCookies: CookieLike[],
+  clearCookie: ClearCookie | undefined
+) {
+  for (const cookie of authCookies) {
+    clearCookie?.(cookie.name, EXPIRED_COOKIE_OPTIONS);
+  }
+}
+
+function getValidAuthCookieGroup(
+  cookies: CookieLike[],
+  storageKey: string,
+  clearCookie?: ClearCookie
+): ValidAuthCookieGroup | null {
+  const authCookies = getAuthCookiesForStorageKey(cookies, storageKey);
+
+  if (authCookies.length === 0) {
+    return null;
+  }
+
+  const { duplicateNames, normalizedCookies } =
+    dedupeAuthCookiesByName(authCookies);
+  const combinedValue = combineAuthCookieChunks(normalizedCookies, storageKey);
+  const malformedChunkLayout = hasMalformedChunkLayout(
+    normalizedCookies,
+    storageKey
+  );
+  const isValid =
+    (!combinedValue && !malformedChunkLayout) ||
+    (combinedValue &&
+      !malformedChunkLayout &&
+      !isMalformedSupabaseCookieValue(combinedValue));
+
+  if (!isValid) {
+    clearAuthCookies(authCookies, clearCookie);
+    return null;
+  }
+
+  for (const name of duplicateNames) {
+    clearCookie?.(name, EXPIRED_COOKIE_OPTIONS);
+  }
+
+  return {
+    normalizedCookies,
+    storageKey,
+  };
+}
+
+function renameAuthCookieStorageKey(
+  cookieName: string,
+  fromStorageKey: string,
+  toStorageKey: string
+) {
+  if (cookieName === fromStorageKey) {
+    return toStorageKey;
+  }
+
+  return `${toStorageKey}${cookieName.slice(fromStorageKey.length)}`;
+}
+
 export function getDuplicateSupabaseAuthCookieNames(
   cookieHeader: string | null | undefined,
   url: string | string[] | null | undefined
@@ -269,55 +356,116 @@ function isMalformedSupabaseCookieValue(cookieValue: string): boolean {
 
 export function sanitizeSupabaseAuthCookies(
   cookies: CookieLike[],
-  url: string,
-  clearCookie?: (
-    name: string,
-    options?: { expires?: Date; maxAge?: number; path?: string }
-  ) => void
+  url: string | string[],
+  clearCookie?: ClearCookie,
+  mirrorCookie?: MirrorCookie
 ): CookieLike[] {
-  const storageKey = getSupabaseAuthStorageKey(url);
-  const authCookies = cookies.filter(
-    (cookie) => getChunkIndex(cookie.name, storageKey) !== null
-  );
+  const storageKeys = getSupabaseAuthStorageKeys(url);
+  const canonicalStorageKey = [...storageKeys][0];
 
-  if (authCookies.length === 0) {
+  if (!canonicalStorageKey) {
     return cookies;
   }
 
-  const { duplicateNames, normalizedCookies } =
-    dedupeAuthCookiesByName(authCookies);
-  const combinedValue = combineAuthCookieChunks(normalizedCookies, storageKey);
-  const malformedChunkLayout = hasMalformedChunkLayout(
-    normalizedCookies,
-    storageKey
+  const nonAuthCookies = cookies.filter(
+    (cookie) => !isAuthCookieForAnyStorageKey(cookie.name, storageKeys)
   );
+  const validGroups = [...storageKeys]
+    .map((storageKey) =>
+      getValidAuthCookieGroup(cookies, storageKey, clearCookie)
+    )
+    .filter((group): group is ValidAuthCookieGroup => group !== null);
 
-  if (
-    (!combinedValue && !malformedChunkLayout) ||
-    (combinedValue &&
-      !malformedChunkLayout &&
-      !isMalformedSupabaseCookieValue(combinedValue))
-  ) {
-    for (const name of duplicateNames) {
-      clearCookie?.(name, EXPIRED_COOKIE_OPTIONS);
-    }
+  if (validGroups.length === 0) {
+    const hasKnownAuthCookies = cookies.some((cookie) =>
+      isAuthCookieForAnyStorageKey(cookie.name, storageKeys)
+    );
 
-    if (duplicateNames.size === 0) {
-      return cookies;
-    }
-
-    return cookies
-      .filter((cookie) => getChunkIndex(cookie.name, storageKey) === null)
-      .concat(normalizedCookies);
+    return hasKnownAuthCookies ? nonAuthCookies : cookies;
   }
 
-  for (const cookie of authCookies) {
-    clearCookie?.(cookie.name, EXPIRED_COOKIE_OPTIONS);
+  const canonicalGroup = validGroups.find(
+    (group) => group.storageKey === canonicalStorageKey
+  );
+  const selectedGroup = canonicalGroup ?? validGroups[0];
+  if (!selectedGroup) {
+    return nonAuthCookies;
   }
 
-  return cookies.filter(
-    (cookie) => getChunkIndex(cookie.name, storageKey) === null
+  for (const group of validGroups) {
+    if (group.storageKey === selectedGroup.storageKey) {
+      continue;
+    }
+
+    clearAuthCookies(group.normalizedCookies, clearCookie);
+  }
+
+  if (selectedGroup.storageKey === canonicalStorageKey) {
+    return nonAuthCookies.concat(selectedGroup.normalizedCookies);
+  }
+
+  const mirroredCookies = selectedGroup.normalizedCookies.map((cookie) => ({
+    ...cookie,
+    name: renameAuthCookieStorageKey(
+      cookie.name,
+      selectedGroup.storageKey,
+      canonicalStorageKey
+    ),
+  }));
+
+  for (const cookie of mirroredCookies) {
+    mirrorCookie?.(cookie.name, cookie.value);
+  }
+
+  clearAuthCookies(selectedGroup.normalizedCookies, clearCookie);
+
+  return nonAuthCookies.concat(mirroredCookies);
+}
+
+export function isSupabaseAuthCookieNameForUrls(
+  cookieName: string,
+  url: string | string[] | null | undefined
+) {
+  return isAuthCookieForAnyStorageKey(
+    cookieName,
+    getSupabaseAuthStorageKeys(url)
   );
+}
+
+export function isCanonicalSupabaseAuthCookieNameForUrls(
+  cookieName: string,
+  url: string | string[] | null | undefined
+) {
+  const [canonicalStorageKey] = getSupabaseAuthStorageKeys(url);
+
+  return canonicalStorageKey
+    ? getChunkIndex(cookieName, canonicalStorageKey) !== null
+    : false;
+}
+
+export function getNonCanonicalSupabaseAuthCookieNames(
+  cookieHeader: string | null | undefined,
+  url: string | string[] | null | undefined
+) {
+  const storageKeys = getSupabaseAuthStorageKeys(url);
+  const [canonicalStorageKey] = storageKeys;
+
+  if (!canonicalStorageKey) {
+    return [];
+  }
+
+  const names = new Set<string>();
+
+  for (const name of getCookieHeaderNames(cookieHeader)) {
+    if (
+      getChunkIndex(name, canonicalStorageKey) === null &&
+      isAuthCookieForAnyStorageKey(name, storageKeys)
+    ) {
+      names.add(name);
+    }
+  }
+
+  return [...names];
 }
 
 export function getMalformedSupabaseAuthCookieNames(

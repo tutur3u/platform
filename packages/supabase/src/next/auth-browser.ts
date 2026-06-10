@@ -2,19 +2,23 @@ import type { Session } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types';
 import type { SupabaseClient, TypedSupabaseClient } from '../types';
 import {
+  type BrowserSupabaseClientConfig,
   createBaseBrowserClient,
   createBaseClientWithSession,
 } from './browser-base';
 import { applyClientSession } from './session-switch';
 
-export function createAuthClient(): TypedSupabaseClient {
-  return createBaseBrowserClient();
+export function createAuthClient(
+  config?: BrowserSupabaseClientConfig
+): TypedSupabaseClient {
+  return createBaseBrowserClient(config);
 }
 
 export async function createAuthClientWithSession(
-  session: Session
+  session: Session,
+  config?: BrowserSupabaseClientConfig
 ): Promise<SupabaseClient<Database>> {
-  return createBaseClientWithSession<Database>(session);
+  return createBaseClientWithSession<Database>(session, config);
 }
 
 export async function switchAuthClientSession(

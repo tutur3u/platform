@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import {
   getMalformedSupabaseAuthCookieNames,
+  getNonCanonicalSupabaseAuthCookieNames,
   getSupabaseAuthCookieNames,
   sanitizeSupabaseAuthCookies,
 } from './auth-cookie-sanitizer';
@@ -11,11 +12,14 @@ import {
   checkEnvVariables,
   getHostOnlyCookieClearHeaders,
   getHostOnlyCookieClearHeadersForNames,
+  getSupabaseAuthCookieUrls,
   getSupabaseCookieOptions,
 } from './common';
 import type { SupabaseJwtPayload } from './user';
 
 export { getMalformedSupabaseAuthCookieNames };
+
+const SUPABASE_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
 
 function extractForwardedHeaderValue(value: string | null) {
   return (
@@ -68,26 +72,40 @@ export async function updateSession(request: NextRequest): Promise<{
     const { url, key } = checkEnvVariables({ useSecretKey: false });
     const requestUrl = resolveRequestUrlFromRequest(request);
     const cookieOptions = getSupabaseCookieOptions(url, requestUrl);
-    const duplicateAuthCookieUrls = [
-      url,
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-    ].filter((candidate): candidate is string => Boolean(candidate));
+    const mirrorCookieOptions = {
+      domain: cookieOptions.domain,
+      path: cookieOptions.path,
+      sameSite: cookieOptions.sameSite,
+      secure: cookieOptions.secure,
+    };
+    const authCookieUrls = getSupabaseAuthCookieUrls(url);
     const possibleHostOnlyAuthCookieNames = cookieOptions.domain
       ? getSupabaseAuthCookieNames(
           request.headers.get('cookie'),
-          duplicateAuthCookieUrls
+          authCookieUrls
         )
       : [];
+    const nonCanonicalAuthCookieNames = getNonCanonicalSupabaseAuthCookieNames(
+      request.headers.get('cookie'),
+      authCookieUrls
+    );
     const supabase = createServerClient<Database>(url, key, {
       cookieOptions,
       cookies: {
         getAll() {
           return sanitizeSupabaseAuthCookies(
             request.cookies.getAll(),
-            url,
+            authCookieUrls,
             (name, options) => {
               request.cookies.set(name, '');
               supabaseResponse.cookies.set(name, '', options);
+            },
+            (name, value) => {
+              request.cookies.set(name, value);
+              supabaseResponse.cookies.set(name, value, {
+                ...mirrorCookieOptions,
+                maxAge: SUPABASE_SESSION_COOKIE_MAX_AGE_SECONDS,
+              });
             }
           );
         },
@@ -116,6 +134,12 @@ export async function updateSession(request: NextRequest): Promise<{
 
     getHostOnlyCookieClearHeadersForNames(
       possibleHostOnlyAuthCookieNames,
+      cookieOptions
+    ).forEach((header) => {
+      supabaseResponse.headers.append('set-cookie', header);
+    });
+    getHostOnlyCookieClearHeadersForNames(
+      nonCanonicalAuthCookieNames,
       cookieOptions
     ).forEach((header) => {
       supabaseResponse.headers.append('set-cookie', header);

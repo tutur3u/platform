@@ -40,6 +40,7 @@ vi.mock('../common', () => ({
       sameSite: 'lax',
     };
   },
+  getSupabaseAuthCookieUrls: vi.fn((url: string) => [url]),
   getSupabaseAuthStorageKey: (url: string) =>
     `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
 }));
@@ -82,6 +83,9 @@ describe('Supabase Server Client', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.SUPABASE_SERVER_URL;
+    delete process.env.SUPABASE_URL;
     (cookies as any).mockReturnValue(mockCookieStore);
     (headers as any).mockReturnValue(new Headers());
     (createServerClient as any).mockImplementation(
@@ -216,6 +220,49 @@ describe('Supabase Server Client', () => {
         'sb-test-auth-token',
         '',
         expect.anything()
+      );
+    });
+
+    it('mirrors compatible server-key cookies into the canonical public key', async () => {
+      const common = await import('../common');
+      vi.mocked(common.getSupabaseAuthCookieUrls).mockReturnValueOnce([
+        'http://127.0.0.1:8001',
+        'http://host.docker.internal:8001',
+      ]);
+      mockCookieStore.getAll.mockReturnValueOnce([
+        {
+          name: 'sb-host-auth-token',
+          value: '{"access_token":"jwt.with.dots","refresh_token":"refresh"}',
+        },
+      ]);
+
+      await createClient();
+
+      const cookieHandler = (createServerClient as any).mock.calls[0][2]
+        .cookies;
+      expect(cookieHandler.getAll()).toEqual([
+        {
+          name: 'sb-127-auth-token',
+          value: '{"access_token":"jwt.with.dots","refresh_token":"refresh"}',
+        },
+      ]);
+      expect(mockCookieStore.set).toHaveBeenCalledWith(
+        'sb-127-auth-token',
+        '{"access_token":"jwt.with.dots","refresh_token":"refresh"}',
+        expect.objectContaining({
+          maxAge: 34_560_000,
+          path: '/',
+          sameSite: 'lax',
+        })
+      );
+      expect(mockCookieStore.set).toHaveBeenCalledWith(
+        'sb-host-auth-token',
+        '',
+        {
+          expires: expect.any(Date),
+          maxAge: 0,
+          path: '/',
+        }
       );
     });
 

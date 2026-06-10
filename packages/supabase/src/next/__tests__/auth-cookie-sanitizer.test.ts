@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   getDuplicateSupabaseAuthCookieNames,
   getMalformedSupabaseAuthCookieNames,
+  getNonCanonicalSupabaseAuthCookieNames,
   getSupabaseAuthCookieNames,
   sanitizeSupabaseAuthCookies,
 } from '../auth-cookie-sanitizer';
@@ -101,5 +102,74 @@ describe('auth-cookie-sanitizer', () => {
         supabaseUrl
       )
     ).toEqual(['sb-test-auth-token', 'sb-test-auth-token.0']);
+  });
+
+  it('mirrors valid server-url auth cookies to the public canonical storage key', () => {
+    const validSession = encodeSupabaseSession();
+    const clearCookie = vi.fn();
+    const mirrorCookie = vi.fn();
+
+    expect(
+      sanitizeSupabaseAuthCookies(
+        [
+          { name: 'theme', value: 'dark' },
+          { name: 'sb-host-auth-token', value: validSession },
+        ],
+        ['http://127.0.0.1:8001', 'http://host.docker.internal:8001'],
+        clearCookie,
+        mirrorCookie
+      )
+    ).toEqual([
+      { name: 'theme', value: 'dark' },
+      { name: 'sb-127-auth-token', value: validSession },
+    ]);
+    expect(mirrorCookie).toHaveBeenCalledWith(
+      'sb-127-auth-token',
+      validSession
+    );
+    expect(clearCookie).toHaveBeenCalledWith('sb-host-auth-token', {
+      expires: expect.any(Date),
+      maxAge: 0,
+      path: '/',
+    });
+  });
+
+  it('keeps canonical auth cookies when both public and server keys are present', () => {
+    const canonicalSession = encodeSupabaseSession({ access_token: 'public' });
+    const serverSession = encodeSupabaseSession({ access_token: 'server' });
+    const clearCookie = vi.fn();
+    const mirrorCookie = vi.fn();
+
+    expect(
+      sanitizeSupabaseAuthCookies(
+        [
+          { name: 'sb-host-auth-token', value: serverSession },
+          { name: 'sb-127-auth-token', value: canonicalSession },
+        ],
+        ['http://127.0.0.1:8001', 'http://host.docker.internal:8001'],
+        clearCookie,
+        mirrorCookie
+      )
+    ).toEqual([{ name: 'sb-127-auth-token', value: canonicalSession }]);
+    expect(mirrorCookie).not.toHaveBeenCalled();
+    expect(clearCookie).toHaveBeenCalledWith('sb-host-auth-token', {
+      expires: expect.any(Date),
+      maxAge: 0,
+      path: '/',
+    });
+  });
+
+  it('detects noncanonical auth cookie names from compatible storage keys', () => {
+    expect(
+      getNonCanonicalSupabaseAuthCookieNames(
+        [
+          'sb-127-auth-token=public',
+          'sb-host-auth-token=server',
+          'sb-host-auth-token.0=server-chunk',
+          'sb-other-auth-token=ignored',
+        ].join('; '),
+        ['http://127.0.0.1:8001', 'http://host.docker.internal:8001']
+      )
+    ).toEqual(['sb-host-auth-token', 'sb-host-auth-token.0']);
   });
 });

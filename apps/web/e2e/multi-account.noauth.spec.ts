@@ -16,6 +16,124 @@ const SECOND_USER = {
   password: 'password123',
 } as const;
 
+function getSupabaseAuthStorageKey(url: string) {
+  return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+}
+
+function getExpectedBrowserAuthCookieNames() {
+  const urls = [
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:8001',
+  ];
+  const cookieNames = urls.flatMap((url) => {
+    try {
+      return [getSupabaseAuthStorageKey(url)];
+    } catch {
+      return [];
+    }
+  });
+
+  return [...new Set(cookieNames)];
+}
+
+async function expectBrowserReadableAuthCookie(page: Page) {
+  const expectedCookieNames = getExpectedBrowserAuthCookieNames();
+  const deadline = Date.now() + 15_000;
+  let lastAuthCookieNames: string[] = [];
+
+  while (Date.now() < deadline) {
+    const cookies = await page.context().cookies();
+    const matchingCookieNames = cookies
+      .filter((cookie) =>
+        expectedCookieNames.some(
+          (expectedCookieName) =>
+            cookie.httpOnly !== true &&
+            (cookie.name === expectedCookieName ||
+              cookie.name.startsWith(`${expectedCookieName}.`))
+        )
+      )
+      .map((cookie) => cookie.name)
+      .sort();
+
+    if (matchingCookieNames.length > 0) {
+      return;
+    }
+
+    lastAuthCookieNames = cookies
+      .filter((cookie) => cookie.name.startsWith('sb-'))
+      .map(
+        (cookie) =>
+          `${cookie.name}${cookie.httpOnly ? ' (httpOnly)' : ''} @ ${cookie.domain}${cookie.path}`
+      )
+      .sort();
+    await page.waitForTimeout(250);
+  }
+
+  throw new Error(
+    `Expected browser-readable Supabase auth cookie for ${expectedCookieNames.join(', ')}; saw ${
+      lastAuthCookieNames.join(', ') || 'no sb-* cookies'
+    }`
+  );
+}
+
+async function waitForLoginSurfaceOrInvalidReturnUrl(page: Page) {
+  const emailInput = page.getByPlaceholder('Enter your email or username');
+  const clearReturnUrlButton = page.getByRole('button', {
+    name: /clear return url/i,
+  });
+  const deadline = Date.now() + 30_000;
+
+  while (Date.now() < deadline) {
+    if (await emailInput.isVisible().catch(() => false)) {
+      return 'login' as const;
+    }
+
+    if (await clearReturnUrlButton.isVisible().catch(() => false)) {
+      return 'invalid-return-url' as const;
+    }
+
+    await page.waitForTimeout(100);
+  }
+
+  throw new Error('Timed out waiting for login form or invalid return URL');
+}
+
+async function clearInvalidReturnUrlIfShown(page: Page) {
+  let surface = await waitForLoginSurfaceOrInvalidReturnUrl(page);
+  const clearReturnUrlButton = page.getByRole('button', {
+    name: /clear return url/i,
+  });
+
+  if (
+    surface === 'login' &&
+    new URL(page.url()).searchParams.has('returnUrl')
+  ) {
+    const deadline = Date.now() + 5000;
+
+    while (Date.now() < deadline) {
+      if (await clearReturnUrlButton.isVisible().catch(() => false)) {
+        surface = 'invalid-return-url';
+        break;
+      }
+
+      await page.waitForTimeout(100);
+    }
+  }
+
+  if (surface === 'invalid-return-url') {
+    await clearReturnUrlButton.click();
+    await clearReturnUrlButton
+      .waitFor({ state: 'hidden', timeout: 10_000 })
+      .catch(async () => {
+        await page.goto('/login', { waitUntil: 'domcontentloaded' });
+      });
+    await expect(
+      page.getByPlaceholder('Enter your email or username')
+    ).toBeVisible({
+      timeout: 30_000,
+    });
+  }
+}
+
 async function loginWithPassword(page: Page, email: string) {
   await page.goto(`/${DEFAULT_LOCALE}/login`, {
     waitUntil: 'domcontentloaded',
@@ -24,12 +142,22 @@ async function loginWithPassword(page: Page, email: string) {
   const passwordInput = await openPasswordStage(page, email);
   await passwordInput.clear();
   await passwordInput.fill('password123');
+  const signInButton = page.getByRole('button', { name: /sign in/i }).first();
+  await expect(signInButton).toBeEnabled({ timeout: 10_000 });
 
-  await page.getByRole('button', { name: /sign in/i }).click();
+  const loginResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().includes('/api/v1/auth/password-login')
+  );
+  await signInButton.click();
+  const loginResponse = await loginResponsePromise;
+  expect(loginResponse.ok()).toBe(true);
   await page.waitForURL((url) => !url.pathname.includes('/login'), {
     timeout: 60_000,
     waitUntil: 'domcontentloaded',
   });
+  await expectBrowserReadableAuthCookie(page);
 }
 
 async function currentProfile(page: Page) {
@@ -164,6 +292,7 @@ test.describe('Multi-account server vault', () => {
         timeout: 30_000,
       })
       .toBe(false);
+    await clearInvalidReturnUrlIfShown(page);
     await expect(
       page.getByPlaceholder('Enter your email or username')
     ).toBeVisible({
@@ -192,7 +321,18 @@ test.describe('Multi-account server vault', () => {
       const passwordInput = await openPasswordStage(page, SECOND_USER.email);
       await passwordInput.clear();
       await passwordInput.fill(SECOND_USER.password);
-      await page.getByRole('button', { name: /sign in/i }).click();
+      const signInButton = page
+        .getByRole('button', { name: /sign in/i })
+        .first();
+      await expect(signInButton).toBeEnabled({ timeout: 10_000 });
+      const loginResponsePromise = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' &&
+          response.url().includes('/api/v1/auth/password-login')
+      );
+      await signInButton.click();
+      const loginResponse = await loginResponsePromise;
+      expect(loginResponse.ok()).toBe(true);
 
       await page.waitForURL(
         (url) =>
@@ -200,6 +340,7 @@ test.describe('Multi-account server vault', () => {
           !url.pathname.includes('/add-account'),
         { timeout: 60_000, waitUntil: 'domcontentloaded' }
       );
+      await expectBrowserReadableAuthCookie(page);
       await expect
         .poll(async () => (await currentProfile(page)).id)
         .toBe(SECOND_USER.id);
@@ -241,6 +382,7 @@ test.describe('Multi-account server vault', () => {
     const returnUrl =
       'https://external-e2e.example/verify-token?nextUrl=/onboarding';
     const storedAccountId = '00000000-0000-0000-0000-000000000099';
+    const previousOtpState = await setWebOtpEnabled(false);
 
     await page.route('**/api/v1/auth/cross-app-return', (route) =>
       route.fulfill({
@@ -314,37 +456,26 @@ test.describe('Multi-account server vault', () => {
       })
     );
 
-    await page.goto('/login', { waitUntil: 'domcontentloaded' });
-    const sessionResponse = await page.evaluate(
-      async ({ email, locale }) => {
-        const response = await fetch('/api/auth/dev-session', {
-          body: JSON.stringify({
-            completeOnboarding: true,
-            email,
-            locale,
-          }),
-          headers: { 'content-type': 'application/json' },
-          method: 'POST',
-        });
+    try {
+      await loginWithPassword(page, TEST_USER.email);
 
-        return response.ok;
-      },
-      { email: TEST_USER.email, locale: DEFAULT_LOCALE }
-    );
-    expect(sessionResponse).toBe(true);
+      await page.goto(`/login?returnUrl=${encodeURIComponent(returnUrl)}`, {
+        waitUntil: 'domcontentloaded',
+      });
 
-    await page.goto(`/login?returnUrl=${encodeURIComponent(returnUrl)}`, {
-      waitUntil: 'domcontentloaded',
-    });
+      await expect(
+        page.getByRole('button', { name: /continue to learn/i })
+      ).toBeVisible({ timeout: 30_000 });
 
-    await expect(
-      page.getByRole('button', { name: /continue to learn/i })
-    ).toBeVisible({ timeout: 30_000 });
+      await page.getByRole('button', { name: /stored account/i }).click();
 
-    await page.getByRole('button', { name: /stored account/i }).click();
-
-    await expect(page.getByText('AUTH-ACC-SWITCH-E2E')).toBeVisible({
-      timeout: 15_000,
-    });
+      await expect(page.getByText('AUTH-ACC-SWITCH-E2E')).toBeVisible({
+        timeout: 15_000,
+      });
+    } finally {
+      if (previousOtpState !== null) {
+        await setWebOtpEnabled(previousOtpState);
+      }
+    }
   });
 });

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getLocalE2EPublicSupabaseUrl,
+  getLocalE2ESupabaseBrowserConfig,
   isLocalE2EAuthBypassEnabled,
   isLocalE2EAuthRequestAllowed,
   shouldBypassSupabaseAuthCaptchaForDev,
@@ -9,6 +11,7 @@ const localE2EEnv = {
   BASE_URL: 'http://localhost:7803',
   NODE_ENV: 'test',
   NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'local-publishable-key',
   SUPABASE_SERVER_URL: 'http://host.docker.internal:8001',
   TUTURUUU_LOCAL_E2E_AUTH_BYPASS: 'true',
 } as const satisfies NodeJS.ProcessEnv;
@@ -39,6 +42,30 @@ describe('isLocalE2EAuthBypassEnabled', () => {
 
   it('allows the bypass for the local Docker web and Supabase origins', () => {
     expect(isLocalE2EAuthBypassEnabled(localE2EEnv)).toBe(true);
+  });
+
+  it('uses the local browser Supabase URL for reused production-built images', () => {
+    const env = {
+      ...localE2EEnv,
+      NEXT_PUBLIC_SUPABASE_URL: 'https://project.supabase.co',
+      SUPABASE_SERVER_URL: 'http://host.docker.internal:8001',
+    } as const satisfies NodeJS.ProcessEnv;
+
+    expect(getLocalE2EPublicSupabaseUrl(env)).toBe('http://127.0.0.1:8001');
+    expect(isLocalE2EAuthBypassEnabled(env)).toBe(true);
+  });
+
+  it('returns a runtime browser client config for reused production-built images', () => {
+    const env = {
+      ...localE2EEnv,
+      NEXT_PUBLIC_SUPABASE_URL: 'https://project.supabase.co',
+      SUPABASE_SERVER_URL: 'http://host.docker.internal:8001',
+    } as const satisfies NodeJS.ProcessEnv;
+
+    expect(getLocalE2ESupabaseBrowserConfig(env)).toEqual({
+      supabasePublishableKey: 'local-publishable-key',
+      supabaseUrl: 'http://127.0.0.1:8001',
+    });
   });
 
   it('allows Portless production starts with public E2E env fallbacks', () => {

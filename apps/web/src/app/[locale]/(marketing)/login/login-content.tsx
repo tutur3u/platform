@@ -14,15 +14,24 @@ export type LoginDomain = {
   name: string;
 };
 
+export type LoginRuntimeSupabaseConfig = {
+  supabasePublishableKey: string;
+  supabaseUrl: string;
+};
+
 type LoginContentProps = {
   currentDomain: LoginDomain | null;
+  localE2EAuthBypass: boolean;
   multiAccount: boolean;
+  runtimeSupabaseConfig: LoginRuntimeSupabaseConfig | null;
   tuturuuuDomain: LoginDomain;
 };
 
 export function LoginContent({
   currentDomain,
+  localE2EAuthBypass,
   multiAccount,
+  runtimeSupabaseConfig,
   tuturuuuDomain,
 }: LoginContentProps) {
   const t = useTranslations();
@@ -112,7 +121,10 @@ export function LoginContent({
                 </div>
               }
             >
-              <LoginForm />
+              <LoginForm
+                localE2EAuthBypass={localE2EAuthBypass}
+                runtimeSupabaseConfig={runtimeSupabaseConfig}
+              />
             </Suspense>
           </motion.div>
 
