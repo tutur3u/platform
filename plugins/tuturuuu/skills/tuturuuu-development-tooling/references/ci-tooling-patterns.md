@@ -63,6 +63,13 @@ formatting behavior, or repo-wide verification.
   `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when
   changing release automation. Do not reintroduce checksum or PR-title package
   version bump generators.
+- Use `bun git-release-please` from a clean `main` checkout to merge the latest
+  `release-please--branches--production` branch. The helper fetches the bot
+  branch, merges without committing, syncs the platform badge version files from
+  `platform-version.txt`, runs `bun ff` and `bun check`, then creates the merge
+  commit only after validation passes. If a manual merge is already in progress,
+  run `bun release:sync-platform-version` before staging the resolved
+  `TUTURUUU_PLATFORM_VERSION` files.
 - Keep the Release Please token fallback ordered as
   `secrets.RELEASE_PLEASE_TOKEN || github.token`; the bot token is still needed
   for generated PRs and releases to trigger downstream workflows.
@@ -139,8 +146,9 @@ formatting behavior, or repo-wide verification.
 
 ## Plugin Changes
 
-- Bump `plugins/tuturuuu/.codex-plugin/plugin.json` when skills materially
-  change.
+- Keep `plugins/tuturuuu/.codex-plugin/plugin.json` aligned with the plugin
+  folder name, but do not bump its `version` for ordinary authored work unless a
+  release workflow or user request requires it.
 - Keep skill folders aligned with frontmatter names and include
   `agents/openai.yaml`.
 - Keep default prompts short, natural, and action-oriented.

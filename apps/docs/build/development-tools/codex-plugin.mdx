@@ -74,7 +74,8 @@ codex plugin marketplace add ./
   plugin behavior, validation scripts, docs runbooks, helper scripts, and
   durable workflow learnings that should benefit future Tuturuuu contributors
   and assistants, including Turborepo/Next cache boundaries, local dev-speed
-  diagnostics, release-please workflow, and package release automation rules.
+  diagnostics, release-please merge automation, and package release automation
+  rules.
 - `$tuturuuu-devbox-ops`: operational guidance for `ttr box` setup, runner
   registration, one-shot smoke tests, 24/7 system services, runner-token
   cleanup, CLI upgrades, and infrastructure devbox observability.
@@ -83,11 +84,10 @@ codex plugin marketplace add ./
   workflows through internal devboxes instead of the local agent session.
 - `$tuturuuu-web-release`: `apps/web` release badge metadata, blue/green
   runtime snapshot fallback, `PLATFORM_BUILD_*` precedence, and
-  `TUTURUUU_PLATFORM_VERSION` bump guidance for every authored platform commit,
-  including release-please version annotations.
+  release-please-managed `TUTURUUU_PLATFORM_VERSION` guidance.
 - `$tuturuuu-mobile-task-board`: Flutter mobile task-board guidance for task
   dates, overdue behavior, task detail routing, description mode, assignee
-  flows, and mobile version bump checks.
+  flows, and release-please-managed mobile version metadata.
 - `$tuturuuu-database`: Supabase migration, RLS, workspace-scoped API write,
   generated type, storage, and database verification guidance.
 - `$tuturuuu-ci-docs`: GitHub Actions, `tuturuuu.ts`, validation script,
@@ -212,8 +212,8 @@ library.
 ## Maintenance Rules
 
 - Keep `plugins/tuturuuu/.codex-plugin/plugin.json` aligned with the plugin
-  folder name, and bump its `version` whenever a skill is added, removed, or
-  materially changed.
+  folder name. Do not bump its `version` for ordinary authored work unless a
+  release workflow or user request requires it.
 - Keep each skill folder name aligned with its `SKILL.md` frontmatter `name`.
 - Keep plugin and skill default prompts short, natural, and action-oriented.
   Marketplace prompt cards should read like user goals, for example "Clear the

@@ -15,6 +15,7 @@ const {
   listTrackedCheckProcesses,
   parseBiomeIssueStats,
   touchesDiscordPython,
+  touchesPlatformReleaseVersion,
 } = require('./check.js');
 const {
   createDiscordPythonChecks,
@@ -138,6 +139,47 @@ test('bun check always includes mobile iOS project settings validation', () => {
   ]);
   assert.ok(mobileIosProjectIndex > -1);
   assert.ok(mobileIosProjectIndex < scriptTestsIndex);
+});
+
+test('bun check includes platform release sync validation for release-please files only', () => {
+  assert.equal(touchesPlatformReleaseVersion(['platform-version.txt']), true);
+  assert.equal(
+    touchesPlatformReleaseVersion(['.release-please-manifest.json']),
+    true
+  );
+  assert.equal(
+    touchesPlatformReleaseVersion(['packages/utils/src/platform-release.ts']),
+    false
+  );
+
+  const unchangedChecks = getActiveChecks({
+    changedFiles: ['packages/utils/src/platform-release.ts'],
+  });
+  assert.equal(
+    unchangedChecks.some((check) => check.name === 'platform-release-version'),
+    false
+  );
+
+  const activeChecks = getActiveChecks({
+    changedFiles: ['platform-version.txt'],
+  });
+  const platformReleaseCheck = activeChecks.find(
+    (check) => check.name === 'platform-release-version'
+  );
+  const scriptTestsIndex = activeChecks.findIndex(
+    (check) => check.name === 'script-tests'
+  );
+  const platformReleaseIndex = activeChecks.findIndex(
+    (check) => check.name === 'platform-release-version'
+  );
+
+  assert.ok(platformReleaseCheck);
+  assert.deepEqual(platformReleaseCheck.args, [
+    'scripts/sync-platform-release-version.js',
+    '--check',
+  ]);
+  assert.ok(platformReleaseIndex > -1);
+  assert.ok(platformReleaseIndex < scriptTestsIndex);
 });
 
 test('Biome check treats warnings as blocking local check issues', () => {

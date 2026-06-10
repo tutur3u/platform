@@ -400,7 +400,6 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
   assert.equal(config.packages['apps/web'], undefined);
   assert.match(platformVersion, /^\d+\.\d+\.\d+$/);
   assert.equal(manifest['.'], platformVersion);
-  assert.equal(manifest['apps/mobile'], '0.5.1');
   assert.equal(manifest['packages/sdk'], workspaceVersions.get('packages/sdk'));
   assert.deepEqual(configuredReleasePaths, expectedReleasePaths);
 

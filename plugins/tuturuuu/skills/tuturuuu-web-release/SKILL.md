@@ -1,19 +1,19 @@
 ---
 name: tuturuuu-web-release
-description: Apps/web release metadata and version-badge guidance for Tuturuuu platform work, including TUTURUUU_PLATFORM_VERSION bumps, blue/green runtime snapshot fallbacks, PLATFORM_BUILD metadata, and focused release verification.
+description: Apps/web release metadata and version-badge guidance for Tuturuuu platform work, including release-please-managed TUTURUUU_PLATFORM_VERSION metadata, blue/green runtime snapshot fallbacks, PLATFORM_BUILD metadata, and focused release verification.
 ---
 
 # Tuturuuu Web Release
 
 Use this skill when touching the `apps/web` version badge, platform release
-metadata, Docker blue/green deployment metadata, release docs, or any platform
-change that needs the displayed badge version bumped.
+metadata, Docker blue/green deployment metadata, release docs, or release-please
+version metadata.
 
 ## Core Rules
 
 - Treat `TUTURUUU_PLATFORM_VERSION` in `@tuturuuu/utils/platform-release` as
-  the displayed platform badge version. Bump it once for every authored platform
-  commit, even for docs, scripts, plugin, or workflow-only changes.
+  the displayed platform badge version. Do not manually bump it for ordinary
+  authored commits; Release Please updates it from `platform-version.txt`.
 - Keep the `x-release-please-version` comments on the platform version constant
   and matching test expectation. The monorepo release-please config also keeps
   `platform-version.txt` aligned for the `platform` release component.

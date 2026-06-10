@@ -36,7 +36,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 4. Avoid committing noisy logs; add diagnostics only when they materially aid debugging.
 5. Never commit credentials, tokens, destructive migrations, or unrelated worktree changes.
 6. Do not stage, rename, delete, or format unknown dirty/untracked files; treat them as human-owned or other-agent-owned until confirmed.
-7. Bump `TUTURUUU_PLATFORM_VERSION` once for every authored platform commit and update its test expectation. This is the version shown by the account-gated web version badge.
+7. Do not manually bump release versions for ordinary authored work. Release Please owns package versions, changelogs, and the account-gated web badge version. Keep release-please annotations intact.
 
 ## Escalate When…
 
@@ -59,7 +59,7 @@ See AGENTS.md §4 for full step-by-step instructions across all workflows.
 Use the repo-local Tuturuuu Codex plugin for detailed pattern catalogs:
 
 - `$tuturuuu-platform` for web/API/shared UI patterns.
-- `$tuturuuu-web-release` for version badge metadata, `PLATFORM_BUILD_*`, and `TUTURUUU_PLATFORM_VERSION` bumps.
+- `$tuturuuu-web-release` for version badge metadata, `PLATFORM_BUILD_*`, and release-please-managed `TUTURUUU_PLATFORM_VERSION` updates.
 - `$tuturuuu-database` for Supabase, protected-table API, and storage patterns.
 - `$tuturuuu-ci-docs` for docs, CI, and Docker blue/green deployment runbooks.
 - `$tuturuuu-development-tooling` for root scripts, plugin validation, and CI/tooling behavior.

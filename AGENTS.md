@@ -23,7 +23,7 @@ surface you are changing:
 - `$tuturuuu-ci-docs` for GitHub Actions, `tuturuuu.ts`, validators, docs
   pages, docs navigation, and Docker deployment runbooks.
 - `$tuturuuu-mobile-task-board` for Flutter mobile task-board behavior and
-  mobile version bump follow-through.
+  mobile release metadata follow-through.
 - `$tuturuuu-cli`, `$tuturuuu-cli-tasks`, and `$tuturuuu-cli-finance` for native
   `ttr` workflows.
 - `$tuturuuu-commit` for explicit commit/commit-and-push requests.
@@ -59,10 +59,10 @@ surface you are changing:
   repo checker (`feature/`, `feat/`, `fix/`, `bugfix/`, `hotfix/`, `release/`,
   `chore/`, `docs/`, `style/`, `refactor/`, `perf/`, `dependabot/`,
   `claude/`).
-- Bump `TUTURUUU_PLATFORM_VERSION` in
-  `packages/utils/src/platform-release.ts` once for every authored platform
-  commit, and update the matching test expectation. Do not bump
-  `apps/web/package.json` for badge display unless explicitly requested.
+- Do not manually bump `TUTURUUU_PLATFORM_VERSION`, package versions,
+  changelogs, or plugin versions for ordinary authored work. Release Please owns
+  version updates. Keep release-please annotations intact, and use
+  `bun git-release-please` when merging generated release-please branches.
 - Add user-facing strings to both English and Vietnamese message bundles. If a
   shared UI key is added, update every app message bundle that ships that shared
   UI and run `bun i18n:sort`.

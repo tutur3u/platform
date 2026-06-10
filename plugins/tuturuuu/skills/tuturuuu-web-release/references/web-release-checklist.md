@@ -2,15 +2,18 @@
 
 Use this checklist for `apps/web` version badge and release metadata work.
 
-## Version Bump
+## Release Version
 
-- Bump `TUTURUUU_PLATFORM_VERSION` in `packages/utils/src/platform-release.ts`
-  once per authored platform commit.
-- Update `packages/utils/src/platform-release.test.ts` with the new expected
-  version.
+- Do not manually bump `TUTURUUU_PLATFORM_VERSION` for ordinary authored
+  commits. Release Please updates `platform-version.txt`,
+  `packages/utils/src/platform-release.ts`, and
+  `packages/utils/src/platform-release.test.ts` together.
 - Keep the `x-release-please-version` annotations on both platform version
   lines. Release Please updates those annotated lines and the root
   `platform-version.txt` file when it opens the `platform` release PR.
+- Use `bun git-release-please` from a clean `main` checkout when merging a
+  generated release-please branch. If already resolving a manual release-please
+  merge, run `bun release:sync-platform-version`.
 - Do not edit package manifests for the displayed badge version unless the user
   asks for package metadata changes.
 

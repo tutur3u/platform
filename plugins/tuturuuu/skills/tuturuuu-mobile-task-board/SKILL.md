@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-mobile-task-board
-description: Tuturuuu Flutter mobile task-board workflow guidance. Use when Codex changes apps/mobile task board behavior, task detail routing, task dates, overdue labels, assignees, task description view/edit mode, task list refreshes, workspace-aware navigation, mobile BLoC/Cubit code, or version bump follow-through in apps/mobile/pubspec.yaml.
+description: Tuturuuu Flutter mobile task-board workflow guidance. Use when Codex changes apps/mobile task board behavior, task detail routing, task dates, overdue labels, assignees, task description view/edit mode, task list refreshes, workspace-aware navigation, mobile BLoC/Cubit code, or release-please-managed mobile release metadata.
 ---
 
 # Tuturuuu Mobile Task Board
@@ -13,8 +13,9 @@ pattern catalog that was split out of root `AGENTS.md`.
 
 If the user asks to commit mobile work, combine this skill with
 `$tuturuuu-commit`. Keep a user-visible mobile behavior, its tests,
-localization, and required version bump together unless the user explicitly asks
-for a different split.
+and localization together unless the user explicitly asks for a different split.
+Do not manually bump `apps/mobile/pubspec.yaml` for ordinary authored work;
+Release Please owns mobile version updates.
 
 Search these files first, then expand only as needed:
 
@@ -52,4 +53,5 @@ Prefer focused mobile tests first, then broader checks:
 - Run `flutter analyze` for mobile Dart changes when feasible.
 - Run `dart format` on touched Dart files.
 - Run `git diff --check` before finishing.
-- For user-visible mobile changes, check whether `apps/mobile/pubspec.yaml` needs a version bump.
+- For user-visible mobile changes, keep release-please-managed mobile version
+  files untouched unless the user is explicitly handling a release branch.

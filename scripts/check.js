@@ -35,6 +35,11 @@ const failFast = !runAll;
 const failFastRequiredChecks = new Set(['tests', 'type-check']);
 const DISCORD_PYTHON_PATH_PREFIX = 'apps/discord/';
 const DISCORD_PYTHON_WORKFLOW_PATH = '.github/workflows/discord-python-ci.yml';
+const PLATFORM_RELEASE_VERSION_PATHS = new Set([
+  '.release-please-manifest.json',
+  'platform-version.txt',
+  'release-please-config.json',
+]);
 let activeCheckProcess = null;
 let activeQueueHandle = null;
 let shutdownSignalHandled = false;
@@ -246,6 +251,16 @@ const checks = [
     parseOutput: () => 'Registered app auth surfaces use app sessions',
   },
   {
+    name: 'platform-release-version',
+    command: 'node',
+    args: ['scripts/sync-platform-release-version.js', '--check'],
+    parseOutput: (stdout) => {
+      const clean = stripAnsi(stdout);
+      const match = clean.match(/aligned at ([0-9A-Za-z.+-]+)/i);
+      return match ? `Platform release ${match[1]}` : 'Release files aligned';
+    },
+  },
+  {
     name: 'mobile-dependency-compat',
     command: 'node',
     args: ['scripts/check-mobile-dependencies.js'],
@@ -412,21 +427,30 @@ function touchesDiscordPython(files) {
   });
 }
 
+function touchesPlatformReleaseVersion(files) {
+  return files.some((file) =>
+    PLATFORM_RELEASE_VERSION_PATHS.has(normalizeChangedFilePath(file))
+  );
+}
+
 function getActiveChecks(options = {}) {
   const changedFiles = options.changedFiles ?? getChangedFiles(options);
+  const activeChecks = checks.filter(
+    (check) =>
+      check.name !== 'platform-release-version' ||
+      touchesPlatformReleaseVersion(changedFiles)
+  );
 
-  if (!touchesDiscordPython(changedFiles)) {
-    return checks;
+  if (touchesDiscordPython(changedFiles)) {
+    const scriptTestsIndex = activeChecks.findIndex(
+      (check) => check.name === 'script-tests'
+    );
+    const insertIndex =
+      scriptTestsIndex === -1 ? activeChecks.length : scriptTestsIndex + 1;
+
+    activeChecks.splice(insertIndex, 0, discordPythonCheck);
   }
 
-  const activeChecks = [...checks];
-  const scriptTestsIndex = activeChecks.findIndex(
-    (check) => check.name === 'script-tests'
-  );
-  const insertIndex =
-    scriptTestsIndex === -1 ? activeChecks.length : scriptTestsIndex + 1;
-
-  activeChecks.splice(insertIndex, 0, discordPythonCheck);
   return activeChecks;
 }
 
@@ -1186,4 +1210,5 @@ module.exports = {
   runCheck,
   signalProcess,
   touchesDiscordPython,
+  touchesPlatformReleaseVersion,
 };

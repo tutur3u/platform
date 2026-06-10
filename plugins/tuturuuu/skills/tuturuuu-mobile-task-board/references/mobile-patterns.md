@@ -9,8 +9,8 @@ localization changes.
   `flutter analyze` or tests. Generated localization files are tracked.
 - Use Dart formatting or `bun check:mobile` for Dart files. `bun ff` does not
   format Dart and may fail with "No files were processed."
-- Check whether `apps/mobile/pubspec.yaml` needs a version bump for
-  user-visible mobile behavior changes.
+- Do not manually bump `apps/mobile/pubspec.yaml` for ordinary authored mobile
+  behavior changes. Release Please owns mobile version updates.
 - Keep `mobile-build-ios.yaml` on CocoaPods by disabling Flutter Swift Package
   Manager in CI while `image_cropper` and `dkimagepickercontroller` resolve
   incompatible `TOCropViewController` Swift package ranges.
