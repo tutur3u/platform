@@ -1,6 +1,6 @@
 ---
-title: 'Remote Devboxes'
-description: 'Run heavy Tuturuuu development workflows on containerized self-hosted remote runners.'
+title: "Remote Devboxes"
+description: "Run heavy Tuturuuu development workflows on containerized self-hosted remote runners."
 ---
 
 ## Overview
@@ -24,6 +24,7 @@ ttr box setup --dir . --clone-into ./tuturuuu
 ttr box agent register --name "ci-lab-1"
 ttr box agent start --token <runner-token>
 ttr box upgrade --runner <runner-id>
+TUTURUUU_DEVBOX_RUNNER_TOKEN=<runner-token> ttr box shutdown
 ```
 
 `ttr box setup` is the default bootstrap for a runner host. It first checks
@@ -62,6 +63,13 @@ Runner heartbeats report a small observability snapshot, including `ttr`, Bun,
 Node, Docker, Git, OS, CPU, RAM, load average, and uptime. Root workspace admins
 can inspect those fields from Infrastructure > Devboxes.
 
+If a host completed `ttr box setup` but does not appear in Infrastructure >
+Devboxes, confirm it was registered as a runner. Plain setup prepares the
+checkout, dependencies, local Supabase, and ignored env files only; it does not
+create a `private.devbox_runners` row. Run setup with `--agent --service`, or
+register and start the agent manually, then confirm `ttr whoami` on that host is
+pointing at the same production origin and root workspace user.
+
 Upgrade a runner's global CLI through the same brokered queue:
 
 ```bash
@@ -70,6 +78,17 @@ ttr box upgrade --runner <runner-id>
 
 The upgrade command queues `bun i -g tuturuuu` for the selected runner, waits
 for completion, and returns the remote command logs and exit code.
+
+Remove a runner from the cluster from the runner host with its runner token:
+
+```bash
+TUTURUUU_DEVBOX_RUNNER_TOKEN=<runner-token> ttr box shutdown
+```
+
+Shutdown deletes the runner's server-side token rows and marks the runner
+revoked. If the host installed a systemd or launchd runner service, stop and
+disable that service as well so the OS does not keep restarting an invalid
+agent process.
 
 Run heavy commands remotely:
 

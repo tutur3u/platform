@@ -257,6 +257,54 @@ describe('devbox CLI helpers', () => {
     ).rejects.toThrow('Run `ttr box agent register` with a logged-in account');
   });
 
+  it('explains that shutdown needs a registered runner token', async () => {
+    vi.stubEnv('TUTURUUU_DEVBOX_RUNNER_TOKEN', '');
+
+    await expect(
+      runDevboxCommand({
+        action: 'shutdown',
+        argv: ['box', 'shutdown'],
+        baseUrl: 'http://localhost:7903',
+        flags: {},
+        json: false,
+      })
+    ).rejects.toThrow('Run `ttr box agent register` with a logged-in account');
+  });
+
+  it('shuts down the current runner without a logged-in user client', async () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: 'Devbox runner removed from the cluster.',
+          runner: { id: 'runner-1', status: 'revoked' },
+        })
+      )
+    );
+
+    await runDevboxCommand({
+      action: 'shutdown',
+      argv: ['box', 'shutdown'],
+      baseUrl: 'http://localhost:7903',
+      flags: { token: 'runner-token' },
+      json: false,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      'http://localhost:7903/api/v1/devboxes/agents/shutdown'
+    );
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      headers: { 'X-Devbox-Runner-Token': 'runner-token' },
+      method: 'POST',
+    });
+    expect(write).toHaveBeenCalledWith(
+      'Devbox runner removed from the cluster.\n'
+    );
+  });
+
   it('fails agent start when heartbeat rejects the runner token', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ message: 'Unauthorized' }), {

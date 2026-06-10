@@ -17,6 +17,7 @@ const helpTopics: Record<string, HelpTopic> = {
       'release <lease-id>           release a kept lease',
       'preview --lease <id> --port  expose an authenticated HTTP preview',
       'agent register               create a self-hosted runner token',
+      'shutdown                     remove this runner from the cluster',
       'cache list|prune             inspect or prune runner cache metadata',
       'doctor                       inspect local runner prerequisites',
       'setup                        clone, install, start Supabase, and wire env',
@@ -31,6 +32,7 @@ const helpTopics: Record<string, HelpTopic> = {
       'ttr box setup --dir . --clone-into ./tuturuuu',
       'ttr box setup --agent --service --runner-name "$(hostname)-devbox" --yes',
       'ttr box upgrade --runner <runner-id>',
+      'TUTURUUU_DEVBOX_RUNNER_TOKEN=<token> ttr box shutdown',
       'ttr box run -- bun check',
       'ttr box run -- bun sb:reset',
       'ttr box build --cwd apps/web',
@@ -67,11 +69,12 @@ const helpTopics: Record<string, HelpTopic> = {
       '--service-manager <manager>  auto, systemd, or launchd',
       '--service-user <user>        OS user for the installed runner service',
       '--token-file <path>          path for the runner token env file',
+      '--token <token>              runner token for agent start or shutdown',
       '--yes                       install detected missing prerequisites during setup',
       '--json                       print machine-readable JSON',
     ],
     usage:
-      'ttr box <run|build|serve|tunnel|lease|release|preview|agent|cache|doctor|setup|upgrade>',
+      'ttr box <run|build|serve|tunnel|lease|release|preview|agent|shutdown|cache|doctor|setup|upgrade>',
   },
   boards: {
     commands: [
@@ -621,7 +624,7 @@ export function getGlobalHelp() {
     '  whoami',
     '  host [current|list|use]',
     '  config set-base-url <url>',
-    '  box <run|lease|release|preview|agent|cache|doctor|setup>',
+    '  box <run|lease|release|preview|agent|shutdown|cache|doctor|setup>',
     '  finance <wallets|transactions|transfers|categories|budgets|recurring>',
     '  workspaces [list]|use [id]',
     '  boards [list]|use|create|update|delete',

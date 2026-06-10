@@ -6,12 +6,14 @@ const {
   completeDevboxRunMock,
   heartbeatDevboxRunnerMock,
   recordDevboxRunEventsMock,
+  shutdownDevboxRunnerMock,
 } = vi.hoisted(() => ({
   authorizeDevboxAgentMock: vi.fn(),
   claimNextDevboxRunMock: vi.fn(),
   completeDevboxRunMock: vi.fn(),
   heartbeatDevboxRunnerMock: vi.fn(),
   recordDevboxRunEventsMock: vi.fn(),
+  shutdownDevboxRunnerMock: vi.fn(),
 }));
 
 vi.mock('@/lib/devboxes/agent-auth', () => ({
@@ -23,11 +25,13 @@ vi.mock('@/lib/devboxes/agent-store', () => ({
   completeDevboxRun: completeDevboxRunMock,
   heartbeatDevboxRunner: heartbeatDevboxRunnerMock,
   recordDevboxRunEvents: recordDevboxRunEventsMock,
+  shutdownDevboxRunner: shutdownDevboxRunnerMock,
 }));
 
 import { POST as events } from './events/route';
 import { POST as heartbeat } from './heartbeat/route';
 import { GET as poll } from './poll/route';
+import { POST as shutdown } from './shutdown/route';
 
 function createRequest(body?: unknown) {
   return new Request('http://localhost/api/v1/devboxes/agents', {
@@ -89,6 +93,22 @@ describe('devbox agent routes', () => {
       'runner-1',
       capabilities
     );
+  });
+
+  it('shuts down the authenticated runner', async () => {
+    shutdownDevboxRunnerMock.mockResolvedValue({
+      message: 'Devbox runner removed from the cluster.',
+      runner: { id: 'runner-1', status: 'revoked' },
+    });
+
+    const response = await shutdown(createRequest());
+
+    expect(response.status).toBe(200);
+    expect(shutdownDevboxRunnerMock).toHaveBeenCalledWith('runner-1');
+    await expect(response.json()).resolves.toEqual({
+      message: 'Devbox runner removed from the cluster.',
+      runner: { id: 'runner-1', status: 'revoked' },
+    });
   });
 
   it('claims queued jobs for the authenticated runner', async () => {

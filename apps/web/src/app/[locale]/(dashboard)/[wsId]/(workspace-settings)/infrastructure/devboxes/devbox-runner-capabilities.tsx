@@ -17,7 +17,23 @@ function asNumber(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-function formatBytes(value: number | null) {
+export interface RunnerCapabilitySummary {
+  bun: string | null;
+  cli: string | null;
+  cpu: string | null;
+  docker: string | null;
+  git: string | null;
+  hostname: string | null;
+  load: string | null;
+  memoryUsedPercent: number | null;
+  node: string | null;
+  os: string | null;
+  ram: string | null;
+  reportedAt: string | null;
+  uptime: string | null;
+}
+
+export function formatCapabilityBytes(value: number | null) {
   if (value === null) return null;
 
   const gib = value / 1024 ** 3;
@@ -53,7 +69,7 @@ function combine(...values: (string | null)[]) {
   return values.filter(Boolean).join(' ');
 }
 
-function getCapabilityRows(
+export function getRunnerCapabilitySummary(
   capabilities: DevboxAdminRunner['capabilities'],
   t: DevboxControlTranslator
 ) {
@@ -65,13 +81,20 @@ function getCapabilityRows(
   const memory = asRecord(resources.memory);
   const runtimes = asRecord(root.runtimes);
   const tools = asRecord(root.tools);
-  const freeMemory = formatBytes(asNumber(memory.freeBytes));
-  const totalMemory = formatBytes(asNumber(memory.totalBytes));
-  const memoryText = combine(
-    freeMemory,
-    freeMemory ? t('capabilities.free') : null,
-    freeMemory && totalMemory ? '/' : null,
-    totalMemory
+  const freeBytes = asNumber(memory.freeBytes);
+  const totalBytes = asNumber(memory.totalBytes);
+  const usedBytes =
+    freeBytes === null || totalBytes === null
+      ? null
+      : Math.max(totalBytes - freeBytes, 0);
+  const memoryUsedPercent =
+    freeBytes === null || totalBytes === null || totalBytes <= 0
+      ? null
+      : Math.round(Math.min(Math.max(1 - freeBytes / totalBytes, 0), 1) * 100);
+  const ramText = combine(
+    formatCapabilityBytes(usedBytes),
+    usedBytes !== null && totalBytes !== null ? '/' : null,
+    formatCapabilityBytes(totalBytes)
   );
   const cpuText = combine(
     asNumber(cpu.cores) === null
@@ -80,52 +103,111 @@ function getCapabilityRows(
     asString(cpu.model)
   );
 
-  return [
-    {
-      label: t('capabilities.cli'),
-      value: combine(asString(cli.name), asString(cli.version)),
-    },
-    {
-      label: t('capabilities.bun'),
-      value: asString(runtimes.bun),
-    },
-    {
-      label: t('capabilities.node'),
-      value: asString(runtimes.node),
-    },
-    {
-      label: t('capabilities.docker'),
-      value: asString(tools.docker),
-    },
-    {
-      label: t('capabilities.git'),
-      value: asString(tools.git),
-    },
-    {
-      label: t('capabilities.os'),
-      value: combine(
+  return {
+    bun: asString(runtimes.bun),
+    cli: combine(asString(cli.name), asString(cli.version)) || null,
+    cpu: cpuText || null,
+    docker: asString(tools.docker),
+    git: asString(tools.git),
+    hostname: asString(os.hostname),
+    load: formatLoadAverage(resources.loadAverage),
+    memoryUsedPercent,
+    node: asString(runtimes.node),
+    os:
+      combine(
         asString(os.type) ?? asString(os.platform),
         asString(os.release),
         asString(os.arch)
-      ),
+      ) || null,
+    ram: ramText || null,
+    reportedAt: asString(root.reportedAt),
+    uptime: formatUptime(asNumber(resources.uptimeSeconds)),
+  } satisfies RunnerCapabilitySummary;
+}
+
+export function getRunnerCapabilityRows(
+  capabilities: DevboxAdminRunner['capabilities'],
+  t: DevboxControlTranslator
+) {
+  const summary = getRunnerCapabilitySummary(capabilities, t);
+
+  return [
+    {
+      label: t('capabilities.cli'),
+      value: summary.cli,
+    },
+    {
+      label: t('capabilities.bun'),
+      value: summary.bun,
+    },
+    {
+      label: t('capabilities.node'),
+      value: summary.node,
+    },
+    {
+      label: t('capabilities.docker'),
+      value: summary.docker,
+    },
+    {
+      label: t('capabilities.git'),
+      value: summary.git,
+    },
+    {
+      label: t('capabilities.os'),
+      value: summary.os,
     },
     {
       label: t('capabilities.cpu'),
-      value: cpuText,
+      value: summary.cpu,
     },
     {
       label: t('capabilities.ram'),
-      value: memoryText,
+      value:
+        summary.ram && summary.memoryUsedPercent !== null
+          ? `${summary.ram} (${summary.memoryUsedPercent}%)`
+          : summary.ram,
     },
     {
       label: t('capabilities.load'),
-      value: formatLoadAverage(resources.loadAverage),
+      value: summary.load,
     },
     {
       label: t('capabilities.uptime'),
-      value: formatUptime(asNumber(resources.uptimeSeconds)),
+      value: summary.uptime,
     },
   ].filter((row) => row.value);
+}
+
+function VersionBadge({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null;
+}) {
+  if (!value) return null;
+
+  return (
+    <Badge
+      className="max-w-44 truncate font-mono text-[11px]"
+      variant="outline"
+    >
+      {label} {value}
+    </Badge>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string | null }) {
+  if (!value) return null;
+
+  return (
+    <div className="grid grid-cols-[4.25rem_minmax(0,1fr)] gap-2">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="truncate font-mono" title={value}>
+        {value}
+      </span>
+    </div>
+  );
 }
 
 export function RunnerCapabilitiesCell({
@@ -135,7 +217,8 @@ export function RunnerCapabilitiesCell({
   capabilities: DevboxAdminRunner['capabilities'];
   t: DevboxControlTranslator;
 }) {
-  const rows = getCapabilityRows(capabilities, t);
+  const summary = getRunnerCapabilitySummary(capabilities, t);
+  const rows = getRunnerCapabilityRows(capabilities, t);
 
   if (rows.length === 0) {
     return (
@@ -146,18 +229,30 @@ export function RunnerCapabilitiesCell({
   }
 
   return (
-    <div className="min-w-72 space-y-1 text-xs">
-      {rows.map((row) => (
-        <div
-          className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2"
-          key={row.label}
-        >
-          <span className="text-muted-foreground">{row.label}</span>
-          <span className="truncate font-mono" title={row.value ?? undefined}>
-            {row.value}
-          </span>
-        </div>
-      ))}
+    <div className="min-w-80 space-y-2 text-xs">
+      <div className="flex flex-wrap gap-1">
+        <VersionBadge
+          label="ttr"
+          value={summary.cli?.replace(/^ttr\s+/u, '') ?? null}
+        />
+        <VersionBadge label="bun" value={summary.bun} />
+        <VersionBadge label="node" value={summary.node} />
+      </div>
+      <div className="grid gap-x-3 gap-y-1 sm:grid-cols-2">
+        <DetailRow label={t('capabilities.host')} value={summary.hostname} />
+        <DetailRow label={t('capabilities.os')} value={summary.os} />
+        <DetailRow label={t('capabilities.cpu')} value={summary.cpu} />
+        <DetailRow
+          label={t('capabilities.ram')}
+          value={
+            summary.ram && summary.memoryUsedPercent !== null
+              ? `${summary.ram} (${summary.memoryUsedPercent}%)`
+              : summary.ram
+          }
+        />
+        <DetailRow label={t('capabilities.load')} value={summary.load} />
+        <DetailRow label={t('capabilities.docker')} value={summary.docker} />
+      </div>
     </div>
   );
 }

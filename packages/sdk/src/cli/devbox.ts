@@ -4,8 +4,13 @@ import {
   parseDevboxEnvAssignments,
 } from '@tuturuuu/devbox';
 import type { TuturuuuUserClient } from '../platform';
-import type { DevboxRunPayload, DevboxRunResponse } from '../platform-devbox';
+import {
+  type DevboxRunPayload,
+  type DevboxRunResponse,
+  shutdownDevboxAgent,
+} from '../platform-devbox';
 import { type FlagValue, getFlag } from './args';
+import { normalizeBaseUrl } from './config';
 import { runDevboxAgentLoop } from './devbox-agent';
 import {
   createDevboxDoctorReport,
@@ -356,6 +361,28 @@ function printJson(value: unknown) {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
 }
 
+function formatResponseStatus(response: Response) {
+  return `${response.status}${response.statusText ? ` ${response.statusText}` : ''}`;
+}
+
+function getDevboxRunnerToken(flags: Record<string, FlagValue>) {
+  return getFlag(flags, 'token') || process.env.TUTURUUU_DEVBOX_RUNNER_TOKEN;
+}
+
+function getRequiredDevboxRunnerToken(
+  flags: Record<string, FlagValue>,
+  command: string
+) {
+  const token = getDevboxRunnerToken(flags);
+  if (!token) {
+    throw new Error(
+      `Missing runner token. Run \`ttr box agent register\` with a logged-in account, then run \`ttr box ${command} --token <runner-token>\` or set TUTURUUU_DEVBOX_RUNNER_TOKEN.`
+    );
+  }
+
+  return token;
+}
+
 function printDevboxRun(
   response: Awaited<ReturnType<TuturuuuUserClient['devboxes']['createRun']>>
 ) {
@@ -464,6 +491,34 @@ async function createAndPrintDevboxRun({
   }
 }
 
+async function shutdownCurrentDevboxRunner({
+  baseUrl,
+  flags,
+  json,
+}: {
+  baseUrl?: string;
+  flags: Record<string, FlagValue>;
+  json: boolean;
+}) {
+  const token = getRequiredDevboxRunnerToken(flags, 'shutdown');
+  const response = await shutdownDevboxAgent({
+    baseUrl: normalizeBaseUrl(baseUrl),
+    token,
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Devbox runner shutdown failed: ${formatResponseStatus(response.response)}`
+    );
+  }
+
+  if (json) {
+    printJson(response.payload);
+    return;
+  }
+  process.stdout.write(`${response.payload.message}\n`);
+}
+
 export async function runDevboxCommand({
   action,
   argv,
@@ -495,9 +550,13 @@ export async function runDevboxCommand({
     await runDevboxAgentLoop({
       baseUrl,
       once: flags.once === true,
-      token:
-        getFlag(flags, 'token') || process.env.TUTURUUU_DEVBOX_RUNNER_TOKEN,
+      token: getDevboxRunnerToken(flags),
     });
+    return;
+  }
+
+  if (resolvedAction === 'shutdown') {
+    await shutdownCurrentDevboxRunner({ baseUrl, flags, json });
     return;
   }
 

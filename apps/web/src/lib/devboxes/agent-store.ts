@@ -28,7 +28,15 @@ type UpdateFilter = {
   select: (columns: string) => QueryResult<unknown[]>;
 };
 
+type DeleteFilter = {
+  eq: (
+    column: string,
+    value: string
+  ) => DeleteFilter & Promise<{ error: DevboxStorageErrorLike }>;
+};
+
 type PrivateTableClient = {
+  delete: () => DeleteFilter;
   insert: (value: unknown) => Promise<{ error: DevboxStorageErrorLike }>;
   select: (columns?: string) => SelectFilter;
   update: (value: unknown) => {
@@ -158,6 +166,43 @@ export async function heartbeatDevboxRunner(
   }
 
   return { message: 'heartbeat accepted' };
+}
+
+export async function shutdownDevboxRunner(runnerId: string) {
+  const privateClient = await createPrivateDevboxClient();
+
+  const { error: tokenError } = await getPrivateTable(
+    privateClient,
+    'devbox_runner_tokens'
+  )
+    .delete()
+    .eq('runner_id', runnerId);
+
+  if (tokenError) {
+    throw getDevboxStorageError(tokenError);
+  }
+
+  const { error: runnerError } = await getPrivateTable(
+    privateClient,
+    'devbox_runners'
+  )
+    .update({
+      status: 'revoked',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', runnerId);
+
+  if (runnerError) {
+    throw getDevboxStorageError(runnerError);
+  }
+
+  return {
+    message: 'Devbox runner removed from the cluster.',
+    runner: {
+      id: runnerId,
+      status: 'revoked',
+    },
+  };
 }
 
 export async function claimNextDevboxRun(runnerId: string) {

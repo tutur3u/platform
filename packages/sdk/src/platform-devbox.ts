@@ -78,6 +78,14 @@ export interface DevboxAgentRegistrationResponse {
   token: string;
 }
 
+export interface DevboxAgentShutdownResponse {
+  message: string;
+  runner: {
+    id: string;
+    status: string;
+  };
+}
+
 export class DevboxesClient {
   private readonly api;
 
@@ -217,4 +225,28 @@ export async function recordDevboxAgentEvents({
     },
     method: 'POST',
   });
+}
+
+export async function shutdownDevboxAgent({
+  baseUrl,
+  fetch: fetchImpl = globalThis.fetch,
+  token,
+}: {
+  baseUrl: string;
+  fetch?: typeof fetch;
+  token: string;
+}) {
+  const response = await fetchImpl(
+    new URL('/api/v1/devboxes/agents/shutdown', baseUrl),
+    {
+      headers: {
+        'X-Devbox-Runner-Token': token,
+      },
+      method: 'POST',
+    }
+  );
+  if (!response.ok) return { ok: false as const, response };
+
+  const payload = (await response.json()) as DevboxAgentShutdownResponse;
+  return { ok: true as const, payload };
 }
