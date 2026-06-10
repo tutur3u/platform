@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/tutur3u/platform/compare/masonry-v0.4.2...masonry-v0.4.3) (2026-06-10)
+
+
+### Bug Fixes
+
+* **ci:** auto-recover package release dependencies ([40b2539](https://github.com/tutur3u/platform/commit/40b25390c903194a3c85cc627c737a4acd0d6fa9))
+
 ## [0.4.2](https://github.com/tutur3u/platform/compare/masonry-v0.4.1...masonry-v0.4.2) (2026-06-09)
 
 

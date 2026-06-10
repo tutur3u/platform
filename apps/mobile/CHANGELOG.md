@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2](https://github.com/tutur3u/platform/compare/mobile-v0.5.1...mobile-v0.5.2) (2026-06-10)
+
+
+### Bug Fixes
+
+* **mobile:** pin connectivity for Apple CI ([6ff00bb](https://github.com/tutur3u/platform/commit/6ff00bbeacf59ef8f26eb1910d4650bea8ba12e9))
+* **mobile:** pin device info for Apple CI ([5219ee1](https://github.com/tutur3u/platform/commit/5219ee18aedb9feeabb955676443d9a4b80ede86))
+
 ## [0.5.1](https://github.com/tutur3u/platform/compare/mobile-v0.5.0...mobile-v0.5.1) (2026-06-03)
 
 

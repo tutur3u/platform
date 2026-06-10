@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/utils-v0.3.1...utils-v0.4.0) (2026-06-10)
+
+
+### Features
+
+* **cli:** add host switching and finance transfers ([6c732c1](https://github.com/tutur3u/platform/commit/6c732c13fae9173e97cadb0b4534f37d42908a92))
+* **devbox:** add infrastructure control panel ([5bfbbd0](https://github.com/tutur3u/platform/commit/5bfbbd025c8482d5ef8218d35599a9d223b5b214))
+* **devbox:** add runner setup and tunnel workflows ([27c55d5](https://github.com/tutur3u/platform/commit/27c55d55899c89a7584ab7c3249c9d9a61b6a0b9))
+* **devbox:** add runner shutdown and observability ([ebcae14](https://github.com/tutur3u/platform/commit/ebcae148dd4109e6a2f18f089de730dcd8d4f30e))
+* **external-projects:** add scoped storage CRUD ([3294ff8](https://github.com/tutur3u/platform/commit/3294ff818e6a2dafbdeec88ed4e4207edc2e5f8c))
+
+
+### Bug Fixes
+
+* **devbox:** keep setup prompt tests deterministic in ci ([d65cbf4](https://github.com/tutur3u/platform/commit/d65cbf48fe3d99e617ba165f7f25d1e3085e2733))
+* **mobile:** pin connectivity for Apple CI ([6ff00bb](https://github.com/tutur3u/platform/commit/6ff00bbeacf59ef8f26eb1910d4650bea8ba12e9))
+* **mobile:** pin device info for Apple CI ([5219ee1](https://github.com/tutur3u/platform/commit/5219ee18aedb9feeabb955676443d9a4b80ede86))
+* **web:** harden task search and command launcher ([e4f8fd2](https://github.com/tutur3u/platform/commit/e4f8fd28bd78eabb0aa38182af2a32b85b5bf3e0))
+
 ## [0.3.1](https://github.com/tutur3u/platform/compare/utils-v0.3.0...utils-v0.3.1) (2026-06-09)
 
 

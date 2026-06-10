@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/devbox-v0.2.1...devbox-v0.3.0) (2026-06-10)
+
+
+### Features
+
+* **devbox:** add runner setup and tunnel workflows ([27c55d5](https://github.com/tutur3u/platform/commit/27c55d55899c89a7584ab7c3249c9d9a61b6a0b9))
+
+
+### Bug Fixes
+
+* **ci:** auto-recover package release dependencies ([40b2539](https://github.com/tutur3u/platform/commit/40b25390c903194a3c85cc627c737a4acd0d6fa9))
+
 ## [0.2.1](https://github.com/tutur3u/platform/compare/devbox-v0.2.0...devbox-v0.2.1) (2026-06-09)
 
 
