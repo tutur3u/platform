@@ -18,7 +18,6 @@ const PLATFORM_RELEASE_FILES = [
 function parseArgs(argv = process.argv.slice(2)) {
   const options = {
     baseBranch: DEFAULT_BASE_BRANCH,
-    check: true,
     fetch: true,
     format: true,
     remote: DEFAULT_REMOTE,
@@ -54,11 +53,6 @@ function parseArgs(argv = process.argv.slice(2)) {
 
     if (arg === '--skip-format') {
       options.format = false;
-      continue;
-    }
-
-    if (arg === '--skip-check') {
-      options.check = false;
       continue;
     }
 
@@ -213,7 +207,7 @@ function mergeReleaseBranch(branch) {
   }
 }
 
-function finalizeMerge({ check, format }) {
+function finalizeMerge({ format }) {
   syncPlatformReleaseVersion();
   ensureNoUnresolvedConflicts();
 
@@ -222,11 +216,6 @@ function finalizeMerge({ check, format }) {
   }
 
   run('git', ['add', '--all']);
-
-  if (check) {
-    run('bun', ['check']);
-  }
-
   run('git', ['commit', '--no-edit']);
 }
 

@@ -49,11 +49,9 @@ test('parseArgs supports release-please merge overrides', () => {
       'production',
       '--skip-fetch',
       '--skip-format',
-      '--skip-check',
     ]),
     {
       baseBranch: 'main',
-      check: false,
       fetch: false,
       format: false,
       remote: 'upstream',

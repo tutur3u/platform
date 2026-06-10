@@ -66,9 +66,10 @@ formatting behavior, or repo-wide verification.
 - Use `bun git-release-please` from a clean `main` checkout to merge the latest
   `release-please--branches--production` branch. The helper fetches the bot
   branch, merges without committing, syncs the platform badge version files from
-  `platform-version.txt`, runs `bun ff` and `bun check`, then creates the merge
-  commit only after validation passes. If a manual merge is already in progress,
-  run `bun release:sync-platform-version` before staging the resolved
+  `platform-version.txt`, runs `bun ff`, stages the resolved merge, then lets
+  the normal commit hook run `bun check` and conditional `bun check:mobile`
+  before the merge commit lands. If a manual merge is already in progress, run
+  `bun release:sync-platform-version` before staging the resolved
   `TUTURUUU_PLATFORM_VERSION` files.
 - Keep the Release Please token fallback ordered as
   `secrets.RELEASE_PLEASE_TOKEN || github.token`; the bot token is still needed
