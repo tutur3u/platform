@@ -708,10 +708,10 @@ host commands for a later recovery event.
 That settings file also owns Docker crash email alerts:
 
 - `emailAlertsEnabled`: enables SES-backed Docker recovery alert emails from the
-  web cron worker.
+  web cron worker and watcher-side first-failure build/deploy incident emails.
 - `emailAlertRecipients`: explicit recipient list. If this is empty, the cron
-  falls back to `PLATFORM_DOCKER_RECOVERY_ALERT_EMAILS`, then the last operator
-  email that saved the settings.
+  and watcher fall back to `PLATFORM_DOCKER_RECOVERY_ALERT_EMAILS`, then the
+  last operator email that saved the settings.
 - `emailAlertCooldownMs`: minimum time between alert emails; default 1800000.
 
 The host supervisor persists Docker crash/recovery events to the watcher log
@@ -720,6 +720,18 @@ usually runs inside Docker, SES email delivery happens after Docker is reachable
 again and the web cron job `/api/cron/infrastructure/docker-recovery-alerts`
 can run. The cron deduplicates by Docker recovery incident id using
 `tmp/docker-web/watch/control/blue-green-docker-recovery-alert-state.json`.
+
+The blue/green watcher sends its own build/deploy incident email when an
+`apps/web` deployment attempt first fails for a commit. This runs from the
+watcher process rather than the current web image, uses the same recipient
+resolution as Docker recovery alerts, and only sends for the first failed
+history row per `commitHash`. Later retries for that same commit still append
+full failure history but do not spam operators. The incident email includes the
+full and short commit hash, commit subject, branch/upstream, deployment kind,
+host, timing, exit code or signal when available, the recorded `failureReason`,
+and debugging pointers for watcher history/log files plus commands like
+`git show --stat --oneline <hash>` and watcher container logs. Notification
+send failures are logged and never block the watcher loop.
 
 Example post-restart commands for colocated projects:
 

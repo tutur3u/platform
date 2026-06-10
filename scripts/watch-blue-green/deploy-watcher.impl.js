@@ -73,6 +73,7 @@ const {
   createWatcherLogEntry,
   readWatcherLogEntries,
 } = require('./logs.js');
+const { sendBuildFailureIncidentEmail } = require('./incident-email.js');
 const {
   DEFAULT_PROJECT_POLL_INTERVAL_MS,
   normalizeProjectBranch,
@@ -1640,13 +1641,14 @@ function describeTimedOutDeploymentBuild(result) {
   return `Deployment build exceeded ${formatDuration(timeoutMs)} while still building; sent ${signal} to PID ${lock.ownerPid ?? lock.pid ?? 'unknown'} after ${formatDuration(elapsedMs)}.`;
 }
 
-function stopTimedOutDeploymentBuildIfNeeded({
+async function stopTimedOutDeploymentBuildIfNeeded({
   env,
   fsImpl,
   log = console,
   now = () => Date.now(),
   paths,
   processImpl,
+  target = null,
 } = {}) {
   const lock = readDeploymentBuildLock(paths, fsImpl);
   const result = tryTerminateTimedOutDeploymentBuildLock(lock, {
@@ -1672,23 +1674,24 @@ function stopTimedOutDeploymentBuildIfNeeded({
   const reason = describeTimedOutDeploymentBuild(result);
   const timedOutError = new Error(reason);
 
-  appendDeploymentHistory(
-    withDeploymentFailureDetails(
-      {
-        buildDurationMs: result.elapsedMs,
-        commitHash: result.lock?.commitHash ?? null,
-        commitShortHash: result.lock?.commitShortHash ?? null,
-        commitSubject: result.lock?.commitSubject ?? null,
-        deploymentKind: result.lock?.deploymentKind ?? 'watcher-timeout',
-        finishedAt,
-        startedAt: result.lock?.startedAt ?? finishedAt,
-        status: 'failed',
-      },
-      timedOutError
-    ),
+  await appendFailedDeploymentHistoryAndNotify(
     {
+      buildDurationMs: result.elapsedMs,
+      commitHash: result.lock?.commitHash ?? null,
+      commitShortHash: result.lock?.commitShortHash ?? null,
+      commitSubject: result.lock?.commitSubject ?? null,
+      deploymentKind: result.lock?.deploymentKind ?? 'watcher-timeout',
+      finishedAt,
+      startedAt: result.lock?.startedAt ?? finishedAt,
+      status: 'failed',
+    },
+    timedOutError,
+    {
+      env,
       fsImpl,
+      log,
       paths,
+      target,
     }
   );
   log.warn?.(reason);
@@ -1704,6 +1707,60 @@ function getFailedDeploymentCountForCommit(deployments = [], commitHash) {
   return deployments.filter(
     (entry) => entry?.status === 'failed' && entry.commitHash === commitHash
   ).length;
+}
+
+async function appendFailedDeploymentHistoryAndNotify(
+  entry,
+  error,
+  {
+    env,
+    fsImpl = fs,
+    incidentEmailSender = sendBuildFailureIncidentEmail,
+    log = console,
+    paths = getWatchPaths(),
+    target = null,
+  } = {}
+) {
+  const failedEntry = withDeploymentFailureDetails(entry, error);
+  const priorHistory = readDeploymentHistory(paths, fsImpl);
+  const shouldNotify =
+    failedEntry.commitHash &&
+    getFailedDeploymentCountForCommit(priorHistory, failedEntry.commitHash) ===
+      0;
+  const history = appendDeploymentHistory(failedEntry, {
+    fsImpl,
+    paths,
+  });
+
+  if (!shouldNotify) {
+    return history;
+  }
+
+  try {
+    const result = await incidentEmailSender({
+      entry: failedEntry,
+      env,
+      fsImpl,
+      paths,
+      target,
+    });
+
+    if (result?.sent) {
+      log.warn?.(
+        `Sent blue/green build failure incident email for ${failedEntry.commitShortHash ?? failedEntry.commitHash.slice(0, 12)} to ${result.recipients?.length ?? 0} recipient(s).`
+      );
+    } else if (result?.skipped === 'send-failed') {
+      log.error?.(
+        `Failed to send blue/green build failure incident email for ${failedEntry.commitShortHash ?? failedEntry.commitHash.slice(0, 12)}: ${result.error ?? 'unknown error'}`
+      );
+    }
+  } catch (notificationError) {
+    log.error?.(
+      `Failed to send blue/green build failure incident email for ${failedEntry.commitShortHash ?? failedEntry.commitHash.slice(0, 12)}: ${getErrorMessage(notificationError)}`
+    );
+  }
+
+  return history;
 }
 
 function hasReachedDeploymentFailureLimit(deployments = [], commitHash) {
@@ -1972,23 +2029,24 @@ async function runDetachedCommitFullBlueGreenDeploy({
         return { buildLockConflict: true, error, history: null };
       }
 
-      const history = appendDeploymentHistory(
-        withDeploymentFailureDetails(
-          {
-            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-            commitHash: deployCommit.hash,
-            commitShortHash: deployCommit.shortHash,
-            commitSubject: deployCommit.subject,
-            deploymentKind,
-            finishedAt: deployFinishedAt,
-            startedAt: deployStartedAt,
-            status: 'failed',
-          },
-          error
-        ),
+      const history = await appendFailedDeploymentHistoryAndNotify(
         {
+          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+          commitHash: deployCommit.hash,
+          commitShortHash: deployCommit.shortHash,
+          commitSubject: deployCommit.subject,
+          deploymentKind,
+          finishedAt: deployFinishedAt,
+          startedAt: deployStartedAt,
+          status: 'failed',
+        },
+        error,
+        {
+          env,
           fsImpl,
+          log,
           paths,
+          target: { branch: targetBranch },
         }
       );
 
@@ -2103,24 +2161,25 @@ async function runDetachedParentFallbackStandbyRefresh({
       return { success: true, history };
     } catch (error) {
       const refreshFinishedAt = now();
-      const history = appendDeploymentHistory(
-        withDeploymentFailureDetails(
-          {
-            activeColor: standbyRefreshCandidate.standbyColor,
-            buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
-            commitHash: deployCommit.hash,
-            commitShortHash: deployCommit.shortHash,
-            commitSubject: deployCommit.subject,
-            deploymentKind: 'parent-fallback-standby-refresh',
-            finishedAt: refreshFinishedAt,
-            startedAt: refreshStartedAt,
-            status: 'failed',
-          },
-          error
-        ),
+      const history = await appendFailedDeploymentHistoryAndNotify(
         {
+          activeColor: standbyRefreshCandidate.standbyColor,
+          buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+          commitHash: deployCommit.hash,
+          commitShortHash: deployCommit.shortHash,
+          commitSubject: deployCommit.subject,
+          deploymentKind: 'parent-fallback-standby-refresh',
+          finishedAt: refreshFinishedAt,
+          startedAt: refreshStartedAt,
+          status: 'failed',
+        },
+        error,
+        {
+          env,
           fsImpl,
+          log,
           paths,
+          target: { branch: targetBranch },
         }
       );
 
@@ -3277,25 +3336,26 @@ async function runPinnedDeploymentIteration(
     }
 
     const deployFinishedAt = now();
-    const history = appendDeploymentHistory(
-      withDeploymentFailureDetails(
-        {
-          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-          commitHash: latestCommit.hash,
-          commitShortHash: latestCommit.shortHash,
-          commitSubject: latestCommit.subject,
-          deploymentKind: 'rollback-pin',
-          finishedAt: deployFinishedAt,
-          pinnedBy: deploymentPin.requestedBy,
-          pinnedByEmail: deploymentPin.requestedByEmail,
-          startedAt: deployStartedAt,
-          status: 'failed',
-        },
-        error
-      ),
+    const history = await appendFailedDeploymentHistoryAndNotify(
       {
+        buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+        commitHash: latestCommit.hash,
+        commitShortHash: latestCommit.shortHash,
+        commitSubject: latestCommit.subject,
+        deploymentKind: 'rollback-pin',
+        finishedAt: deployFinishedAt,
+        pinnedBy: deploymentPin.requestedBy,
+        pinnedByEmail: deploymentPin.requestedByEmail,
+        startedAt: deployStartedAt,
+        status: 'failed',
+      },
+      error,
+      {
+        env,
         fsImpl,
+        log,
         paths,
+        target,
       }
     );
 
@@ -3358,13 +3418,14 @@ async function runDeployWatchIteration(
       })),
     };
   };
-  const timedOutBuild = stopTimedOutDeploymentBuildIfNeeded({
+  const timedOutBuild = await stopTimedOutDeploymentBuildIfNeeded({
     env,
     fsImpl,
     log,
     now,
     paths,
     processImpl,
+    target,
   });
 
   if (
@@ -3849,26 +3910,24 @@ async function runDeployWatchIteration(
           }
 
           const deployFinishedAt = now();
-          const history = appendDeploymentHistory(
-            withDeploymentFailureDetails(
-              {
-                buildDurationMs: Math.max(
-                  0,
-                  deployFinishedAt - deployStartedAt
-                ),
-                commitHash: latestCommit.hash,
-                commitShortHash: latestCommit.shortHash,
-                commitSubject: latestCommit.subject,
-                deploymentKind: 'manual',
-                finishedAt: deployFinishedAt,
-                startedAt: deployStartedAt,
-                status: 'failed',
-              },
-              error
-            ),
+          const history = await appendFailedDeploymentHistoryAndNotify(
             {
+              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              deploymentKind: 'manual',
+              finishedAt: deployFinishedAt,
+              startedAt: deployStartedAt,
+              status: 'failed',
+            },
+            error,
+            {
+              env,
               fsImpl,
+              log,
               paths,
+              target,
             }
           );
           await updatePlatformProjectStatus({
@@ -4220,26 +4279,24 @@ async function runDeployWatchIteration(
           }
 
           const deployFinishedAt = now();
-          const history = appendDeploymentHistory(
-            withDeploymentFailureDetails(
-              {
-                buildDurationMs: Math.max(
-                  0,
-                  deployFinishedAt - deployStartedAt
-                ),
-                commitHash: latestCommit.hash,
-                commitShortHash: latestCommit.shortHash,
-                commitSubject: latestCommit.subject,
-                deploymentKind: 'reconcile',
-                finishedAt: deployFinishedAt,
-                startedAt: deployStartedAt,
-                status: 'failed',
-              },
-              error
-            ),
+          const history = await appendFailedDeploymentHistoryAndNotify(
             {
+              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              deploymentKind: 'reconcile',
+              finishedAt: deployFinishedAt,
+              startedAt: deployStartedAt,
+              status: 'failed',
+            },
+            error,
+            {
+              env,
               fsImpl,
+              log,
               paths,
+              target,
             }
           );
 
@@ -4545,27 +4602,25 @@ async function runDeployWatchIteration(
         }
 
         const refreshFinishedAt = now();
-        const history = appendDeploymentHistory(
-          withDeploymentFailureDetails(
-            {
-              activeColor: standbyRefreshCandidate.standbyColor,
-              buildDurationMs: Math.max(
-                0,
-                refreshFinishedAt - refreshStartedAt
-              ),
-              commitHash: latestCommit.hash,
-              commitShortHash: latestCommit.shortHash,
-              commitSubject: latestCommit.subject,
-              deploymentKind: 'standby-refresh',
-              finishedAt: refreshFinishedAt,
-              startedAt: refreshStartedAt,
-              status: 'failed',
-            },
-            error
-          ),
+        const history = await appendFailedDeploymentHistoryAndNotify(
           {
+            activeColor: standbyRefreshCandidate.standbyColor,
+            buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            deploymentKind: 'standby-refresh',
+            finishedAt: refreshFinishedAt,
+            startedAt: refreshStartedAt,
+            status: 'failed',
+          },
+          error,
+          {
+            env,
             fsImpl,
+            log,
             paths,
+            target,
           }
         );
 
@@ -5129,22 +5184,24 @@ async function runDeployWatchIteration(
         }
 
         const deployFinishedAt = now();
-        const history = appendDeploymentHistory(
-          withDeploymentFailureDetails(
-            {
-              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-              commitHash: latestCommit.hash,
-              commitShortHash: latestCommit.shortHash,
-              commitSubject: latestCommit.subject,
-              finishedAt: deployFinishedAt,
-              startedAt: deployStartedAt,
-              status: 'failed',
-            },
-            error
-          ),
+        const history = await appendFailedDeploymentHistoryAndNotify(
           {
+            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            deploymentKind: 'promotion',
+            finishedAt: deployFinishedAt,
+            startedAt: deployStartedAt,
+            status: 'failed',
+          },
+          error,
+          {
+            env,
             fsImpl,
+            log,
             paths,
+            target,
           }
         );
 
@@ -5747,13 +5804,14 @@ async function main(argv = process.argv.slice(2), options = {}) {
           `Recovered watcher is already serving ${latestCommit.shortHash}; skipping the pending deploy handoff.`
         );
       } else {
-        stopTimedOutDeploymentBuildIfNeeded({
+        await stopTimedOutDeploymentBuildIfNeeded({
           env,
           fsImpl,
           log: ui,
           now: options.now ?? (() => Date.now()),
           paths,
           processImpl,
+          target,
         });
         let activeDeploymentConflict = getActiveDeploymentConflict({
           env,
@@ -5783,13 +5841,14 @@ async function main(argv = process.argv.slice(2), options = {}) {
           }
 
           await (options.sleepImpl ?? sleep)(parsed.intervalMs);
-          stopTimedOutDeploymentBuildIfNeeded({
+          await stopTimedOutDeploymentBuildIfNeeded({
             env,
             fsImpl,
             log: ui,
             now: options.now ?? (() => Date.now()),
             paths,
             processImpl,
+            target,
           });
           activeDeploymentConflict = getActiveDeploymentConflict({
             env,
@@ -5921,25 +5980,27 @@ async function main(argv = process.argv.slice(2), options = {}) {
               return;
             }
 
-            const history = appendDeploymentHistory(
-              withDeploymentFailureDetails(
-                {
-                  buildDurationMs: Math.max(
-                    0,
-                    deployFinishedAt - pendingStartedAt
-                  ),
-                  commitHash: deployCommit.hash,
-                  commitShortHash: deployCommit.shortHash,
-                  commitSubject: deployCommit.subject,
-                  finishedAt: deployFinishedAt,
-                  startedAt: pendingStartedAt,
-                  status: 'failed',
-                },
-                error
-              ),
+            const history = await appendFailedDeploymentHistoryAndNotify(
               {
+                buildDurationMs: Math.max(
+                  0,
+                  deployFinishedAt - pendingStartedAt
+                ),
+                commitHash: deployCommit.hash,
+                commitShortHash: deployCommit.shortHash,
+                commitSubject: deployCommit.subject,
+                deploymentKind,
+                finishedAt: deployFinishedAt,
+                startedAt: pendingStartedAt,
+                status: 'failed',
+              },
+              error,
+              {
+                env,
                 fsImpl,
+                log: ui,
                 paths,
+                target,
               }
             );
             const runtimeSnapshot = await loadRuntimeSnapshot({
@@ -6209,6 +6270,7 @@ module.exports = {
   DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS_ENV,
   DOCKER_DAEMON_RECOVERY_SETTINGS_FILE,
   acquireWatchLock,
+  appendFailedDeploymentHistoryAndNotify,
   appendDeploymentHistory,
   buildDashboardView,
   clearInstantRolloutRequest,

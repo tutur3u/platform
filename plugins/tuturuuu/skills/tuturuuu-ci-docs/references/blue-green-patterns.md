@@ -28,6 +28,11 @@ infrastructure dashboard changes.
   conflict and the lock is old enough to be safe.
 - Watcher failures stay in the loop. Record failed deployment rows, clear stale
   pending handoff files, and cap retries per commit.
+- The watcher sends a build/deploy incident email only for the first failed
+  history row per commit hash. Reuse Infrastructure Monitoring Docker recovery
+  recipients from `emailAlertRecipients`, then
+  `PLATFORM_DOCKER_RECOVERY_ALERT_EMAILS`, then `updatedByEmail`; log email
+  send failures without changing deployment results.
 - Watcher restart/recreate must reconcile current `HEAD` against the latest
   successful deployment and deploy `HEAD` when runtime history lags.
 

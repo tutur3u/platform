@@ -43,6 +43,7 @@ const {
   WATCH_PENDING_DEPLOY_ENV,
   WATCHER_CONTAINER_ENV,
   acquireWatchLock,
+  appendFailedDeploymentHistoryAndNotify,
   appendDeploymentHistory,
   buildDashboardView,
   clearContainerManagedWatcherState,
@@ -119,6 +120,12 @@ const {
   readDeploymentStagesHandoff,
   writeDeploymentStagesHandoff,
 } = require('./watch-blue-green/history.js');
+const {
+  BUILD_FAILURE_ALERT_RECIPIENTS_ENV,
+  DOCKER_RECOVERY_SETTINGS_FILE: BUILD_FAILURE_ALERT_SETTINGS_FILE,
+  createBuildFailureIncidentEmail,
+  sendBuildFailureIncidentEmail,
+} = require('./watch-blue-green/incident-email.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const PROD_COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.prod.yml');
@@ -325,6 +332,270 @@ test('dashboard Docker recovery settings preserve host-configured command env', 
       effectiveEnv[DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV],
       '[["docker","compose","up","-d"]]'
     );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+function writeBuildFailureAlertSettings(paths, settings) {
+  fs.mkdirSync(paths.controlDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(paths.controlDir, BUILD_FAILURE_ALERT_SETTINGS_FILE),
+    JSON.stringify(settings),
+    'utf8'
+  );
+}
+
+function createFailedDeploymentEntry(overrides = {}) {
+  return {
+    buildDurationMs: 123_456,
+    commitHash: 'abcdef1234567890abcdef1234567890abcdef12',
+    commitShortHash: 'abcdef123456',
+    commitSubject: 'Fix production build',
+    deploymentKind: 'promotion',
+    failureReason: 'failed to compile\nerror: Missing export',
+    finishedAt: Date.parse('2026-06-10T10:03:00.000Z'),
+    startedAt: Date.parse('2026-06-10T10:01:00.000Z'),
+    status: 'failed',
+    ...overrides,
+  };
+}
+
+test('build failure incident email uses dashboard recipients when enabled', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-build-failure-email-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const sends = [];
+
+  try {
+    writeBuildFailureAlertSettings(paths, {
+      emailAlertRecipients: ['Ops@Platform.Test', 'bad', 'ops@platform.test'],
+      emailAlertsEnabled: true,
+    });
+
+    const result = await sendBuildFailureIncidentEmail({
+      entry: createFailedDeploymentEntry(),
+      env: {},
+      fsImpl: fs,
+      paths,
+      sendSystemEmail: async (payload) => {
+        sends.push(payload);
+        return { success: true };
+      },
+      target: {
+        branch: 'main',
+        upstreamRef: 'origin/main',
+      },
+    });
+
+    assert.equal(result.sent, true);
+    assert.deepEqual(result.recipients, ['ops@platform.test']);
+    assert.deepEqual(sends[0].recipients, { to: ['ops@platform.test'] });
+    assert.match(sends[0].content.text, /abcdef1234567890/);
+    assert.match(sends[0].content.text, /Fix production build/);
+    assert.match(sends[0].content.text, /failed to compile/);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('build failure incident email uses env recipients as fallback and implicit enablement', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-build-failure-email-')
+  );
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    const result = await sendBuildFailureIncidentEmail({
+      entry: createFailedDeploymentEntry(),
+      env: {
+        [BUILD_FAILURE_ALERT_RECIPIENTS_ENV]: 'Env@Platform.Test,bad',
+      },
+      fsImpl: fs,
+      paths,
+      sendSystemEmail: async () => ({ success: true }),
+    });
+
+    assert.equal(result.sent, true);
+    assert.deepEqual(result.recipients, ['env@platform.test']);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('build failure incident email falls back to settings updatedByEmail', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-build-failure-email-')
+  );
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    writeBuildFailureAlertSettings(paths, {
+      emailAlertsEnabled: true,
+      updatedByEmail: 'Owner@Platform.Test',
+    });
+
+    const result = await sendBuildFailureIncidentEmail({
+      entry: createFailedDeploymentEntry(),
+      env: {},
+      fsImpl: fs,
+      paths,
+      sendSystemEmail: async () => ({ success: true }),
+    });
+
+    assert.equal(result.sent, true);
+    assert.deepEqual(result.recipients, ['owner@platform.test']);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('build failure incident email skips when disabled and no env recipients exist', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-build-failure-email-')
+  );
+  const paths = getWatchPaths(tempDir);
+  let sends = 0;
+
+  try {
+    writeBuildFailureAlertSettings(paths, {
+      emailAlertRecipients: ['ops@platform.test'],
+      emailAlertsEnabled: false,
+    });
+
+    const result = await sendBuildFailureIncidentEmail({
+      entry: createFailedDeploymentEntry(),
+      env: {},
+      fsImpl: fs,
+      paths,
+      sendSystemEmail: async () => {
+        sends += 1;
+        return { success: true };
+      },
+    });
+
+    assert.deepEqual(result, { sent: false, skipped: 'disabled' });
+    assert.equal(sends, 0);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('build failure incident email content includes commit and debugging details', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-build-failure-email-')
+  );
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    const content = createBuildFailureIncidentEmail({
+      entry: createFailedDeploymentEntry({
+        commitMessage: 'Fix production build\n\nFull commit body',
+        failureReason: 'Compilation failed <script>alert(1)</script>',
+      }),
+      hostname: 'deploy-host-1',
+      paths,
+      target: {
+        branch: 'main',
+        upstreamRef: 'origin/main',
+      },
+    });
+
+    assert.match(content.subject, /abcdef123456/);
+    assert.match(content.text, /abcdef1234567890abcdef1234567890abcdef12/);
+    assert.match(content.text, /Fix production build/);
+    assert.match(content.text, /Full commit body/);
+    assert.match(content.text, /Deployment kind: promotion/);
+    assert.match(content.text, /Compilation failed/);
+    assert.match(
+      content.text,
+      /git show --stat --oneline abcdef1234567890abcdef1234567890abcdef12/
+    );
+    assert.match(content.text, new RegExp(paths.historyFile));
+    assert.doesNotMatch(content.html, /<script>alert/);
+    assert.match(content.html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('failed deployment incident email sends once per commit', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-build-failure-email-')
+  );
+  const paths = getWatchPaths(tempDir);
+  let sends = 0;
+
+  try {
+    await appendFailedDeploymentHistoryAndNotify(
+      createFailedDeploymentEntry({
+        finishedAt: 2000,
+        startedAt: 1000,
+      }),
+      new Error('first build failed'),
+      {
+        fsImpl: fs,
+        incidentEmailSender: async () => {
+          sends += 1;
+          return { recipients: ['ops@platform.test'], sent: true };
+        },
+        log: { warn() {} },
+        paths,
+      }
+    );
+    await appendFailedDeploymentHistoryAndNotify(
+      createFailedDeploymentEntry({
+        finishedAt: 4000,
+        startedAt: 3000,
+      }),
+      new Error('second build failed'),
+      {
+        fsImpl: fs,
+        incidentEmailSender: async () => {
+          sends += 1;
+          return { recipients: ['ops@platform.test'], sent: true };
+        },
+        log: { warn() {} },
+        paths,
+      }
+    );
+
+    assert.equal(sends, 1);
+    assert.equal(readDeploymentHistory(paths, fs).length, 2);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('failed deployment incident email errors are logged without changing failure history', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-build-failure-email-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const errors = [];
+
+  try {
+    const history = await appendFailedDeploymentHistoryAndNotify(
+      createFailedDeploymentEntry(),
+      new Error('build failed'),
+      {
+        fsImpl: fs,
+        incidentEmailSender: async () => {
+          throw new Error('mail down');
+        },
+        log: {
+          error(message) {
+            errors.push(message);
+          },
+        },
+        paths,
+      }
+    );
+
+    assert.equal(history.length, 1);
+    assert.equal(readDeploymentHistory(paths, fs).length, 1);
+    assert.match(errors.join('\n'), /mail down/);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
