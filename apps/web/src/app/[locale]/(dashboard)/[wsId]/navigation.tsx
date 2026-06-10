@@ -1421,6 +1421,12 @@ export async function WorkspaceNavigationLinks({
               disabled: withoutPermission('manage_workspace_roles'),
             },
             {
+              title: t('infrastructure-tabs.mobile_deployment'),
+              href: `/${personalOrWsId}/infrastructure/mobile-deployment`,
+              icon: createDashboardNavigationIcon('Upload', 'h-5 w-5'),
+              disabled: withoutPermission('manage_workspace_secrets'),
+            },
+            {
               title: t('infrastructure-tabs.external_apps'),
               href: `/${personalOrWsId}/infrastructure/external-apps`,
               icon: createDashboardNavigationIcon('KeyRound', 'h-5 w-5'),

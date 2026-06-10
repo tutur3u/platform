@@ -8,6 +8,7 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  InternalApiError,
 } from './client';
 
 export interface MobilePlatformVersionPolicyPayload {
@@ -21,6 +22,89 @@ export interface MobileVersionPoliciesPayload {
   android: MobilePlatformVersionPolicyPayload;
   ios: MobilePlatformVersionPolicyPayload;
   webOtpEnabled: boolean;
+}
+
+export type MobileDeploymentPlatform = 'android' | 'ios';
+export type MobileDeploymentFileKind =
+  | 'android_google_services_json'
+  | 'ios_google_service_info_plist'
+  | 'android_upload_keystore'
+  | 'google_play_service_account_json'
+  | 'apple_distribution_certificate_p12'
+  | 'apple_app_store_provisioning_profile'
+  | 'app_store_connect_private_key_p8';
+export type MobileDeploymentScalarName =
+  | 'ANDROID_KEYSTORE_ALIAS'
+  | 'ANDROID_KEYSTORE_PASSWORD'
+  | 'ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD'
+  | 'GOOGLE_PLAY_PACKAGE_NAME'
+  | 'GOOGLE_PLAY_TRACK'
+  | 'APPLE_BUNDLE_ID'
+  | 'APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD'
+  | 'APPLE_TEAM_ID'
+  | 'APP_STORE_CONNECT_API_KEY_ID'
+  | 'APP_STORE_CONNECT_ISSUER_ID';
+
+export interface MobileDeploymentResourceStatus {
+  configured: boolean;
+  lastFour: string | null;
+  name: string;
+  plaintextSha256: string | null;
+  size: number | null;
+  updatedAt: string | null;
+  validationErrors: string[];
+}
+
+export interface MobileDeploymentVersionStatus {
+  activatedAt: string | null;
+  createdAt: string;
+  id: string;
+  ready: boolean;
+  readinessErrors: string[];
+  status: 'active' | 'archived' | 'draft';
+  version: number;
+}
+
+export interface MobileDeploymentTokenStatus {
+  createdAt: string;
+  expiresAt: string;
+  id: string;
+  lastFour: string;
+  lastUsedAt: string | null;
+  name: string;
+  platforms: MobileDeploymentPlatform[];
+  prefix: string;
+  revokedAt: string | null;
+}
+
+export interface MobileDeploymentAuditEvent {
+  actorType: 'ci' | 'user';
+  createdAt: string;
+  eventType: string;
+  id: string;
+  metadata: Record<string, unknown>;
+  resourceKind: string | null;
+}
+
+export interface MobileDeploymentState {
+  activeVersion: MobileDeploymentVersionStatus | null;
+  auditEvents: MobileDeploymentAuditEvent[];
+  draftVersion: MobileDeploymentVersionStatus | null;
+  envKeys: MobileDeploymentResourceStatus[];
+  fileArtifacts: MobileDeploymentResourceStatus[];
+  scalarValues: MobileDeploymentResourceStatus[];
+  tokens: MobileDeploymentTokenStatus[];
+}
+
+export interface IssueMobileDeploymentCiTokenPayload {
+  expiresInDays?: number;
+  name: string;
+  platforms?: MobileDeploymentPlatform[];
+}
+
+export interface IssueMobileDeploymentCiTokenResponse {
+  state: MobileDeploymentState;
+  token: string;
 }
 
 export interface ExternalAppRegistration {
@@ -1769,6 +1853,149 @@ export async function updateMobileVersionPolicies(
     },
     method: 'PUT',
   });
+}
+
+const MOBILE_DEPLOYMENT_CSRF_HEADER = 'x-tuturuuu-mobile-deployment-action';
+
+function mobileDeploymentMutationHeaders(extra?: HeadersInit) {
+  const headers = new Headers(extra);
+  headers.set(MOBILE_DEPLOYMENT_CSRF_HEADER, '1');
+  return headers;
+}
+
+export async function getMobileDeploymentState(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
+    cache: 'no-store',
+  });
+}
+
+export async function replaceMobileDeploymentEnvFile(
+  envFile: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
+    body: JSON.stringify({ action: 'replace_env', envFile }),
+    cache: 'no-store',
+    headers: mobileDeploymentMutationHeaders({
+      'Content-Type': 'application/json',
+    }),
+    method: 'PUT',
+  });
+}
+
+export async function saveMobileDeploymentScalarValue(
+  name: MobileDeploymentScalarName,
+  value: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
+    body: JSON.stringify({ action: 'save_scalar', name, value }),
+    cache: 'no-store',
+    headers: mobileDeploymentMutationHeaders({
+      'Content-Type': 'application/json',
+    }),
+    method: 'PUT',
+  });
+}
+
+export async function uploadMobileDeploymentFileResource(
+  kind: MobileDeploymentFileKind,
+  file: File,
+  options?: InternalApiClientOptions
+) {
+  const formData = new FormData();
+  formData.set('file', file);
+  const client = getInternalApiClient(options);
+  const response = await client.fetch(
+    `/api/v1/mobile-deployment/files/${kind}`,
+    {
+      body: formData,
+      cache: 'no-store',
+      headers: mobileDeploymentMutationHeaders(),
+      method: 'POST',
+    }
+  );
+
+  if (!response.ok) {
+    throw new InternalApiError(
+      `Internal API request failed: ${response.status}`,
+      response.status
+    );
+  }
+
+  return (await response.json()) as MobileDeploymentState;
+}
+
+export async function activateMobileDeploymentDraft(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MobileDeploymentState>(
+    '/api/v1/mobile-deployment/activate',
+    {
+      body: '{}',
+      cache: 'no-store',
+      headers: mobileDeploymentMutationHeaders({
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export async function rollbackMobileDeploymentVersion(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MobileDeploymentState>(
+    '/api/v1/mobile-deployment/rollback',
+    {
+      body: '{}',
+      cache: 'no-store',
+      headers: mobileDeploymentMutationHeaders({
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export async function issueMobileDeploymentCiToken(
+  payload: IssueMobileDeploymentCiTokenPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<IssueMobileDeploymentCiTokenResponse>(
+    '/api/v1/mobile-deployment/tokens',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: mobileDeploymentMutationHeaders({
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export async function revokeMobileDeploymentCiToken(
+  tokenId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MobileDeploymentState>(
+    `/api/v1/mobile-deployment/tokens/${encodePathSegment(tokenId)}`,
+    {
+      cache: 'no-store',
+      headers: mobileDeploymentMutationHeaders(),
+      method: 'DELETE',
+    }
+  );
 }
 
 export async function listAiGatewayModels(

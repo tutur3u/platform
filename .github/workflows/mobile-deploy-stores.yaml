@@ -1,0 +1,282 @@
+name: Mobile Store Deployment
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  push:
+    branches:
+      - production
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile-deploy-stores.yaml"
+      - ".github/workflows/ci-check.yml"
+      - "scripts/mobile-deployment/**"
+      - "tuturuuu.ts"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: mobile-deploy-stores.yaml
+
+  publish-android-internal:
+    name: Publish Android to Google Play internal
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: mobile-store-beta
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Setup Java
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: "3.44.x"
+          channel: stable
+          cache: true
+
+      - name: Fetch Android deployment bundle from Tuturuuu
+        shell: bash
+        env:
+          MOBILE_DEPLOYMENT_CI_TOKEN: ${{ secrets.MOBILE_DEPLOYMENT_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+
+          bundle_path="$RUNNER_TEMP/mobile-deployment-android.json"
+          oidc_response="$RUNNER_TEMP/mobile-deployment-android-oidc.json"
+          oidc_url="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=tuturuuu-mobile-deployment"
+          curl -fsSL \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "$oidc_url" \
+            -o "$oidc_response"
+          oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
+
+          curl -fsSL \
+            -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
+            -H "X-GitHub-OIDC-Token: ${oidc_token}" \
+            "https://tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=android" \
+            -o "$bundle_path"
+
+          node ../../scripts/mobile-deployment/hydrate-bundle.mjs \
+            --platform android \
+            --bundle "$bundle_path" \
+            --mobile-root "$PWD"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Validate Android deployment identity
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test "$GOOGLE_PLAY_PACKAGE_NAME" = "com.tuturuuu.app.mobile"
+          test "$GOOGLE_PLAY_TRACK" = "internal"
+          keytool -list \
+            -keystore "$ANDROID_KEYSTORE_PATH" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEYSTORE_ALIAS" >/dev/null
+
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github
+
+      - name: Upload Android App Bundle artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: android-production-aab
+          path: apps/mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab
+          retention-days: 14
+
+      - name: Publish Android App Bundle to Google Play internal
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5
+        with:
+          packageName: com.tuturuuu.app.mobile
+          releaseFiles: apps/mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab
+          serviceAccountJson: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH }}
+          status: completed
+          track: internal
+
+      - name: Cleanup Android release files
+        if: always()
+        shell: bash
+        run: |
+          rm -f .env.github
+          rm -f android/app/src/production/google-services.json
+          rm -rf "$RUNNER_TEMP/mobile-deployment"
+          rm -f "$RUNNER_TEMP/mobile-deployment-android.json"
+          rm -f "$RUNNER_TEMP/mobile-deployment-android-oidc.json"
+
+  publish-ios-testflight:
+    name: Upload iOS to TestFlight
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 120
+    environment: mobile-store-beta
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: "3.44.x"
+          channel: stable
+          cache: true
+
+      - name: Fetch iOS deployment bundle from Tuturuuu
+        shell: bash
+        env:
+          MOBILE_DEPLOYMENT_CI_TOKEN: ${{ secrets.MOBILE_DEPLOYMENT_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+
+          bundle_path="$RUNNER_TEMP/mobile-deployment-ios.json"
+          oidc_response="$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
+          oidc_url="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=tuturuuu-mobile-deployment"
+          curl -fsSL \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "$oidc_url" \
+            -o "$oidc_response"
+          oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
+
+          curl -fsSL \
+            -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
+            -H "X-GitHub-OIDC-Token: ${oidc_token}" \
+            "https://tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
+            -o "$bundle_path"
+
+          node ../../scripts/mobile-deployment/hydrate-bundle.mjs \
+            --platform ios \
+            --bundle "$bundle_path" \
+            --mobile-root "$PWD"
+
+      - name: Disable Flutter Swift Package Manager
+        run: flutter config --no-enable-swift-package-manager
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Import Apple signing assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          keychain_path="$RUNNER_TEMP/mobile-deployment/mobile-deployment.keychain-db"
+          security create-keychain -p "$RUNNER_TEMP" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$RUNNER_TEMP" "$keychain_path"
+          security import "$APPLE_DISTRIBUTION_CERTIFICATE_P12_PATH" \
+            -P "$APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "$keychain_path"
+          security list-keychains -d user -s "$keychain_path" login.keychain-db
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$RUNNER_TEMP" "$keychain_path"
+
+          profile_plist="$RUNNER_TEMP/mobile-deployment/profile.plist"
+          security cms -D -i "$APPLE_PROVISIONING_PROFILE_PATH" > "$profile_plist"
+          profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print UUID' "$profile_plist")"
+          profile_name="$(/usr/libexec/PlistBuddy -c 'Print Name' "$profile_plist")"
+          profile_team="$(/usr/libexec/PlistBuddy -c 'Print TeamIdentifier:0' "$profile_plist")"
+          app_identifier="$(/usr/libexec/PlistBuddy -c 'Print Entitlements:application-identifier' "$profile_plist")"
+
+          test "$APPLE_TEAM_ID" = "$profile_team"
+          test "$app_identifier" = "$APPLE_TEAM_ID.$APPLE_BUNDLE_ID"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$APPLE_PROVISIONING_PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/${profile_uuid}.mobileprovision"
+
+          cat > ios/ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>teamID</key>
+            <string>${APPLE_TEAM_ID}</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${APPLE_BUNDLE_ID}</key>
+              <string>${profile_name}</string>
+            </dict>
+            <key>stripSwiftSymbols</key>
+            <true/>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Build iOS IPA
+        run: flutter build ipa --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --export-options-plist=ios/ExportOptions.plist
+
+      - name: Resolve iOS IPA path
+        id: ios-ipa
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ipa_path="$(find build/ios/ipa -maxdepth 1 -type f -name '*.ipa' | head -n 1)"
+          if [ -z "$ipa_path" ]; then
+            echo "::error title=Missing iOS IPA::No IPA was generated under apps/mobile/build/ios/ipa."
+            exit 1
+          fi
+
+          echo "path=apps/mobile/$ipa_path" >> "$GITHUB_OUTPUT"
+          echo "local_path=$ipa_path" >> "$GITHUB_OUTPUT"
+
+      - name: Upload iOS IPA artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ios-production-ipa
+          path: ${{ steps.ios-ipa.outputs.path }}
+          retention-days: 14
+
+      - name: Upload iOS IPA to TestFlight
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          xcrun altool --upload-app \
+            --type ios \
+            --file "${{ steps.ios-ipa.outputs.local_path }}" \
+            --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+
+      - name: Cleanup iOS release files
+        if: always()
+        shell: bash
+        run: |
+          rm -f .env.github
+          rm -f ios/ExportOptions.plist
+          rm -f ios/Runner/GoogleService-Info.plist
+          rm -f ios/Runner/GoogleService-Info-production.plist
+          rm -rf "$RUNNER_TEMP/mobile-deployment"
+          rm -f "$RUNNER_TEMP/mobile-deployment-ios.json"
+          rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"

@@ -74,6 +74,7 @@ export const ci = {
   'mobile-build-android.yaml': true,
   'mobile-build-windows.yaml': true,
   'mobile-build-macos.yaml': true,
+  'mobile-deploy-stores.yaml': true,
 };
 
 export type WorkflowDecision = {

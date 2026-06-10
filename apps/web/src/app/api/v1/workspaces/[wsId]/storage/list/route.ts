@@ -8,6 +8,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
 import {
+  filterReservedMobileDeploymentDriveEntries,
+  isReservedMobileDeploymentDrivePath,
+} from '@/lib/mobile-deployment/storage-policy';
+import {
   listWorkspaceStorageDirectory,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
@@ -63,6 +67,13 @@ export async function GET(
       return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
     }
 
+    if (
+      sanitizedPath &&
+      isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
     const canListStorage =
       !permissions.withoutPermission('manage_drive') ||
       (await canAccessFinanceTransactionStoragePath({
@@ -88,7 +99,11 @@ export async function GET(
     });
 
     return NextResponse.json({
-      data: result.data,
+      data: filterReservedMobileDeploymentDriveEntries(
+        normalizedWsId,
+        sanitizedPath,
+        result.data
+      ),
       pagination: {
         limit,
         offset,

@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-06-08"
+updatedAt: "2026-06-10"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -195,6 +195,7 @@ treat that ref as code that can execute during install/build.
 - `mobile-build-ios.yaml`
 - `mobile-build-macos.yaml`
 - `mobile-build-windows.yaml`
+- `mobile-deploy-stores.yaml`
 - `release-*.yaml` package publishing workflows
 
 ## Operational Rules
@@ -328,6 +329,61 @@ the iOS/macOS build workflows use Xcode 16.4, keep `connectivity_plus` pinned to
 `7.0.0` because `7.1.1` references `NWPath.isUltraConstrained`, and keep
 `device_info_plus` pinned to `12.3.0` because `12.4.0` references
 `NSProcessInfo.isiOSAppOnVision`; those symbols are not available in that CI SDK.
+
+### Mobile store beta deployment
+
+`mobile-deploy-stores.yaml` runs automatically on `production` pushes that touch
+`apps/mobile/**`, the workflow file, `ci-check.yml`, or `tuturuuu.ts`. It is a
+beta-store workflow only:
+
+- Android builds the production flavor AAB from `apps/mobile/.env.github` and
+  publishes it to the Google Play `internal` track.
+- iOS builds the production flavor IPA from `apps/mobile/.env.github` and
+  uploads it to TestFlight.
+- CI requests a signed GitHub OIDC token for the
+  `tuturuuu-mobile-deployment` audience, then fetches an Android or iOS bundle
+  from `https://tuturuuu.com/api/v1/mobile-deployment/bundle` with the issued
+  `MOBILE_DEPLOYMENT_CI_TOKEN`.
+- The apps/web mobile deployment vault verifies the CI token, GitHub OIDC
+  issuer, audience, repository, `production` ref, workflow file, and
+  `mobile-store-beta` environment before returning any plaintext.
+- CI hydrates ignored Firebase, signing, store, and `.env.github` files into
+  fixed paths under `apps/mobile` and `$RUNNER_TEMP` with `umask 077`, validates
+  plaintext SHA-256 hashes, masks scalar values, and deletes generated files in
+  `always()` cleanup steps.
+- The workflow rejects any Google Play track other than `internal`, uploads only
+  the AAB/IPA build artifacts, and uses TestFlight-only iOS upload.
+- Release Please owns mobile version and build-number bumps. Duplicate store
+  build numbers should fail in CI instead of being bumped by this workflow.
+
+The workflow is bound to the `mobile-store-beta` GitHub Environment. Keep that
+environment restricted to the `production` branch and store only
+`MOBILE_DEPLOYMENT_CI_TOKEN` there. Mobile signing, Firebase, store API, and
+`.env.github` resources live in the root workspace mobile deployment vault at
+`/internal/infrastructure/mobile-deployment` and require
+`manage_workspace_secrets`.
+
+Local release-build verification should run before relying on the workflow:
+
+```sh
+bun test scripts/ci/check-workflow-config.test.js
+ruby -e "require 'yaml'; YAML.load_file('.github/workflows/mobile-deploy-stores.yaml')"
+git diff --check
+bun check:mobile
+(cd apps/mobile && flutter pub get)
+(cd apps/mobile && flutter build appbundle --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github)
+```
+
+iOS IPA verification requires full Xcode, not only Command Line Tools:
+
+```sh
+xcodebuild -version
+(cd apps/mobile && flutter config --no-enable-swift-package-manager)
+(cd apps/mobile && flutter build ipa --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github)
+```
+
+If `xcodebuild -version` reports that Command Line Tools are selected, switch to
+full Xcode before claiming the iOS archive has been verified locally.
 
 ## Fast Triage Checklist
 

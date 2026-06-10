@@ -2,6 +2,7 @@ import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
+import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import {
   deleteWorkspaceStorageObjectByPath,
   WorkspaceStorageError,
@@ -59,6 +60,10 @@ export async function DELETE(
       { message: 'Invalid request path' },
       { status: 400 }
     );
+  }
+
+  if (isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
   const canDeleteStorageObject =

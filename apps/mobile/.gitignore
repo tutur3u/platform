@@ -103,6 +103,7 @@ app.*.map.json
 # Environment variables (contains secrets)
 .env
 .env.development
+.env.github
 .env.production
 
 # Exceptions to the above rules.

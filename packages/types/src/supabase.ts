@@ -3094,6 +3094,12 @@ export type Database = {
           metadata: Json;
           note: string | null;
           platform_fee_amount: number;
+          polar_checkout_id: string | null;
+          polar_checkout_url: string | null;
+          polar_environment: string | null;
+          polar_order_id: string | null;
+          polar_product_id: string | null;
+          polar_status: string | null;
           processing_fee_estimate_amount: number;
           public_token: string;
           status: string;
@@ -3118,6 +3124,12 @@ export type Database = {
           metadata?: Json;
           note?: string | null;
           platform_fee_amount?: number;
+          polar_checkout_id?: string | null;
+          polar_checkout_url?: string | null;
+          polar_environment?: string | null;
+          polar_order_id?: string | null;
+          polar_product_id?: string | null;
+          polar_status?: string | null;
           processing_fee_estimate_amount?: number;
           public_token?: string;
           status?: string;
@@ -3142,6 +3154,12 @@ export type Database = {
           metadata?: Json;
           note?: string | null;
           platform_fee_amount?: number;
+          polar_checkout_id?: string | null;
+          polar_checkout_url?: string | null;
+          polar_environment?: string | null;
+          polar_order_id?: string | null;
+          polar_product_id?: string | null;
+          polar_status?: string | null;
           processing_fee_estimate_amount?: number;
           public_token?: string;
           status?: string;
@@ -3214,6 +3232,87 @@ export type Database = {
           linked_workspace_user_id?: string | null;
           name?: string;
           updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_polar_integrations: {
+        Row: {
+          access_token_encrypted: string;
+          access_token_fingerprint: string;
+          access_token_last4: string | null;
+          created_at: string;
+          created_by: string | null;
+          environment: string;
+          id: string;
+          last_error: string | null;
+          last_validated_at: string | null;
+          polar_product_id: string | null;
+          polar_product_name: string;
+          status: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          access_token_encrypted: string;
+          access_token_fingerprint: string;
+          access_token_last4?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          environment: string;
+          id?: string;
+          last_error?: string | null;
+          last_validated_at?: string | null;
+          polar_product_id?: string | null;
+          polar_product_name?: string;
+          status?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          access_token_encrypted?: string;
+          access_token_fingerprint?: string;
+          access_token_last4?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          environment?: string;
+          id?: string;
+          last_error?: string | null;
+          last_validated_at?: string | null;
+          polar_product_id?: string | null;
+          polar_product_name?: string;
+          status?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_polar_settings: {
+        Row: {
+          created_at: string;
+          production_environment: string;
+          testing_environment: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          production_environment?: string;
+          testing_environment?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          production_environment?: string;
+          testing_environment?: string;
+          updated_at?: string;
+          updated_by?: string | null;
           ws_id?: string;
         };
         Relationships: [];
@@ -3492,6 +3591,7 @@ export type Database = {
           slug: string;
           status: string;
           updated_at: string | null;
+          visibility: string;
           ws_id: string;
         };
         Insert: {
@@ -3506,6 +3606,7 @@ export type Database = {
           slug: string;
           status?: string;
           updated_at?: string | null;
+          visibility?: string;
           ws_id: string;
         };
         Update: {
@@ -3520,6 +3621,7 @@ export type Database = {
           slug?: string;
           status?: string;
           updated_at?: string | null;
+          visibility?: string;
           ws_id?: string;
         };
         Relationships: [];
@@ -5301,6 +5403,420 @@ export type Database = {
           xp_reward?: number;
         };
         Relationships: [];
+      };
+      mobile_deployment_audit_events: {
+        Row: {
+          actor_type: string;
+          actor_user_id: string | null;
+          created_at: string;
+          environment_id: string;
+          event_type: string;
+          id: string;
+          metadata: Json;
+          resource_kind: string | null;
+          token_id: string | null;
+          version_id: string | null;
+        };
+        Insert: {
+          actor_type: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          environment_id: string;
+          event_type: string;
+          id?: string;
+          metadata?: Json;
+          resource_kind?: string | null;
+          token_id?: string | null;
+          version_id?: string | null;
+        };
+        Update: {
+          actor_type?: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          environment_id?: string;
+          event_type?: string;
+          id?: string;
+          metadata?: Json;
+          resource_kind?: string | null;
+          token_id?: string | null;
+          version_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mobile_deployment_audit_events_environment_id_fkey';
+            columns: ['environment_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_environments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mobile_deployment_audit_events_token_id_fkey';
+            columns: ['token_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_ci_tokens';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mobile_deployment_audit_events_version_id_fkey';
+            columns: ['version_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_versions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mobile_deployment_bundle_fetches: {
+        Row: {
+          created_at: string;
+          environment_id: string;
+          failure_code: string | null;
+          github_actor: string | null;
+          github_run_attempt: string | null;
+          github_run_id: string | null;
+          github_sha: string | null;
+          github_workflow_ref: string | null;
+          id: string;
+          platform: string;
+          request_ip: string | null;
+          success: boolean;
+          token_id: string | null;
+          version_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          environment_id: string;
+          failure_code?: string | null;
+          github_actor?: string | null;
+          github_run_attempt?: string | null;
+          github_run_id?: string | null;
+          github_sha?: string | null;
+          github_workflow_ref?: string | null;
+          id?: string;
+          platform: string;
+          request_ip?: string | null;
+          success?: boolean;
+          token_id?: string | null;
+          version_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          environment_id?: string;
+          failure_code?: string | null;
+          github_actor?: string | null;
+          github_run_attempt?: string | null;
+          github_run_id?: string | null;
+          github_sha?: string | null;
+          github_workflow_ref?: string | null;
+          id?: string;
+          platform?: string;
+          request_ip?: string | null;
+          success?: boolean;
+          token_id?: string | null;
+          version_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mobile_deployment_bundle_fetches_environment_id_fkey';
+            columns: ['environment_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_environments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mobile_deployment_bundle_fetches_token_id_fkey';
+            columns: ['token_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_ci_tokens';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mobile_deployment_bundle_fetches_version_id_fkey';
+            columns: ['version_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_versions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mobile_deployment_ci_tokens: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          environment_id: string;
+          expires_at: string;
+          id: string;
+          last_four: string;
+          last_used_at: string | null;
+          last_used_github_run_attempt: string | null;
+          last_used_github_run_id: string | null;
+          last_used_platform: string | null;
+          name: string;
+          platforms: string[];
+          revoked_at: string | null;
+          revoked_by: string | null;
+          token_hash: string;
+          token_prefix: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          environment_id: string;
+          expires_at: string;
+          id?: string;
+          last_four: string;
+          last_used_at?: string | null;
+          last_used_github_run_attempt?: string | null;
+          last_used_github_run_id?: string | null;
+          last_used_platform?: string | null;
+          name: string;
+          platforms?: string[];
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          token_hash: string;
+          token_prefix: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          environment_id?: string;
+          expires_at?: string;
+          id?: string;
+          last_four?: string;
+          last_used_at?: string | null;
+          last_used_github_run_attempt?: string | null;
+          last_used_github_run_id?: string | null;
+          last_used_platform?: string | null;
+          name?: string;
+          platforms?: string[];
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          token_hash?: string;
+          token_prefix?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mobile_deployment_ci_tokens_environment_id_fkey';
+            columns: ['environment_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_environments';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mobile_deployment_environments: {
+        Row: {
+          active_version_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          enabled: boolean;
+          environment: string;
+          github_environment: string;
+          github_ref: string;
+          github_repository: string;
+          github_workflow_ref: string;
+          id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          active_version_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          enabled?: boolean;
+          environment: string;
+          github_environment?: string;
+          github_ref?: string;
+          github_repository?: string;
+          github_workflow_ref?: string;
+          id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          active_version_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          enabled?: boolean;
+          environment?: string;
+          github_environment?: string;
+          github_ref?: string;
+          github_repository?: string;
+          github_workflow_ref?: string;
+          id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mobile_deployment_environments_active_version_id_fkey';
+            columns: ['active_version_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_versions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mobile_deployment_file_artifacts: {
+        Row: {
+          ciphertext_sha256: string;
+          ciphertext_size: number;
+          content_type: string;
+          created_at: string;
+          filename: string;
+          id: string;
+          kind: string;
+          plaintext_sha256: string;
+          plaintext_size: number;
+          storage_path: string;
+          storage_provider: string;
+          updated_at: string;
+          updated_by: string | null;
+          validation_errors: string[];
+          validation_status: string;
+          version_id: string;
+        };
+        Insert: {
+          ciphertext_sha256: string;
+          ciphertext_size: number;
+          content_type?: string;
+          created_at?: string;
+          filename: string;
+          id?: string;
+          kind: string;
+          plaintext_sha256: string;
+          plaintext_size: number;
+          storage_path: string;
+          storage_provider: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          validation_errors?: string[];
+          validation_status?: string;
+          version_id: string;
+        };
+        Update: {
+          ciphertext_sha256?: string;
+          ciphertext_size?: number;
+          content_type?: string;
+          created_at?: string;
+          filename?: string;
+          id?: string;
+          kind?: string;
+          plaintext_sha256?: string;
+          plaintext_size?: number;
+          storage_path?: string;
+          storage_provider?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          validation_errors?: string[];
+          validation_status?: string;
+          version_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mobile_deployment_file_artifacts_version_id_fkey';
+            columns: ['version_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_versions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mobile_deployment_secret_values: {
+        Row: {
+          created_at: string;
+          encrypted_value: string;
+          id: string;
+          kind: string;
+          name: string;
+          plaintext_last_four: string;
+          plaintext_sha256: string;
+          updated_at: string;
+          updated_by: string | null;
+          value_size: number;
+          version_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          encrypted_value: string;
+          id?: string;
+          kind: string;
+          name: string;
+          plaintext_last_four: string;
+          plaintext_sha256: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          value_size: number;
+          version_id: string;
+        };
+        Update: {
+          created_at?: string;
+          encrypted_value?: string;
+          id?: string;
+          kind?: string;
+          name?: string;
+          plaintext_last_four?: string;
+          plaintext_sha256?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          value_size?: number;
+          version_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mobile_deployment_secret_values_version_id_fkey';
+            columns: ['version_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_versions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mobile_deployment_versions: {
+        Row: {
+          activated_at: string | null;
+          activated_by: string | null;
+          created_at: string;
+          created_by: string | null;
+          data_key_ciphertext: string;
+          environment_id: string;
+          id: string;
+          status: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          activated_at?: string | null;
+          activated_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          data_key_ciphertext: string;
+          environment_id: string;
+          id?: string;
+          status?: string;
+          updated_at?: string;
+          version: number;
+        };
+        Update: {
+          activated_at?: string | null;
+          activated_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          data_key_ciphertext?: string;
+          environment_id?: string;
+          id?: string;
+          status?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mobile_deployment_versions_environment_id_fkey';
+            columns: ['environment_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_deployment_environments';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       notification_batches: {
         Row: {
@@ -30101,6 +30617,14 @@ export type Database = {
           p_checkout_id: string;
           p_finance_invoice_id: string;
           p_now?: string;
+        };
+        Returns: string;
+      };
+      complete_inventory_checkout_session_payment: {
+        Args: {
+          p_checkout_id: string;
+          p_now?: string;
+          p_polar_order_id: string;
         };
         Returns: string;
       };

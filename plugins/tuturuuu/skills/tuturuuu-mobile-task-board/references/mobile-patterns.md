@@ -20,6 +20,14 @@ localization changes.
   `12.4.0` references `NSProcessInfo.isiOSAppOnVision`; that SDK does not
   provide those symbols, so root `bun check` enforces these pins with
   `scripts/check-mobile-dependencies.js`.
+- Keep `mobile-deploy-stores.yaml` beta-only: production pushes may publish the
+  production flavor to Google Play internal testing and TestFlight, but should
+  not submit production store releases. CI stores only
+  `MOBILE_DEPLOYMENT_CI_TOKEN` in the `mobile-store-beta` GitHub Environment,
+  then fetches `.env.github`, Firebase, signing, and store resources from the
+  root workspace apps/web mobile deployment vault after GitHub OIDC validation.
+  Local verification must prove the Android AAB build, while iOS IPA
+  verification requires full Xcode before it can be claimed.
 
 ## Overlays And Shell
 

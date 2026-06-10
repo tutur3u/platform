@@ -131,6 +131,7 @@
     "framer-motion": "^12.40.0",
     "html2canvas-pro": "^2.0.2",
     "isomorphic-dompurify": "^3.16.0",
+    "jose": "^6.2.3",
     "jotai": "^2.20.0",
     "jspdf": "^4.2.1",
     "juice": "^12.1.0",

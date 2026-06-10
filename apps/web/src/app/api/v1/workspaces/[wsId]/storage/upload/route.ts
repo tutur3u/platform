@@ -1,6 +1,7 @@
 import { posix } from 'node:path';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
+import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import { triggerWorkspaceStorageAutoExtract } from '@/lib/workspace-storage-auto-extract';
 import {
   uploadWorkspaceStorageFileDirect,
@@ -68,6 +69,10 @@ export async function POST(
     const storagePath = sanitizedPath
       ? posix.join(sanitizedPath, sanitizedFilename)
       : sanitizedFilename;
+
+    if (isReservedMobileDeploymentDrivePath(normalizedWsId, storagePath)) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);

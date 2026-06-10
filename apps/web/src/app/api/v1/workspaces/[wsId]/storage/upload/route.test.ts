@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   uploadWorkspaceStorageFileDirect: vi.fn(),
 }));
 
+const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
+
 vi.mock('@/lib/workspace-storage-auto-extract', () => ({
   triggerWorkspaceStorageAutoExtract: mocks.triggerWorkspaceStorageAutoExtract,
 }));
@@ -29,12 +31,12 @@ vi.mock('../route-auth', () => ({
   resolveWorkspaceStorageRouteAuth: mocks.resolveWorkspaceStorageRouteAuth,
 }));
 
-function createUploadRequest(file: File) {
+function createUploadRequest(file: File, path = 'documents') {
   return {
     formData: async () => ({
       get: (key: string) => {
         if (key === 'file') return file;
-        if (key === 'path') return 'documents';
+        if (key === 'path') return path;
         return null;
       },
     }),
@@ -119,6 +121,36 @@ describe('workspace storage direct upload route', () => {
     await expect(response.json()).resolves.toEqual({
       message: 'File type not allowed',
     });
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+  });
+
+  it('rejects uploads into the reserved mobile deployment vault prefix', async () => {
+    const { POST } = await import('./route');
+    mocks.resolveWorkspaceStorageRouteAuth.mockResolvedValue({
+      context: {
+        normalizedWsId: ROOT_WORKSPACE_ID,
+        permissions: {
+          withoutPermission: (permission: string) =>
+            permission !== 'manage_drive',
+        },
+      },
+      ok: true,
+    });
+
+    const response = await POST(
+      createUploadRequest(
+        new NodeFile(['secret'], 'google-services.json', {
+          type: 'application/json',
+        }) as File,
+        '.tuturuuu/mobile-deployment-vault/production/android'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'workspace-1' }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
     expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
   });
 });
