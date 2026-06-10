@@ -70,6 +70,41 @@ create a `private.devbox_runners` row. Run setup with `--agent --service`, or
 register and start the agent manually, then confirm `ttr whoami` on that host is
 pointing at the same production origin and root workspace user.
 
+If the host appears as registered but shows no heartbeat, inspect the installed
+service on that host:
+
+```bash
+sudo systemctl status --no-pager --full tuturuuu-devbox-runner.service
+sudo journalctl -u tuturuuu-devbox-runner.service -n 80 --no-pager
+```
+
+The runner service reads its token from the local `devbox-runner.env` file. If
+the journal shows a missing runner token on an existing installation, inspect
+the wrapper in the Tuturuuu CLI config directory and make sure the token file is
+sourced with automatic export enabled:
+
+```sh
+set -a
+. "$HOME/.config/tuturuuu/devbox-runner.env"
+set +a
+```
+
+Then restart the service:
+
+```bash
+sudo systemctl restart tuturuuu-devbox-runner.service
+```
+
+After upgrading to a fixed CLI, `ttr box setup --agent --service` will generate
+that wrapper shape for new or rotated registrations. Rerunning it registers a
+new runner token, so revoke the old runner if you use setup as the repair path:
+
+```bash
+ttr upgrade
+ttr box setup --dir . --agent --service --runner-name "$(hostname)-devbox" --yes
+sudo systemctl restart tuturuuu-devbox-runner.service
+```
+
 Upgrade a runner's global CLI through the same brokered queue:
 
 ```bash

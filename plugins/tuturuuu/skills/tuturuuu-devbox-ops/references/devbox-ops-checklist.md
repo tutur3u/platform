@@ -121,3 +121,12 @@ The infrastructure devbox admin page should show:
 
 If telemetry is missing, run the agent once and verify the heartbeat route
 accepts and stores capabilities.
+
+If a runner row exists with an active token but no heartbeat after
+`ttr box setup --agent --service`, inspect the installed service logs first:
+`sudo systemctl status --no-pager --full tuturuuu-devbox-runner.service` and
+`sudo journalctl -u tuturuuu-devbox-runner.service -n 80 --no-pager` on Linux,
+or the matching launchd log paths on macOS. A missing runner-token error usually
+means the service wrapper sourced `devbox-runner.env` without exporting it; the
+wrapper must source token files under `set -a` before execing
+`ttr box agent start`.

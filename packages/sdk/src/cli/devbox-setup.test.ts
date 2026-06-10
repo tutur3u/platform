@@ -332,6 +332,14 @@ describe('devbox setup checkout and runner service', () => {
     await expect(readFile(serviceFile, 'utf8')).resolves.toContain(
       'Restart=always'
     );
+    const wrapperFile = join(configDir, 'devbox-runner.sh');
+    await expect(readFile(wrapperFile, 'utf8')).resolves.toContain('set -a');
+    await expect(readFile(wrapperFile, 'utf8')).resolves.toContain(
+      `. '${tokenFile}'\nset +a`
+    );
+    await expect(readFile(wrapperFile, 'utf8')).resolves.toContain(
+      'export PATH'
+    );
     expect(commands).toEqual(
       expect.arrayContaining([
         `sudo cp ${serviceFile} /etc/systemd/system/tuturuuu-devbox-runner.service`,
@@ -383,6 +391,10 @@ describe('devbox setup checkout and runner service', () => {
     );
     await expect(readFile(plistFile, 'utf8')).resolves.toContain(
       '<key>KeepAlive</key>'
+    );
+    const wrapperFile = join(configDir, 'devbox-runner.sh');
+    await expect(readFile(wrapperFile, 'utf8')).resolves.toContain(
+      `. '${tokenFile}'\nset +a`
     );
     expect(commands).toEqual(
       expect.arrayContaining([
