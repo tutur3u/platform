@@ -407,7 +407,7 @@ class _AssistantMermaidInAppWebView extends StatelessWidget {
         controller
           ..addJavaScriptHandler(
             handlerName: 'assistantMermaidRendered',
-            callback: (List<dynamic> arguments) {
+            callback: (arguments) {
               final rawHeight = arguments.isEmpty
                   ? null
                   : arguments.first as num?;
@@ -418,13 +418,13 @@ class _AssistantMermaidInAppWebView extends StatelessWidget {
           )
           ..addJavaScriptHandler(
             handlerName: 'assistantMermaidReady',
-            callback: (List<dynamic> arguments) async {
+            callback: (arguments) async {
               await onDiagramReady?.call();
             },
           )
           ..addJavaScriptHandler(
             handlerName: 'assistantMermaidError',
-            callback: (List<dynamic> arguments) {
+            callback: (arguments) {
               final message = arguments.isEmpty
                   ? context.l10n.assistantMermaidRenderError
                   : arguments.first.toString();
