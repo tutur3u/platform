@@ -92,10 +92,14 @@ describe('auth callback route', () => {
       new NextRequest('http://0.0.0.0:7803/api/auth/callback?code=oauth-code')
     );
 
-    expect(response.headers.get('location')).toBe(
-      'http://localhost:7803/login?error=auth_failed'
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.origin).toBe('http://localhost:7803');
+    expect(location.pathname).toBe('/login');
+    expect(location.searchParams.get('error')).toBe('auth_failed');
+    expect(location.searchParams.get('diagnosticCode')).toMatch(
+      /^AUTH-OAUTH-[A-F0-9]{6}$/
     );
-    expect(response.headers.get('location')).not.toContain('0.0.0.0');
+    expect(location.toString()).not.toContain('0.0.0.0');
   });
 
   it('allows the root platform returnUrl when supplied over http and redirects to https', async () => {

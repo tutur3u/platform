@@ -67,6 +67,51 @@ test.describe('Authentication (unauthenticated)', () => {
     await expect(continueButton).toBeVisible({ timeout: 10_000 });
   });
 
+  test('login remains usable when web OTP settings fail', async ({ page }) => {
+    await page.route('**/api/v1/auth/otp/settings?client=web', (route) =>
+      route.fulfill({
+        body: JSON.stringify({
+          diagnosticCode: 'AUTH-OTP-SETTINGS-E2E',
+          error: 'Failed to load OTP settings',
+        }),
+        contentType: 'application/json',
+        status: 500,
+      })
+    );
+
+    await page.goto(`/${DEFAULT_LOCALE}/login`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    const emailInput = page
+      .getByPlaceholder('Enter your email or username')
+      .first();
+    await expect(emailInput).toBeVisible({ timeout: 30_000 });
+
+    await expect(
+      page.getByRole('button', { name: /continue with passkey/i })
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(
+      page.getByRole('button', { name: /continue with google/i })
+    ).toBeVisible({ timeout: 10_000 });
+
+    await emailInput.clear();
+    await emailInput.fill(TEST_USER.email);
+
+    const continueButton = page
+      .locator('form button[type="submit"]')
+      .filter({ hasText: /continue/i })
+      .first();
+    await continueButton.waitFor({ state: 'visible', timeout: 10_000 });
+    await continueButton.waitFor({ state: 'attached', timeout: 10_000 });
+    await expect(continueButton).toBeEnabled({ timeout: 15_000 });
+    await continueButton.click();
+
+    await expect(page.getByPlaceholder('Enter your password')).toBeVisible({
+      timeout: 15_000,
+    });
+  });
+
   test('unprefixed login page renders from a direct hard load', async ({
     page,
   }) => {

@@ -8946,6 +8946,7 @@
     "continue_with_google": "Continue with Google",
     "continue_with_microsoft": "Continue with Microsoft",
     "continue_with_passkey": "Continue with passkey",
+    "diagnostic_reference": "Reference: {code}",
     "email": "Email",
     "email_description": "We'll send a verification code to your email",
     "email_placeholder": "Enter your email",

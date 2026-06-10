@@ -6,6 +6,11 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthRedirectOrigin } from '@/app/[locale]/(marketing)/login/auth-redirect-origin';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
+import {
+  createAuthDiagnosticCode,
+  getReturnUrlKind,
+  logAuthDiagnostic,
+} from '@/lib/auth/diagnostics';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const queryParamsSchema = z.object({
@@ -140,14 +145,25 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       // Exchange the code for a session
       await supabase.auth.exchangeCodeForSession(_code);
     } catch (error) {
-      // Log error server-side only (not in response)
-      serverLogger.warn('[auth/callback] Failed to exchange code for session', {
-        error: error instanceof Error ? error.message : String(error),
+      const diagnosticCode = createAuthDiagnosticCode(
+        'oauth_callback_exchange'
+      );
+      logAuthDiagnostic({
+        authMethod: 'oauth',
+        code: diagnosticCode,
+        error,
+        level: 'warn',
+        message: '[auth/callback] Failed to exchange code for session',
+        request,
+        returnUrlKind: getReturnUrlKind(_returnUrl, redirectOrigin),
+        route: '/api/auth/callback',
+        stage: 'oauth_callback_exchange',
       });
       // Return safe error response without leaking details
-      return NextResponse.redirect(
-        new URL('/login?error=auth_failed', redirectOrigin)
-      );
+      const loginUrl = new URL('/login', redirectOrigin);
+      loginUrl.searchParams.set('error', 'auth_failed');
+      loginUrl.searchParams.set('diagnosticCode', diagnosticCode);
+      return NextResponse.redirect(loginUrl);
     }
   }
 

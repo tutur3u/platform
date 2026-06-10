@@ -1,4 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  createAuthDiagnosticCode,
+  logAuthDiagnostic,
+} from '@/lib/auth/diagnostics';
 import { removeWebAccount } from '@/lib/auth/multi-account/vault';
 
 export async function DELETE(
@@ -9,9 +13,20 @@ export async function DELETE(
 
   try {
     return NextResponse.json(await removeWebAccount(request, accountId));
-  } catch {
+  } catch (error) {
+    const diagnosticCode = createAuthDiagnosticCode('account_remove');
+    logAuthDiagnostic({
+      authMethod: 'multi-account',
+      code: diagnosticCode,
+      error,
+      message: 'Failed to remove multi-account vault entry',
+      request,
+      route: '/api/v1/auth/accounts/[accountId]',
+      stage: 'account_remove',
+    });
+
     return NextResponse.json(
-      { error: 'Failed to remove account' },
+      { diagnosticCode, error: 'Failed to remove account' },
       { status: 500 }
     );
   }

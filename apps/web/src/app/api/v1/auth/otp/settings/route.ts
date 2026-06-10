@@ -1,7 +1,10 @@
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
+import {
+  createAuthDiagnosticCode,
+  logAuthDiagnostic,
+} from '@/lib/auth/diagnostics';
 import { getPublicOtpSettings } from '@/lib/auth/otp';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { jsonWithCors, optionsWithCors } from '../../mobile/shared';
 
 const QuerySchema = z
@@ -43,9 +46,27 @@ export async function GET(request: NextRequest) {
     const result = await getPublicOtpSettings(query.data);
     return jsonWithCors(result);
   } catch (error) {
-    serverLogger.error('Failed to load OTP settings:', error);
+    const diagnosticCode = createAuthDiagnosticCode('otp_settings');
+    logAuthDiagnostic({
+      client: query.data.client,
+      code: diagnosticCode,
+      error,
+      message: 'Failed to load OTP settings',
+      platform: query.data.platform,
+      request,
+      route: '/api/v1/auth/otp/settings',
+      stage: 'otp_settings',
+    });
+
+    if (query.data.client !== 'mobile') {
+      return jsonWithCors({
+        diagnosticCode,
+        otpEnabled: false,
+      });
+    }
+
     return jsonWithCors(
-      { error: 'Failed to load OTP settings' },
+      { diagnosticCode, error: 'Failed to load OTP settings' },
       { status: 500 }
     );
   }

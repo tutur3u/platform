@@ -8946,6 +8946,7 @@
     "continue_with_google": "Tiếp tục với Google",
     "continue_with_microsoft": "Tiếp tục với Microsoft",
     "continue_with_passkey": "Tiếp tục với passkey",
+    "diagnostic_reference": "Mã tham chiếu: {code}",
     "email": "Email",
     "email_description": "Nhập địa chỉ email của bạn để bắt đầu với Tuturuuu.",
     "email_placeholder": "Nhập địa chỉ email của bạn",

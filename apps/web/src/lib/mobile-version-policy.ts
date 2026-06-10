@@ -175,7 +175,7 @@ export function validateMobileVersionPolicies(value: MobileVersionPolicies) {
 }
 
 export async function getMobileVersionPolicies() {
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
   const configIds: string[] = Object.values(
     MOBILE_VERSION_POLICY_CONFIG_KEYS
   ).flatMap((platformConfig) => Object.values(platformConfig));
@@ -228,6 +228,23 @@ export async function getMobileVersionPolicies() {
   }
 
   return policies;
+}
+
+export async function getWebOtpEnabledConfig() {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
+  const { data, error } = await sbAdmin
+    .from('workspace_configs')
+    .select('value')
+    .eq('ws_id', ROOT_WORKSPACE_ID)
+    .eq('id', WEB_OTP_ENABLED_CONFIG_KEY)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error('Failed to fetch web OTP setting');
+  }
+
+  return normalizeBooleanValue(data?.value);
 }
 
 export function evaluateMobileVersionPolicy({

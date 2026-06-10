@@ -1,5 +1,9 @@
 import type { NextRequest } from 'next/server';
 import {
+  createAuthDiagnosticCode,
+  logAuthDiagnostic,
+} from '@/lib/auth/diagnostics';
+import {
   OtpSendRequestSchema,
   sendOtp,
   toOtpErrorResult,
@@ -27,9 +31,43 @@ export async function POST(request: NextRequest) {
       request,
     });
 
+    if (result.status >= 500) {
+      const diagnosticCode = createAuthDiagnosticCode('otp_send');
+      logAuthDiagnostic({
+        authMethod: 'otp',
+        client: parsed.data.client,
+        code: diagnosticCode,
+        error: result.body.error,
+        message: 'OTP send failed',
+        platform: parsed.data.platform,
+        request,
+        route: '/api/v1/auth/otp/send',
+        stage: 'otp_send',
+        status: result.status,
+      });
+
+      return jsonWithCors(
+        { ...result.body, diagnosticCode },
+        { status: result.status }
+      );
+    }
+
     return jsonWithCors(result.body, { status: result.status });
   } catch (error) {
+    const diagnosticCode = createAuthDiagnosticCode('otp_send');
+    logAuthDiagnostic({
+      authMethod: 'otp',
+      code: diagnosticCode,
+      error,
+      message: 'OTP send route failed',
+      request,
+      route: '/api/v1/auth/otp/send',
+      stage: 'otp_send',
+    });
     const result = toOtpErrorResult(error, 'send');
-    return jsonWithCors(result.body, { status: result.status });
+    return jsonWithCors(
+      { ...result.body, diagnosticCode },
+      { status: result.status }
+    );
   }
 }

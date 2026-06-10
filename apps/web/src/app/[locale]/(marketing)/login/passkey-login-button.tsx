@@ -7,6 +7,10 @@ import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
+import {
+  appendDiagnosticReference,
+  createClientAuthDiagnosticCode,
+} from './auth-diagnostic-copy';
 
 interface PasskeyLoginButtonProps {
   captchaToken?: string;
@@ -34,6 +38,16 @@ export function PasskeyLoginButton({
     requiresTurnstile && (!canRenderTurnstile || !captchaToken);
   const turnstileBlockReason = isTurnstileBlocked ? turnstileError : undefined;
 
+  const formatDiagnosticDescription = (
+    description: string,
+    diagnosticCode: string
+  ) =>
+    appendDiagnosticReference({
+      description,
+      diagnosticCode,
+      referenceLabel: t('diagnostic_reference', { code: diagnosticCode }),
+    });
+
   const handlePasskeyLogin = async () => {
     if (disabled || isAuthenticating || isTurnstileBlocked) {
       return;
@@ -43,8 +57,12 @@ export function PasskeyLoginButton({
       typeof window.PublicKeyCredential === 'undefined' ||
       typeof navigator.credentials?.get !== 'function'
     ) {
+      const diagnosticCode = createClientAuthDiagnosticCode('AUTH-PASSKEY');
       toast.error(t('passkey_failed'), {
-        description: t('passkey_try_again'),
+        description: formatDiagnosticDescription(
+          t('passkey_try_again'),
+          diagnosticCode
+        ),
       });
       return;
     }
@@ -62,17 +80,24 @@ export function PasskeyLoginButton({
         : await supabase.auth.signInWithPasskey();
 
       if (error) {
+        const diagnosticCode = createClientAuthDiagnosticCode('AUTH-PASSKEY');
         toast.error(t('passkey_failed'), {
-          description: error.message,
+          description: formatDiagnosticDescription(
+            t('passkey_try_again'),
+            diagnosticCode
+          ),
         });
         return;
       }
 
       await onAuthenticated();
-    } catch (error) {
+    } catch {
+      const diagnosticCode = createClientAuthDiagnosticCode('AUTH-PASSKEY');
       toast.error(t('passkey_failed'), {
-        description:
-          error instanceof Error ? error.message : t('passkey_try_again'),
+        description: formatDiagnosticDescription(
+          t('passkey_try_again'),
+          diagnosticCode
+        ),
       });
     } finally {
       if (requiresTurnstile) {

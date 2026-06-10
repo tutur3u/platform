@@ -34,6 +34,7 @@ import {
 import { z } from 'zod';
 import {
   getMobileVersionPolicies,
+  getWebOtpEnabledConfig,
   type MobilePlatform,
 } from '@/lib/mobile-version-policy';
 import { shouldBypassSupabaseAuthCaptchaForDev } from './local-e2e';
@@ -157,16 +158,15 @@ async function getOtpAvailability({
   client: OtpClient;
   platform?: MobilePlatform;
 }): Promise<OtpAvailabilityResult> {
-  const policies = await getMobileVersionPolicies();
-
   if (client !== 'mobile') {
-    return { otpEnabled: policies.webOtpEnabled };
+    return { otpEnabled: await getWebOtpEnabledConfig() };
   }
 
   if (!platform) {
     return { otpEnabled: false };
   }
 
+  const policies = await getMobileVersionPolicies();
   return { otpEnabled: policies[platform].otpEnabled };
 }
 

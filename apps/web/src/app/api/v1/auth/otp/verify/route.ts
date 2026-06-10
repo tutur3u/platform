@@ -1,5 +1,9 @@
 import type { NextRequest } from 'next/server';
 import {
+  createAuthDiagnosticCode,
+  logAuthDiagnostic,
+} from '@/lib/auth/diagnostics';
+import {
   OtpVerifyRequestSchema,
   toOtpErrorResult,
   verifyOtp,
@@ -27,9 +31,47 @@ export async function POST(request: NextRequest) {
       request,
     });
 
+    if (result.status >= 500) {
+      const diagnosticCode = createAuthDiagnosticCode('otp_verify');
+      logAuthDiagnostic({
+        authMethod: 'otp',
+        client: parsed.data.client,
+        code: diagnosticCode,
+        error: result.body.error,
+        message: 'OTP verify failed',
+        platform: parsed.data.platform,
+        request,
+        route: '/api/v1/auth/otp/verify',
+        stage: 'otp_verify',
+        status: result.status,
+      });
+
+      return jsonWithCors(
+        {
+          ...result.body,
+          diagnosticCode,
+          error: 'Verification failed. Please try again.',
+        },
+        { status: result.status }
+      );
+    }
+
     return jsonWithCors(result.body, { status: result.status });
   } catch (error) {
+    const diagnosticCode = createAuthDiagnosticCode('otp_verify');
+    logAuthDiagnostic({
+      authMethod: 'otp',
+      code: diagnosticCode,
+      error,
+      message: 'OTP verify route failed',
+      request,
+      route: '/api/v1/auth/otp/verify',
+      stage: 'otp_verify',
+    });
     const result = toOtpErrorResult(error, 'verify');
-    return jsonWithCors(result.body, { status: result.status });
+    return jsonWithCors(
+      { ...result.body, diagnosticCode },
+      { status: result.status }
+    );
   }
 }

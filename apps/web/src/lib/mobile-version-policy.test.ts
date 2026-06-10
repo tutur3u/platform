@@ -1,12 +1,70 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   compareStrictSemver,
   evaluateMobileVersionPolicy,
+  getMobileVersionPolicies,
+  getWebOtpEnabledConfig,
+  MOBILE_VERSION_POLICY_CONFIG_KEYS,
   normalizeMobileVersionPolicies,
   validateMobileVersionPolicies,
+  WEB_OTP_ENABLED_CONFIG_KEY,
 } from './mobile-version-policy';
 
+const mocks = vi.hoisted(() => ({
+  createAdminClient: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
+    mocks.createAdminClient(...args),
+}));
+
+function mockSingleConfigResponse(response: {
+  data: { value: unknown } | null;
+  error: Error | null;
+}) {
+  const query = {
+    eq: vi.fn(),
+    in: vi.fn(),
+    maybeSingle: vi.fn(),
+    select: vi.fn(),
+  };
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  query.maybeSingle.mockResolvedValue(response);
+
+  mocks.createAdminClient.mockResolvedValue({
+    from: vi.fn(() => query),
+  });
+
+  return query;
+}
+
+function mockListConfigResponse(response: {
+  data: Array<{ id: string; value: unknown }>;
+  error: Error | null;
+}) {
+  const query = {
+    eq: vi.fn(),
+    in: vi.fn(),
+    select: vi.fn(),
+  };
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
+  query.in.mockResolvedValue(response);
+
+  mocks.createAdminClient.mockResolvedValue({
+    from: vi.fn(() => query),
+  });
+
+  return query;
+}
+
 describe('mobile-version-policy', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('compares semantic versions correctly', () => {
     expect(compareStrictSemver('1.2.3', '1.2.3')).toBe(0);
     expect(compareStrictSemver('1.2.4', '1.2.3')).toBeGreaterThan(0);
@@ -110,5 +168,50 @@ describe('mobile-version-policy', () => {
     expect(result.ios.otpEnabled).toBe(true);
     expect(result.android.otpEnabled).toBe(false);
     expect(result.webOtpEnabled).toBe(true);
+  });
+
+  it('reads the web OTP flag without loading mobile policy fields', async () => {
+    const query = mockSingleConfigResponse({
+      data: { value: 'true' },
+      error: null,
+    });
+
+    await expect(getWebOtpEnabledConfig()).resolves.toBe(true);
+
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(query.select).toHaveBeenCalledWith('value');
+    expect(query.eq).toHaveBeenCalledWith('id', WEB_OTP_ENABLED_CONFIG_KEY);
+    expect(query.in).not.toHaveBeenCalled();
+  });
+
+  it('throws only the web OTP config error for web flag fetch failures', async () => {
+    mockSingleConfigResponse({
+      data: null,
+      error: new Error('database unavailable'),
+    });
+
+    await expect(getWebOtpEnabledConfig()).rejects.toThrow(
+      'Failed to fetch web OTP setting'
+    );
+  });
+
+  it('still validates mobile policy fields for mobile policy loading', async () => {
+    mockListConfigResponse({
+      data: [
+        {
+          id: MOBILE_VERSION_POLICY_CONFIG_KEYS.ios.effectiveVersion,
+          value: '1.2',
+        },
+        {
+          id: MOBILE_VERSION_POLICY_CONFIG_KEYS.ios.storeUrl,
+          value: 'https://apps.apple.com/app/id1',
+        },
+      ],
+      error: null,
+    });
+
+    await expect(getMobileVersionPolicies()).rejects.toThrow(
+      'ios: effective version must use x.y.z format'
+    );
   });
 });

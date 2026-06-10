@@ -1,5 +1,9 @@
 import type { NextRequest } from 'next/server';
 import {
+  createAuthDiagnosticCode,
+  logAuthDiagnostic,
+} from '@/lib/auth/diagnostics';
+import {
   PasswordLoginRequestSchema,
   passwordLogin,
   toPasswordLoginErrorResult,
@@ -26,9 +30,46 @@ export async function POST(request: NextRequest) {
       request,
     });
 
+    if (result.status >= 500) {
+      const diagnosticCode = createAuthDiagnosticCode('password_login');
+      logAuthDiagnostic({
+        authMethod: 'password',
+        client: parsed.data.client,
+        code: diagnosticCode,
+        error: result.body.error,
+        message: 'Password login failed',
+        request,
+        route: '/api/v1/auth/password-login',
+        stage: 'password_login',
+        status: result.status,
+      });
+
+      return jsonWithCors(
+        {
+          ...result.body,
+          diagnosticCode,
+          error: 'Failed to login',
+        },
+        { status: result.status }
+      );
+    }
+
     return jsonWithCors(result.body, { status: result.status });
   } catch (error) {
+    const diagnosticCode = createAuthDiagnosticCode('password_login');
+    logAuthDiagnostic({
+      authMethod: 'password',
+      code: diagnosticCode,
+      error,
+      message: 'Password login route failed',
+      request,
+      route: '/api/v1/auth/password-login',
+      stage: 'password_login',
+    });
     const result = toPasswordLoginErrorResult(error);
-    return jsonWithCors(result.body, { status: result.status });
+    return jsonWithCors(
+      { ...result.body, diagnosticCode },
+      { status: result.status }
+    );
   }
 }

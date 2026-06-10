@@ -8,6 +8,7 @@ export type InternalOtpClient = 'mobile' | 'tulearn' | 'web';
 export type InternalOtpPlatform = 'android' | 'ios';
 
 export interface OtpSettingsResponse {
+  diagnosticCode?: string;
   otpEnabled: boolean;
 }
 
@@ -21,6 +22,7 @@ export interface SendOtpPayload {
 }
 
 export interface SendOtpResponse {
+  diagnosticCode?: string;
   error?: string;
   retryAfter?: number;
   success?: boolean;
@@ -36,6 +38,7 @@ export interface VerifyOtpPayload {
 }
 
 export interface VerifyOtpResponse {
+  diagnosticCode?: string;
   error?: string;
   retryAfter?: number;
   session?: {
@@ -58,6 +61,7 @@ export interface PasswordLoginPayload {
 }
 
 export interface PasswordLoginResponse {
+  diagnosticCode?: string;
   error?: string;
   remainingAttempts?: number;
   retryAfter?: number;
@@ -214,11 +218,12 @@ export interface WebAccountSummary {
 export interface WebAccountsResponse {
   accounts: WebAccountSummary[];
   activeAccountId: string | null;
+  diagnosticCode?: string;
+  error?: string;
 }
 
 export interface WebAccountMutationResponse extends WebAccountsResponse {
   accountId?: string;
-  error?: string;
   redirectTo?: string;
   success: boolean;
 }

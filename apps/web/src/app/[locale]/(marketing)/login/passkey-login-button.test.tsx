@@ -26,9 +26,10 @@ vi.mock('@tuturuuu/icons', () => ({
 }));
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => {
+  useTranslations: () => (key: string, values?: Record<string, string>) => {
     const translations: Record<string, string> = {
       continue_with_passkey: 'Continue with passkey',
+      diagnostic_reference: `Reference: ${values?.code}`,
       passkey_failed: 'Passkey sign-in failed',
       passkey_try_again: 'Please try again.',
     };
@@ -184,7 +185,9 @@ describe('PasskeyLoginButton', () => {
 
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalledWith('Passkey sign-in failed', {
-        description: 'captcha protection: request disallowed',
+        description: expect.stringMatching(
+          /^Please try again\. Reference: AUTH-PASSKEY-[A-F0-9]{6}$/
+        ),
       });
       expect(onCaptchaReset).toHaveBeenCalledTimes(1);
       expect(onAuthenticated).not.toHaveBeenCalled();
@@ -206,7 +209,9 @@ describe('PasskeyLoginButton', () => {
 
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalledWith('Passkey sign-in failed', {
-        description: 'Browser does not support WebAuthn',
+        description: expect.stringMatching(
+          /^Please try again\. Reference: AUTH-PASSKEY-[A-F0-9]{6}$/
+        ),
       });
       expect(onAuthenticated).not.toHaveBeenCalled();
     });
@@ -226,7 +231,9 @@ describe('PasskeyLoginButton', () => {
     );
 
     expect(mockToastError).toHaveBeenCalledWith('Passkey sign-in failed', {
-      description: 'Please try again.',
+      description: expect.stringMatching(
+        /^Please try again\. Reference: AUTH-PASSKEY-[A-F0-9]{6}$/
+      ),
     });
     expect(mockSignInWithPasskey).not.toHaveBeenCalled();
     expect(onAuthenticated).not.toHaveBeenCalled();

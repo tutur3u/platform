@@ -59,6 +59,7 @@ import {
   type AuthOAuthProvider,
   getAuthOAuthProviderOptions,
 } from '@/lib/auth/oauth-providers';
+import { appendDiagnosticReference } from './auth-diagnostic-copy';
 import { resolveAuthRedirectOrigin } from './auth-redirect-origin';
 import { InternalAppAccountConfirmation } from './internal-app-account-confirmation';
 import { InvalidReturnUrlWarning } from './invalid-return-url-warning';
@@ -363,6 +364,17 @@ export default function LoginForm() {
   const emailValue = emailForm.watch('email');
   const otpValue = otpForm.watch('otp');
   const webOtpEnabled = otpSettingsQuery.data?.otpEnabled ?? false;
+  const formatDiagnosticDescription = useCallback(
+    (description?: string | null, diagnosticCode?: string | null) =>
+      appendDiagnosticReference({
+        description,
+        diagnosticCode,
+        referenceLabel: diagnosticCode
+          ? t('login.diagnostic_reference', { code: diagnosticCode })
+          : '',
+      }),
+    [t]
+  );
   const isResolvingOtpEnablement =
     otpSettingsQuery.isLoading && otpSettingsQuery.data === undefined;
   const normalizedPreviewEmail =
@@ -782,12 +794,15 @@ export default function LoginForm() {
 
       if (!result.success) {
         toast.error(t('login.account_switch_failed'), {
-          description: result.error,
+          description: formatDiagnosticDescription(
+            result.error,
+            result.diagnosticCode
+          ),
         });
         setSwitchingAccountId(null);
       }
     },
-    [switchAccount, t]
+    [formatDiagnosticDescription, switchAccount, t]
   );
 
   const handleUseAnotherAccount = useCallback(async () => {
@@ -876,7 +891,10 @@ export default function LoginForm() {
           });
         } else {
           toast.error(t('login.failed_to_send'), {
-            description: result.error,
+            description: formatDiagnosticDescription(
+              result.error,
+              result.diagnosticCode
+            ),
           });
           openPasswordStage(normalizedEmail);
         }
@@ -912,7 +930,10 @@ export default function LoginForm() {
         });
         otpForm.setValue('otp', '');
         toast.error(t('login.failed_to_verify'), {
-          description: result.error,
+          description: formatDiagnosticDescription(
+            result.error,
+            result.diagnosticCode
+          ),
         });
         setLoading(false);
         return;
@@ -967,9 +988,10 @@ export default function LoginForm() {
         });
 
         toast.error(t('login.failed'), {
-          description: socialAuthHint
-            ? `${errorMessage} ${socialAuthHint}`
-            : errorMessage,
+          description: formatDiagnosticDescription(
+            socialAuthHint ? `${errorMessage} ${socialAuthHint}` : errorMessage,
+            result.diagnosticCode
+          ),
         });
 
         setLoading(false);
@@ -1281,13 +1303,14 @@ export default function LoginForm() {
   useEffect(() => {
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
+    const diagnosticCode = searchParams.get('diagnosticCode');
 
-    if (!error && !errorDescription) {
+    if (!error && !errorDescription && !diagnosticCode) {
       oauthErrorToastKeyRef.current = null;
       return;
     }
 
-    const toastKey = `${error ?? ''}:${errorDescription ?? ''}`;
+    const toastKey = `${error ?? ''}:${errorDescription ?? ''}:${diagnosticCode ?? ''}`;
     if (oauthErrorToastKeyRef.current === toastKey) {
       return;
     }
@@ -1296,13 +1319,15 @@ export default function LoginForm() {
     setLoading(false);
 
     toast.error(t('login.failed'), {
-      description:
+      description: formatDiagnosticDescription(
         errorDescription ||
-        (error === 'auth_failed'
-          ? t('login.oauth_callback_failed')
-          : t('login.social_sign_in_failed')),
+          (error === 'auth_failed'
+            ? t('login.oauth_callback_failed')
+            : t('login.social_sign_in_failed')),
+        diagnosticCode
+      ),
     });
-  }, [searchParams, t]);
+  }, [formatDiagnosticDescription, searchParams, t]);
 
   useEffect(() => {
     const processUrl = async () => {

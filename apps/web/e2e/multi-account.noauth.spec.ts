@@ -234,4 +234,117 @@ test.describe('Multi-account server vault', () => {
       }
     }
   });
+
+  test('shows a safe diagnostic code when account switch fails from login confirmation', async ({
+    page,
+  }) => {
+    const returnUrl =
+      'https://external-e2e.example/verify-token?nextUrl=/onboarding';
+    const storedAccountId = '00000000-0000-0000-0000-000000000099';
+
+    await page.route('**/api/v1/auth/cross-app-return', (route) =>
+      route.fulfill({
+        body: JSON.stringify({
+          appName: 'Learn',
+          targetApp: 'learn',
+        }),
+        contentType: 'application/json',
+        status: 200,
+      })
+    );
+    await page.route('**/api/v1/users/me/profile', (route) =>
+      route.fulfill({
+        body: JSON.stringify({
+          avatar_url: null,
+          display_name: 'E2E User',
+          email: TEST_USER.email,
+          full_name: 'E2E User',
+          id: TEST_USER.id,
+        }),
+        contentType: 'application/json',
+        status: 200,
+      })
+    );
+    await page.route('**/api/v1/auth/accounts', (route) =>
+      route.fulfill({
+        body: JSON.stringify({
+          accounts: [
+            {
+              email: TEST_USER.email,
+              id: TEST_USER.id,
+              metadata: {
+                addedAt: Date.now(),
+                avatarUrl: null,
+                displayName: 'E2E User',
+                lastActiveAt: Date.now(),
+                lastRoute: `/${DEFAULT_LOCALE}/personal/tasks`,
+                lastWorkspaceId: 'personal',
+              },
+            },
+            {
+              email: 'stored-account@tuturuuu.com',
+              id: storedAccountId,
+              metadata: {
+                addedAt: Date.now(),
+                avatarUrl: null,
+                displayName: 'Stored Account',
+                lastActiveAt: Date.now(),
+                lastRoute: `/${DEFAULT_LOCALE}/personal/tasks`,
+                lastWorkspaceId: 'personal',
+              },
+            },
+          ],
+          activeAccountId: TEST_USER.id,
+        }),
+        contentType: 'application/json',
+        status: 200,
+      })
+    );
+    await page.route('**/api/v1/auth/accounts/switch', (route) =>
+      route.fulfill({
+        body: JSON.stringify({
+          accounts: [],
+          activeAccountId: TEST_USER.id,
+          diagnosticCode: 'AUTH-ACC-SWITCH-E2E',
+          error: 'Account not found',
+          success: false,
+        }),
+        contentType: 'application/json',
+        status: 410,
+      })
+    );
+
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    const sessionResponse = await page.evaluate(
+      async ({ email, locale }) => {
+        const response = await fetch('/api/auth/dev-session', {
+          body: JSON.stringify({
+            completeOnboarding: true,
+            email,
+            locale,
+          }),
+          headers: { 'content-type': 'application/json' },
+          method: 'POST',
+        });
+
+        return response.ok;
+      },
+      { email: TEST_USER.email, locale: DEFAULT_LOCALE }
+    );
+    expect(sessionResponse).toBe(true);
+
+    await page.goto(`/login?returnUrl=${encodeURIComponent(returnUrl)}`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    await expect(
+      page.getByRole('button', { name: /continue to learn/i })
+    ).toBeVisible({ timeout: 30_000 });
+
+    await page.getByRole('button', { name: /stored account/i }).click();
+
+    await expect(page.getByText('AUTH-ACC-SWITCH-E2E')).toBeVisible({
+      timeout: 15_000,
+    });
+  });
 });

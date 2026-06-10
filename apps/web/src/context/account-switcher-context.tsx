@@ -35,6 +35,7 @@ const LEGACY_MULTI_SESSION_STORAGE_KEY = 'tuturuuu_multi_session_store';
 
 export interface AccountOperationResult {
   accountId?: string;
+  diagnosticCode?: string;
   error?: string;
   redirectTo?: string;
   success: boolean;
@@ -82,6 +83,7 @@ function toAccountOperationResult(
 ): AccountOperationResult {
   return {
     accountId: response.accountId,
+    diagnosticCode: response.diagnosticCode,
     error: response.error,
     redirectTo: response.redirectTo,
     success: response.success,

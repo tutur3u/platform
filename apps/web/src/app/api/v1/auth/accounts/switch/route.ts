@@ -1,5 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  createAuthDiagnosticCode,
+  logAuthDiagnostic,
+} from '@/lib/auth/diagnostics';
 import { switchWebAccount } from '@/lib/auth/multi-account/vault';
 
 const switchSchema = z.object({
@@ -23,10 +27,38 @@ export async function POST(request: NextRequest) {
 
     const { accountId, ...payload } = parsed.data;
     const result = await switchWebAccount(request, accountId, payload);
+    if (!result.success) {
+      const diagnosticCode = createAuthDiagnosticCode('account_switch');
+      logAuthDiagnostic({
+        authMethod: 'multi-account',
+        code: diagnosticCode,
+        error: result.error,
+        level: 'warn',
+        message: 'Failed to switch multi-account vault entry',
+        request,
+        route: '/api/v1/auth/accounts/switch',
+        stage: 'account_switch',
+        status: 410,
+      });
+
+      return NextResponse.json({ ...result, diagnosticCode }, { status: 410 });
+    }
+
     return NextResponse.json(result, { status: result.success ? 200 : 410 });
-  } catch {
+  } catch (error) {
+    const diagnosticCode = createAuthDiagnosticCode('account_switch');
+    logAuthDiagnostic({
+      authMethod: 'multi-account',
+      code: diagnosticCode,
+      error,
+      message: 'Failed to switch multi-account vault entry',
+      request,
+      route: '/api/v1/auth/accounts/switch',
+      stage: 'account_switch',
+    });
+
     return NextResponse.json(
-      { error: 'Failed to switch account' },
+      { diagnosticCode, error: 'Failed to switch account' },
       { status: 500 }
     );
   }
