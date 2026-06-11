@@ -7326,6 +7326,9 @@
   "github-bot-settings": {
     "appId": "App ID",
     "auditTitle": "Audit events",
+    "autoPickupDescription": "Issue a dedicated watcher-only client token and queue it through the blue/green control directory so the watcher can discover the apps/web token endpoint automatically.",
+    "autoPickupQueued": "Watcher auto-pickup credential queued.",
+    "autoPickupTitle": "Watcher auto-pickup",
     "clientIssued": "Watcher client token issued",
     "clientName": "Client name",
     "clientRevoked": "Watcher client token revoked.",
@@ -7333,6 +7336,7 @@
     "configurationTitle": "GitHub App configuration",
     "description": "Manage the Tuturuuu-owned GitHub App used by the blue/green watcher to publish Tuturuuu CI Check Runs.",
     "disabled": "Disabled",
+    "enableAutoPickup": "Enable watcher auto-pickup",
     "enabled": "Enabled",
     "enabledHint": "Allow watcher clients to mint short-lived GitHub installation tokens.",
     "expiresAt": "Expires {value}",

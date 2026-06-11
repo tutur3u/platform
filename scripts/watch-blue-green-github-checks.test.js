@@ -6,6 +6,7 @@ const path = require('node:path');
 
 const {
   buildGitHubCheckRunContext,
+  createGitHubChecksTokenProvider,
   createGitHubChecksPublisher,
   publishGitHubCheckRunForState,
   readGitHubChecksState,
@@ -17,6 +18,12 @@ const ENABLED_ENV = {
   GITHUB_REPOSITORY: 'tutur3u/platform',
   TUTURUUU_CI_CHECKS_ENABLED: '1',
   TUTURUUU_CI_GITHUB_TOKEN: 'test-token',
+};
+const GENERATED_TOKEN_ENV = {
+  GITHUB_REPOSITORY: 'tutur3u/platform',
+  TUTURUUU_CI_CHECKS_ENABLED: '1',
+  TUTURUUU_CI_GITHUB_TOKEN_CLIENT_TOKEN: 'watcher-client-token',
+  TUTURUUU_CI_GITHUB_TOKEN_URL: 'https://tuturuuu.example.com/api/token',
 };
 
 function createDeploymentState(overrides = {}) {
@@ -121,6 +128,235 @@ test('buildGitHubCheckRunContext emits only allowlisted sanitized metadata', () 
   assert.doesNotMatch(serialized, /eyJhbGci/);
 });
 
+test('buildGitHubCheckRunContext prefers static tokens over generated token config', () => {
+  const context = buildGitHubCheckRunContext(createDeploymentState(), {
+    env: {
+      ...GENERATED_TOKEN_ENV,
+      TUTURUUU_CI_GITHUB_TOKEN: 'static-check-token',
+    },
+    now: 1000,
+  });
+
+  assert.equal(context.publishable, true);
+  assert.equal(context.token, 'static-check-token');
+  assert.deepEqual(context.tokenSource, {
+    envName: 'TUTURUUU_CI_GITHUB_TOKEN',
+    type: 'static',
+  });
+});
+
+test('buildGitHubCheckRunContext auto-discovers queued watcher runtime credentials before GITHUB_TOKEN', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'github-checks-auto-'));
+  const paths = getWatchPaths(tempDir);
+  const now = Date.parse('2026-06-11T00:00:00.000Z');
+
+  try {
+    fs.mkdirSync(path.dirname(paths.githubBotRuntimeRequestFile), {
+      recursive: true,
+    });
+    fs.writeFileSync(
+      paths.githubBotRuntimeRequestFile,
+      JSON.stringify(
+        {
+          clientId: 'client-1',
+          clientToken: 'runtime-client-token',
+          createdAt: new Date(now).toISOString(),
+          expiresAt: new Date(now + 90 * 24 * 60 * 60 * 1000).toISOString(),
+          kind: 'tuturuuu-github-bot-runtime-credential',
+          repository: { name: 'platform', owner: 'tutur3u' },
+          tokenUrl:
+            'https://tuturuuu.example.com/api/v1/infrastructure/github-bot/installation-token',
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    const context = buildGitHubCheckRunContext(createDeploymentState(), {
+      env: {
+        GITHUB_REPOSITORY: 'tutur3u/platform',
+        GITHUB_TOKEN: 'fallback-token',
+      },
+      fsImpl: fs,
+      now,
+      paths,
+    });
+    const runtimeCredential = JSON.parse(
+      fs.readFileSync(paths.githubBotRuntimeFile, 'utf8')
+    );
+
+    assert.equal(context.publishable, true);
+    assert.equal(context.token, null);
+    assert.deepEqual(context.tokenSource, {
+      source: 'runtime',
+      type: 'generated',
+    });
+    assert.equal(fs.existsSync(paths.githubBotRuntimeRequestFile), false);
+    assert.equal(runtimeCredential.clientToken, 'runtime-client-token');
+    assert.equal(runtimeCredential.kind, 'tuturuuu-github-bot-runtime-token');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('buildGitHubCheckRunContext lets explicit generated env config override runtime credentials', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'github-checks-auto-env-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const now = Date.parse('2026-06-11T00:00:00.000Z');
+
+  try {
+    fs.mkdirSync(path.dirname(paths.githubBotRuntimeFile), {
+      recursive: true,
+    });
+    fs.writeFileSync(
+      paths.githubBotRuntimeFile,
+      JSON.stringify({
+        clientToken: 'runtime-client-token',
+        expiresAt: new Date(now + 90 * 24 * 60 * 60 * 1000).toISOString(),
+        kind: 'tuturuuu-github-bot-runtime-token',
+        tokenUrl: 'https://runtime.example.com/token',
+      }),
+      'utf8'
+    );
+
+    const context = buildGitHubCheckRunContext(createDeploymentState(), {
+      env: GENERATED_TOKEN_ENV,
+      fsImpl: fs,
+      now,
+      paths,
+    });
+
+    assert.equal(context.publishable, true);
+    assert.deepEqual(context.tokenSource, {
+      source: 'env',
+      type: 'generated',
+    });
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('createGitHubChecksTokenProvider fetches and caches generated tokens', async () => {
+  let now = Date.parse('2026-06-11T00:00:00.000Z');
+  const calls = [];
+  const fetchImpl = async (url, options) => {
+    calls.push({ options, url });
+    return {
+      json: async () => ({
+        expiresAt: new Date(now + 60 * 60 * 1000).toISOString(),
+        repository: { name: 'platform', owner: 'tutur3u' },
+        token: `generated-${calls.length}`,
+      }),
+      ok: true,
+      status: 200,
+    };
+  };
+  const provider = createGitHubChecksTokenProvider({
+    env: GENERATED_TOKEN_ENV,
+    fetchImpl,
+    now: () => now,
+  });
+
+  assert.equal(await provider.getToken(), 'generated-1');
+  assert.equal(await provider.getToken(), 'generated-1');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, GENERATED_TOKEN_ENV.TUTURUUU_CI_GITHUB_TOKEN_URL);
+  assert.equal(
+    new Headers(calls[0].options.headers).get('Authorization'),
+    'Bearer watcher-client-token'
+  );
+
+  now += 56 * 60 * 1000;
+  assert.equal(await provider.getToken(), 'generated-2');
+  assert.equal(calls.length, 2);
+});
+
+test('publishGitHubCheckRunForState uses auto-discovered watcher runtime credentials', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'github-checks-runtime-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const now = Date.parse('2026-06-11T00:00:00.000Z');
+  const requestTokens = [];
+  const tokenFetches = [];
+
+  try {
+    fs.mkdirSync(path.dirname(paths.githubBotRuntimeRequestFile), {
+      recursive: true,
+    });
+    fs.writeFileSync(
+      paths.githubBotRuntimeRequestFile,
+      JSON.stringify({
+        clientId: 'client-1',
+        clientToken: 'runtime-client-token',
+        createdAt: new Date(now).toISOString(),
+        expiresAt: new Date(now + 90 * 24 * 60 * 60 * 1000).toISOString(),
+        kind: 'tuturuuu-github-bot-runtime-credential',
+        repository: { name: 'platform', owner: 'tutur3u' },
+        tokenUrl:
+          'https://tuturuuu.example.com/api/v1/infrastructure/github-bot/installation-token',
+      }),
+      'utf8'
+    );
+
+    const env = {
+      GITHUB_REPOSITORY: 'tutur3u/platform',
+    };
+    const tokenProvider = createGitHubChecksTokenProvider({
+      env,
+      fetchImpl: async (url, options) => {
+        tokenFetches.push({ options, url });
+        return {
+          json: async () => ({
+            expiresAt: new Date(now + 60 * 60 * 1000).toISOString(),
+            repository: { name: 'platform', owner: 'tutur3u' },
+            token: 'installation-token',
+          }),
+          ok: true,
+          status: 200,
+        };
+      },
+      fsImpl: fs,
+      now: () => now,
+      paths,
+    });
+    const result = await publishGitHubCheckRunForState(
+      createDeploymentState(),
+      {
+        env,
+        fsImpl: fs,
+        now,
+        paths,
+        repository: { owner: 'tutur3u', repo: 'platform' },
+        requestJson: async (_requestPath, options = {}) => {
+          requestTokens.push(options.token);
+          return { id: 303 };
+        },
+        tokenProvider,
+      }
+    );
+    const serializedRequestBody = JSON.stringify(result.requestBody);
+
+    assert.equal(result.status, 'created');
+    assert.deepEqual(requestTokens, ['installation-token']);
+    assert.equal(
+      tokenFetches[0].url,
+      'https://tuturuuu.example.com/api/v1/infrastructure/github-bot/installation-token'
+    );
+    assert.equal(
+      new Headers(tokenFetches[0].options.headers).get('Authorization'),
+      'Bearer runtime-client-token'
+    );
+    assert.doesNotMatch(serializedRequestBody, /runtime-client-token/);
+    assert.doesNotMatch(serializedRequestBody, /installation-token/);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('publishGitHubCheckRunForState creates once and updates the stored check run', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'github-checks-'));
   const paths = getWatchPaths(tempDir);
@@ -191,6 +427,55 @@ test('publishGitHubCheckRunForState creates once and updates the stored check ru
       stored.checkRuns[`Tuturuuu CI:${COMMIT_HASH}`].checkRunId,
       101
     );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('publishGitHubCheckRunForState uses generated tokens and retries once after GitHub 401', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'github-checks-gen-'));
+  const paths = getWatchPaths(tempDir);
+  const requestTokens = [];
+  let tokenCounter = 0;
+
+  try {
+    const tokenProvider = createGitHubChecksTokenProvider({
+      env: GENERATED_TOKEN_ENV,
+      fetchImpl: async () => ({
+        json: async () => ({
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+          repository: { name: 'platform', owner: 'tutur3u' },
+          token: `generated-token-${++tokenCounter}`,
+        }),
+        ok: true,
+        status: 200,
+      }),
+    });
+    const requestJson = async (_requestPath, options = {}) => {
+      requestTokens.push(options.token);
+      if (requestTokens.length === 1) {
+        const error = new Error('expired token');
+        error.statusCode = 401;
+        throw error;
+      }
+
+      return { id: 202 };
+    };
+
+    const result = await publishGitHubCheckRunForState(
+      createDeploymentState(),
+      {
+        env: GENERATED_TOKEN_ENV,
+        fsImpl: fs,
+        paths,
+        repository: { owner: 'tutur3u', repo: 'platform' },
+        requestJson,
+        tokenProvider,
+      }
+    );
+
+    assert.equal(result.status, 'created');
+    assert.deepEqual(requestTokens, ['generated-token-1', 'generated-token-2']);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -300,4 +585,34 @@ test('createGitHubChecksPublisher catches GitHub API failures and dedupes unchan
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('createGitHubChecksPublisher reports generated token endpoint failures without leaking token config', async () => {
+  const warnings = [];
+  const publisher = createGitHubChecksPublisher({
+    env: GENERATED_TOKEN_ENV,
+    log: {
+      warn(message) {
+        warnings.push(message);
+      },
+    },
+    repository: { owner: 'tutur3u', repo: 'platform' },
+    tokenProvider: createGitHubChecksTokenProvider({
+      env: GENERATED_TOKEN_ENV,
+      fetchImpl: async () => ({
+        json: async () => ({ message: 'nope' }),
+        ok: false,
+        status: 502,
+      }),
+    }),
+  });
+
+  await publisher.publish(createDeploymentState());
+  const result = await publisher.flush();
+  const serialized = JSON.stringify({ result, warnings });
+
+  assert.equal(result.status, 'failed');
+  assert.match(warnings[0], /GitHub token endpoint failed with status 502/);
+  assert.doesNotMatch(serialized, /watcher-client-token/);
+  assert.doesNotMatch(serialized, /tuturuuu\.example\.com/);
 });

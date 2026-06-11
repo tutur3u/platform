@@ -5,10 +5,17 @@ const path = require('node:path');
 
 const { getGitHubRepository } = require('./production-promotion.js');
 const { getWatchPaths } = require('./paths.js');
+const {
+  GITHUB_CHECKS_TOKEN_CLIENT_TOKEN_ENV,
+  GITHUB_CHECKS_TOKEN_ENV,
+  GITHUB_CHECKS_TOKEN_URL_ENV,
+  createGitHubChecksTokenProvider,
+  getGitHubChecksToken,
+  getGitHubChecksTokenSource,
+} = require('./github-token-provider.js');
 
 const GITHUB_CHECKS_STATE_KIND = 'tuturuuu-github-check-runs';
 const GITHUB_CHECKS_ENABLED_ENV = 'TUTURUUU_CI_CHECKS_ENABLED';
-const GITHUB_CHECKS_TOKEN_ENV = 'TUTURUUU_CI_GITHUB_TOKEN';
 const GITHUB_CHECKS_NAME_ENV = 'TUTURUUU_CI_CHECK_NAME';
 const GITHUB_CHECKS_DETAILS_URL_ENV = 'TUTURUUU_CI_CHECK_DETAILS_URL';
 const DEFAULT_GITHUB_CHECK_NAME = 'Tuturuuu CI';
@@ -101,14 +108,12 @@ function trimString(value) {
     : null;
 }
 
-function isGitHubChecksEnabled(env = process.env) {
-  return env?.[GITHUB_CHECKS_ENABLED_ENV] === '1';
-}
+function isGitHubChecksEnabled(env = process.env, tokenSource = null) {
+  if (env?.[GITHUB_CHECKS_ENABLED_ENV] === '1') {
+    return true;
+  }
 
-function getGitHubChecksToken(env = process.env) {
-  return (
-    trimString(env?.[GITHUB_CHECKS_TOKEN_ENV]) ?? trimString(env?.GITHUB_TOKEN)
-  );
+  return tokenSource?.type === 'generated' && tokenSource.source === 'runtime';
 }
 
 function sanitizePublicText(value, maxLength = 120) {
@@ -568,17 +573,27 @@ function createPayloadFingerprint(payload) {
 
 function buildGitHubCheckRunContext(
   state,
-  { env = process.env, now = Date.now() } = {}
+  {
+    env = process.env,
+    fsImpl = fs,
+    now = Date.now(),
+    paths = getWatchPaths(),
+  } = {}
 ) {
-  if (!isGitHubChecksEnabled(env)) {
+  const tokenSource = getGitHubChecksTokenSource(env, {
+    fsImpl,
+    now: () => now,
+    paths,
+  });
+
+  if (!isGitHubChecksEnabled(env, tokenSource)) {
     return {
       publishable: false,
       reason: 'disabled',
     };
   }
 
-  const token = getGitHubChecksToken(env);
-  if (!token) {
+  if (!tokenSource) {
     return {
       publishable: false,
       reason: 'missing-token',
@@ -683,7 +698,11 @@ function buildGitHubCheckRunContext(
       startedAt,
     }),
     publishable: true,
-    token,
+    token: tokenSource.type === 'static' ? tokenSource.token : null,
+    tokenSource:
+      tokenSource.type === 'static'
+        ? { envName: tokenSource.envName, type: tokenSource.type }
+        : { source: tokenSource.source, type: tokenSource.type },
     updateBody,
   };
 }
@@ -838,6 +857,7 @@ async function publishGitHubCheckRunContext(
     paths = getWatchPaths(),
     repository,
     requestJson = githubJsonRequest,
+    tokenProvider = createGitHubChecksTokenProvider({ env, fsImpl, paths }),
   } = {}
 ) {
   if (!context?.publishable) {
@@ -861,18 +881,52 @@ async function publishGitHubCheckRunContext(
   const owner = encodeURIComponent(repository.owner);
   const repo = encodeURIComponent(repository.repo);
   const nowIso = new Date().toISOString();
+  const requestWithToken = async (requestPath, options) => {
+    const token = context.token ?? (await tokenProvider.getToken());
+
+    if (!token) {
+      return {
+        reason: 'missing-token',
+        status: 'skipped',
+      };
+    }
+
+    try {
+      return await requestJson(requestPath, {
+        ...options,
+        token,
+      });
+    } catch (error) {
+      if (context.token || error?.statusCode !== 401) {
+        throw error;
+      }
+
+      const refreshedToken = await tokenProvider.forceRefresh();
+      if (!refreshedToken) {
+        throw error;
+      }
+
+      return requestJson(requestPath, {
+        ...options,
+        token: refreshedToken,
+      });
+    }
+  };
 
   if (existing?.checkRunId) {
     try {
-      await requestJson(
+      const result = await requestWithToken(
         `/repos/${owner}/${repo}/check-runs/${encodeURIComponent(existing.checkRunId)}`,
         {
           body: context.updateBody,
           env,
           method: 'PATCH',
-          token: context.token,
         }
       );
+
+      if (result?.status === 'skipped') {
+        return result;
+      }
 
       storedState.checkRuns[stateKey] = {
         ...existing,
@@ -895,12 +949,16 @@ async function publishGitHubCheckRunContext(
     }
   }
 
-  const created = await requestJson(`/repos/${owner}/${repo}/check-runs`, {
+  const created = await requestWithToken(`/repos/${owner}/${repo}/check-runs`, {
     body: context.createBody,
     env,
     method: 'POST',
-    token: context.token,
   });
+
+  if (created?.status === 'skipped') {
+    return created;
+  }
+
   const checkRunId = created?.id;
 
   if (checkRunId) {
@@ -931,9 +989,15 @@ async function publishGitHubCheckRunForState(
     requestJson = githubJsonRequest,
     rootDir,
     runCommand,
+    tokenProvider = createGitHubChecksTokenProvider({ env, fsImpl, paths }),
   } = {}
 ) {
-  const context = buildGitHubCheckRunContext(state, { env, now });
+  const context = buildGitHubCheckRunContext(state, {
+    env,
+    fsImpl,
+    now,
+    paths,
+  });
 
   if (!context.publishable) {
     return {
@@ -952,6 +1016,7 @@ async function publishGitHubCheckRunForState(
     paths,
     repository: resolvedRepository,
     requestJson,
+    tokenProvider,
   });
 }
 
@@ -969,6 +1034,7 @@ function createGitHubChecksPublisher({
   requestJson = githubJsonRequest,
   rootDir,
   runCommand,
+  tokenProvider = createGitHubChecksTokenProvider({ env, fsImpl, now, paths }),
 } = {}) {
   let lastFingerprint = null;
   let pending = Promise.resolve({
@@ -997,7 +1063,9 @@ function createGitHubChecksPublisher({
     publish(state) {
       const context = buildGitHubCheckRunContext(state, {
         env,
+        fsImpl,
         now: now(),
+        paths,
       });
 
       if (!context.publishable) {
@@ -1023,6 +1091,7 @@ function createGitHubChecksPublisher({
             paths,
             repository: resolvedRepository,
             requestJson,
+            tokenProvider,
           });
         })
         .catch((error) => {
@@ -1048,12 +1117,16 @@ module.exports = {
   GITHUB_CHECKS_ENABLED_ENV,
   GITHUB_CHECKS_NAME_ENV,
   GITHUB_CHECKS_STATE_KIND,
+  GITHUB_CHECKS_TOKEN_CLIENT_TOKEN_ENV,
   GITHUB_CHECKS_TOKEN_ENV,
+  GITHUB_CHECKS_TOKEN_URL_ENV,
   buildGitHubCheckRunContext,
+  createGitHubChecksTokenProvider,
   createGitHubChecksPublisher,
   getGitHubCheckDetailsUrl,
   getGitHubCheckName,
   getGitHubChecksToken,
+  getGitHubChecksTokenSource,
   githubJsonRequest,
   isGitHubChecksEnabled,
   publishGitHubCheckRunContext,

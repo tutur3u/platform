@@ -51,6 +51,14 @@ const WATCH_GITHUB_CHECKS_FILE = path.join(
   'blue-green-github-checks.json'
 );
 const WATCH_CONTROL_DIR = path.join(WATCH_RUNTIME_DIR, 'control');
+const WATCH_GITHUB_BOT_RUNTIME_FILE = path.join(
+  WATCH_RUNTIME_DIR,
+  'blue-green-github-bot-runtime.json'
+);
+const WATCH_GITHUB_BOT_RUNTIME_REQUEST_FILE = path.join(
+  WATCH_CONTROL_DIR,
+  'blue-green-github-bot-runtime.request.json'
+);
 const WATCH_INSTANT_ROLLOUT_REQUEST_FILE = path.join(
   WATCH_CONTROL_DIR,
   'blue-green-instant-rollout.request.json'
@@ -127,6 +135,15 @@ function getWatchPaths(rootDir = ROOT_DIR, env = process.env) {
     ),
     historyFile: path.join(runtimeDir, 'blue-green-auto-deploy.history.json'),
     githubChecksFile: path.join(runtimeDir, 'blue-green-github-checks.json'),
+    githubBotRuntimeFile: path.join(
+      runtimeDir,
+      'blue-green-github-bot-runtime.json'
+    ),
+    githubBotRuntimeRequestFile: path.join(
+      runtimeDir,
+      'control',
+      'blue-green-github-bot-runtime.request.json'
+    ),
     instantRolloutRequestFile: path.join(
       runtimeDir,
       'control',
@@ -179,6 +196,8 @@ module.exports = {
   WATCH_DEPLOYMENT_REVERT_REQUEST_FILE,
   WATCH_DEPLOYMENT_PIN_FILE,
   WATCH_DEPLOYMENT_STAGES_FILE,
+  WATCH_GITHUB_BOT_RUNTIME_FILE,
+  WATCH_GITHUB_BOT_RUNTIME_REQUEST_FILE,
   WATCH_GITHUB_CHECKS_FILE,
   WATCH_HISTORY_FILE,
   WATCH_INSTANT_ROLLOUT_REQUEST_FILE,

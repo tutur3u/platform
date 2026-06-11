@@ -107,6 +107,87 @@ export interface IssueMobileDeploymentCiTokenResponse {
   token: string;
 }
 
+export interface GitHubBotConfigurationStatus {
+  appId: string;
+  enabled: boolean;
+  installationId: string;
+  lastValidatedAt: string | null;
+  lastValidationError: string | null;
+  permissions: {
+    checks: 'write';
+  };
+  privateKeyConfigured: boolean;
+  privateKeyFingerprint: string;
+  repository: {
+    name: string;
+    owner: string;
+  };
+  updatedAt: string;
+}
+
+export interface GitHubBotWatcherClientStatus {
+  createdAt: string;
+  expiresAt: string;
+  id: string;
+  lastFour: string;
+  lastIssuedAt: string | null;
+  lastUsedAt: string | null;
+  name: string;
+  prefix: string;
+  revokedAt: string | null;
+}
+
+export interface GitHubBotAuditEvent {
+  actorType: 'user' | 'watcher';
+  createdAt: string;
+  eventType: string;
+  id: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface GitHubBotState {
+  auditEvents: GitHubBotAuditEvent[];
+  clients: GitHubBotWatcherClientStatus[];
+  configuration: GitHubBotConfigurationStatus | null;
+}
+
+export interface SaveGitHubBotConfigurationPayload {
+  appId: string;
+  enabled: boolean;
+  installationId: string;
+  privateKey?: string;
+  repositoryName: string;
+  repositoryOwner: string;
+}
+
+export interface TestGitHubBotConfigurationResponse {
+  state: GitHubBotState;
+  validation: {
+    ok: boolean;
+    validatedAt: string;
+  };
+}
+
+export interface IssueGitHubBotWatcherClientPayload {
+  expiresInDays?: number;
+  name: string;
+}
+
+export interface IssueGitHubBotWatcherClientResponse {
+  state: GitHubBotState;
+  token: string;
+}
+
+export interface EnableGitHubBotWatcherAutoPickupResponse {
+  autoPickup: {
+    clientId: string;
+    expiresAt: string;
+    queuedAt: string;
+    tokenEndpointUrl: string;
+  };
+  state: GitHubBotState;
+}
+
 export interface ExternalAppRegistration {
   allowedScopes: string[];
   createdAt: string | null;
@@ -1953,10 +2034,17 @@ export async function updateMobileVersionPolicies(
 }
 
 const MOBILE_DEPLOYMENT_CSRF_HEADER = 'x-tuturuuu-mobile-deployment-action';
+const GITHUB_BOT_CSRF_HEADER = 'x-tuturuuu-github-bot-action';
 
 function mobileDeploymentMutationHeaders(extra?: HeadersInit) {
   const headers = new Headers(extra);
   headers.set(MOBILE_DEPLOYMENT_CSRF_HEADER, '1');
+  return headers;
+}
+
+function githubBotMutationHeaders(extra?: HeadersInit) {
+  const headers = new Headers(extra);
+  headers.set(GITHUB_BOT_CSRF_HEADER, '1');
   return headers;
 }
 
@@ -2090,6 +2178,95 @@ export async function revokeMobileDeploymentCiToken(
     {
       cache: 'no-store',
       headers: mobileDeploymentMutationHeaders(),
+      method: 'DELETE',
+    }
+  );
+}
+
+export async function getGitHubBotState(options?: InternalApiClientOptions) {
+  const client = getInternalApiClient(options);
+  return client.json<GitHubBotState>('/api/v1/infrastructure/github-bot', {
+    cache: 'no-store',
+  });
+}
+
+export async function saveGitHubBotConfiguration(
+  payload: SaveGitHubBotConfigurationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<GitHubBotState>('/api/v1/infrastructure/github-bot', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: githubBotMutationHeaders({
+      'Content-Type': 'application/json',
+    }),
+    method: 'PUT',
+  });
+}
+
+export async function testGitHubBotConfiguration(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TestGitHubBotConfigurationResponse>(
+    '/api/v1/infrastructure/github-bot/test',
+    {
+      body: '{}',
+      cache: 'no-store',
+      headers: githubBotMutationHeaders({
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export async function issueGitHubBotWatcherClient(
+  payload: IssueGitHubBotWatcherClientPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<IssueGitHubBotWatcherClientResponse>(
+    '/api/v1/infrastructure/github-bot/clients',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: githubBotMutationHeaders({
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export async function enableGitHubBotWatcherAutoPickup(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<EnableGitHubBotWatcherAutoPickupResponse>(
+    '/api/v1/infrastructure/github-bot/auto-pickup',
+    {
+      body: '{}',
+      cache: 'no-store',
+      headers: githubBotMutationHeaders({
+        'Content-Type': 'application/json',
+      }),
+      method: 'POST',
+    }
+  );
+}
+
+export async function revokeGitHubBotWatcherClient(
+  clientId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<GitHubBotState>(
+    `/api/v1/infrastructure/github-bot/clients/${encodePathSegment(clientId)}`,
+    {
+      cache: 'no-store',
+      headers: githubBotMutationHeaders(),
       method: 'DELETE',
     }
   );

@@ -601,10 +601,38 @@ pending build/deploy status are surfaced with a synthetic current stage so
 operators can see the build is in progress before full stage history is written.
 When `TUTURUUU_CI_CHECKS_ENABLED=1`, the watcher also publishes one sanitized
 GitHub Check Run per watched commit. The default check name is `Tuturuuu CI`;
-override it with `TUTURUUU_CI_CHECK_NAME`. The publisher uses
-`TUTURUUU_CI_GITHUB_TOKEN` first, then `GITHUB_TOKEN`, and the token must be
-able to create and update Check Runs for the repository. The watcher stores the
-latest check-run id per commit in
+override it with `TUTURUUU_CI_CHECK_NAME`. The managed production path is the
+Infrastructure → GitHub Bot page in the root workspace: create and install a
+Tuturuuu-owned GitHub App with repository `Checks: write` permission, then save
+the App ID, installation ID, repository owner/name, and private key there. The
+private key stays server-side and encrypted in the private-schema vault. After
+the configuration validates, use **Enable watcher auto-pickup** on the same
+page. apps/web issues a dedicated watcher-only client token, writes a small
+credential request into the blue/green control directory, and the watcher moves
+that credential into its local runtime directory on the next Check Run publish.
+The watcher then discovers the apps/web installation-token endpoint without
+requiring you to copy GitHub-related env into the watcher process. The queued
+runtime credential is the Check Run opt-in signal for the watcher.
+
+Manual generated-token setup remains available for local or emergency use:
+
+```bash
+TUTURUUU_CI_CHECKS_ENABLED=1
+TUTURUUU_CI_GITHUB_TOKEN_URL=https://<apps-web-origin>/api/v1/infrastructure/github-bot/installation-token
+TUTURUUU_CI_GITHUB_TOKEN_CLIENT_TOKEN=<watcher-client-token>
+```
+
+The watcher exchanges that client token for repository-scoped GitHub App
+installation tokens and refreshes them before expiry. Revoke and reissue the
+watcher client from Infrastructure → GitHub Bot when rotating access. The
+browser UI never displays generated GitHub installation tokens, and the
+auto-pickup action does not display the watcher client token. Manual and
+static-token paths still require `TUTURUUU_CI_CHECKS_ENABLED=1`; when enabled,
+the publisher uses `TUTURUUU_CI_GITHUB_TOKEN` first, then an explicitly
+configured generated token endpoint, then the watcher auto-pickup runtime
+credential, then `GITHUB_TOKEN`. Static tokens must be able to create and
+update Check Runs for the repository. The watcher stores the latest check-run
+id per commit in
 `tmp/docker-web/watch/blue-green-github-checks.json` so restarts update the
 same GitHub row instead of creating duplicates. `TUTURUUU_CI_CHECK_DETAILS_URL`
 is optional and omitted unless explicitly configured.

@@ -6,17 +6,23 @@ import {
   deleteAIWhitelistDomain,
   deleteAIWhitelistEmail,
   deployAiAgentChannel,
+  enableGitHubBotWatcherAutoPickup,
   getBlueGreenMonitoringRequestArchive,
+  getGitHubBotState,
   getObservabilityLogs,
+  issueGitHubBotWatcherClient,
   listAIWhitelistDomains,
   listAIWhitelistEmails,
   listAiAgents,
   listAiGatewayModelsPage,
   pauseAiAgentChannel,
+  revokeGitHubBotWatcherClient,
   rotateAiAgentChannelSecret,
   saveAiAgent,
   saveAiAgentIdentityLink,
+  saveGitHubBotConfiguration,
   testAiAgentChannel,
+  testGitHubBotConfiguration,
   updateAIWhitelistDomain,
   updateAIWhitelistEmail,
 } from './infrastructure';
@@ -27,6 +33,13 @@ function createJsonResponse(data: unknown) {
     ok: true,
     status: 200,
   };
+}
+
+function getCalledHeaders(fetchMock: ReturnType<typeof vi.fn>, callIndex = 0) {
+  const init = fetchMock.mock.calls[callIndex]?.[1] as
+    | { headers?: HeadersInit }
+    | undefined;
+  return new Headers(init?.headers);
 }
 
 describe('AI whitelist domain internal API helpers', () => {
@@ -272,6 +285,155 @@ describe('AI gateway model internal API helpers', () => {
       ],
       pagination: { limit: 25, page: 2, total: 51 },
     });
+  });
+});
+
+describe('GitHub bot internal API helpers', () => {
+  it('loads redacted GitHub bot state through the infrastructure API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        auditEvents: [],
+        clients: [],
+        configuration: null,
+      })
+    );
+
+    await getGitHubBotState({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/github-bot',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('saves GitHub bot configuration with the dedicated CSRF header', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        auditEvents: [],
+        clients: [],
+        configuration: null,
+      })
+    );
+    const payload = {
+      appId: '12345',
+      enabled: true,
+      installationId: '67890',
+      privateKey:
+        '-----BEGIN PRIVATE KEY-----\nsecret\n-----END PRIVATE KEY-----',
+      repositoryName: 'platform',
+      repositoryOwner: 'tutur3u',
+    };
+
+    await saveGitHubBotConfiguration(payload, {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/github-bot',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    const headers = getCalledHeaders(fetchMock);
+    expect(headers.get('Content-Type')).toBe('application/json');
+    expect(headers.get('x-tuturuuu-github-bot-action')).toBe('1');
+  });
+
+  it('tests, enables auto-pickup, issues, and revokes GitHub bot watcher clients', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        autoPickup: {
+          clientId: 'client-auto',
+          expiresAt: '2026-09-09T00:00:00.000Z',
+          queuedAt: '2026-06-11T00:00:00.000Z',
+          tokenEndpointUrl:
+            'https://internal.example.com/api/v1/infrastructure/github-bot/installation-token',
+        },
+        state: {
+          auditEvents: [],
+          clients: [],
+          configuration: null,
+        },
+        token: 'ttr_github_bot_generated',
+        validation: {
+          ok: true,
+          validatedAt: '2026-06-11T00:00:00.000Z',
+        },
+      })
+    );
+
+    await testGitHubBotConfiguration({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    await enableGitHubBotWatcherAutoPickup({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    await issueGitHubBotWatcherClient(
+      { expiresInDays: 30, name: 'Watcher' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await revokeGitHubBotWatcherClient('client/id', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/infrastructure/github-bot/test',
+      expect.objectContaining({
+        body: '{}',
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/infrastructure/github-bot/auto-pickup',
+      expect.objectContaining({
+        body: '{}',
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/infrastructure/github-bot/clients',
+      expect.objectContaining({
+        body: JSON.stringify({ expiresInDays: 30, name: 'Watcher' }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/infrastructure/github-bot/clients/client%2Fid',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'DELETE',
+      })
+    );
+
+    for (const callIndex of [0, 1, 2, 3]) {
+      expect(
+        getCalledHeaders(fetchMock, callIndex).get(
+          'x-tuturuuu-github-bot-action'
+        )
+      ).toBe('1');
+    }
   });
 });
 

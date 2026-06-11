@@ -2525,6 +2525,167 @@ export type Database = {
           },
         ];
       };
+      github_bot_audit_events: {
+        Row: {
+          actor_type: string;
+          actor_user_id: string | null;
+          client_id: string | null;
+          configuration_id: string;
+          created_at: string;
+          event_type: string;
+          id: string;
+          metadata: Json;
+        };
+        Insert: {
+          actor_type: string;
+          actor_user_id?: string | null;
+          client_id?: string | null;
+          configuration_id: string;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          metadata?: Json;
+        };
+        Update: {
+          actor_type?: string;
+          actor_user_id?: string | null;
+          client_id?: string | null;
+          configuration_id?: string;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          metadata?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'github_bot_audit_events_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'github_bot_watcher_clients';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'github_bot_audit_events_configuration_id_fkey';
+            columns: ['configuration_id'];
+            isOneToOne: false;
+            referencedRelation: 'github_bot_configurations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      github_bot_configurations: {
+        Row: {
+          app_id: string;
+          created_at: string;
+          created_by: string | null;
+          data_key_ciphertext: string;
+          enabled: boolean;
+          id: string;
+          installation_id: string;
+          last_validated_at: string | null;
+          last_validation_error: string | null;
+          permissions: Json;
+          private_key_encrypted: string;
+          private_key_fingerprint: string;
+          repository_name: string;
+          repository_owner: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          app_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          data_key_ciphertext: string;
+          enabled?: boolean;
+          id: string;
+          installation_id: string;
+          last_validated_at?: string | null;
+          last_validation_error?: string | null;
+          permissions?: Json;
+          private_key_encrypted: string;
+          private_key_fingerprint: string;
+          repository_name: string;
+          repository_owner: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          app_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          data_key_ciphertext?: string;
+          enabled?: boolean;
+          id?: string;
+          installation_id?: string;
+          last_validated_at?: string | null;
+          last_validation_error?: string | null;
+          permissions?: Json;
+          private_key_encrypted?: string;
+          private_key_fingerprint?: string;
+          repository_name?: string;
+          repository_owner?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      github_bot_watcher_clients: {
+        Row: {
+          configuration_id: string;
+          created_at: string;
+          created_by: string | null;
+          expires_at: string;
+          id: string;
+          last_four: string;
+          last_issued_at: string | null;
+          last_used_at: string | null;
+          name: string;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          token_hash: string;
+          token_prefix: string;
+        };
+        Insert: {
+          configuration_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          expires_at: string;
+          id?: string;
+          last_four: string;
+          last_issued_at?: string | null;
+          last_used_at?: string | null;
+          name: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          token_hash: string;
+          token_prefix: string;
+        };
+        Update: {
+          configuration_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string;
+          id?: string;
+          last_four?: string;
+          last_issued_at?: string | null;
+          last_used_at?: string | null;
+          name?: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          token_hash?: string;
+          token_prefix?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'github_bot_watcher_clients_configuration_id_fkey';
+            columns: ['configuration_id'];
+            isOneToOne: false;
+            referencedRelation: 'github_bot_configurations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       healthcare_diagnoses: {
         Row: {
           created_at: string | null;

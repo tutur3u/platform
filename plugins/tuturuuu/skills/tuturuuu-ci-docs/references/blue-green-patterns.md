@@ -59,6 +59,22 @@ infrastructure dashboard changes.
   counts, and safe timestamps/durations; never publish raw logs, raw errors,
   env values, host paths, hostnames, user identifiers, emails, tokens, or
   secret-shaped text.
+- Prefer the root Infrastructure GitHub Bot token issuer for production Check
+  Runs. Use the Infrastructure GitHub Bot page to enable watcher auto-pickup:
+  apps/web issues a dedicated watcher-only client token, writes
+  `blue-green-github-bot-runtime.request.json` in the blue/green control
+  directory, and the watcher moves it into
+  `blue-green-github-bot-runtime.json` under its runtime directory before
+  fetching short-lived GitHub App installation tokens with `checks: write`. A
+  queued runtime credential is the Check Run opt-in signal, so production does
+  not need GitHub-related watcher env for this path. Manual generated-token env
+  remains supported for local/emergency cases with
+  `TUTURUUU_CI_CHECKS_ENABLED=1`, `TUTURUUU_CI_GITHUB_TOKEN_URL`, and
+  `TUTURUUU_CI_GITHUB_TOKEN_CLIENT_TOKEN`; apps/web still stores the GitHub App
+  private key server-side. Static token paths also need
+  `TUTURUUU_CI_CHECKS_ENABLED=1`. Preserve token precedence for compatibility:
+  `TUTURUUU_CI_GITHUB_TOKEN`, explicit generated token endpoint, watcher
+  auto-pickup runtime credential, then `GITHUB_TOKEN`.
 
 ## BuildKit And Compose
 

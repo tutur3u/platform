@@ -7326,6 +7326,9 @@
   "github-bot-settings": {
     "appId": "ID ứng dụng",
     "auditTitle": "Sự kiện kiểm toán",
+    "autoPickupDescription": "Cấp một token client chỉ dành cho watcher và đưa vào thư mục điều khiển blue/green để watcher tự phát hiện endpoint token của apps/web.",
+    "autoPickupQueued": "Đã đưa thông tin auto-pickup của watcher vào hàng đợi.",
+    "autoPickupTitle": "Watcher auto-pickup",
     "clientIssued": "Đã cấp token client watcher",
     "clientName": "Tên client",
     "clientRevoked": "Đã thu hồi token client watcher.",
@@ -7333,6 +7336,7 @@
     "configurationTitle": "Cấu hình GitHub App",
     "description": "Quản lý GitHub App thuộc sở hữu Tuturuuu để watcher blue/green đăng Check Run Tuturuuu CI.",
     "disabled": "Đã tắt",
+    "enableAutoPickup": "Bật auto-pickup cho watcher",
     "enabled": "Đã bật",
     "enabledHint": "Cho phép client watcher tạo token cài đặt GitHub ngắn hạn.",
     "expiresAt": "Hết hạn {value}",

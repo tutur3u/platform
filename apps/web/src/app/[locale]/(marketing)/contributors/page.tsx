@@ -1,7 +1,5 @@
 'use client';
 
-import { createAppAuth } from '@octokit/auth-app';
-import { Octokit } from '@octokit/rest';
 import {
   ArrowRight,
   Calendar,
@@ -93,107 +91,62 @@ const Confetti = dynamic(() => import('react-confetti'), {
   ssr: false,
 });
 
-// Initialize GitHub App authentication
-async function getAuthenticatedOctokit() {
-  const appId = process.env.NEXT_PUBLIC_GITHUB_APP_ID;
-  const privateKey = process.env.NEXT_PUBLIC_GITHUB_APP_PRIVATE_KEY;
-  const installationId = process.env.NEXT_PUBLIC_GITHUB_APP_INSTALLATION_ID;
-
-  if (!appId || !privateKey || !installationId) {
-    console.warn(
-      'GitHub App credentials not found. Using unauthenticated requests.'
-    );
-    return new Octokit();
-  }
-
+async function githubApiJson<T>(path: string): Promise<T | undefined> {
   try {
-    const auth = createAppAuth({
-      appId,
-      privateKey,
-      installationId: Number(installationId),
+    const response = await fetch(`https://api.github.com${path}`, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+      },
     });
 
-    const { token } = await auth({ type: 'installation' });
+    if (!response.ok) {
+      return undefined;
+    }
 
-    return new Octokit({
-      auth: token,
-    });
-  } catch (error) {
-    console.error('Failed to authenticate with GitHub App:', error);
-    return new Octokit();
+    return (await response.json()) as T;
+  } catch {
+    return undefined;
   }
 }
 
 // Fetch GitHub data
 async function fetchGithubRepo(
-  octokit: Octokit,
   owner: string = GITHUB_OWNER,
   repo: string = GITHUB_REPO
 ): Promise<GithubRepo | undefined> {
-  try {
-    const { data } = await octokit.repos.get({
-      owner,
-      repo,
-    });
-
-    return data as GithubRepo;
-  } catch (error) {
-    console.error('Error fetching GitHub repository:', error);
-    return undefined;
-  }
+  return githubApiJson<GithubRepo>(`/repos/${owner}/${repo}`);
 }
 
 async function fetchGithubContributors(
-  octokit: Octokit,
   owner: string = GITHUB_OWNER,
   repo: string = GITHUB_REPO
 ): Promise<GithubContributor[]> {
-  try {
-    const { data } = await octokit.repos.listContributors({
-      owner,
-      repo,
-      per_page: 25,
-    });
-
-    return data as GithubContributor[];
-  } catch (error) {
-    console.error('Error fetching GitHub contributors:', error);
-    return [];
-  }
+  return (
+    (await githubApiJson<GithubContributor[]>(
+      `/repos/${owner}/${repo}/contributors?per_page=25`
+    )) ?? []
+  );
 }
 
 async function fetchGithubUser(
-  octokit: Octokit,
   username: string
 ): Promise<GithubUser | undefined> {
-  try {
-    const { data } = await octokit.users.getByUsername({
-      username,
-    });
-
-    return data as GithubUser;
-  } catch (error) {
-    console.error(`Error fetching GitHub user ${username}:`, error);
-    return undefined;
-  }
+  return githubApiJson<GithubUser>(`/users/${encodeURIComponent(username)}`);
 }
 
 async function fetchPullRequests(
-  octokit: Octokit,
   owner: string = GITHUB_OWNER,
   repo: string = GITHUB_REPO
 ): Promise<number> {
-  try {
-    const { data: searchData } = await octokit.search.issuesAndPullRequests({
-      q: `repo:${owner}/${repo} is:pr`,
-      per_page: 1,
-    });
+  const params = new URLSearchParams({
+    per_page: '1',
+    q: `repo:${owner}/${repo} is:pr`,
+  });
+  const searchData = await githubApiJson<{ total_count: number }>(
+    `/search/issues?${params.toString()}`
+  );
 
-    return searchData.total_count;
-  } catch (error) {
-    console.error('Error fetching GitHub pull requests:', error);
-    return 0;
-  }
+  return searchData?.total_count ?? 0;
 }
 
 // Helper functions for data visualization
@@ -288,29 +241,16 @@ export default function ContributorsPage() {
         const owner = GITHUB_OWNER;
         const repo = GITHUB_REPO;
 
-        const octokit = await getAuthenticatedOctokit();
-
-        const repoData = await fetchGithubRepo(octokit, owner, repo);
-        const contributors = await fetchGithubContributors(
-          octokit,
-          owner,
-          repo
-        );
+        const repoData = await fetchGithubRepo(owner, repo);
+        const contributors = await fetchGithubContributors(owner, repo);
 
         const enrichedContributors = await Promise.all(
           contributors.map(async (contributor, index) => {
             if (index < 25) {
               try {
-                const userDetails = await fetchGithubUser(
-                  octokit,
-                  contributor.login
-                );
+                const userDetails = await fetchGithubUser(contributor.login);
                 return { ...contributor, userDetails };
-              } catch (err) {
-                console.warn(
-                  `Failed to fetch details for ${contributor.login}:`,
-                  err
-                );
+              } catch {
                 return contributor;
               }
             }
@@ -318,7 +258,7 @@ export default function ContributorsPage() {
           })
         );
 
-        const pullRequestsCount = await fetchPullRequests(octokit, owner, repo);
+        const pullRequestsCount = await fetchPullRequests(owner, repo);
 
         const stats: RepoStats = {
           stars: repoData?.stargazers_count || 0,
@@ -333,8 +273,7 @@ export default function ContributorsPage() {
           contributors: enrichedContributors,
           stats,
         });
-      } catch (error) {
-        console.error('Error fetching GitHub data:', error);
+      } catch {
         setGithubData({
           error: 'Failed to fetch GitHub data. Please try again later.',
         });
