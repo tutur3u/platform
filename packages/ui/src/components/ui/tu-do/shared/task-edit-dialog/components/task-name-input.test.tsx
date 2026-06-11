@@ -13,9 +13,13 @@ vi.mock('next-intl', () => ({
 function renderTaskNameInput({
   isCreateMode = true,
   targetCursor = 12,
+  variant = 'fullscreen',
+  onSubmit,
 }: {
   isCreateMode?: boolean;
   targetCursor?: number | null;
+  variant?: 'fullscreen' | 'compact';
+  onSubmit?: () => void;
 } = {}) {
   const editorWrapper = document.createElement('div');
   const editorElement = document.createElement('div');
@@ -37,6 +41,8 @@ function renderTaskNameInput({
     setName: vi.fn(),
     updateName: vi.fn(),
     flushNameUpdate: vi.fn(),
+    variant,
+    onSubmit,
   };
 
   render(<TaskNameInput {...props} />);
@@ -136,5 +142,23 @@ describe('TaskNameInput', () => {
     } finally {
       window.removeEventListener('keydown', windowKeyDown);
     }
+  });
+
+  it('submits from compact mode without focusing the description editor', () => {
+    const onSubmit = vi.fn();
+    const { focusEditor, targetEditorCursorRef, input } = renderTaskNameInput({
+      onSubmit,
+      variant: 'compact',
+    });
+
+    const eventAllowed = fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(eventAllowed).toBe(false);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(targetEditorCursorRef.current).toBe(12);
+
+    vi.runOnlyPendingTimers();
+
+    expect(focusEditor).not.toHaveBeenCalled();
   });
 });

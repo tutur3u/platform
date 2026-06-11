@@ -2,6 +2,7 @@
 
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -19,6 +20,7 @@ interface TaskListSelectorProps {
   selectedListId: string;
   availableLists: TaskList[];
   disabled?: boolean;
+  compact?: boolean;
   onListChange: (listId: string) => void;
 }
 
@@ -28,6 +30,7 @@ export function TaskListSelector({
   selectedListId,
   availableLists,
   disabled = false,
+  compact = false,
   onListChange,
 }: TaskListSelectorProps) {
   const t = useTranslations();
@@ -65,30 +68,43 @@ export function TaskListSelector({
 
   const TriggerIcon = getTaskListTriggerIcon(selectedList);
   const triggerSurfaceClass = getTaskListTriggerSurfaceClass(selectedList);
+  const triggerLabel = selectedList
+    ? translateTaskListNameForDisplay(selectedList.name, nameLabels)
+    : t('ws-task-boards.dialog.field.list');
+  const triggerButton = (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-label={compact ? triggerLabel : undefined}
+      className={cn(
+        'inline-flex shrink-0 items-center border font-medium text-xs transition-colors',
+        compact
+          ? 'h-9 w-9 justify-center rounded-md p-0'
+          : 'h-8 gap-1.5 rounded-lg px-3',
+        selectedList && triggerSurfaceClass
+          ? triggerSurfaceClass
+          : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
+        disabled && 'cursor-not-allowed opacity-50'
+      )}
+    >
+      <TriggerIcon className="h-3.5 w-3.5 shrink-0" />
+      <span className={compact ? 'sr-only' : undefined}>{triggerLabel}</span>
+    </button>
+  );
 
   return (
     <>
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            disabled={disabled}
-            className={cn(
-              'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
-              selectedList && triggerSurfaceClass
-                ? triggerSurfaceClass
-                : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
-              disabled && 'cursor-not-allowed opacity-50'
-            )}
-          >
-            <TriggerIcon className="h-3.5 w-3.5 shrink-0" />
-            <span>
-              {selectedList
-                ? translateTaskListNameForDisplay(selectedList.name, nameLabels)
-                : t('ws-task-boards.dialog.field.list')}
-            </span>
-          </button>
-        </PopoverTrigger>
+        {compact ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{triggerLabel}</TooltipContent>
+          </Tooltip>
+        ) : (
+          <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+        )}
         <PopoverContent align="start" className="w-80 p-0">
           <TaskListPickerPanel
             selectedListId={selectedListId}

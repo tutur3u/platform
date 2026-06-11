@@ -36,11 +36,19 @@ import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Switch } from '@tuturuuu/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { PRIORITY_BADGE_COLORS } from '../../utils/taskConstants';
 import { getPriorityIcon } from '../../utils/taskPriorityUtils';
 import { ClearMenuItem } from '../clear-menu-item';
@@ -139,6 +147,31 @@ interface TaskPropertiesSectionProps {
   disabled?: boolean;
   /** When true, hides fields not supported by drafts (projects, scheduling) */
   isDraftMode?: boolean;
+  /** Compact icon-only controls for the create popover. */
+  variant?: 'default' | 'compact';
+}
+
+function TaskPropertyPopoverTrigger({
+  children,
+  compact,
+  label,
+}: {
+  children: ReactNode;
+  compact: boolean;
+  label: ReactNode;
+}) {
+  if (!compact) {
+    return <PopoverTrigger asChild>{children}</PopoverTrigger>;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <PopoverTrigger asChild>{children}</PopoverTrigger>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 // Calendar hours type options
@@ -325,9 +358,18 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
     schedulingSaving,
     disabled = false,
     isDraftMode = false,
+    variant = 'default',
   } = props;
 
   const t = useTranslations();
+  const isCompact = variant === 'compact';
+  const triggerBaseClass = cn(
+    'inline-flex shrink-0 items-center border font-medium text-xs transition-colors',
+    isCompact
+      ? 'h-9 w-9 justify-center rounded-md p-0'
+      : 'h-8 gap-1.5 rounded-lg px-3'
+  );
+  const compactLabelClass = isCompact ? 'sr-only' : undefined;
 
   const selectedListForSummary = useMemo(
     () =>
@@ -670,163 +712,184 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   );
 
   return (
-    <div className="border-y bg-muted/30">
+    <div className={cn(!isCompact && 'border-y bg-muted/30')}>
       {/* Header with toggle button */}
-      <button
-        type="button"
-        onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
-        className="flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-muted/50 md:px-8"
-      >
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
-              !isMetadataExpanded && '-rotate-90'
-            )}
-          />
-          <span className="shrink-0 font-semibold text-foreground text-sm">
-            {t('ws-task-boards.dialog.properties')}
-          </span>
+      {!isCompact && (
+        <button
+          type="button"
+          onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
+          className="flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-muted/50 md:px-8"
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                !isMetadataExpanded && '-rotate-90'
+              )}
+            />
+            <span className="shrink-0 font-semibold text-foreground text-sm">
+              {t('ws-task-boards.dialog.properties')}
+            </span>
 
-          {/* Summary badges when collapsed */}
-          {!isMetadataExpanded && (
-            <div className="scrollbar-hide ml-2 flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
-              {priority && (
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
-                    PRIORITY_BADGE_COLORS[priority]
-                  )}
-                >
-                  {getPriorityIcon(priority, 'h-2.5 w-2.5')}
-                  {t(`tasks.priority_${priority}`)}
-                </Badge>
-              )}
-              {selectedListId && (
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
-                    listSummarySurfaceClass ??
-                      'border-border bg-muted/50 text-muted-foreground'
-                  )}
-                >
-                  <ListSummaryTriggerIcon className="h-2.5 w-2.5" />
-                  {selectedListForSummary
-                    ? translateTaskListNameForDisplay(
-                        selectedListForSummary.name,
-                        listNameLabels
-                      )
-                    : t('ws-task-boards.dialog.field.list')}
-                </Badge>
-              )}
-              {(startDate || endDate) && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-orange/30 bg-dynamic-orange/15 px-2 font-medium text-[10px] text-dynamic-orange"
-                >
-                  <Calendar className="h-2.5 w-2.5" />
-                  {startDate || endDate
-                    ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.field.start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.field.end_date')}`
-                    : t('ws-task-boards.dialog.field.end_date')}
-                </Badge>
-              )}
-              {estimationPoints != null && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-purple/30 bg-dynamic-purple/15 px-2 font-medium text-[10px] text-dynamic-purple"
-                >
-                  <Timer className="h-2.5 w-2.5" />
-                  {boardConfig?.estimation_type
-                    ? mapEstimationPoints(
-                        estimationPoints,
-                        boardConfig.estimation_type
-                      )
-                    : t('ws-task-boards.dialog.field.estimation')}
-                </Badge>
-              )}
-              {selectedLabels.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-indigo/30 bg-dynamic-indigo/15 px-2 font-medium text-[10px] text-dynamic-indigo"
-                >
-                  <Tag className="h-2.5 w-2.5" />
-                  {selectedLabels.length === 1
-                    ? selectedLabels[0]?.name
-                    : t('common.n_labels', { count: selectedLabels.length })}
-                </Badge>
-              )}
-              {selectedProjects.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-sky/30 bg-dynamic-sky/15 px-2 font-medium text-[10px] text-dynamic-sky"
-                >
-                  <Box className="h-2.5 w-2.5" />
-                  {selectedProjects.length === 1
-                    ? selectedProjects[0]?.name
-                    : t('common.n_projects', {
-                        count: selectedProjects.length,
-                      })}
-                </Badge>
-              )}
-              {selectedAssignees.length > 0 && !isPersonalWorkspace && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/15 px-2 font-medium text-[10px] text-dynamic-cyan"
-                >
-                  <Users className="h-2.5 w-2.5" />
-                  {selectedAssignees.length === 1
-                    ? selectedAssignees[0]?.display_name ||
-                      t('ws-task-boards.dialog.unknown_user')
-                    : t('common.n_assignees', {
-                        count: selectedAssignees.length,
-                      })}
-                </Badge>
-              )}
-              {totalMinutes > 0 && (
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
-                    !disabled && hasUnsavedSchedulingChanges
-                      ? 'border-dynamic-yellow/50 border-dashed bg-dynamic-yellow/15 text-dynamic-yellow'
-                      : 'border-dynamic-teal/30 bg-dynamic-teal/15 text-dynamic-teal'
-                  )}
-                >
-                  {!disabled && hasUnsavedSchedulingChanges ? (
-                    <AlertCircle className="h-2.5 w-2.5" />
-                  ) : (
-                    <CalendarClock className="h-2.5 w-2.5" />
-                  )}
-                  {formatDuration(totalMinutes, t)}
-                  {!disabled && hasUnsavedSchedulingChanges && (
-                    <span className="text-[8px] opacity-75">
-                      {t('ws-task-boards.dialog.unsaved')}
-                    </span>
-                  )}
-                </Badge>
-              )}
-            </div>
-          )}
-        </div>
-      </button>
+            {/* Summary badges when collapsed */}
+            {!isMetadataExpanded && (
+              <div className="scrollbar-hide ml-2 flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
+                {priority && (
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
+                      PRIORITY_BADGE_COLORS[priority]
+                    )}
+                  >
+                    {getPriorityIcon(priority, 'h-2.5 w-2.5')}
+                    {t(`tasks.priority_${priority}`)}
+                  </Badge>
+                )}
+                {selectedListId && (
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
+                      listSummarySurfaceClass ??
+                        'border-border bg-muted/50 text-muted-foreground'
+                    )}
+                  >
+                    <ListSummaryTriggerIcon className="h-2.5 w-2.5" />
+                    {selectedListForSummary
+                      ? translateTaskListNameForDisplay(
+                          selectedListForSummary.name,
+                          listNameLabels
+                        )
+                      : t('ws-task-boards.dialog.field.list')}
+                  </Badge>
+                )}
+                {(startDate || endDate) && (
+                  <Badge
+                    variant="secondary"
+                    className="h-5 shrink-0 gap-1 border border-dynamic-orange/30 bg-dynamic-orange/15 px-2 font-medium text-[10px] text-dynamic-orange"
+                  >
+                    <Calendar className="h-2.5 w-2.5" />
+                    {startDate || endDate
+                      ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.field.start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.field.end_date')}`
+                      : t('ws-task-boards.dialog.field.end_date')}
+                  </Badge>
+                )}
+                {estimationPoints != null && (
+                  <Badge
+                    variant="secondary"
+                    className="h-5 shrink-0 gap-1 border border-dynamic-purple/30 bg-dynamic-purple/15 px-2 font-medium text-[10px] text-dynamic-purple"
+                  >
+                    <Timer className="h-2.5 w-2.5" />
+                    {boardConfig?.estimation_type
+                      ? mapEstimationPoints(
+                          estimationPoints,
+                          boardConfig.estimation_type
+                        )
+                      : t('ws-task-boards.dialog.field.estimation')}
+                  </Badge>
+                )}
+                {selectedLabels.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-5 shrink-0 gap-1 border border-dynamic-indigo/30 bg-dynamic-indigo/15 px-2 font-medium text-[10px] text-dynamic-indigo"
+                  >
+                    <Tag className="h-2.5 w-2.5" />
+                    {selectedLabels.length === 1
+                      ? selectedLabels[0]?.name
+                      : t('common.n_labels', { count: selectedLabels.length })}
+                  </Badge>
+                )}
+                {selectedProjects.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-5 shrink-0 gap-1 border border-dynamic-sky/30 bg-dynamic-sky/15 px-2 font-medium text-[10px] text-dynamic-sky"
+                  >
+                    <Box className="h-2.5 w-2.5" />
+                    {selectedProjects.length === 1
+                      ? selectedProjects[0]?.name
+                      : t('common.n_projects', {
+                          count: selectedProjects.length,
+                        })}
+                  </Badge>
+                )}
+                {selectedAssignees.length > 0 && !isPersonalWorkspace && (
+                  <Badge
+                    variant="secondary"
+                    className="h-5 shrink-0 gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/15 px-2 font-medium text-[10px] text-dynamic-cyan"
+                  >
+                    <Users className="h-2.5 w-2.5" />
+                    {selectedAssignees.length === 1
+                      ? selectedAssignees[0]?.display_name ||
+                        t('ws-task-boards.dialog.unknown_user')
+                      : t('common.n_assignees', {
+                          count: selectedAssignees.length,
+                        })}
+                  </Badge>
+                )}
+                {totalMinutes > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
+                      !disabled && hasUnsavedSchedulingChanges
+                        ? 'border-dynamic-yellow/50 border-dashed bg-dynamic-yellow/15 text-dynamic-yellow'
+                        : 'border-dynamic-teal/30 bg-dynamic-teal/15 text-dynamic-teal'
+                    )}
+                  >
+                    {!disabled && hasUnsavedSchedulingChanges ? (
+                      <AlertCircle className="h-2.5 w-2.5" />
+                    ) : (
+                      <CalendarClock className="h-2.5 w-2.5" />
+                    )}
+                    {formatDuration(totalMinutes, t)}
+                    {!disabled && hasUnsavedSchedulingChanges && (
+                      <span className="text-[8px] opacity-75">
+                        {t('ws-task-boards.dialog.unsaved')}
+                      </span>
+                    )}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        </button>
+      )}
 
       {/* Expandable badges section */}
-      {isMetadataExpanded && (
-        <div className="border-t px-4 py-3 md:px-8">
-          <div className="flex flex-wrap items-center gap-2">
+      {(isCompact || isMetadataExpanded) && (
+        <div
+          className={cn(isCompact ? 'px-0 py-0' : 'border-t px-4 py-3 md:px-8')}
+        >
+          <div
+            className={cn(
+              'flex flex-wrap items-center',
+              isCompact ? 'gap-1.5' : 'gap-2'
+            )}
+          >
             {/* Priority Badge */}
             <Popover
               open={isPriorityPopoverOpen}
               onOpenChange={setIsPriorityPopoverOpen}
             >
-              <PopoverTrigger asChild>
+              <TaskPropertyPopoverTrigger
+                compact={isCompact}
+                label={
+                  priority
+                    ? t(`tasks.priority_${priority}`)
+                    : t('common.priority')
+                }
+              >
                 <button
                   type="button"
                   disabled={disabled}
+                  aria-label={
+                    priority
+                      ? t(`tasks.priority_${priority}`)
+                      : t('common.priority')
+                  }
                   className={cn(
-                    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
+                    triggerBaseClass,
                     priority
                       ? PRIORITY_BADGE_COLORS[priority]
                       : 'border-input bg-background text-foreground hover:bg-muted',
@@ -838,13 +901,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   ) : (
                     <Flag className="h-3.5 w-3.5" />
                   )}
-                  <span>
+                  <span className={compactLabelClass}>
                     {priority
                       ? t(`tasks.priority_${priority}`)
                       : t('common.priority')}
                   </span>
                 </button>
-              </PopoverTrigger>
+              </TaskPropertyPopoverTrigger>
               <PopoverContent align="start" className="w-56 p-0">
                 <div className="p-1">
                   {[
@@ -910,6 +973,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               selectedListId={selectedListId}
               availableLists={availableLists}
               disabled={disabled}
+              compact={isCompact}
               onListChange={onListChange}
             />
 
@@ -918,12 +982,20 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               open={isDueDatePopoverOpen}
               onOpenChange={setIsDueDatePopoverOpen}
             >
-              <PopoverTrigger asChild>
+              <TaskPropertyPopoverTrigger
+                compact={isCompact}
+                label={
+                  startDate || endDate
+                    ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_due_date')}`
+                    : t('ws-task-boards.dialog.dates')
+                }
+              >
                 <button
                   type="button"
                   disabled={disabled}
+                  aria-label={t('ws-task-boards.dialog.dates')}
                   className={cn(
-                    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
+                    triggerBaseClass,
                     startDate || endDate
                       ? 'border-dynamic-orange/30 bg-dynamic-orange/15 text-dynamic-orange hover:border-dynamic-orange/50 hover:bg-dynamic-orange/20'
                       : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
@@ -931,13 +1003,13 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   )}
                 >
                   <Calendar className="h-3.5 w-3.5" />
-                  <span>
+                  <span className={compactLabelClass}>
                     {startDate || endDate
                       ? `${startDate ? new Date(startDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_start_date')} → ${endDate ? new Date(endDate).toLocaleDateString(t('common.locale', { defaultValue: 'en-US' }), { month: 'short', day: 'numeric' }) : t('ws-task-boards.dialog.no_due_date')}`
                       : t('ws-task-boards.dialog.dates')}
                   </span>
                 </button>
-              </PopoverTrigger>
+              </TaskPropertyPopoverTrigger>
               <PopoverContent align="start" className="w-80 p-0">
                 <div className="rounded-lg p-3.5">
                   <div className="space-y-3">
@@ -1057,12 +1129,23 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
               open={isEstimationPopoverOpen}
               onOpenChange={setIsEstimationPopoverOpen}
             >
-              <PopoverTrigger asChild>
+              <TaskPropertyPopoverTrigger
+                compact={isCompact}
+                label={
+                  boardConfig?.estimation_type && estimationPoints != null
+                    ? mapEstimationPoints(
+                        estimationPoints,
+                        boardConfig.estimation_type
+                      )
+                    : t('ws-task-boards.dialog.estimate')
+                }
+              >
                 <button
                   type="button"
                   disabled={disabled}
+                  aria-label={t('ws-task-boards.dialog.estimate')}
                   className={cn(
-                    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
+                    triggerBaseClass,
                     estimationPoints != null
                       ? 'border-dynamic-purple/30 bg-dynamic-purple/15 text-dynamic-purple hover:border-dynamic-purple/50 hover:bg-dynamic-purple/20'
                       : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
@@ -1070,7 +1153,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   )}
                 >
                   <Timer className="h-3.5 w-3.5" />
-                  <span>
+                  <span className={compactLabelClass}>
                     {boardConfig?.estimation_type
                       ? estimationPoints != null
                         ? mapEstimationPoints(
@@ -1081,7 +1164,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       : t('ws-task-boards.dialog.estimate')}
                   </span>
                 </button>
-              </PopoverTrigger>
+              </TaskPropertyPopoverTrigger>
               <PopoverContent align="start" className="w-64 p-0">
                 {!boardConfig?.estimation_type ? (
                   <EmptyStateCard
@@ -1145,12 +1228,24 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                 if (!open) setLabelSearchQuery('');
               }}
             >
-              <PopoverTrigger asChild>
+              <TaskPropertyPopoverTrigger
+                compact={isCompact}
+                label={
+                  selectedLabels.length === 0
+                    ? t('common.labels')
+                    : selectedLabels.length === 1
+                      ? selectedLabels[0]?.name
+                      : t('common.n_labels', {
+                          count: selectedLabels.length,
+                        })
+                }
+              >
                 <button
                   type="button"
                   disabled={disabled}
+                  aria-label={t('common.labels')}
                   className={cn(
-                    'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
+                    triggerBaseClass,
                     selectedLabels.length > 0
                       ? 'border-dynamic-indigo/30 bg-dynamic-indigo/15 text-dynamic-indigo hover:border-dynamic-indigo/50 hover:bg-dynamic-indigo/20'
                       : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
@@ -1158,7 +1253,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   )}
                 >
                   <Tag className="h-3.5 w-3.5" />
-                  <span>
+                  <span className={compactLabelClass}>
                     {selectedLabels.length === 0
                       ? t('common.labels')
                       : selectedLabels.length === 1
@@ -1168,7 +1263,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           })}
                   </span>
                 </button>
-              </PopoverTrigger>
+              </TaskPropertyPopoverTrigger>
               <PopoverContent align="start" className="w-72 p-0">
                 {availableLabels.length === 0 ? (
                   <EmptyStateCard
@@ -1283,12 +1378,24 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   if (!open) setProjectSearchQuery('');
                 }}
               >
-                <PopoverTrigger asChild>
+                <TaskPropertyPopoverTrigger
+                  compact={isCompact}
+                  label={
+                    selectedProjects.length === 0
+                      ? t('common.projects')
+                      : selectedProjects.length === 1
+                        ? selectedProjects[0]?.name
+                        : t('common.n_projects', {
+                            count: selectedProjects.length,
+                          })
+                  }
+                >
                   <button
                     type="button"
                     disabled={disabled}
+                    aria-label={t('common.projects')}
                     className={cn(
-                      'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
+                      triggerBaseClass,
                       selectedProjects.length > 0
                         ? 'border-dynamic-sky/30 bg-dynamic-sky/15 text-dynamic-sky hover:border-dynamic-sky/50 hover:bg-dynamic-sky/20'
                         : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
@@ -1296,7 +1403,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     )}
                   >
                     <Box className="h-3.5 w-3.5" />
-                    <span>
+                    <span className={compactLabelClass}>
                       {selectedProjects.length === 0
                         ? t('common.projects')
                         : selectedProjects.length === 1
@@ -1306,7 +1413,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             })}
                     </span>
                   </button>
-                </PopoverTrigger>
+                </TaskPropertyPopoverTrigger>
                 <PopoverContent align="start" className="w-72 p-0">
                   {taskProjects.length === 0 ? (
                     <EmptyStateCard
@@ -1411,12 +1518,25 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   if (!open) setAssigneeSearchQuery('');
                 }}
               >
-                <PopoverTrigger asChild>
+                <TaskPropertyPopoverTrigger
+                  compact={isCompact}
+                  label={
+                    selectedAssignees.length === 0
+                      ? t('common.assignees')
+                      : selectedAssignees.length === 1
+                        ? selectedAssignees[0]?.display_name ||
+                          t('ws-task-boards.dialog.unknown_user')
+                        : t('common.n_assignees', {
+                            count: selectedAssignees.length,
+                          })
+                  }
+                >
                   <button
                     type="button"
                     disabled={disabled}
+                    aria-label={t('common.assignees')}
                     className={cn(
-                      'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
+                      triggerBaseClass,
                       selectedAssignees.length > 0
                         ? 'border-dynamic-cyan/30 bg-dynamic-cyan/15 text-dynamic-cyan hover:border-dynamic-cyan/50 hover:bg-dynamic-cyan/20'
                         : 'border-border bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-foreground',
@@ -1424,7 +1544,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     )}
                   >
                     <Users className="h-3.5 w-3.5" />
-                    <span>
+                    <span className={compactLabelClass}>
                       {selectedAssignees.length === 0
                         ? t('common.assignees')
                         : selectedAssignees.length === 1
@@ -1435,7 +1555,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             })}
                     </span>
                   </button>
-                </PopoverTrigger>
+                </TaskPropertyPopoverTrigger>
                 <PopoverContent align="start" className="w-72 p-0">
                   {workspaceMembers.length === 0 ? (
                     <div className="p-4 text-center text-muted-foreground text-sm">
@@ -1526,12 +1646,20 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                 open={isSchedulingPopoverOpen}
                 onOpenChange={setIsSchedulingPopoverOpen}
               >
-                <PopoverTrigger asChild>
+                <TaskPropertyPopoverTrigger
+                  compact={isCompact}
+                  label={
+                    totalMinutes > 0
+                      ? formatDuration(totalMinutes, t)
+                      : t('ws-task-boards.dialog.schedule')
+                  }
+                >
                   <button
                     type="button"
                     disabled={disabled}
+                    aria-label={t('ws-task-boards.dialog.schedule')}
                     className={cn(
-                      'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 font-medium text-xs transition-colors',
+                      triggerBaseClass,
                       hasUnsavedSchedulingChanges
                         ? 'border-dynamic-yellow/50 border-dashed bg-dynamic-yellow/10 text-dynamic-yellow hover:border-dynamic-yellow/70 hover:bg-dynamic-yellow/15'
                         : totalDuration
@@ -1545,18 +1673,18 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                     ) : (
                       <CalendarClock className="h-3.5 w-3.5" />
                     )}
-                    <span>
+                    <span className={compactLabelClass}>
                       {totalMinutes > 0
                         ? formatDuration(totalMinutes, t)
                         : t('ws-task-boards.dialog.schedule')}
                     </span>
-                    {!disabled && hasUnsavedSchedulingChanges && (
+                    {!isCompact && !disabled && hasUnsavedSchedulingChanges && (
                       <span className="text-[10px] opacity-75">
                         {t('ws-task-boards.dialog.unsaved')}
                       </span>
                     )}
                   </button>
-                </PopoverTrigger>
+                </TaskPropertyPopoverTrigger>
                 <PopoverContent align="start" className="w-72 p-0">
                   <div className="rounded-lg p-3">
                     <div className="space-y-3">

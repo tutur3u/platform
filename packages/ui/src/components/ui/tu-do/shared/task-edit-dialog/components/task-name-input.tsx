@@ -18,6 +18,8 @@ interface TaskNameInputProps {
   updateName: (value: string) => void;
   flushNameUpdate: () => void;
   disabled?: boolean;
+  variant?: 'fullscreen' | 'compact';
+  onSubmit?: () => void;
 }
 
 export function TaskNameInput({
@@ -31,10 +33,15 @@ export function TaskNameInput({
   updateName,
   flushNameUpdate,
   disabled,
+  variant = 'fullscreen',
+  onSubmit,
 }: TaskNameInputProps) {
   const t = useTranslations('ws-task-boards.dialog');
+  const isCompact = variant === 'compact';
 
   const focusDescriptionEditor = () => {
+    if (isCompact) return;
+
     targetEditorCursorRef.current = null;
 
     setTimeout(() => {
@@ -115,10 +122,14 @@ export function TaskNameInput({
             if (!isCreateMode && e.currentTarget.value.trim()) {
               flushNameUpdate();
             }
+            if (isCompact) {
+              onSubmit?.();
+              return;
+            }
             focusDescriptionEditor();
           }
 
-          if (e.key === 'ArrowDown') {
+          if (!isCompact && e.key === 'ArrowDown') {
             e.preventDefault();
             const input = e.currentTarget;
             const cursorPosition = input.selectionStart ?? 0;
@@ -137,7 +148,7 @@ export function TaskNameInput({
           }
 
           // Right arrow at end of title moves to description
-          if (e.key === 'ArrowRight') {
+          if (!isCompact && e.key === 'ArrowRight') {
             const input = e.currentTarget;
             const cursorPosition = input.selectionStart ?? 0;
             const textLength = input.value.length;
@@ -155,7 +166,11 @@ export function TaskNameInput({
           }
         }}
         placeholder={t('task_name_placeholder')}
-        className="h-auto border-0 bg-transparent px-4 pt-4 pb-2 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 disabled:opacity-100 md:px-8 md:pt-4 md:pb-2 md:text-2xl"
+        className={
+          isCompact
+            ? 'h-11 border-0 bg-transparent px-0 font-semibold text-base text-foreground leading-tight shadow-none transition-colors placeholder:text-muted-foreground/40 focus-visible:outline-0 focus-visible:ring-0 disabled:opacity-100 md:text-lg'
+            : 'h-auto border-0 bg-transparent px-4 pt-4 pb-2 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 disabled:opacity-100 md:px-8 md:pt-4 md:pb-2 md:text-2xl'
+        }
         autoFocus
       />
     </div>
