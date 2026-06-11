@@ -1,26 +1,84 @@
 'use client';
 
 import { AlertCircle, Check, RefreshCw, Sparkles, X } from '@tuturuuu/icons';
+import type { Json } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { BrutalCard } from './shared';
 
-interface Quiz {
+type QuizOption = {
+  id: string;
+  value: string;
+  is_correct: boolean;
+  explanation: string | null;
+};
+type Quiz = {
   id: string;
   question: string;
-  type: string | null;
-  content: any;
-  answer: any;
-  explanation?: string | null;
   score: number;
+  type?: string | null;
+  content?: Json | null;
+  answer?: Json | null;
+  explanation?: string | null;
+  quiz_options?: QuizOption[];
+};
+type SelectedAnswer = boolean | number | null;
+type DisplayOption = {
+  value: string;
+  isCorrect: boolean;
+  explanation: string | null;
+};
+type MatchingPair = {
+  left: string;
+  right: string;
+};
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function getArrayProperty(value: unknown, key: string): unknown[] {
+  const record = asRecord(value);
+  const property = record?.[key];
+  return Array.isArray(property) ? property : [];
+}
+
+function getNumberProperty(value: unknown, key: string): number | null {
+  const property = asRecord(value)?.[key];
+  return typeof property === 'number' ? property : null;
+}
+
+function displayText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return '';
+}
+
+function getMatchingPairs(content: unknown): MatchingPair[] {
+  return getArrayProperty(content, 'pairs')
+    .map((pair) => {
+      const record = asRecord(pair);
+      return {
+        left: displayText(record?.left),
+        right: displayText(record?.right),
+      };
+    })
+    .filter((pair) => pair.left || pair.right);
+}
+
+function getStringItems(content: unknown, key: string): string[] {
+  return getArrayProperty(content, key).map(displayText).filter(Boolean);
 }
 
 export function LearnerQuizzes({ quizzes }: { quizzes: Quiz[] }) {
   const t = useTranslations();
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState<any>(null);
+  const [selectedAnswers, setSelectedAnswers] = useState<SelectedAnswer>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [completed, setCompleted] = useState(false);
@@ -39,35 +97,33 @@ export function LearnerQuizzes({ quizzes }: { quizzes: Quiz[] }) {
     return null;
   }
 
-  const getMultipleChoiceOptions = (quiz: Quiz) => {
-    const contentOptions = Array.isArray(quiz?.content?.options)
-      ? quiz.content.options.filter((o: unknown) => typeof o === 'string')
-      : [];
-    const hasQuizOptions =
-      Array.isArray((quiz as any).quiz_options) &&
-      (quiz as any).quiz_options.length > 0;
+  const getMultipleChoiceOptions = (quiz: Quiz): DisplayOption[] => {
+    const contentOptions = getStringItems(quiz.content, 'options');
+    const quizOptions = quiz.quiz_options ?? [];
+    const correctIndex = getNumberProperty(quiz.answer, 'correctIndex');
+    const hasQuizOptions = quizOptions.length > 0;
 
     if (
       contentOptions.length > 0 &&
-      (!hasQuizOptions || typeof quiz.answer?.correctIndex === 'number')
+      (!hasQuizOptions || correctIndex !== null)
     ) {
       return contentOptions.map((value: string, index: number) => ({
         value,
-        isCorrect:
-          typeof quiz.answer?.correctIndex === 'number'
-            ? quiz.answer.correctIndex === index
-            : false,
+        isCorrect: correctIndex === index,
         explanation: null,
       }));
     }
-    return ((quiz as any).quiz_options ?? []).map((o: any) => ({
-      value: o?.value ?? '',
-      isCorrect: Boolean(o?.is_correct),
-      explanation: o?.explanation ?? null,
+
+    return quizOptions.map((option) => ({
+      value: option.value,
+      isCorrect: option.is_correct,
+      explanation: option.explanation,
     }));
   };
 
   const options = getMultipleChoiceOptions(currentQuiz);
+  const matchingPairs = getMatchingPairs(currentQuiz.content);
+  const orderingItems = getStringItems(currentQuiz.content, 'items');
 
   const handleSelectOption = (optionIdx: number) => {
     if (isSubmitted) return;
@@ -83,7 +139,7 @@ export function LearnerQuizzes({ quizzes }: { quizzes: Quiz[] }) {
     if (!currentQuiz) return false;
 
     if (currentQuiz.type === 'true_false') {
-      const correctVal = currentQuiz.answer?.correct ?? false;
+      const correctVal = asRecord(currentQuiz.answer)?.correct ?? false;
       return (
         String(selectedAnswers).toLowerCase() ===
         String(correctVal).toLowerCase()
@@ -91,6 +147,7 @@ export function LearnerQuizzes({ quizzes }: { quizzes: Quiz[] }) {
     }
 
     if (!currentQuiz.type || currentQuiz.type === 'multiple_choice') {
+      if (typeof selectedAnswers !== 'number') return false;
       const opts = getMultipleChoiceOptions(currentQuiz);
       const selectedOpt = opts[selectedAnswers];
       return selectedOpt ? selectedOpt.isCorrect : false;
@@ -184,7 +241,7 @@ export function LearnerQuizzes({ quizzes }: { quizzes: Quiz[] }) {
         {/* Multiple Choice Rendering */}
         {(!currentQuiz.type || currentQuiz.type === 'multiple_choice') && (
           <div className="mt-6 grid gap-3">
-            {options.map((option: any, idx: number) => {
+            {options.map((option, idx) => {
               const isSelected = selectedAnswers === idx;
 
               let buttonStyle = 'bg-background hover:bg-muted/10';
@@ -230,7 +287,7 @@ export function LearnerQuizzes({ quizzes }: { quizzes: Quiz[] }) {
             {[true, false].map((val) => {
               const isSelected = selectedAnswers === val;
               const isCorrectVal =
-                String(currentQuiz.answer?.correct).toLowerCase() ===
+                String(asRecord(currentQuiz.answer)?.correct).toLowerCase() ===
                 String(val).toLowerCase();
 
               let buttonStyle = 'bg-background hover:bg-muted/10';
@@ -281,7 +338,7 @@ export function LearnerQuizzes({ quizzes }: { quizzes: Quiz[] }) {
 
             {currentQuiz.type === 'matching' && (
               <div className="grid gap-2">
-                {currentQuiz.content?.pairs?.map((pair: any, pidx: number) => (
+                {matchingPairs.map((pair, pidx) => (
                   <div
                     key={pidx}
                     className="flex items-center justify-between border-2 border-border bg-muted/20 p-3 text-sm shadow-[2px_2px_0_var(--border)]"
@@ -298,19 +355,17 @@ export function LearnerQuizzes({ quizzes }: { quizzes: Quiz[] }) {
 
             {currentQuiz.type === 'ordering' && (
               <div className="grid gap-2">
-                {currentQuiz.content?.items?.map(
-                  (item: string, iidx: number) => (
-                    <div
-                      key={iidx}
-                      className="flex items-center gap-3 border-2 border-border bg-muted/20 p-3 text-sm shadow-[2px_2px_0_var(--border)]"
-                    >
-                      <span className="flex h-5 w-5 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
-                        {iidx + 1}
-                      </span>
-                      <span className="font-bold">{item}</span>
-                    </div>
-                  )
-                )}
+                {orderingItems.map((item, iidx) => (
+                  <div
+                    key={iidx}
+                    className="flex items-center gap-3 border-2 border-border bg-muted/20 p-3 text-sm shadow-[2px_2px_0_var(--border)]"
+                  >
+                    <span className="flex h-5 w-5 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
+                      {iidx + 1}
+                    </span>
+                    <span className="font-bold">{item}</span>
+                  </div>
+                ))}
               </div>
             )}
 
