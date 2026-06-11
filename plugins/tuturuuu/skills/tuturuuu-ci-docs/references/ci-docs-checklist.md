@@ -13,6 +13,9 @@ Use this checklist when changing CI, validators, docs, or repo automation.
 - Keep staging Supabase migration CI on `supabase db push --include-all`;
   production migration CI stays prerequisite-gated and uses the normal push
   unless that rollout rule changes.
+- Keep `vercel-preview-platform.yaml` on a protected `main` push trigger because
+  `supabase-staging.yaml` depends on its completed workflow-run event; other
+  preview Vercel workflows remain trusted manual-dispatch only.
 - For repo-local Codex plugins, keep `.agents/plugins/marketplace.json` present and pointed at `./plugins/<plugin-name>`.
 
 ## Docs

@@ -654,11 +654,15 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
 
     const [, target, app] = match;
     const isPreview = target === 'preview';
+    const isPlatformPreview = workflowName === 'vercel-preview-platform.yaml';
     const jobName = isPreview ? 'Deploy-Preview' : 'Deploy-Production';
     const expectedEnvironment = `vercel-${target}-${app}`;
-    const expectedRefGuard = isPreview
-      ? /github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/main'/
-      : /github\.ref == 'refs\/heads\/production'/;
+    const expectedRefGuard =
+      isPreview && isPlatformPreview
+        ? /github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'[\s\S]*github\.event_name == 'workflow_dispatch'[\s\S]*github\.ref == 'refs\/heads\/main'/
+        : isPreview
+          ? /github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/main'/
+          : /github\.ref == 'refs\/heads\/production'/;
     const projectSecret = projectSecretsByApp[app];
 
     assert.ok(
@@ -692,11 +696,19 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
     assert.match(deployJob, new RegExp(`environment: ${expectedEnvironment}`));
 
     if (isPreview) {
-      assert.doesNotMatch(
-        header,
-        /\n {2}push:/,
-        `${workflowName} must not expose deployment secrets to branch push workflows`
-      );
+      if (isPlatformPreview) {
+        assert.match(
+          header,
+          /\n {2}push:\n {4}branches:\n {6}- main\n/,
+          'platform preview must expose deployment secrets only to protected main push code'
+        );
+      } else {
+        assert.doesNotMatch(
+          header,
+          /\n {2}push:/,
+          `${workflowName} must not expose deployment secrets to branch push workflows`
+        );
+      }
       assert.match(header, /\n {2}workflow_dispatch:\n/);
       assert.match(header, /\n {6}preview_ref:\n/);
       assert.match(
@@ -706,8 +718,12 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
       );
       assert.match(
         deployJob,
-        /ref: \$\{\{ inputs\.preview_ref \}\}/,
-        `${workflowName} must check out the manually approved preview ref`
+        isPlatformPreview
+          ? /ref: \$\{\{ github\.event\.inputs\.preview_ref \|\| github\.sha \}\}/
+          : /ref: \$\{\{ inputs\.preview_ref \}\}/,
+        isPlatformPreview
+          ? `${workflowName} must check out the protected push SHA or manually approved preview ref`
+          : `${workflowName} must check out the manually approved preview ref`
       );
     }
 

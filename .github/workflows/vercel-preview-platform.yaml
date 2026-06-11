@@ -1,5 +1,8 @@
 name: Vercel Platform Preview Deployment
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       preview_ref:
@@ -21,7 +24,16 @@ jobs:
 
   Deploy-Preview:
     needs: [check-ci]
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && contains(format(',{0},', vars.TRUSTED_PREVIEW_DEPLOY_ACTORS), format(',{0},', github.actor)) && needs.check-ci.outputs.should_run == 'true'
+    if: >-
+      needs.check-ci.outputs.should_run == 'true' &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/main' &&
+          contains(format(',{0},', vars.TRUSTED_PREVIEW_DEPLOY_ACTORS), format(',{0},', github.actor))
+        )
+      )
     environment: vercel-preview-platform
     runs-on: ubuntu-latest
     permissions:
@@ -32,12 +44,12 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 2
-          ref: ${{ inputs.preview_ref }}
+          ref: ${{ github.event.inputs.preview_ref || github.sha }}
 
-      - name: Confirm preview ref
+      - name: Confirm preview target
         id: check_commits
         run: |
-          echo "Deploying preview ref ${{ inputs.preview_ref }}."
+          echo "Deploying preview ref ${{ github.event.inputs.preview_ref || github.sha }}."
           echo "skip_build=false" >> $GITHUB_OUTPUT
 
       - name: Setup bun
