@@ -69,7 +69,7 @@ export async function GET(req: Request, { params }: Params) {
     'id, display_name, full_name, avatar_url, archived, archived_until, note';
   const publicFields = canViewPublicInfo ? ', birthday, gender' : '';
   const personalFields = canViewPersonalInfo ? ', email, phone' : '';
-  const selectQuery = `workspace_users!inner(${baseFields}${publicFields}${personalFields}), role`;
+  const selectQuery = `workspace_users!workspace_user_roles_users_user_id_fkey!inner(${baseFields}${publicFields}${personalFields}), role`;
 
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')

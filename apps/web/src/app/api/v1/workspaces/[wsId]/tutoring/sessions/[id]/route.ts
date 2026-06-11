@@ -29,7 +29,9 @@ async function isGroupTeacher(
 ) {
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
-    .select('user_id,user:workspace_users!inner(ws_id)')
+    .select(
+      'user_id,user:workspace_users!workspace_user_roles_users_user_id_fkey!inner(ws_id)'
+    )
     .eq('group_id', groupId)
     .eq('user_id', teacherUserId)
     .eq('role', 'TEACHER')

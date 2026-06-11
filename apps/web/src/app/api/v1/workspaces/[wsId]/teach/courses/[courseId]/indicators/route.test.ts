@@ -237,6 +237,9 @@ describe('Teach course indicators route', () => {
       'group_id',
       mocks.ids.courseId
     );
+    expect(mocks.queries.members.select).toHaveBeenCalledWith(
+      'user_id, workspace_users!workspace_user_roles_users_user_id_fkey!inner(id)'
+    );
     expect(mocks.queries.members.eq).toHaveBeenCalledWith(
       'workspace_users.ws_id',
       mocks.ids.workspaceId

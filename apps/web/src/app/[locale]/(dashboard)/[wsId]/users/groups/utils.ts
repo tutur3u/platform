@@ -149,7 +149,7 @@ export async function fetchManagersForGroups(
   const { data: managersData, error: managersError } = await supabase
     .from('workspace_user_groups_users')
     .select(
-      'group_id, user:workspace_users!inner(id, full_name, avatar_url, display_name, email, workspace_user_linked_users(platform_user_id))'
+      'group_id, user:workspace_users!workspace_user_roles_users_user_id_fkey!inner(id, full_name, avatar_url, display_name, email, workspace_user_linked_users(platform_user_id))'
     )
     .in('group_id', groupIds)
     .eq('role', 'TEACHER');

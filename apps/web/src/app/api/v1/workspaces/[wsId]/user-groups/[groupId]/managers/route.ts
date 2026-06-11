@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -22,13 +23,15 @@ export async function GET(req: Request, { params }: Params) {
 
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
-    .select('user:workspace_users!inner(id, full_name, ws_id)')
+    .select(
+      'user:workspace_users!workspace_user_roles_users_user_id_fkey!inner(id, full_name, ws_id)'
+    )
     .eq('group_id', groupId)
     .eq('role', 'TEACHER')
     .eq('user.ws_id', wsId);
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error fetching group managers:', error);
     return NextResponse.json(
       { message: 'Error fetching group managers' },
       { status: 500 }

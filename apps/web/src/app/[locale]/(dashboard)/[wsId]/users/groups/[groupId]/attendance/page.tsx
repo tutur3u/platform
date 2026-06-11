@@ -114,7 +114,9 @@ async function getInitialAttendanceData(
   // Members (basic profile info)
   const { data: membersRows } = await sbAdmin
     .from('workspace_user_groups_users')
-    .select('workspace_users!inner(*), role')
+    .select(
+      'workspace_users!workspace_user_roles_users_user_id_fkey!inner(*), role'
+    )
     .eq('group_id', groupId);
 
   const members = await Promise.all(

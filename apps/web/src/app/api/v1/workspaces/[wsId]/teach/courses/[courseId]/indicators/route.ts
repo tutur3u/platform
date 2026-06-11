@@ -59,7 +59,9 @@ async function validateIndicatorValueTargets({
       .in('id', indicatorIds),
     db
       .from('workspace_user_groups_users')
-      .select('user_id, workspace_users!inner(id)')
+      .select(
+        'user_id, workspace_users!workspace_user_roles_users_user_id_fkey!inner(id)'
+      )
       .eq('group_id', courseId)
       .in('user_id', userIds)
       .eq('workspace_users.ws_id', wsId)

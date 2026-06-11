@@ -228,7 +228,9 @@ export async function listGroupTeacherIds({
 
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
-    .select('user_id,user:workspace_users!inner(ws_id)')
+    .select(
+      'user_id,user:workspace_users!workspace_user_roles_users_user_id_fkey!inner(ws_id)'
+    )
     .eq('group_id', groupId)
     .in('user_id', teacherUserIds)
     .eq('role', 'TEACHER')
