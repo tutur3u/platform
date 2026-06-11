@@ -203,6 +203,9 @@ export function CheckoutPanel({
   isCheckout,
   isSubmitting,
   onSubmit,
+  reserveLabel,
+  reservedCopy,
+  reservingLabel,
   storeSlug,
   total,
 }: {
@@ -211,6 +214,9 @@ export function CheckoutPanel({
   isCheckout: boolean;
   isSubmitting: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  reserveLabel?: string;
+  reservedCopy?: string;
+  reservingLabel?: string;
   storeSlug: string;
   total: number;
 }) {
@@ -219,7 +225,9 @@ export function CheckoutPanel({
   return (
     <aside className="h-fit rounded-lg border border-border bg-card p-4 shadow-sm">
       <p className="font-semibold">{t('cart')}</p>
-      <p className="mt-2 text-muted-foreground text-sm">{t('reservedCopy')}</p>
+      <p className="mt-2 text-muted-foreground text-sm">
+        {reservedCopy ?? t('reservedCopy')}
+      </p>
       <div className="mt-4 flex items-center justify-between border-border border-t pt-4">
         <span className="text-muted-foreground text-sm">{t('total')}</span>
         <span className="font-semibold">{price(total, currencyCode)}</span>
@@ -260,7 +268,9 @@ export function CheckoutPanel({
             disabled={cartCount === 0 || isSubmitting}
             type="submit"
           >
-            {isSubmitting ? t('reserving') : t('reserve')}
+            {isSubmitting
+              ? (reservingLabel ?? t('reserving'))
+              : (reserveLabel ?? t('reserve'))}
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>

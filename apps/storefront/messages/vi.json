@@ -5,6 +5,10 @@
     "cart": "Giỏ hàng",
     "checkout": "Thanh toán",
     "checkoutError": "Không thể bắt đầu thanh toán Polar.",
+    "demoBadge": "Demo thử nghiệm",
+    "demoReserve": "Mô phỏng thanh toán",
+    "demoReservedCopy": "Demo tạm thời này mô phỏng thanh toán cục bộ mà không thay đổi tồn kho hoặc mở Polar.",
+    "demoReserving": "Đang mô phỏng thanh toán...",
     "emptyCart": "Thêm ít nhất một mặt hàng trước khi thanh toán.",
     "fallbackDescription": "Có sẵn từ cửa hàng của workspace này.",
     "form": {
