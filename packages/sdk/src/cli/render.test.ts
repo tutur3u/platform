@@ -196,6 +196,96 @@ describe('CLI rendering', () => {
     expect(output).not.toMatch(/May 8, 2026|8 May 2026/);
   });
 
+  it('renders finance wallet checkpoint summaries and interval statuses', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    render(
+      {
+        data: [
+          {
+            actual_balance: 1250,
+            checked_at: '2026-06-11T00:00:00.000Z',
+            currency: 'USD',
+            current_variance: 5,
+            id: 'checkpoint-2',
+            ledger_balance: 1245,
+            original_variance: 5,
+            wallet_id: 'wallet-1',
+          },
+        ],
+        intervals: [
+          {
+            actual_delta: 50,
+            end_checked_at: '2026-06-11T00:00:00.000Z',
+            interval_variance: 0,
+            is_clean: true,
+            ledger_delta: 50,
+            start_checked_at: '2026-06-01T00:00:00.000Z',
+            transaction_count: 2,
+          },
+        ],
+      },
+      { financeResource: 'checkpoints', group: 'finance' }
+    );
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Checkpoints');
+    expect(output).toContain('Intervals');
+    expect(output).toContain('1,250');
+    expect(output).toContain('clean');
+  });
+
+  it('renders finance checkpoint total summaries', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    render(
+      {
+        latest_checkpoints: [
+          {
+            actual_balance: 100,
+            checked_at: '2026-06-11T00:00:00.000Z',
+            currency: 'USD',
+            current_variance: 2,
+            id: 'checkpoint-1',
+            ledger_balance: 98,
+            original_variance: 2,
+            wallet_id: 'wallet-1',
+          },
+        ],
+        totals_by_currency: [
+          {
+            actual_total: 100,
+            checkpoint_count: 1,
+            currency: 'USD',
+            ledger_total: 98,
+            variance_total: 2,
+          },
+        ],
+        wallets: [
+          {
+            balance: 98,
+            currency: 'USD',
+            id: 'wallet-1',
+            name: 'Cash',
+            type: 'STANDARD',
+          },
+        ],
+      },
+      { financeResource: 'checkpoint-summary', group: 'finance' }
+    );
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Wallets');
+    expect(output).toContain('Latest Checkpoints');
+    expect(output).toContain('Totals');
+    expect(output).toContain('Cash');
+    expect(output).toContain('USD');
+  });
+
   it('shows per-task workspace names for mixed workspace task rows', () => {
     const write = vi
       .spyOn(process.stdout, 'write')

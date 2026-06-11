@@ -1,6 +1,7 @@
 export type FinanceResource =
   | 'budgets'
   | 'categories'
+  | 'checkpoints'
   | 'recurring'
   | 'tags'
   | 'transfers'
@@ -17,6 +18,11 @@ export function normalizeFinanceResource(
     case 'category':
     case 'categories':
       return 'categories';
+    case 'checkpoint':
+    case 'checkpoints':
+    case 'wallet-checkpoint':
+    case 'wallet-checkpoints':
+      return 'checkpoints';
     case 'recurring':
     case 'recurring-transaction':
     case 'recurring-transactions':

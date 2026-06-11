@@ -512,6 +512,134 @@ describe('TuturuuuUserClient', () => {
     );
   });
 
+  it('supports finance wallet checkpoint helpers', async () => {
+    const checkpoint = {
+      actual_balance: 100,
+      checked_at: '2026-06-11T00:00:00.000Z',
+      id: 'checkpoint/1',
+      wallet_id: 'wallet/1',
+    };
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({
+          latest_checkpoints: [],
+          totals_by_currency: [],
+          wallets: [],
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({ data: [], intervals: [], latest: null })
+      )
+      .mockResolvedValueOnce(Response.json(checkpoint))
+      .mockResolvedValueOnce(
+        Response.json({ data: [checkpoint], intervals: [], latest: checkpoint })
+      )
+      .mockResolvedValueOnce(
+        Response.json({ ...checkpoint, actual_balance: 101 })
+      )
+      .mockResolvedValueOnce(Response.json({ message: 'Checkpoint deleted' }))
+      .mockResolvedValueOnce(
+        Response.json({ data: [checkpoint], totals_by_currency: [] })
+      );
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.finance.getWalletCheckpointSummary('ws 1');
+    await client.finance.listWalletCheckpoints('ws 1', 'wallet/1', {
+      limit: 10,
+    });
+    await client.finance.createWalletCheckpoint('ws 1', 'wallet/1', {
+      actual_balance: 100,
+      checked_at: '2026-06-11T00:00:00.000Z',
+      note: 'Monthly audit',
+    });
+    await client.finance.getWalletCheckpoint(
+      'ws 1',
+      'wallet/1',
+      'checkpoint/1'
+    );
+    await client.finance.updateWalletCheckpoint(
+      'ws 1',
+      'wallet/1',
+      'checkpoint/1',
+      {
+        actual_balance: 101,
+      }
+    );
+    await client.finance.deleteWalletCheckpoint(
+      'ws 1',
+      'wallet/1',
+      'checkpoint/1'
+    );
+    await client.finance.createWalletCheckpointBatch('ws 1', {
+      checked_at: '2026-06-11T00:00:00.000Z',
+      entries: [{ actual_balance: 100, wallet_id: 'wallet/1' }],
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://tuturuuu.com/api/workspaces/ws%201/wallets/checkpoints',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints?limit=10',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints',
+      expect.objectContaining({
+        body: JSON.stringify({
+          actual_balance: 100,
+          checked_at: '2026-06-11T00:00:00.000Z',
+          note: 'Monthly audit',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints/checkpoint%2F1',
+      expect.objectContaining({
+        body: JSON.stringify({ actual_balance: 101 }),
+        cache: 'no-store',
+        method: 'PATCH',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      'https://tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints/checkpoint%2F1',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'DELETE',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      7,
+      'https://tuturuuu.com/api/workspaces/ws%201/wallets/checkpoints',
+      expect.objectContaining({
+        body: JSON.stringify({
+          checked_at: '2026-06-11T00:00:00.000Z',
+          entries: [{ actual_balance: 100, wallet_id: 'wallet/1' }],
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
   it('adds pagination metadata to finance transaction exports', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({

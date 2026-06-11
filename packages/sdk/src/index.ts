@@ -82,6 +82,14 @@ export type {
   TransactionCategoryPayload,
   TransactionExportQuery,
   TransactionPayload,
+  WalletCheckpoint,
+  WalletCheckpointBatchPayload,
+  WalletCheckpointCurrencyTotal,
+  WalletCheckpointInterval,
+  WalletCheckpointListResponse,
+  WalletCheckpointPayload,
+  WalletCheckpointSummaryResponse,
+  WalletCheckpointSummaryWallet,
   WalletPayload,
 } from './platform-finance';
 export { FinanceClient } from './platform-finance';

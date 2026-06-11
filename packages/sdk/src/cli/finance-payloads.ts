@@ -9,6 +9,8 @@ import type {
   TransactionCategoryPayload,
   TransactionExportQuery,
   TransactionPayload,
+  WalletCheckpointBatchPayload,
+  WalletCheckpointPayload,
   WalletPayload,
 } from '../platform-finance';
 import { type FlagValue, getFlag, parseCsv } from './args';
@@ -52,6 +54,20 @@ function parseBoolean(value: FlagValue | undefined) {
     default:
       return undefined;
   }
+}
+
+function parseProvidedFinanceNumber(value: string, label: string) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${label} must be a finite number.`);
+  }
+  return parsed;
+}
+
+function parseOptionalFinanceNumber(value: string | undefined, label: string) {
+  return value === undefined
+    ? undefined
+    : parseProvidedFinanceNumber(value, label);
 }
 
 function assignDefined<T extends Record<string, unknown>>(
@@ -120,6 +136,163 @@ export function getWalletPayload(
   );
   assignDefined(payload, 'type', pickFinanceString(flags, 'type'));
   return mergePayload(payload, flags) as WalletPayload;
+}
+
+function getCheckpointCheckedAt(flags: Record<string, FlagValue>) {
+  return normalizeCliDateTime(
+    pickFinanceString(flags, 'checked-at', 'date', 'at'),
+    pickCliTimeZone(flags)
+  );
+}
+
+function getCheckpointActualBalance(flags: Record<string, FlagValue>) {
+  return parseOptionalFinanceNumber(
+    pickFinanceString(flags, 'actual-balance', 'actual', 'amount', 'balance'),
+    '--actual-balance'
+  );
+}
+
+export function getCheckpointPayload(flags: Record<string, FlagValue>) {
+  const payload: Record<string, unknown> = {};
+  assignDefined(payload, 'actual_balance', getCheckpointActualBalance(flags));
+  assignDefined(payload, 'checked_at', getCheckpointCheckedAt(flags));
+  assignDefined(payload, 'note', pickFinanceString(flags, 'note'));
+  return mergePayload(payload, flags) as unknown as WalletCheckpointPayload;
+}
+
+function parseCheckpointEntryRecord(
+  value: unknown,
+  index: number,
+  fallbackNote?: string
+): WalletCheckpointBatchPayload['entries'][number] {
+  if (!value || typeof value !== 'object') {
+    throw new Error(`Checkpoint entry ${index + 1} must be an object.`);
+  }
+
+  const record = value as Record<string, unknown>;
+  const walletId =
+    typeof record.wallet_id === 'string'
+      ? record.wallet_id
+      : typeof record.walletId === 'string'
+        ? record.walletId
+        : undefined;
+  const rawBalance =
+    record.actual_balance ?? record.actualBalance ?? record.amount;
+  const note =
+    typeof record.note === 'string' || record.note === null
+      ? record.note
+      : fallbackNote;
+
+  if (!walletId) {
+    throw new Error(`Checkpoint entry ${index + 1} is missing wallet_id.`);
+  }
+
+  if (rawBalance === undefined) {
+    throw new Error(`Checkpoint entry ${index + 1} is missing actual_balance.`);
+  }
+
+  return {
+    actual_balance: parseProvidedFinanceNumber(
+      String(rawBalance),
+      `checkpoint entry ${index + 1} actual_balance`
+    ),
+    ...(note === undefined ? {} : { note }),
+    wallet_id: walletId,
+  };
+}
+
+function parseCheckpointEntriesJson(
+  value: string | undefined,
+  fallbackNote?: string
+) {
+  if (!value) return undefined;
+  const parsed = JSON.parse(value) as unknown;
+
+  if (!Array.isArray(parsed)) {
+    throw new Error('--entries-json must be a JSON array.');
+  }
+
+  return parsed.map((entry, index) =>
+    parseCheckpointEntryRecord(entry, index, fallbackNote)
+  );
+}
+
+function parseCheckpointBalances(value: string | undefined, note?: string) {
+  if (!value) return undefined;
+
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry, index) => {
+      const separatorIndex =
+        entry.indexOf('=') >= 0 ? entry.indexOf('=') : entry.indexOf(':');
+      if (separatorIndex <= 0) {
+        throw new Error(
+          `Checkpoint balance entry ${index + 1} must use wallet_id=amount.`
+        );
+      }
+
+      const walletId = entry.slice(0, separatorIndex).trim();
+      const amount = entry.slice(separatorIndex + 1).trim();
+      if (!walletId) {
+        throw new Error(
+          `Checkpoint balance entry ${index + 1} is missing wallet_id.`
+        );
+      }
+      if (!amount) {
+        throw new Error(
+          `Checkpoint balance entry ${index + 1} is missing amount.`
+        );
+      }
+
+      return {
+        actual_balance: parseProvidedFinanceNumber(
+          amount,
+          `checkpoint balance entry ${index + 1}`
+        ),
+        ...(note === undefined ? {} : { note }),
+        wallet_id: walletId,
+      };
+    });
+}
+
+export function getCheckpointBatchPayload(flags: Record<string, FlagValue>) {
+  const note = pickFinanceString(flags, 'note');
+  const entriesJson = pickFinanceString(flags, 'entries-json');
+  const balances = pickFinanceString(flags, 'balances', 'wallet-balances');
+
+  if (entriesJson && balances) {
+    throw new Error('Use either --entries-json or --balances, not both.');
+  }
+
+  const entries =
+    parseCheckpointEntriesJson(entriesJson, note) ??
+    parseCheckpointBalances(balances, note);
+  const payload: Record<string, unknown> = {};
+  assignDefined(payload, 'checked_at', getCheckpointCheckedAt(flags));
+  assignDefined(payload, 'entries', entries);
+
+  const merged = mergePayload(
+    payload,
+    flags
+  ) as unknown as WalletCheckpointBatchPayload;
+  if (!Array.isArray(merged.entries) || merged.entries.length === 0) {
+    throw new Error(
+      'Checkpoint batch requires --balances, --entries-json, or --json-payload entries.'
+    );
+  }
+
+  return merged;
+}
+
+export function getCheckpointListQuery(flags: Record<string, FlagValue>) {
+  const limit = parseOptionalFinanceNumber(
+    pickFinanceString(flags, 'limit', 'page-size'),
+    '--limit'
+  );
+
+  return limit === undefined ? undefined : { limit };
 }
 
 export function getTransactionPayload(flags: Record<string, FlagValue>) {

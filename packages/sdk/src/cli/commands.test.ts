@@ -80,6 +80,10 @@ describe('CLI commands', () => {
     return path;
   }
 
+  const walletIdA = '11111111-1111-4111-8111-111111111111';
+  const walletIdB = '22222222-2222-4222-8222-222222222222';
+  const checkpointId = '33333333-3333-4333-8333-333333333333';
+
   it('switches hosts and clears saved session context when the origin changes', async () => {
     const configPath = await writeTestConfig({
       baseUrl: 'https://tuturuuu.com',
@@ -210,6 +214,237 @@ describe('CLI commands', () => {
     );
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('"balance": 150')
+    );
+  });
+
+  it('creates wallet checkpoints with timezone-normalized checked_at values', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        actual_balance: 123.45,
+        checked_at: '2026-06-10T17:00:00.000Z',
+        id: checkpointId,
+        wallet_id: walletIdA,
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'finance',
+      'checkpoints',
+      'create',
+      '--wallet',
+      walletIdA,
+      '--actual-balance',
+      '123.45',
+      '--checked-at',
+      '2026-06-11',
+      '--timezone',
+      'Asia/Ho_Chi_Minh',
+      '--note',
+      'Monthly audit',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          actual_balance: 123.45,
+          checked_at: '2026-06-10T17:00:00.000Z',
+          note: 'Monthly audit',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('creates all-wallet checkpoint batches from balances pairs', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        data: [],
+        totals_by_currency: [],
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'finance',
+      'checkpoints',
+      'batch',
+      '--checked-at',
+      '2026-06-11',
+      '--timezone',
+      'Asia/Ho_Chi_Minh',
+      '--balances',
+      `${walletIdA}=100.1,${walletIdB}=-25`,
+      '--note',
+      'Quick total check',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/workspaces/ws-1/wallets/checkpoints',
+      expect.objectContaining({
+        body: JSON.stringify({
+          checked_at: '2026-06-10T17:00:00.000Z',
+          entries: [
+            {
+              actual_balance: 100.1,
+              note: 'Quick total check',
+              wallet_id: walletIdA,
+            },
+            {
+              actual_balance: -25,
+              note: 'Quick total check',
+              wallet_id: walletIdB,
+            },
+          ],
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('routes checkpoint list, get, update, delete, and summary commands', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const checkpoint = {
+      actual_balance: 100,
+      checked_at: '2026-06-11T00:00:00.000Z',
+      currency: 'USD',
+      id: checkpointId,
+      ledger_balance: 98,
+      wallet_id: walletIdA,
+    };
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json({ data: [checkpoint], intervals: [], latest: checkpoint })
+      )
+      .mockResolvedValueOnce(
+        Response.json({ data: [checkpoint], intervals: [], latest: checkpoint })
+      )
+      .mockResolvedValueOnce(
+        Response.json({ ...checkpoint, actual_balance: 101 })
+      )
+      .mockResolvedValueOnce(Response.json({ message: 'Checkpoint deleted' }))
+      .mockResolvedValueOnce(
+        Response.json({
+          latest_checkpoints: [checkpoint],
+          totals_by_currency: [],
+          wallets: [],
+        })
+      );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'finance',
+      'checkpoints',
+      'list',
+      '--wallet',
+      walletIdA,
+      '--limit',
+      '10',
+      '--json',
+      '--no-update-check',
+    ]);
+    await runCli([
+      'finance',
+      'checkpoints',
+      'get',
+      checkpointId,
+      '--wallet',
+      walletIdA,
+      '--json',
+      '--no-update-check',
+    ]);
+    await runCli([
+      'finance',
+      'checkpoints',
+      'update',
+      checkpointId,
+      '--wallet',
+      walletIdA,
+      '--amount',
+      '101',
+      '--json',
+      '--no-update-check',
+    ]);
+    await runCli([
+      'finance',
+      'checkpoints',
+      'delete',
+      checkpointId,
+      '--wallet',
+      walletIdA,
+      '--json',
+      '--no-update-check',
+    ]);
+    await runCli([
+      'finance',
+      'checkpoints',
+      'summary',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints?limit=10`,
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints`,
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints/${checkpointId}`,
+      expect.objectContaining({
+        body: JSON.stringify({ actual_balance: 101 }),
+        cache: 'no-store',
+        method: 'PATCH',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints/${checkpointId}`,
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'DELETE',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://tuturuuu.com/api/workspaces/ws-1/wallets/checkpoints',
+      expect.objectContaining({ cache: 'no-store' })
     );
   });
 
@@ -947,6 +1182,27 @@ describe('CLI commands', () => {
     );
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('--color <#rrggbb>')
+    );
+  });
+
+  it.each([
+    ['finance', 'checkpoints', '--help'],
+    ['help', 'finance', 'checkpoints'],
+    ['finance', 'help', 'checkpoints'],
+  ])('prints finance checkpoint help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Usage: ttr finance checkpoints [list|get|create|update|delete|summary|batch] [id]'
+      )
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('--balances <pairs>')
     );
   });
 

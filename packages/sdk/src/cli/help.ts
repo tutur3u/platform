@@ -151,6 +151,7 @@ const helpTopics: Record<string, HelpTopic> = {
   finance: {
     commands: [
       'wallets [list|get|balance|create|update|delete]',
+      'checkpoints [list|get|create|update|delete|summary|batch]',
       'transactions [list|get|create|update|delete|export|stats]',
       'transfers [create|update|migrate]',
       'categories [list|get|create|update|delete]',
@@ -163,6 +164,9 @@ const helpTopics: Record<string, HelpTopic> = {
     examples: [
       'ttr finance wallets',
       'ttr finance wallets balance --all',
+      'ttr finance checkpoints summary',
+      'ttr finance checkpoints create --wallet <wallet-id> --actual-balance 150000 --checked-at 2026-06-11',
+      'ttr finance checkpoints batch --checked-at 2026-06-11 --balances <wallet-id>=150000,<wallet-id>=42000',
       'ttr finance transactions --page-size 10',
       'ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09',
       'ttr finance transfers migrate --from-transaction <tx-id> --to-transaction <tx-id> --from-wallet <wallet-id> --to-wallet <wallet-id> --amount 150000 --taken-at 2026-05-09',
@@ -532,6 +536,32 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
     },
   },
   finance: {
+    checkpoints: {
+      examples: [
+        'ttr finance checkpoints summary',
+        'ttr finance checkpoints list --wallet <wallet-id> --limit 50',
+        'ttr finance checkpoints get <checkpoint-id> --wallet <wallet-id>',
+        'ttr finance checkpoints create --wallet <wallet-id> --actual-balance 150000 --checked-at 2026-06-11 --note "Monthly audit"',
+        'ttr finance checkpoints update <checkpoint-id> --wallet <wallet-id> --actual-balance 151000',
+        'ttr finance checkpoints batch --checked-at 2026-06-11 --balances <wallet-id>=150000,<wallet-id>=42000',
+        'ttr finance checkpoints batch --entries-json \'[{"wallet_id":"...","actual_balance":150000}]\'',
+      ],
+      options: [
+        '--wallet <id>              wallet id for list/get/create/update/delete',
+        '--actual-balance <number>  actual wallet balance at checkpoint time',
+        '--amount <number>          alias for --actual-balance',
+        '--checked-at <date/time>   checkpoint date/time; local values use --timezone',
+        '--timezone <iana>          timezone for date-only/local date-time inputs',
+        '--note <text>              checkpoint note',
+        '--balances <pairs>         batch wallet_id=amount pairs separated by commas',
+        '--entries-json <json>      batch entries array with wallet_id and actual_balance',
+        '--limit <n>                wallet checkpoint list limit',
+        '--json-payload <json>      explicit payload override',
+        '--json                     print machine-readable JSON',
+      ],
+      usage:
+        'ttr finance checkpoints [list|get|create|update|delete|summary|batch] [id]',
+    },
     budgets: {
       examples: [
         'ttr finance budgets',
@@ -829,7 +859,7 @@ export function getGlobalHelp() {
     '  config set-base-url <url>',
     '  box <run|lease|release|preview|agent|shutdown|cache|doctor|setup|repair>',
     '  calendar <events|schedule|sources|calendars|categories|accounts|auth|provider-calendars|connections>',
-    '  finance <wallets|transactions|transfers|categories|tags|budgets|recurring>',
+    '  finance <wallets|checkpoints|transactions|transfers|categories|tags|budgets|recurring>',
     '  workspaces [list]|use [id]',
     '  boards [list]|use|create|update|delete',
     '  lists [list]|use|create|update --board <id>',

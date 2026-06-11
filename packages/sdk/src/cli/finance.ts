@@ -5,6 +5,9 @@ import {
   getBudgetPayload,
   getCategoryBreakdownQuery,
   getCategoryPayload,
+  getCheckpointBatchPayload,
+  getCheckpointListQuery,
+  getCheckpointPayload,
   getExportQuery,
   getFinancePositionalName,
   getMetricsQuery,
@@ -122,6 +125,113 @@ async function handleWallets(input: FinanceCommandInput, action: string) {
     return;
   }
   throw new Error(`Unknown finance wallets action: ${action}`);
+}
+
+function getRequiredCheckpointWalletId(
+  flags: Record<string, FlagValue>,
+  action: string
+) {
+  const walletId =
+    typeof flags.wallet === 'string'
+      ? flags.wallet
+      : typeof flags['wallet-id'] === 'string'
+        ? flags['wallet-id']
+        : undefined;
+
+  if (walletId) return walletId;
+  throw new Error(`Missing wallet id for finance checkpoints ${action}.`);
+}
+
+async function handleCheckpoints(input: FinanceCommandInput, action: string) {
+  const { client, flags, json, positionals, workspaceId } = input;
+  const id = positionals[3];
+
+  if (['summary', 'totals', 'overview'].includes(action)) {
+    render(await client.finance.getWalletCheckpointSummary(workspaceId), {
+      financeResource: 'checkpoint-summary',
+      group: 'finance',
+      json,
+    });
+    return;
+  }
+
+  if (
+    ['batch', 'batch-create', 'create-batch', 'total-check'].includes(action)
+  ) {
+    render(
+      await client.finance.createWalletCheckpointBatch(
+        workspaceId,
+        getCheckpointBatchPayload(flags)
+      ),
+      { financeResource: 'checkpoint-batch', group: 'finance', json }
+    );
+    return;
+  }
+
+  const walletId = getRequiredCheckpointWalletId(flags, action);
+
+  if (action === 'list') {
+    render(
+      await client.finance.listWalletCheckpoints(
+        workspaceId,
+        walletId,
+        getCheckpointListQuery(flags)
+      ),
+      { financeResource: 'checkpoints', group: 'finance', json }
+    );
+    return;
+  }
+
+  if (action === 'get') {
+    render(
+      await client.finance.getWalletCheckpoint(
+        workspaceId,
+        walletId,
+        getRequiredFinanceId(action, 'checkpoints', id)
+      ),
+      { financeResource: 'checkpoints', group: 'finance', json }
+    );
+    return;
+  }
+
+  if (action === 'create') {
+    render(
+      await client.finance.createWalletCheckpoint(
+        workspaceId,
+        walletId,
+        getCheckpointPayload(flags)
+      ),
+      { financeResource: 'checkpoints', group: 'finance', json }
+    );
+    return;
+  }
+
+  if (action === 'update') {
+    render(
+      await client.finance.updateWalletCheckpoint(
+        workspaceId,
+        walletId,
+        getRequiredFinanceId(action, 'checkpoints', id),
+        getCheckpointPayload(flags)
+      ),
+      { financeResource: 'checkpoints', group: 'finance', json }
+    );
+    return;
+  }
+
+  if (action === 'delete') {
+    render(
+      await client.finance.deleteWalletCheckpoint(
+        workspaceId,
+        walletId,
+        getRequiredFinanceId(action, 'checkpoints', id)
+      ),
+      { financeResource: 'checkpoints', group: 'finance', json }
+    );
+    return;
+  }
+
+  throw new Error(`Unknown finance checkpoints action: ${action}`);
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -526,7 +636,7 @@ export async function runFinanceCommand(input: FinanceCommandInput) {
 
   if (!resource) {
     throw new Error(
-      'Missing finance resource. Use wallets, transactions, transfers, categories, tags, budgets, or recurring.'
+      'Missing finance resource. Use wallets, checkpoints, transactions, transfers, categories, tags, budgets, or recurring.'
     );
   }
 
@@ -535,6 +645,8 @@ export async function runFinanceCommand(input: FinanceCommandInput) {
       return handleBudgets(input, action);
     case 'categories':
       return handleCategories(input, action);
+    case 'checkpoints':
+      return handleCheckpoints(input, action);
     case 'recurring':
       return handleRecurring(input, action);
     case 'tags':

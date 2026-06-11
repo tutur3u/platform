@@ -760,6 +760,56 @@ function financeRows(data: unknown, resource?: string) {
           Currency: asString(row.currency),
         };
       });
+    case 'checkpoints':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          CheckedAt: formatFinanceDate(row.checked_at),
+          Actual: formatFinanceAmount(row.actual_balance),
+          Ledger: formatFinanceAmount(row.ledger_balance),
+          Variance: formatFinanceAmount(row.original_variance),
+          Current: formatFinanceAmount(row.current_variance),
+          Currency: asString(row.currency),
+          Note: asString(row.note),
+          Wallet: asString(row.wallet_id),
+          Id: asString(row.id),
+        };
+      });
+    case 'checkpoint-intervals':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          From: formatFinanceDate(row.start_checked_at),
+          To: formatFinanceDate(row.end_checked_at),
+          ActualDelta: formatFinanceAmount(row.actual_delta),
+          LedgerDelta: formatFinanceAmount(row.ledger_delta),
+          Variance: formatFinanceAmount(row.interval_variance),
+          Txns: row.transaction_count ?? '',
+          Status: row.is_clean === true ? 'clean' : 'unresolved',
+        };
+      });
+    case 'checkpoint-summary-wallets':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.name, 'Untitled wallet'),
+          Id: asString(row.id),
+          Balance: formatFinanceAmount(row.balance),
+          Currency: asString(row.currency),
+          Type: asString(row.type),
+        };
+      });
+    case 'checkpoint-totals':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Currency: asString(row.currency),
+          Actual: formatFinanceAmount(row.actual_total),
+          Ledger: formatFinanceAmount(row.ledger_total),
+          Variance: formatFinanceAmount(row.variance_total),
+          Count: row.checkpoint_count ?? '',
+        };
+      });
     case 'transactions':
       return rows.map((item) => {
         const row = asRecord(item);
@@ -850,6 +900,39 @@ function financeRows(data: unknown, resource?: string) {
 
 function renderFinance(data: unknown, resource?: string) {
   const record = asRecord(data);
+  if (resource === 'checkpoint-summary') {
+    if (Array.isArray(record.wallets)) {
+      process.stdout.write(`${color.bold('Wallets')}\n`);
+      renderTable(financeRows(record.wallets, 'checkpoint-summary-wallets'));
+    }
+    if (Array.isArray(record.latest_checkpoints)) {
+      process.stdout.write(`${color.bold('Latest Checkpoints')}\n`);
+      renderTable(financeRows(record.latest_checkpoints, 'checkpoints'));
+    }
+    if (Array.isArray(record.totals_by_currency)) {
+      process.stdout.write(`${color.bold('Totals')}\n`);
+      renderTable(financeRows(record.totals_by_currency, 'checkpoint-totals'));
+    }
+    return;
+  }
+
+  if (
+    (resource === 'checkpoints' || resource === 'checkpoint-batch') &&
+    Array.isArray(record.data)
+  ) {
+    process.stdout.write(`${color.bold('Checkpoints')}\n`);
+    renderTable(financeRows(record.data, 'checkpoints'));
+    if (Array.isArray(record.intervals)) {
+      process.stdout.write(`${color.bold('Intervals')}\n`);
+      renderTable(financeRows(record.intervals, 'checkpoint-intervals'));
+    }
+    if (Array.isArray(record.totals_by_currency)) {
+      process.stdout.write(`${color.bold('Totals')}\n`);
+      renderTable(financeRows(record.totals_by_currency, 'checkpoint-totals'));
+    }
+    return;
+  }
+
   if (
     resource === 'wallet-balances' &&
     Array.isArray(record.wallets) &&
