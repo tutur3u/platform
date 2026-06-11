@@ -6,14 +6,11 @@ import { TaskDialogProvider } from '@tuturuuu/ui/tu-do/providers/task-dialog-pro
 import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import type { ComponentType, ReactNode } from 'react';
 import { useLazyClientComponent } from '@/hooks/use-lazy-client-component';
+import { preloadTaskDialogManager } from './task-dialog-manager-loader';
 
 type PersonalWorkspaceCollaborationBannerComponent = ComponentType<
   Record<string, never>
 >;
-
-type TaskDialogManagerComponent = ComponentType<{
-  wsId: string;
-}>;
 
 interface DashboardWorkspaceProvidersProps {
   children: ReactNode;
@@ -30,12 +27,6 @@ function loadPersonalWorkspaceCollaborationBanner(): Promise<PersonalWorkspaceCo
   );
 }
 
-function loadTaskDialogManager(): Promise<TaskDialogManagerComponent> {
-  return import('@tuturuuu/ui/tu-do/shared/task-dialog-manager').then(
-    (module) => module.TaskDialogManager
-  );
-}
-
 export function DashboardWorkspaceProviders({
   children,
   enablePresence,
@@ -48,7 +39,7 @@ export function DashboardWorkspaceProviders({
     loadPersonalWorkspaceCollaborationBanner,
     showPersonalWorkspaceCollaborationBanner
   );
-  const TaskDialogManager = useLazyClientComponent(loadTaskDialogManager);
+  const TaskDialogManager = useLazyClientComponent(preloadTaskDialogManager);
 
   return (
     <RealtimeLogProvider wsId={wsId}>

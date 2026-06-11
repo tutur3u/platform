@@ -58,6 +58,23 @@ interface TaskDialogState {
   taskWorkspacePersonal?: boolean;
   /** The task workspace tier used to gate cursor tracking for edit mode */
   taskWorkspaceTier?: WorkspaceProductTier;
+  /** True while an existing task was opened from a partial snapshot and is hydrating. */
+  isHydratingTask?: boolean;
+  /** True when the latest hydration request failed after the dialog already opened. */
+  taskLoadError?: boolean;
+  /** Bumps when async task hydration replaces a partial snapshot. */
+  taskHydrationVersion?: number;
+  taskOpenRequestId?: number;
+}
+
+interface OpenTaskByIdOptions {
+  initialTask?: Partial<Task>;
+  boardId?: string;
+  availableLists?: TaskList[];
+  fakeTaskUrl?: boolean;
+  taskWsId?: string;
+  taskWorkspacePersonal?: boolean;
+  taskWorkspaceTier?: WorkspaceProductTier;
 }
 
 interface TaskDialogContextValue {
@@ -85,7 +102,10 @@ interface TaskDialogContextValue {
   ) => void;
 
   // Open task by ID (fetches task data first)
-  openTaskById: (taskId: string) => Promise<boolean>;
+  openTaskById: (
+    taskId: string,
+    options?: OpenTaskByIdOptions
+  ) => Promise<boolean>;
 
   // Open dialog for creating new task
   createTask: (
@@ -178,9 +198,11 @@ export function TaskDialogProvider({
   const [state, setState] = useState<TaskDialogState>({
     isOpen: false,
   });
+  const stateRef = useRef(state);
   const isDialogOpenRef = useRef(state.isOpen);
   const queuedDialogStatesRef = useRef<TaskDialogState[]>([]);
   const queuedOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const taskOpenRequestIdRef = useRef(0);
   const closeRequestHandlerRef = useRef<
     (() => boolean | undefined | Promise<boolean | undefined>) | null
   >(null);
@@ -283,7 +305,52 @@ export function TaskDialogProvider({
     [closeDialog]
   );
 
+  const replaceHydratingDialogState = useCallback(
+    (requestId: number, nextDialogState: TaskDialogState) => {
+      queuedDialogStatesRef.current = queuedDialogStatesRef.current.map(
+        (queuedDialogState) =>
+          queuedDialogState.taskOpenRequestId === requestId
+            ? nextDialogState
+            : queuedDialogState
+      );
+
+      setState((currentState) =>
+        currentState.taskOpenRequestId === requestId
+          ? nextDialogState
+          : currentState
+      );
+    },
+    []
+  );
+
+  const markHydratingDialogFailed = useCallback((requestId: number) => {
+    queuedDialogStatesRef.current = queuedDialogStatesRef.current.map(
+      (queuedDialogState) =>
+        queuedDialogState.taskOpenRequestId === requestId
+          ? {
+              ...queuedDialogState,
+              isHydratingTask: false,
+              taskLoadError: true,
+              taskHydrationVersion:
+                (queuedDialogState.taskHydrationVersion ?? 0) + 1,
+            }
+          : queuedDialogState
+    );
+
+    setState((currentState) =>
+      currentState.taskOpenRequestId === requestId
+        ? {
+            ...currentState,
+            isHydratingTask: false,
+            taskLoadError: true,
+            taskHydrationVersion: (currentState.taskHydrationVersion ?? 0) + 1,
+          }
+        : currentState
+    );
+  }, []);
+
   useEffect(() => {
+    stateRef.current = state;
     isDialogOpenRef.current = state.isOpen;
 
     if (state.isOpen) {
@@ -292,7 +359,7 @@ export function TaskDialogProvider({
 
     closeRequestInFlightRef.current = false;
     flushQueuedDialogState();
-  }, [flushQueuedDialogState, state.isOpen]);
+  }, [flushQueuedDialogState, state]);
 
   useEffect(() => {
     return () => {
@@ -344,48 +411,99 @@ export function TaskDialogProvider({
   );
 
   const openTaskById = useCallback(
-    async (taskId: string) => {
+    async (taskId: string, options?: OpenTaskByIdOptions) => {
+      const requestId = taskOpenRequestIdRef.current + 1;
+      taskOpenRequestIdRef.current = requestId;
+
+      const initialTaskSnapshot = options?.initialTask;
+      const now = new Date().toISOString();
+      const initialTask = {
+        name: '',
+        description: '',
+        list_id: '',
+        display_number: 0,
+        created_at: now,
+        updated_at: now,
+        deleted: false,
+        archived: false,
+        labels: [],
+        assignees: [],
+        projects: [],
+        ...initialTaskSnapshot,
+        id: taskId,
+      } as Task;
+      const initialTaskWithBoard = initialTaskSnapshot as
+        | (Partial<Task> & {
+            board_id?: string | null;
+            list?: { board_id?: string | null } | null;
+          })
+        | undefined;
+      const initialBoardId =
+        options?.boardId ??
+        initialTaskWithBoard?.board_id ??
+        initialTaskWithBoard?.list?.board_id ??
+        undefined;
+      const initialTaskWorkspacePersonal =
+        options?.taskWorkspacePersonal ?? isPersonalWorkspace;
+
+      const initialDialogState: TaskDialogState = {
+        isOpen: true,
+        task: initialTask,
+        boardId: initialBoardId,
+        mode: 'edit',
+        availableLists: options?.availableLists,
+        collaborationMode: false,
+        realtimeEnabled: false,
+        fakeTaskUrl: options?.fakeTaskUrl,
+        taskWsId: options?.taskWsId,
+        taskWorkspacePersonal: initialTaskWorkspacePersonal,
+        taskWorkspaceTier: options?.taskWorkspaceTier,
+        isHydratingTask: true,
+        taskLoadError: false,
+        taskHydrationVersion: 0,
+        taskOpenRequestId: requestId,
+      };
+      const currentState = stateRef.current;
+
+      if (
+        currentState.isOpen &&
+        currentState.task?.id === taskId &&
+        currentState.taskLoadError
+      ) {
+        setState(initialDialogState);
+      } else {
+        queueDialogState(initialDialogState);
+      }
+
       try {
-        let response:
-          | {
-              task: Task & {
-                list?: {
-                  board_id?: string | null;
-                } | null;
-              };
-              availableLists: TaskList[];
-              taskWsId: string;
-              taskWorkspacePersonal: boolean;
-              taskWorkspaceTier: WorkspaceProductTier;
-            }
-          | undefined;
+        const { getCurrentUserTask } = await import(
+          '@tuturuuu/internal-api/tasks'
+        );
 
-        try {
-          const { getCurrentUserTask } = await import(
-            '@tuturuuu/internal-api/tasks'
-          );
-
-          response = await getCurrentUserTask(taskId, {
-            fetch: (input, init) =>
-              fetch(new URL(String(input), window.location.origin).toString(), {
-                ...init,
-                cache: 'no-store',
-              }),
-          });
-        } catch {
-          return false;
-        }
+        const response = await getCurrentUserTask(taskId, {
+          fetch: (input, init) =>
+            fetch(new URL(String(input), window.location.origin).toString(), {
+              ...init,
+              cache: 'no-store',
+            }),
+        });
 
         if (!response) {
+          markHydratingDialogFailed(requestId);
           return false;
         }
 
-        const transformedTask = response.task;
+        const transformedTask = response.task as Task & {
+          board_id?: string | null;
+          list?: {
+            board_id?: string | null;
+          } | null;
+        };
         const taskWsId = response.taskWsId;
         const taskWorkspacePersonal = response.taskWorkspacePersonal;
         const taskWorkspaceTier = response.taskWorkspaceTier;
         const isTaskWorkspacePersonal =
-          taskWorkspacePersonal ?? isPersonalWorkspace;
+          taskWorkspacePersonal ?? initialTaskWorkspacePersonal;
 
         // Realtime sync (auto-save via Yjs) is always enabled in edit mode.
         // Cursor presence requires tier check and non-personal workspace.
@@ -394,26 +512,40 @@ export function TaskDialogProvider({
           taskWorkspaceTier
         );
 
-        // Open the task in edit mode
-        queueDialogState({
+        replaceHydratingDialogState(requestId, {
           isOpen: true,
           task: transformedTask as Task,
-          boardId: transformedTask.list?.board_id ?? undefined,
+          boardId:
+            transformedTask.board_id ??
+            transformedTask.list?.board_id ??
+            initialBoardId,
           mode: 'edit',
-          availableLists: response.availableLists || undefined,
+          availableLists:
+            response.availableLists || options?.availableLists || undefined,
           collaborationMode: shouldEnableCursors,
           realtimeEnabled: true,
+          fakeTaskUrl: options?.fakeTaskUrl,
           taskWsId,
           taskWorkspacePersonal: isTaskWorkspacePersonal,
           taskWorkspaceTier,
+          isHydratingTask: false,
+          taskLoadError: false,
+          taskHydrationVersion: 1,
+          taskOpenRequestId: requestId,
         });
         return true;
-      } catch (error) {
-        console.error('Failed to open task:', error);
+      } catch {
+        markHydratingDialogFailed(requestId);
         return false;
       }
     },
-    [canUseTaskCursors, isPersonalWorkspace, queueDialogState]
+    [
+      canUseTaskCursors,
+      isPersonalWorkspace,
+      markHydratingDialogFailed,
+      queueDialogState,
+      replaceHydratingDialogState,
+    ]
   );
 
   const createTask = useCallback(

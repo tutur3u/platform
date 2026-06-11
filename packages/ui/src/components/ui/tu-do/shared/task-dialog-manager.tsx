@@ -235,30 +235,12 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
 
   const openTaskFromCurrentWorkspace = useCallback(
     async (taskId: string) => {
-      try {
-        const { task } = await getWorkspaceTask(wsId, taskId, {
-          fetch: (input, init) =>
-            fetch(new URL(String(input), window.location.origin).toString(), {
-              ...init,
-              cache: 'no-store',
-            }),
-        });
-
-        const boardId = task.board_id;
-        if (!boardId) {
-          return false;
-        }
-
-        openTask(task as Task, boardId, undefined, false, {
-          taskWsId: wsId,
-          taskWorkspacePersonal: isPersonalWorkspace,
-        });
-        return true;
-      } catch {
-        return false;
-      }
+      return openTaskById(taskId, {
+        taskWsId: wsId,
+        taskWorkspacePersonal: isPersonalWorkspace,
+      });
     },
-    [isPersonalWorkspace, openTask, wsId]
+    [isPersonalWorkspace, openTaskById, wsId]
   );
 
   useEffect(() => {
@@ -278,40 +260,12 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       };
 
       void (async () => {
-        if (requestedWsId) {
-          try {
-            const { task } = await getWorkspaceTask(requestedWsId, taskId, {
-              fetch: (input, init) =>
-                fetch(
-                  new URL(String(input), window.location.origin).toString(),
-                  {
-                    ...init,
-                    cache: 'no-store',
-                  }
-                ),
-            });
-
-            const taskWithList = task as {
-              board_id?: string | null;
-              list?: {
-                board_id?: string | null;
-              } | null;
-            };
-            const boardId =
-              taskWithList.board_id || taskWithList.list?.board_id;
-            if (boardId) {
-              openTask(task as Task, boardId, undefined, false, {
-                taskWsId: requestedWsId,
-              });
-              emitOpenResult(true);
-              return;
-            }
-          } catch {
-            // Fall through to the generic current-user lookup below.
-          }
-        }
-
-        const opened = await openTaskById(taskId);
+        const opened = await openTaskById(taskId, {
+          taskWsId: requestedWsId,
+          taskWorkspacePersonal: requestedWsId
+            ? undefined
+            : isPersonalWorkspace,
+        });
         emitOpenResult(opened);
       })();
     };
@@ -327,7 +281,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
         handleTaskOpenRequest as EventListener
       );
     };
-  }, [openTaskById, openTask]);
+  }, [isPersonalWorkspace, openTaskById]);
 
   useEffect(() => {
     const canonicalTaskId = searchParams.get('task');
@@ -357,7 +311,10 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       return;
     }
 
-    void openTaskById(legacyTaskId);
+    void openTaskById(legacyTaskId, {
+      taskWsId: wsId,
+      taskWorkspacePersonal: isPersonalWorkspace,
+    });
     const nextSearchParams = new URLSearchParams(searchParams.toString());
     nextSearchParams.delete('openTaskId');
 
@@ -367,7 +324,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       : window.location.pathname;
 
     window.history.replaceState(window.history.state, '', nextUrl);
-  }, [openTaskById, searchParams]);
+  }, [isPersonalWorkspace, openTaskById, searchParams, wsId]);
 
   // Open subtask creation dialog for the current task
   const handleAddSubtask = useCallback(() => {
@@ -420,6 +377,29 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   const handleAddBlockedByTask = () => handleAddRelationship('blocked-by');
   const handleAddRelatedTask = () => handleAddRelationship('related');
 
+  const handleRetryTaskLoad = useCallback(() => {
+    if (!state.task?.id) return;
+
+    void openTaskById(state.task.id, {
+      initialTask: state.task,
+      boardId: state.boardId,
+      availableLists: state.availableLists,
+      fakeTaskUrl: state.fakeTaskUrl,
+      taskWsId: state.taskWsId,
+      taskWorkspacePersonal: state.taskWorkspacePersonal,
+      taskWorkspaceTier: state.taskWorkspaceTier,
+    });
+  }, [
+    openTaskById,
+    state.availableLists,
+    state.boardId,
+    state.fakeTaskUrl,
+    state.task,
+    state.taskWorkspacePersonal,
+    state.taskWorkspaceTier,
+    state.taskWsId,
+  ]);
+
   // Track presence location when the dialog is open in edit mode.
   // On kanban boards, BoardUserPresenceAvatarsComponent also calls updateLocation
   // with the same args — this is idempotent (same location = no-op).
@@ -428,7 +408,14 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   const wsUpdateLocation = wsPresence?.updateLocation;
 
   useEffect(() => {
-    if (!wsUpdateLocation || !state.isOpen || state.mode === 'create') return;
+    if (
+      !wsUpdateLocation ||
+      !state.isOpen ||
+      state.mode === 'create' ||
+      state.isHydratingTask ||
+      state.taskLoadError
+    )
+      return;
     const taskId = state.task?.id;
     const boardId = state.boardId;
     if (!taskId || !boardId) return;
@@ -442,6 +429,8 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     wsUpdateLocation,
     state.isOpen,
     state.mode,
+    state.isHydratingTask,
+    state.taskLoadError,
     state.task?.id,
     state.boardId,
   ]);
@@ -450,7 +439,9 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     if (
       typeof window === 'undefined' ||
       !state.isOpen ||
-      state.mode === 'create'
+      state.mode === 'create' ||
+      state.isHydratingTask ||
+      state.taskLoadError
     ) {
       return;
     }
@@ -502,10 +493,12 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   }, [
     state.boardId,
     state.isOpen,
+    state.isHydratingTask,
     state.mode,
     state.task,
     state.taskWsId,
     state.taskWorkspacePersonal,
+    state.taskLoadError,
     isPersonalWorkspace,
     wsId,
   ]);
@@ -532,6 +525,9 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       mode={state.mode}
       collaborationMode={state.collaborationMode}
       realtimeEnabled={state.realtimeEnabled}
+      isHydratingTask={state.isHydratingTask}
+      taskLoadError={state.taskLoadError}
+      taskHydrationVersion={state.taskHydrationVersion}
       isPersonalWorkspace={isPersonalWorkspace}
       parentTaskId={state.parentTaskId}
       parentTaskName={state.parentTaskName}
@@ -548,6 +544,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       onAddBlockingTask={handleAddBlockingTask}
       onAddBlockedByTask={handleAddBlockedByTask}
       onAddRelatedTask={handleAddRelatedTask}
+      onRetryTaskLoad={handleRetryTaskLoad}
     />
   );
 

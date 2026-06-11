@@ -164,12 +164,16 @@ vi.mock('../task-edit-dialog', () => ({
   TaskEditDialog: ({
     defaultPresentation,
     isOpen,
+    isHydratingTask,
+    taskLoadError,
     task,
     onClose,
     onNavigateToTask,
   }: {
     defaultPresentation?: string;
     isOpen: boolean;
+    isHydratingTask?: boolean;
+    taskLoadError?: boolean;
     task?: Task;
     onClose: () => void;
     onNavigateToTask?: (taskId: string) => Promise<void>;
@@ -177,6 +181,8 @@ vi.mock('../task-edit-dialog', () => ({
     <div
       data-testid="task-edit-dialog"
       data-default-presentation={defaultPresentation}
+      data-hydrating={String(!!isHydratingTask)}
+      data-load-error={String(!!taskLoadError)}
       data-open={isOpen}
     >
       {task && <div data-testid="task-name">{task.name}</div>}
@@ -228,6 +234,17 @@ function createTestQueryClient() {
   return new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+
+  return { promise, resolve, reject };
 }
 
 function Wrapper({ children }: { children: React.ReactNode }) {
@@ -478,8 +495,7 @@ describe('TaskDialogManager', () => {
     );
 
     await waitFor(() => {
-      expect(mockGetWorkspaceTask).toHaveBeenCalledWith(
-        'workspace-1',
+      expect(mockGetCurrentUserTask).toHaveBeenCalledWith(
         'task-2',
         expect.any(Object)
       );
@@ -490,7 +506,7 @@ describe('TaskDialogManager', () => {
         'data-open',
         'true'
       );
-      expect(getByTestId('task-name')).toHaveTextContent('Related Task');
+      expect(getByTestId('task-name')).toHaveTextContent('Test Task');
     });
   });
 
@@ -583,6 +599,60 @@ describe('TaskDialogManager', () => {
     });
   });
 
+  it('renders a hydrating task dialog immediately for shared task-open events', async () => {
+    const deferred = createDeferred<{
+      task: Task & { list?: { board_id?: string | null } | null };
+      availableLists: TaskList[];
+      taskWsId: string;
+      taskWorkspacePersonal: boolean;
+      taskWorkspaceTier: 'PRO';
+    }>();
+    mockGetCurrentUserTask.mockReturnValueOnce(deferred.promise);
+
+    const { getByTestId } = render(
+      <Wrapper>
+        <TaskDialogManager wsId="workspace-1" />
+      </Wrapper>
+    );
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(REQUEST_OPEN_TASK_EVENT, {
+          detail: { taskId: 'task-42' },
+        })
+      );
+    });
+
+    expect(getByTestId('task-edit-dialog')).toHaveAttribute(
+      'data-hydrating',
+      'true'
+    );
+
+    await act(async () => {
+      deferred.resolve({
+        task: {
+          ...mockTask,
+          id: 'task-42',
+          name: 'Hydrated Event Task',
+          list: { board_id: 'board-1' },
+        },
+        availableLists: [mockList],
+        taskWsId: 'workspace-1',
+        taskWorkspacePersonal: false,
+        taskWorkspaceTier: 'PRO',
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('task-edit-dialog')).toHaveAttribute(
+        'data-hydrating',
+        'false'
+      );
+      expect(getByTestId('task-name')).toHaveTextContent('Hydrated Event Task');
+    });
+  });
+
   it('opens a task from the canonical task query parameter', async () => {
     mockSearchParams.set('task', 'task-42');
 
@@ -593,8 +663,7 @@ describe('TaskDialogManager', () => {
     );
 
     await waitFor(() => {
-      expect(mockGetWorkspaceTask).toHaveBeenCalledWith(
-        'workspace-1',
+      expect(mockGetCurrentUserTask).toHaveBeenCalledWith(
         'task-42',
         expect.any(Object)
       );

@@ -30,6 +30,7 @@ export interface UseTaskFormResetProps {
   isCreateMode: boolean;
   task?: Task;
   filters?: TaskFilters;
+  taskHydrationVersion?: number;
 
   // State setters - using React dispatch types for compatibility
   setName: React.Dispatch<React.SetStateAction<string>>;
@@ -55,6 +56,7 @@ export function useTaskFormReset({
   isCreateMode,
   task,
   filters,
+  taskHydrationVersion = 0,
   setName,
   setDescription,
   setPriority,
@@ -67,12 +69,15 @@ export function useTaskFormReset({
   setSelectedProjects,
 }: UseTaskFormResetProps): void {
   const previousTaskIdRef = useRef<string | null>(null);
+  const previousTaskHydrationVersionRef = useRef<number>(taskHydrationVersion);
   const previousIsOpenRef = useRef<boolean>(false);
   const isMountedRef = useRef(true);
 
   // Reset form when task changes or dialog opens
   useEffect(() => {
     const taskIdChanged = previousTaskIdRef.current !== task?.id;
+    const taskHydrationVersionChanged =
+      previousTaskHydrationVersionRef.current !== taskHydrationVersion;
     const justOpened = isOpen && !previousIsOpenRef.current;
     previousIsOpenRef.current = isOpen;
 
@@ -88,7 +93,11 @@ export function useTaskFormReset({
     // In edit mode, reset whenever the dialog opens or the task changes.
     // We don't reset on close (see below) so we must reset on every open
     // to ensure the form reflects the latest DB state, even for the same task.
-    if (isOpen && !isCreateMode && (taskIdChanged || justOpened)) {
+    if (
+      isOpen &&
+      !isCreateMode &&
+      (taskIdChanged || taskHydrationVersionChanged || justOpened)
+    ) {
       setName(task?.name || '');
       setDescription(getDescriptionContent(task?.description));
       setPriority(task?.priority || null);
@@ -100,6 +109,7 @@ export function useTaskFormReset({
       setSelectedAssignees(task?.assignees || []);
       setSelectedProjects(task?.projects || []);
       if (task?.id) previousTaskIdRef.current = task.id;
+      previousTaskHydrationVersionRef.current = taskHydrationVersion;
     } else if (
       isOpen &&
       (isCreateMode || task?.id === 'new') &&
@@ -122,6 +132,7 @@ export function useTaskFormReset({
     isCreateMode,
     isOpen,
     task,
+    taskHydrationVersion,
     filters,
     setName,
     setDescription,

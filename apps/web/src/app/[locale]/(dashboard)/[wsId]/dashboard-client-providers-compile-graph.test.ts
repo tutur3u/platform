@@ -20,6 +20,15 @@ const dashboardWorkspaceProvidersSource = readFileSync(
     encoding: 'utf8',
   }
 );
+const taskDialogManagerLoaderSource = readFileSync(
+  join(
+    process.cwd(),
+    'src/app/[locale]/(dashboard)/[wsId]/task-dialog-manager-loader.ts'
+  ),
+  {
+    encoding: 'utf8',
+  }
+);
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -93,8 +102,18 @@ describe('[wsId] dashboard client providers compile graph', () => {
     expect(dashboardWorkspaceProvidersSource).toContain(
       "import('./personal-workspace-collaboration-banner')"
     );
-    expect(dashboardWorkspaceProvidersSource).toContain(
-      "import('@tuturuuu/ui/tu-do/shared/task-dialog-manager')"
+    expect(dashboardWorkspaceProvidersSource).toMatch(
+      staticImportPattern('./task-dialog-manager-loader')
     );
+    expect(dashboardWorkspaceProvidersSource).toContain(
+      'useLazyClientComponent(preloadTaskDialogManager)'
+    );
+    expect(taskDialogManagerLoaderSource).not.toMatch(
+      staticImportPattern('@tuturuuu/ui/tu-do/shared/task-dialog-manager')
+    );
+    expect(taskDialogManagerLoaderSource).toMatch(
+      /import\(\s*['"]@tuturuuu\/ui\/tu-do\/shared\/task-dialog-manager['"]\s*\)/u
+    );
+    expect(taskDialogManagerLoaderSource).toContain('taskDialogManagerPromise');
   });
 });

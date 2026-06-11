@@ -1,3 +1,4 @@
+import type { WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { TaskFilters } from '@tuturuuu/ui/tu-do/boards/boardId/task-filter';
@@ -50,7 +51,18 @@ export function useTaskDialog(): {
       taskWorkspacePersonal?: boolean;
     }
   ) => void;
-  openTaskById: (taskId: string) => Promise<boolean>;
+  openTaskById: (
+    taskId: string,
+    options?: {
+      initialTask?: Partial<Task>;
+      boardId?: string;
+      availableLists?: TaskList[];
+      fakeTaskUrl?: boolean;
+      taskWsId?: string;
+      taskWorkspacePersonal?: boolean;
+      taskWorkspaceTier?: WorkspaceProductTier;
+    }
+  ) => Promise<boolean>;
   createTask: (
     boardId: string,
     listId: string,

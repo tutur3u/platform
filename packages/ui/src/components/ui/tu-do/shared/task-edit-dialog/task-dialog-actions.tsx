@@ -47,6 +47,7 @@ interface TaskDialogActionsProps {
   onNavigateBack?: () => void;
   onOpenShareDialog?: () => void;
   disabled?: boolean;
+  controlsDisabled?: boolean;
 }
 
 export function TaskDialogActions({
@@ -64,6 +65,7 @@ export function TaskDialogActions({
   onNavigateBack,
   onOpenShareDialog,
   disabled = false,
+  controlsDisabled = false,
 }: TaskDialogActionsProps) {
   const t = useTranslations();
   const tasksHref = useTasksHref();
@@ -75,7 +77,7 @@ export function TaskDialogActions({
   return (
     <>
       {/* Share button - only in edit mode */}
-      {!isCreateMode && taskId && onOpenShareDialog && (
+      {!isCreateMode && taskId && onOpenShareDialog && !controlsDisabled && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -95,7 +97,7 @@ export function TaskDialogActions({
       )}
 
       {/* More options menu - only in edit mode */}
-      {!isCreateMode && taskId && !disabled && (
+      {!isCreateMode && taskId && !disabled && !controlsDisabled && (
         <DropdownMenu open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>
           <DropdownMenuTrigger asChild>
             <Button
@@ -164,7 +166,7 @@ export function TaskDialogActions({
       )}
 
       {/* Back to related task button - only in create mode with pending relationship */}
-      {showBackButton && (
+      {showBackButton && !controlsDisabled && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

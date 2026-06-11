@@ -144,6 +144,7 @@ import { areTaskCardPropsEqual } from './task-card-comparator';
 import { shouldRenderTaskCardCompletionCheckbox } from './task-card-completion-checkbox-visibility';
 import { TaskCardIdentifierRow } from './task-card-identifier-row';
 import { mergeTaskCardLabelOptions } from './task-card-label-options';
+import { getTaskCardHydratingOpenOptions } from './task-card-open-options';
 import { getTaskCardVisibilityState } from './task-card-visibility';
 import { TaskSchedulingBadge } from './task-scheduling-badge';
 
@@ -887,51 +888,23 @@ function TaskCardInner({
   // Removed explicit drag handle – entire card is now draggable for better UX.
   // Keep attributes/listeners to spread onto root interactive area.
 
-  const openExternalTask = useCallback(async () => {
-    const sourceWorkspaceId = task.source_workspace_id;
-    const sourceBoardId = task.source_board_id;
-
-    if (sourceWorkspaceId && sourceBoardId) {
-      try {
-        const { task: sourceTask } = await getWorkspaceTask(
-          sourceWorkspaceId,
-          task.id
-        );
-        let sourceLists: TaskList[] | undefined;
-
-        try {
-          sourceLists = (
-            await listWorkspaceTaskLists(sourceWorkspaceId, sourceBoardId)
-          ).lists;
-        } catch {
-          sourceLists = undefined;
-        }
-
-        openTask(sourceTask as Task, sourceBoardId, sourceLists, false, {
-          taskWsId: sourceWorkspaceId,
-          taskWorkspacePersonal: false,
-        });
-        return;
-      } catch {
-        const opened = await openTaskById(task.id);
-        if (opened) return;
-      }
-    } else {
-      const opened = await openTaskById(task.id);
-      if (opened) return;
-    }
-
-    openTask(task, sourceBoardId ?? boardId, availableLists, false, {
-      taskWsId: sourceWorkspaceId ?? effectiveWorkspaceId,
-      taskWorkspacePersonal: sourceWorkspaceId ? false : isPersonalWorkspace,
-    });
+  const openExternalTask = useCallback(() => {
+    void openTaskById(
+      task.id,
+      getTaskCardHydratingOpenOptions({
+        task,
+        boardId,
+        availableLists,
+        effectiveWorkspaceId,
+        isPersonalWorkspace,
+      })
+    );
   }, [
     task,
     boardId,
     availableLists,
     effectiveWorkspaceId,
     isPersonalWorkspace,
-    openTask,
     openTaskById,
   ]);
 
@@ -956,7 +929,7 @@ function TaskCardInner({
       ) {
         // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
         if (isPersonalExternalTask) {
-          void openExternalTask();
+          openExternalTask();
           return;
         }
 

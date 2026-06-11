@@ -24,6 +24,7 @@ interface CompactTaskDialogPanelProps {
   iconBgClass?: string;
   iconRingClass?: string;
   titleInput: ReactNode;
+  taskStatus?: ReactNode;
   propertyControls: ReactNode;
   smartAction?: ReactNode;
   smartPanel?: ReactNode;
@@ -80,6 +81,7 @@ export function CompactTaskDialogPanel({
   iconBgClass = 'bg-dynamic-orange/10',
   iconRingClass = 'ring-dynamic-orange/20',
   titleInput,
+  taskStatus,
   propertyControls,
   smartAction,
   smartPanel,
@@ -172,6 +174,7 @@ export function CompactTaskDialogPanel({
 
       <div className="min-h-0 space-y-3 overflow-y-auto px-4 py-3">
         {titleInput}
+        {taskStatus}
         <div className="flex flex-wrap items-center gap-1.5">
           {propertyControls}
         </div>

@@ -222,6 +222,8 @@ interface TaskDialogHeaderProps {
   onOpenShareDialog?: () => void;
   /** Whether the dialog is in read-only mode */
   disabled?: boolean;
+  /** Whether task-dependent actions should be disabled while the task hydrates. */
+  controlsDisabled?: boolean;
   /** Callback to scroll the editor to a collaborator's cursor position */
   onScrollToUserCursor?: (userId: string, displayName: string) => void;
 }
@@ -262,6 +264,7 @@ export function TaskDialogHeader({
   isPersonalWorkspace = false,
   onOpenShareDialog,
   disabled = false,
+  controlsDisabled = false,
   onScrollToUserCursor,
 }: TaskDialogHeaderProps) {
   const t = useTranslations();
@@ -448,7 +451,7 @@ export function TaskDialogHeader({
         )}
 
         {/* Quick Settings */}
-        {!disabled && (
+        {!controlsDisabled && (
           <QuickSettingsPopover isPersonalWorkspace={isPersonalWorkspace} />
         )}
 
@@ -467,10 +470,11 @@ export function TaskDialogHeader({
           onNavigateBack={onNavigateBack}
           onOpenShareDialog={onOpenShareDialog}
           disabled={disabled}
+          controlsDisabled={controlsDisabled}
         />
 
         {/* Hide save button in edit mode when realtime is enabled (either cursors or Yjs sync) */}
-        {!disabled &&
+        {!controlsDisabled &&
           (isCreateMode || (!collaborationMode && !realtimeEnabled)) && (
             <Tooltip>
               <TooltipTrigger asChild>

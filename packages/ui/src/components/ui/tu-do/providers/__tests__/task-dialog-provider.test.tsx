@@ -59,8 +59,20 @@ const wrapper = ({ children }: { children: ReactNode }) => (
   <TaskDialogProvider>{children}</TaskDialogProvider>
 );
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+
+  return { promise, resolve, reject };
+}
+
 describe('TaskDialogProvider', () => {
   afterEach(() => {
+    mockGetCurrentUserTask.mockReset();
     vi.useRealTimers();
   });
 
@@ -106,6 +118,166 @@ describe('TaskDialogProvider', () => {
 
     expect(result.current.state.collaborationMode).toBe(false);
     expect(result.current.state.taskWorkspaceTier).toBe('FREE');
+  });
+
+  it('opens by id immediately from an initial snapshot before hydrating task details', async () => {
+    const deferred = createDeferred<{
+      task: Task & { list?: { board_id?: string | null } | null };
+      availableLists: TaskList[];
+      taskWsId: string;
+      taskWorkspacePersonal: boolean;
+      taskWorkspaceTier: 'PRO';
+    }>();
+    mockGetCurrentUserTask.mockReturnValueOnce(deferred.promise);
+
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+    let openPromise!: Promise<boolean>;
+
+    act(() => {
+      openPromise = result.current.openTaskById(mockTask.id, {
+        initialTask: { ...mockTask, name: 'Visible snapshot' },
+        boardId: 'board-1',
+        availableLists: [mockList],
+        taskWsId: 'workspace-1',
+      });
+    });
+
+    expect(result.current.state).toMatchObject({
+      isOpen: true,
+      isHydratingTask: true,
+      taskLoadError: false,
+      boardId: 'board-1',
+      realtimeEnabled: false,
+      task: {
+        id: mockTask.id,
+        name: 'Visible snapshot',
+      },
+    });
+
+    await act(async () => {
+      deferred.resolve({
+        task: {
+          ...mockTask,
+          name: 'Hydrated task',
+          list: { board_id: 'board-1' },
+        },
+        availableLists: [mockList],
+        taskWsId: 'workspace-1',
+        taskWorkspacePersonal: false,
+        taskWorkspaceTier: 'PRO',
+      });
+      await openPromise;
+    });
+
+    expect(result.current.state).toMatchObject({
+      isOpen: true,
+      isHydratingTask: false,
+      taskLoadError: false,
+      collaborationMode: true,
+      realtimeEnabled: true,
+      taskHydrationVersion: 1,
+      taskWorkspaceTier: 'PRO',
+      task: {
+        id: mockTask.id,
+        name: 'Hydrated task',
+      },
+    });
+  });
+
+  it('keeps the dialog open in a non-editable error state when hydration fails', async () => {
+    const deferred = createDeferred<never>();
+    mockGetCurrentUserTask.mockReturnValueOnce(deferred.promise);
+
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+    let openPromise!: Promise<boolean>;
+
+    act(() => {
+      openPromise = result.current.openTaskById(mockTask.id, {
+        initialTask: { ...mockTask, name: 'Visible snapshot' },
+        boardId: 'board-1',
+      });
+    });
+
+    expect(result.current.state.isOpen).toBe(true);
+    expect(result.current.state.isHydratingTask).toBe(true);
+
+    await act(async () => {
+      deferred.reject(new Error('network failed'));
+      await openPromise;
+    });
+
+    expect(result.current.state).toMatchObject({
+      isOpen: true,
+      isHydratingTask: false,
+      taskLoadError: true,
+      task: {
+        id: mockTask.id,
+        name: 'Visible snapshot',
+      },
+    });
+  });
+
+  it('ignores stale hydration responses after another task opens', async () => {
+    const firstDeferred = createDeferred<{
+      task: Task & { list?: { board_id?: string | null } | null };
+      availableLists: TaskList[];
+      taskWsId: string;
+      taskWorkspacePersonal: boolean;
+      taskWorkspaceTier: 'PRO';
+    }>();
+    mockGetCurrentUserTask.mockReturnValueOnce(firstDeferred.promise);
+
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+    let firstOpenPromise!: Promise<boolean>;
+
+    act(() => {
+      firstOpenPromise = result.current.openTaskById('task-1', {
+        initialTask: { ...mockTask, id: 'task-1', name: 'First snapshot' },
+        boardId: 'board-1',
+      });
+    });
+    act(() => {
+      result.current.closeDialog();
+    });
+    act(() => {
+      result.current.openTask(
+        { ...mockTask, id: 'task-2', name: 'Second task' },
+        'board-1',
+        [mockList]
+      );
+    });
+
+    expect(result.current.state).toMatchObject({
+      isOpen: true,
+      task: {
+        id: 'task-2',
+        name: 'Second task',
+      },
+    });
+
+    await act(async () => {
+      firstDeferred.resolve({
+        task: {
+          ...mockTask,
+          id: 'task-1',
+          name: 'Stale hydrated task',
+          list: { board_id: 'board-1' },
+        },
+        availableLists: [mockList],
+        taskWsId: 'workspace-1',
+        taskWorkspacePersonal: false,
+        taskWorkspaceTier: 'PRO',
+      });
+      await firstOpenPromise;
+    });
+
+    expect(result.current.state).toMatchObject({
+      isOpen: true,
+      task: {
+        id: 'task-2',
+        name: 'Second task',
+      },
+    });
   });
 
   it('should provide initial dialog state', () => {

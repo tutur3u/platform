@@ -12,11 +12,13 @@ import {
 import type { WorkspaceTaskSuggestionTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { toast } from '@tuturuuu/ui/sonner';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
+import { cn } from '@tuturuuu/utils/format';
 import {
   getTicketIdentifier,
   invalidateTaskCaches,
@@ -140,6 +142,9 @@ export interface TaskEditDialogProps {
   collaborationMode?: boolean;
   /** Whether realtime features (Yjs sync, presence avatars) are enabled - true for all tiers */
   realtimeEnabled?: boolean;
+  isHydratingTask?: boolean;
+  taskLoadError?: boolean;
+  taskHydrationVersion?: number;
   isPersonalWorkspace?: boolean;
   parentTaskId?: string;
   parentTaskName?: string;
@@ -161,6 +166,7 @@ export interface TaskEditDialogProps {
   onAddBlockingTask?: () => void;
   onAddBlockedByTask?: () => void;
   onAddRelatedTask?: () => void;
+  onRetryTaskLoad?: () => void;
 }
 
 export function TaskEditDialog({
@@ -176,6 +182,9 @@ export function TaskEditDialog({
   mode = 'edit',
   collaborationMode = false,
   realtimeEnabled = false,
+  isHydratingTask = false,
+  taskLoadError = false,
+  taskHydrationVersion = 0,
   isPersonalWorkspace = false,
   parentTaskId,
   parentTaskName,
@@ -193,6 +202,7 @@ export function TaskEditDialog({
   onAddBlockingTask,
   onAddBlockedByTask,
   onAddRelatedTask,
+  onRetryTaskLoad,
 }: TaskEditDialogProps) {
   const isCreateMode = mode === 'create';
   const effectiveTaskWsId = !isCreateMode ? (taskWsId ?? wsId) : wsId;
@@ -210,6 +220,11 @@ export function TaskEditDialog({
   // Disable editing if we are viewing via a shared link
   // User requested: always disable editing for shared tasks, regardless of permission
   const disabled = !!shareCode;
+  const taskControlsDisabled = disabled || isHydratingTask || taskLoadError;
+  const effectiveRealtimeEnabled =
+    realtimeEnabled && !isHydratingTask && !taskLoadError;
+  const effectiveCollaborationMode =
+    collaborationMode && !isHydratingTask && !taskLoadError;
 
   // Keep this permission query disabled when `disabled` shared-link mode is active
   // (`enabled` becomes false) so `canManageTaskMedia` stays undefined while
@@ -231,7 +246,7 @@ export function TaskEditDialog({
         );
         return result.hasPermission;
       },
-      enabled: Boolean(effectiveTaskWsId) && !disabled,
+      enabled: Boolean(effectiveTaskWsId) && !taskControlsDisabled,
       staleTime: 5 * 60 * 1000,
     });
 
@@ -400,7 +415,7 @@ export function TaskEditDialog({
     columnName: 'description_yjs_state',
     id: task?.id || '',
     user: yjsUser,
-    enabled: isOpen && !isCreateMode && realtimeEnabled && !!task?.id,
+    enabled: isOpen && !isCreateMode && effectiveRealtimeEnabled && !!task?.id,
     broadcastDebounceMs: workspaceTier && workspaceTier !== 'FREE' ? 0 : 200,
     saveDebounceMs: 5000,
     loadDocumentState: loadTaskDescriptionState,
@@ -410,7 +425,7 @@ export function TaskEditDialog({
   const [hasHydratedYjsState, setHasHydratedYjsState] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || isCreateMode || !realtimeEnabled || !task?.id) {
+    if (!isOpen || isCreateMode || !effectiveRealtimeEnabled || !task?.id) {
       setHasHydratedYjsState(false);
       return;
     }
@@ -418,13 +433,13 @@ export function TaskEditDialog({
     if (synced) {
       setHasHydratedYjsState(true);
     }
-  }, [isOpen, isCreateMode, realtimeEnabled, task?.id, synced]);
+  }, [isOpen, isCreateMode, effectiveRealtimeEnabled, task?.id, synced]);
 
   const isYjsSyncing = useMemo(() => {
     return (
       isOpen &&
       !isCreateMode &&
-      realtimeEnabled &&
+      effectiveRealtimeEnabled &&
       !!task?.id &&
       !hasHydratedYjsState &&
       !synced
@@ -433,7 +448,7 @@ export function TaskEditDialog({
     hasHydratedYjsState,
     isOpen,
     isCreateMode,
-    realtimeEnabled,
+    effectiveRealtimeEnabled,
     task?.id,
     synced,
   ]);
@@ -746,8 +761,8 @@ export function TaskEditDialog({
       selectedLabels: formState.selectedLabels,
       selectedAssignees: formState.selectedAssignees,
       isCreateMode,
-      isLoading,
-      collaborationMode,
+      isLoading: isLoading || taskControlsDisabled,
+      collaborationMode: effectiveCollaborationMode,
       draftId,
     });
 
@@ -770,7 +785,7 @@ export function TaskEditDialog({
     boardId,
     isCreateMode,
     isOpen,
-    realtimeEnabled,
+    realtimeEnabled: effectiveRealtimeEnabled,
     isPersonalWorkspace,
     name: formState.name,
     priority: formState.priority,
@@ -898,6 +913,7 @@ export function TaskEditDialog({
     isCreateMode,
     task,
     filters,
+    taskHydrationVersion,
     setName: formState.setName,
     setDescription: formState.setDescription,
     setPriority: formState.setPriority,
@@ -917,7 +933,7 @@ export function TaskEditDialog({
     boardId,
     isOpen,
     isCreateMode,
-    realtimeEnabled,
+    realtimeEnabled: effectiveRealtimeEnabled,
     editorInstance,
     doc,
     yjsProvider: provider,
@@ -1240,7 +1256,7 @@ export function TaskEditDialog({
     saveAsDraft: isCreateMode && (!!draftId || saveAsDraft),
     draftId,
     isCreateMode,
-    collaborationMode,
+    collaborationMode: effectiveCollaborationMode,
     isPersonalWorkspace,
     shareCode,
     sharedPermission,
@@ -1675,7 +1691,7 @@ export function TaskEditDialog({
     useTaskDialogClose({
       taskId: task?.id,
       isCreateMode,
-      collaborationMode,
+      collaborationMode: effectiveCollaborationMode,
       synced,
       connected,
       draftStorageKey,
@@ -1823,8 +1839,8 @@ export function TaskEditDialog({
     isOpen,
     canSave,
     isCreateMode,
-    collaborationMode,
-    disabled,
+    collaborationMode: effectiveCollaborationMode,
+    disabled: taskControlsDisabled,
     editorInstance,
     boardConfig,
     slashState: suggestionMenus.slashState,
@@ -1951,6 +1967,32 @@ export function TaskEditDialog({
   ]);
 
   const showCompactDialog = presentation === 'compact' && !draftId;
+  const taskHydrationNotice =
+    isHydratingTask || taskLoadError ? (
+      <div
+        className={cn(
+          'mx-4 mb-2 flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm md:mx-8',
+          taskLoadError
+            ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
+            : 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow'
+        )}
+        role={taskLoadError ? 'alert' : 'status'}
+      >
+        <span>
+          {taskLoadError ? t('please_try_again_later') : t('loading')}
+        </span>
+        {taskLoadError && onRetryTaskLoad && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="xs"
+            onClick={onRetryTaskLoad}
+          >
+            {t('retry')}
+          </Button>
+        )}
+      </div>
+    ) : null;
   const compactHeaderInfo = useMemo(
     () =>
       getTaskDialogHeaderInfo(
@@ -2047,7 +2089,7 @@ export function TaskEditDialog({
       onSaveSchedulingSettings={saveSchedulingSettings}
       schedulingSaving={schedulingSaving}
       scheduledEvents={localCalendarEvents}
-      disabled={disabled}
+      disabled={taskControlsDisabled}
       isDraftMode={!!draftId || (isCreateMode && saveAsDraft)}
       variant={variant}
     />
@@ -2135,18 +2177,25 @@ export function TaskEditDialog({
                   setName={formState.setName}
                   updateName={updateName}
                   flushNameUpdate={flushNameUpdate}
-                  disabled={disabled}
+                  disabled={taskControlsDisabled}
                   variant="compact"
-                  onSubmit={isCreateMode ? handleSave : undefined}
+                  onSubmit={
+                    isCreateMode && !taskControlsDisabled
+                      ? handleSave
+                      : undefined
+                  }
                 />
               }
               propertyControls={renderTaskPropertiesSection('compact')}
+              taskStatus={taskHydrationNotice}
               smartAction={smartSuggestionsButton}
               smartPanel={smartSuggestionsPanel}
               saveAsDraft={isCreateMode ? saveAsDraft : undefined}
               createMultiple={isCreateMode ? createMultiple : undefined}
               canSave={
-                isCreateMode ? canSave && !isDescriptionOverLimit : undefined
+                isCreateMode
+                  ? canSave && !isDescriptionOverLimit && !taskControlsDisabled
+                  : undefined
               }
               isLoading={isLoading}
               isPersonalWorkspace={isPersonalWorkspace}
@@ -2156,7 +2205,9 @@ export function TaskEditDialog({
               }
               onClose={handleAttemptClose}
               onFullscreen={() => setPresentation('fullscreen')}
-              onSave={isCreateMode ? handleSave : undefined}
+              onSave={
+                isCreateMode && !taskControlsDisabled ? handleSave : undefined
+              }
             />
           ) : (
             <>
@@ -2167,8 +2218,8 @@ export function TaskEditDialog({
                 {!disabled && (
                   <TaskDialogHeader
                     isCreateMode={isCreateMode}
-                    collaborationMode={collaborationMode}
-                    realtimeEnabled={realtimeEnabled}
+                    collaborationMode={effectiveCollaborationMode}
+                    realtimeEnabled={effectiveRealtimeEnabled}
                     isOpen={isOpen}
                     synced={synced}
                     connected={connected}
@@ -2198,7 +2249,11 @@ export function TaskEditDialog({
                     wsId={effectiveTaskWsId}
                     boardId={boardId}
                     pathname={pathname}
-                    canSave={canSave && !isDescriptionOverLimit}
+                    canSave={
+                      canSave &&
+                      !isDescriptionOverLimit &&
+                      !taskControlsDisabled
+                    }
                     isLoading={isLoading}
                     setCreateMultiple={setCreateMultiple}
                     handleClose={handleAttemptClose}
@@ -2217,8 +2272,11 @@ export function TaskEditDialog({
                         : undefined
                     }
                     disabled={disabled}
+                    controlsDisabled={taskControlsDisabled}
                     onScrollToUserCursor={
-                      collaborationMode ? scrollToUserCursor : undefined
+                      effectiveCollaborationMode
+                        ? scrollToUserCursor
+                        : undefined
                     }
                   />
                 )}
@@ -2238,7 +2296,7 @@ export function TaskEditDialog({
                       setName={formState.setName}
                       updateName={updateName}
                       flushNameUpdate={flushNameUpdate}
-                      disabled={disabled}
+                      disabled={taskControlsDisabled}
                     />
 
                     {smartSuggestionsButton && (
@@ -2249,13 +2307,15 @@ export function TaskEditDialog({
 
                     {!disabled && renderTaskPropertiesSection()}
 
+                    {taskHydrationNotice}
+
                     {smartSuggestionsPanel && (
                       <div className="px-4 pb-3 md:px-8">
                         {smartSuggestionsPanel}
                       </div>
                     )}
 
-                    {!disabled && !isCreateMode && (
+                    {!taskControlsDisabled && !isCreateMode && (
                       <PersonalOverridesSection
                         taskId={task?.id}
                         isCreateMode={isCreateMode}
@@ -2264,7 +2324,7 @@ export function TaskEditDialog({
                       />
                     )}
 
-                    {!disabled &&
+                    {!taskControlsDisabled &&
                       !draftId &&
                       !(isCreateMode && saveAsDraft) && (
                         <TaskRelationshipsProperties
@@ -2313,7 +2373,7 @@ export function TaskEditDialog({
                           onAddExistingAsSubtask={addChildTask}
                           isSaving={!!savingRelationship}
                           savingTaskId={savingRelationship}
-                          disabled={disabled}
+                          disabled={taskControlsDisabled}
                         />
                       )}
 
@@ -2322,8 +2382,8 @@ export function TaskEditDialog({
                       setDescription={formState.setDescription}
                       isOpen={isOpen}
                       isCreateMode={isCreateMode}
-                      collaborationMode={collaborationMode}
-                      realtimeEnabled={realtimeEnabled}
+                      collaborationMode={effectiveCollaborationMode}
+                      realtimeEnabled={effectiveRealtimeEnabled}
                       isYjsSyncing={isYjsSyncing}
                       wsId={effectiveTaskWsId}
                       boardId={boardId}
@@ -2357,7 +2417,7 @@ export function TaskEditDialog({
                       descriptionPercentLeft={descriptionPercentLeft}
                       descriptionLimit={MAX_TASK_DESCRIPTION_LENGTH}
                       isDescriptionOverLimit={isDescriptionOverLimit}
-                      disabled={disabled}
+                      disabled={taskControlsDisabled}
                       mentionTranslations={{
                         delete_task: t('delete_task'),
                         delete_task_confirmation: (name: string) =>
@@ -2438,11 +2498,13 @@ export function TaskEditDialog({
 
               <MobileFloatingSaveButton
                 isCreateMode={isCreateMode}
-                collaborationMode={collaborationMode}
+                collaborationMode={effectiveCollaborationMode}
                 isLoading={isLoading}
-                canSave={canSave && !isDescriptionOverLimit}
+                canSave={
+                  canSave && !isDescriptionOverLimit && !taskControlsDisabled
+                }
                 handleSave={handleSave}
-                disabled={disabled}
+                disabled={taskControlsDisabled}
               />
             </>
           )}
