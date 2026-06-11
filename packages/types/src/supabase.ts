@@ -9815,6 +9815,14 @@ export type Database = {
           status: string;
         }[];
       };
+      complete_inventory_checkout_session_payment: {
+        Args: {
+          p_checkout_id: string;
+          p_now?: string;
+          p_polar_order_id: string;
+        };
+        Returns: string;
+      };
       compute_abuse_risk_tier: {
         Args: { p_confidence: number; p_score: number };
         Returns: Database['public']['Enums']['abuse_risk_tier'];
@@ -9890,6 +9898,28 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: string;
+      };
+      create_inventory_checkout_session: {
+        Args: { p_now?: string; p_payload: Json; p_storefront_slug: string };
+        Returns: Json;
+      };
+      create_wallet_checkpoint_reconciliation: {
+        Args: {
+          _actor_id: string;
+          _basis?: string;
+          _category_id?: string;
+          _checkpoint_id: string;
+          _description?: string;
+          _wallet_id: string;
+        };
+        Returns: {
+          checked_at: string;
+          checkpoint_id: string;
+          created: boolean;
+          offset_amount: number;
+          transaction_id: string;
+          wallet_id: string;
+        }[];
       };
       create_workspace_wallet_checkpoints_batch: {
         Args: {
@@ -10330,6 +10360,22 @@ export type Database = {
           undeliverable_count: number;
         }[];
       };
+      get_wallet_checkpoint_audit_status: {
+        Args: { _wallet_ids: string[] };
+        Returns: {
+          audited_balance: number;
+          checkpoint_ledger_balance: number;
+          latest_actual_balance: number;
+          latest_checked_at: string;
+          latest_checkpoint_id: string;
+          ledger_balance: number;
+          post_checkpoint_delta: number;
+          post_checkpoint_transaction_count: number;
+          status: string;
+          variance: number;
+          wallet_id: string;
+        }[];
+      };
       get_wallet_checkpoint_interval_delta: {
         Args: { _end_at: string; _start_at: string; _wallet_id: string };
         Returns: {
@@ -10582,6 +10628,52 @@ export type Database = {
       is_nova_user_id_in_team: {
         Args: { _team_id: string; _user_id: string };
         Returns: boolean;
+      };
+      list_inventory_bundles: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+          p_status?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          bundle: Json;
+          total_count: number;
+        }[];
+      };
+      list_inventory_checkouts: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+          p_status?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          checkout: Json;
+          total_count: number;
+        }[];
+      };
+      list_inventory_storefront_listings: {
+        Args: { p_status?: string; p_storefront_id: string; p_ws_id: string };
+        Returns: {
+          listing: Json;
+          total_count: number;
+        }[];
+      };
+      list_inventory_storefronts: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+          p_status?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          storefront: Json;
+          total_count: number;
+        }[];
       };
       list_task_source_filter_ids: {
         Args: {
@@ -10859,6 +10951,10 @@ export type Database = {
         Returns: undefined;
       };
       refresh_posts_dashboard_view: { Args: never; Returns: undefined };
+      release_inventory_checkout_session: {
+        Args: { p_checkout_id: string; p_now?: string };
+        Returns: undefined;
+      };
       resolve_user_groups_table_timezone: {
         Args: { p_ws_id: string };
         Returns: string;
@@ -10944,6 +11040,22 @@ export type Database = {
           product_enabled: boolean;
           products: Json;
         }[];
+      };
+      upsert_inventory_bundle_with_components: {
+        Args: {
+          p_bundle_id?: string;
+          p_components?: Json;
+          p_description?: string;
+          p_image_url?: string;
+          p_max_per_order?: number;
+          p_name?: string;
+          p_price?: number;
+          p_slug?: string;
+          p_status?: string;
+          p_storefront_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       upsert_scheduling_metadata: {
         Args: {

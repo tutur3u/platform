@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   isInventoryEnabled: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
   rpc: vi.fn(),
+  schema: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
 }));
 
@@ -52,7 +53,8 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 describe('inventory storefront checkout route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.createAdminClient.mockResolvedValue({ rpc: mocks.rpc });
+    mocks.schema.mockReturnValue({ rpc: mocks.rpc });
+    mocks.createAdminClient.mockResolvedValue({ schema: mocks.schema });
     mocks.getPublicStorefront.mockResolvedValue({
       storefront: { visibility: 'public', wsId: 'ws-1' },
     });
@@ -114,6 +116,7 @@ describe('inventory storefront checkout route', () => {
         p_checkout_id: 'checkout-1',
       }
     );
+    expect(mocks.schema).toHaveBeenCalledWith('private');
   });
 
   it('denies private storefront checkout before reservation when unauthenticated', async () => {

@@ -20,15 +20,17 @@ type InventoryCheckoutRpcData = {
 };
 
 type RpcClient = {
-  rpc: (
-    fn:
-      | 'create_inventory_checkout_session'
-      | 'release_inventory_checkout_session',
-    args: Record<string, unknown>
-  ) => Promise<{
-    data: InventoryCheckoutRpcData | null;
-    error: { message?: string } | null;
-  }>;
+  schema: (schema: 'private') => {
+    rpc: (
+      fn:
+        | 'create_inventory_checkout_session'
+        | 'release_inventory_checkout_session',
+      args: Record<string, unknown>
+    ) => Promise<{
+      data: InventoryCheckoutRpcData | null;
+      error: { message?: string } | null;
+    }>;
+  };
 };
 
 function getStorefrontUrl(request: Request) {
@@ -91,7 +93,8 @@ export async function POST(request: Request, { params }: Params) {
 
     const payload = checkoutCreatePayloadSchema.parse(await request.json());
     const sbAdmin = (await createAdminClient()) as unknown as RpcClient;
-    const { data, error } = await sbAdmin.rpc(
+    const privateRpc = sbAdmin.schema('private');
+    const { data, error } = await privateRpc.rpc(
       'create_inventory_checkout_session',
       {
         p_payload: payload,
@@ -143,7 +146,7 @@ export async function POST(request: Request, { params }: Params) {
         { status: 201 }
       );
     } catch (error) {
-      const { error: releaseError } = await sbAdmin.rpc(
+      const { error: releaseError } = await privateRpc.rpc(
         'release_inventory_checkout_session',
         {
           p_checkout_id: checkout.id,

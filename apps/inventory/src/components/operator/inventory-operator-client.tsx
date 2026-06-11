@@ -12,6 +12,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { CheckoutFeeCalculator } from '@/components/checkout-fee-calculator';
+import { BundleComponentsPanel } from './bundle-components-panel';
 import { BundleForm, StorefrontForm } from './inventory-forms';
 import {
   LoadingRows,
@@ -25,8 +26,12 @@ import type {
 } from './operator-types';
 import { OverviewPanel } from './overview-panel';
 import { PolarSettingsPanel } from './polar-settings-panel';
+import { ProductCreateForm } from './product-management';
 import { ProductsTable } from './products-table';
+import { SaleDetailPanel } from './sale-detail-panel';
+import { SetupPanel } from './setup-panel';
 import { SimpleRows } from './simple-rows';
+import { StorefrontListingsPanel } from './storefront-listings-panel';
 import { useInventoryData } from './use-inventory-data';
 
 export type { InventoryOperatorView } from './operator-types';
@@ -51,6 +56,9 @@ export function InventoryOperatorClient({
   const products = data.products.data?.data ?? [];
   const storefronts = data.storefronts.data?.data ?? [];
   const bundles = data.bundles.data?.data ?? [];
+  const sales = data.sales.data?.data ?? [];
+  const suppliers = data.suppliers.data?.data ?? [];
+  const batches = data.batches.data?.data ?? [];
   const lowStock = data.overview.data?.low_stock_products ?? [];
   const statusOptions = useMemo<InventoryStatusOption[]>(() => {
     const all = { label: t('statuses.all'), value: 'all' };
@@ -136,14 +144,21 @@ export function InventoryOperatorClient({
   const Icon = section[0] as typeof Boxes;
   const activeQueries = [
     view === 'overview' ? data.overview : null,
-    ['catalog', 'stock', 'setup', 'overview'].includes(view)
+    ['bundles', 'catalog', 'stock', 'setup', 'storefront', 'overview'].includes(
+      view
+    )
       ? data.products
       : null,
-    ['storefront', 'overview'].includes(view) ? data.storefronts : null,
-    ['bundles', 'overview'].includes(view) ? data.bundles : null,
+    view === 'storefront' ? data.storefronts : null,
+    ['bundles', 'storefront'].includes(view) ? data.bundles : null,
     view === 'checkouts' ? data.checkouts : null,
     view === 'sales' ? data.sales : null,
     view === 'audits' ? data.audits : null,
+    ['catalog', 'stock', 'setup', 'bundles', 'storefront'].includes(view)
+      ? data.formOptions
+      : null,
+    view === 'setup' ? data.suppliers : null,
+    view === 'setup' ? data.batches : null,
   ].flatMap((query) =>
     query
       ? [
@@ -190,22 +205,44 @@ export function InventoryOperatorClient({
           storefronts={storefronts}
         />
       ) : null}
-      {!isLoading &&
-      !isError &&
-      (view === 'catalog' || view === 'stock' || view === 'setup') ? (
-        <ProductsTable rows={products} view={view} />
+      {!isLoading && !isError && (view === 'catalog' || view === 'stock') ? (
+        <>
+          {view === 'catalog' ? (
+            <ProductCreateForm options={data.formOptions.data} wsId={wsId} />
+          ) : null}
+          <ProductsTable rows={products} view={view} wsId={wsId} />
+        </>
+      ) : null}
+      {!isLoading && !isError && view === 'setup' ? (
+        <SetupPanel
+          batches={batches}
+          options={data.formOptions.data}
+          suppliers={suppliers}
+          wsId={wsId}
+        />
       ) : null}
       {!isLoading && !isError && view === 'storefront' ? (
         <>
-          <SimpleRows rows={storefronts} type="storefronts" />
+          <SimpleRows rows={storefronts} type="storefronts" wsId={wsId} />
           <StorefrontForm wsId={wsId} />
+          <StorefrontListingsPanel
+            bundles={bundles}
+            products={products}
+            storefronts={storefronts}
+            wsId={wsId}
+          />
           <PolarSettingsPanel wsId={wsId} />
         </>
       ) : null}
       {!isLoading && !isError && view === 'bundles' ? (
         <>
-          <SimpleRows rows={bundles} type="bundles" />
+          <SimpleRows rows={bundles} type="bundles" wsId={wsId} />
           <BundleForm wsId={wsId} />
+          <BundleComponentsPanel
+            bundles={bundles}
+            products={products}
+            wsId={wsId}
+          />
         </>
       ) : null}
       {!isLoading && !isError && view === 'checkouts' ? (
@@ -214,11 +251,18 @@ export function InventoryOperatorClient({
             <CheckoutFeeCalculator />
           </div>
           <PolarSettingsPanel wsId={wsId} />
-          <SimpleRows rows={data.checkouts.data?.data ?? []} type="checkouts" />
+          <SimpleRows
+            rows={data.checkouts.data?.data ?? []}
+            type="checkouts"
+            wsId={wsId}
+          />
         </>
       ) : null}
       {!isLoading && !isError && view === 'sales' ? (
-        <SimpleRows rows={data.sales.data?.data ?? []} type="sales" />
+        <>
+          <SimpleRows rows={sales} type="sales" wsId={wsId} />
+          <SaleDetailPanel sales={sales} wsId={wsId} />
+        </>
       ) : null}
       {!isLoading && !isError && view === 'audits' ? (
         <SimpleRows rows={data.audits.data?.data ?? []} type="audits" />

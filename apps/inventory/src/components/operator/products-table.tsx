@@ -5,13 +5,16 @@ import type { InventoryProductSummary } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { EmptyRow } from './operator-shell';
+import { ProductRowActions } from './product-management';
 
 export function ProductsTable({
   rows,
   view,
+  wsId,
 }: {
   rows: InventoryProductSummary[];
   view: string;
+  wsId: string;
 }) {
   const t = useTranslations('inventory.operator');
 
@@ -28,6 +31,7 @@ export function ProductsTable({
             <th className="p-3">{t('columns.owner')}</th>
             <th className="p-3">{t('columns.stock')}</th>
             <th className="p-3">{t('columns.location')}</th>
+            <th className="p-3">{t('columns.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -61,6 +65,9 @@ export function ProductsTable({
                 </td>
                 <td className="p-3 text-muted-foreground">
                   {String(inventory.warehouse_name ?? row.warehouse ?? '-')}
+                </td>
+                <td className="p-3">
+                  <ProductRowActions row={row} wsId={wsId} />
                 </td>
               </tr>
             );

@@ -50,9 +50,9 @@ const publicStorefrontPrivateRpcMigrationPath = resolve(
   repoRoot,
   'apps/database/supabase/migrations/20260611111500_inventory_public_storefront_private_rpcs.sql'
 );
-const bundleRepositoryPath = resolve(
+const inventoryOperatorPrivateRpcMigrationPath = resolve(
   repoRoot,
-  'apps/web/src/lib/inventory/commerce/bundles.ts'
+  'apps/database/supabase/migrations/20260612003400_inventory_operator_private_rpcs.sql'
 );
 
 describe('inventory commerce migration contract', () => {
@@ -159,41 +159,52 @@ describe('inventory commerce migration contract', () => {
     expect(checkoutSource).toContain('BUNDLE_COMPONENTS_REQUIRED');
   });
 
-  it('validates bundle component targets before replacing stored components', () => {
-    const source = readFileSync(bundleRepositoryPath, 'utf8');
-    const validationIndex = source.indexOf('await assertComponentTargets');
+  it('validates bundle component targets inside the atomic private upsert RPC', () => {
+    const source = readFileSync(
+      inventoryOperatorPrivateRpcMigrationPath,
+      'utf8'
+    );
+    const validationIndex = source.indexOf(
+      'INVALID_BUNDLE_COMPONENT_WORKSPACE_SCOPE'
+    );
     const deleteIndex = source.indexOf(
       'delete from private.inventory_bundle_components'
     );
 
-    expect(source).toContain('async function assertComponentTargets');
+    expect(source).toContain(
+      'create or replace function private.upsert_inventory_bundle_with_components'
+    );
     expect(validationIndex).toBeGreaterThan(-1);
     expect(deleteIndex).toBeGreaterThan(-1);
-    expect(validationIndex).toBeLessThan(deleteIndex);
-    expect(source).toMatch(/and product\.ws_id = \$\{wsId\}/);
-    expect(source).toMatch(/and unit\.ws_id = \$\{wsId\}/);
-    expect(source).toMatch(/and warehouse\.ws_id = \$\{wsId\}/);
+    expect(source).toContain('join public.workspace_products product');
+    expect(source).toContain('and product.ws_id = p_ws_id');
+    expect(source).toContain('and unit.ws_id = p_ws_id');
+    expect(source).toContain('and warehouse.ws_id = p_ws_id');
     expect(source).toContain('when stock.product_id is null then 0');
-    expect(source).toContain(
-      'throw new InvalidInventoryBundleComponentTargetError()'
-    );
+    expect(source).toContain('raise exception');
   });
 
   it('filters bundle component reads through same-workspace stock joins', () => {
-    const bundleSource = readFileSync(bundleRepositoryPath, 'utf8');
+    const bundleSource = readFileSync(
+      inventoryOperatorPrivateRpcMigrationPath,
+      'utf8'
+    );
     const publicStorefrontRpcSource = readFileSync(
       publicStorefrontPrivateRpcMigrationPath,
       'utf8'
     );
 
+    expect(bundleSource).toContain(
+      'create or replace function private.list_inventory_bundles'
+    );
     expect(bundleSource).toContain('join public.workspace_products product');
-    expect(bundleSource).toMatch(/and product\.ws_id = \$\{wsId\}/);
+    expect(bundleSource).toContain('and product.ws_id = p_ws_id');
     expect(bundleSource).toContain('join private.inventory_units unit');
-    expect(bundleSource).toMatch(/and unit\.ws_id = \$\{wsId\}/);
+    expect(bundleSource).toContain('and unit.ws_id = p_ws_id');
     expect(bundleSource).toContain(
       'join private.inventory_warehouses warehouse'
     );
-    expect(bundleSource).toMatch(/and warehouse\.ws_id = \$\{wsId\}/);
+    expect(bundleSource).toContain('and warehouse.ws_id = p_ws_id');
     expect(bundleSource).toContain('join private.inventory_products stock');
 
     expect(publicStorefrontRpcSource).toContain(

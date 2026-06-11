@@ -888,6 +888,7 @@
     },
     "operator": {
       "columns": {
+        "actions": "Thao tác",
         "category": "Danh mục",
         "item": "Mặt hàng",
         "location": "Vị trí",
@@ -897,18 +898,39 @@
       },
       "empty": "Không có bản ghi kho hàng phù hợp với chế độ xem này.",
       "forms": {
+        "amount": "Số lượng",
+        "bundle": "Combo",
         "bundleName": "Tên combo",
+        "category": "Danh mục",
         "create": "Tạo",
         "createBundleError": "Không thể tạo combo.",
         "createBundleSuccess": "Đã tạo combo.",
         "createStorefrontError": "Không thể tạo cửa hàng.",
         "createStorefrontSuccess": "Đã tạo cửa hàng.",
         "creating": "Đang tạo...",
+        "deleteError": "Không thể xóa bản ghi.",
+        "deleteSuccess": "Đã xóa bản ghi.",
+        "emptyResource": "Chưa có bản ghi thiết lập.",
+        "listingTitle": "Tiêu đề listing",
+        "manufacturer": "Nhà sản xuất",
+        "minAmount": "Tối thiểu",
+        "note": "Ghi chú",
+        "owner": "Chủ sở hữu",
         "price": "Giá",
+        "product": "Sản phẩm",
+        "productName": "Tên sản phẩm",
+        "quantity": "Số lượng",
+        "save": "Lưu",
+        "saveError": "Không thể lưu thay đổi.",
+        "saveSuccess": "Đã lưu thay đổi.",
         "slug": "slug",
         "storeName": "Tên cửa hàng",
+        "supplier": "Nhà cung cấp",
+        "target": "Đối tượng",
+        "unit": "Đơn vị",
         "visibilityPrivate": "Riêng tư",
-        "visibilityPublic": "Công khai"
+        "visibilityPublic": "Công khai",
+        "warehouse": "Kho"
       },
       "metrics": {
         "bundles": "Combo",
@@ -940,6 +962,15 @@
         "tokenPlaceholder": "Polar organization access token"
       },
       "search": "Tìm trong kho",
+      "setup": {
+        "batches": "Lô hàng",
+        "categories": "Danh mục",
+        "manufacturers": "Nhà sản xuất",
+        "owners": "Chủ sở hữu",
+        "suppliers": "Nhà cung cấp",
+        "units": "Đơn vị",
+        "warehouses": "Kho"
+      },
       "states": {
         "errorDescription": "Hãy làm mới chế độ xem này hoặc thử lại sau khi API hoạt động ổn định.",
         "errorTitle": "Không thể tải dữ liệu kho",

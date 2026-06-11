@@ -1,15 +1,42 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createInventoryBatch,
   createInventoryCheckoutSession,
+  createInventoryOwner,
+  createInventoryProduct,
+  createInventoryProductCategory,
   createInventoryStorefront,
+  createInventorySupplier,
   createInventoryUnit,
+  createInventoryWarehouse,
+  deleteInventoryBatch,
+  deleteInventoryBundle,
+  deleteInventoryOwner,
+  deleteInventoryProduct,
+  deleteInventoryProductCategory,
+  deleteInventorySale,
+  deleteInventoryStorefront,
+  deleteInventoryStorefrontListing,
+  deleteInventorySupplier,
   deleteInventoryUnit,
+  deleteInventoryWarehouse,
   getInventoryPublicOrder,
   getInventoryPublicStorefront,
+  getInventorySale,
   listInventoryBundles,
   listInventoryStorefronts,
   listInventoryUnits,
+  releaseInventoryCheckout,
+  updateInventoryBatch,
+  updateInventoryOwner,
+  updateInventoryProduct,
+  updateInventoryProductCategory,
+  updateInventoryProductInventory,
+  updateInventorySale,
+  updateInventoryStorefrontListing,
+  updateInventorySupplier,
   updateInventoryUnit,
+  updateInventoryWarehouse,
 } from './inventory';
 
 function createJsonResponse(data: unknown) {
@@ -171,6 +198,301 @@ describe('inventory internal API helpers', () => {
       expect.objectContaining({
         method: 'DELETE',
       })
+    );
+  });
+
+  it('routes product create, update, stock update, and delete through workspace product APIs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        message: 'success',
+      })
+    );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await createInventoryProduct(
+      'ws_1',
+      {
+        category_id: 'category_1',
+        name: 'Coffee Beans',
+      },
+      options
+    );
+    await updateInventoryProduct(
+      'ws_1',
+      'product 1',
+      { name: 'Coffee Blend' },
+      options
+    );
+    await updateInventoryProductInventory(
+      'ws_1',
+      'product 1',
+      {
+        inventory: [
+          {
+            amount: 10,
+            price: 1200,
+            unit_id: 'unit_1',
+            warehouse_id: 'warehouse_1',
+          },
+        ],
+      },
+      options
+    );
+    await deleteInventoryProduct('ws_1', 'product 1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws_1/products',
+      expect.objectContaining({
+        body: JSON.stringify({
+          category_id: 'category_1',
+          name: 'Coffee Beans',
+        }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws_1/products/product%201',
+      expect.objectContaining({
+        body: JSON.stringify({ name: 'Coffee Blend' }),
+        method: 'PATCH',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws_1/products/product%201/inventory',
+      expect.objectContaining({
+        method: 'PATCH',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/ws_1/products/product%201',
+      expect.objectContaining({
+        method: 'DELETE',
+      })
+    );
+  });
+
+  it('routes storefront listing update/delete and checkout release through protected inventory APIs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: { id: 'listing_1' },
+      })
+    );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await updateInventoryStorefrontListing(
+      'ws_1',
+      'storefront 1',
+      'listing 1',
+      { price: 2500, status: 'published' },
+      options
+    );
+    await deleteInventoryStorefrontListing(
+      'ws_1',
+      'storefront 1',
+      'listing 1',
+      options
+    );
+    await releaseInventoryCheckout('ws_1', 'checkout 1', options);
+    await deleteInventoryStorefront('ws_1', 'storefront 1', options);
+    await deleteInventoryBundle('ws_1', 'bundle 1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/storefronts/storefront%201/listings/listing%201',
+      expect.objectContaining({
+        body: JSON.stringify({ price: 2500, status: 'published' }),
+        method: 'PATCH',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/storefronts/storefront%201/listings/listing%201',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/checkouts/checkout%201/release',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/storefronts/storefront%201',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/bundles/bundle%201',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
+  it('routes batch create, update, and delete through the inventory batch API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: { id: 'batch_1' },
+      })
+    );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await createInventoryBatch(
+      'ws_1',
+      { price: 500, supplier_id: null, warehouse_id: 'warehouse_1' },
+      options
+    );
+    await updateInventoryBatch('ws_1', 'batch 1', { price: 700 }, options);
+    await deleteInventoryBatch('ws_1', 'batch 1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/batches',
+      expect.objectContaining({
+        body: JSON.stringify({
+          price: 500,
+          supplier_id: null,
+          warehouse_id: 'warehouse_1',
+        }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/batches/batch%201',
+      expect.objectContaining({
+        body: JSON.stringify({ price: 700 }),
+        method: 'PATCH',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/batches/batch%201',
+      expect.objectContaining({
+        method: 'DELETE',
+      })
+    );
+  });
+
+  it('routes setup resource CRUD through existing workspace APIs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: { id: 'resource_1' },
+        message: 'success',
+      })
+    );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await createInventoryProductCategory('ws_1', { name: 'Tea' }, options);
+    await updateInventoryProductCategory(
+      'ws_1',
+      'category 1',
+      { name: 'Coffee' },
+      options
+    );
+    await deleteInventoryProductCategory('ws_1', 'category 1', options);
+    await createInventoryWarehouse('ws_1', { name: 'Main' }, options);
+    await updateInventoryWarehouse(
+      'ws_1',
+      'warehouse 1',
+      { name: 'Back' },
+      options
+    );
+    await deleteInventoryWarehouse('ws_1', 'warehouse 1', options);
+    await createInventorySupplier('ws_1', { name: 'Supplier' }, options);
+    await updateInventorySupplier(
+      'ws_1',
+      'supplier 1',
+      { name: 'Vendor' },
+      options
+    );
+    await deleteInventorySupplier('ws_1', 'supplier 1', options);
+    await createInventoryOwner('ws_1', { name: 'Ops' }, options);
+    await updateInventoryOwner('ws_1', 'owner 1', { archived: true }, options);
+    await deleteInventoryOwner('ws_1', 'owner 1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws_1/product-categories',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws_1/product-categories/category%201',
+      expect.objectContaining({ method: 'PUT' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/ws_1/product-warehouses',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      7,
+      'https://internal.example.com/api/v1/workspaces/ws_1/product-suppliers',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      10,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/owners',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      12,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/owners/owner%201',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
+  it('routes sale detail, update, and delete through the inventory sale API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: { id: 'sale_1' },
+      })
+    );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await getInventorySale('ws_1', 'sale 1', options);
+    await updateInventorySale(
+      'ws_1',
+      'sale 1',
+      { note: 'Packed', wallet_id: 'wallet_1' },
+      options
+    );
+    await deleteInventorySale('ws_1', 'sale 1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/sales/sale%201',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/sales/sale%201',
+      expect.objectContaining({
+        body: JSON.stringify({ note: 'Packed', wallet_id: 'wallet_1' }),
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/sales/sale%201',
+      expect.objectContaining({ method: 'DELETE' })
     );
   });
 

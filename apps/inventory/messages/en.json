@@ -888,6 +888,7 @@
     },
     "operator": {
       "columns": {
+        "actions": "Actions",
         "category": "Category",
         "item": "Item",
         "location": "Location",
@@ -897,18 +898,39 @@
       },
       "empty": "No inventory records match this view.",
       "forms": {
+        "amount": "Amount",
+        "bundle": "Bundle",
         "bundleName": "Bundle name",
+        "category": "Category",
         "create": "Create",
         "createBundleError": "Could not create bundle.",
         "createBundleSuccess": "Bundle created.",
         "createStorefrontError": "Could not create storefront.",
         "createStorefrontSuccess": "Storefront created.",
         "creating": "Creating...",
+        "deleteError": "Could not delete record.",
+        "deleteSuccess": "Record deleted.",
+        "emptyResource": "No setup records yet.",
+        "listingTitle": "Listing title",
+        "manufacturer": "Manufacturer",
+        "minAmount": "Min",
+        "note": "Note",
+        "owner": "Owner",
         "price": "Price",
+        "product": "Product",
+        "productName": "Product name",
+        "quantity": "Quantity",
+        "save": "Save",
+        "saveError": "Could not save changes.",
+        "saveSuccess": "Changes saved.",
         "slug": "slug",
         "storeName": "Store name",
+        "supplier": "Supplier",
+        "target": "Target",
+        "unit": "Unit",
         "visibilityPrivate": "Private",
-        "visibilityPublic": "Public"
+        "visibilityPublic": "Public",
+        "warehouse": "Warehouse"
       },
       "metrics": {
         "bundles": "Bundles",
@@ -940,6 +962,15 @@
         "tokenPlaceholder": "Polar organization access token"
       },
       "search": "Search inventory",
+      "setup": {
+        "batches": "Batches",
+        "categories": "Categories",
+        "manufacturers": "Manufacturers",
+        "owners": "Owners",
+        "suppliers": "Suppliers",
+        "units": "Units",
+        "warehouses": "Warehouses"
+      },
       "states": {
         "errorDescription": "Refresh this view or try again after the API recovers.",
         "errorTitle": "Inventory data could not be loaded",

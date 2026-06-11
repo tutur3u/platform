@@ -1,13 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getCheckoutByPublicToken } from './checkouts';
+import {
+  getCheckoutByPublicToken,
+  listCheckouts,
+  releaseCheckout,
+} from './checkouts';
 
 vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => {
+  const from = vi.fn();
   const rpc = vi.fn();
-  const schema = vi.fn(() => ({ rpc }));
+  const schema = vi.fn(() => ({ from, rpc }));
   return {
     createAdminClient: vi.fn(),
+    from,
     rpc,
     schema,
   };
@@ -57,5 +63,69 @@ describe('getCheckoutByPublicToken', () => {
     mocks.rpc.mockResolvedValue({ data: null, error });
 
     await expect(getCheckoutByPublicToken('public-token')).rejects.toBe(error);
+  });
+
+  it('lists checkouts through the private checkout RPC', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          checkout: { id: 'checkout-1', publicToken: 'public-token' },
+          total_count: 1,
+        },
+      ],
+      error: null,
+    });
+
+    await expect(
+      listCheckouts('ws-1', { pageSize: 10, q: 'buyer', status: 'reserved' })
+    ).resolves.toEqual({
+      count: 1,
+      data: [{ id: 'checkout-1', publicToken: 'public-token' }],
+    });
+
+    expect(mocks.rpc).toHaveBeenCalledWith('list_inventory_checkouts', {
+      p_limit: 10,
+      p_offset: 0,
+      p_search: 'buyer',
+      p_status: 'reserved',
+      p_ws_id: 'ws-1',
+    });
+  });
+
+  it('releases a workspace checkout through the private release RPC', async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { public_token: 'public-token' },
+      error: null,
+    });
+    const eq = vi.fn(() => ({ eq, maybeSingle }));
+    const select = vi.fn(() => ({ eq }));
+    mocks.from.mockReturnValue({ select });
+    mocks.rpc
+      .mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({
+        data: { id: 'checkout-1', publicToken: 'public-token' },
+        error: null,
+      });
+
+    await expect(releaseCheckout('ws-1', 'checkout-1')).resolves.toEqual({
+      id: 'checkout-1',
+      publicToken: 'public-token',
+    });
+
+    expect(mocks.from).toHaveBeenCalledWith('inventory_checkout_sessions');
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      1,
+      'release_inventory_checkout_session',
+      {
+        p_checkout_id: 'checkout-1',
+      }
+    );
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      2,
+      'get_inventory_checkout_by_public_token',
+      {
+        p_public_token: 'public-token',
+      }
+    );
   });
 });

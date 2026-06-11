@@ -194,15 +194,20 @@ export type InventoryOverviewResponse = {
 export type InventoryProductSummary = {
   archived?: boolean;
   category?: string | null;
+  category_id?: string | null;
+  description?: string | null;
+  finance_category_id?: string | null;
   id: string;
   inventory?: Array<Record<string, unknown>>;
   manufacturer_id?: string | null;
   manufacturer?: string | null;
   min_amount?: number | null;
   name: string;
-  owner?: { name?: string | null } | null;
+  owner_id?: string | null;
+  owner?: { id?: string | null; name?: string | null } | null;
   stock?: Array<Record<string, unknown>>;
   unit?: string | null;
+  usage?: string | null;
   warehouse?: string | null;
 };
 
@@ -222,6 +227,57 @@ export type InventoryUnit = {
   updated_at?: string | null;
 };
 
+export type InventoryProductInventoryItem = {
+  warehouse_id: string;
+  unit_id: string;
+  amount: number | null;
+  min_amount?: number;
+  price: number;
+};
+
+export type InventoryProductPayload = {
+  name: string;
+  manufacturer_id?: string | null;
+  manufacturer?: string | null;
+  description?: string;
+  usage?: string;
+  category_id: string;
+  owner_id?: string;
+  finance_category_id?: string | null;
+  inventory?: InventoryProductInventoryItem[];
+  archived?: boolean;
+};
+
+export type InventoryProductInventoryPayload = {
+  inventory: InventoryProductInventoryItem[];
+};
+
+export type InventoryCategoryPayload = {
+  name: string;
+};
+
+export type InventoryWarehousePayload = {
+  name: string;
+};
+
+export type InventorySupplierPayload = {
+  name: string;
+};
+
+export type InventoryOwnerPayload = {
+  name: string;
+  linked_workspace_user_id?: string | null;
+  avatar_url?: string | null;
+  archived?: boolean;
+};
+
+export type InventoryBatchPayload = {
+  warehouse_id: string;
+  supplier_id?: string | null;
+  price?: number;
+  total_diff?: number;
+};
+
 export type InventorySaleSummary = {
   completed_at: string | null;
   created_at: string | null;
@@ -230,6 +286,49 @@ export type InventorySaleSummary = {
   items_count: number;
   paid_amount: number;
   total_quantity: number;
+};
+
+export type InventorySaleLine = {
+  product_id: string;
+  product_name: string;
+  owner_id: string | null;
+  owner_name: string;
+  unit_id: string;
+  unit_name: string;
+  warehouse_id: string;
+  warehouse_name: string;
+  quantity: number;
+  price: number;
+};
+
+export type InventorySaleDetail = InventorySaleSummary & {
+  notice: string | null;
+  note: string | null;
+  wallet_id: string | null;
+  wallet_name: string | null;
+  category_id: string | null;
+  category_name: string | null;
+  transaction_id: string | null;
+  transaction_missing: boolean;
+  customer_id: string | null;
+  customer_name: string | null;
+  creator_name: string | null;
+  owners: string[];
+  lines: InventorySaleLine[];
+};
+
+export type InventorySaleUpdatePayload = {
+  notice?: string | null;
+  note?: string | null;
+  wallet_id?: string | null;
+  category_id?: string | null;
+  products?: Array<{
+    product_id: string;
+    unit_id: string;
+    warehouse_id: string;
+    quantity: number;
+    price: number;
+  }>;
 };
 
 export type InventoryAuditLogSummary = {
@@ -498,6 +597,67 @@ export function listInventoryProducts(
   });
 }
 
+export function createInventoryProduct(
+  wsId: string,
+  payload: InventoryProductPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(wsId, '/products'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventoryProduct(
+  wsId: string,
+  productId: string,
+  payload: Partial<InventoryProductPayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(wsId, `/products/${encodePathSegment(productId)}`),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PATCH',
+    }
+  );
+}
+
+export function deleteInventoryProduct(
+  wsId: string,
+  productId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(wsId, `/products/${encodePathSegment(productId)}`),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
+  );
+}
+
+export function updateInventoryProductInventory(
+  wsId: string,
+  productId: string,
+  payload: InventoryProductInventoryPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(wsId, `/products/${encodePathSegment(productId)}/inventory`),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PATCH',
+    }
+  );
+}
+
 export function listInventoryProductCategories(
   wsId: string,
   query?: InventoryNamedListQuery,
@@ -509,6 +669,51 @@ export function listInventoryProductCategories(
     cache: 'no-store',
     query: paginatedQuery(query),
   });
+}
+
+export function createInventoryProductCategory(
+  wsId: string,
+  payload: InventoryCategoryPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(wsId, '/product-categories'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventoryProductCategory(
+  wsId: string,
+  categoryId: string,
+  payload: Partial<InventoryCategoryPayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(wsId, `/product-categories/${encodePathSegment(categoryId)}`),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PUT',
+    }
+  );
+}
+
+export function deleteInventoryProductCategory(
+  wsId: string,
+  categoryId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(wsId, `/product-categories/${encodePathSegment(categoryId)}`),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
+  );
 }
 
 export function listInventoryWarehouses(
@@ -524,6 +729,57 @@ export function listInventoryWarehouses(
   });
 }
 
+export function createInventoryWarehouse(
+  wsId: string,
+  payload: InventoryWarehousePayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(wsId, '/product-warehouses'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventoryWarehouse(
+  wsId: string,
+  warehouseId: string,
+  payload: Partial<InventoryWarehousePayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(
+      wsId,
+      `/product-warehouses/${encodePathSegment(warehouseId)}`
+    ),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PUT',
+    }
+  );
+}
+
+export function deleteInventoryWarehouse(
+  wsId: string,
+  warehouseId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(
+      wsId,
+      `/product-warehouses/${encodePathSegment(warehouseId)}`
+    ),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
+  );
+}
+
 export function listInventorySuppliers(
   wsId: string,
   query?: InventoryNamedListQuery,
@@ -537,6 +793,51 @@ export function listInventorySuppliers(
   });
 }
 
+export function createInventorySupplier(
+  wsId: string,
+  payload: InventorySupplierPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(wsId, '/product-suppliers'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventorySupplier(
+  wsId: string,
+  supplierId: string,
+  payload: Partial<InventorySupplierPayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(wsId, `/product-suppliers/${encodePathSegment(supplierId)}`),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PUT',
+    }
+  );
+}
+
+export function deleteInventorySupplier(
+  wsId: string,
+  supplierId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspacePath(wsId, `/product-suppliers/${encodePathSegment(supplierId)}`),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
+  );
+}
+
 export function listInventoryBatches(
   wsId: string,
   query?: InventoryNamedListQuery,
@@ -548,6 +849,51 @@ export function listInventoryBatches(
     cache: 'no-store',
     query: paginatedQuery(query),
   });
+}
+
+export function createInventoryBatch(
+  wsId: string,
+  payload: InventoryBatchPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: ProductBatch }>(
+    workspaceInventoryPath(wsId, '/batches'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventoryBatch(
+  wsId: string,
+  batchId: string,
+  payload: Partial<InventoryBatchPayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: ProductBatch }>(
+    workspaceInventoryPath(wsId, `/batches/${encodePathSegment(batchId)}`),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PATCH',
+    }
+  );
+}
+
+export function deleteInventoryBatch(
+  wsId: string,
+  batchId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ ok: boolean }>(
+    workspaceInventoryPath(wsId, `/batches/${encodePathSegment(batchId)}`),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
+  );
 }
 
 export function listInventoryPromotions(
@@ -591,6 +937,62 @@ export function listInventoryManufacturersPage(
   });
 }
 
+export function listInventoryOwners(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryOwner[];
+  }>(workspaceInventoryPath(wsId, '/owners'), {
+    cache: 'no-store',
+  });
+}
+
+export function createInventoryOwner(
+  wsId: string,
+  payload: InventoryOwnerPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryOwner }>(
+    workspaceInventoryPath(wsId, '/owners'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventoryOwner(
+  wsId: string,
+  ownerId: string,
+  payload: Partial<InventoryOwnerPayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryOwner }>(
+    workspaceInventoryPath(wsId, `/owners/${encodePathSegment(ownerId)}`),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PATCH',
+    }
+  );
+}
+
+export function deleteInventoryOwner(
+  wsId: string,
+  ownerId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspaceInventoryPath(wsId, `/owners/${encodePathSegment(ownerId)}`),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
+  );
+}
+
 export function listInventoryUnits(
   wsId: string,
   options?: InternalApiClientOptions
@@ -628,6 +1030,47 @@ export function listInventorySales(
     cache: 'no-store',
     query: asQuery(query),
   });
+}
+
+export function getInventorySale(
+  wsId: string,
+  saleId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventorySaleDetail }>(
+    workspaceInventoryPath(wsId, `/sales/${encodePathSegment(saleId)}`),
+    { cache: 'no-store' }
+  );
+}
+
+export function updateInventorySale(
+  wsId: string,
+  saleId: string,
+  payload: InventorySaleUpdatePayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventorySaleDetail }>(
+    workspaceInventoryPath(wsId, `/sales/${encodePathSegment(saleId)}`),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PUT',
+    }
+  );
+}
+
+export function deleteInventorySale(
+  wsId: string,
+  saleId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspaceInventoryPath(wsId, `/sales/${encodePathSegment(saleId)}`),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
+  );
 }
 
 export function listInventoryAuditLogs(
@@ -773,6 +1216,23 @@ export function updateInventoryStorefront(
   );
 }
 
+export function deleteInventoryStorefront(
+  wsId: string,
+  storefrontId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ ok: boolean }>(
+    workspaceInventoryPath(
+      wsId,
+      `/storefronts/${encodePathSegment(storefrontId)}`
+    ),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
+  );
+}
+
 export function listInventoryStorefrontListings(
   wsId: string,
   storefrontId: string,
@@ -810,6 +1270,46 @@ export function createInventoryStorefrontListing(
       body: JSON.stringify(payload),
       headers: jsonHeaders(options?.defaultHeaders),
       method: 'POST',
+    }
+  );
+}
+
+export function updateInventoryStorefrontListing(
+  wsId: string,
+  storefrontId: string,
+  listingId: string,
+  payload: Partial<InventoryStorefrontListingPayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryStorefrontListing;
+  }>(
+    workspaceInventoryPath(
+      wsId,
+      `/storefronts/${encodePathSegment(storefrontId)}/listings/${encodePathSegment(listingId)}`
+    ),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PATCH',
+    }
+  );
+}
+
+export function deleteInventoryStorefrontListing(
+  wsId: string,
+  storefrontId: string,
+  listingId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ ok: boolean }>(
+    workspaceInventoryPath(
+      wsId,
+      `/storefronts/${encodePathSegment(storefrontId)}/listings/${encodePathSegment(listingId)}`
+    ),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
     }
   );
 }
@@ -858,6 +1358,20 @@ export function updateInventoryBundle(
   );
 }
 
+export function deleteInventoryBundle(
+  wsId: string,
+  bundleId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ ok: boolean }>(
+    workspaceInventoryPath(wsId, `/bundles/${encodePathSegment(bundleId)}`),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
+  );
+}
+
 export function listInventoryCheckouts(
   wsId: string,
   query?: InventoryCheckoutListQuery,
@@ -869,6 +1383,25 @@ export function listInventoryCheckouts(
     cache: 'no-store',
     query: asQuery(query),
   });
+}
+
+export function releaseInventoryCheckout(
+  wsId: string,
+  checkoutId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryCheckoutSession;
+  }>(
+    workspaceInventoryPath(
+      wsId,
+      `/checkouts/${encodePathSegment(checkoutId)}/release`
+    ),
+    {
+      headers: options?.defaultHeaders,
+      method: 'POST',
+    }
+  );
 }
 
 export function getInventoryPolarSettings(

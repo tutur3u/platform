@@ -2,18 +2,20 @@ import 'server-only';
 
 import type {
   InventoryListingStatus,
+  InventoryStorefront,
+  InventoryStorefrontListing,
   InventoryStorefrontListingPayload,
   InventoryStorefrontPayload,
   InventoryStorefrontStatus,
 } from '@tuturuuu/internal-api/inventory';
-import { getPlatformSql } from '@/lib/database/platform-sql';
-import {
-  type ListingRow,
-  type ListQuery,
-  mapListing,
-  mapStorefront,
-  type StorefrontRow,
-} from './mappers';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { type ListQuery, mapStorefront, type StorefrontRow } from './mappers';
+
+type SupabaseErrorLike = { code?: string; message?: string } | null;
+
+type ListRpcRow<TKey extends string, TValue> = {
+  total_count: number | null;
+} & Record<TKey, TValue | null>;
 
 function normalizePagination(page?: number, pageSize?: number) {
   const limit = Math.max(1, Math.min(pageSize ?? 25, 100));
@@ -23,114 +25,113 @@ function normalizePagination(page?: number, pageSize?: number) {
 
 function normalizeSearch(q?: string) {
   const value = q?.trim();
-  return value ? `%${value}%` : null;
+  return value ? value : null;
+}
+
+function mapRpcList<TKey extends string, TValue>(
+  rows: ListRpcRow<TKey, TValue>[] | null | undefined,
+  key: TKey
+) {
+  return {
+    count: rows?.[0]?.total_count ?? 0,
+    data: (rows ?? []).map((row) => row[key]).filter(Boolean) as TValue[],
+  };
+}
+
+function hasPayloadKey<T extends object, K extends PropertyKey>(
+  payload: T,
+  key: K
+): payload is T & Record<K, unknown> {
+  return Object.hasOwn(payload, key);
+}
+
+async function createPrivateInventoryClient() {
+  const sbAdmin = await createAdminClient();
+  return { inventory: sbAdmin.schema('private'), sbAdmin };
+}
+
+async function getStorefrontListingsCount(
+  storefrontId: string,
+  inventory: Awaited<
+    ReturnType<typeof createPrivateInventoryClient>
+  >['inventory']
+) {
+  const { count, error } = await inventory
+    .from('inventory_storefront_listings')
+    .select('id', { count: 'exact', head: true })
+    .eq('storefront_id', storefrontId);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
+async function mapStorefrontWithCount(
+  row: Omit<StorefrontRow, 'listings_count'>,
+  inventory: Awaited<
+    ReturnType<typeof createPrivateInventoryClient>
+  >['inventory']
+) {
+  return mapStorefront({
+    ...row,
+    listings_count: await getStorefrontListingsCount(row.id, inventory),
+  });
 }
 
 export async function listStorefronts(
   wsId: string,
   query: ListQuery<InventoryStorefrontStatus> = {}
 ) {
-  const sql = getPlatformSql();
+  const { inventory } = await createPrivateInventoryClient();
   const { limit, offset } = normalizePagination(query.page, query.pageSize);
-  const search = normalizeSearch(query.q);
   const status = query.status && query.status !== 'all' ? query.status : null;
+  const { data, error } = (await inventory.rpc(
+    'list_inventory_storefronts' as never,
+    {
+      p_limit: limit,
+      p_offset: offset,
+      p_search: normalizeSearch(query.q),
+      p_status: status,
+      p_ws_id: wsId,
+    } as never
+  )) as {
+    data: ListRpcRow<'storefront', InventoryStorefront>[] | null;
+    error: SupabaseErrorLike;
+  };
 
-  const rows = await sql<StorefrontRow[]>`
-    select
-      storefront.id,
-      storefront.ws_id,
-      storefront.slug,
-      storefront.name,
-      storefront.description,
-      storefront.status,
-      storefront.visibility,
-      storefront.hero_image_url,
-      storefront.accent_color,
-      storefront.currency,
-      storefront.created_at::text as created_at,
-      storefront.updated_at::text as updated_at,
-      (
-        select count(*)::int
-        from private.inventory_storefront_listings listing
-        where listing.storefront_id = storefront.id
-      ) as listings_count
-    from private.inventory_storefronts storefront
-    where storefront.ws_id = ${wsId}
-      and (${status}::text is null or storefront.status = ${status})
-      and (
-        ${search}::text is null
-        or storefront.name ilike ${search}
-        or storefront.slug ilike ${search}
-      )
-    order by storefront.created_at desc
-    limit ${limit}
-    offset ${offset}
-  `;
-
-  const [countRow] = await sql<{ count: number }[]>`
-    select count(*)::int as count
-    from private.inventory_storefronts storefront
-    where storefront.ws_id = ${wsId}
-      and (${status}::text is null or storefront.status = ${status})
-      and (
-        ${search}::text is null
-        or storefront.name ilike ${search}
-        or storefront.slug ilike ${search}
-      )
-  `;
-
-  return { count: countRow?.count ?? 0, data: rows.map(mapStorefront) };
+  if (error) throw error;
+  return mapRpcList(data, 'storefront');
 }
 
 export async function createStorefront(
   wsId: string,
   payload: InventoryStorefrontPayload
 ) {
-  const sql = getPlatformSql();
-  const [row] = await sql<StorefrontRow[]>`
-    insert into private.inventory_storefronts (
-      ws_id,
-      slug,
-      name,
-      description,
-      status,
-      visibility,
-      hero_image_url,
-      accent_color,
-      currency
+  const { inventory } = await createPrivateInventoryClient();
+  const { data, error } = await inventory
+    .from('inventory_storefronts')
+    .insert({
+      accent_color: payload.accentColor ?? null,
+      currency: payload.currency ?? 'USD',
+      description: payload.description ?? null,
+      hero_image_url: payload.heroImageUrl ?? null,
+      name: payload.name,
+      slug: payload.slug,
+      status: payload.status ?? 'draft',
+      visibility: payload.visibility ?? 'public',
+      ws_id: wsId,
+    })
+    .select(
+      'id, ws_id, slug, name, description, status, visibility, hero_image_url, accent_color, currency, created_at, updated_at'
     )
-    values (
-      ${wsId},
-      ${payload.slug},
-      ${payload.name},
-      ${payload.description ?? null},
-      ${payload.status ?? 'draft'},
-      ${payload.visibility ?? 'public'},
-      ${payload.heroImageUrl ?? null},
-      ${payload.accentColor ?? null},
-      ${payload.currency ?? 'USD'}
-    )
-    returning
-      id,
-      ws_id,
-      slug,
-      name,
-      description,
-      status,
-      visibility,
-      hero_image_url,
-      accent_color,
-      currency,
-      created_at::text as created_at,
-      updated_at::text as updated_at,
-      0::int as listings_count
-  `;
+    .single();
 
-  if (!row) {
-    throw new Error('Failed to create inventory storefront');
-  }
+  if (error) throw error;
+  if (!data) throw new Error('Failed to create inventory storefront');
 
-  return mapStorefront(row);
+  return mapStorefront({
+    ...(data as Omit<StorefrontRow, 'listings_count'>),
+    listings_count: 0,
+  });
 }
 
 export async function updateStorefront(
@@ -138,41 +139,57 @@ export async function updateStorefront(
   storefrontId: string,
   payload: Partial<InventoryStorefrontPayload>
 ) {
-  const sql = getPlatformSql();
-  const [row] = await sql<StorefrontRow[]>`
-    update private.inventory_storefronts
-    set
-      slug = coalesce(${payload.slug ?? null}, slug),
-      name = coalesce(${payload.name ?? null}, name),
-      description = ${payload.description ?? null},
-      status = coalesce(${payload.status ?? null}, status),
-      visibility = coalesce(${payload.visibility ?? null}, visibility),
-      hero_image_url = ${payload.heroImageUrl ?? null},
-      accent_color = ${payload.accentColor ?? null},
-      currency = coalesce(${payload.currency ?? null}, currency)
-    where id = ${storefrontId}
-      and ws_id = ${wsId}
-    returning
-      id,
-      ws_id,
-      slug,
-      name,
-      description,
-      status,
-      visibility,
-      hero_image_url,
-      accent_color,
-      currency,
-      created_at::text as created_at,
-      updated_at::text as updated_at,
-      (
-        select count(*)::int
-        from private.inventory_storefront_listings listing
-        where listing.storefront_id = private.inventory_storefronts.id
-      ) as listings_count
-  `;
+  const { inventory } = await createPrivateInventoryClient();
+  const update: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
 
-  return row ? mapStorefront(row) : null;
+  if (payload.slug !== undefined) update.slug = payload.slug;
+  if (payload.name !== undefined) update.name = payload.name;
+  if (payload.status !== undefined) update.status = payload.status;
+  if (payload.visibility !== undefined) update.visibility = payload.visibility;
+  if (payload.currency !== undefined) update.currency = payload.currency;
+  if (hasPayloadKey(payload, 'description')) {
+    update.description = payload.description ?? null;
+  }
+  if (hasPayloadKey(payload, 'heroImageUrl')) {
+    update.hero_image_url = payload.heroImageUrl ?? null;
+  }
+  if (hasPayloadKey(payload, 'accentColor')) {
+    update.accent_color = payload.accentColor ?? null;
+  }
+
+  const { data, error } = await inventory
+    .from('inventory_storefronts')
+    .update(update as never)
+    .eq('id', storefrontId)
+    .eq('ws_id', wsId)
+    .select(
+      'id, ws_id, slug, name, description, status, visibility, hero_image_url, accent_color, currency, created_at, updated_at'
+    )
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return mapStorefrontWithCount(
+    data as Omit<StorefrontRow, 'listings_count'>,
+    inventory
+  );
+}
+
+export async function deleteStorefront(wsId: string, storefrontId: string) {
+  const { inventory } = await createPrivateInventoryClient();
+  const { data, error } = await inventory
+    .from('inventory_storefronts')
+    .delete()
+    .eq('id', storefrontId)
+    .eq('ws_id', wsId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data);
 }
 
 export async function listStorefrontListings(
@@ -182,104 +199,123 @@ export async function listStorefrontListings(
     status?: InventoryStorefrontStatus | InventoryListingStatus | 'all';
   } = {}
 ) {
-  const sql = getPlatformSql();
+  const { inventory } = await createPrivateInventoryClient();
   const status = query.status && query.status !== 'all' ? query.status : null;
-  const rows = await sql<ListingRow[]>`
-    select
-      listing.id,
-      listing.storefront_id,
-      listing.ws_id,
-      listing.listing_type,
-      listing.product_id,
-      listing.unit_id,
-      unit.name as unit_name,
-      listing.warehouse_id,
-      warehouse.name as warehouse_name,
-      listing.bundle_id,
-      listing.title,
-      listing.description,
-      listing.image_url,
-      listing.price,
-      listing.compare_at_price,
-      listing.status,
-      listing.sort_order,
-      listing.max_per_order,
-      listing.created_at::text as created_at,
-      listing.updated_at::text as updated_at,
-      case
-        when listing.listing_type = 'product' then greatest(
-          coalesce(stock.amount, 0)
-          - public._inventory_reserved_quantity(
-            listing.product_id,
-            listing.unit_id,
-            listing.warehouse_id,
-            now()
-          ),
-          0
-        )::int
-        else null
-      end as available_quantity
-    from private.inventory_storefront_listings listing
-    left join private.inventory_products stock
-      on stock.product_id = listing.product_id
-      and stock.unit_id = listing.unit_id
-      and stock.warehouse_id = listing.warehouse_id
-    left join private.inventory_units unit
-      on unit.id = listing.unit_id
-    left join private.inventory_warehouses warehouse
-      on warehouse.id = listing.warehouse_id
-    where listing.ws_id = ${wsId}
-      and listing.storefront_id = ${storefrontId}
-      and (${status}::text is null or listing.status = ${status})
-    order by listing.sort_order asc, listing.created_at desc
-  `;
+  const { data, error } = (await inventory.rpc(
+    'list_inventory_storefront_listings' as never,
+    {
+      p_status: status,
+      p_storefront_id: storefrontId,
+      p_ws_id: wsId,
+    } as never
+  )) as {
+    data: ListRpcRow<'listing', InventoryStorefrontListing>[] | null;
+    error: SupabaseErrorLike;
+  };
 
-  return { count: rows.length, data: rows.map(mapListing) };
+  if (error) throw error;
+  return mapRpcList(data, 'listing');
 }
 
 async function assertListingTarget(
   wsId: string,
   payload: InventoryStorefrontListingPayload
 ) {
-  const sql = getPlatformSql();
+  const { inventory, sbAdmin } = await createPrivateInventoryClient();
 
   if ((payload.listingType ?? 'product') === 'product') {
-    const [row] = await sql<{ id: string }[]>`
-      select product.id
-      from public.workspace_products product
-      join private.inventory_products stock
-        on stock.product_id = product.id
-      where product.ws_id = ${wsId}
-        and product.id = ${payload.productId ?? null}
-        and stock.unit_id = ${payload.unitId ?? null}
-        and stock.warehouse_id = ${payload.warehouseId ?? null}
-      limit 1
-    `;
-    if (!row) throw new Error('Invalid inventory listing product target');
+    if (!payload.productId || !payload.unitId || !payload.warehouseId) {
+      throw new Error('Invalid inventory listing product target');
+    }
+
+    const { data: product, error: productError } = await sbAdmin
+      .from('workspace_products')
+      .select('id')
+      .eq('id', payload.productId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+    if (productError) throw productError;
+
+    const { data: stock, error: stockError } = await inventory
+      .from('inventory_products')
+      .select('product_id')
+      .eq('product_id', payload.productId)
+      .eq('unit_id', payload.unitId)
+      .eq('warehouse_id', payload.warehouseId)
+      .maybeSingle();
+    if (stockError) throw stockError;
+    if (!product || !stock) {
+      throw new Error('Invalid inventory listing product target');
+    }
     return;
   }
 
-  const [row] = await sql<{ id: string }[]>`
-    select id
-    from private.inventory_bundles
-    where ws_id = ${wsId}
-      and id = ${payload.bundleId ?? null}
-    limit 1
-  `;
-  if (!row) throw new Error('Invalid inventory listing bundle target');
+  const { data, error } = await inventory
+    .from('inventory_bundles')
+    .select('id')
+    .eq('ws_id', wsId)
+    .eq('id', payload.bundleId ?? '')
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error('Invalid inventory listing bundle target');
 }
 
 async function assertStorefrontTarget(wsId: string, storefrontId: string) {
-  const sql = getPlatformSql();
-  const [row] = await sql<{ id: string }[]>`
-    select id
-    from private.inventory_storefronts
-    where id = ${storefrontId}
-      and ws_id = ${wsId}
-    limit 1
-  `;
+  const { inventory } = await createPrivateInventoryClient();
+  const { data, error } = await inventory
+    .from('inventory_storefronts')
+    .select('id')
+    .eq('id', storefrontId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
 
-  if (!row) throw new Error('Invalid inventory storefront target');
+  if (error) throw error;
+  if (!data) throw new Error('Invalid inventory storefront target');
+}
+
+async function getListingTargetPayload(
+  wsId: string,
+  storefrontId: string,
+  listingId: string,
+  payload: Partial<InventoryStorefrontListingPayload>
+) {
+  const { inventory } = await createPrivateInventoryClient();
+  const { data, error } = await inventory
+    .from('inventory_storefront_listings')
+    .select(
+      'listing_type, product_id, unit_id, warehouse_id, bundle_id, title, price'
+    )
+    .eq('id', listingId)
+    .eq('storefront_id', storefrontId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const listingType =
+    payload.listingType ??
+    (data.listing_type === 'bundle' ? 'bundle' : 'product');
+  return {
+    bundleId: payload.bundleId ?? data.bundle_id,
+    listingType,
+    price: payload.price ?? Number(data.price),
+    productId: payload.productId ?? data.product_id,
+    title: payload.title ?? data.title,
+    unitId: payload.unitId ?? data.unit_id,
+    warehouseId: payload.warehouseId ?? data.warehouse_id,
+  } satisfies InventoryStorefrontListingPayload;
+}
+
+async function findListingById(
+  wsId: string,
+  storefrontId: string,
+  listingId: string
+) {
+  const result = await listStorefrontListings(wsId, storefrontId, {
+    status: 'all',
+  });
+  return result.data.find((listing) => listing.id === listingId) ?? null;
 }
 
 export async function createStorefrontListing(
@@ -290,70 +326,126 @@ export async function createStorefrontListing(
   await assertStorefrontTarget(wsId, storefrontId);
   await assertListingTarget(wsId, payload);
 
-  const sql = getPlatformSql();
+  const { inventory } = await createPrivateInventoryClient();
   const listingType = payload.listingType ?? 'product';
-  const [row] = await sql<ListingRow[]>`
-    insert into private.inventory_storefront_listings (
-      storefront_id,
-      ws_id,
-      listing_type,
-      product_id,
-      unit_id,
-      warehouse_id,
-      bundle_id,
-      title,
-      description,
-      image_url,
-      price,
-      compare_at_price,
-      status,
-      sort_order,
-      max_per_order
-    )
-    values (
-      ${storefrontId},
-      ${wsId},
-      ${listingType},
-      ${listingType === 'product' ? (payload.productId ?? null) : null},
-      ${listingType === 'product' ? (payload.unitId ?? null) : null},
-      ${listingType === 'product' ? (payload.warehouseId ?? null) : null},
-      ${listingType === 'bundle' ? (payload.bundleId ?? null) : null},
-      ${payload.title},
-      ${payload.description ?? null},
-      ${payload.imageUrl ?? null},
-      ${payload.price},
-      ${payload.compareAtPrice ?? null},
-      ${payload.status ?? 'draft'},
-      ${payload.sortOrder ?? 0},
-      ${payload.maxPerOrder ?? 99}
-    )
-    returning
-      id,
-      storefront_id,
-      ws_id,
-      listing_type,
-      product_id,
-      unit_id,
-      null::text as unit_name,
-      warehouse_id,
-      null::text as warehouse_name,
-      bundle_id,
-      title,
-      description,
-      image_url,
-      price,
-      compare_at_price,
-      status,
-      sort_order,
-      max_per_order,
-      created_at::text as created_at,
-      updated_at::text as updated_at,
-      null::int as available_quantity
-  `;
+  const { data, error } = await inventory
+    .from('inventory_storefront_listings')
+    .insert({
+      bundle_id: listingType === 'bundle' ? (payload.bundleId ?? null) : null,
+      compare_at_price: payload.compareAtPrice ?? null,
+      description: payload.description ?? null,
+      image_url: payload.imageUrl ?? null,
+      listing_type: listingType,
+      max_per_order: payload.maxPerOrder ?? 99,
+      price: payload.price,
+      product_id:
+        listingType === 'product' ? (payload.productId ?? null) : null,
+      sort_order: payload.sortOrder ?? 0,
+      status: payload.status ?? 'draft',
+      storefront_id: storefrontId,
+      title: payload.title,
+      unit_id: listingType === 'product' ? (payload.unitId ?? null) : null,
+      warehouse_id:
+        listingType === 'product' ? (payload.warehouseId ?? null) : null,
+      ws_id: wsId,
+    })
+    .select('id')
+    .single();
 
-  if (!row) {
-    throw new Error('Failed to create inventory storefront listing');
+  if (error) throw error;
+  if (!data) throw new Error('Failed to create inventory storefront listing');
+
+  const listing = await findListingById(wsId, storefrontId, String(data.id));
+  if (!listing) throw new Error('Failed to load inventory storefront listing');
+  return listing;
+}
+
+export async function updateStorefrontListing(
+  wsId: string,
+  storefrontId: string,
+  listingId: string,
+  payload: Partial<InventoryStorefrontListingPayload>
+) {
+  await assertStorefrontTarget(wsId, storefrontId);
+  const targetPayload = await getListingTargetPayload(
+    wsId,
+    storefrontId,
+    listingId,
+    payload
+  );
+  if (!targetPayload) return null;
+
+  await assertListingTarget(wsId, targetPayload);
+
+  const listingType = targetPayload.listingType ?? 'product';
+  const update: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (payload.title !== undefined) update.title = payload.title;
+  if (payload.price !== undefined) update.price = payload.price;
+  if (payload.status !== undefined) update.status = payload.status;
+  if (payload.sortOrder !== undefined) update.sort_order = payload.sortOrder;
+  if (payload.maxPerOrder !== undefined) {
+    update.max_per_order = payload.maxPerOrder;
+  }
+  if (hasPayloadKey(payload, 'description')) {
+    update.description = payload.description ?? null;
+  }
+  if (hasPayloadKey(payload, 'imageUrl')) {
+    update.image_url = payload.imageUrl ?? null;
+  }
+  if (hasPayloadKey(payload, 'compareAtPrice')) {
+    update.compare_at_price = payload.compareAtPrice ?? null;
+  }
+  if (
+    payload.listingType !== undefined ||
+    hasPayloadKey(payload, 'productId') ||
+    hasPayloadKey(payload, 'unitId') ||
+    hasPayloadKey(payload, 'warehouseId') ||
+    hasPayloadKey(payload, 'bundleId')
+  ) {
+    update.listing_type = listingType;
+    update.bundle_id =
+      listingType === 'bundle' ? (targetPayload.bundleId ?? null) : null;
+    update.product_id =
+      listingType === 'product' ? (targetPayload.productId ?? null) : null;
+    update.unit_id =
+      listingType === 'product' ? (targetPayload.unitId ?? null) : null;
+    update.warehouse_id =
+      listingType === 'product' ? (targetPayload.warehouseId ?? null) : null;
   }
 
-  return mapListing(row);
+  const { inventory } = await createPrivateInventoryClient();
+  const { data, error } = await inventory
+    .from('inventory_storefront_listings')
+    .update(update as never)
+    .eq('id', listingId)
+    .eq('storefront_id', storefrontId)
+    .eq('ws_id', wsId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return findListingById(wsId, storefrontId, listingId);
+}
+
+export async function deleteStorefrontListing(
+  wsId: string,
+  storefrontId: string,
+  listingId: string
+) {
+  const { inventory } = await createPrivateInventoryClient();
+  const { data, error } = await inventory
+    .from('inventory_storefront_listings')
+    .delete()
+    .eq('id', listingId)
+    .eq('storefront_id', storefrontId)
+    .eq('ws_id', wsId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data);
 }

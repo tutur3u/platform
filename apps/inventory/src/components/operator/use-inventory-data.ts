@@ -4,12 +4,15 @@ import { useQuery } from '@tanstack/react-query';
 import {
   getInventoryOverview,
   getInventoryPolarSettings,
+  getInventoryProductFormOptions,
   listInventoryAuditLogs,
+  listInventoryBatches,
   listInventoryBundles,
   listInventoryCheckouts,
   listInventoryProducts,
   listInventorySales,
   listInventoryStorefronts,
+  listInventorySuppliers,
 } from '@tuturuuu/internal-api/inventory';
 import { parseAsString, useQueryStates } from 'nuqs';
 import type { InventoryOperatorView } from './operator-types';
@@ -27,7 +30,14 @@ export function useInventoryData(wsId: string, view: InventoryOperatorView) {
     queryKey: ['inventory', wsId, 'overview'],
   });
   const products = useQuery({
-    enabled: ['catalog', 'stock', 'setup', 'overview'].includes(view),
+    enabled: [
+      'bundles',
+      'catalog',
+      'setup',
+      'stock',
+      'storefront',
+      'overview',
+    ].includes(view),
     queryFn: () =>
       listInventoryProducts(wsId, {
         pageSize: 50,
@@ -51,7 +61,7 @@ export function useInventoryData(wsId: string, view: InventoryOperatorView) {
     queryKey: ['inventory', wsId, 'storefronts', filters.q, filters.status],
   });
   const bundles = useQuery({
-    enabled: ['bundles', 'overview'].includes(view),
+    enabled: ['bundles', 'storefront', 'overview'].includes(view),
     queryFn: () =>
       listInventoryBundles(wsId, {
         pageSize: 50,
@@ -81,6 +91,23 @@ export function useInventoryData(wsId: string, view: InventoryOperatorView) {
     queryFn: () => listInventoryAuditLogs(wsId, { limit: 50 }),
     queryKey: ['inventory', wsId, 'audits'],
   });
+  const formOptions = useQuery({
+    enabled: ['bundles', 'catalog', 'setup', 'stock', 'storefront'].includes(
+      view
+    ),
+    queryFn: () => getInventoryProductFormOptions(wsId),
+    queryKey: ['inventory', wsId, 'form-options'],
+  });
+  const suppliers = useQuery({
+    enabled: view === 'setup',
+    queryFn: () => listInventorySuppliers(wsId, { pageSize: 100 }),
+    queryKey: ['inventory', wsId, 'suppliers'],
+  });
+  const batches = useQuery({
+    enabled: view === 'setup',
+    queryFn: () => listInventoryBatches(wsId, { pageSize: 100 }),
+    queryKey: ['inventory', wsId, 'batches'],
+  });
   const polarSettings = useQuery({
     enabled: ['checkouts', 'overview', 'storefront'].includes(view),
     queryFn: () => getInventoryPolarSettings(wsId),
@@ -89,14 +116,17 @@ export function useInventoryData(wsId: string, view: InventoryOperatorView) {
 
   return {
     audits,
+    batches,
     bundles,
     checkouts,
     filters,
+    formOptions,
     overview,
     polarSettings,
     products,
     sales,
     setFilters,
     storefronts,
+    suppliers,
   };
 }

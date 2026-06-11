@@ -1,18 +1,18 @@
 import 'server-only';
 
 import type {
-  InventoryBundleComponent,
+  InventoryBundle,
   InventoryBundlePayload,
   InventoryBundleStatus,
 } from '@tuturuuu/internal-api/inventory';
-import { getPlatformSql } from '@/lib/database/platform-sql';
-import {
-  type BundleComponentRow,
-  type BundleRow,
-  type ListQuery,
-  mapBundle,
-  mapComponent,
-} from './mappers';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { ListQuery } from './mappers';
+
+type SupabaseErrorLike = { code?: string; message?: string } | null;
+
+type ListRpcRow<TKey extends string, TValue> = {
+  total_count: number | null;
+} & Record<TKey, TValue | null>;
 
 function normalizePagination(page?: number, pageSize?: number) {
   const limit = Math.max(1, Math.min(pageSize ?? 25, 100));
@@ -22,7 +22,24 @@ function normalizePagination(page?: number, pageSize?: number) {
 
 function normalizeSearch(q?: string) {
   const value = q?.trim();
-  return value ? `%${value}%` : null;
+  return value ? value : null;
+}
+
+function mapRpcList<TKey extends string, TValue>(
+  rows: ListRpcRow<TKey, TValue>[] | null | undefined,
+  key: TKey
+) {
+  return {
+    count: rows?.[0]?.total_count ?? 0,
+    data: (rows ?? []).map((row) => row[key]).filter(Boolean) as TValue[],
+  };
+}
+
+function hasPayloadKey<T extends object, K extends PropertyKey>(
+  payload: T,
+  key: K
+): payload is T & Record<K, unknown> {
+  return Object.hasOwn(payload, key);
 }
 
 export class InvalidInventoryBundleComponentTargetError extends Error {
@@ -32,269 +49,98 @@ export class InvalidInventoryBundleComponentTargetError extends Error {
   }
 }
 
-async function listBundleComponents(wsId: string, bundleIds: string[]) {
-  if (bundleIds.length === 0) {
-    return new Map<string, InventoryBundleComponent[]>();
+function rethrowBundleRpcError(error: SupabaseErrorLike): never {
+  if (error?.message?.includes('INVALID_BUNDLE_COMPONENT_WORKSPACE_SCOPE')) {
+    throw new InvalidInventoryBundleComponentTargetError();
   }
 
-  const sql = getPlatformSql();
-  const rows = await sql<BundleComponentRow[]>`
-    select
-      component.id,
-      component.bundle_id,
-      component.product_id,
-      product.name as product_name,
-      component.unit_id,
-      unit.name as unit_name,
-      component.warehouse_id,
-      warehouse.name as warehouse_name,
-      component.quantity::int as quantity
-    from private.inventory_bundle_components component
-    join public.workspace_products product
-      on product.id = component.product_id
-      and product.ws_id = ${wsId}
-    join private.inventory_units unit
-      on unit.id = component.unit_id
-      and unit.ws_id = ${wsId}
-    join private.inventory_warehouses warehouse
-      on warehouse.id = component.warehouse_id
-      and warehouse.ws_id = ${wsId}
-    join private.inventory_products stock
-      on stock.product_id = product.id
-      and stock.unit_id = unit.id
-      and stock.warehouse_id = warehouse.id
-    where component.bundle_id = any(${bundleIds}::uuid[])
-    order by product.name asc, component.created_at asc
-  `;
+  throw error ?? new Error('Inventory bundle RPC failed');
+}
 
-  const grouped = new Map<string, InventoryBundleComponent[]>();
-  for (const row of rows) {
-    const current = grouped.get(row.bundle_id) ?? [];
-    current.push(mapComponent(row));
-    grouped.set(row.bundle_id, current);
-  }
-  return grouped;
+async function createPrivateInventoryClient() {
+  const sbAdmin = await createAdminClient();
+  return sbAdmin.schema('private');
 }
 
 export async function listBundles(
   wsId: string,
   query: ListQuery<InventoryBundleStatus> = {}
 ) {
-  const sql = getPlatformSql();
+  const inventory = await createPrivateInventoryClient();
   const { limit, offset } = normalizePagination(query.page, query.pageSize);
-  const search = normalizeSearch(query.q);
   const status = query.status && query.status !== 'all' ? query.status : null;
-
-  const rows = await sql<BundleRow[]>`
-    select
-      bundle.id,
-      bundle.ws_id,
-      bundle.storefront_id,
-      bundle.slug,
-      bundle.name,
-      bundle.description,
-      bundle.image_url,
-      bundle.price,
-      bundle.status,
-      bundle.max_per_order,
-      bundle.created_at::text as created_at,
-      bundle.updated_at::text as updated_at,
-      min(
-        floor(
-          greatest(
-            case
-              when stock.product_id is null then 0
-              else coalesce(stock.amount, 0)
-                - public._inventory_reserved_quantity(
-                  component.product_id,
-                  component.unit_id,
-                  component.warehouse_id,
-                  now()
-                )
-            end,
-            0
-            )
-            / nullif(component.quantity, 0)
-        )
-      )::int as available_quantity
-    from private.inventory_bundles bundle
-    left join private.inventory_bundle_components component
-      on component.bundle_id = bundle.id
-    left join public.workspace_products product
-      on product.id = component.product_id
-      and product.ws_id = bundle.ws_id
-    left join private.inventory_units unit
-      on unit.id = component.unit_id
-      and unit.ws_id = bundle.ws_id
-    left join private.inventory_warehouses warehouse
-      on warehouse.id = component.warehouse_id
-      and warehouse.ws_id = bundle.ws_id
-    left join private.inventory_products stock
-      on stock.product_id = product.id
-      and stock.unit_id = unit.id
-      and stock.warehouse_id = warehouse.id
-    where bundle.ws_id = ${wsId}
-      and (${status}::text is null or bundle.status = ${status})
-      and (
-        ${search}::text is null
-        or bundle.name ilike ${search}
-        or bundle.slug ilike ${search}
-      )
-    group by bundle.id
-    order by bundle.created_at desc
-    limit ${limit}
-    offset ${offset}
-  `;
-
-  const [countRow] = await sql<{ count: number }[]>`
-    select count(*)::int as count
-    from private.inventory_bundles bundle
-    where bundle.ws_id = ${wsId}
-      and (${status}::text is null or bundle.status = ${status})
-      and (
-        ${search}::text is null
-        or bundle.name ilike ${search}
-        or bundle.slug ilike ${search}
-      )
-  `;
-
-  const components = await listBundleComponents(
-    wsId,
-    rows.map((row) => row.id)
-  );
-  return {
-    count: countRow?.count ?? 0,
-    data: rows.map((row) => mapBundle(row, components)),
+  const { data, error } = (await inventory.rpc(
+    'list_inventory_bundles' as never,
+    {
+      p_limit: limit,
+      p_offset: offset,
+      p_search: normalizeSearch(query.q),
+      p_status: status,
+      p_ws_id: wsId,
+    } as never
+  )) as {
+    data: ListRpcRow<'bundle', InventoryBundle>[] | null;
+    error: SupabaseErrorLike;
   };
+
+  if (error) throw error;
+  return mapRpcList(data, 'bundle');
 }
 
-async function assertComponentTargets(
+async function upsertBundle(
   wsId: string,
-  components: InventoryBundlePayload['components']
+  payload: InventoryBundlePayload,
+  bundleId: string | null = null
 ) {
-  if (!components?.length) {
-    return;
+  const inventory = await createPrivateInventoryClient();
+  const { data, error } = (await inventory.rpc(
+    'upsert_inventory_bundle_with_components' as never,
+    {
+      p_bundle_id: bundleId,
+      p_components: payload.components ?? null,
+      p_description: payload.description ?? null,
+      p_image_url: payload.imageUrl ?? null,
+      p_max_per_order: payload.maxPerOrder ?? 99,
+      p_name: payload.name,
+      p_price: payload.price,
+      p_slug: payload.slug,
+      p_status: payload.status ?? 'draft',
+      p_storefront_id: payload.storefrontId ?? null,
+      p_ws_id: wsId,
+    } as never
+  )) as {
+    data: InventoryBundle | null;
+    error: SupabaseErrorLike;
+  };
+
+  if (error) rethrowBundleRpcError(error);
+  if (!data && bundleId === null) {
+    throw new Error('Failed to create inventory bundle');
   }
 
-  const sql = getPlatformSql();
-
-  for (const component of components) {
-    const [row] = await sql<{ product_id: string }[]>`
-      select stock.product_id
-      from private.inventory_products stock
-      join public.workspace_products product
-        on product.id = stock.product_id
-      join private.inventory_units unit
-        on unit.id = stock.unit_id
-      join private.inventory_warehouses warehouse
-        on warehouse.id = stock.warehouse_id
-      where product.ws_id = ${wsId}
-        and unit.ws_id = ${wsId}
-        and warehouse.ws_id = ${wsId}
-        and stock.product_id = ${component.productId}
-        and stock.unit_id = ${component.unitId}
-        and stock.warehouse_id = ${component.warehouseId}
-      limit 1
-    `;
-
-    if (!row) {
-      throw new InvalidInventoryBundleComponentTargetError();
-    }
-  }
-}
-
-async function replaceComponents(
-  wsId: string,
-  bundleId: string,
-  components: InventoryBundlePayload['components']
-) {
-  if (!components) {
-    return;
-  }
-
-  const sql = getPlatformSql();
-  await assertComponentTargets(wsId, components);
-
-  await sql`
-    delete from private.inventory_bundle_components
-    where bundle_id = ${bundleId}
-  `;
-
-  if (components.length === 0) {
-    return;
-  }
-
-  for (const component of components) {
-    await sql`
-      insert into private.inventory_bundle_components (
-        bundle_id,
-        product_id,
-        unit_id,
-        warehouse_id,
-        quantity
-      )
-      values (
-        ${bundleId},
-        ${component.productId},
-        ${component.unitId},
-        ${component.warehouseId},
-        ${component.quantity}
-      )
-    `;
-  }
+  return data;
 }
 
 export async function createBundle(
   wsId: string,
   payload: InventoryBundlePayload
 ) {
-  const sql = getPlatformSql();
-  const [row] = await sql<BundleRow[]>`
-    insert into private.inventory_bundles (
-      ws_id,
-      storefront_id,
-      slug,
-      name,
-      description,
-      image_url,
-      price,
-      status,
-      max_per_order
-    )
-    values (
-      ${wsId},
-      ${payload.storefrontId ?? null},
-      ${payload.slug},
-      ${payload.name},
-      ${payload.description ?? null},
-      ${payload.imageUrl ?? null},
-      ${payload.price},
-      ${payload.status ?? 'draft'},
-      ${payload.maxPerOrder ?? 99}
-    )
-    returning
-      id,
-      ws_id,
-      storefront_id,
-      slug,
-      name,
-      description,
-      image_url,
-      price,
-      status,
-      max_per_order,
-      created_at::text as created_at,
-      updated_at::text as updated_at,
-      null::int as available_quantity
-  `;
+  return upsertBundle(wsId, payload);
+}
 
-  if (!row) {
-    throw new Error('Failed to create inventory bundle');
-  }
+async function getBundleBase(wsId: string, bundleId: string) {
+  const inventory = await createPrivateInventoryClient();
+  const { data, error } = await inventory
+    .from('inventory_bundles')
+    .select(
+      'storefront_id, slug, name, description, image_url, price, status, max_per_order'
+    )
+    .eq('id', bundleId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
 
-  await replaceComponents(wsId, row.id, payload.components);
-  const components = await listBundleComponents(wsId, [row.id]);
-  return mapBundle(row, components);
+  if (error) throw error;
+  return data;
 }
 
 export async function updateBundle(
@@ -302,41 +148,40 @@ export async function updateBundle(
   bundleId: string,
   payload: Partial<InventoryBundlePayload>
 ) {
-  const sql = getPlatformSql();
-  const [row] = await sql<BundleRow[]>`
-    update private.inventory_bundles
-    set
-      storefront_id = ${payload.storefrontId ?? null},
-      slug = coalesce(${payload.slug ?? null}, slug),
-      name = coalesce(${payload.name ?? null}, name),
-      description = ${payload.description ?? null},
-      image_url = ${payload.imageUrl ?? null},
-      price = coalesce(${payload.price ?? null}, price),
-      status = coalesce(${payload.status ?? null}, status),
-      max_per_order = coalesce(${payload.maxPerOrder ?? null}, max_per_order)
-    where id = ${bundleId}
-      and ws_id = ${wsId}
-    returning
-      id,
-      ws_id,
-      storefront_id,
-      slug,
-      name,
-      description,
-      image_url,
-      price,
-      status,
-      max_per_order,
-      created_at::text as created_at,
-      updated_at::text as updated_at,
-      null::int as available_quantity
-  `;
+  const current = await getBundleBase(wsId, bundleId);
+  if (!current) return null;
 
-  if (!row) {
-    return null;
-  }
+  const merged: InventoryBundlePayload = {
+    components: payload.components,
+    description: hasPayloadKey(payload, 'description')
+      ? (payload.description ?? null)
+      : current.description,
+    imageUrl: hasPayloadKey(payload, 'imageUrl')
+      ? (payload.imageUrl ?? null)
+      : current.image_url,
+    maxPerOrder: payload.maxPerOrder ?? current.max_per_order,
+    name: payload.name ?? current.name,
+    price: payload.price ?? Number(current.price),
+    slug: payload.slug ?? current.slug,
+    status: payload.status ?? (current.status as InventoryBundleStatus),
+    storefrontId: hasPayloadKey(payload, 'storefrontId')
+      ? (payload.storefrontId ?? null)
+      : current.storefront_id,
+  };
 
-  await replaceComponents(wsId, row.id, payload.components);
-  const components = await listBundleComponents(wsId, [row.id]);
-  return mapBundle(row, components);
+  return upsertBundle(wsId, merged, bundleId);
+}
+
+export async function deleteBundle(wsId: string, bundleId: string) {
+  const inventory = await createPrivateInventoryClient();
+  const { data, error } = await inventory
+    .from('inventory_bundles')
+    .delete()
+    .eq('id', bundleId)
+    .eq('ws_id', wsId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data);
 }

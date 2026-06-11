@@ -495,9 +495,12 @@ export async function syncInventoryPolarCheckout(checkout: Checkout) {
 
   if (polarStatus === 'expired' || polarStatus === 'failed') {
     const sbAdmin = await createAdminClient();
-    const { error } = await sbAdmin.rpc('release_inventory_checkout_session', {
-      p_checkout_id: metadata.checkoutId,
-    });
+    const { error } = (await sbAdmin.schema('private').rpc(
+      'release_inventory_checkout_session' as never,
+      {
+        p_checkout_id: metadata.checkoutId,
+      } as never
+    )) as { error: SupabaseErrorLike };
 
     if (error) {
       throw new Error(
@@ -526,7 +529,7 @@ export async function syncInventoryPolarOrder(order: Order) {
 
   if (order.status === 'paid') {
     const sbAdmin = await createAdminClient();
-    const { error } = (await sbAdmin.rpc(
+    const { error } = (await sbAdmin.schema('private').rpc(
       'complete_inventory_checkout_session_payment' as never,
       {
         p_checkout_id: metadata.checkoutId,
