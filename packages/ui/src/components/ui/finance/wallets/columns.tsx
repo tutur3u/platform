@@ -19,6 +19,8 @@ import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useFinanceBalanceMode } from '../shared/use-finance-balance-mode';
 import {
   FINANCE_HIDDEN_AMOUNT,
   useFinanceConfidentialVisibility,
@@ -34,32 +36,53 @@ interface WalletExtraData {
 }
 
 function WalletBalanceCell({
+  auditBalance,
+  auditStatus,
+  auditVariance,
   balance,
   walletCurrency,
   workspaceCurrency,
   exchangeRates,
 }: {
+  auditBalance?: number | null;
+  auditStatus?: string | null;
+  auditVariance?: number | null;
   balance: number;
   walletCurrency: string;
   workspaceCurrency: string;
   exchangeRates?: ExchangeRate[];
 }) {
+  const t = useTranslations('wallet-checkpoints');
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
+  const { isAuditedMode } = useFinanceBalanceMode();
+  const hasAuditBalance = typeof auditBalance === 'number';
+  const displayBalance =
+    isAuditedMode && hasAuditBalance ? auditBalance : balance;
+  const contextBalance =
+    isAuditedMode && hasAuditBalance ? balance : auditBalance;
+  const contextLabel = isAuditedMode ? t('ledger') : t('audited');
+  const showAuditContext =
+    hasAuditBalance && auditStatus && auditStatus !== 'no_checkpoint';
 
-  const formattedBalance = formatCurrency(balance, walletCurrency, undefined, {
-    signDisplay: 'auto',
-  });
+  const formattedBalance = formatCurrency(
+    displayBalance,
+    walletCurrency,
+    undefined,
+    {
+      signDisplay: 'auto',
+    }
+  );
 
   let convertedText: string | null = null;
   if (
     walletCurrency !== workspaceCurrency &&
     exchangeRates &&
     exchangeRates.length > 0 &&
-    balance !== 0
+    displayBalance !== 0
   ) {
     const converted = convertCurrency(
-      balance,
+      displayBalance,
       walletCurrency,
       workspaceCurrency,
       exchangeRates
@@ -82,9 +105,9 @@ function WalletBalanceCell({
     );
   }
 
-  const isPositive = balance > 0;
-  const isNegative = balance < 0;
-  const isNeutral = balance === 0;
+  const isPositive = displayBalance > 0;
+  const isNegative = displayBalance < 0;
+  const isNeutral = displayBalance === 0;
 
   return (
     <div className="flex flex-col gap-0.5">
@@ -125,6 +148,27 @@ function WalletBalanceCell({
       {convertedText && (
         <span className="text-muted-foreground text-xs">
           {'\u2248'} {convertedText}
+        </span>
+      )}
+      {showAuditContext && typeof contextBalance === 'number' && (
+        <span className="text-muted-foreground text-xs">
+          {contextLabel}:{' '}
+          {formatCurrency(contextBalance, walletCurrency, undefined, {
+            signDisplay: 'auto',
+          })}
+          {typeof auditVariance === 'number'
+            ? ` · ${t('variance')}: ${formatCurrency(
+                auditVariance,
+                walletCurrency,
+                undefined,
+                { signDisplay: 'always' }
+              )}`
+            : null}
+        </span>
+      )}
+      {isAuditedMode && auditStatus === 'no_checkpoint' && (
+        <span className="text-muted-foreground text-xs">
+          {t('no_checkpoint_short')}
         </span>
       )}
     </div>
@@ -226,6 +270,9 @@ export const walletColumns = ({
         const walletCurrency = row.original.currency || workspaceCurrency;
         return (
           <WalletBalanceCell
+            auditBalance={row.original.audit_balance}
+            auditStatus={row.original.audit_status}
+            auditVariance={row.original.audit_variance}
             balance={balance}
             walletCurrency={walletCurrency}
             workspaceCurrency={workspaceCurrency}

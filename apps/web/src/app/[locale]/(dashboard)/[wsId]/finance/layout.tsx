@@ -1,4 +1,5 @@
 import { FinanceRouteProvider } from '@tuturuuu/ui/finance/finance-route-context';
+import { FinanceBalanceModeToggle } from '@tuturuuu/ui/finance/shared/balance-mode-toggle';
 import { FinanceNumbersVisibilityToggle } from '@tuturuuu/ui/finance/shared/numbers-visibility-toggle';
 import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
@@ -27,7 +28,8 @@ export default async function WebFinanceLayout({
   return (
     <FinanceRouteProvider prefix="/finance">
       {context && (
-        <div className="mb-4 flex justify-end">
+        <div className="mb-4 flex flex-wrap justify-end gap-2">
+          <FinanceBalanceModeToggle />
           <FinanceNumbersVisibilityToggle />
         </div>
       )}

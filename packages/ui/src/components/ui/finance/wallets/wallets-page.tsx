@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/internal-api';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { CreateDialogFeatureSummary } from '@tuturuuu/ui/finance/shared/create-dialog-feature-summary';
+import { WalletCheckpointHistoryDialog } from '@tuturuuu/ui/finance/wallets/checkpoints/wallet-checkpoint-history-dialog';
 import { WalletTotalCheckDialog } from '@tuturuuu/ui/finance/wallets/checkpoints/wallet-total-check-dialog';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { WalletsDataTable } from '@tuturuuu/ui/finance/wallets/wallets-data-table';
@@ -66,6 +67,7 @@ export default async function WalletsPage({
   const canCreateWallets = containsPermission('create_wallets');
   const canUpdateWallets = containsPermission('update_wallets');
   const canDeleteWallets = containsPermission('delete_wallets');
+  const canCreateTransactions = containsPermission('create_transactions');
   const resolvedInternalApiOptions =
     internalApiOptions ?? withForwardedInternalApiAuth(await headers());
   const {
@@ -92,12 +94,20 @@ export default async function WalletsPage({
         form={canCreateWallets ? <WalletForm wsId={wsId} /> : undefined}
       />
       <Separator className="my-4" />
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex flex-wrap justify-end gap-2">
+        <WalletCheckpointHistoryDialog
+          wsId={wsId}
+          financePrefix={financePrefix}
+          canCreateTransactions={canCreateTransactions}
+        />
         <WalletTotalCheckDialog
           wsId={wsId}
           wallets={allWallets
             .filter((wallet) => !!wallet.id)
             .map((wallet) => ({
+              audit_balance: wallet.audit_balance,
+              audit_status: wallet.audit_status,
+              audit_variance: wallet.audit_variance,
               balance: wallet.balance,
               currency: wallet.currency || resolvedCurrency || 'USD',
               id: wallet.id as string,

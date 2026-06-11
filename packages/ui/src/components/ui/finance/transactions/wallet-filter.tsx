@@ -20,6 +20,7 @@ import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useFinanceBalanceMode } from '../shared/use-finance-balance-mode';
 import {
   FINANCE_HIDDEN_AMOUNT,
   useFinanceConfidentialVisibility,
@@ -45,9 +46,11 @@ export function WalletFilter({
   className,
 }: WalletFilterProps) {
   const t = useTranslations();
+  const checkpointT = useTranslations('wallet-checkpoints');
   const [isOpen, setIsOpen] = useState(false);
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
+  const { isAuditedMode } = useFinanceBalanceMode();
 
   const hasActiveFilters = selectedWalletIds.length > 0;
 
@@ -135,6 +138,16 @@ export function WalletFilter({
                     })
                     .map((wallet) => {
                       const isSelected = selectedWalletIds.includes(wallet.id);
+                      const hasAuditedBalance =
+                        typeof wallet.audit_balance === 'number';
+                      const displayBalance: number =
+                        isAuditedMode && hasAuditedBalance
+                          ? (wallet.audit_balance ?? 0)
+                          : (wallet.balance ?? 0);
+                      const balanceLabel =
+                        isAuditedMode && hasAuditedBalance
+                          ? checkpointT('audited')
+                          : checkpointT('ledger');
 
                       return (
                         <CommandItem
@@ -161,7 +174,7 @@ export function WalletFilter({
                               <span className="text-muted-foreground text-xs">
                                 {areNumbersHidden
                                   ? FINANCE_HIDDEN_AMOUNT
-                                  : Intl.NumberFormat(
+                                  : `${balanceLabel}: ${Intl.NumberFormat(
                                       getCurrencyLocale(
                                         wallet.currency || 'USD'
                                       ),
@@ -171,7 +184,14 @@ export function WalletFilter({
                                         minimumFractionDigits: 0,
                                         maximumFractionDigits: 0,
                                       }
-                                    ).format(wallet.balance || 0)}
+                                    ).format(displayBalance)}`}
+                                {!areNumbersHidden &&
+                                  isAuditedMode &&
+                                  wallet.audit_status === 'no_checkpoint' && (
+                                    <span className="ml-1">
+                                      {checkpointT('no_checkpoint_short')}
+                                    </span>
+                                  )}
                               </span>
                             </div>
                           </div>

@@ -1,4 +1,5 @@
 import { Navigation, type NavLink } from '@tuturuuu/ui/custom/navigation';
+import { FinanceBalanceModeToggle } from '@tuturuuu/ui/finance/shared/balance-mode-toggle';
 import { FinanceNumbersVisibilityToggle } from '@tuturuuu/ui/finance/shared/numbers-visibility-toggle';
 import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -88,7 +89,8 @@ export default async function FinanceLayout({
   return (
     <>
       <Navigation navLinks={navLinks} />
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex flex-wrap justify-end gap-2">
+        <FinanceBalanceModeToggle />
         <FinanceNumbersVisibilityToggle />
       </div>
       {children}

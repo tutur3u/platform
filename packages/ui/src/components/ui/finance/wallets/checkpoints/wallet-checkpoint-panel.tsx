@@ -146,7 +146,7 @@ export function WalletCheckpointPanel({
         currency={currency}
         formatDate={formatDate}
         intervals={query.data?.intervals ?? []}
-        onAdjust={setAdjusting}
+        onReconcile={setAdjusting}
       />
       <WalletCheckpointTimeline
         canUpdateWallets={canUpdateWallets}
@@ -181,6 +181,7 @@ export function WalletCheckpointPanel({
       {adjusting && (
         <WalletCheckpointAdjustmentDialog
           checkedAt={adjusting.end_checked_at}
+          checkpointId={adjusting.end_checkpoint_id}
           currency={currency}
           onCreated={refresh}
           onOpenChange={(open) => !open && setAdjusting(null)}

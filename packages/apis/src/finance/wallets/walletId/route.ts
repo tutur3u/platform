@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { FinanceRouteAuthContext } from '../../request-access';
+import { attachWalletAuditData } from '../audit-balance';
 import { flattenWalletCreditData, getAccessibleWallet } from '../wallet-access';
 
 interface Params {
@@ -28,7 +29,16 @@ export async function GET(
     return result.response;
   }
 
-  return NextResponse.json(flattenWalletCreditData(result.wallet));
+  const wallet = flattenWalletCreditData(result.wallet);
+  const auditResult = await attachWalletAuditData(result.context.sbAdmin, [
+    wallet,
+  ]);
+
+  if (auditResult.error) {
+    return NextResponse.json(wallet);
+  }
+
+  return NextResponse.json(auditResult.data[0] ?? wallet);
 }
 
 export async function PUT(

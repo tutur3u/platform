@@ -54,6 +54,42 @@ export type WalletCheckpointInterval = {
   transaction_count: number;
 };
 
+export type WalletCheckpointAuditStatusRow = {
+  audited_balance: number | string;
+  checkpoint_id?: string | null;
+  checkpoint_ledger_balance: number | string | null;
+  checked_at?: string | null;
+  latest_actual_balance: number | string | null;
+  latest_checked_at: string | null;
+  latest_checkpoint_id: string | null;
+  ledger_balance: number | string;
+  post_checkpoint_delta: number | string;
+  post_checkpoint_transaction_count: number | string;
+  status: string;
+  variance: number | string;
+  wallet_id: string;
+};
+
+export type WalletCheckpointAuditStatus = {
+  audited_balance: number;
+  checkpoint_ledger_balance: number | null;
+  latest_actual_balance: number | null;
+  latest_checked_at: string | null;
+  latest_checkpoint_id: string | null;
+  ledger_balance: number;
+  post_checkpoint_delta: number;
+  post_checkpoint_transaction_count: number;
+  status: 'clean' | 'no_checkpoint' | 'unresolved';
+  variance: number;
+  wallet_id: string;
+};
+
+export type WalletCheckpointHistoryInterval = WalletCheckpointInterval & {
+  currency: string;
+  wallet_id: string;
+  wallet_name: string | null;
+};
+
 export type WalletCheckpointListResponse = {
   data: WalletCheckpoint[];
   intervals: WalletCheckpointInterval[];
@@ -82,6 +118,28 @@ export type WalletCheckpointSummaryResponse = {
   latest_checkpoints: WalletCheckpoint[];
   totals_by_currency: WalletCheckpointCurrencyTotal[];
   wallets: WalletCheckpointSummaryWallet[];
+};
+
+export type WalletCheckpointHistoryResponse =
+  WalletCheckpointSummaryResponse & {
+    audit_statuses: WalletCheckpointAuditStatus[];
+    checkpoints: WalletCheckpoint[];
+    intervals: WalletCheckpointHistoryInterval[];
+  };
+
+export type WalletCheckpointReconciliationPayload = {
+  basis?: 'checkpoint' | 'interval';
+  category_id?: string | null;
+  description?: string | null;
+};
+
+export type WalletCheckpointReconciliationResponse = {
+  checked_at: string;
+  checkpoint_id: string;
+  created: boolean;
+  offset_amount: number;
+  transaction_id: string | null;
+  wallet_id: string;
 };
 
 export type WalletCheckpointPayload = {

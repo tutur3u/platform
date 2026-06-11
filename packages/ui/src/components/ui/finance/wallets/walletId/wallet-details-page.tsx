@@ -12,8 +12,7 @@ import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infi
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import type { ExchangeRate } from '@tuturuuu/utils/exchange-rates';
-import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
-import { formatCurrency, getCurrencyLocale } from '@tuturuuu/utils/format';
+import { getCurrencyLocale } from '@tuturuuu/utils/format';
 import {
   getPermissions,
   getWorkspace,
@@ -117,28 +116,6 @@ export default async function WalletDetailsPage({
 
   // Fetch exchange rates for conversion display
   const exchangeRates = await getExchangeRates();
-  let convertedBalanceText: string | null = null;
-  if (
-    currency !== workspaceCurrency &&
-    exchangeRates.length > 0 &&
-    wallet.balance &&
-    wallet.balance !== 0
-  ) {
-    const converted = convertCurrency(
-      wallet.balance,
-      currency,
-      workspaceCurrency,
-      exchangeRates
-    );
-    if (converted !== null) {
-      convertedBalanceText = formatCurrency(
-        Math.abs(converted),
-        workspaceCurrency,
-        undefined,
-        { signDisplay: 'never', maximumFractionDigits: 0 }
-      );
-    }
-  }
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -195,11 +172,17 @@ export default async function WalletDetailsPage({
               label={t('wallet-data-table.balance')}
               value={
                 <WalletDetailsAmount
+                  auditedBalance={wallet.audit_balance}
+                  auditStatus={wallet.audit_status}
+                  auditVariance={wallet.audit_variance}
+                  currency={currency}
+                  exchangeRates={exchangeRates}
+                  ledgerBalance={wallet.balance ?? 0}
                   primary={Intl.NumberFormat(getCurrencyLocale(currency), {
                     style: 'currency',
                     currency,
                   }).format(wallet.balance || 0)}
-                  converted={convertedBalanceText}
+                  workspaceCurrency={workspaceCurrency}
                 />
               }
             />

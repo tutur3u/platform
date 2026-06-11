@@ -15,6 +15,7 @@ const WALLET_MUTATION_QUERY_ROOTS = new Set([
   'recurring_transactions',
   'spending_trends',
   'wallet-checkpoint-summary',
+  'wallet-checkpoint-history',
   'wallet-checkpoints',
   'upcoming_recurring_transactions',
   'wallets',

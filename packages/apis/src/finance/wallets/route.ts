@@ -6,6 +6,7 @@ import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
 } from '../request-access';
+import { attachWalletAuditData } from './audit-balance';
 import {
   attachWalletCreditData,
   flattenWalletCreditList,
@@ -52,19 +53,40 @@ async function loadWorkspaceWallets({
 
   const { data, error } = await query.order('name', { ascending: true });
 
-  if (error || !shouldAttachCreditData) {
+  if (error) {
     return {
       data: data ?? [],
       error,
     };
   }
 
+  if (!shouldAttachCreditData) {
+    if (invoiceSafeOnly) {
+      return {
+        data: data ?? [],
+        error: null,
+      };
+    }
+
+    return attachWalletAuditData(
+      sbAdmin,
+      (data ?? []) as Array<Record<string, unknown>>
+    );
+  }
+
   const creditResult = await attachWalletCreditData(sbAdmin, data ?? []);
 
-  return {
-    data: flattenWalletCreditList(creditResult.data),
-    error: creditResult.error,
-  };
+  if (creditResult.error || invoiceSafeOnly) {
+    return {
+      data: flattenWalletCreditList(creditResult.data),
+      error: creditResult.error,
+    };
+  }
+
+  return attachWalletAuditData(
+    sbAdmin,
+    flattenWalletCreditList(creditResult.data)
+  );
 }
 
 export async function GET(

@@ -20,10 +20,14 @@ import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { useFinanceBalanceMode } from '../../shared/use-finance-balance-mode';
 import { invalidateWalletMutationQueries } from '../query-invalidation';
 import { WalletCheckpointAmount } from './wallet-checkpoint-amount';
 
 type WalletInput = {
+  audit_balance?: number | null;
+  audit_status?: 'clean' | 'no_checkpoint' | 'unresolved' | null;
+  audit_variance?: number | null;
   balance?: number | null;
   currency: string;
   id: string;
@@ -41,6 +45,7 @@ export function WalletTotalCheckDialog({
 }) {
   const t = useTranslations('wallet-checkpoints');
   const queryClient = useQueryClient();
+  const { isAuditedMode } = useFinanceBalanceMode();
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
   const mutation = useMutation({
@@ -108,12 +113,54 @@ export function WalletTotalCheckDialog({
                         {wallet.name}
                       </div>
                       <div className="text-muted-foreground text-xs">
-                        {t('ledger_balance')}:{' '}
+                        {isAuditedMode &&
+                        typeof wallet.audit_balance === 'number'
+                          ? t('audited_balance')
+                          : t('ledger_balance')}
+                        :{' '}
                         <WalletCheckpointAmount
-                          amount={wallet.balance ?? 0}
+                          amount={
+                            isAuditedMode &&
+                            typeof wallet.audit_balance === 'number'
+                              ? wallet.audit_balance
+                              : (wallet.balance ?? 0)
+                          }
                           currency={wallet.currency}
                         />
                       </div>
+                      {typeof wallet.audit_balance === 'number' &&
+                        wallet.audit_status !== 'no_checkpoint' && (
+                          <div className="text-muted-foreground text-xs">
+                            {isAuditedMode
+                              ? t('ledger_balance')
+                              : t('audited_balance')}
+                            :{' '}
+                            <WalletCheckpointAmount
+                              amount={
+                                isAuditedMode
+                                  ? (wallet.balance ?? 0)
+                                  : wallet.audit_balance
+                              }
+                              currency={wallet.currency}
+                            />
+                            {typeof wallet.audit_variance === 'number'
+                              ? ` · ${t('variance')}: `
+                              : null}
+                            {typeof wallet.audit_variance === 'number' && (
+                              <WalletCheckpointAmount
+                                amount={wallet.audit_variance}
+                                currency={wallet.currency}
+                                signDisplay="always"
+                              />
+                            )}
+                          </div>
+                        )}
+                      {isAuditedMode &&
+                        wallet.audit_status === 'no_checkpoint' && (
+                          <div className="text-muted-foreground text-xs">
+                            {t('no_checkpoint_short')}
+                          </div>
+                        )}
                     </div>
                     <div className="text-muted-foreground text-xs">
                       {wallet.currency}

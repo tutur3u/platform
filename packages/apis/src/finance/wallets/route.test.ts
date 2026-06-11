@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   getWorkspaceConfig: vi.fn(),
   creditWalletIn: vi.fn(),
   creditWalletSelect: vi.fn(),
+  privateRpc: vi.fn(),
   roleMembersEq: vi.fn(),
   roleMembersWorkspaceEq: vi.fn(),
   walletEq: vi.fn(),
@@ -38,6 +39,7 @@ describe('wallets route', () => {
       }
 
       return {
+        rpc: mocks.privateRpc,
         from: vi.fn((table: string) => {
           if (table === 'workspace_wallets') {
             return {
@@ -94,6 +96,24 @@ describe('wallets route', () => {
           limit: 5000,
           payment_date: 15,
           statement_date: 1,
+          wallet_id: 'wallet-default',
+        },
+      ],
+      error: null,
+    });
+    mocks.privateRpc.mockResolvedValue({
+      data: [
+        {
+          audited_balance: 1200,
+          checkpoint_ledger_balance: 1200,
+          latest_actual_balance: 1200,
+          latest_checked_at: '2026-06-11T00:00:00.000Z',
+          latest_checkpoint_id: 'checkpoint-1',
+          ledger_balance: 1200,
+          post_checkpoint_delta: 0,
+          post_checkpoint_transaction_count: 0,
+          status: 'clean',
+          variance: 0,
           wallet_id: 'wallet-default',
         },
       ],
@@ -235,6 +255,10 @@ describe('wallets route', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual([
       expect.objectContaining({
+        audit_balance: 1200,
+        audit_checkpoint_id: 'checkpoint-1',
+        audit_status: 'clean',
+        audit_variance: 0,
         balance: 1200,
         limit: 5000,
         payment_date: 15,

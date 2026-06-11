@@ -47,13 +47,13 @@ export function WalletCheckpointIntervals({
   currency,
   formatDate,
   intervals,
-  onAdjust,
+  onReconcile,
 }: {
   canCreateTransactions: boolean;
   currency: string;
   formatDate: (value: string) => string;
   intervals: WalletCheckpointInterval[];
-  onAdjust: (interval: WalletCheckpointInterval) => void;
+  onReconcile: (interval: WalletCheckpointInterval) => void;
 }) {
   const t = useTranslations('wallet-checkpoints');
   if (intervals.length === 0) return null;
@@ -112,9 +112,9 @@ export function WalletCheckpointIntervals({
               className="mt-3"
               size="sm"
               variant="outline"
-              onClick={() => onAdjust(interval)}
+              onClick={() => onReconcile(interval)}
             >
-              {t('create_adjustment')}
+              {t('reconcile')}
             </Button>
           )}
         </div>

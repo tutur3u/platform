@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
-  createTransaction,
+  createWalletCheckpointReconciliation,
   listTransactionCategories,
 } from '@tuturuuu/internal-api/finance';
 import { Button } from '@tuturuuu/ui/button';
@@ -33,6 +33,7 @@ const NO_CATEGORY = 'none';
 
 export function WalletCheckpointAdjustmentDialog({
   checkedAt,
+  checkpointId,
   currency,
   onCreated,
   onOpenChange,
@@ -43,6 +44,7 @@ export function WalletCheckpointAdjustmentDialog({
   wsId,
 }: {
   checkedAt: string;
+  checkpointId: string;
   currency: string;
   onCreated: () => void;
   onOpenChange: (open: boolean) => void;
@@ -55,16 +57,11 @@ export function WalletCheckpointAdjustmentDialog({
   const t = useTranslations('wallet-checkpoints');
   const [categoryId, setCategoryId] = useState(NO_CATEGORY);
   const [description, setDescription] = useState(
-    t('adjustment_description', {
+    t('reconciliation_description', {
       date: new Date(checkedAt).toLocaleDateString(),
       wallet: walletName,
     })
   );
-  const [takenAt, setTakenAt] = useState(() => {
-    const date = new Date(checkedAt);
-    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-    return local.toISOString().slice(0, 16);
-  });
   const categoriesQuery = useQuery({
     queryKey: ['transaction-categories', wsId],
     queryFn: () => listTransactionCategories(wsId),
@@ -78,24 +75,30 @@ export function WalletCheckpointAdjustmentDialog({
       }),
     [currency, variance]
   );
+  const checkedAtText = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date(checkedAt)),
+    [checkedAt]
+  );
   const mutation = useMutation({
     mutationFn: () =>
-      createTransaction(wsId, {
-        amount: variance,
+      createWalletCheckpointReconciliation(wsId, walletId, checkpointId, {
         category_id: categoryId === NO_CATEGORY ? undefined : categoryId,
         description,
-        origin_wallet_id: walletId,
-        report_opt_in: false,
-        taken_at: new Date(takenAt).toISOString(),
       }),
-    onSuccess: () => {
-      toast.success(t('adjustment_created'));
+    onSuccess: (result) => {
+      toast.success(
+        result.created ? t('reconciliation_created') : t('reconciliation_clean')
+      );
       onCreated();
       onOpenChange(false);
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : t('adjustment_create_error')
+        error instanceof Error ? error.message : t('reconciliation_error')
       );
     },
   });
@@ -104,23 +107,22 @@ export function WalletCheckpointAdjustmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('create_adjustment')}</DialogTitle>
+          <DialogTitle>{t('create_reconciliation_transaction')}</DialogTitle>
           <DialogDescription>
-            {t('create_adjustment_description')}
+            {t('create_reconciliation_description')}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
-            <Label>{t('adjustment_amount')}</Label>
+            <Label>{t('offset_amount_preview')}</Label>
             <Input value={amountText} readOnly />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="checkpoint-adjustment-date">{t('date')}</Label>
+            <Label htmlFor="checkpoint-reconciliation-date">{t('date')}</Label>
             <Input
-              id="checkpoint-adjustment-date"
-              type="datetime-local"
-              value={takenAt}
-              onChange={(event) => setTakenAt(event.target.value)}
+              id="checkpoint-reconciliation-date"
+              value={checkedAtText}
+              readOnly
             />
           </div>
           <div className="grid gap-2">
@@ -160,10 +162,10 @@ export function WalletCheckpointAdjustmentDialog({
             {t('cancel')}
           </Button>
           <Button
-            disabled={mutation.isPending || variance === 0}
+            disabled={mutation.isPending}
             onClick={() => mutation.mutate()}
           >
-            {mutation.isPending ? t('creating') : t('create_adjustment')}
+            {mutation.isPending ? t('creating') : t('reconcile')}
           </Button>
         </DialogFooter>
       </DialogContent>

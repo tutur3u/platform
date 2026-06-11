@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import type {
   WalletCheckpoint,
+  WalletCheckpointAuditStatus,
+  WalletCheckpointAuditStatusRow,
   WalletCheckpointCurrencyTotal,
   WalletCheckpointInterval,
   WalletCheckpointIntervalRow,
@@ -64,6 +66,39 @@ export function normalizeInterval(
     start_checked_at: row.start_checked_at,
     start_checkpoint_id: row.start_checkpoint_id,
     transaction_count: Number(row.transaction_count),
+  };
+}
+
+export function normalizeAuditStatus(
+  row: WalletCheckpointAuditStatusRow
+): WalletCheckpointAuditStatus {
+  const status =
+    row.status === 'clean' ||
+    row.status === 'no_checkpoint' ||
+    row.status === 'unresolved'
+      ? row.status
+      : 'no_checkpoint';
+
+  return {
+    audited_balance: toCheckpointNumber(row.audited_balance),
+    checkpoint_ledger_balance:
+      row.checkpoint_ledger_balance === null
+        ? null
+        : toCheckpointNumber(row.checkpoint_ledger_balance),
+    latest_actual_balance:
+      row.latest_actual_balance === null
+        ? null
+        : toCheckpointNumber(row.latest_actual_balance),
+    latest_checked_at: row.latest_checked_at,
+    latest_checkpoint_id: row.latest_checkpoint_id,
+    ledger_balance: toCheckpointNumber(row.ledger_balance),
+    post_checkpoint_delta: toCheckpointNumber(row.post_checkpoint_delta),
+    post_checkpoint_transaction_count: Number(
+      row.post_checkpoint_transaction_count
+    ),
+    status,
+    variance: toCheckpointNumber(row.variance),
+    wallet_id: row.wallet_id,
   };
 }
 
@@ -198,7 +233,9 @@ export function isCheckpointStorageMissing(error: {
     text.includes('wallet_checkpoint') ||
     text.includes('get_wallet_ledger_balance_at') ||
     text.includes('list_wallet_checkpoint_intervals') ||
-    text.includes('create_workspace_wallet_checkpoints_batch');
+    text.includes('create_workspace_wallet_checkpoints_batch') ||
+    text.includes('get_wallet_checkpoint_audit_status') ||
+    text.includes('create_wallet_checkpoint_reconciliation');
 
   if (!mentionsCheckpointStorage) {
     return false;
@@ -295,6 +332,37 @@ export async function listCheckpointIntervals({
   }
 
   return ((data ?? []) as WalletCheckpointIntervalRow[]).map(normalizeInterval);
+}
+
+export async function listWalletAuditStatuses({
+  sbAdmin,
+  walletIds,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sbAdmin: any;
+  walletIds: string[];
+}) {
+  if (walletIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .rpc('get_wallet_checkpoint_audit_status', {
+      _wallet_ids: walletIds,
+    });
+
+  if (error) {
+    if (isCheckpointStorageMissing(error)) {
+      return [];
+    }
+
+    throw error;
+  }
+
+  return ((data ?? []) as WalletCheckpointAuditStatusRow[]).map(
+    normalizeAuditStatus
+  );
 }
 
 export function getCheckpointLimit(request: Request) {

@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(48);
+select plan(64);
 
 select ok(
   to_regclass('private.workspace_wallet_checkpoints') is not null,
@@ -206,6 +206,42 @@ select ok(
   'authenticated cannot call private batch checkpoint helper directly'
 );
 
+select ok(
+  has_function_privilege(
+    'service_role',
+    'private.get_wallet_checkpoint_audit_status(uuid[])',
+    'execute'
+  ),
+  'service role can read private wallet checkpoint audit status'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'private.get_wallet_checkpoint_audit_status(uuid[])',
+    'execute'
+  ),
+  'authenticated cannot read private wallet checkpoint audit status directly'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'private.create_wallet_checkpoint_reconciliation(uuid,uuid,uuid,uuid,text,text)',
+    'execute'
+  ),
+  'service role can create private checkpoint reconciliation transactions'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'private.create_wallet_checkpoint_reconciliation(uuid,uuid,uuid,uuid,text,text)',
+    'execute'
+  ),
+  'authenticated cannot create checkpoint reconciliation transactions directly'
+);
+
 set local role service_role;
 
 insert into private.workspace_wallets (
@@ -347,6 +383,28 @@ select is(
 
 select is(
   (
+    select status
+    from private.get_wallet_checkpoint_audit_status(
+      array['20000000-0000-0000-0000-000000000803']::uuid[]
+    )
+  ),
+  'no_checkpoint',
+  'audit status reports no checkpoint for wallets without audit anchors'
+);
+
+select is(
+  (
+    select audited_balance
+    from private.get_wallet_checkpoint_audit_status(
+      array['20000000-0000-0000-0000-000000000803']::uuid[]
+    )
+  ),
+  0::numeric,
+  'audit status falls back to ledger balance when no checkpoint exists'
+);
+
+select is(
+  (
     select ledger_delta
     from private.get_wallet_checkpoint_interval_delta(
       '20000000-0000-0000-0000-000000000801',
@@ -466,6 +524,49 @@ insert into private.workspace_wallet_checkpoints (
     'VND',
     'negative variance checkpoint'
   );
+
+insert into private.workspace_wallet_checkpoints (
+  id,
+  wallet_id,
+  checked_at,
+  actual_balance,
+  ledger_balance,
+  currency,
+  note
+) values (
+  '20000000-0000-0000-0000-000000000826',
+  '20000000-0000-0000-0000-000000000802',
+  '2026-06-12 00:00:00+00',
+  -40,
+  private.get_wallet_ledger_balance_at(
+    '20000000-0000-0000-0000-000000000802',
+    '2026-06-12 00:00:00+00'
+  ),
+  'USD',
+  'positive checkpoint offset'
+);
+
+select is(
+  (
+    select variance
+    from private.get_wallet_checkpoint_audit_status(
+      array['20000000-0000-0000-0000-000000000802']::uuid[]
+    )
+  ),
+  2.75::numeric,
+  'audit status reports exact positive latest-checkpoint variance'
+);
+
+select is(
+  (
+    select status
+    from private.get_wallet_checkpoint_audit_status(
+      array['20000000-0000-0000-0000-000000000802']::uuid[]
+    )
+  ),
+  'unresolved',
+  'audit status marks non-zero latest-checkpoint variance unresolved'
+);
 
 select is(
   (
@@ -676,7 +777,7 @@ select is(
     select count(*)
     from private.workspace_wallet_checkpoints
   ),
-  7::bigint,
+  8::bigint,
   'checkpoint count before failed batches is stable'
 );
 
@@ -711,7 +812,7 @@ select is(
     select count(*)
     from private.workspace_wallet_checkpoints
   ),
-  7::bigint,
+  8::bigint,
   'duplicate wallet batch rolls back without partial rows'
 );
 
@@ -746,7 +847,7 @@ select is(
     select count(*)
     from private.workspace_wallet_checkpoints
   ),
-  7::bigint,
+  8::bigint,
   'invalid wallet batch rolls back without partial rows'
 );
 
@@ -775,8 +876,100 @@ select is(
     select count(*)
     from private.workspace_wallet_checkpoints
   ),
-  7::bigint,
+  8::bigint,
   'existing duplicate timestamp batch rolls back without partial rows'
+);
+
+create temporary table checkpoint_reconciliation_result on commit drop as
+select *
+from private.create_wallet_checkpoint_reconciliation(
+  '20000000-0000-0000-0000-000000000802',
+  '20000000-0000-0000-0000-000000000826',
+  null,
+  null,
+  null,
+  'checkpoint'
+);
+
+select is(
+  (select created from checkpoint_reconciliation_result),
+  true,
+  'checkpoint reconciliation creates a transaction for non-zero offsets'
+);
+
+select is(
+  (select offset_amount from checkpoint_reconciliation_result),
+  2.75::numeric,
+  'checkpoint reconciliation recomputes the exact signed offset'
+);
+
+create temporary table checkpoint_reconciliation_retry on commit drop as
+select *
+from private.create_wallet_checkpoint_reconciliation(
+  '20000000-0000-0000-0000-000000000802',
+  '20000000-0000-0000-0000-000000000826',
+  null,
+  null,
+  null,
+  'checkpoint'
+);
+
+select is(
+  (select created from checkpoint_reconciliation_retry),
+  false,
+  'checkpoint reconciliation double-submit becomes a clean no-op'
+);
+
+select is(
+  (select offset_amount from checkpoint_reconciliation_retry),
+  0::numeric,
+  'checkpoint reconciliation double-submit does not create a duplicate offset'
+);
+
+create temporary table interval_reconciliation_result on commit drop as
+select *
+from private.create_wallet_checkpoint_reconciliation(
+  '20000000-0000-0000-0000-000000000801',
+  '20000000-0000-0000-0000-000000000824',
+  null,
+  null,
+  null,
+  'interval'
+);
+
+select is(
+  (select created from interval_reconciliation_result),
+  true,
+  'interval reconciliation creates a transaction for non-zero interval variance'
+);
+
+select is(
+  (select offset_amount from interval_reconciliation_result),
+  1::numeric,
+  'interval reconciliation recomputes actual delta minus ledger delta'
+);
+
+create temporary table interval_reconciliation_retry on commit drop as
+select *
+from private.create_wallet_checkpoint_reconciliation(
+  '20000000-0000-0000-0000-000000000801',
+  '20000000-0000-0000-0000-000000000824',
+  null,
+  null,
+  null,
+  'interval'
+);
+
+select is(
+  (select created from interval_reconciliation_retry),
+  false,
+  'interval reconciliation double-submit becomes a clean no-op'
+);
+
+select is(
+  (select offset_amount from interval_reconciliation_retry),
+  0::numeric,
+  'interval reconciliation double-submit does not create a duplicate offset'
 );
 
 reset role;

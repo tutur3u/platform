@@ -4,12 +4,14 @@ import {
   createSubscriptionFinanceInvoice,
   createWalletCheckpoint,
   createWalletCheckpointBatch,
+  createWalletCheckpointReconciliation,
   createWalletInterestConfig,
   deleteInvoice,
   deleteWalletCheckpoint,
   getInvoiceAnalytics,
   getPendingFinanceInvoicesCurrentMonthCount,
   getSubscriptionInvoiceContext,
+  getWalletCheckpointHistory,
   getWalletCheckpointSummary,
   importMoneyLoverTransactions,
   listFinanceBalanceTrend,
@@ -220,6 +222,73 @@ describe('finance internal API helpers', () => {
       'https://internal.example.com/api/workspaces/workspace%201/wallets/checkpoints',
       expect.objectContaining({
         cache: 'no-store',
+      })
+    );
+  });
+
+  it('gets wallet checkpoint history with encoded workspace IDs and no-store cache', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        audit_statuses: [],
+        checkpoints: [],
+        intervals: [],
+        latest_checkpoints: [],
+        totals_by_currency: [],
+        wallets: [],
+      })
+    );
+
+    await getWalletCheckpointHistory(
+      'workspace 1',
+      { limit: 100 },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/workspaces/workspace%201/wallets/checkpoints/history?limit=100',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('creates wallet checkpoint reconciliations with encoded IDs and reviewed body shape', async () => {
+    const payload = {
+      basis: 'interval' as const,
+      category_id: 'category/1',
+      description: 'Reviewed offset',
+    };
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        checked_at: '2026-06-11T10:00:00.000Z',
+        checkpoint_id: 'checkpoint/1',
+        created: true,
+        offset_amount: -12.34,
+        transaction_id: 'tx-1',
+        wallet_id: 'wallet/1',
+      })
+    );
+
+    await createWalletCheckpointReconciliation(
+      'workspace 1',
+      'wallet/1',
+      'checkpoint/1',
+      payload,
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/workspaces/workspace%201/wallets/wallet%2F1/checkpoints/checkpoint%2F1/reconcile',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'POST',
       })
     );
   });
