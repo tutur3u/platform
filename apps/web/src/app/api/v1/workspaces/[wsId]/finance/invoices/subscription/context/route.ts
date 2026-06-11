@@ -54,7 +54,9 @@ export async function GET(req: Request, { params }: Params) {
 
   const { data: validGroups, error: validGroupsError } = await sbAdmin
     .from('workspace_user_groups_users')
-    .select('group_id, workspace_user_groups!inner(ws_id)')
+    .select(
+      'group_id, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(ws_id)'
+    )
     .eq('user_id', userId)
     .eq('role', 'STUDENT')
     .eq('workspace_user_groups.ws_id', normalizedWsId)

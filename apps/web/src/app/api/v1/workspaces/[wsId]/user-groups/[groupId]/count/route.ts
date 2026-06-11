@@ -6,6 +6,7 @@ import {
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
@@ -48,7 +49,9 @@ async function getDataWithApiKey({
 
   const mainQuery = sbAdmin
     .from('workspace_user_groups_users')
-    .select('count(), workspace_user_groups!inner(id, ws_id)')
+    .select(
+      'count(), workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(id, ws_id)'
+    )
     .eq('workspace_user_groups.ws_id', wsId)
     .eq('workspace_user_groups.id', groupId)
     .maybeSingle();
@@ -62,7 +65,7 @@ async function getDataWithApiKey({
   const { data, error } = response;
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching user group count with API key:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -107,13 +110,15 @@ async function getDataFromSession({
 
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
-    .select('count(), workspace_user_groups!inner(id, ws_id)')
+    .select(
+      'count(), workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(id, ws_id)'
+    )
     .eq('workspace_user_groups.ws_id', wsId)
     .eq('workspace_user_groups.id', groupId)
     .maybeSingle();
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching user group count:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }

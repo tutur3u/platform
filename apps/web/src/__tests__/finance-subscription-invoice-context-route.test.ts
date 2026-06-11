@@ -73,6 +73,9 @@ describe('subscription invoice context route', () => {
     const source = readFileSync(subscriptionContextRoutePath, 'utf8');
 
     expect(source).toContain(
+      'workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(ws_id)'
+    );
+    expect(source).toContain(
       'finance_invoices!inner(valid_until, created_at, completed_at)'
     );
     expect(source).toContain(
@@ -175,6 +178,9 @@ describe('subscription invoice context route', () => {
       'finance_invoices.completed_at',
       'is',
       null
+    );
+    expect(validGroupsQuery.select).toHaveBeenCalledWith(
+      'group_id, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(ws_id)'
     );
   });
 });
