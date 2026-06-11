@@ -95,7 +95,6 @@ const {
 } = require('./docker-web/env.js');
 const {
   DEFAULT_BUILDER_NAME,
-  BUILDKIT_SERVICE_NAME,
   cleanupBuildkitAfterBuild,
   ensureBuildkitBuilder,
 } = require('./docker-web/buildkit-builder.js');
@@ -110,14 +109,15 @@ const {
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
 const {
   WATCHER_CONTAINER_ENV,
-  BLUE_GREEN_WATCHER_SERVICE,
   startBlueGreenWatcherContainer,
 } = require('./watch-blue-green-deploy.js');
+const {
+  cancelActiveBlueGreenBuild,
+} = require('./watch-blue-green/active-build-cancel.js');
 const {
   CANCEL_ACTIVE_BUILD_ENV,
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
   acquireDeploymentBuildLock,
-  clearDeploymentBuildLock,
   describeActiveDeploymentConflict,
   getActiveDeploymentConflict,
 } = require('./watch-blue-green/build-lock.js');
@@ -651,72 +651,6 @@ async function promptForActiveDeploymentCancellation(
   }
 }
 
-async function cancelActiveBlueGreenBuild({
-  composeEnv,
-  conflict,
-  fsImpl = fs,
-  latestCommit,
-  now = () => Date.now(),
-  paths = getWatchPaths(),
-  rootDir = ROOT_DIR,
-  runCommand: run = runCommand,
-} = {}) {
-  const canceledAt = now();
-  const reason = `Canceled active deployment before manual blue/green deploy: ${describeActiveDeploymentConflict(conflict)}`;
-
-  await run(
-    'docker',
-    getComposeCommandArgs(
-      getComposeFile('prod'),
-      ['--profile', 'redis'],
-      'stop',
-      '--timeout',
-      '1',
-      BLUE_GREEN_WATCHER_SERVICE,
-      BUILDKIT_SERVICE_NAME
-    ),
-    {
-      env: composeEnv,
-      stdio: 'pipe',
-    }
-  );
-  await run('docker', ['buildx', 'rm', DEFAULT_BUILDER_NAME], {
-    env: composeEnv,
-    stdio: 'pipe',
-  });
-
-  clearDeploymentBuildLock({ fsImpl, paths });
-  if (fsImpl.existsSync(paths.statusFile)) {
-    fsImpl.rmSync(paths.statusFile, { force: true });
-  }
-
-  appendDeploymentHistory(
-    {
-      buildDurationMs: Math.max(
-        0,
-        canceledAt - (conflict?.lock?.startedAt ?? canceledAt)
-      ),
-      cancellationReason: reason,
-      commitHash: conflict?.lock?.commitHash ?? latestCommit?.hash ?? null,
-      commitShortHash:
-        conflict?.lock?.commitShortHash ?? latestCommit?.shortHash ?? null,
-      commitSubject:
-        conflict?.lock?.commitSubject ?? latestCommit?.subject ?? null,
-      deploymentKind: conflict?.lock?.deploymentKind ?? 'manual-interrupt',
-      finishedAt: canceledAt,
-      rootDir,
-      startedAt: conflict?.lock?.startedAt ?? canceledAt,
-      status: 'canceled',
-    },
-    {
-      fsImpl,
-      paths,
-    }
-  );
-
-  return reason;
-}
-
 async function resolveManualBlueGreenBuildConflict({
   composeEnv,
   env,
@@ -757,12 +691,14 @@ async function resolveManualBlueGreenBuildConflict({
   }
 
   return cancelActiveBlueGreenBuild({
+    cancellationSource: 'manual blue/green deploy',
     composeEnv,
     conflict,
     fsImpl,
     latestCommit,
     now,
     paths,
+    processImpl,
     rootDir,
     runCommand: run,
   });

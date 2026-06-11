@@ -114,6 +114,8 @@ function getProductionBlockerTranslationKey(reason: string) {
   switch (reason) {
     case 'ci-not-green':
       return 'controls.production_blocker_ci_not_green';
+    case 'deployment-active':
+      return 'controls.production_blocker_deployment_active';
     case 'git-unavailable':
       return 'controls.production_blocker_git_unavailable';
     case 'not-fast-forward':

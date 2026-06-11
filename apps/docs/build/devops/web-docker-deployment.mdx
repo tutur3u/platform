@@ -1317,25 +1317,34 @@ Behavior:
     duration/failure details, next evaluation time, and latest decision.
     Missing CI inspection, dirty worktrees, deployment locks, divergent
     `production`, or an active rollback pin block automatic promotion.
+    Build-lock conflicts during the prebuild or standby-refresh phase are
+    recorded as a `deployment-active` deferral instead of a failed deployment
+    attempt, so active Docker work does not poison retry limits.
 16. Infrastructure operators can queue
     `tmp/docker-web/watch/control/blue-green-production-promote.request.json`
     from the deployments dashboard to promote `main` immediately. Manual
     promotion bypasses only the CI-green and 10 minute age gates; it still uses
     a non-forced update, requires a fast-forward ancestry relationship, and
-    leaves normal post-switch blue/green health checks in the deploy path. When
-    `GITHUB_TOKEN` is configured, the watcher updates the GitHub ref through the
-    API; otherwise it uses the host's configured Git credentials with
+    leaves normal post-switch blue/green health checks in the deploy path. Once
+    those Git safety checks pass, the request is an operator-authorized override
+    that cancels any active blue/green build before updating `production`; it
+    also clears an active rollback pin as operator intent to resume production.
+    When `GITHUB_TOKEN` is configured, the watcher updates the GitHub ref
+    through the API; otherwise it uses the host's configured Git credentials with
     `git push <remote> <mainHash>:refs/heads/production`.
 17. Infrastructure operators can queue
     `tmp/docker-web/watch/control/blue-green-deployment-revert.request.json`
     to revert production to a retained successful deployment. The watcher keeps
     the 5 newest unique successful deployed image tags for instant revert; a
-    cached revert retags the selected image, starts active/standby with
-    `--no-build`, health-checks through the normal proxy path, records
-    deployment kind `instant-revert`, and writes a deployment pin so automatic
-    promotion does not immediately overwrite the rollback. Older retained
-    deployments remain revertable through the existing rollback pin path, which
-    may rebuild because no cached image is available.
+    cached revert verifies the cached target first, supersedes any queued
+    manual production promotion request, cancels any active blue/green build,
+    retags the selected image, starts active/standby with `--no-build`,
+    health-checks through the normal proxy path, records deployment kind
+    `instant-revert`, and writes a deployment pin so automatic promotion does
+    not immediately overwrite the rollback. Older retained deployments remain
+    revertable through the existing rollback pin path, which may rebuild
+    because no cached image is available and still respects the active build
+    lock.
 18. After forward database migrations finish, blue/green workflows remove
     completed `hive-db-migrate` and `supermemory-db-migrate` containers by
     Compose service labels. This catches stopped one-off `docker compose run`

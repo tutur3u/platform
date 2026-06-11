@@ -87,6 +87,7 @@ const {
 } = require('./projects.js');
 const {
   clearDeploymentRevertRequest,
+  clearDeploymentPin,
   clearInstantRolloutRequest,
   clearProductionPromoteRequest,
   readDeploymentRevertRequest,
@@ -95,6 +96,7 @@ const {
   readProductionPromoteRequest,
   writeDeploymentPin,
 } = require('./control.js');
+const { cancelActiveBlueGreenBuild } = require('./active-build-cancel.js');
 const {
   DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
@@ -2326,6 +2328,43 @@ function createDeploymentActiveResult(conflict, result = {}) {
   };
 }
 
+async function cancelActiveDeploymentForWatcherRequest({
+  cancellationSource,
+  conflict,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl,
+  latestCommit,
+  now,
+  paths,
+  processImpl,
+  rootDir,
+  runCommand: run,
+}) {
+  if (!conflict) {
+    return null;
+  }
+
+  return cancelActiveBlueGreenBuild({
+    cancellationSource,
+    composeEnv: getWatcherComposeEnv({
+      baseEnv: env,
+      envFilePath,
+      fsImpl,
+      rootDir,
+    }),
+    conflict,
+    fsImpl,
+    latestCommit,
+    now,
+    paths,
+    processImpl,
+    rootDir,
+    runCommand: run,
+    stopWatcherService: false,
+  });
+}
+
 function hasReportedActiveDeploymentConflict(conflict, { fsImpl, paths }) {
   const lastResult = readWatchStatus(paths, fsImpl)?.lastResult;
 
@@ -2559,6 +2598,7 @@ async function runDetachedParentFallbackStandbyRefresh({
   onDeploymentStart = () => {},
   manageCheckout = true,
   paths = getWatchPaths(),
+  processImpl = process,
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
   standbyRefreshCandidate,
@@ -2608,6 +2648,7 @@ async function runDetachedParentFallbackStandbyRefresh({
         latestCommit: deployCommit,
         now,
         paths,
+        processImpl,
         rootDir,
         runCommand: run,
       });
@@ -2658,6 +2699,11 @@ async function runDetachedParentFallbackStandbyRefresh({
       return { success: true, history };
     } catch (error) {
       const refreshFinishedAt = now();
+
+      if (error instanceof DeploymentBuildLockConflictError) {
+        return { buildLockConflict: true, error, history: null };
+      }
+
       const history = await appendFailedDeploymentHistoryAndNotify(
         {
           activeColor: standbyRefreshCandidate.standbyColor,
@@ -3659,6 +3705,7 @@ async function runDeploymentRevertRequestIteration(
   target,
   request,
   {
+    activeDeploymentConflict = null,
     attachRuntime,
     checkedAt,
     deployCommand = DEFAULT_DEPLOY_COMMAND,
@@ -3701,7 +3748,28 @@ async function runDeploymentRevertRequestIteration(
       ? deployment.imageTag
       : null;
 
+  clearProductionPromoteRequest({ fsImpl, paths });
+
   if (!cachedImageTag) {
+    if (activeDeploymentConflict) {
+      logActiveDeploymentDeferralOnce(
+        `Rollback pin for ${pin.commitShortHash} is waiting because another deployment is already active`,
+        activeDeploymentConflict,
+        { fsImpl, log, paths }
+      );
+      return attachRuntime(
+        createDeploymentActiveResult(activeDeploymentConflict, {
+          checkedAt,
+          latestCommit: {
+            hash: deployment.commitHash,
+            shortHash:
+              deployment.commitShortHash ?? deployment.commitHash.slice(0, 7),
+            subject: deployment.commitSubject ?? 'Production rollback',
+          },
+        })
+      );
+    }
+
     writeDeploymentPin(pin, { fsImpl, paths });
     clearDeploymentRevertRequest({ fsImpl, paths });
     log.warn?.(
@@ -3743,6 +3811,22 @@ async function runDeploymentRevertRequestIteration(
   });
 
   try {
+    if (activeDeploymentConflict) {
+      await cancelActiveDeploymentForWatcherRequest({
+        cancellationSource: 'instant cached production revert',
+        conflict: activeDeploymentConflict,
+        env,
+        envFilePath,
+        fsImpl,
+        latestCommit,
+        now,
+        paths,
+        processImpl,
+        rootDir,
+        runCommand: run,
+      });
+    }
+
     log.warn?.(
       `Instant reverting production to ${latestCommit.shortHash} from cached image ${cachedImageTag}.`
     );
@@ -4130,6 +4214,7 @@ async function runPinnedDeploymentIteration(
 async function runProductionPromotionIteration(
   target,
   {
+    activeDeploymentConflict = null,
     attachRuntime,
     checkedAt,
     env,
@@ -4140,6 +4225,7 @@ async function runProductionPromotionIteration(
     now = () => Date.now(),
     onDeploymentStart = () => {},
     paths = getWatchPaths(),
+    processImpl = process,
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
   } = {}
@@ -4344,6 +4430,7 @@ async function runProductionPromotionIteration(
           now,
           onDeploymentStart,
           paths,
+          processImpl,
           rootDir,
           runCommand: run,
           standbyRefreshCandidate,
@@ -4369,6 +4456,56 @@ async function runProductionPromotionIteration(
             worktreePath: prebuildWorktree.worktreePath,
           });
         }
+      }
+
+      if (prebuildResult?.buildLockConflict) {
+        const activeConflict = getConflictFromDeploymentBuildLockError(
+          prebuildResult.error,
+          now
+        );
+
+        writeProductionPromotionState(
+          createProductionPromotionState({
+            ci,
+            evaluation: {
+              ...evaluation,
+              blockedReasons: [
+                ...evaluation.blockedReasons,
+                'deployment-active',
+              ],
+              ready: false,
+            },
+            main: refs.main,
+            now: now(),
+            prebuild: {
+              durationMs: null,
+              failureReason: null,
+              imageTag: null,
+              startedAt: prebuildStartedAt,
+              standbyColor: standbyRefreshCandidate.standbyColor ?? null,
+              status: 'missing',
+              updatedAt: now(),
+            },
+            production: refs.production,
+            request,
+            status: 'deployment-active',
+            target,
+          }),
+          { fsImpl, paths }
+        );
+        logActiveDeploymentDeferralOnce(
+          `Production prebuild for ${refs.main.shortHash} is waiting because another deployment is already active`,
+          activeConflict,
+          { fsImpl, log, paths }
+        );
+
+        return attachRuntime(
+          createDeploymentActiveResult(activeConflict, {
+            checkedAt,
+            error: prebuildResult.error,
+            latestCommit: refs.main,
+          })
+        );
       }
 
       const prebuiltDeployment = prebuildResult.history?.find?.(
@@ -4441,6 +4578,72 @@ async function runProductionPromotionIteration(
   }
 
   try {
+    if (request) {
+      const deploymentPin = readDeploymentPin(paths, fsImpl);
+
+      if (deploymentPin || activeDeploymentConflict) {
+        const currentBranch = await getCurrentBranchName({
+          env,
+          runCommand: run,
+        });
+
+        if (!deploymentPin && currentBranch !== target.branch) {
+          throw new Error(
+            `Current branch changed from ${target.branch} to ${currentBranch}. The watcher is locked to ${target.branch}.`
+          );
+        }
+
+        if (deploymentPin) {
+          if (currentBranch === 'HEAD') {
+            const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+              env,
+              runCommand: run,
+            });
+
+            if (hasBlockingDirtyWorktree) {
+              throw new Error(
+                `Cannot clear rollback pin for manual production promotion because the detached watcher worktree has uncommitted changes.`
+              );
+            }
+
+            clearDeploymentPin({ fsImpl, paths });
+            log.warn?.(
+              `Manual production promotion clears the active rollback pin for ${deploymentPin.commitShortHash ?? deploymentPin.commitHash.slice(0, 12)}.`
+            );
+            await checkoutBranch(target.branch, {
+              env,
+              runCommand: run,
+            });
+          } else if (currentBranch === target.branch) {
+            clearDeploymentPin({ fsImpl, paths });
+            log.warn?.(
+              `Manual production promotion clears the active rollback pin for ${deploymentPin.commitShortHash ?? deploymentPin.commitHash.slice(0, 12)}.`
+            );
+          } else {
+            throw new Error(
+              `Current branch changed from ${target.branch} to ${currentBranch}. The watcher is locked to ${target.branch}.`
+            );
+          }
+        }
+      }
+
+      if (activeDeploymentConflict) {
+        await cancelActiveDeploymentForWatcherRequest({
+          cancellationSource: 'manual production promotion',
+          conflict: activeDeploymentConflict,
+          env,
+          envFilePath,
+          fsImpl,
+          latestCommit: refs.main,
+          now,
+          paths,
+          processImpl,
+          rootDir,
+          runCommand: run,
+        });
+      }
+    }
+
     const promotionUpdate = await updateProductionRefToMain({
       env,
       mainHash: refs.main.hash,
@@ -4632,6 +4835,9 @@ async function runDeployWatchIteration(
     });
   }
 
+  const deploymentPin = readDeploymentPin(paths, fsImpl);
+  const deploymentRevertRequest = readDeploymentRevertRequest(paths, fsImpl);
+  const productionPromoteRequest = readProductionPromoteRequest(paths, fsImpl);
   const activeDeploymentConflict = getActiveDeploymentConflict({
     env,
     fsImpl,
@@ -4640,26 +4846,12 @@ async function runDeployWatchIteration(
     processImpl,
   });
 
-  if (activeDeploymentConflict) {
-    logActiveDeploymentDeferralOnce(
-      'Skipping watcher deployment poll because another deployment is already active',
-      activeDeploymentConflict,
-      { fsImpl, log, paths }
-    );
-
-    return attachRuntime(
-      createDeploymentActiveResult(activeDeploymentConflict, { checkedAt })
-    );
-  }
-
-  const deploymentPin = readDeploymentPin(paths, fsImpl);
-  const deploymentRevertRequest = readDeploymentRevertRequest(paths, fsImpl);
-
   if (deploymentRevertRequest) {
     return runDeploymentRevertRequestIteration(
       target,
       deploymentRevertRequest,
       {
+        activeDeploymentConflict,
         attachRuntime,
         checkedAt,
         deployCommand,
@@ -4680,7 +4872,65 @@ async function runDeployWatchIteration(
     );
   }
 
-  if (deploymentPin) {
+  if (
+    activeDeploymentConflict &&
+    productionPromoteRequest &&
+    target.branch === 'production'
+  ) {
+    const productionPromotionResult = await runProductionPromotionIteration(
+      target,
+      {
+        activeDeploymentConflict,
+        attachRuntime,
+        checkedAt,
+        env,
+        envFilePath,
+        fsImpl,
+        log,
+        now,
+        onDeploymentStart,
+        paths,
+        processImpl,
+        rootDir,
+        runCommand: run,
+      }
+    );
+
+    if (productionPromotionResult) {
+      return productionPromotionResult;
+    }
+  }
+
+  if (activeDeploymentConflict) {
+    const pendingProductionPromoteRequest = readProductionPromoteRequest(
+      paths,
+      fsImpl
+    );
+
+    writeProductionPromotionWatcherBlocker({
+      blockedReason: 'deployment-active',
+      checkedAt,
+      fsImpl,
+      paths,
+      request: pendingProductionPromoteRequest,
+      status: 'deployment-active',
+      target,
+    });
+    logActiveDeploymentDeferralOnce(
+      'Skipping watcher deployment poll because another deployment is already active',
+      activeDeploymentConflict,
+      { fsImpl, log, paths }
+    );
+
+    return attachRuntime(
+      createDeploymentActiveResult(activeDeploymentConflict, { checkedAt })
+    );
+  }
+
+  if (
+    deploymentPin &&
+    !(productionPromoteRequest && target.branch === 'production')
+  ) {
     return runPinnedDeploymentIteration(target, deploymentPin, {
       deployCommand,
       env,
@@ -4726,7 +4976,9 @@ async function runDeployWatchIteration(
     }
 
     log.info?.(
-      `Deployment pin is clear. Checking out ${target.branch} and resuming normal auto-pulls.`
+      deploymentPin && productionPromoteRequest
+        ? `Queued production promotion will clear the rollback pin; checking out ${target.branch}.`
+        : `Deployment pin is clear. Checking out ${target.branch} and resuming normal auto-pulls.`
     );
     await checkoutBranch(target.branch, {
       env,
@@ -5299,6 +5551,7 @@ async function runDeployWatchIteration(
           now,
           onDeploymentStart,
           paths,
+          processImpl,
           rootDir,
           runCommand: run,
           runtimeSnapshot,
@@ -5684,6 +5937,18 @@ async function runDeployWatchIteration(
           standbyRefreshCandidate,
           targetBranch: target.branch,
         });
+
+        if (sb.buildLockConflict) {
+          return attachRuntime({
+            activeDeploymentConflict: describeActiveDeploymentConflict(
+              sb.error?.conflict
+            ),
+            branchTipCommit: latestCommit,
+            checkedAt,
+            latestCommit: parentDeploy,
+            status: 'deployment-active',
+          });
+        }
 
         if (!sb.success) {
           log.error?.(

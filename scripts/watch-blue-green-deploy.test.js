@@ -104,6 +104,7 @@ const {
   stripAnsi,
   summarizeRequestRate,
   getLatestDeploymentSummary,
+  getProductionPrebuildWorktreePath,
   writeDeploymentHistory,
   writeWatchArgsFile,
   loadRuntimeSnapshot,
@@ -992,6 +993,10 @@ function prodComposePsKey(serviceName) {
 
 function prodComposePsAllKey(serviceName) {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q ${serviceName}`;
+}
+
+function prodComposeStopKey(...serviceNames) {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${serviceNames.join(' ')}`;
 }
 
 function prodComposeWatcherUpKey() {
@@ -3761,6 +3766,503 @@ test('runProductionPromotionIteration manually promotes with host git credential
   }
 });
 
+test('runProductionPromotionIteration cancels an active build after fast-forward validation and clears rollback pin', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-production-promote-cancel-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const githubRequests = [];
+  const checkedAt = Date.parse('2026-06-10T10:00:00.000Z');
+  const mainHash = 'bbb2222222222222222222222222222222222222';
+  const productionHash = 'aaa1111111111111111111111111111111111111';
+
+  try {
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(
+      paths.productionPromoteRequestFile,
+      JSON.stringify(
+        {
+          bypassChecks: true,
+          bypassDelay: true,
+          kind: 'production-promote',
+          requestedAt: '2026-06-10T10:00:00.000Z',
+          requestedBy: 'user-1',
+          requestedByEmail: 'ops@platform.test',
+          sourceBranch: 'main',
+          targetBranch: 'production',
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+    fs.writeFileSync(
+      paths.deploymentPinFile,
+      JSON.stringify(
+        {
+          commitHash: productionHash,
+          commitShortHash: 'aaa111',
+          commitSubject: 'Pinned rollback',
+          kind: 'deployment-pin',
+          requestedAt: '2026-06-10T09:30:00.000Z',
+          requestedBy: 'user-2',
+          requestedByEmail: 'ops@platform.test',
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    const runCommand = async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      if (
+        key ===
+        'git fetch origin refs/heads/main:refs/remotes/origin/main refs/heads/production:refs/remotes/origin/production'
+      ) {
+        return createResult('');
+      }
+
+      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/main') {
+        return createResult(
+          `${mainHash}\nbbb222\nFresh main candidate\n2026-06-10T09:59:30.000Z\n`
+        );
+      }
+
+      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/production') {
+        return createResult(
+          `${productionHash}\naaa111\nCurrent production\n2026-06-10T09:30:00.000Z\n`
+        );
+      }
+
+      if (
+        key === `git merge-base --is-ancestor ${productionHash} ${mainHash}`
+      ) {
+        return createResult('');
+      }
+
+      if (key === 'git config --get remote.origin.url') {
+        return createResult('git@github.com:tutur3u/platform.git\n');
+      }
+
+      if (key === 'git rev-parse --abbrev-ref HEAD') {
+        return createResult('production\n');
+      }
+
+      if (key === prodComposeStopKey('buildkit')) {
+        return createResult('');
+      }
+
+      if (key === 'docker buildx rm tuturuuu') {
+        return createResult('');
+      }
+
+      if (
+        key ===
+        'git fetch origin refs/heads/production:refs/remotes/origin/production'
+      ) {
+        return createResult('');
+      }
+
+      if (key === 'git merge --ff-only origin/production') {
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    };
+
+    const githubRequestJson = async (requestPath, options = {}) => {
+      githubRequests.push({
+        body: options.body ?? null,
+        method: options.method ?? 'GET',
+        requestPath,
+      });
+
+      if (requestPath.includes('/check-runs')) {
+        return {
+          check_runs: [{ conclusion: 'failure', status: 'completed' }],
+        };
+      }
+
+      if (requestPath.endsWith('/status')) {
+        return {
+          statuses: [{ context: 'legacy-ci', state: 'failure' }],
+        };
+      }
+
+      if (options.method === 'PATCH') {
+        return { object: { sha: mainHash } };
+      }
+
+      throw new Error(`Unexpected GitHub request: ${requestPath}`);
+    };
+
+    const result = await runProductionPromotionIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        activeDeploymentConflict: {
+          elapsedMs: 1000,
+          lock: {
+            command: 'bun serve:web:docker:bg',
+            commitHash: 'build123456789',
+            commitShortHash: 'build123',
+            commitSubject: 'Build in flight',
+            deploymentKind: 'promotion',
+            ownerPid: 9876,
+            startedAt: checkedAt - 1000,
+          },
+          source: 'lock',
+          status: 'building',
+        },
+        attachRuntime: async (state) => state,
+        checkedAt,
+        env: { GITHUB_TOKEN: 'test-token' },
+        fsImpl: fs,
+        githubRequestJson,
+        log: { info() {}, warn() {} },
+        now: () => checkedAt,
+        paths,
+        processImpl: { pid: 4321 },
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    const mergeBaseIndex = calls.indexOf(
+      `git merge-base --is-ancestor ${productionHash} ${mainHash}`
+    );
+    const cancelIndex = calls.indexOf(prodComposeStopKey('buildkit'));
+    const history = readDeploymentHistory(paths, fs);
+
+    assert.equal(result.status, 'production-promoted');
+    assert.ok(mergeBaseIndex >= 0);
+    assert.ok(cancelIndex > mergeBaseIndex);
+    assert.equal(history[0].status, 'canceled');
+    assert.equal(history[0].commitShortHash, 'build123');
+    assert.match(history[0].cancellationReason, /manual production promotion/);
+    assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
+    assert.equal(fs.existsSync(paths.deploymentPinFile), false);
+    assert.ok(calls.includes(prodComposeStopKey('buildkit')));
+    assert.equal(
+      calls.includes(
+        prodComposeStopKey(BLUE_GREEN_WATCHER_SERVICE, 'buildkit')
+      ),
+      false
+    );
+    assert.ok(calls.includes('docker buildx rm tuturuuu'));
+    assert.deepEqual(
+      githubRequests.find((request) => request.method === 'PATCH').body,
+      {
+        force: false,
+        sha: mainHash,
+      }
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runProductionPromotionIteration does not cancel an active build before failed ancestry validation', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-production-promote-not-ff-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const checkedAt = Date.parse('2026-06-10T10:00:00.000Z');
+  const mainHash = 'bbb2222222222222222222222222222222222222';
+  const productionHash = 'aaa1111111111111111111111111111111111111';
+
+  try {
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(
+      paths.productionPromoteRequestFile,
+      JSON.stringify(
+        {
+          bypassChecks: true,
+          bypassDelay: true,
+          kind: 'production-promote',
+          requestedAt: '2026-06-10T10:00:00.000Z',
+          requestedBy: 'user-1',
+          requestedByEmail: 'ops@platform.test',
+          sourceBranch: 'main',
+          targetBranch: 'production',
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    const result = await runProductionPromotionIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        activeDeploymentConflict: {
+          elapsedMs: 1000,
+          lock: {
+            command: 'bun serve:web:docker:bg',
+            commitHash: 'build123456789',
+            commitShortHash: 'build123',
+            commitSubject: 'Build in flight',
+            deploymentKind: 'promotion',
+            ownerPid: 9876,
+            startedAt: checkedAt - 1000,
+          },
+          source: 'lock',
+          status: 'building',
+        },
+        attachRuntime: async (state) => state,
+        checkedAt,
+        env: { GITHUB_TOKEN: 'test-token' },
+        fsImpl: fs,
+        githubRequestJson: async (requestPath) => {
+          if (requestPath.includes('/check-runs')) {
+            return { check_runs: [] };
+          }
+
+          if (requestPath.endsWith('/status')) {
+            return { statuses: [] };
+          }
+
+          throw new Error(`Unexpected GitHub request: ${requestPath}`);
+        },
+        log: { info() {}, warn() {} },
+        now: () => checkedAt,
+        paths,
+        processImpl: { pid: 4321 },
+        rootDir: tempDir,
+        runCommand: async (command, args) => {
+          const key = `${command} ${args.join(' ')}`;
+          calls.push(key);
+
+          if (
+            key ===
+            'git fetch origin refs/heads/main:refs/remotes/origin/main refs/heads/production:refs/remotes/origin/production'
+          ) {
+            return createResult('');
+          }
+
+          if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/main') {
+            return createResult(
+              `${mainHash}\nbbb222\nFresh main candidate\n2026-06-10T09:59:30.000Z\n`
+            );
+          }
+
+          if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/production') {
+            return createResult(
+              `${productionHash}\naaa111\nCurrent production\n2026-06-10T09:30:00.000Z\n`
+            );
+          }
+
+          if (
+            key === `git merge-base --is-ancestor ${productionHash} ${mainHash}`
+          ) {
+            return createResult('', { code: 1 });
+          }
+
+          if (key === 'git config --get remote.origin.url') {
+            return createResult('git@github.com:tutur3u/platform.git\n');
+          }
+
+          throw new Error(`Unexpected command: ${key}`);
+        },
+      }
+    );
+
+    assert.equal(result, null);
+    assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
+    assert.equal(readDeploymentHistory(paths, fs).length, 0);
+    assert.equal(calls.includes(prodComposeStopKey('buildkit')), false);
+    assert.equal(calls.includes('docker buildx rm tuturuuu'), false);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runProductionPromotionIteration defers lock-conflicted prebuild without failed history', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-production-prebuild-lock-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, '.env.local');
+  const calls = [];
+  const checkedAt = Date.parse('2026-06-10T10:00:00.000Z');
+  const mainHash = 'bbb2222222222222222222222222222222222222';
+  const productionHash = 'aaa1111111111111111111111111111111111111';
+  const worktreePath = getProductionPrebuildWorktreePath(
+    {
+      hash: mainHash,
+      shortHash: 'bbb222',
+    },
+    paths
+  );
+
+  try {
+    fs.mkdirSync(tempDir, { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+    writeDeploymentBuildLock(
+      {
+        command: 'bun serve:web:docker:bg',
+        commitHash: 'build123456789',
+        commitShortHash: 'build123',
+        commitSubject: 'Build in flight',
+        deploymentKind: 'promotion',
+        lockToken: 'active-token',
+        ownerPid: 9876,
+        startedAt: checkedAt - 1000,
+      },
+      { fsImpl: fs, paths }
+    );
+
+    const runCommand = async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      if (
+        key ===
+        'git fetch origin refs/heads/main:refs/remotes/origin/main refs/heads/production:refs/remotes/origin/production'
+      ) {
+        return createResult('');
+      }
+
+      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/main') {
+        return createResult(
+          `${mainHash}\nbbb222\nFresh main candidate\n2026-06-10T09:45:00.000Z\n`
+        );
+      }
+
+      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/production') {
+        return createResult(
+          `${productionHash}\naaa111\nCurrent production\n2026-06-10T09:30:00.000Z\n`
+        );
+      }
+
+      if (
+        key === `git merge-base --is-ancestor ${productionHash} ${mainHash}`
+      ) {
+        return createResult('');
+      }
+
+      if (key === 'git config --get remote.origin.url') {
+        return createResult('git@github.com:tutur3u/platform.git\n');
+      }
+
+      if (key === `git worktree add --detach ${worktreePath} ${mainHash}`) {
+        fs.mkdirSync(worktreePath, { recursive: true });
+        return createResult('');
+      }
+
+      if (key === `git diff --name-only oldstandby ${mainHash}`) {
+        return createResult('apps/web/src/app/page.tsx\n');
+      }
+
+      if (key === `git worktree remove --force ${worktreePath}`) {
+        fs.rmSync(worktreePath, { force: true, recursive: true });
+        return createResult('');
+      }
+
+      if (key === 'git worktree prune') {
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    };
+
+    const result = await runProductionPromotionIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        attachRuntime: async (state) => ({
+          ...state,
+          currentBlueGreen: {
+            activeColor: 'blue',
+            liveColors: ['blue', 'green'],
+            standbyColor: 'green',
+          },
+          deployments: [
+            {
+              activatedAt: checkedAt - 20 * 60_000,
+              commitHash: productionHash,
+              runtimeState: 'active',
+              status: 'successful',
+            },
+            {
+              activatedAt: checkedAt - 30 * 60_000,
+              commitHash: 'oldstandby',
+              runtimeState: 'standby',
+              status: 'successful',
+            },
+          ],
+        }),
+        checkedAt,
+        env: { GITHUB_TOKEN: 'test-token' },
+        envFilePath,
+        fsImpl: fs,
+        githubRequestJson: async (requestPath) => {
+          if (requestPath.includes('/check-runs')) {
+            return {
+              check_runs: [{ conclusion: 'success', status: 'completed' }],
+            };
+          }
+
+          if (requestPath.endsWith('/status')) {
+            return {
+              statuses: [{ context: 'legacy-ci', state: 'success' }],
+            };
+          }
+
+          throw new Error(`Unexpected GitHub request: ${requestPath}`);
+        },
+        log: { info() {}, warn() {} },
+        now: () => checkedAt,
+        paths,
+        processImpl: {
+          kill(pid) {
+            if (pid !== 9876) {
+              const error = new Error('missing');
+              error.code = 'ESRCH';
+              throw error;
+            }
+          },
+          pid: 4321,
+        },
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    const state = JSON.parse(
+      fs.readFileSync(paths.productionPromotionStateFile, 'utf8')
+    );
+
+    assert.equal(result.status, 'deployment-active');
+    assert.equal(readDeploymentHistory(paths, fs).length, 0);
+    assert.equal(state.decision.status, 'deployment-active');
+    assert.deepEqual(state.decision.blockedReasons, ['deployment-active']);
+    assert.equal(state.prebuild.status, 'missing');
+    assert.equal(fs.existsSync(worktreePath), false);
+    assert.ok(calls.includes(`git worktree remove --force ${worktreePath}`));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDeploymentRevertRequestIteration uses cached no-build recovery and pins the selected commit', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-cached-revert-')
@@ -3971,6 +4473,250 @@ test('runDeploymentRevertRequestIteration uses cached no-build recovery and pins
       calls.some((call) => call.startsWith('bun ')),
       false
     );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeploymentRevertRequestIteration cancels an active build before cached recovery', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-cached-revert-cancel-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const composeProjectName = path.basename(tempDir);
+  const cachedImageTag = `${composeProjectName}-web-cache:old123`;
+  const checkedAt = Date.parse('2026-06-10T10:05:00.000Z');
+  const calls = [];
+  const request = {
+    commitHash: 'old123456789old123456789old123456789old1',
+    commitShortHash: 'old123',
+    commitSubject: 'Known good cached image',
+    deploymentStamp: 'deploy-old123',
+    imageTag: cachedImageTag,
+    instant: true,
+    kind: 'deployment-revert',
+    requestedAt: '2026-06-10T10:05:00.000Z',
+    requestedBy: 'user-1',
+    requestedByEmail: 'ops@platform.test',
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+    fs.writeFileSync(paths.blueGreen.stateFile, 'blue\n', 'utf8');
+    fs.writeFileSync(
+      paths.blueGreen.deploymentStampFile,
+      'deploy-current\n',
+      'utf8'
+    );
+    fs.writeFileSync(
+      paths.deploymentRevertRequestFile,
+      JSON.stringify(request, null, 2),
+      'utf8'
+    );
+    fs.writeFileSync(
+      paths.productionPromoteRequestFile,
+      JSON.stringify(
+        {
+          bypassChecks: true,
+          bypassDelay: true,
+          kind: 'production-promote',
+          requestedAt: '2026-06-10T10:04:00.000Z',
+          requestedBy: 'user-2',
+          requestedByEmail: 'ops@platform.test',
+          sourceBranch: 'main',
+          targetBranch: 'production',
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: Date.parse('2026-06-10T09:00:00.000Z'),
+          activeColor: 'blue',
+          buildDurationMs: 20_000,
+          commitHash: request.commitHash,
+          commitShortHash: request.commitShortHash,
+          commitSubject: request.commitSubject,
+          deploymentStamp: request.deploymentStamp,
+          finishedAt: Date.parse('2026-06-10T09:00:00.000Z'),
+          imageTag: cachedImageTag,
+          startedAt: Date.parse('2026-06-10T08:59:40.000Z'),
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+
+    const runCommand = async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      const cleanupResult = migrationCleanupResult(command, args);
+      if (cleanupResult) return cleanupResult;
+
+      if (key === prodComposeStopKey('buildkit')) {
+        return createResult('');
+      }
+
+      if (key === 'docker buildx rm tuturuuu') {
+        return createResult('');
+      }
+
+      if (key === `docker image inspect ${cachedImageTag}`) {
+        return createResult('');
+      }
+
+      if (
+        key === `docker tag ${cachedImageTag} ${composeProjectName}-web-blue`
+      ) {
+        return createResult('');
+      }
+
+      if (
+        key === `docker tag ${cachedImageTag} ${composeProjectName}-web-green`
+      ) {
+        return createResult('');
+      }
+
+      if (
+        key ===
+        `docker ps -aq --filter name=^/${composeProjectName}-hive-1$ --format {{.ID}}`
+      ) {
+        return createResult('');
+      }
+
+      if (key === prodComposeHiveDbMigrateKey()) {
+        return createResult('');
+      }
+
+      if (key === prodComposePsAllKey('hive-db-migrate')) {
+        return createResult('');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue hive-blue hive-realtime meet-realtime`
+      ) {
+        return createResult('');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green hive-green`
+      ) {
+        return createResult('');
+      }
+
+      const serviceIds = new Map([
+        [BLUE_GREEN_PROXY_SERVICE, 'proxy-123'],
+        ['web-blue', 'blue-123'],
+        ['hive-blue', 'hive-blue-123'],
+        ['hive-realtime', 'hive-realtime-123'],
+        ['meet-realtime', 'meet-realtime-123'],
+        ['web-green', 'green-123'],
+        ['hive-green', 'hive-green-123'],
+      ]);
+
+      for (const [serviceName, id] of serviceIds) {
+        if (
+          key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q ${serviceName}`
+        ) {
+          return createResult(`${id}\n`);
+        }
+      }
+
+      if (
+        key.startsWith(
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} '
+        )
+      ) {
+        return createResult('healthy\n');
+      }
+
+      if (
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -t` ||
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload` ||
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status` ||
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7814/login`
+      ) {
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    };
+
+    const result = await runDeploymentRevertRequestIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      request,
+      {
+        activeDeploymentConflict: {
+          elapsedMs: 1000,
+          lock: {
+            command: 'bun serve:web:docker:bg',
+            commitHash: 'build123456789',
+            commitShortHash: 'build123',
+            commitSubject: 'Build in flight',
+            deploymentKind: 'promotion',
+            ownerPid: 9876,
+            startedAt: checkedAt - 1000,
+          },
+          source: 'lock',
+          status: 'building',
+        },
+        attachRuntime: async (state, history = null) => ({
+          ...state,
+          deployments: history ?? readDeploymentHistory(paths, fs),
+        }),
+        checkedAt,
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: () => checkedAt,
+        paths,
+        processImpl: { pid: 4321 },
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    const history = readDeploymentHistory(paths, fs);
+
+    assert.equal(result.status, 'instant-reverted');
+    assert.equal(history[0].deploymentKind, 'instant-revert');
+    assert.equal(history[1].status, 'canceled');
+    assert.equal(history[1].commitShortHash, 'build123');
+    assert.match(
+      history[1].cancellationReason,
+      /instant cached production revert/
+    );
+    assert.equal(fs.existsSync(paths.deploymentRevertRequestFile), false);
+    assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
+    assert.ok(calls.includes(prodComposeStopKey('buildkit')));
+    assert.equal(
+      calls.includes(
+        prodComposeStopKey(BLUE_GREEN_WATCHER_SERVICE, 'buildkit')
+      ),
+      false
+    );
+    assert.ok(calls.includes('docker buildx rm tuturuuu'));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

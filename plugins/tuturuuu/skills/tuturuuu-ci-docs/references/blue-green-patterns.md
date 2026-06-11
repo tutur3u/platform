@@ -32,10 +32,18 @@ infrastructure dashboard changes.
 - Prebuild the newest fast-forward `main` candidate on standby before CI is
   green when GitHub checks are inspectable, but never update `production` until
   the promotion gates pass or an authorized manual override request bypasses
-  only the CI/age gates.
+  only the CI/age gates. Treat build-lock conflicts during prebuild/standby
+  refresh as `deployment-active` deferrals, not failed deployment attempts.
 - Dashboard promotion and revert controls must flow through control request
   files, stay operator-authorized, respect dirty-worktree/build-lock/divergence
-  safety gates, and avoid native browser dialogs.
+  safety gates, and avoid native browser dialogs. Read revert requests before
+  queued promotion requests; cached revert supersedes queued promotion.
+- Authorized manual production promotion and cached production revert are
+  active-build-canceling operator overrides. Manual promotion cancels only after
+  fast-forward/up-to-date validation passes and clears an active rollback pin as
+  operator intent to resume production. Cached revert verifies the cached target
+  first, clears pending promotion, cancels active build work, then runs the
+  no-build recovery and writes the rollback pin.
 - Keep the 5 newest unique successful deployed blue/green image tags for cached
   instant revert. Cached revert should use the no-build recovery path, record
   deployment kind `instant-revert`, and write a deployment pin so auto-promotion

@@ -87,6 +87,8 @@ const messages: Record<string, string> = {
   'controls.deployment_revert_title': 'Revert production',
   'controls.production_branch_commit': 'Production',
   'controls.production_blocker_ci_not_green': 'CI is not green',
+  'controls.production_blocker_deployment_active':
+    'another deployment is active',
   'controls.production_blocker_git_unavailable': 'Git state is unavailable',
   'controls.production_blocker_not_fast_forward': 'main is not a fast-forward',
   'controls.production_blocker_prebuild_missing': 'prebuild is missing',
