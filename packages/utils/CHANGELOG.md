@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/tutur3u/platform/compare/utils-v0.5.0...utils-v0.5.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **finance:** raise read proxy limits ([396ce3e](https://github.com/tutur3u/platform/commit/396ce3ec10b5adf15d021e7aa4f58b057d74da5a))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/utils-v0.4.0...utils-v0.5.0) (2026-06-10)
 
 

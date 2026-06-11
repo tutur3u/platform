@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/platform-v0.6.0...platform-v0.7.0) (2026-06-11)
+
+
+### Features
+
+* **finance:** add CLI tag CRUD ([bc60f8e](https://github.com/tutur3u/platform/commit/bc60f8eb1af2fe650a28ef44ec33466a4ce831de))
+* **storefront:** add temporary demo fixture flow ([ad0a15b](https://github.com/tutur3u/platform/commit/ad0a15b3c1ecc24f303fccb9c2226003d14d9119))
+
+
+### Bug Fixes
+
+* **auth:** rethrow multi-account route bailouts ([b932d60](https://github.com/tutur3u/platform/commit/b932d602f26d13902e7cc3cfbf9a3f812d5246a8))
+* **chat:** throttle Zalo phone sync and group mirrored chats ([51f3ab5](https://github.com/tutur3u/platform/commit/51f3ab5cec4a7a0c7403100045a6d7500975caf3))
+* **ci:** isolate production promotion prebuilds ([d044288](https://github.com/tutur3u/platform/commit/d044288fdba58e4d1535b6eb41b992ec412a69de))
+* **ci:** restore platform preview staging trigger ([8b498ca](https://github.com/tutur3u/platform/commit/8b498ca72e89cbabcd127bd2e7b76f5ce241a34d))
+* **deploy:** clean migration containers by project label ([18047e4](https://github.com/tutur3u/platform/commit/18047e4f0b82dc864781315e7c7bc4edf09d0971))
+* **finance:** allow app-session transaction enrichment ([15feedd](https://github.com/tutur3u/platform/commit/15feedd3ac03810998e78ef60e91735ac44ca16c))
+* **finance:** raise read proxy limits ([396ce3e](https://github.com/tutur3u/platform/commit/396ce3ec10b5adf15d021e7aa4f58b057d74da5a))
+* **storefront:** load public inventory through private rpcs ([80d1149](https://github.com/tutur3u/platform/commit/80d11493e546a594021345f95e3f8e8b22b65e13))
+* **tooling:** repair stale portless aliases ([43eb916](https://github.com/tutur3u/platform/commit/43eb916741b78affaf0478157ca8f3630586786d))
+* **web:** allow cli finance transfer auth ([b3f08cb](https://github.com/tutur3u/platform/commit/b3f08cbb6d9981f4a4a15c428aa41e5d2869038d))
+* **web:** complete mfa redirect navigation ([4f51dc9](https://github.com/tutur3u/platform/commit/4f51dc99791775c04fef0985a836530ced1e1bae))
+* **web:** disambiguate attendance embeds ([4831bb0](https://github.com/tutur3u/platform/commit/4831bb093301a8a15b0c90333c020fd562f2862d))
+* **web:** disambiguate subscription invoice group embeds ([c8ebf16](https://github.com/tutur3u/platform/commit/c8ebf1601a7fc0d735e6919eab0636dc71ece083))
+* **web:** disambiguate user group member embeds ([abb3e7e](https://github.com/tutur3u/platform/commit/abb3e7e15f3c68cbc3646f1b9eab732ca48433f6))
+* **web:** keep login redirecting after auth ([e47649e](https://github.com/tutur3u/platform/commit/e47649efe90a6c486aab2455fa85b1e1c9cb940c))
+* **web:** use connection for auth accounts route ([4cf45b0](https://github.com/tutur3u/platform/commit/4cf45b0bd67d58057fbd34436f6351f14200ab23))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/platform-v0.5.0...platform-v0.6.0) (2026-06-10)
 
 

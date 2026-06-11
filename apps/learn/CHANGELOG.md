@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/tutur3u/platform/compare/learn-v0.1.2...learn-v0.1.3) (2026-06-11)
+
+
+### Bug Fixes
+
+* **tooling:** repair stale portless aliases ([43eb916](https://github.com/tutur3u/platform/commit/43eb916741b78affaf0478157ca8f3630586786d))
+
 ## [0.1.2](https://github.com/tutur3u/platform/compare/learn-v0.1.1...learn-v0.1.2) (2026-06-08)
 
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.1](https://github.com/tutur3u/platform/compare/types-v0.6.0...types-v0.6.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **finance:** allow app-session transaction enrichment ([15feedd](https://github.com/tutur3u/platform/commit/15feedd3ac03810998e78ef60e91735ac44ca16c))
+* **storefront:** load public inventory through private rpcs ([80d1149](https://github.com/tutur3u/platform/commit/80d11493e546a594021345f95e3f8e8b22b65e13))
+* **web:** disambiguate user group member embeds ([abb3e7e](https://github.com/tutur3u/platform/commit/abb3e7e15f3c68cbc3646f1b9eab732ca48433f6))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/types-v0.5.0...types-v0.6.0) (2026-06-10)
 
 

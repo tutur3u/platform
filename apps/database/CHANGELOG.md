@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/tutur3u/platform/compare/database-v1.4.0...database-v1.4.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **finance:** allow app-session transaction enrichment ([15feedd](https://github.com/tutur3u/platform/commit/15feedd3ac03810998e78ef60e91735ac44ca16c))
+* **storefront:** load public inventory through private rpcs ([80d1149](https://github.com/tutur3u/platform/commit/80d11493e546a594021345f95e3f8e8b22b65e13))
+
 ## [1.4.0](https://github.com/tutur3u/platform/compare/database-v1.3.0...database-v1.4.0) (2026-06-10)
 
 

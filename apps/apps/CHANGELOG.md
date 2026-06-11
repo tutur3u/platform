@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/tutur3u/platform/compare/apps-v0.2.0...apps-v0.2.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **tooling:** repair stale portless aliases ([43eb916](https://github.com/tutur3u/platform/commit/43eb916741b78affaf0478157ca8f3630586786d))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/apps-v0.1.1...apps-v0.2.0) (2026-06-10)
 
 

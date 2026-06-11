@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/tasks",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsgo-build.js --build",

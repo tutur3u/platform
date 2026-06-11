@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/tutur3u/platform/compare/hive-v0.2.2...hive-v0.2.3) (2026-06-11)
+
+
+### Bug Fixes
+
+* **tooling:** repair stale portless aliases ([43eb916](https://github.com/tutur3u/platform/commit/43eb916741b78affaf0478157ca8f3630586786d))
+
 ## [0.2.2](https://github.com/tutur3u/platform/compare/hive-v0.2.1...hive-v0.2.2) (2026-06-10)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.1](https://github.com/tutur3u/platform/compare/rewise-v0.18.0...rewise-v0.18.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **chat:** throttle Zalo phone sync and group mirrored chats ([51f3ab5](https://github.com/tutur3u/platform/commit/51f3ab5cec4a7a0c7403100045a6d7500975caf3))
+* **tooling:** repair stale portless aliases ([43eb916](https://github.com/tutur3u/platform/commit/43eb916741b78affaf0478157ca8f3630586786d))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/rewise-v0.17.0...rewise-v0.18.0) (2026-06-10)
 
 

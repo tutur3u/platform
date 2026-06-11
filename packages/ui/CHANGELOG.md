@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/tutur3u/platform/compare/ui-v0.4.0...ui-v0.4.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **chat:** throttle Zalo phone sync and group mirrored chats ([51f3ab5](https://github.com/tutur3u/platform/commit/51f3ab5cec4a7a0c7403100045a6d7500975caf3))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/ui-v0.3.2...ui-v0.4.0) (2026-06-10)
 
 
