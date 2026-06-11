@@ -47,6 +47,30 @@ function getComposeCommandArgs(composeFile, composeGlobalArgs, ...args) {
   return ['compose', '-f', composeFile, ...composeGlobalArgs, ...args];
 }
 
+function getComposeProjectNameFromGlobalArgs(composeGlobalArgs = []) {
+  for (let index = 0; index < composeGlobalArgs.length; index += 1) {
+    const arg = composeGlobalArgs[index];
+
+    if (arg === '-p' || arg === '--project-name') {
+      const value = composeGlobalArgs[index + 1];
+
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value.trim();
+      }
+    }
+
+    if (typeof arg === 'string' && arg.startsWith('--project-name=')) {
+      const value = arg.slice('--project-name='.length).trim();
+
+      if (value.length > 0) {
+        return value;
+      }
+    }
+  }
+
+  return null;
+}
+
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -187,7 +211,14 @@ async function runChecked(command, args, options = {}) {
   return result;
 }
 
-function getComposeProjectName(composeFile, env = {}) {
+function getComposeProjectName(composeFile, env = {}, composeGlobalArgs = []) {
+  const projectNameFromGlobalArgs =
+    getComposeProjectNameFromGlobalArgs(composeGlobalArgs);
+
+  if (projectNameFromGlobalArgs) {
+    return projectNameFromGlobalArgs;
+  }
+
   if (
     typeof env.COMPOSE_PROJECT_NAME === 'string' &&
     env.COMPOSE_PROJECT_NAME.trim().length > 0
@@ -195,11 +226,21 @@ function getComposeProjectName(composeFile, env = {}) {
     return env.COMPOSE_PROJECT_NAME.trim();
   }
 
+  if (
+    typeof env.DOCKER_WEB_COMPOSE_PROJECT_NAME === 'string' &&
+    env.DOCKER_WEB_COMPOSE_PROJECT_NAME.trim().length > 0
+  ) {
+    return env.DOCKER_WEB_COMPOSE_PROJECT_NAME.trim();
+  }
+
   return path.basename(path.dirname(composeFile));
 }
 
-function getComposeServiceContainerName(serviceName, { composeFile, env }) {
-  return `${getComposeProjectName(composeFile, env)}-${serviceName}-1`;
+function getComposeServiceContainerName(
+  serviceName,
+  { composeFile, composeGlobalArgs = [], env }
+) {
+  return `${getComposeProjectName(composeFile, env, composeGlobalArgs)}-${serviceName}-1`;
 }
 
 function isExpectedComposeContainerName(containerName, expectedContainerNames) {
@@ -251,7 +292,11 @@ async function runComposeUpWithNameConflictRecovery({
   const args = getComposeCommandArgs(composeFile, composeGlobalArgs, ...upArgs);
   const expectedContainerNames = new Set(
     services.map((serviceName) =>
-      getComposeServiceContainerName(serviceName, { composeFile, env })
+      getComposeServiceContainerName(serviceName, {
+        composeFile,
+        composeGlobalArgs,
+        env,
+      })
     )
   );
   const removedContainerNames = new Set();
@@ -381,7 +426,7 @@ async function hasComposeServiceContainer(
 
 async function listComposeServiceContainerIdsByLabel(
   serviceName,
-  { composeFile, env, runCommand: run }
+  { composeFile, composeGlobalArgs = [], env, runCommand: run }
 ) {
   const result = await runChecked(
     'docker',
@@ -389,7 +434,11 @@ async function listComposeServiceContainerIdsByLabel(
       'ps',
       '-aq',
       '--filter',
-      `label=com.docker.compose.project=${getComposeProjectName(composeFile, env)}`,
+      `label=com.docker.compose.project=${getComposeProjectName(
+        composeFile,
+        env,
+        composeGlobalArgs
+      )}`,
       '--filter',
       `label=com.docker.compose.service=${serviceName}`,
       '--format',
@@ -410,13 +459,14 @@ async function listComposeServiceContainerIdsByLabel(
 
 async function removeComposeServiceContainersByLabelIfPresent(
   serviceNames,
-  { composeFile, env, runCommand: run }
+  { composeFile, composeGlobalArgs = [], env, runCommand: run }
 ) {
   for (const serviceName of serviceNames) {
     const containerIds = await listComposeServiceContainerIdsByLabel(
       serviceName,
       {
         composeFile,
+        composeGlobalArgs,
         env,
         runCommand: run,
       }

@@ -2197,11 +2197,13 @@ async function runHiveDbForwardMigrations({
 
 async function removeDbMigrateContainersIfPresent({
   composeFile,
+  composeGlobalArgs = [],
   env,
   runCommand: run,
 }) {
   await removeComposeServiceContainersByLabelIfPresent(DB_MIGRATE_SERVICES, {
     composeFile,
+    composeGlobalArgs,
     env,
     runCommand: run,
   });
@@ -2224,6 +2226,7 @@ async function runHiveDbForwardMigrationsAndCleanup({
     try {
       await removeDbMigrateContainersIfPresent({
         composeFile,
+        composeGlobalArgs,
         env,
         runCommand: run,
       });
@@ -2235,6 +2238,7 @@ async function runHiveDbForwardMigrationsAndCleanup({
 
   await removeDbMigrateContainersIfPresent({
     composeFile,
+    composeGlobalArgs,
     env,
     runCommand: run,
   });
@@ -3297,6 +3301,12 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       env,
       runCommand: run,
     });
+    await removeDbMigrateContainersIfPresent({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: targetEnv,
+      runCommand: run,
+    });
 
     if (hiveBuildServices.length > 0) {
       if (!skipSupportBuild) {
@@ -3358,6 +3368,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
         });
         await removeDbMigrateContainersIfPresent({
           composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
           env: targetEnv,
           runCommand: run,
         });
@@ -3453,6 +3464,12 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             ...parsed.composeArgs,
             ...supportServices,
           ],
+        });
+        await removeDbMigrateContainersIfPresent({
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
+          runCommand: run,
         });
 
         for (const serviceName of supportServices) {
@@ -3780,6 +3797,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     });
     await removeDbMigrateContainersIfPresent({
       composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
       env: standbyEnv,
       runCommand: run,
     });
@@ -3800,6 +3818,12 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
           ...parsed.composeArgs,
           ...standbyPhase2,
         ],
+      });
+      await removeDbMigrateContainersIfPresent({
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: standbyEnv,
+        runCommand: run,
       });
     }
 
@@ -3954,6 +3978,7 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
   });
   await removeDbMigrateContainersIfPresent({
     composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
     env: activeEnv,
     runCommand: run,
   });
@@ -4027,6 +4052,12 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
       '--remove-orphans',
       ...standbyServices,
     ],
+  });
+  await removeDbMigrateContainersIfPresent({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: standbyEnv,
+    runCommand: run,
   });
   await waitForComposeServiceHealthy(standbyServiceName, {
     composeFile,

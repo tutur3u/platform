@@ -87,10 +87,12 @@ infrastructure dashboard changes.
   pulling the private enterprise image while production remains enabled by
   default.
 - Completed migration containers such as `hive-db-migrate` and
-  `supermemory-db-migrate` should be removed by Compose service labels, not only
-  `docker compose ps` output, because one-off run containers can remain stopped
-  under names like `tuturuuu-hive-db-migrate-*` and make the cluster look
-  unhealthy after a successful migration.
+  `supermemory-db-migrate` should be removed by Compose project and service
+  labels, not only `docker compose ps` output, because one-off run containers
+  can remain stopped under names like `tuturuuu-hive-db-migrate-*` and make the
+  cluster look unhealthy after a successful migration. Project-label cleanup
+  must honor Compose `--project-name`/`-p`, `COMPOSE_PROJECT_NAME`, and
+  `DOCKER_WEB_COMPOSE_PROJECT_NAME`.
 
 ## Observability
 

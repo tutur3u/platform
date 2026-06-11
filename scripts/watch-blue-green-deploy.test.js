@@ -210,8 +210,29 @@ function getMigrationCleanupService(command, args) {
   return serviceFilter?.split('=').at(-1) ?? null;
 }
 
+function getMigrationCleanupProject(command, args) {
+  if (command !== 'docker' || args[0] !== 'ps' || !args.includes('-aq')) {
+    return null;
+  }
+
+  const projectFilter = args.find((arg) =>
+    String(arg).startsWith('label=com.docker.compose.project=')
+  );
+
+  return (
+    projectFilter?.slice('label=com.docker.compose.project='.length) ?? null
+  );
+}
+
 function migrationCleanupResult(command, args) {
   const serviceName = getMigrationCleanupService(command, args);
+
+  if (serviceName) {
+    assert.ok(
+      getMigrationCleanupProject(command, args),
+      'expected migration cleanup to include a Compose project label'
+    );
+  }
 
   if (serviceName === 'hive-db-migrate') {
     return createResult('hive-db-migrate-123\n');
@@ -5179,6 +5200,14 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         calls.indexOf(
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-cron-runner redis serverless-redis-http`
         )
+    );
+    assert.ok(
+      calls.includes('docker rm -f hive-db-migrate-123'),
+      'expected web-only watcher refresh to sweep a stranded Hive migrator'
+    );
+    assert.ok(
+      calls.includes('docker rm -f supermemory-db-migrate-123'),
+      'expected web-only watcher refresh to sweep a stranded Supermemory migrator'
     );
     assert.ok(
       result.deployments.length >= 2,
