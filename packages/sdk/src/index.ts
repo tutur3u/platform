@@ -43,6 +43,38 @@ export {
 export type { TuturuuuUserClientConfig } from './platform';
 export { TasksClient, TuturuuuUserClient, WorkspacesClient } from './platform';
 export type {
+  CalendarAccount,
+  CalendarAccountDisconnectResponse,
+  CalendarAccountsResponse,
+  CalendarAuthUrlResponse,
+  CalendarCategoriesReorderPayload,
+  CalendarCategoriesResponse,
+  CalendarCategory,
+  CalendarCategoryPayload,
+  CalendarConnectionPayload,
+  CalendarConnectionResponse,
+  CalendarConnectionsResponse,
+  CalendarConnectionUpdatePayload,
+  CalendarDefaultSourceResponse,
+  CalendarResetResponse,
+  CalendarScheduleStatusResponse,
+  CalendarSourceInput,
+  CalendarSourceOption,
+  ProviderCalendar,
+  ProviderCalendarsResponse,
+  SchedulableTasksResponse,
+  ScheduleApplyRequestPayload,
+  SchedulePreviewRequestPayload,
+  WorkspaceCalendarEventCreatePayload,
+  WorkspaceCalendarEventsQuery,
+  WorkspaceCalendarEventsResponse,
+  WorkspaceCalendarEventUpdatePayload,
+  WorkspaceCalendarPayload,
+  WorkspaceCalendarsResponse,
+  WorkspaceCalendarUpdatePayload,
+} from './platform-calendar';
+export { CalendarClient } from './platform-calendar';
+export type {
   FinanceBudgetUpsertPayload,
   FinanceTagPayload,
   ListTransactionsQuery,

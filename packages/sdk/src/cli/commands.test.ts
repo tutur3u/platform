@@ -464,6 +464,188 @@ describe('CLI commands', () => {
     );
   });
 
+  it('builds calendar event create payloads from ISO start and duration', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ id: 'event-1' }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'calendar',
+      'events',
+      'create',
+      'Focus block',
+      '--start',
+      '2026-06-11T09:00:00+07:00',
+      '--duration-minutes',
+      '90',
+      '--locked',
+      'true',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendar/events',
+      expect.objectContaining({
+        body: JSON.stringify({
+          title: 'Focus block',
+          locked: true,
+          start_at: '2026-06-11T02:00:00.000Z',
+          end_at: '2026-06-11T03:30:00.000Z',
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('rejects calendar event create commands with both end and duration', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+
+    await expect(
+      runCli([
+        'calendar',
+        'events',
+        'create',
+        'Focus block',
+        '--start',
+        '2026-06-11T09:00:00Z',
+        '--end',
+        '2026-06-11T10:00:00Z',
+        '--duration-minutes',
+        '90',
+        '--no-update-check',
+      ])
+    ).rejects.toThrow('Use either --end or --duration-minutes, not both.');
+  });
+
+  it('guards destructive calendar reset unless --yes is present', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+
+    await expect(
+      runCli(['calendar', 'calendars', 'reset', '--no-update-check'])
+    ).rejects.toThrow('Calendar reset is destructive. Re-run with --yes.');
+  });
+
+  it('routes calendar reset with explicit confirmation', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ success: true }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'calendar',
+      'calendars',
+      'reset',
+      '--yes',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendars/reset',
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+  });
+
+  it('prints calendar provider auth URLs', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({ authUrl: 'https://accounts.example.test/oauth' })
+    );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(['calendar', 'auth', 'google', '--no-update-check']);
+
+    expect(write).toHaveBeenCalledWith('https://accounts.example.test/oauth\n');
+  });
+
+  it('builds calendar connection create payloads from CLI flags', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ id: 'connection-1' }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'calendar',
+      'connections',
+      'create',
+      '--calendar-id',
+      'primary',
+      '--calendar-name',
+      'Primary',
+      '--account',
+      'account-1',
+      '--enabled',
+      'true',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/calendar/connections',
+      expect.objectContaining({
+        body: JSON.stringify({
+          calendarId: 'primary',
+          calendarName: 'Primary',
+          authTokenId: 'account-1',
+          isEnabled: true,
+          wsId: 'ws-1',
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
   it.each([
     ['--help'],
     ['-h'],
@@ -543,6 +725,27 @@ describe('CLI commands', () => {
   });
 
   it.each([
+    ['calendar', '--help'],
+    ['help', 'calendar'],
+    ['calendar', 'help'],
+  ])('prints calendar group help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Usage: ttr calendar <resource> [action] [id] [options]'
+      )
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('Calendar commands use the selected workspace')
+    );
+  });
+
+  it.each([
     ['box', '--help'],
     ['help', 'box'],
     ['box', 'help'],
@@ -586,6 +789,27 @@ describe('CLI commands', () => {
     );
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('ttr finance transactions create')
+    );
+  });
+
+  it.each([
+    ['calendar', 'events', '--help'],
+    ['help', 'calendar', 'events'],
+    ['calendar', 'help', 'events'],
+  ])('prints calendar event help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Usage: ttr calendar events [list|get|create|update|delete] [event-id]'
+      )
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('--duration-minutes <n>')
     );
   });
 

@@ -83,6 +83,9 @@ ttr finance wallets
 ttr finance transactions --page-size 10
 ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09
 ttr finance budgets status
+ttr calendar events list --start 2026-06-11T00:00:00Z --end 2026-06-12T00:00:00Z
+ttr calendar events create "Focus block" --start 2026-06-11T09:00:00+07:00 --duration-minutes 90
+ttr calendar schedule preview --window-days 14 --timezone Asia/Ho_Chi_Minh
 ```
 
 Login opens the browser and creates a Tuturuuu-managed CLI app-session JWT pair
@@ -137,6 +140,8 @@ Scoped help is available without login, saved config reads, or update checks:
 ttr --help
 ttr upgrade --help
 ttr box --help
+ttr calendar --help
+ttr calendar events --help
 ttr finance --help
 ttr finance transactions --help
 ttr tasks --help
@@ -213,6 +218,36 @@ ttr finance budgets create "Marketing" --amount 1000000 --period monthly --start
 ttr finance budgets status
 ttr finance recurring create "Rent" --amount 5000000 --wallet <wallet-id> --frequency monthly --start-date 2026-05-01
 ttr finance recurring upcoming --days-ahead 30
+```
+
+Calendar commands cover event CRUD, schedule status/preview/apply, schedulable
+tasks, default source selection, workspace calendars, categories, provider
+accounts, provider auth URLs, provider calendar discovery, and calendar
+connections. Calendar commands use the selected workspace by default; pass
+`--workspace` or `--ws` to target another workspace. Event time input is exact
+ISO datetime only. `events create` requires `--start` and exactly one of `--end`
+or `--duration-minutes`; `events update --duration-minutes` also requires
+`--start`. Human output uses resource-specific tables, and `--json` preserves
+the raw structured API response for scripts. Use `calendar calendars reset
+--yes`; without `--yes`, the reset command fails with a confirmation error.
+
+Common calendar examples:
+
+```bash
+ttr calendar events list --start 2026-06-11T00:00:00Z --end 2026-06-12T00:00:00Z
+ttr calendar events get <event-id>
+ttr calendar events create "Focus block" --start 2026-06-11T09:00:00+07:00 --duration-minutes 90
+ttr calendar events update <event-id> --title "Focus block" --locked true
+ttr calendar sources list
+ttr calendar sources use --source-provider tuturuuu --calendar <calendar-id>
+ttr calendar calendars create "Team" --color BLUE
+ttr calendar categories reorder --json-payload '{"categories":[{"id":"...","position":0}]}'
+ttr calendar accounts list
+ttr calendar auth google
+ttr calendar provider-calendars list --account <account-id>
+ttr calendar connections create --calendar-id primary --calendar-name "Primary" --account <account-id>
+ttr calendar schedule preview --window-days 14 --timezone Asia/Ho_Chi_Minh
+ttr calendar calendars reset --yes
 ```
 
 Common task examples:

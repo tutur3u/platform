@@ -20,6 +20,7 @@ import {
   readTokenFromStdin,
   receiveTokenFromBrowser,
 } from './auth';
+import { runCalendarCommand } from './calendar';
 import {
   type CliConfig,
   clearHostScopedConfig,
@@ -1090,6 +1091,17 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
 
   const workspaceId = getWorkspaceId(config, flags);
+
+  if (group === 'calendar') {
+    await runCalendarCommand({
+      client,
+      flags,
+      json,
+      positionals,
+      workspaceId,
+    });
+    return;
+  }
 
   if (group === 'boards') {
     if (action === 'list') {

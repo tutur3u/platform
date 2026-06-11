@@ -10,6 +10,7 @@ type TableCellStyle = (input: {
 type ColorCode = 1 | 2 | 22 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 90;
 
 export interface RenderOptions {
+  calendarResource?: string;
   compact?: boolean;
   currentWorkspaceId?: string;
   financeResource?: string;
@@ -943,6 +944,172 @@ function renderFinance(data: unknown, resource?: string) {
   renderTable(financeRows([data], resource));
 }
 
+function formatCalendarDateTime(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function calendarRows(data: unknown, resource?: string) {
+  const record = asRecord(data);
+  const rows = (() => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(record.data)) return record.data;
+    if (Array.isArray(record.calendars)) return record.calendars;
+    if (Array.isArray(record.categories)) return record.categories;
+    if (Array.isArray(record.accounts)) return record.accounts;
+    if (Array.isArray(record.connections)) return record.connections;
+    if (Array.isArray(record.tasks)) return record.tasks;
+    if (Array.isArray(record.options)) return record.options;
+    return [data];
+  })();
+
+  switch (resource) {
+    case 'accounts':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Provider: asString(row.provider),
+          Account: asString(row.account_email, asString(row.email)),
+          Name: asString(row.account_name, asString(row.name)),
+          Active: row.is_active === false ? 'no' : 'yes',
+          Id: asString(row.id),
+        };
+      });
+    case 'calendars':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.name, 'Untitled calendar'),
+          Id: asString(row.id),
+          Type: asString(row.calendar_type),
+          Enabled: row.is_enabled === false ? 'no' : 'yes',
+          System: row.is_system === true ? 'yes' : 'no',
+          Color: asString(row.color),
+        };
+      });
+    case 'categories':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.name, 'Untitled category'),
+          Id: asString(row.id),
+          Position: row.position ?? '',
+          Color: asString(row.color),
+        };
+      });
+    case 'connections':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Calendar: asString(row.calendar_name),
+          Provider: asString(row.provider),
+          Id: asString(row.id),
+          CalendarId: asString(row.calendar_id),
+          Account: asString(row.auth_token_id),
+          Enabled: row.is_enabled === false ? 'no' : 'yes',
+        };
+      });
+    case 'events':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Start: formatCalendarDateTime(row.start_at),
+          End: formatCalendarDateTime(row.end_at),
+          Title: asString(row.title, 'Untitled event'),
+          Provider: asString(row.provider),
+          Locked: row.locked === true ? 'yes' : 'no',
+          Id: asString(row.id),
+        };
+      });
+    case 'provider-calendars':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.name),
+          Provider: asString(row.provider),
+          Account: asString(row.accountEmail),
+          Role: asString(row.accessRole),
+          Primary: row.primary === true ? 'yes' : 'no',
+          Id: asString(row.id),
+        };
+      });
+    case 'schedule-tasks':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.name, 'Untitled task'),
+          Id: asString(row.id),
+          Duration: row.total_duration ?? '',
+          Scheduled: row.scheduled_minutes ?? '',
+          Completed: row.completed_minutes ?? '',
+        };
+      });
+    case 'sources':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Label: asString(row.label),
+          Provider: asString(row.provider),
+          Writable: row.writable === false ? 'no' : 'yes',
+          Primary: row.primary === true ? 'yes' : 'no',
+          Id: asString(row.id),
+        };
+      });
+    default:
+      return rows.map(asRecord);
+  }
+}
+
+function renderCalendar(data: unknown, resource?: string) {
+  const record = asRecord(data);
+
+  if (resource === 'auth' && record.authUrl) {
+    process.stdout.write(`${asString(record.authUrl)}\n`);
+    return;
+  }
+
+  if (resource === 'schedule') {
+    const statistics = asRecord(record.statistics);
+    const schedulableItems = asRecord(record.schedulableItems);
+    renderTable([
+      {
+        Status: asString(record.lastStatus, 'unknown'),
+        Message: asString(record.lastMessage),
+        LastScheduled: formatCalendarDateTime(record.lastScheduledAt),
+        Events: statistics.eventsCreated ?? '',
+        Habits: statistics.habitsScheduled ?? '',
+        Tasks: statistics.tasksScheduled ?? '',
+        ActiveHabits: schedulableItems.activeHabits ?? '',
+        AutoTasks: schedulableItems.autoScheduleTasks ?? '',
+      },
+    ]);
+    return;
+  }
+
+  if (record.defaultSource && Array.isArray(record.options)) {
+    process.stdout.write(`${color.bold('Default source')}\n`);
+    renderTable(calendarRows([record.defaultSource], resource));
+    process.stdout.write(`${color.bold('Options')}\n`);
+    renderTable(calendarRows(record.options, resource));
+    return;
+  }
+
+  if (record.message && Object.keys(record).length <= 4) {
+    process.stdout.write(`${asString(record.message)}\n`);
+    return;
+  }
+
+  renderTable(calendarRows(data, resource));
+}
+
 function getTaskRows(tasks: unknown[]) {
   return sortTasksForCli(tasks).map((task) => {
     const record = asRecord(task);
@@ -1088,6 +1255,9 @@ export function render(data: unknown, options: RenderOptions = {}) {
       return;
     case 'finance':
       renderFinance(data, options.financeResource);
+      return;
+    case 'calendar':
+      renderCalendar(data, options.calendarResource);
       return;
     default:
       break;

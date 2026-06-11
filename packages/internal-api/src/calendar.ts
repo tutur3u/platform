@@ -1,6 +1,10 @@
-import type { CalendarConnection, TaskWithScheduling } from '@tuturuuu/types';
+import type {
+  CalendarConnection,
+  TaskWithScheduling,
+  WorkspaceCalendar,
+} from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import type { InternalApiClientOptions } from './client';
+import type { InternalApiClientOptions, InternalApiQuery } from './client';
 import { encodePathSegment, getInternalApiClient } from './client';
 
 export interface WorkspaceCalendarEventUpdatePayload {
@@ -63,6 +67,72 @@ export interface WorkspaceCalendarEventCreatePayload {
   locked?: boolean;
   task_id?: string | null;
   source?: CalendarSourceInput;
+}
+
+export type WorkspaceCalendarEventsQuery = InternalApiQuery & {
+  start_at?: string;
+  end_at?: string;
+};
+
+export interface WorkspaceCalendarEventsResponse {
+  data: CalendarEvent[];
+  count: number;
+}
+
+export interface WorkspaceCalendarPayload {
+  name: string;
+  description?: string | null;
+  color?: string | null;
+  is_enabled?: boolean;
+  position?: number;
+}
+
+export interface WorkspaceCalendarUpdatePayload
+  extends Partial<WorkspaceCalendarPayload> {
+  id: string;
+}
+
+export interface WorkspaceCalendarsResponse {
+  calendars: WorkspaceCalendar[];
+  grouped: {
+    custom: WorkspaceCalendar[];
+    system: WorkspaceCalendar[];
+  };
+  total: number;
+}
+
+export interface CalendarResetResponse {
+  authTokensDeactivated: number;
+  calendarConnectionsDeleted: number;
+  eventsDeleted: number;
+  message: string;
+  success: true;
+}
+
+export interface CalendarCategory {
+  id: string;
+  ws_id?: string;
+  name: string;
+  color: string | null;
+  position: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface CalendarCategoryPayload {
+  name: string;
+  color?: string | null;
+}
+
+export interface CalendarCategoriesResponse {
+  categories: CalendarCategory[];
+}
+
+export interface CalendarCategoriesReorderPayload {
+  categories: Array<{
+    id: string;
+    position: number;
+  }>;
 }
 
 export interface SchedulePreviewRequestPayload {
@@ -137,6 +207,314 @@ export interface CalendarConnectionsResponse {
   connections: CalendarConnection[];
 }
 
+export interface CalendarConnectionPayload {
+  accessRole?: string;
+  authTokenId?: string;
+  calendarId: string;
+  calendarName: string;
+  color?: string | null;
+  isEnabled?: boolean;
+}
+
+export interface CalendarConnectionUpdatePayload
+  extends Partial<CalendarConnectionPayload> {
+  id?: string;
+  wsId?: string;
+}
+
+export interface CalendarConnectionResponse {
+  connection: CalendarConnection;
+}
+
+export interface CalendarAccount {
+  id: string;
+  provider: 'google' | 'microsoft' | string;
+  account_email: string | null;
+  account_name: string | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  expires_at: string | null;
+}
+
+export interface CalendarAccountsResponse {
+  accounts: CalendarAccount[];
+  grouped: {
+    google: CalendarAccount[];
+    microsoft: CalendarAccount[];
+  };
+  total: number;
+}
+
+export interface CalendarAccountDisconnectResponse {
+  message: string;
+  success: true;
+}
+
+export interface CalendarAuthUrlResponse {
+  authUrl: string;
+}
+
+export interface ProviderCalendar {
+  id: string;
+  name: string;
+  description?: string;
+  primary?: boolean;
+  backgroundColor?: string;
+  foregroundColor?: string;
+  accessRole?: string;
+  provider?: 'google' | 'microsoft';
+  accountId: string;
+  accountEmail?: string | null;
+}
+
+export interface ProviderCalendarsResponse {
+  accounts: Array<{
+    id: string;
+    provider?: string;
+    email?: string | null;
+    name?: string | null;
+  }>;
+  byAccount: Record<string, ProviderCalendar[]>;
+  calendars: ProviderCalendar[];
+}
+
+export interface CalendarScheduleStatusResponse {
+  lastScheduledAt: string | null;
+  lastStatus: string | null;
+  lastMessage: string | null;
+  statistics: {
+    habitsScheduled: number;
+    tasksScheduled: number;
+    eventsCreated: number;
+    bumpedHabits: number;
+    windowDays: number;
+  };
+  schedulableItems: {
+    activeHabits: number;
+    autoScheduleTasks: number;
+  };
+  mode: 'personal' | 'workspace';
+}
+
+export async function listWorkspaceCalendarEvents(
+  wsId: string,
+  query: WorkspaceCalendarEventsQuery,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceCalendarEventsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/events`,
+    {
+      query,
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceCalendarEvent(
+  wsId: string,
+  eventId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarEvent>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/events/${encodePathSegment(
+      eventId
+    )}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceCalendarEvent(
+  wsId: string,
+  eventId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{
+    message: string;
+    linkedTaskId: string | null;
+    skippedHabitDate: string | null;
+    skippedHabitId: string | null;
+  }>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/events/${encodePathSegment(
+      eventId
+    )}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceCalendars(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceCalendarsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendars`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceCalendar(
+  wsId: string,
+  payload: WorkspaceCalendarPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceCalendar>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendars`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export async function updateWorkspaceCalendar(
+  wsId: string,
+  payload: WorkspaceCalendarUpdatePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceCalendar>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendars`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export async function deleteWorkspaceCalendar(
+  wsId: string,
+  calendarId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendars`,
+    {
+      method: 'DELETE',
+      query: { id: calendarId },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function resetWorkspaceCalendars(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarResetResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendars/reset`,
+    {
+      method: 'POST',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceCalendarCategories(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarCategoriesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/categories`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceCalendarCategory(
+  wsId: string,
+  payload: CalendarCategoryPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ category: CalendarCategory }>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/categories`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export async function updateWorkspaceCalendarCategory(
+  wsId: string,
+  categoryId: string,
+  payload: CalendarCategoryPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ category: CalendarCategory }>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/categories/${encodePathSegment(
+      categoryId
+    )}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export async function deleteWorkspaceCalendarCategory(
+  wsId: string,
+  categoryId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/categories/${encodePathSegment(
+      categoryId
+    )}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function reorderWorkspaceCalendarCategories(
+  wsId: string,
+  payload: CalendarCategoriesReorderPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarCategoriesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/categories/reorder`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
 export async function listCalendarConnections(
   wsId: string,
   options?: InternalApiClientOptions
@@ -151,6 +529,127 @@ export async function listCalendarConnections(
   );
 
   return response.connections ?? [];
+}
+
+export async function createCalendarConnection(
+  wsId: string,
+  payload: CalendarConnectionPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.json<CalendarConnectionResponse>(
+    '/api/v1/calendar/connections',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ...payload, wsId }),
+    }
+  );
+
+  return response.connection;
+}
+
+export async function updateCalendarConnection(
+  payload: CalendarConnectionUpdatePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.json<CalendarConnectionResponse>(
+    '/api/v1/calendar/connections',
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  return response.connection;
+}
+
+export async function deleteCalendarConnection(
+  connectionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>('/api/v1/calendar/connections', {
+    method: 'DELETE',
+    query: { id: connectionId },
+    cache: 'no-store',
+  });
+}
+
+export async function listCalendarAccounts(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarAccountsResponse>(
+    '/api/v1/calendar/auth/accounts',
+    {
+      query: { wsId },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function disconnectCalendarAccount(
+  wsId: string,
+  accountId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarAccountDisconnectResponse>(
+    '/api/v1/calendar/auth/accounts',
+    {
+      method: 'DELETE',
+      query: { accountId, wsId },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getGoogleCalendarAuthUrl(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarAuthUrlResponse>('/api/v1/calendar/auth', {
+    query: { wsId },
+    cache: 'no-store',
+  });
+}
+
+export async function getMicrosoftCalendarAuthUrl(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarAuthUrlResponse>(
+    '/api/v1/calendar/auth/microsoft',
+    {
+      query: { wsId },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listProviderCalendars(
+  wsId: string,
+  query?: { accountId?: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ProviderCalendarsResponse>(
+    '/api/v1/calendar/auth/provider-calendars',
+    {
+      query: { wsId, accountId: query?.accountId },
+      cache: 'no-store',
+    }
+  );
 }
 
 export async function getWorkspaceCalendarDefaultSource(
@@ -219,6 +718,19 @@ export async function createWorkspaceCalendarEvent(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+    }
+  );
+}
+
+export async function getWorkspaceCalendarScheduleStatus(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarScheduleStatusResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/schedule`,
+    {
+      cache: 'no-store',
     }
   );
 }

@@ -44,6 +44,8 @@ relevant surface before running a mutation:
 ```bash
 ttr --help
 ttr upgrade --help
+ttr calendar --help
+ttr calendar events --help
 ttr finance --help
 ttr finance wallets --help
 ttr finance transactions --help
@@ -143,6 +145,48 @@ When a new command group becomes substantial, split focused modules under
 `packages/sdk/src/cli/` before the command file grows too large. Keep public
 exports in `packages/sdk/src/index.ts` aligned with new SDK clients and payload
 types.
+
+## Calendar CLI
+
+Calendar commands use the selected workspace by default and should go through
+`client.calendar`, backed by `packages/sdk/src/platform-calendar.ts`. Use
+`--workspace` or `--ws` for explicit workspace targeting. Keep stdout
+machine-readable under `--json`; human output should use calendar-specific
+tables for events, calendars, categories, accounts, provider calendars,
+connections, sources, and schedulable tasks.
+
+Time input is exact ISO datetime only. Do not add natural-language parsing to
+`ttr calendar`. `events create` requires `--start` and exactly one of `--end` or
+`--duration-minutes`. `events update --duration-minutes` requires `--start`.
+Source flags map directly to API payloads:
+`--source-provider tuturuuu --calendar <workspace-calendar-id>` or
+`--source-provider google|microsoft --connection <connection-id>`.
+
+Provider calendar discovery routes used by the CLI must accept calendar
+app-session auth and still perform explicit workspace membership checks. Do not
+wire legacy browser-session-only import or active-sync routes into the CLI v1
+surface.
+
+```bash
+ttr calendar --help
+ttr calendar events --help
+ttr calendar events list --start 2026-06-11T00:00:00Z --end 2026-06-12T00:00:00Z
+ttr calendar events create "Focus block" --start 2026-06-11T09:00:00+07:00 --duration-minutes 90
+ttr calendar events update <event-id> --title "Focus block" --locked true
+ttr calendar sources list
+ttr calendar sources use --source-provider tuturuuu --calendar <calendar-id>
+ttr calendar calendars create "Team" --color BLUE
+ttr calendar categories reorder --json-payload '{"categories":[{"id":"...","position":0}]}'
+ttr calendar accounts list
+ttr calendar auth google
+ttr calendar provider-calendars list --account <account-id>
+ttr calendar connections create --calendar-id primary --calendar-name "Primary" --account <account-id>
+ttr calendar schedule preview --window-days 14 --timezone Asia/Ho_Chi_Minh
+ttr calendar calendars reset --yes
+```
+
+Guard destructive calendar resets behind `--yes`; without confirmation, the CLI
+should fail before making the request.
 
 ## Monorepo Behavior
 

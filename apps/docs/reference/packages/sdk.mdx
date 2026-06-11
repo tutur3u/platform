@@ -116,6 +116,9 @@ ttr finance transactions --page-size 10
 ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09
 ttr finance transfers migrate --from-transaction <tx-id> --to-transaction <tx-id> --from-wallet <wallet-id> --to-wallet <wallet-id> --amount 150000 --taken-at 2026-05-09
 ttr finance budgets status
+ttr calendar events list --start 2026-06-11T00:00:00Z --end 2026-06-12T00:00:00Z
+ttr calendar events create "Focus block" --start 2026-06-11T09:00:00+07:00 --duration-minutes 90
+ttr calendar schedule preview --window-days 14 --timezone Asia/Ho_Chi_Minh
 ```
 
 `ttr login` opens the browser and creates a Tuturuuu-managed CLI app-session
@@ -297,6 +300,8 @@ not require login, do not read the saved config, and do not run the update check
 ttr --help
 ttr upgrade --help
 ttr box --help
+ttr calendar --help
+ttr calendar events --help
 ttr finance --help
 ttr finance transactions --help
 ttr tasks --help
@@ -415,6 +420,53 @@ ttr finance budgets create "Marketing" --amount 1000000 --period monthly --start
 ttr finance budgets status
 ttr finance recurring create "Rent" --amount 5000000 --wallet <wallet-id> --frequency monthly --start-date 2026-05-01
 ttr finance recurring upcoming --days-ahead 30
+```
+
+### Calendar CLI
+
+Calendar commands use the selected workspace and the same authenticated calendar
+APIs as the web app. Use `--workspace` or `--ws` to target a different
+workspace, and use `--json` when scripts need the raw structured response.
+Human output renders resource-specific tables for events, calendars, categories,
+accounts, provider calendars, connections, sources, and schedulable tasks.
+
+Event time input is exact ISO datetime only. `events create` requires `--start`
+and exactly one of `--end` or `--duration-minutes`; `events update
+--duration-minutes` also requires `--start`. Source flags map to provider
+payloads: use `--source-provider tuturuuu --calendar <workspace-calendar-id>`
+for workspace calendars, or `--source-provider google|microsoft --connection
+<connection-id>` for connected provider calendars. `calendar calendars reset`
+is destructive and requires `--yes`.
+
+```bash
+# Event CRUD.
+ttr calendar events list --start 2026-06-11T00:00:00Z --end 2026-06-12T00:00:00Z
+ttr calendar events get <event-id>
+ttr calendar events create "Focus block" --start 2026-06-11T09:00:00+07:00 --duration-minutes 90
+ttr calendar events update <event-id> --title "Focus block" --locked true
+ttr calendar events delete <event-id>
+
+# Default source and workspace calendar administration.
+ttr calendar sources list
+ttr calendar sources use --source-provider tuturuuu --calendar <calendar-id>
+ttr calendar calendars create "Team" --color BLUE
+ttr calendar calendars update <calendar-id> --name "Team Calendar"
+ttr calendar calendars reset --yes
+
+# Categories and provider connections.
+ttr calendar categories create "Focus" --color BLUE
+ttr calendar categories reorder --json-payload '{"categories":[{"id":"...","position":0}]}'
+ttr calendar accounts list
+ttr calendar auth google
+ttr calendar auth microsoft
+ttr calendar provider-calendars list --account <account-id>
+ttr calendar connections create --calendar-id primary --calendar-name "Primary" --account <account-id>
+
+# Scheduling.
+ttr calendar schedule status
+ttr calendar schedule tasks --q roadmap
+ttr calendar schedule preview --window-days 14 --timezone Asia/Ho_Chi_Minh
+ttr calendar schedule apply --mode safe-apply --scope impacted-only --window-days 14 --timezone Asia/Ho_Chi_Minh
 ```
 
 Common task workflows:

@@ -1,15 +1,19 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
 import { createGraphClient } from '@tuturuuu/microsoft';
 import { fetchMicrosoftCalendars } from '@tuturuuu/microsoft/calendar';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import {
+  MAX_LONG_TEXT_LENGTH,
+  MAX_NAME_LENGTH,
+} from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const querySchema = z.object({
+  accountId: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
   wsId: z.string().max(MAX_NAME_LENGTH),
 });
 
@@ -28,17 +32,6 @@ const getGoogleAuthClient = (tokens: {
 };
 
 export async function GET(request: Request) {
-  const supabase = await createClient(request);
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
-
-  if (userError || !user) {
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
-
   const url = new URL(request.url);
   const parsed = querySchema.safeParse(
     Object.fromEntries(url.searchParams.entries())
@@ -51,9 +44,32 @@ export async function GET(request: Request) {
     );
   }
 
-  const normalizedWsId = await normalizeWorkspaceId(parsed.data.wsId);
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: { targetApp: 'calendar' },
+  });
 
-  const { data: tokens, error: tokensError } = await supabase
+  if (!auth.ok) return auth.response;
+
+  const { supabase, user } = auth;
+  const normalizedWsId = await normalizeWorkspaceId(parsed.data.wsId, supabase);
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: normalizedWsId,
+    userId: user.id,
+    supabase,
+  });
+
+  if (membership.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace access' },
+      { status: 500 }
+    );
+  }
+
+  if (!membership.ok) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  let tokenQuery = supabase
     .from('calendar_auth_tokens')
     .select(
       'id, provider, access_token, refresh_token, account_email, account_name'
@@ -62,6 +78,12 @@ export async function GET(request: Request) {
     .eq('ws_id', normalizedWsId)
     .eq('is_active', true)
     .order('created_at', { ascending: true });
+
+  if (parsed.data.accountId) {
+    tokenQuery = tokenQuery.eq('id', parsed.data.accountId);
+  }
+
+  const { data: tokens, error: tokensError } = await tokenQuery;
 
   if (tokensError) {
     return NextResponse.json(

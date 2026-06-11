@@ -296,6 +296,77 @@ describe('TuturuuuUserClient', () => {
     );
   });
 
+  it('passes calendar requests through the authenticated internal API client', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () => Response.json({ message: 'success' }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.calendar.listEvents('ws-1', {
+      start_at: '2026-06-11T00:00:00.000Z',
+      end_at: '2026-06-12T00:00:00.000Z',
+    });
+    await client.calendar.createEvent('ws-1', {
+      title: 'Focus block',
+      start_at: '2026-06-11T02:00:00.000Z',
+      end_at: '2026-06-11T03:00:00.000Z',
+    });
+    await client.calendar.createCalendar('ws-1', {
+      name: 'Team',
+      color: 'BLUE',
+    });
+    await client.calendar.listProviderCalendars('ws-1', {
+      accountId: 'account-1',
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendar/events?start_at=2026-06-11T00%3A00%3A00.000Z&end_at=2026-06-12T00%3A00%3A00.000Z',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendar/events',
+      expect.objectContaining({
+        body: JSON.stringify({
+          title: 'Focus block',
+          start_at: '2026-06-11T02:00:00.000Z',
+          end_at: '2026-06-11T03:00:00.000Z',
+        }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendars',
+      expect.objectContaining({
+        body: JSON.stringify({
+          name: 'Team',
+          color: 'BLUE',
+        }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://tuturuuu.com/api/v1/calendar/auth/provider-calendars?wsId=ws-1&accountId=account-1',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    const requestInit = fetchMock.mock.calls[0]?.[1];
+    expect(new Headers(requestInit?.headers).get('authorization')).toBe(
+      'Bearer access-token'
+    );
+  });
+
   it('passes finance transfer migration requests through the authenticated internal API client', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
