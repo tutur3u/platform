@@ -336,12 +336,14 @@ export async function getAccessibleWallets({
   walletIds,
   requiredPermission,
   select,
+  authContext,
 }: {
   req: Request;
   wsId: string;
   walletIds: string[];
   requiredPermission: WalletPermission;
   select: string;
+  authContext?: FinanceRouteAuthContext;
 }): Promise<
   | {
       context: WalletRouteContext;
@@ -354,7 +356,8 @@ export async function getAccessibleWallets({
   const contextResult = await getWalletRouteContext(
     req,
     wsId,
-    requiredPermission
+    requiredPermission,
+    authContext
   );
 
   if (contextResult.response) {

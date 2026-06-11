@@ -2,18 +2,24 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createFinanceInvoice,
   createSubscriptionFinanceInvoice,
+  createWalletCheckpoint,
+  createWalletCheckpointBatch,
   createWalletInterestConfig,
   deleteInvoice,
+  deleteWalletCheckpoint,
   getInvoiceAnalytics,
   getPendingFinanceInvoicesCurrentMonthCount,
   getSubscriptionInvoiceContext,
+  getWalletCheckpointSummary,
   importMoneyLoverTransactions,
   listFinanceBalanceTrend,
   listFinanceIncomeExpenseSummary,
   listFinanceInvoices,
   listPendingFinanceInvoices,
+  listWalletCheckpoints,
   listWalletRoleAccess,
   updateFinanceInvoice,
+  updateWalletCheckpoint,
   updateWalletRoleAccess,
 } from './finance';
 
@@ -87,6 +93,170 @@ describe('finance internal API helpers', () => {
           viewing_window: 'custom',
         }),
         method: 'PUT',
+      })
+    );
+  });
+
+  it('lists wallet checkpoints with encoded route params and no-store cache', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [],
+        intervals: [],
+        latest: null,
+      })
+    );
+
+    await listWalletCheckpoints(
+      'workspace 1',
+      'wallet/1',
+      { limit: 50 },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/workspaces/workspace%201/wallets/wallet%2F1/checkpoints?limit=50',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('creates wallet checkpoints with the shared checkpoint payload', async () => {
+    const payload = {
+      actual_balance: 1234.56,
+      checked_at: '2026-06-11T10:00:00.000Z',
+      note: 'Manual audit',
+    };
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        id: 'checkpoint-1',
+      })
+    );
+
+    await createWalletCheckpoint('workspace 1', 'wallet/1', payload, {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/workspaces/workspace%201/wallets/wallet%2F1/checkpoints',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('updates wallet checkpoints through PATCH with encoded checkpoint IDs', async () => {
+    const payload = {
+      actual_balance: -42.75,
+      checked_at: '2026-06-12T00:00:00.000Z',
+    };
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        id: 'checkpoint-1',
+      })
+    );
+
+    await updateWalletCheckpoint(
+      'workspace 1',
+      'wallet/1',
+      'checkpoint/1',
+      payload,
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/workspaces/workspace%201/wallets/wallet%2F1/checkpoints/checkpoint%2F1',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'PATCH',
+      })
+    );
+  });
+
+  it('deletes wallet checkpoints through the checkpoint route', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ message: 'success' }));
+
+    await deleteWalletCheckpoint('workspace 1', 'wallet/1', 'checkpoint/1', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/workspaces/workspace%201/wallets/wallet%2F1/checkpoints/checkpoint%2F1',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'DELETE',
+      })
+    );
+  });
+
+  it('gets wallet checkpoint summaries through the workspace route', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        latest_checkpoints: [],
+        totals_by_currency: [],
+        wallets: [],
+      })
+    );
+
+    await getWalletCheckpointSummary('workspace 1', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/workspaces/workspace%201/wallets/checkpoints',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('creates wallet checkpoint batches with the all-wallet body shape', async () => {
+    const payload = {
+      checked_at: '2026-06-11T10:00:00.000Z',
+      entries: [
+        {
+          actual_balance: 100,
+          note: 'Primary',
+          wallet_id: 'wallet/1',
+        },
+        {
+          actual_balance: 200,
+          wallet_id: 'wallet/2',
+        },
+      ],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [],
+        totals_by_currency: [],
+      })
+    );
+
+    await createWalletCheckpointBatch('workspace 1', payload, {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/workspaces/workspace%201/wallets/checkpoints',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'POST',
       })
     );
   });

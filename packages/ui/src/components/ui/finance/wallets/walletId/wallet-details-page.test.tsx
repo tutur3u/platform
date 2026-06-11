@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => {
   const currencyRateLimit = vi.fn();
 
   return {
-    createClient: vi.fn(() => ({
+    createAdminClient: vi.fn(() => ({
       from: vi.fn((table: string) => {
         if (table === 'currency_exchange_rates') {
           return {
@@ -44,8 +44,8 @@ vi.mock('@tuturuuu/internal-api', () => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createClient: (...args: Parameters<typeof mocks.createClient>) =>
-    mocks.createClient(...args),
+  createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
+    mocks.createAdminClient(...args),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -94,6 +94,10 @@ vi.mock('../../../card', () => ({
 
 vi.mock('../wallet-icon-display', () => ({
   WalletIconDisplay: () => null,
+}));
+
+vi.mock('../checkpoints/wallet-checkpoint-panel', () => ({
+  WalletCheckpointPanel: () => null,
 }));
 
 vi.mock('./credit-wallet-summary', () => ({

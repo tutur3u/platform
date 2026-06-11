@@ -118,6 +118,186 @@ export async function deleteWallet(
   );
 }
 
+export interface WalletCheckpoint {
+  actual_balance: number;
+  checked_at: string;
+  created_at: string;
+  created_by: string | null;
+  currency: string;
+  current_ledger_balance: number;
+  current_variance: number;
+  id: string;
+  ledger_balance: number;
+  note: string | null;
+  original_variance: number;
+  updated_at: string;
+  wallet_id: string;
+}
+
+export interface WalletCheckpointInterval {
+  actual_delta: number;
+  end_actual_balance: number;
+  end_checked_at: string;
+  end_checkpoint_id: string;
+  interval_variance: number;
+  is_clean: boolean;
+  ledger_delta: number;
+  start_actual_balance: number;
+  start_checked_at: string;
+  start_checkpoint_id: string;
+  transaction_count: number;
+}
+
+export interface WalletCheckpointListResponse {
+  data: WalletCheckpoint[];
+  intervals: WalletCheckpointInterval[];
+  latest: WalletCheckpoint | null;
+}
+
+export interface WalletCheckpointPayload {
+  actual_balance: number;
+  checked_at?: string;
+  note?: string | null;
+}
+
+export interface WalletCheckpointBatchPayload {
+  checked_at?: string;
+  entries: Array<{
+    actual_balance: number;
+    note?: string | null;
+    wallet_id: string;
+  }>;
+}
+
+export interface WalletCheckpointCurrencyTotal {
+  actual_total: number;
+  checkpoint_count: number;
+  currency: string;
+  ledger_total: number;
+  variance_total: number;
+}
+
+export interface WalletCheckpointSummaryWallet {
+  balance: number;
+  currency: string;
+  icon: string | null;
+  id: string;
+  image_src: string | null;
+  name: string | null;
+  type: string | null;
+}
+
+export interface WalletCheckpointSummaryResponse {
+  latest_checkpoints: WalletCheckpoint[];
+  totals_by_currency: WalletCheckpointCurrencyTotal[];
+  wallets: WalletCheckpointSummaryWallet[];
+}
+
+export async function listWalletCheckpoints(
+  workspaceId: string,
+  walletId: string,
+  query?: { limit?: number },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WalletCheckpointListResponse>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/checkpoints`,
+    {
+      cache: 'no-store',
+      query,
+    }
+  );
+}
+
+export async function createWalletCheckpoint(
+  workspaceId: string,
+  walletId: string,
+  payload: WalletCheckpointPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WalletCheckpoint>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/checkpoints`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateWalletCheckpoint(
+  workspaceId: string,
+  walletId: string,
+  checkpointId: string,
+  payload: Partial<WalletCheckpointPayload>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WalletCheckpoint>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/checkpoints/${encodePathSegment(checkpointId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function deleteWalletCheckpoint(
+  workspaceId: string,
+  walletId: string,
+  checkpointId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/checkpoints/${encodePathSegment(checkpointId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
+}
+
+export async function getWalletCheckpointSummary(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WalletCheckpointSummaryResponse>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/checkpoints`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWalletCheckpointBatch(
+  workspaceId: string,
+  payload: WalletCheckpointBatchPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{
+    data: WalletCheckpoint[];
+    totals_by_currency: WalletCheckpointCurrencyTotal[];
+  }>(`/api/workspaces/${encodePathSegment(workspaceId)}/wallets/checkpoints`, {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  });
+}
+
 export interface WalletCreditSummary {
   availableCredit: number;
   balance: number;

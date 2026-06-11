@@ -53,6 +53,13 @@ vi.mock('@tuturuuu/ui/finance/shared/create-dialog-feature-summary', () => ({
   CreateDialogFeatureSummary: () => null,
 }));
 
+vi.mock(
+  '@tuturuuu/ui/finance/wallets/checkpoints/wallet-total-check-dialog',
+  () => ({
+    WalletTotalCheckDialog: () => null,
+  })
+);
+
 vi.mock('@tuturuuu/ui/finance/wallets/form', () => ({
   WalletForm: () => null,
 }));

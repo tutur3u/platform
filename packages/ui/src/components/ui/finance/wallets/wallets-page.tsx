@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/internal-api';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { CreateDialogFeatureSummary } from '@tuturuuu/ui/finance/shared/create-dialog-feature-summary';
+import { WalletTotalCheckDialog } from '@tuturuuu/ui/finance/wallets/checkpoints/wallet-total-check-dialog';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { WalletsDataTable } from '@tuturuuu/ui/finance/wallets/wallets-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -67,11 +68,11 @@ export default async function WalletsPage({
   const canDeleteWallets = containsPermission('delete_wallets');
   const resolvedInternalApiOptions =
     internalApiOptions ?? withForwardedInternalApiAuth(await headers());
-  const { data: rawData, count } = await getData(
-    wsId,
-    searchParams,
-    resolvedInternalApiOptions
-  );
+  const {
+    data: rawData,
+    count,
+    allWallets,
+  } = await getData(wsId, searchParams, resolvedInternalApiOptions);
 
   const data = rawData.map((d) => ({
     ...d,
@@ -91,6 +92,20 @@ export default async function WalletsPage({
         form={canCreateWallets ? <WalletForm wsId={wsId} /> : undefined}
       />
       <Separator className="my-4" />
+      <div className="mb-4 flex justify-end">
+        <WalletTotalCheckDialog
+          wsId={wsId}
+          wallets={allWallets
+            .filter((wallet) => !!wallet.id)
+            .map((wallet) => ({
+              balance: wallet.balance,
+              currency: wallet.currency || resolvedCurrency || 'USD',
+              id: wallet.id as string,
+              name: wallet.name,
+            }))}
+          canUpdateWallets={canUpdateWallets}
+        />
+      </div>
       <WalletsDataTable
         wsId={wsId}
         data={data}
@@ -131,6 +146,7 @@ async function getData(
 
   return {
     data: filteredWallets.slice(start, start + parsedPageSize) as Wallet[],
+    allWallets: wallets as Wallet[],
     count: filteredWallets.length,
   };
 }

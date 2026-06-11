@@ -27,6 +27,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { Card } from '../../../card';
+import { WalletCheckpointPanel } from '../checkpoints/wallet-checkpoint-panel';
 import { WalletIconDisplay } from '../wallet-icon-display';
 import { CreditWalletSummary } from './credit-wallet-summary';
 import { WalletInterestSection } from './interest';
@@ -299,6 +300,15 @@ export default async function WalletDetailsPage({
           <Separator className="my-4" />
         </>
       )}
+      <WalletCheckpointPanel
+        wsId={wsId}
+        walletId={walletId}
+        walletName={wallet.name ?? t('ws-wallets.singular')}
+        currency={currency}
+        canUpdateWallets={canUpdateWallets}
+        canCreateTransactions={canCreateTransactions}
+      />
+      <Separator className="my-4" />
       {/* Interest Tracking Section - for Momo/ZaloPay wallets */}
       <WalletInterestSection wsId={wsId} wallet={wallet as Wallet} />
       <Suspense

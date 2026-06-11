@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.4';
-  };
   private: {
     Tables: {
       ai_agent_external_messages: {
@@ -8522,6 +8517,74 @@ export type Database = {
           },
         ];
       };
+      workspace_wallet_checkpoints: {
+        Row: {
+          actual_balance: number;
+          checked_at: string;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          id: string;
+          ledger_balance: number;
+          note: string | null;
+          updated_at: string;
+          wallet_id: string;
+        };
+        Insert: {
+          actual_balance: number;
+          checked_at?: string;
+          created_at?: string;
+          created_by?: string | null;
+          currency: string;
+          id?: string;
+          ledger_balance: number;
+          note?: string | null;
+          updated_at?: string;
+          wallet_id: string;
+        };
+        Update: {
+          actual_balance?: number;
+          checked_at?: string;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          id?: string;
+          ledger_balance?: number;
+          note?: string | null;
+          updated_at?: string;
+          wallet_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_wallet_checkpoints_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_wallet_checkpoints_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_wallet_checkpoints_currency_fkey';
+            columns: ['currency'];
+            isOneToOne: false;
+            referencedRelation: 'currencies';
+            referencedColumns: ['code'];
+          },
+          {
+            foreignKeyName: 'workspace_wallet_checkpoints_wallet_id_fkey';
+            columns: ['wallet_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_wallets';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_wallets: {
         Row: {
           balance: number | null;
@@ -9667,6 +9730,32 @@ export type Database = {
         };
         Returns: string;
       };
+      create_workspace_wallet_checkpoints_batch: {
+        Args: {
+          _actor_id: string;
+          _checked_at: string;
+          _entries: Json;
+          _ws_id: string;
+        };
+        Returns: {
+          actual_balance: number;
+          checked_at: string;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          id: string;
+          ledger_balance: number;
+          note: string | null;
+          updated_at: string;
+          wallet_id: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_wallet_checkpoints';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       detect_wallet_interest_transactions: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
@@ -10080,6 +10169,13 @@ export type Database = {
           undeliverable_count: number;
         }[];
       };
+      get_wallet_checkpoint_interval_delta: {
+        Args: { _end_at: string; _start_at: string; _wallet_id: string };
+        Returns: {
+          ledger_delta: number;
+          transaction_count: number;
+        }[];
+      };
       get_wallet_interest_initial_balance: {
         Args: {
           _actor_id: string;
@@ -10105,6 +10201,10 @@ export type Database = {
       };
       get_wallet_interest_visible_balance: {
         Args: { _can_view_confidential_amounts: boolean; _wallet_id: string };
+        Returns: number;
+      };
+      get_wallet_ledger_balance_at: {
+        Args: { _checked_at: string; _wallet_id: string };
         Returns: number;
       };
       get_workspace_post_email_rows: {
@@ -10396,6 +10496,21 @@ export type Database = {
           resource_type: string;
           table_name: string;
           total_count: number;
+        }[];
+      };
+      list_wallet_checkpoint_intervals: {
+        Args: { _limit?: number; _wallet_id: string };
+        Returns: {
+          actual_delta: number;
+          end_actual_balance: number;
+          end_checked_at: string;
+          end_checkpoint_id: string;
+          interval_variance: number;
+          ledger_delta: number;
+          start_actual_balance: number;
+          start_checked_at: string;
+          start_checkpoint_id: string;
+          transaction_count: number;
         }[];
       };
       list_workspace_user_groups_for_table: {
@@ -28905,7 +29020,22 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -33633,6 +33763,8 @@ export type Database = {
         };
         Returns: boolean;
       };
+      show_limit: { Args: never; Returns: number };
+      show_trgm: { Args: { '': string }; Returns: string[] };
       strict_payload_field_byte_limit: {
         Args: { _column_name: string; _table_name: string };
         Returns: number;
@@ -36231,6 +36363,101 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      iceberg_namespaces: {
+        Row: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          bucket_name?: string;
+          catalog_id?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'iceberg_namespaces_catalog_id_fkey';
+            columns: ['catalog_id'];
+            isOneToOne: false;
+            referencedRelation: 'buckets_analytics';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      iceberg_tables: {
+        Row: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at: string;
+          id: string;
+          location: string;
+          name: string;
+          namespace_id: string;
+          remote_table_id: string | null;
+          shard_id: string | null;
+          shard_key: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at?: string;
+          id?: string;
+          location: string;
+          name: string;
+          namespace_id: string;
+          remote_table_id?: string | null;
+          shard_id?: string | null;
+          shard_key?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          bucket_name?: string;
+          catalog_id?: string;
+          created_at?: string;
+          id?: string;
+          location?: string;
+          name?: string;
+          namespace_id?: string;
+          remote_table_id?: string | null;
+          shard_id?: string | null;
+          shard_key?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'iceberg_tables_catalog_id_fkey';
+            columns: ['catalog_id'];
+            isOneToOne: false;
+            referencedRelation: 'buckets_analytics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'iceberg_tables_namespace_id_fkey';
+            columns: ['namespace_id'];
+            isOneToOne: false;
+            referencedRelation: 'iceberg_namespaces';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       migrations: {
         Row: {

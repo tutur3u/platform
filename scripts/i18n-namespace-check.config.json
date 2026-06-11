@@ -1,10 +1,10 @@
 {
   "$comment": "Namespaces from shared packages that specific apps intentionally do not use. Remove entries as apps add the missing translations.",
   "apps/web": ["certificates"],
-  "apps/tasks": ["certificates"],
-  "apps/calendar": ["certificates", "ws-board-templates"],
-  "apps/cms": ["certificates"],
-  "apps/drive": ["certificates"],
+  "apps/tasks": ["certificates", "wallet-checkpoints"],
+  "apps/calendar": ["certificates", "wallet-checkpoints", "ws-board-templates"],
+  "apps/cms": ["certificates", "wallet-checkpoints"],
+  "apps/drive": ["certificates", "wallet-checkpoints"],
   "apps/finance": ["certificates", "ws-board-templates"],
   "apps/meet": [
     "certificates",
@@ -18,13 +18,14 @@
     "task-projects",
     "tasks-history",
     "tasks-logs",
+    "wallet-checkpoints",
     "wallet-interest",
     "ws-board-templates",
     "ws-debt-loan",
     "ws-presence",
     "ws-tasks-labels"
   ],
-  "apps/track": ["certificates", "ws-board-templates"],
+  "apps/track": ["certificates", "wallet-checkpoints", "ws-board-templates"],
   "apps/nova": [
     "certificates",
     "dashboard",
@@ -38,6 +39,7 @@
     "task-projects",
     "tasks-history",
     "tasks-logs",
+    "wallet-checkpoints",
     "wallet-interest",
     "workspace-finance-transactions",
     "ws-board-templates",
@@ -47,7 +49,7 @@
     "ws-tasks",
     "ws-tasks-labels"
   ],
-  "apps/rewise": ["certificates", "ws-board-templates"],
+  "apps/rewise": ["certificates", "wallet-checkpoints", "ws-board-templates"],
 
   "$keyExceptionsComment": "Key-level exceptions for shared package translation keys that specific apps do not need. Supports wildcards: 'namespace.*' skips all keys under a namespace. Remove entries as apps add the missing keys.",
   "keyExceptions": {
