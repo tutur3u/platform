@@ -13,6 +13,7 @@ import LoginForm from './form';
 const mocks = vi.hoisted(() => ({
   assign: vi.fn(),
   createCrossAppReturnUrlWithInternalApi: vi.fn(),
+  createMfaMobileApprovalChallengeWithInternalApi: vi.fn(),
   currentUserProfile: null as {
     avatar_url: string | null;
     display_name: string | null;
@@ -23,37 +24,81 @@ const mocks = vi.hoisted(() => ({
   getOtpSettings: vi.fn(),
   getUser: vi.fn(),
   mfaAssuranceLevel: vi.fn(),
+  mfaChallenge: vi.fn(),
+  mfaListFactors: vi.fn(),
+  mfaVerify: vi.fn(),
   passwordLoginWithInternalApi: vi.fn(),
+  pollMfaMobileApprovalChallengeWithInternalApi: vi.fn(),
   refreshSession: vi.fn(),
   reload: vi.fn(),
   resolveCrossAppReturnUrlWithInternalApi: vi.fn(),
   routerPush: vi.fn(),
   routerRefresh: vi.fn(),
   searchParams: new URLSearchParams(),
+  sendOtpWithInternalApi: vi.fn(),
   signInWithOAuth: vi.fn(),
   switchAccount: vi.fn(),
+  verifyOtpWithInternalApi: vi.fn(),
 }));
 
 vi.mock('@marsidev/react-turnstile', () => ({
   Turnstile: () => <div data-testid="turnstile" />,
 }));
 
+vi.mock('@tuturuuu/ui/input-otp', () => ({
+  InputOTP: ({
+    disabled,
+    maxLength,
+    onChange,
+    value,
+  }: {
+    disabled?: boolean;
+    maxLength?: number;
+    onChange?: (value: string) => void;
+    value?: string;
+  }) => (
+    <input
+      aria-label="otp-input"
+      disabled={disabled}
+      maxLength={maxLength}
+      onChange={(event) => onChange?.(event.target.value)}
+      value={value ?? ''}
+    />
+  ),
+  InputOTPGroup: ({ children }: { children?: ReactNode }) => (
+    <div>{children}</div>
+  ),
+  InputOTPSlot: () => null,
+}));
+
 vi.mock('@tuturuuu/internal-api/auth', () => ({
   createCrossAppReturnUrlWithInternalApi: (
     ...args: Parameters<typeof mocks.createCrossAppReturnUrlWithInternalApi>
   ) => mocks.createCrossAppReturnUrlWithInternalApi(...args),
-  createMfaMobileApprovalChallengeWithInternalApi: vi.fn(),
+  createMfaMobileApprovalChallengeWithInternalApi: (
+    ...args: Parameters<
+      typeof mocks.createMfaMobileApprovalChallengeWithInternalApi
+    >
+  ) => mocks.createMfaMobileApprovalChallengeWithInternalApi(...args),
   getOtpSettings: (...args: Parameters<typeof mocks.getOtpSettings>) =>
     mocks.getOtpSettings(...args),
   passwordLoginWithInternalApi: (
     ...args: Parameters<typeof mocks.passwordLoginWithInternalApi>
   ) => mocks.passwordLoginWithInternalApi(...args),
-  pollMfaMobileApprovalChallengeWithInternalApi: vi.fn(),
+  pollMfaMobileApprovalChallengeWithInternalApi: (
+    ...args: Parameters<
+      typeof mocks.pollMfaMobileApprovalChallengeWithInternalApi
+    >
+  ) => mocks.pollMfaMobileApprovalChallengeWithInternalApi(...args),
   resolveCrossAppReturnUrlWithInternalApi: (
     ...args: Parameters<typeof mocks.resolveCrossAppReturnUrlWithInternalApi>
   ) => mocks.resolveCrossAppReturnUrlWithInternalApi(...args),
-  sendOtpWithInternalApi: vi.fn(),
-  verifyOtpWithInternalApi: vi.fn(),
+  sendOtpWithInternalApi: (
+    ...args: Parameters<typeof mocks.sendOtpWithInternalApi>
+  ) => mocks.sendOtpWithInternalApi(...args),
+  verifyOtpWithInternalApi: (
+    ...args: Parameters<typeof mocks.verifyOtpWithInternalApi>
+  ) => mocks.verifyOtpWithInternalApi(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/auth-browser', () => ({
@@ -61,7 +106,10 @@ vi.mock('@tuturuuu/supabase/next/auth-browser', () => ({
     auth: {
       getUser: mocks.getUser,
       mfa: {
+        challenge: mocks.mfaChallenge,
         getAuthenticatorAssuranceLevel: mocks.mfaAssuranceLevel,
+        listFactors: mocks.mfaListFactors,
+        verify: mocks.mfaVerify,
       },
       refreshSession: mocks.refreshSession,
       signInWithOAuth: mocks.signInWithOAuth,
@@ -199,11 +247,44 @@ describe('LoginForm returnUrl navigation', () => {
         nextLevel: 'aal1',
       },
     });
+    mocks.mfaListFactors.mockResolvedValue({
+      data: {
+        totp: [
+          {
+            id: 'factor-1',
+            status: 'verified',
+          },
+        ],
+      },
+      error: null,
+    });
+    mocks.mfaChallenge.mockResolvedValue({
+      data: {
+        id: 'challenge-1',
+      },
+      error: null,
+    });
+    mocks.mfaVerify.mockResolvedValue({ error: null });
     mocks.resolveCrossAppReturnUrlWithInternalApi.mockResolvedValue({
       error: 'Invalid returnUrl',
     });
+    mocks.createMfaMobileApprovalChallengeWithInternalApi.mockResolvedValue({
+      challenge: {
+        expiresAt: '2026-06-11T03:10:00.000Z',
+        id: 'mobile-challenge-1',
+        pairCode: '123456',
+      },
+      secret: 'mobile-secret',
+    });
+    mocks.pollMfaMobileApprovalChallengeWithInternalApi.mockResolvedValue({
+      mobileMfaVerified: false,
+      status: 'pending',
+    });
     mocks.passwordLoginWithInternalApi.mockResolvedValue({ success: true });
+    mocks.refreshSession.mockResolvedValue({ error: null });
+    mocks.sendOtpWithInternalApi.mockResolvedValue({});
     mocks.signInWithOAuth.mockResolvedValue({ error: null });
+    mocks.verifyOtpWithInternalApi.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -252,6 +333,20 @@ describe('LoginForm returnUrl navigation', () => {
     expect(
       screen.getByPlaceholderText('login.email_username_placeholder')
     ).toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('shows redirecting instead of the public form for authenticated login hard loads', async () => {
+    const queryClient = renderLoginFormSearch();
+
+    await screen.findByText('account_switcher.redirecting');
+
+    expect(mocks.routerPush).toHaveBeenCalledWith('/');
+    expect(
+      screen.queryByRole('button', {
+        name: 'login.continue_with_email',
+      })
+    ).not.toBeInTheDocument();
     queryClient.clear();
   });
 
@@ -322,9 +417,137 @@ describe('LoginForm returnUrl navigation', () => {
     await waitFor(() => {
       expect(mocks.passwordLoginWithInternalApi).toHaveBeenCalled();
     });
+    await screen.findByText('account_switcher.redirecting');
     expect(mocks.routerPush).toHaveBeenCalledWith('/');
     expect(mocks.routerRefresh).toHaveBeenCalled();
     expect(mocks.reload).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('button', {
+        name: 'login.continue_with_email',
+      })
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('shows redirecting after OTP login succeeds without a returnUrl', async () => {
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
+    });
+
+    const queryClient = renderLoginFormSearch();
+
+    const sendOtpButton = await screen.findByRole('button', {
+      name: 'login.continue_with_email',
+    });
+    // The unit harness does not mount a real Turnstile widget, so clear the
+    // DOM-only disabled flag to exercise the submit path.
+    (sendOtpButton as HTMLButtonElement).disabled = false;
+    await act(async () => {
+      fireEvent.click(sendOtpButton);
+    });
+
+    await waitFor(() => {
+      expect(mocks.sendOtpWithInternalApi).toHaveBeenCalled();
+    });
+
+    fireEvent.change(await screen.findByLabelText('otp-input'), {
+      target: { value: '123456' },
+    });
+
+    const verifyButton = await screen.findByRole('button', {
+      name: 'login.verify_button',
+    });
+    await act(async () => {
+      fireEvent.click(verifyButton);
+    });
+
+    await waitFor(() => {
+      expect(mocks.verifyOtpWithInternalApi).toHaveBeenCalled();
+    });
+    await screen.findByText('account_switcher.redirecting');
+    expect(mocks.routerPush).toHaveBeenCalledWith('/');
+    expect(
+      screen.queryByRole('button', {
+        name: 'login.continue_with_email',
+      })
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('shows redirecting after TOTP MFA succeeds without a returnUrl', async () => {
+    mocks.mfaAssuranceLevel.mockResolvedValue({
+      data: {
+        currentLevel: 'aal1',
+        nextLevel: 'aal2',
+      },
+    });
+
+    const queryClient = renderLoginFormSearch();
+
+    await screen.findByText('login.two_factor_authentication');
+    fireEvent.change(await screen.findByLabelText('otp-input'), {
+      target: { value: '123456' },
+    });
+
+    const verifyButton = await screen.findByRole('button', {
+      name: 'login.verify_button',
+    });
+    await act(async () => {
+      fireEvent.click(verifyButton);
+    });
+
+    await waitFor(() => {
+      expect(mocks.mfaVerify).toHaveBeenCalled();
+    });
+    await screen.findByText('account_switcher.redirecting');
+    expect(mocks.routerPush).toHaveBeenCalledWith('/');
+    expect(
+      screen.queryByRole('button', {
+        name: 'login.continue_with_email',
+      })
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('shows redirecting after mobile MFA approval succeeds without a returnUrl', async () => {
+    mocks.mfaAssuranceLevel.mockResolvedValue({
+      data: {
+        currentLevel: 'aal1',
+        nextLevel: 'aal2',
+      },
+    });
+    mocks.pollMfaMobileApprovalChallengeWithInternalApi.mockResolvedValue({
+      mobileMfaVerified: true,
+      status: 'approved',
+    });
+
+    const queryClient = renderLoginFormSearch();
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'login.mobile_mfa_button',
+      })
+    );
+
+    await waitFor(() => {
+      expect(
+        mocks.createMfaMobileApprovalChallengeWithInternalApi
+      ).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(
+        mocks.pollMfaMobileApprovalChallengeWithInternalApi
+      ).toHaveBeenCalled();
+    });
+    await screen.findByText('account_switcher.redirecting');
+    expect(mocks.routerPush).toHaveBeenCalledWith('/');
+    expect(
+      screen.queryByRole('button', {
+        name: 'login.continue_with_email',
+      })
+    ).not.toBeInTheDocument();
     queryClient.clear();
   });
 
@@ -408,6 +631,9 @@ describe('LoginForm returnUrl navigation', () => {
         mocks.createCrossAppReturnUrlWithInternalApi
       ).not.toHaveBeenCalled();
       expect(mocks.assign).not.toHaveBeenCalled();
+      expect(
+        screen.queryByText('account_switcher.redirecting')
+      ).not.toBeInTheDocument();
       queryClient.clear();
     } finally {
       if (originalPublicExternalDomains === undefined) {

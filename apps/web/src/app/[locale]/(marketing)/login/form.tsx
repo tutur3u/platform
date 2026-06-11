@@ -332,6 +332,8 @@ export default function LoginForm({
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [requiresMFA, setRequiresMFA] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [redirectingAfterAuth, setRedirectingAfterAuth] = useState(false);
+  const redirectingAfterAuthRef = useRef(false);
   const [showPassword, setShowPassword] = useState(false);
   const [authStage, setAuthStage] = useState<AuthStage>('identify');
   const [transitionDirection, setTransitionDirection] = useState<1 | -1>(1);
@@ -425,6 +427,11 @@ export default function LoginForm({
       : resolvedReturnUrlFailure;
   const hasActiveReturnUrlFailure = Boolean(activeReturnUrlFailure);
   const canRenderAuthSurface = readyForAuth || !initialized;
+
+  const setRedirectingAfterAuthState = useCallback((value: boolean) => {
+    redirectingAfterAuthRef.current = value;
+    setRedirectingAfterAuth(value);
+  }, []);
 
   const createMobileMfaChallengeMutation = useMutation({
     mutationFn: () =>
@@ -524,6 +531,7 @@ export default function LoginForm({
 
   const markReturnUrlValidationFailure = useCallback(
     (failedReturnUrl: string, error?: unknown) => {
+      setRedirectingAfterAuthState(false);
       setReturnUrlValidationFailure({
         reason: error instanceof Error ? error.message : undefined,
         returnUrl: failedReturnUrl,
@@ -532,8 +540,14 @@ export default function LoginForm({
       setLoading(false);
       setReadyForAuth(true);
     },
-    []
+    [setRedirectingAfterAuthState]
   );
+
+  const showRedirectingAfterAuth = useCallback(() => {
+    setConfirmingReturn(false);
+    setReadyForAuth(true);
+    setRedirectingAfterAuthState(true);
+  }, [setRedirectingAfterAuthState]);
 
   const handleCaptchaSuccess = useCallback(
     (token: string) => {
@@ -621,12 +635,14 @@ export default function LoginForm({
       return false;
     }
 
+    setRedirectingAfterAuthState(false);
     setUser(user);
     setReadyForAuth(true);
     setLoading(false);
     return true;
   }, [
     markReturnUrlValidationFailure,
+    setRedirectingAfterAuthState,
     isRegisteredInternalAppReturn,
     refetchResolvedReturnApp,
     returnApp,
@@ -707,9 +723,12 @@ export default function LoginForm({
   }, [router, searchParams, supabase]);
 
   const completeMfaSignIn = useCallback(async () => {
+    showRedirectingAfterAuth();
+
     await completeVerifiedMfaSignIn({
       clearMfaRequirement: () => setRequiresMFA(false),
       fallbackToHome: () => {
+        showRedirectingAfterAuth();
         window.location.href = '/';
       },
       onNavigationError: (navigationError) => {
@@ -726,6 +745,7 @@ export default function LoginForm({
       },
       processNextUrl: async () => {
         if (await prepareReturnAppConfirmation()) {
+          setRedirectingAfterAuthState(false);
           return;
         }
 
@@ -734,13 +754,21 @@ export default function LoginForm({
       refreshSession: () => supabase.auth.refreshSession(),
       resetTotp: () => totpForm.reset({ totp: '' }),
     });
-  }, [prepareReturnAppConfirmation, processNextUrl, supabase.auth, totpForm]);
+  }, [
+    prepareReturnAppConfirmation,
+    processNextUrl,
+    setRedirectingAfterAuthState,
+    showRedirectingAfterAuth,
+    supabase.auth,
+    totpForm,
+  ]);
 
   const completePrimarySignIn = useCallback(
     async (source: 'otp' | 'passkey' | 'password') => {
       router.refresh();
 
       if (await needsMFA()) {
+        setRedirectingAfterAuthState(false);
         setRequiresMFA(true);
         setLoading(false);
         return;
@@ -750,8 +778,11 @@ export default function LoginForm({
       const returnUrl = searchParams.get('returnUrl');
 
       if (await prepareReturnAppConfirmation()) {
+        setRedirectingAfterAuthState(false);
         return;
       }
+
+      showRedirectingAfterAuth();
 
       if (multiAccount === 'true' || returnUrl) {
         try {
@@ -768,8 +799,10 @@ export default function LoginForm({
           }
 
           if (multiAccount === 'true') {
+            showRedirectingAfterAuth();
             window.location.href = `/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`;
           } else {
+            showRedirectingAfterAuth();
             window.location.href = '/';
           }
         }
@@ -783,6 +816,7 @@ export default function LoginForm({
           `[login:${source}] Navigation error after successful login:`,
           navError
         );
+        showRedirectingAfterAuth();
         window.location.href = '/';
       }
     },
@@ -793,6 +827,8 @@ export default function LoginForm({
       processNextUrl,
       router,
       searchParams,
+      setRedirectingAfterAuthState,
+      showRedirectingAfterAuth,
     ]
   );
 
@@ -840,13 +876,15 @@ export default function LoginForm({
     await supabase.auth.signOut({ scope: 'local' });
     setUser(null);
     setRequiresMFA(false);
+    setRedirectingAfterAuthState(false);
     setReadyForAuth(true);
     setLoading(false);
-  }, [supabase.auth]);
+  }, [setRedirectingAfterAuthState, supabase.auth]);
 
   const clearInvalidReturnUrl = useCallback(() => {
     setReturnUrlValidationFailure(null);
     setConfirmingReturn(false);
+    setRedirectingAfterAuthState(false);
     setLoading(false);
 
     if (user && !requiresMFA) {
@@ -864,7 +902,7 @@ export default function LoginForm({
     const nextPath = `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
     router.replace(nextPath);
     router.refresh();
-  }, [requiresMFA, router, user]);
+  }, [requiresMFA, router, setRedirectingAfterAuthState, user]);
 
   const sendOtpMutation = useMutation({
     mutationFn: (payload: Parameters<typeof sendOtpWithInternalApi>[0]) =>
@@ -1314,21 +1352,25 @@ export default function LoginForm({
         setUser(user);
 
         if (user) {
-          setRequiresMFA(await needsMFA());
+          const requiresMfa = await needsMFA();
+          setRequiresMFA(requiresMfa);
+          setRedirectingAfterAuthState(!requiresMfa);
         } else {
           setRequiresMFA(false);
+          setRedirectingAfterAuthState(false);
         }
       } catch (error) {
         console.error('[login] Failed to initialize auth state:', error);
         setUser(null);
         setRequiresMFA(false);
+        setRedirectingAfterAuthState(false);
       } finally {
         setInitialized(true);
       }
     }
 
     void checkUser();
-  }, [needsMFA, supabase.auth]);
+  }, [needsMFA, setRedirectingAfterAuthState, supabase.auth]);
 
   useEffect(() => {
     const error = searchParams.get('error');
@@ -1346,6 +1388,7 @@ export default function LoginForm({
     }
 
     oauthErrorToastKeyRef.current = toastKey;
+    setRedirectingAfterAuthState(false);
     setLoading(false);
 
     toast.error(t('login.failed'), {
@@ -1357,7 +1400,12 @@ export default function LoginForm({
         diagnosticCode
       ),
     });
-  }, [formatDiagnosticDescription, searchParams, t]);
+  }, [
+    formatDiagnosticDescription,
+    searchParams,
+    setRedirectingAfterAuthState,
+    t,
+  ]);
 
   useEffect(() => {
     const processUrl = async () => {
@@ -1366,6 +1414,7 @@ export default function LoginForm({
       }
 
       if (hasActiveReturnUrlFailure) {
+        setRedirectingAfterAuthState(false);
         setReadyForAuth(true);
         return;
       }
@@ -1373,17 +1422,20 @@ export default function LoginForm({
       const multiAccount = searchParams.get('multiAccount');
 
       if (multiAccount === 'true') {
+        setRedirectingAfterAuthState(false);
         setReadyForAuth(true);
         return;
       }
 
       if (user && !requiresMFA) {
         if (isInternalAppReturn && !isRegisteredInternalAppReturn) {
+          setRedirectingAfterAuthState(false);
           setReadyForAuth(true);
           return;
         }
 
         try {
+          showRedirectingAfterAuth();
           await processNextUrl();
         } catch (error) {
           console.error(
@@ -1397,9 +1449,15 @@ export default function LoginForm({
             return;
           }
 
-          setReadyForAuth(true);
+          showRedirectingAfterAuth();
+          window.location.href = '/';
         }
       } else {
+        if (redirectingAfterAuthRef.current) {
+          return;
+        }
+
+        setRedirectingAfterAuthState(false);
         setReadyForAuth(true);
       }
     };
@@ -1417,6 +1475,8 @@ export default function LoginForm({
     processNextUrl,
     requiresMFA,
     searchParams,
+    setRedirectingAfterAuthState,
+    showRedirectingAfterAuth,
     user,
   ]);
 
@@ -1535,6 +1595,21 @@ export default function LoginForm({
         }
         switchingAccountId={switchingAccountId}
       />
+    );
+  }
+
+  if (redirectingAfterAuth) {
+    return (
+      <motion.div layout transition={authContainerTransition}>
+        <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
+          <CardContent className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+            <LoadingIndicator className="size-6" />
+            <p className="font-medium text-muted-foreground text-sm">
+              {t('account_switcher.redirecting')}
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
     );
   }
 
