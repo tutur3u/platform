@@ -165,6 +165,37 @@ describe('CLI rendering', () => {
     expect(output).toContain('■ Done');
   });
 
+  it('renders finance transaction dates in the user timezone', () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      calendar: 'gregory',
+      locale: 'en',
+      numberingSystem: 'latn',
+      timeZone: 'Asia/Ho_Chi_Minh',
+    });
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    render(
+      {
+        data: [
+          {
+            id: 'tx-1',
+            amount: 150000,
+            description: 'Local date transaction',
+            taken_at: '2026-05-08T17:00:00.000Z',
+            wallet_name: 'Cash',
+          },
+        ],
+      },
+      { financeResource: 'transactions', group: 'finance' }
+    );
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toMatch(/May 9, 2026|9 May 2026/);
+    expect(output).not.toMatch(/May 8, 2026|8 May 2026/);
+  });
+
   it('shows per-task workspace names for mixed workspace task rows', () => {
     const write = vi
       .spyOn(process.stdout, 'write')

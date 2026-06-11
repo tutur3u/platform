@@ -13,6 +13,7 @@ import type {
 } from '../platform-finance';
 import { type FlagValue, getFlag, parseCsv } from './args';
 import { getFinancePagination } from './finance-pagination';
+import { normalizeCliDateTime, pickCliTimeZone } from './timezone';
 
 export function parseFinanceNumber(value?: string) {
   if (value === undefined) return undefined;
@@ -123,6 +124,7 @@ export function getWalletPayload(
 
 export function getTransactionPayload(flags: Record<string, FlagValue>) {
   const payload: Record<string, unknown> = {};
+  const timeZone = pickCliTimeZone(flags);
   assignDefined(
     payload,
     'amount',
@@ -142,7 +144,7 @@ export function getTransactionPayload(flags: Record<string, FlagValue>) {
   assignDefined(
     payload,
     'taken_at',
-    pickFinanceString(flags, 'taken-at', 'date')
+    normalizeCliDateTime(pickFinanceString(flags, 'taken-at', 'date'), timeZone)
   );
   assignDefined(payload, 'report_opt_in', parseBoolean(flags['report-opt-in']));
   assignDefined(payload, 'tag_ids', parseCsv(pickFinanceString(flags, 'tags')));
@@ -218,6 +220,7 @@ export function getTransferPayload(
   options: { includeTransactionIds?: boolean } = {}
 ) {
   const payload: Record<string, unknown> = {};
+  const timeZone = pickCliTimeZone(flags);
   assignDefined(
     payload,
     'origin_wallet_id',
@@ -260,7 +263,7 @@ export function getTransferPayload(
   assignDefined(
     payload,
     'taken_at',
-    pickFinanceString(flags, 'taken-at', 'date')
+    normalizeCliDateTime(pickFinanceString(flags, 'taken-at', 'date'), timeZone)
   );
   assignDefined(payload, 'report_opt_in', parseBoolean(flags['report-opt-in']));
   assignDefined(payload, 'tag_ids', parseCsv(pickFinanceString(flags, 'tags')));

@@ -1,4 +1,5 @@
 import { inspect } from 'node:util';
+import { getDateParts, inferUserTimeZone } from './timezone';
 
 type RenderableRecord = Record<string, unknown>;
 type TableCellStyle = (input: {
@@ -412,56 +413,6 @@ function formatDueDate(value: unknown) {
   return new Intl.DateTimeFormat('en', options).format(date);
 }
 
-function inferUserTimeZone() {
-  try {
-    const timeZone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (!timeZone) return null;
-
-    new Intl.DateTimeFormat('en', { timeZone }).format(new Date());
-    return timeZone;
-  } catch {
-    return null;
-  }
-}
-
-function getDateParts(date: Date, timeZone: string | null) {
-  if (!timeZone) {
-    return {
-      day: date.getDate(),
-      month: date.getMonth() + 1,
-      year: date.getFullYear(),
-    };
-  }
-
-  try {
-    const parts = new Intl.DateTimeFormat('en', {
-      day: '2-digit',
-      month: '2-digit',
-      timeZone,
-      year: 'numeric',
-    }).formatToParts(date);
-    const getPart = (type: string) =>
-      Number(parts.find((part) => part.type === type)?.value);
-    const year = getPart('year');
-    const month = getPart('month');
-    const day = getPart('day');
-
-    if (
-      Number.isInteger(year) &&
-      Number.isInteger(month) &&
-      Number.isInteger(day)
-    ) {
-      return { day, month, year };
-    }
-  } catch {}
-
-  return {
-    day: date.getDate(),
-    month: date.getMonth() + 1,
-    year: date.getFullYear(),
-  };
-}
-
 function getNamedColorCode(value: string): ColorCode {
   switch (value.trim().toLowerCase()) {
     case 'red':
@@ -766,9 +717,11 @@ function formatFinanceDate(value: unknown) {
   if (typeof value !== 'string' || !value.trim()) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
+  const timeZone = inferUserTimeZone();
   return new Intl.DateTimeFormat('en', {
     day: 'numeric',
     month: 'short',
+    ...(timeZone ? { timeZone } : {}),
     year: 'numeric',
   }).format(date);
 }

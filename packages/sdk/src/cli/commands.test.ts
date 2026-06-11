@@ -213,6 +213,101 @@ describe('CLI commands', () => {
     );
   });
 
+  it('normalizes finance transaction create dates in the requested timezone', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ id: 'tx-1' }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'finance',
+      'transactions',
+      'create',
+      '--amount',
+      '150000',
+      '--wallet',
+      'wallet-1',
+      '--taken-at',
+      '2026-05-09',
+      '--timezone',
+      'Asia/Ho_Chi_Minh',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    const request = fetchMock.mock.calls[0];
+    expect(request?.[0]).toBe(
+      'https://tuturuuu.com/api/workspaces/ws-1/transactions'
+    );
+    expect(request?.[1]).toEqual(
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(JSON.parse(String(request?.[1]?.body))).toEqual({
+      amount: 150000,
+      origin_wallet_id: 'wallet-1',
+      taken_at: '2026-05-08T17:00:00.000Z',
+      tag_ids: [],
+    });
+  });
+
+  it('normalizes finance transaction update local date-times in the user timezone', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      calendar: 'gregory',
+      locale: 'en',
+      numberingSystem: 'latn',
+      timeZone: 'Asia/Ho_Chi_Minh',
+    });
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ id: 'tx-1' }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'finance',
+      'transactions',
+      'update',
+      'tx-1',
+      '--taken-at',
+      '2026-05-09T13:45',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    const request = fetchMock.mock.calls[0];
+    expect(request?.[0]).toBe(
+      'https://tuturuuu.com/api/workspaces/ws-1/transactions/tx-1'
+    );
+    expect(request?.[1]).toEqual(
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(JSON.parse(String(request?.[1]?.body))).toEqual({
+      taken_at: '2026-05-09T06:45:00.000Z',
+      tag_ids: [],
+    });
+  });
+
   it('builds transfer migration payloads from CLI flags', async () => {
     await writeTestConfig({
       baseUrl: 'https://tuturuuu.com',
