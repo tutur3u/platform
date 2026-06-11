@@ -7,6 +7,7 @@ import type {
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { loadTransactionListEnrichment } from '../list-enrichment';
 
 interface Params {
   params: Promise<{
@@ -125,45 +126,13 @@ export async function GET(req: Request, { params }: Params) {
       }
     });
 
-    const { data: enrichmentRows, error: enrichmentError } =
-      allTransactionIds.length > 0
-        ? await supabase.rpc('get_transaction_list_enrichment', {
-            p_ws_id: normalizedWsId,
-            p_transaction_ids: allTransactionIds,
-            p_user_id: user.id,
-          })
-        : { data: [], error: null };
-
-    if (enrichmentError) {
-      throw enrichmentError;
-    }
-
-    const tagsByTransaction = new Map<
-      string,
-      Array<{ id: string; name: string; color: string }>
-    >();
-    for (const row of enrichmentRows || []) {
-      const tags = Array.isArray(row.tags)
-        ? row.tags
-            .filter(
-              (
-                tag
-              ): tag is { id: string; name: string; color?: string | null } =>
-                !!tag &&
-                typeof tag === 'object' &&
-                'id' in tag &&
-                'name' in tag &&
-                typeof tag.id === 'string' &&
-                typeof tag.name === 'string'
-            )
-            .map((tag) => ({
-              id: tag.id,
-              name: tag.name,
-              color: typeof tag.color === 'string' ? tag.color : '',
-            }))
-        : [];
-      tagsByTransaction.set(row.transaction_id, tags);
-    }
+    const enrichmentByTransaction = await loadTransactionListEnrichment({
+      normalizedWsId,
+      route: 'transactions/periods',
+      supabase,
+      transactionIds: allTransactionIds,
+      userId: user.id,
+    });
 
     // Collect all creator IDs for user info fetching
     const creatorIds = new Set<string>();
@@ -259,7 +228,7 @@ export async function GET(req: Request, { params }: Params) {
                   avatar_url: userInfo.avatar_url,
                 }
               : undefined,
-            tags: tagsByTransaction.get(tx.id) || [],
+            tags: enrichmentByTransaction.get(tx.id)?.tags || [],
           };
         }
       );
