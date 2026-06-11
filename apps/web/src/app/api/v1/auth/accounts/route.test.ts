@@ -2,10 +2,11 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DELETE } from './[accountId]/route';
 import { POST as saveCurrentPOST } from './current/route';
-import { dynamic, GET } from './route';
+import { GET } from './route';
 import { POST as switchPOST } from './switch/route';
 
 const mocks = vi.hoisted(() => ({
+  connection: vi.fn(),
   createAuthDiagnosticCode: vi.fn(),
   listWebAccounts: vi.fn(),
   logAuthDiagnostic: vi.fn(),
@@ -14,6 +15,15 @@ const mocks = vi.hoisted(() => ({
   switchWebAccount: vi.fn(),
   unstable_rethrow: vi.fn(),
 }));
+
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+
+  return {
+    ...actual,
+    connection: () => mocks.connection(),
+  };
+});
 
 vi.mock('@/lib/auth/diagnostics', () => ({
   createAuthDiagnosticCode: mocks.createAuthDiagnosticCode,
@@ -39,6 +49,7 @@ vi.mock('next/navigation', () => ({
 describe('web multi-account API routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.connection.mockResolvedValue(undefined);
     mocks.createAuthDiagnosticCode.mockReturnValue('AUTH-ACC-LIST-ABC123');
     mocks.unstable_rethrow.mockReturnValue(undefined);
     mocks.listWebAccounts.mockResolvedValue({
@@ -65,20 +76,20 @@ describe('web multi-account API routes', () => {
     });
   });
 
-  it('opts account listing out of static generation', () => {
-    expect(dynamic).toBe('force-dynamic');
-  });
-
-  it('lists account summaries', async () => {
-    const response = await GET(
-      new NextRequest('http://localhost/api/v1/auth/accounts')
-    );
+  it('lists account summaries after waiting for a request connection', async () => {
+    const request = new NextRequest('http://localhost/api/v1/auth/accounts');
+    const response = await GET(request);
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       accounts: [],
       activeAccountId: null,
     });
+    expect(mocks.connection).toHaveBeenCalledTimes(1);
+    expect(mocks.listWebAccounts).toHaveBeenCalledWith(request);
+    expect(mocks.connection.mock.invocationCallOrder[0]!).toBeLessThan(
+      mocks.listWebAccounts.mock.invocationCallOrder[0]!
+    );
   });
 
   it('rethrows DYNAMIC_SERVER_USAGE signals before diagnostic logging', async () => {

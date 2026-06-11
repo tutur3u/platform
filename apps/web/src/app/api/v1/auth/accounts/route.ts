@@ -1,14 +1,14 @@
 import { unstable_rethrow } from 'next/navigation';
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import {
   createAuthDiagnosticCode,
   logAuthDiagnostic,
 } from '@/lib/auth/diagnostics';
 import { listWebAccounts } from '@/lib/auth/multi-account/vault';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
+  await connection();
+
   try {
     return NextResponse.json(await listWebAccounts(request));
   } catch (error) {
