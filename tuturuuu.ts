@@ -27,7 +27,6 @@ export const ci = {
   'sdk-version-bump.yaml': true,
   'supabase-production.yaml': true,
   'supabase-staging.yaml': true,
-  'supabase-types.yaml': true,
   'turbo-unit-tests.yaml': true,
   'type-check.yaml': true,
   'vercel-preview-apps.yaml': true,
