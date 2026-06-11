@@ -36,9 +36,10 @@
     },
     {
       "title": "Product Surfaces",
-      "description": "CMS, satellite apps, and local E2E authentication workflows.",
+      "description": "CMS, external apps, satellite apps, and local E2E authentication workflows.",
       "skills": [
         "tuturuuu-cms-studio",
+        "tuturuuu-external-apps",
         "tuturuuu-satellite-app-ux",
         "tuturuuu-e2e-auth-debugging"
       ]

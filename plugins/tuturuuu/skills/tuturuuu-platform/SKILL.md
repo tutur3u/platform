@@ -50,6 +50,9 @@ Use the more focused plugin skills when they match the task:
 - `$tuturuuu-cms-studio` for `apps/cms`, branded external-project adapters,
   landing-page content editing, media workflows, preview delivery, and
   non-technical editor UX.
+- `$tuturuuu-external-apps` for branded sibling apps that connect to Tuturuuu
+  through app-token exchange, direct signed uploads, external-project APIs,
+  delivery payloads, and refreshable admin sessions.
 - `$tuturuuu-satellite-app-ux` for standalone satellite apps such as Mail or
   CMS, including app-session auth, i18n, workspace routes, navigation, and
   focused app shells.

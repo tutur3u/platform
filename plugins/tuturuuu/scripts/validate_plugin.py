@@ -72,6 +72,10 @@ PROMPT_COVERAGE_PATTERNS = {
         r"\b(E2E auth|dev-session|auth redirect|local E2E)\b",
         re.IGNORECASE,
     ),
+    "tuturuuu-external-apps": re.compile(
+        r"\b(external app|app-token|direct uploads?|content delivery)\b",
+        re.IGNORECASE,
+    ),
 }
 
 
