@@ -76,7 +76,7 @@
     "@tiptap/extension-link": "3.26.0",
     "@tiptap/extension-strike": "3.26.0",
     "@tiptap/extension-subscript": "3.26.0",
-    "@tiptap/extension-superscript": "3.26.0",
+    "@tiptap/extension-superscript": "3.26.1",
     "@tiptap/extension-text-align": "3.26.0",
     "@tiptap/extension-underline": "3.26.0",
     "@tiptap/html": "3.26.0",
