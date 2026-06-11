@@ -18,6 +18,7 @@ const {
   DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
   DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV,
   ensureProductionRedisToken,
+  ensureProductionSupabaseOrigin,
   ensureWebEnvFile,
   getComposeEnvironment,
   getDockerWebComposeProjectName,
@@ -567,6 +568,14 @@ async function startBlueGreenWatcherContainer(
     envFilePath: resolvedEnvFilePath,
     fsImpl,
     rootDir,
+  });
+  ensureProductionSupabaseOrigin({
+    baseEnv: env,
+    composeEnv,
+    envFilePath: resolvedEnvFilePath,
+    fsImpl,
+    rootDir:
+      getProjectNameFromEnv(composeEnv, HOST_WORKSPACE_DIR_ENV) || rootDir,
   });
   const startupComposeEnv = await getWatcherStartupComposeEnv({
     composeEnv,
@@ -2743,9 +2752,17 @@ async function cacheBlueGreenDeploymentImage({
     baseEnv: env ?? process.env,
     envFilePath,
     fsImpl,
+    preferEnvFilePath: true,
     rootDir,
     withRedis: true,
     withSupportServices: true,
+  });
+  ensureProductionSupabaseOrigin({
+    baseEnv: env ?? process.env,
+    composeEnv,
+    envFilePath,
+    fsImpl,
+    rootDir,
   });
   const serviceName = getBlueGreenServiceName(activeColor);
   const imageTag = getBlueGreenCacheImageTag(latestCommit.shortHash, {

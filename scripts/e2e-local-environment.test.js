@@ -154,6 +154,7 @@ test('createLocalE2EEnvFileContent is pinned to local Docker E2E values', () => 
     content,
     new RegExp(`SUPABASE_SERVER_URL=${LOCAL_E2E_DOCKER_SUPABASE_URL}`)
   );
+  assert.match(content, /DOCKER_WEB_ALLOW_LOCAL_SUPABASE=1/);
   assert.match(content, new RegExp(LOCAL_E2E_APP_COORDINATION_SECRET));
   assert.match(
     content,
@@ -231,6 +232,7 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
   assert.equal(env.DOCKER_WEB_ENV_FILE, 'tmp/e2e/web.env');
   assert.equal(env.DOCKER_WEB_COMPOSE_ENV_FILE, '../tmp/e2e/web.env');
   assert.equal(env.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE, '../tmp/e2e/web.env');
+  assert.equal(env.DOCKER_WEB_ALLOW_LOCAL_SUPABASE, '1');
   assert.equal(
     env.DOCKER_UPSTASH_REDIS_REST_TOKEN,
     LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN

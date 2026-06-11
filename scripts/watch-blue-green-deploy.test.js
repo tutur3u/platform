@@ -132,6 +132,12 @@ const {
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const PROD_COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.prod.yml');
+const LOCAL_SUPABASE_TEST_ENV = {
+  DOCKER_WEB_ALLOW_LOCAL_SUPABASE: '1',
+  PATH: 'test-path',
+};
+const LOCAL_SUPABASE_ENV_FILE_CONTENT =
+  'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\nDOCKER_WEB_ALLOW_LOCAL_SUPABASE=1\n';
 
 test('watcher restart globs include blue-green service wiring files', () => {
   assert.ok(SELF_WATCHED_FILES.includes('scripts/docker-web/blue-green.js'));
@@ -2511,11 +2517,7 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
 
     const status = await resolveCurrentBlueGreenStatus({
@@ -2589,11 +2591,7 @@ test('resolveCurrentBlueGreenStatus recovers active color from proxy config when
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(
       paths.blueGreen.proxyConfigFile,
       renderBlueGreenProxyConfig('green', { standbyColor: 'blue' }),
@@ -2654,11 +2652,7 @@ test('resolveCurrentBlueGreenStatus marks an unhealthy active lane as degraded',
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
 
     const status = await resolveCurrentBlueGreenStatus({
@@ -2721,11 +2715,7 @@ test('resolveCurrentBlueGreenStatus falls back to docker ps when compose inspect
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
 
     const status = await resolveCurrentBlueGreenStatus({
@@ -2811,11 +2801,7 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
 
     const now = Date.parse('2026-04-18T11:30:00.000Z');
@@ -2971,11 +2957,7 @@ test('loadRuntimeSnapshot parses docker stats that use comma decimals', async ()
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
 
     const now = Date.parse('2026-04-18T11:30:00.000Z');
@@ -3045,11 +3027,7 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     const result = await runDeployWatchIteration(
       {
         branch: 'main',
@@ -3107,11 +3085,7 @@ test('runDeployWatchIteration reports git fetch failures without killing the wat
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     const result = await runDeployWatchIteration(
       {
@@ -3212,11 +3186,7 @@ test('runDeployWatchIteration deploys a pinned rollback without fetching upstrea
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.controlDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(
       paths.deploymentPinFile,
       JSON.stringify(
@@ -3449,11 +3419,7 @@ test('runDeploymentRevertRequestIteration uses cached no-build recovery and pins
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
     fs.mkdirSync(paths.controlDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(paths.blueGreen.stateFile, 'blue\n', 'utf8');
     fs.writeFileSync(
       paths.blueGreen.deploymentStampFile,
@@ -3664,11 +3630,7 @@ test('runDeploymentRevertRequestIteration falls back to rollback pin when no cac
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.controlDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(
       paths.deploymentRevertRequestFile,
       JSON.stringify(request, null, 2),
@@ -3841,11 +3803,7 @@ test('runDeployWatchIteration returns from detached HEAD when the deployment pin
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     const result = await runDeployWatchIteration(
       {
@@ -3949,11 +3907,7 @@ test('runDeployWatchIteration restarts before deployment when the watcher script
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     const result = await runDeployWatchIteration(
       {
         branch: 'main',
@@ -4061,11 +4015,7 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     const result = await runDeployWatchIteration(
       {
@@ -4470,11 +4420,7 @@ test('runDeployWatchIteration blocks when bun.lock is the only dirty file', asyn
   };
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     const result = await runDeployWatchIteration(
       {
@@ -4617,11 +4563,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
     writeDeploymentHistory(
       [
@@ -4918,11 +4860,7 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     writeDeploymentHistory(
       [
         {
@@ -5214,11 +5152,7 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
     fs.mkdirSync(paths.controlDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
     fs.writeFileSync(
       paths.instantRolloutRequestFile,
@@ -5590,11 +5524,7 @@ test('runPendingDeployAfterRestart refreshes the live proxy before running blue/
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
 
     const result = await runPendingDeployAfterRestart({
@@ -5747,11 +5677,7 @@ test('runDeployWatchLoop honors once mode without sleeping', async () => {
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     const result = await runDeployWatchLoop(
       {
         branch: 'main',
@@ -5883,7 +5809,7 @@ test('spawnReplacementWatcher relaunches the watcher with inherited args', async
   await spawnReplacementWatcher({
     argv: ['scripts/watch-blue-green-deploy.js', '--interval-ms', '5000'],
     cwd: '/tmp/platform',
-    env: { PATH: 'test-path' },
+    env: LOCAL_SUPABASE_TEST_ENV,
     execPath: '/usr/local/bin/node',
     spawnImpl(command, args, options) {
       calls.push({ args, command, options });
@@ -5907,7 +5833,7 @@ test('spawnReplacementWatcher relaunches the watcher with inherited args', async
       options: {
         cwd: '/tmp/platform',
         detached: true,
-        env: { PATH: 'test-path' },
+        env: LOCAL_SUPABASE_TEST_ENV,
         stdio: 'inherit',
       },
     },
@@ -5978,11 +5904,7 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.mkdirSync(paths.runtimeDir, { recursive: true });
     fs.writeFileSync(
       paths.lockFile,
@@ -5996,7 +5918,7 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     );
 
     await startBlueGreenWatcherContainer(['--interval-ms', '5000'], {
-      env: { PATH: process.env.PATH },
+      env: { ...LOCAL_SUPABASE_TEST_ENV, PATH: process.env.PATH },
       envFilePath,
       fsImpl: fs,
       rootDir: tempDir,
@@ -6034,6 +5956,40 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     assert.equal(envs[1].SUPERMEMORY_ENABLED, 'true');
     assert.match(envs[1].SUPERMEMORY_API_KEY, /^[a-f0-9]{64}$/u);
     assert.match(envs[1].SUPERMEMORY_POSTGRES_PASSWORD, /^[a-f0-9]{64}$/u);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('startBlueGreenWatcherContainer rejects legacy local Supabase env without override', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-container-local-supabase-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+  const legacyEnvFile = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(legacyEnvFile), { recursive: true });
+    fs.writeFileSync(
+      legacyEnvFile,
+      [
+        'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+        'SUPABASE_SERVER_URL=http://localhost:8001',
+      ].join('\n'),
+      'utf8'
+    );
+
+    await assert.rejects(
+      () =>
+        startBlueGreenWatcherContainer(['--interval-ms', '5000'], {
+          env: { PATH: process.env.PATH },
+          envFilePath,
+          fsImpl: fs,
+          rootDir: tempDir,
+          runCommand: async () => createResult(''),
+        }),
+      /Refusing to run production Docker web with a local Supabase origin.*ttr box setup/
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -6157,11 +6113,7 @@ test('handoffLegacyWatcherToTargetProject starts a staged target watcher and sto
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     const started = await handoffLegacyWatcherToTargetProject({
       argv: ['--interval-ms', '5000'],
@@ -6215,11 +6167,7 @@ test('handoffLegacyWatcherToTargetProject detects legacy watcher containers with
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     const started = await handoffLegacyWatcherToTargetProject({
       argv: [],
@@ -6733,11 +6681,7 @@ test('runWatcherCommand boots the watcher container before tailing logs', async 
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await runWatcherCommand(['--once'], {
       env: { PATH: process.env.PATH },
@@ -6797,11 +6741,7 @@ test('runWatcherCommand reconnects log tail after a transient docker logs failur
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await runWatcherCommand(['--once'], {
       env: { PATH: process.env.PATH },
@@ -6869,11 +6809,7 @@ test('runWatcherCommand waits for Docker daemon recovery before recreating watch
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await runWatcherCommand(['--once'], {
       env: { PATH: process.env.PATH },
@@ -7020,11 +6956,7 @@ test('runWatcherCommand reconnects after watcher service recreation', async () =
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await runWatcherCommand(['--once'], {
       env: { PATH: process.env.PATH },
@@ -7092,11 +7024,7 @@ test('runWatcherCommand recreates the watcher when the log stream completes afte
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await runWatcherCommand(['--once'], {
       env: { PATH: process.env.PATH },
@@ -7173,11 +7101,7 @@ test('runWatcherCommand force-recreates when watcher logs request host-supervise
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await runWatcherCommand(['--once'], {
       env: { PATH: process.env.PATH },
@@ -7283,11 +7207,7 @@ test('runDeployWatchIteration stops retrying a commit after three failed deploym
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     writeDeploymentHistory(
       [
         {
@@ -7518,11 +7438,7 @@ test('main keeps watching after recovered pending deployment failure and caps re
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     writeDeploymentHistory(
       [
         {
@@ -7680,11 +7596,7 @@ test('main deploys the latest fetched revision after recovery when the last succ
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
     writeDeploymentHistory(
       [
@@ -7862,11 +7774,7 @@ test('main skips recovery deploys when the latest successful build already match
       },
       { fsImpl: fs, paths }
     );
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await main(['--once'], {
       env: { PATH: process.env.PATH },
@@ -7957,11 +7865,7 @@ test('main checks out production when startup is detached and no target lock rem
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await main(['--once'], {
       env: { PATH: process.env.PATH },
@@ -8058,11 +7962,7 @@ test('main recovers the locked branch from target metadata when the checkout is 
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
     fs.mkdirSync(paths.runtimeDir, { recursive: true });
     fs.writeFileSync(
       paths.lockFile,
@@ -8198,11 +8098,7 @@ test('main reconciles HEAD when git is current but the latest successful deploym
       paths,
       fs
     );
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await main(['--once'], {
       env: { PATH: process.env.PATH },
@@ -8300,11 +8196,7 @@ test('main restarts the watcher with a pending deploy handoff env when the watch
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await main([], {
       env: { PATH: process.env.PATH },
@@ -8432,11 +8324,7 @@ test('main exits with the container restart code when the watcher script changes
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await main([], {
       env: {
@@ -8556,11 +8444,7 @@ test('main exits with the container refresh code when critical watcher runtime f
 
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-    fs.writeFileSync(
-      envFilePath,
-      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
-      'utf8'
-    );
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await main([], {
       env: {

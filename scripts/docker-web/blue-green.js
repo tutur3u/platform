@@ -21,6 +21,7 @@ const {
 const {
   DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
   DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV,
+  ensureProductionSupabaseOrigin,
   getComposeEnvironment,
   getDockerWebComposeProjectName,
   LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
@@ -71,6 +72,21 @@ const PLATFORM_BUILD_METADATA_ENV_NAMES = Object.freeze([
   'PLATFORM_BUILD_ENVIRONMENT',
   'PLATFORM_BUILD_REF_NAME',
 ]);
+
+function getBlueGreenProductionComposeEnvironment(options = {}) {
+  const composeEnv = getComposeEnvironment({
+    ...options,
+    preferEnvFilePath: true,
+  });
+
+  ensureProductionSupabaseOrigin({
+    ...options,
+    composeEnv,
+  });
+
+  return composeEnv;
+}
+
 /** Started after the core web/support services so Hive can warm independently. */
 const BLUE_GREEN_DEFERRED_SUPPORT_SERVICES = Object.freeze([
   'hive-blue',
@@ -2449,7 +2465,7 @@ async function refreshBlueGreenProxyIfRunning({
   runCommand: run = runCommand,
 } = {}) {
   const composeFile = getComposeFile('prod');
-  const composeEnv = getComposeEnvironment({
+  const composeEnv = getBlueGreenProductionComposeEnvironment({
     baseEnv: env ?? process.env,
     envFilePath,
     fsImpl,
@@ -2987,7 +3003,7 @@ function markBlueGreenStageSkipped(stages, id, reason) {
 
 async function runBlueGreenProdWorkflow(parsed, options = {}) {
   const composeFile = getComposeFile(parsed.mode);
-  const baseEnv = getComposeEnvironment({
+  const baseEnv = getBlueGreenProductionComposeEnvironment({
     baseEnv: options.env ?? process.env,
     envFilePath: options.envFilePath,
     fsImpl: options.fsImpl ?? fs,
@@ -3617,7 +3633,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
 
 async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
   const composeFile = getComposeFile(parsed.mode);
-  const env = getComposeEnvironment({
+  const env = getBlueGreenProductionComposeEnvironment({
     baseEnv: options.env ?? process.env,
     envFilePath: options.envFilePath,
     fsImpl: options.fsImpl ?? fs,
@@ -3833,7 +3849,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
 
 async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
   const composeFile = getComposeFile(parsed.mode);
-  const env = getComposeEnvironment({
+  const env = getBlueGreenProductionComposeEnvironment({
     baseEnv: options.env ?? process.env,
     envFilePath: options.envFilePath,
     fsImpl: options.fsImpl ?? fs,

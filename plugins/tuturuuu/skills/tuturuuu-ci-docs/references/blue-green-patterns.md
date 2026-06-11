@@ -75,6 +75,12 @@ infrastructure dashboard changes.
   Postgres, and Better Auth secrets under `tmp/docker-web`, inject them through
   the shared Compose env, and preserve explicit `DOCKER_SUPERMEMORY_*` or
   standard `SUPERMEMORY_*` overrides.
+- Production Docker web serving should prefer root `.env.local` over inherited
+  `DOCKER_WEB_ENV_FILE` or `DOCKER_WEB_COMPOSE_*ENV_FILE` values when no
+  explicit `--env-file` was passed. `ttr box setup` writes local Supabase values
+  into `apps/web/.env.local`, so prod and blue/green watcher flows must reject
+  local Supabase origins unless `DOCKER_WEB_ALLOW_LOCAL_SUPABASE=1` is set for a
+  local production-image rehearsal.
 - When `SUPERMEMORY_ENABLED=false` or `DOCKER_SUPERMEMORY_ENABLED=false` is
   explicit, blue/green helpers should remove the Supermemory sidecar from
   support builds, starts, and health gates. This keeps local-only E2E shards from

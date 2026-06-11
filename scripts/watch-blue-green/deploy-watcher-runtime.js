@@ -47,6 +47,7 @@ function getWatcherComposeEnv({
       baseEnv,
       envFilePath,
       fsImpl,
+      preferEnvFilePath: true,
       rootDir: hostWorkspaceDir,
       withCloudflared: isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED),
       withRedis: true,

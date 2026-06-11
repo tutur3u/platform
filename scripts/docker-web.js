@@ -78,12 +78,17 @@ const {
   DOCKER_WEB_SUPERMEMORY_API_KEY_FILE,
   DOCKER_WEB_SUPERMEMORY_BETTER_AUTH_SECRET_FILE,
   DOCKER_WEB_SUPERMEMORY_POSTGRES_PASSWORD_FILE,
+  DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV,
   WEB_ENV_FILE,
+  classifySupabaseOrigin,
   ensureProductionRedisToken,
+  ensureProductionSupabaseOrigin,
   ensureRequiredComposeEnvironment,
+  formatSupabaseOriginReport,
   ensureWebEnvFile,
   getComposeEnvironment,
   getDockerSupermemoryRuntime,
+  getDockerWebSupabaseOriginReport,
   parseEnvFile,
   rewriteLocalhostUrl,
   stripUnquotedInlineComment,
@@ -793,6 +798,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       baseEnv: env,
       envFilePath,
       fsImpl,
+      preferEnvFilePath: parsed.mode === 'prod',
       rootDir: options.rootDir,
       withCloudflared,
       withRedis,
@@ -833,6 +839,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     baseEnv: env,
     envFilePath,
     fsImpl,
+    preferEnvFilePath: parsed.mode === 'prod',
     rootDir: options.rootDir,
     withCloudflared,
     withRedis,
@@ -842,6 +849,17 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     runCommand: run,
   });
   composeEnv = applyLowMemoryBuildkitRestartEnv(composeEnv, parsed);
+
+  if (parsed.mode === 'prod') {
+    ensureProductionSupabaseOrigin({
+      baseEnv: env,
+      composeEnv,
+      envFilePath,
+      fsImpl,
+      rootDir: options.rootDir ?? ROOT_DIR,
+    });
+  }
+
   const watchPaths = getWatchPaths(options.rootDir ?? ROOT_DIR);
   let blueGreenBuildLock = null;
   let deployLockSignalCleanup = null;
@@ -1178,6 +1196,7 @@ module.exports = {
   DOCKER_WEB_BACKEND_TOKEN_FILE,
   DOCKER_WEB_CRON_TOKEN_FILE,
   DOCKER_WEB_NEXT_PRIVATE_ORIGIN,
+  DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV,
   DOCKER_WEB_SUPERMEMORY_API_KEY_FILE,
   DOCKER_WEB_SUPERMEMORY_BETTER_AUTH_SECRET_FILE,
   DOCKER_WEB_SUPERMEMORY_POSTGRES_PASSWORD_FILE,
@@ -1186,10 +1205,12 @@ module.exports = {
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
   cancelActiveBlueGreenBuild,
+  classifySupabaseOrigin,
   describeActiveDeploymentConflict,
   ensureBuildkitBuilder,
   ensureBlueGreenRuntime,
   ensureProductionRedisToken,
+  ensureProductionSupabaseOrigin,
   ensureRequiredComposeEnvironment,
   ensureWebEnvFile,
   getBlueGreenBuildTimeoutMs,
@@ -1202,10 +1223,12 @@ module.exports = {
   getActiveDeploymentConflict,
   getComposeEnvironment,
   getComposeFile,
+  getDockerWebSupabaseOriginReport,
   getComposeServiceContainerId,
   getComposeServiceContainerName,
   getContainerHealthStatus,
   getDockerSupermemoryRuntime,
+  formatSupabaseOriginReport,
   getChangedFilesBetweenCommits,
   getErrorText,
   getInPlaceProdServices,

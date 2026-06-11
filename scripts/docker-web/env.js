@@ -46,6 +46,26 @@ const LOCALHOST_HOSTS = new Set([
   '[::1]',
 ]);
 const DOCKER_HOST_ALIAS = 'host.docker.internal';
+const DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV = 'DOCKER_WEB_ALLOW_LOCAL_SUPABASE';
+const LOCAL_SUPABASE_PORTS = new Set([
+  '8000',
+  '8001',
+  '54321',
+  '54322',
+  '54323',
+  '54324',
+  '54325',
+  '54326',
+  '54327',
+  '54328',
+  '54329',
+]);
+const SUPABASE_ORIGIN_KEYS = Object.freeze([
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'SUPABASE_SERVER_URL',
+  'SUPABASE_URL',
+  'DOCKER_INTERNAL_SUPABASE_URL',
+]);
 const DOCKER_REDIS_SERVICE_URL = 'http://serverless-redis-http:80';
 const DOCKER_MARKITDOWN_SERVICE_URL = 'http://markitdown:8000';
 const DOCKER_MARKITDOWN_ENDPOINT_URL = `${DOCKER_MARKITDOWN_SERVICE_URL}/markitdown`;
@@ -137,6 +157,30 @@ function parseWebEnvFiles({
   }
 
   return values;
+}
+
+function parseWebEnvFilesWithSources({
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const sources = {};
+  const values = {};
+
+  for (const candidatePath of getWebEnvFileCandidates({
+    envFilePath,
+    rootDir,
+  })) {
+    const parsed = parseEnvFile(candidatePath, fsImpl);
+    const source = path.relative(rootDir, candidatePath) || '.env.local';
+
+    for (const [key, value] of Object.entries(parsed)) {
+      values[key] = value;
+      sources[key] = source;
+    }
+  }
+
+  return { sources, values };
 }
 
 function resolveWebEnvFile({
@@ -231,6 +275,221 @@ function rewriteLocalhostUrl(rawUrl) {
   return parsedUrl.toString();
 }
 
+function classifySupabaseOrigin(rawUrl) {
+  const value = typeof rawUrl === 'string' ? rawUrl.trim() : '';
+
+  if (!value) {
+    return 'missing';
+  }
+
+  let parsedUrl;
+
+  try {
+    parsedUrl = new URL(value);
+  } catch {
+    return 'invalid';
+  }
+
+  const hostname = parsedUrl.hostname.toLowerCase();
+
+  if (
+    hostname === DOCKER_HOST_ALIAS ||
+    hostname.endsWith('.localhost') ||
+    LOCALHOST_HOSTS.has(hostname) ||
+    LOCAL_SUPABASE_PORTS.has(parsedUrl.port)
+  ) {
+    return 'local';
+  }
+
+  return 'cloud';
+}
+
+function isTruthyEnvValue(value) {
+  return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
+}
+
+function getEnvCandidate({ baseEnv, envData, key }) {
+  if (Object.hasOwn(envData.values, key)) {
+    return {
+      key,
+      source: envData.sources[key],
+      value: envData.values[key],
+    };
+  }
+
+  if (Object.hasOwn(baseEnv, key)) {
+    return {
+      key,
+      source: 'process.env',
+      value: baseEnv[key],
+    };
+  }
+
+  return null;
+}
+
+function getFirstEnvCandidate(candidates) {
+  return candidates.find((candidate) => candidate && candidate.value != null);
+}
+
+function createSupabaseOriginEntry({ effective = true, key, source, value }) {
+  return {
+    classification: classifySupabaseOrigin(value),
+    effective,
+    key,
+    source: source ?? 'missing',
+  };
+}
+
+function getDockerWebSupabaseOriginReport({
+  baseEnv = process.env,
+  composeEnv,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const envData = parseWebEnvFilesWithSources({
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  const nextPublicCandidate = getFirstEnvCandidate([
+    getEnvCandidate({
+      baseEnv,
+      envData,
+      key: 'NEXT_PUBLIC_SUPABASE_URL',
+    }),
+  ]);
+  const serverCandidate = getFirstEnvCandidate([
+    getEnvCandidate({
+      baseEnv: {},
+      envData,
+      key: 'SUPABASE_SERVER_URL',
+    }),
+    getEnvCandidate({
+      baseEnv,
+      envData: { sources: {}, values: {} },
+      key: 'SUPABASE_SERVER_URL',
+    }),
+    getEnvCandidate({
+      baseEnv,
+      envData: { sources: {}, values: {} },
+      key: 'DOCKER_INTERNAL_SUPABASE_URL',
+    }),
+    nextPublicCandidate,
+  ]);
+  const effectiveServerUrl =
+    composeEnv?.SUPABASE_SERVER_URL ??
+    rewriteLocalhostUrl(serverCandidate?.value);
+  const effectiveServerSource = serverCandidate
+    ? serverCandidate.source
+    : 'missing';
+  const effectiveServerSourceKey = serverCandidate?.key;
+  const supabaseUrlCandidate = getFirstEnvCandidate([
+    getEnvCandidate({
+      baseEnv,
+      envData,
+      key: 'SUPABASE_URL',
+    }),
+  ]);
+  const dockerInternalCandidate = getFirstEnvCandidate([
+    getEnvCandidate({
+      baseEnv,
+      envData,
+      key: 'DOCKER_INTERNAL_SUPABASE_URL',
+    }),
+  ]);
+
+  return {
+    allowLocal: isTruthyEnvValue(
+      composeEnv?.[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV] ??
+        envData.values[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV] ??
+        baseEnv[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV]
+    ),
+    entries: [
+      createSupabaseOriginEntry({
+        key: 'NEXT_PUBLIC_SUPABASE_URL',
+        source: nextPublicCandidate?.source,
+        value: nextPublicCandidate?.value,
+      }),
+      createSupabaseOriginEntry({
+        key: 'SUPABASE_SERVER_URL',
+        source: effectiveServerSource,
+        value: effectiveServerUrl,
+      }),
+      createSupabaseOriginEntry({
+        key: 'SUPABASE_URL',
+        source: effectiveServerUrl
+          ? effectiveServerSource
+          : supabaseUrlCandidate?.source,
+        value:
+          composeEnv?.SUPABASE_URL ??
+          effectiveServerUrl ??
+          supabaseUrlCandidate?.value,
+      }),
+      createSupabaseOriginEntry({
+        effective: effectiveServerSourceKey === 'DOCKER_INTERNAL_SUPABASE_URL',
+        key: 'DOCKER_INTERNAL_SUPABASE_URL',
+        source: dockerInternalCandidate?.source,
+        value: dockerInternalCandidate?.value,
+      }),
+    ],
+  };
+}
+
+function formatSupabaseOriginReport(report) {
+  return report.entries
+    .filter((entry) => SUPABASE_ORIGIN_KEYS.includes(entry.key))
+    .map((entry) => {
+      const ignored = entry.effective
+        ? ''
+        : ', ignored by resolved runtime env';
+      return `${entry.key}: ${entry.classification} (${entry.source}${ignored})`;
+    })
+    .join('; ');
+}
+
+function ensureProductionSupabaseOrigin({
+  baseEnv = process.env,
+  composeEnv,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const report = getDockerWebSupabaseOriginReport({
+    baseEnv,
+    composeEnv,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+
+  if (report.allowLocal) {
+    return report;
+  }
+
+  const violations = report.entries.filter(
+    (entry) =>
+      entry.effective &&
+      (entry.classification === 'local' || entry.classification === 'invalid')
+  );
+
+  if (violations.length === 0) {
+    return report;
+  }
+
+  const classifications = formatSupabaseOriginReport(report);
+
+  throw new Error(
+    [
+      'Refusing to run production Docker web with a local Supabase origin.',
+      `Resolved Supabase origins: ${classifications}.`,
+      '`ttr box setup` writes local Supabase values into apps/web/.env.local; production watchers must use root .env.local or another deployment env file with cloud Supabase values.',
+      `Set ${DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV}=1 only for a local production-image rehearsal.`,
+    ].join(' ')
+  );
+}
+
 function getFirstNonBlank(values) {
   return values.find(
     (value) => typeof value === 'string' && value.trim().length > 0
@@ -274,6 +533,7 @@ function getComposeEnvironment({
   baseEnv = process.env,
   envFilePath,
   fsImpl = fs,
+  preferEnvFilePath = false,
   rootDir = ROOT_DIR,
   withCloudflared = false,
   withSupportServices = false,
@@ -301,24 +561,28 @@ function getComposeEnvironment({
     COMPOSE_DOCKER_CLI_BUILD: baseEnv.COMPOSE_DOCKER_CLI_BUILD ?? '1',
     COMPOSE_PROJECT_NAME: getDockerWebComposeProjectName({ baseEnv, rootDir }),
     DOCKER_BUILDKIT: baseEnv.DOCKER_BUILDKIT ?? '1',
-    DOCKER_WEB_ENV_FILE:
-      baseEnv.DOCKER_WEB_ENV_FILE ??
-      getComposeEnvFileValue({
-        envFilePath: resolvedEnvFilePath,
-        fsImpl,
-        rootDir,
-      }),
   };
   const composeEnvFileValues = getComposeFragmentEnvFileValues({
     envFilePath: resolvedEnvFilePath,
     fsImpl,
     rootDir,
   });
-  composeEnv.DOCKER_WEB_COMPOSE_ENV_FILE =
-    baseEnv.DOCKER_WEB_COMPOSE_ENV_FILE ?? composeEnvFileValues.envFile;
-  composeEnv.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE =
-    baseEnv.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE ??
-    composeEnvFileValues.legacyEnvFile;
+  const dockerWebEnvFile = getComposeEnvFileValue({
+    envFilePath: resolvedEnvFilePath,
+    fsImpl,
+    rootDir,
+  });
+  composeEnv.DOCKER_WEB_ENV_FILE = preferEnvFilePath
+    ? (dockerWebEnvFile ?? baseEnv.DOCKER_WEB_ENV_FILE)
+    : (baseEnv.DOCKER_WEB_ENV_FILE ?? dockerWebEnvFile);
+  composeEnv.DOCKER_WEB_COMPOSE_ENV_FILE = preferEnvFilePath
+    ? (composeEnvFileValues.envFile ?? baseEnv.DOCKER_WEB_COMPOSE_ENV_FILE)
+    : (baseEnv.DOCKER_WEB_COMPOSE_ENV_FILE ?? composeEnvFileValues.envFile);
+  composeEnv.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE = preferEnvFilePath
+    ? (composeEnvFileValues.legacyEnvFile ??
+      baseEnv.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE)
+    : (baseEnv.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE ??
+      composeEnvFileValues.legacyEnvFile);
   composeEnv.DOCKER_WEB_NEXT_PRIVATE_ORIGIN =
     getFirstNonBlank([
       baseEnv.DOCKER_WEB_NEXT_PRIVATE_ORIGIN,
@@ -869,6 +1133,7 @@ module.exports = {
   DOCKER_WEB_BACKEND_TOKEN_FILE,
   DOCKER_WEB_CRON_TOKEN_FILE,
   DOCKER_WEB_MARKITDOWN_TOKEN_FILE,
+  DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV,
   DOCKER_WEB_REDIS_TOKEN_FILE,
   DOCKER_WEB_RUNTIME_DIR,
   DOCKER_WEB_STORAGE_UNZIP_TOKEN_FILE,
@@ -881,9 +1146,11 @@ module.exports = {
   LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
   WEB_ENV_FILE,
   ensureProductionRedisToken,
+  ensureProductionSupabaseOrigin,
   ensureRequiredComposeEnvironment,
   ensureDockerWebRuntime,
   ensureWebEnvFile,
+  classifySupabaseOrigin,
   generateDockerRedisToken,
   generateDockerServiceToken,
   getComposeEnvironment,
@@ -899,12 +1166,15 @@ module.exports = {
   getDockerSupermemoryRuntime,
   getDockerStorageUnzipRuntime,
   getDockerWebRuntimePaths,
+  getDockerWebSupabaseOriginReport,
   getWebEnvFileCandidates,
   getPersistedDockerRedisToken,
   parseEnvFile,
+  parseWebEnvFilesWithSources,
   parseWebEnvFiles,
   resolveWebEnvFile,
   rewriteLocalhostUrl,
+  formatSupabaseOriginReport,
   stripUnquotedInlineComment,
   writeDockerRedisToken,
 };

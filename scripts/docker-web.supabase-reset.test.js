@@ -10,6 +10,10 @@ const {
 } = require('./docker-web.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
+const LOCAL_SUPABASE_TEST_ENV = {
+  DOCKER_WEB_ALLOW_LOCAL_SUPABASE: '1',
+  PATH: 'test-path',
+};
 
 function createFsStub({ envFileContent = '', hasEnvFile = true } = {}) {
   return {
@@ -44,7 +48,7 @@ test('runDockerWebWorkflow starts and resets Supabase before Docker when request
   };
 
   await runDockerWebWorkflow(parseArgs(['up', '--reset-supabase']), {
-    env: { PATH: 'test-path' },
+    env: LOCAL_SUPABASE_TEST_ENV,
     fsImpl: fsStub,
     runCommand,
   });

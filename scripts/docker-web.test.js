@@ -13,6 +13,7 @@ const {
   COMPOSE_FILE,
   DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
   DEFAULT_BUILDER_NAME,
+  DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV,
   DOCKER_BACKEND_INTERNAL_URL,
   DOCKER_HOST_ALIAS,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
@@ -26,14 +27,18 @@ const {
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
+  classifySupabaseOrigin,
   describeActiveDeploymentConflict,
   ensureRequiredComposeEnvironment,
+  ensureProductionSupabaseOrigin,
+  formatSupabaseOriginReport,
   getActiveDeploymentConflict,
   getBlueGreenBuildTimeoutMs,
   getBlueGreenDeploymentChangedFiles,
   getBlueGreenHiveServiceName,
   getBlueGreenPaths,
   getComposeEnvironment,
+  getDockerWebSupabaseOriginReport,
   getComposeFile,
   getInPlaceProdServices,
   parseArgs,
@@ -84,6 +89,10 @@ const BLUE_GREEN_PROXY_PORTS_JSON = JSON.stringify({
   '7814/tcp': [{ HostIp: '0.0.0.0', HostPort: '7814' }],
   '7816/tcp': [{ HostIp: '0.0.0.0', HostPort: '7816' }],
 });
+const LOCAL_SUPABASE_TEST_ENV = {
+  [DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV]: '1',
+  PATH: 'test-path',
+};
 
 function isHiveDbMigrateRun(command, args) {
   return (
@@ -364,7 +373,7 @@ test('getBlueGreenDeploymentChangedFiles diffs from the latest successful deploy
     );
 
     const changedFiles = await getBlueGreenDeploymentChangedFiles({
-      env: { PATH: 'test-path' },
+      env: LOCAL_SUPABASE_TEST_ENV,
       fsImpl: fs,
       latestCommit: { hash: 'bbb222' },
       rootDir: tempDir,
@@ -742,7 +751,7 @@ test('watcher entrypoint restarts crashed or stale child processes', () => {
 test('resolveBlueGreenActiveColor promotes a healthy standby over an unhealthy persisted active color', async () => {
   const activeColor = await resolveBlueGreenActiveColor('blue', {
     composeFile: PROD_COMPOSE_FILE,
-    env: { PATH: 'test-path' },
+    env: LOCAL_SUPABASE_TEST_ENV,
     runCommand: async (command, args) => {
       const key = `${command} ${args.join(' ')}`;
 
@@ -852,6 +861,199 @@ test('getComposeEnvironment prefers root .env.local and falls back to apps/web/.
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('getComposeEnvironment can prefer the resolved env file over inherited Docker env-file overrides', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-root-env-override-')
+  );
+  const rootEnvFile = path.join(tempDir, '.env.local');
+  const legacyEnvFile = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(legacyEnvFile), { recursive: true });
+    fs.writeFileSync(
+      legacyEnvFile,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+    );
+    fs.writeFileSync(
+      rootEnvFile,
+      'NEXT_PUBLIC_SUPABASE_URL=https://root.supabase.co\n'
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: {
+        DOCKER_WEB_COMPOSE_ENV_FILE: '../apps/web/.env.local',
+        DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE: '../apps/web/.env.local',
+        DOCKER_WEB_ENV_FILE: 'apps/web/.env.local',
+        PATH: 'test-path',
+      },
+      envFilePath: rootEnvFile,
+      preferEnvFilePath: true,
+      rootDir: tempDir,
+    });
+
+    assert.equal(env.SUPABASE_SERVER_URL, 'https://root.supabase.co');
+    assert.equal(env.DOCKER_WEB_ENV_FILE, '.env.local');
+    assert.equal(env.DOCKER_WEB_COMPOSE_ENV_FILE, '../.env.local');
+    assert.equal(
+      env.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE,
+      '../apps/web/.env.local'
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('classifySupabaseOrigin reports local, cloud, missing, and invalid origins', () => {
+  assert.equal(classifySupabaseOrigin('http://localhost:8001'), 'local');
+  assert.equal(
+    classifySupabaseOrigin(`http://${DOCKER_HOST_ALIAS}:8001`),
+    'local'
+  );
+  assert.equal(classifySupabaseOrigin('http://supabase-kong:54321'), 'local');
+  assert.equal(
+    classifySupabaseOrigin('https://project-ref.supabase.co'),
+    'cloud'
+  );
+  assert.equal(classifySupabaseOrigin(''), 'missing');
+  assert.equal(classifySupabaseOrigin('not a url'), 'invalid');
+});
+
+test('ensureProductionSupabaseOrigin allows root cloud env over legacy local env', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-supabase-root-cloud-')
+  );
+  const rootEnvFile = path.join(tempDir, '.env.local');
+  const legacyEnvFile = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(legacyEnvFile), { recursive: true });
+    fs.writeFileSync(
+      legacyEnvFile,
+      [
+        'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+        'SUPABASE_SERVER_URL=http://localhost:8001',
+        'SUPABASE_URL=http://localhost:8001',
+        'DOCKER_INTERNAL_SUPABASE_URL=http://host.docker.internal:8001',
+      ].join('\n')
+    );
+    fs.writeFileSync(
+      rootEnvFile,
+      [
+        'NEXT_PUBLIC_SUPABASE_URL=https://cloud.supabase.co',
+        'SUPABASE_SERVER_URL=https://cloud.supabase.co',
+      ].join('\n')
+    );
+
+    const composeEnv = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath: rootEnvFile,
+      rootDir: tempDir,
+    });
+    const report = ensureProductionSupabaseOrigin({
+      baseEnv: { PATH: 'test-path' },
+      composeEnv,
+      envFilePath: rootEnvFile,
+      rootDir: tempDir,
+    });
+    const formattedReport = formatSupabaseOriginReport(report);
+
+    assert.equal(composeEnv.SUPABASE_SERVER_URL, 'https://cloud.supabase.co');
+    assert.match(formattedReport, /NEXT_PUBLIC_SUPABASE_URL: cloud/);
+    assert.match(
+      formattedReport,
+      /DOCKER_INTERNAL_SUPABASE_URL: local .*ignored by resolved runtime env/
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('ensureProductionSupabaseOrigin rejects legacy local env without an override', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-supabase-legacy-local-')
+  );
+  const rootEnvFile = path.join(tempDir, '.env.local');
+  const legacyEnvFile = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(legacyEnvFile), { recursive: true });
+    fs.writeFileSync(
+      legacyEnvFile,
+      [
+        'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+        'SUPABASE_SERVER_URL=http://localhost:8001',
+      ].join('\n')
+    );
+
+    const composeEnv = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath: rootEnvFile,
+      rootDir: tempDir,
+    });
+
+    assert.throws(
+      () =>
+        ensureProductionSupabaseOrigin({
+          baseEnv: { PATH: 'test-path' },
+          composeEnv,
+          envFilePath: rootEnvFile,
+          rootDir: tempDir,
+        }),
+      /ttr box setup.*apps\/web\/\.env\.local/
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('ensureProductionSupabaseOrigin allows explicit local Supabase rehearsals', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-supabase-local-allow-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+    );
+
+    const composeEnv = getComposeEnvironment({
+      baseEnv: LOCAL_SUPABASE_TEST_ENV,
+      envFilePath,
+      rootDir: tempDir,
+    });
+    const report = ensureProductionSupabaseOrigin({
+      baseEnv: LOCAL_SUPABASE_TEST_ENV,
+      composeEnv,
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.equal(report.allowLocal, true);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getDockerWebSupabaseOriginReport redacts values and reports source classifications', () => {
+  const report = getDockerWebSupabaseOriginReport({
+    baseEnv: {
+      NEXT_PUBLIC_SUPABASE_URL: 'https://cloud.supabase.co',
+      PATH: 'test-path',
+    },
+    composeEnv: {
+      SUPABASE_SERVER_URL: 'https://cloud.supabase.co',
+      SUPABASE_URL: 'https://cloud.supabase.co',
+    },
+  });
+  const formattedReport = formatSupabaseOriginReport(report);
+
+  assert.match(formattedReport, /NEXT_PUBLIC_SUPABASE_URL: cloud/);
+  assert.doesNotMatch(formattedReport, /https:\/\/cloud\.supabase\.co/);
 });
 
 test('rewriteLocalhostUrl maps local URLs to the Docker host alias', () => {
@@ -2244,7 +2446,7 @@ test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async (
   };
 
   await runDockerWebWorkflow(parseArgs(['up']), {
-    env: { PATH: 'test-path' },
+    env: LOCAL_SUPABASE_TEST_ENV,
     fsImpl: fsStub,
     runCommand,
   });
@@ -2283,7 +2485,7 @@ test('runDockerWebWorkflow omits redis env when dockerized redis is disabled', a
   });
 
   await runDockerWebWorkflow(parseArgs(['up', '--without-redis']), {
-    env: { PATH: 'test-path' },
+    env: LOCAL_SUPABASE_TEST_ENV,
     fsImpl: fsStub,
     runCommand: async (command, args, options = {}) => {
       calls.push({
@@ -2329,7 +2531,7 @@ test('runDockerWebWorkflow routes builds through a capped buildx builder when re
       '2',
     ]),
     {
-      env: { PATH: 'test-path' },
+      env: LOCAL_SUPABASE_TEST_ENV,
       fsImpl: fsStub,
       runCommand: async (command, args, options = {}) => {
         calls.push({
@@ -2396,7 +2598,7 @@ test('runDockerWebWorkflow forwards Docker memory limit into build env', async (
   });
 
   await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
-    env: { PATH: 'test-path' },
+    env: LOCAL_SUPABASE_TEST_ENV,
     fsImpl: fsStub,
     runCommand: async (command, args, options = {}) => {
       calls.push({
@@ -2453,7 +2655,7 @@ test('runDockerWebWorkflow uses the production compose file for in-place deploys
   };
 
   await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
-    env: { PATH: 'test-path' },
+    env: LOCAL_SUPABASE_TEST_ENV,
     fsImpl: fsStub,
     runCommand,
   });
@@ -2511,7 +2713,7 @@ test('runDockerWebWorkflow throws a clear error when Docker env files are missin
   await assert.rejects(
     () =>
       runDockerWebWorkflow(parseArgs(['up']), {
-        env: { PATH: 'test-path' },
+        env: LOCAL_SUPABASE_TEST_ENV,
         fsImpl: createFsStub({ hasEnvFile: false }),
         runCommand: async () => ({
           code: 0,
@@ -2537,7 +2739,7 @@ test('runDockerWebWorkflow fails fast when required Docker runtime env is missin
     await assert.rejects(
       () =>
         runDockerWebWorkflow(parseArgs(['up']), {
-          env: { PATH: 'test-path' },
+          env: LOCAL_SUPABASE_TEST_ENV,
           envFilePath,
           rootDir: tempDir,
           runCommand: async () => ({
@@ -2548,6 +2750,105 @@ test('runDockerWebWorkflow fails fast when required Docker runtime env is missin
           }),
         }),
       /Missing required Docker runtime env: SUPABASE_SERVER_URL/
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDockerWebWorkflow rejects prod blue-green with only legacy local Supabase env', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-prod-local-supabase-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+  const legacyEnvFile = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  fs.mkdirSync(path.dirname(legacyEnvFile), { recursive: true });
+  fs.writeFileSync(
+    legacyEnvFile,
+    [
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+      'SUPABASE_SERVER_URL=http://localhost:8001',
+    ].join('\n')
+  );
+
+  try {
+    await assert.rejects(
+      () =>
+        runDockerWebWorkflow(
+          parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
+          {
+            env: { PATH: 'test-path' },
+            envFilePath,
+            rootDir: tempDir,
+            runCommand: async () => ({
+              code: 0,
+              signal: null,
+              stderr: '',
+              stdout: '',
+            }),
+          }
+        ),
+      /Refusing to run production Docker web with a local Supabase origin.*ttr box setup/
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDockerWebWorkflow prefers root env for production serving despite inherited legacy env-file overrides', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-prod-root-env-')
+  );
+  const rootEnvFile = path.join(tempDir, '.env.local');
+  const legacyEnvFile = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+
+  fs.mkdirSync(path.dirname(legacyEnvFile), { recursive: true });
+  fs.writeFileSync(
+    legacyEnvFile,
+    [
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+      'SUPABASE_SERVER_URL=http://localhost:8001',
+    ].join('\n')
+  );
+  fs.writeFileSync(
+    rootEnvFile,
+    [
+      'NEXT_PUBLIC_SUPABASE_URL=https://root.supabase.co',
+      'SUPABASE_SERVER_URL=https://root.supabase.co',
+    ].join('\n')
+  );
+
+  try {
+    await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
+      env: {
+        DOCKER_WEB_COMPOSE_ENV_FILE: '../apps/web/.env.local',
+        DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE: '../apps/web/.env.local',
+        DOCKER_WEB_ENV_FILE: 'apps/web/.env.local',
+        PATH: 'test-path',
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({ args, command, env: options.env });
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+    });
+
+    const composeUpCall = calls.find(
+      ({ args, command }) =>
+        command === 'docker' && args.includes('up') && args.includes('-f')
+    );
+
+    assert.ok(composeUpCall);
+    assert.equal(
+      composeUpCall.env.SUPABASE_SERVER_URL,
+      'https://root.supabase.co'
+    );
+    assert.equal(composeUpCall.env.DOCKER_WEB_ENV_FILE, '.env.local');
+    assert.equal(
+      composeUpCall.env.DOCKER_WEB_COMPOSE_ENV_FILE,
+      '../.env.local'
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -2567,7 +2868,7 @@ test('runDockerWebWorkflow auto-generates redis credentials for production docke
 
   try {
     await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
-      env: { PATH: 'test-path' },
+      env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       rootDir: tempDir,
       runCommand: async (command, args, options = {}) => {
@@ -2709,7 +3010,7 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
         '1',
       ]),
       {
-        env: { PATH: 'test-path' },
+        env: LOCAL_SUPABASE_TEST_ENV,
         envFilePath,
         proxyDrainMs: 0,
         rootDir: tempDir,
@@ -2828,7 +3129,7 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     assert.deepEqual(watcherStarts, [
       {
         argv: ['--resume-if-running'],
-        env: { PATH: 'test-path' },
+        env: LOCAL_SUPABASE_TEST_ENV,
         rootDir: tempDir,
       },
     ]);
@@ -2994,9 +3295,9 @@ test('runBlueGreenProdWorkflow promotes pretagged images without rebuilding them
           'apps/backend/cmd/backend/main.go',
         ],
         env: {
+          ...LOCAL_SUPABASE_TEST_ENV,
           DOCKER_WEB_SKIP_BLUE_GREEN_SUPPORT_BUILD: '1',
           DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD: '1',
-          PATH: 'test-path',
         },
         envFilePath,
         proxyDrainMs: 0,
@@ -3146,7 +3447,7 @@ test('runDockerWebWorkflow does not recursively start watcher from watcher deplo
         '1',
       ]),
       {
-        env: { PATH: 'test-path', [WATCHER_CONTAINER_ENV]: '1' },
+        env: { ...LOCAL_SUPABASE_TEST_ENV, [WATCHER_CONTAINER_ENV]: '1' },
         envFilePath,
         proxyDrainMs: 0,
         rootDir: tempDir,
@@ -3266,8 +3567,8 @@ test('runDockerWebWorkflow recovers from stale blue-green container name conflic
       parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
       {
         env: {
+          ...LOCAL_SUPABASE_TEST_ENV,
           DOCKER_WEB_COMPOSE_PROJECT_NAME: 'platform',
-          PATH: 'test-path',
         },
         envFilePath,
         proxyDrainMs: 0,
@@ -3424,7 +3725,7 @@ test('runBlueGreenProdWorkflow does not clear a blue-green lane before a failed 
             strategy: 'blue-green',
           },
           {
-            env: { PATH: 'test-path' },
+            env: LOCAL_SUPABASE_TEST_ENV,
             envFilePath,
             rootDir: tempDir,
             runCommand,
@@ -3617,8 +3918,8 @@ test('runBlueGreenProdWorkflow does not promote web before Hive migration succee
             drainPollMs: 0,
             drainTimeoutMs: 5_000,
             env: {
+              ...LOCAL_SUPABASE_TEST_ENV,
               BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
-              PATH: 'test-path',
               WEB_APP_URL: 'https://tuturuuu.com',
             },
             envFilePath,
@@ -3778,8 +4079,8 @@ test('runBlueGreenProdWorkflow does not promote web before support refresh succe
           {
             changedFiles: ['apps/storage-unzip-proxy/src/server.js'],
             env: {
+              ...LOCAL_SUPABASE_TEST_ENV,
               BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
-              PATH: 'test-path',
             },
             envFilePath,
             latestCommit: {
@@ -3905,7 +4206,7 @@ test('hasBlueGreenProxyHostPortBindings requires support host ports on web-proxy
   assert.equal(
     await hasBlueGreenProxyHostPortBindings({
       composeFile: PROD_COMPOSE_FILE,
-      env: { PATH: 'test-path' },
+      env: LOCAL_SUPABASE_TEST_ENV,
       runCommand,
     }),
     false
@@ -3919,7 +4220,7 @@ test('hasBlueGreenProxyHostPortBindings requires support host ports on web-proxy
   assert.equal(
     await hasBlueGreenProxyHostPortBindings({
       composeFile: PROD_COMPOSE_FILE,
-      env: { PATH: 'test-path' },
+      env: LOCAL_SUPABASE_TEST_ENV,
       runCommand,
     }),
     false
@@ -3933,7 +4234,7 @@ test('hasBlueGreenProxyHostPortBindings requires support host ports on web-proxy
   assert.equal(
     await hasBlueGreenProxyHostPortBindings({
       composeFile: PROD_COMPOSE_FILE,
-      env: { PATH: 'test-path' },
+      env: LOCAL_SUPABASE_TEST_ENV,
       runCommand,
     }),
     true
@@ -3981,7 +4282,7 @@ test('hasComposeServiceExpectedImage detects stale compose service images', asyn
   assert.equal(
     await hasComposeServiceExpectedImage(BLUE_GREEN_PROXY_SERVICE, {
       composeFile: PROD_COMPOSE_FILE,
-      env: { PATH: 'test-path' },
+      env: LOCAL_SUPABASE_TEST_ENV,
       runCommand,
     }),
     false
@@ -3992,7 +4293,7 @@ test('hasComposeServiceExpectedImage detects stale compose service images', asyn
   assert.equal(
     await hasComposeServiceExpectedImage(BLUE_GREEN_PROXY_SERVICE, {
       composeFile: PROD_COMPOSE_FILE,
-      env: { PATH: 'test-path' },
+      env: LOCAL_SUPABASE_TEST_ENV,
       runCommand,
     }),
     true
@@ -4149,7 +4450,10 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
       {
         drainPollMs: 0,
         drainTimeoutMs: 5_000,
-        env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME, PATH: 'test-path' },
+        env: {
+          ...LOCAL_SUPABASE_TEST_ENV,
+          BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+        },
         envFilePath,
         proxyDrainMs: 0,
         rootDir: tempDir,
@@ -4358,7 +4662,10 @@ test('runBlueGreenProdWorkflow recreates web-proxy when its image is stale', asy
       {
         drainPollMs: 0,
         drainTimeoutMs: 5_000,
-        env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME, PATH: 'test-path' },
+        env: {
+          ...LOCAL_SUPABASE_TEST_ENV,
+          BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+        },
         envFilePath,
         proxyDrainMs: 0,
         rootDir: tempDir,
@@ -4539,8 +4846,8 @@ test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy h
       },
       {
         env: {
+          ...LOCAL_SUPABASE_TEST_ENV,
           DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
-          PATH: 'test-path',
         },
         envFilePath,
         now: () => 0,
@@ -4879,7 +5186,7 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
       {
         drainPollMs: 0,
         drainTimeoutMs: 5_000,
-        env: { PATH: 'test-path' },
+        env: LOCAL_SUPABASE_TEST_ENV,
         envFilePath,
         proxyDrainMs: 0,
         rootDir: tempDir,
@@ -5099,7 +5406,7 @@ test('runDockerWebWorkflow ignores stale active colors without live containers',
     await runDockerWebWorkflow(
       parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
       {
-        env: { PATH: 'test-path' },
+        env: LOCAL_SUPABASE_TEST_ENV,
         envFilePath,
         proxyDrainMs: 0,
         rootDir: tempDir,
@@ -5302,7 +5609,7 @@ test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before star
       },
       {
         cachedImageTag: 'platform-web-cache:cached123',
-        env: { PATH: 'test-path' },
+        env: LOCAL_SUPABASE_TEST_ENV,
         envFilePath,
         rootDir: tempDir,
         runCommand,
