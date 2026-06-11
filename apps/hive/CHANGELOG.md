@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/tutur3u/platform/compare/hive-v0.2.1...hive-v0.2.2) (2026-06-10)
+
+
+### Bug Fixes
+
+* **docker:** copy storefront workspace manifest ([36b64da](https://github.com/tutur3u/platform/commit/36b64da16be15ab917d2af06947c5fc29bbcb0ab))
+
 ## [0.2.1](https://github.com/tutur3u/platform/compare/hive-v0.2.0...hive-v0.2.1) (2026-06-08)
 
 

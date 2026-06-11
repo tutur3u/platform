@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/types-v0.5.0...types-v0.6.0) (2026-06-10)
+
+
+### Features
+
+* **mobile:** add deployment vault CI flow ([b1d21eb](https://github.com/tutur3u/platform/commit/b1d21eb1e30d74b412e4687b095004c21cf03dd1))
+* **web:** store multi-account sessions server-side ([2359f35](https://github.com/tutur3u/platform/commit/2359f35a849488f5b6c4070b87dbff8de2d8c9c4))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/types-v0.4.1...types-v0.5.0) (2026-06-10)
 
 

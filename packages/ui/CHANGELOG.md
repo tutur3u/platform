@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/ui-v0.3.2...ui-v0.4.0) (2026-06-10)
+
+
+### Features
+
+* **chat:** add personal channels and root integrations ([fb5e753](https://github.com/tutur3u/platform/commit/fb5e7534588c7015449313fc4a752b70732f227e))
+* **chat:** merge personal channels and root integrations ([22d50ce](https://github.com/tutur3u/platform/commit/22d50ce0d75e36e0beaa973ef59cbd296e22dc35))
+
 ## [0.3.2](https://github.com/tutur3u/platform/compare/ui-v0.3.1...ui-v0.3.2) (2026-06-10)
 
 

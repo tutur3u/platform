@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/mobile-v0.5.2...mobile-v0.6.0) (2026-06-10)
+
+
+### Features
+
+* **mobile:** add deployment vault CI flow ([b1d21eb](https://github.com/tutur3u/platform/commit/b1d21eb1e30d74b412e4687b095004c21cf03dd1))
+
 ## [0.5.2](https://github.com/tutur3u/platform/compare/mobile-v0.5.1...mobile-v0.5.2) (2026-06-10)
 
 
