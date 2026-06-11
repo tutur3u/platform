@@ -132,7 +132,14 @@ export interface TulearnCourseModuleDetail extends TulearnCourseModuleSummary {
   extra_content: unknown;
   youtube_links: string[] | null;
   flashcards: Array<{ id: string; front: string; back: string }>;
-  quizzes: Array<{ id: string; question: string; score: number }>;
+  quizzes: Array<{
+    id: string;
+    question: string;
+    type: string | null;
+    content: any;
+    answer: any;
+    score: number;
+  }>;
   quizSets: Array<{ id: string; name: string }>;
 }
 

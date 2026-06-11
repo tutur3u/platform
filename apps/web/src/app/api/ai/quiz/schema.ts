@@ -19,23 +19,6 @@ export const QUIZ_GENERATION_PROMPT = `You are an expert Academic Curriculum Des
    - For 'ordering': populate 'ordering_items' (array of strings).
    - Do NOT include any 'id' fields.`;
 
-const BaseQuizSchema = z.object({
-  question: z.string().describe('The quiz question text.'),
-  score: z
-    .number()
-    .int()
-    .min(1)
-    .max(10)
-    .default(1)
-    .describe(
-      'Point value for this question (MUST be an integer between 1 and 10, default is 1).'
-    ),
-  explanation: z
-    .string()
-    .optional()
-    .describe('Explanation of the correct answer.'),
-});
-
 export const GeneratedQuizSchema = z.object({
   question: z.string().describe('The quiz question text.'),
   score: z
@@ -59,17 +42,23 @@ export const GeneratedQuizSchema = z.object({
     .min(2)
     .max(6)
     .optional()
-    .describe('List of options for multiple choice questions. Required if type is multiple_choice.'),
+    .describe(
+      'List of options for multiple choice questions. Required if type is multiple_choice.'
+    ),
   correct_option_index: z
     .number()
     .int()
     .nonnegative()
     .optional()
-    .describe('Index of the correct option for multiple choice (0-indexed). Required if type is multiple_choice.'),
+    .describe(
+      'Index of the correct option for multiple choice (0-indexed). Required if type is multiple_choice.'
+    ),
   correct_boolean: z
     .boolean()
     .optional()
-    .describe('Correct answer for true/false questions. Required if type is true_false.'),
+    .describe(
+      'Correct answer for true/false questions. Required if type is true_false.'
+    ),
   matching_pairs: z
     .array(
       z.object({
@@ -79,12 +68,16 @@ export const GeneratedQuizSchema = z.object({
     )
     .min(1)
     .optional()
-    .describe('Pairs of items that match each other. Required if type is matching.'),
+    .describe(
+      'Pairs of items that match each other. Required if type is matching.'
+    ),
   ordering_items: z
     .array(z.string())
     .min(2)
     .optional()
-    .describe('Items in their correct ordered sequence. Required if type is ordering.'),
+    .describe(
+      'Items in their correct ordered sequence. Required if type is ordering.'
+    ),
 });
 
 export const QuizGenerationSchema = z.object({

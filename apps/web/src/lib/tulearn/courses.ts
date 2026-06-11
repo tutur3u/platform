@@ -1,5 +1,6 @@
 import type { Tables } from '@tuturuuu/types/supabase';
 
+import { attachPrivateWorkspaceQuizAnswers } from '../education/private-quiz-answers';
 import { getAdmin } from './db';
 import { firstOf } from './helpers';
 import type { Db } from './types';
@@ -42,8 +43,28 @@ type FlashcardJoinRow = {
 
 type QuizJoinRow = {
   workspace_quizzes:
-    | Pick<Tables<'workspace_quizzes'>, 'id' | 'question' | 'score'>
-    | Pick<Tables<'workspace_quizzes'>, 'id' | 'question' | 'score'>[]
+    | (Pick<
+        Tables<'workspace_quizzes'>,
+        'id' | 'question' | 'type' | 'content' | 'answer' | 'score'
+      > & {
+        quiz_options?: Array<{
+          id: string;
+          value: string;
+          is_correct: boolean;
+          explanation: string | null;
+        }>;
+      })
+    | (Pick<
+        Tables<'workspace_quizzes'>,
+        'id' | 'question' | 'type' | 'content' | 'answer' | 'score'
+      > & {
+        quiz_options?: Array<{
+          id: string;
+          value: string;
+          is_correct: boolean;
+          explanation: string | null;
+        }>;
+      })[]
     | null;
 };
 
@@ -329,7 +350,9 @@ export async function getLearnerModuleDetail({
         .eq('module_id', moduleId),
       sbAdmin
         .from('course_module_quizzes')
-        .select('workspace_quizzes(id, question, score)')
+        .select(
+          'workspace_quizzes(id, question, type, content, answer, score, quiz_options(id, value, is_correct, explanation))'
+        )
         .eq('module_id', moduleId),
       sbAdmin
         .from('course_module_quiz_sets')
@@ -347,6 +370,12 @@ export async function getLearnerModuleDetail({
   const quizRows = (quizzesResult.data ?? []) as QuizJoinRow[];
   const quizSetRows = (quizSetsResult.data ?? []) as QuizSetJoinRow[];
 
+  const rawQuizzes = quizRows
+    .map((row) => firstOf(row.workspace_quizzes))
+    .filter((value): value is NonNullable<typeof value> => Boolean(value));
+
+  const quizzesWithAnswers = await attachPrivateWorkspaceQuizAnswers(sbAdmin, rawQuizzes);
+
   return {
     ...summary,
     content: moduleResult.data.content,
@@ -355,9 +384,7 @@ export async function getLearnerModuleDetail({
     flashcards: flashcardRows
       .map((row) => firstOf(row.workspace_flashcards))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),
-    quizzes: quizRows
-      .map((row) => firstOf(row.workspace_quizzes))
-      .filter((value): value is NonNullable<typeof value> => Boolean(value)),
+    quizzes: quizzesWithAnswers,
     quizSets: quizSetRows
       .map((row) => firstOf(row.workspace_quiz_sets))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),
