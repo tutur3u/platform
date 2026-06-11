@@ -105,7 +105,9 @@ function renderWithQueryClient(node: ReactNode) {
 describe('WorkspaceUsersTable', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.values(querySetters).forEach((setter) => setter.mockClear());
+    Object.values(querySetters).forEach((setter) => {
+      setter.mockClear();
+    });
     queryState.q = '';
     queryState.page = 1;
     queryState.pageSize = 10;
