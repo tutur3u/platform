@@ -6,6 +6,7 @@ const getPermissionsMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const adminRpcMock = vi.fn();
 const rpcRangeMock = vi.fn();
+const serverLoggerErrorMock = vi.fn();
 const ORIGINAL_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -24,6 +25,13 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('@/lib/require-attention-users', () => ({
   fetchRequireAttentionUserIds: vi.fn().mockResolvedValue(new Set()),
   withRequireAttentionFlag: vi.fn((users) => users),
+}));
+
+vi.mock('@/lib/infrastructure/log-drain', () => ({
+  serverLogger: {
+    error: (...args: Parameters<typeof serverLoggerErrorMock>) =>
+      serverLoggerErrorMock(...args),
+  },
 }));
 
 import { GET, POST } from './route';
@@ -310,5 +318,79 @@ describe('workspace users database route query parsing', () => {
         },
       ],
     });
+  });
+
+  it('uses the workspace group FK hint when enriching guest users', async () => {
+    rpcRangeMock.mockResolvedValue({
+      data: [
+        {
+          id: 'user-1',
+          full_name: 'Alice',
+          avatar_url: null,
+          archived: false,
+          archived_until: null,
+        },
+      ],
+      error: null,
+      count: 1,
+    });
+
+    const guestQuery = {
+      eq: vi.fn(() => guestQuery),
+      in: vi.fn().mockResolvedValue({
+        data: [{ user_id: 'user-1' }],
+        error: null,
+      }),
+      select: vi.fn(() => guestQuery),
+    };
+    const fromMock = vi.fn((table: string) => {
+      if (table !== 'workspace_user_groups_users') {
+        throw new Error(`Unexpected table lookup: ${table}`);
+      }
+
+      return guestQuery;
+    });
+    createAdminClientMock.mockResolvedValue({
+      rpc: adminRpcMock,
+      from: fromMock,
+      schema: vi.fn(() => ({
+        from: vi.fn(() => {
+          throw new Error('Unexpected private table lookup');
+        }),
+      })),
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/users/database?page=1&pageSize=10'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      data: [
+        {
+          id: 'user-1',
+          is_guest: true,
+        },
+      ],
+      count: 1,
+    });
+    expect(fromMock).toHaveBeenCalledWith('workspace_user_groups_users');
+    expect(guestQuery.select).toHaveBeenCalledWith(
+      'user_id, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(is_guest, ws_id)'
+    );
+    expect(guestQuery.eq).toHaveBeenCalledWith(
+      'workspace_user_groups.ws_id',
+      'ws-1'
+    );
+    expect(guestQuery.eq).toHaveBeenCalledWith(
+      'workspace_user_groups.is_guest',
+      true
+    );
+    expect(guestQuery.in).toHaveBeenCalledWith('user_id', ['user-1']);
   });
 });

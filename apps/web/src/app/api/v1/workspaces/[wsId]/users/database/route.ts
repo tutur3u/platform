@@ -12,6 +12,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { GROUP_MEMBERSHIP_FILTER_VALUES } from '@/app/[locale]/(dashboard)/[wsId]/users/database/group-membership';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 import {
   fetchRequireAttentionUserIds,
@@ -228,7 +229,7 @@ async function handleUsersDatabaseRequest(
         return rateLimitResponse;
       }
 
-      console.error('Error fetching workspace users:', error);
+      serverLogger.error('Error fetching workspace users', { error });
       return NextResponse.json(
         { message: 'Error fetching workspace users' },
         { status: 500 }
@@ -309,7 +310,9 @@ async function handleUsersDatabaseRequest(
           return rateLimitResponse;
         }
 
-        console.error('Error fetching guest workspace users:', guestError);
+        serverLogger.error('Error fetching guest workspace users', {
+          error: guestError,
+        });
         return NextResponse.json(
           { message: 'Error fetching workspace users' },
           { status: 500 }
@@ -323,10 +326,9 @@ async function handleUsersDatabaseRequest(
       );
 
       if (sp.withPromotions && promotionLinksResult.error) {
-        console.error(
-          'Error fetching workspace user linked promotions:',
-          promotionLinksResult.error
-        );
+        serverLogger.error('Error fetching workspace user linked promotions', {
+          error: promotionLinksResult.error,
+        });
         return NextResponse.json(
           { message: 'Error fetching workspace users' },
           { status: 500 }
@@ -348,9 +350,11 @@ async function handleUsersDatabaseRequest(
             : { data: [], error: null };
 
         if (promotionsError) {
-          console.error(
-            'Error fetching workspace user linked promotions:',
-            promotionsError
+          serverLogger.error(
+            'Error fetching workspace user linked promotions',
+            {
+              error: promotionsError,
+            }
           );
           return NextResponse.json(
             { message: 'Error fetching workspace users' },
@@ -458,7 +462,7 @@ async function handleUsersDatabaseRequest(
       );
     }
 
-    console.error('Error in workspace users API:', error);
+    serverLogger.error('Error in workspace users API', { error });
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

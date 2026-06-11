@@ -185,7 +185,7 @@ export async function getGroupData({
   const { data, count, error } = await sbAdmin
     .from('workspace_user_groups')
     .select(
-      'id, name, sessions, starting_date, ending_date, workspace_user_groups_users!inner(user_id, role)',
+      'id, name, sessions, starting_date, ending_date, workspace_user_groups_users!workspace_user_roles_users_role_id_fkey!inner(user_id, role)',
       {
         count: 'exact',
       }
