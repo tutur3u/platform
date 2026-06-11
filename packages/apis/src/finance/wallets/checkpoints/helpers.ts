@@ -141,6 +141,8 @@ export function validationErrorResponse(error: unknown) {
 
 export function checkpointDatabaseErrorResponse(error: {
   code?: string;
+  details?: string;
+  hint?: string;
   message?: string;
 }) {
   if (error.code === '23505') {
@@ -168,9 +170,53 @@ export function checkpointDatabaseErrorResponse(error: {
     return NextResponse.json({ message: 'Wallet not found' }, { status: 404 });
   }
 
+  if (isCheckpointStorageMissing(error)) {
+    return NextResponse.json(
+      { message: 'Wallet checkpoint storage is not ready' },
+      { status: 503 }
+    );
+  }
+
   return NextResponse.json(
     { message: 'Error saving wallet checkpoint' },
     { status: 500 }
+  );
+}
+
+export function isCheckpointStorageMissing(error: {
+  code?: string;
+  details?: string;
+  hint?: string;
+  message?: string;
+}) {
+  const text = [error.message, error.details, error.hint]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  const mentionsCheckpointStorage =
+    text.includes('workspace_wallet_checkpoints') ||
+    text.includes('wallet_checkpoint') ||
+    text.includes('get_wallet_ledger_balance_at') ||
+    text.includes('list_wallet_checkpoint_intervals') ||
+    text.includes('create_workspace_wallet_checkpoints_batch');
+
+  if (!mentionsCheckpointStorage) {
+    return false;
+  }
+
+  if (
+    error.code === '42P01' ||
+    error.code === '42883' ||
+    error.code === 'PGRST202' ||
+    error.code === 'PGRST205'
+  ) {
+    return true;
+  }
+
+  return (
+    text.includes('does not exist') ||
+    text.includes('could not find') ||
+    text.includes('schema cache')
   );
 }
 
@@ -198,6 +244,31 @@ export async function getLedgerBalanceAt({
   return toCheckpointNumber(data as number | string | null);
 }
 
+export async function getLedgerBalanceForCheckpointRead({
+  checkedAt,
+  fallbackLedgerBalance,
+  sbAdmin,
+  walletId,
+}: {
+  checkedAt: string;
+  fallbackLedgerBalance: number | string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sbAdmin: any;
+  walletId: string;
+}) {
+  try {
+    return await getLedgerBalanceAt({ checkedAt, sbAdmin, walletId });
+  } catch (error) {
+    if (
+      isCheckpointStorageMissing(error as { code?: string; message?: string })
+    ) {
+      return fallbackLedgerBalance;
+    }
+
+    throw error;
+  }
+}
+
 export async function listCheckpointIntervals({
   limit,
   sbAdmin,
@@ -216,6 +287,10 @@ export async function listCheckpointIntervals({
     });
 
   if (error) {
+    if (isCheckpointStorageMissing(error)) {
+      return [];
+    }
+
     throw error;
   }
 

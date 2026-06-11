@@ -3,6 +3,7 @@ import type { FinanceRouteAuthContext } from '../../../../request-access';
 import {
   checkpointDatabaseErrorResponse,
   getLedgerBalanceAt,
+  isCheckpointStorageMissing,
   normalizeCheckpoint,
   parseJsonBody,
   validationErrorResponse,
@@ -85,6 +86,10 @@ export async function PATCH(
     .maybeSingle();
 
   if (existingError) {
+    if (isCheckpointStorageMissing(existingError)) {
+      return checkpointDatabaseErrorResponse(existingError);
+    }
+
     return NextResponse.json(
       { message: 'Error fetching wallet checkpoint' },
       { status: 500 }
@@ -141,7 +146,15 @@ export async function PATCH(
     return NextResponse.json(
       normalizeCheckpoint(data as WalletCheckpointRow, ledgerBalance)
     );
-  } catch {
+  } catch (error) {
+    if (
+      isCheckpointStorageMissing(error as { code?: string; message?: string })
+    ) {
+      return checkpointDatabaseErrorResponse(
+        error as { code?: string; message?: string }
+      );
+    }
+
     return NextResponse.json(
       { message: 'Error calculating wallet checkpoint balances' },
       { status: 500 }
@@ -184,6 +197,10 @@ export async function DELETE(
     .maybeSingle();
 
   if (error) {
+    if (isCheckpointStorageMissing(error)) {
+      return checkpointDatabaseErrorResponse(error);
+    }
+
     return NextResponse.json(
       { message: 'Error deleting wallet checkpoint' },
       { status: 500 }

@@ -171,4 +171,45 @@ describe('wallet checkpoint detail route', () => {
 
     expect(response.status).toBe(404);
   });
+
+  it('returns storage-not-ready for checkpoint deletes before migration', async () => {
+    const sbAdmin = {
+      schema: vi.fn(() => ({
+        from: vi.fn(() => ({
+          delete: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({
+                    data: null,
+                    error: {
+                      code: '42P01',
+                      message:
+                        'relation "private.workspace_wallet_checkpoints" does not exist',
+                    },
+                  }),
+                }),
+              }),
+            }),
+          }),
+        })),
+      })),
+    };
+    mocks.getAccessibleWallet.mockResolvedValue({
+      context: {
+        sbAdmin,
+      },
+      wallet: {
+        id: walletId,
+      },
+    });
+
+    const { DELETE } = await import('./route.js');
+    const response = await DELETE(request('DELETE'), params());
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'Wallet checkpoint storage is not ready',
+    });
+  });
 });

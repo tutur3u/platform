@@ -277,4 +277,86 @@ describe('wallet checkpoint route', () => {
       },
     });
   });
+
+  it('returns an empty checkpoint list while checkpoint storage is not migrated', async () => {
+    const privateClient = {
+      from: vi.fn(() => ({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({
+              order: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue({
+                  data: null,
+                  error: {
+                    code: '42P01',
+                    message:
+                      'relation "private.workspace_wallet_checkpoints" does not exist',
+                  },
+                }),
+              }),
+            }),
+          }),
+        }),
+      })),
+    };
+    const sbAdmin = {
+      schema: vi.fn(() => privateClient),
+    };
+    mocks.getAccessibleWallet.mockResolvedValue({
+      context: {
+        sbAdmin,
+      },
+      wallet: {
+        currency: 'VND',
+      },
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(createRequest(), params());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      data: [],
+      intervals: [],
+      latest: null,
+    });
+  });
+
+  it('returns storage-not-ready for checkpoint creates before migration', async () => {
+    const sbAdmin = {
+      schema: vi.fn(() => ({
+        rpc: vi.fn().mockResolvedValue({
+          data: null,
+          error: {
+            code: '42883',
+            message:
+              'function private.get_wallet_ledger_balance_at(uuid,timestamptz) does not exist',
+          },
+        }),
+      })),
+    };
+    mocks.getAccessibleWallet.mockResolvedValue({
+      context: {
+        sbAdmin,
+        userId: 'user-1',
+      },
+      wallet: {
+        currency: 'VND',
+      },
+    });
+
+    const { POST } = await import('./route.js');
+    const response = await POST(
+      createRequest({
+        actual_balance: 100,
+        checked_at: '2026-06-11T10:00:00.000Z',
+      }),
+      params()
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'Wallet checkpoint storage is not ready',
+    });
+  });
 });

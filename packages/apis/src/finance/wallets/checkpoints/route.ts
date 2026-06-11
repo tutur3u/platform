@@ -3,7 +3,8 @@ import type { FinanceRouteAuthContext } from '../../request-access';
 import { getAccessibleWallets, getWalletRouteContext } from '../wallet-access';
 import {
   checkpointDatabaseErrorResponse,
-  getLedgerBalanceAt,
+  getLedgerBalanceForCheckpointRead,
+  isCheckpointStorageMissing,
   normalizeCheckpoint,
   normalizeSummaryWallet,
   parseJsonBody,
@@ -138,6 +139,14 @@ export async function GET(
       .order('created_at', { ascending: false });
 
     if (error) {
+      if (isCheckpointStorageMissing(error)) {
+        return NextResponse.json({
+          latest_checkpoints: [],
+          totals_by_currency: [],
+          wallets,
+        });
+      }
+
       return NextResponse.json(
         { message: 'Error fetching wallet checkpoints' },
         { status: 500 }
@@ -155,8 +164,9 @@ export async function GET(
       [...latestRows.values()].map(async (row) =>
         normalizeCheckpoint(
           row,
-          await getLedgerBalanceAt({
+          await getLedgerBalanceForCheckpointRead({
             checkedAt: row.checked_at,
+            fallbackLedgerBalance: row.ledger_balance,
             sbAdmin: access.context.sbAdmin,
             walletId: row.wallet_id,
           })

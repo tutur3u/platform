@@ -71,6 +71,82 @@ describe('workspace wallet checkpoint route', () => {
     });
   });
 
+  it('returns wallets with empty checkpoint summaries before checkpoint storage is migrated', async () => {
+    const from = vi.fn((table: string) => {
+      if (table === 'workspace_wallets') {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: [
+                  {
+                    balance: 100,
+                    currency: 'USD',
+                    icon: null,
+                    id: walletIdA,
+                    image_src: null,
+                    name: 'Cash',
+                    type: 'STANDARD',
+                  },
+                ],
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+
+      return {
+        select: vi.fn().mockReturnValue({
+          in: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: null,
+                error: {
+                  code: '42P01',
+                  message:
+                    'relation "private.workspace_wallet_checkpoints" does not exist',
+                },
+              }),
+            }),
+          }),
+        }),
+      };
+    });
+    mocks.getWalletRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'workspace-1',
+        permissions: {
+          withoutPermission: vi.fn(() => false),
+        },
+        sbAdmin: {
+          schema: vi.fn(() => ({ from })),
+        },
+        userId: 'user-1',
+      },
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(request(), params());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      latest_checkpoints: [],
+      totals_by_currency: [],
+      wallets: [
+        {
+          balance: 100,
+          currency: 'USD',
+          icon: null,
+          id: walletIdA,
+          image_src: null,
+          name: 'Cash',
+          type: 'STANDARD',
+        },
+      ],
+    });
+  });
+
   it('rejects duplicate wallet IDs before batch access checks', async () => {
     const { POST } = await import('./route.js');
     const response = await POST(

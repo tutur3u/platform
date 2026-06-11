@@ -4,6 +4,8 @@ import {
   checkpointDatabaseErrorResponse,
   getCheckpointLimit,
   getLedgerBalanceAt,
+  getLedgerBalanceForCheckpointRead,
+  isCheckpointStorageMissing,
   listCheckpointIntervals,
   normalizeCheckpoint,
   parseJsonBody,
@@ -60,6 +62,14 @@ export async function GET(
     .limit(limit);
 
   if (error) {
+    if (isCheckpointStorageMissing(error)) {
+      return NextResponse.json({
+        data: [],
+        intervals: [],
+        latest: null,
+      });
+    }
+
     return NextResponse.json(
       { message: 'Error fetching wallet checkpoints' },
       { status: 500 }
@@ -71,8 +81,9 @@ export async function GET(
       ((data ?? []) as WalletCheckpointRow[]).map(async (row) =>
         normalizeCheckpoint(
           row,
-          await getLedgerBalanceAt({
+          await getLedgerBalanceForCheckpointRead({
             checkedAt: row.checked_at,
+            fallbackLedgerBalance: row.ledger_balance,
             sbAdmin: access.context.sbAdmin,
             walletId,
           })
@@ -90,7 +101,15 @@ export async function GET(
       intervals,
       latest: checkpoints[0] ?? null,
     });
-  } catch {
+  } catch (error) {
+    if (
+      isCheckpointStorageMissing(error as { code?: string; message?: string })
+    ) {
+      return checkpointDatabaseErrorResponse(
+        error as { code?: string; message?: string }
+      );
+    }
+
     return NextResponse.json(
       { message: 'Error calculating wallet checkpoint balances' },
       { status: 500 }
@@ -164,7 +183,15 @@ export async function POST(
       normalizeCheckpoint(data as WalletCheckpointRow, ledgerBalance),
       { status: 201 }
     );
-  } catch {
+  } catch (error) {
+    if (
+      isCheckpointStorageMissing(error as { code?: string; message?: string })
+    ) {
+      return checkpointDatabaseErrorResponse(
+        error as { code?: string; message?: string }
+      );
+    }
+
     return NextResponse.json(
       { message: 'Error calculating wallet checkpoint balances' },
       { status: 500 }
