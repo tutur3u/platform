@@ -285,10 +285,10 @@ packages:
     dependency: "direct main"
     description:
       name: cloudflare_turnstile
-      sha256: b7c400681889d704a915336d96373a4989fddd4fa0773587e783d0cd3bc2e99c
+      sha256: "06d8c7e8f99aae47022a1e53738d6c6cb3b410c3e8ba310159cdb5daf482c5ac"
       url: "https://pub.dev"
     source: hosted
-    version: "3.7.0"
+    version: "3.7.1"
   code_assets:
     dependency: transitive
     description:
@@ -2435,4 +2435,4 @@ packages:
     version: "2.1.0"
 sdks:
   dart: ">=3.12.0 <4.0.0"
-  flutter: ">=3.44.0 <4.0.0"
+  flutter: ">=3.44.0"
