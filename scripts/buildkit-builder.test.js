@@ -74,6 +74,7 @@ test('normalizeBuilderConfig reads throttling defaults from env', () => {
 
 test('normalizeBuilderConfig resolves auto throttling from current Docker memory', () => {
   const currentDockerMemory = String(9364279296);
+  const largeDockerMemory = String(28 * 1024 * 1024 * 1024);
 
   assert.equal(parseMemoryToBytes('8g'), 8 * 1024 * 1024 * 1024);
   assert.equal(
@@ -100,6 +101,12 @@ test('normalizeBuilderConfig resolves auto throttling from current Docker memory
     }),
     1
   );
+  assert.equal(
+    getAutoBuildMemory({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: largeDockerMemory,
+    }),
+    '28160m'
+  );
   assert.deepEqual(
     normalizeBuilderConfig(
       {
@@ -117,6 +124,25 @@ test('normalizeBuilderConfig resolves auto throttling from current Docker memory
       endpoint: `tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
       maxParallelism: 1,
       memory: '8418m',
+    }
+  );
+  assert.deepEqual(
+    normalizeBuilderConfig(
+      {
+        cpus: '4',
+        maxParallelism: '1',
+        memory: 'auto',
+      },
+      {
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: largeDockerMemory,
+      }
+    ),
+    {
+      builderName: DEFAULT_BUILDER_NAME,
+      cpus: 4,
+      endpoint: `tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
+      maxParallelism: 1,
+      memory: '28160m',
     }
   );
 });
@@ -861,11 +887,11 @@ test('production Docker root scripts keep the default build caps', () => {
 
   assert.match(
     packageJson.scripts['serve:web:docker'],
-    /--build-memory 12g --build-cpus 4 --build-max-parallelism 1/
+    /--build-memory auto --build-cpus 4 --build-max-parallelism 1/
   );
   assert.match(
     packageJson.scripts['serve:web:docker:bg'],
-    /--build-memory 12g --build-cpus 4 --build-max-parallelism 1/
+    /--build-memory auto --build-cpus 4 --build-max-parallelism 1/
   );
   assert.equal(
     packageJson.scripts['build:web:docker'],

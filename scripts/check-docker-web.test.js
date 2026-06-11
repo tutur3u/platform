@@ -800,7 +800,29 @@ test('production watcher service does not keep BuildKit running while idle', () 
     watcherServiceBlock,
     /DOCKER_WEB_BUILDKIT_ENDPOINT=tcp:\/\/buildkit:1234/u
   );
+  assert.match(watcherServiceBlock, /^\s+- DOCKER_WEB_BUILD_MEMORY$/mu);
+  assert.match(watcherServiceBlock, /^\s+- DOCKER_WEB_BUILD_CPUS$/mu);
+  assert.match(
+    watcherServiceBlock,
+    /^\s+- DOCKER_WEB_BUILD_MAX_PARALLELISM$/mu
+  );
+  assert.match(
+    watcherServiceBlock,
+    /^\s+- DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE$/mu
+  );
+  assert.match(watcherServiceBlock, /^\s+- DOCKER_WEB_NEXT_BUILD_CPUS$/mu);
   assert.doesNotMatch(watcherServiceBlock, /^\s+buildkit:\s*$/mu);
+});
+
+test('validateDockerProdCompose reports missing watcher build env wiring', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replace('      - DOCKER_WEB_BUILD_MEMORY\n', '')
+    .replace('      - DOCKER_WEB_NEXT_BUILD_CPUS\n', '');
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /DOCKER_WEB_BUILD_MEMORY/);
+  assert.match(errors.join('\n'), /DOCKER_WEB_NEXT_BUILD_CPUS/);
 });
 
 test('validateDockerProdCompose reports missing cron runner wiring', () => {

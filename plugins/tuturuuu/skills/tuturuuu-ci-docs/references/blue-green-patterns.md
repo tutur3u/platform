@@ -61,6 +61,11 @@ infrastructure dashboard changes.
   builder instead.
 - Do not use the Buildx `docker-container` driver for the platform capped
   builder because it creates containers outside the Compose `platform` group.
+- Production web serve helpers should default BuildKit memory to
+  `--build-memory auto` so the cap follows Docker's configured memory
+  allocation. Keep blue/green max parallelism conservative by default, and keep
+  direct Compose fallbacks concrete because Compose cannot resolve helper-only
+  `auto` values by itself.
 - Watcher images need Docker CLI, Compose plugin, and Buildx when production
   builds are capped.
 - Containerized watcher handoffs must run from the mirrored host checkout path

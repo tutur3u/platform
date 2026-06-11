@@ -917,20 +917,22 @@ Buildx throttling options instead of letting BuildKit consume the full host.
 Example:
 
 ```bash
-bun serve:web:docker:bg -- --build-memory 12g --build-cpus 4 --build-max-parallelism 1
+bun serve:web:docker:bg -- --build-memory auto --build-cpus 4 --build-max-parallelism 1
 ```
 
 Current root-script defaults:
 
-- `bun serve:web:docker` defaults to `--build-memory 12g --build-cpus 4 --build-max-parallelism 1`
-- `bun serve:web:docker:bg` defaults to `--build-memory 12g --build-cpus 4 --build-max-parallelism 1`
+- `bun serve:web:docker` defaults to `--build-memory auto --build-cpus 4 --build-max-parallelism 1`
+- `bun serve:web:docker:bg` defaults to `--build-memory auto --build-cpus 4 --build-max-parallelism 1`
 
-The Compose-owned BuildKit service also defaults `mem_limit` to **12g** and
-`cpus` to **4** when `DOCKER_WEB_BUILD_MEMORY` and `DOCKER_WEB_BUILD_CPUS` are
-unset, which keeps large monorepo builds from overcommitting shared hosts that
-still run the web stack, Redis, log drain, and other sidecars alongside builds.
-Raise or lower the caps with env vars or helper flags when your machine is
-tighter or has spare capacity.
+The helper resolves `auto` from Docker's reported memory limit before starting
+the Compose-owned BuildKit service. On a Docker Desktop allocation of 28 GiB,
+that means the BuildKit memory cap resolves to about 27.5 GiB after the helper's
+512 MiB overhead buffer. Direct Compose use still has a concrete `mem_limit`
+fallback of **12g** and `cpus` **4** when `DOCKER_WEB_BUILD_MEMORY` and
+`DOCKER_WEB_BUILD_CPUS` are unset, because Compose cannot resolve the helper's
+`auto` value by itself. Raise or lower the caps with env vars or helper flags
+when your machine is tighter or has spare capacity.
 
 You can still override those defaults per run by appending your own flags after
 `--`, for example:
@@ -969,9 +971,9 @@ How it works:
   limit minus a small host overhead buffer, rounded down to MiB precision; auto
   CPU uses 1 CPU below 10 GB, 2 CPUs below 16 GB, and 4 CPUs on larger Docker
   allocations; auto max parallelism uses 1 below 16 GB and 2 above that. The
-  E2E runner uses these auto caps by default so local Playwright verification
-  adapts to the current Docker Desktop setting without requiring one-off env
-  overrides.
+  E2E runner and production web serve scripts use auto memory by default so
+  local Playwright verification and watcher builds adapt to the current Docker
+  Desktop setting without requiring one-off env overrides.
 - `DOCKER_WEB_BUILD_MEMORY` caps the Compose-owned BuildKit service's memory
   budget.
 - `DOCKER_WEB_BUILD_CPUS` sets the BuildKit service CPU budget.
@@ -1068,8 +1070,15 @@ Operational notes:
   the stale Buildx record.
 - A lower parallelism setting usually trades build speed for host stability.
 - If BuildKit fails with `ResourceExhausted` or `cannot allocate memory` while
-  host memory is still available, the builder cgroup is too small; raise
-  `--build-memory` while keeping `--build-max-parallelism 1`.
+  host memory is still available, the builder cgroup is too small. Prefer the
+  default `--build-memory auto` path so the cap follows Docker's configured
+  allocation, or raise `DOCKER_WEB_BUILD_MEMORY`/`--build-memory` explicitly
+  while keeping `--build-max-parallelism 1`.
+- Docker Desktop resource graphs can show memory near the configured maximum
+  because the Docker VM and file cache are preallocated or cached. Treat
+  `docker info --format '{{json .MemTotal}}'` as the build budget source of
+  truth, then use process/container RSS and BuildKit errors to decide whether
+  the build is truly exhausting memory.
 - If host memory or swap is saturated, lower `--build-max-parallelism` first
   and stop unrelated containers before raising the builder memory cap.
 - If Bun fails during an image install with a tarball extraction error such as

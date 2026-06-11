@@ -2680,6 +2680,83 @@ test('runDockerWebWorkflow routes builds through a capped buildx builder when re
   assert.equal(calls.at(-1).env.BUILDX_BUILDER, DEFAULT_BUILDER_NAME);
 });
 
+test('runDockerWebWorkflow resolves auto build memory from Docker memory limit', async () => {
+  const calls = [];
+  const dockerMemoryLimit = String(28 * 1024 * 1024 * 1024);
+  const fsStub = createFsStub({
+    envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+  });
+
+  await runDockerWebWorkflow(
+    parseArgs([
+      'up',
+      '--build-memory',
+      'auto',
+      '--build-cpus',
+      '4',
+      '--build-max-parallelism',
+      '1',
+    ]),
+    {
+      env: LOCAL_SUPABASE_TEST_ENV,
+      fsImpl: fsStub,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({
+          args,
+          command,
+          env: options.env,
+        });
+
+        if (
+          command === 'docker' &&
+          args[0] === 'info' &&
+          args.includes('{{json .MemTotal}}')
+        ) {
+          return {
+            code: 0,
+            signal: null,
+            stderr: '',
+            stdout: dockerMemoryLimit,
+          };
+        }
+
+        if (args[0] === 'buildx' && args[1] === 'inspect') {
+          return { code: 1, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args.includes('ps') && args.includes('buildkit')) {
+          return {
+            code: 0,
+            signal: null,
+            stderr: '',
+            stdout: 'buildkit-123\n',
+          };
+        }
+
+        if (args[0] === 'inspect' && args.includes('buildkit-123')) {
+          return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+        }
+
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+    }
+  );
+
+  assert.ok(
+    calls.some(
+      (call) =>
+        call.command === 'docker' &&
+        call.args[0] === 'compose' &&
+        call.args.includes('up') &&
+        call.args.includes('--no-build') &&
+        call.args.includes('buildkit') &&
+        call.env.DOCKER_WEB_BUILD_MEMORY === '28160m' &&
+        call.env.DOCKER_WEB_BUILD_CPUS === '4' &&
+        call.env.DOCKER_WEB_BUILD_MAX_PARALLELISM === '1'
+    )
+  );
+});
+
 test('runDockerWebWorkflow forwards Docker memory limit into build env', async () => {
   const calls = [];
   const fsStub = createFsStub({

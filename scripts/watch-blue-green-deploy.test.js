@@ -7109,6 +7109,71 @@ test('runWatcherCommand boots the watcher container before tailing logs', async 
   }
 });
 
+test('runWatcherCommand forwards build overrides when booting watcher container', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-command-build-env-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  let watcherUpEnv = null;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+
+    await runWatcherCommand(['--once'], {
+      env: {
+        PATH: process.env.PATH,
+        DOCKER_WEB_BUILD_MEMORY: '24g',
+        DOCKER_WEB_BUILD_CPUS: '4',
+        DOCKER_WEB_BUILD_MAX_PARALLELISM: '1',
+        DOCKER_WEB_NEXT_BUILD_CPUS: '4',
+        DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE: 'auto',
+      },
+      envFilePath,
+      fsImpl: fs,
+      reconnectDelayMs: 0,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        const key = `${command} ${args.join(' ')}`;
+
+        if (key === 'docker compose version') {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherUpKey()) {
+          watcherUpEnv = options.env;
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherLogsKey()) {
+          return createResult('');
+        }
+
+        if (key === prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE)) {
+          return createResult('watcher-123\n');
+        }
+
+        if (
+          key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123'
+        ) {
+          return createResult('healthy\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    });
+
+    assert.equal(watcherUpEnv?.DOCKER_WEB_BUILD_MEMORY, '24g');
+    assert.equal(watcherUpEnv?.DOCKER_WEB_BUILD_CPUS, '4');
+    assert.equal(watcherUpEnv?.DOCKER_WEB_BUILD_MAX_PARALLELISM, '1');
+    assert.equal(watcherUpEnv?.DOCKER_WEB_NEXT_BUILD_CPUS, '4');
+    assert.equal(watcherUpEnv?.DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE, 'auto');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runWatcherCommand reconnects log tail after a transient docker logs failure', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-command-log-retry-')
