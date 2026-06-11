@@ -1,7 +1,7 @@
 ---
 title: "DevOps & Deployment"
 description: "The operational map for how Tuturuuu is built, deployed, migrated, and validated."
-updatedAt: "2026-06-03"
+updatedAt: "2026-06-12"
 ---
 
 This section is the runbook for shipping and operating Tuturuuu. It documents the
@@ -11,14 +11,15 @@ released, or recovered.
 
 ## Deployment Surfaces
 
-| Surface                                                                                                                                                                                 | Source of truth                                                                                         | Delivery target                                         |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Web apps (`apps/web`, `apps/apps`, `apps/nova`, `apps/rewise`, `apps/calendar`, `apps/finance`, `apps/inventory`, `apps/meet`, `apps/tasks`, `apps/track`, `apps/shortener`, `apps/qr`) | `.github/workflows/vercel-*.yaml`                                                                       | Vercel preview and production deployments               |
-| Database schema (`apps/database`)                                                                                                                                                       | `.github/workflows/supabase-staging.yaml`, `.github/workflows/supabase-production.yaml`                 | Supabase staging and production projects                |
-| Self-hosted web runtime (`apps/web`)                                                                                                                                                    | `apps/web/Dockerfile`, `docker-compose.web.yml`, `docker-compose.web.prod.yml`, `scripts/docker-web.js` | Docker dev stacks and production blue/green deployments |
-| Discord utilities (`apps/discord`)                                                                                                                                                      | `.github/workflows/discord-modal-deploy.yml`                                                            | Modal                                                   |
-| Mobile artifacts (`apps/mobile`)                                                                                                                                                        | `.github/workflows/mobile-build-*.yaml`                                                                 | Build artifacts for Android, iOS, macOS, Windows        |
-| Shared packages (`packages/*`)                                                                                                                                                          | `.github/workflows/release-*.yaml`                                                                      | npm                                                     |
+| Surface                                                                                                                                                                               | Source of truth                                                                                         | Delivery target                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Platform web app (`apps/web`)                                                                                                                                                         | `.github/workflows/vercel-preview-platform.yaml`, `.github/workflows/vercel-production-platform.yaml`   | Vercel build validation for on-premise deployment       |
+| Satellite web apps (`apps/apps`, `apps/nova`, `apps/rewise`, `apps/calendar`, `apps/finance`, `apps/inventory`, `apps/meet`, `apps/tasks`, `apps/track`, `apps/shortener`, `apps/qr`) | `.github/workflows/vercel-*.yaml`                                                                       | Vercel preview and production deployments               |
+| Database schema (`apps/database`)                                                                                                                                                     | `.github/workflows/supabase-staging.yaml`, `.github/workflows/supabase-production.yaml`                 | Supabase staging and production projects                |
+| Self-hosted web runtime (`apps/web`)                                                                                                                                                  | `apps/web/Dockerfile`, `docker-compose.web.yml`, `docker-compose.web.prod.yml`, `scripts/docker-web.js` | Docker dev stacks and production blue/green deployments |
+| Discord utilities (`apps/discord`)                                                                                                                                                    | `.github/workflows/discord-modal-deploy.yml`                                                            | Modal                                                   |
+| Mobile artifacts (`apps/mobile`)                                                                                                                                                      | `.github/workflows/mobile-build-*.yaml`                                                                 | Build artifacts for Android, iOS, macOS, Windows        |
+| Shared packages (`packages/*`)                                                                                                                                                        | `.github/workflows/release-*.yaml`                                                                      | npm                                                     |
 
 ## Read This In Order
 
@@ -29,13 +30,13 @@ released, or recovered.
 
 ## Core Principles
 
-- GitHub Actions is the canonical automation layer for hosted deployments and database migrations.
+- GitHub Actions is the canonical automation layer for hosted deployments, platform build validation, and database migrations.
 - `tuturuuu.ts` can disable individual workflows; `ci-check.yml` enforces that toggle before a job does real work.
 - `bun check` includes path-sensitive Discord Python validation when the local
   diff touches `apps/discord/**` or `.github/workflows/discord-python-ci.yml`.
   That path runs the same blocking checks as Discord Python CI through
   `scripts/check-discord-python.js`.
-- Vercel handles hosted web deployments. Supabase migrations run as separate workflows; `main` drives staging schema promotion and `production` drives production schema promotion.
+- Vercel handles hosted satellite web deployments and platform build validation. Supabase migrations run as separate workflows; `main` drives staging schema promotion and `production` drives production schema promotion.
 - Self-hosted web deployment is Docker-based, and blue/green rollout is the supported rebuild-before-restart path.
 - Secrets live in GitHub Actions secrets/variables or local env files such as `apps/web/.env.local`. They do not belong in the repo.
 
@@ -44,9 +45,9 @@ released, or recovered.
 ```mermaid
 flowchart LR
     Branch["Git branch or manual dispatch"]
-    Preview["Vercel preview workflow"]
+    Preview["Platform preview build"]
     Staging["Supabase staging migration"]
-    Production["Vercel production workflow"]
+    Production["Platform production build"]
     ProdDb["Supabase production migration"]
     Docker["Self-hosted Docker deploy"]
 

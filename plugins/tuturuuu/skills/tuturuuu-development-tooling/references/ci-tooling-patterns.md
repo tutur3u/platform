@@ -117,15 +117,18 @@ formatting behavior, or repo-wide verification.
   published package, add a matching npm release workflow and `tuturuuu.ts`
   switchboard entry for that dependency instead of letting consumers resolve an
   unpublished package name.
-- Platform Vercel production deployments should run
+- Platform Vercel production build validation should run
   `node scripts/ci/package-release-readiness.js wait-changed-package-versions`
   before dependency installation when release-please package manifests changed,
   tolerate shallow checkout by fetching a missing base SHA before `git diff`,
   and fail fast if a related package release workflow for the same SHA failed.
   Platform Vercel workflows must build local `@tuturuuu/devbox` artifacts before
-  `vercel build` because `apps/web` imports that workspace package.
-- Package release workflows must use npm trusted publishing. Keep `id-token:
-  write` isolated to the final `publish-npm` job, publish a downloaded and
+  `vercel build` because `apps/web` imports that workspace package. The
+  platform preview and production workflows are build-only signals for
+  on-premise deployment and may cross-credit successful same-SHA build markers;
+  satellite Vercel workflows still deploy prebuilt artifacts.
+- Package release workflows must use npm trusted publishing. Keep
+  `id-token: write` isolated to the final `publish-npm` job, publish a downloaded and
   verified tarball with `npm publish --ignore-scripts`, and do not reintroduce
   `NPM_TOKEN`, checkout, Bun setup, dependency install, or package builds in the
   publish job.

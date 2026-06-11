@@ -1,21 +1,21 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-06-11"
+updatedAt: "2026-06-12"
 ---
 
 This page explains how Tuturuuu moves from code to running environments.
 
 ## Branch-to-Environment Map
 
-| Branch or event                     | What deploys                                                                                                                       | Follow-up automation                                                                                                                 |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Feature branch push                 | CI only; Vercel preview deployments require trusted manual dispatch from `main` with `preview_ref`                                 | None by default                                                                                                                      |
-| `main` push                         | Platform Vercel preview deployment                                                                                                | `supabase-staging.yaml` can apply staging migrations after preview succeeds                                                          |
-| `production` push                   | Vercel production deployment                                                                                                       | `supabase-production.yaml` can apply production migrations after prerequisites pass                                                  |
-| `main` push for `apps/discord`      | Discord Modal deployment after Python CI succeeds                                                                                  | None                                                                                                                                 |
-| Manual `workflow_dispatch`          | Depends on workflow                                                                                                                | Bypasses normal branch trigger timing, but not the workflow logic; production Supabase migration dispatches must select `production` |
-| Self-hosted server after `git pull` | Docker deploy from current checkout                                                                                                | Optional blue/green cutover through `bun serve:web:docker:bg`                                                                        |
+| Branch or event                     | What deploys                                                                                       | Follow-up automation                                                                                                                 |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Feature branch push                 | CI only; Vercel preview deployments require trusted manual dispatch from `main` with `preview_ref` | None by default                                                                                                                      |
+| `main` push                         | Platform Vercel preview build validation                                                           | `supabase-staging.yaml` can apply staging migrations after the preview build succeeds                                                |
+| `production` push                   | Platform Vercel production build validation                                                        | `supabase-production.yaml` can apply production migrations after prerequisites pass                                                  |
+| `main` push for `apps/discord`      | Discord Modal deployment after Python CI succeeds                                                  | None                                                                                                                                 |
+| Manual `workflow_dispatch`          | Depends on workflow                                                                                | Bypasses normal branch trigger timing, but not the workflow logic; production Supabase migration dispatches must select `production` |
+| Self-hosted server after `git pull` | Docker deploy from current checkout                                                                | Optional blue/green cutover through `bun serve:web:docker:bg`                                                                        |
 
 ## Hosted Web Release Flow
 
@@ -24,20 +24,26 @@ This page explains how Tuturuuu moves from code to running environments.
 - Preview workflows are named `vercel-preview-<app>.yaml`.
 - Most preview workflows are manual-only from `main` with a required
   `preview_ref`; `vercel-preview-platform.yaml` also triggers on protected
-  `main` pushes so the staging database workflow receives a same-SHA signal.
+  `main` pushes so the staging database workflow receives a same-SHA platform
+  build signal.
 - `e2e-tests.yaml` also runs only on non-`production` pushes; production
   promotion relies on the already-green validation before the branch is
-  promoted plus the production deployment gates below.
+  promoted plus the production build-validation gates below.
 - Each workflow checks whether a newer commit exists on the same branch before spending time on install/build/deploy.
 - Each deploy job is bound to a `vercel-preview-<app>` GitHub Environment and
   introduces Vercel credentials only after dependency installation.
-- Preview deploys are the normal validation surface for branch work and merged
-  `main` changes.
+- Platform preview is build validation only; on-premise machines own the actual
+  `apps/web` runtime deployment.
+- Satellite preview deploys remain the normal Vercel validation surface for
+  branch work and merged `main` changes.
+- Platform preview and production build validation workflows cross-credit
+  successful same-SHA build markers. If one has already passed for a commit, the
+  other can record success without reinstalling dependencies or rebuilding.
 
 ### Staging Database
 
 - `supabase-staging.yaml` is tied to the `Vercel Platform Preview Deployment` workflow on `main`.
-- The staging migration runs only when the triggering preview deployment concludes successfully, or when manually dispatched.
+- The staging migration runs only when the triggering platform preview build concludes successfully, or when manually dispatched.
 - The staging deploy step runs `supabase db push --include-all` after linking
   the staging Supabase project, so staging can converge after `main` migration
   history changes.
@@ -49,8 +55,10 @@ This page explains how Tuturuuu moves from code to running environments.
 
 ### Production
 
-- Production web deploys run through `vercel-production-<app>.yaml`.
-- `apps/web` production deploys are handled by `vercel-production-platform.yaml`.
+- Satellite production web deploys run through `vercel-production-<app>.yaml`.
+- `apps/web` production build validation is handled by
+  `vercel-production-platform.yaml`; on-premise machines handle the actual
+  runtime deployment.
 - `apps/apps` production deploys are handled by `vercel-production-apps.yaml`.
 - `apps/qr` production deploys are handled by `vercel-production-qr.yaml`.
 - The production workflow also skips if a newer commit already exists on `production`.
@@ -82,10 +90,10 @@ This page explains how Tuturuuu moves from code to running environments.
 `supabase-production.yaml` is stricter than staging:
 
 1. It re-evaluates automatically after either `Vercel Platform Production
-   Deployment` completes on `production` or `Supabase Staging Migration`
-   completes on `main`.
-2. The production Vercel deployment for the target commit must have concluded
-   successfully on `production`.
+   Deployment` completes its build validation on `production` or
+   `Supabase Staging Migration` completes on `main`.
+2. The production platform build validation for the target commit must have
+   concluded successfully on `production`.
 3. The `main` staging migration for the same target commit must have completed
    with a `success` conclusion.
 4. A manual dispatch can still be used when an operator explicitly wants to run
@@ -93,11 +101,11 @@ This page explains how Tuturuuu moves from code to running environments.
    the same production-deployment and staging-migration SHA checks.
 
 The staging-triggered path is an automatic retry for the case where production
-deployment finishes before staging migration does. The production migration job
-still checks out the verified target commit explicitly before running
-`supabase db push --include-all`. This keeps production schema changes behind
-application deployment success, staging validation, and branch promotion for the
-same commit.
+build validation finishes before staging migration does. The production
+migration job still checks out the verified target commit explicitly before
+running `supabase db push --include-all`. This keeps production schema changes
+behind application build validation, staging validation, and branch promotion
+for the same commit.
 
 ## Self-Hosted Web Release Flow
 
@@ -116,12 +124,12 @@ health-checked before the proxy is reloaded.
 2. If Docker behavior changed, make sure `docker-setup-check.yaml` is green.
 3. If database migrations changed, confirm the `main`-driven staging path first.
 4. Promote to `production` only after preview and staging behavior is understood.
-5. Confirm the follow-up Supabase workflow after production deployment.
+5. Confirm the follow-up Supabase workflow after production build validation.
 6. For self-hosted rollout, deploy from the intended commit and prefer `bun serve:web:docker:bg`.
 
 ## Rollback Guidance
 
-- Vercel-hosted rollback: redeploy the previous known-good commit or use Vercel rollback tooling.
+- Vercel-hosted rollback: for satellite apps, redeploy the previous known-good commit or use Vercel rollback tooling.
 - Supabase rollback: use a corrective migration instead of editing applied migration history.
 - Self-hosted Docker rollback: checkout the previous known-good commit and rerun `bun serve:web:docker:bg`.
 
@@ -132,5 +140,5 @@ health-checked before the proxy is reloaded.
 - Do not manually dispatch production Supabase migration from `main`; the only
   valid `main` path is the automatic staging-migration re-evaluation, and the
   production gate still requires the same commit to have both a successful
-  production deployment and a completed successful `main` staging migration.
+  production platform build and a completed successful `main` staging migration.
 - Do not use the in-place Docker path when you specifically need rebuild-before-restart semantics.

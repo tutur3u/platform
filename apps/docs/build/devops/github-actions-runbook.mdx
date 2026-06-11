@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-06-11"
+updatedAt: "2026-06-12"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -52,7 +52,7 @@ is ambiguous without a manifest or source path.
 
 ## Main Workflow Groups
 
-### Hosted web deployments
+### Hosted web build and deployment checks
 
 - `vercel-preview-platform.yaml`
 - `vercel-preview-apps.yaml`
@@ -72,7 +72,7 @@ is ambiguous without a manifest or source path.
 - `vercel-preview-teach.yaml`
 - Matching `vercel-production-*.yaml` workflows for production
 
-CMS uses the same Vercel pattern as the other satellite apps:
+CMS uses the same Vercel deployment pattern as the other satellite apps:
 
 - preview workflow: `vercel-preview-cms.yaml`
 - production workflow: `vercel-production-cms.yaml`
@@ -93,7 +93,7 @@ QR uses the same pattern:
 - project secret: `VERCEL_QR_PROJECT_ID`
 - environments: `vercel-preview-qr` and `vercel-production-qr`
 
-Mail uses the same pattern:
+Mail uses the same deployment pattern:
 
 - preview workflow: `vercel-preview-mail.yaml`
 - production workflow: `vercel-production-mail.yaml`
@@ -105,7 +105,7 @@ These workflows:
 - run with default `contents: read` permissions
 - bind deploy jobs to `vercel-preview-<app>` or `vercel-production-<app>`
   GitHub Environments
-- run preview deployments only through manual dispatch from `main`, with a
+- run preview workflows only through manual dispatch from `main`, with a
   required `preview_ref` input and an actor present in the
   `TRUSTED_PREVIEW_DEPLOY_ACTORS` repository variable; `vercel-preview-platform.yaml`
   is the exception and also runs on protected `main` pushes so Supabase staging
@@ -120,12 +120,22 @@ These workflows:
   `@tuturuuu/types`, `@tuturuuu/supabase`, and `@tuturuuu/internal-api`
 - run `vercel pull`
 - run `vercel build`
-- deploy prebuilt artifacts
+- deploy prebuilt artifacts for satellite apps
+- treat `vercel-preview-platform.yaml` and `vercel-production-platform.yaml`
+  as platform build validation only; on-premise machines own the actual
+  `apps/web` runtime deployment
 - skip production push work when a newer commit already exists on the target
   branch
 - record a non-blocking GitHub Deployment marker after a successful Vercel
-  build/deploy so the next production push can evaluate every change since the
-  last successful run
+  build or satellite deploy so the next production push can evaluate every
+  change since the last successful run
+
+The platform preview and production workflows cross-credit successful same-SHA
+build markers. If `vercel-preview-platform.yaml` already recorded a successful
+build marker for a commit, `vercel-production-platform.yaml` can record its own
+successful build marker without reinstalling dependencies or rebuilding, and
+vice versa. This only applies to the platform workflows; satellite Vercel
+workflows still build and deploy independently.
 
 ### Database automation
 
@@ -191,8 +201,8 @@ execute during install/build.
 
 `vercel-preview-platform.yaml` also runs on protected `main` pushes. Keep that
 exception narrow: `supabase-staging.yaml` is triggered by the platform preview
-workflow and production migration requires a successful `main` staging migration
-for the same SHA before it can run `supabase db push --include-all`.
+build workflow and production migration requires a successful `main` staging
+migration for the same SHA before it can run `supabase db push --include-all`.
 
 ### Other delivery surfaces
 
@@ -283,7 +293,7 @@ Tuturuuu package, that dependency also needs its own
 The platform production Vercel workflow also runs
 `node scripts/ci/package-release-readiness.js wait-changed-package-versions`
 before installing dependencies. Release-please package bumps therefore publish
-and become visible on npm before the normal production platform deployment flow
+and become visible on npm before the normal production platform build validation
 continues. When the push payload omits changed package files, the helper fetches
 the missing base SHA before falling back to `git diff`, so shallow checkout
 depth does not break the release gate.
@@ -306,13 +316,14 @@ from skipped intermediate runs still queue the correct Vercel workflow.
 
 ### Prerequisite guards
 
-- `supabase-staging.yaml` requires a successful `main` preview trigger unless manually dispatched.
+- `supabase-staging.yaml` requires a successful `main` platform preview build
+  trigger unless manually dispatched.
 - Its deploy step links the staging project and runs
   `supabase db push --include-all`.
-- `supabase-production.yaml` runs after production deployment and also
-  re-evaluates after a matching `main` staging migration succeeds. It still
-  checks both the latest production Vercel result and a completed successful
-  staging migration for the same commit before running
+- `supabase-production.yaml` runs after production platform build validation
+  and also re-evaluates after a matching `main` staging migration succeeds. It
+  still checks both the latest production platform build result and a completed
+  successful staging migration for the same commit before running
   `supabase db push --include-all`.
 
 ### Mobile iOS native assets

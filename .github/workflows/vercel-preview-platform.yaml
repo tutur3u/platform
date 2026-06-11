@@ -49,14 +49,13 @@ jobs:
       - name: Confirm preview target
         id: check_commits
         run: |
-          echo "Deploying preview ref ${{ github.event.inputs.preview_ref || github.sha }}."
+          echo "Building preview ref ${{ github.event.inputs.preview_ref || github.sha }}."
           echo "skip_build=false" >> $GITHUB_OUTPUT
 
-      - name: Setup bun
+      - name: Resolve checked-out SHA
         if: steps.check_commits.outputs.skip_build != 'true'
-        uses: ./.github/actions/setup-bun-with-retry
-        with:
-          bun-version: 1.3.14
+        id: resolve_target
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Use Node.js 24
         if: steps.check_commits.outputs.skip_build != 'true'
@@ -64,40 +63,59 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install dependencies
+      - name: Check equivalent production platform build
         if: steps.check_commits.outputs.skip_build != 'true'
+        id: equivalent_build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node --experimental-strip-types scripts/ci/github-deployment-markers.ts has-successful-marker \
+            --workflow vercel-production-platform.yaml \
+            --sha "${{ steps.resolve_target.outputs.sha }}" \
+            --marker-kind build
+
+      - name: Setup bun
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Install Vercel CLI
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build workspace dependencies
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
         run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry --filter=@tuturuuu/devbox
 
       - name: Generate shared build metadata
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
         run: bun run --silent scripts/ci/generate-build-metadata.ts
 
       - name: Build Project Artifacts
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Record successful Vercel deployment marker
+      - name: Record successful Vercel build marker
         if: steps.check_commits.outputs.skip_build != 'true'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          VERCEL_MARKER_KIND: build
+          VERCEL_MARKER_SHA: ${{ steps.resolve_target.outputs.sha }}
           VERCEL_WORKFLOW_NAME: vercel-preview-platform.yaml
-        run: bun run --silent scripts/ci/record-vercel-deployment.ts
+        run: node --experimental-strip-types scripts/ci/record-vercel-deployment.ts

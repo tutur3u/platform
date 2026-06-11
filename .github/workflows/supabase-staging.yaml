@@ -35,7 +35,7 @@ jobs:
             echo "Manual dispatch detected. Proceeding with staging migration."
             SHOULD_DEPLOY=true
           elif [ "$TRIGGER_CONCLUSION" = "success" ]; then
-            echo "Preview deployment completed successfully. Proceeding with staging migration."
+            echo "Platform preview build completed successfully. Proceeding with staging migration."
             SHOULD_DEPLOY=true
           else
             echo "::notice::Skipping staging migration because the triggering workflow concluded with '$TRIGGER_CONCLUSION'."
