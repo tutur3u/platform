@@ -195,13 +195,12 @@ ${lessonInfo}`;
           };
         });
 
-        const { data: createdQuizRows, error: quizError } = await sbAdmin
+        const { error: quizError } = await sbAdmin
           .from('workspace_quizzes')
-          .insert(quizPayloads.map(({ quiz }) => quiz))
-          .select('id');
+          .insert(quizPayloads.map(({ quiz }) => quiz));
 
-        if (quizError || !createdQuizRows) {
-          throw quizError ?? new Error('Failed to create quizzes in database');
+        if (quizError) {
+          throw quizError;
         }
 
         const createdQuizzes = quizPayloads.map(({ quiz }) => ({
