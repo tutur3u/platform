@@ -1,6 +1,10 @@
 import 'server-only';
 
-import type { InventoryCheckoutStatus } from '@tuturuuu/internal-api/inventory';
+import type {
+  InventoryCheckoutSession,
+  InventoryCheckoutStatus,
+} from '@tuturuuu/internal-api/inventory';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPlatformSql } from '@/lib/database/platform-sql';
 import {
   type CheckoutLineRow,
@@ -124,41 +128,14 @@ export async function listCheckouts(
 }
 
 export async function getCheckoutByPublicToken(publicToken: string) {
-  const sql = getPlatformSql();
-  const [row] = await sql<CheckoutRow[]>`
-    select
-      id,
-      ws_id,
-      public_token,
-      status,
-      customer_name,
-      customer_email,
-      customer_phone,
-      note,
-      currency,
-      subtotal_amount,
-      platform_fee_amount,
-      processing_fee_estimate_amount,
-      conversion_fee_estimate_amount,
-      total_amount,
-      expires_at::text as expires_at,
-      completed_at::text as completed_at,
-      finance_invoice_id,
-      polar_checkout_id,
-      polar_order_id,
-      polar_environment,
-      polar_product_id,
-      polar_checkout_url,
-      polar_status
-    from private.inventory_checkout_sessions
-    where public_token = ${publicToken}
-    limit 1
-  `;
+  const sbAdmin = await createAdminClient();
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .rpc('get_inventory_checkout_by_public_token', {
+      p_public_token: publicToken,
+    });
 
-  if (!row) {
-    return null;
-  }
+  if (error) throw error;
 
-  const linesByCheckoutId = await listCheckoutLines([row.id]);
-  return mapCheckout(row, linesByCheckoutId.get(row.id) ?? []);
+  return (data as InventoryCheckoutSession | null) ?? null;
 }

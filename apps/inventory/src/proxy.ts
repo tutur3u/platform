@@ -1,8 +1,12 @@
 import {
+  APP_SESSION_COOKIE_NAME,
+  APP_SESSION_REFRESH_COOKIE_NAME,
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
+  WEB_APP_SESSION_COOKIE_NAME,
+  WEB_APP_SESSION_REFRESH_COOKIE_NAME,
 } from '@tuturuuu/auth/app-session';
 import {
   consumeVerifyTokenRequest,
@@ -18,6 +22,11 @@ import { type Locale, routing, supportedLocales } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
+const PUBLIC_STOREFRONT_API_PATTERN =
+  /^\/api\/v1\/inventory\/storefronts\/[^/]+\/?$/u;
+const PUBLIC_STOREFRONT_CHECKOUT_API_PATTERN =
+  /^\/api\/v1\/inventory\/storefronts\/[^/]+\/checkouts\/?$/u;
+const PUBLIC_ORDER_API_PATTERN = /^\/api\/v1\/inventory\/orders\/[^/]+\/?$/u;
 
 function stripLocale(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
@@ -55,23 +64,62 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
+function hasCookie(request: NextRequest, name: string) {
+  return Boolean(request.cookies.get(name)?.value);
+}
+
+function hasApiSessionCredentials(request: NextRequest) {
+  return (
+    hasSupportedSupabaseAuthCookie(request) ||
+    hasWebAppSessionTokenFromRequest(request) ||
+    hasCookie(request, APP_SESSION_COOKIE_NAME) ||
+    hasCookie(request, WEB_APP_SESSION_COOKIE_NAME) ||
+    hasCookie(request, APP_SESSION_REFRESH_COOKIE_NAME) ||
+    hasCookie(request, WEB_APP_SESSION_REFRESH_COOKIE_NAME)
+  );
+}
+
+function isPublicStorefrontApiRequest(request: NextRequest) {
+  const method = request.method.toUpperCase();
+  const pathname = request.nextUrl.pathname;
+
+  if (method === 'GET' && PUBLIC_STOREFRONT_API_PATTERN.test(pathname)) {
+    return true;
+  }
+
+  if (
+    method === 'POST' &&
+    PUBLIC_STOREFRONT_CHECKOUT_API_PATTERN.test(pathname)
+  ) {
+    return true;
+  }
+
+  return method === 'GET' && PUBLIC_ORDER_API_PATTERN.test(pathname);
+}
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const appSessionRefresh = isLocalAuthApi
-      ? null
-      : await refreshAppSessionForRequest(request, {
+    const isPublicStorefrontApi = isPublicStorefrontApiRequest(request);
+    const shouldRefreshAppSession =
+      !isLocalAuthApi &&
+      (!isPublicStorefrontApi || hasApiSessionCredentials(request));
+    const appSessionRefresh = shouldRefreshAppSession
+      ? await refreshAppSessionForRequest(request, {
           sessionMode: 'supabase-first',
           targetApp: 'inventory',
-        });
+        })
+      : null;
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
-      return clearSupabaseAuthCookies(
-        request,
-        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      );
+      if (!isPublicStorefrontApi) {
+        return clearSupabaseAuthCookies(
+          request,
+          NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        );
+      }
     }
 
     const guardResponse = await guardApiProxyRequest(request, {
@@ -79,16 +127,15 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     });
 
     if (guardResponse) {
-      if (appSessionRefresh) {
+      if (appSessionRefresh?.ok) {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
       return clearSupabaseAuthCookies(request, guardResponse);
     }
 
-    return (
-      appSessionRefresh?.response ??
-      clearSupabaseAuthCookies(request, NextResponse.next())
-    );
+    return appSessionRefresh?.ok
+      ? appSessionRefresh.response
+      : clearSupabaseAuthCookies(request, NextResponse.next());
   }
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);

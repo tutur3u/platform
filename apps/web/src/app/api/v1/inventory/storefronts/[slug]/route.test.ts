@@ -52,7 +52,19 @@ describe('inventory public storefront route', () => {
     });
 
     expect(response.status).toBe(200);
+    expect(mocks.getPublicStorefront).toHaveBeenCalledWith('shop');
     expect(mocks.resolveSessionAuthContext).not.toHaveBeenCalled();
+  });
+
+  it('returns not found when the public storefront helper returns null', async () => {
+    mocks.getPublicStorefront.mockResolvedValue(null);
+
+    const response = await GET(new Request('http://test.local'), {
+      params: Promise.resolve({ slug: 'missing-shop' }),
+    });
+
+    expect(response.status).toBe(404);
+    expect(mocks.isInventoryEnabled).not.toHaveBeenCalled();
   });
 
   it('requires workspace membership for private storefronts', async () => {

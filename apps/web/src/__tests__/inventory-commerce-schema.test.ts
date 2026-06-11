@@ -46,13 +46,13 @@ const inventoryPolarMigrationPath = resolve(
   repoRoot,
   'apps/database/supabase/migrations/20260610163000_inventory_storefront_polar.sql'
 );
+const publicStorefrontPrivateRpcMigrationPath = resolve(
+  repoRoot,
+  'apps/database/supabase/migrations/20260611111500_inventory_public_storefront_private_rpcs.sql'
+);
 const bundleRepositoryPath = resolve(
   repoRoot,
   'apps/web/src/lib/inventory/commerce/bundles.ts'
-);
-const publicStorefrontRepositoryPath = resolve(
-  repoRoot,
-  'apps/web/src/lib/inventory/commerce/public-storefront.ts'
 );
 
 describe('inventory commerce migration contract', () => {
@@ -181,18 +181,33 @@ describe('inventory commerce migration contract', () => {
 
   it('filters bundle component reads through same-workspace stock joins', () => {
     const bundleSource = readFileSync(bundleRepositoryPath, 'utf8');
-    const publicStorefrontSource = readFileSync(
-      publicStorefrontRepositoryPath,
+    const publicStorefrontRpcSource = readFileSync(
+      publicStorefrontPrivateRpcMigrationPath,
       'utf8'
     );
 
-    for (const source of [bundleSource, publicStorefrontSource]) {
+    expect(bundleSource).toContain('join public.workspace_products product');
+    expect(bundleSource).toMatch(/and product\.ws_id = \$\{wsId\}/);
+    expect(bundleSource).toContain('join private.inventory_units unit');
+    expect(bundleSource).toMatch(/and unit\.ws_id = \$\{wsId\}/);
+    expect(bundleSource).toContain(
+      'join private.inventory_warehouses warehouse'
+    );
+    expect(bundleSource).toMatch(/and warehouse\.ws_id = \$\{wsId\}/);
+    expect(bundleSource).toContain('join private.inventory_products stock');
+
+    expect(publicStorefrontRpcSource).toContain(
+      'create or replace function private.get_public_inventory_storefront'
+    );
+    for (const tableAlias of ['product', 'unit', 'warehouse']) {
+      expect(publicStorefrontRpcSource).toContain(
+        `and ${tableAlias}.ws_id = storefront.ws_id`
+      );
+    }
+    for (const source of [publicStorefrontRpcSource]) {
       expect(source).toContain('join public.workspace_products product');
-      expect(source).toMatch(/and product\.ws_id = \$\{wsId\}/);
       expect(source).toContain('join private.inventory_units unit');
-      expect(source).toMatch(/and unit\.ws_id = \$\{wsId\}/);
       expect(source).toContain('join private.inventory_warehouses warehouse');
-      expect(source).toMatch(/and warehouse\.ws_id = \$\{wsId\}/);
       expect(source).toContain('join private.inventory_products stock');
     }
   });

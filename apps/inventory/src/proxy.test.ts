@@ -16,6 +16,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
+  APP_SESSION_COOKIE_NAME: 'tuturuuu_app_session',
+  APP_SESSION_REFRESH_COOKIE_NAME: 'tuturuuu_app_session_refresh',
+  WEB_APP_SESSION_COOKIE_NAME: 'tuturuuu_web_app_session',
+  WEB_APP_SESSION_REFRESH_COOKIE_NAME: 'tuturuuu_web_app_session_refresh',
   clearSupabaseAuthCookies: (
     ...args: Parameters<typeof mocks.clearSupabaseAuthCookies>
   ) => mocks.clearSupabaseAuthCookies(...args),
@@ -197,5 +201,68 @@ describe('Inventory proxy storefront access', () => {
       request,
       guardResponse
     );
+  });
+
+  it.each([
+    ['GET', 'https://inventory.tuturuuu.com/api/v1/inventory/storefronts/shop'],
+    [
+      'POST',
+      'https://inventory.tuturuuu.com/api/v1/inventory/storefronts/shop/checkouts',
+    ],
+    [
+      'GET',
+      'https://inventory.tuturuuu.com/api/v1/inventory/orders/public-token',
+    ],
+  ])('allows anonymous public storefront API %s %s', async (method, url) => {
+    const request = new NextRequest(url, { method });
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+      prefixBase: 'proxy:inventory:api',
+    });
+  });
+
+  it('refreshes credentialed public storefront API requests', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      ok: true,
+      response: NextResponse.next(),
+    });
+    const request = new NextRequest(
+      'https://inventory.tuturuuu.com/api/v1/inventory/storefronts/shop',
+      {
+        headers: {
+          cookie: 'tuturuuu_app_session=ttr_app_existing',
+        },
+      }
+    );
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
+      sessionMode: 'supabase-first',
+      targetApp: 'inventory',
+    });
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+      prefixBase: 'proxy:inventory:api',
+    });
+  });
+
+  it('keeps unrelated API routes gated when app-session refresh fails', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      error: 'Missing app session',
+      ok: false,
+    });
+    const request = new NextRequest(
+      'https://inventory.tuturuuu.com/api/v1/workspaces/ws-1/private-data'
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(401);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
 });
