@@ -7,7 +7,12 @@ interface Props {
   wsId: string;
   noInclude?: boolean;
   noExclude?: boolean;
+  includedGroups?: string[];
+  excludedGroups?: string[] | null;
+  effectiveIncludedGroups?: string[];
   effectiveExcludedGroups?: string[];
+  onIncludedGroupsChange?: (value: string[]) => Promise<void> | void;
+  onExcludedGroupsChange?: (value: string[]) => Promise<void> | void;
   className?: string;
 }
 
@@ -15,17 +20,34 @@ export default function Filters({
   wsId,
   noInclude = false,
   noExclude = false,
+  includedGroups = [],
+  excludedGroups = null,
+  effectiveIncludedGroups = [],
   effectiveExcludedGroups = [],
+  onIncludedGroupsChange,
+  onExcludedGroupsChange,
   className,
 }: Props) {
   return (
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
-      {!noInclude && <GroupFilterWrapper wsId={wsId} filterType="included" />}
+      {!noInclude && (
+        <GroupFilterWrapper
+          wsId={wsId}
+          filterType="included"
+          selectedGroupIds={includedGroups}
+          dependencyGroupIds={effectiveIncludedGroups}
+          effectiveSelectedGroupIds={effectiveIncludedGroups}
+          onSelectedGroupIdsChange={onIncludedGroupsChange}
+        />
+      )}
       {!noExclude && (
         <GroupFilterWrapper
           wsId={wsId}
           filterType="excluded"
-          effectiveExcludedGroups={effectiveExcludedGroups}
+          selectedGroupIds={excludedGroups ?? []}
+          dependencyGroupIds={effectiveIncludedGroups}
+          effectiveSelectedGroupIds={effectiveExcludedGroups}
+          onSelectedGroupIdsChange={onExcludedGroupsChange}
         />
       )}
     </div>
@@ -35,27 +57,26 @@ export default function Filters({
 function GroupFilterWrapper({
   wsId,
   filterType,
-  effectiveExcludedGroups = [],
+  selectedGroupIds,
+  dependencyGroupIds,
+  effectiveSelectedGroupIds,
+  onSelectedGroupIdsChange,
 }: {
   wsId: string;
   filterType: 'included' | 'excluded';
-  effectiveExcludedGroups?: string[];
+  selectedGroupIds: string[];
+  dependencyGroupIds: string[];
+  effectiveSelectedGroupIds: string[];
+  onSelectedGroupIdsChange?: (value: string[]) => Promise<void> | void;
 }) {
-  const queryKey =
-    filterType === 'excluded' ? 'excludedGroups' : 'includedGroups';
-  const dependencyKey =
-    filterType === 'excluded' ? 'includedGroups' : undefined;
-
   return (
     <GroupFilter
       wsId={wsId}
       filterType={filterType}
-      queryKey={queryKey}
-      pageKey="page"
-      dependencyKey={dependencyKey}
-      effectiveSelectedGroupIds={
-        filterType === 'excluded' ? effectiveExcludedGroups : undefined
-      }
+      selectedGroupIds={selectedGroupIds}
+      dependencyGroupIds={dependencyGroupIds}
+      effectiveSelectedGroupIds={effectiveSelectedGroupIds}
+      onSelectedGroupIdsChange={onSelectedGroupIdsChange}
     />
   );
 }

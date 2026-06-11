@@ -13,12 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
-import {
-  parseAsArrayOf,
-  parseAsInteger,
-  parseAsString,
-  useQueryState,
-} from 'nuqs';
+import { parseAsString, useQueryState } from 'nuqs';
 import { useMemo } from 'react';
 import type { DatabaseLinkStatus } from '@/lib/users-database-filters';
 import type { GroupMembershipFilter } from './group-membership';
@@ -31,17 +26,25 @@ import {
 interface Props {
   wsId: string;
   initialFeaturedGroupIds?: string[];
+  includedGroups?: string[];
+  excludedGroups?: string[] | null;
+  effectiveIncludedGroups?: string[];
   effectiveExcludedGroups?: string[];
   groupMembership?: GroupMembershipFilter;
   linkStatus?: DatabaseLinkStatus;
+  onIncludedGroupsChange?: (value: string[]) => Promise<void> | void;
 }
 
 export function QuickGroupFilters({
   wsId,
   initialFeaturedGroupIds,
+  includedGroups = [],
+  excludedGroups = null,
+  effectiveIncludedGroups = [],
   effectiveExcludedGroups = [],
   groupMembership = 'all',
   linkStatus = 'all',
+  onIncludedGroupsChange,
 }: Props) {
   const t = useTranslations('user-data-table');
 
@@ -54,20 +57,6 @@ export function QuickGroupFilters({
       ensureGroupIds: featuredGroupIds,
     });
 
-  const [includedGroups, setIncludedGroups] = useQueryState(
-    'includedGroups',
-    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
-      shallow: true,
-    })
-  );
-
-  const [excludedGroups] = useQueryState(
-    'excludedGroups',
-    parseAsArrayOf(parseAsString).withOptions({
-      shallow: true,
-    })
-  );
-
   const [q] = useQueryState(
     'q',
     parseAsString.withDefault('').withOptions({ shallow: true })
@@ -76,11 +65,6 @@ export function QuickGroupFilters({
   const [status] = useQueryState(
     'status',
     parseAsString.withDefault('active').withOptions({ shallow: true })
-  );
-
-  const [, setPage] = useQueryState(
-    'page',
-    parseAsInteger.withDefault(1).withOptions({ shallow: true })
   );
 
   // Resolve featured group IDs to full group objects
@@ -104,22 +88,23 @@ export function QuickGroupFilters({
     }
   );
   const showCounts = groupMembership === 'all';
+  const selectedIncludedGroups =
+    includedGroups.length > 0 ? includedGroups : effectiveIncludedGroups;
 
   if (isLoadingFeatured || isLoadingGroups) return null;
   if (!featuredGroups.length) return null;
 
   const toggleGroup = (groupId: string) => {
-    const isActive = includedGroups.includes(groupId);
+    const isActive = selectedIncludedGroups.includes(groupId);
     const newGroups = isActive
-      ? includedGroups.filter((id) => id !== groupId)
-      : [...includedGroups, groupId];
+      ? selectedIncludedGroups.filter((id) => id !== groupId)
+      : [...selectedIncludedGroups, groupId];
 
-    setIncludedGroups(newGroups.length > 0 ? newGroups : null);
-    setPage(1);
+    void onIncludedGroupsChange?.(newGroups);
   };
 
   const activeFeaturedCount = featuredGroups.filter((group) =>
-    includedGroups.includes(group.id)
+    selectedIncludedGroups.includes(group.id)
   ).length;
 
   return (
@@ -145,7 +130,7 @@ export function QuickGroupFilters({
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {featuredGroups.map((group) => {
-          const isActive = includedGroups.includes(group.id);
+          const isActive = selectedIncludedGroups.includes(group.id);
           const count = groupCounts?.[group.id];
 
           return (

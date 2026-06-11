@@ -4,35 +4,50 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkspaceUsersTable } from './workspace-users-table';
 
-const { dataTableMock, parser, queryState, useWorkspaceUsersMock } = vi.hoisted(
-  () => {
-    const nextParser = {
-      withDefault() {
-        return this;
-      },
-      withOptions() {
-        return this;
-      },
-    };
+const {
+  dataTableMock,
+  parser,
+  querySetters,
+  queryState,
+  useWorkspaceUsersMock,
+} = vi.hoisted(() => {
+  const nextParser = {
+    withDefault() {
+      return this;
+    },
+    withOptions() {
+      return this;
+    },
+  };
 
-    return {
-      useWorkspaceUsersMock: vi.fn(),
-      dataTableMock: vi.fn(),
-      queryState: {
-        q: '',
-        page: 1,
-        pageSize: 10,
-        status: 'active',
-        linkStatus: null,
-        requireAttention: 'all',
-        groupMembership: null,
-        includedGroups: [],
-        excludedGroups: null,
-      } as Record<string, unknown>,
-      parser: nextParser,
-    };
-  }
-);
+  return {
+    useWorkspaceUsersMock: vi.fn(),
+    dataTableMock: vi.fn(),
+    querySetters: {
+      excludedGroups: vi.fn(),
+      groupMembership: vi.fn(),
+      includedGroups: vi.fn(),
+      linkStatus: vi.fn(),
+      page: vi.fn(),
+      pageSize: vi.fn(),
+      q: vi.fn(),
+      requireAttention: vi.fn(),
+      status: vi.fn(),
+    } as Record<string, ReturnType<typeof vi.fn>>,
+    queryState: {
+      q: '',
+      page: 1,
+      pageSize: 10,
+      status: 'active',
+      linkStatus: null,
+      requireAttention: 'all',
+      groupMembership: null,
+      includedGroups: [],
+      excludedGroups: null,
+    } as Record<string, unknown>,
+    parser: nextParser,
+  };
+});
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -42,7 +57,7 @@ vi.mock('nuqs', () => ({
   parseAsArrayOf: () => parser,
   parseAsInteger: parser,
   parseAsString: parser,
-  useQueryState: (key: string) => [queryState[key] ?? null, vi.fn()],
+  useQueryState: (key: string) => [queryState[key] ?? null, querySetters[key]],
 }));
 
 vi.mock('@/hooks/use-user-config', () => ({
@@ -90,6 +105,7 @@ function renderWithQueryClient(node: ReactNode) {
 describe('WorkspaceUsersTable', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.values(querySetters).forEach((setter) => setter.mockClear());
     queryState.q = '';
     queryState.page = 1;
     queryState.pageSize = 10;
@@ -150,6 +166,8 @@ describe('WorkspaceUsersTable', () => {
     expect(dataTableProps.toolbarExportContent?.props.filters).toMatchObject({
       excludedGroups: ['default-group'],
     });
+    expect(querySetters.includedGroups).not.toHaveBeenCalled();
+    expect(querySetters.excludedGroups).not.toHaveBeenCalled();
   });
 
   it('preserves explicit included and excluded groups', async () => {

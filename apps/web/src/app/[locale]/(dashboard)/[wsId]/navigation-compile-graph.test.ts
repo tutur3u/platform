@@ -32,15 +32,24 @@ describe('[wsId] navigation compile graph', () => {
       expect(navigationSource).not.toMatch(staticImportPattern(modulePath));
     }
 
-    expect(navigationSource).toContain(
-      "from '@tuturuuu/internal-api/workspace-config-ids'"
+    expect(navigationSource).toMatch(
+      /import\(["']@tuturuuu\/supabase\/next\/server["']\)/u
     );
-    expect(navigationSource).toContain(
-      "import('@tuturuuu/supabase/next/server')"
+    expect(navigationSource).toMatch(
+      /import\(["']@tuturuuu\/utils\/workspace-helper["']\)/u
     );
-    expect(navigationSource).toContain(
-      "import('@tuturuuu/utils/workspace-helper')"
+    expect(navigationSource).toMatch(/import\(["']next-intl\/server["']\)/u);
+  });
+
+  it('does not serialize users database default group filters into sidebar URLs', () => {
+    expect(navigationSource).not.toContain(
+      'DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID'
     );
-    expect(navigationSource).toContain("import('next-intl/server')");
+    expect(navigationSource).not.toContain(
+      'DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID'
+    );
+    expect(navigationSource).not.toContain(
+      'deferredQueryParamsFromWorkspaceConfig'
+    );
   });
 });

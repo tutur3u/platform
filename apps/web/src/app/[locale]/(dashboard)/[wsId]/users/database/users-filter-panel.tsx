@@ -18,12 +18,17 @@ interface UsersFilterPanelProps {
   groupMembership: GroupMembershipFilter;
   defaultLinkStatus: DatabaseLinkStatus;
   defaultGroupMembership: GroupMembershipFilter;
+  includedGroups: string[];
+  excludedGroups: string[] | null;
+  effectiveIncludedGroups: string[];
   effectiveExcludedGroups: string[];
   initialFeaturedGroupIds?: string[];
   onStatusChange: (value: UsersDatabaseStatus) => void;
   onLinkStatusChange: (value: DatabaseLinkStatus) => void;
   onRequireAttentionChange: (value: UsersDatabaseRequireAttention) => void;
   onGroupMembershipChange: (value: GroupMembershipFilter) => void;
+  onIncludedGroupsChange: (value: string[]) => Promise<void> | void;
+  onExcludedGroupsChange: (value: string[]) => Promise<void> | void;
 }
 
 export function UsersFilterPanel({
@@ -34,12 +39,17 @@ export function UsersFilterPanel({
   groupMembership,
   defaultLinkStatus,
   defaultGroupMembership,
+  includedGroups,
+  excludedGroups,
+  effectiveIncludedGroups,
   effectiveExcludedGroups,
   initialFeaturedGroupIds = [],
   onStatusChange,
   onLinkStatusChange,
   onRequireAttentionChange,
   onGroupMembershipChange,
+  onIncludedGroupsChange,
+  onExcludedGroupsChange,
 }: UsersFilterPanelProps) {
   return (
     <section className="col-span-full flex w-full flex-wrap items-center gap-2 rounded-lg border border-border/60 bg-background/80 p-2 shadow-sm">
@@ -59,13 +69,22 @@ export function UsersFilterPanel({
       <QuickGroupFilters
         wsId={wsId}
         initialFeaturedGroupIds={initialFeaturedGroupIds}
+        includedGroups={includedGroups}
+        effectiveIncludedGroups={effectiveIncludedGroups}
+        excludedGroups={excludedGroups}
         effectiveExcludedGroups={effectiveExcludedGroups}
         groupMembership={groupMembership}
         linkStatus={linkStatus}
+        onIncludedGroupsChange={onIncludedGroupsChange}
       />
       <Filters
         wsId={wsId}
+        includedGroups={includedGroups}
+        excludedGroups={excludedGroups}
+        effectiveIncludedGroups={effectiveIncludedGroups}
         effectiveExcludedGroups={effectiveExcludedGroups}
+        onIncludedGroupsChange={onIncludedGroupsChange}
+        onExcludedGroupsChange={onExcludedGroupsChange}
         className="contents"
       />
     </section>

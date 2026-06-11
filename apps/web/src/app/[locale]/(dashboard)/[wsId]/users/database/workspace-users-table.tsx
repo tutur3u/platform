@@ -11,7 +11,7 @@ import {
   useQueryState,
 } from 'nuqs';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useUserConfig } from '@/hooks/use-user-config';
 import {
   DATABASE_DEFAULT_GROUP_MEMBERSHIP_CONFIG_ID,
@@ -160,6 +160,10 @@ export function WorkspaceUsersTable({
       shallow: true,
     })
   );
+  const [defaultIncludedGroupsDisabled, setDefaultIncludedGroupsDisabled] =
+    useState(false);
+  const [defaultExcludedGroupsDisabled, setDefaultExcludedGroupsDisabled] =
+    useState(false);
 
   const { data: defaultIncludedGroups, isLoading: isLoadingIncludedDefaults } =
     useDefaultIncludedGroups(wsId, {
@@ -171,24 +175,6 @@ export function WorkspaceUsersTable({
     });
   const { data: extraFieldsData, isLoading: isLoadingFields } =
     useWorkspaceUserFields(wsId);
-
-  // Track if defaults have been applied (prevents re-apply on clear)
-  const hasAppliedDefaultIncludedGroups = useRef(false);
-  const hasAppliedDefaultExcludedGroups = useRef(false);
-
-  const shouldApplyDefaultIncludedGroups =
-    !isLoadingIncludedDefaults &&
-    !hasAppliedDefaultIncludedGroups.current &&
-    includedGroups.length === 0 &&
-    !!defaultIncludedGroups &&
-    defaultIncludedGroups.length > 0;
-
-  const shouldApplyDefaultExcludedGroups =
-    !isLoadingDefaults &&
-    !hasAppliedDefaultExcludedGroups.current && // Only apply once per session
-    excludedGroups === null &&
-    !!defaultExcludedGroups &&
-    defaultExcludedGroups.length > 0;
 
   const isUserDefaultsReady = !isLoadingLinkStatus && !isLoadingGroupMembership;
   const isInitialized =
@@ -204,33 +190,11 @@ export function WorkspaceUsersTable({
     groupMembership,
     defaultIncludedGroups,
     defaultExcludedGroups,
-    hasAppliedDefaultIncludedGroups: hasAppliedDefaultIncludedGroups.current,
-    hasAppliedDefaultExcludedGroups: hasAppliedDefaultExcludedGroups.current,
+    hasAppliedDefaultIncludedGroups: defaultIncludedGroupsDisabled,
+    hasAppliedDefaultExcludedGroups: defaultExcludedGroupsDisabled,
     defaultLinkStatus,
     defaultGroupMembership,
   });
-
-  // Apply default included groups to URL state on mount if no inclusions set
-  useEffect(() => {
-    if (!shouldApplyDefaultIncludedGroups) return;
-    hasAppliedDefaultIncludedGroups.current = true;
-    void setIncludedGroups(defaultIncludedGroups);
-  }, [
-    defaultIncludedGroups,
-    setIncludedGroups,
-    shouldApplyDefaultIncludedGroups,
-  ]);
-
-  // Apply default excluded groups to URL state on mount if no exclusions set
-  useEffect(() => {
-    if (!shouldApplyDefaultExcludedGroups) return;
-    hasAppliedDefaultExcludedGroups.current = true;
-    void setExcludedGroups(defaultExcludedGroups);
-  }, [
-    defaultExcludedGroups,
-    setExcludedGroups,
-    shouldApplyDefaultExcludedGroups,
-  ]);
 
   useEffect(() => {
     if (!isUserDefaultsReady || linkStatus !== null) return;
@@ -325,8 +289,32 @@ export function WorkspaceUsersTable({
     [setPage, setPageSize]
   );
 
+  const handleIncludedGroupsChange = useCallback(
+    async (groups: string[]) => {
+      const normalizedGroups = [...new Set(groups.filter(Boolean))];
+      setDefaultIncludedGroupsDisabled(normalizedGroups.length === 0);
+      await setIncludedGroups(normalizedGroups);
+      await setPage(1);
+    },
+    [setIncludedGroups, setPage]
+  );
+
+  const handleExcludedGroupsChange = useCallback(
+    async (groups: string[]) => {
+      const normalizedGroups = [...new Set(groups.filter(Boolean))];
+      setDefaultExcludedGroupsDisabled(normalizedGroups.length === 0);
+      await setExcludedGroups(
+        normalizedGroups.length > 0 ? normalizedGroups : null
+      );
+      await setPage(1);
+    },
+    [setExcludedGroups, setPage]
+  );
+
   // Handler for reset - clears all nuqs state
   const handleResetParams = useCallback(() => {
+    setDefaultIncludedGroupsDisabled(true);
+    setDefaultExcludedGroupsDisabled(true);
     setQ(null);
     setPage(null);
     setPageSize(null);
@@ -396,6 +384,9 @@ export function WorkspaceUsersTable({
             groupMembership={effectiveGroupMembership}
             defaultLinkStatus={defaultLinkStatus}
             defaultGroupMembership={defaultGroupMembership}
+            includedGroups={includedGroups}
+            excludedGroups={excludedGroups}
+            effectiveIncludedGroups={resolvedFilters.includedGroups}
             effectiveExcludedGroups={resolvedFilters.excludedGroups}
             initialFeaturedGroupIds={initialFeaturedGroupIds}
             onStatusChange={(val) => {
@@ -414,6 +405,8 @@ export function WorkspaceUsersTable({
               setGroupMembership(val === defaultGroupMembership ? null : val);
               setPage(1);
             }}
+            onIncludedGroupsChange={handleIncludedGroupsChange}
+            onExcludedGroupsChange={handleExcludedGroupsChange}
           />
         }
         toolbarImportContent={toolbarImportContent}

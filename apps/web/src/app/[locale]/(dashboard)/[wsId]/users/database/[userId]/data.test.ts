@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const createAdminClientMock = vi.fn();
+const fetchRequireAttentionUserIdsMock = vi.fn();
+const serverLoggerErrorMock = vi.fn();
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof createAdminClientMock>) =>
@@ -14,14 +16,27 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/lib/require-attention-users', () => ({
-  fetchRequireAttentionUserIds: vi.fn().mockResolvedValue(new Set()),
+  fetchRequireAttentionUserIds: (
+    ...args: Parameters<typeof fetchRequireAttentionUserIdsMock>
+  ) => fetchRequireAttentionUserIdsMock(...args),
 }));
 
 vi.mock('@/lib/user-referrals', () => ({
   listAvailableReferralUsers: vi.fn(),
 }));
 
-import { getGroupData } from './data';
+vi.mock('@/lib/infrastructure/log-drain', () => ({
+  serverLogger: {
+    error: (...args: Parameters<typeof serverLoggerErrorMock>) =>
+      serverLoggerErrorMock(...args),
+  },
+}));
+
+import {
+  getGroupData,
+  getUserDetailData,
+  loadOptionalUserDetailResource,
+} from './data';
 
 function createGroupQuery(result: {
   count: number | null;
@@ -40,6 +55,7 @@ function createGroupQuery(result: {
 describe('user detail data loaders', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    fetchRequireAttentionUserIdsMock.mockResolvedValue(new Set());
   });
 
   it('uses the explicit workspace group membership FK when loading groups', async () => {
@@ -103,5 +119,88 @@ describe('user detail data loaders', () => {
     expect(groupQuery.order).toHaveBeenCalledWith('name', {
       ascending: true,
     });
+  });
+
+  it('keeps primary user details loadable when require-attention lookup fails', async () => {
+    fetchRequireAttentionUserIdsMock.mockRejectedValue(
+      new Error('missing require-attention rpc')
+    );
+    const rpcMock = vi.fn().mockResolvedValue({
+      data: {
+        id: 'user-1',
+        full_name: 'Alice Nguyen',
+        display_name: 'Alice',
+        avatar_url: null,
+        email: 'alice@example.com',
+        phone: null,
+        birthday: null,
+        gender: null,
+        ethnicity: null,
+        guardian: null,
+        national_id: null,
+        address: null,
+        note: null,
+        archived: false,
+        archived_until: null,
+        created_at: null,
+        updated_at: null,
+        group_count: 0,
+        linked_users: [],
+        referrer: null,
+      },
+      error: null,
+    });
+
+    createAdminClientMock.mockResolvedValue({
+      rpc: rpcMock,
+    });
+
+    await expect(
+      getUserDetailData({
+        wsId: 'ws-1',
+        userId: 'user-1',
+        hasPrivateInfo: true,
+        hasPublicInfo: true,
+      })
+    ).resolves.toMatchObject({
+      display_name: 'Alice',
+      full_name: 'Alice Nguyen',
+      has_require_attention_feedback: false,
+      id: 'user-1',
+    });
+
+    expect(serverLoggerErrorMock).toHaveBeenCalledWith(
+      'Failed to load user detail require-attention flags',
+      expect.objectContaining({
+        loader: 'getUserDetailData',
+        userId: 'user-1',
+        wsId: 'ws-1',
+      }),
+      expect.any(Error)
+    );
+  });
+
+  it('logs and falls back when an optional detail resource fails', async () => {
+    await expect(
+      loadOptionalUserDetailResource({
+        fallback: { count: 0, data: [] },
+        loader: async () => {
+          throw new Error('reports unavailable');
+        },
+        name: 'reports',
+        userId: 'user-1',
+        wsId: 'ws-1',
+      })
+    ).resolves.toEqual({ count: 0, data: [] });
+
+    expect(serverLoggerErrorMock).toHaveBeenCalledWith(
+      'Failed to load user detail resource',
+      expect.objectContaining({
+        resource: 'reports',
+        userId: 'user-1',
+        wsId: 'ws-1',
+      }),
+      expect.any(Error)
+    );
   });
 });

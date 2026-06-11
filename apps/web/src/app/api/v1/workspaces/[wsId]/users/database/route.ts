@@ -12,7 +12,10 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { GROUP_MEMBERSHIP_FILTER_VALUES } from '@/app/[locale]/(dashboard)/[wsId]/users/database/group-membership';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  serverLogger,
+  withRequestLogDrain,
+} from '@/lib/infrastructure/log-drain';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 import {
   fetchRequireAttentionUserIds,
@@ -472,17 +475,31 @@ async function handleUsersDatabaseRequest(
 
 export async function GET(request: Request, context: Params) {
   const { searchParams } = new URL(request.url);
-  return handleUsersDatabaseRequest(
-    request,
-    context,
-    collectSearchParams(searchParams)
+  return withRequestLogDrain(
+    {
+      request,
+      route: '/api/v1/workspaces/[wsId]/users/database',
+    },
+    () =>
+      handleUsersDatabaseRequest(
+        request,
+        context,
+        collectSearchParams(searchParams)
+      )
   );
 }
 
 export async function POST(request: Request, context: Params) {
-  return handleUsersDatabaseRequest(
-    request,
-    context,
-    await readJsonObject(request)
+  return withRequestLogDrain(
+    {
+      request,
+      route: '/api/v1/workspaces/[wsId]/users/database',
+    },
+    async () =>
+      handleUsersDatabaseRequest(
+        request,
+        context,
+        await readJsonObject(request)
+      )
   );
 }

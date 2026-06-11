@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { notFound } from 'next/navigation';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { fetchRequireAttentionUserIds } from '@/lib/require-attention-users';
 import { listAvailableReferralUsers } from '@/lib/user-referrals';
 import type {
@@ -12,6 +13,52 @@ import type {
   UserReport,
   WorkspaceSettings,
 } from './types';
+
+type RequireAttentionOptions = Parameters<
+  typeof fetchRequireAttentionUserIds
+>[1];
+
+async function fetchRequireAttentionUserIdsOrEmpty(
+  sbAdmin: Parameters<typeof fetchRequireAttentionUserIds>[0],
+  options: RequireAttentionOptions,
+  metadata: Record<string, unknown>
+) {
+  try {
+    return await fetchRequireAttentionUserIds(sbAdmin, options);
+  } catch (error) {
+    serverLogger.error(
+      'Failed to load user detail require-attention flags',
+      metadata,
+      error
+    );
+    return new Set<string>();
+  }
+}
+
+export async function loadOptionalUserDetailResource<T>({
+  fallback,
+  loader,
+  name,
+  userId,
+  wsId,
+}: {
+  fallback: T;
+  loader: () => Promise<T>;
+  name: string;
+  userId: string;
+  wsId: string;
+}) {
+  try {
+    return await loader();
+  } catch (error) {
+    serverLogger.error(
+      'Failed to load user detail resource',
+      { resource: name, userId, wsId },
+      error
+    );
+    return fallback;
+  }
+}
 
 export async function isUserGuest(user_id: string) {
   const sbAdmin = await createAdminClient();
@@ -83,13 +130,21 @@ export async function getUserDetailData({
   }
 
   const userWithDetails = rawData as unknown as RPCUserWithDetails;
-  const requireAttentionUserIds = await fetchRequireAttentionUserIds(sbAdmin, {
-    wsId,
-    userIds: [
-      userWithDetails.id,
-      ...(userWithDetails.referrer?.id ? [userWithDetails.referrer.id] : []),
-    ],
-  });
+  const requireAttentionUserIds = await fetchRequireAttentionUserIdsOrEmpty(
+    sbAdmin,
+    {
+      wsId,
+      userIds: [
+        userWithDetails.id,
+        ...(userWithDetails.referrer?.id ? [userWithDetails.referrer.id] : []),
+      ],
+    },
+    {
+      loader: 'getUserDetailData',
+      userId,
+      wsId,
+    }
+  );
 
   const data: UserDetail = {
     id: userWithDetails.id,
@@ -268,7 +323,11 @@ export async function getCouponData({
     .eq('user_id', userId);
 
   if (linksError) {
-    console.error('Error fetching coupon data:', linksError);
+    serverLogger.error(
+      'Error fetching user detail coupon links',
+      { userId, wsId },
+      linksError
+    );
     return { data: [], count: 0 };
   }
 
@@ -285,7 +344,11 @@ export async function getCouponData({
     .in('id', promoIds);
 
   if (error) {
-    console.error('Error fetching coupon data:', error);
+    serverLogger.error(
+      'Error fetching user detail coupon data',
+      { promoCount: promoIds.length, userId, wsId },
+      error
+    );
     return { data: [], count: 0 };
   }
 
@@ -353,10 +416,19 @@ export async function getReferredUsers({
   if (error) throw error;
 
   const referredUsers = (data || []) as unknown as WorkspaceUser[];
-  const requireAttentionUserIds = await fetchRequireAttentionUserIds(sbAdmin, {
-    wsId,
-    userIds: referredUsers.map((user) => user.id),
-  });
+  const requireAttentionUserIds = await fetchRequireAttentionUserIdsOrEmpty(
+    sbAdmin,
+    {
+      wsId,
+      userIds: referredUsers.map((user) => user.id),
+    },
+    {
+      loader: 'getReferredUsers',
+      referredUserCount: referredUsers.length,
+      userId,
+      wsId,
+    }
+  );
 
   return referredUsers.map((user) => ({
     ...user,

@@ -42,6 +42,12 @@ export interface WorkspaceUsersResponse {
   };
 }
 
+interface PossibleExcludedGroupsPageResponse {
+  count: number;
+  data: UserGroup[];
+  pageSize: number;
+}
+
 export async function fetchWorkspaceUsers(
   wsId: string,
   params: Required<WorkspaceUsersParams>
@@ -60,6 +66,87 @@ export async function fetchWorkspaceUsers(
   }
 
   return response.json();
+}
+
+export async function fetchPossibleExcludedGroupsPage(
+  wsId: string,
+  params: {
+    includedGroups: string[];
+    page?: number;
+    pageSize?: number;
+    paginated?: boolean;
+    q?: string;
+  }
+): Promise<PossibleExcludedGroupsPageResponse> {
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/users/groups/possible-excluded`,
+    {
+      body: JSON.stringify(params),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch possible excluded groups');
+  }
+
+  return (await response.json()) as PossibleExcludedGroupsPageResponse;
+}
+
+export async function fetchPossibleExcludedGroups(
+  wsId: string,
+  includedGroups: string[]
+): Promise<UserGroup[]> {
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/users/groups/possible-excluded`,
+    {
+      body: JSON.stringify({ includedGroups }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch possible excluded groups');
+  }
+
+  return (await response.json()) as UserGroup[];
+}
+
+export async function fetchFeaturedGroupCounts(
+  wsId: string,
+  params: FeaturedGroupCountsParams & { featuredGroupIds: string[] }
+): Promise<Record<string, number>> {
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/users/groups/featured-counts`,
+    {
+      body: JSON.stringify({
+        excludedGroups: params.excludedGroups ?? [],
+        featuredGroupIds: params.featuredGroupIds,
+        linkStatus: params.linkStatus ?? 'all',
+        q: params.searchQuery ?? '',
+        status: params.status ?? 'active',
+      }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch featured group counts');
+  }
+
+  return (await response.json()) as Record<string, number>;
 }
 
 /**
@@ -175,22 +262,7 @@ export function useExcludedUserGroups(
         return listAllWorkspaceUserGroups(wsId);
       }
 
-      // Use backend API to get possible excluded groups
-      const searchParams = new URLSearchParams();
-      includedGroups.forEach((group) => {
-        searchParams.append('includedGroups', group);
-      });
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/groups/possible-excluded?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch possible excluded groups');
-      }
-
-      return (await response.json()) as UserGroup[];
+      return fetchPossibleExcludedGroups(wsId, includedGroups);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -267,27 +339,13 @@ export function useFeaturedGroupCounts(
       { excludedGroups, searchQuery, status, linkStatus },
     ],
     queryFn: async (): Promise<Record<string, number>> => {
-      const searchParams = new URLSearchParams();
-      featuredGroupIds.forEach((id) => {
-        searchParams.append('featuredGroupIds', id);
+      return fetchFeaturedGroupCounts(wsId, {
+        excludedGroups,
+        featuredGroupIds,
+        linkStatus,
+        searchQuery,
+        status,
       });
-      excludedGroups.forEach((id) => {
-        searchParams.append('excludedGroups', id);
-      });
-      if (searchQuery) searchParams.set('q', searchQuery);
-      searchParams.set('status', status);
-      searchParams.set('linkStatus', linkStatus);
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/groups/featured-counts?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch featured group counts');
-      }
-
-      return (await response.json()) as Record<string, number>;
     },
     enabled: featuredGroupIds.length > 0,
     placeholderData: keepPreviousData,

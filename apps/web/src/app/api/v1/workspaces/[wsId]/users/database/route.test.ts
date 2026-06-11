@@ -32,6 +32,8 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
     error: (...args: Parameters<typeof serverLoggerErrorMock>) =>
       serverLoggerErrorMock(...args),
   },
+  withRequestLogDrain: (_options: unknown, handler: () => Promise<Response>) =>
+    handler(),
 }));
 
 import { GET, POST } from './route';

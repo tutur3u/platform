@@ -20,16 +20,16 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useMemo, useState } from 'react';
+import { fetchPossibleExcludedGroupsPage } from './hooks';
 
 interface GroupFilterProps {
   wsId: string;
   filterType: 'included' | 'excluded';
-  queryKey: 'includedGroups' | 'excludedGroups';
-  pageKey: 'page';
-  dependencyKey?: 'includedGroups';
+  selectedGroupIds: string[];
+  dependencyGroupIds: string[];
   effectiveSelectedGroupIds?: string[];
+  onSelectedGroupIdsChange?: (value: string[]) => Promise<void> | void;
   className?: string;
 }
 
@@ -76,29 +76,14 @@ async function fetchExcludedGroupsPage(
     return fetchIncludedGroupsPage(wsId, page, query);
   }
 
-  const searchParams = new URLSearchParams();
-  searchParams.set('page', String(page));
-  searchParams.set('pageSize', String(GROUPS_PAGE_SIZE));
-  searchParams.set('paginated', 'true');
-
-  if (query.trim()) {
-    searchParams.set('q', query.trim());
-  }
-
-  includedGroups.forEach((group) => {
-    searchParams.append('includedGroups', group);
+  const payload = await fetchPossibleExcludedGroupsPage(wsId, {
+    includedGroups,
+    page,
+    pageSize: GROUPS_PAGE_SIZE,
+    paginated: true,
+    q: query.trim() || undefined,
   });
 
-  const response = await fetch(
-    `/api/v1/workspaces/${wsId}/users/groups/possible-excluded?${searchParams.toString()}`,
-    { cache: 'no-store' }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch possible excluded groups');
-  }
-
-  const payload = (await response.json()) as GroupsPageResponse;
   return {
     count: payload.count ?? 0,
     data: payload.data ?? [],
@@ -109,10 +94,10 @@ async function fetchExcludedGroupsPage(
 export function GroupFilter({
   wsId,
   filterType,
-  queryKey,
-  pageKey,
-  dependencyKey,
+  selectedGroupIds,
+  dependencyGroupIds,
   effectiveSelectedGroupIds = [],
+  onSelectedGroupIdsChange,
   className,
 }: GroupFilterProps) {
   const t = useTranslations('user-data-table');
@@ -120,26 +105,8 @@ export function GroupFilter({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [selectedGroupIds, setSelectedGroupIds] = useQueryState(
-    queryKey,
-    queryKey === 'excludedGroups'
-      ? parseAsArrayOf(parseAsString).withOptions({
-          shallow: true,
-        })
-      : parseAsArrayOf(parseAsString).withDefault([]).withOptions({
-          shallow: true,
-        })
-  );
-  const [dependencyGroups] = useQueryState(
-    dependencyKey ?? 'includedGroups',
-    parseAsArrayOf(parseAsString).withDefault([]).withOptions({
-      shallow: true,
-    })
-  );
-  const [, setPage] = useQueryState(pageKey, { shallow: true });
-
   const resolvedSelectedGroupIds =
-    selectedGroupIds ?? effectiveSelectedGroupIds;
+    selectedGroupIds.length > 0 ? selectedGroupIds : effectiveSelectedGroupIds;
   const normalizedSelectedGroupIds = useMemo(
     () => [...new Set(resolvedSelectedGroupIds.filter(Boolean))],
     [resolvedSelectedGroupIds]
@@ -162,7 +129,7 @@ export function GroupFilter({
         ? [
             'workspace-excluded-groups-infinite',
             wsId,
-            dependencyGroups,
+            dependencyGroupIds,
             searchQuery.trim(),
           ]
         : ['workspace-user-groups-infinite', wsId, searchQuery.trim()],
@@ -171,7 +138,7 @@ export function GroupFilter({
       filterType === 'excluded'
         ? fetchExcludedGroupsPage(
             wsId,
-            dependencyGroups,
+            dependencyGroupIds,
             pageParam,
             searchQuery
           )
@@ -219,7 +186,7 @@ export function GroupFilter({
   }, [pagedGroups?.pages, selectedGroups]);
 
   const sortedGroups = useMemo(() => {
-    const selectedSet = new Set(selectedGroupIds);
+    const selectedSet = new Set(resolvedSelectedGroupIds);
     return [...groups].sort((a, b) => {
       const aSelected = selectedSet.has(a.id);
       const bSelected = selectedSet.has(b.id);
@@ -229,7 +196,7 @@ export function GroupFilter({
       const bName = b.name || t('common.unknown');
       return aName.localeCompare(bName);
     });
-  }, [groups, selectedGroupIds, t]);
+  }, [groups, resolvedSelectedGroupIds, t]);
 
   const combinedError = error || selectedGroupsError;
   const showInitialLoading = isLoading || isLoadingSelectedGroups;
@@ -241,22 +208,14 @@ export function GroupFilter({
         ? currentSelection.filter((id) => id !== groupId)
         : [...currentSelection, groupId];
 
-      await setSelectedGroupIds(
-        nextSelection.length > 0
-          ? nextSelection
-          : queryKey === 'excludedGroups'
-            ? null
-            : []
-      );
-      await setPage('1');
+      await onSelectedGroupIdsChange?.(nextSelection);
     },
-    [queryKey, resolvedSelectedGroupIds, setSelectedGroupIds, setPage]
+    [onSelectedGroupIdsChange, resolvedSelectedGroupIds]
   );
 
   const clearFilters = useCallback(async () => {
-    await setSelectedGroupIds(queryKey === 'excludedGroups' ? null : []);
-    await setPage('1');
-  }, [queryKey, setSelectedGroupIds, setPage]);
+    await onSelectedGroupIdsChange?.([]);
+  }, [onSelectedGroupIdsChange]);
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>

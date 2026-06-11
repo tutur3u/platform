@@ -15,6 +15,7 @@ import {
   getUserSentEmails,
   getWorkspaceSettings,
   isUserGuest,
+  loadOptionalUserDetailResource,
 } from './data';
 import EditUserDialog from './edit-user-dialog';
 import { partitionUserGroupsBySchedule } from './group-schedule';
@@ -71,7 +72,13 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
       hasPrivateInfo,
       hasPublicInfo,
     }),
-    isUserGuest(userId),
+    loadOptionalUserDetailResource({
+      fallback: false,
+      loader: () => isUserGuest(userId),
+      name: 'guest-status',
+      userId,
+      wsId,
+    }),
   ]);
 
   const [
@@ -84,25 +91,73 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
     referredUsers,
   ] = await Promise.all([
     hasPrivateInfo
-      ? getGroupData({ wsId, userId })
-      : Promise.resolve({ data: [], count: 0 }),
-    hasPrivateInfo
-      ? getReportData({ wsId, userId })
-      : Promise.resolve({ data: [], count: 0 }),
-    hasPrivateInfo
-      ? getCouponData({ wsId, userId })
-      : Promise.resolve({ data: [], count: 0 }),
-    hasPrivateInfo
-      ? getUserSentEmails({ wsId, userId, pageSize: EMAIL_PAGE_SIZE })
-      : Promise.resolve({ data: [], count: 0 }),
-    hasPrivateInfo ? getWorkspaceSettings(wsId) : Promise.resolve(null),
-    hasPrivateInfo && canUpdateUsers
-      ? getAvailableUsersForReferral({
+      ? loadOptionalUserDetailResource({
+          fallback: { data: [], count: 0 },
+          loader: () => getGroupData({ wsId, userId }),
+          name: 'groups',
+          userId,
           wsId,
-          currentUserId: userId,
         })
       : Promise.resolve({ data: [], count: 0 }),
-    hasPrivateInfo ? getReferredUsers({ wsId, userId }) : Promise.resolve([]),
+    hasPrivateInfo
+      ? loadOptionalUserDetailResource({
+          fallback: { data: [], count: 0 },
+          loader: () => getReportData({ wsId, userId }),
+          name: 'reports',
+          userId,
+          wsId,
+        })
+      : Promise.resolve({ data: [], count: 0 }),
+    hasPrivateInfo
+      ? loadOptionalUserDetailResource({
+          fallback: { data: [], count: 0 },
+          loader: () => getCouponData({ wsId, userId }),
+          name: 'coupons',
+          userId,
+          wsId,
+        })
+      : Promise.resolve({ data: [], count: 0 }),
+    hasPrivateInfo
+      ? loadOptionalUserDetailResource({
+          fallback: { data: [], count: 0 },
+          loader: () =>
+            getUserSentEmails({ wsId, userId, pageSize: EMAIL_PAGE_SIZE }),
+          name: 'sent-emails',
+          userId,
+          wsId,
+        })
+      : Promise.resolve({ data: [], count: 0 }),
+    hasPrivateInfo
+      ? loadOptionalUserDetailResource({
+          fallback: null,
+          loader: () => getWorkspaceSettings(wsId),
+          name: 'workspace-settings',
+          userId,
+          wsId,
+        })
+      : Promise.resolve(null),
+    hasPrivateInfo && canUpdateUsers
+      ? loadOptionalUserDetailResource({
+          fallback: { data: [], count: 0 },
+          loader: () =>
+            getAvailableUsersForReferral({
+              wsId,
+              currentUserId: userId,
+            }),
+          name: 'available-referral-users',
+          userId,
+          wsId,
+        })
+      : Promise.resolve({ data: [], count: 0 }),
+    hasPrivateInfo
+      ? loadOptionalUserDetailResource({
+          fallback: [],
+          loader: () => getReferredUsers({ wsId, userId }),
+          name: 'referred-users',
+          userId,
+          wsId,
+        })
+      : Promise.resolve([]),
   ]);
 
   const groups = groupResult.data;
