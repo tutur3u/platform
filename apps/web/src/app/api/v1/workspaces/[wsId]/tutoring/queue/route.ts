@@ -104,8 +104,8 @@ export async function GET(request: Request, { params }: Params) {
     .from('user_group_attendance')
     .select(
       `group_id,user_id,status,
-      group:workspace_user_groups!inner(id,ws_id,name),
-      user:workspace_users!inner(id,full_name,display_name,email,archived)`
+      group:workspace_user_groups!user_group_attendance_group_id_fkey!inner(id,ws_id,name),
+      user:workspace_users!user_group_attendance_user_id_fkey!inner(id,full_name,display_name,email,archived)`
     )
     .eq('group.ws_id', normalizedWsId)
     .eq('user.archived', false)

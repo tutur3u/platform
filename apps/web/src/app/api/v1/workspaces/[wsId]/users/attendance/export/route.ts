@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const SearchParamsSchema = z
   .object({
@@ -92,20 +93,20 @@ export async function GET(request: Request, { params }: Params) {
         date,
         status,
         notes,
-        user:workspace_users!inner(${userFields}),
-        group:workspace_user_groups!inner(id, name)
+        user:workspace_users!user_group_attendance_user_id_fkey!inner(${userFields}),
+        group:workspace_user_groups!user_group_attendance_group_id_fkey!inner(id, name)
       `,
       { count: 'exact' }
     )
-    .eq('workspace_user_groups.ws_id', workspace.id)
-    .eq('workspace_users.ws_id', workspace.id)
+    .eq('group.ws_id', workspace.id)
+    .eq('user.ws_id', workspace.id)
     .gte('date', startDate)
     .lte('date', endDate)
     .order('date', { ascending: true })
     .range(offset, offset + limit - 1);
 
   if (error) {
-    console.error('Error exporting workspace attendance:', error);
+    serverLogger.error('Error exporting workspace attendance:', error);
     return NextResponse.json(
       { message: 'Error exporting attendance' },
       { status: 500 }

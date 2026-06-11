@@ -19,7 +19,10 @@ export async function GET(req: Request) {
 
   const { data, error, count } = await supabase
     .from('user_group_attendance')
-    .select('*, workspace_user_groups!inner(ws_id)', { count: 'exact' })
+    .select(
+      '*, workspace_user_groups!user_group_attendance_group_id_fkey!inner(ws_id)',
+      { count: 'exact' }
+    )
     .eq('workspace_user_groups.ws_id', wsId)
     .range(
       Number.parseInt(offset, 10),

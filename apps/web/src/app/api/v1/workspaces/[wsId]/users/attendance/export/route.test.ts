@@ -85,17 +85,11 @@ describe('attendance export route', () => {
     expect(sbAdmin.from).toHaveBeenCalledWith('user_group_attendance');
     expect(attendanceQuery.select).toHaveBeenCalledWith(
       expect.stringContaining(
-        'user:workspace_users!inner(id, display_name, full_name)'
+        'user:workspace_users!user_group_attendance_user_id_fkey!inner(id, display_name, full_name)'
       ),
       { count: 'exact' }
     );
-    expect(attendanceQuery.eq).toHaveBeenCalledWith(
-      'workspace_user_groups.ws_id',
-      'ws-1'
-    );
-    expect(attendanceQuery.eq).toHaveBeenCalledWith(
-      'workspace_users.ws_id',
-      'ws-1'
-    );
+    expect(attendanceQuery.eq).toHaveBeenCalledWith('group.ws_id', 'ws-1');
+    expect(attendanceQuery.eq).toHaveBeenCalledWith('user.ws_id', 'ws-1');
   });
 });
