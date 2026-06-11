@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { google } from '@ai-sdk/google';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -184,6 +185,7 @@ ${lessonInfo}`;
           return {
             answer,
             quiz: {
+              id: randomUUID(),
               question: quiz.question,
               type: quiz.type,
               content,
@@ -193,27 +195,29 @@ ${lessonInfo}`;
           };
         });
 
-        const createdQuizzes: Array<{ id: string }> = [];
-        for (const { answer, quiz } of quizPayloads) {
-          const { data: createdQuiz, error: quizError } = await sbAdmin
-            .from('workspace_quizzes')
-            .insert(quiz)
-            .select('id')
-            .single();
+        const { data: createdQuizRows, error: quizError } = await sbAdmin
+          .from('workspace_quizzes')
+          .insert(quizPayloads.map(({ quiz }) => quiz))
+          .select('id');
 
-          if (quizError || !createdQuiz) {
-            throw quizError ?? new Error('Failed to create quiz in database');
-          }
-
-          createdQuizzes.push(createdQuiz);
-          createdQuizIds.push(createdQuiz.id);
-
-          await setPrivateWorkspaceQuizAnswer({
-            answer,
-            db: sbAdmin,
-            quizId: createdQuiz.id,
-          });
+        if (quizError || !createdQuizRows) {
+          throw quizError ?? new Error('Failed to create quizzes in database');
         }
+
+        const createdQuizzes = quizPayloads.map(({ quiz }) => ({
+          id: quiz.id,
+        }));
+        createdQuizIds.push(...createdQuizzes.map((q) => q.id));
+
+        await Promise.all(
+          quizPayloads.map(({ answer, quiz }) =>
+            setPrivateWorkspaceQuizAnswer({
+              answer,
+              db: sbAdmin,
+              quizId: quiz.id,
+            })
+          )
+        );
 
         // Link quizzes to course module
         const { error: linkError } = await sbAdmin
