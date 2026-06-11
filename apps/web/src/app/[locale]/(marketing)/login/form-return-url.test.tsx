@@ -31,6 +31,7 @@ const mocks = vi.hoisted(() => ({
   pollMfaMobileApprovalChallengeWithInternalApi: vi.fn(),
   refreshSession: vi.fn(),
   reload: vi.fn(),
+  replace: vi.fn(),
   resolveCrossAppReturnUrlWithInternalApi: vi.fn(),
   routerPush: vi.fn(),
   routerRefresh: vi.fn(),
@@ -191,6 +192,7 @@ function setWindowLocation(search = '', origin = 'https://tuturuuu.com') {
       origin: url.origin,
       pathname: '/login',
       reload: mocks.reload,
+      replace: mocks.replace,
       search,
     },
   });
@@ -221,6 +223,9 @@ function renderLoginForm(returnUrl: string, options: { origin?: string } = {}) {
     origin: options.origin,
   });
 }
+
+const platformVerifyTokenReturnUrl =
+  'http://tuturuuu.com/verify-token?nextUrl=%2F';
 
 describe('LoginForm returnUrl navigation', () => {
   beforeEach(() => {
@@ -350,6 +355,26 @@ describe('LoginForm returnUrl navigation', () => {
     queryClient.clear();
   });
 
+  it('hard redirects authenticated bootstrap for platform verify-token returnUrls', async () => {
+    const queryClient = renderLoginForm(platformVerifyTokenReturnUrl);
+
+    await screen.findByText('account_switcher.redirecting');
+
+    await waitFor(() => {
+      expect(mocks.replace).toHaveBeenCalledWith('/');
+    });
+    expect(mocks.routerPush).not.toHaveBeenCalledWith(
+      '/verify-token?nextUrl=%2F'
+    );
+    expect(mocks.assign).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('button', {
+        name: 'login.continue_with_email',
+      })
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
   it('does not use a wildcard browser origin for social OAuth callbacks', async () => {
     vi.stubEnv('WEB_APP_URL', '');
     vi.stubEnv('NEXT_PUBLIC_WEB_APP_URL', '');
@@ -421,6 +446,53 @@ describe('LoginForm returnUrl navigation', () => {
     expect(mocks.routerPush).toHaveBeenCalledWith('/');
     expect(mocks.routerRefresh).toHaveBeenCalled();
     expect(mocks.reload).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('button', {
+        name: 'login.continue_with_email',
+      })
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('hard redirects password sign-in for platform verify-token returnUrls', async () => {
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
+    });
+
+    const queryClient = renderLoginForm(platformVerifyTokenReturnUrl);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'login.use_password_instead',
+      })
+    );
+    const passwordInput = await screen.findByPlaceholderText(
+      'login.password_placeholder'
+    );
+    fireEvent.change(passwordInput, {
+      target: { value: 'password1234' },
+    });
+
+    const signInButton = await screen.findByRole('button', {
+      name: 'login.sign_in',
+    });
+    (signInButton as HTMLButtonElement).disabled = false;
+    await act(async () => {
+      fireEvent.click(signInButton);
+    });
+
+    await waitFor(() => {
+      expect(mocks.passwordLoginWithInternalApi).toHaveBeenCalled();
+    });
+    await screen.findByText('account_switcher.redirecting');
+    await waitFor(() => {
+      expect(mocks.replace).toHaveBeenCalledWith('/');
+    });
+    expect(mocks.routerPush).not.toHaveBeenCalledWith(
+      '/verify-token?nextUrl=%2F'
+    );
     expect(
       screen.queryByRole('button', {
         name: 'login.continue_with_email',
@@ -511,6 +583,46 @@ describe('LoginForm returnUrl navigation', () => {
     queryClient.clear();
   });
 
+  it('hard redirects after TOTP MFA succeeds for platform verify-token returnUrls', async () => {
+    mocks.mfaAssuranceLevel.mockResolvedValue({
+      data: {
+        currentLevel: 'aal1',
+        nextLevel: 'aal2',
+      },
+    });
+
+    const queryClient = renderLoginForm(platformVerifyTokenReturnUrl);
+
+    await screen.findByText('login.two_factor_authentication');
+    fireEvent.change(await screen.findByLabelText('otp-input'), {
+      target: { value: '123456' },
+    });
+
+    const verifyButton = await screen.findByRole('button', {
+      name: 'login.verify_button',
+    });
+    await act(async () => {
+      fireEvent.click(verifyButton);
+    });
+
+    await waitFor(() => {
+      expect(mocks.mfaVerify).toHaveBeenCalled();
+    });
+    await screen.findByText('account_switcher.redirecting');
+    await waitFor(() => {
+      expect(mocks.replace).toHaveBeenCalledWith('/');
+    });
+    expect(mocks.routerPush).not.toHaveBeenCalledWith(
+      '/verify-token?nextUrl=%2F'
+    );
+    expect(
+      screen.queryByRole('button', {
+        name: 'login.continue_with_email',
+      })
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
   it('shows redirecting after mobile MFA approval succeeds without a returnUrl', async () => {
     mocks.mfaAssuranceLevel.mockResolvedValue({
       data: {
@@ -543,6 +655,51 @@ describe('LoginForm returnUrl navigation', () => {
     });
     await screen.findByText('account_switcher.redirecting');
     expect(mocks.routerPush).toHaveBeenCalledWith('/');
+    expect(
+      screen.queryByRole('button', {
+        name: 'login.continue_with_email',
+      })
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('hard redirects after mobile MFA approval for platform verify-token returnUrls', async () => {
+    mocks.mfaAssuranceLevel.mockResolvedValue({
+      data: {
+        currentLevel: 'aal1',
+        nextLevel: 'aal2',
+      },
+    });
+    mocks.pollMfaMobileApprovalChallengeWithInternalApi.mockResolvedValue({
+      mobileMfaVerified: true,
+      status: 'approved',
+    });
+
+    const queryClient = renderLoginForm(platformVerifyTokenReturnUrl);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'login.mobile_mfa_button',
+      })
+    );
+
+    await waitFor(() => {
+      expect(
+        mocks.createMfaMobileApprovalChallengeWithInternalApi
+      ).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(
+        mocks.pollMfaMobileApprovalChallengeWithInternalApi
+      ).toHaveBeenCalled();
+    });
+    await screen.findByText('account_switcher.redirecting');
+    await waitFor(() => {
+      expect(mocks.replace).toHaveBeenCalledWith('/');
+    });
+    expect(mocks.routerPush).not.toHaveBeenCalledWith(
+      '/verify-token?nextUrl=%2F'
+    );
     expect(
       screen.queryByRole('button', {
         name: 'login.continue_with_email',

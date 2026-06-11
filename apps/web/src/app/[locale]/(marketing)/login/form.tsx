@@ -75,6 +75,8 @@ import {
 
 const CAPTCHA_ERROR_RETRY_DELAY = 3000;
 const INVALID_LOCAL_RETURN_URL = '__invalid_local_return_url__';
+const VERIFY_TOKEN_FALLBACK_PATH = '/onboarding';
+const VERIFY_TOKEN_ROUTE_SEGMENT = 'verify-token';
 
 function getSafeLocalReturnPath(returnUrl: string | null | undefined) {
   const normalizedReturnUrl = normalizeClientRedirectPath(
@@ -85,6 +87,19 @@ function getSafeLocalReturnPath(returnUrl: string | null | undefined) {
   return normalizedReturnUrl === INVALID_LOCAL_RETURN_URL
     ? null
     : normalizedReturnUrl;
+}
+
+function getPlatformVerifyTokenNextPath(redirectUrl: URL) {
+  const pathSegments = redirectUrl.pathname.split('/').filter(Boolean);
+
+  if (pathSegments[pathSegments.length - 1] !== VERIFY_TOKEN_ROUTE_SEGMENT) {
+    return null;
+  }
+
+  return normalizeClientRedirectPath(
+    redirectUrl.searchParams.get('nextUrl'),
+    VERIFY_TOKEN_FALLBACK_PATH
+  );
 }
 
 const authStepVariants = {
@@ -675,13 +690,14 @@ export default function LoginForm({
         const canonicalReturnUrl =
           getAppDomainByUrl(returnUrl)?.canonicalUrl ?? returnUrl;
         const redirectUrl = new URL(canonicalReturnUrl);
+        const verifyTokenNextPath = getPlatformVerifyTokenNextPath(redirectUrl);
 
-        if (redirectUrl.origin !== window.location.origin) {
-          window.location.assign(redirectUrl.toString());
-        } else {
-          router.push(redirectUrl.pathname + redirectUrl.search);
-          router.refresh();
+        if (verifyTokenNextPath) {
+          window.location.replace(verifyTokenNextPath);
+          return;
         }
+
+        window.location.assign(redirectUrl.toString());
         return;
       }
 

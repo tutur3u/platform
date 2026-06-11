@@ -1,7 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { completeVerifiedMfaSignIn } from '@/app/[locale]/(marketing)/login/mfa-navigation';
 
 describe('completeVerifiedMfaSignIn', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('refreshes the session, clears MFA state, and processes the post-login URL', async () => {
     const clearMfaRequirement = vi.fn();
     const fallbackToHome = vi.fn();
@@ -60,6 +64,31 @@ describe('completeVerifiedMfaSignIn', () => {
     });
 
     expect(onSessionRefreshError).toHaveBeenCalledWith(refreshError);
+    expect(processNextUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not block navigation when the post-MFA session refresh stalls', async () => {
+    vi.useFakeTimers();
+
+    const onSessionRefreshError = vi.fn();
+    const processNextUrl = vi.fn().mockResolvedValue(undefined);
+    const refreshSession = vi.fn(() => new Promise<never>(() => undefined));
+
+    const signInPromise = completeVerifiedMfaSignIn({
+      clearMfaRequirement: vi.fn(),
+      fallbackToHome: vi.fn(),
+      onSessionRefreshError,
+      processNextUrl,
+      refreshSession,
+      resetTotp: vi.fn(),
+      sessionRefreshTimeoutMs: 25,
+    });
+
+    await vi.advanceTimersByTimeAsync(25);
+    await signInPromise;
+
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+    expect(onSessionRefreshError).toHaveBeenCalledWith(expect.any(Error));
     expect(processNextUrl).toHaveBeenCalledTimes(1);
   });
 });
