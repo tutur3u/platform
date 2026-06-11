@@ -1,9 +1,12 @@
 import { google } from '@ai-sdk/google';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { Json } from '@tuturuuu/types';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import { setPrivateWorkspaceQuizAnswer } from '@/lib/education/private-quiz-answers';
+import { revalidateCourseModuleQuizPaths } from '@/lib/education/revalidate-quiz-paths';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 import {
@@ -14,12 +17,18 @@ import {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function extractTextFromContent(content: any): string {
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function extractTextFromContent(content: unknown): string {
   if (!content) return '';
   if (typeof content === 'string') return content;
-  if (content.text) return content.text;
-  if (content.content && Array.isArray(content.content)) {
-    return content.content.map(extractTextFromContent).join(' ');
+  const record = asRecord(content);
+  if (typeof record?.text === 'string') return record.text;
+  if (Array.isArray(record?.content)) {
+    return record.content.map(extractTextFromContent).join(' ');
   }
   return '';
 }
@@ -154,9 +163,10 @@ ${lessonInfo}`;
 
       try {
         // Map and insert quizzes into database
+        const quizAnswers: Json[] = [];
         const quizzesPayload = object.quizzes.map((quiz) => {
-          let content: any = {};
-          let answer: any = {};
+          let content: Json = {};
+          let answer: Json = {};
 
           if (quiz.type === 'true_false') {
             content = {};
@@ -172,11 +182,12 @@ ${lessonInfo}`;
             answer = { order: quiz.ordering_items ?? [] };
           }
 
+          quizAnswers.push(answer);
+
           return {
             question: quiz.question,
             type: quiz.type,
             content,
-            answer,
             score: quiz.score,
             ws_id: normalizedWsId,
           };
@@ -193,6 +204,16 @@ ${lessonInfo}`;
 
         createdQuizIds.push(...createdQuizzes.map((q) => q.id));
 
+        await Promise.all(
+          createdQuizzes.map((quiz, index) =>
+            setPrivateWorkspaceQuizAnswer({
+              answer: quizAnswers[index],
+              db: sbAdmin,
+              quizId: quiz.id,
+            })
+          )
+        );
+
         // Link quizzes to course module
         const { error: linkError } = await sbAdmin
           .from('course_module_quizzes')
@@ -204,6 +225,12 @@ ${lessonInfo}`;
           );
 
         if (linkError) throw linkError;
+
+        await revalidateCourseModuleQuizPaths({
+          db: sbAdmin,
+          moduleIds: [lesson.id],
+          wsId: normalizedWsId,
+        });
 
         return NextResponse.json({
           success: true,

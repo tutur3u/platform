@@ -150,7 +150,8 @@ export function ModuleDetailView({
 
               {!hasContent(courseModule.content) &&
                 videos.length === 0 &&
-                !hasContent(courseModule.extra_content) && (
+                !hasContent(courseModule.extra_content) &&
+                (courseModule.quizzes?.length ?? 0) === 0 && (
                   <EmptyState label={t('courses.moduleEmpty')} />
                 )}
             </>

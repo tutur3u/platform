@@ -93,7 +93,7 @@ function getStatusValue(status, ...candidates) {
   return null;
 }
 
-function getLocalSupabaseStatus() {
+async function getLocalSupabaseStatus() {
   const maxAttempts = 15;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -132,7 +132,7 @@ function getLocalSupabaseStatus() {
     console.log(
       `⏳ Supabase not ready yet, waiting for container to start (attempt ${attempt}/${maxAttempts})...`
     );
-    execFileSync('sleep', ['2']);
+    await sleep(2_000);
   }
   throw new Error(
     'Could not resolve local Supabase API URL or SERVICE_ROLE_KEY from `supabase status` after multiple attempts.'
@@ -459,7 +459,7 @@ async function normalizeAllocations(
 async function main() {
   console.log('\n🔄 Post-reset AI credits bootstrap...\n');
 
-  const { supabaseBaseUrl, serviceRoleKey } = getLocalSupabaseStatus();
+  const { supabaseBaseUrl, serviceRoleKey } = await getLocalSupabaseStatus();
   const models = await fetchGatewayModels();
   const rows = models
     .filter((model) => model && typeof model.id === 'string')

@@ -1,3 +1,4 @@
+import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -5,6 +6,7 @@ import {
   attachPrivateWorkspaceQuizAnswers,
   setPrivateWorkspaceQuizAnswer,
 } from '@/lib/education/private-quiz-answers';
+import { revalidateCourseModuleQuizPaths } from '@/lib/education/revalidate-quiz-paths';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -26,14 +28,21 @@ const QuizTypeSchema = z.enum([
   'matching',
   'ordering',
 ]);
+const JsonPayloadSchema = z.custom<Json>();
+
+type QuizMutationData = {
+  question: string;
+  content?: Json;
+  type?: z.infer<typeof QuizTypeSchema>;
+};
 
 const QuizPayloadSchema = z.object({
   id: z.guid().optional(),
   question: z.string().trim().min(1).max(4000),
   quiz_options: z.array(QuizOptionSchema).optional(),
   type: QuizTypeSchema.optional(),
-  content: z.any().optional(),
-  answer: z.any().optional(),
+  content: JsonPayloadSchema.optional(),
+  answer: JsonPayloadSchema.optional(),
 });
 
 const QuizCreateSchema = z.object({
@@ -196,7 +205,7 @@ export const POST = withSessionAuth(
       for (const quiz of quizzes) {
         let quizId: string;
 
-        const updateData: any = { question: quiz.question };
+        const updateData: QuizMutationData = { question: quiz.question };
         if (quiz.type !== undefined) updateData.type = quiz.type;
         if (quiz.content !== undefined) updateData.content = quiz.content;
 
@@ -217,7 +226,7 @@ export const POST = withSessionAuth(
           }
           quizId = updated.id;
         } else {
-          const insertData: any = {
+          const insertData: QuizMutationData & { ws_id: string } = {
             question: quiz.question,
             ws_id: access.normalizedWsId,
           };
@@ -284,6 +293,14 @@ export const POST = withSessionAuth(
             if (insertOptionsError) throw insertOptionsError;
           }
         }
+      }
+
+      if (moduleId != null) {
+        await revalidateCourseModuleQuizPaths({
+          db: access.sbAdmin,
+          moduleIds: [moduleId],
+          wsId: access.normalizedWsId,
+        });
       }
 
       return NextResponse.json({

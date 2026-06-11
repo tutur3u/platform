@@ -1,6 +1,5 @@
 import type { Tables } from '@tuturuuu/types/supabase';
 
-import { attachPrivateWorkspaceQuizAnswers } from '../education/private-quiz-answers';
 import { getAdmin } from './db';
 import { firstOf } from './helpers';
 import type { Db } from './types';
@@ -45,24 +44,20 @@ type QuizJoinRow = {
   workspace_quizzes:
     | (Pick<
         Tables<'workspace_quizzes'>,
-        'id' | 'question' | 'type' | 'content' | 'answer' | 'score'
+        'id' | 'question' | 'type' | 'content' | 'score'
       > & {
         quiz_options?: Array<{
           id: string;
           value: string;
-          is_correct: boolean;
-          explanation: string | null;
         }>;
       })
     | (Pick<
         Tables<'workspace_quizzes'>,
-        'id' | 'question' | 'type' | 'content' | 'answer' | 'score'
+        'id' | 'question' | 'type' | 'content' | 'score'
       > & {
         quiz_options?: Array<{
           id: string;
           value: string;
-          is_correct: boolean;
-          explanation: string | null;
         }>;
       })[]
     | null;
@@ -351,7 +346,7 @@ export async function getLearnerModuleDetail({
       sbAdmin
         .from('course_module_quizzes')
         .select(
-          'workspace_quizzes(id, question, type, content, answer, score, quiz_options(id, value, is_correct, explanation))'
+          'workspace_quizzes(id, question, type, content, score, quiz_options(id, value))'
         )
         .eq('module_id', moduleId),
       sbAdmin
@@ -374,11 +369,6 @@ export async function getLearnerModuleDetail({
     .map((row) => firstOf(row.workspace_quizzes))
     .filter((value): value is NonNullable<typeof value> => Boolean(value));
 
-  const quizzesWithAnswers = await attachPrivateWorkspaceQuizAnswers(
-    sbAdmin,
-    rawQuizzes
-  );
-
   return {
     ...summary,
     content: moduleResult.data.content,
@@ -387,7 +377,7 @@ export async function getLearnerModuleDetail({
     flashcards: flashcardRows
       .map((row) => firstOf(row.workspace_flashcards))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),
-    quizzes: quizzesWithAnswers,
+    quizzes: rawQuizzes,
     quizSets: quizSetRows
       .map((row) => firstOf(row.workspace_quiz_sets))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),

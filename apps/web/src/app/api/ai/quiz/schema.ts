@@ -19,7 +19,7 @@ export const QUIZ_GENERATION_PROMPT = `You are an expert Academic Curriculum Des
    - For 'ordering': populate 'ordering_items' (array of strings).
    - Do NOT include any 'id' fields.`;
 
-export const GeneratedQuizSchema = z.object({
+const BaseGeneratedQuizSchema = z.object({
   question: z.string().describe('The quiz question text.'),
   score: z
     .number()
@@ -34,51 +34,61 @@ export const GeneratedQuizSchema = z.object({
     .string()
     .optional()
     .describe('Explanation of the correct answer.'),
-  type: z
-    .enum(['multiple_choice', 'true_false', 'matching', 'ordering'])
-    .describe('The question type.'),
-  options: z
-    .array(z.string())
-    .min(2)
-    .max(6)
-    .optional()
-    .describe(
-      'List of options for multiple choice questions. Required if type is multiple_choice.'
-    ),
-  correct_option_index: z
-    .number()
-    .int()
-    .nonnegative()
-    .optional()
-    .describe(
-      'Index of the correct option for multiple choice (0-indexed). Required if type is multiple_choice.'
-    ),
-  correct_boolean: z
-    .boolean()
-    .optional()
-    .describe(
-      'Correct answer for true/false questions. Required if type is true_false.'
-    ),
-  matching_pairs: z
-    .array(
-      z.object({
-        left: z.string().describe('Left item'),
-        right: z.string().describe('Right matched item'),
-      })
-    )
-    .min(1)
-    .optional()
-    .describe(
-      'Pairs of items that match each other. Required if type is matching.'
-    ),
-  ordering_items: z
-    .array(z.string())
-    .min(2)
-    .optional()
-    .describe(
-      'Items in their correct ordered sequence. Required if type is ordering.'
-    ),
 });
+
+export const GeneratedQuizSchema = z
+  .discriminatedUnion('type', [
+    BaseGeneratedQuizSchema.extend({
+      type: z.literal('multiple_choice').describe('The question type.'),
+      options: z
+        .array(z.string())
+        .min(2)
+        .max(6)
+        .describe('List of options for multiple choice questions.'),
+      correct_option_index: z
+        .number()
+        .int()
+        .nonnegative()
+        .describe('Index of the correct option for multiple choice.'),
+    }),
+    BaseGeneratedQuizSchema.extend({
+      type: z.literal('true_false').describe('The question type.'),
+      correct_boolean: z
+        .boolean()
+        .describe('Correct answer for true/false questions.'),
+    }),
+    BaseGeneratedQuizSchema.extend({
+      type: z.literal('matching').describe('The question type.'),
+      matching_pairs: z
+        .array(
+          z.object({
+            left: z.string().describe('Left item'),
+            right: z.string().describe('Right matched item'),
+          })
+        )
+        .min(1)
+        .describe('Pairs of items that match each other.'),
+    }),
+    BaseGeneratedQuizSchema.extend({
+      type: z.literal('ordering').describe('The question type.'),
+      ordering_items: z
+        .array(z.string())
+        .min(2)
+        .describe('Items in their correct ordered sequence.'),
+    }),
+  ])
+  .superRefine((quiz, ctx) => {
+    if (
+      quiz.type === 'multiple_choice' &&
+      quiz.correct_option_index >= quiz.options.length
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['correct_option_index'],
+        message: 'Correct option index must reference an existing option.',
+      });
+    }
+  });
 
 export const QuizGenerationSchema = z.object({
   quizzes: z
