@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: read
+  deployments: read
   id-token: write
 
 jobs:
