@@ -1,4 +1,7 @@
-import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
+import {
+  createAppCoordinationToken,
+  verifyAppCoordinationToken,
+} from '@tuturuuu/auth/app-coordination';
 import {
   createAdminClient,
   createClient,
@@ -12,12 +15,14 @@ import {
   getAllowedAppTokenScopes,
   verifyExternalAppSecret,
 } from '@/lib/app-coordination/external-apps';
-import { getExternalAppBearerTtlSeconds } from '@/lib/app-coordination/session-policy';
+import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-projects/access';
 import {
   serverLogger,
   withRequestLogDrain,
 } from '@/lib/infrastructure/log-drain';
+
+const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
 
 const exchangeSchema = z.object({
   appId: z
@@ -34,7 +39,8 @@ const exchangeSchema = z.object({
     .toLowerCase()
     .regex(/^[a-z0-9_-]{1,64}$/u)
     .optional(),
-  token: z.string().min(1),
+  refreshToken: z.string().min(1).optional(),
+  token: z.string().min(1).optional(),
   workspaceId: z.string().trim().max(128).optional(),
 });
 
@@ -161,6 +167,88 @@ function buildInvitationUrl(request: NextRequest, workspaceId: string) {
   return path;
 }
 
+async function createExchangeTokenResponse({
+  email,
+  normalizedWorkspaceId,
+  scopes,
+  targetApp,
+  userId,
+}: {
+  email: string | null;
+  normalizedWorkspaceId?: string | null;
+  scopes: string[];
+  targetApp: string;
+  userId: string;
+}) {
+  const { policy } = await getAppCoordinationSessionPolicy();
+  const accessToken = createAppCoordinationToken({
+    email,
+    expiresInSeconds: policy.externalAppBearerTtlSeconds,
+    originApp: 'web',
+    scopes,
+    targetApp,
+    userId,
+  });
+  const refreshToken = createAppCoordinationToken({
+    email,
+    expiresInSeconds: policy.internalAppRefreshTtlSeconds,
+    originApp: 'web',
+    scopes: [APP_TOKEN_REFRESH_SCOPE],
+    targetApp,
+    userId,
+  });
+
+  return NextResponse.json({
+    accessToken: accessToken.token,
+    app: {
+      name: accessToken.claims.target_app,
+    },
+    expiresAt: accessToken.expiresAt,
+    expiresIn: accessToken.claims.exp - accessToken.claims.iat,
+    refreshEarlySeconds: policy.internalAppRefreshEarlySeconds,
+    refreshExpiresAt: refreshToken.expiresAt,
+    refreshExpiresIn: refreshToken.claims.exp - refreshToken.claims.iat,
+    refreshToken: refreshToken.token,
+    tokenType: 'Bearer',
+    user: {
+      email,
+      id: userId,
+    },
+    workspaceId: normalizedWorkspaceId,
+  });
+}
+
+function verifyExchangeRefreshToken({
+  refreshToken,
+  targetApp,
+}: {
+  refreshToken: string;
+  targetApp: string;
+}) {
+  let verification: ReturnType<typeof verifyAppCoordinationToken>;
+
+  try {
+    verification = verifyAppCoordinationToken(refreshToken);
+  } catch {
+    return null;
+  }
+
+  if (!verification.ok) {
+    return null;
+  }
+
+  const { claims } = verification;
+
+  if (
+    claims.target_app !== targetApp ||
+    !claims.scopes.includes(APP_TOKEN_REFRESH_SCOPE)
+  ) {
+    return null;
+  }
+
+  return claims;
+}
+
 async function exchangeAppToken(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = exchangeSchema.safeParse(body);
@@ -175,11 +263,20 @@ async function exchangeAppToken(request: NextRequest) {
   const {
     appId,
     appSecret,
+    refreshToken,
     requestedScopes = [],
     targetApp,
     token,
     workspaceId,
   } = parsed.data;
+
+  if (Boolean(token) === Boolean(refreshToken)) {
+    return NextResponse.json(
+      { error: 'Provide exactly one token or refresh token' },
+      { status: 400 }
+    );
+  }
+
   let resolvedTarget: Awaited<ReturnType<typeof resolveExchangeTarget>>;
 
   try {
@@ -207,42 +304,76 @@ async function exchangeAppToken(request: NextRequest) {
     );
   }
 
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const { data, error } = await supabase.rpc(
-    'validate_cross_app_token_with_session',
-    {
-      p_target_app: resolvedTarget.targetApp,
-      p_token: token,
-    }
-  );
+  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  let email: string | null;
+  let userId: string;
 
-  if (error) {
-    serverLogger.warn('Failed to validate cross-app token for app exchange', {
-      error: error.message,
+  if (refreshToken) {
+    const refreshClaims = verifyExchangeRefreshToken({
+      refreshToken,
       targetApp: resolvedTarget.targetApp,
     });
-    return NextResponse.json(
-      { error: 'Invalid or expired token' },
-      { status: 401 }
+
+    if (!refreshClaims) {
+      return NextResponse.json(
+        { error: 'Invalid or expired refresh token' },
+        { status: 401 }
+      );
+    }
+
+    userId = refreshClaims.sub;
+    email = await getUserEmail({
+      sbAdmin,
+      sessionData: null,
+      userId,
+    });
+  } else {
+    const crossAppToken = token;
+
+    if (!crossAppToken) {
+      return NextResponse.json(
+        { error: 'Provide exactly one token or refresh token' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = (await createClient(request)) as TypedSupabaseClient;
+    const { data, error } = await supabase.rpc(
+      'validate_cross_app_token_with_session',
+      {
+        p_target_app: resolvedTarget.targetApp,
+        p_token: crossAppToken,
+      }
     );
+
+    if (error) {
+      serverLogger.warn('Failed to validate cross-app token for app exchange', {
+        error: error.message,
+        targetApp: resolvedTarget.targetApp,
+      });
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    const validationRow = getValidationRow(data);
+    userId = validationRow?.user_id ?? '';
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    email = await getUserEmail({
+      sbAdmin,
+      sessionData: validationRow?.session_data ?? null,
+      userId,
+    });
   }
 
-  const validationRow = getValidationRow(data);
-  const userId = validationRow?.user_id;
-
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'Invalid or expired token' },
-      { status: 401 }
-    );
-  }
-
-  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
-  const email = await getUserEmail({
-    sbAdmin,
-    sessionData: validationRow.session_data ?? null,
-    userId,
-  });
   const exchangeAuthorization = await authorizeExternalProjectAppTokenExchange({
     admin: sbAdmin,
     appId: resolvedTarget.targetApp,
@@ -275,32 +406,12 @@ async function exchangeAppToken(request: NextRequest) {
     );
   }
 
-  const {
-    claims,
-    expiresAt,
-    token: accessToken,
-  } = createAppCoordinationToken({
+  return createExchangeTokenResponse({
     email,
-    expiresInSeconds: await getExternalAppBearerTtlSeconds(),
-    originApp: 'web',
+    normalizedWorkspaceId: exchangeAuthorization.normalizedWorkspaceId,
     scopes: resolvedTarget.scopes,
     targetApp: resolvedTarget.targetApp,
     userId,
-  });
-
-  return NextResponse.json({
-    accessToken,
-    app: {
-      name: claims.target_app,
-    },
-    expiresAt,
-    expiresIn: claims.exp - claims.iat,
-    tokenType: 'Bearer',
-    user: {
-      email,
-      id: userId,
-    },
-    workspaceId: exchangeAuthorization.normalizedWorkspaceId,
   });
 }
 

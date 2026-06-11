@@ -1,4 +1,7 @@
-import { verifyAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
+import {
+  createAppCoordinationToken,
+  verifyAppCoordinationToken,
+} from '@tuturuuu/auth/app-coordination';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -351,12 +354,20 @@ describe('app token exchange route', () => {
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
       accessToken: string;
+      refreshEarlySeconds: number;
+      refreshExpiresAt: string;
+      refreshToken: string;
       workspaceId?: string;
     };
     const verification = verifyAppCoordinationToken(body.accessToken, {
       secret: 'test-secret',
     });
+    const refreshVerification = verifyAppCoordinationToken(body.refreshToken, {
+      secret: 'test-secret',
+    });
 
+    expect(body.refreshEarlySeconds).toBeGreaterThan(0);
+    expect(body.refreshExpiresAt).toEqual(expect.any(String));
     expect(body.workspaceId).toBe(workspaceId);
     expect(verification.ok).toBe(true);
     if (verification.ok) {
@@ -364,6 +375,99 @@ describe('app token exchange route', () => {
       expect(verification.claims.target_app).toBe('yoola');
       expect(verification.claims.scopes).toEqual(['external-projects:read']);
     }
+    expect(refreshVerification.ok).toBe(true);
+    if (refreshVerification.ok) {
+      expect(refreshVerification.claims.sub).toBe(victimUserId);
+      expect(refreshVerification.claims.target_app).toBe('yoola');
+      expect(refreshVerification.claims.scopes).toEqual(['app-token:refresh']);
+    }
+  });
+
+  it('refreshes registered app tokens without a fresh cross-app token', async () => {
+    mockRegisteredApp(['external-projects:*']);
+    const { token: refreshToken } = createAppCoordinationToken(
+      {
+        email: 'victim@example.com',
+        expiresInSeconds: 86_400,
+        originApp: 'web',
+        scopes: ['app-token:refresh'],
+        targetApp: 'yoola',
+        userId: victimUserId,
+      },
+      { secret: 'test-secret' }
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        refreshToken,
+        requestedScopes: ['external-projects:*'],
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    const body = (await response.json()) as {
+      accessToken: string;
+      refreshToken: string;
+      workspaceId?: string;
+    };
+    const accessVerification = verifyAppCoordinationToken(body.accessToken, {
+      secret: 'test-secret',
+    });
+    const nextRefreshVerification = verifyAppCoordinationToken(
+      body.refreshToken,
+      {
+        secret: 'test-secret',
+      }
+    );
+
+    expect(body.workspaceId).toBe(workspaceId);
+    expect(accessVerification.ok).toBe(true);
+    if (accessVerification.ok) {
+      expect(accessVerification.claims.sub).toBe(victimUserId);
+      expect(accessVerification.claims.target_app).toBe('yoola');
+      expect(accessVerification.claims.scopes).toEqual(['external-projects:*']);
+    }
+    expect(nextRefreshVerification.ok).toBe(true);
+    if (nextRefreshVerification.ok) {
+      expect(nextRefreshVerification.claims.scopes).toEqual([
+        'app-token:refresh',
+      ]);
+    }
+  });
+
+  it('rejects refresh requests with non-refresh app tokens', async () => {
+    mockRegisteredApp(['external-projects:*']);
+    const { token: accessToken } = createAppCoordinationToken(
+      {
+        email: 'victim@example.com',
+        expiresInSeconds: 86_400,
+        originApp: 'web',
+        scopes: ['external-projects:*'],
+        targetApp: 'yoola',
+        userId: victimUserId,
+      },
+      { secret: 'test-secret' }
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        refreshToken: accessToken,
+        requestedScopes: ['external-projects:*'],
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Invalid or expired refresh token',
+    });
+    expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
   it('rejects external-project app exchanges without a linked workspace id', async () => {
