@@ -10,9 +10,17 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTaskActions } from '../use-task-actions';
 
+const { mockDispatchTaskSoundCue } = vi.hoisted(() => ({
+  mockDispatchTaskSoundCue: vi.fn(),
+}));
+
 // Mock dependencies
 vi.mock('@tuturuuu/supabase/next/client', () => ({
   createClient: vi.fn(),
+}));
+
+vi.mock('../../components/ui/tu-do/shared/task-sound-effects', () => ({
+  dispatchTaskSoundCue: mockDispatchTaskSoundCue,
 }));
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
@@ -268,6 +276,12 @@ describe('useTaskActions', () => {
       expect(mockToast.success).toHaveBeenCalledWith('Task completed', {
         description: 'Task marked as done and moved to Done',
       });
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith({
+        count: 1,
+        cue: 'complete',
+        intensity: 1,
+      });
     });
 
     it('moves an external task to the personal and source done lists when checked', async () => {
@@ -420,6 +434,11 @@ describe('useTaskActions', () => {
 
       expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
         closed_at: expect.any(String),
+      });
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith({
+        count: 1,
+        cue: 'complete',
+        intensity: 1,
       });
     });
 
@@ -667,6 +686,12 @@ describe('useTaskActions', () => {
       expect(mockToast.success).toHaveBeenCalledWith('2 tasks completed', {
         description: 'Tasks marked as done',
       });
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith({
+        count: 2,
+        cue: 'complete',
+        intensity: 1.15,
+      });
     });
   });
 
@@ -849,6 +874,12 @@ describe('useTaskActions', () => {
       expect(mockToast.success).toHaveBeenCalledWith('Success', {
         description: 'Task deleted successfully',
       });
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith({
+        count: 1,
+        cue: 'delete',
+        intensity: 1,
+      });
       expect(setDeleteDialogOpen).toHaveBeenCalledWith(false);
 
       const deletedTasks = queryClient.getQueryData<Task[]>([
@@ -938,6 +969,12 @@ describe('useTaskActions', () => {
       });
       expect(mockToast.success).toHaveBeenCalledWith('Due date updated', {
         description: 'Due date set successfully',
+      });
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith({
+        count: 1,
+        cue: 'update',
+        intensity: 1,
       });
     });
 
@@ -1040,6 +1077,12 @@ describe('useTaskActions', () => {
       });
       expect(mockToast.success).toHaveBeenCalledWith('Priority updated', {
         description: 'Priority changed',
+      });
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith({
+        count: 1,
+        cue: 'update',
+        intensity: 1,
       });
     });
 
@@ -1153,6 +1196,12 @@ describe('useTaskActions', () => {
       });
       expect(mockToast.success).toHaveBeenCalledWith('Estimation updated', {
         description: 'Estimation points updated successfully',
+      });
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith({
+        count: 1,
+        cue: 'update',
+        intensity: 1,
       });
     });
 
@@ -1313,6 +1362,12 @@ describe('useTaskActions', () => {
       expect(setCustomDateDialogOpen).toHaveBeenCalledWith(false);
       expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
         end_date: expect.any(String),
+      });
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith({
+        count: 1,
+        cue: 'update',
+        intensity: 1,
       });
     });
 
@@ -1624,6 +1679,12 @@ describe('useTaskActions', () => {
 
       expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
         list_id: 'list-2',
+      });
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
+      expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith({
+        count: 1,
+        cue: 'move',
+        intensity: 1,
       });
       expect(setMenuOpen).toHaveBeenCalledWith(false);
     });

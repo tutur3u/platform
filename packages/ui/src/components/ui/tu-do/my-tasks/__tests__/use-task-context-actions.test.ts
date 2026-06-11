@@ -7,6 +7,7 @@ import { useTaskContextActions } from '../use-task-context-actions';
 const {
   mockAddWorkspaceTaskLabel,
   mockDeleteWorkspaceTask,
+  mockDispatchTaskSoundCue,
   mockInvalidateQueries,
   mockListWorkspaceTaskLists,
   mockRemoveWorkspaceTaskLabel,
@@ -17,6 +18,7 @@ const {
 } = vi.hoisted(() => ({
   mockAddWorkspaceTaskLabel: vi.fn(),
   mockDeleteWorkspaceTask: vi.fn(),
+  mockDispatchTaskSoundCue: vi.fn(),
   mockInvalidateQueries: vi.fn(),
   mockListWorkspaceTaskLists: vi.fn(),
   mockRemoveWorkspaceTaskLabel: vi.fn(),
@@ -53,6 +55,10 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: {
     error: mockToastError,
   },
+}));
+
+vi.mock('../../shared/task-sound-effects', () => ({
+  dispatchTaskSoundCue: mockDispatchTaskSoundCue,
 }));
 
 // Mock fetch
@@ -131,6 +137,7 @@ describe('useTaskContextActions', () => {
     );
     expect(onTaskUpdate).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+    expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith('complete');
   });
 
   it('handleUndoDoneWithMyPart sends PUT with both flags cleared', async () => {
@@ -165,6 +172,7 @@ describe('useTaskContextActions', () => {
     );
     expect(onTaskUpdate).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+    expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith('update');
   });
 
   it('handleComplete clears overrides when task has completed_at override', async () => {
@@ -279,6 +287,7 @@ describe('useTaskContextActions', () => {
     expect(mockDeleteWorkspaceTask).toHaveBeenCalledWith('ws-1', mockTask.id);
     expect(onTaskUpdate).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+    expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith('delete');
   });
 
   it('handlePriorityChange updates task priority via internal API', async () => {
@@ -299,6 +308,7 @@ describe('useTaskContextActions', () => {
       priority: 'high',
     });
     expect(mockInvalidateQueries).toHaveBeenCalled();
+    expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith('update');
   });
 
   it('handleUnassignMe updates assignee_ids via internal API', async () => {
@@ -512,5 +522,6 @@ describe('useTaskContextActions', () => {
     });
     expect(onTaskUpdate).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+    expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith('move');
   });
 });

@@ -3,6 +3,10 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useEffect } from 'react';
 import {
+  dispatchTaskSoundCue,
+  type TaskSoundCue,
+} from '../../../../shared/task-sound-effects';
+import {
   useBulkClearAssignees,
   useBulkClearLabels,
   useBulkClearProjects,
@@ -30,6 +34,14 @@ import {
 import { useBulkOperationI18n } from './bulk-operation-i18n';
 import type { BulkOperationsConfig } from './bulk-operation-types';
 import { getBulkTaskWorkspaceGroups } from './bulk-operation-utils';
+
+function dispatchBulkTaskSoundCue(cue: TaskSoundCue, count: number) {
+  dispatchTaskSoundCue({
+    cue,
+    count,
+    intensity: count > 1 ? 1.2 : 1,
+  });
+}
 
 export function useBulkOperations(config: BulkOperationsConfig) {
   const i18n = useBulkOperationI18n();
@@ -213,11 +225,13 @@ export function useBulkOperations(config: BulkOperationsConfig) {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await priorityMutation.mutateAsync({ priority, taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkUpdateEstimation: async (points: number | null) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await estimationMutation.mutateAsync({ points, taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkUpdateDueDate: async (
       preset: 'today' | 'tomorrow' | 'this_week' | 'next_week' | 'clear'
@@ -225,16 +239,19 @@ export function useBulkOperations(config: BulkOperationsConfig) {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await dueDateMutation.mutateAsync({ preset, taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkUpdateCustomDueDate: async (date: Date | null) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await customDueDateMutation.mutateAsync({ date, taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkMoveToList: async (listId: string, listName: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await moveToListMutation.mutateAsync({ listId, listName, taskIds });
+      dispatchBulkTaskSoundCue('move', taskIds.length);
     },
     bulkMoveToStatus: async (status: 'done' | 'closed') => {
       const taskIds = Array.from(selectedTasks);
@@ -242,51 +259,61 @@ export function useBulkOperations(config: BulkOperationsConfig) {
       const listId = getListIdByStatus(status);
       if (!listId) return;
       await statusMutation.mutateAsync({ status, taskIds });
+      dispatchBulkTaskSoundCue('complete', taskIds.length);
     },
     bulkAddLabel: async (labelId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await addLabelMutation.mutateAsync({ labelId, taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkRemoveLabel: async (labelId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await removeLabelMutation.mutateAsync({ labelId, taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkAddProject: async (projectId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await addProjectMutation.mutateAsync({ projectId, taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkRemoveProject: async (projectId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await removeProjectMutation.mutateAsync({ projectId, taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkAddAssignee: async (assigneeId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await addAssigneeMutation.mutateAsync({ assigneeId, taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkRemoveAssignee: async (assigneeId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await removeAssigneeMutation.mutateAsync({ assigneeId, taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkClearLabels: async () => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await clearLabelsMutation.mutateAsync({ taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkClearProjects: async () => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await clearProjectsMutation.mutateAsync({ taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkClearAssignees: async () => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
       await clearAssigneesMutation.mutateAsync({ taskIds });
+      dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkDeleteTasks: async () => {
       const taskIds = Array.from(selectedTasks);
@@ -298,6 +325,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
         taskIds,
       });
       await deleteMutation.mutateAsync({ taskIds, workspaceGroups });
+      dispatchBulkTaskSoundCue('delete', taskIds.length);
     },
     bulkMoveToBoard: async (targetBoardId: string, targetListId: string) => {
       const taskIds = Array.from(selectedTasks);
@@ -307,6 +335,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
         targetListId,
         taskIds,
       });
+      dispatchBulkTaskSoundCue('move', taskIds.length);
     },
     getListIdByStatus,
   };

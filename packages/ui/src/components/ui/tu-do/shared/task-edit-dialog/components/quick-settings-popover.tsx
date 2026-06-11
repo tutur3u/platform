@@ -3,11 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Settings } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
+import { TASK_SOUND_EFFECTS_ENABLED_CONFIG_ID } from '../../task-sound-effects';
 
 interface TaskSettingsData {
   task_auto_assign_to_self: boolean;
@@ -38,6 +40,12 @@ export function QuickSettingsPopover({
   const t = useTranslations('settings.tasks');
   const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
+  const {
+    value: soundEffectsEnabled,
+    setValue: setSoundEffectsEnabled,
+    isLoading: soundEffectsEnabledLoading,
+    isPending: soundEffectsEnabledPending,
+  } = useUserBooleanConfig(TASK_SOUND_EFFECTS_ENABLED_CONFIG_ID, true);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['user-task-settings'],
@@ -154,6 +162,24 @@ export function QuickSettingsPopover({
                 checked={settings?.fade_completed_tasks ?? false}
                 onCheckedChange={handleFadeCompletedToggle}
                 disabled={isLoading || updateSettings.isPending}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="space-y-0.5">
+                <Label htmlFor="task-sound-effects" className="text-sm">
+                  {t('sound_effects')}
+                </Label>
+                <p className="text-muted-foreground text-xs">
+                  {t('sound_effects_description')}
+                </p>
+              </div>
+              <Switch
+                id="task-sound-effects"
+                checked={soundEffectsEnabled}
+                onCheckedChange={setSoundEffectsEnabled}
+                disabled={
+                  soundEffectsEnabledLoading || soundEffectsEnabledPending
+                }
               />
             </div>
           </div>

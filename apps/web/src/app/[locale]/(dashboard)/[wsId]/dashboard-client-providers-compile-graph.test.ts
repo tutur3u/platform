@@ -68,6 +68,18 @@ describe('[wsId] dashboard client providers compile graph', () => {
     );
   });
 
+  it('loads task sound effects setup after hydration instead of preloading it through next/dynamic', () => {
+    expect(dashboardClientProvidersSource).not.toMatch(
+      /const\s+TaskSoundEffectsInitializer\s*=\s*dynamic\(\s*\(\)\s*=>[\s\S]*?import\(['"]@tuturuuu\/ui\/tu-do\/shared\/task-sound-effects['"]\)/u
+    );
+    expect(dashboardClientProvidersSource).toContain(
+      "import('@tuturuuu/ui/tu-do/shared/task-sound-effects')"
+    );
+    expect(dashboardClientProvidersSource).toContain(
+      'useTaskSoundEffectsInitializerComponent'
+    );
+  });
+
   it('loads optional workspace provider children after hydration instead of through next/dynamic', () => {
     expect(dashboardWorkspaceProvidersSource).not.toMatch(
       staticImportPattern('next/dynamic')

@@ -1,8 +1,14 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 
-const { mockCreateWorkspaceTaskRelationship } = vi.hoisted(() => ({
+const {
+  mockCreateTask,
+  mockCreateWorkspaceTaskRelationship,
+  mockDispatchTaskSoundCue,
+} = vi.hoisted(() => ({
+  mockCreateTask: vi.fn(),
   mockCreateWorkspaceTaskRelationship: vi.fn(),
+  mockDispatchTaskSoundCue: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/internal-api/tasks', async () => {
@@ -26,8 +32,17 @@ vi.mock('@tuturuuu/supabase/next/client', () => ({
   })),
 }));
 
+vi.mock('@tuturuuu/utils/task-helper', () => ({
+  createTask: mockCreateTask,
+}));
+
+vi.mock('../../task-sound-effects', () => ({
+  dispatchTaskSoundCue: mockDispatchTaskSoundCue,
+}));
+
 import {
   applyPendingRelationshipSummary,
+  handleCreateTask,
   persistPendingTaskRelationships,
 } from './use-task-save';
 
@@ -202,5 +217,73 @@ describe('applyPendingRelationshipSummary', () => {
         },
       }),
     ]);
+  });
+});
+
+describe('handleCreateTask', () => {
+  it('dispatches the create sound cue once after successful task creation', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const toast = vi.fn();
+
+    mockCreateTask.mockResolvedValueOnce({
+      id: 'task-new',
+      name: 'New task',
+      list_id: 'list-1',
+      created_at: '2026-01-01T00:00:00Z',
+    });
+
+    await handleCreateTask({
+      autoSchedule: false,
+      boardId: 'board-1',
+      broadcast: null,
+      calendarHours: null,
+      createMultiple: false,
+      descriptionString: null,
+      descriptionYjsState: null,
+      endDate: undefined,
+      estimationPoints: null,
+      isPersonalWorkspace: false,
+      isSplittable: false,
+      maxSplitDurationMinutes: null,
+      minSplitDurationMinutes: null,
+      name: 'New task',
+      onClose: vi.fn(),
+      onUpdate: vi.fn(),
+      priority: null,
+      queryClient,
+      selectedAssignees: [],
+      selectedLabels: [],
+      selectedListId: 'list-1',
+      selectedProjects: [],
+      setDescription: vi.fn(),
+      setEndDate: vi.fn(),
+      setEstimationPoints: vi.fn(),
+      setIsLoading: vi.fn(),
+      setIsSaving: vi.fn(),
+      setName: vi.fn(),
+      setPriority: vi.fn(),
+      setSelectedAssignees: vi.fn(),
+      setSelectedLabels: vi.fn(),
+      setSelectedProjects: vi.fn(),
+      setStartDate: vi.fn(),
+      startDate: undefined,
+      toast,
+      totalDuration: null,
+      user: { id: 'user-1' },
+      userTaskSettings: { task_auto_assign_to_self: false },
+      wsId: 'ws-1',
+    });
+
+    expect(mockCreateTask).toHaveBeenCalledWith(
+      'ws-1',
+      'list-1',
+      expect.objectContaining({
+        name: 'New task',
+      })
+    );
+    expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
+    expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith('create');
   });
 });

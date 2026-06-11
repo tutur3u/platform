@@ -17,6 +17,10 @@ import { addDays } from 'date-fns';
 import { useCallback } from 'react';
 import { useBoardBroadcast } from '../components/ui/tu-do/shared/board-broadcast-context';
 import {
+  dispatchTaskSoundCue,
+  type TaskSoundCue,
+} from '../components/ui/tu-do/shared/task-sound-effects';
+import {
   isPersonalExternalTask,
   moveExternalTaskToPersonalList,
 } from './task-actions-personal-external';
@@ -40,6 +44,21 @@ interface UseTaskActionsProps {
   taskId?: string; // Optional task ID for syncing individual task cache
   // Bulk operation functions from useBulkOperations hook
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
+}
+
+function dispatchTaskActionSound(cue: TaskSoundCue, count = 1) {
+  dispatchTaskSoundCue({
+    cue,
+    count,
+    intensity: count > 1 ? 1.15 : 1,
+  });
+}
+
+function getMoveSoundCue(targetList?: TaskList | null): TaskSoundCue {
+  return isTaskBoardCompletedStatus(targetList?.status) ||
+    isTaskBoardTerminalStatus(targetList?.status)
+    ? 'complete'
+    : 'move';
 }
 
 export function useTaskActions({
@@ -252,6 +271,7 @@ export function useTaskActions({
         toast.success('Task completed', {
           description: `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
         });
+        dispatchTaskActionSound('complete');
       } catch (error) {
         console.error('Failed to complete external task:', error);
         toast.error('Error', {
@@ -321,6 +341,7 @@ export function useTaskActions({
         toast.success('Task completed', {
           description: `Task marked as done and moved to ${targetCompletionList.name}`,
         });
+        dispatchTaskActionSound('complete');
       } catch (error) {
         // Rollback on error
         if (previousTasks) {
@@ -373,6 +394,7 @@ export function useTaskActions({
             completed_at: updatedTask.completed_at,
           },
         });
+        dispatchTaskActionSound(newClosedState ? 'complete' : 'update');
       } catch (error) {
         // Rollback on error
         if (previousTasks) {
@@ -429,6 +451,7 @@ export function useTaskActions({
         toast.success('Task completed', {
           description: `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
         });
+        dispatchTaskActionSound('complete');
         return;
       }
 
@@ -496,6 +519,7 @@ export function useTaskActions({
         toast.warning('Partial completion update', {
           description: `${successCount}/${tasksToMove.length} tasks updated`,
         });
+        dispatchTaskActionSound('complete', successCount);
         return;
       }
 
@@ -509,6 +533,7 @@ export function useTaskActions({
               : `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
         }
       );
+      dispatchTaskActionSound('complete', taskCount);
     } catch (error) {
       // Rollback on error
       if (previousTasks) {
@@ -564,6 +589,7 @@ export function useTaskActions({
         toast.success('Success', {
           description: 'Task marked as closed',
         });
+        dispatchTaskActionSound('complete');
         return;
       }
 
@@ -627,6 +653,7 @@ export function useTaskActions({
         toast.warning('Partial close update', {
           description: `${successCount}/${tasksToMove.length} tasks updated`,
         });
+        dispatchTaskActionSound('complete', successCount);
         return;
       }
 
@@ -637,6 +664,7 @@ export function useTaskActions({
             ? `${taskCount} tasks marked as closed`
             : 'Task marked as closed',
       });
+      dispatchTaskActionSound('complete', taskCount);
     } catch (error) {
       // Rollback on error
       if (previousTasks) {
@@ -741,6 +769,7 @@ export function useTaskActions({
         toast.warning('Partial delete update', {
           description: `${successCount}/${tasksToDelete.length} tasks deleted`,
         });
+        dispatchTaskActionSound('delete', successCount);
         return;
       }
 
@@ -751,6 +780,7 @@ export function useTaskActions({
             ? `${taskCount} tasks deleted`
             : 'Task deleted successfully',
       });
+      dispatchTaskActionSound('delete', taskCount);
 
       setDeleteDialogOpen?.(false);
     } catch (error) {
@@ -817,6 +847,7 @@ export function useTaskActions({
       toast.success('Success', {
         description: 'All assignees removed from task',
       });
+      dispatchTaskActionSound('update');
     } catch (error) {
       queryClient.setQueryData(['tasks', boardId], previousTasks);
       console.error('Failed to remove all assignees:', error);
@@ -888,6 +919,7 @@ export function useTaskActions({
           description: `${assignee?.display_name || assignee?.email || 'Assignee'} removed from task`,
         });
         broadcast?.('task:relations-changed', { taskId: task.id });
+        dispatchTaskActionSound('update');
       } catch (error) {
         queryClient.setQueryData(['tasks', boardId], previousTasks);
         console.error('Failed to remove assignee:', error);
@@ -977,6 +1009,7 @@ export function useTaskActions({
           toast.success('Success', {
             description: `Task moved to ${targetList.name || 'selected list'}`,
           });
+          dispatchTaskActionSound(getMoveSoundCue(targetList));
         } catch (error) {
           console.error('Failed to move external task:', error);
           toast.error('Error', {
@@ -1087,6 +1120,7 @@ export function useTaskActions({
           toast.warning('Partial move update', {
             description: `${successCount}/${tasksToMove.length} tasks updated`,
           });
+          dispatchTaskActionSound(getMoveSoundCue(targetList), successCount);
           return;
         }
 
@@ -1097,6 +1131,7 @@ export function useTaskActions({
               ? `${taskCount} tasks moved to ${targetList?.name || 'selected list'}`
               : `Task moved to ${targetList?.name || 'selected list'}`,
         });
+        dispatchTaskActionSound(getMoveSoundCue(targetList), taskCount);
       } catch (error) {
         // Rollback on error
         if (previousTasks) {
@@ -1213,6 +1248,7 @@ export function useTaskActions({
           toast.warning('Partial due date update', {
             description: `${succeededTaskIds.length}/${tasksToUpdate.length} tasks updated`,
           });
+          dispatchTaskActionSound('update', succeededTaskIds.length);
         } else {
           const taskCount = tasksToUpdate.length;
           toast.success('Due date updated', {
@@ -1223,6 +1259,7 @@ export function useTaskActions({
                   ? 'Due date set successfully'
                   : 'Due date removed',
           });
+          dispatchTaskActionSound('update', taskCount);
         }
       } catch (error) {
         console.error('Failed to update due date:', error);
@@ -1328,6 +1365,7 @@ export function useTaskActions({
           toast.warning('Partial priority update', {
             description: `${succeededTaskIds.length}/${tasksToUpdate.length} tasks updated`,
           });
+          dispatchTaskActionSound('update', succeededTaskIds.length);
         } else {
           const taskCount = tasksToUpdate.length;
           toast.success('Priority updated', {
@@ -1338,6 +1376,7 @@ export function useTaskActions({
                   ? 'Priority changed'
                   : 'Priority cleared',
           });
+          dispatchTaskActionSound('update', taskCount);
         }
 
         // Don't auto-clear selection - let user manually clear with "Clear" button
@@ -1459,6 +1498,7 @@ export function useTaskActions({
           toast.warning('Partial estimation update', {
             description: `${succeededIds.length}/${tasksToUpdate.length} tasks updated`,
           });
+          dispatchTaskActionSound('update', succeededIds.length);
 
           return;
         }
@@ -1476,6 +1516,7 @@ export function useTaskActions({
               ? `${taskCount} tasks updated`
               : 'Estimation points updated successfully',
         });
+        dispatchTaskActionSound('update', taskCount);
 
         return;
       } catch (e: any) {
@@ -1575,6 +1616,7 @@ export function useTaskActions({
               ? 'Custom due date set successfully'
               : 'Due date removed',
           });
+          dispatchTaskActionSound('update');
         } catch (error) {
           if (previousTasks) {
             queryClient.setQueryData(['tasks', boardId], previousTasks);
@@ -1797,6 +1839,9 @@ export function useTaskActions({
               ? `${succeededTaskIds.length} tasks updated`
               : `${assigneeName} ${active ? 'removed' : 'added'} on task`,
         });
+        if (succeededTaskIds.length > 0) {
+          dispatchTaskActionSound('update', succeededTaskIds.length);
+        }
 
         // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (e: any) {

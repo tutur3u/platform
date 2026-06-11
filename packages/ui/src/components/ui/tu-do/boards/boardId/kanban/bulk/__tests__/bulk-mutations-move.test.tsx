@@ -10,6 +10,10 @@ import type { ReactElement, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBulkOperations } from '../bulk-operations';
 
+const { mockDispatchTaskSoundCue } = vi.hoisted(() => ({
+  mockDispatchTaskSoundCue: vi.fn(),
+}));
+
 vi.mock('next-intl', () => ({
   useTranslations: () => {
     const translate = (key: string, values?: Record<string, unknown>) =>
@@ -47,6 +51,10 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
     success: vi.fn(),
     warning: vi.fn(),
   },
+}));
+
+vi.mock('../../../../../shared/task-sound-effects', () => ({
+  dispatchTaskSoundCue: mockDispatchTaskSoundCue,
 }));
 
 describe('bulk move mutations', () => {
@@ -172,5 +180,11 @@ describe('bulk move mutations', () => {
         personal_list_id: 'list-2',
       })
     );
+    expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
+    expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith({
+      count: 2,
+      cue: 'move',
+      intensity: 1.2,
+    });
   });
 });

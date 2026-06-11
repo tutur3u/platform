@@ -14,6 +14,9 @@ interface DashboardClientProvidersProps {
 }
 
 type FadeSettingInitializerComponent = ComponentType<Record<string, never>>;
+type TaskSoundEffectsInitializerComponent = ComponentType<
+  Record<string, never>
+>;
 
 type DashboardWorkspaceProvidersComponent =
   ComponentType<DashboardClientProvidersProps>;
@@ -30,8 +33,18 @@ function loadFadeSettingInitializer(): Promise<FadeSettingInitializerComponent> 
   );
 }
 
+function loadTaskSoundEffectsInitializer(): Promise<TaskSoundEffectsInitializerComponent> {
+  return import('@tuturuuu/ui/tu-do/shared/task-sound-effects').then(
+    (module) => module.TaskSoundEffectsInitializer
+  );
+}
+
 function useFadeSettingInitializerComponent() {
   return useLazyClientComponent(loadFadeSettingInitializer);
+}
+
+function useTaskSoundEffectsInitializerComponent() {
+  return useLazyClientComponent(loadTaskSoundEffectsInitializer);
 }
 
 export function DashboardClientProviders({
@@ -46,6 +59,7 @@ export function DashboardClientProviders({
     loadDashboardWorkspaceProviders
   );
   const FadeSettingInitializer = useFadeSettingInitializerComponent();
+  const TaskSoundEffectsInitializer = useTaskSoundEffectsInitializerComponent();
 
   const content = DashboardWorkspaceProviders ? (
     <DashboardWorkspaceProviders
@@ -64,6 +78,7 @@ export function DashboardClientProviders({
   return (
     <>
       {FadeSettingInitializer && <FadeSettingInitializer />}
+      {TaskSoundEffectsInitializer && <TaskSoundEffectsInitializer />}
       {content}
     </>
   );

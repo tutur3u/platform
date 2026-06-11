@@ -23,6 +23,7 @@ import {
   getActiveBroadcast,
   useBoardBroadcast,
 } from '../../board-broadcast-context';
+import { dispatchTaskSoundCue } from '../../task-sound-effects';
 import type {
   PendingRelationship,
   PendingTaskRelationships,
@@ -800,7 +801,7 @@ async function handleSaveAsDraft({
 }
 
 // Helper function for creating tasks
-async function handleCreateTask({
+export async function handleCreateTask({
   wsId,
   name,
   descriptionString,
@@ -1104,6 +1105,7 @@ async function handleCreateTask({
         ? 'New sub-task added.'
         : 'New task added.',
     });
+    dispatchTaskSoundCue('create');
     onUpdate();
 
     if (createMultiple) {
@@ -1394,6 +1396,7 @@ async function handleUpdateTask({
               title: 'Task updated',
               description: 'The task has been successfully updated.',
             });
+            dispatchTaskSoundCue('update');
             onUpdate();
             onClose();
           },
@@ -1431,6 +1434,7 @@ async function handleUpdateTask({
         title: 'Task updated',
         description: 'The task has been successfully updated.',
       });
+      dispatchTaskSoundCue('update');
       onUpdate();
       onClose();
     } catch (error) {

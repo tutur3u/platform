@@ -13,6 +13,7 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
+import { dispatchTaskSoundCue } from '../shared/task-sound-effects';
 import {
   MY_COMPLETED_TASKS_QUERY_KEY,
   MY_TASKS_QUERY_KEY,
@@ -73,6 +74,7 @@ export function useTaskContextActions({
         if (!taskWorkspaceId) throw new Error('Task workspace not found');
         await updateWorkspaceTask(taskWorkspaceId, task.id, { priority });
         invalidateQueries();
+        dispatchTaskSoundCue('update');
       } catch {
         toast.error(t('failed_to_update'));
         invalidateQueries();
@@ -97,6 +99,7 @@ export function useTaskContextActions({
           end_date: newDate,
         });
         invalidateQueries();
+        dispatchTaskSoundCue('update');
       } catch {
         toast.error(t('failed_to_update'));
         invalidateQueries();
@@ -119,6 +122,7 @@ export function useTaskContextActions({
           await addWorkspaceTaskLabel(taskWorkspaceId, task.id, labelId);
         }
         invalidateQueries();
+        dispatchTaskSoundCue('update');
       } catch {
         toast.error(t('failed_to_update'));
         invalidateQueries();
@@ -167,6 +171,7 @@ export function useTaskContextActions({
 
       onTaskUpdate();
       onClose();
+      dispatchTaskSoundCue('complete');
     } catch {
       toast.error(t('failed_to_update'));
     } finally {
@@ -196,6 +201,7 @@ export function useTaskContextActions({
       if (!response.ok) throw new Error('Failed');
       onTaskUpdate();
       onClose();
+      dispatchTaskSoundCue('complete');
     } catch {
       toast.error(t('failed_to_update'));
     } finally {
@@ -220,6 +226,7 @@ export function useTaskContextActions({
       if (!response.ok) throw new Error('Failed');
       onTaskUpdate();
       onClose();
+      dispatchTaskSoundCue('update');
     } catch {
       toast.error(t('failed_to_update'));
     } finally {
@@ -250,6 +257,7 @@ export function useTaskContextActions({
 
       onTaskUpdate();
       onClose();
+      dispatchTaskSoundCue('move');
     } catch {
       toast.error(t('failed_to_update'));
     } finally {
@@ -285,6 +293,7 @@ export function useTaskContextActions({
       });
       onTaskUpdate();
       onClose();
+      dispatchTaskSoundCue('update');
     } catch {
       toast.error(t('failed_to_update'));
       invalidateQueries();
@@ -310,6 +319,7 @@ export function useTaskContextActions({
       await deleteWorkspaceTask(taskWorkspaceId, task.id);
       onTaskUpdate();
       onClose();
+      dispatchTaskSoundCue('delete');
     } catch {
       toast.error(t('failed_to_update'));
     } finally {

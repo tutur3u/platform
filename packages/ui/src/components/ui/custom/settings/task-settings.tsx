@@ -21,6 +21,12 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID } from '../../tu-do/shared/task-due-date-visibility';
+import {
+  clampTaskSoundEffectsVolume,
+  DEFAULT_TASK_SOUND_EFFECTS_VOLUME,
+  TASK_SOUND_EFFECTS_ENABLED_CONFIG_ID,
+  TASK_SOUND_EFFECTS_VOLUME_CONFIG_ID,
+} from '../../tu-do/shared/task-sound-effects';
 
 interface TaskSettingsData {
   task_auto_assign_to_self: boolean;
@@ -74,6 +80,18 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
     isLoading: showReviewDueDatesLoading,
     isPending: showReviewDueDatesPending,
   } = useUserBooleanConfig(TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID, false);
+  const {
+    value: soundEffectsEnabled,
+    setValue: setSoundEffectsEnabled,
+    isLoading: soundEffectsEnabledLoading,
+    isPending: soundEffectsEnabledPending,
+  } = useUserBooleanConfig(TASK_SOUND_EFFECTS_ENABLED_CONFIG_ID, true);
+  const { data: soundEffectsVolume, isLoading: soundEffectsVolumeLoading } =
+    useUserConfig(
+      TASK_SOUND_EFFECTS_VOLUME_CONFIG_ID,
+      String(DEFAULT_TASK_SOUND_EFFECTS_VOLUME)
+    );
+  const updateSoundEffectsVolume = useUpdateUserConfig();
 
   const { data: submitShortcut, isLoading: submitShortcutLoading } =
     useUserConfig('TASK_SUBMIT_SHORTCUT', 'enter');
@@ -128,9 +146,19 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
     updateSettings.mutate({ fade_completed_tasks: checked });
   };
 
+  const handleSoundEffectsVolumeChange = (value: string) => {
+    updateSoundEffectsVolume.mutate({
+      configId: TASK_SOUND_EFFECTS_VOLUME_CONFIG_ID,
+      value: String(clampTaskSoundEffectsVolume(value)),
+    });
+  };
+
   const effectiveAutoAssignValue = isPersonalWorkspace
     ? true
     : (settings?.task_auto_assign_to_self ?? false);
+  const normalizedSoundEffectsVolume = String(
+    clampTaskSoundEffectsVolume(soundEffectsVolume)
+  );
 
   return (
     <div className="space-y-8">
@@ -161,6 +189,54 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             onCheckedChange={handleFadeCompletedToggle}
             disabled={isLoading || updateSettings.isPending}
           />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('sound_effects')}
+          description={t('sound_effects_description')}
+        >
+          <Switch
+            aria-label={t('sound_effects')}
+            checked={soundEffectsEnabled}
+            onCheckedChange={setSoundEffectsEnabled}
+            disabled={soundEffectsEnabledLoading || soundEffectsEnabledPending}
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('sound_effects_volume')}
+          description={t('sound_effects_volume_description')}
+        >
+          <Select
+            value={normalizedSoundEffectsVolume}
+            onValueChange={handleSoundEffectsVolumeChange}
+            disabled={
+              soundEffectsVolumeLoading ||
+              updateSoundEffectsVolume.isPending ||
+              !soundEffectsEnabled
+            }
+          >
+            <SelectTrigger
+              aria-label={t('sound_effects_volume')}
+              className="w-36"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="15">
+                {t('sound_effects_volume_soft')}
+              </SelectItem>
+              <SelectItem value="35">
+                {t('sound_effects_volume_balanced')}
+              </SelectItem>
+              <SelectItem value="60">
+                {t('sound_effects_volume_lively')}
+              </SelectItem>
+              <SelectItem value="85">
+                {t('sound_effects_volume_bold')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </SettingItemTab>
         <Separator />
         <SettingItemTab

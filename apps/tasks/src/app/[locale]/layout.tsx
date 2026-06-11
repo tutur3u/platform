@@ -9,6 +9,7 @@ import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { FadeSettingInitializer } from '@tuturuuu/ui/tu-do/shared/fade-setting-initializer';
+import { TaskSoundEffectsInitializer } from '@tuturuuu/ui/tu-do/shared/task-sound-effects';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
@@ -74,6 +75,7 @@ export default async function RootLayout({ children, params }: Props) {
           <Suspense>
             <Providers appName={siteConfig.name}>
               <FadeSettingInitializer />
+              <TaskSoundEffectsInitializer />
               {children}
             </Providers>
           </Suspense>
