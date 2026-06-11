@@ -7,7 +7,10 @@ import {
   saveInventoryPolarSettings,
 } from '@/lib/inventory/commerce/polar';
 import { polarSettingsPayloadSchema } from '@/lib/inventory/commerce/schemas';
-import { canManageInventorySetup } from '@/lib/inventory/permissions';
+import {
+  canManageInventorySetup,
+  canViewInventoryDashboard,
+} from '@/lib/inventory/permissions';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -19,7 +22,7 @@ export async function GET(request: Request, { params }: Params) {
     const authorization = await authorizeInventoryWorkspace(request, rawWsId);
     if (!authorization.ok) return authorization.response;
 
-    if (!canManageInventorySetup(authorization.value.permissions)) {
+    if (!canViewInventoryDashboard(authorization.value.permissions)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 

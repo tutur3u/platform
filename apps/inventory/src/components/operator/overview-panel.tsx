@@ -22,10 +22,9 @@ export function OverviewPanel({
   storefronts: InventoryStorefront[];
 }) {
   const t = useTranslations('inventory.operator');
-  const readyPolarConnections =
-    polarSettings?.integrations.filter(
-      (integration) => integration.status === 'ready'
-    ).length ?? 0;
+  const readyPolarConnections = (polarSettings?.integrations ?? []).filter(
+    (integration) => integration.status === 'ready'
+  ).length;
   const metrics = [
     { label: t('metrics.products'), value: products.length },
     { label: t('metrics.lowStock'), value: lowStock.length },

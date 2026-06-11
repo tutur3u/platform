@@ -144,9 +144,6 @@ export function InventoryOperatorClient({
     view === 'checkouts' ? data.checkouts : null,
     view === 'sales' ? data.sales : null,
     view === 'audits' ? data.audits : null,
-    ['checkouts', 'overview', 'storefront'].includes(view)
-      ? data.polarSettings
-      : null,
   ].flatMap((query) =>
     query
       ? [

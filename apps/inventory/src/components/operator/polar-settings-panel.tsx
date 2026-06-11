@@ -126,7 +126,7 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
 
       <div className="grid gap-3 lg:grid-cols-2">
         {environments.map((environment) => {
-          const integration = data?.integrations.find(
+          const integration = (data?.integrations ?? []).find(
             (item) => item.environment === environment
           );
           const ready = integration?.status === 'ready';
