@@ -607,6 +607,7 @@ test('Supabase production migration requires production deployment and successfu
     deployJob,
     /ref: \$\{\{ needs\.evaluate-prerequisites\.outputs\.target_sha \}\}/
   );
+  assert.match(deployJob, /supabase db push --include-all/);
 });
 
 test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', () => {

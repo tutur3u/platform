@@ -10,9 +10,9 @@ Use this checklist when changing CI, validators, docs, or repo automation.
 - Prefer `permissions: contents: read` for validation-only jobs.
 - Prefer standard-library validators for plugin, docs, and repository metadata checks.
 - Keep path-sensitive checks deterministic and run them from the repo root.
-- Keep staging Supabase migration CI on `supabase db push --include-all`;
-  production migration CI stays prerequisite-gated and uses the normal push
-  unless that rollout rule changes.
+- Keep staging and production Supabase migration CI on
+  `supabase db push --include-all`; production migration CI stays
+  prerequisite-gated on production deployment and same-SHA staging success.
 - Keep `vercel-preview-platform.yaml` on a protected `main` push trigger because
   `supabase-staging.yaml` depends on its completed workflow-run event; other
   preview Vercel workflows remain trusted manual-dispatch only.

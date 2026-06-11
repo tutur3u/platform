@@ -95,9 +95,9 @@ This page explains how Tuturuuu moves from code to running environments.
 The staging-triggered path is an automatic retry for the case where production
 deployment finishes before staging migration does. The production migration job
 still checks out the verified target commit explicitly before running
-`supabase db push`. This keeps production schema changes behind application
-deployment success, staging validation, and branch promotion for the same
-commit.
+`supabase db push --include-all`. This keeps production schema changes behind
+application deployment success, staging validation, and branch promotion for the
+same commit.
 
 ## Self-Hosted Web Release Flow
 
