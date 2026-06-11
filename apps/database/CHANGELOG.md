@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.0](https://github.com/tutur3u/platform/compare/database-v1.4.1...database-v1.5.0) (2026-06-11)
+
+
+### Features
+
+* **finance:** add wallet checkpoints ([54f9f29](https://github.com/tutur3u/platform/commit/54f9f29446ff9991e09a68abb258ce66c640b086))
+
+
+### Bug Fixes
+
+* **learn:** secure learner quiz practice ([352183b](https://github.com/tutur3u/platform/commit/352183b0c67798867628adddc8fb5d18d262de40))
+
 ## [1.4.1](https://github.com/tutur3u/platform/compare/database-v1.4.0...database-v1.4.1) (2026-06-11)
 
 

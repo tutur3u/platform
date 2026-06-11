@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/tutur3u/platform/compare/inventory-v0.3.1...inventory-v0.3.2) (2026-06-11)
+
+
+### Bug Fixes
+
+* **inventory:** resolve dashboard loading crashes for non-admin users ([e5328ca](https://github.com/tutur3u/platform/commit/e5328ca1b9fc059aa2076dd9a1ffe6ff7a6b00fe))
+
 ## [0.3.1](https://github.com/tutur3u/platform/compare/inventory-v0.3.0...inventory-v0.3.1) (2026-06-11)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/finance-v0.5.1...finance-v0.6.0) (2026-06-11)
+
+
+### Features
+
+* **finance:** add wallet checkpoints ([54f9f29](https://github.com/tutur3u/platform/commit/54f9f29446ff9991e09a68abb258ce66c640b086))
+
+
+### Bug Fixes
+
+* **finance:** merge transfer rows and sync wallet icons ([084e1ac](https://github.com/tutur3u/platform/commit/084e1ac662a3f41c59cfc54d58fa5897293697d2))
+
 ## [0.5.1](https://github.com/tutur3u/platform/compare/finance-v0.5.0...finance-v0.5.1) (2026-06-11)
 
 

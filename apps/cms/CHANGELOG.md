@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/cms-v0.5.1...cms-v0.6.0) (2026-06-11)
+
+
+### Features
+
+* **tasks:** add task sound effects ([7c4cb06](https://github.com/tutur3u/platform/commit/7c4cb06f8f134db201f54294c3c2641ae9ae5d07))
+
 ## [0.5.1](https://github.com/tutur3u/platform/compare/cms-v0.5.0...cms-v0.5.1) (2026-06-11)
 
 

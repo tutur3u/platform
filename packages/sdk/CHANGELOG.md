@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/sdk-v0.9.0...sdk-v0.10.0) (2026-06-11)
+
+
+### Features
+
+* **cli:** add calendar commands ([b916c1a](https://github.com/tutur3u/platform/commit/b916c1a0eeecfae961292466de0e9b37b9512b69))
+* **cli:** add finance wallet checkpoints ([4f77821](https://github.com/tutur3u/platform/commit/4f778210e753f6241a52528c64a9cb0756fb20dc))
+
+
+### Bug Fixes
+
+* **sdk:** respect timezone for finance dates ([ad5e725](https://github.com/tutur3u/platform/commit/ad5e72533f45dc2ebf3bab451bc3b98f3a68d8ef))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/sdk-v0.8.0...sdk-v0.9.0) (2026-06-11)
 
 
