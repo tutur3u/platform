@@ -55,7 +55,7 @@ export const GET = withSessionAuth(
     const { data, error } = await access.sbAdmin
       .from('workspace_user_groups_users')
       .select(
-        'role, workspace_users(id, display_name, full_name, email, avatar_url, archived)'
+        'role, workspace_users!workspace_user_roles_users_user_id_fkey(id, display_name, full_name, email, avatar_url, archived)'
       )
       .eq('group_id', parsedParams.data.courseId)
       .order('role', { ascending: true });
