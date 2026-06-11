@@ -3,6 +3,11 @@ const fs = require('node:fs');
 const net = require('node:net');
 const os = require('node:os');
 const path = require('node:path');
+const { runPortlessSetup } = require('./setup-portless');
+const {
+  getPortlessRoutesForApp,
+  removeClosedSameAppAliases,
+} = require('./portless-safe-dev');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DEFAULT_PORT_CHECK_TIMEOUT_MS = 250;
@@ -130,10 +135,6 @@ function unique(values) {
   return [...new Set(values)];
 }
 
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function parseDefaultPort(devAppScript) {
   if (typeof devAppScript !== 'string') {
     return null;
@@ -186,30 +187,14 @@ function getActivePortlessRouteHost(
 function getActivePortlessRoute(
   app,
   portlessListOutput = '',
-  { knownHosts = new Set() } = {}
+  { ignoredHosts = new Set(), knownHosts = new Set() } = {}
 ) {
-  const host = getPortlessHost(app.routeName);
-  const routePattern = new RegExp(
-    `(^|[^A-Za-z0-9.-])([A-Za-z0-9-]+\\.)?${escapeRegExp(host)}([^A-Za-z0-9.-]|$)`,
-    'gu'
+  return (
+    getPortlessRoutesForApp(app, portlessListOutput, {
+      ignoredHosts,
+      knownHosts,
+    })[0] ?? null
   );
-
-  for (const line of portlessListOutput.split(/\r?\n/u)) {
-    for (const match of line.matchAll(routePattern)) {
-      const routeHost = `${match[2] ?? ''}${host}`;
-
-      if (routeHost === host || !knownHosts.has(routeHost)) {
-        const portMatch = line.match(/(?:localhost|127\.0\.0\.1):(\d+)/u);
-
-        return {
-          host: routeHost,
-          port: portMatch?.[1] ? Number.parseInt(portMatch[1], 10) : null,
-        };
-      }
-    }
-  }
-
-  return null;
 }
 
 function isPortlessRouteActive(app, portlessListOutput = '', options = {}) {
@@ -368,8 +353,25 @@ async function resolveAppStates(
     }
 
     const expectedPortlessUrl = resolvePortlessUrl(app, { rootDir });
+    const aliasCleanup =
+      registerAliases && app.defaultPort
+        ? await removeClosedSameAppAliases(app, {
+            checkPort,
+            knownHosts,
+            portlessListOutput,
+            rootDir,
+            runner: aliasRunner,
+          })
+        : [];
+    const ignoredHosts = new Set(
+      aliasCleanup
+        .filter((cleanup) => cleanup.ok)
+        .map((cleanup) => cleanup.host)
+    );
+
     if (forceStart) {
       states[appKey] = {
+        aliasCleanup,
         reason: 'forced',
         status: 'missing',
         url: expectedPortlessUrl,
@@ -381,6 +383,7 @@ async function resolveAppStates(
       app,
       portlessListOutput,
       {
+        ignoredHosts,
         knownHosts,
       }
     );
@@ -391,6 +394,7 @@ async function resolveAppStates(
         (await checkPort(activePortlessRoute.port, app)))
     ) {
       states[appKey] = {
+        aliasCleanup,
         reason: 'portless',
         status: 'active',
         url: `https://${activePortlessRoute.host}`,
@@ -409,6 +413,7 @@ async function resolveAppStates(
 
       states[appKey] = {
         alias,
+        aliasCleanup,
         reason: 'localhost',
         status: 'active',
         url: alias.ok
@@ -436,6 +441,7 @@ async function resolveAppStates(
         : null;
 
     states[appKey] = {
+      aliasCleanup,
       alias: pendingAlias,
       reason: 'not-running',
       staleAlias,
@@ -604,6 +610,7 @@ function createDevPlan(
     appStates,
     catalog,
     env = process.env,
+    forceStart = false,
     portlessCaCertPath = null,
     rootDir = ROOT_DIR,
     serviceCatalog = DEV_SERVICES,
@@ -683,7 +690,11 @@ function createDevPlan(
 
     return {
       appKey,
-      args: app.defaultPort ? ['run', 'dev:app'] : ['run', 'dev'],
+      args: forceStart
+        ? ['run', 'dev', '--force']
+        : app.defaultPort
+          ? ['run', 'dev:app']
+          : ['run', 'dev'],
       command: 'bun',
       cwd: app.path,
       env: Object.keys(appEnv).length > 0 ? appEnv : undefined,
@@ -774,6 +785,24 @@ function formatDevCommand(command) {
   const cwd = command.cwd ? ` (cwd: ${command.cwd})` : '';
 
   return `${command.label}: ${command.command} ${command.args.join(' ')}${cwd}`;
+}
+
+function formatAliasCleanupWarnings(appStates) {
+  const warnings = [];
+
+  for (const [appKey, state] of Object.entries(appStates)) {
+    for (const cleanup of state.aliasCleanup ?? []) {
+      if (cleanup.ok) {
+        continue;
+      }
+
+      warnings.push(
+        `Could not remove stale Portless alias for ${appKey} (${cleanup.host}); continuing. ${cleanup.output}`
+      );
+    }
+  }
+
+  return warnings;
 }
 
 function waitForOutputPattern({ child, patterns = [], timeoutMs = 8000 } = {}) {
@@ -1010,9 +1039,13 @@ function printUsage(stdout = process.stdout) {
 }
 
 async function runDevWorkspaces({
+  aliasRunner = spawnSync,
   argv = process.argv.slice(2),
+  checkPort = isTcpPortOpen,
   env = process.env,
+  getPortlessListOutputImpl = getPortlessListOutput,
   rootDir = ROOT_DIR,
+  setupPortless = runPortlessSetup,
   spawnImpl = spawn,
   stderr = process.stderr,
   stdout = process.stdout,
@@ -1030,14 +1063,30 @@ async function runDevWorkspaces({
     return 1;
   }
 
+  if (!parsed.dryRun) {
+    const setupExitCode = setupPortless({
+      env,
+      error: (message) => stderr.write(`${message}\n`),
+      isTTY: process.stdin.isTTY,
+      log: (message) => stdout.write(`${message}\n`),
+    });
+
+    if (setupExitCode !== 0) {
+      return setupExitCode;
+    }
+  }
+
   const catalog = loadAppCatalog({ rootDir });
-  const portlessListOutput = getPortlessListOutput({ env, rootDir });
+  const portlessListOutput = getPortlessListOutputImpl({ env, rootDir });
   const appStates = await resolveAppStates(
     DEV_TARGETS[parsed.targetName].apps,
     {
+      aliasRunner,
       catalog,
+      checkPort,
       forceStart: parsed.forceStart,
       portlessListOutput,
+      registerAliases: !parsed.dryRun,
       rootDir,
     }
   );
@@ -1048,6 +1097,7 @@ async function runDevWorkspaces({
     appStates,
     catalog,
     env,
+    forceStart: parsed.forceStart,
     portlessCaCertPath: getPortlessCaCertPath({ env }),
     rootDir,
     serviceStates,
@@ -1064,6 +1114,9 @@ async function runDevWorkspaces({
   }
   if (skippedServices) {
     stdout.write(`Reusing running dev service(s): ${skippedServices}\n`);
+  }
+  for (const warning of formatAliasCleanupWarnings(appStates)) {
+    stderr.write(`${warning}\n`);
   }
 
   for (const appKey of plan.skippedAppKeys) {
@@ -1115,6 +1168,7 @@ module.exports = {
   DEV_SERVICES,
   DEV_TARGETS,
   createDevPlan,
+  formatAliasCleanupWarnings,
   formatDevCommand,
   getActivePortlessRouteHost,
   getAppCommandEnv,

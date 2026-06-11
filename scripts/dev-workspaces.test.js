@@ -18,6 +18,7 @@ const {
   parseDefaultPort,
   resolveAppStates,
   resolveServiceStates,
+  runDevWorkspaces,
   spawnDevCommands,
 } = require('./dev-workspaces');
 
@@ -299,6 +300,39 @@ test('resolveAppStates ignores stale Portless aliases whose target port is close
   assert.deepEqual(plan.missingAppKeys, ['web']);
   assert.deepEqual(plan.appCommands[0].args, ['run', 'dev:app']);
   assert.deepEqual(aliasCalls, [
+    ['bunx', ['portless', 'alias', '--remove', 'tuturuuu']],
+    ['bunx', ['portless', 'alias', 'tuturuuu', '7803']],
+  ]);
+});
+
+test('resolveAppStates removes stale worktree-prefixed aliases for the same app', async () => {
+  const catalog = loadAppCatalog({ rootDir: repoRoot });
+  const aliasCalls = [];
+  const states = await resolveAppStates(['web'], {
+    aliasRunner: (command, args) => {
+      aliasCalls.push([command, args]);
+      return { status: 0, stderr: '', stdout: 'ok' };
+    },
+    catalog,
+    checkPort: async () => false,
+    portlessListOutput: [
+      'http://zalo-qr-chat-setup.tuturuuu.localhost:1355 -> localhost:7803 (alias)',
+      'http://zalo-qr-chat-setup.chat.tuturuuu.localhost:1355 -> localhost:7821 (alias)',
+    ].join('\n'),
+    resolvePortlessUrl: getBasePortlessUrl,
+  });
+
+  assert.deepEqual(states.web.aliasCleanup, [
+    {
+      aliasName: 'zalo-qr-chat-setup.tuturuuu',
+      host: 'zalo-qr-chat-setup.tuturuuu.localhost',
+      ok: true,
+      output: 'ok',
+      port: 7803,
+    },
+  ]);
+  assert.deepEqual(aliasCalls, [
+    ['bunx', ['portless', 'alias', '--remove', 'zalo-qr-chat-setup.tuturuuu']],
     ['bunx', ['portless', 'alias', 'tuturuuu', '7803']],
   ]);
 });
@@ -379,6 +413,7 @@ test('force mode includes already-running app workspaces', async () => {
   const plan = createDevPlan('chat', {
     appStates: states,
     catalog,
+    forceStart: true,
   });
 
   assert.deepEqual(plan.skippedAppKeys, []);
@@ -386,6 +421,13 @@ test('force mode includes already-running app workspaces', async () => {
   assert.deepEqual(
     plan.appCommands.map((command) => command.appKey),
     ['chat', 'web']
+  );
+  assert.deepEqual(
+    plan.appCommands.map((command) => command.args),
+    [
+      ['run', 'dev', '--force'],
+      ['run', 'dev', '--force'],
+    ]
   );
   assert.deepEqual(plan.appCommands[0].env, {
     HOST: '127.0.0.1',
@@ -418,8 +460,16 @@ test('force mode carries worktree-prefixed Portless origins into started apps', 
   const plan = createDevPlan('chat', {
     appStates: states,
     catalog,
+    forceStart: true,
   });
 
+  assert.deepEqual(
+    plan.appCommands.map((command) => command.args),
+    [
+      ['run', 'dev', '--force'],
+      ['run', 'dev', '--force'],
+    ]
+  );
   assert.deepEqual(plan.appCommands[0].env, {
     HOST: '127.0.0.1',
     INTERNAL_WEB_API_ORIGIN: 'https://zalo-qr-chat-setup.tuturuuu.localhost',
@@ -540,6 +590,45 @@ test('parseArgs consumes reuse flags and forwards other Turbo args', () => {
     targetName: 'chat',
     turboArgs: [],
   });
+});
+
+test('runDevWorkspaces dry run does not start Portless or register aliases', async () => {
+  let setupCalled = false;
+  const aliasCalls = [];
+  const output = {
+    stderr: '',
+    stdout: '',
+  };
+  const writeTo = (key) => ({
+    write: (value) => {
+      output[key] += value.toString();
+    },
+  });
+
+  const exitCode = await runDevWorkspaces({
+    aliasRunner: (command, args) => {
+      aliasCalls.push([command, args]);
+      return { status: 0, stderr: '', stdout: '' };
+    },
+    argv: ['web', '--dry-run'],
+    checkPort: async () => false,
+    getPortlessListOutputImpl: () =>
+      'http://tuturuuu.localhost:1355 -> localhost:7803 (alias)',
+    setupPortless: () => {
+      setupCalled = true;
+      return 0;
+    },
+    spawnImpl: () => {
+      throw new Error('dry run should not spawn commands');
+    },
+    stderr: writeTo('stderr'),
+    stdout: writeTo('stdout'),
+  });
+
+  assert.equal(exitCode, 0);
+  assert.equal(setupCalled, false);
+  assert.deepEqual(aliasCalls, []);
+  assert.match(output.stdout, /Starting dev:web/u);
 });
 
 test('spawnDevCommands retries Portless route-lock app startup once', async () => {

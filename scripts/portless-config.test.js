@@ -5,6 +5,7 @@ const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..');
 const portlessConfigPath = path.join(repoRoot, 'portless.json');
+const portlessDevScript = 'node ../../scripts/portless-safe-dev.js';
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -49,8 +50,8 @@ test('app package portless entries mirror the root portless app map', () => {
 
     assert.equal(
       pkg.scripts.dev,
-      'portless',
-      `${relPath} should route its dev script through portless`
+      portlessDevScript,
+      `${relPath} should route its dev script through the safe Portless wrapper`
     );
     assert.deepEqual(
       pkg.portless,

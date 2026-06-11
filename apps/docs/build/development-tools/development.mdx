@@ -112,8 +112,16 @@ bun dev
 
 Local app development uses Portless, so each app gets a stable Tuturuuu
 subdomain instead of relying on its fallback port. The app package `dev`
-scripts run `portless`, and the underlying framework command remains available
-through `dev:app` for direct port-based debugging.
+scripts run the repo's Portless-safe wrapper, and the underlying framework
+command remains available through `dev:app` for direct port-based debugging.
+
+The wrapper only removes stale static aliases for the same app when their
+default backend port is closed, then starts Portless with the original app
+config. This fixes old worktree aliases such as
+`zalo-qr-chat-setup.tuturuuu.localhost` without cleaning certificates, deleting
+unrelated routes, or touching other apps' active aliases. Package-local
+`bun dev --force` delegates to `portless run --name <app> --force` so Portless
+can take over a live route when you explicitly request it.
 
 Root app-specific commands such as `bun dev:chat`, `bun dev:calendar`, and
 `bun dev:edu` reuse app servers that are already running. The launcher checks
@@ -121,7 +129,8 @@ active Portless routes first, then the app's default localhost port; if it finds
 a direct localhost listener, it tries to register a matching Portless alias so
 cross-app auth can still use the `*.tuturuuu.localhost` URL. Pass `--force` or
 `--no-reuse` when you intentionally want the command to include already-running
-app workspaces.
+app workspaces. Force mode starts the package `dev --force` path so Portless can
+take over the matching route instead of leaving a stale static alias in place.
 
 `bun dev:chat` also manages the local chat realtime sidecar. It reuses
 `localhost:7817` when a sidecar is already running; otherwise it starts

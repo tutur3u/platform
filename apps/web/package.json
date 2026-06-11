@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "portless",
+    "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "NODE_OPTIONS='--experimental-require-module' node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7803} --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",

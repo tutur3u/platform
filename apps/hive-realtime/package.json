@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "portless",
+    "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- bun --watch src/index.ts",
     "serve:hive-realtime": "bun run start",
     "start": "bun src/index.ts",
