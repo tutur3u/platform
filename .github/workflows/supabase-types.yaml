@@ -16,12 +16,9 @@ jobs:
     if: needs.check-ci.outputs.should_run == 'true'
     timeout-minutes: 15
     runs-on: ubuntu-latest
-
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
-      STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
-      STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+    permissions:
+      actions: write
+      contents: read
     steps:
       - uses: actions/checkout@v6
       - name: Setup Supabase CLI
