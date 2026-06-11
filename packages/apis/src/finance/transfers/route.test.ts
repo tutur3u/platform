@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { FinanceRouteAuthContext } from '../request-access';
 
 const mocks = vi.hoisted(() => {
   const getPermissions = vi.fn();
@@ -471,6 +472,76 @@ describe('transfers route', () => {
         tag_id: '33333333-3333-4333-8333-333333333333',
       },
     ]);
+  });
+
+  it('migrates existing transactions with a resolved finance auth context', async () => {
+    const { PATCH } = await import('./route.js');
+
+    const authContext = {
+      sbAdmin: mocks.adminSupabase,
+      supabase: mocks.sessionSupabase,
+      user: {
+        aud: 'authenticated',
+        email: 'cli-user@tuturuuu.com',
+        id: 'cli-user-1',
+      },
+    } as unknown as FinanceRouteAuthContext;
+
+    const response = await PATCH(
+      new Request('http://localhost/api/workspaces/personal/transfers', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          origin_transaction_id: '11111111-1111-4111-8111-111111111111',
+          destination_transaction_id: '22222222-2222-4222-8222-222222222222',
+          origin_wallet_id: '11111111-1111-1111-1111-111111111111',
+          destination_wallet_id: '22222222-2222-2222-2222-222222222222',
+          amount: 25,
+          taken_at: '2026-03-30T08:00:00.000Z',
+          description: 'Migrated transfer',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'personal',
+        }),
+      },
+      authContext
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      wsId: 'personal',
+      user: {
+        email: 'cli-user@tuturuuu.com',
+        id: 'cli-user-1',
+      },
+    });
+    expect(mocks.transferInsert).toHaveBeenCalledWith({
+      from_transaction_id: '11111111-1111-4111-8111-111111111111',
+      to_transaction_id: '22222222-2222-4222-8222-222222222222',
+    });
+    expect(mocks.adminTransactionUpsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          id: '11111111-1111-4111-8111-111111111111',
+          amount: -25,
+          category_id: null,
+          description: 'Migrated transfer',
+          wallet_id: '11111111-1111-1111-1111-111111111111',
+        }),
+        expect.objectContaining({
+          id: '22222222-2222-4222-8222-222222222222',
+          amount: 25,
+          category_id: null,
+          description: 'Migrated transfer',
+          wallet_id: '22222222-2222-2222-2222-222222222222',
+        }),
+      ],
+      { onConflict: 'id' }
+    );
   });
 
   it('rejects transfer migration for an already-linked pair', async () => {

@@ -1,42 +1,22 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
 import {
   canReassignFinanceWallet,
   canUseRequestedFinanceWalletOnCreate,
 } from '@tuturuuu/utils/finance';
 import {
-  getPermissions,
   getWorkspaceConfig,
-  normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  type FinanceRouteAuthContext,
+  getFinanceRouteContext,
+} from '../request-access';
 
 interface Params {
   params: Promise<{
     wsId: string;
   }>;
-}
-
-const NORMALIZATION_ERROR_MESSAGES = new Set([
-  'User not authenticated',
-  'Personal workspace not found',
-  'Invalid workspace',
-]);
-
-function isWorkspaceNormalizationError(error: unknown): error is Error {
-  if (!(error instanceof Error)) return false;
-
-  return (
-    NORMALIZATION_ERROR_MESSAGES.has(error.message) ||
-    error.name === 'WorkspaceAuthError' ||
-    error.name === 'WorkspaceAccessError' ||
-    error.name === 'WorkspaceRedirectRequiredError'
-  );
 }
 
 type TransferIntegrityIncident = {
@@ -95,53 +75,17 @@ const UpdateTransferSchema = z
 
 const MigrateTransferSchema = UpdateTransferSchema;
 
-export async function PATCH(req: Request, { params }: Params) {
+export async function PATCH(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
-  let normalizedWsId: string;
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  try {
-    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '';
+  if (access.response) return access.response;
 
-    if (errorMessage === 'User not authenticated') {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (errorMessage === 'Personal workspace not found') {
-      return NextResponse.json(
-        { message: 'Workspace not found' },
-        { status: 404 }
-      );
-    }
-
-    if (isWorkspaceNormalizationError(error)) {
-      return NextResponse.json(
-        { message: 'Invalid workspace' },
-        { status: 400 }
-      );
-    }
-
-    console.error('Unexpected workspace normalization error in transfers API', {
-      wsId,
-      error,
-    });
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-
-  const permissions = await getPermissions({
-    wsId: normalizedWsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+  const { normalizedWsId, permissions, sbAdmin, supabase } = access.context;
 
   if (permissions.withoutPermission('update_transactions')) {
     return NextResponse.json(
@@ -401,53 +345,17 @@ export async function PATCH(req: Request, { params }: Params) {
   });
 }
 
-export async function PUT(req: Request, { params }: Params) {
+export async function PUT(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
-  let normalizedWsId: string;
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  try {
-    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '';
+  if (access.response) return access.response;
 
-    if (errorMessage === 'User not authenticated') {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (errorMessage === 'Personal workspace not found') {
-      return NextResponse.json(
-        { message: 'Workspace not found' },
-        { status: 404 }
-      );
-    }
-
-    if (isWorkspaceNormalizationError(error)) {
-      return NextResponse.json(
-        { message: 'Invalid workspace' },
-        { status: 400 }
-      );
-    }
-
-    console.error('Unexpected workspace normalization error in transfers API', {
-      wsId,
-      error,
-    });
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-
-  const permissions = await getPermissions({
-    wsId: normalizedWsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+  const { normalizedWsId, permissions, sbAdmin, supabase } = access.context;
 
   const { withoutPermission } = permissions;
 
@@ -689,53 +597,18 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function POST(req: Request, { params }: Params) {
+export async function POST(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
-  let normalizedWsId: string;
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  try {
-    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '';
+  if (access.response) return access.response;
 
-    if (errorMessage === 'User not authenticated') {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (errorMessage === 'Personal workspace not found') {
-      return NextResponse.json(
-        { message: 'Workspace not found' },
-        { status: 404 }
-      );
-    }
-
-    if (isWorkspaceNormalizationError(error)) {
-      return NextResponse.json(
-        { message: 'Invalid workspace' },
-        { status: 400 }
-      );
-    }
-
-    console.error('Unexpected workspace normalization error in transfers API', {
-      wsId,
-      error,
-    });
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-
-  const permissions = await getPermissions({
-    wsId: normalizedWsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+  const { normalizedWsId, permissions, sbAdmin, supabase, user } =
+    access.context;
 
   const { withoutPermission } = permissions;
 
@@ -750,12 +623,6 @@ export async function POST(req: Request, { params }: Params) {
     normalizedWsId,
     'default_wallet_id'
   );
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   // Get virtual_user_id for this workspace
   let { data: wsUser } = await supabase
