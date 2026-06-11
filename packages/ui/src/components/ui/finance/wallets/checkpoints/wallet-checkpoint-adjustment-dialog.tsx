@@ -5,6 +5,7 @@ import {
   createWalletCheckpointReconciliation,
   listTransactionCategories,
 } from '@tuturuuu/internal-api/finance';
+import { FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -14,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -27,7 +29,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const NO_CATEGORY = 'none';
 
@@ -62,11 +64,54 @@ export function WalletCheckpointAdjustmentDialog({
       wallet: walletName,
     })
   );
+  const [categoryInitialized, setCategoryInitialized] = useState(false);
   const categoriesQuery = useQuery({
     queryKey: ['transaction-categories', wsId],
     queryFn: () => listTransactionCategories(wsId),
     enabled: open,
   });
+  const {
+    data: defaultReconciliationCategoryId,
+    isLoading: isLoadingDefaultReconciliationCategory,
+  } = useWorkspaceConfig<string>(
+    wsId,
+    FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID,
+    ''
+  );
+
+  useEffect(() => {
+    if (!open) {
+      setCategoryId(NO_CATEGORY);
+      setCategoryInitialized(false);
+      return;
+    }
+
+    if (
+      categoryInitialized ||
+      categoriesQuery.isLoading ||
+      isLoadingDefaultReconciliationCategory
+    ) {
+      return;
+    }
+
+    const defaultCategoryExists = (categoriesQuery.data ?? []).some(
+      (category) => category.id === defaultReconciliationCategoryId
+    );
+
+    setCategoryId(
+      defaultReconciliationCategoryId && defaultCategoryExists
+        ? defaultReconciliationCategoryId
+        : NO_CATEGORY
+    );
+    setCategoryInitialized(true);
+  }, [
+    categoriesQuery.data,
+    categoriesQuery.isLoading,
+    categoryInitialized,
+    defaultReconciliationCategoryId,
+    isLoadingDefaultReconciliationCategory,
+    open,
+  ]);
   const amountText = useMemo(
     () =>
       formatCurrency(variance, currency, undefined, {
@@ -162,7 +207,7 @@ export function WalletCheckpointAdjustmentDialog({
             {t('cancel')}
           </Button>
           <Button
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || !categoryInitialized}
             onClick={() => mutation.mutate()}
           >
             {mutation.isPending ? t('creating') : t('reconcile')}

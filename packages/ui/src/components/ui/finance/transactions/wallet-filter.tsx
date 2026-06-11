@@ -25,6 +25,7 @@ import {
   FINANCE_HIDDEN_AMOUNT,
   useFinanceConfidentialVisibility,
 } from '../shared/use-finance-confidential-visibility';
+import { resolveWalletBalanceForMode } from '../shared/wallet-balance-mode';
 
 interface WalletFilterProps {
   wsId: string;
@@ -138,16 +139,14 @@ export function WalletFilter({
                     })
                     .map((wallet) => {
                       const isSelected = selectedWalletIds.includes(wallet.id);
-                      const hasAuditedBalance =
-                        typeof wallet.audit_balance === 'number';
-                      const displayBalance: number =
-                        isAuditedMode && hasAuditedBalance
-                          ? (wallet.audit_balance ?? 0)
-                          : (wallet.balance ?? 0);
-                      const balanceLabel =
-                        isAuditedMode && hasAuditedBalance
-                          ? checkpointT('audited')
-                          : checkpointT('ledger');
+                      const { displayBalance, usesAuditedBalance } =
+                        resolveWalletBalanceForMode(
+                          wallet,
+                          isAuditedMode ? 'audited' : 'ledger'
+                        );
+                      const balanceLabel = usesAuditedBalance
+                        ? checkpointT('audited')
+                        : checkpointT('ledger');
 
                       return (
                         <CommandItem

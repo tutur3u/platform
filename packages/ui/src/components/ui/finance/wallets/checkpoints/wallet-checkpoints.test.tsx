@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletCheckpointAdjustmentDialog } from './wallet-checkpoint-adjustment-dialog';
 import { WalletCheckpointAmount } from './wallet-checkpoint-amount';
@@ -11,6 +11,7 @@ import { WalletTotalCheckDialog } from './wallet-total-check-dialog';
 const mocks = vi.hoisted(() => ({
   createWalletCheckpointBatch: vi.fn(),
   createWalletCheckpointReconciliation: vi.fn(),
+  defaultReconciliationCategoryId: '',
   deleteWalletCheckpoint: vi.fn(),
   getWalletCheckpointHistory: vi.fn(),
   isConfidential: true,
@@ -40,6 +41,40 @@ vi.mock('@tuturuuu/internal-api/finance', () => ({
     ...args: Parameters<typeof mocks.listWalletCheckpoints>
   ) => mocks.listWalletCheckpoints(...args),
   updateWalletCheckpoint: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/ui/hooks/use-workspace-config', () => ({
+  useWorkspaceConfig: () => ({
+    data: mocks.defaultReconciliationCategoryId,
+    isLoading: false,
+  }),
+}));
+
+vi.mock('@tuturuuu/ui/select', () => ({
+  Select: ({
+    children,
+    onValueChange,
+    value,
+  }: {
+    children: ReactNode;
+    onValueChange: (value: string) => void;
+    value: string;
+  }) => (
+    <select
+      onChange={(event) => onValueChange(event.target.value)}
+      value={value}
+    >
+      {children}
+    </select>
+  ),
+  SelectContent: ({ children }: { children: ReactNode }) => children,
+  SelectItem: ({ children, value }: { children: ReactNode; value: string }) => (
+    <option value={value}>
+      {typeof children === 'string' ? children : value}
+    </option>
+  ),
+  SelectTrigger: ({ children }: { children: ReactNode }) => children,
+  SelectValue: () => null,
 }));
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
@@ -78,6 +113,7 @@ function renderWithQueryClient(ui: ReactElement) {
 describe('wallet checkpoint UI', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.defaultReconciliationCategoryId = '';
     mocks.isConfidential = true;
     mocks.createWalletCheckpointReconciliation.mockResolvedValue({
       checked_at: '2026-06-11T10:00:00.000Z',
@@ -283,7 +319,9 @@ describe('wallet checkpoint UI', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'reconcile' }));
+    const reconcileButton = screen.getByRole('button', { name: 'reconcile' });
+    await waitFor(() => expect(reconcileButton).not.toBeDisabled());
+    fireEvent.click(reconcileButton);
 
     await waitFor(() => {
       expect(mocks.createWalletCheckpointReconciliation).toHaveBeenCalledWith(
@@ -293,6 +331,89 @@ describe('wallet checkpoint UI', () => {
         expect.objectContaining({
           category_id: undefined,
           description: expect.stringContaining('Cash'),
+        })
+      );
+    });
+  });
+
+  it('preselects the configured reconciliation category', async () => {
+    mocks.defaultReconciliationCategoryId = 'category-reconcile';
+    mocks.listTransactionCategories.mockResolvedValue([
+      {
+        id: 'category-reconcile',
+        name: 'Audit',
+      },
+    ]);
+
+    renderWithQueryClient(
+      <WalletCheckpointAdjustmentDialog
+        wsId="ws-1"
+        walletId="wallet-1"
+        checkpointId="checkpoint-1"
+        walletName="Cash"
+        checkedAt="2026-06-11T10:00:00.000Z"
+        currency="USD"
+        variance={-12.34}
+        open
+        onOpenChange={vi.fn()}
+        onCreated={vi.fn()}
+      />
+    );
+
+    const reconcileButton = screen.getByRole('button', { name: 'reconcile' });
+    await waitFor(() => expect(reconcileButton).not.toBeDisabled());
+    fireEvent.click(reconcileButton);
+
+    await waitFor(() => {
+      expect(mocks.createWalletCheckpointReconciliation).toHaveBeenCalledWith(
+        'ws-1',
+        'wallet-1',
+        'checkpoint-1',
+        expect.objectContaining({
+          category_id: 'category-reconcile',
+        })
+      );
+    });
+  });
+
+  it('submits no reconciliation category after clearing the configured default', async () => {
+    mocks.defaultReconciliationCategoryId = 'category-reconcile';
+    mocks.listTransactionCategories.mockResolvedValue([
+      {
+        id: 'category-reconcile',
+        name: 'Audit',
+      },
+    ]);
+
+    renderWithQueryClient(
+      <WalletCheckpointAdjustmentDialog
+        wsId="ws-1"
+        walletId="wallet-1"
+        checkpointId="checkpoint-1"
+        walletName="Cash"
+        checkedAt="2026-06-11T10:00:00.000Z"
+        currency="USD"
+        variance={-12.34}
+        open
+        onOpenChange={vi.fn()}
+        onCreated={vi.fn()}
+      />
+    );
+
+    const reconcileButton = screen.getByRole('button', { name: 'reconcile' });
+    await waitFor(() => expect(reconcileButton).not.toBeDisabled());
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: 'none' },
+    });
+    fireEvent.click(reconcileButton);
+
+    await waitFor(() => {
+      expect(mocks.createWalletCheckpointReconciliation).toHaveBeenCalledWith(
+        'ws-1',
+        'wallet-1',
+        'checkpoint-1',
+        expect.objectContaining({
+          category_id: undefined,
         })
       );
     });
@@ -393,6 +514,7 @@ describe('wallet checkpoint UI', () => {
     if (!lastReconcileButton) {
       throw new Error('Expected a checkpoint reconcile button');
     }
+    await waitFor(() => expect(lastReconcileButton).not.toBeDisabled());
     fireEvent.click(lastReconcileButton);
 
     await waitFor(() => {

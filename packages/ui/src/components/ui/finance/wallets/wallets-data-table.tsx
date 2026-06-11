@@ -10,6 +10,7 @@ import { useExchangeRates } from '@tuturuuu/ui/hooks/use-exchange-rates';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useCallback, useState } from 'react';
+import { useFinanceBalanceMode } from '../shared/use-finance-balance-mode';
 
 interface WalletsDataTableProps {
   wsId: string;
@@ -42,6 +43,7 @@ export function WalletsDataTable({
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { data: exchangeRatesResponse } = useExchangeRates();
+  const { mode: balanceMode } = useFinanceBalanceMode();
 
   // State for edit dialog
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
@@ -90,6 +92,7 @@ export function WalletsDataTable({
         data={data}
         columnGenerator={walletColumns}
         extraData={{
+          balanceMode,
           canUpdateWallets,
           canDeleteWallets,
           currency,

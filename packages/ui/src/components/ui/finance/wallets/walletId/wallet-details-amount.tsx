@@ -9,6 +9,7 @@ import {
   FINANCE_HIDDEN_AMOUNT,
   useFinanceConfidentialVisibility,
 } from '../../shared/use-finance-confidential-visibility';
+import { resolveWalletBalanceForMode } from '../../shared/wallet-balance-mode';
 
 interface WalletDetailsAmountProps {
   auditedBalance?: number | null;
@@ -36,7 +37,7 @@ export function WalletDetailsAmount({
   const t = useTranslations('wallet-checkpoints');
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
-  const { isAuditedMode } = useFinanceBalanceMode();
+  const { mode } = useFinanceBalanceMode();
 
   if (areNumbersHidden) {
     return (
@@ -44,21 +45,32 @@ export function WalletDetailsAmount({
     );
   }
 
-  const hasLedgerBalance = typeof ledgerBalance === 'number';
-  const hasAuditedBalance = typeof auditedBalance === 'number';
-  const displayBalance =
-    isAuditedMode && hasAuditedBalance ? auditedBalance : ledgerBalance;
-  const contextBalance =
-    isAuditedMode && hasAuditedBalance ? ledgerBalance : auditedBalance;
+  const {
+    auditStatus: resolvedAuditStatus,
+    auditVariance: resolvedAuditVariance,
+    contextBalance,
+    displayBalance,
+    hasAuditedBalance,
+    isAuditedMode,
+  } = resolveWalletBalanceForMode(
+    {
+      audit_balance: auditedBalance,
+      audit_status: auditStatus ?? undefined,
+      audit_variance: auditVariance,
+      balance: ledgerBalance,
+    },
+    mode
+  );
+  const hasResolvableBalance =
+    typeof ledgerBalance === 'number' || typeof auditedBalance === 'number';
   const resolvedCurrency = currency ?? 'USD';
   const resolvedWorkspaceCurrency = workspaceCurrency ?? resolvedCurrency;
-  const displayPrimary =
-    typeof displayBalance === 'number'
-      ? Intl.NumberFormat(getCurrencyLocale(resolvedCurrency), {
-          style: 'currency',
-          currency: resolvedCurrency,
-        }).format(displayBalance)
-      : primary;
+  const displayPrimary = hasResolvableBalance
+    ? Intl.NumberFormat(getCurrencyLocale(resolvedCurrency), {
+        style: 'currency',
+        currency: resolvedCurrency,
+      }).format(displayBalance)
+    : primary;
   let displayConverted = converted;
 
   if (
@@ -86,10 +98,9 @@ export function WalletDetailsAmount({
   }
 
   const showAuditContext =
-    hasLedgerBalance &&
     hasAuditedBalance &&
-    auditStatus &&
-    auditStatus !== 'no_checkpoint';
+    resolvedAuditStatus &&
+    resolvedAuditStatus !== 'no_checkpoint';
 
   return (
     <span className="inline-flex flex-col gap-0.5 align-middle">
@@ -107,9 +118,9 @@ export function WalletDetailsAmount({
           {formatCurrency(contextBalance, resolvedCurrency, undefined, {
             signDisplay: 'auto',
           })}
-          {typeof auditVariance === 'number'
+          {resolvedAuditVariance !== null
             ? ` · ${t('variance')}: ${formatCurrency(
-                auditVariance,
+                resolvedAuditVariance,
                 resolvedCurrency,
                 undefined,
                 { signDisplay: 'always' }
@@ -117,7 +128,7 @@ export function WalletDetailsAmount({
             : null}
         </span>
       )}
-      {isAuditedMode && auditStatus === 'no_checkpoint' && (
+      {isAuditedMode && resolvedAuditStatus === 'no_checkpoint' && (
         <span className="text-muted-foreground text-xs">
           {t('no_checkpoint_short')}
         </span>

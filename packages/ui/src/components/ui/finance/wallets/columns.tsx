@@ -20,14 +20,19 @@ import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useFinanceBalanceMode } from '../shared/use-finance-balance-mode';
+import type { FinanceBalanceMode } from '../shared/use-finance-balance-mode';
 import {
   FINANCE_HIDDEN_AMOUNT,
   useFinanceConfidentialVisibility,
 } from '../shared/use-finance-confidential-visibility';
+import {
+  getWalletBalanceTone,
+  resolveWalletBalanceForMode,
+} from '../shared/wallet-balance-mode';
 import { WalletIconDisplay } from './wallet-icon-display';
 
 interface WalletExtraData {
+  balanceMode?: FinanceBalanceMode;
   canUpdateWallets?: boolean;
   canDeleteWallets?: boolean;
   currency?: string;
@@ -36,18 +41,14 @@ interface WalletExtraData {
 }
 
 function WalletBalanceCell({
-  auditBalance,
-  auditStatus,
-  auditVariance,
-  balance,
+  balanceMode,
+  wallet,
   walletCurrency,
   workspaceCurrency,
   exchangeRates,
 }: {
-  auditBalance?: number | null;
-  auditStatus?: string | null;
-  auditVariance?: number | null;
-  balance: number;
+  balanceMode: FinanceBalanceMode;
+  wallet: Wallet;
   walletCurrency: string;
   workspaceCurrency: string;
   exchangeRates?: ExchangeRate[];
@@ -55,15 +56,17 @@ function WalletBalanceCell({
   const t = useTranslations('wallet-checkpoints');
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
-  const { isAuditedMode } = useFinanceBalanceMode();
-  const hasAuditBalance = typeof auditBalance === 'number';
-  const displayBalance =
-    isAuditedMode && hasAuditBalance ? auditBalance : balance;
-  const contextBalance =
-    isAuditedMode && hasAuditBalance ? balance : auditBalance;
+  const {
+    auditStatus,
+    auditVariance,
+    contextBalance,
+    displayBalance,
+    hasAuditedBalance,
+    isAuditedMode,
+  } = resolveWalletBalanceForMode(wallet, balanceMode);
   const contextLabel = isAuditedMode ? t('ledger') : t('audited');
   const showAuditContext =
-    hasAuditBalance && auditStatus && auditStatus !== 'no_checkpoint';
+    hasAuditedBalance && auditStatus && auditStatus !== 'no_checkpoint';
 
   const formattedBalance = formatCurrency(
     displayBalance,
@@ -105,14 +108,12 @@ function WalletBalanceCell({
     );
   }
 
-  const isPositive = displayBalance > 0;
-  const isNegative = displayBalance < 0;
-  const isNeutral = displayBalance === 0;
+  const balanceTone = getWalletBalanceTone(displayBalance);
 
   return (
     <div className="flex flex-col gap-0.5">
       <div className="flex items-center gap-2">
-        {isPositive && (
+        {balanceTone === 'positive' && (
           <Badge
             variant="outline"
             className={cn(
@@ -124,7 +125,7 @@ function WalletBalanceCell({
             {formattedBalance}
           </Badge>
         )}
-        {isNegative && (
+        {balanceTone === 'negative' && (
           <Badge
             variant="outline"
             className={cn(
@@ -136,7 +137,7 @@ function WalletBalanceCell({
             {formattedBalance}
           </Badge>
         )}
-        {isNeutral && (
+        {balanceTone === 'neutral' && (
           <Badge
             variant="outline"
             className="font-semibold text-muted-foreground"
@@ -156,7 +157,7 @@ function WalletBalanceCell({
           {formatCurrency(contextBalance, walletCurrency, undefined, {
             signDisplay: 'auto',
           })}
-          {typeof auditVariance === 'number'
+          {auditVariance !== null
             ? ` · ${t('variance')}: ${formatCurrency(
                 auditVariance,
                 walletCurrency,
@@ -183,6 +184,7 @@ export const walletColumns = ({
   extraData?: WalletExtraData;
 }): ColumnDef<Wallet>[] => {
   const workspaceCurrency = extraData?.currency || 'USD';
+  const balanceMode = extraData?.balanceMode ?? 'ledger';
 
   return [
     // {
@@ -257,7 +259,9 @@ export const walletColumns = ({
       cell: ({ row }) => <div>{row.getValue('description') || '-'}</div>,
     },
     {
-      accessorKey: 'balance',
+      id: 'balance',
+      accessorFn: (wallet) =>
+        resolveWalletBalanceForMode(wallet, balanceMode).displayBalance,
       header: ({ column }) => (
         <DataTableColumnHeader
           t={t}
@@ -266,14 +270,11 @@ export const walletColumns = ({
         />
       ),
       cell: ({ row }) => {
-        const balance = Number(row.getValue('balance')) || 0;
         const walletCurrency = row.original.currency || workspaceCurrency;
         return (
           <WalletBalanceCell
-            auditBalance={row.original.audit_balance}
-            auditStatus={row.original.audit_status}
-            auditVariance={row.original.audit_variance}
-            balance={balance}
+            balanceMode={balanceMode}
+            wallet={row.original}
             walletCurrency={walletCurrency}
             workspaceCurrency={workspaceCurrency}
             exchangeRates={extraData?.exchangeRates}

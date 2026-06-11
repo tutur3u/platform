@@ -21,6 +21,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useFinanceBalanceMode } from '../../shared/use-finance-balance-mode';
+import { resolveWalletBalanceForMode } from '../../shared/wallet-balance-mode';
 import { invalidateWalletMutationQueries } from '../query-invalidation';
 import { WalletCheckpointAmount } from './wallet-checkpoint-amount';
 
@@ -103,89 +104,19 @@ export function WalletTotalCheckDialog({
           ) : (
             <div className="grid gap-3">
               {wallets.map((wallet) => (
-                <div
+                <WalletTotalCheckRow
                   key={wallet.id}
-                  className="grid gap-2 rounded-md border p-3"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="truncate font-medium text-sm">
-                        {wallet.name}
-                      </div>
-                      <div className="text-muted-foreground text-xs">
-                        {isAuditedMode &&
-                        typeof wallet.audit_balance === 'number'
-                          ? t('audited_balance')
-                          : t('ledger_balance')}
-                        :{' '}
-                        <WalletCheckpointAmount
-                          amount={
-                            isAuditedMode &&
-                            typeof wallet.audit_balance === 'number'
-                              ? wallet.audit_balance
-                              : (wallet.balance ?? 0)
-                          }
-                          currency={wallet.currency}
-                        />
-                      </div>
-                      {typeof wallet.audit_balance === 'number' &&
-                        wallet.audit_status !== 'no_checkpoint' && (
-                          <div className="text-muted-foreground text-xs">
-                            {isAuditedMode
-                              ? t('ledger_balance')
-                              : t('audited_balance')}
-                            :{' '}
-                            <WalletCheckpointAmount
-                              amount={
-                                isAuditedMode
-                                  ? (wallet.balance ?? 0)
-                                  : wallet.audit_balance
-                              }
-                              currency={wallet.currency}
-                            />
-                            {typeof wallet.audit_variance === 'number'
-                              ? ` · ${t('variance')}: `
-                              : null}
-                            {typeof wallet.audit_variance === 'number' && (
-                              <WalletCheckpointAmount
-                                amount={wallet.audit_variance}
-                                currency={wallet.currency}
-                                signDisplay="always"
-                              />
-                            )}
-                          </div>
-                        )}
-                      {isAuditedMode &&
-                        wallet.audit_status === 'no_checkpoint' && (
-                          <div className="text-muted-foreground text-xs">
-                            {t('no_checkpoint_short')}
-                          </div>
-                        )}
-                    </div>
-                    <div className="text-muted-foreground text-xs">
-                      {wallet.currency}
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor={`wallet-check-${wallet.id}`}>
-                      {t('actual_balance_with_currency', {
-                        currency: wallet.currency,
-                      })}
-                    </Label>
-                    <Input
-                      id={`wallet-check-${wallet.id}`}
-                      inputMode="decimal"
-                      value={values[wallet.id] ?? ''}
-                      onChange={(event) =>
-                        setValues((current) => ({
-                          ...current,
-                          [wallet.id]: event.target.value,
-                        }))
-                      }
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
+                  isAuditedMode={isAuditedMode}
+                  onValueChange={(value) =>
+                    setValues((current) => ({
+                      ...current,
+                      [wallet.id]: value,
+                    }))
+                  }
+                  t={t}
+                  value={values[wallet.id] ?? ''}
+                  wallet={wallet}
+                />
               ))}
               {totals.length > 0 && (
                 <div className="rounded-md border p-3">
@@ -232,5 +163,84 @@ export function WalletTotalCheckDialog({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function WalletTotalCheckRow({
+  isAuditedMode,
+  onValueChange,
+  t,
+  value,
+  wallet,
+}: {
+  isAuditedMode: boolean;
+  onValueChange: (value: string) => void;
+  t: ReturnType<typeof useTranslations>;
+  value: string;
+  wallet: WalletInput;
+}) {
+  const {
+    auditStatus,
+    auditVariance,
+    contextBalance,
+    displayBalance,
+    hasAuditedBalance,
+    usesAuditedBalance,
+  } = resolveWalletBalanceForMode(wallet, isAuditedMode ? 'audited' : 'ledger');
+
+  return (
+    <div className="grid gap-2 rounded-md border p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate font-medium text-sm">{wallet.name}</div>
+          <div className="text-muted-foreground text-xs">
+            {usesAuditedBalance ? t('audited_balance') : t('ledger_balance')}:{' '}
+            <WalletCheckpointAmount
+              amount={displayBalance}
+              currency={wallet.currency}
+            />
+          </div>
+          {hasAuditedBalance && auditStatus !== 'no_checkpoint' && (
+            <div className="text-muted-foreground text-xs">
+              {isAuditedMode ? t('ledger_balance') : t('audited_balance')}:{' '}
+              {contextBalance !== null && (
+                <WalletCheckpointAmount
+                  amount={contextBalance}
+                  currency={wallet.currency}
+                />
+              )}
+              {auditVariance !== null ? ` · ${t('variance')}: ` : null}
+              {auditVariance !== null && (
+                <WalletCheckpointAmount
+                  amount={auditVariance}
+                  currency={wallet.currency}
+                  signDisplay="always"
+                />
+              )}
+            </div>
+          )}
+          {isAuditedMode && auditStatus === 'no_checkpoint' && (
+            <div className="text-muted-foreground text-xs">
+              {t('no_checkpoint_short')}
+            </div>
+          )}
+        </div>
+        <div className="text-muted-foreground text-xs">{wallet.currency}</div>
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor={`wallet-check-${wallet.id}`}>
+          {t('actual_balance_with_currency', {
+            currency: wallet.currency,
+          })}
+        </Label>
+        <Input
+          id={`wallet-check-${wallet.id}`}
+          inputMode="decimal"
+          value={value}
+          onChange={(event) => onValueChange(event.target.value)}
+          placeholder="0"
+        />
+      </div>
+    </div>
   );
 }

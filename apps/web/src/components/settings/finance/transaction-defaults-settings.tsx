@@ -9,6 +9,10 @@ import {
   Loader2,
   Wallet,
 } from '@tuturuuu/icons';
+import {
+  FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID,
+  updateWorkspaceConfig,
+} from '@tuturuuu/internal-api/workspace-configs';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -80,6 +84,14 @@ export default function TransactionDefaultsSettings({
     useWorkspaceConfig(workspaceId, 'default_wallet_id', '');
   const { data: defaultCategoryId, isLoading: isLoadingDefaultCategoryConfig } =
     useWorkspaceConfig(workspaceId, 'default_category_id', '');
+  const {
+    data: defaultReconciliationCategoryId,
+    isLoading: isLoadingDefaultReconciliationCategoryConfig,
+  } = useWorkspaceConfig(
+    workspaceId,
+    FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID,
+    ''
+  );
   const { hasPermission: canChangeFinanceWallets } = useWorkspacePermission({
     wsId: workspaceId,
     permission: 'change_finance_wallets',
@@ -101,6 +113,7 @@ export default function TransactionDefaultsSettings({
     isLoadingCategories ||
     isLoadingDefaultWalletConfig ||
     isLoadingDefaultCategoryConfig ||
+    isLoadingDefaultReconciliationCategoryConfig ||
     isLoadingRememberLastSelections ||
     !isLastSelectionsInitialized;
 
@@ -108,6 +121,12 @@ export default function TransactionDefaultsSettings({
   const [initialWalletId, setInitialWalletId] = useState(NONE_OPTION);
   const [selectedCategoryId, setSelectedCategoryId] = useState(NONE_OPTION);
   const [initialCategoryId, setInitialCategoryId] = useState(NONE_OPTION);
+  const [
+    selectedReconciliationCategoryId,
+    setSelectedReconciliationCategoryId,
+  ] = useState(NONE_OPTION);
+  const [initialReconciliationCategoryId, setInitialReconciliationCategoryId] =
+    useState(NONE_OPTION);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
@@ -122,18 +141,28 @@ export default function TransactionDefaultsSettings({
       categories.some((category) => category.id === defaultCategoryId)
         ? defaultCategoryId
         : NONE_OPTION;
+    const nextReconciliationCategoryId =
+      defaultReconciliationCategoryId &&
+      categories.some(
+        (category) => category.id === defaultReconciliationCategoryId
+      )
+        ? defaultReconciliationCategoryId
+        : NONE_OPTION;
 
     setInitialWalletId(nextWalletId);
     setInitialCategoryId(nextCategoryId);
+    setInitialReconciliationCategoryId(nextReconciliationCategoryId);
 
     if (!initialized) {
       setSelectedWalletId(nextWalletId);
       setSelectedCategoryId(nextCategoryId);
+      setSelectedReconciliationCategoryId(nextReconciliationCategoryId);
       setInitialized(true);
     }
   }, [
     categories,
     defaultCategoryId,
+    defaultReconciliationCategoryId,
     defaultWalletId,
     initialized,
     isLoading,
@@ -144,20 +173,7 @@ export default function TransactionDefaultsSettings({
     mutationFn: async () => {
       const nextValue =
         selectedWalletId !== NONE_OPTION ? selectedWalletId : '';
-      const response = await fetch(
-        `/api/v1/workspaces/${workspaceId}/settings/default_wallet_id`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value: nextValue }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to update default wallet');
-      }
-
-      return response.json();
+      return updateWorkspaceConfig(workspaceId, 'default_wallet_id', nextValue);
     },
     onSuccess: () => {
       setInitialWalletId(selectedWalletId);
@@ -175,25 +191,44 @@ export default function TransactionDefaultsSettings({
     mutationFn: async () => {
       const nextValue =
         selectedCategoryId !== NONE_OPTION ? selectedCategoryId : '';
-      const response = await fetch(
-        `/api/v1/workspaces/${workspaceId}/settings/default_category_id`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value: nextValue }),
-        }
+      return updateWorkspaceConfig(
+        workspaceId,
+        'default_category_id',
+        nextValue
       );
-
-      if (!response.ok) {
-        throw new Error('Failed to update default category');
-      }
-
-      return response.json();
     },
     onSuccess: () => {
       setInitialCategoryId(selectedCategoryId);
       queryClient.invalidateQueries({
         queryKey: ['workspace-config', workspaceId, 'default_category_id'],
+      });
+      toast.success(tSettings('update_success'));
+    },
+    onError: () => {
+      toast.error(tSettings('update_error'));
+    },
+  });
+
+  const updateReconciliationCategoryMutation = useMutation({
+    mutationFn: async () => {
+      const nextValue =
+        selectedReconciliationCategoryId !== NONE_OPTION
+          ? selectedReconciliationCategoryId
+          : '';
+      return updateWorkspaceConfig(
+        workspaceId,
+        FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID,
+        nextValue
+      );
+    },
+    onSuccess: () => {
+      setInitialReconciliationCategoryId(selectedReconciliationCategoryId);
+      queryClient.invalidateQueries({
+        queryKey: [
+          'workspace-config',
+          workspaceId,
+          FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID,
+        ],
       });
       toast.success(tSettings('update_success'));
     },
@@ -312,7 +347,7 @@ export default function TransactionDefaultsSettings({
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-3">
         <section className="rounded-3xl border bg-card p-5 shadow-sm">
           <div className="mb-5 space-y-2">
             <div className="flex items-center gap-2">
@@ -431,6 +466,76 @@ export default function TransactionDefaultsSettings({
               onClick={() => updateCategoryMutation.mutate()}
             >
               {updateCategoryMutation.isPending
+                ? tSettings('saving')
+                : tSettings('save')}
+            </Button>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border bg-card p-5 shadow-sm">
+          <div className="mb-5 space-y-2">
+            <div className="flex items-center gap-2">
+              <LayoutGrid className="h-4 w-4 text-dynamic-green" />
+              <h4 className="font-semibold text-base">
+                {tSettings('default_reconciliation_category_title')}
+              </h4>
+            </div>
+            <p className="text-muted-foreground text-sm">
+              {tSettings('default_reconciliation_category_description')}
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <Label>
+                {tSettings('default_reconciliation_category_label')}
+              </Label>
+              <Select
+                onValueChange={setSelectedReconciliationCategoryId}
+                value={selectedReconciliationCategoryId}
+              >
+                <SelectTrigger className="h-11 rounded-xl">
+                  <SelectValue
+                    placeholder={tSettings(
+                      'select_default_reconciliation_category'
+                    )}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_OPTION}>
+                    {tSettings('no_default_reconciliation_category')}
+                  </SelectItem>
+                  {categories
+                    .filter((category) => category.id)
+                    .map((category) => (
+                      <SelectItem
+                        key={category.id}
+                        value={category.id as string}
+                      >
+                        <div className="flex items-center gap-2">
+                          <CategoryIcon category={category} />
+                          <span>
+                            {category.name || tCategories('unnamed_category')}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              type="button"
+              className="w-full rounded-xl"
+              disabled={
+                isLoading ||
+                updateReconciliationCategoryMutation.isPending ||
+                selectedReconciliationCategoryId ===
+                  initialReconciliationCategoryId
+              }
+              onClick={() => updateReconciliationCategoryMutation.mutate()}
+            >
+              {updateReconciliationCategoryMutation.isPending
                 ? tSettings('saving')
                 : tSettings('save')}
             </Button>
