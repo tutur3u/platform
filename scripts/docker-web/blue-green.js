@@ -87,6 +87,16 @@ function getBlueGreenProductionComposeEnvironment(options = {}) {
   return composeEnv;
 }
 
+function getComposeFileForRoot(mode = 'dev', rootDir = ROOT_DIR) {
+  const composeFile = getComposeFile(mode);
+
+  if (path.resolve(rootDir) === ROOT_DIR) {
+    return composeFile;
+  }
+
+  return path.join(rootDir, path.relative(ROOT_DIR, composeFile));
+}
+
 /** Started after the core web/support services so Hive can warm independently. */
 const BLUE_GREEN_DEFERRED_SUPPORT_SERVICES = Object.freeze([
   'hive-blue',
@@ -3632,18 +3642,20 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
 }
 
 async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
-  const composeFile = getComposeFile(parsed.mode);
+  const buildRootDir = options.buildRootDir ?? ROOT_DIR;
+  const runtimeRootDir = options.rootDir ?? ROOT_DIR;
+  const composeFile = getComposeFileForRoot(parsed.mode, buildRootDir);
   const env = getBlueGreenProductionComposeEnvironment({
     baseEnv: options.env ?? process.env,
     envFilePath: options.envFilePath,
     fsImpl: options.fsImpl ?? fs,
-    rootDir: options.rootDir,
+    rootDir: buildRootDir,
     withCloudflared: hasComposeProfile(parsed.composeGlobalArgs, 'cloudflared'),
     withRedis: hasComposeProfile(parsed.composeGlobalArgs, 'redis'),
     withSupportServices: true,
   });
   const fsImpl = options.fsImpl ?? fs;
-  const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
+  const paths = getBlueGreenPaths(runtimeRootDir);
   const run = options.runCommand ?? runCommand;
   const activeColor = await resolveBlueGreenActiveColor(
     readBlueGreenActiveColor(paths, fsImpl) ??
@@ -3692,7 +3704,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
   const supportBuildHashes = await getBlueGreenSupportBuildInputHashes({
     env: standbyEnv,
     fsImpl,
-    rootDir: options.rootDir ?? ROOT_DIR,
+    rootDir: buildRootDir,
     runCommand: run,
     targetColor: standbyColor,
   });
@@ -3710,6 +3722,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
       env: standbyEnv,
+      rootDir: buildRootDir,
       runCommand: run,
       services: standbyBuildServices,
     });

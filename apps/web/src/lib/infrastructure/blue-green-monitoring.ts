@@ -1496,10 +1496,20 @@ function normalizeProductionPromotionState(
     nextCheckAt: toFiniteNumber(record.nextCheckAt),
     prebuild: prebuildRecord
       ? {
+          durationMs: toFiniteNumber(prebuildRecord.durationMs),
+          failureReason:
+            typeof prebuildRecord.failureReason === 'string'
+              ? prebuildRecord.failureReason
+              : null,
           imageTag:
             typeof prebuildRecord.imageTag === 'string'
               ? prebuildRecord.imageTag
               : null,
+          standbyColor:
+            typeof prebuildRecord.standbyColor === 'string'
+              ? prebuildRecord.standbyColor
+              : null,
+          startedAt: toFiniteNumber(prebuildRecord.startedAt),
           status:
             typeof prebuildRecord.status === 'string'
               ? prebuildRecord.status

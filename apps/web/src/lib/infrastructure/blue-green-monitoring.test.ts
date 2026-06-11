@@ -323,7 +323,11 @@ describe('readBlueGreenMonitoringSnapshot', () => {
           },
           nextCheckAt: 2000,
           prebuild: {
+            durationMs: 12_000,
+            failureReason: null,
             imageTag: 'platform-web-cache:main123',
+            standbyColor: 'green',
+            startedAt: 500,
             status: 'cached',
             updatedAt: 1500,
           },
@@ -364,6 +368,15 @@ describe('readBlueGreenMonitoringSnapshot', () => {
         },
         main: {
           shortHash: 'main123',
+        },
+        prebuild: {
+          durationMs: 12_000,
+          failureReason: null,
+          imageTag: 'platform-web-cache:main123',
+          standbyColor: 'green',
+          startedAt: 500,
+          status: 'cached',
+          updatedAt: 1500,
         },
       });
     } finally {

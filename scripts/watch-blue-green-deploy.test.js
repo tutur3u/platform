@@ -75,12 +75,14 @@ const {
   parseContainerConsoleLogEntries,
   parseProxyLogEntries,
   parseUpstreamRef,
+  prepareProductionPrebuildWorktree,
   pullTrackedBranch,
   readDeploymentHistory,
   readWatchArgsFile,
   readWatchLock,
   readPendingDeployRequest,
   releaseWatchLock,
+  removeManagedProductionPrebuildWorktree,
   restoreTargetBranchIfDetached,
   resolveCurrentBlueGreenStatus,
   runBunFrozenInstall,
@@ -95,6 +97,7 @@ const {
   removeStaleGitIndexLock,
   startBlueGreenWatcherContainer,
   streamBlueGreenWatcherLogs,
+  sweepManagedProductionPrebuildWorktrees,
   waitForDockerDaemonRecovery,
   main,
   spawnReplacementWatcher,
@@ -246,6 +249,217 @@ function createRunCommandMock(responses) {
     return typeof response === 'function' ? response() : response;
   };
 }
+
+test('production prebuild uses a detached managed worktree and cleans env files before removal', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-prebuild-'));
+  const paths = getWatchPaths(tempDir);
+  const mainHash = 'main123456789main123456789main123456789main1234';
+  const rootEnvFile = path.join(tempDir, '.env.local');
+  const appEnvFile = path.join(tempDir, 'apps', 'web', '.env.local');
+  const staleWorktree = path.join(paths.productionPrebuildWorktreeDir, 'stale');
+  const calls = [];
+  const logs = [];
+  let cleanupSawEnvFilesRemoved = false;
+
+  try {
+    fs.mkdirSync(path.dirname(appEnvFile), { recursive: true });
+    fs.mkdirSync(staleWorktree, { recursive: true });
+    fs.writeFileSync(rootEnvFile, 'ROOT_SECRET=do-not-log-root\n', 'utf8');
+    fs.writeFileSync(appEnvFile, 'APP_SECRET=do-not-log-app\n', 'utf8');
+    fs.writeFileSync(
+      path.join(staleWorktree, '.tuturuuu-production-prebuild-worktree.json'),
+      JSON.stringify({
+        createdAt: new Date(0).toISOString(),
+        kind: 'tuturuuu-production-prebuild-worktree',
+      }),
+      'utf8'
+    );
+
+    const runCommand = async (command, args, options = {}) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      if (command === 'git' && args[0] === 'worktree' && args[1] === 'add') {
+        assert.deepEqual(args.slice(0, 3), ['worktree', 'add', '--detach']);
+        assert.equal(args[4], mainHash);
+        fs.mkdirSync(args[3], { recursive: true });
+        return createResult('');
+      }
+
+      if (command === 'git' && args[0] === 'worktree' && args[1] === 'remove') {
+        const worktreePath = args[3];
+
+        if (worktreePath.includes('main123')) {
+          cleanupSawEnvFilesRemoved =
+            !fs.existsSync(path.join(worktreePath, '.env.local')) &&
+            !fs.existsSync(
+              path.join(worktreePath, 'apps', 'web', '.env.local')
+            );
+        }
+
+        fs.rmSync(worktreePath, { force: true, recursive: true });
+        return createResult('');
+      }
+
+      if (command === 'git' && args[0] === 'worktree' && args[1] === 'prune') {
+        assert.equal(options.cwd, tempDir);
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    };
+
+    const prebuildWorktree = await prepareProductionPrebuildWorktree({
+      deployCommit: {
+        hash: mainHash,
+        shortHash: 'main123',
+      },
+      env: { PATH: 'test-path' },
+      envFilePath: rootEnvFile,
+      fsImpl: fs,
+      log: {
+        warn(message) {
+          logs.push(message);
+        },
+      },
+      now: () => 10_000_000,
+      paths,
+      rootDir: tempDir,
+      runCommand,
+    });
+
+    assert.equal(
+      prebuildWorktree.worktreePath,
+      path.join(paths.productionPrebuildWorktreeDir, 'main123')
+    );
+    assert.equal(prebuildWorktree.rootDir, prebuildWorktree.worktreePath);
+    assert.equal(
+      prebuildWorktree.env.PLATFORM_HOST_WORKSPACE_DIR,
+      prebuildWorktree.worktreePath
+    );
+    assert.equal(
+      prebuildWorktree.envFilePath,
+      path.join(prebuildWorktree.worktreePath, '.env.local')
+    );
+    assert.equal(
+      fs.readFileSync(
+        path.join(prebuildWorktree.worktreePath, '.env.local'),
+        'utf8'
+      ),
+      'ROOT_SECRET=do-not-log-root\n'
+    );
+    assert.equal(
+      fs.readFileSync(
+        path.join(prebuildWorktree.worktreePath, 'apps', 'web', '.env.local'),
+        'utf8'
+      ),
+      'APP_SECRET=do-not-log-app\n'
+    );
+    assert.equal(fs.existsSync(staleWorktree), false);
+    assert.ok(
+      calls.indexOf(`git worktree remove --force ${staleWorktree}`) <
+        calls.indexOf(
+          `git worktree add --detach ${prebuildWorktree.worktreePath} ${mainHash}`
+        )
+    );
+    assert.equal(
+      calls.some((call) => /git (checkout|switch)\b/u.test(call)),
+      false
+    );
+    assert.equal(JSON.stringify(logs).includes('do-not-log'), false);
+
+    await removeManagedProductionPrebuildWorktree({
+      copiedEnvFiles: prebuildWorktree.copiedEnvFiles,
+      fsImpl: fs,
+      paths,
+      rootDir: tempDir,
+      runCommand,
+      worktreePath: prebuildWorktree.worktreePath,
+    });
+
+    assert.equal(cleanupSawEnvFilesRemoved, true);
+    assert.equal(fs.existsSync(prebuildWorktree.worktreePath), false);
+    assert.ok(calls.includes('git worktree prune'));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('production prebuild cleanup sweeps only stale watcher-owned managed worktrees', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-prebuild-sweep-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const staleManaged = path.join(paths.productionPrebuildWorktreeDir, 'stale');
+  const freshManaged = path.join(paths.productionPrebuildWorktreeDir, 'fresh');
+  const unowned = path.join(paths.productionPrebuildWorktreeDir, 'unowned');
+  const calls = [];
+
+  try {
+    for (const dirPath of [staleManaged, freshManaged, unowned]) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+
+    fs.writeFileSync(
+      path.join(staleManaged, '.tuturuuu-production-prebuild-worktree.json'),
+      JSON.stringify({
+        createdAt: new Date(0).toISOString(),
+        kind: 'tuturuuu-production-prebuild-worktree',
+      }),
+      'utf8'
+    );
+    fs.writeFileSync(
+      path.join(freshManaged, '.tuturuuu-production-prebuild-worktree.json'),
+      JSON.stringify({
+        createdAt: new Date(9500).toISOString(),
+        kind: 'tuturuuu-production-prebuild-worktree',
+      }),
+      'utf8'
+    );
+
+    const removed = await sweepManagedProductionPrebuildWorktrees({
+      fsImpl: fs,
+      maxAgeMs: 1000,
+      now: 10_000,
+      paths,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (
+          command === 'git' &&
+          args[0] === 'worktree' &&
+          args[1] === 'remove'
+        ) {
+          fs.rmSync(args[3], { force: true, recursive: true });
+          return createResult('');
+        }
+
+        if (
+          command === 'git' &&
+          args[0] === 'worktree' &&
+          args[1] === 'prune'
+        ) {
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    });
+
+    assert.deepEqual(removed, [staleManaged]);
+    assert.equal(fs.existsSync(staleManaged), false);
+    assert.equal(fs.existsSync(freshManaged), true);
+    assert.equal(fs.existsSync(unowned), true);
+    assert.deepEqual(calls, [
+      `git worktree remove --force ${staleManaged}`,
+      'git worktree prune',
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
 
 test('runBlueGreenDeploy gives child deploys a stage handoff file', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-run-stages-'));
@@ -3387,6 +3601,140 @@ test('runProductionPromotionIteration lets manual promote bypass only CI and age
       )
     );
     assert.ok(calls.includes('git merge --ff-only origin/production'));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runProductionPromotionIteration manually promotes with host git credentials when GITHUB_TOKEN is absent', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-production-promote-git-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const githubRequests = [];
+  const checkedAt = Date.parse('2026-06-10T10:00:00.000Z');
+  const mainHash = 'bbb2222222222222222222222222222222222222';
+  const productionHash = 'aaa1111111111111111111111111111111111111';
+
+  try {
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(
+      paths.productionPromoteRequestFile,
+      JSON.stringify(
+        {
+          bypassChecks: true,
+          bypassDelay: true,
+          kind: 'production-promote',
+          requestedAt: '2026-06-10T10:00:00.000Z',
+          requestedBy: 'user-1',
+          requestedByEmail: 'ops@platform.test',
+          sourceBranch: 'main',
+          targetBranch: 'production',
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    const runCommand = async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      if (
+        key ===
+        'git fetch origin refs/heads/main:refs/remotes/origin/main refs/heads/production:refs/remotes/origin/production'
+      ) {
+        return createResult('');
+      }
+
+      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/main') {
+        return createResult(
+          `${mainHash}\nbbb222\nFresh main candidate\n2026-06-10T09:59:30.000Z\n`
+        );
+      }
+
+      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/production') {
+        return createResult(
+          `${productionHash}\naaa111\nCurrent production\n2026-06-10T09:30:00.000Z\n`
+        );
+      }
+
+      if (
+        key === `git merge-base --is-ancestor ${productionHash} ${mainHash}`
+      ) {
+        return createResult('');
+      }
+
+      if (key === 'git config --get remote.origin.url') {
+        return createResult('git@github.com:tutur3u/platform.git\n');
+      }
+
+      if (key === `git push origin ${mainHash}:refs/heads/production`) {
+        return createResult('');
+      }
+
+      if (
+        key ===
+        'git fetch origin refs/heads/production:refs/remotes/origin/production'
+      ) {
+        return createResult('');
+      }
+
+      if (key === 'git merge --ff-only origin/production') {
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    };
+
+    const result = await runProductionPromotionIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        attachRuntime: async (state) => state,
+        checkedAt,
+        env: {},
+        fsImpl: fs,
+        githubRequestJson: async (requestPath, options = {}) => {
+          githubRequests.push({
+            body: options.body ?? null,
+            method: options.method ?? 'GET',
+            requestPath,
+          });
+          throw new Error(`Unexpected GitHub request: ${requestPath}`);
+        },
+        log: { info() {}, warn() {} },
+        now: () => checkedAt,
+        paths,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    const state = JSON.parse(
+      fs.readFileSync(paths.productionPromotionStateFile, 'utf8')
+    );
+
+    assert.equal(result.status, 'production-promoted');
+    assert.equal(state.decision.status, 'manual-promoted');
+    assert.equal(state.production.hash, mainHash);
+    assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
+    assert.equal(githubRequests.length, 0);
+    assert.ok(
+      calls.includes(`git push origin ${mainHash}:refs/heads/production`)
+    );
+    assert.equal(
+      calls.includes(
+        `git push --force origin ${mainHash}:refs/heads/production`
+      ),
+      false
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
