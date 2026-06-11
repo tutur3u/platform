@@ -125,6 +125,7 @@ const helpTopics: Record<string, HelpTopic> = {
       'transactions [list|get|create|update|delete|export|stats]',
       'transfers [create|update|migrate]',
       'categories [list|get|create|update|delete]',
+      'tags [list|get|create|update|delete]',
       'budgets [list|status|create|update|delete]',
       'recurring [list|upcoming|create|update|delete]',
     ],
@@ -137,6 +138,7 @@ const helpTopics: Record<string, HelpTopic> = {
       'ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 2026-05-09',
       'ttr finance transfers migrate --from-transaction <tx-id> --to-transaction <tx-id> --from-wallet <wallet-id> --to-wallet <wallet-id> --amount 150000 --taken-at 2026-05-09',
       'ttr finance categories create "Travel" --expense --color blue',
+      'ttr finance tags create "Tuturuuu" --color "#9ef0ff"',
       'ttr finance budgets status',
     ],
     options: [
@@ -394,6 +396,23 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
       ],
       usage: 'ttr finance categories [list|get|create|update|delete] [id]',
     },
+    tags: {
+      examples: [
+        'ttr finance tags',
+        'ttr finance tags get <tag-id>',
+        'ttr finance tags create "Tuturuuu" --color "#9ef0ff" --description "Platform costs"',
+        'ttr finance tags update <tag-id> --description "Investment platform costs"',
+      ],
+      options: [
+        '--name <name>               tag name; positional text is also accepted',
+        '--description <text>        tag description',
+        '--color <#rrggbb>           tag color',
+        '--page <n>, --page-size <n> paginate list output',
+        '--json-payload <json>       explicit payload override',
+        '--json                      print machine-readable JSON',
+      ],
+      usage: 'ttr finance tags [list|get|create|update|delete] [id]',
+    },
     recurring: {
       examples: [
         'ttr finance recurring',
@@ -630,7 +649,7 @@ export function getGlobalHelp() {
     '  host [current|list|use]',
     '  config set-base-url <url>',
     '  box <run|lease|release|preview|agent|shutdown|cache|doctor|setup|repair>',
-    '  finance <wallets|transactions|transfers|categories|budgets|recurring>',
+    '  finance <wallets|transactions|transfers|categories|tags|budgets|recurring>',
     '  workspaces [list]|use [id]',
     '  boards [list]|use|create|update|delete',
     '  lists [list]|use|create|update --board <id>',

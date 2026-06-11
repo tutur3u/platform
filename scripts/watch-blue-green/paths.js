@@ -4,6 +4,13 @@ const { getBlueGreenPaths } = require('../docker-web/blue-green.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const WATCH_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web', 'watch');
+const WATCH_PREBUILD_WORKTREE_DIR = path.join(
+  ROOT_DIR,
+  'tmp',
+  'docker-web',
+  'worktrees',
+  'production-prebuild'
+);
 const WATCH_ARGS_FILE_ENV = 'PLATFORM_BLUE_GREEN_WATCH_ARGS_FILE';
 const WATCH_RUNTIME_DIR_ENV = 'PLATFORM_BLUE_GREEN_WATCH_RUNTIME_DIR';
 const WATCH_STATUS_FILE_ENV = 'PLATFORM_BLUE_GREEN_WATCH_STATUS_FILE';
@@ -135,6 +142,11 @@ function getWatchPaths(rootDir = ROOT_DIR, env = process.env) {
       runtimeDir,
       'blue-green-production-promotion.state.json'
     ),
+    productionPrebuildWorktreeDir: path.join(
+      path.dirname(runtimeDir),
+      'worktrees',
+      'production-prebuild'
+    ),
     requestLogDir: path.join(runtimeDir, 'blue-green-request-logs'),
     requestSummaryFile: path.join(
       runtimeDir,
@@ -166,6 +178,7 @@ module.exports = {
   WATCH_INSTANT_ROLLOUT_REQUEST_FILE,
   WATCH_PRODUCTION_PROMOTE_REQUEST_FILE,
   WATCH_PRODUCTION_PROMOTION_STATE_FILE,
+  WATCH_PREBUILD_WORKTREE_DIR,
   WATCH_LOCK_FILE,
   WATCH_LOG_FILE,
   WATCH_PENDING_DEPLOY_FILE,

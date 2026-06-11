@@ -5,7 +5,6 @@ import { RefreshCw, ShoppingCart } from '@tuturuuu/icons';
 import {
   createInventoryCheckoutSession,
   getInventoryPublicOrder,
-  getInventoryPublicStorefront,
 } from '@tuturuuu/internal-api/inventory';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
@@ -16,6 +15,13 @@ import {
   StorefrontListingGrid,
   useCart,
 } from './storefront-cart';
+import {
+  createDemoCheckoutResponse,
+  DEMO_ORDER_PUBLIC_TOKEN,
+  getDemoOrderResponse,
+  isDemoStorefrontFixture,
+} from './storefront-fixture';
+import { getOptionalInventoryPublicStorefront } from './storefront-loader';
 
 type StorefrontMode = 'cart' | 'checkout' | 'order' | 'product' | 'store';
 
@@ -34,17 +40,30 @@ export function StorefrontClient({
 }: StorefrontClientProps) {
   const t = useTranslations('storefront');
   const cart = useCart(storeSlug);
+  const shouldResolveDemoOrder =
+    mode === 'order' && publicToken === DEMO_ORDER_PUBLIC_TOKEN;
   const storefrontQuery = useQuery({
-    enabled: mode !== 'order',
-    queryFn: () => getInventoryPublicStorefront(storeSlug),
+    enabled: mode !== 'order' || shouldResolveDemoOrder,
+    queryFn: () => getOptionalInventoryPublicStorefront(storeSlug),
     queryKey: ['storefront', storeSlug],
   });
-  const orderQuery = useQuery({
-    enabled: mode === 'order' && !!publicToken,
-    queryFn: () => getInventoryPublicOrder(publicToken ?? ''),
-    queryKey: ['storefront-order', publicToken],
-  });
   const storefront = storefrontQuery.data?.storefront;
+  const isDemoStorefront = isDemoStorefrontFixture(storefront);
+  const orderQuery = useQuery({
+    enabled:
+      mode === 'order' &&
+      !!publicToken &&
+      (!shouldResolveDemoOrder || storefrontQuery.isSuccess),
+    queryFn: () =>
+      isDemoStorefront
+        ? getDemoOrderResponse(publicToken ?? '')
+        : getInventoryPublicOrder(publicToken ?? ''),
+    queryKey: [
+      'storefront-order',
+      publicToken,
+      isDemoStorefront ? 'demo-fixture' : 'live',
+    ],
+  });
   const listings = storefrontQuery.data?.listings ?? [];
   const selectedListing = listings.find((listing) => listing.id === listingId);
   const currencyCode = storefront?.currency ?? 'USD';
@@ -65,8 +84,10 @@ export function StorefrontClient({
     0
   );
   const checkoutMutation = useMutation({
-    mutationFn: (formData: FormData) =>
-      createInventoryCheckoutSession(storeSlug, {
+    mutationFn: async (formData: FormData) => {
+      if (isDemoStorefront) return createDemoCheckoutResponse(storeSlug);
+
+      return createInventoryCheckoutSession(storeSlug, {
         customerEmail: String(formData.get('email') ?? ''),
         customerName: String(formData.get('name') ?? ''),
         customerPhone: String(formData.get('phone') ?? '') || null,
@@ -77,7 +98,8 @@ export function StorefrontClient({
           }))
           .filter((line) => line.quantity > 0),
         note: String(formData.get('note') ?? '') || null,
-      }),
+      });
+    },
     onError: () => toast.error(t('checkoutError')),
     onSuccess: ({ checkoutUrl }) => {
       if (!checkoutUrl) {
@@ -92,15 +114,20 @@ export function StorefrontClient({
 
   if (mode === 'order') {
     const order = orderQuery.data?.order;
+    const isOrderUnavailable =
+      orderQuery.isError || (shouldResolveDemoOrder && storefrontQuery.isError);
     return (
       <main className="mx-auto grid min-h-dvh w-full max-w-3xl place-items-center px-4 py-10">
         <section className="w-full rounded-lg border border-border bg-card p-6 shadow-sm">
           <p className="text-muted-foreground text-sm">{t('order')}</p>
           <h1 className="mt-2 font-semibold text-3xl">{publicToken}</h1>
-          {orderQuery.isError ? (
+          {isOrderUnavailable ? (
             <RetryPanel
               description={t('orderErrorDescription')}
-              onRetry={() => orderQuery.refetch()}
+              onRetry={() => {
+                if (shouldResolveDemoOrder) storefrontQuery.refetch();
+                orderQuery.refetch();
+              }}
               title={t('orderErrorTitle')}
             />
           ) : (
@@ -153,11 +180,18 @@ export function StorefrontClient({
       <header className="border-border border-b bg-dynamic-surface/80">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
           <div className="min-w-0">
-            <p className="text-muted-foreground text-xs">
-              {storefront.visibility === 'private'
-                ? t('privateStore')
-                : t('publicStore')}
-            </p>
+            <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
+              <span>
+                {storefront.visibility === 'private'
+                  ? t('privateStore')
+                  : t('publicStore')}
+              </span>
+              {isDemoStorefront ? (
+                <span className="rounded-md border border-border bg-background px-2 py-0.5 font-medium">
+                  {t('demoBadge')}
+                </span>
+              ) : null}
+            </div>
             <h1 className="truncate font-semibold text-2xl">
               {storefront.name}
             </h1>
@@ -199,6 +233,9 @@ export function StorefrontClient({
             event.preventDefault();
             checkoutMutation.mutate(new FormData(event.currentTarget));
           }}
+          reserveLabel={isDemoStorefront ? t('demoReserve') : undefined}
+          reservedCopy={isDemoStorefront ? t('demoReservedCopy') : undefined}
+          reservingLabel={isDemoStorefront ? t('demoReserving') : undefined}
           storeSlug={storeSlug}
           total={total}
         />

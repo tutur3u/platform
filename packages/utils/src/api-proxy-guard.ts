@@ -80,29 +80,54 @@ const FINANCE_INVOICE_CREATE_SUPPORT_READ_PATH_PATTERN = new RegExp(
 );
 const FINANCE_INVOICE_TRANSACTION_CATEGORIES_PATH_PATTERN =
   /^\/api\/workspaces\/[^/]+\/transactions\/categories\/?$/u;
+const FINANCE_READ_PATH_PATTERNS = [
+  /^\/api\/workspaces\/[^/]+\/finance(?:\/|$)/u,
+  /^\/api\/workspaces\/[^/]+\/transactions(?:\/|$)/u,
+  /^\/api\/workspaces\/[^/]+\/wallets(?:\/|$)/u,
+  /^\/api\/workspaces\/[^/]+\/tags(?:\/|$)/u,
+  /^\/api\/v1\/workspaces\/[^/]+\/finance(?:\/|$)/u,
+  /^\/api\/v1\/workspaces\/[^/]+\/wallets(?:\/|$)/u,
+] as const;
 
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
-function parsePositiveIntEnv(name: string, fallback: number): number {
+function parsePositiveIntEnv(
+  name: string,
+  fallback: number,
+  aliases: string[] = []
+): number {
   const rawValue = process.env[name];
-  if (!rawValue) {
-    return fallback;
+  if (rawValue) {
+    const parsed = Number.parseInt(rawValue, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
   }
 
-  const parsed = Number.parseInt(rawValue, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  for (const alias of aliases) {
+    const aliasValue = process.env[alias];
+    if (!aliasValue) {
+      continue;
+    }
+
+    const parsed = Number.parseInt(aliasValue, 10);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  return fallback;
 }
 
 function createConfig(
   window: RateLimitWindow,
   duration: '1 m' | '1 h' | '1 d',
   fallback: number,
-  envName: string
+  envName: string,
+  envAliases: string[] = []
 ): RateLimitConfig {
   return {
     window,
     duration,
-    limit: parsePositiveIntEnv(envName, fallback),
+    limit: parsePositiveIntEnv(envName, fallback, envAliases),
   };
 }
 
@@ -234,26 +259,17 @@ const TASK_BOARD_READ_RATE_LIMITS: RateLimitProfile = {
   mutate: DEFAULT_MUTATE_RATE_LIMITS,
 };
 
-const FINANCE_INVOICE_CREATE_READ_RATE_LIMITS: RateLimitProfile = {
+const FINANCE_READ_RATE_LIMITS: RateLimitProfile = {
   get: [
-    createConfig(
-      'minute',
-      '1 m',
-      600,
-      'API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_MINUTE'
-    ),
-    createConfig(
-      'hour',
-      '1 h',
-      6000,
-      'API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_HOUR'
-    ),
-    createConfig(
-      'day',
-      '1 d',
-      40_000,
-      'API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_DAY'
-    ),
+    createConfig('minute', '1 m', 1200, 'API_PROXY_FINANCE_READ_LIMIT_MINUTE', [
+      'API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_MINUTE',
+    ]),
+    createConfig('hour', '1 h', 12_000, 'API_PROXY_FINANCE_READ_LIMIT_HOUR', [
+      'API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_HOUR',
+    ]),
+    createConfig('day', '1 d', 80_000, 'API_PROXY_FINANCE_READ_LIMIT_DAY', [
+      'API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_DAY',
+    ]),
   ],
   mutate: DEFAULT_MUTATE_RATE_LIMITS,
 };
@@ -270,6 +286,16 @@ function isFinanceInvoiceCreateSupportRead(req: NextRequest) {
     FINANCE_INVOICE_TRANSACTION_CATEGORIES_PATH_PATTERN.test(
       req.nextUrl.pathname
     )
+  );
+}
+
+function isFinanceRead(req: NextRequest) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return false;
+  }
+
+  return FINANCE_READ_PATH_PATTERNS.some((pattern) =>
+    pattern.test(req.nextUrl.pathname)
   );
 }
 
@@ -338,9 +364,14 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
     rateLimits: TASK_BOARD_READ_RATE_LIMITS,
   },
   {
+    key: 'finance-read',
+    matches: isFinanceRead,
+    rateLimits: FINANCE_READ_RATE_LIMITS,
+  },
+  {
     key: 'finance-invoice-create-read',
     matches: isFinanceInvoiceCreateSupportRead,
-    rateLimits: FINANCE_INVOICE_CREATE_READ_RATE_LIMITS,
+    rateLimits: FINANCE_READ_RATE_LIMITS,
   },
   {
     key: 'high-fanout',

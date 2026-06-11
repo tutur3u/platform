@@ -2,6 +2,7 @@ import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { loadTransactionListEnrichment } from '../list-enrichment';
 
 interface Params {
   params: Promise<{
@@ -105,90 +106,13 @@ export async function GET(req: Request, { params }: Params) {
     const hasMore = (data || []).length > limit;
     const rawTransactions = hasMore ? data.slice(0, limit) : data || [];
     const transactionIds = rawTransactions.map((t) => t.id);
-    const { data: enrichmentRows, error: enrichmentError } =
-      transactionIds.length > 0
-        ? await supabase.rpc('get_transaction_list_enrichment', {
-            p_ws_id: normalizedWsId,
-            p_transaction_ids: transactionIds,
-            p_user_id: user.id,
-          })
-        : { data: [], error: null };
-
-    if (enrichmentError) {
-      throw enrichmentError;
-    }
-
-    const enrichmentByTransactionId = new Map<
-      string,
-      {
-        wallet_currency: string | null;
-        wallet_icon: string | null;
-        wallet_image_src: string | null;
-        tags: Array<{ id: string; name: string; color: string }>;
-        transfer:
-          | {
-              linked_transaction_id: string;
-              linked_wallet_id: string;
-              linked_wallet_name: string;
-              linked_wallet_currency?: string;
-              linked_amount?: number;
-              is_origin: boolean;
-            }
-          | undefined;
-      }
-    >();
-
-    for (const row of enrichmentRows || []) {
-      const tags = Array.isArray(row.tags)
-        ? row.tags
-            .filter(
-              (
-                tag
-              ): tag is { id: string; name: string; color?: string | null } =>
-                !!tag &&
-                typeof tag === 'object' &&
-                'id' in tag &&
-                'name' in tag &&
-                typeof tag.id === 'string' &&
-                typeof tag.name === 'string'
-            )
-            .map((tag) => ({
-              id: tag.id,
-              name: tag.name,
-              color: typeof tag.color === 'string' ? tag.color : '',
-            }))
-        : [];
-
-      const transfer =
-        row.transfer &&
-        typeof row.transfer === 'object' &&
-        'linked_transaction_id' in row.transfer &&
-        'linked_wallet_id' in row.transfer &&
-        'linked_wallet_name' in row.transfer
-          ? {
-              linked_transaction_id: String(row.transfer.linked_transaction_id),
-              linked_wallet_id: String(row.transfer.linked_wallet_id),
-              linked_wallet_name: String(row.transfer.linked_wallet_name),
-              linked_wallet_currency:
-                typeof row.transfer.linked_wallet_currency === 'string'
-                  ? row.transfer.linked_wallet_currency
-                  : undefined,
-              linked_amount:
-                typeof row.transfer.linked_amount === 'number'
-                  ? row.transfer.linked_amount
-                  : undefined,
-              is_origin: Boolean(row.transfer.is_origin),
-            }
-          : undefined;
-
-      enrichmentByTransactionId.set(row.transaction_id, {
-        wallet_currency: row.wallet_currency,
-        wallet_icon: row.wallet_icon,
-        wallet_image_src: row.wallet_image_src,
-        tags,
-        transfer,
-      });
-    }
+    const enrichmentByTransactionId = await loadTransactionListEnrichment({
+      normalizedWsId,
+      route: 'transactions/infinite',
+      supabase,
+      transactionIds,
+      userId: user.id,
+    });
 
     const transactions = rawTransactions.map((t) => ({
       ...t,

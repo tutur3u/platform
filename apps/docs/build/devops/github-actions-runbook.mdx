@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-06-10"
+updatedAt: "2026-06-11"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -107,7 +107,9 @@ These workflows:
   GitHub Environments
 - run preview deployments only through manual dispatch from `main`, with a
   required `preview_ref` input and an actor present in the
-  `TRUSTED_PREVIEW_DEPLOY_ACTORS` repository variable
+  `TRUSTED_PREVIEW_DEPLOY_ACTORS` repository variable; `vercel-preview-platform.yaml`
+  is the exception and also runs on protected `main` pushes so Supabase staging
+  migrations keep their same-SHA prerequisite signal
 - reject production manual dispatches from non-production branches before
   install/build/deploy work starts
 - install Bun with `.github/actions/setup-bun-with-retry`, pinned to the root
@@ -182,11 +184,17 @@ the Vercel project environment. The regression test
 `vercel-preview-*.yaml` and `vercel-production-*.yaml` workflow.
 
 Preview deploy credentials must not be exposed to arbitrary branch push code.
-Preview Vercel workflows are manual-only: run the workflow from `main`, provide
-the branch, tag, or SHA in `preview_ref`, and keep `TRUSTED_PREVIEW_DEPLOY_ACTORS`
-limited to maintainers who can approve secret-backed preview builds. The workflow
-still checks out and builds the requested `preview_ref`, so reviewers should
-treat that ref as code that can execute during install/build.
+Most preview Vercel workflows are manual-only: run the workflow from `main`,
+provide the branch, tag, or SHA in `preview_ref`, and keep
+`TRUSTED_PREVIEW_DEPLOY_ACTORS` limited to maintainers who can approve
+secret-backed preview builds. The workflow still checks out and builds the
+requested `preview_ref`, so reviewers should treat that ref as code that can
+execute during install/build.
+
+`vercel-preview-platform.yaml` also runs on protected `main` pushes. Keep that
+exception narrow: `supabase-staging.yaml` is triggered by the platform preview
+workflow and production migration requires a successful `main` staging migration
+for the same SHA before it can run `supabase db push --include-all`.
 
 ### Other delivery surfaces
 
@@ -306,7 +314,8 @@ from skipped intermediate runs still queue the correct Vercel workflow.
 - `supabase-production.yaml` runs after production deployment and also
   re-evaluates after a matching `main` staging migration succeeds. It still
   checks both the latest production Vercel result and a completed successful
-  staging migration for the same commit before running `supabase db push`.
+  staging migration for the same commit before running
+  `supabase db push --include-all`.
 
 ### Mobile iOS native assets
 

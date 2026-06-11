@@ -108,12 +108,13 @@ Examples:
 Keep new migration timestamps ahead of the latest migration already on `main`,
 `staging`, and `production`. Supabase refuses to apply a local migration that
 sorts before the last remote migration unless the operator passes
-`--include-all`. Staging CI intentionally runs
-`supabase db push --include-all` so the staging project can converge after
-`main` migration history changes, but ordinary forward deploys should still keep
-timestamps monotonic. After a rebase, merge, or hotfix, re-list
+`--include-all`. Staging and production CI intentionally run
+`supabase db push --include-all` so each project can converge after migration
+history changes, but ordinary forward deploys should still keep timestamps
+monotonic. After a rebase, merge, or hotfix, re-list
 `apps/database/supabase/migrations` and rename any still-unapplied local
-migration forward instead of asking production to replay out-of-order history.
+migration forward instead of treating `--include-all` as permission to edit or
+replay old migration history.
 
 ### File Template
 

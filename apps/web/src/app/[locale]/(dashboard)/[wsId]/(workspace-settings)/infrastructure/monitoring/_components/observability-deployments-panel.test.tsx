@@ -86,6 +86,16 @@ const messages: Record<string, string> = {
   'controls.deployment_revert_success': 'Queued revert.',
   'controls.deployment_revert_title': 'Revert production',
   'controls.production_branch_commit': 'Production',
+  'controls.production_blocker_ci_not_green': 'CI is not green',
+  'controls.production_blocker_git_unavailable': 'Git state is unavailable',
+  'controls.production_blocker_not_fast_forward': 'main is not a fast-forward',
+  'controls.production_blocker_prebuild_missing': 'prebuild is missing',
+  'controls.production_blocker_up_to_date': 'production is up to date',
+  'controls.production_blocker_watcher_branch_mismatch':
+    'watcher checkout is on another branch',
+  'controls.production_blocker_watcher_dirty_worktree':
+    'watcher checkout has local changes',
+  'controls.production_blocker_waiting_for_age': 'waiting for the age gate',
   'controls.production_ci_failing': 'Failing',
   'controls.production_ci_missing': 'Missing',
   'controls.production_ci_passing': 'Passing',
@@ -94,7 +104,15 @@ const messages: Record<string, string> = {
   'controls.production_ci_unavailable': 'Unavailable',
   'controls.production_main_commit': 'Main',
   'controls.production_next_check': 'Next check {time}',
+  'controls.production_prebuild_blocked': 'Prebuild blocked: {reason}',
+  'controls.production_prebuild_building': 'Prebuilding main · {elapsed}',
+  'controls.production_prebuild_completed': 'Prebuilt main · {duration}',
+  'controls.production_prebuild_failed':
+    'Prebuild failed · {duration}: {reason}',
+  'controls.production_prebuild_missing': 'Prebuild missing',
+  'controls.production_prebuild_not_needed': 'Prebuild not needed',
   'controls.production_prebuild_status': 'Prebuild {status}',
+  'controls.production_promotion_failed': 'Promotion failed: {reason}',
   'controls.production_promote_action': 'Promote Main Now',
   'controls.production_promote_badge': 'Production Promotion',
   'controls.production_promote_confirm_action': 'Promote Now',
@@ -332,7 +350,11 @@ function createSnapshot(): BlueGreenMonitoringSnapshot {
       },
       nextCheckAt: 2000,
       prebuild: {
+        durationMs: 9000,
+        failureReason: null,
         imageTag: 'platform-web-cache:main123',
+        standbyColor: 'green',
+        startedAt: 1000,
         status: 'cached',
         updatedAt: 1000,
       },
@@ -459,6 +481,7 @@ describe('ObservabilityDeploymentsPanel', () => {
 
     expect(screen.getByText('Auto promote main to production')).toBeVisible();
     expect(screen.getByText('Instant cached revert')).toBeVisible();
+    expect(screen.getByText('Prebuilt main · 9s')).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: /Promote Main Now/i }));
     fireEvent.click(screen.getByRole('button', { name: /Promote Now/i }));
@@ -479,6 +502,85 @@ describe('ObservabilityDeploymentsPanel', () => {
         instant: true,
       });
     });
+  });
+
+  it('shows elapsed time while the main prebuild is building', () => {
+    const snapshot = createSnapshot();
+    snapshot.productionPromotion!.prebuild = {
+      durationMs: null,
+      failureReason: null,
+      imageTag: null,
+      standbyColor: 'green',
+      startedAt: Date.now() - 65_000,
+      status: 'building',
+      updatedAt: Date.now() - 65_000,
+    };
+
+    renderPanel({ snapshot });
+
+    expect(screen.getByText('Prebuilding main · 2m')).toBeInTheDocument();
+  });
+
+  it('shows explicit failed and blocked main prebuild states', () => {
+    const failedSnapshot = createSnapshot();
+    failedSnapshot.productionPromotion!.prebuild = {
+      durationMs: 61_000,
+      failureReason: 'docker build failed',
+      imageTag: null,
+      standbyColor: 'green',
+      startedAt: 1000,
+      status: 'failed',
+      updatedAt: 62_000,
+    };
+
+    const { rerender } = renderPanel({ snapshot: failedSnapshot });
+
+    expect(
+      screen.getByText('Prebuild failed · 2m: docker build failed')
+    ).toBeInTheDocument();
+
+    const blockedSnapshot = createSnapshot();
+    blockedSnapshot.productionPromotion!.decision = {
+      blockedReasons: ['ci-not-green'],
+      bypassed: false,
+      ready: false,
+      status: 'waiting',
+    };
+    blockedSnapshot.productionPromotion!.prebuild = {
+      durationMs: null,
+      failureReason: null,
+      imageTag: null,
+      standbyColor: null,
+      startedAt: null,
+      status: 'missing',
+      updatedAt: null,
+    };
+
+    rerender(
+      <QueryClientProvider
+        client={
+          new QueryClient({
+            defaultOptions: { queries: { retry: false } },
+          })
+        }
+      >
+        <ObservabilityDeploymentsPanel
+          deployments={[createDeployment()]}
+          emptyLabel="No deployments"
+          hasMore={false}
+          isFetchingMore={false}
+          isLoading={false}
+          loaded={1}
+          onLoadMore={() => {}}
+          snapshot={blockedSnapshot}
+          total={1}
+        />
+      </QueryClientProvider>
+    );
+
+    expect(
+      screen.getByText('Prebuild blocked: CI is not green')
+    ).toBeInTheDocument();
   });
 
   it('shows partial web promotion, failed Hive migration, and stage filters', () => {

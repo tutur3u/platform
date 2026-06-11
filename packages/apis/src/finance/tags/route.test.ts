@@ -137,4 +137,57 @@ describe('finance tags route', () => {
       },
     ]);
   });
+
+  it('creates tags with descriptions', async () => {
+    const insert = vi.fn((payload) => ({
+      select: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            id: 'tag-2',
+            ...payload,
+          },
+          error: null,
+        }),
+      })),
+    }));
+    mocks.adminSupabase.from.mockImplementation((table: string) => {
+      if (table !== 'transaction_tags') {
+        throw new Error(`Unexpected table: ${table}`);
+      }
+
+      return { insert };
+    });
+
+    const { POST } = await import('./route.js');
+    const response = await POST(
+      new Request('http://localhost/api/workspaces/ws-1/tags', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Tuturuuu',
+          color: '#9ef0ff',
+          description: 'Platform costs',
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(insert).toHaveBeenCalledWith({
+      ws_id: 'ws-1',
+      name: 'Tuturuuu',
+      color: '#9ef0ff',
+      description: 'Platform costs',
+    });
+    await expect(response.json()).resolves.toEqual({
+      id: 'tag-2',
+      ws_id: 'ws-1',
+      name: 'Tuturuuu',
+      color: '#9ef0ff',
+      description: 'Platform costs',
+    });
+  });
 });

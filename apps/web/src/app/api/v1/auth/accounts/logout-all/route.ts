@@ -1,3 +1,4 @@
+import { unstable_rethrow } from 'next/navigation';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   createAuthDiagnosticCode,
@@ -9,6 +10,8 @@ export async function POST(request: NextRequest) {
   try {
     return NextResponse.json(await logoutAllWebAccounts(request));
   } catch (error) {
+    unstable_rethrow(error);
+
     const diagnosticCode = createAuthDiagnosticCode('account_logout_all');
     logAuthDiagnostic({
       authMethod: 'multi-account',

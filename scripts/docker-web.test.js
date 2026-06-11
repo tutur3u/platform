@@ -72,6 +72,9 @@ const {
   runBlueGreenCachedRecoveryWorkflow,
   testBlueGreenHiveProxyRouting,
 } = require('./docker-web/blue-green.js');
+const {
+  removeComposeServiceContainersByLabelIfPresent,
+} = require('./docker-web/compose.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
 const { writeDeploymentHistory } = require('./watch-blue-green/history.js');
 const {
@@ -121,12 +124,33 @@ function getMigrationCleanupService(command, args) {
   return serviceFilter?.split('=').at(-1) ?? null;
 }
 
+function getMigrationCleanupProject(command, args) {
+  if (command !== 'docker' || args[0] !== 'ps' || !args.includes('-aq')) {
+    return null;
+  }
+
+  const projectFilter = args.find((arg) =>
+    String(arg).startsWith('label=com.docker.compose.project=')
+  );
+
+  return (
+    projectFilter?.slice('label=com.docker.compose.project='.length) ?? null
+  );
+}
+
 function isMigrationCleanupRm(command, args) {
   return command === 'docker' && args[0] === 'rm' && args[1] === '-f';
 }
 
 function migrationCleanupResult(command, args) {
   const serviceName = getMigrationCleanupService(command, args);
+
+  if (serviceName) {
+    assert.ok(
+      getMigrationCleanupProject(command, args),
+      'expected migration cleanup to include a Compose project label'
+    );
+  }
 
   if (serviceName === 'hive-db-migrate') {
     return createCommandResult('hive-db-migrate-123\n');
@@ -142,6 +166,71 @@ function migrationCleanupResult(command, args) {
 
   return null;
 }
+
+test('migration cleanup scopes service labels to the resolved Compose project', async () => {
+  const calls = [];
+
+  await removeComposeServiceContainersByLabelIfPresent(['hive-db-migrate'], {
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--project-name', 'explicit-project'],
+    env: {
+      COMPOSE_PROJECT_NAME: 'wrong-env-project',
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: 'wrong-docker-web-project',
+      PATH: 'test-path',
+    },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (command === 'docker' && args[0] === 'ps') {
+        assert.deepEqual(args, [
+          'ps',
+          '-aq',
+          '--filter',
+          'label=com.docker.compose.project=explicit-project',
+          '--filter',
+          'label=com.docker.compose.service=hive-db-migrate',
+          '--format',
+          '{{.ID}}',
+        ]);
+
+        return createCommandResult('hive-migrate-123\n');
+      }
+
+      if (command === 'docker' && args[0] === 'rm') {
+        assert.deepEqual(args, ['rm', '-f', 'hive-migrate-123']);
+        return createCommandResult('');
+      }
+
+      throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+    },
+  });
+
+  await removeComposeServiceContainersByLabelIfPresent(['hive-db-migrate'], {
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: 'docker-web-project',
+      PATH: 'test-path',
+    },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (command === 'docker' && args[0] === 'ps') {
+        assert.equal(
+          args.find((arg) =>
+            String(arg).startsWith('label=com.docker.compose.project=')
+          ),
+          'label=com.docker.compose.project=docker-web-project'
+        );
+
+        return createCommandResult('');
+      }
+
+      throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+    },
+  });
+
+  assert.equal(calls.length, 3);
+});
 
 test('getBlueGreenDeploymentBuildServices builds only the web lane for web-only changes', () => {
   assert.deepEqual(

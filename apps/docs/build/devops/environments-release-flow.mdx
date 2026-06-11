@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-05-31"
+updatedAt: "2026-06-11"
 ---
 
 This page explains how Tuturuuu moves from code to running environments.
@@ -10,8 +10,8 @@ This page explains how Tuturuuu moves from code to running environments.
 
 | Branch or event                     | What deploys                                                                                                                       | Follow-up automation                                                                                                                 |
 | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Feature branch push                 | Vercel preview deployment for the touched app workflow, subject to the matching `vercel-preview-<app>` GitHub Environment controls | None by default                                                                                                                      |
-| `main` push                         | Vercel preview deployment                                                                                                          | `supabase-staging.yaml` can apply staging migrations after preview succeeds                                                          |
+| Feature branch push                 | CI only; Vercel preview deployments require trusted manual dispatch from `main` with `preview_ref`                                 | None by default                                                                                                                      |
+| `main` push                         | Platform Vercel preview deployment                                                                                                | `supabase-staging.yaml` can apply staging migrations after preview succeeds                                                          |
 | `production` push                   | Vercel production deployment                                                                                                       | `supabase-production.yaml` can apply production migrations after prerequisites pass                                                  |
 | `main` push for `apps/discord`      | Discord Modal deployment after Python CI succeeds                                                                                  | None                                                                                                                                 |
 | Manual `workflow_dispatch`          | Depends on workflow                                                                                                                | Bypasses normal branch trigger timing, but not the workflow logic; production Supabase migration dispatches must select `production` |
@@ -22,7 +22,9 @@ This page explains how Tuturuuu moves from code to running environments.
 ### Preview
 
 - Preview workflows are named `vercel-preview-<app>.yaml`.
-- They trigger on non-`production` pushes, including `main`.
+- Most preview workflows are manual-only from `main` with a required
+  `preview_ref`; `vercel-preview-platform.yaml` also triggers on protected
+  `main` pushes so the staging database workflow receives a same-SHA signal.
 - `e2e-tests.yaml` also runs only on non-`production` pushes; production
   promotion relies on the already-green validation before the branch is
   promoted plus the production deployment gates below.
@@ -41,6 +43,9 @@ This page explains how Tuturuuu moves from code to running environments.
   history changes.
 - This means `main` is where app preview and staging schema advancement are
   meant to stay aligned.
+- If a production commit was promoted before the same-SHA staging migration run
+  existed, manually dispatch `supabase-staging.yaml` from `main`; production
+  migration re-evaluates after that staging run succeeds.
 
 ### Production
 
@@ -90,9 +95,9 @@ This page explains how Tuturuuu moves from code to running environments.
 The staging-triggered path is an automatic retry for the case where production
 deployment finishes before staging migration does. The production migration job
 still checks out the verified target commit explicitly before running
-`supabase db push`. This keeps production schema changes behind application
-deployment success, staging validation, and branch promotion for the same
-commit.
+`supabase db push --include-all`. This keeps production schema changes behind
+application deployment success, staging validation, and branch promotion for the
+same commit.
 
 ## Self-Hosted Web Release Flow
 

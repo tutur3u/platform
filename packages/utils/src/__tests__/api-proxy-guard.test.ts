@@ -290,6 +290,119 @@ describe('guardApiProxyRequest', () => {
     );
   });
 
+  it('uses the finance read bucket for common Finance app reads', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValue({
+      success: false,
+      limit: 1200,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const financeReads = [
+      { method: 'GET', path: '/api/workspaces/ws-1/finance/overview' },
+      {
+        method: 'GET',
+        path: '/api/workspaces/ws-1/finance/charts/categories',
+      },
+      {
+        method: 'GET',
+        path: '/api/workspaces/ws-1/transactions/infinite?limit=20',
+      },
+      {
+        method: 'GET',
+        path: '/api/workspaces/ws-1/transactions/categories',
+      },
+      { method: 'GET', path: '/api/workspaces/ws-1/wallets/wallet-1' },
+      { method: 'HEAD', path: '/api/workspaces/ws-1/tags' },
+      {
+        method: 'GET',
+        path: '/api/v1/workspaces/ws-1/finance/invoices/subscription/context?month=2026-06',
+      },
+      { method: 'GET', path: '/api/v1/workspaces/ws-1/finance/budgets' },
+      { method: 'GET', path: '/api/v1/workspaces/ws-1/wallets' },
+    ];
+
+    for (const { method, path } of financeReads) {
+      const response = await guardApiProxyRequest(makeRequest(path, method), {
+        prefixBase: 'proxy:test:api',
+      });
+
+      expect(response?.status).toBe(429);
+      expect(response?.headers.get('X-RateLimit-Limit')).toBe('1200');
+      expect(response?.headers.get('X-RateLimit-Policy')).toBe('finance-read');
+    }
+
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 1200,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 12000,
+      window: '1 h',
+    });
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 80000,
+      window: '1 d',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:finance-read:anonymous:get:minute'
+    );
+  });
+
+  it('keeps Finance auth-looking reads anonymous at proxy time', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValue({
+      success: false,
+      limit: 1200,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const authLookingHeaders: Record<string, string>[] = [
+      { authorization: 'Bearer ttr_fake' },
+      {
+        cookie:
+          'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+      },
+      { cookie: 'tuturuuu_app_session=app-session-token; theme=dark' },
+    ];
+
+    for (const headers of authLookingHeaders) {
+      const response = await guardApiProxyRequest(
+        makeRequest('/api/workspaces/ws-1/finance/overview', 'GET', headers),
+        {
+          prefixBase: 'proxy:test:api',
+        }
+      );
+
+      expect(response?.status).toBe(429);
+      expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe(
+        'anonymous'
+      );
+      expect(response?.headers.get('X-RateLimit-Policy')).toBe('finance-read');
+    }
+  });
+
   it('uses the finance invoice create read bucket for invoice support reads', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
@@ -299,7 +412,7 @@ describe('guardApiProxyRequest', () => {
     mocks.isBlocked.mockResolvedValue(null);
     mocks.limit.mockResolvedValue({
       success: false,
-      limit: 600,
+      limit: 1200,
       remaining: 0,
       reset: Date.now() + 15_000,
     });
@@ -320,7 +433,6 @@ describe('guardApiProxyRequest', () => {
         method: 'GET',
         path: '/api/v1/workspaces/ws-1/inventory/products?page=1',
       },
-      { method: 'GET', path: '/api/v1/workspaces/ws-1/wallets' },
       { method: 'GET', path: '/api/v1/workspaces/ws-1/promotions' },
       {
         method: 'GET',
@@ -330,14 +442,6 @@ describe('guardApiProxyRequest', () => {
         method: 'GET',
         path: `/api/v1/workspaces/ws-1/user-groups/${groupId}/linked-products`,
       },
-      {
-        method: 'GET',
-        path: `/api/v1/workspaces/ws-1/finance/invoices/subscription/context?userId=${userId}&groupIds=${groupId}&month=2026-06`,
-      },
-      {
-        method: 'HEAD',
-        path: '/api/workspaces/ws-1/transactions/categories',
-      },
     ];
 
     for (const { method, path } of supportReads) {
@@ -346,14 +450,14 @@ describe('guardApiProxyRequest', () => {
       });
 
       expect(response?.status).toBe(429);
-      expect(response?.headers.get('X-RateLimit-Limit')).toBe('600');
+      expect(response?.headers.get('X-RateLimit-Limit')).toBe('1200');
       expect(response?.headers.get('X-RateLimit-Policy')).toBe(
         'finance-invoice-create-read'
       );
     }
 
     expect(mocks.ratelimitConfigs).toContainEqual({
-      limit: 600,
+      limit: 1200,
       window: '1 m',
     });
     expect(mocks.ratelimitPrefixes).toContain(
@@ -361,7 +465,47 @@ describe('guardApiProxyRequest', () => {
     );
   });
 
-  it('honors finance invoice create read bucket environment overrides', async () => {
+  it('honors finance read bucket environment overrides', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('API_PROXY_FINANCE_READ_LIMIT_MINUTE', '1500');
+    vi.stubEnv('API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_MINUTE', '750');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 1500,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/workspaces/ws-1/finance/overview', 'GET'),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('1500');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('finance-read');
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 1500,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitConfigs).not.toContainEqual({
+      limit: 750,
+      window: '1 m',
+    });
+  });
+
+  it('uses legacy finance invoice read environment aliases when new Finance vars are absent', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');

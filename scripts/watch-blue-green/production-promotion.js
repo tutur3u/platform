@@ -428,27 +428,44 @@ async function updateProductionRefToMain({
   mainHash,
   owner,
   repo,
+  remote = 'origin',
   requestJson = githubJsonRequest,
+  rootDir,
+  runCommand,
 } = {}) {
-  if (!env?.GITHUB_TOKEN) {
-    throw new Error('GITHUB_TOKEN is required to update production.');
+  if (!mainHash) {
+    throw new Error('Main SHA is required to update production.');
   }
 
-  if (!owner || !repo || !mainHash) {
-    throw new Error('GitHub repository and main SHA are required.');
+  if (env?.GITHUB_TOKEN && owner && repo) {
+    return requestJson(
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/refs/heads/production`,
+      {
+        body: {
+          force: false,
+          sha: mainHash,
+        },
+        env,
+        method: 'PATCH',
+      }
+    );
   }
 
-  return requestJson(
-    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/refs/heads/production`,
+  await runChecked(
+    'git',
+    ['push', remote, `${mainHash}:refs/heads/production`],
     {
-      body: {
-        force: false,
-        sha: mainHash,
-      },
+      cwd: rootDir,
       env,
-      method: 'PATCH',
+      runCommand,
+      stdio: 'pipe',
     }
   );
+
+  return {
+    object: { sha: mainHash },
+    transport: 'git-push',
+  };
 }
 
 async function fastForwardLocalProduction({

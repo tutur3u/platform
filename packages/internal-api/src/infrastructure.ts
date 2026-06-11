@@ -906,7 +906,11 @@ export interface BlueGreenProductionPromotionState {
   } | null;
   nextCheckAt: number | null;
   prebuild: {
+    durationMs: number | null;
+    failureReason: string | null;
     imageTag: string | null;
+    standbyColor: string | null;
+    startedAt: number | null;
     status: string | null;
     updatedAt: number | null;
   } | null;

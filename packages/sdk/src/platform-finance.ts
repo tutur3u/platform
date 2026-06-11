@@ -57,6 +57,12 @@ export interface TransactionCategoryPayload {
   color?: string | null;
 }
 
+export interface FinanceTagPayload {
+  name?: string;
+  color?: string;
+  description?: string | null;
+}
+
 export interface FinanceTransferPayload {
   origin_wallet_id: string;
   destination_wallet_id: string;
@@ -221,6 +227,13 @@ export class FinanceClient {
     );
   }
 
+  createTag(workspaceId: string, payload: FinanceTagPayload) {
+    return this.api<unknown>(
+      `/api/workspaces/${encodePathSegment(workspaceId)}/tags`,
+      { body: payload, method: 'POST' }
+    );
+  }
+
   createTransfer(workspaceId: string, payload: FinanceTransferPayload) {
     return this.api<FinanceTransferResponse>(
       `/api/workspaces/${encodePathSegment(workspaceId)}/transfers`,
@@ -266,6 +279,13 @@ export class FinanceClient {
     );
   }
 
+  deleteTag(workspaceId: string, tagId: string) {
+    return this.api<{ message: string }>(
+      `/api/workspaces/${encodePathSegment(workspaceId)}/tags/${encodePathSegment(tagId)}`,
+      { method: 'DELETE' }
+    );
+  }
+
   deleteWallet(workspaceId: string, walletId: string) {
     return this.api<{ message: string }>(
       `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}`,
@@ -305,6 +325,12 @@ export class FinanceClient {
     );
   }
 
+  getTag(workspaceId: string, tagId: string) {
+    return this.api<unknown>(
+      `/api/workspaces/${encodePathSegment(workspaceId)}/tags/${encodePathSegment(tagId)}`
+    );
+  }
+
   getTransactionStats(workspaceId: string, query?: InternalApiQuery) {
     return this.api<unknown>(
       `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/stats`,
@@ -333,6 +359,12 @@ export class FinanceClient {
   listTransactionCategories(workspaceId: string) {
     return this.api<unknown[]>(
       `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories`
+    );
+  }
+
+  listTags(workspaceId: string) {
+    return this.api<unknown[]>(
+      `/api/workspaces/${encodePathSegment(workspaceId)}/tags`
     );
   }
 
@@ -413,6 +445,13 @@ export class FinanceClient {
   ) {
     return this.api<{ message: string }>(
       `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories/${encodePathSegment(categoryId)}`,
+      { body: payload, method: 'PUT' }
+    );
+  }
+
+  updateTag(workspaceId: string, tagId: string, payload: FinanceTagPayload) {
+    return this.api<{ message: string }>(
+      `/api/workspaces/${encodePathSegment(workspaceId)}/tags/${encodePathSegment(tagId)}`,
       { body: payload, method: 'PUT' }
     );
   }

@@ -316,6 +316,154 @@ describe('CLI commands', () => {
     );
   });
 
+  it('builds tag create payloads from CLI flags', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ id: 'tag-1' }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'finance',
+      'tags',
+      'create',
+      'Tuturuuu',
+      '--color',
+      '#9ef0ff',
+      '--description',
+      'Platform costs',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/workspaces/ws-1/tags',
+      expect.objectContaining({
+        body: JSON.stringify({
+          name: 'Tuturuuu',
+          color: '#9ef0ff',
+          description: 'Platform costs',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('builds tag update payloads from CLI flags', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ message: 'success' }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'finance',
+      'tags',
+      'update',
+      'tag-1',
+      '--description',
+      'Investment platform costs',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      expect.objectContaining({
+        body: JSON.stringify({
+          description: 'Investment platform costs',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+  });
+
+  it('routes tag list, get, and delete CLI commands', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json([
+          {
+            id: 'tag-1',
+            name: 'Tuturuuu',
+          },
+        ])
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          id: 'tag-1',
+          name: 'Tuturuuu',
+        })
+      )
+      .mockResolvedValueOnce(Response.json({ message: 'success' }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli(['finance', 'tags', 'list', '--json', '--no-update-check']);
+    await runCli([
+      'finance',
+      'tags',
+      'get',
+      'tag-1',
+      '--json',
+      '--no-update-check',
+    ]);
+    await runCli([
+      'finance',
+      'tags',
+      'delete',
+      'tag-1',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://tuturuuu.com/api/workspaces/ws-1/tags',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'DELETE',
+      })
+    );
+  });
+
   it.each([
     ['--help'],
     ['-h'],
@@ -459,6 +607,27 @@ describe('CLI commands', () => {
     );
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('--from-transaction <id>')
+    );
+  });
+
+  it.each([
+    ['finance', 'tags', '--help'],
+    ['help', 'finance', 'tags'],
+    ['finance', 'help', 'tags'],
+  ])('prints finance tag help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Usage: ttr finance tags [list|get|create|update|delete] [id]'
+      )
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('--color <#rrggbb>')
     );
   });
 

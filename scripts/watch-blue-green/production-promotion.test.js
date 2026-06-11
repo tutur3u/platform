@@ -6,6 +6,7 @@ const {
   createCiSummary,
   evaluateProductionPromotion,
   parseGitHubRepositoryFromRemote,
+  updateProductionRefToMain,
 } = require('./production-promotion.js');
 
 test('createCiSummary requires at least one passing GitHub signal', () => {
@@ -143,4 +144,38 @@ test('parseGitHubRepositoryFromRemote supports common GitHub remotes', () => {
     parseGitHubRepositoryFromRemote('https://example.com/tutur3u/platform.git'),
     null
   );
+});
+
+test('updateProductionRefToMain falls back to non-forced host git push without GITHUB_TOKEN', async () => {
+  const calls = [];
+  const mainHash = 'main123456789main123456789main123456789main1234';
+  const result = await updateProductionRefToMain({
+    env: {},
+    mainHash,
+    remote: 'origin',
+    rootDir: '/tmp/platform',
+    runCommand: async (command, args, options = {}) => {
+      calls.push({ args, command, options });
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: '',
+      };
+    },
+  });
+
+  assert.deepEqual(result, {
+    object: { sha: mainHash },
+    transport: 'git-push',
+  });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].command, 'git');
+  assert.deepEqual(calls[0].args, [
+    'push',
+    'origin',
+    `${mainHash}:refs/heads/production`,
+  ]);
+  assert.equal(calls[0].options.cwd, '/tmp/platform');
+  assert.equal(calls[0].options.stdio, 'pipe');
 });

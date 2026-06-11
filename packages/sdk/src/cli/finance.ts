@@ -9,6 +9,7 @@ import {
   getFinancePositionalName,
   getMetricsQuery,
   getSpendingTrendsQuery,
+  getTagPayload,
   getTransactionListQuery,
   getTransactionPayload,
   getTransferPayload,
@@ -357,6 +358,69 @@ async function handleCategories(input: FinanceCommandInput, action: string) {
   throw new Error(`Unknown finance categories action: ${action}`);
 }
 
+async function handleTags(input: FinanceCommandInput, action: string) {
+  const { client, flags, json, positionals, workspaceId } = input;
+  const id = positionals[3];
+
+  if (action === 'list') {
+    render(
+      paginateFinanceArray(await client.finance.listTags(workspaceId), flags),
+      {
+        financeResource: 'tags',
+        group: 'finance',
+        json,
+      }
+    );
+    return;
+  }
+  if (action === 'get') {
+    render(
+      await client.finance.getTag(
+        workspaceId,
+        getRequiredFinanceId(action, 'tags', id)
+      ),
+      {
+        financeResource: 'tags',
+        group: 'finance',
+        json,
+      }
+    );
+    return;
+  }
+  if (action === 'create') {
+    render(
+      await client.finance.createTag(
+        workspaceId,
+        getTagPayload(flags, getFinancePositionalName(positionals))
+      ),
+      { financeResource: 'tags', group: 'finance', json }
+    );
+    return;
+  }
+  if (action === 'update') {
+    render(
+      await client.finance.updateTag(
+        workspaceId,
+        getRequiredFinanceId(action, 'tags', id),
+        getTagPayload(flags)
+      ),
+      { financeResource: 'tags', group: 'finance', json }
+    );
+    return;
+  }
+  if (action === 'delete') {
+    render(
+      await client.finance.deleteTag(
+        workspaceId,
+        getRequiredFinanceId(action, 'tags', id)
+      ),
+      { financeResource: 'tags', group: 'finance', json }
+    );
+    return;
+  }
+  throw new Error(`Unknown finance tags action: ${action}`);
+}
+
 async function handleTransfers(input: FinanceCommandInput, action: string) {
   const { client, flags, json, workspaceId } = input;
 
@@ -462,7 +526,7 @@ export async function runFinanceCommand(input: FinanceCommandInput) {
 
   if (!resource) {
     throw new Error(
-      'Missing finance resource. Use wallets, transactions, transfers, categories, budgets, or recurring.'
+      'Missing finance resource. Use wallets, transactions, transfers, categories, tags, budgets, or recurring.'
     );
   }
 
@@ -473,6 +537,8 @@ export async function runFinanceCommand(input: FinanceCommandInput) {
       return handleCategories(input, action);
     case 'recurring':
       return handleRecurring(input, action);
+    case 'tags':
+      return handleTags(input, action);
     case 'transactions':
       return handleTransactions(input, action);
     case 'transfers':

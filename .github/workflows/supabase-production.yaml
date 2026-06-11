@@ -163,4 +163,4 @@ jobs:
         run: |
           cd apps/database
           supabase link --project-ref ${{ env.PRODUCTION_PROJECT_ID }}
-          supabase db push
+          supabase db push --include-all

@@ -38,7 +38,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 type StageStatus = BlueGreenDeploymentStage['status'];
 type StageDisplayStatus = StageStatus | 'not-applicable';
@@ -93,6 +93,44 @@ function durationLabel(value: number | null | undefined) {
   if (seconds < 60) return `${seconds}s`;
 
   return `${Math.ceil(seconds / 60)}m`;
+}
+
+function useNow(enabled: boolean, intervalMs = 1000) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), intervalMs);
+
+    return () => window.clearInterval(timer);
+  }, [enabled, intervalMs]);
+
+  return now;
+}
+
+function getProductionBlockerTranslationKey(reason: string) {
+  switch (reason) {
+    case 'ci-not-green':
+      return 'controls.production_blocker_ci_not_green';
+    case 'git-unavailable':
+      return 'controls.production_blocker_git_unavailable';
+    case 'not-fast-forward':
+      return 'controls.production_blocker_not_fast_forward';
+    case 'prebuild-missing':
+      return 'controls.production_blocker_prebuild_missing';
+    case 'up-to-date':
+      return 'controls.production_blocker_up_to_date';
+    case 'watcher-branch-mismatch':
+      return 'controls.production_blocker_watcher_branch_mismatch';
+    case 'watcher-dirty-worktree':
+      return 'controls.production_blocker_watcher_dirty_worktree';
+    case 'waiting-for-age':
+      return 'controls.production_blocker_waiting_for_age';
+    default:
+      return null;
+  }
 }
 
 function findCachedDeployment(
@@ -414,6 +452,70 @@ export function ObservabilityDeploymentsPanel({
     selectedRollbackTarget?.commitHash
   );
   const promotionState = snapshot?.productionPromotion ?? null;
+  const prebuildBuilding = promotionState?.prebuild?.status === 'building';
+  const nowMs = useNow(prebuildBuilding);
+  const productionPrebuildText = useMemo(() => {
+    const prebuild = promotionState?.prebuild ?? null;
+    const promotionFailureReason =
+      promotionState?.decision.status === 'promote-failed'
+        ? (promotionState.decision.blockedReasons.at(-1) ?? null)
+        : null;
+
+    if (promotionFailureReason) {
+      return rootT('controls.production_promotion_failed', {
+        reason: promotionFailureReason,
+      });
+    }
+
+    if (prebuild?.status === 'building') {
+      const elapsed =
+        prebuild.startedAt == null
+          ? null
+          : Math.max(0, nowMs - prebuild.startedAt);
+
+      return rootT('controls.production_prebuild_building', {
+        elapsed: durationLabel(elapsed),
+      });
+    }
+
+    if (prebuild?.status === 'cached' || prebuild?.status === 'prebuilt') {
+      return rootT('controls.production_prebuild_completed', {
+        duration: durationLabel(prebuild.durationMs),
+      });
+    }
+
+    if (prebuild?.status === 'failed') {
+      return rootT('controls.production_prebuild_failed', {
+        duration: durationLabel(prebuild.durationMs),
+        reason: prebuild.failureReason ?? rootT('states.unknown'),
+      });
+    }
+
+    if (prebuild?.status === 'not-needed') {
+      return rootT('controls.production_prebuild_not_needed');
+    }
+
+    const blockingReason =
+      promotionState?.decision.blockedReasons.find(
+        (reason) => reason !== 'prebuild-missing'
+      ) ?? null;
+
+    if (blockingReason) {
+      const blockerKey = getProductionBlockerTranslationKey(blockingReason);
+
+      return rootT('controls.production_prebuild_blocked', {
+        reason: blockerKey ? rootT(blockerKey) : blockingReason,
+      });
+    }
+
+    if (prebuild?.status === 'missing') {
+      return rootT('controls.production_prebuild_missing');
+    }
+
+    return rootT('controls.production_prebuild_status', {
+      status: prebuild?.status ?? rootT('states.none'),
+    });
+  }, [nowMs, promotionState, rootT]);
   const queuedProductionPromote =
     snapshot?.control.productionPromoteRequest ?? promotionState?.queuedRequest;
   const queuedDeploymentRevert = snapshot?.control.deploymentRevertRequest;
@@ -541,10 +643,7 @@ export function ObservabilityDeploymentsPanel({
               <div className="flex flex-wrap gap-2 text-xs">
                 <StatusBadge
                   icon={<GitBranch className="h-3.5 w-3.5" />}
-                  text={rootT('controls.production_prebuild_status', {
-                    status:
-                      promotionState?.prebuild?.status ?? rootT('states.none'),
-                  })}
+                  text={productionPrebuildText}
                 />
                 <StatusBadge
                   icon={<Clock className="h-3.5 w-3.5" />}

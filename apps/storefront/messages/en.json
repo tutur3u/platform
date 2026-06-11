@@ -5,6 +5,10 @@
     "cart": "Cart",
     "checkout": "Checkout",
     "checkoutError": "Unable to start Polar checkout.",
+    "demoBadge": "Testing demo",
+    "demoReserve": "Simulate checkout",
+    "demoReservedCopy": "This temporary demo simulates checkout locally without changing inventory or opening Polar.",
+    "demoReserving": "Simulating checkout...",
     "emptyCart": "Add at least one item before checkout.",
     "fallbackDescription": "Available from this workspace storefront.",
     "form": {
