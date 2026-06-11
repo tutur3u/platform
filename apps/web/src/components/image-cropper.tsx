@@ -12,7 +12,6 @@ import { Slider } from '@tuturuuu/ui/slider';
 import { useCallback, useState } from 'react';
 import type { Area, Point } from 'react-easy-crop';
 import Cropper from 'react-easy-crop';
-import 'react-easy-crop/react-easy-crop.css';
 
 interface ImageCropperProps {
   image: string;
