@@ -84,7 +84,10 @@ export function LearnerQuizzes({ quizzes }: { quizzes: Quiz[] }) {
 
     if (currentQuiz.type === 'true_false') {
       const correctVal = currentQuiz.answer?.correct ?? false;
-      return String(selectedAnswers).toLowerCase() === String(correctVal).toLowerCase();
+      return (
+        String(selectedAnswers).toLowerCase() ===
+        String(correctVal).toLowerCase()
+      );
     }
 
     if (!currentQuiz.type || currentQuiz.type === 'multiple_choice') {
@@ -226,7 +229,9 @@ export function LearnerQuizzes({ quizzes }: { quizzes: Quiz[] }) {
           <div className="mt-6 grid grid-cols-2 gap-4">
             {[true, false].map((val) => {
               const isSelected = selectedAnswers === val;
-              const isCorrectVal = String(currentQuiz.answer?.correct).toLowerCase() === String(val).toLowerCase();
+              const isCorrectVal =
+                String(currentQuiz.answer?.correct).toLowerCase() ===
+                String(val).toLowerCase();
 
               let buttonStyle = 'bg-background hover:bg-muted/10';
               if (isSelected && !isSubmitted) {

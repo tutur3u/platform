@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader, Plus, Trash } from '@tuturuuu/icons';
 import {
   createWorkspaceQuiz,
@@ -44,6 +44,7 @@ export default function DynamicQuizForm({
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Form State
   const [question, setQuestion] = useState(data?.question || '');
@@ -141,6 +142,9 @@ export default function DynamicQuizForm({
           ? t('ws-quizzes.edit_description')
           : t('ws-quizzes.create_description')
       );
+      queryClient.invalidateQueries({
+        queryKey: ['module-quizzes', wsId, moduleId],
+      });
       onFinish?.();
       router.refresh();
     },

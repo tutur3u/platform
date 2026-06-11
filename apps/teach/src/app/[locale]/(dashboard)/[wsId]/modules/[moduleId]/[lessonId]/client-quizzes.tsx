@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Pencil, Trash, X } from '@tuturuuu/icons';
 import { deleteWorkspaceQuiz } from '@tuturuuu/internal-api';
 import {
@@ -120,12 +121,16 @@ export default function ClientQuizzes({
 }) {
   const router = useRouter();
   const t = useTranslations();
+  const queryClient = useQueryClient();
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
 
   const onDelete = async (id: string) => {
     try {
       await deleteWorkspaceQuiz(wsId, id);
       toast.success(t('common.success'));
+      queryClient.invalidateQueries({
+        queryKey: ['module-quizzes', wsId, moduleId],
+      });
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));

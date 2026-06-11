@@ -374,7 +374,10 @@ export async function getLearnerModuleDetail({
     .map((row) => firstOf(row.workspace_quizzes))
     .filter((value): value is NonNullable<typeof value> => Boolean(value));
 
-  const quizzesWithAnswers = await attachPrivateWorkspaceQuizAnswers(sbAdmin, rawQuizzes);
+  const quizzesWithAnswers = await attachPrivateWorkspaceQuizAnswers(
+    sbAdmin,
+    rawQuizzes
+  );
 
   return {
     ...summary,
