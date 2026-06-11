@@ -1,13 +1,15 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import {
   checkWorkspacePermission,
   createWorkspaceTask,
+  createWorkspaceTaskSuggestions,
   updateWorkspaceCalendarEvent,
   uploadWorkspaceTaskFile,
 } from '@tuturuuu/internal-api';
+import type { WorkspaceTaskSuggestionTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
@@ -40,8 +42,16 @@ import {
 import { DescriptionOverflowWarningDialog } from './description-overflow-warning-dialog';
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
-import { CompactTaskCreatePopover } from './task-edit-dialog/components/compact-task-create-popover';
+import {
+  normalizeTaskDialogPresentation,
+  type TaskDialogPresentation,
+} from './task-dialog-presentation';
+import { CompactTaskDialogPanel } from './task-edit-dialog/components/compact-task-create-popover';
 import { MobileFloatingSaveButton } from './task-edit-dialog/components/mobile-floating-save-button';
+import {
+  SmartTaskSuggestionsButton,
+  SmartTaskSuggestionsPanel,
+} from './task-edit-dialog/components/smart-task-suggestions-panel';
 import { TaskDescriptionEditor } from './task-edit-dialog/components/task-description-editor';
 import {
   getTaskDialogHeaderInfo,
@@ -91,6 +101,7 @@ import {
 import {
   broadcastTaskDescriptionUpsert,
   clearDraft,
+  getDescriptionContent,
   getDraftStorageKey,
   getTaskDescriptionPercentLeft,
   getTaskDescriptionStorageLength,
@@ -138,6 +149,8 @@ export interface TaskEditDialogProps {
   sharedContext?: SharedTaskContext;
   /** Whether draft mode is enabled from user settings */
   draftModeEnabled?: boolean;
+  /** Preferred opening presentation for normal task dialogs */
+  defaultPresentation?: TaskDialogPresentation;
   /** When editing an existing draft, this is the draft ID */
   draftId?: string;
   onClose: () => void;
@@ -170,6 +183,7 @@ export function TaskEditDialog({
   currentUser: propsCurrentUser,
   sharedContext,
   draftModeEnabled = false,
+  defaultPresentation = 'compact',
   draftId,
   onClose,
   onUpdate,
@@ -509,7 +523,30 @@ export function TaskEditDialog({
     useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [saveAsDraft, setSaveAsDraft] = useState(draftModeEnabled);
-  const [isCreateFullscreen, setIsCreateFullscreen] = useState(false);
+  const normalizedDefaultPresentation = useMemo(
+    () => normalizeTaskDialogPresentation(defaultPresentation),
+    [defaultPresentation]
+  );
+  const [presentation, setPresentation] = useState<TaskDialogPresentation>(
+    normalizedDefaultPresentation
+  );
+  const [smartSuggestions, setSmartSuggestions] = useState<
+    WorkspaceTaskSuggestionTask[]
+  >([]);
+  const [selectedSmartSuggestionIds, setSelectedSmartSuggestionIds] = useState<
+    string[]
+  >([]);
+  const [smartSuggestionError, setSmartSuggestionError] = useState<
+    string | null
+  >(null);
+  const [smartCreateErrors, setSmartCreateErrors] = useState<
+    Record<string, string>
+  >({});
+  const [creatingSmartSuggestionIds, setCreatingSmartSuggestionIds] = useState<
+    string[]
+  >([]);
+  const [isCreatingSmartSuggestions, setIsCreatingSmartSuggestions] =
+    useState(false);
   const previousOpenRef = useRef(false);
   const [isTitleVisible, setIsTitleVisible] = useState(true);
   const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(
@@ -1252,6 +1289,309 @@ export function TaskEditDialog({
     setSelectedProjects: formState.setSelectedProjects,
   });
 
+  const smartSuggestionsMutation = useMutation({
+    mutationFn: async () => {
+      const prompt = formState.name.trim();
+      if (!prompt) {
+        throw new Error(dialogT('smart_prompt_required'));
+      }
+
+      const currentDescription =
+        flushEditorPendingRef.current?.() ?? formState.description;
+
+      return createWorkspaceTaskSuggestions(effectiveTaskWsId, {
+        boardId,
+        prompt,
+        description: serializeTaskDescriptionContent(currentDescription),
+        currentListId: formState.selectedListId || undefined,
+        clientTimezone:
+          Intl.DateTimeFormat().resolvedOptions().timeZone || undefined,
+        clientTimestamp: new Date().toISOString(),
+      });
+    },
+    onMutate: () => {
+      setSmartSuggestionError(null);
+      setSmartCreateErrors({});
+    },
+    onSuccess: (response) => {
+      const suggestions = response.tasks ?? [];
+      setSmartSuggestions(suggestions);
+      setSelectedSmartSuggestionIds(
+        suggestions.map((suggestion) => suggestion.id)
+      );
+      if (!suggestions.length) {
+        setSmartSuggestionError(dialogT('smart_no_suggestions'));
+      }
+    },
+    onError: (error) => {
+      setSmartSuggestionError(
+        error instanceof Error
+          ? error.message
+          : dialogT('smart_suggestions_failed_description')
+      );
+    },
+  });
+
+  const canUseSmartSuggestions =
+    isCreateMode && !draftId && !disabled && Boolean(boardId);
+
+  const handleGenerateSmartSuggestions = useCallback(() => {
+    if (!canUseSmartSuggestions) return;
+
+    if (!formState.name.trim()) {
+      toast.error(dialogT('smart_prompt_required'));
+      return;
+    }
+
+    smartSuggestionsMutation.mutate();
+  }, [
+    canUseSmartSuggestions,
+    dialogT,
+    formState.name,
+    smartSuggestionsMutation,
+  ]);
+
+  const applySmartSuggestion = useCallback(
+    (suggestion: WorkspaceTaskSuggestionTask) => {
+      formState.setName(suggestion.title);
+      formState.setDescription(getDescriptionContent(suggestion.description));
+      formState.setPriority(suggestion.priority);
+      formState.setEndDate(
+        suggestion.endDate ? new Date(suggestion.endDate) : undefined
+      );
+      formState.setSelectedListId(suggestion.listId);
+      formState.setEstimationPoints(suggestion.estimationPoints);
+      formState.setSelectedLabels(
+        suggestion.labels.map((label) => ({
+          id: label.id,
+          name: label.name,
+          color: label.color ?? '',
+          created_at: label.created_at ?? '',
+        }))
+      );
+      formState.setSelectedProjects(
+        suggestion.projects.map((project) => ({
+          id: project.id,
+          name: project.name,
+          status: project.status ?? 'active',
+        }))
+      );
+      formState.setTotalDuration(
+        suggestion.durationMinutes ? suggestion.durationMinutes / 60 : null
+      );
+      formState.setIsSplittable(suggestion.isSplittable);
+      formState.setMinSplitDurationMinutes(suggestion.minSplitDurationMinutes);
+      formState.setMaxSplitDurationMinutes(suggestion.maxSplitDurationMinutes);
+      formState.setCalendarHours(suggestion.calendarHours ?? null);
+      formState.setAutoSchedule(suggestion.autoSchedule);
+      toast.success(dialogT('smart_suggestion_applied'));
+    },
+    [
+      dialogT,
+      formState.setAutoSchedule,
+      formState.setCalendarHours,
+      formState.setDescription,
+      formState.setEndDate,
+      formState.setEstimationPoints,
+      formState.setIsSplittable,
+      formState.setMaxSplitDurationMinutes,
+      formState.setMinSplitDurationMinutes,
+      formState.setName,
+      formState.setPriority,
+      formState.setSelectedLabels,
+      formState.setSelectedListId,
+      formState.setSelectedProjects,
+      formState.setTotalDuration,
+    ]
+  );
+
+  const handleToggleSmartSuggestion = useCallback((suggestionId: string) => {
+    setSelectedSmartSuggestionIds((current) =>
+      current.includes(suggestionId)
+        ? current.filter((id) => id !== suggestionId)
+        : [...current, suggestionId]
+    );
+  }, []);
+
+  const handleCreateSelectedSmartSuggestions = useCallback(async () => {
+    if (!selectedSmartSuggestionIds.length) return;
+
+    const selectedSuggestions = smartSuggestions.filter((suggestion) =>
+      selectedSmartSuggestionIds.includes(suggestion.id)
+    );
+    if (!selectedSuggestions.length) return;
+
+    setIsCreatingSmartSuggestions(true);
+    setSmartCreateErrors({});
+    setCreatingSmartSuggestionIds(selectedSuggestions.map((s) => s.id));
+
+    let resolvedUserId = user?.id;
+    if (!resolvedUserId && isPersonalWorkspace) {
+      resolvedUserId = userForSave?.id;
+    }
+
+    const currentAssigneeIds = formState.selectedAssignees
+      .map((assignee) => assignee.user_id || assignee.id)
+      .filter((assigneeId): assigneeId is string => !!assigneeId);
+    const desiredAssigneeIds =
+      currentAssigneeIds.length > 0
+        ? currentAssigneeIds
+        : userTaskSettings?.task_auto_assign_to_self &&
+            resolvedUserId &&
+            !isPersonalWorkspace
+          ? [resolvedUserId]
+          : [];
+    const nextErrors: Record<string, string> = {};
+    const broadcast = getActiveBroadcast() ?? taskRealtimeBroadcastRef.current;
+
+    for (const suggestion of selectedSuggestions) {
+      setCreatingSmartSuggestionIds((current) =>
+        current.includes(suggestion.id) ? current : [...current, suggestion.id]
+      );
+
+      try {
+        const response = await createWorkspaceTask(effectiveTaskWsId, {
+          name: suggestion.title,
+          description: suggestion.description,
+          listId: suggestion.listId,
+          priority: suggestion.priority,
+          end_date: suggestion.endDate,
+          estimation_points: suggestion.estimationPoints,
+          label_ids: suggestion.labelIds,
+          project_ids: suggestion.projectIds,
+          assignee_ids: desiredAssigneeIds,
+          total_duration: suggestion.durationMinutes
+            ? suggestion.durationMinutes / 60
+            : null,
+          is_splittable: suggestion.isSplittable,
+          min_split_duration_minutes: suggestion.minSplitDurationMinutes,
+          max_split_duration_minutes: suggestion.maxSplitDurationMinutes,
+          calendar_hours: suggestion.calendarHours,
+          auto_schedule: suggestion.autoSchedule,
+        });
+
+        const createdTask: Task = {
+          ...(response.task as Task),
+          labels: suggestion.labels.map((label) => ({
+            id: label.id,
+            name: label.name,
+            color: label.color ?? '',
+            created_at: label.created_at ?? '',
+          })),
+          assignees: desiredAssigneeIds.map((assigneeId) => ({
+            id: assigneeId,
+          })),
+          projects: suggestion.projects.map((project) => ({
+            id: project.id,
+            name: project.name,
+            status: project.status ?? 'active',
+          })),
+        };
+
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: Task[] | undefined) => {
+            if (!old) return [createdTask];
+            if (old.some((task) => task.id === createdTask.id)) return old;
+            return [...old, createdTask];
+          }
+        );
+        broadcast?.('task:upsert', { task: createdTask });
+        if (
+          suggestion.labelIds.length ||
+          suggestion.projectIds.length ||
+          desiredAssigneeIds.length
+        ) {
+          broadcast?.('task:relations-changed', { taskId: createdTask.id });
+        }
+      } catch (error) {
+        nextErrors[suggestion.id] =
+          error instanceof Error
+            ? error.message
+            : dialogT('smart_create_failed');
+      } finally {
+        setCreatingSmartSuggestionIds((current) =>
+          current.filter((id) => id !== suggestion.id)
+        );
+      }
+    }
+
+    await invalidateTaskCaches(queryClient, boardId);
+    onUpdate();
+
+    setSmartCreateErrors(nextErrors);
+    const failedIds = Object.keys(nextErrors);
+    setSelectedSmartSuggestionIds(failedIds);
+
+    if (failedIds.length) {
+      toast.error(dialogT('smart_create_partial_failed'));
+    } else {
+      toast.success(
+        dialogT('smart_create_selected_success', {
+          count: selectedSuggestions.length,
+        })
+      );
+      setSmartSuggestions([]);
+      setSelectedSmartSuggestionIds([]);
+      onClose();
+    }
+
+    setIsCreatingSmartSuggestions(false);
+    setCreatingSmartSuggestionIds([]);
+  }, [
+    boardId,
+    dialogT,
+    effectiveTaskWsId,
+    formState.selectedAssignees,
+    isPersonalWorkspace,
+    onClose,
+    onUpdate,
+    queryClient,
+    selectedSmartSuggestionIds,
+    smartSuggestions,
+    user?.id,
+    userForSave?.id,
+    userTaskSettings?.task_auto_assign_to_self,
+  ]);
+
+  const smartSuggestionsPanel =
+    canUseSmartSuggestions &&
+    (smartSuggestionsMutation.isPending ||
+      smartSuggestionError ||
+      smartSuggestions.length > 0) ? (
+      <SmartTaskSuggestionsPanel
+        suggestions={smartSuggestions}
+        selectedSuggestionIds={selectedSmartSuggestionIds}
+        createErrors={smartCreateErrors}
+        creatingSuggestionIds={creatingSmartSuggestionIds}
+        errorMessage={smartSuggestionError}
+        isCreatingSelected={isCreatingSmartSuggestions}
+        isLoading={smartSuggestionsMutation.isPending}
+        onApplyFirst={() => {
+          const firstSuggestion = smartSuggestions[0];
+          if (firstSuggestion) applySmartSuggestion(firstSuggestion);
+        }}
+        onApplySuggestion={applySmartSuggestion}
+        onClose={() => {
+          setSmartSuggestions([]);
+          setSelectedSmartSuggestionIds([]);
+          setSmartSuggestionError(null);
+          setSmartCreateErrors({});
+        }}
+        onCreateSelected={handleCreateSelectedSmartSuggestions}
+        onRetry={handleGenerateSmartSuggestions}
+        onToggleSuggestion={handleToggleSmartSuggestion}
+      />
+    ) : null;
+
+  const smartSuggestionsButton = canUseSmartSuggestions ? (
+    <SmartTaskSuggestionsButton
+      disabled={smartSuggestionsMutation.isPending || isLoading}
+      isLoading={smartSuggestionsMutation.isPending}
+      onClick={handleGenerateSmartSuggestions}
+    />
+  ) : null;
+
   const persistTaskDescriptionOnClose = useCallback(async () => {
     if (isCreateMode || !task?.id || !flushEditorPendingRef.current) {
       return true;
@@ -1534,14 +1874,20 @@ export function TaskEditDialog({
     previousOpenRef.current = isOpen;
 
     if (!isOpen) {
-      setIsCreateFullscreen(false);
+      setPresentation(normalizedDefaultPresentation);
+      setSmartSuggestions([]);
+      setSelectedSmartSuggestionIds([]);
+      setSmartSuggestionError(null);
+      setSmartCreateErrors({});
+      setCreatingSmartSuggestionIds([]);
+      setIsCreatingSmartSuggestions(false);
       return;
     }
 
-    if (justOpened && isCreateMode && !draftId) {
-      setIsCreateFullscreen(false);
+    if (justOpened) {
+      setPresentation(draftId ? 'fullscreen' : normalizedDefaultPresentation);
     }
-  }, [isOpen, isCreateMode, draftId]);
+  }, [isOpen, draftId, normalizedDefaultPresentation]);
 
   // Track whether the title input is scrolled out of view
   useEffect(() => {
@@ -1604,8 +1950,7 @@ export function TaskEditDialog({
     taskSearchQuery,
   ]);
 
-  const showCompactCreate =
-    isCreateMode && !draftId && !isCreateFullscreen && !disabled;
+  const showCompactDialog = presentation === 'compact' && !draftId;
   const compactHeaderInfo = useMemo(
     () =>
       getTaskDialogHeaderInfo(
@@ -1743,7 +2088,7 @@ export function TaskEditDialog({
         <DialogContent
           showCloseButton={false}
           className={
-            showCompactCreate
+            showCompactDialog
               ? 'w-[min(calc(100vw-2rem),30rem)] max-w-[30rem] gap-0 overflow-hidden rounded-lg border p-0 shadow-xl'
               : 'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 inset-0! top-0! left-0! flex h-screen max-h-screen w-screen max-w-none! translate-x-0! translate-y-0! gap-0 rounded-none! border-0 p-0'
           }
@@ -1772,8 +2117,8 @@ export function TaskEditDialog({
               e.preventDefault();
           }}
         >
-          {showCompactCreate ? (
-            <CompactTaskCreatePopover
+          {showCompactDialog ? (
+            <CompactTaskDialogPanel
               title={compactHeaderInfo.title}
               description={compactHeaderInfo.description}
               icon={compactHeaderInfo.icon}
@@ -1792,20 +2137,26 @@ export function TaskEditDialog({
                   flushNameUpdate={flushNameUpdate}
                   disabled={disabled}
                   variant="compact"
-                  onSubmit={handleSave}
+                  onSubmit={isCreateMode ? handleSave : undefined}
                 />
               }
               propertyControls={renderTaskPropertiesSection('compact')}
-              saveAsDraft={saveAsDraft}
-              createMultiple={createMultiple}
-              canSave={canSave && !isDescriptionOverLimit}
+              smartAction={smartSuggestionsButton}
+              smartPanel={smartSuggestionsPanel}
+              saveAsDraft={isCreateMode ? saveAsDraft : undefined}
+              createMultiple={isCreateMode ? createMultiple : undefined}
+              canSave={
+                isCreateMode ? canSave && !isDescriptionOverLimit : undefined
+              }
               isLoading={isLoading}
               isPersonalWorkspace={isPersonalWorkspace}
-              onSaveAsDraftChange={setSaveAsDraft}
-              onCreateMultipleChange={setCreateMultiple}
+              onSaveAsDraftChange={isCreateMode ? setSaveAsDraft : undefined}
+              onCreateMultipleChange={
+                isCreateMode ? setCreateMultiple : undefined
+              }
               onClose={handleAttemptClose}
-              onFullscreen={() => setIsCreateFullscreen(true)}
-              onSave={handleSave}
+              onFullscreen={() => setPresentation('fullscreen')}
+              onSave={isCreateMode ? handleSave : undefined}
             />
           ) : (
             <>
@@ -1890,7 +2241,19 @@ export function TaskEditDialog({
                       disabled={disabled}
                     />
 
+                    {smartSuggestionsButton && (
+                      <div className="flex justify-end px-4 pb-2 md:px-8">
+                        {smartSuggestionsButton}
+                      </div>
+                    )}
+
                     {!disabled && renderTaskPropertiesSection()}
+
+                    {smartSuggestionsPanel && (
+                      <div className="px-4 pb-3 md:px-8">
+                        {smartSuggestionsPanel}
+                      </div>
+                    )}
 
                     {!disabled && !isCreateMode && (
                       <PersonalOverridesSection

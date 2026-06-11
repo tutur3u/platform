@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import { getUserConfig } from '@tuturuuu/internal-api/users';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -12,6 +13,10 @@ import {
   WorkspacePresenceProvider,
 } from '../providers/workspace-presence-provider';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
+import {
+  normalizeTaskDialogPresentation,
+  TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID,
+} from './task-dialog-presentation';
 import { TaskEditDialog } from './task-edit-dialog';
 import {
   dispatchTaskOpenResult,
@@ -146,18 +151,22 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   // Read draft mode preference from user config (same query key as useUserBooleanConfig)
   const { data: draftModeRaw } = useQuery({
     queryKey: ['user-config', 'TASK_DRAFT_MODE_ENABLED'],
-    queryFn: async () => {
-      const res = await fetch(
-        '/api/v1/users/me/configs/TASK_DRAFT_MODE_ENABLED',
-        { cache: 'no-store' }
-      );
-      if (!res.ok) return 'false';
-      const data = await res.json();
-      return (data.value as string) ?? 'false';
-    },
+    queryFn: async () =>
+      (await getUserConfig('TASK_DRAFT_MODE_ENABLED')).value ?? 'false',
     staleTime: 5 * 60 * 1000,
   });
   const draftModeEnabled = draftModeRaw === 'true';
+
+  const { data: defaultPresentationRaw } = useQuery({
+    queryKey: ['user-config', TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID],
+    queryFn: async () =>
+      (await getUserConfig(TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID)).value ??
+      'compact',
+    staleTime: 5 * 60 * 1000,
+  });
+  const defaultPresentation = normalizeTaskDialogPresentation(
+    defaultPresentationRaw
+  );
 
   const handleClose = () => {
     triggerClose();
@@ -529,6 +538,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       pendingRelationship={state.pendingRelationship}
       currentUser={currentUser || undefined}
       draftModeEnabled={draftModeEnabled}
+      defaultPresentation={defaultPresentation}
       draftId={state.draftId}
       onClose={handleClose}
       onUpdate={triggerUpdate}

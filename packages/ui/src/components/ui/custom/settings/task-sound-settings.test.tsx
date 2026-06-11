@@ -18,6 +18,7 @@ const {
   mockSetSoundEffectsEnabled: vi.fn(),
   mockUpdateUserConfigMutate: vi.fn(),
   mockConfigState: {
+    dialogPresentation: 'compact',
     soundEffectsEnabled: true,
     soundEffectsVolume: '35',
   },
@@ -51,7 +52,9 @@ vi.mock('@tuturuuu/ui/hooks/use-user-config', () => ({
     data:
       configId === 'TASK_SOUND_EFFECTS_VOLUME'
         ? mockConfigState.soundEffectsVolume
-        : defaultValue,
+        : configId === 'TASK_DIALOG_DEFAULT_PRESENTATION'
+          ? mockConfigState.dialogPresentation
+          : defaultValue,
     isLoading: false,
   }),
   useUpdateUserConfig: () => ({
@@ -76,6 +79,7 @@ function renderWithQueryClient(children: ReactNode) {
 describe('task sound settings controls', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockConfigState.dialogPresentation = 'compact';
     mockConfigState.soundEffectsEnabled = true;
     mockConfigState.soundEffectsVolume = '35';
     vi.stubGlobal(
@@ -102,6 +106,22 @@ describe('task sound settings controls', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'sound_effects' }));
 
     expect(mockSetSoundEffectsEnabled).toHaveBeenCalledWith(false);
+  });
+
+  it('renders task dialog presentation setting and persists immersive mode', async () => {
+    renderWithQueryClient(<TaskSettings />);
+
+    expect(await screen.findByText('dialog_presentation')).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('combobox', { name: 'dialog_presentation' })
+    );
+    fireEvent.click(screen.getByText('dialog_presentation_immersive'));
+
+    expect(mockUpdateUserConfigMutate).toHaveBeenCalledWith({
+      configId: 'TASK_DIALOG_DEFAULT_PRESENTATION',
+      value: 'fullscreen',
+    });
   });
 
   it('renders the quick settings sound switch and persists changes', async () => {

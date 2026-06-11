@@ -430,8 +430,52 @@ export interface CreateWorkspaceTaskJournalPayload {
   clientTimestamp?: string;
 }
 
+export interface CreateWorkspaceTaskSuggestionsPayload {
+  boardId: string;
+  prompt: string;
+  description?: string | null;
+  currentListId?: string;
+  clientTimezone?: string;
+  clientTimestamp?: string;
+}
+
 export interface WorkspaceTaskJournalResponse {
   tasks: WorkspaceTaskJournalResultTask[];
+  metadata?: {
+    generatedWithAI?: boolean;
+    totalTasks?: number;
+  };
+}
+
+export interface WorkspaceTaskSuggestionTask {
+  id: string;
+  title: string;
+  description: string | null;
+  priority: TaskPriority | null;
+  listId: string;
+  listName: string | null;
+  labelIds: string[];
+  labels: Array<{
+    id: string;
+    name: string;
+    color?: string | null;
+    created_at?: string | null;
+  }>;
+  projectIds: string[];
+  projects: Array<{ id: string; name: string; status?: string | null }>;
+  endDate: string | null;
+  estimationPoints: number | null;
+  durationMinutes: number | null;
+  isSplittable: boolean;
+  minSplitDurationMinutes: number | null;
+  maxSplitDurationMinutes: number | null;
+  calendarHours: Task['calendar_hours'] | null;
+  autoSchedule: boolean;
+  reason: string | null;
+}
+
+export interface WorkspaceTaskSuggestionsResponse {
+  tasks: WorkspaceTaskSuggestionTask[];
   metadata?: {
     generatedWithAI?: boolean;
     totalTasks?: number;
@@ -1249,6 +1293,25 @@ export async function createWorkspaceTaskJournal(
   const client = getInternalApiClient(options);
   return client.json<WorkspaceTaskJournalResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/journal`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceTaskSuggestions(
+  workspaceId: string,
+  payload: CreateWorkspaceTaskSuggestionsPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskSuggestionsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/suggestions`,
     {
       method: 'POST',
       headers: {

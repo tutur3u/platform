@@ -64,7 +64,7 @@ describe('CompactTaskCreatePopover', () => {
   it('renders compact create content with accessible icon actions', () => {
     renderCompactTaskCreatePopover();
 
-    expect(screen.getByTestId('compact-task-create-popover')).toBeTruthy();
+    expect(screen.getByTestId('compact-task-dialog-panel')).toBeTruthy();
     expect(screen.getByText('Create task')).toBeTruthy();
     expect(screen.getByLabelText('Task title')).toHaveProperty(
       'value',
@@ -137,5 +137,44 @@ describe('CompactTaskCreatePopover', () => {
     expect(
       screen.getAllByRole('button', { name: 'task-drafts.save_as_draft' })
     ).toHaveLength(2);
+  });
+
+  it('renders compact edit content without create-only footer actions', () => {
+    render(
+      <Dialog open={true}>
+        <CompactTaskCreatePopover
+          title="Edit task"
+          titleInput={<input aria-label="Task title" defaultValue="Existing" />}
+          propertyControls={
+            <button type="button" aria-label="List: Inbox">
+              List
+            </button>
+          }
+          smartAction={
+            <button type="button" aria-label="Smart action">
+              Smart
+            </button>
+          }
+          onClose={vi.fn()}
+          onFullscreen={vi.fn()}
+        />
+      </Dialog>
+    );
+
+    expect(screen.getByText('Edit task')).toBeTruthy();
+    expect(screen.getByLabelText('Task title')).toHaveProperty(
+      'value',
+      'Existing'
+    );
+    expect(screen.getByLabelText('List: Inbox')).toBeTruthy();
+    expect(screen.getByLabelText('Smart action')).toBeTruthy();
+    expect(
+      screen.queryByLabelText('task-drafts.save_as_draft')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: 'ws-task-boards.dialog.create_task',
+      })
+    ).not.toBeInTheDocument();
   });
 });

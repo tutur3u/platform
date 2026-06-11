@@ -915,6 +915,7 @@ export {
 export {
   addWorkspaceTaskLabel,
   type CreateWorkspaceTaskJournalPayload,
+  type CreateWorkspaceTaskSuggestionsPayload,
   cleanupWorkspaceTaskMentions,
   createWorkspaceLabel,
   createWorkspaceTask,
@@ -924,6 +925,7 @@ export {
   createWorkspaceTaskList,
   createWorkspaceTaskProject,
   createWorkspaceTaskRelationship,
+  createWorkspaceTaskSuggestions,
   createWorkspaceTaskWithRelationship,
   deleteWorkspaceLabel,
   deleteWorkspaceTask,
@@ -967,6 +969,8 @@ export {
   type WorkspaceTaskBoardSharesResponse,
   type WorkspaceTaskJournalResponse,
   type WorkspaceTaskSearchResult,
+  type WorkspaceTaskSuggestionsResponse,
+  type WorkspaceTaskSuggestionTask,
 } from './tasks';
 export {
   type CurrentUserTaskScheduleResponse,

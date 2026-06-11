@@ -20,6 +20,11 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import {
+  normalizeTaskDialogPresentation,
+  TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID,
+  type TaskDialogPresentation,
+} from '../../tu-do/shared/task-dialog-presentation';
 import { TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID } from '../../tu-do/shared/task-due-date-visibility';
 import {
   clampTaskSoundEffectsVolume,
@@ -96,6 +101,9 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
   const { data: submitShortcut, isLoading: submitShortcutLoading } =
     useUserConfig('TASK_SUBMIT_SHORTCUT', 'enter');
   const updateSubmitShortcut = useUpdateUserConfig();
+  const { data: dialogPresentationRaw, isLoading: dialogPresentationLoading } =
+    useUserConfig(TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID, 'compact');
+  const updateDialogPresentation = useUpdateUserConfig();
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['user-task-settings'],
@@ -159,6 +167,20 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
   const normalizedSoundEffectsVolume = String(
     clampTaskSoundEffectsVolume(soundEffectsVolume)
   );
+  const dialogPresentation = normalizeTaskDialogPresentation(
+    dialogPresentationRaw
+  );
+
+  const handleDialogPresentationChange = (value: string) => {
+    const nextValue: TaskDialogPresentation = normalizeTaskDialogPresentation(
+      value,
+      'compact'
+    );
+    updateDialogPresentation.mutate({
+      configId: TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID,
+      value: nextValue,
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -234,6 +256,34 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
               </SelectItem>
               <SelectItem value="85">
                 {t('sound_effects_volume_bold')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('dialog_presentation')}
+          description={t('dialog_presentation_description')}
+        >
+          <Select
+            value={dialogPresentation}
+            onValueChange={handleDialogPresentationChange}
+            disabled={
+              dialogPresentationLoading || updateDialogPresentation.isPending
+            }
+          >
+            <SelectTrigger
+              aria-label={t('dialog_presentation')}
+              className="w-36"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="compact">
+                {t('dialog_presentation_compact')}
+              </SelectItem>
+              <SelectItem value="fullscreen">
+                {t('dialog_presentation_immersive')}
               </SelectItem>
             </SelectContent>
           </Select>

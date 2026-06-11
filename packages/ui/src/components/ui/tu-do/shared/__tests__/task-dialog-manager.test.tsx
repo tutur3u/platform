@@ -35,6 +35,7 @@ vi.mock('next/navigation', () => ({
 const {
   mockGetCurrentUserProfile,
   mockGetCurrentUserTask,
+  mockGetUserConfig,
   mockGetWorkspaceTask,
   mockListWorkspaceLabels,
   mockListWorkspaceMembers,
@@ -43,6 +44,7 @@ const {
 } = vi.hoisted(() => ({
   mockGetCurrentUserProfile: vi.fn(),
   mockGetCurrentUserTask: vi.fn(),
+  mockGetUserConfig: vi.fn(),
   mockGetWorkspaceTask: vi.fn(),
   mockListWorkspaceLabels: vi.fn(),
   mockListWorkspaceMembers: vi.fn(),
@@ -60,6 +62,10 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
   listWorkspaceLabels: mockListWorkspaceLabels,
   listWorkspaceTaskProjectsByIds: mockListWorkspaceTaskProjectsByIds,
   resolveTaskProjectWorkspaceId: mockResolveTaskProjectWorkspaceId,
+}));
+
+vi.mock('@tuturuuu/internal-api/users', () => ({
+  getUserConfig: mockGetUserConfig,
 }));
 
 vi.mock('@tuturuuu/internal-api/workspaces', () => ({
@@ -156,17 +162,23 @@ vi.mock('@tuturuuu/supabase/next/client', () => ({
 // Mock the TaskEditDialog component since it's lazy-loaded
 vi.mock('../task-edit-dialog', () => ({
   TaskEditDialog: ({
+    defaultPresentation,
     isOpen,
     task,
     onClose,
     onNavigateToTask,
   }: {
+    defaultPresentation?: string;
     isOpen: boolean;
     task?: Task;
     onClose: () => void;
     onNavigateToTask?: (taskId: string) => Promise<void>;
   }) => (
-    <div data-testid="task-edit-dialog" data-open={isOpen}>
+    <div
+      data-testid="task-edit-dialog"
+      data-default-presentation={defaultPresentation}
+      data-open={isOpen}
+    >
       {task && <div data-testid="task-name">{task.name}</div>}
       <button
         type="button"
@@ -244,6 +256,12 @@ beforeEach(() => {
     email: 'user@example.com',
     avatar_url: null,
   });
+  mockGetUserConfig.mockImplementation((configId: string) =>
+    Promise.resolve({
+      value:
+        configId === 'TASK_DIALOG_DEFAULT_PRESENTATION' ? 'compact' : 'false',
+    })
+  );
   mockGetCurrentUserTask.mockResolvedValue({
     task: {
       ...mockTask,
@@ -347,6 +365,10 @@ describe('TaskDialogManager', () => {
       expect(getByTestId('task-edit-dialog')).toHaveAttribute(
         'data-open',
         'true'
+      );
+      expect(getByTestId('task-edit-dialog')).toHaveAttribute(
+        'data-default-presentation',
+        'compact'
       );
       expect(getByTestId('task-name')).toHaveTextContent('Test Task');
     });

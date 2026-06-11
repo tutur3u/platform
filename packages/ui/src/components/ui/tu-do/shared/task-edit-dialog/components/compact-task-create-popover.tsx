@@ -17,7 +17,7 @@ import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { QuickSettingsPopover } from './quick-settings-popover';
 
-interface CompactTaskCreatePopoverProps {
+interface CompactTaskDialogPanelProps {
   title: string;
   description?: ReactNode;
   icon?: ReactNode;
@@ -25,16 +25,18 @@ interface CompactTaskCreatePopoverProps {
   iconRingClass?: string;
   titleInput: ReactNode;
   propertyControls: ReactNode;
-  saveAsDraft: boolean;
-  createMultiple: boolean;
-  canSave: boolean;
-  isLoading: boolean;
+  smartAction?: ReactNode;
+  smartPanel?: ReactNode;
+  saveAsDraft?: boolean;
+  createMultiple?: boolean;
+  canSave?: boolean;
+  isLoading?: boolean;
   isPersonalWorkspace?: boolean;
-  onSaveAsDraftChange: (value: boolean) => void;
-  onCreateMultipleChange: (value: boolean) => void;
+  onSaveAsDraftChange?: (value: boolean) => void;
+  onCreateMultipleChange?: (value: boolean) => void;
   onClose: () => void;
   onFullscreen: () => void;
-  onSave: () => void;
+  onSave?: () => void;
 }
 
 function CompactIconButton({
@@ -71,7 +73,7 @@ function CompactIconButton({
   );
 }
 
-export function CompactTaskCreatePopover({
+export function CompactTaskDialogPanel({
   title,
   description,
   icon,
@@ -79,25 +81,34 @@ export function CompactTaskCreatePopover({
   iconRingClass = 'ring-dynamic-orange/20',
   titleInput,
   propertyControls,
+  smartAction,
+  smartPanel,
   saveAsDraft,
   createMultiple,
   canSave,
-  isLoading,
+  isLoading = false,
   isPersonalWorkspace,
   onSaveAsDraftChange,
   onCreateMultipleChange,
   onClose,
   onFullscreen,
   onSave,
-}: CompactTaskCreatePopoverProps) {
+}: CompactTaskDialogPanelProps) {
   const t = useTranslations();
+  const hasCreateActions =
+    typeof saveAsDraft === 'boolean' &&
+    typeof createMultiple === 'boolean' &&
+    typeof canSave === 'boolean' &&
+    !!onSave &&
+    !!onSaveAsDraftChange &&
+    !!onCreateMultipleChange;
   const saveLabel = saveAsDraft
     ? t('task-drafts.save_as_draft')
     : t('ws-task-boards.dialog.create_task');
 
   return (
     <div
-      data-testid="compact-task-create-popover"
+      data-testid="compact-task-dialog-panel"
       className="flex max-h-[calc(100vh-2rem)] min-h-0 flex-col overflow-hidden rounded-lg bg-background"
     >
       <div className="flex items-start justify-between gap-3 border-b px-4 py-3">
@@ -123,6 +134,7 @@ export function CompactTaskCreatePopover({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          {smartAction}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -163,46 +175,51 @@ export function CompactTaskCreatePopover({
         <div className="flex flex-wrap items-center gap-1.5">
           {propertyControls}
         </div>
+        {smartPanel}
       </div>
 
-      <div className="flex items-center justify-between gap-2 border-t bg-muted/20 px-4 py-3">
-        <div className="flex items-center gap-1">
-          <CompactIconButton
-            active={saveAsDraft}
-            label={t('task-drafts.save_as_draft')}
-            onClick={() => onSaveAsDraftChange(!saveAsDraft)}
+      {hasCreateActions && (
+        <div className="flex items-center justify-between gap-2 border-t bg-muted/20 px-4 py-3">
+          <div className="flex items-center gap-1">
+            <CompactIconButton
+              active={!!saveAsDraft}
+              label={t('task-drafts.save_as_draft')}
+              onClick={() => onSaveAsDraftChange?.(!saveAsDraft)}
+            >
+              <FileEdit className="h-4 w-4" />
+            </CompactIconButton>
+            <CompactIconButton
+              active={!!createMultiple}
+              label={t('ws-task-boards.dialog.create_multiple')}
+              onClick={() => onCreateMultipleChange?.(!createMultiple)}
+            >
+              <Copy className="h-4 w-4" />
+            </CompactIconButton>
+            <QuickSettingsPopover isPersonalWorkspace={isPersonalWorkspace} />
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            disabled={!canSave}
+            onClick={() => onSave?.()}
+            className="min-w-28"
           >
-            <FileEdit className="h-4 w-4" />
-          </CompactIconButton>
-          <CompactIconButton
-            active={createMultiple}
-            label={t('ws-task-boards.dialog.create_multiple')}
-            onClick={() => onCreateMultipleChange(!createMultiple)}
-          >
-            <Copy className="h-4 w-4" />
-          </CompactIconButton>
-          <QuickSettingsPopover isPersonalWorkspace={isPersonalWorkspace} />
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t('ws-task-boards.dialog.saving')}
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" />
+                {saveLabel}
+              </>
+            )}
+          </Button>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          disabled={!canSave}
-          onClick={onSave}
-          className="min-w-28"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t('ws-task-boards.dialog.saving')}
-            </>
-          ) : (
-            <>
-              <Check className="h-4 w-4" />
-              {saveLabel}
-            </>
-          )}
-        </Button>
-      </div>
+      )}
     </div>
   );
 }
+
+export const CompactTaskCreatePopover = CompactTaskDialogPanel;
