@@ -1,3 +1,4 @@
+import { unstable_rethrow } from 'next/navigation';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   createAuthDiagnosticCode,
@@ -5,10 +6,14 @@ import {
 } from '@/lib/auth/diagnostics';
 import { listWebAccounts } from '@/lib/auth/multi-account/vault';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     return NextResponse.json(await listWebAccounts(request));
   } catch (error) {
+    unstable_rethrow(error);
+
     const diagnosticCode = createAuthDiagnosticCode('account_list');
     logAuthDiagnostic({
       authMethod: 'multi-account',

@@ -1,3 +1,4 @@
+import { unstable_rethrow } from 'next/navigation';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -46,6 +47,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result, { status: result.success ? 200 : 410 });
   } catch (error) {
+    unstable_rethrow(error);
+
     const diagnosticCode = createAuthDiagnosticCode('account_switch');
     logAuthDiagnostic({
       authMethod: 'multi-account',

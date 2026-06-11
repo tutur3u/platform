@@ -1,3 +1,4 @@
+import { unstable_rethrow } from 'next/navigation';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   createAuthDiagnosticCode,
@@ -14,6 +15,8 @@ export async function DELETE(
   try {
     return NextResponse.json(await removeWebAccount(request, accountId));
   } catch (error) {
+    unstable_rethrow(error);
+
     const diagnosticCode = createAuthDiagnosticCode('account_remove');
     logAuthDiagnostic({
       authMethod: 'multi-account',
