@@ -83,34 +83,7 @@ export function TransactionCard({
   const [isHovered, setIsHovered] = useState(false);
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
-  const effectiveCurrency = transaction.wallet_currency || currency;
-  const isExpense = (transaction.amount || 0) < 0;
   const isTransfer = !!transaction.transfer;
-
-  // Currency conversion for foreign-currency transactions
-  const isForeignCurrency =
-    effectiveCurrency.toUpperCase() !== currency.toUpperCase();
-  const { data: exchangeRateData } = useExchangeRates();
-  const convertedAmount = useMemo(() => {
-    if (
-      !isForeignCurrency ||
-      transaction.amount == null ||
-      !exchangeRateData?.data
-    )
-      return null;
-    return convertCurrency(
-      transaction.amount,
-      effectiveCurrency,
-      currency,
-      exchangeRateData.data
-    );
-  }, [
-    isForeignCurrency,
-    transaction.amount,
-    effectiveCurrency,
-    currency,
-    exchangeRateData?.data,
-  ]);
 
   // Check if transaction is confidential
   const isConfidential =
@@ -153,6 +126,65 @@ export function TransactionCard({
     if (!transaction.transfer?.linked_wallet_id || !wallets) return null;
     return wallets.find((w) => w.id === transaction.transfer?.linked_wallet_id);
   }, [transaction.transfer?.linked_wallet_id, wallets]);
+
+  const transferDisplay = transaction.transfer
+    ? transaction.transfer.is_origin
+      ? {
+          amount: transaction.amount,
+          amountCurrency: transaction.wallet_currency,
+          destinationIcon: linkedWallet?.icon,
+          destinationImageSrc: linkedWallet?.image_src,
+          destinationWalletId: transaction.transfer.linked_wallet_id,
+          destinationWalletName: transaction.transfer.linked_wallet_name,
+          originIcon: wallet?.icon,
+          originImageSrc: wallet?.image_src,
+          originWalletId: transaction.wallet_id,
+          originWalletName: transaction.wallet,
+          secondaryAmount: transaction.transfer.linked_amount,
+          secondaryCurrency: transaction.transfer.linked_wallet_currency,
+        }
+      : {
+          amount: transaction.transfer.linked_amount ?? transaction.amount,
+          amountCurrency:
+            transaction.transfer.linked_wallet_currency ||
+            transaction.wallet_currency,
+          destinationIcon: wallet?.icon,
+          destinationImageSrc: wallet?.image_src,
+          destinationWalletId: transaction.wallet_id,
+          destinationWalletName: transaction.wallet,
+          originIcon: linkedWallet?.icon,
+          originImageSrc: linkedWallet?.image_src,
+          originWalletId: transaction.transfer.linked_wallet_id,
+          originWalletName: transaction.transfer.linked_wallet_name,
+          secondaryAmount: transaction.amount,
+          secondaryCurrency: transaction.wallet_currency,
+        }
+    : null;
+  const displayAmount = transferDisplay?.amount ?? transaction.amount;
+  const effectiveCurrency =
+    transferDisplay?.amountCurrency || transaction.wallet_currency || currency;
+  const isExpense = (displayAmount || 0) < 0;
+
+  // Currency conversion for foreign-currency transactions
+  const isForeignCurrency =
+    effectiveCurrency.toUpperCase() !== currency.toUpperCase();
+  const { data: exchangeRateData } = useExchangeRates();
+  const convertedAmount = useMemo(() => {
+    if (!isForeignCurrency || displayAmount == null || !exchangeRateData?.data)
+      return null;
+    return convertCurrency(
+      displayAmount,
+      effectiveCurrency,
+      currency,
+      exchangeRateData.data
+    );
+  }, [
+    isForeignCurrency,
+    displayAmount,
+    effectiveCurrency,
+    currency,
+    exchangeRateData?.data,
+  ]);
 
   // Determine if we should use custom styling
   const hasCustomStyling = Boolean(customColorStyles);
@@ -331,37 +363,37 @@ export function TransactionCard({
                   {transaction.category}
                 </Badge>
               ) : null}
-              {transaction.wallet && (
+              {(transaction.wallet || transferDisplay) && (
                 <div className="flex items-center gap-1">
-                  {isTransfer && transaction.transfer ? (
+                  {isTransfer && transferDisplay ? (
                     <div className="flex items-center rounded-full border border-dynamic-blue/20 bg-dynamic-blue/5 py-0.5 pr-1 pl-1">
                       <Link
-                        href={`/${wsId}${financeHref(`/wallets/${transaction.wallet_id}`)}`}
+                        href={`/${wsId}${financeHref(`/wallets/${transferDisplay.originWalletId}`)}`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <span className="flex items-center gap-1 rounded-full px-1.5 py-0.5 font-medium text-[11px] text-muted-foreground transition-colors hover:bg-dynamic-blue/10 hover:text-foreground sm:text-xs">
                           <WalletIconDisplay
-                            icon={wallet?.icon}
-                            imageSrc={wallet?.image_src}
+                            icon={transferDisplay.originIcon}
+                            imageSrc={transferDisplay.originImageSrc}
                             size="sm"
                             className="h-3 w-3"
                           />
-                          {transaction.wallet}
+                          {transferDisplay.originWalletName}
                         </span>
                       </Link>
                       <ArrowRight className="mx-0.5 h-3 w-3 shrink-0 text-dynamic-blue" />
                       <Link
-                        href={`/${wsId}${financeHref(`/wallets/${transaction.transfer.linked_wallet_id}`)}`}
+                        href={`/${wsId}${financeHref(`/wallets/${transferDisplay.destinationWalletId}`)}`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <span className="flex items-center gap-1 rounded-full px-1.5 py-0.5 font-medium text-[11px] text-dynamic-blue transition-colors hover:bg-dynamic-blue/10 sm:text-xs">
                           <WalletIconDisplay
-                            icon={linkedWallet?.icon}
-                            imageSrc={linkedWallet?.image_src}
+                            icon={transferDisplay.destinationIcon}
+                            imageSrc={transferDisplay.destinationImageSrc}
                             size="sm"
                             className="h-3 w-3"
                           />
-                          {transaction.transfer.linked_wallet_name}
+                          {transferDisplay.destinationWalletName}
                         </span>
                       </Link>
                     </div>
@@ -401,7 +433,7 @@ export function TransactionCard({
             <div className="flex shrink-0 items-center gap-1 sm:gap-2">
               <div className="flex flex-col items-end">
                 <ConfidentialAmount
-                  amount={transaction.amount ?? null}
+                  amount={displayAmount ?? null}
                   isConfidential={transaction.is_amount_confidential || false}
                   currency={effectiveCurrency}
                   className={cn(
@@ -426,16 +458,16 @@ export function TransactionCard({
                   }
                 />
                 {isTransfer &&
-                  transaction.transfer?.linked_amount != null &&
-                  transaction.transfer?.linked_wallet_currency &&
-                  transaction.transfer.linked_wallet_currency.toUpperCase() !==
+                  transferDisplay?.secondaryAmount != null &&
+                  transferDisplay.secondaryCurrency &&
+                  transferDisplay.secondaryCurrency.toUpperCase() !==
                     effectiveCurrency.toUpperCase() && (
                     <span className="text-[10px] text-dynamic-blue tabular-nums sm:text-xs">
                       {areNumbersHidden
                         ? FINANCE_HIDDEN_AMOUNT
                         : formatCurrency(
-                            Math.abs(transaction.transfer.linked_amount),
-                            transaction.transfer.linked_wallet_currency,
+                            Math.abs(transferDisplay.secondaryAmount),
+                            transferDisplay.secondaryCurrency,
                             undefined,
                             { signDisplay: 'always' }
                           )}

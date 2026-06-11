@@ -73,6 +73,7 @@ import {
 import { PeriodBreakdownPanel } from './period-charts';
 import { TransactionCard } from './transaction-card';
 import { TransactionStatistics } from './transaction-statistics';
+import { mergeLinkedTransferTransactions } from './transfer-merge';
 
 interface InfiniteTransactionsListProps {
   wsId: string;
@@ -446,6 +447,10 @@ export function InfiniteTransactionsList({
   const allTransactions = usePeriods
     ? []
     : dailyData?.pages.flatMap((page) => page.data) || [];
+  const visibleTransactions = useMemo(
+    () => mergeLinkedTransferTransactions(allTransactions),
+    [allTransactions]
+  );
 
   // All periods for period-based views
   const allPeriods: TransactionPeriod[] = usePeriods
@@ -485,26 +490,32 @@ export function InfiniteTransactionsList({
   const groupedTransactions = useMemo(() => {
     // For period-based views, convert periods to grouped transactions format
     if (usePeriods) {
-      return allPeriods.map((period) => ({
-        date: period.periodStart,
-        label: generatePeriodLabel(period.periodStart, viewMode),
-        transactions: period.transactions || [],
-        // Store period stats for display
-        periodStats: {
-          totalIncome: period.totalIncome,
-          totalExpense: period.totalExpense,
-          netTotal: period.netTotal,
-          transactionCount: period.transactionCount,
-          hasRedactedAmounts: period.hasRedactedAmounts,
-        },
-      }));
+      return allPeriods.map((period) => {
+        const transactions = mergeLinkedTransferTransactions(
+          period.transactions || []
+        );
+
+        return {
+          date: period.periodStart,
+          label: generatePeriodLabel(period.periodStart, viewMode),
+          transactions,
+          // Store period stats for display
+          periodStats: {
+            totalIncome: period.totalIncome,
+            totalExpense: period.totalExpense,
+            netTotal: period.netTotal,
+            transactionCount: transactions.length,
+            hasRedactedAmounts: period.hasRedactedAmounts,
+          },
+        };
+      });
     }
 
     // For daily view, group transactions by date in the user's timezone
     const groups: GroupedTransactions[] = [];
     const now = dayjs().tz(resolvedTimezone);
 
-    allTransactions.forEach((transaction) => {
+    visibleTransactions.forEach((transaction) => {
       // Parse transaction date in the user's timezone
       const transactionDate = dayjs(transaction.taken_at).tz(resolvedTimezone);
       const dateKey = transactionDate.format('YYYY-MM-DD');
@@ -543,7 +554,7 @@ export function InfiniteTransactionsList({
 
     return groups;
   }, [
-    allTransactions,
+    visibleTransactions,
     allPeriods,
     usePeriods,
     viewMode,
@@ -604,7 +615,7 @@ export function InfiniteTransactionsList({
   // Check if there's no data (either no transactions for daily or no periods for other views)
   const hasNoData = usePeriods
     ? allPeriods.length === 0
-    : allTransactions.length === 0;
+    : visibleTransactions.length === 0;
 
   if (hasNoData) {
     return (
@@ -627,7 +638,7 @@ export function InfiniteTransactionsList({
       {/* Statistics Summary - Only show when filters are active (daily view only uses transactions for stats) */}
       {hasActiveFilter && (stats || isStatsLoading) && !usePeriods && (
         <TransactionStatistics
-          transactions={allTransactions}
+          transactions={visibleTransactions}
           stats={stats}
           isLoading={isStatsLoading}
           currency={currency}
@@ -1023,7 +1034,7 @@ export function InfiniteTransactionsList({
         {!hasNextPage &&
           (usePeriods
             ? allPeriods.length > 5
-            : allTransactions.length > 10) && (
+            : visibleTransactions.length > 10) && (
             <div className="rounded-xl border border-dashed bg-muted/20 p-6 text-center">
               <p className="text-muted-foreground text-sm">
                 {t('user-data-table.common.end_of_list')}
