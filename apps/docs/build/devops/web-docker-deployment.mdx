@@ -1,7 +1,7 @@
 ---
 title: "Web Docker Deployment"
 description: "Run the web app in Docker for development, production, and blue/green self-hosted rollout."
-updatedAt: "2026-06-04"
+updatedAt: "2026-06-11"
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -599,6 +599,22 @@ deployment status and build-cache metadata; truly pre-tracking rows still show
 stage chips as not applicable. Active watcher deployments that only have
 pending build/deploy status are surfaced with a synthetic current stage so
 operators can see the build is in progress before full stage history is written.
+When `TUTURUUU_CI_CHECKS_ENABLED=1`, the watcher also publishes one sanitized
+GitHub Check Run per watched commit. The default check name is `Tuturuuu CI`;
+override it with `TUTURUUU_CI_CHECK_NAME`. The publisher uses
+`TUTURUUU_CI_GITHUB_TOKEN` first, then `GITHUB_TOKEN`, and the token must be
+able to create and update Check Runs for the repository. The watcher stores the
+latest check-run id per commit in
+`tmp/docker-web/watch/blue-green-github-checks.json` so restarts update the
+same GitHub row instead of creating duplicates. `TUTURUUU_CI_CHECK_DETAILS_URL`
+is optional and omitted unless explicitly configured.
+
+The GitHub-facing Check Run is intentionally not a log export. It includes only
+allowlisted rollout metadata: commit SHA/short SHA, branch/upstream, deployment
+kind, watcher status, current stage, aggregate stage counts, and safe
+timestamps/durations. It must not include raw watcher logs, raw error messages,
+environment values, local host paths, hostnames, emails, user ids, tokens, or
+secret-shaped key/value text.
 After each Hive migration pass, the deploy helper runs
 `docker compose rm --stop -f hive-db-migrate` so the completed one-shot
 migration service is stopped if necessary and removed. This keeps

@@ -8033,6 +8033,7 @@ test('main deploys the latest fetched revision after recovery when the last succ
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const paths = getWatchPaths(tempDir);
   const calls = [];
+  const publishedStates = [];
   const uiState = {};
 
   try {
@@ -8078,6 +8079,17 @@ test('main deploys the latest fetched revision after recovery when the last succ
         exit() {},
         on() {},
         pid: 4321,
+      },
+      githubChecksPublisher: {
+        publish(state) {
+          publishedStates.push({
+            deployments: (state.deployments ?? []).map((deployment) => ({
+              commitHash: deployment.commitHash,
+              status: deployment.status,
+            })),
+            lastResultStatus: state.lastResult?.status ?? null,
+          });
+        },
       },
       rootDir: tempDir,
       runCommand: async (command, args) => {
@@ -8174,6 +8186,18 @@ test('main deploys the latest fetched revision after recovery when the last succ
       calls.includes(
         `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
       )
+    );
+    assert.ok(
+      publishedStates.some((state) =>
+        state.deployments.some(
+          (deployment) =>
+            deployment.commitHash === 'bbb222222222222222222' &&
+            deployment.status === 'successful'
+        )
+      )
+    );
+    assert.ok(
+      publishedStates.some((state) => state.lastResultStatus === 'deployed')
     );
     assert.equal(readPendingDeployRequest(paths, fs), null);
   } finally {

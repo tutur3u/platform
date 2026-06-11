@@ -75,6 +75,7 @@ const {
   createWatcherLogEntry,
   readWatcherLogEntries,
 } = require('./logs.js');
+const { createGitHubChecksPublisher } = require('./github-checks.js');
 const { sendBuildFailureIncidentEmail } = require('./incident-email.js');
 const {
   DEFAULT_PROJECT_POLL_INTERVAL_MS,
@@ -184,6 +185,76 @@ const MAX_RECOVERY_CACHE_IMAGES = 5;
 const PRODUCTION_PREBUILD_WORKTREE_MARKER =
   '.tuturuuu-production-prebuild-worktree.json';
 const PRODUCTION_PREBUILD_STALE_EXTRA_MS = 60 * 60_000;
+
+function normalizeGitHubChecksPublisher(publisher) {
+  if (!publisher) {
+    return null;
+  }
+
+  if (typeof publisher === 'function') {
+    return {
+      publish: publisher,
+    };
+  }
+
+  return typeof publisher.publish === 'function' ? publisher : null;
+}
+
+function publishGitHubChecksFromWatcherState(publisher, state, log = console) {
+  if (!publisher) {
+    return;
+  }
+
+  try {
+    const result = publisher.publish(state);
+
+    if (result && typeof result.catch === 'function') {
+      result.catch((error) => {
+        log.warn?.(
+          `Unable to publish Tuturuuu CI GitHub Check Run: ${error instanceof Error ? error.message : String(error)}`
+        );
+      });
+    }
+  } catch (error) {
+    log.warn?.(
+      `Unable to publish Tuturuuu CI GitHub Check Run: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+function wrapWatchUiStateChange(ui, onStateChange) {
+  if (!ui || typeof onStateChange !== 'function') {
+    return ui;
+  }
+
+  const originalClose =
+    typeof ui.close === 'function' ? ui.close.bind(ui) : null;
+  const originalStart =
+    typeof ui.start === 'function' ? ui.start.bind(ui) : null;
+  const originalUpdate =
+    typeof ui.update === 'function' ? ui.update.bind(ui) : null;
+
+  return {
+    ...ui,
+    close() {
+      originalClose?.();
+      onStateChange(ui.state);
+    },
+    start() {
+      originalStart?.();
+      onStateChange(ui.state);
+    },
+    update(patch) {
+      if (originalUpdate) {
+        originalUpdate(patch);
+      } else if (ui.state && patch && typeof patch === 'object') {
+        Object.assign(ui.state, patch);
+      }
+
+      onStateChange(ui.state);
+    },
+  };
+}
 
 function isPathInside(parentPath, candidatePath) {
   const relative = path.relative(parentPath, candidatePath);
@@ -6769,42 +6840,60 @@ async function main(argv = process.argv.slice(2), options = {}) {
   const initialDeploymentSummary = getLatestDeploymentSummary(
     initialRuntimeSnapshot.deployments
   );
-  const ui =
-    options.ui ??
-    createWatchUi(
-      {
-        currentBlueGreen: initialRuntimeSnapshot.currentBlueGreen,
-        dockerResources: initialRuntimeSnapshot.dockerResources,
-        deploymentPin: readDeploymentPin(paths, fsImpl),
-        deployments: initialRuntimeSnapshot.deployments,
-        logs: readWatcherLogEntries(paths, fsImpl),
-        intervalMs: parsed.intervalMs,
-        lastDeployAt: initialDeploymentSummary.lastDeployAt,
-        lastDeployStatus: initialDeploymentSummary.lastDeployStatus,
-        lockFile: paths.lockFile,
-        startedAt: Date.now(),
-      },
-      {
-        onEvent: (event, state) => {
-          const nextLogs = appendWatcherLogEntry(
-            createWatcherLogEntry(event, state),
-            {
-              fsImpl,
-              paths,
-            }
-          );
-          state.logs = nextLogs;
+  let ui = null;
+  const githubChecksPublisher = normalizeGitHubChecksPublisher(
+    options.githubChecksPublisher ??
+      createGitHubChecksPublisher({
+        env,
+        fsImpl,
+        log: {
+          warn(message) {
+            ui?.warn?.(message);
+          },
         },
-        onStateChange: (state) => {
-          writeWatchStatus(state, {
-            fsImpl,
-            now: Date.now(),
-            paths,
-            processImpl,
-          });
+        paths,
+        rootDir,
+        runCommand: run,
+      })
+  );
+  const handleStateChange = (state) => {
+    writeWatchStatus(state, {
+      fsImpl,
+      now: Date.now(),
+      paths,
+      processImpl,
+    });
+    publishGitHubChecksFromWatcherState(githubChecksPublisher, state, ui);
+  };
+  ui = options.ui
+    ? wrapWatchUiStateChange(options.ui, handleStateChange)
+    : createWatchUi(
+        {
+          currentBlueGreen: initialRuntimeSnapshot.currentBlueGreen,
+          dockerResources: initialRuntimeSnapshot.dockerResources,
+          deploymentPin: readDeploymentPin(paths, fsImpl),
+          deployments: initialRuntimeSnapshot.deployments,
+          logs: readWatcherLogEntries(paths, fsImpl),
+          intervalMs: parsed.intervalMs,
+          lastDeployAt: initialDeploymentSummary.lastDeployAt,
+          lastDeployStatus: initialDeploymentSummary.lastDeployStatus,
+          lockFile: paths.lockFile,
+          startedAt: Date.now(),
         },
-      }
-    );
+        {
+          onEvent: (event, state) => {
+            const nextLogs = appendWatcherLogEntry(
+              createWatcherLogEntry(event, state),
+              {
+                fsImpl,
+                paths,
+              }
+            );
+            state.logs = nextLogs;
+          },
+          onStateChange: handleStateChange,
+        }
+      );
   let released = false;
   let target = null;
   let terminating = false;

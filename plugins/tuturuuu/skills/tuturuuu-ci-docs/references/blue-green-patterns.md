@@ -53,6 +53,12 @@ infrastructure dashboard changes.
   send failures without changing deployment results.
 - Watcher restart/recreate must reconcile current `HEAD` against the latest
   successful deployment and deploy `HEAD` when runtime history lags.
+- GitHub-facing watcher progress must be opt-in and published as sanitized
+  Check Runs only. Keep the payload allowlisted to stage/status metadata,
+  commit SHA/short SHA, branch/upstream, deployment kind, aggregate stage
+  counts, and safe timestamps/durations; never publish raw logs, raw errors,
+  env values, host paths, hostnames, user identifiers, emails, tokens, or
+  secret-shaped text.
 
 ## BuildKit And Compose
 

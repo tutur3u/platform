@@ -1,0 +1,1065 @@
+const crypto = require('node:crypto');
+const fs = require('node:fs');
+const https = require('node:https');
+const path = require('node:path');
+
+const { getGitHubRepository } = require('./production-promotion.js');
+const { getWatchPaths } = require('./paths.js');
+
+const GITHUB_CHECKS_STATE_KIND = 'tuturuuu-github-check-runs';
+const GITHUB_CHECKS_ENABLED_ENV = 'TUTURUUU_CI_CHECKS_ENABLED';
+const GITHUB_CHECKS_TOKEN_ENV = 'TUTURUUU_CI_GITHUB_TOKEN';
+const GITHUB_CHECKS_NAME_ENV = 'TUTURUUU_CI_CHECK_NAME';
+const GITHUB_CHECKS_DETAILS_URL_ENV = 'TUTURUUU_CI_CHECK_DETAILS_URL';
+const DEFAULT_GITHUB_CHECK_NAME = 'Tuturuuu CI';
+const MAX_CHECK_STATE_ENTRIES = 200;
+const REDACTED_VALUE = '[REDACTED]';
+const REDACTED_EMAIL = '[REDACTED_EMAIL]';
+const REDACTED_HOST = '[REDACTED_HOST]';
+const REDACTED_PATH = '[REDACTED_PATH]';
+const REDACTED_URL = '[REDACTED_URL]';
+
+const SENSITIVE_QUERY_PARAM_PATTERN =
+  /([?&](?:access[_-]?token|api[_-]?key|authorization|code|cookie|key|password|refresh[_-]?token|secret|session|token)=)[^&\s]+/giu;
+const SENSITIVE_KEY_VALUE_PATTERN =
+  /(?<![?&])\b(access[_-]?token|api[_-]?key|authorization|client[_-]?secret|cookie|password|refresh[_-]?token|secret|session|token)\b\s*[:=]\s*("[^"]*"|'[^']*'|Bearer\s+[A-Za-z0-9._~+/=-]+|[^\s,;}\]]+)/giu;
+const BEARER_TOKEN_PATTERN = /\bBearer\s+[A-Za-z0-9._~+/=-]+/giu;
+const JWT_PATTERN = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/gu;
+const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/giu;
+const URL_PATTERN = /\bhttps?:\/\/[^\s)]+/giu;
+const LOCAL_PATH_PATTERN =
+  /(?:\/Users\/[^\s)]+|\/home\/[^\s)]+|\/private\/[^\s)]+|[A-Za-z]:\\[^\s)]+)/gu;
+const HOSTNAME_PATTERN =
+  /\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:com|dev|internal|io|local|localhost|net|org|test)\b/giu;
+const COMMIT_HASH_PATTERN = /^[a-f0-9]{7,40}$/iu;
+
+const STAGE_LABELS = new Map([
+  ['deploy', 'Deploy'],
+  ['hive-migrate', 'Hive migration'],
+  ['hive-promote', 'Hive promotion'],
+  ['production-gates', 'Production gates'],
+  ['production-prebuild', 'Production prebuild'],
+  ['production-promote', 'Production promotion'],
+  ['proxy-reload', 'Proxy reload'],
+  ['support-refresh', 'Support refresh'],
+  ['watcher', 'Watcher'],
+  ['web-build', 'Web build'],
+  ['web-promote', 'Web promotion'],
+]);
+
+const SUCCESS_WATCHER_STATUSES = new Set([
+  'deployed',
+  'instant-reverted',
+  'pinned-deployed',
+  'production-promoted',
+  'recovered',
+  'standby-refreshed',
+]);
+const FAILURE_WATCHER_STATUSES = new Set([
+  'deploy-failed',
+  'instant-revert-failed',
+  'pin-deploy-failed',
+  'production-prebuild-failed',
+  'production-promotion-failed',
+  'retry-limited',
+  'standby-refresh-failed',
+]);
+const ACTION_REQUIRED_WATCHER_STATUSES = new Set([
+  'ahead',
+  'blocked',
+  'dirty',
+  'diverged',
+  'watcher-branch-mismatch',
+  'watcher-dirty',
+]);
+const QUEUED_WATCHER_STATUSES = new Set([
+  'cached',
+  'pinned',
+  'production-prebuild-check',
+  'production-prebuilt',
+  'queued',
+  'waiting',
+]);
+const IN_PROGRESS_WATCHER_STATUSES = new Set([
+  'building',
+  'deployment-active',
+  'deploying',
+  'prebuild-building',
+  'restarting',
+]);
+const NEUTRAL_WATCHER_STATUSES = new Set([
+  'completed',
+  'missing',
+  'skipped',
+  'source-absent',
+  'up-to-date',
+]);
+
+function trimString(value) {
+  return typeof value === 'string' && value.trim().length > 0
+    ? value.trim()
+    : null;
+}
+
+function isGitHubChecksEnabled(env = process.env) {
+  return env?.[GITHUB_CHECKS_ENABLED_ENV] === '1';
+}
+
+function getGitHubChecksToken(env = process.env) {
+  return (
+    trimString(env?.[GITHUB_CHECKS_TOKEN_ENV]) ?? trimString(env?.GITHUB_TOKEN)
+  );
+}
+
+function sanitizePublicText(value, maxLength = 120) {
+  if (value == null) {
+    return null;
+  }
+
+  const sanitized = String(value)
+    .replace(
+      SENSITIVE_QUERY_PARAM_PATTERN,
+      (_match, prefix) => `${prefix}${REDACTED_VALUE}`
+    )
+    .replace(
+      SENSITIVE_KEY_VALUE_PATTERN,
+      (_match, key) => `${key}: ${REDACTED_VALUE}`
+    )
+    .replace(BEARER_TOKEN_PATTERN, `Bearer ${REDACTED_VALUE}`)
+    .replace(JWT_PATTERN, REDACTED_VALUE)
+    .replace(EMAIL_PATTERN, REDACTED_EMAIL)
+    .replace(LOCAL_PATH_PATTERN, REDACTED_PATH)
+    .replace(URL_PATTERN, REDACTED_URL)
+    .replace(HOSTNAME_PATTERN, REDACTED_HOST)
+    .replace(/\s+/gu, ' ')
+    .trim();
+
+  if (!sanitized) {
+    return null;
+  }
+
+  return sanitized.length > maxLength
+    ? `${sanitized.slice(0, Math.max(0, maxLength - 3))}...`
+    : sanitized;
+}
+
+function getGitHubCheckName(env = process.env) {
+  return (
+    sanitizePublicText(env?.[GITHUB_CHECKS_NAME_ENV], 100) ??
+    DEFAULT_GITHUB_CHECK_NAME
+  );
+}
+
+function getGitHubCheckDetailsUrl(env = process.env) {
+  const value = trimString(env?.[GITHUB_CHECKS_DETAILS_URL_ENV]);
+
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeCommitHash(value) {
+  const text = trimString(value);
+
+  return text && COMMIT_HASH_PATTERN.test(text) ? text : null;
+}
+
+function getShortHash(commitHash, fallback = null) {
+  const fallbackHash = normalizeCommitHash(fallback);
+
+  if (fallbackHash) {
+    return fallbackHash.slice(0, 12);
+  }
+
+  return commitHash ? commitHash.slice(0, 12) : null;
+}
+
+function toIsoTimestamp(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return new Date(value).toISOString();
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
+  }
+
+  return null;
+}
+
+function formatDurationMs(value) {
+  if (!Number.isFinite(value) || value < 0) {
+    return null;
+  }
+
+  if (value < 1000) {
+    return '<1s';
+  }
+
+  const units = [
+    ['d', 86_400_000],
+    ['h', 3_600_000],
+    ['m', 60_000],
+    ['s', 1_000],
+  ];
+  const parts = [];
+  let remaining = value;
+
+  for (const [label, size] of units) {
+    const count = Math.floor(remaining / size);
+
+    if (count <= 0 && parts.length === 0) {
+      continue;
+    }
+
+    if (count > 0) {
+      parts.push(`${count}${label}`);
+      remaining -= count * size;
+    }
+
+    if (parts.length === 2) {
+      break;
+    }
+  }
+
+  return parts.join(' ') || '<1s';
+}
+
+function titleizeStageId(id) {
+  return sanitizePublicText(
+    String(id ?? 'watcher')
+      .split(/[-_\s]+/u)
+      .filter(Boolean)
+      .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+      .join(' '),
+    80
+  );
+}
+
+function normalizeStageStatus(status) {
+  const value = String(status ?? '').toLowerCase();
+
+  if (
+    ['completed', 'passed', 'success', 'successful', 'succeeded'].includes(
+      value
+    )
+  ) {
+    return 'succeeded';
+  }
+
+  if (
+    ['cancelled', 'error', 'failed', 'failure', 'timed_out'].includes(value)
+  ) {
+    return 'failed';
+  }
+
+  if (['neutral', 'skipped'].includes(value)) {
+    return 'skipped';
+  }
+
+  if (['building', 'deploying', 'in_progress', 'running'].includes(value)) {
+    return 'running';
+  }
+
+  return 'pending';
+}
+
+function normalizeStage(stage) {
+  const id = sanitizePublicText(stage?.id, 80);
+
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    label:
+      STAGE_LABELS.get(id) ??
+      sanitizePublicText(stage?.label, 80) ??
+      titleizeStageId(id),
+    status: normalizeStageStatus(stage?.status),
+  };
+}
+
+function normalizeStages(value) {
+  return Array.isArray(value)
+    ? value.map((stage) => normalizeStage(stage)).filter(Boolean)
+    : [];
+}
+
+function getStageCounts(stages) {
+  return stages.reduce(
+    (counts, stage) => {
+      counts.total += 1;
+      if (stage.status === 'failed') counts.failed += 1;
+      if (stage.status === 'pending') counts.pending += 1;
+      if (stage.status === 'running') counts.running += 1;
+      if (stage.status === 'skipped') counts.skipped += 1;
+      if (stage.status === 'succeeded') counts.succeeded += 1;
+      return counts;
+    },
+    {
+      failed: 0,
+      pending: 0,
+      running: 0,
+      skipped: 0,
+      succeeded: 0,
+      total: 0,
+    }
+  );
+}
+
+function getLatestDeployment(state) {
+  const deployments = Array.isArray(state?.deployments)
+    ? state.deployments
+    : [];
+
+  return (
+    deployments.find((deployment) =>
+      ['building', 'deploying'].includes(String(deployment?.status ?? ''))
+    ) ??
+    deployments[0] ??
+    null
+  );
+}
+
+function getProductionPromotion(state) {
+  const promotion = state?.lastResult?.productionPromotion;
+
+  return promotion && typeof promotion === 'object' && !Array.isArray(promotion)
+    ? promotion
+    : null;
+}
+
+function resolveCommit(state, latestDeployment, productionPromotion) {
+  const promotionMainHash = normalizeCommitHash(
+    productionPromotion?.main?.hash
+  );
+  const promotionProductionHash = normalizeCommitHash(
+    productionPromotion?.production?.hash
+  );
+
+  if (promotionMainHash && promotionMainHash !== promotionProductionHash) {
+    return {
+      hash: promotionMainHash,
+      shortHash: getShortHash(
+        promotionMainHash,
+        productionPromotion?.main?.shortHash
+      ),
+    };
+  }
+
+  const hash =
+    normalizeCommitHash(latestDeployment?.commitHash) ??
+    normalizeCommitHash(state?.latestCommit?.hash) ??
+    normalizeCommitHash(state?.lastResult?.latestCommit?.hash) ??
+    promotionMainHash;
+
+  return hash
+    ? {
+        hash,
+        shortHash: getShortHash(
+          hash,
+          latestDeployment?.commitShortHash ??
+            state?.latestCommit?.shortHash ??
+            state?.lastResult?.latestCommit?.shortHash ??
+            productionPromotion?.main?.shortHash
+        ),
+      }
+    : null;
+}
+
+function getWatcherStatus(state, latestDeployment, productionPromotion) {
+  if (
+    latestDeployment &&
+    ['building', 'deploying'].includes(String(latestDeployment.status ?? ''))
+  ) {
+    return String(latestDeployment.status);
+  }
+
+  const promotionStatus = trimString(productionPromotion?.decision?.status);
+  if (
+    promotionStatus === 'waiting' ||
+    promotionStatus === 'prebuild-building'
+  ) {
+    return promotionStatus;
+  }
+
+  return (
+    trimString(state?.lastResult?.status) ??
+    trimString(state?.lastDeployStatus) ??
+    trimString(latestDeployment?.status) ??
+    'unknown'
+  );
+}
+
+function createSyntheticStage(watcherStatus, deploymentKind, checkState) {
+  const status =
+    checkState.status === 'completed'
+      ? checkState.conclusion === 'failure'
+        ? 'failed'
+        : checkState.conclusion === 'success'
+          ? 'succeeded'
+          : 'pending'
+      : checkState.status === 'in_progress'
+        ? 'running'
+        : 'pending';
+  const kind = String(deploymentKind ?? '');
+  const normalizedStatus = String(watcherStatus ?? '');
+  const id =
+    kind === 'production-prebuild' || normalizedStatus.includes('prebuild')
+      ? 'production-prebuild'
+      : normalizedStatus.includes('promot')
+        ? 'production-promote'
+        : normalizedStatus === 'building'
+          ? 'web-build'
+          : normalizedStatus === 'deploying' ||
+              normalizedStatus === 'restarting'
+            ? 'deploy'
+            : normalizedStatus === 'waiting'
+              ? 'production-gates'
+              : 'watcher';
+
+  return {
+    id,
+    label: STAGE_LABELS.get(id) ?? titleizeStageId(id),
+    status,
+  };
+}
+
+function getCurrentStage(stages, watcherStatus, deploymentKind, checkState) {
+  const running = stages.find((stage) => stage.status === 'running');
+  if (running) return running;
+
+  const failed = stages.find((stage) => stage.status === 'failed');
+  if (failed) return failed;
+
+  if (stages.length > 0) {
+    return stages[stages.length - 1];
+  }
+
+  return createSyntheticStage(watcherStatus, deploymentKind, checkState);
+}
+
+function mapWatcherStatusToCheckState(watcherStatus, latestDeployment) {
+  if (
+    latestDeployment &&
+    ['building', 'deploying'].includes(String(latestDeployment.status ?? ''))
+  ) {
+    return { conclusion: null, status: 'in_progress' };
+  }
+
+  const normalizedStatus = String(watcherStatus ?? 'unknown');
+
+  if (SUCCESS_WATCHER_STATUSES.has(normalizedStatus)) {
+    return { conclusion: 'success', status: 'completed' };
+  }
+
+  if (FAILURE_WATCHER_STATUSES.has(normalizedStatus)) {
+    return { conclusion: 'failure', status: 'completed' };
+  }
+
+  if (ACTION_REQUIRED_WATCHER_STATUSES.has(normalizedStatus)) {
+    return { conclusion: 'action_required', status: 'completed' };
+  }
+
+  if (IN_PROGRESS_WATCHER_STATUSES.has(normalizedStatus)) {
+    return { conclusion: null, status: 'in_progress' };
+  }
+
+  if (QUEUED_WATCHER_STATUSES.has(normalizedStatus)) {
+    return { conclusion: null, status: 'queued' };
+  }
+
+  if (NEUTRAL_WATCHER_STATUSES.has(normalizedStatus)) {
+    return { conclusion: 'neutral', status: 'completed' };
+  }
+
+  if (normalizedStatus.endsWith('-failed')) {
+    return { conclusion: 'failure', status: 'completed' };
+  }
+
+  return { conclusion: 'neutral', status: 'completed' };
+}
+
+function createStageTable(stages) {
+  if (stages.length === 0) {
+    return null;
+  }
+
+  return [
+    '| Stage | Status |',
+    '| --- | --- |',
+    ...stages.map(
+      (stage) =>
+        `| ${sanitizePublicText(stage.label, 80) ?? stage.id} | ${stage.status} |`
+    ),
+  ].join('\n');
+}
+
+function getCheckRunTitle(checkState, watcherStatus, commit) {
+  const stateLabel =
+    checkState.status === 'completed'
+      ? checkState.conclusion
+      : checkState.status;
+  const title = `Tuturuuu CI: ${stateLabel} ${commit.shortHash ?? commit.hash.slice(0, 12)} (${watcherStatus})`;
+
+  return sanitizePublicText(title, 255);
+}
+
+function createCheckRunOutput({
+  branch,
+  buildDuration,
+  checkState,
+  commit,
+  currentStage,
+  deploymentKind,
+  stageCounts,
+  stages,
+  upstream,
+  watcherStatus,
+}) {
+  const lines = [
+    `Watcher status: ${sanitizePublicText(watcherStatus, 80) ?? 'unknown'}`,
+    `Commit: ${commit.shortHash ?? commit.hash.slice(0, 12)}`,
+  ];
+
+  if (branch) {
+    lines.push(`Branch: ${branch}${upstream ? ` (${upstream})` : ''}`);
+  }
+
+  if (deploymentKind) {
+    lines.push(`Deployment kind: ${deploymentKind}`);
+  }
+
+  lines.push(
+    `Current stage: ${currentStage.label ?? currentStage.id} (${currentStage.status})`
+  );
+  lines.push(
+    `Stages: ${stageCounts.succeeded} succeeded, ${stageCounts.failed} failed, ${stageCounts.running} running, ${stageCounts.pending} pending, ${stageCounts.skipped} skipped`
+  );
+
+  if (buildDuration) {
+    lines.push(`Build duration: ${buildDuration}`);
+  }
+
+  const stageTable = createStageTable(stages);
+
+  return {
+    summary: lines.join('\n'),
+    text: stageTable ?? undefined,
+    title: getCheckRunTitle(checkState, watcherStatus, commit),
+  };
+}
+
+function createPayloadFingerprint(payload) {
+  return crypto
+    .createHash('sha256')
+    .update(JSON.stringify(payload))
+    .digest('hex');
+}
+
+function buildGitHubCheckRunContext(
+  state,
+  { env = process.env, now = Date.now() } = {}
+) {
+  if (!isGitHubChecksEnabled(env)) {
+    return {
+      publishable: false,
+      reason: 'disabled',
+    };
+  }
+
+  const token = getGitHubChecksToken(env);
+  if (!token) {
+    return {
+      publishable: false,
+      reason: 'missing-token',
+    };
+  }
+
+  const latestDeployment = getLatestDeployment(state);
+  const productionPromotion = getProductionPromotion(state);
+  const commit = resolveCommit(state, latestDeployment, productionPromotion);
+
+  if (!commit?.hash) {
+    return {
+      publishable: false,
+      reason: 'missing-commit',
+    };
+  }
+
+  const watcherStatus = getWatcherStatus(
+    state,
+    latestDeployment,
+    productionPromotion
+  );
+  const checkState = mapWatcherStatusToCheckState(
+    watcherStatus,
+    latestDeployment
+  );
+  const stages = normalizeStages(latestDeployment?.stages);
+  const deploymentKind = sanitizePublicText(
+    latestDeployment?.deploymentKind ?? state?.lastResult?.deploymentKind,
+    80
+  );
+  const currentStage = getCurrentStage(
+    stages,
+    watcherStatus,
+    deploymentKind,
+    checkState
+  );
+  const stageCounts = getStageCounts(
+    stages.length > 0 ? stages : [currentStage]
+  );
+  const branch = sanitizePublicText(state?.target?.branch, 120);
+  const upstream = sanitizePublicText(state?.target?.upstreamRef, 120);
+  const buildDuration = formatDurationMs(latestDeployment?.buildDurationMs);
+  const output = createCheckRunOutput({
+    branch,
+    buildDuration,
+    checkState,
+    commit,
+    currentStage,
+    deploymentKind,
+    stageCounts,
+    stages,
+    upstream,
+    watcherStatus,
+  });
+  const detailsUrl = getGitHubCheckDetailsUrl(env);
+  const startedAt =
+    toIsoTimestamp(latestDeployment?.startedAt) ??
+    toIsoTimestamp(state?.startedAt) ??
+    toIsoTimestamp(now);
+  const completedAt =
+    checkState.status === 'completed'
+      ? (toIsoTimestamp(latestDeployment?.finishedAt) ??
+        toIsoTimestamp(latestDeployment?.activatedAt) ??
+        toIsoTimestamp(state?.lastDeployAt))
+      : null;
+  const createBody = {
+    head_sha: commit.hash,
+    name: getGitHubCheckName(env),
+    output,
+    status: checkState.status,
+    ...(startedAt ? { started_at: startedAt } : {}),
+    ...(detailsUrl ? { details_url: detailsUrl } : {}),
+    ...(checkState.status === 'completed' && checkState.conclusion
+      ? { conclusion: checkState.conclusion }
+      : {}),
+    ...(completedAt ? { completed_at: completedAt } : {}),
+  };
+  const updateBody = {
+    output,
+    status: checkState.status,
+    ...(detailsUrl ? { details_url: detailsUrl } : {}),
+    ...(checkState.status === 'completed' && checkState.conclusion
+      ? { conclusion: checkState.conclusion }
+      : {}),
+    ...(completedAt ? { completed_at: completedAt } : {}),
+  };
+
+  return {
+    checkName: createBody.name,
+    checkState,
+    commit,
+    createBody,
+    fingerprint: createPayloadFingerprint({
+      commit: commit.hash,
+      name: createBody.name,
+      output,
+      status: checkState.status,
+      conclusion: checkState.conclusion,
+      detailsUrl,
+      completedAt,
+      startedAt,
+    }),
+    publishable: true,
+    token,
+    updateBody,
+  };
+}
+
+function createEmptyGitHubChecksState() {
+  return {
+    checkRuns: {},
+    kind: GITHUB_CHECKS_STATE_KIND,
+  };
+}
+
+function readGitHubChecksState(filePath, fsImpl = fs) {
+  if (!filePath || !fsImpl.existsSync(filePath)) {
+    return createEmptyGitHubChecksState();
+  }
+
+  try {
+    const parsed = JSON.parse(fsImpl.readFileSync(filePath, 'utf8'));
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return createEmptyGitHubChecksState();
+    }
+
+    return {
+      checkRuns:
+        parsed.checkRuns && typeof parsed.checkRuns === 'object'
+          ? parsed.checkRuns
+          : {},
+      kind: GITHUB_CHECKS_STATE_KIND,
+    };
+  } catch {
+    return createEmptyGitHubChecksState();
+  }
+}
+
+function pruneGitHubChecksState(state) {
+  const entries = Object.entries(state.checkRuns ?? {}).sort((left, right) => {
+    const leftTime = Date.parse(left[1]?.updatedAt ?? '') || 0;
+    const rightTime = Date.parse(right[1]?.updatedAt ?? '') || 0;
+    return rightTime - leftTime;
+  });
+
+  return {
+    checkRuns: Object.fromEntries(entries.slice(0, MAX_CHECK_STATE_ENTRIES)),
+    kind: GITHUB_CHECKS_STATE_KIND,
+  };
+}
+
+function writeGitHubChecksState(filePath, state, fsImpl = fs) {
+  if (!filePath) {
+    return;
+  }
+
+  fsImpl.mkdirSync(path.dirname(filePath), { recursive: true });
+  fsImpl.writeFileSync(
+    filePath,
+    JSON.stringify(pruneGitHubChecksState(state), null, 2),
+    'utf8'
+  );
+}
+
+function getCheckRunStateKey(checkName, commitHash) {
+  return `${checkName}:${commitHash}`;
+}
+
+function githubJsonRequest(
+  requestPath,
+  { body = null, method = 'GET', token } = {}
+) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'tuturuuu-blue-green-watcher',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+        hostname: 'api.github.com',
+        method,
+        path: requestPath,
+      },
+      (res) => {
+        let responseBody = '';
+
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => {
+          responseBody += chunk;
+        });
+        res.on('end', () => {
+          let parsed = null;
+
+          try {
+            parsed = responseBody ? JSON.parse(responseBody) : null;
+          } catch {
+            parsed = null;
+          }
+
+          if ((res.statusCode ?? 500) >= 400) {
+            const error = new Error(
+              `GitHub API ${method} ${requestPath} failed with ${res.statusCode}`
+            );
+            error.statusCode = res.statusCode;
+            reject(error);
+            return;
+          }
+
+          resolve(parsed);
+        });
+      }
+    );
+
+    req.on('error', reject);
+
+    if (body) {
+      req.write(JSON.stringify(body));
+    }
+
+    req.end();
+  });
+}
+
+function parseRepositoryFromEnv(env = process.env) {
+  const repository = trimString(env?.GITHUB_REPOSITORY);
+
+  if (!repository?.includes('/')) {
+    return null;
+  }
+
+  const [owner, repo] = repository.split('/');
+
+  return owner && repo ? { owner, repo } : null;
+}
+
+async function resolveGitHubChecksRepository({
+  env = process.env,
+  rootDir,
+  runCommand,
+} = {}) {
+  return (
+    parseRepositoryFromEnv(env) ??
+    (await getGitHubRepository({ env, rootDir, runCommand }).catch(() => null))
+  );
+}
+
+async function publishGitHubCheckRunContext(
+  context,
+  {
+    env = process.env,
+    fsImpl = fs,
+    paths = getWatchPaths(),
+    repository,
+    requestJson = githubJsonRequest,
+  } = {}
+) {
+  if (!context?.publishable) {
+    return {
+      reason: context?.reason ?? 'not-publishable',
+      status: 'skipped',
+    };
+  }
+
+  if (!repository?.owner || !repository?.repo) {
+    return {
+      reason: 'missing-repository',
+      status: 'skipped',
+    };
+  }
+
+  const stateFile = paths.githubChecksFile;
+  const storedState = readGitHubChecksState(stateFile, fsImpl);
+  const stateKey = getCheckRunStateKey(context.checkName, context.commit.hash);
+  const existing = storedState.checkRuns[stateKey];
+  const owner = encodeURIComponent(repository.owner);
+  const repo = encodeURIComponent(repository.repo);
+  const nowIso = new Date().toISOString();
+
+  if (existing?.checkRunId) {
+    try {
+      await requestJson(
+        `/repos/${owner}/${repo}/check-runs/${encodeURIComponent(existing.checkRunId)}`,
+        {
+          body: context.updateBody,
+          env,
+          method: 'PATCH',
+          token: context.token,
+        }
+      );
+
+      storedState.checkRuns[stateKey] = {
+        ...existing,
+        checkRunId: existing.checkRunId,
+        commitHash: context.commit.hash,
+        name: context.checkName,
+        updatedAt: nowIso,
+      };
+      writeGitHubChecksState(stateFile, storedState, fsImpl);
+
+      return {
+        checkRunId: existing.checkRunId,
+        requestBody: context.updateBody,
+        status: 'updated',
+      };
+    } catch (error) {
+      if (error?.statusCode !== 404) {
+        throw error;
+      }
+    }
+  }
+
+  const created = await requestJson(`/repos/${owner}/${repo}/check-runs`, {
+    body: context.createBody,
+    env,
+    method: 'POST',
+    token: context.token,
+  });
+  const checkRunId = created?.id;
+
+  if (checkRunId) {
+    storedState.checkRuns[stateKey] = {
+      checkRunId,
+      commitHash: context.commit.hash,
+      name: context.checkName,
+      updatedAt: nowIso,
+    };
+    writeGitHubChecksState(stateFile, storedState, fsImpl);
+  }
+
+  return {
+    checkRunId,
+    requestBody: context.createBody,
+    status: 'created',
+  };
+}
+
+async function publishGitHubCheckRunForState(
+  state,
+  {
+    env = process.env,
+    fsImpl = fs,
+    now = Date.now(),
+    paths = getWatchPaths(),
+    repository,
+    requestJson = githubJsonRequest,
+    rootDir,
+    runCommand,
+  } = {}
+) {
+  const context = buildGitHubCheckRunContext(state, { env, now });
+
+  if (!context.publishable) {
+    return {
+      reason: context.reason,
+      status: 'skipped',
+    };
+  }
+
+  const resolvedRepository =
+    repository ??
+    (await resolveGitHubChecksRepository({ env, rootDir, runCommand }));
+
+  return publishGitHubCheckRunContext(context, {
+    env,
+    fsImpl,
+    paths,
+    repository: resolvedRepository,
+    requestJson,
+  });
+}
+
+function describePublishError(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function createGitHubChecksPublisher({
+  env = process.env,
+  fsImpl = fs,
+  log = console,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  repository = null,
+  requestJson = githubJsonRequest,
+  rootDir,
+  runCommand,
+} = {}) {
+  let lastFingerprint = null;
+  let pending = Promise.resolve({
+    status: 'idle',
+  });
+  let repositoryPromise = null;
+
+  const resolveRepositoryOnce = () => {
+    if (repository) {
+      return Promise.resolve(repository);
+    }
+
+    repositoryPromise ??= resolveGitHubChecksRepository({
+      env,
+      rootDir,
+      runCommand,
+    });
+
+    return repositoryPromise;
+  };
+
+  const publisher = {
+    flush() {
+      return pending;
+    },
+    publish(state) {
+      const context = buildGitHubCheckRunContext(state, {
+        env,
+        now: now(),
+      });
+
+      if (!context.publishable) {
+        return Promise.resolve({
+          reason: context.reason,
+          status: 'skipped',
+        });
+      }
+
+      if (context.fingerprint === lastFingerprint) {
+        return Promise.resolve({
+          status: 'unchanged',
+        });
+      }
+
+      lastFingerprint = context.fingerprint;
+      pending = pending
+        .then(async () => {
+          const resolvedRepository = await resolveRepositoryOnce();
+          return publishGitHubCheckRunContext(context, {
+            env,
+            fsImpl,
+            paths,
+            repository: resolvedRepository,
+            requestJson,
+          });
+        })
+        .catch((error) => {
+          log.warn?.(
+            `Unable to publish Tuturuuu CI GitHub Check Run: ${describePublishError(error)}`
+          );
+          return {
+            error,
+            status: 'failed',
+          };
+        });
+
+      return pending;
+    },
+  };
+
+  return publisher;
+}
+
+module.exports = {
+  DEFAULT_GITHUB_CHECK_NAME,
+  GITHUB_CHECKS_DETAILS_URL_ENV,
+  GITHUB_CHECKS_ENABLED_ENV,
+  GITHUB_CHECKS_NAME_ENV,
+  GITHUB_CHECKS_STATE_KIND,
+  GITHUB_CHECKS_TOKEN_ENV,
+  buildGitHubCheckRunContext,
+  createGitHubChecksPublisher,
+  getGitHubCheckDetailsUrl,
+  getGitHubCheckName,
+  getGitHubChecksToken,
+  githubJsonRequest,
+  isGitHubChecksEnabled,
+  publishGitHubCheckRunContext,
+  publishGitHubCheckRunForState,
+  readGitHubChecksState,
+  resolveGitHubChecksRepository,
+  sanitizePublicText,
+  writeGitHubChecksState,
+};
