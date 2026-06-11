@@ -94,37 +94,49 @@ function getStatusValue(status, ...candidates) {
 }
 
 function getLocalSupabaseStatus() {
-  const output = execFileSync('bun', ['supabase', 'status', '-o', 'json'], {
-    encoding: 'utf-8',
-    stdio: ['pipe', 'pipe', 'pipe'],
-  });
+  const maxAttempts = 15;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const output = execFileSync('bun', ['supabase', 'status', '-o', 'json'], {
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
 
-  const parsed = JSON.parse(output);
-  const supabaseUrlRaw = getStatusValue(
-    parsed,
-    'API_URL',
-    'api_url',
-    'apiUrl',
-    'SUPABASE_URL',
-    'supabase_url'
-  );
-  const serviceRoleKey = getStatusValue(
-    parsed,
-    'SERVICE_ROLE_KEY',
-    'service_role_key',
-    'serviceRoleKey'
-  );
-  const supabaseBaseUrl = supabaseUrlRaw
-    ? parseHttpsBaseUrl(supabaseUrlRaw)
-    : null;
+      const parsed = JSON.parse(output);
+      const supabaseUrlRaw = getStatusValue(
+        parsed,
+        'API_URL',
+        'api_url',
+        'apiUrl',
+        'SUPABASE_URL',
+        'supabase_url'
+      );
+      const serviceRoleKey = getStatusValue(
+        parsed,
+        'SERVICE_ROLE_KEY',
+        'service_role_key',
+        'serviceRoleKey'
+      );
+      const supabaseBaseUrl = supabaseUrlRaw
+        ? parseHttpsBaseUrl(supabaseUrlRaw)
+        : null;
 
-  if (!supabaseBaseUrl || !serviceRoleKey) {
-    throw new Error(
-      'Could not resolve local Supabase API URL or SERVICE_ROLE_KEY from `supabase status`.'
+      if (supabaseBaseUrl && serviceRoleKey) {
+        return { supabaseBaseUrl, serviceRoleKey };
+      }
+    } catch (e) {
+      if (attempt === maxAttempts) {
+        throw e;
+      }
+    }
+    console.log(
+      `⏳ Supabase not ready yet, waiting for container to start (attempt ${attempt}/${maxAttempts})...`
     );
+    execFileSync('sleep', ['2']);
   }
-
-  return { supabaseBaseUrl, serviceRoleKey };
+  throw new Error(
+    'Could not resolve local Supabase API URL or SERVICE_ROLE_KEY from `supabase status` after multiple attempts.'
+  );
 }
 
 async function fetchWithTimeout(

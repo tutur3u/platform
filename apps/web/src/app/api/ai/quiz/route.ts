@@ -160,16 +160,16 @@ ${lessonInfo}`;
 
           if (quiz.type === 'true_false') {
             content = {};
-            answer = { correct: quiz.correct_boolean };
+            answer = { correct: quiz.correct_boolean ?? false };
           } else if (quiz.type === 'multiple_choice') {
-            content = { options: quiz.options };
-            answer = { correctIndex: quiz.correct_option_index };
+            content = { options: quiz.options ?? [] };
+            answer = { correctIndex: quiz.correct_option_index ?? 0 };
           } else if (quiz.type === 'matching') {
-            content = { pairs: quiz.matching_pairs };
-            answer = { pairs: quiz.matching_pairs };
+            content = { pairs: quiz.matching_pairs ?? [] };
+            answer = { pairs: quiz.matching_pairs ?? [] };
           } else if (quiz.type === 'ordering') {
-            content = { items: quiz.ordering_items };
-            answer = { order: quiz.ordering_items };
+            content = { items: quiz.ordering_items ?? [] };
+            answer = { order: quiz.ordering_items ?? [] };
           }
 
           return {

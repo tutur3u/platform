@@ -1,6 +1,7 @@
 {
   "common": {
     "back": "Back",
+    "cancel": "Cancel",
     "completed": "Completed",
     "loading": "Loading…",
     "retry": "Retry",
