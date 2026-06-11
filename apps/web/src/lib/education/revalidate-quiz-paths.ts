@@ -21,8 +21,7 @@ function localizedPaths(path: string) {
   const paths = new Set<string>([path]);
 
   for (const locale of supportedLocales) {
-    paths.add(locale === defaultLocale ? path : `/${locale}${path}`);
-    paths.add(`/${locale}${path}`);
+    if (locale !== defaultLocale) paths.add(`/${locale}${path}`);
   }
 
   return [...paths];
@@ -71,7 +70,13 @@ export async function revalidateCourseModuleQuizPaths({
   }
 
   for (const row of (data ?? []) as ModuleCourseRow[]) {
-    if (!row.group_id) continue;
+    if (!row.group_id) {
+      serverLogger.warn('Skipping quiz path revalidation for orphaned module', {
+        moduleId: row.id,
+        wsId,
+      });
+      continue;
+    }
     revalidateModuleQuizPaths({
       courseId: row.group_id,
       moduleId: row.id,

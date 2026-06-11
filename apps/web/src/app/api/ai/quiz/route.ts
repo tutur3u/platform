@@ -163,8 +163,7 @@ ${lessonInfo}`;
 
       try {
         // Map and insert quizzes into database
-        const quizAnswers: Json[] = [];
-        const quizzesPayload = object.quizzes.map((quiz) => {
+        const quizPayloads = object.quizzes.map((quiz) => {
           let content: Json = {};
           let answer: Json = {};
 
@@ -182,37 +181,39 @@ ${lessonInfo}`;
             answer = { order: quiz.ordering_items ?? [] };
           }
 
-          quizAnswers.push(answer);
-
           return {
-            question: quiz.question,
-            type: quiz.type,
-            content,
-            score: quiz.score,
-            ws_id: normalizedWsId,
+            answer,
+            quiz: {
+              question: quiz.question,
+              type: quiz.type,
+              content,
+              score: quiz.score,
+              ws_id: normalizedWsId,
+            },
           };
         });
 
-        const { data: createdQuizzes, error: quizError } = await sbAdmin
-          .from('workspace_quizzes')
-          .insert(quizzesPayload)
-          .select('id');
+        const createdQuizzes: Array<{ id: string }> = [];
+        for (const { answer, quiz } of quizPayloads) {
+          const { data: createdQuiz, error: quizError } = await sbAdmin
+            .from('workspace_quizzes')
+            .insert(quiz)
+            .select('id')
+            .single();
 
-        if (quizError || !createdQuizzes) {
-          throw quizError ?? new Error('Failed to create quizzes in database');
+          if (quizError || !createdQuiz) {
+            throw quizError ?? new Error('Failed to create quiz in database');
+          }
+
+          createdQuizzes.push(createdQuiz);
+          createdQuizIds.push(createdQuiz.id);
+
+          await setPrivateWorkspaceQuizAnswer({
+            answer,
+            db: sbAdmin,
+            quizId: createdQuiz.id,
+          });
         }
-
-        createdQuizIds.push(...createdQuizzes.map((q) => q.id));
-
-        await Promise.all(
-          createdQuizzes.map((quiz, index) =>
-            setPrivateWorkspaceQuizAnswer({
-              answer: quizAnswers[index],
-              db: sbAdmin,
-              quizId: quiz.id,
-            })
-          )
-        );
 
         // Link quizzes to course module
         const { error: linkError } = await sbAdmin

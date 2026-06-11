@@ -2,11 +2,13 @@ import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { JsonPayloadSchema } from '@/lib/education/json-payload-schema';
 import {
   attachPrivateWorkspaceQuizAnswers,
   setPrivateWorkspaceQuizAnswer,
 } from '@/lib/education/private-quiz-answers';
 import { revalidateCourseModuleQuizPaths } from '@/lib/education/revalidate-quiz-paths';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -28,7 +30,6 @@ const QuizTypeSchema = z.enum([
   'matching',
   'ordering',
 ]);
-const JsonPayloadSchema = z.custom<Json>();
 
 type QuizMutationData = {
   question: string;
@@ -107,7 +108,11 @@ export const GET = withSessionAuth(
         .eq('module_id', moduleId);
 
       if (mqErr) {
-        console.error('Failed to fetch course module quizzes', mqErr);
+        serverLogger.error('Failed to fetch course module quizzes', {
+          error: mqErr,
+          moduleId,
+          wsId: access.normalizedWsId,
+        });
         return NextResponse.json(
           { message: 'Error fetching course module quizzes' },
           { status: 500 }
@@ -135,7 +140,10 @@ export const GET = withSessionAuth(
 
     const { data, error, count } = await queryBuilder;
     if (error) {
-      console.error('Failed to fetch workspace quizzes', error);
+      serverLogger.error('Failed to fetch workspace quizzes', {
+        error,
+        wsId: access.normalizedWsId,
+      });
       return NextResponse.json(
         { message: 'Error fetching workspace quizzes' },
         { status: 500 }
@@ -307,7 +315,7 @@ export const POST = withSessionAuth(
         message: 'All quizzes processed successfully',
       });
     } catch (error) {
-      console.error('Bulk quiz error:', error);
+      serverLogger.error('Bulk quiz error', { error });
       return NextResponse.json(
         { message: 'An error occurred processing quizzes' },
         { status: 500 }

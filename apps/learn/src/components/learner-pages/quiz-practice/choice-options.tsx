@@ -28,26 +28,36 @@ function submittedStyle(isSelected: boolean) {
     : 'opacity-60';
 }
 
+function choiceStyle({
+  isSelected,
+  isSubmitted,
+}: {
+  isSelected: boolean;
+  isSubmitted: boolean;
+}) {
+  if (isSubmitted) return submittedStyle(isSelected);
+
+  return isSelected
+    ? 'border-primary bg-primary/5 text-primary shadow-[4px_4px_0_var(--border)]'
+    : 'bg-background hover:bg-muted/10';
+}
+
 export function ChoiceOptions(props: ChoiceOptionsProps) {
   if (props.kind === 'true_false') {
     return (
       <div className="mt-6 grid grid-cols-2 gap-4">
         {[true, false].map((value) => {
           const isSelected = props.selectedAnswer === value;
-          const buttonStyle = props.isSubmitted
-            ? submittedStyle(isSelected)
-            : isSelected
-              ? 'border-primary bg-primary/5 text-primary shadow-[4px_4px_0_var(--border)]'
-              : 'bg-background hover:bg-muted/10';
 
           return (
             <button
+              aria-pressed={isSelected}
               key={value ? 'true' : 'false'}
               onClick={() => props.onSelect(value)}
               disabled={props.isSubmitted}
               className={cn(
                 'flex flex-col items-center justify-center border-2 border-border p-6 font-bold shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0_var(--border)]',
-                buttonStyle
+                choiceStyle({ isSelected, isSubmitted: props.isSubmitted })
               )}
               type="button"
             >
@@ -65,20 +75,16 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
     <div className="mt-6 grid gap-3">
       {props.options.map((option, index) => {
         const isSelected = props.selectedAnswer === index;
-        const buttonStyle = props.isSubmitted
-          ? submittedStyle(isSelected)
-          : isSelected
-            ? 'border-primary bg-primary/5 text-primary shadow-[4px_4px_0_var(--border)]'
-            : 'bg-background hover:bg-muted/10';
 
         return (
           <button
+            aria-pressed={isSelected}
             key={`${option.value}-${index}`}
             onClick={() => props.onSelect(index)}
             disabled={props.isSubmitted}
             className={cn(
               'w-full border-2 border-border p-4 text-left font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0_var(--border)]',
-              buttonStyle
+              choiceStyle({ isSelected, isSubmitted: props.isSubmitted })
             )}
             type="button"
           >

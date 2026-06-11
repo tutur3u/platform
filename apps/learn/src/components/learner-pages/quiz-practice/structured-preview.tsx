@@ -22,6 +22,8 @@ export function StructuredQuizPreview({
   selectedAnswer: SelectedAnswer;
   type: 'matching' | 'ordering';
 }) {
+  const hasConfirmedAnswer = selectedAnswer !== null;
+
   return (
     <div className="mt-6 space-y-4">
       <div className="flex gap-2 rounded-sm border-2 border-dynamic-yellow/30 bg-dynamic-yellow/10 p-3 text-dynamic-yellow text-xs">
@@ -66,7 +68,7 @@ export function StructuredQuizPreview({
           disabled={isSubmitted}
           className={cn(
             'border-2 border-border px-6 py-2.5 font-black text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0',
-            selectedAnswer === true
+            hasConfirmedAnswer
               ? 'bg-primary text-primary-foreground'
               : 'bg-background text-foreground hover:bg-muted/10'
           )}

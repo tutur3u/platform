@@ -28,6 +28,10 @@ describe('attachPrivateWorkspaceQuizAnswers', () => {
         answer: { correct: false },
       },
       {
+        id: 'private-null-answer',
+        answer: { correct: false },
+      },
+      {
         id: 'missing-answer',
       },
     ];
@@ -35,6 +39,7 @@ describe('attachPrivateWorkspaceQuizAnswers', () => {
     const result = await attachPrivateWorkspaceQuizAnswers(
       createPrivateAnswerDb([
         { quiz_id: 'private-answer', answer: { correct: true } },
+        { quiz_id: 'private-null-answer', answer: null },
       ]),
       quizzes
     );
@@ -47,6 +52,10 @@ describe('attachPrivateWorkspaceQuizAnswers', () => {
       {
         id: 'private-answer',
         answer: { correct: true },
+      },
+      {
+        id: 'private-null-answer',
+        answer: null,
       },
       {
         id: 'missing-answer',

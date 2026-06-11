@@ -2,6 +2,7 @@ import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { JsonPayloadSchema } from '@/lib/education/json-payload-schema';
 import { setPrivateWorkspaceQuizAnswer } from '@/lib/education/private-quiz-answers';
 import { revalidateQuizLinkedModulePaths } from '@/lib/education/revalidate-quiz-paths';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
@@ -24,7 +25,6 @@ const QuizTypeSchema = z.enum([
   'matching',
   'ordering',
 ]);
-const JsonPayloadSchema = z.custom<Json>();
 
 type QuizMutationData = {
   question: string;

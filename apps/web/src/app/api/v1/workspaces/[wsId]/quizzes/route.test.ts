@@ -144,6 +144,13 @@ vi.mock('@/lib/teach/api', () => ({
   ) => mocks.requireTeachWorkspaceAccess(...args),
 }));
 
+vi.mock('@/lib/infrastructure/log-drain', () => ({
+  serverLogger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+  },
+}));
+
 describe('workspace quizzes route', () => {
   beforeEach(() => {
     vi.clearAllMocks();

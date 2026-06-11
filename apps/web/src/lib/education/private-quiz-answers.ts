@@ -51,7 +51,9 @@ export async function attachPrivateWorkspaceQuizAnswers<
 
   return quizzes.map((quiz) => ({
     ...quiz,
-    answer: answerByQuizId.get(quiz.id) ?? quiz.answer ?? null,
+    answer: answerByQuizId.has(quiz.id)
+      ? (answerByQuizId.get(quiz.id) ?? null)
+      : (quiz.answer ?? null),
   }));
 }
 
