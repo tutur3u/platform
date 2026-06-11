@@ -42,6 +42,20 @@ action, keep teams in sync, and let software handle more of the coordination
 load. This monorepo contains the apps, shared packages, mobile client, SDK,
 CLI, documentation, local services, and deployment tooling behind that system.
 
+## Table of Contents
+1. [What Tuturuuu Builds](#what-tuturuuu-builds)
+2. [Start Here](#start-here)
+3. [Repository Map](#repository-map)
+4. [Technology Foundation](#technology-foundation)
+5. [Quick Start](#quick-start)
+6. [Local Development](#local-development)
+7. [Data And Local Services](#data-and-local-services)
+8. [Docker And Deployment](#docker-and-deployment)
+9. [SDK And CLI](#sdk-and-cli)
+10. [Quality Gates](#quality-gates)
+11. [Contributor Expectations](#contributor-expectations)
+12. [CI, Security, And License](#ci-security-and-license)
+
 ## What Tuturuuu Builds
 
 | Product layer | What it does | Where to start |
