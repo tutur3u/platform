@@ -115,7 +115,26 @@ async function waitForTaskDescriptionEditor(
     { timeout: 30_000 }
   );
 
-  const editor = targetPage.locator('.ProseMirror').first();
+  const editor = targetPage
+    .locator('.ProseMirror[contenteditable="true"]')
+    .first();
+  const editorAlreadyVisible = await editor
+    .isVisible({ timeout: 1_000 })
+    .catch(() => false);
+
+  if (!editorAlreadyVisible) {
+    const fullscreenButton = targetPage.getByRole('button', {
+      name: 'Open fullscreen',
+    });
+    const canOpenFullscreen = await fullscreenButton
+      .isVisible({ timeout: 5_000 })
+      .catch(() => false);
+
+    if (canOpenFullscreen) {
+      await fullscreenButton.click();
+    }
+  }
+
   await expect(editor).toBeVisible({ timeout: 30_000 });
   await expect(editor).toHaveAttribute('contenteditable', 'true', {
     timeout: 30_000,
