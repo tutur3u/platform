@@ -2357,9 +2357,11 @@
           "request_id": "Request {value}",
           "route": "Tuyến {value}",
           "source": "Nguồn {value}",
-          "status": "Trạng thái {value}"
+          "status": "Trạng thái {value}",
+          "user": "Người dùng {value}"
         },
         "clear_filters": "Xóa bộ lọc",
+        "client": "Máy khách",
         "collapse": "Thu gọn nhóm log",
         "columns": {
           "deployment": "Triển khai",
@@ -2368,7 +2370,8 @@
           "request": "Request",
           "source": "Nguồn",
           "status": "Trạng thái",
-          "time": "Thời gian"
+          "time": "Thời gian",
+          "user": "Người dùng"
         },
         "deployment": "Dấu triển khai",
         "description": "Nhóm theo request trước, rồi theo tuyến, nguồn, triển khai và bucket thời gian cho log cũ.",
@@ -2384,8 +2387,9 @@
         "request_id": "Request ID",
         "resume": "Tiếp tục live",
         "route": "Tuyến",
-        "search": "Tìm thông điệp, tuyến, request",
-        "title": "Luồng Log Đã Nhóm"
+        "search": "Tìm thông điệp, tuyến, request, người dùng",
+        "title": "Luồng Log Đã Nhóm",
+        "user": "Người dùng đã xác thực"
       },
       "metrics": {
         "cron": "Lượt chạy cron",

@@ -3,6 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { setLogDrainUserContext } from '@/lib/infrastructure/log-drain';
 
 type InfrastructureMonitoringPermission =
   | 'manage_infrastructure_stress_tests'
@@ -26,6 +27,11 @@ export async function authorizeInfrastructureViewer(
       response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
     };
   }
+
+  setLogDrainUserContext({
+    userEmail: user.email,
+    userId: user.id,
+  });
 
   const permissions = await getPermissions({
     wsId: ROOT_WORKSPACE_ID,

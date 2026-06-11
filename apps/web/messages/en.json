@@ -2357,9 +2357,11 @@
           "request_id": "Request {value}",
           "route": "Route {value}",
           "source": "Source {value}",
-          "status": "Status {value}"
+          "status": "Status {value}",
+          "user": "User {value}"
         },
         "clear_filters": "Clear filters",
+        "client": "Client",
         "collapse": "Collapse log group",
         "columns": {
           "deployment": "Deployment",
@@ -2368,7 +2370,8 @@
           "request": "Request",
           "source": "Source",
           "status": "Status",
-          "time": "Time"
+          "time": "Time",
+          "user": "User"
         },
         "deployment": "Deployment stamp",
         "description": "Grouped by request first, then by route, source, deployment, and time bucket for legacy logs.",
@@ -2384,8 +2387,9 @@
         "request_id": "Request ID",
         "resume": "Resume live",
         "route": "Route",
-        "search": "Search messages, routes, requests",
-        "title": "Grouped Log Stream"
+        "search": "Search messages, routes, requests, users",
+        "title": "Grouped Log Stream",
+        "user": "Authenticated user"
       },
       "metrics": {
         "cron": "Cron Runs",

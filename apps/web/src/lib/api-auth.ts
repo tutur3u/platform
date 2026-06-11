@@ -33,6 +33,7 @@ import {
   recordResponseAbuseSignal,
   resolveWebAbuseDecision,
 } from './abuse-risk';
+import { setLogDrainUserContext } from './infrastructure/log-drain';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
 
 export type AuthorizedRequest = {
@@ -292,7 +293,14 @@ function getAppSessionVerificationOptions(
 }
 
 async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
-  return resolveAuthenticatedSessionUser(supabase);
+  const resolution = await resolveAuthenticatedSessionUser(supabase);
+  if (resolution.user) {
+    setLogDrainUserContext({
+      userEmail: resolution.user.email,
+      userId: resolution.user.id,
+    });
+  }
+  return resolution;
 }
 
 export type SessionAuthResolution =
@@ -330,6 +338,10 @@ export async function resolveSessionAuthContext(
       const appSessionUser = createAppSessionUser(
         appSessionVerification.claims
       );
+      setLogDrainUserContext({
+        userEmail: appSessionUser.email,
+        userId: appSessionUser.id,
+      });
 
       return {
         ok: true,
@@ -566,7 +578,10 @@ export function withSessionAuth<T = unknown>(
 
     // 2. Check persistent IP block
     if (ipAddress && ipAddress !== 'unknown') {
-      const blockInfo = await isIPBlocked(ipAddress);
+      const blockInfo = await isIPBlocked(ipAddress, {
+        route: endpoint,
+        source: 'api-auth',
+      });
       if (blockInfo) {
         const authenticatedSessionMarker = hasAuthenticatedApiSession(request);
 
@@ -610,6 +625,10 @@ export function withSessionAuth<T = unknown>(
     if (tempAuth.status === 'valid') {
       const tempUser = tempAuth.context.user as SupabaseUser;
       const tempSupabase = (await createClient(request)) as TypedSupabaseClient;
+      setLogDrainUserContext({
+        userEmail: tempUser.email,
+        userId: tempUser.id,
+      });
 
       try {
         const { checkUserSuspension } = await import(
@@ -693,6 +712,10 @@ export function withSessionAuth<T = unknown>(
         const appSessionUser = createAppSessionUser(
           appSessionVerification.claims
         );
+        setLogDrainUserContext({
+          userEmail: appSessionUser.email,
+          userId: appSessionUser.id,
+        });
 
         try {
           const { checkUserSuspension } = await import(

@@ -18,6 +18,8 @@ const messages: Record<string, string> = {
   'chips.route': 'Route {value}',
   'chips.source': 'Source {value}',
   'chips.status': 'Status {value}',
+  'chips.user': 'User {value}',
+  client: 'Client',
   clear_filters: 'Clear filters',
   collapse: 'Collapse log group',
   'columns.deployment': 'Deployment',
@@ -27,6 +29,7 @@ const messages: Record<string, string> = {
   'columns.source': 'Source',
   'columns.status': 'Status',
   'columns.time': 'Time',
+  'columns.user': 'User',
   deployment: 'Deployment stamp',
   description: 'Grouped logs',
   error_stack: 'Error stack',
@@ -41,7 +44,8 @@ const messages: Record<string, string> = {
   request_id: 'Request ID',
   resume: 'Resume live',
   route: 'Route',
-  search: 'Search messages, routes, requests',
+  user: 'Authenticated user',
+  search: 'Search messages, routes, requests, users',
   title: 'Grouped Log Stream',
 };
 
@@ -73,6 +77,8 @@ function createLogGroup(): ObservabilityLogGroup {
     source: 'api' as const,
     status: 200,
     userAgent: 'cron-runner',
+    userEmail: 'operator@example.com',
+    userId: 'user-123',
   };
   const secondEvent = {
     ...firstEvent,
@@ -116,6 +122,7 @@ describe('ObservabilityLogsPanel', () => {
           ],
           sources: [{ count: 2, errorCount: 1, value: 'api' }],
           statuses: [{ count: 1, errorCount: 1, value: '5xx' }],
+          users: [{ count: 2, errorCount: 1, value: 'operator@example.com' }],
         }}
         filters={{
           deploymentStamp: '',
@@ -125,6 +132,7 @@ describe('ObservabilityLogsPanel', () => {
           route: 'all',
           source: 'all',
           status: 'all',
+          user: '',
         }}
         groups={[createLogGroup()]}
         hasMore={false}
@@ -146,8 +154,11 @@ describe('ObservabilityLogsPanel', () => {
       screen.getByText('Sampled infrastructure resources {')
     ).toBeInTheDocument();
     expect(screen.getByText('2 events')).toBeInTheDocument();
+    expect(screen.getByText('operator@example.com')).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText('Expand log group'));
+    expect(screen.getByText('Authenticated user')).toBeInTheDocument();
+    expect(screen.getByText('Client')).toBeInTheDocument();
     expect(screen.getAllByText('Metadata')).toHaveLength(2);
     expect(screen.getAllByText(/infrastructure-sample-resources/)).toHaveLength(
       2
@@ -155,17 +166,23 @@ describe('ObservabilityLogsPanel', () => {
     expect(screen.getByText('Error stack')).toBeInTheDocument();
 
     fireEvent.change(
-      screen.getByPlaceholderText('Search messages, routes, requests'),
+      screen.getByPlaceholderText('Search messages, routes, requests, users'),
       { target: { value: 'sample' } }
     );
     fireEvent.change(screen.getAllByRole('combobox')[0]!, {
       target: { value: '/api/cron/infrastructure/sample-resources' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Authenticated user'), {
+      target: { value: 'operator@example.com' },
     });
     fireEvent.click(screen.getByText('Pause live'));
 
     expect(onFilterChange).toHaveBeenCalledWith({ query: 'sample' });
     expect(onFilterChange).toHaveBeenCalledWith({
       route: '/api/cron/infrastructure/sample-resources',
+    });
+    expect(onFilterChange).toHaveBeenCalledWith({
+      user: 'operator@example.com',
     });
     expect(onTogglePaused).toHaveBeenCalledTimes(1);
   });

@@ -111,6 +111,7 @@ describe('parseObservabilityFilters', () => {
         status: '5xx',
         timeframeHours: '168',
         until: '2026-05-04T01:02:03.000Z',
+        user: 'operator@example.com',
       })
     );
 
@@ -127,6 +128,7 @@ describe('parseObservabilityFilters', () => {
       status: '5xx',
       timeframeHours: 168,
       until: Date.parse('2026-05-04T01:02:03.000Z'),
+      user: 'operator@example.com',
     });
   });
 });
@@ -425,6 +427,62 @@ describe('readObservabilityLogs', () => {
     );
   });
 
+  it('exposes coalesced route and authenticated user context from log-drain rows', async () => {
+    logDrainMocks.getLogDrainSqlClient.mockReturnValue(
+      createMockLogDrainSql([
+        [
+          {
+            created_at: new Date('2026-05-04T01:30:00.000Z'),
+            deployment_color: 'green',
+            deployment_stamp: 'deploy-user',
+            duration_ms: 42,
+            error_name: 'Error',
+            error_stack: 'Error: failed',
+            id: 'event-user',
+            ip_address: '203.0.113.10',
+            level: 'error',
+            message: 'Route failed for operator',
+            metadata: { route: '/api/from-request' },
+            request_id: 'req-user',
+            route: '/api/from-request',
+            source: 'api',
+            status: 500,
+            user_agent: 'vitest',
+            user_email: 'operator@example.com',
+            user_id: 'user-123',
+          },
+        ],
+      ])
+    );
+
+    const logs = await readObservabilityLogs({
+      pageSize: 10,
+      q: 'operator@example.com',
+      route: '/api/from-request',
+      timeframeHours: 24,
+      user: 'operator',
+    });
+
+    expect(logs.total).toBe(1);
+    expect(logs.items[0]).toMatchObject({
+      requestId: 'req-user',
+      route: '/api/from-request',
+      userEmail: 'operator@example.com',
+      userId: 'user-123',
+    });
+    expect(logs.items[0]?.events[0]).toMatchObject({
+      route: '/api/from-request',
+      userEmail: 'operator@example.com',
+      userId: 'user-123',
+    });
+    expect(logs.facets.users).toContainEqual(
+      expect.objectContaining({
+        count: 1,
+        value: 'operator@example.com',
+      })
+    );
+  });
+
   it('caps embedded grouped events while preserving total event count', async () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'observability-capped-logs-')
@@ -681,6 +739,8 @@ describe('readObservabilityRequests', () => {
             started_at: new Date('2026-05-04T01:30:00.000Z'),
             status: 200,
             user_agent: 'vitest',
+            user_email: 'operator@example.com',
+            user_id: 'user-123',
           },
         ],
         [],
@@ -708,6 +768,10 @@ describe('readObservabilityRequests', () => {
       ])
     );
     expect(requests.items[0]?.id).toBe('req-window');
+    expect(requests.items[0]).toMatchObject({
+      userEmail: 'operator@example.com',
+      userId: 'user-123',
+    });
   });
 
   it('keeps frozen legacy request cursors from being evicted by newer floods', async () => {

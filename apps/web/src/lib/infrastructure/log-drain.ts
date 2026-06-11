@@ -24,6 +24,8 @@ export interface LogDrainEvent {
   status: number | null;
   time: number;
   userAgent: string | null;
+  userEmail: string | null;
+  userId: string | null;
 }
 
 export interface LogDrainContext {
@@ -38,6 +40,8 @@ export interface LogDrainContext {
   source: LogDrainSource;
   startedAt: number;
   userAgent: string | null;
+  userEmail: string | null;
+  userId: string | null;
 }
 
 export interface RequestDrainOptions {
@@ -192,6 +196,8 @@ export async function ensureLogDrainSchema() {
         error_stack TEXT,
         ip_address TEXT,
         user_agent TEXT,
+        user_id TEXT,
+        user_email TEXT,
         metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
         started_at TIMESTAMPTZ NOT NULL,
         ended_at TIMESTAMPTZ NOT NULL,
@@ -215,6 +221,8 @@ export async function ensureLogDrainSchema() {
         error_stack TEXT,
         ip_address TEXT,
         user_agent TEXT,
+        user_id TEXT,
+        user_email TEXT,
         metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
         created_at TIMESTAMPTZ NOT NULL
       )
@@ -255,8 +263,12 @@ export async function ensureLogDrainSchema() {
     `;
     await sql`ALTER TABLE requests ADD COLUMN IF NOT EXISTS ip_address TEXT`;
     await sql`ALTER TABLE requests ADD COLUMN IF NOT EXISTS user_agent TEXT`;
+    await sql`ALTER TABLE requests ADD COLUMN IF NOT EXISTS user_id TEXT`;
+    await sql`ALTER TABLE requests ADD COLUMN IF NOT EXISTS user_email TEXT`;
     await sql`ALTER TABLE log_events ADD COLUMN IF NOT EXISTS ip_address TEXT`;
     await sql`ALTER TABLE log_events ADD COLUMN IF NOT EXISTS user_agent TEXT`;
+    await sql`ALTER TABLE log_events ADD COLUMN IF NOT EXISTS user_id TEXT`;
+    await sql`ALTER TABLE log_events ADD COLUMN IF NOT EXISTS user_email TEXT`;
     await sql`ALTER TABLE deployments ADD COLUMN IF NOT EXISTS project_id TEXT NOT NULL DEFAULT 'platform'`;
     await sql`ALTER TABLE requests ADD COLUMN IF NOT EXISTS project_id TEXT NOT NULL DEFAULT 'platform'`;
     await sql`ALTER TABLE log_events ADD COLUMN IF NOT EXISTS project_id TEXT NOT NULL DEFAULT 'platform'`;
@@ -431,6 +443,8 @@ function createEvent(
     status: null,
     time: Date.now(),
     userAgent: context?.userAgent ?? null,
+    userEmail: context?.userEmail ?? null,
+    userId: context?.userId ?? null,
   };
 }
 
@@ -468,6 +482,8 @@ async function persistStandaloneEvent(event: LogDrainEvent) {
         error_stack,
         ip_address,
         user_agent,
+        user_id,
+        user_email,
         metadata,
         created_at
       )
@@ -486,6 +502,8 @@ async function persistStandaloneEvent(event: LogDrainEvent) {
         ${event.errorStack},
         ${event.ipAddress},
         ${event.userAgent},
+        ${event.userId},
+        ${event.userEmail},
         ${JSON.stringify(event.metadata)}::jsonb,
         ${new Date(event.time)}
       )
@@ -547,6 +565,8 @@ async function persistContext({
           error_stack,
           ip_address,
           user_agent,
+          user_id,
+          user_email,
           metadata,
           started_at,
           ended_at
@@ -568,6 +588,8 @@ async function persistContext({
           ${normalizedError?.stack ?? null},
           ${context.ipAddress},
           ${context.userAgent},
+          ${context.userId},
+          ${context.userEmail},
           ${JSON.stringify(requestMetadata)}::jsonb,
           ${new Date(context.startedAt)},
           ${new Date(endedAt)}
@@ -581,6 +603,8 @@ async function persistContext({
           error_stack = EXCLUDED.error_stack,
           ip_address = EXCLUDED.ip_address,
           user_agent = EXCLUDED.user_agent,
+          user_id = EXCLUDED.user_id,
+          user_email = EXCLUDED.user_email,
           metadata = EXCLUDED.metadata,
           ended_at = EXCLUDED.ended_at
       `;
@@ -644,6 +668,8 @@ async function persistContext({
             error_stack,
             ip_address,
             user_agent,
+            user_id,
+            user_email,
             metadata,
             created_at
           )
@@ -662,6 +688,8 @@ async function persistContext({
             ${event.errorStack},
             ${event.ipAddress},
             ${event.userAgent},
+            ${event.userId ?? context.userId},
+            ${event.userEmail ?? context.userEmail},
             ${JSON.stringify(event.metadata)}::jsonb,
             ${new Date(event.time)}
           )
@@ -730,6 +758,8 @@ export function createRequestLogDrainContext(
     source: options.source ?? 'api',
     startedAt: Date.now(),
     userAgent: clientMetadata.userAgent,
+    userEmail: null,
+    userId: null,
   };
 }
 
@@ -751,7 +781,33 @@ export function createCronLogDrainContext(
     source: 'cron',
     startedAt: Date.now(),
     userAgent: clientMetadata.userAgent,
+    userEmail: null,
+    userId: null,
   };
+}
+
+export function setLogDrainUserContext({
+  userEmail,
+  userId,
+}: {
+  userEmail?: string | null;
+  userId?: string | null;
+}) {
+  const context = storage.getStore();
+  if (!context) {
+    return;
+  }
+
+  const normalizedUserId = userId?.trim() || null;
+  const normalizedUserEmail = userEmail?.trim().toLowerCase() || null;
+
+  context.userId = normalizedUserId;
+  context.userEmail = normalizedUserEmail;
+
+  for (const event of context.events) {
+    event.userId ??= normalizedUserId;
+    event.userEmail ??= normalizedUserEmail;
+  }
 }
 
 async function runWithLogDrain<T>(

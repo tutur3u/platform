@@ -19,6 +19,7 @@ import {
 import type {
   AbuseCheckResult,
   AbuseEventType,
+  AbuseProtectionLogContext,
   BlockInfo,
   LogAbuseEventOptions,
   RedisClient,
@@ -158,6 +159,23 @@ export function hashEmail(email: string): string {
 function normalizeAbuseEventEmail(email?: string): string | null {
   const normalized = email?.trim().toLowerCase();
   return normalized ? normalized : null;
+}
+
+function sanitizeAbuseLogValue(value: string | null | undefined) {
+  const normalized = value?.trim();
+  return normalized ? normalized.slice(0, 256) : null;
+}
+
+function createAbuseLogContext(
+  ipAddress: string,
+  context?: AbuseProtectionLogContext
+) {
+  return {
+    ipAddress,
+    operation: 'is_ip_blocked',
+    route: sanitizeAbuseLogValue(context?.route),
+    source: sanitizeAbuseLogValue(context?.source),
+  };
 }
 
 /**
@@ -327,7 +345,8 @@ async function getSupabaseAdmin(): Promise<SupabaseClient<Database> | null> {
  * Check if an IP is currently blocked
  */
 export async function isIPBlocked(
-  ipAddress: string
+  ipAddress: string,
+  context?: AbuseProtectionLogContext
 ): Promise<BlockInfo | null> {
   const redis = await getRedisClient();
 
@@ -349,7 +368,11 @@ export async function isIPBlocked(
         }
       }
     } catch (error) {
-      console.error('[Abuse Protection] Redis cache error:', error);
+      console.error(
+        '[Abuse Protection] Redis cache error:',
+        error,
+        createAbuseLogContext(ipAddress, context)
+      );
     }
   }
 
@@ -883,10 +906,11 @@ export async function resetOtpLimitsForEmail({
  */
 export async function checkOTPSendAllowed(
   ipAddress: string,
-  email?: string
+  email?: string,
+  context?: AbuseProtectionLogContext
 ): Promise<AbuseCheckResult> {
   // First check if IP is blocked
-  const blockInfo = await isIPBlocked(ipAddress);
+  const blockInfo = await isIPBlocked(ipAddress, context);
   if (blockInfo) {
     const retryAfter = Math.ceil(
       (blockInfo.expiresAt.getTime() - Date.now()) / 1000
@@ -1068,9 +1092,10 @@ export async function recordOTPSendSuccess(
 // Backward-compatible alias for call sites that still import the old helper.
 export async function checkOTPSendLimit(
   ipAddress: string,
-  email?: string
+  email?: string,
+  context?: AbuseProtectionLogContext
 ): Promise<AbuseCheckResult> {
-  return checkOTPSendAllowed(ipAddress, email);
+  return checkOTPSendAllowed(ipAddress, email, context);
 }
 
 /**
@@ -1078,10 +1103,11 @@ export async function checkOTPSendLimit(
  */
 export async function checkOTPVerifyLimit(
   ipAddress: string,
-  email: string
+  email: string,
+  context?: AbuseProtectionLogContext
 ): Promise<AbuseCheckResult> {
   // First check if IP is blocked
-  const blockInfo = await isIPBlocked(ipAddress);
+  const blockInfo = await isIPBlocked(ipAddress, context);
   if (blockInfo) {
     const retryAfter = Math.ceil(
       (blockInfo.expiresAt.getTime() - Date.now()) / 1000
@@ -1377,9 +1403,10 @@ export async function clearReauthVerifyFailures(
  * Check password login limits
  */
 export async function checkPasswordLoginLimit(
-  ipAddress: string
+  ipAddress: string,
+  context?: AbuseProtectionLogContext
 ): Promise<AbuseCheckResult> {
-  const blockInfo = await isIPBlocked(ipAddress);
+  const blockInfo = await isIPBlocked(ipAddress, context);
   if (blockInfo) {
     return {
       allowed: false,
@@ -1450,9 +1477,10 @@ export async function clearPasswordLoginFailures(
  * Check if an IP should be blocked for API auth abuse
  */
 export async function checkApiAuthLimit(
-  ipAddress: string
+  ipAddress: string,
+  context?: AbuseProtectionLogContext
 ): Promise<AbuseCheckResult> {
-  const blockInfo = await isIPBlocked(ipAddress);
+  const blockInfo = await isIPBlocked(ipAddress, context);
   if (blockInfo) {
     return {
       allowed: false,

@@ -43,7 +43,10 @@ const {
   getComposeFile,
   runChecked,
 } = require('../docker-web/compose.js');
-const { getDockerWebComposeProjectName } = require('../docker-web/env.js');
+const {
+  getDockerRedisRuntime,
+  getDockerWebComposeProjectName,
+} = require('../docker-web/env.js');
 const {
   DeploymentBuildLockConflictError,
   acquireDeploymentBuildLock,
@@ -658,7 +661,40 @@ async function syncManagedProjectCheckout(
   return getManagedCheckoutCommit(paths.repoDir, { env, runCommand });
 }
 
-async function deployManagedProject(project, { env, rootDir, runCommand }) {
+function getManagedProjectDeploymentEnv(
+  project,
+  { env = process.env, fsImpl = fs, rootDir = process.cwd() } = {}
+) {
+  const deploymentEnv = { ...env };
+
+  if (project.redis_enabled !== false) {
+    const redisRuntime = getDockerRedisRuntime({
+      baseEnv: env,
+      fsImpl,
+      rootDir,
+    });
+
+    deploymentEnv.UPSTASH_REDIS_REST_TOKEN = redisRuntime.token;
+    deploymentEnv.UPSTASH_REDIS_REST_URL = redisRuntime.url;
+    deploymentEnv.SRH_TOKEN = redisRuntime.token;
+  } else {
+    delete deploymentEnv.UPSTASH_REDIS_REST_TOKEN;
+    delete deploymentEnv.UPSTASH_REDIS_REST_URL;
+    delete deploymentEnv.SRH_TOKEN;
+  }
+
+  deploymentEnv.COMPOSE_PROJECT_NAME = getDockerWebComposeProjectName({
+    baseEnv: env,
+    rootDir,
+  });
+
+  return deploymentEnv;
+}
+
+async function deployManagedProject(
+  project,
+  { env, fsImpl = fs, rootDir, runCommand }
+) {
   const paths = getProjectRuntimePaths(project.id, rootDir);
   const serviceName = getProjectServiceName(project.id);
 
@@ -686,13 +722,7 @@ async function deployManagedProject(project, { env, rootDir, runCommand }) {
       serviceName
     ),
     {
-      env: {
-        ...env,
-        COMPOSE_PROJECT_NAME: getDockerWebComposeProjectName({
-          baseEnv: env,
-          rootDir,
-        }),
-      },
+      env: getManagedProjectDeploymentEnv(project, { env, fsImpl, rootDir }),
       runCommand,
     }
   );
@@ -857,6 +887,7 @@ async function processManagedInfrastructureProjects({
             });
             await deployManagedProject(project, {
               env,
+              fsImpl,
               rootDir,
               runCommand,
             });
@@ -942,6 +973,7 @@ module.exports = {
   DEFAULT_PROJECT_POLL_INTERVAL_MS,
   getProjectRuntimePaths,
   getProjectServiceName,
+  getManagedProjectDeploymentEnv,
   normalizeProjectBranch,
   processManagedInfrastructureProjects,
   readPlatformProject,

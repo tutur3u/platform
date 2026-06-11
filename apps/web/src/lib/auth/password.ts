@@ -138,7 +138,11 @@ export async function passwordLogin(
   }
 
   const abuseCheck = await checkPasswordLoginLimit(
-    suspiciousAgentCheck.ipAddress
+    suspiciousAgentCheck.ipAddress,
+    {
+      route: context.endpoint,
+      source: 'password-login',
+    }
   );
   if (!abuseCheck.allowed) {
     return {

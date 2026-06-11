@@ -1,7 +1,7 @@
 ---
-title: 'DevOps & Deployment'
-description: 'The operational map for how Tuturuuu is built, deployed, migrated, and validated.'
-updatedAt: '2026-06-03'
+title: "DevOps & Deployment"
+description: "The operational map for how Tuturuuu is built, deployed, migrated, and validated."
+updatedAt: "2026-06-03"
 ---
 
 This section is the runbook for shipping and operating Tuturuuu. It documents the
@@ -11,14 +11,14 @@ released, or recovered.
 
 ## Deployment Surfaces
 
-| Surface | Source of truth | Delivery target |
-| --- | --- | --- |
-| Web apps (`apps/web`, `apps/apps`, `apps/nova`, `apps/rewise`, `apps/calendar`, `apps/finance`, `apps/inventory`, `apps/meet`, `apps/tasks`, `apps/track`, `apps/shortener`, `apps/qr`) | `.github/workflows/vercel-*.yaml` | Vercel preview and production deployments |
-| Database schema (`apps/database`) | `.github/workflows/supabase-staging.yaml`, `.github/workflows/supabase-production.yaml` | Supabase staging and production projects |
-| Self-hosted web runtime (`apps/web`) | `apps/web/Dockerfile`, `docker-compose.web.yml`, `docker-compose.web.prod.yml`, `scripts/docker-web.js` | Docker dev stacks and production blue/green deployments |
-| Discord utilities (`apps/discord`) | `.github/workflows/discord-modal-deploy.yml` | Modal |
-| Mobile artifacts (`apps/mobile`) | `.github/workflows/mobile-build-*.yaml` | Build artifacts for Android, iOS, macOS, Windows |
-| Shared packages (`packages/*`) | `.github/workflows/release-*.yaml` | npm |
+| Surface                                                                                                                                                                                 | Source of truth                                                                                         | Delivery target                                         |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Web apps (`apps/web`, `apps/apps`, `apps/nova`, `apps/rewise`, `apps/calendar`, `apps/finance`, `apps/inventory`, `apps/meet`, `apps/tasks`, `apps/track`, `apps/shortener`, `apps/qr`) | `.github/workflows/vercel-*.yaml`                                                                       | Vercel preview and production deployments               |
+| Database schema (`apps/database`)                                                                                                                                                       | `.github/workflows/supabase-staging.yaml`, `.github/workflows/supabase-production.yaml`                 | Supabase staging and production projects                |
+| Self-hosted web runtime (`apps/web`)                                                                                                                                                    | `apps/web/Dockerfile`, `docker-compose.web.yml`, `docker-compose.web.prod.yml`, `scripts/docker-web.js` | Docker dev stacks and production blue/green deployments |
+| Discord utilities (`apps/discord`)                                                                                                                                                      | `.github/workflows/discord-modal-deploy.yml`                                                            | Modal                                                   |
+| Mobile artifacts (`apps/mobile`)                                                                                                                                                        | `.github/workflows/mobile-build-*.yaml`                                                                 | Build artifacts for Android, iOS, macOS, Windows        |
+| Shared packages (`packages/*`)                                                                                                                                                          | `.github/workflows/release-*.yaml`                                                                      | npm                                                     |
 
 ## Read This In Order
 
@@ -63,7 +63,9 @@ flowchart LR
 - `docker-setup-check.yaml` validates Docker parity, renders both compose files, and builds both the dev and production web images.
 - Production Redis in Docker now requires a token, but `scripts/docker-web.js`
   satisfies that automatically by generating and injecting the value unless you
-  explicitly opt out with `--without-redis`.
+  explicitly opt out with `--without-redis`. Watcher-managed Infrastructure
+  projects use the same integrated Docker Redis runtime by default unless the
+  project has `redis_enabled=false`.
 
 If you are changing deployment behavior, update this section and add any new
 page to `apps/docs/docs.json`.

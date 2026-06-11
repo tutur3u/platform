@@ -43,6 +43,16 @@ function formatClientContext({
   return [ipAddress, userAgent].filter(Boolean).join(' · ');
 }
 
+function formatUserContext({
+  userEmail,
+  userId,
+}: {
+  userEmail?: string | null;
+  userId?: string | null;
+}) {
+  return userEmail ?? userId ?? '';
+}
+
 function statusClass(status: number | null | undefined) {
   if (status == null) {
     return 'text-muted-foreground';
@@ -147,10 +157,11 @@ export function LogGroupRow({
     .filter(Boolean)
     .join(' · ');
   const clientContext = formatClientContext(group);
+  const userContext = formatUserContext(group);
 
   return (
     <article className="border-border/60 border-b">
-      <div className="grid gap-3 px-3 py-3 text-sm lg:grid-cols-[32px_142px_84px_80px_minmax(220px,1fr)_180px_170px_88px] lg:items-start">
+      <div className="grid gap-3 px-3 py-3 text-sm lg:grid-cols-[32px_142px_84px_80px_minmax(220px,1fr)_180px_170px_170px_88px] lg:items-start">
         <button
           aria-expanded={expanded}
           aria-label={expanded ? t('collapse') : t('expand')}
@@ -196,6 +207,9 @@ export function LogGroupRow({
           {group.requestId ?? '-'}
         </div>
         <div className="min-w-0 truncate font-mono text-muted-foreground text-xs">
+          {userContext || '-'}
+        </div>
+        <div className="min-w-0 truncate font-mono text-muted-foreground text-xs">
           {deploymentContext || '-'}
         </div>
         <div className="text-muted-foreground text-xs uppercase">
@@ -204,7 +218,7 @@ export function LogGroupRow({
       </div>
       {expanded ? (
         <div className="space-y-3 border-border/60 border-t bg-muted/10 px-3 py-3">
-          <div className="grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-5">
             <div>
               <p className="text-muted-foreground">{t('first_event')}</p>
               <p className="font-mono">{formatTime(group.firstEventAt)}</p>
@@ -218,9 +232,19 @@ export function LogGroupRow({
               <p className="truncate font-mono">{group.requestId ?? '-'}</p>
             </div>
             <div>
+              <p className="text-muted-foreground">{t('user')}</p>
+              <p className="truncate font-mono">{userContext || '-'}</p>
+            </div>
+            <div>
               <p className="text-muted-foreground">{t('deployment')}</p>
               <p className="truncate font-mono">{deploymentContext || '-'}</p>
             </div>
+            {clientContext ? (
+              <div className="sm:col-span-2 lg:col-span-5">
+                <p className="text-muted-foreground">{t('client')}</p>
+                <p className="truncate font-mono">{clientContext}</p>
+              </div>
+            ) : null}
           </div>
           <div className="space-y-2">
             {group.events.map((event, index) => {
@@ -228,6 +252,7 @@ export function LogGroupRow({
                 ? metadataJson(event.metadata)
                 : null;
               const eventClientContext = formatClientContext(event);
+              const eventUserContext = formatUserContext(event);
 
               return (
                 <div
@@ -262,6 +287,9 @@ export function LogGroupRow({
                         <span>{t('event_index', { index: index + 1 })}</span>
                         {event.route ? (
                           <span className="font-mono">{event.route}</span>
+                        ) : null}
+                        {eventUserContext ? (
+                          <span className="font-mono">{eventUserContext}</span>
                         ) : null}
                         {eventClientContext ? (
                           <span>{eventClientContext}</span>

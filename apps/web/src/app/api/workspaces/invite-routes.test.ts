@@ -50,6 +50,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: {
     error: vi.fn(),
   },
+  setLogDrainUserContext: vi.fn(),
 }));
 
 describe('workspace invitation API routes', () => {

@@ -50,6 +50,7 @@ interface ObservabilityFilters {
   status?: string | null;
   timeframeHours?: number;
   until?: number | null;
+  user?: string | null;
 }
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -139,6 +140,7 @@ export function parseObservabilityFilters(
     status: normalize(searchParams.get('status')),
     timeframeHours: clampTimeframeHours(searchParams.get('timeframeHours')),
     until: parseTimestampFilter(searchParams.get('until')),
+    user: normalize(searchParams.get('user')),
   };
 }
 
@@ -258,6 +260,25 @@ function requestIdMatches(
   return !filter || requestId === filter;
 }
 
+function userMatches(
+  event: {
+    userEmail?: string | null;
+    userId?: string | null;
+  },
+  filter: string | null | undefined
+) {
+  const normalizedFilter = filter?.trim().toLowerCase();
+  if (!normalizedFilter) {
+    return true;
+  }
+
+  return (
+    event.userId?.toLowerCase().includes(normalizedFilter) ||
+    event.userEmail?.toLowerCase().includes(normalizedFilter) ||
+    false
+  );
+}
+
 async function getSql() {
   await ensureLogDrainSchema();
   return getLogDrainSqlClient();
@@ -339,6 +360,8 @@ function mapLegacyRequest(request: BlueGreenMonitoringRequestLog) {
     startedAt,
     status: request.status,
     userAgent: null,
+    userEmail: null,
+    userId: null,
   };
 }
 
@@ -375,6 +398,8 @@ function mapLegacyWatcherLog(
     source: 'server',
     status: null,
     userAgent: null,
+    userEmail: null,
+    userId: null,
   };
 }
 
@@ -405,6 +430,8 @@ function mapLegacyConsoleLog(
     source: 'api',
     status: request.status,
     userAgent: null,
+    userEmail: null,
+    userId: null,
   };
 }
 
@@ -470,16 +497,21 @@ function loadLegacyLogs(
     .filter((log) => statusMatches(log.status, filters.status))
     .filter((log) => routeMatches(log.route, filters.route))
     .filter((log) => requestIdMatches(log.requestId, filters.requestId))
+    .filter((log) => userMatches(log, filters.user))
     .filter((log) =>
       deploymentStampMatches(log.deploymentStamp, filters.deploymentStamp)
     )
     .filter((log) =>
       shouldIncludeText(filters.q, [
         log.message,
+        log.errorName,
         log.route,
         normalizeRoutePath(log.route),
         log.requestId,
         log.deploymentStamp,
+        log.userEmail,
+        log.userId,
+        JSON.stringify(log.metadata),
       ])
     );
 }
@@ -513,6 +545,8 @@ async function loadRecentLogs(
       source: ObservabilityLogEvent['source'];
       status: number | null;
       user_agent: string | null;
+      user_email: string | null;
+      user_id: string | null;
     }>
   >`
     SELECT
@@ -521,7 +555,7 @@ async function loadRecentLogs(
       log_events.source,
       log_events.level,
       log_events.message,
-      log_events.route,
+      COALESCE(log_events.route, requests.route, requests.path) AS route,
       log_events.status,
       log_events.duration_ms,
       log_events.deployment_color,
@@ -530,6 +564,8 @@ async function loadRecentLogs(
       log_events.error_stack,
       COALESCE(log_events.ip_address, requests.ip_address) AS ip_address,
       COALESCE(log_events.user_agent, requests.user_agent) AS user_agent,
+      COALESCE(log_events.user_id, requests.user_id) AS user_id,
+      COALESCE(log_events.user_email, requests.user_email) AS user_email,
       log_events.metadata,
       log_events.created_at
     FROM log_events
@@ -554,16 +590,26 @@ async function loadRecentLogs(
     .filter((row) => routeMatches(row.route, filters.route))
     .filter((row) => requestIdMatches(row.request_id, filters.requestId))
     .filter((row) =>
+      userMatches(
+        { userEmail: row.user_email, userId: row.user_id },
+        filters.user
+      )
+    )
+    .filter((row) =>
       deploymentStampMatches(row.deployment_stamp, filters.deploymentStamp)
     )
     .filter(
       (row) =>
         !q ||
         filterText(row.message, q) ||
+        filterText(row.error_name, q) ||
         filterText(row.route, q) ||
         filterText(normalizeRoutePath(row.route), q) ||
         filterText(row.request_id, q) ||
         filterText(row.deployment_stamp, q) ||
+        filterText(row.user_email, q) ||
+        filterText(row.user_id, q) ||
+        filterText(JSON.stringify(row.metadata ?? {}), q) ||
         filterText(row.source, q) ||
         filterText(row.level, q) ||
         filterText(row.status == null ? null : String(row.status), q)
@@ -585,6 +631,8 @@ async function loadRecentLogs(
       source: row.source,
       status: row.status,
       userAgent: row.user_agent,
+      userEmail: row.user_email,
+      userId: row.user_id,
     }));
 
   return [
@@ -621,6 +669,8 @@ async function loadRecentRequests(
       started_at: Date;
       status: number | null;
       user_agent: string | null;
+      user_email: string | null;
+      user_id: string | null;
     }>
   >`
     SELECT
@@ -636,6 +686,8 @@ async function loadRecentRequests(
       requests.error_message,
       requests.ip_address,
       requests.user_agent,
+      requests.user_id,
+      requests.user_email,
       requests.started_at,
       requests.ended_at,
       count(log_events.id)::int AS log_count
@@ -658,13 +710,21 @@ async function loadRecentRequests(
     .filter((row) =>
       shouldIncludeTime(toMs(row.started_at) ?? Date.now(), filters)
     )
+    .filter((row) =>
+      userMatches(
+        { userEmail: row.user_email, userId: row.user_id },
+        filters.user
+      )
+    )
     .filter(
       (row) =>
         !q ||
         filterText(row.path, q) ||
         filterText(row.id, q) ||
         filterText(row.error_message, q) ||
-        filterText(row.cron_job_id, q)
+        filterText(row.cron_job_id, q) ||
+        filterText(row.user_email, q) ||
+        filterText(row.user_id, q)
     )
     .map((row) => ({
       cronJobId: row.cron_job_id,
@@ -683,6 +743,8 @@ async function loadRecentRequests(
       startedAt: toMs(row.started_at) ?? Date.now(),
       status: row.status,
       userAgent: row.user_agent,
+      userEmail: row.user_email,
+      userId: row.user_id,
     }));
 
   return [
@@ -725,6 +787,8 @@ async function attachRelatedLogsToRequests(
       source: ObservabilityLogEvent['source'];
       status: number | null;
       user_agent: string | null;
+      user_email: string | null;
+      user_id: string | null;
     }>
   >`
     SELECT
@@ -733,7 +797,7 @@ async function attachRelatedLogsToRequests(
       log_events.source,
       log_events.level,
       log_events.message,
-      log_events.route,
+      COALESCE(log_events.route, requests.route, requests.path) AS route,
       log_events.status,
       log_events.duration_ms,
       log_events.deployment_color,
@@ -742,6 +806,8 @@ async function attachRelatedLogsToRequests(
       log_events.error_stack,
       COALESCE(log_events.ip_address, requests.ip_address) AS ip_address,
       COALESCE(log_events.user_agent, requests.user_agent) AS user_agent,
+      COALESCE(log_events.user_id, requests.user_id) AS user_id,
+      COALESCE(log_events.user_email, requests.user_email) AS user_email,
       log_events.metadata,
       log_events.created_at
     FROM log_events
@@ -775,6 +841,8 @@ async function attachRelatedLogsToRequests(
       source: row.source,
       status: row.status,
       userAgent: row.user_agent,
+      userEmail: row.user_email,
+      userId: row.user_id,
     });
     logsByRequest.set(row.request_id, current);
   }
@@ -900,6 +968,14 @@ function groupObservabilityLogs(
           latest.userAgent ??
           allEvents.find((event) => event.userAgent)?.userAgent ??
           null,
+        userEmail:
+          latest.userEmail ??
+          allEvents.find((event) => event.userEmail)?.userEmail ??
+          null,
+        userId:
+          latest.userId ??
+          allEvents.find((event) => event.userId)?.userId ??
+          null,
       };
     })
     .sort((left, right) => right.createdAt - left.createdAt);
@@ -921,7 +997,10 @@ function createLogFacet(
     counts.set(value, {
       count: current.count + 1,
       errorCount:
-        current.errorCount + (log.status != null && log.status >= 500 ? 1 : 0),
+        current.errorCount +
+        (log.level === 'error' || (log.status != null && log.status >= 500)
+          ? 1
+          : 0),
     });
   }
 
@@ -948,6 +1027,7 @@ function createLogFacets(
     routes: createLogFacet(logs, (log) => normalizeRoutePath(log.route)),
     sources: createLogFacet(logs, (log) => log.source),
     statuses: createLogFacet(logs, (log) => getStatusFacetValue(log.status)),
+    users: createLogFacet(logs, (log) => log.userEmail ?? log.userId),
   };
 }
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createCronLogDrainContext,
   createRequestLogDrainContext,
+  setLogDrainUserContext,
   shouldPersistLogDrainContext,
 } from './log-drain';
 
@@ -20,6 +21,8 @@ describe('log drain request ids', () => {
     expect(context.requestId).toMatch(/^req-/u);
     expect(context.requestId).not.toBe('attacker-controlled-request-id');
     expect(context.clientRequestId).toBe('attacker-controlled-request-id');
+    expect(context.userEmail).toBeNull();
+    expect(context.userId).toBeNull();
   });
 
   it('keeps cron request ids internally generated too', () => {
@@ -36,6 +39,17 @@ describe('log drain request ids', () => {
     expect(context.requestId).toMatch(/^cron-/u);
     expect(context.requestId).not.toBe('cron-attacker-id');
     expect(context.clientRequestId).toBe('cron-attacker-id');
+    expect(context.userEmail).toBeNull();
+    expect(context.userId).toBeNull();
+  });
+
+  it('ignores user enrichment when no log-drain context is active', () => {
+    expect(() =>
+      setLogDrainUserContext({
+        userEmail: 'operator@example.com',
+        userId: 'user-123',
+      })
+    ).not.toThrow();
   });
 
   it('skips log-drain persistence for unauthorized cron responses', () => {

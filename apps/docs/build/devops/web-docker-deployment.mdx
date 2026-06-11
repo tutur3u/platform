@@ -1117,6 +1117,14 @@ instance is shut down. If a Docker host must override the bundled Redis sidecar,
 use the Docker-specific `DOCKER_UPSTASH_REDIS_REST_URL` and
 `DOCKER_UPSTASH_REDIS_REST_TOKEN` variables.
 
+Watcher-managed Infrastructure projects use the same integrated Docker Redis
+runtime by default. The watcher generates or reuses `tmp/docker-web/redis-token`
+and injects `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and
+`SRH_TOKEN` for managed project compose runs unless the project explicitly sets
+`redis_enabled=false`. Generic host `UPSTASH_REDIS_REST_*` values are ignored
+there too; use the Docker-specific override variables when a managed project
+must point somewhere else.
+
 If you intentionally want the memory-only fallback, opt out:
 
 ```bash

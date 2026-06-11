@@ -33,6 +33,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: {
     error: vi.fn(),
   },
+  setLogDrainUserContext: vi.fn(),
   withRequestLogDrain: (_opts: unknown, handler: () => Promise<Response>) =>
     handler(),
 }));

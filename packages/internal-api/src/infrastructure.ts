@@ -1573,6 +1573,8 @@ export interface ObservabilityLogEvent {
   source: ObservabilitySource;
   status: number | null;
   userAgent: string | null;
+  userEmail: string | null;
+  userId: string | null;
 }
 
 export interface ObservabilityLogFacet {
@@ -1586,6 +1588,7 @@ export interface ObservabilityLogFacets {
   routes: ObservabilityLogFacet[];
   sources: ObservabilityLogFacet[];
   statuses: ObservabilityLogFacet[];
+  users: ObservabilityLogFacet[];
 }
 
 export interface ObservabilityLogGroup {
@@ -1608,6 +1611,8 @@ export interface ObservabilityLogGroup {
   source: ObservabilitySource;
   status: number | null;
   userAgent: string | null;
+  userEmail: string | null;
+  userId: string | null;
 }
 
 export interface ObservabilityLogsResult
@@ -1632,6 +1637,8 @@ export interface ObservabilityRequest {
   startedAt: number;
   status: number | null;
   userAgent: string | null;
+  userEmail: string | null;
+  userId: string | null;
 }
 
 export interface ObservabilityCronRun {
@@ -1769,6 +1776,7 @@ export interface GetObservabilityParams {
   status?: string;
   timeframeHours?: number;
   until?: number;
+  user?: string;
 }
 
 export interface GetBlueGreenMonitoringRequestArchiveParams
@@ -3057,6 +3065,10 @@ function appendObservabilitySearchParams(
 
   if (params?.requestId) {
     searchParams.set('requestId', params.requestId);
+  }
+
+  if (params?.user) {
+    searchParams.set('user', params.user);
   }
 
   if (params?.deploymentStamp) {

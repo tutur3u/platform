@@ -250,6 +250,16 @@ function formatClientContext({
   return [ipAddress, userAgent].filter(Boolean).join(' · ');
 }
 
+function formatUserContext({
+  userEmail,
+  userId,
+}: {
+  userEmail?: string | null;
+  userId?: string | null;
+}) {
+  return userEmail ?? userId ?? '';
+}
+
 function describeCronSchedule(
   schedule: string,
   labels: {
@@ -687,6 +697,7 @@ function MetricCard({
 
 function LogRow({ log }: { log: ObservabilityLogEvent }) {
   const clientContext = formatClientContext(log);
+  const userContext = formatUserContext(log);
 
   return (
     <div className="grid grid-cols-[140px_72px_90px_minmax(0,1fr)] items-start gap-4 border-border/50 border-b px-4 py-3 font-mono text-xs">
@@ -712,6 +723,9 @@ function LogRow({ log }: { log: ObservabilityLogEvent }) {
         {clientContext ? (
           <p className="mt-1 truncate text-muted-foreground">{clientContext}</p>
         ) : null}
+        {userContext ? (
+          <p className="mt-1 truncate text-muted-foreground">{userContext}</p>
+        ) : null}
       </div>
     </div>
   );
@@ -719,6 +733,7 @@ function LogRow({ log }: { log: ObservabilityLogEvent }) {
 
 function RequestRow({ request }: { request: ObservabilityRequest }) {
   const clientContext = formatClientContext(request);
+  const userContext = formatUserContext(request);
   const relatedLogs = request.relatedLogs.slice(0, 2);
 
   return (
@@ -734,6 +749,9 @@ function RequestRow({ request }: { request: ObservabilityRequest }) {
         <p className="truncate">{request.path ?? request.id}</p>
         {clientContext ? (
           <p className="mt-1 truncate text-muted-foreground">{clientContext}</p>
+        ) : null}
+        {userContext ? (
+          <p className="mt-1 truncate text-muted-foreground">{userContext}</p>
         ) : null}
         {relatedLogs.length > 0 ? (
           <div className="mt-2 space-y-1">
@@ -945,6 +963,10 @@ export function ObservabilityDashboardClient({
     'requestId',
     parseAsString.withDefault('').withOptions({ shallow: true })
   );
+  const [userFilter, setUserFilter] = useQueryState(
+    'user',
+    parseAsString.withDefault('').withOptions({ shallow: true })
+  );
   const [deploymentStampFilter, setDeploymentStampFilter] = useQueryState(
     'deploymentStamp',
     parseAsString.withDefault('').withOptions({ shallow: true })
@@ -980,6 +1002,7 @@ export function ObservabilityDashboardClient({
       source: source as GetObservabilityParams['source'],
       status: statusFilter === 'all' ? undefined : statusFilter,
       timeframeHours,
+      user: userFilter || undefined,
     }),
     [
       deploymentStampFilter,
@@ -992,6 +1015,7 @@ export function ObservabilityDashboardClient({
       source,
       statusFilter,
       timeframeHours,
+      userFilter,
     ]
   );
   const projectsQuery = useQuery({
@@ -1396,6 +1420,7 @@ export function ObservabilityDashboardClient({
     route: routeFilter,
     source,
     status: statusFilter,
+    user: userFilter,
   };
   const setLogPanelFilters = (
     nextFilters: Partial<ObservabilityLogsPanelFilters>
@@ -1407,6 +1432,9 @@ export function ObservabilityDashboardClient({
     if (nextFilters.route != null) void setRouteFilter(nextFilters.route);
     if (nextFilters.requestId != null) {
       void setRequestIdFilter(nextFilters.requestId);
+    }
+    if (nextFilters.user != null) {
+      void setUserFilter(nextFilters.user);
     }
     if (nextFilters.deploymentStamp != null) {
       void setDeploymentStampFilter(nextFilters.deploymentStamp);

@@ -32,6 +32,7 @@ export interface ObservabilityLogsPanelFilters {
   route: string;
   source: string;
   status: string;
+  user: string;
 }
 
 export function ObservabilityLogsPanel({
@@ -107,6 +108,12 @@ export function ObservabilityLogsPanel({
           label: t('chips.request_id', { value: filters.requestId }),
         }
       : null,
+    filters.user
+      ? {
+          key: 'user',
+          label: t('chips.user', { value: filters.user }),
+        }
+      : null,
     filters.deploymentStamp
       ? {
           key: 'deploymentStamp',
@@ -163,7 +170,7 @@ export function ObservabilityLogsPanel({
             </Button>
           </div>
         </div>
-        <div className="grid gap-2 xl:grid-cols-[minmax(220px,1fr)_180px_150px_150px_150px_180px_180px]">
+        <div className="grid gap-2 xl:grid-cols-[minmax(220px,1fr)_180px_150px_150px_150px_170px_170px_180px]">
           <label className="relative">
             <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -233,6 +240,12 @@ export function ObservabilityLogsPanel({
           />
           <Input
             className="h-9 font-mono"
+            onChange={(event) => onFilterChange({ user: event.target.value })}
+            placeholder={t('user')}
+            value={filters.user}
+          />
+          <Input
+            className="h-9 font-mono"
             onChange={(event) =>
               onFilterChange({ deploymentStamp: event.target.value })
             }
@@ -263,6 +276,7 @@ export function ObservabilityLogsPanel({
                   route: 'all',
                   source: 'all',
                   status: 'all',
+                  user: '',
                 })
               }
               size="sm"
@@ -274,13 +288,14 @@ export function ObservabilityLogsPanel({
           </div>
         ) : null}
       </div>
-      <div className="hidden grid-cols-[32px_142px_84px_80px_minmax(220px,1fr)_180px_170px_88px] gap-3 border-border border-b px-3 py-2 text-muted-foreground text-xs lg:grid">
+      <div className="hidden grid-cols-[32px_142px_84px_80px_minmax(220px,1fr)_180px_170px_170px_88px] gap-3 border-border border-b px-3 py-2 text-muted-foreground text-xs lg:grid">
         <span />
         <span>{t('columns.time')}</span>
         <span>{t('columns.level')}</span>
         <span>{t('columns.status')}</span>
         <span>{t('columns.message')}</span>
         <span>{t('columns.request')}</span>
+        <span>{t('columns.user')}</span>
         <span>{t('columns.deployment')}</span>
         <span>{t('columns.source')}</span>
       </div>

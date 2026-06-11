@@ -36,6 +36,11 @@ export interface BlockInfo {
   blockedAt: Date;
 }
 
+export interface AbuseProtectionLogContext {
+  route?: string | null;
+  source?: string | null;
+}
+
 export interface RateLimitConfig {
   windowMs: number;
   maxAttempts: number;

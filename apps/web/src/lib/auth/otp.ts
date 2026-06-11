@@ -273,7 +273,10 @@ export async function sendOtp(
   const ipAddress = suspiciousAgentCheck.ipAddress;
   const userAgent = suspiciousAgentCheck.userAgent;
 
-  const abuseCheck = await checkOTPSendAllowed(ipAddress, validatedEmail);
+  const abuseCheck = await checkOTPSendAllowed(ipAddress, validatedEmail, {
+    route: context.endpoint,
+    source: 'otp-send',
+  });
   if (!abuseCheck.allowed) {
     return {
       body: {
@@ -439,7 +442,10 @@ export async function verifyOtp(
     };
   }
   const ipAddress = suspiciousAgentCheck.ipAddress;
-  const abuseCheck = await checkOTPVerifyLimit(ipAddress, validatedEmail);
+  const abuseCheck = await checkOTPVerifyLimit(ipAddress, validatedEmail, {
+    route: context.endpoint,
+    source: 'otp-verify',
+  });
   if (!abuseCheck.allowed) {
     return {
       body: {

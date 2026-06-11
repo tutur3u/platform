@@ -218,7 +218,10 @@ export function withApiAuth<T = unknown>(
 
     // Enforce persistent IP blocks (shared across services)
     if (ipAddress && ipAddress !== 'unknown') {
-      const blockInfo = await isIPBlocked(ipAddress);
+      const blockInfo = await isIPBlocked(ipAddress, {
+        route: endpoint,
+        source: 'api-middleware',
+      });
       if (blockInfo) {
         const retryAfter = Math.max(
           1,
