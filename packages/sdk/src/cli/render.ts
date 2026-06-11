@@ -831,6 +831,18 @@ function financeRows(data: unknown, resource?: string) {
           Color: asString(row.color),
         };
       });
+    case 'tags':
+      return rows.map((item) => {
+        const row = asRecord(item);
+        return {
+          Name: asString(row.name, 'Untitled tag'),
+          Id: asString(row.id),
+          Description: asString(row.description),
+          Amount: formatFinanceAmount(row.amount ?? row.net_total),
+          Count: row.transaction_count ?? '',
+          Color: asString(row.color),
+        };
+      });
     case 'budgets':
       return rows.map((item) => {
         const row = asRecord(item);

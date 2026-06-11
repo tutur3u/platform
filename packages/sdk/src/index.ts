@@ -41,13 +41,10 @@ export {
   linkExternalProjectPublicFolderAssets,
 } from './external-projects-public-assets';
 export type { TuturuuuUserClientConfig } from './platform';
-export {
-  TasksClient,
-  TuturuuuUserClient,
-  WorkspacesClient,
-} from './platform';
+export { TasksClient, TuturuuuUserClient, WorkspacesClient } from './platform';
 export type {
   FinanceBudgetUpsertPayload,
+  FinanceTagPayload,
   ListTransactionsQuery,
   RecurringTransactionPayload,
   TransactionCategoryPayload,

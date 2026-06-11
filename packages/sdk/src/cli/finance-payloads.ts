@@ -1,5 +1,6 @@
 import type {
   FinanceBudgetUpsertPayload,
+  FinanceTagPayload,
   FinanceTransferMigratePayload,
   FinanceTransferPayload,
   FinanceTransferUpdatePayload,
@@ -183,6 +184,25 @@ export function getCategoryPayload(
   assignDefined(payload, 'is_expense', parseBoolean(flags.expense));
   if (flags.income === true) payload.is_expense = false;
   return mergePayload(payload, flags) as TransactionCategoryPayload;
+}
+
+export function getTagPayload(
+  flags: Record<string, FlagValue>,
+  positionalName?: string
+) {
+  const payload: Record<string, unknown> = {};
+  assignDefined(
+    payload,
+    'name',
+    pickFinanceString(flags, 'name') || positionalName
+  );
+  assignDefined(payload, 'color', pickFinanceString(flags, 'color'));
+  assignDefined(
+    payload,
+    'description',
+    pickFinanceString(flags, 'description')
+  );
+  return mergePayload(payload, flags) as FinanceTagPayload;
 }
 
 export function getTransferPayload(

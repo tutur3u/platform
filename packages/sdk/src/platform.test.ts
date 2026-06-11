@@ -374,6 +374,73 @@ describe('TuturuuuUserClient', () => {
     );
   });
 
+  it('supports finance tag CRUD helpers', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(() => Promise.resolve(Response.json({ ok: true })));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.finance.listTags('ws-1');
+    await client.finance.getTag('ws-1', 'tag-1');
+    await client.finance.createTag('ws-1', {
+      name: 'Tuturuuu',
+      color: '#9ef0ff',
+      description: 'Platform costs',
+    });
+    await client.finance.updateTag('ws-1', 'tag-1', {
+      description: 'Investment platform costs',
+    });
+    await client.finance.deleteTag('ws-1', 'tag-1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://tuturuuu.com/api/workspaces/ws-1/tags',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://tuturuuu.com/api/workspaces/ws-1/tags',
+      expect.objectContaining({
+        body: JSON.stringify({
+          name: 'Tuturuuu',
+          color: '#9ef0ff',
+          description: 'Platform costs',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      expect.objectContaining({
+        body: JSON.stringify({
+          description: 'Investment platform costs',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'DELETE',
+      })
+    );
+  });
+
   it('adds pagination metadata to finance transaction exports', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({

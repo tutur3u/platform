@@ -54,6 +54,49 @@ async function authorizeTagRequest(
   return { normalizedWsId, sbAdmin };
 }
 
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
+  const { tagId, wsId } = await params;
+
+  if (!TagIdSchema.safeParse(tagId).success) {
+    return NextResponse.json(
+      { message: 'Invalid tagId: must be a valid UUID' },
+      { status: 400 }
+    );
+  }
+
+  const authorization = await authorizeTagRequest(req, wsId, authContext);
+
+  if ('response' in authorization) {
+    return authorization.response;
+  }
+
+  const { normalizedWsId, sbAdmin } = authorization;
+
+  const { data, error } = await sbAdmin
+    .from('transaction_tags')
+    .select('*')
+    .eq('id', tagId)
+    .eq('ws_id', normalizedWsId)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json(
+      { message: 'Error fetching tag' },
+      { status: 500 }
+    );
+  }
+
+  if (!data) {
+    return NextResponse.json({ message: 'Tag not found' }, { status: 404 });
+  }
+
+  return NextResponse.json(data);
+}
+
 export async function PUT(
   req: Request,
   { params }: Params,
