@@ -74,6 +74,8 @@ jobs:
           key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}
 
       - name: Verify generated types match Postgres schema
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           supabase gen types typescript --local > schema.gen.ts
           if ! git diff --ignore-space-at-eol --exit-code --quiet schema.gen.ts; then
