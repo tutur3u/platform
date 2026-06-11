@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/tutur3u/platform/compare/ai-v0.2.0...ai-v0.2.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **chat:** throttle Zalo phone sync and group mirrored chats ([51f3ab5](https://github.com/tutur3u/platform/commit/51f3ab5cec4a7a0c7403100045a6d7500975caf3))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/ai-v0.1.0...ai-v0.2.0) (2026-06-10)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/inventory-v0.3.0...inventory-v0.3.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **storefront:** load public inventory through private rpcs ([80d1149](https://github.com/tutur3u/platform/commit/80d11493e546a594021345f95e3f8e8b22b65e13))
+* **tooling:** repair stale portless aliases ([43eb916](https://github.com/tutur3u/platform/commit/43eb916741b78affaf0478157ca8f3630586786d))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/inventory-v0.2.0...inventory-v0.3.0) (2026-06-10)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/tutur3u/platform/compare/apis-v0.1.0...apis-v0.2.0) (2026-06-11)
+
+
+### Features
+
+* **finance:** add CLI tag CRUD ([bc60f8e](https://github.com/tutur3u/platform/commit/bc60f8eb1af2fe650a28ef44ec33466a4ce831de))
+
+
+### Bug Fixes
+
+* **web:** allow cli finance transfer auth ([b3f08cb](https://github.com/tutur3u/platform/commit/b3f08cbb6d9981f4a4a15c428aa41e5d2869038d))
+
 ## [0.1.0](https://github.com/tutur3u/platform/compare/apis-v0.0.12...apis-v0.1.0) (2026-06-10)
 
 
