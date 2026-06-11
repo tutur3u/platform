@@ -15,9 +15,15 @@ DEFAULT_PROMPT_LINE_RE = re.compile(r"^\s*default_prompt:\s*(?P<value>.+?)\s*$",
 TODO_MARKER = "[TO" + "DO:"
 MACHINE_PATH_MARKERS = ["/Us" + "ers/", "Documents/" + "Git" + "Hub/platform"]
 WORKFLOW_NAME = "codex-plugin.yaml"
-DOCS_PAGE = "build/development-tools/codex-plugin"
+DOCS_PAGES = (
+    "build/development-tools/codex-plugin",
+    "build/skills/overview",
+    "build/skills/installation",
+)
 MARKETPLACE_NAME = "tuturuuu"
 PLUGIN_NAME = "tuturuuu"
+CLAUDE_MARKETPLACE_PATH = ".claude-plugin/marketplace.json"
+SKILLS_SH_CONFIG = "skills.sh.json"
 MAX_DEFAULT_PROMPT_LENGTH = 120
 PROMPT_COVERAGE_PATTERNS = {
     "tuturuuu-platform": re.compile(r"\bplatform\b", re.IGNORECASE),
@@ -256,11 +262,7 @@ def validate_reference_links(skill_dir: Path, skill_file: Path) -> None:
 
 
 def validate_skills(plugin_root: Path, manifest: dict) -> None:
-    skills_root = plugin_root / "skills"
-    if not skills_root.is_dir():
-        fail(f"missing skills directory at {skills_root}")
-
-    skill_dirs = sorted(path for path in skills_root.iterdir() if path.is_dir())
+    skill_dirs = get_skill_dirs(plugin_root)
     if not skill_dirs:
         fail("plugin must contain at least one skill")
 
@@ -278,30 +280,134 @@ def validate_skills(plugin_root: Path, manifest: dict) -> None:
         validate_reference_links(skill_dir, skill_file)
 
 
+def get_skill_dirs(plugin_root: Path) -> list[Path]:
+    skills_root = plugin_root / "skills"
+    if not skills_root.is_dir():
+        fail(f"missing skills directory at {skills_root}")
+    return sorted(path for path in skills_root.iterdir() if path.is_dir())
+
+
+def get_skill_names(plugin_root: Path) -> list[str]:
+    return [path.name for path in get_skill_dirs(plugin_root)]
+
+
+def validate_public_claude_manifest(repo_root: Path, plugin_root: Path) -> None:
+    manifest_path = repo_root / CLAUDE_MARKETPLACE_PATH
+    if not manifest_path.exists():
+        fail(f"missing public plugin marketplace at {manifest_path}")
+
+    manifest_text = read_text(manifest_path)
+    check_no_todo(manifest_path, manifest_text)
+    check_no_machine_paths(manifest_path, manifest_text)
+    try:
+        payload = json.loads(manifest_text)
+    except json.JSONDecodeError as exc:
+        fail(f"invalid JSON in {manifest_path}: {exc}")
+
+    if payload.get("metadata", {}).get("pluginRoot") != "./plugins":
+        fail(f"{manifest_path} metadata.pluginRoot must be ./plugins")
+
+    plugins = payload.get("plugins")
+    if not isinstance(plugins, list):
+        fail(f"{manifest_path} plugins must be an array")
+
+    matching_entries = [
+        entry
+        for entry in plugins
+        if isinstance(entry, dict) and entry.get("name") == PLUGIN_NAME
+    ]
+    if len(matching_entries) != 1:
+        fail(f"{manifest_path} must contain exactly one {PLUGIN_NAME} entry")
+
+    entry = matching_entries[0]
+    if entry.get("source") != "./tuturuuu":
+        fail(f"{manifest_path} {PLUGIN_NAME} source must be ./tuturuuu")
+
+    expected_skills = [f"./skills/{name}" for name in get_skill_names(plugin_root)]
+    actual_skills = entry.get("skills")
+    if actual_skills != expected_skills:
+        fail(f"{manifest_path} {PLUGIN_NAME} skills must match plugin skill folders")
+
+    for skill_path in expected_skills:
+        resolved = plugin_root / skill_path.removeprefix("./")
+        if not (resolved / "SKILL.md").exists():
+            fail(f"{manifest_path} references missing skill directory {resolved}")
+
+
+def validate_skills_sh_config(repo_root: Path, plugin_root: Path) -> None:
+    config_path = repo_root / SKILLS_SH_CONFIG
+    if not config_path.exists():
+        fail(f"missing skills.sh config at {config_path}")
+
+    config_text = read_text(config_path)
+    check_no_todo(config_path, config_text)
+    check_no_machine_paths(config_path, config_text)
+    try:
+        payload = json.loads(config_text)
+    except json.JSONDecodeError as exc:
+        fail(f"invalid JSON in {config_path}: {exc}")
+
+    if payload.get("$schema") != "https://skills.sh/schemas/skills.sh.schema.json":
+        fail(f"{config_path} $schema must point to the skills.sh schema")
+    if payload.get("notGrouped") != "bottom":
+        fail(f'{config_path} notGrouped must be "bottom"')
+
+    groupings = payload.get("groupings")
+    if not isinstance(groupings, list) or not groupings:
+        fail(f"{config_path} groupings must be a non-empty array")
+
+    grouped_skills: list[str] = []
+    for index, grouping in enumerate(groupings):
+        if not isinstance(grouping, dict):
+            fail(f"{config_path} groupings[{index}] must be an object")
+        if not isinstance(grouping.get("title"), str) or not grouping["title"].strip():
+            fail(f"{config_path} groupings[{index}].title must be a non-empty string")
+        skills = grouping.get("skills")
+        if not isinstance(skills, list) or not skills:
+            fail(f"{config_path} groupings[{index}].skills must be a non-empty array")
+        for skill_name in skills:
+            if not isinstance(skill_name, str) or not skill_name.strip():
+                fail(f"{config_path} groupings[{index}].skills contains an invalid name")
+            grouped_skills.append(skill_name)
+
+    duplicates = sorted(
+        {skill_name for skill_name in grouped_skills if grouped_skills.count(skill_name) > 1}
+    )
+    if duplicates:
+        fail(f"{config_path} contains duplicate skills: {', '.join(duplicates)}")
+
+    expected_skills = get_skill_names(plugin_root)
+    if sorted(grouped_skills) != expected_skills:
+        fail(f"{config_path} groupings must include every Tuturuuu skill exactly once")
+
+
 def validate_docs(repo_root: Path) -> None:
     docs_json_path = repo_root / "apps" / "docs" / "docs.json"
-    docs_page_path = repo_root / "apps" / "docs" / f"{DOCS_PAGE}.mdx"
     if not docs_json_path.exists():
         fail(f"missing docs navigation at {docs_json_path}")
-    if not docs_page_path.exists():
-        fail(f"missing plugin docs page at {docs_page_path}")
+
+    for page in DOCS_PAGES:
+        docs_page_path = repo_root / "apps" / "docs" / f"{page}.mdx"
+        if not docs_page_path.exists():
+            fail(f"missing plugin docs page at {docs_page_path}")
 
     try:
         docs_payload = json.loads(read_text(docs_json_path))
     except json.JSONDecodeError as exc:
         fail(f"invalid JSON in {docs_json_path}: {exc}")
 
-    def contains_page(value: object) -> bool:
-        if value == DOCS_PAGE:
+    def contains_page(value: object, page: str) -> bool:
+        if value == page:
             return True
         if isinstance(value, list):
-            return any(contains_page(item) for item in value)
+            return any(contains_page(item, page) for item in value)
         if isinstance(value, dict):
-            return any(contains_page(item) for item in value.values())
+            return any(contains_page(item, page) for item in value.values())
         return False
 
-    if not contains_page(docs_payload):
-        fail(f"{docs_json_path} does not register {DOCS_PAGE}")
+    for page in DOCS_PAGES:
+        if not contains_page(docs_payload, page):
+            fail(f"{docs_json_path} does not register {page}")
 
 
 def validate_ci(repo_root: Path) -> None:
@@ -405,6 +511,8 @@ def main() -> None:
     validate_docs(repo_root)
     validate_ci(repo_root)
     validate_marketplace(repo_root)
+    validate_public_claude_manifest(repo_root, plugin_root)
+    validate_skills_sh_config(repo_root, plugin_root)
     validate_no_todo_under(plugin_root)
     validate_portable_text_under(plugin_root)
     print(f"OK: validated {plugin_root}")

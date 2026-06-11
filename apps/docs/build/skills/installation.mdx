@@ -1,0 +1,68 @@
+---
+title: "Skills Installation"
+description: "Install Tuturuuu skills from the public platform repository."
+---
+
+## Install A Focused Skill
+
+Use the `skills` CLI from the project where the agent should load the skill.
+For Codex, install one focused skill like this:
+
+```bash
+npx skills add tutur3u/platform --agent codex --copy -y \
+  --skill tuturuuu-platform
+```
+
+Replace `tuturuuu-platform` with any skill from the catalog. Common starting
+points:
+
+- `tuturuuu-platform` for general platform repo work.
+- `tuturuuu-agent-coordination` for shared or dirty worktrees.
+- `tuturuuu-commit` for scoped commit follow-through.
+- `tuturuuu-cli` for `ttr` and SDK workflows.
+- `tuturuuu-database` for Supabase migrations, RLS, and protected data access.
+
+## Install The Full Tuturuuu Set
+
+Install all public Tuturuuu skills for Codex with explicit skill names:
+
+```bash
+npx skills add tutur3u/platform --agent codex --copy -y \
+  --skill tuturuuu-agent-coordination \
+  --skill tuturuuu-ci-docs \
+  --skill tuturuuu-cli \
+  --skill tuturuuu-cli-finance \
+  --skill tuturuuu-cli-tasks \
+  --skill tuturuuu-cms-studio \
+  --skill tuturuuu-commit \
+  --skill tuturuuu-database \
+  --skill tuturuuu-devbox-ops \
+  --skill tuturuuu-development-tooling \
+  --skill tuturuuu-e2e-auth-debugging \
+  --skill tuturuuu-mobile-task-board \
+  --skill tuturuuu-platform \
+  --skill tuturuuu-review-comments \
+  --skill tuturuuu-satellite-app-ux \
+  --skill tuturuuu-validation-offload \
+  --skill tuturuuu-web-release
+```
+
+Run the command from the target project checkout. For a one-time skills.sh
+discovery trigger, run it from a disposable directory after the metadata commit
+has been pushed to GitHub.
+
+## Verify Discovery
+
+Before pushing metadata changes, validate local repo-root discovery:
+
+```bash
+npx skills add . --list
+```
+
+The output should include all `tuturuuu-*` skills. After the metadata is pushed
+and the public install trigger has run, check the cached public page after it
+refreshes:
+
+```text
+https://skills.sh/tutur3u/platform
+```

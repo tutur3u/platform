@@ -32,6 +32,45 @@ a local marketplace source from the CLI:
 codex plugin marketplace add ./
 ```
 
+## skills.sh Discovery
+
+The public skills.sh registry discovers skills from GitHub repositories after
+someone installs the repo with the `skills` CLI. The platform repo exposes the
+Tuturuuu plugin skills for that flow through two root metadata files:
+
+- `.claude-plugin/marketplace.json` points compatible skill installers at
+  `plugins/tuturuuu/skills`.
+- `skills.sh.json` groups the public repo page so Tuturuuu skills appear ahead
+  of unrelated installed project skills.
+
+Do not run the public install trigger before the metadata is pushed to GitHub.
+After pushing the metadata commit, run the trigger from a disposable directory,
+not from this checkout:
+
+```bash
+npx skills add tutur3u/platform --agent codex --copy -y \
+  --skill tuturuuu-agent-coordination \
+  --skill tuturuuu-ci-docs \
+  --skill tuturuuu-cli \
+  --skill tuturuuu-cli-finance \
+  --skill tuturuuu-cli-tasks \
+  --skill tuturuuu-cms-studio \
+  --skill tuturuuu-commit \
+  --skill tuturuuu-database \
+  --skill tuturuuu-devbox-ops \
+  --skill tuturuuu-development-tooling \
+  --skill tuturuuu-e2e-auth-debugging \
+  --skill tuturuuu-mobile-task-board \
+  --skill tuturuuu-platform \
+  --skill tuturuuu-review-comments \
+  --skill tuturuuu-satellite-app-ux \
+  --skill tuturuuu-validation-offload \
+  --skill tuturuuu-web-release
+```
+
+Then verify the cached page after refresh at
+`https://skills.sh/tutur3u/platform`.
+
 ## Included Skills
 
 - `$tuturuuu-platform`: repo-wide workflow guidance for `apps/web`,
@@ -122,6 +161,8 @@ The CI check currently verifies:
 - durable CI tooling guidance for bounded Codecov coverage test retries
 - scoped commit workflow coverage for explicit commit requests
 - repo marketplace metadata at `.agents/plugins/marketplace.json`
+- public skills.sh discovery metadata at `.claude-plugin/marketplace.json`
+- public skills.sh grouping metadata at `skills.sh.json`
 - skill folder and frontmatter naming parity
 - `agents/openai.yaml` defaults for every skill
 - skill `references/` links
@@ -183,6 +224,10 @@ Run the local validator after changing the plugin manifest or its skills:
 python3 plugins/tuturuuu/scripts/validate_plugin.py
 ```
 
+The local validator also checks the root skills.sh metadata files against the
+actual Tuturuuu skill folders, so add every new public skill to both
+`.claude-plugin/marketplace.json` and `skills.sh.json`.
+
 For individual skills, run the Codex skill validator:
 
 ```bash
@@ -229,3 +274,6 @@ library.
 - Add marketplace metadata only when deciding where the plugin should be
   installed from: repo-local `.agents/plugins/marketplace.json` or home-local
   `~/.agents/plugins/marketplace.json`.
+- Keep public skills.sh metadata aligned across `.claude-plugin/marketplace.json`
+  and `skills.sh.json`; do not modify `.agents/skills` just to publish the
+  Tuturuuu plugin skills.

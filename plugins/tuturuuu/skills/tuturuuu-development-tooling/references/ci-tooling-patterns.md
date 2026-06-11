@@ -153,4 +153,12 @@ formatting behavior, or repo-wide verification.
 - Keep skill folders aligned with frontmatter names and include
   `agents/openai.yaml`.
 - Keep default prompts short, natural, and action-oriented.
+- Keep public skills.sh metadata aligned with Tuturuuu skill folders:
+  `.claude-plugin/marketplace.json` exposes `plugins/tuturuuu/skills`, and
+  `skills.sh.json` controls the public grouping order. Do not move or rewrite
+  `.agents/skills` just to publish the Tuturuuu plugin skills.
+- Trigger skills.sh discovery only after the metadata commit is pushed to
+  GitHub. Run `npx skills add tutur3u/platform ...` from a disposable directory,
+  not from the platform checkout, so the install telemetry indexes the public
+  source without rewriting local project skills.
 - Run `python3 plugins/tuturuuu/scripts/validate_plugin.py` after plugin edits.

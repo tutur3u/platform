@@ -1,0 +1,46 @@
+---
+title: "Skills"
+description: "Install and publish Tuturuuu agent skills for platform work."
+---
+
+## Overview
+
+Tuturuuu agent skills package repo-specific operating knowledge for coding
+agents. They help agents load focused guidance for platform work without
+copying long instructions into every prompt.
+
+The source skills live in `plugins/tuturuuu/skills`. The platform repo exposes
+them to public skill installers through `.claude-plugin/marketplace.json`, and
+the public skills.sh page is grouped with `skills.sh.json`.
+
+## Skill Groups
+
+The public catalog groups the Tuturuuu skills by workflow:
+
+- Platform: monorepo, Supabase, CI/docs, release metadata, and mobile task-board
+  work.
+- Agent Workflow: shared-worktree coordination, scoped commits, review comments,
+  validation offload, and tooling improvements.
+- CLI And Ops: core `ttr` workflows, task capture, finance commands, and remote
+  devbox operations.
+- Product Surfaces: CMS studio, satellite app UX, and local E2E authentication
+  debugging.
+
+## Maintenance
+
+When a skill is added, renamed, or removed, keep these files aligned:
+
+- `plugins/tuturuuu/skills/<skill>/SKILL.md`
+- `.claude-plugin/marketplace.json`
+- `skills.sh.json`
+- `apps/docs/build/skills/installation.mdx`
+- `apps/docs/build/development-tools/codex-plugin.mdx`
+
+Run the plugin validator after changing skill metadata:
+
+```bash
+python3 plugins/tuturuuu/scripts/validate_plugin.py
+```
+
+Use the [installation guide](/build/skills/installation) to install skills from
+the public repo or trigger skills.sh discovery after a metadata push.

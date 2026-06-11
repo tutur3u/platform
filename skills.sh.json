@@ -1,0 +1,47 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Platform",
+      "description": "Core monorepo, database, CI, release, and mobile workflow skills.",
+      "skills": [
+        "tuturuuu-platform",
+        "tuturuuu-database",
+        "tuturuuu-ci-docs",
+        "tuturuuu-web-release",
+        "tuturuuu-mobile-task-board"
+      ]
+    },
+    {
+      "title": "Agent Workflow",
+      "description": "Shared-worktree coordination, commits, review comments, validation, and tooling.",
+      "skills": [
+        "tuturuuu-agent-coordination",
+        "tuturuuu-commit",
+        "tuturuuu-review-comments",
+        "tuturuuu-validation-offload",
+        "tuturuuu-development-tooling"
+      ]
+    },
+    {
+      "title": "CLI And Ops",
+      "description": "Tuturuuu CLI, task capture, finance workflows, and devbox operations.",
+      "skills": [
+        "tuturuuu-cli",
+        "tuturuuu-cli-tasks",
+        "tuturuuu-cli-finance",
+        "tuturuuu-devbox-ops"
+      ]
+    },
+    {
+      "title": "Product Surfaces",
+      "description": "CMS, satellite apps, and local E2E authentication workflows.",
+      "skills": [
+        "tuturuuu-cms-studio",
+        "tuturuuu-satellite-app-ux",
+        "tuturuuu-e2e-auth-debugging"
+      ]
+    }
+  ]
+}

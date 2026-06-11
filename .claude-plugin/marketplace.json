@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "tuturuuu",
+      "source": "./tuturuuu",
+      "skills": [
+        "./skills/tuturuuu-agent-coordination",
+        "./skills/tuturuuu-ci-docs",
+        "./skills/tuturuuu-cli",
+        "./skills/tuturuuu-cli-finance",
+        "./skills/tuturuuu-cli-tasks",
+        "./skills/tuturuuu-cms-studio",
+        "./skills/tuturuuu-commit",
+        "./skills/tuturuuu-database",
+        "./skills/tuturuuu-devbox-ops",
+        "./skills/tuturuuu-development-tooling",
+        "./skills/tuturuuu-e2e-auth-debugging",
+        "./skills/tuturuuu-mobile-task-board",
+        "./skills/tuturuuu-platform",
+        "./skills/tuturuuu-review-comments",
+        "./skills/tuturuuu-satellite-app-ux",
+        "./skills/tuturuuu-validation-offload",
+        "./skills/tuturuuu-web-release"
+      ]
+    }
+  ]
+}

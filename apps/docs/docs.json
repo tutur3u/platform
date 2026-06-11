@@ -156,7 +156,11 @@
               "build/development-tools/ci-cd-pipelines",
               "build/development-tools/ci-cd-optimization",
               "build/development-tools/cleaning-clone",
-              "build/development-tools/documenting"
+              "build/development-tools/documenting",
+              {
+                "group": "Skills",
+                "pages": ["build/skills/overview", "build/skills/installation"]
+              }
             ]
           },
           {
