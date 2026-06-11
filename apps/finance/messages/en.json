@@ -1934,6 +1934,8 @@
     "show": "Show",
     "showing_all_chats": "Showing active and archived conversations",
     "showing_archived_chats": "Showing archived conversations",
+    "source_external": "External source",
+    "source_zalo_personal": "Zalo Personal",
     "step_details": "Details",
     "step_details_description": "Add the name and optional context people will see.",
     "step_members": "People",

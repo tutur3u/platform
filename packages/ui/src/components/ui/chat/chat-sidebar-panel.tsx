@@ -17,6 +17,7 @@ import {
   filterChatConversationsByScope,
   getChatConversationTypesForScope,
   getChatSelectionStorageKey,
+  getChatSourceGroupStorageKey,
   normalizeChatConversationScope,
   resolveChatConversationSelection,
 } from './utils';
@@ -105,6 +106,10 @@ export function ChatSidebarPanel({
     wsId,
     conversationScope
   );
+  const sourceGroupStorageKey = getChatSourceGroupStorageKey(
+    wsId,
+    conversationScope
+  );
   const requestedConversationPending = Boolean(
     requestedConversationId &&
       !scopedConversationIdList.includes(requestedConversationId) &&
@@ -189,6 +194,7 @@ export function ChatSidebarPanel({
         selectedConversationId={selectedConversationId}
         showControls={false}
         showTitle={false}
+        sourceGroupStorageKey={sourceGroupStorageKey}
         scope={conversationScope}
       />
       <CreateConversationDialog

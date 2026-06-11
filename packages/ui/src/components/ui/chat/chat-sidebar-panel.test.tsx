@@ -111,6 +111,8 @@ describe('ChatSidebarPanel', () => {
       hasMoreConversations: true,
       isFetchingMoreConversations: false,
       isLoading: false,
+      sourceGroupStorageKey:
+        'tuturuuu.chat.collapsedSourceGroups.personal.personal',
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'load more' }));

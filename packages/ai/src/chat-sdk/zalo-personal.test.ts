@@ -717,11 +717,6 @@ describe('Zalo personal Chat SDK adapter', () => {
       lastSeqId: 42,
       msgs: [userMessage],
     });
-    mocks.transferErrors.set(
-      'tuturuuuRequestPhoneSync',
-      new Error('Request failed with status code 404')
-    );
-
     const result = await adapter.syncPersonalPhoneHistory({
       maxPulls: 2,
       pullDelayMs: 250,
@@ -734,7 +729,7 @@ describe('Zalo personal Chat SDK adapter', () => {
       groupMessages: 1,
       pullAttempts: 1,
       requestAccepted: true,
-      requestHttpError: 'Request failed with status code 404',
+      requestHttpError: null,
       requestViaHttp: false,
       requestViaWebSocket: true,
       status: 'completed',
@@ -745,7 +740,6 @@ describe('Zalo personal Chat SDK adapter', () => {
       'phone group message',
     ]);
     expect(mocks.transferCalls.map((call) => call.name)).toEqual([
-      'tuturuuuRequestPhoneSync',
       'tuturuuuPullMobileMessages',
       'tuturuuuCleanMobileSync',
     ]);
@@ -819,7 +813,6 @@ describe('Zalo personal Chat SDK adapter', () => {
     expect(mocks.transferCalls.map((call) => call.name)).toEqual([
       'tuturuuuRequestPhoneSync',
       'tuturuuuPullMobileMessages',
-      'tuturuuuCancelMobileMessages',
     ]);
   });
 

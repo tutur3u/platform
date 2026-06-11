@@ -284,6 +284,68 @@ describe('AgentOperationsPanel', () => {
     });
   });
 
+  it('keeps personal Zalo actions busy while a phone sync job is running', async () => {
+    mocks.getAiAgentZaloPersonalStatus.mockResolvedValue({
+      phoneSyncJob: {
+        completedAt: null,
+        error: null,
+        startedAt: '2026-06-02T00:00:00.000Z',
+        status: 'running',
+        sync: null,
+      },
+      status: {
+        channelId: 'channel-1',
+        connected: true,
+        enabled: true,
+        lastError: 'zalo_personal_phone_sync_waiting_for_phone',
+        lastEventAt: '2026-06-02T00:00:00.000Z',
+        mode: 'personal',
+        ownId: 'own-1',
+        running: true,
+        startedAt: '2026-06-02T00:00:00.000Z',
+      },
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AgentOperationsPanel
+          agentId="agent-1"
+          channel={{
+            ...channel,
+            adapter: 'zalo',
+            displayName: 'Personal Zalo',
+            webhookUrl: null,
+            zaloAccountMode: 'personal',
+            zaloPersonalOwnId: 'own-1',
+          }}
+          isPending={false}
+          onCopySecret={vi.fn()}
+          onDeploy={vi.fn()}
+          onPause={vi.fn()}
+          onRefresh={vi.fn()}
+          onRotateSecret={vi.fn()}
+          onTest={vi.fn()}
+          secretPreview={null}
+          testResult={null}
+        />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('agent_zalo_personal_sync_phone').closest('button')
+      ).toBeDisabled();
+    });
+    expect(
+      screen.getByText('agent_zalo_personal_sync_phone_waiting')
+    ).toBeInTheDocument();
+  });
+
   it('warns when personal Zalo phone transfer is approved but returns no payload', async () => {
     mocks.getAiAgentZaloPersonalStatus.mockResolvedValue({
       status: {

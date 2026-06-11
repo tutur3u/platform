@@ -1256,16 +1256,15 @@ export function createZaloPersonalAdapter(
           });
         }
 
-        try {
-          await transferApi.tuturuuuRequestPhoneSync?.({
-            data: syncPayload,
-            reqId: requestId,
-          });
-          requestViaHttp = true;
-        } catch (error) {
-          requestHttpError = toSafePhoneSyncError(error);
-
-          if (!requestViaWebSocket) {
+        if (!requestViaWebSocket) {
+          try {
+            await transferApi.tuturuuuRequestPhoneSync?.({
+              data: syncPayload,
+              reqId: requestId,
+            });
+            requestViaHttp = true;
+          } catch (error) {
+            requestHttpError = toSafePhoneSyncError(error);
             throw error;
           }
         }
@@ -1341,7 +1340,12 @@ export function createZaloPersonalAdapter(
               .tuturuuuCleanMobileSync?.({ publicKey })
               .then(() => true)
               .catch(() => false)) ?? false;
-        } else if (requestAccepted && lastError && messages.length === 0) {
+        } else if (
+          requestAccepted &&
+          lastError &&
+          messages.length === 0 &&
+          !isPhoneSyncApprovalPendingError(lastError)
+        ) {
           await transferApi
             .tuturuuuCancelMobileMessages?.({ publicKey })
             .catch(() => undefined);

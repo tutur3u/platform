@@ -71,4 +71,48 @@ describe('chat sidebar conversation sections', () => {
       },
     ]);
   });
+
+  it('groups Zalo mirrored external conversations under the AI source group', () => {
+    const sections = getChatConversationSections({
+      conversations: [
+        conversation('ai', 'assistant-conversation'),
+        conversation('ai', 'zalo-thread-1', {
+          adapter: 'zalo',
+          agentId: 'agent-1',
+          channelId: 'chat-zalo-personal',
+          source: 'ai-agent-external-thread',
+        }),
+        conversation('ai', 'zalo-thread-2', {
+          adapter: 'zalo',
+          agentId: 'agent-1',
+          channelId: 'chat-zalo-personal',
+          source: 'ai-agent-external-thread',
+        }),
+      ],
+      labels: {
+        ai: 'AI agents',
+        channel: 'Channels',
+        direct: 'Direct messages',
+        group: 'Groups',
+      },
+      scope: 'workspaces',
+      sourceLabels: {
+        external: 'External source',
+        zaloPersonal: 'Zalo Personal',
+      },
+    });
+
+    expect(sections[1]).toMatchObject({
+      conversations: [{ id: 'assistant-conversation' }],
+      label: 'AI agents',
+      sectionType: 'ai',
+      sourceGroups: [
+        {
+          conversations: [{ id: 'zalo-thread-1' }, { id: 'zalo-thread-2' }],
+          id: 'external:zalo:agent-1:chat-zalo-personal',
+          label: 'Zalo Personal',
+        },
+      ],
+    });
+  });
 });

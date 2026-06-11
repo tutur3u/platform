@@ -102,7 +102,7 @@ export function AgentZaloPersonalPanel({
     queryFn: () => getAiAgentZaloPersonalStatus(agentId, channel.id),
     queryKey: [STATUS_QUERY_KEY, agentId, channel.id],
     refetchInterval: (query) =>
-      query.state.data?.phoneSyncJob?.status === 'running' ? 3000 : 10_000,
+      isActivePhoneSyncJob(query.state.data?.phoneSyncJob) ? 3000 : 10_000,
   });
   const qrQuery = useQuery({
     enabled: Boolean(sessionId),
@@ -214,7 +214,7 @@ export function AgentZaloPersonalPanel({
 
   const listenerStatus = statusQuery.data?.status;
   const phoneSyncJob = statusQuery.data?.phoneSyncJob ?? null;
-  const phoneSyncRunning = phoneSyncJob?.status === 'running';
+  const phoneSyncRunning = isActivePhoneSyncJob(phoneSyncJob);
   const qrBusy = startMutation.isPending || abortMutation.isPending;
   const actionBusy = isPending || actionMutation.isPending || phoneSyncRunning;
   const listenerError =
@@ -483,6 +483,12 @@ function getQrErrorMessage(
   }
 
   return session.error;
+}
+
+function isActivePhoneSyncJob(
+  job: AiAgentZaloPersonalPhoneSyncJobSnapshot | null | undefined
+) {
+  return job?.status === 'running';
 }
 
 function ActionButton({

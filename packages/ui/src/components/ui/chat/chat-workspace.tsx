@@ -48,6 +48,7 @@ import {
   filterChatConversations,
   getChatConversationTypesForScope,
   getChatSelectionStorageKey,
+  getChatSourceGroupStorageKey,
   getConversationTitle,
   isReadOnlyChatConversation,
   normalizeChatConversationScope,
@@ -122,6 +123,9 @@ export function ChatWorkspace({
   const requestedConversationId = searchParams.get('conversationId');
   const selectionStorageKey = conversationScope
     ? getChatSelectionStorageKey(wsId, conversationScope)
+    : null;
+  const sourceGroupStorageKey = conversationScope
+    ? getChatSourceGroupStorageKey(wsId, conversationScope)
     : null;
   const requestedConversationPending = Boolean(
     requestedConversationId &&
@@ -491,6 +495,7 @@ export function ChatWorkspace({
           searchResults={searchResults}
           searchValue={searchValue}
           selectedConversationId={activeConversationId}
+          sourceGroupStorageKey={sourceGroupStorageKey}
           scope={conversationScope ?? undefined}
         />
       ) : null}

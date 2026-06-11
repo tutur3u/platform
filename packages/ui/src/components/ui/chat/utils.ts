@@ -244,6 +244,13 @@ export function getChatSelectionStorageKey(
   return `tuturuuu.chat.selectedConversation.${wsId}.${scope}`;
 }
 
+export function getChatSourceGroupStorageKey(
+  wsId: string,
+  scope: ChatConversationScope
+) {
+  return `tuturuuu.chat.collapsedSourceGroups.${wsId}.${scope}`;
+}
+
 export function resolveChatConversationSelection({
   conversationIds,
   requestedConversationId,
