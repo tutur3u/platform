@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/platform-v0.7.0...platform-v0.8.0) (2026-06-11)
+
+
+### Features
+
+* **cli:** add calendar commands ([b916c1a](https://github.com/tutur3u/platform/commit/b916c1a0eeecfae961292466de0e9b37b9512b69))
+* **cli:** add finance wallet checkpoints ([4f77821](https://github.com/tutur3u/platform/commit/4f778210e753f6241a52528c64a9cb0756fb20dc))
+* **finance:** add wallet checkpoints ([54f9f29](https://github.com/tutur3u/platform/commit/54f9f29446ff9991e09a68abb258ce66c640b086))
+* **infrastructure:** improve log observability and redis defaults ([566724d](https://github.com/tutur3u/platform/commit/566724d691c0703038373d811ac41c709efa9544))
+* **tasks:** add compact task create popover ([6c4b957](https://github.com/tutur3u/platform/commit/6c4b957634136a57e3ceb4ba1fc2f151c8a04314))
+* **tasks:** add task sound effects ([7c4cb06](https://github.com/tutur3u/platform/commit/7c4cb06f8f134db201f54294c3c2641ae9ae5d07))
+
+
+### Bug Fixes
+
+* **docker:** auto-size web build memory cap ([7b28018](https://github.com/tutur3u/platform/commit/7b28018922d9a29c951cd35bd7a40e5351891ebd))
+* **finance:** merge transfer rows and sync wallet icons ([084e1ac](https://github.com/tutur3u/platform/commit/084e1ac662a3f41c59cfc54d58fa5897293697d2))
+* **inventory:** resolve dashboard loading crashes for non-admin users ([e5328ca](https://github.com/tutur3u/platform/commit/e5328ca1b9fc059aa2076dd9a1ffe6ff7a6b00fe))
+* **learn:** address quiz review comments ([441fe7e](https://github.com/tutur3u/platform/commit/441fe7eabe7ac7c4a3dd05d014dd52e1f6339129))
+* **learn:** avoid unused quiz insert rows ([d7a5c36](https://github.com/tutur3u/platform/commit/d7a5c36ce3cf03e4dbcc26beec1d37215100e137))
+* **learn:** batch insert generated quizzes ([9e671ca](https://github.com/tutur3u/platform/commit/9e671ca83bb8c1df9e05eae7889955ad958aef0b))
+* **learn:** secure learner quiz practice ([352183b](https://github.com/tutur3u/platform/commit/352183b0c67798867628adddc8fb5d18d262de40))
+* **learn:** type learner quiz data ([f98ec7c](https://github.com/tutur3u/platform/commit/f98ec7cf0cf2f2e93faa8b57577dfff58a555a63))
+* **sdk:** respect timezone for finance dates ([ad5e725](https://github.com/tutur3u/platform/commit/ad5e72533f45dc2ebf3bab451bc3b98f3a68d8ef))
+* **users:** keep database filters out of URLs ([3f8045a](https://github.com/tutur3u/platform/commit/3f8045a42632ed415c6c7b3f245ca8d360d171b9))
+* **web:** restore users database pages ([bd3188f](https://github.com/tutur3u/platform/commit/bd3188fff1bf960c8d52e545a8770088749d82d0))
+* **web:** satisfy workspace users table lint ([08d9f78](https://github.com/tutur3u/platform/commit/08d9f783b4d5a436df8fa2a2fc4e0dcb75f702fc))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/platform-v0.6.0...platform-v0.7.0) (2026-06-11)
 
 

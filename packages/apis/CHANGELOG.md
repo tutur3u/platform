@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/apis-v0.2.0...apis-v0.3.0) (2026-06-11)
+
+
+### Features
+
+* **finance:** add wallet checkpoints ([54f9f29](https://github.com/tutur3u/platform/commit/54f9f29446ff9991e09a68abb258ce66c640b086))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/apis-v0.1.0...apis-v0.2.0) (2026-06-11)
 
 

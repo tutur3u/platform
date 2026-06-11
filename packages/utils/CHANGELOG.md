@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/utils-v0.5.1...utils-v0.6.0) (2026-06-11)
+
+
+### Features
+
+* **infrastructure:** improve log observability and redis defaults ([566724d](https://github.com/tutur3u/platform/commit/566724d691c0703038373d811ac41c709efa9544))
+
 ## [0.5.1](https://github.com/tutur3u/platform/compare/utils-v0.5.0...utils-v0.5.1) (2026-06-11)
 
 

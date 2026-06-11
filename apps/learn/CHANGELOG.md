@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.4](https://github.com/tutur3u/platform/compare/learn-v0.1.3...learn-v0.1.4) (2026-06-11)
+
+
+### Bug Fixes
+
+* **learn:** address quiz review comments ([441fe7e](https://github.com/tutur3u/platform/commit/441fe7eabe7ac7c4a3dd05d014dd52e1f6339129))
+* **learn:** secure learner quiz practice ([352183b](https://github.com/tutur3u/platform/commit/352183b0c67798867628adddc8fb5d18d262de40))
+* **learn:** type learner quiz data ([f98ec7c](https://github.com/tutur3u/platform/commit/f98ec7cf0cf2f2e93faa8b57577dfff58a555a63))
+
 ## [0.1.3](https://github.com/tutur3u/platform/compare/learn-v0.1.2...learn-v0.1.3) (2026-06-11)
 
 

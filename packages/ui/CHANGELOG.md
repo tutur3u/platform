@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/ui-v0.4.1...ui-v0.5.0) (2026-06-11)
+
+
+### Features
+
+* **finance:** add wallet checkpoints ([54f9f29](https://github.com/tutur3u/platform/commit/54f9f29446ff9991e09a68abb258ce66c640b086))
+* **tasks:** add compact task create popover ([6c4b957](https://github.com/tutur3u/platform/commit/6c4b957634136a57e3ceb4ba1fc2f151c8a04314))
+* **tasks:** add task sound effects ([7c4cb06](https://github.com/tutur3u/platform/commit/7c4cb06f8f134db201f54294c3c2641ae9ae5d07))
+
+
+### Bug Fixes
+
+* **finance:** merge transfer rows and sync wallet icons ([084e1ac](https://github.com/tutur3u/platform/commit/084e1ac662a3f41c59cfc54d58fa5897293697d2))
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/ui-v0.4.0...ui-v0.4.1) (2026-06-11)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/types-v0.6.1...types-v0.7.0) (2026-06-11)
+
+
+### Features
+
+* **finance:** add wallet checkpoints ([54f9f29](https://github.com/tutur3u/platform/commit/54f9f29446ff9991e09a68abb258ce66c640b086))
+
 ## [0.6.1](https://github.com/tutur3u/platform/compare/types-v0.6.0...types-v0.6.1) (2026-06-11)
 
 
