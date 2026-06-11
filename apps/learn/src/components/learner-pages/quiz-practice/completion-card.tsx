@@ -1,0 +1,54 @@
+'use client';
+
+import { RefreshCw, Sparkles } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { useTranslations } from 'next-intl';
+import { BrutalCard } from '../shared';
+
+export function QuizCompletionCard({
+  completedCount,
+  onRetry,
+  totalCount,
+  totalMaxScore,
+}: {
+  completedCount: number;
+  onRetry: () => void;
+  totalCount: number;
+  totalMaxScore: number;
+}) {
+  const t = useTranslations();
+
+  return (
+    <BrutalCard className="bg-background p-8 text-center">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border-2 border-border bg-dynamic-yellow text-foreground shadow-[3px_3px_0_var(--border)]">
+        <Sparkles className="h-8 w-8" />
+      </div>
+      <h2 className="font-black text-3xl leading-tight tracking-normal">
+        {t('courses.done')}
+      </h2>
+      <p className="mt-2 text-muted-foreground text-sm">
+        {t('courses.quizPracticeCompleteDescription')}
+      </p>
+
+      <div className="my-6 border-2 border-border bg-muted/20 p-5 shadow-[4px_4px_0_var(--border)]">
+        <div className="font-black text-3xl text-primary">
+          {t('courses.quizReviewedCount', {
+            completed: completedCount,
+            total: totalCount,
+          })}
+        </div>
+        <div className="mt-2 font-bold text-muted-foreground text-sm">
+          {t('courses.quizAvailablePoints', { points: totalMaxScore })}
+        </div>
+      </div>
+
+      <Button
+        onClick={onRetry}
+        className="h-12 border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)]"
+      >
+        <RefreshCw className="mr-2 h-4 w-4" />
+        {t('courses.quizRetryPractice')}
+      </Button>
+    </BrutalCard>
+  );
+}

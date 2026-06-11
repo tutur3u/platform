@@ -1,7 +1,10 @@
+import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { JsonPayloadSchema } from '@/lib/education/json-payload-schema';
 import { setPrivateWorkspaceQuizAnswer } from '@/lib/education/private-quiz-answers';
+import { revalidateQuizLinkedModulePaths } from '@/lib/education/revalidate-quiz-paths';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
@@ -23,12 +26,18 @@ const QuizTypeSchema = z.enum([
   'ordering',
 ]);
 
+type QuizMutationData = {
+  question: string;
+  content?: Json;
+  type?: z.infer<typeof QuizTypeSchema>;
+};
+
 const QuizUpdateSchema = z.object({
   question: z.string().trim().min(1).max(4000),
   quiz_options: z.array(QuizOptionSchema).optional(),
   type: QuizTypeSchema.optional(),
-  content: z.any().optional(),
-  answer: z.any().optional(),
+  content: JsonPayloadSchema.optional(),
+  answer: JsonPayloadSchema.optional(),
 });
 
 export const PUT = withSessionAuth(
@@ -72,7 +81,7 @@ export const PUT = withSessionAuth(
       );
     }
 
-    const updateData: any = { question: parsedBody.data.question };
+    const updateData: QuizMutationData = { question: parsedBody.data.question };
     if (parsedBody.data.type !== undefined)
       updateData.type = parsedBody.data.type;
     if (parsedBody.data.content !== undefined)
@@ -152,6 +161,12 @@ export const PUT = withSessionAuth(
       }
     }
 
+    await revalidateQuizLinkedModulePaths({
+      db: access.sbAdmin,
+      quizId: parsedParams.data.quizId,
+      wsId: access.normalizedWsId,
+    });
+
     return NextResponse.json({ message: 'success' });
   },
   {
@@ -182,6 +197,12 @@ export const DELETE = withSessionAuth(
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
+
+    await revalidateQuizLinkedModulePaths({
+      db: access.sbAdmin,
+      quizId: parsedParams.data.quizId,
+      wsId: access.normalizedWsId,
+    });
 
     const { data, error } = await access.sbAdmin
       .from('workspace_quizzes')

@@ -8,10 +8,20 @@ let mocks: RouteMocks;
 function createRouteMocks() {
   const requireTeachWorkspaceAccess = vi.fn();
 
-  const updateQuizBuilder: Record<string, any> = {};
-  updateQuizBuilder.eq = vi.fn(() => updateQuizBuilder);
-  updateQuizBuilder.select = vi.fn(() => updateQuizBuilder);
-  updateQuizBuilder.maybeSingle = vi.fn();
+  const updateQuizBuilder = {
+    eq: vi.fn(),
+    maybeSingle: vi.fn(),
+    select: vi.fn(),
+  };
+  updateQuizBuilder.eq.mockReturnValue(updateQuizBuilder);
+  updateQuizBuilder.select.mockReturnValue(updateQuizBuilder);
+
+  const quizLinksBuilder = {
+    eq: vi.fn(),
+    select: vi.fn(),
+  };
+  quizLinksBuilder.select.mockReturnValue(quizLinksBuilder);
+  quizLinksBuilder.eq.mockResolvedValue({ data: [], error: null });
 
   const workspaceQuizzesTable = {
     update: vi.fn(() => updateQuizBuilder),
@@ -25,6 +35,10 @@ function createRouteMocks() {
     from: vi.fn((table: string) => {
       if (table === 'workspace_quizzes') {
         return workspaceQuizzesTable;
+      }
+
+      if (table === 'course_module_quizzes') {
+        return quizLinksBuilder;
       }
 
       throw new Error(`Unexpected table: ${table}`);
@@ -48,6 +62,7 @@ function createRouteMocks() {
 
   return {
     privateQuizAnswersTable,
+    quizLinksBuilder,
     requireTeachWorkspaceAccess,
     sessionSupabase,
     updateQuizBuilder,
@@ -81,7 +96,12 @@ vi.mock('@/lib/api-auth', () => ({
 vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: {
     error: vi.fn(),
+    warn: vi.fn(),
   },
+}));
+
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
 }));
 
 vi.mock('@/lib/teach/api', () => ({

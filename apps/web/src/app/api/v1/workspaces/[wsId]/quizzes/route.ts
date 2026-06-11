@@ -1,10 +1,14 @@
+import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { JsonPayloadSchema } from '@/lib/education/json-payload-schema';
 import {
   attachPrivateWorkspaceQuizAnswers,
   setPrivateWorkspaceQuizAnswer,
 } from '@/lib/education/private-quiz-answers';
+import { revalidateCourseModuleQuizPaths } from '@/lib/education/revalidate-quiz-paths';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -27,13 +31,19 @@ const QuizTypeSchema = z.enum([
   'ordering',
 ]);
 
+type QuizMutationData = {
+  question: string;
+  content?: Json;
+  type?: z.infer<typeof QuizTypeSchema>;
+};
+
 const QuizPayloadSchema = z.object({
   id: z.guid().optional(),
   question: z.string().trim().min(1).max(4000),
   quiz_options: z.array(QuizOptionSchema).optional(),
   type: QuizTypeSchema.optional(),
-  content: z.any().optional(),
-  answer: z.any().optional(),
+  content: JsonPayloadSchema.optional(),
+  answer: JsonPayloadSchema.optional(),
 });
 
 const QuizCreateSchema = z.object({
@@ -98,7 +108,11 @@ export const GET = withSessionAuth(
         .eq('module_id', moduleId);
 
       if (mqErr) {
-        console.error('Failed to fetch course module quizzes', mqErr);
+        serverLogger.error('Failed to fetch course module quizzes', {
+          error: mqErr,
+          moduleId,
+          wsId: access.normalizedWsId,
+        });
         return NextResponse.json(
           { message: 'Error fetching course module quizzes' },
           { status: 500 }
@@ -126,7 +140,10 @@ export const GET = withSessionAuth(
 
     const { data, error, count } = await queryBuilder;
     if (error) {
-      console.error('Failed to fetch workspace quizzes', error);
+      serverLogger.error('Failed to fetch workspace quizzes', {
+        error,
+        wsId: access.normalizedWsId,
+      });
       return NextResponse.json(
         { message: 'Error fetching workspace quizzes' },
         { status: 500 }
@@ -196,7 +213,7 @@ export const POST = withSessionAuth(
       for (const quiz of quizzes) {
         let quizId: string;
 
-        const updateData: any = { question: quiz.question };
+        const updateData: QuizMutationData = { question: quiz.question };
         if (quiz.type !== undefined) updateData.type = quiz.type;
         if (quiz.content !== undefined) updateData.content = quiz.content;
 
@@ -217,7 +234,7 @@ export const POST = withSessionAuth(
           }
           quizId = updated.id;
         } else {
-          const insertData: any = {
+          const insertData: QuizMutationData & { ws_id: string } = {
             question: quiz.question,
             ws_id: access.normalizedWsId,
           };
@@ -286,11 +303,19 @@ export const POST = withSessionAuth(
         }
       }
 
+      if (moduleId != null) {
+        await revalidateCourseModuleQuizPaths({
+          db: access.sbAdmin,
+          moduleIds: [moduleId],
+          wsId: access.normalizedWsId,
+        });
+      }
+
       return NextResponse.json({
         message: 'All quizzes processed successfully',
       });
     } catch (error) {
-      console.error('Bulk quiz error:', error);
+      serverLogger.error('Bulk quiz error', { error });
       return NextResponse.json(
         { message: 'An error occurred processing quizzes' },
         { status: 500 }

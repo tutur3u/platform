@@ -1,3 +1,5 @@
+import type { Json } from '@tuturuuu/types';
+
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -127,12 +129,26 @@ export interface TulearnCourseDetail extends TulearnCourseSummary {
   modules: TulearnCourseModuleSummary[];
 }
 
+export interface TulearnQuizOption {
+  id: string;
+  value: string;
+}
+
+export interface TulearnQuiz {
+  id: string;
+  question: string;
+  type: string | null;
+  content: Json | null;
+  score: number;
+  quiz_options?: TulearnQuizOption[];
+}
+
 export interface TulearnCourseModuleDetail extends TulearnCourseModuleSummary {
   content: unknown;
   extra_content: unknown;
   youtube_links: string[] | null;
   flashcards: Array<{ id: string; front: string; back: string }>;
-  quizzes: Array<{ id: string; question: string; score: number }>;
+  quizzes: TulearnQuiz[];
   quizSets: Array<{ id: string; name: string }>;
 }
 

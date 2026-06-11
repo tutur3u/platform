@@ -11,8 +11,11 @@ import type {
   TulearnCourseModuleDetail,
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { ContentCard } from './content-card';
+import { LearnerQuizzes } from './learner-quizzes';
 import { hasContent, RichContentRenderer } from './rich-content-renderer';
 import { BrutalCard, EmptyState } from './shared';
 import { YoutubeCard } from './youtube-card';
@@ -41,6 +44,7 @@ export function ModuleDetailView({
   totalModules: number;
 }) {
   const t = useTranslations();
+  const [activeTab, setActiveTab] = useState<'content' | 'quizzes'>('content');
   const videos = courseModule.youtube_links ?? [];
 
   return (
@@ -80,42 +84,78 @@ export function ModuleDetailView({
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="space-y-5">
-          {hasContent(courseModule.content) && (
-            <ContentCard
-              icon={<BookOpen className="h-4 w-4" />}
-              title={t('courses.moduleContent')}
-            >
-              <RichContentRenderer content={courseModule.content} />
-            </ContentCard>
+          {courseModule.quizzes?.length > 0 && (
+            <div className="flex gap-2 border-border border-b-2 pb-1">
+              <button
+                onClick={() => setActiveTab('content')}
+                className={cn(
+                  'cursor-pointer border-2 border-border px-4 py-2 font-black text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]',
+                  activeTab === 'content'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background text-foreground'
+                )}
+                type="button"
+              >
+                {t('courses.moduleContent')}
+              </button>
+              <button
+                onClick={() => setActiveTab('quizzes')}
+                className={cn(
+                  'cursor-pointer border-2 border-border px-4 py-2 font-black text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]',
+                  activeTab === 'quizzes'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background text-foreground'
+                )}
+                type="button"
+              >
+                {t('courses.quizzes')} ({courseModule.quizzes.length})
+              </button>
+            </div>
           )}
 
-          {videos.length > 0 && (
-            <ContentCard
-              icon={<Youtube className="h-4 w-4" />}
-              title={t('courses.videos')}
-            >
-              <div className="grid gap-3">
-                {videos.map((link) => (
-                  <YoutubeCard key={link} url={link} />
-                ))}
-              </div>
-            </ContentCard>
-          )}
+          {activeTab === 'quizzes' && courseModule.quizzes?.length > 0 ? (
+            <LearnerQuizzes quizzes={courseModule.quizzes} />
+          ) : (
+            <>
+              {hasContent(courseModule.content) && (
+                <ContentCard
+                  icon={<BookOpen className="h-4 w-4" />}
+                  title={t('courses.moduleContent')}
+                >
+                  <RichContentRenderer content={courseModule.content} />
+                </ContentCard>
+              )}
 
-          {hasContent(courseModule.extra_content) && (
-            <ContentCard
-              icon={<BookText className="h-4 w-4" />}
-              title={t('courses.extraReading')}
-            >
-              <RichContentRenderer content={courseModule.extra_content} />
-            </ContentCard>
-          )}
+              {videos.length > 0 && (
+                <ContentCard
+                  icon={<Youtube className="h-4 w-4" />}
+                  title={t('courses.videos')}
+                >
+                  <div className="grid gap-3">
+                    {videos.map((link) => (
+                      <YoutubeCard key={link} url={link} />
+                    ))}
+                  </div>
+                </ContentCard>
+              )}
 
-          {!hasContent(courseModule.content) &&
-            videos.length === 0 &&
-            !hasContent(courseModule.extra_content) && (
-              <EmptyState label={t('courses.moduleEmpty')} />
-            )}
+              {hasContent(courseModule.extra_content) && (
+                <ContentCard
+                  icon={<BookText className="h-4 w-4" />}
+                  title={t('courses.extraReading')}
+                >
+                  <RichContentRenderer content={courseModule.extra_content} />
+                </ContentCard>
+              )}
+
+              {!hasContent(courseModule.content) &&
+                videos.length === 0 &&
+                !hasContent(courseModule.extra_content) &&
+                (courseModule.quizzes?.length ?? 0) === 0 && (
+                  <EmptyState label={t('courses.moduleEmpty')} />
+                )}
+            </>
+          )}
         </div>
 
         <aside className="space-y-4">

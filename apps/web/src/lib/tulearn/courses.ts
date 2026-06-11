@@ -42,8 +42,24 @@ type FlashcardJoinRow = {
 
 type QuizJoinRow = {
   workspace_quizzes:
-    | Pick<Tables<'workspace_quizzes'>, 'id' | 'question' | 'score'>
-    | Pick<Tables<'workspace_quizzes'>, 'id' | 'question' | 'score'>[]
+    | (Pick<
+        Tables<'workspace_quizzes'>,
+        'id' | 'question' | 'type' | 'content' | 'score'
+      > & {
+        quiz_options?: Array<{
+          id: string;
+          value: string;
+        }>;
+      })
+    | (Pick<
+        Tables<'workspace_quizzes'>,
+        'id' | 'question' | 'type' | 'content' | 'score'
+      > & {
+        quiz_options?: Array<{
+          id: string;
+          value: string;
+        }>;
+      })[]
     | null;
 };
 
@@ -329,7 +345,9 @@ export async function getLearnerModuleDetail({
         .eq('module_id', moduleId),
       sbAdmin
         .from('course_module_quizzes')
-        .select('workspace_quizzes(id, question, score)')
+        .select(
+          'workspace_quizzes(id, question, type, content, score, quiz_options(id, value))'
+        )
         .eq('module_id', moduleId),
       sbAdmin
         .from('course_module_quiz_sets')
@@ -347,6 +365,10 @@ export async function getLearnerModuleDetail({
   const quizRows = (quizzesResult.data ?? []) as QuizJoinRow[];
   const quizSetRows = (quizSetsResult.data ?? []) as QuizSetJoinRow[];
 
+  const rawQuizzes = quizRows
+    .map((row) => firstOf(row.workspace_quizzes))
+    .filter((value): value is NonNullable<typeof value> => Boolean(value));
+
   return {
     ...summary,
     content: moduleResult.data.content,
@@ -355,9 +377,7 @@ export async function getLearnerModuleDetail({
     flashcards: flashcardRows
       .map((row) => firstOf(row.workspace_flashcards))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),
-    quizzes: quizRows
-      .map((row) => firstOf(row.workspace_quizzes))
-      .filter((value): value is NonNullable<typeof value> => Boolean(value)),
+    quizzes: rawQuizzes,
     quizSets: quizSetRows
       .map((row) => firstOf(row.workspace_quiz_sets))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),
