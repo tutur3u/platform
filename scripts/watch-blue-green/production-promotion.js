@@ -106,6 +106,34 @@ function writeProductionPromotionState(
   );
 }
 
+function clearQueuedProductionPromotionState({
+  fsImpl = fs,
+  now = Date.now(),
+  paths = getWatchPaths(),
+} = {}) {
+  const state = readProductionPromotionState(paths, fsImpl);
+
+  if (!state?.queuedRequest) {
+    return state;
+  }
+
+  const nextState = {
+    ...state,
+    decision: state.decision
+      ? {
+          ...state.decision,
+          bypassed: false,
+        }
+      : state.decision,
+    queuedRequest: null,
+    updatedAt: new Date(now).toISOString(),
+  };
+
+  writeProductionPromotionState(nextState, { fsImpl, paths });
+
+  return nextState;
+}
+
 function getCommitAgeMs(commit, now = Date.now()) {
   const committedAt = toFiniteTimestamp(commit?.committedAt);
 
@@ -533,6 +561,7 @@ module.exports = {
   DEFAULT_AUTO_PRODUCTION_PROMOTION_DELAY_MS,
   DEFAULT_AUTO_PRODUCTION_PROMOTION_POLL_MS,
   PRODUCTION_PROMOTION_STATE_KIND,
+  clearQueuedProductionPromotionState,
   createCiSummary,
   createProductionPromotionState,
   evaluateProductionPromotion,

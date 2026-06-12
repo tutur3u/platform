@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ObservabilityDeploymentsPanel } from './observability-deployments-panel';
 
 const apiMocks = vi.hoisted(() => ({
+  clearBlueGreenDeploymentPin: vi.fn(),
   requestBlueGreenDeploymentRevert: vi.fn(),
   requestBlueGreenProductionPromote: vi.fn(),
 }));
@@ -23,6 +24,7 @@ vi.mock('@tuturuuu/internal-api/infrastructure', async (importOriginal) => {
 
   return {
     ...actual,
+    clearBlueGreenDeploymentPin: apiMocks.clearBlueGreenDeploymentPin,
     requestBlueGreenDeploymentRevert: apiMocks.requestBlueGreenDeploymentRevert,
     requestBlueGreenProductionPromote:
       apiMocks.requestBlueGreenProductionPromote,
@@ -68,6 +70,10 @@ const messages: Record<string, string> = {
   'deployments.targets.proxy': 'Proxy',
   'deployments.targets.support': 'Support',
   'deployments.targets.web': 'Web',
+  'controls.clear_pin_action': 'Remove Pin',
+  'controls.clear_pin_error': 'Could not remove the deployment pin.',
+  'controls.clear_pin_pending': 'Removing Pin',
+  'controls.clear_pin_success': 'Removed the deployment pin.',
   'controls.confirm_cancel': 'Cancel',
   'controls.deployment_revert_confirm_action': 'Queue Revert',
   'controls.deployment_revert_confirm_description':
@@ -106,6 +112,8 @@ const messages: Record<string, string> = {
   'controls.production_ci_unavailable': 'Unavailable',
   'controls.production_main_commit': 'Main',
   'controls.production_next_check': 'Next check {time}',
+  'controls.pin_active_description': 'Production is pinned to {commit}.',
+  'controls.pin_active_title': 'Deployment pin active',
   'controls.production_prebuild_blocked': 'Prebuild blocked: {reason}',
   'controls.production_prebuild_building': 'Prebuilding main · {elapsed}',
   'controls.production_prebuild_completed': 'Prebuilt main · {duration}',
@@ -447,6 +455,7 @@ function createSnapshot(): BlueGreenMonitoringSnapshot {
 
 describe('ObservabilityDeploymentsPanel', () => {
   beforeEach(() => {
+    apiMocks.clearBlueGreenDeploymentPin.mockReset();
     apiMocks.requestBlueGreenDeploymentRevert.mockReset();
     apiMocks.requestBlueGreenProductionPromote.mockReset();
   });
@@ -504,6 +513,77 @@ describe('ObservabilityDeploymentsPanel', () => {
         instant: true,
       });
     });
+  });
+
+  it('shows and clears the active deployment pin from the deployments panel', async () => {
+    apiMocks.clearBlueGreenDeploymentPin.mockResolvedValueOnce({
+      message: 'Cleared the pinned deployment.',
+    });
+    const snapshot = createSnapshot();
+    snapshot.control.deploymentPin = {
+      activeColor: 'blue',
+      commitHash: 'cached123456789',
+      commitShortHash: 'cached1',
+      commitSubject: 'Cached rollback target',
+      deploymentStamp: 'deploy-cached1',
+      kind: 'deployment-pin',
+      requestedAt: '2026-06-10T10:05:00.000Z',
+      requestedBy: 'user-1',
+      requestedByEmail: null,
+    };
+
+    renderPanel({ snapshot });
+
+    expect(screen.getByText('Deployment pin active')).toBeVisible();
+    expect(screen.getByText('Production is pinned to cached1.')).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: /Remove Pin/i }));
+
+    await waitFor(() => {
+      expect(apiMocks.clearBlueGreenDeploymentPin).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('ignores stale queued promotion state when no control request exists', () => {
+    const snapshot = createSnapshot();
+    snapshot.productionPromotion!.queuedRequest = {
+      bypassChecks: true,
+      bypassDelay: true,
+      kind: 'production-promote',
+      requestedAt: '2026-06-10T10:00:00.000Z',
+      requestedBy: 'user-1',
+      requestedByEmail: null,
+      sourceBranch: 'main',
+      targetBranch: 'production',
+    };
+
+    renderPanel({ snapshot });
+
+    expect(screen.queryByText('Promotion queued')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Promote Main Now/i })
+    ).toBeEnabled();
+  });
+
+  it('shows queued promotion only while the control request exists', () => {
+    const snapshot = createSnapshot();
+    snapshot.control.productionPromoteRequest = {
+      bypassChecks: true,
+      bypassDelay: true,
+      kind: 'production-promote',
+      requestedAt: '2026-06-10T10:00:00.000Z',
+      requestedBy: 'user-1',
+      requestedByEmail: null,
+      sourceBranch: 'main',
+      targetBranch: 'production',
+    };
+
+    renderPanel({ snapshot });
+
+    expect(screen.getAllByText('Promotion queued').length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole('button', { name: /Promotion queued/i })
+    ).toBeDisabled();
   });
 
   it('shows elapsed time while the main prebuild is building', () => {

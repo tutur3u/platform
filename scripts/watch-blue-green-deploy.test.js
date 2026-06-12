@@ -4083,6 +4083,12 @@ test('runProductionPromotionIteration does not cancel an active build before fai
 
     assert.equal(result, null);
     assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
+    const state = JSON.parse(
+      fs.readFileSync(paths.productionPromotionStateFile, 'utf8')
+    );
+
+    assert.equal(state.queuedRequest, null);
+    assert.equal(state.decision.bypassed, false);
     assert.equal(readDeploymentHistory(paths, fs).length, 0);
     assert.equal(calls.includes(prodComposeStopKey('buildkit')), false);
     assert.equal(calls.includes('docker buildx rm tuturuuu'), false);
@@ -4535,6 +4541,60 @@ test('runDeploymentRevertRequestIteration cancels an active build before cached 
       ),
       'utf8'
     );
+    fs.writeFileSync(
+      paths.productionPromotionStateFile,
+      JSON.stringify(
+        {
+          ci: {
+            completed: 0,
+            failing: 0,
+            pending: 0,
+            state: 'unavailable',
+            total: 0,
+            unavailableReason: null,
+          },
+          decision: {
+            blockedReasons: [],
+            bypassed: true,
+            ready: true,
+            status: 'manual-ready',
+          },
+          kind: 'production-promotion-state',
+          main: {
+            committedAt: '2026-06-10T09:59:30.000Z',
+            hash: 'new9999999999999999999999999999999999999',
+            shortHash: 'new999',
+            subject: 'Current production',
+          },
+          nextCheckAt: checkedAt + 5000,
+          prebuild: null,
+          production: {
+            committedAt: '2026-06-10T09:00:00.000Z',
+            hash: request.commitHash,
+            shortHash: request.commitShortHash,
+            subject: request.commitSubject,
+          },
+          queuedRequest: {
+            bypassChecks: true,
+            bypassDelay: true,
+            kind: 'production-promote',
+            requestedAt: '2026-06-10T10:04:00.000Z',
+            requestedBy: 'user-2',
+            requestedByEmail: 'ops@platform.test',
+            sourceBranch: 'main',
+            targetBranch: 'production',
+          },
+          requiredDelayMs: 600000,
+          sourceBranch: 'main',
+          targetBranch: 'production',
+          updatedAt: '2026-06-10T10:04:00.000Z',
+          waitRemainingMs: 0,
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
     writeDeploymentHistory(
       [
         {
@@ -4707,8 +4767,14 @@ test('runDeploymentRevertRequestIteration cancels an active build before cached 
       history[1].cancellationReason,
       /instant cached production revert/
     );
+    const promotionState = JSON.parse(
+      fs.readFileSync(paths.productionPromotionStateFile, 'utf8')
+    );
+
     assert.equal(fs.existsSync(paths.deploymentRevertRequestFile), false);
     assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
+    assert.equal(promotionState.queuedRequest, null);
+    assert.equal(promotionState.decision.bypassed, false);
     assert.ok(calls.includes(prodComposeStopKey('buildkit')));
     assert.equal(
       calls.includes(

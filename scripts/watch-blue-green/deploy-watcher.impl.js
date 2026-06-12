@@ -167,6 +167,7 @@ const {
   SELF_WATCHED_FILES,
 } = require('./deploy-watcher-watched-paths.js');
 const {
+  clearQueuedProductionPromotionState,
   createProductionPromotionState,
   evaluateProductionPromotion,
   fastForwardLocalProduction,
@@ -3749,6 +3750,7 @@ async function runDeploymentRevertRequestIteration(
       : null;
 
   clearProductionPromoteRequest({ fsImpl, paths });
+  clearQueuedProductionPromotionState({ fsImpl, now: now(), paths });
 
   if (!cachedImageTag) {
     if (activeDeploymentConflict) {
@@ -4572,6 +4574,7 @@ async function runProductionPromotionIteration(
       )
     ) {
       clearProductionPromoteRequest({ fsImpl, paths });
+      clearQueuedProductionPromotionState({ fsImpl, now: checkedAt, paths });
     }
 
     return null;

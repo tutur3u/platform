@@ -6,6 +6,7 @@ import {
   Clock,
   GitBranch,
   Loader2,
+  PinOff,
   RefreshCw,
   Rocket,
   RotateCcw,
@@ -21,6 +22,7 @@ import type {
   ObservabilityDeployment,
 } from '@tuturuuu/internal-api/infrastructure';
 import {
+  clearBlueGreenDeploymentPin,
   requestBlueGreenDeploymentRevert,
   requestBlueGreenProductionPromote,
 } from '@tuturuuu/internal-api/infrastructure';
@@ -453,6 +455,7 @@ export function ObservabilityDeploymentsPanel({
     snapshot?.recoveryCache,
     selectedRollbackTarget?.commitHash
   );
+  const deploymentPin = snapshot?.control.deploymentPin ?? null;
   const promotionState = snapshot?.productionPromotion ?? null;
   const prebuildBuilding = promotionState?.prebuild?.status === 'building';
   const nowMs = useNow(prebuildBuilding);
@@ -518,8 +521,7 @@ export function ObservabilityDeploymentsPanel({
       status: prebuild?.status ?? rootT('states.none'),
     });
   }, [nowMs, promotionState, rootT]);
-  const queuedProductionPromote =
-    snapshot?.control.productionPromoteRequest ?? promotionState?.queuedRequest;
+  const queuedProductionPromote = snapshot?.control.productionPromoteRequest;
   const queuedDeploymentRevert = snapshot?.control.deploymentRevertRequest;
   const promoteMutation = useMutation({
     mutationFn: () => requestBlueGreenProductionPromote(),
@@ -550,6 +552,18 @@ export function ObservabilityDeploymentsPanel({
     },
     onError: () => {
       toast.error(rootT('controls.deployment_revert_error'));
+    },
+  });
+  const clearPinMutation = useMutation({
+    mutationFn: () => clearBlueGreenDeploymentPin(),
+    onSuccess: async () => {
+      toast.success(rootT('controls.clear_pin_success'));
+      await queryClient.invalidateQueries({
+        queryKey: ['infrastructure', 'monitoring', 'blue-green'],
+      });
+    },
+    onError: () => {
+      toast.error(rootT('controls.clear_pin_error'));
     },
   });
   const promoteDisabled =
@@ -681,6 +695,39 @@ export function ObservabilityDeploymentsPanel({
                   })}
                 </p>
               </div>
+
+              {deploymentPin ? (
+                <div className="flex flex-col gap-3 rounded-md border border-dynamic-amber/25 bg-dynamic-amber/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="font-medium text-dynamic-amber text-sm">
+                      {rootT('controls.pin_active_title')}
+                    </p>
+                    <p className="mt-1 text-muted-foreground text-sm">
+                      {rootT('controls.pin_active_description', {
+                        commit:
+                          deploymentPin.commitShortHash ??
+                          deploymentPin.commitHash.slice(0, 12),
+                      })}
+                    </p>
+                  </div>
+                  <Button
+                    className="shrink-0"
+                    disabled={clearPinMutation.isPending}
+                    onClick={() => clearPinMutation.mutate()}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {clearPinMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <PinOff className="mr-2 h-4 w-4" />
+                    )}
+                    {clearPinMutation.isPending
+                      ? rootT('controls.clear_pin_pending')
+                      : rootT('controls.clear_pin_action')}
+                  </Button>
+                </div>
+              ) : null}
 
               <select
                 className={cn(selectClassName(), 'w-full')}
