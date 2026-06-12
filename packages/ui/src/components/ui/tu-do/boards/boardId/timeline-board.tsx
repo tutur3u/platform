@@ -32,6 +32,10 @@ import {
   useState,
 } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
+import {
+  getTaskCardHydratingOpenOptions,
+  isExternalTaskSnapshot,
+} from './task-card/task-card-open-options';
 import { TaskEditDialog } from './timeline/task-edit-dialog';
 import {
   DEFAULT_DAY_WIDTH,
@@ -111,7 +115,7 @@ export function TimelineBoard({
 }: TimelineProps) {
   const t = useTranslations('common');
   const locale = useLocale();
-  const { createTask, openTask } = useTaskDialog();
+  const { createTask, openTask, openTaskById } = useTaskDialog();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
   const [density, setDensity] = useState<Density>('comfortable');
@@ -226,23 +230,28 @@ export function TimelineBoard({
 
   const openTimelineTask = useCallback(
     (task: Task) => {
-      const targetBoardId = task.source_board_id ?? boardId;
-      const targetWorkspaceId = task.source_workspace_id ?? wsId;
+      if (!boardId) return;
 
-      if (!targetBoardId) return;
+      if (isExternalTaskSnapshot(task)) {
+        void openTaskById(
+          task.id,
+          getTaskCardHydratingOpenOptions({
+            task,
+            boardId,
+            availableLists: lists,
+            effectiveWorkspaceId: wsId,
+            isPersonalWorkspace: Boolean(wsId),
+          })
+        );
+        return;
+      }
 
-      openTask(
-        task,
-        targetBoardId,
-        task.source_board_id ? undefined : lists,
-        false,
-        {
-          taskWsId: targetWorkspaceId,
-          taskWorkspacePersonal: Boolean(wsId) && !task.source_workspace_id,
-        }
-      );
+      openTask(task, boardId, lists, false, {
+        taskWsId: wsId,
+        taskWorkspacePersonal: Boolean(wsId),
+      });
     },
-    [boardId, lists, openTask, wsId]
+    [boardId, lists, openTask, openTaskById, wsId]
   );
 
   const clearDraft = useCallback((taskId: string) => {

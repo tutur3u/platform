@@ -144,7 +144,10 @@ import { areTaskCardPropsEqual } from './task-card-comparator';
 import { shouldRenderTaskCardCompletionCheckbox } from './task-card-completion-checkbox-visibility';
 import { TaskCardIdentifierRow } from './task-card-identifier-row';
 import { mergeTaskCardLabelOptions } from './task-card-label-options';
-import { getTaskCardHydratingOpenOptions } from './task-card-open-options';
+import {
+  getTaskCardHydratingOpenOptions,
+  isExternalTaskSnapshot,
+} from './task-card-open-options';
 import { getTaskCardVisibilityState } from './task-card-visibility';
 import { TaskSchedulingBadge } from './task-scheduling-badge';
 
@@ -663,8 +666,7 @@ function TaskCardInner({
 
   // Check if task is optimistically added (pending realtime confirmation)
   const isOptimistic = '_isOptimistic' in task && task._isOptimistic === true;
-  const isPersonalExternalTask =
-    task.is_personal_external === true || Boolean(task.personal_board_id);
+  const isPersonalExternalTask = isExternalTaskSnapshot(task);
   const sourceBoardUrl =
     task.source_workspace_id && task.source_board_id
       ? `/${task.source_workspace_id}${tasksHref(`/boards/${task.source_board_id}`)}`

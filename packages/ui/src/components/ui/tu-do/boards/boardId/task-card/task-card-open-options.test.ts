@@ -1,7 +1,10 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { describe, expect, it } from 'vitest';
-import { getTaskCardHydratingOpenOptions } from './task-card-open-options';
+import {
+  getTaskCardHydratingOpenOptions,
+  isExternalTaskSnapshot,
+} from './task-card-open-options';
 
 const task = {
   id: 'task-1',
@@ -31,9 +34,16 @@ describe('getTaskCardHydratingOpenOptions', () => {
   it('opens external task cards from the visible snapshot while hydrating source details', () => {
     const externalTask = {
       ...task,
+      list_id: 'personal-list',
       source_workspace_id: 'source-workspace',
+      source_workspace_name: 'Source workspace',
       source_board_id: 'source-board',
-    } satisfies Task;
+      source_board_name: 'Source board',
+      source_list_id: 'source-list',
+      source_list_name: 'Doing',
+      source_list_status: 'active',
+      ticket_prefix: 'SRC',
+    } satisfies Task & { ticket_prefix: string };
 
     expect(
       getTaskCardHydratingOpenOptions({
@@ -44,11 +54,52 @@ describe('getTaskCardHydratingOpenOptions', () => {
         isPersonalWorkspace: true,
       })
     ).toEqual({
-      initialTask: externalTask,
+      initialTask: {
+        ...externalTask,
+        list_id: 'source-list',
+      },
       boardId: 'source-board',
-      availableLists: undefined,
+      availableLists: [
+        {
+          id: 'source-list',
+          name: 'Doing',
+          board_id: 'source-board',
+          position: 0,
+          status: 'active',
+          color: 'GRAY',
+          created_at: '2026-06-12T00:00:00.000Z',
+          creator_id: '',
+          archived: false,
+          deleted: false,
+        },
+      ],
       taskWsId: 'source-workspace',
       taskWorkspacePersonal: false,
+      initialSharedContext: {
+        boardConfig: {
+          id: 'source-board',
+          name: 'Source board',
+          ws_id: 'source-workspace',
+          ticket_prefix: 'SRC',
+        },
+        availableLists: [
+          {
+            id: 'source-list',
+            name: 'Doing',
+            board_id: 'source-board',
+            position: 0,
+            status: 'active',
+            color: 'GRAY',
+            created_at: '2026-06-12T00:00:00.000Z',
+            creator_id: '',
+            archived: false,
+            deleted: false,
+          },
+        ],
+        workspaceLabels: [],
+        workspaceMembers: [],
+        workspaceProjects: [],
+      },
     });
   });
 
@@ -67,6 +118,17 @@ describe('getTaskCardHydratingOpenOptions', () => {
       availableLists: [list],
       taskWsId: 'workspace-1',
       taskWorkspacePersonal: true,
+      initialSharedContext: undefined,
     });
+  });
+
+  it('treats source metadata as an external task snapshot', () => {
+    expect(
+      isExternalTaskSnapshot({
+        ...task,
+        source_workspace_id: 'source-workspace',
+      })
+    ).toBe(true);
+    expect(isExternalTaskSnapshot(task)).toBe(false);
   });
 });

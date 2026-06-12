@@ -388,9 +388,11 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       taskWsId: state.taskWsId,
       taskWorkspacePersonal: state.taskWorkspacePersonal,
       taskWorkspaceTier: state.taskWorkspaceTier,
+      initialSharedContext: state.initialSharedContext,
     });
   }, [
     openTaskById,
+    state.initialSharedContext,
     state.availableLists,
     state.boardId,
     state.fakeTaskUrl,
@@ -521,6 +523,11 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       boardId={state.boardId || ''}
       isOpen={state.isOpen}
       availableLists={state.availableLists}
+      sharedContext={
+        state.isHydratingTask || state.taskLoadError
+          ? state.initialSharedContext
+          : undefined
+      }
       filters={state.filters}
       mode={state.mode}
       collaborationMode={state.collaborationMode}

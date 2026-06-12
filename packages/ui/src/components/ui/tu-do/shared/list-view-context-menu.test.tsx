@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListView } from './list-view';
 
 const openTaskMock = vi.hoisted(() => vi.fn());
+const openTaskByIdMock = vi.hoisted(() => vi.fn());
 
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
@@ -24,6 +25,7 @@ vi.mock('next/image', () => ({
 vi.mock('../hooks/useTaskDialog', () => ({
   useTaskDialog: () => ({
     openTask: openTaskMock,
+    openTaskById: openTaskByIdMock,
   }),
 }));
 
@@ -104,7 +106,7 @@ const tasks: Task[] = [
   },
 ];
 
-function renderListView() {
+function renderListView(viewTasks = tasks) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -116,8 +118,9 @@ function renderListView() {
       <ListView
         boardId="board-1"
         lists={lists}
-        tasks={tasks}
+        tasks={viewTasks}
         workspaceId="ws-1"
+        isPersonalWorkspace={true}
       />
     </QueryClientProvider>
   );
@@ -126,6 +129,7 @@ function renderListView() {
 describe('ListView task context menu', () => {
   beforeEach(() => {
     openTaskMock.mockReset();
+    openTaskByIdMock.mockReset();
   });
 
   it('opens the shared task menu from row right-click and the compact menu button', () => {
@@ -146,5 +150,54 @@ describe('ListView task context menu', () => {
 
     fireEvent.click(screen.getByTestId('mock-task-menu-trigger-task-1'));
     expect(screen.getByTestId('mock-task-menu-task-1')).toBeInTheDocument();
+  });
+
+  it('opens external rows through the hydrating task-by-id path immediately', () => {
+    const externalTask: Task = {
+      ...tasks[0]!,
+      id: 'external-task',
+      name: 'External task',
+      list_id: 'personal-list',
+      personal_board_id: 'board-1',
+      is_personal_external: true,
+      source_workspace_id: 'source-ws',
+      source_board_id: 'source-board',
+      source_board_name: 'Source board',
+      source_list_id: 'source-list',
+      source_list_name: 'Source list',
+    } satisfies Task;
+
+    renderListView([externalTask]);
+
+    fireEvent.click(screen.getByText('External task'));
+
+    expect(openTaskByIdMock).toHaveBeenCalledWith(
+      'external-task',
+      expect.objectContaining({
+        boardId: 'source-board',
+        taskWsId: 'source-ws',
+        taskWorkspacePersonal: false,
+        initialTask: expect.objectContaining({
+          id: 'external-task',
+          list_id: 'source-list',
+          name: 'External task',
+        }),
+        initialSharedContext: expect.objectContaining({
+          boardConfig: expect.objectContaining({
+            id: 'source-board',
+            name: 'Source board',
+            ws_id: 'source-ws',
+          }),
+          availableLists: [
+            expect.objectContaining({
+              id: 'source-list',
+              name: 'Source list',
+              board_id: 'source-board',
+            }),
+          ],
+        }),
+      })
+    );
+    expect(openTaskMock).not.toHaveBeenCalled();
   });
 });

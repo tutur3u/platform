@@ -6,6 +6,7 @@ import {
   type PendingRelationshipType,
   useTaskDialogContext,
 } from '../providers/task-dialog-provider';
+import type { SharedTaskContext } from '../shared/task-edit-dialog/hooks/use-task-data';
 
 /**
  * Hook to open and manage the centralized task dialog
@@ -61,6 +62,7 @@ export function useTaskDialog(): {
       taskWsId?: string;
       taskWorkspacePersonal?: boolean;
       taskWorkspaceTier?: WorkspaceProductTier;
+      initialSharedContext?: SharedTaskContext;
     }
   ) => Promise<boolean>;
   createTask: (

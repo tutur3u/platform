@@ -61,6 +61,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBulkOperations } from '../boards/boardId/kanban/bulk/bulk-operations';
+import {
+  getTaskCardHydratingOpenOptions,
+  isExternalTaskSnapshot,
+} from '../boards/boardId/task-card/task-card-open-options';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
 import { useBoardBroadcast } from './board-broadcast-context';
@@ -129,7 +133,7 @@ export function ListView({
   const [openTaskMenu, setOpenTaskMenu] = useState<TaskMenuState | null>(null);
   const previousWorkspaceIdRef = useRef(workspaceId);
   const previousBoardIdRef = useRef(boardId);
-  const { openTask } = useTaskDialog();
+  const { openTask, openTaskById } = useTaskDialog();
 
   // Infinite scroll
   const [displayCount, setDisplayCount] = useState(50);
@@ -277,21 +281,24 @@ export function ListView({
   }
 
   function openTaskFromRow(task: Task) {
-    const targetBoardId = task.source_board_id ?? boardId;
-    const targetWorkspaceId = task.source_workspace_id ?? workspaceId;
+    if (isExternalTaskSnapshot(task)) {
+      void openTaskById(
+        task.id,
+        getTaskCardHydratingOpenOptions({
+          task,
+          boardId,
+          availableLists: lists,
+          effectiveWorkspaceId: workspaceId,
+          isPersonalWorkspace,
+        })
+      );
+      return;
+    }
 
-    openTask(
-      task,
-      targetBoardId,
-      task.source_board_id ? undefined : lists,
-      false,
-      {
-        taskWsId: targetWorkspaceId,
-        taskWorkspacePersonal: task.source_workspace_id
-          ? false
-          : isPersonalWorkspace,
-      }
-    );
+    openTask(task, boardId, lists, false, {
+      taskWsId: workspaceId,
+      taskWorkspacePersonal: isPersonalWorkspace,
+    });
   }
 
   // Infinite scroll handler

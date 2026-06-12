@@ -121,6 +121,18 @@ describe('TaskDialogProvider', () => {
   });
 
   it('opens by id immediately from an initial snapshot before hydrating task details', async () => {
+    const initialSharedContext = {
+      boardConfig: {
+        id: 'board-1',
+        name: 'Visible board',
+        ws_id: 'workspace-1',
+        ticket_prefix: 'VIS',
+      },
+      availableLists: [mockList],
+      workspaceLabels: [],
+      workspaceMembers: [],
+      workspaceProjects: [],
+    };
     const deferred = createDeferred<{
       task: Task & { list?: { board_id?: string | null } | null };
       availableLists: TaskList[];
@@ -139,6 +151,7 @@ describe('TaskDialogProvider', () => {
         boardId: 'board-1',
         availableLists: [mockList],
         taskWsId: 'workspace-1',
+        initialSharedContext,
       });
     });
 
@@ -148,6 +161,7 @@ describe('TaskDialogProvider', () => {
       taskLoadError: false,
       boardId: 'board-1',
       realtimeEnabled: false,
+      initialSharedContext,
       task: {
         id: mockTask.id,
         name: 'Visible snapshot',
@@ -182,9 +196,22 @@ describe('TaskDialogProvider', () => {
         name: 'Hydrated task',
       },
     });
+    expect(result.current.state.initialSharedContext).toBeUndefined();
   });
 
   it('keeps the dialog open in a non-editable error state when hydration fails', async () => {
+    const initialSharedContext = {
+      boardConfig: {
+        id: 'board-1',
+        name: 'Visible board',
+        ws_id: 'workspace-1',
+        ticket_prefix: 'VIS',
+      },
+      availableLists: [mockList],
+      workspaceLabels: [],
+      workspaceMembers: [],
+      workspaceProjects: [],
+    };
     const deferred = createDeferred<never>();
     mockGetCurrentUserTask.mockReturnValueOnce(deferred.promise);
 
@@ -195,6 +222,7 @@ describe('TaskDialogProvider', () => {
       openPromise = result.current.openTaskById(mockTask.id, {
         initialTask: { ...mockTask, name: 'Visible snapshot' },
         boardId: 'board-1',
+        initialSharedContext,
       });
     });
 
@@ -210,6 +238,7 @@ describe('TaskDialogProvider', () => {
       isOpen: true,
       isHydratingTask: false,
       taskLoadError: true,
+      initialSharedContext,
       task: {
         id: mockTask.id,
         name: 'Visible snapshot',

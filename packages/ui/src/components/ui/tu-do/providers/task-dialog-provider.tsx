@@ -14,6 +14,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import type { SharedTaskContext } from '../shared/task-edit-dialog/hooks/use-task-data';
 import type {
   PendingRelationship,
   PendingRelationshipType,
@@ -58,6 +59,8 @@ interface TaskDialogState {
   taskWorkspacePersonal?: boolean;
   /** The task workspace tier used to gate cursor tracking for edit mode */
   taskWorkspaceTier?: WorkspaceProductTier;
+  /** Initial board/list context used for immediate partial-task rendering. */
+  initialSharedContext?: SharedTaskContext;
   /** True while an existing task was opened from a partial snapshot and is hydrating. */
   isHydratingTask?: boolean;
   /** True when the latest hydration request failed after the dialog already opened. */
@@ -75,6 +78,7 @@ interface OpenTaskByIdOptions {
   taskWsId?: string;
   taskWorkspacePersonal?: boolean;
   taskWorkspaceTier?: WorkspaceProductTier;
+  initialSharedContext?: SharedTaskContext;
 }
 
 interface TaskDialogContextValue {
@@ -458,6 +462,7 @@ export function TaskDialogProvider({
         taskWsId: options?.taskWsId,
         taskWorkspacePersonal: initialTaskWorkspacePersonal,
         taskWorkspaceTier: options?.taskWorkspaceTier,
+        initialSharedContext: options?.initialSharedContext,
         isHydratingTask: true,
         taskLoadError: false,
         taskHydrationVersion: 0,
