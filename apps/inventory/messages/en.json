@@ -805,28 +805,6 @@
     "yearly": "Yearly"
   },
   "inventory": {
-    "checkout": {
-      "calculator": {
-        "auditNote": "Use this estimator for quoting only. The production ledger should store Stripe balance transaction fees, Tuturuuu platform fees, conversion fees, refunds, and payout reconciliation lines after settlement.",
-        "conversionFee": "Conversion fee",
-        "conversionPercent": "Conversion %",
-        "customerPays": "Customer pays",
-        "description": "Model transparent checkout economics before sending a B2B2C seller through Stripe Connect onboarding.",
-        "feeBreakdown": "Fee breakdown",
-        "feesHeld": "Fees held",
-        "merchantReceives": "Merchant receives",
-        "netPayout": "Net payout",
-        "platformFee": "Tuturuuu platform fee",
-        "platformPercent": "Platform %",
-        "processingFee": "Stripe processing fee",
-        "processingFixed": "Fixed fee",
-        "processingPercent": "Processing %",
-        "settlementTitle": "Settlement preview",
-        "subtotal": "Subtotal",
-        "title": "Checkout fee estimator",
-        "totalFees": "Total fees"
-      }
-    },
     "nav": {
       "audits": {
         "description": "Trace payment, stock, and payout events.",
@@ -841,7 +819,7 @@
         "title": "Catalog"
       },
       "checkout": {
-        "description": "Preview clear fee lines before checkout.",
+        "description": "Monitor real checkout reservations and Polar state.",
         "title": "Checkout"
       },
       "checkouts": {
@@ -882,8 +860,8 @@
         "title": "Storefront"
       },
       "stripe": {
-        "description": "Prepare Stripe Connect onboarding and fee ledgers.",
-        "title": "Stripe"
+        "description": "Manage Polar checkout readiness.",
+        "title": "Polar"
       }
     },
     "operator": {
@@ -897,23 +875,61 @@
         "stock": "Stock"
       },
       "empty": "No inventory records match this view.",
+      "emptyDescriptions": {
+        "audits": "Audit events will appear after checkout, stock, or setup changes are recorded.",
+        "bundles": "Create a bundle, then attach component products to prepare a campaign-ready listing.",
+        "checkouts": "Reserved and completed Polar checkout sessions will appear here.",
+        "sales": "Finalized checkout sales linked to finance invoices will appear here.",
+        "storefronts": "Create a storefront, customize its theme, then publish listings for buyers."
+      },
       "forms": {
+        "accentColor": "Accent color",
         "amount": "Amount",
         "bundle": "Bundle",
         "bundleName": "Bundle name",
         "category": "Category",
+        "cornerStyle": "Corners",
+        "cornerStyles": {
+          "compact": "Compact",
+          "rounded": "Rounded",
+          "soft": "Soft"
+        },
         "create": "Create",
+        "createBundleDescription": "Create a stock-backed bundle before adding component products.",
         "createBundleError": "Could not create bundle.",
         "createBundleSuccess": "Bundle created.",
+        "createBundleTitle": "Create bundle",
+        "createListingDescription": "Choose a product or bundle, then set the buyer-facing title and price.",
+        "createListingTitle": "Create storefront listing",
+        "createProductDescription": "Add product details and optional opening stock in a warehouse.",
+        "createProductTitle": "Create product",
+        "createStorefrontDescription": "Set storefront identity, visibility, and buyer-facing theme.",
         "createStorefrontError": "Could not create storefront.",
         "createStorefrontSuccess": "Storefront created.",
+        "createStorefrontTitle": "Create storefront",
         "creating": "Creating...",
+        "currency": "Currency",
         "deleteError": "Could not delete record.",
         "deleteSuccess": "Record deleted.",
+        "description": "Description",
+        "editStorefrontDescription": "Customize storefront copy, visibility, and buyer-facing theme.",
+        "editStorefrontTitle": "Customize storefront",
         "emptyResource": "No setup records yet.",
+        "heroImageUrl": "Hero image URL",
+        "layoutStyle": "Layout",
+        "layoutStyles": {
+          "feature": "Feature",
+          "grid": "Grid",
+          "list": "List"
+        },
         "listingTitle": "Listing title",
         "manufacturer": "Manufacturer",
         "minAmount": "Min",
+        "newBundle": "New bundle",
+        "newListing": "New listing",
+        "newProduct": "New product",
+        "newStorefront": "New storefront",
+        "noStorefrontsForListings": "Create a storefront before adding listings.",
         "note": "Note",
         "owner": "Owner",
         "price": "Price",
@@ -923,11 +939,33 @@
         "save": "Save",
         "saveError": "Could not save changes.",
         "saveSuccess": "Changes saved.",
+        "showInventoryBadges": "Show inventory badges on buyer listings",
         "slug": "slug",
+        "status": "Status",
+        "storefront": "Storefront",
+        "storefrontStatus": {
+          "draft": "Draft",
+          "paused": "Paused",
+          "published": "Published"
+        },
         "storeName": "Store name",
         "supplier": "Supplier",
+        "surfaceStyle": "Surface",
+        "surfaceStyles": {
+          "glass": "Glass",
+          "soft": "Soft",
+          "solid": "Solid"
+        },
         "target": "Target",
+        "themePreset": "Theme",
+        "themePresets": {
+          "boutique": "Boutique",
+          "catalog": "Catalog",
+          "editorial": "Editorial",
+          "minimal": "Minimal"
+        },
         "unit": "Unit",
+        "visibility": "Visibility",
         "visibilityPrivate": "Private",
         "visibilityPublic": "Public",
         "warehouse": "Warehouse"
@@ -942,16 +980,22 @@
       "openStore": "Open store",
       "polar": {
         "description": "Save workspace-owned Polar tokens and choose checkout environments for storefront orders.",
+        "dialogDescription": "Paste the workspace-owned Polar organization token for one environment. The token is never shown in the page body.",
+        "dialogTitle": "Manage Polar token",
         "environment": {
           "production": "Production",
           "sandbox": "Sandbox"
         },
+        "environmentLabel": "Environment",
+        "feeResponsibility": "Tuturuuu does not add a platform fee at this stage. Users are accountable for Polar platform fees and Stripe fees that Polar accounts for.",
+        "manage": "Manage Polar",
         "notConfigured": "No token saved",
         "pending": "Pending",
         "productionDefault": "Production default",
         "productMissing": "Checkout product has not been created.",
         "productReady": "Product {productId}",
         "ready": "Ready",
+        "saveDefaults": "Save defaults",
         "saveError": "Could not save Polar settings.",
         "saveSuccess": "Polar settings saved.",
         "saveToken": "Save token",
@@ -959,8 +1003,27 @@
         "testingDefault": "Testing default",
         "title": "Polar checkout",
         "tokenEnding": "Token ending in {last4}",
+        "tokenLabel": "Access token",
         "tokenPlaceholder": "Polar organization access token"
       },
+      "preview": {
+        "back": "Back to storefronts",
+        "checkoutDisabled": "Preview checkout is simulated and cannot create reservations.",
+        "description": "Review the buyer experience with the same renderer used by the public storefront app.",
+        "devices": {
+          "desktop": "Desktop",
+          "mobile": "Mobile",
+          "tablet": "Tablet"
+        },
+        "errorDescription": "Refresh the preview or return to storefronts.",
+        "errorTitle": "Storefront preview could not be loaded",
+        "eyebrow": "Storefront preview",
+        "openLive": "Open live",
+        "previewNotice": "Admin preview: checkout is disabled and cart actions are simulated.",
+        "retry": "Retry",
+        "title": "Buyer preview"
+      },
+      "previewStore": "Preview",
       "search": "Search inventory",
       "setup": {
         "batches": "Batches",
@@ -972,6 +1035,8 @@
         "warehouses": "Warehouses"
       },
       "states": {
+        "checkoutFeeDescription": "Checkout fees are not estimated here. Polar accounts for its platform fees and Stripe fees; Tuturuuu does not add a platform fee at this stage.",
+        "checkoutFeeTitle": "Real checkout state only",
         "errorDescription": "Refresh this view or try again after the API recovers.",
         "errorTitle": "Inventory data could not be loaded",
         "retry": "Retry"
@@ -1034,11 +1099,17 @@
     },
     "storefront": {
       "add": "Add",
+      "available": "available",
+      "browse": "Browse storefront",
+      "bundle": "Bundle",
       "bundleAvailability": "Bundle stock",
       "cart": "Cart",
       "checkout": "Checkout",
+      "checkoutDisabled": "Checkout is disabled in preview.",
       "checkoutError": "Could not reserve this order.",
       "emptyCart": "Your cart is empty.",
+      "emptyListingsDescription": "Publish a listing to make this storefront buyer-ready.",
+      "emptyListingsTitle": "No listings are published",
       "fallbackDescription": "No description provided.",
       "form": {
         "email": "Email",
@@ -1052,10 +1123,16 @@
       "orderErrorDescription": "Refresh this order status or contact the merchant with your order link.",
       "orderErrorTitle": "Order status could not be loaded",
       "orderStatus": "Order status: {status}",
+      "previewBadge": "Preview",
+      "privateStore": "Private storefront",
+      "product": "Product",
+      "publicStore": "Public storefront",
+      "quantity": "Quantity",
       "reserve": "Reserve order",
-      "reservedCopy": "Checkout reserves stock for a short window before invoice finalization.",
+      "reservedCopy": "Checkout reserves stock through Polar. Polar accounts for its platform fees and Stripe fees; Tuturuuu does not add a platform fee at this stage.",
       "reserving": "Reserving...",
       "retry": "Retry",
+      "soldOut": "Sold out",
       "store": "Store",
       "storefrontErrorDescription": "Refresh the storefront or try again later.",
       "storefrontErrorTitle": "Storefront could not be loaded",
@@ -1065,7 +1142,7 @@
       "audits": {
         "cards": {
           "0": {
-            "detail": "Stock reservation, checkout session, Stripe charge, fee allocation, and payout events share one correlation id.",
+            "detail": "Stock reservation, checkout session, Polar order, settlement, and payout events share one correlation id.",
             "meta": "Cross-ledger",
             "title": "Unified event chain"
           },
@@ -1095,7 +1172,7 @@
             "value": "99.4%"
           },
           "1": {
-            "detail": "Stripe webhook to inventory ledger confirmation window.",
+            "detail": "Polar webhook to inventory ledger confirmation window.",
             "label": "Median lag",
             "value": "41s"
           },
@@ -1121,7 +1198,7 @@
             "title": "Component stock guard"
           },
           "2": {
-            "detail": "Promotions keep margin, platform fee, and Stripe fee assumptions visible before the campaign is published.",
+            "detail": "Promotions keep stock, margin, and Polar checkout readiness visible before the campaign is published.",
             "meta": "Margin",
             "title": "Promotion economics"
           }
@@ -1130,7 +1207,7 @@
         "eyebrow": "Bundle management",
         "insights": {
           "0": "Reserve component stock atomically when a bundle checkout starts.",
-          "1": "Show margin after discounts, Stripe fees, platform fees, and conversion fees.",
+          "1": "Use Polar settlement records for Polar platform fees, Stripe fees, and conversion fees.",
           "2": "Expire campaign inventory separately from evergreen catalog stock."
         },
         "insightTitle": "Promotion rules",
@@ -1157,7 +1234,7 @@
       "checkout": {
         "cards": {
           "0": {
-            "detail": "Each checkout exposes subtotal, discounts, shipping, Stripe processing fees, Tuturuuu platform fees, conversion fees, and seller payout.",
+            "detail": "Each checkout exposes subtotal, reservation status, Polar checkout state, and settlement data once Polar returns it.",
             "meta": "Transparent",
             "title": "Clear customer and seller fee view"
           },
@@ -1167,23 +1244,23 @@
             "title": "Inventory-safe checkout"
           },
           "2": {
-            "detail": "Stripe balance transactions should reconcile against fee estimates so clients understand every settlement difference.",
+            "detail": "Polar checkout and order state should reconcile against inventory reservations so operators understand every settlement difference.",
             "meta": "Reconciled",
             "title": "Fee reconciliation"
           }
         },
-        "description": "Design checkout around explicit fee lines, inventory reservations, and settlement reconciliation for marketplace-style B2B2C sales.",
+        "description": "Design checkout around inventory reservations, Polar checkout state, and settlement reconciliation.",
         "eyebrow": "Payment checkout",
         "insights": {
-          "0": "Never hide platform fees inside product price when the seller needs a payout statement.",
-          "1": "Persist the estimate shown at checkout and the actual Stripe fee received after settlement.",
+          "0": "Do not invent fees outside Polar and Stripe settlement records that Polar accounts for.",
+          "1": "Persist Polar checkout and order state instead of local fee estimates.",
           "2": "Release inventory when checkout expires, payment fails, or fraud review blocks capture."
         },
         "insightTitle": "Checkout requirements",
         "metrics": {
           "0": {
-            "detail": "Checkout sessions with visible fee breakdowns.",
-            "label": "Fee clarity",
+            "detail": "Checkout sessions with real Polar state.",
+            "label": "State clarity",
             "value": "100%"
           },
           "1": {
@@ -1192,8 +1269,8 @@
             "value": "342"
           },
           "2": {
-            "detail": "Estimated fee rows reconciled to actual Stripe ledger rows.",
-            "label": "Matched fees",
+            "detail": "Provider settlement rows reconciled to checkout reservations.",
+            "label": "Matched settlements",
             "value": "96.8%"
           }
         },
@@ -1249,7 +1326,7 @@
       "overview": {
         "cards": {
           "0": {
-            "detail": "Operators can see stock health, checkout reservations, Stripe onboarding, and fee reconciliation from the same workspace.",
+            "detail": "Operators can see stock health, checkout reservations, Polar readiness, and settlement reconciliation from the same workspace.",
             "meta": "Command",
             "title": "One operating surface"
           },
@@ -1259,17 +1336,17 @@
             "title": "Flexible categorization"
           },
           "2": {
-            "detail": "Payment, fee, refund, stock, and payout events are designed to be audited together instead of stitched manually later.",
+            "detail": "Payment, refund, stock, and payout events are designed to be audited together instead of stitched manually later.",
             "meta": "Audit",
             "title": "Ledger-first observability"
           }
         },
-        "description": "A workspace for managing products, stock, bundles, checkout economics, Stripe Connect readiness, and operating controls.",
+        "description": "A workspace for managing products, stock, bundles, Polar checkout readiness, and operating controls.",
         "eyebrow": "Inventory command center",
         "insights": {
           "0": "Inventory reservations should be linked to checkout sessions before payment capture.",
-          "1": "Fee visibility belongs in checkout, seller reports, and finance reconciliation.",
-          "2": "Stripe Connect onboarding should be treated as a business readiness gate."
+          "1": "Polar checkout state belongs in checkout, seller reports, and finance reconciliation.",
+          "2": "Polar readiness should be treated as a business readiness gate."
         },
         "insightTitle": "Operating principles",
         "metrics": {
@@ -1284,12 +1361,12 @@
             "value": "126"
           },
           "2": {
-            "detail": "Connected sellers ready to receive Stripe payouts.",
-            "label": "Stripe-ready sellers",
+            "detail": "Storefronts ready to route checkout through Polar.",
+            "label": "Polar-ready stores",
             "value": "38"
           }
         },
-        "title": "Inventory, checkout, and fee operations",
+        "title": "Inventory and checkout operations",
         "workTitle": "Workspace streams"
       },
       "stock": {
@@ -1305,7 +1382,7 @@
             "title": "Reorder signals"
           },
           "2": {
-            "detail": "Stock reservations lock sellable quantity while Stripe checkout is pending and release cleanly when sessions expire.",
+            "detail": "Stock reservations lock sellable quantity while Polar checkout is pending and release cleanly when sessions expire.",
             "meta": "Checkout-safe",
             "title": "Reservation control"
           }
@@ -1341,50 +1418,50 @@
       "stripe": {
         "cards": {
           "0": {
-            "detail": "Clients can connect their Stripe account so Tuturuuu can orchestrate storefront checkout while the seller receives payouts through their account.",
-            "meta": "Connect",
-            "title": "Seller-owned Stripe accounts"
+            "detail": "Clients configure workspace-owned Polar checkout tokens so storefront orders can create Polar checkouts.",
+            "meta": "Polar",
+            "title": "Workspace-owned Polar checkout"
           },
           "1": {
-            "detail": "Account capability status, onboarding completion, payout readiness, and business profile gaps should block risky checkout flows.",
+            "detail": "Token validation, checkout product readiness, and environment defaults should block risky checkout flows.",
             "meta": "Readiness",
             "title": "Business readiness gate"
           },
           "2": {
-            "detail": "Application fees, processing fees, conversion fees, refunds, disputes, and payouts need separate ledger rows for seller reporting.",
-            "meta": "Fees",
-            "title": "Fee ledger"
+            "detail": "Polar order state, refunds, disputes, and payouts need separate ledger rows for seller reporting once settlement data is available.",
+            "meta": "Settlement",
+            "title": "Settlement ledger"
           }
         },
-        "connectDescription": "The app is registered for inventory.tuturuuu.com and ready to receive a centralized Stripe Connect route from apps/web. Protected payment APIs should stay behind apps/web so bot protection, audit logging, and provider secrets remain centralized.",
-        "connectTitle": "Stripe Connect boundary",
-        "description": "Prepare B2B2C onboarding where clients link their Stripe account and sell through Tuturuuu with clear fees and payout observability.",
-        "eyebrow": "Stripe Connect",
+        "connectDescription": "The app is registered for inventory.tuturuuu.com and ready to receive centralized Polar checkout routes from apps/web. Protected payment APIs should stay behind apps/web so bot protection, audit logging, and provider secrets remain centralized.",
+        "connectTitle": "Polar checkout boundary",
+        "description": "Prepare storefront checkout with workspace-owned Polar tokens, clear reservation state, and payout observability from provider settlement data.",
+        "eyebrow": "Polar checkout",
         "insights": {
-          "0": "Store Stripe account ids and capability status centrally; never expose provider secrets to the satellite app.",
-          "1": "Use account onboarding and account update links from the protected web API boundary.",
-          "2": "Treat Stripe balance transactions as the source of truth for actual fees after settlement."
+          "0": "Store Polar token fingerprints centrally; never expose provider secrets to the satellite app.",
+          "1": "Use protected web API boundaries for checkout creation and token validation.",
+          "2": "Treat Polar order and settlement data as the source of truth for fees after settlement."
         },
         "insightTitle": "Connect model",
         "metrics": {
           "0": {
-            "detail": "Seller workspaces with connected account identifiers.",
-            "label": "Connected sellers",
+            "detail": "Workspaces with saved Polar token fingerprints.",
+            "label": "Configured workspaces",
             "value": "38"
           },
           "1": {
-            "detail": "Accounts with charges, transfers, and payouts ready.",
-            "label": "Payout-ready",
+            "detail": "Environments with a checkout product ready.",
+            "label": "Checkout-ready",
             "value": "31"
           },
           "2": {
-            "detail": "Payments missing final Stripe fee reconciliation.",
-            "label": "Fee drift",
+            "detail": "Orders missing final provider settlement reconciliation.",
+            "label": "Settlement drift",
             "value": "12"
           }
         },
-        "title": "Stripe Connect readiness",
-        "workTitle": "Connect operations"
+        "title": "Polar checkout readiness",
+        "workTitle": "Polar operations"
       }
     }
   },

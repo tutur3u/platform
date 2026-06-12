@@ -111,7 +111,7 @@ export function BundleComponentsPanel({
           value={quantity}
         />
         <button
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-dynamic-blue px-3 font-medium text-dynamic-blue-foreground text-sm disabled:opacity-50"
+          className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm disabled:opacity-50"
           disabled={!canAdd || mutation.isPending}
           type="submit"
         >
@@ -137,7 +137,7 @@ export function BundleComponentsPanel({
               </div>
               <span>{component.quantity}</span>
               <button
-                className="inline-flex h-8 items-center justify-center rounded-md border border-dynamic-red/30 px-2 text-dynamic-red"
+                className="inline-flex h-8 items-center justify-center rounded-md border border-destructive/30 px-2 text-destructive"
                 onClick={() =>
                   mutation.mutate(
                     activeBundle.components.filter(

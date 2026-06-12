@@ -1,15 +1,32 @@
 'use client';
 
-import { RefreshCw, Search } from '@tuturuuu/icons';
+import { PackageOpen, RefreshCw, Search } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { InventoryFilters, InventoryStatusOption } from './operator-types';
 
-export function EmptyRow({ label }: { label: string }) {
+export function EmptyRow({
+  action,
+  description,
+  label,
+}: {
+  action?: ReactNode;
+  description?: string;
+  label: string;
+}) {
   return (
-    <div className="rounded-lg border border-border border-dashed p-6 text-center text-muted-foreground text-sm">
-      {label}
+    <div className="grid min-h-44 place-items-center rounded-lg border border-border border-dashed bg-muted/25 p-6 text-center">
+      <div className="max-w-sm">
+        <PackageOpen className="mx-auto h-8 w-8 text-muted-foreground" />
+        <p className="mt-3 font-medium">{label}</p>
+        {description ? (
+          <p className="mt-1 text-muted-foreground text-sm leading-6">
+            {description}
+          </p>
+        ) : null}
+        {action ? <div className="mt-4">{action}</div> : null}
+      </div>
     </div>
   );
 }
@@ -30,10 +47,10 @@ export function StatePanel({
   return (
     <div
       className={cn(
-        'm-4 rounded-lg border p-5',
+        'rounded-lg border p-5',
         tone === 'danger'
-          ? 'border-dynamic-red/25 bg-dynamic-red/10 text-dynamic-red'
-          : 'border-border bg-background text-foreground'
+          ? 'border-destructive/25 bg-destructive/10 text-destructive'
+          : 'border-border bg-card text-foreground'
       )}
     >
       <p className="font-semibold">{title}</p>
@@ -54,10 +71,10 @@ export function StatePanel({
 
 export function LoadingRows() {
   return (
-    <div className="grid gap-3 p-4">
+    <div className="grid gap-3">
       {Array.from({ length: 4 }).map((_, index) => (
         <div
-          className="h-16 animate-pulse rounded-lg border border-border bg-background"
+          className="h-16 animate-pulse rounded-lg border border-border bg-muted/45"
           key={index.toString()}
         />
       ))}
@@ -77,18 +94,18 @@ export function Toolbar({
   const t = useTranslations('inventory.operator');
 
   return (
-    <div className="flex flex-col gap-2 border-border border-b bg-dynamic-surface/70 p-3 lg:flex-row lg:items-center lg:justify-between">
+    <div className="sticky top-0 z-20 flex flex-col gap-2 border-border border-b bg-background/95 py-3 backdrop-blur lg:flex-row lg:items-center lg:justify-between">
       <label className="relative flex min-w-0 flex-1 items-center">
         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
-          className="h-9 w-full rounded-md border border-border bg-background pr-3 pl-9 text-sm outline-none transition focus:border-dynamic-blue"
+          className="h-9 w-full rounded-md border border-input bg-background pr-3 pl-9 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring/40"
           onChange={(event) => setFilters({ q: event.target.value })}
           placeholder={t('search')}
           value={filters.q}
         />
       </label>
       <select
-        className="h-9 rounded-md border border-border bg-background px-3 text-sm outline-none transition focus:border-dynamic-blue"
+        className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring/40"
         onChange={(event) => setFilters({ status: event.target.value })}
         value={filters.status}
       >
@@ -114,14 +131,14 @@ export function SectionShell({
   title: string;
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="flex items-start gap-3 border-border border-b p-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dynamic-blue/25 bg-dynamic-blue/10 text-dynamic-blue">
+    <section className="grid gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-border border-b pb-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-primary/10 text-primary">
           {icon}
         </div>
-        <div className="min-w-0">
-          <h1 className="font-semibold text-xl tracking-normal">{title}</h1>
-          <p className="mt-1 text-muted-foreground text-sm leading-6">
+        <div className="min-w-0 flex-1">
+          <h1 className="font-semibold text-2xl tracking-normal">{title}</h1>
+          <p className="mt-1 max-w-3xl text-muted-foreground text-sm leading-6">
             {description}
           </p>
         </div>

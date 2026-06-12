@@ -22,6 +22,18 @@ export type InventoryStorefrontStatus =
 
 export type InventoryStorefrontVisibility = 'private' | 'public';
 
+export type InventoryStorefrontThemePreset =
+  | 'boutique'
+  | 'catalog'
+  | 'editorial'
+  | 'minimal';
+
+export type InventoryStorefrontLayoutStyle = 'feature' | 'grid' | 'list';
+
+export type InventoryStorefrontSurfaceStyle = 'glass' | 'soft' | 'solid';
+
+export type InventoryStorefrontCornerStyle = 'compact' | 'rounded' | 'soft';
+
 export type InventoryListingStatus =
   | 'draft'
   | 'published'
@@ -47,6 +59,11 @@ export type InventoryStorefront = {
   heroImageUrl: string | null;
   accentColor: string | null;
   currency: string;
+  themePreset: InventoryStorefrontThemePreset;
+  layoutStyle: InventoryStorefrontLayoutStyle;
+  surfaceStyle: InventoryStorefrontSurfaceStyle;
+  cornerStyle: InventoryStorefrontCornerStyle;
+  showInventoryBadges: boolean;
   listingsCount?: number;
   createdAt: string | null;
   updatedAt: string | null;
@@ -402,6 +419,11 @@ export type InventoryStorefrontPayload = {
   heroImageUrl?: string | null;
   accentColor?: string | null;
   currency?: string;
+  themePreset?: InventoryStorefrontThemePreset;
+  layoutStyle?: InventoryStorefrontLayoutStyle;
+  surfaceStyle?: InventoryStorefrontSurfaceStyle;
+  cornerStyle?: InventoryStorefrontCornerStyle;
+  showInventoryBadges?: boolean;
 };
 
 export type InventoryStorefrontListingPayload = {
@@ -539,6 +561,20 @@ export function listInventoryStorefronts(
     cache: 'no-store',
     query: asQuery(query),
   });
+}
+
+export function getInventoryStorefront(
+  wsId: string,
+  storefrontId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryStorefront }>(
+    workspaceInventoryPath(
+      wsId,
+      `/storefronts/${encodePathSegment(storefrontId)}`
+    ),
+    { cache: 'no-store' }
+  );
 }
 
 export function getInventoryStatistics(

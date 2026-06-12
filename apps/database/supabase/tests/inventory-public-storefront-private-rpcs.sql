@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(13);
 
 select ok(
   to_regprocedure(
@@ -163,7 +163,12 @@ insert into private.inventory_storefronts (
   name,
   status,
   visibility,
-  currency
+  currency,
+  theme_preset,
+  layout_style,
+  surface_style,
+  corner_style,
+  show_inventory_badges
 )
 values (
   '00000000-0000-4000-8000-000000001701',
@@ -172,13 +177,23 @@ values (
   'Inventory public RPC test',
   'published',
   'public',
-  'USD'
+  'USD',
+  'boutique',
+  'feature',
+  'glass',
+  'soft',
+  false
 )
 on conflict (id) do update
 set
   slug = excluded.slug,
   status = excluded.status,
-  visibility = excluded.visibility;
+  visibility = excluded.visibility,
+  theme_preset = excluded.theme_preset,
+  layout_style = excluded.layout_style,
+  surface_style = excluded.surface_style,
+  corner_style = excluded.corner_style,
+  show_inventory_badges = excluded.show_inventory_badges;
 
 insert into private.inventory_storefront_listings (
   id,
@@ -322,6 +337,14 @@ select is(
     ->> 'slug',
   'inventory-public-rpc-test',
   'public storefront RPC returns storefront identity'
+);
+
+select is(
+  private.get_public_inventory_storefront('inventory-public-rpc-test')
+    -> 'storefront'
+    ->> 'themePreset',
+  'boutique',
+  'public storefront RPC returns storefront theme fields'
 );
 
 select is(

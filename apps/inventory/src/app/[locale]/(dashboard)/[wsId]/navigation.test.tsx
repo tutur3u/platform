@@ -33,7 +33,7 @@ describe('Inventory navigation', () => {
       sectionKey: 'sections.commerce',
     });
     expect(visibleLinks[6]).toMatchObject({
-      aliases: ['/acme/stripe'],
+      aliases: ['/acme/storefront/preview', '/acme/stripe'],
     });
     expect(visibleLinks[7]).toMatchObject({
       sectionKey: 'sections.controls',

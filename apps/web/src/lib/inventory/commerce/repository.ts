@@ -17,6 +17,9 @@ type ListRpcRow<TKey extends string, TValue> = {
   total_count: number | null;
 } & Record<TKey, TValue | null>;
 
+const storefrontSelect =
+  'id, ws_id, slug, name, description, status, visibility, hero_image_url, accent_color, currency, theme_preset, layout_style, surface_style, corner_style, show_inventory_badges, created_at, updated_at';
+
 function normalizePagination(page?: number, pageSize?: number) {
   const limit = Math.max(1, Math.min(pageSize ?? 25, 100));
   const offset = (Math.max(1, page ?? 1) - 1) * limit;
@@ -102,6 +105,24 @@ export async function listStorefronts(
   return mapRpcList(data, 'storefront');
 }
 
+export async function getStorefront(wsId: string, storefrontId: string) {
+  const { inventory } = await createPrivateInventoryClient();
+  const { data, error } = await inventory
+    .from('inventory_storefronts')
+    .select(storefrontSelect as never)
+    .eq('id', storefrontId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return mapStorefrontWithCount(
+    data as unknown as Omit<StorefrontRow, 'listings_count'>,
+    inventory
+  );
+}
+
 export async function createStorefront(
   wsId: string,
   payload: InventoryStorefrontPayload
@@ -111,25 +132,28 @@ export async function createStorefront(
     .from('inventory_storefronts')
     .insert({
       accent_color: payload.accentColor ?? null,
+      corner_style: payload.cornerStyle ?? 'rounded',
       currency: payload.currency ?? 'USD',
       description: payload.description ?? null,
       hero_image_url: payload.heroImageUrl ?? null,
+      layout_style: payload.layoutStyle ?? 'grid',
       name: payload.name,
+      show_inventory_badges: payload.showInventoryBadges ?? true,
       slug: payload.slug,
       status: payload.status ?? 'draft',
+      surface_style: payload.surfaceStyle ?? 'solid',
+      theme_preset: payload.themePreset ?? 'minimal',
       visibility: payload.visibility ?? 'public',
       ws_id: wsId,
-    })
-    .select(
-      'id, ws_id, slug, name, description, status, visibility, hero_image_url, accent_color, currency, created_at, updated_at'
-    )
+    } as never)
+    .select(storefrontSelect as never)
     .single();
 
   if (error) throw error;
   if (!data) throw new Error('Failed to create inventory storefront');
 
   return mapStorefront({
-    ...(data as Omit<StorefrontRow, 'listings_count'>),
+    ...(data as unknown as Omit<StorefrontRow, 'listings_count'>),
     listings_count: 0,
   });
 }
@@ -149,6 +173,21 @@ export async function updateStorefront(
   if (payload.status !== undefined) update.status = payload.status;
   if (payload.visibility !== undefined) update.visibility = payload.visibility;
   if (payload.currency !== undefined) update.currency = payload.currency;
+  if (payload.themePreset !== undefined) {
+    update.theme_preset = payload.themePreset;
+  }
+  if (payload.layoutStyle !== undefined) {
+    update.layout_style = payload.layoutStyle;
+  }
+  if (payload.surfaceStyle !== undefined) {
+    update.surface_style = payload.surfaceStyle;
+  }
+  if (payload.cornerStyle !== undefined) {
+    update.corner_style = payload.cornerStyle;
+  }
+  if (payload.showInventoryBadges !== undefined) {
+    update.show_inventory_badges = payload.showInventoryBadges;
+  }
   if (hasPayloadKey(payload, 'description')) {
     update.description = payload.description ?? null;
   }
@@ -164,16 +203,14 @@ export async function updateStorefront(
     .update(update as never)
     .eq('id', storefrontId)
     .eq('ws_id', wsId)
-    .select(
-      'id, ws_id, slug, name, description, status, visibility, hero_image_url, accent_color, currency, created_at, updated_at'
-    )
+    .select(storefrontSelect as never)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) return null;
 
   return mapStorefrontWithCount(
-    data as Omit<StorefrontRow, 'listings_count'>,
+    data as unknown as Omit<StorefrontRow, 'listings_count'>,
     inventory
   );
 }

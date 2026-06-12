@@ -12,6 +12,16 @@ import {
   updateInventoryProduct,
   updateInventoryProductInventory,
 } from '@tuturuuu/internal-api/inventory';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
@@ -42,6 +52,7 @@ export function ProductCreateForm({
   const [amount, setAmount] = useState('');
   const [minAmount, setMinAmount] = useState('');
   const [price, setPrice] = useState('');
+  const [open, setOpen] = useState(false);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -69,6 +80,7 @@ export function ProductCreateForm({
       setAmount('');
       setMinAmount('');
       setPrice('');
+      setOpen(false);
       toast.success(t('saveSuccess'));
       invalidateProducts(queryClient, wsId);
     },
@@ -77,109 +89,144 @@ export function ProductCreateForm({
   const canCreate = Boolean(name && categoryId && ownerId);
 
   return (
-    <form
-      className="grid gap-2 border-border border-b p-3 lg:grid-cols-[1fr_160px_160px_160px_120px_120px_100px_auto]"
-      onSubmit={(event: FormEvent) => {
-        event.preventDefault();
-        if (canCreate) mutation.mutate();
-      }}
-    >
+    <div className="flex justify-end">
+      <Dialog onOpenChange={setOpen} open={open}>
+        <DialogTrigger asChild>
+          <Button type="button">
+            <PackagePlus className="h-4 w-4" />
+            {t('newProduct')}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{t('createProductTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('createProductDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="grid gap-3"
+            onSubmit={(event: FormEvent) => {
+              event.preventDefault();
+              if (canCreate) mutation.mutate();
+            }}
+          >
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="grid gap-1 text-sm md:col-span-2">
+                <span className="font-medium">{t('productName')}</span>
+                <input
+                  className="h-10 rounded-md border border-input bg-background px-3"
+                  onChange={(event) => setName(event.target.value)}
+                  value={name}
+                />
+              </label>
+              <SelectField
+                label={t('category')}
+                onChange={setCategoryId}
+                options={options?.categories}
+                value={categoryId}
+              />
+              <SelectField
+                label={t('owner')}
+                onChange={setOwnerId}
+                options={options?.owners}
+                value={ownerId}
+              />
+              <SelectField
+                label={t('manufacturer')}
+                onChange={setManufacturerId}
+                options={options?.manufacturers}
+                value={manufacturerId}
+              />
+              <SelectField
+                label={t('unit')}
+                onChange={setUnitId}
+                options={options?.units}
+                value={unitId}
+              />
+              <SelectField
+                label={t('warehouse')}
+                onChange={setWarehouseId}
+                options={options?.warehouses}
+                value={warehouseId}
+              />
+              <NumberField
+                label={t('amount')}
+                onChange={setAmount}
+                value={amount}
+              />
+              <NumberField
+                label={t('minAmount')}
+                onChange={setMinAmount}
+                value={minAmount}
+              />
+              <NumberField
+                label={t('price')}
+                onChange={setPrice}
+                value={price}
+              />
+            </div>
+            <DialogFooter>
+              <Button disabled={!canCreate || mutation.isPending} type="submit">
+                {mutation.isPending ? t('creating') : t('create')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  onChange,
+  options = [],
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  options?: { id: string; name?: string | null }[];
+  value: string;
+}) {
+  return (
+    <label className="grid gap-1 text-sm">
+      <span className="font-medium">{label}</span>
+      <select
+        className="h-10 rounded-md border border-input bg-background px-3"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        <option value="">{label}</option>
+        {options.map((item) => (
+          <option key={item.id} value={item.id}>
+            {item.name ?? item.id}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function NumberField({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <label className="grid gap-1 text-sm">
+      <span className="font-medium">{label}</span>
       <input
-        className="h-9 rounded-md border border-border bg-background px-3 text-sm"
-        onChange={(event) => setName(event.target.value)}
-        placeholder={t('productName')}
-        value={name}
-      />
-      <select
-        className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-        onChange={(event) => setCategoryId(event.target.value)}
-        value={categoryId}
-      >
-        <option value="">{t('category')}</option>
-        {options?.categories.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.name}
-          </option>
-        ))}
-      </select>
-      <select
-        className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-        onChange={(event) => setOwnerId(event.target.value)}
-        value={ownerId}
-      >
-        <option value="">{t('owner')}</option>
-        {options?.owners.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.name}
-          </option>
-        ))}
-      </select>
-      <select
-        className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-        onChange={(event) => setManufacturerId(event.target.value)}
-        value={manufacturerId}
-      >
-        <option value="">{t('manufacturer')}</option>
-        {options?.manufacturers.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.name}
-          </option>
-        ))}
-      </select>
-      <select
-        className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-        onChange={(event) => setUnitId(event.target.value)}
-        value={unitId}
-      >
-        <option value="">{t('unit')}</option>
-        {options?.units.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.name}
-          </option>
-        ))}
-      </select>
-      <select
-        className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-        onChange={(event) => setWarehouseId(event.target.value)}
-        value={warehouseId}
-      >
-        <option value="">{t('warehouse')}</option>
-        {options?.warehouses.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.name}
-          </option>
-        ))}
-      </select>
-      <input
-        className="h-9 rounded-md border border-border bg-background px-3 text-sm"
+        className="h-10 rounded-md border border-input bg-background px-3"
         inputMode="numeric"
-        onChange={(event) => setAmount(event.target.value)}
-        placeholder={t('amount')}
-        value={amount}
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
       />
-      <button
-        className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-dynamic-blue px-3 font-medium text-dynamic-blue-foreground text-sm disabled:opacity-50"
-        disabled={!canCreate || mutation.isPending}
-        type="submit"
-      >
-        <PackagePlus className="h-4 w-4" />
-        {t('create')}
-      </button>
-      <input
-        className="h-9 rounded-md border border-border bg-background px-3 text-sm lg:col-start-7"
-        inputMode="numeric"
-        onChange={(event) => setMinAmount(event.target.value)}
-        placeholder={t('minAmount')}
-        value={minAmount}
-      />
-      <input
-        className="h-9 rounded-md border border-border bg-background px-3 text-sm"
-        inputMode="numeric"
-        onChange={(event) => setPrice(event.target.value)}
-        placeholder={t('price')}
-        value={price}
-      />
-    </form>
+    </label>
   );
 }
 
@@ -287,7 +334,7 @@ export function ProductRowActions({
         <Archive className="h-4 w-4" />
       </button>
       <button
-        className="inline-flex h-8 items-center justify-center rounded-md border border-dynamic-red/30 px-2 text-dynamic-red disabled:opacity-50"
+        className="inline-flex h-8 items-center justify-center rounded-md border border-destructive/30 px-2 text-destructive disabled:opacity-50"
         disabled={deleteMutation.isPending}
         onClick={() => deleteMutation.mutate()}
         type="button"

@@ -19,6 +19,11 @@ export type StorefrontRow = {
   currency: string;
   description: string | null;
   hero_image_url: string | null;
+  theme_preset: InventoryStorefront['themePreset'];
+  layout_style: InventoryStorefront['layoutStyle'];
+  surface_style: InventoryStorefront['surfaceStyle'];
+  corner_style: InventoryStorefront['cornerStyle'];
+  show_inventory_badges: boolean | null;
   id: string;
   listings_count: number;
   name: string;
@@ -135,6 +140,11 @@ export function mapStorefront(row: StorefrontRow): InventoryStorefront {
     currency: row.currency,
     description: row.description,
     heroImageUrl: row.hero_image_url,
+    themePreset: row.theme_preset ?? 'minimal',
+    layoutStyle: row.layout_style ?? 'grid',
+    surfaceStyle: row.surface_style ?? 'solid',
+    cornerStyle: row.corner_style ?? 'rounded',
+    showInventoryBadges: row.show_inventory_badges ?? true,
     id: row.id,
     listingsCount: row.listings_count,
     name: row.name,

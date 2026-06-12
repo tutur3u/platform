@@ -9,6 +9,23 @@ export const StorefrontStatusSchema = z.enum([
 
 export const StorefrontVisibilitySchema = z.enum(['public', 'private']);
 
+export const StorefrontThemePresetSchema = z.enum([
+  'minimal',
+  'editorial',
+  'boutique',
+  'catalog',
+]);
+
+export const StorefrontLayoutStyleSchema = z.enum(['grid', 'list', 'feature']);
+
+export const StorefrontSurfaceStyleSchema = z.enum(['solid', 'soft', 'glass']);
+
+export const StorefrontCornerStyleSchema = z.enum([
+  'compact',
+  'rounded',
+  'soft',
+]);
+
 export const ListingStatusSchema = z.enum([
   'draft',
   'published',
@@ -45,6 +62,11 @@ export const storefrontPayloadSchema = z.object({
   currency: z.string().trim().length(3).optional(),
   description: z.string().trim().max(2000).nullable().optional(),
   heroImageUrl: z.url().nullable().optional(),
+  themePreset: StorefrontThemePresetSchema.optional(),
+  layoutStyle: StorefrontLayoutStyleSchema.optional(),
+  surfaceStyle: StorefrontSurfaceStyleSchema.optional(),
+  cornerStyle: StorefrontCornerStyleSchema.optional(),
+  showInventoryBadges: z.boolean().optional(),
   name: z.string().trim().min(1).max(160),
   slug: z
     .string()

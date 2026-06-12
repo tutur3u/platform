@@ -62,7 +62,10 @@ export function getInventoryNavigationItems({
     {
       titleKey: 'storefront.title',
       href: `/${workspaceSlug}/storefront`,
-      aliases: [`/${workspaceSlug}/stripe`],
+      aliases: [
+        `/${workspaceSlug}/storefront/preview`,
+        `/${workspaceSlug}/stripe`,
+      ],
       icon: 'storefront',
     },
     null,

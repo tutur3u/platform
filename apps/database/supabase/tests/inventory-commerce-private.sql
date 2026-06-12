@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(11);
+select plan(12);
 
 select ok(
   to_regclass('public.inventory_storefronts') is null,
@@ -14,6 +14,27 @@ select ok(
 select ok(
   to_regclass('private.inventory_storefronts') is not null,
   'inventory storefronts are created in the private schema'
+);
+
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'theme_preset',
+      'layout_style',
+      'surface_style',
+      'corner_style',
+      'show_inventory_badges'
+    ]) as required(column_name)
+    where not exists (
+      select 1
+      from information_schema.columns c
+      where table_schema = 'private'
+        and table_name = 'inventory_storefronts'
+        and c.column_name = required.column_name
+    )
+  ),
+  'inventory storefront theme columns exist in the private schema'
 );
 
 select ok(

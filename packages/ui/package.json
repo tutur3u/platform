@@ -207,6 +207,10 @@
       "types": "./src/components/ui/sonner.tsx",
       "import": "./src/components/ui/sonner.tsx"
     },
+    "./storefront": {
+      "types": "./src/components/ui/storefront/index.ts",
+      "import": "./src/components/ui/storefront/index.ts"
+    },
     "./hooks/use-board-actions": "./src/hooks/use-board-actions.ts",
     "./hooks/*": "./src/hooks/*.ts",
     "./hooks/time-blocking-provider": "./src/hooks/time-blocking-provider.tsx",

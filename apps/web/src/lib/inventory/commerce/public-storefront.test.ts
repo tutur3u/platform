@@ -27,7 +27,16 @@ describe('getPublicStorefront', () => {
     const payload = {
       bundles: [],
       listings: [],
-      storefront: { slug: 'demo', visibility: 'public', wsId: 'ws-1' },
+      storefront: {
+        cornerStyle: 'soft',
+        layoutStyle: 'feature',
+        showInventoryBadges: false,
+        slug: 'demo',
+        surfaceStyle: 'glass',
+        themePreset: 'boutique',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
     };
     mocks.rpc.mockResolvedValue({ data: payload, error: null });
 

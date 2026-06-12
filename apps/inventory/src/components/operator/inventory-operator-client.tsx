@@ -11,7 +11,6 @@ import {
 } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import { CheckoutFeeCalculator } from '@/components/checkout-fee-calculator';
 import { BundleComponentsPanel } from './bundle-components-panel';
 import { BundleForm, StorefrontForm } from './inventory-forms';
 import {
@@ -184,89 +183,92 @@ export function InventoryOperatorClient({
         setFilters={data.setFilters}
         statusOptions={statusOptions}
       />
-      {isLoading ? <LoadingRows /> : null}
-      {isError ? (
-        <StatePanel
-          actionLabel={t('states.retry')}
-          description={t('states.errorDescription')}
-          onAction={() => {
-            for (const query of activeQueries) query.refetch();
-          }}
-          title={t('states.errorTitle')}
-          tone="danger"
-        />
-      ) : null}
-      {!isLoading && !isError && view === 'overview' ? (
-        <OverviewPanel
-          bundles={bundles}
-          lowStock={lowStock}
-          polarSettings={data.polarSettings.data}
-          products={products}
-          storefronts={storefronts}
-        />
-      ) : null}
-      {!isLoading && !isError && (view === 'catalog' || view === 'stock') ? (
-        <>
-          {view === 'catalog' ? (
-            <ProductCreateForm options={data.formOptions.data} wsId={wsId} />
-          ) : null}
-          <ProductsTable rows={products} view={view} wsId={wsId} />
-        </>
-      ) : null}
-      {!isLoading && !isError && view === 'setup' ? (
-        <SetupPanel
-          batches={batches}
-          options={data.formOptions.data}
-          suppliers={suppliers}
-          wsId={wsId}
-        />
-      ) : null}
-      {!isLoading && !isError && view === 'storefront' ? (
-        <>
-          <SimpleRows rows={storefronts} type="storefronts" wsId={wsId} />
-          <StorefrontForm wsId={wsId} />
-          <StorefrontListingsPanel
+      <div className="grid gap-4">
+        {isLoading ? <LoadingRows /> : null}
+        {isError ? (
+          <StatePanel
+            actionLabel={t('states.retry')}
+            description={t('states.errorDescription')}
+            onAction={() => {
+              for (const query of activeQueries) query.refetch();
+            }}
+            title={t('states.errorTitle')}
+            tone="danger"
+          />
+        ) : null}
+        {!isLoading && !isError && view === 'overview' ? (
+          <OverviewPanel
             bundles={bundles}
+            lowStock={lowStock}
+            polarSettings={data.polarSettings.data}
             products={products}
             storefronts={storefronts}
+          />
+        ) : null}
+        {!isLoading && !isError && (view === 'catalog' || view === 'stock') ? (
+          <>
+            {view === 'catalog' ? (
+              <ProductCreateForm options={data.formOptions.data} wsId={wsId} />
+            ) : null}
+            <ProductsTable rows={products} view={view} wsId={wsId} />
+          </>
+        ) : null}
+        {!isLoading && !isError && view === 'setup' ? (
+          <SetupPanel
+            batches={batches}
+            options={data.formOptions.data}
+            suppliers={suppliers}
             wsId={wsId}
           />
-          <PolarSettingsPanel wsId={wsId} />
-        </>
-      ) : null}
-      {!isLoading && !isError && view === 'bundles' ? (
-        <>
-          <SimpleRows rows={bundles} type="bundles" wsId={wsId} />
-          <BundleForm wsId={wsId} />
-          <BundleComponentsPanel
-            bundles={bundles}
-            products={products}
-            wsId={wsId}
-          />
-        </>
-      ) : null}
-      {!isLoading && !isError && view === 'checkouts' ? (
-        <>
-          <div className="border-border border-b p-4">
-            <CheckoutFeeCalculator />
-          </div>
-          <PolarSettingsPanel wsId={wsId} />
-          <SimpleRows
-            rows={data.checkouts.data?.data ?? []}
-            type="checkouts"
-            wsId={wsId}
-          />
-        </>
-      ) : null}
-      {!isLoading && !isError && view === 'sales' ? (
-        <>
-          <SimpleRows rows={sales} type="sales" wsId={wsId} />
-          <SaleDetailPanel sales={sales} wsId={wsId} />
-        </>
-      ) : null}
-      {!isLoading && !isError && view === 'audits' ? (
-        <SimpleRows rows={data.audits.data?.data ?? []} type="audits" />
-      ) : null}
+        ) : null}
+        {!isLoading && !isError && view === 'storefront' ? (
+          <>
+            <StorefrontForm wsId={wsId} />
+            <SimpleRows rows={storefronts} type="storefronts" wsId={wsId} />
+            <StorefrontListingsPanel
+              bundles={bundles}
+              products={products}
+              storefronts={storefronts}
+              wsId={wsId}
+            />
+            <PolarSettingsPanel wsId={wsId} />
+          </>
+        ) : null}
+        {!isLoading && !isError && view === 'bundles' ? (
+          <>
+            <BundleForm wsId={wsId} />
+            <SimpleRows rows={bundles} type="bundles" wsId={wsId} />
+            <BundleComponentsPanel
+              bundles={bundles}
+              products={products}
+              wsId={wsId}
+            />
+          </>
+        ) : null}
+        {!isLoading && !isError && view === 'checkouts' ? (
+          <>
+            <StatePanel
+              description={t('states.checkoutFeeDescription')}
+              title={t('states.checkoutFeeTitle')}
+            />
+            <PolarSettingsPanel wsId={wsId} />
+            <SimpleRows
+              rows={data.checkouts.data?.data ?? []}
+              type="checkouts"
+              wsId={wsId}
+            />
+          </>
+        ) : null}
+        {!isLoading && !isError && view === 'sales' ? (
+          <>
+            <SimpleRows rows={sales} type="sales" wsId={wsId} />
+            <SaleDetailPanel sales={sales} wsId={wsId} />
+          </>
+        ) : null}
+        {!isLoading && !isError && view === 'audits' ? (
+          <SimpleRows rows={data.audits.data?.data ?? []} type="audits" />
+        ) : null}
+      </div>
     </SectionShell>
   );
 }

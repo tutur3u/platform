@@ -102,7 +102,7 @@ function ResourceRow({
         <Save className="h-4 w-4" />
       </button>
       <button
-        className="inline-flex h-8 items-center justify-center rounded-md border border-dynamic-red/30 px-2 text-dynamic-red disabled:opacity-50"
+        className="inline-flex h-8 items-center justify-center rounded-md border border-destructive/30 px-2 text-destructive disabled:opacity-50"
         disabled={deleteMutation.isPending}
         onClick={() => deleteMutation.mutate()}
         type="button"
@@ -149,7 +149,7 @@ function ResourceSection({
           value={name}
         />
         <button
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-dynamic-blue px-3 font-medium text-dynamic-blue-foreground text-sm disabled:opacity-50"
+          className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm disabled:opacity-50"
           disabled={!name || createMutation.isPending}
           type="submit"
         >
@@ -246,7 +246,7 @@ function BatchSection({
           value={price}
         />
         <button
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-dynamic-blue px-3 font-medium text-dynamic-blue-foreground text-sm disabled:opacity-50"
+          className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm disabled:opacity-50"
           disabled={!warehouseId || createMutation.isPending}
           type="submit"
         >
@@ -295,7 +295,7 @@ function BatchRow({
       </div>
       <span>{batch.price ?? 0}</span>
       <button
-        className="inline-flex h-8 items-center justify-center rounded-md border border-dynamic-red/30 px-2 text-dynamic-red disabled:opacity-50"
+        className="inline-flex h-8 items-center justify-center rounded-md border border-destructive/30 px-2 text-destructive disabled:opacity-50"
         disabled={deleteMutation.isPending}
         onClick={() => deleteMutation.mutate()}
         type="button"

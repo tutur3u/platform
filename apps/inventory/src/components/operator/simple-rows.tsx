@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Archive, RotateCcw, Trash2 } from '@tuturuuu/icons';
+import { Archive, ExternalLink, Eye, RotateCcw, Trash2 } from '@tuturuuu/icons';
 import type {
   InventoryAuditLogSummary,
   InventoryBundle,
@@ -22,10 +22,11 @@ import { useTranslations } from 'next-intl';
 import { STOREFRONT_APP_URL } from '@/constants/common';
 import { currency } from './operator-format';
 import { EmptyRow } from './operator-shell';
+import { StorefrontEditorDialog } from './storefront-editor-dialog';
 
 function StatusBadge({ value }: { value: string }) {
   return (
-    <span className="inline-flex h-6 items-center rounded-md border border-dynamic-blue/25 bg-dynamic-blue/10 px-2 font-medium text-dynamic-blue text-xs">
+    <span className="inline-flex h-6 items-center rounded-md border border-border bg-primary/10 px-2 font-medium text-primary text-xs">
       {value}
     </span>
   );
@@ -108,10 +109,17 @@ export function SimpleRows({
     },
   });
 
-  if (rows.length === 0) return <EmptyRow label={t('empty')} />;
+  if (rows.length === 0) {
+    return (
+      <EmptyRow
+        description={t(`emptyDescriptions.${type}`)}
+        label={t('empty')}
+      />
+    );
+  }
 
   return (
-    <div className="divide-y divide-border">
+    <div className="grid gap-2">
       {rows.map((row) => {
         const anyRow = row as Record<string, unknown>;
         const title = String(
@@ -127,8 +135,8 @@ export function SimpleRows({
             : String(anyRow.status ?? anyRow.event_kind ?? '');
 
         return (
-          <div
-            className="grid gap-2 p-3 text-sm lg:grid-cols-[1fr_auto_auto_auto] lg:items-center"
+          <article
+            className="grid gap-3 rounded-lg border border-border bg-card p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
             key={String(anyRow.id)}
           >
             <div className="min-w-0">
@@ -142,77 +150,95 @@ export function SimpleRows({
                 )}
               </p>
             </div>
-            {value ? <StatusBadge value={value} /> : <span />}
-            {type === 'storefronts' && 'slug' in anyRow ? (
-              <a
-                className="text-dynamic-blue text-xs"
-                href={`${STOREFRONT_APP_URL}/store/${String(anyRow.slug)}`}
-              >
-                {t('openStore')}
-              </a>
-            ) : null}
-            {wsId && type === 'storefronts' ? (
-              <div className="flex gap-1">
+            <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
+              {value ? <StatusBadge value={value} /> : null}
+              {wsId && type === 'storefronts' ? (
+                <a
+                  className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-2 font-medium text-xs"
+                  href={`/${wsId}/storefront/preview/${String(anyRow.id)}`}
+                >
+                  <Eye className="h-4 w-4" />
+                  {t('previewStore')}
+                </a>
+              ) : null}
+              {type === 'storefronts' && 'slug' in anyRow ? (
+                <a
+                  className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-2 font-medium text-xs"
+                  href={`${STOREFRONT_APP_URL}/store/${String(anyRow.slug)}`}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  {t('openStore')}
+                </a>
+              ) : null}
+              {wsId && type === 'storefronts' ? (
+                <>
+                  <StorefrontEditorDialog
+                    storefront={row as InventoryStorefront}
+                    wsId={wsId}
+                  />
+                  <button
+                    className="inline-flex h-8 items-center rounded-md border border-border px-2"
+                    onClick={() =>
+                      archiveStorefront.mutate(row as InventoryStorefront)
+                    }
+                    type="button"
+                  >
+                    <Archive className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="inline-flex h-8 items-center rounded-md border border-destructive/30 px-2 text-destructive"
+                    onClick={() =>
+                      deleteStorefront.mutate(row as InventoryStorefront)
+                    }
+                    type="button"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </>
+              ) : null}
+              {wsId && type === 'bundles' ? (
+                <>
+                  <button
+                    className="inline-flex h-8 items-center rounded-md border border-border px-2"
+                    onClick={() => archiveBundle.mutate(row as InventoryBundle)}
+                    type="button"
+                  >
+                    <Archive className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="inline-flex h-8 items-center rounded-md border border-destructive/30 px-2 text-destructive"
+                    onClick={() => deleteBundle.mutate(row as InventoryBundle)}
+                    type="button"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </>
+              ) : null}
+              {wsId && type === 'checkouts' ? (
                 <button
-                  className="inline-flex h-8 items-center rounded-md border border-border px-2"
+                  className="inline-flex h-8 items-center rounded-md border border-border px-2 disabled:opacity-50"
+                  disabled={String(anyRow.status) === 'completed'}
                   onClick={() =>
-                    archiveStorefront.mutate(row as InventoryStorefront)
+                    releaseCheckout.mutate(row as InventoryCheckoutSession)
                   }
                   type="button"
                 >
-                  <Archive className="h-4 w-4" />
+                  <RotateCcw className="h-4 w-4" />
                 </button>
+              ) : null}
+              {wsId && type === 'sales' ? (
                 <button
-                  className="inline-flex h-8 items-center rounded-md border border-dynamic-red/30 px-2 text-dynamic-red"
-                  onClick={() =>
-                    deleteStorefront.mutate(row as InventoryStorefront)
-                  }
+                  className="inline-flex h-8 items-center rounded-md border border-destructive/30 px-2 text-destructive"
+                  onClick={() => deleteSale.mutate(row as InventorySaleSummary)}
                   type="button"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
-              </div>
-            ) : null}
-            {wsId && type === 'bundles' ? (
-              <div className="flex gap-1">
-                <button
-                  className="inline-flex h-8 items-center rounded-md border border-border px-2"
-                  onClick={() => archiveBundle.mutate(row as InventoryBundle)}
-                  type="button"
-                >
-                  <Archive className="h-4 w-4" />
-                </button>
-                <button
-                  className="inline-flex h-8 items-center rounded-md border border-dynamic-red/30 px-2 text-dynamic-red"
-                  onClick={() => deleteBundle.mutate(row as InventoryBundle)}
-                  type="button"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ) : null}
-            {wsId && type === 'checkouts' ? (
-              <button
-                className="inline-flex h-8 items-center rounded-md border border-border px-2 disabled:opacity-50"
-                disabled={String(anyRow.status) === 'completed'}
-                onClick={() =>
-                  releaseCheckout.mutate(row as InventoryCheckoutSession)
-                }
-                type="button"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </button>
-            ) : null}
-            {wsId && type === 'sales' ? (
-              <button
-                className="inline-flex h-8 items-center rounded-md border border-dynamic-red/30 px-2 text-dynamic-red"
-                onClick={() => deleteSale.mutate(row as InventorySaleSummary)}
-                type="button"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            ) : null}
-          </div>
+              ) : null}
+            </div>
+          </article>
         );
       })}
     </div>

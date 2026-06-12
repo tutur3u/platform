@@ -1,8 +1,8 @@
 # Tuturuuu Inventory
 
 Inventory is the satellite app for `inventory.tuturuuu.com`. It owns the
-workspace UI for catalog, stock, bundles, checkout fee visibility, Stripe
-Connect readiness, and inventory/payment auditing.
+workspace UI for catalog, stock, bundles, Polar checkout readiness, storefront
+publishing, and inventory/payment auditing.
 
 Protected APIs should stay centralized in `apps/web` and be consumed through the
 satellite `/api/*` fallback rewrite.

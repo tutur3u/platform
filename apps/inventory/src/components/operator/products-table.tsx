@@ -23,7 +23,7 @@ export function ProductsTable({
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[760px] text-left text-sm">
-        <thead className="bg-dynamic-surface text-muted-foreground text-xs">
+        <thead className="bg-muted/45 text-muted-foreground text-xs">
           <tr>
             <th className="p-3">{t('columns.item')}</th>
             <th className="p-3">{t('columns.manufacturer')}</th>
@@ -57,7 +57,7 @@ export function ProductsTable({
                 <td className="p-3 text-muted-foreground">
                   {row.owner?.name ?? '-'}
                 </td>
-                <td className={cn('p-3', low && 'text-dynamic-red')}>
+                <td className={cn('p-3', low && 'text-destructive')}>
                   {low ? (
                     <TriangleAlert className="mr-1 inline h-4 w-4" />
                   ) : null}

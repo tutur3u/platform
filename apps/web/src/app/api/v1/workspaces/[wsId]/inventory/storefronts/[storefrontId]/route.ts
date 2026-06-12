@@ -4,13 +4,43 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import {
   deleteStorefront,
+  getStorefront,
   updateStorefront,
 } from '@/lib/inventory/commerce/repository';
 import { storefrontPatchSchema } from '@/lib/inventory/commerce/schemas';
-import { canManageInventorySetup } from '@/lib/inventory/permissions';
+import {
+  canManageInventorySetup,
+  canViewInventoryCatalog,
+} from '@/lib/inventory/permissions';
 
 interface Params {
   params: Promise<{ storefrontId: string; wsId: string }>;
+}
+
+export async function GET(request: Request, { params }: Params) {
+  try {
+    const { storefrontId, wsId: rawWsId } = await params;
+    const authorization = await authorizeInventoryWorkspace(request, rawWsId);
+    if (!authorization.ok) return authorization.response;
+
+    if (!canViewInventoryCatalog(authorization.value.permissions)) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    const data = await getStorefront(authorization.value.wsId, storefrontId);
+
+    if (!data) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ data });
+  } catch (error) {
+    serverLogger.error('Failed to load inventory storefront', error);
+    return NextResponse.json(
+      { message: 'Failed to load inventory storefront' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PATCH(request: Request, { params }: Params) {

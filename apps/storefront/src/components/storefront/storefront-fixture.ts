@@ -16,16 +16,21 @@ const DEMO_CREATED_AT = '2026-06-11T00:00:00.000Z';
 
 export const demoStorefront: InventoryStorefront = {
   accentColor: null,
+  cornerStyle: 'rounded',
   createdAt: DEMO_CREATED_AT,
   currency: 'USD',
   description:
     'A temporary testing storefront that demonstrates product browsing, cart review, checkout, and order status without touching production inventory.',
   heroImageUrl: null,
   id: DEMO_STOREFRONT_ID,
+  layoutStyle: 'grid',
   listingsCount: 4,
   name: 'Tuturuuu Demo Store',
+  showInventoryBadges: true,
   slug: DEMO_STOREFRONT_SLUG,
   status: 'published',
+  surfaceStyle: 'soft',
+  themePreset: 'catalog',
   updatedAt: DEMO_CREATED_AT,
   visibility: 'public',
   wsId: DEMO_WORKSPACE_ID,

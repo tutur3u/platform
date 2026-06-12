@@ -1,20 +1,20 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { RefreshCw, ShoppingCart } from '@tuturuuu/icons';
+import { RefreshCw } from '@tuturuuu/icons';
 import {
   createInventoryCheckoutSession,
   getInventoryPublicOrder,
 } from '@tuturuuu/internal-api/inventory';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
-import { type FormEvent, useMemo } from 'react';
 import {
-  CheckoutPanel,
-  getListingLimit,
-  StorefrontListingGrid,
-  useCart,
-} from './storefront-cart';
+  getStorefrontListingLimit,
+  StorefrontSurface,
+  type StorefrontSurfaceLabels,
+} from '@tuturuuu/ui/storefront';
+import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
+import { useCart } from './storefront-cart';
 import {
   createDemoCheckoutResponse,
   DEMO_ORDER_PUBLIC_TOKEN,
@@ -66,7 +66,6 @@ export function StorefrontClient({
   });
   const listings = storefrontQuery.data?.listings ?? [];
   const selectedListing = listings.find((listing) => listing.id === listingId);
-  const currencyCode = storefront?.currency ?? 'USD';
   const cartListings = useMemo(
     () =>
       cart.cart.flatMap((line) => {
@@ -76,12 +75,8 @@ export function StorefrontClient({
     [cart.cart, listings]
   );
   const checkoutListings = cartListings.filter(
-    ({ line, listing }) => Math.min(line.quantity, getListingLimit(listing)) > 0
-  );
-  const total = checkoutListings.reduce(
-    (sum, { line, listing }) =>
-      sum + listing.price * Math.min(line.quantity, getListingLimit(listing)),
-    0
+    ({ line, listing }) =>
+      Math.min(line.quantity, getStorefrontListingLimit(listing)) > 0
   );
   const checkoutMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -94,7 +89,10 @@ export function StorefrontClient({
         lines: checkoutListings
           .map(({ line, listing }) => ({
             listingId: line.listingId,
-            quantity: Math.min(line.quantity, getListingLimit(listing)),
+            quantity: Math.min(
+              line.quantity,
+              getStorefrontListingLimit(listing)
+            ),
           }))
           .filter((line) => line.quantity > 0),
         note: String(formData.get('note') ?? '') || null,
@@ -172,75 +170,55 @@ export function StorefrontClient({
     );
   }
 
-  const visibleListings =
-    mode === 'product' && selectedListing ? [selectedListing] : listings;
+  const resolvedMode = mode === 'product' && !selectedListing ? 'store' : mode;
+  const surfaceLabels: Partial<StorefrontSurfaceLabels> = {
+    add: t('add'),
+    available: t('available'),
+    browse: t('browse'),
+    bundle: t('bundle'),
+    cart: t('cart'),
+    checkout: t('checkout'),
+    checkoutDisabled: t('checkoutDisabled'),
+    demoBadge: t('demoBadge'),
+    emptyCart: t('emptyCart'),
+    emptyListingsDescription: t('emptyListingsDescription'),
+    emptyListingsTitle: t('emptyListingsTitle'),
+    fallbackDescription: t('fallbackDescription'),
+    form: {
+      email: t('form.email'),
+      name: t('form.name'),
+      note: t('form.note'),
+      phone: t('form.phone'),
+    },
+    privateStore: t('privateStore'),
+    previewBadge: t('previewBadge'),
+    product: t('product'),
+    publicStore: t('publicStore'),
+    quantity: t('quantity'),
+    reserve: isDemoStorefront ? t('demoReserve') : t('reserve'),
+    reserving: isDemoStorefront ? t('demoReserving') : t('reserving'),
+    reservedCopy: isDemoStorefront ? t('demoReservedCopy') : t('reservedCopy'),
+    soldOut: t('soldOut'),
+    total: t('total'),
+  };
 
   return (
-    <main className="min-h-dvh bg-background text-foreground">
-      <header className="border-border border-b bg-dynamic-surface/80">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-              <span>
-                {storefront.visibility === 'private'
-                  ? t('privateStore')
-                  : t('publicStore')}
-              </span>
-              {isDemoStorefront ? (
-                <span className="rounded-md border border-border bg-background px-2 py-0.5 font-medium">
-                  {t('demoBadge')}
-                </span>
-              ) : null}
-            </div>
-            <h1 className="truncate font-semibold text-2xl">
-              {storefront.name}
-            </h1>
-          </div>
-          <a
-            className="inline-flex h-10 min-w-12 items-center justify-center gap-2 rounded-md border border-border bg-background px-3 font-medium text-sm"
-            href={`/store/${storeSlug}/cart`}
-          >
-            <ShoppingCart className="h-4 w-4" />
-            {cart.cart.reduce((sum, line) => sum + line.quantity, 0)}
-          </a>
-        </div>
-      </header>
-
-      <div className="mx-auto grid max-w-7xl gap-5 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <StorefrontListingGrid
-          cartListings={cartListings}
-          currencyCode={currencyCode}
-          onDecrement={cart.decrement}
-          onIncrement={(selectedListingId) => {
-            const listing = listings.find(
-              (item) => item.id === selectedListingId
-            );
-            cart.increment(
-              selectedListingId,
-              listing ? getListingLimit(listing) : 1
-            );
-          }}
-          showCart={mode === 'cart' || mode === 'checkout'}
-          visibleListings={visibleListings}
-        />
-
-        <CheckoutPanel
-          cartCount={checkoutListings.length}
-          currencyCode={currencyCode}
-          isCheckout={mode === 'checkout'}
-          isSubmitting={checkoutMutation.isPending}
-          onSubmit={(event: FormEvent<HTMLFormElement>) => {
-            event.preventDefault();
-            checkoutMutation.mutate(new FormData(event.currentTarget));
-          }}
-          reserveLabel={isDemoStorefront ? t('demoReserve') : undefined}
-          reservedCopy={isDemoStorefront ? t('demoReservedCopy') : undefined}
-          reservingLabel={isDemoStorefront ? t('demoReserving') : undefined}
-          storeSlug={storeSlug}
-          total={total}
-        />
-      </div>
-    </main>
+    <StorefrontSurface
+      cartLines={cart.cart}
+      checkoutHref={`/store/${storeSlug}/checkout`}
+      isDemo={isDemoStorefront}
+      isSubmitting={checkoutMutation.isPending}
+      labels={surfaceLabels}
+      listings={listings}
+      mode={resolvedMode}
+      onCheckoutSubmit={(formData) => checkoutMutation.mutate(formData)}
+      onDecrement={cart.decrement}
+      onIncrement={(selectedListingId, maxQuantity) => {
+        cart.increment(selectedListingId, maxQuantity);
+      }}
+      selectedListingId={listingId}
+      storefront={storefront}
+    />
   );
 }
 
@@ -256,7 +234,7 @@ function RetryPanel({
   const t = useTranslations('storefront');
 
   return (
-    <section className="w-full max-w-md rounded-lg border border-dynamic-red/25 bg-dynamic-red/10 p-5 text-dynamic-red">
+    <section className="w-full max-w-md rounded-lg border border-destructive/25 bg-destructive/10 p-5 text-destructive">
       <p className="font-semibold">{title}</p>
       <p className="mt-1 text-sm leading-6 opacity-80">{description}</p>
       <button

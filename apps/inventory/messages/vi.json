@@ -805,28 +805,6 @@
     "yearly": "Hàng năm"
   },
   "inventory": {
-    "checkout": {
-      "calculator": {
-        "auditNote": "Chỉ dùng bộ ước tính này để báo giá. Sổ cái production cần lưu phí giao dịch số dư Stripe, phí nền tảng Tuturuuu, phí chuyển đổi, hoàn tiền và các dòng đối soát payout sau khi quyết toán.",
-        "conversionFee": "Phí chuyển đổi",
-        "conversionPercent": "% chuyển đổi",
-        "customerPays": "Khách thanh toán",
-        "description": "Mô phỏng kinh tế checkout minh bạch trước khi đưa người bán B2B2C qua bước onboarding Stripe Connect.",
-        "feeBreakdown": "Chi tiết phí",
-        "feesHeld": "Phí giữ lại",
-        "merchantReceives": "Người bán nhận",
-        "netPayout": "Payout ròng",
-        "platformFee": "Phí nền tảng Tuturuuu",
-        "platformPercent": "% nền tảng",
-        "processingFee": "Phí xử lý Stripe",
-        "processingFixed": "Phí cố định",
-        "processingPercent": "% xử lý",
-        "settlementTitle": "Xem trước quyết toán",
-        "subtotal": "Tạm tính",
-        "title": "Bộ ước tính phí checkout",
-        "totalFees": "Tổng phí"
-      }
-    },
     "nav": {
       "audits": {
         "description": "Truy vết sự kiện thanh toán, tồn kho và payout.",
@@ -841,7 +819,7 @@
         "title": "Danh mục"
       },
       "checkout": {
-        "description": "Xem trước các dòng phí rõ ràng trước checkout.",
+        "description": "Theo dõi giữ hàng thực tế và trạng thái Polar.",
         "title": "Checkout"
       },
       "checkouts": {
@@ -882,8 +860,8 @@
         "title": "Cửa hàng"
       },
       "stripe": {
-        "description": "Chuẩn bị onboarding Stripe Connect và sổ cái phí.",
-        "title": "Stripe"
+        "description": "Quản lý mức sẵn sàng của Polar checkout.",
+        "title": "Polar"
       }
     },
     "operator": {
@@ -897,23 +875,61 @@
         "stock": "Tồn kho"
       },
       "empty": "Không có bản ghi kho hàng phù hợp với chế độ xem này.",
+      "emptyDescriptions": {
+        "audits": "Sự kiện kiểm toán sẽ xuất hiện sau các thay đổi checkout, tồn kho hoặc thiết lập.",
+        "bundles": "Tạo combo rồi gắn sản phẩm thành phần để chuẩn bị listing cho chiến dịch.",
+        "checkouts": "Các phiên checkout Polar đã giữ hàng hoặc hoàn tất sẽ xuất hiện tại đây.",
+        "sales": "Doanh số checkout đã hoàn tất và liên kết hóa đơn tài chính sẽ xuất hiện tại đây.",
+        "storefronts": "Tạo cửa hàng, tùy chỉnh giao diện rồi xuất bản listing cho người mua."
+      },
       "forms": {
+        "accentColor": "Màu nhấn",
         "amount": "Số lượng",
         "bundle": "Combo",
         "bundleName": "Tên combo",
         "category": "Danh mục",
+        "cornerStyle": "Bo góc",
+        "cornerStyles": {
+          "compact": "Gọn",
+          "rounded": "Bo tròn",
+          "soft": "Mềm"
+        },
         "create": "Tạo",
+        "createBundleDescription": "Tạo combo có tồn kho trước khi thêm sản phẩm thành phần.",
         "createBundleError": "Không thể tạo combo.",
         "createBundleSuccess": "Đã tạo combo.",
+        "createBundleTitle": "Tạo combo",
+        "createListingDescription": "Chọn sản phẩm hoặc combo, rồi đặt tiêu đề và giá hiển thị cho khách.",
+        "createListingTitle": "Tạo listing cửa hàng",
+        "createProductDescription": "Thêm thông tin sản phẩm và tồn kho ban đầu nếu cần.",
+        "createProductTitle": "Tạo sản phẩm",
+        "createStorefrontDescription": "Thiết lập nhận diện, hiển thị và giao diện cho người mua.",
         "createStorefrontError": "Không thể tạo cửa hàng.",
         "createStorefrontSuccess": "Đã tạo cửa hàng.",
+        "createStorefrontTitle": "Tạo cửa hàng",
         "creating": "Đang tạo...",
+        "currency": "Tiền tệ",
         "deleteError": "Không thể xóa bản ghi.",
         "deleteSuccess": "Đã xóa bản ghi.",
+        "description": "Mô tả",
+        "editStorefrontDescription": "Tùy chỉnh nội dung, hiển thị và giao diện cửa hàng.",
+        "editStorefrontTitle": "Tùy chỉnh cửa hàng",
         "emptyResource": "Chưa có bản ghi thiết lập.",
+        "heroImageUrl": "URL ảnh hero",
+        "layoutStyle": "Bố cục",
+        "layoutStyles": {
+          "feature": "Nổi bật",
+          "grid": "Lưới",
+          "list": "Danh sách"
+        },
         "listingTitle": "Tiêu đề listing",
         "manufacturer": "Nhà sản xuất",
         "minAmount": "Tối thiểu",
+        "newBundle": "Combo mới",
+        "newListing": "Listing mới",
+        "newProduct": "Sản phẩm mới",
+        "newStorefront": "Cửa hàng mới",
+        "noStorefrontsForListings": "Tạo cửa hàng trước khi thêm listing.",
         "note": "Ghi chú",
         "owner": "Chủ sở hữu",
         "price": "Giá",
@@ -923,11 +939,33 @@
         "save": "Lưu",
         "saveError": "Không thể lưu thay đổi.",
         "saveSuccess": "Đã lưu thay đổi.",
+        "showInventoryBadges": "Hiển thị nhãn tồn kho trên listing",
         "slug": "slug",
+        "status": "Trạng thái",
+        "storefront": "Cửa hàng",
+        "storefrontStatus": {
+          "draft": "Nháp",
+          "paused": "Tạm dừng",
+          "published": "Đã xuất bản"
+        },
         "storeName": "Tên cửa hàng",
         "supplier": "Nhà cung cấp",
+        "surfaceStyle": "Bề mặt",
+        "surfaceStyles": {
+          "glass": "Kính mờ",
+          "soft": "Mềm",
+          "solid": "Đặc"
+        },
         "target": "Đối tượng",
+        "themePreset": "Chủ đề",
+        "themePresets": {
+          "boutique": "Boutique",
+          "catalog": "Catalog",
+          "editorial": "Editorial",
+          "minimal": "Tối giản"
+        },
         "unit": "Đơn vị",
+        "visibility": "Hiển thị",
         "visibilityPrivate": "Riêng tư",
         "visibilityPublic": "Công khai",
         "warehouse": "Kho"
@@ -942,16 +980,22 @@
       "openStore": "Mở cửa hàng",
       "polar": {
         "description": "Lưu token Polar của workspace và chọn môi trường thanh toán cho đơn cửa hàng.",
+        "dialogDescription": "Dán token tổ chức Polar do workspace sở hữu cho từng môi trường. Token không hiển thị trong thân trang.",
+        "dialogTitle": "Quản lý token Polar",
         "environment": {
           "production": "Production",
           "sandbox": "Sandbox"
         },
+        "environmentLabel": "Môi trường",
+        "feeResponsibility": "Tuturuuu chưa thu phí nền tảng ở giai đoạn này. Người dùng chịu các phí nền tảng Polar và phí Stripe mà Polar đã tính.",
+        "manage": "Quản lý Polar",
         "notConfigured": "Chưa lưu token",
         "pending": "Đang chờ",
         "productionDefault": "Mặc định production",
         "productMissing": "Chưa tạo sản phẩm checkout.",
         "productReady": "Sản phẩm {productId}",
         "ready": "Sẵn sàng",
+        "saveDefaults": "Lưu mặc định",
         "saveError": "Không thể lưu cài đặt Polar.",
         "saveSuccess": "Đã lưu cài đặt Polar.",
         "saveToken": "Lưu token",
@@ -959,8 +1003,27 @@
         "testingDefault": "Mặc định testing",
         "title": "Thanh toán Polar",
         "tokenEnding": "Token kết thúc bằng {last4}",
+        "tokenLabel": "Access token",
         "tokenPlaceholder": "Polar organization access token"
       },
+      "preview": {
+        "back": "Quay lại cửa hàng",
+        "checkoutDisabled": "Checkout trong xem trước chỉ là mô phỏng và không tạo giữ hàng.",
+        "description": "Rà soát trải nghiệm người mua bằng đúng renderer của ứng dụng storefront công khai.",
+        "devices": {
+          "desktop": "Desktop",
+          "mobile": "Mobile",
+          "tablet": "Tablet"
+        },
+        "errorDescription": "Hãy làm mới xem trước hoặc quay lại danh sách cửa hàng.",
+        "errorTitle": "Không thể tải xem trước cửa hàng",
+        "eyebrow": "Xem trước cửa hàng",
+        "openLive": "Mở bản live",
+        "previewNotice": "Xem trước quản trị: checkout bị tắt và thao tác giỏ hàng chỉ là mô phỏng.",
+        "retry": "Thử lại",
+        "title": "Xem trước người mua"
+      },
+      "previewStore": "Xem trước",
       "search": "Tìm trong kho",
       "setup": {
         "batches": "Lô hàng",
@@ -972,6 +1035,8 @@
         "warehouses": "Kho"
       },
       "states": {
+        "checkoutFeeDescription": "Không ước tính phí checkout tại đây. Polar tính phí nền tảng của họ và phí Stripe; Tuturuuu chưa thu phí nền tảng ở giai đoạn này.",
+        "checkoutFeeTitle": "Chỉ hiển thị trạng thái checkout thực",
         "errorDescription": "Hãy làm mới chế độ xem này hoặc thử lại sau khi API hoạt động ổn định.",
         "errorTitle": "Không thể tải dữ liệu kho",
         "retry": "Thử lại"
@@ -1034,11 +1099,17 @@
     },
     "storefront": {
       "add": "Thêm",
+      "available": "còn hàng",
+      "browse": "Xem cửa hàng",
+      "bundle": "Combo",
       "bundleAvailability": "Tồn combo",
       "cart": "Giỏ hàng",
       "checkout": "Checkout",
+      "checkoutDisabled": "Checkout bị tắt trong chế độ xem trước.",
       "checkoutError": "Không thể giữ đơn hàng này.",
       "emptyCart": "Giỏ hàng của bạn đang trống.",
+      "emptyListingsDescription": "Xuất bản listing để cửa hàng sẵn sàng cho người mua.",
+      "emptyListingsTitle": "Chưa có listing nào được xuất bản",
       "fallbackDescription": "Chưa có mô tả.",
       "form": {
         "email": "Email",
@@ -1052,10 +1123,16 @@
       "orderErrorDescription": "Hãy làm mới trạng thái đơn hàng hoặc liên hệ người bán bằng đường dẫn đơn hàng.",
       "orderErrorTitle": "Không thể tải trạng thái đơn hàng",
       "orderStatus": "Trạng thái đơn: {status}",
+      "previewBadge": "Xem trước",
+      "privateStore": "Cửa hàng riêng tư",
+      "product": "Sản phẩm",
+      "publicStore": "Cửa hàng công khai",
+      "quantity": "Số lượng",
       "reserve": "Giữ đơn hàng",
-      "reservedCopy": "Checkout giữ tồn kho trong một khoảng thời gian ngắn trước khi chốt hóa đơn.",
+      "reservedCopy": "Checkout giữ tồn kho qua Polar. Polar tự tính phí nền tảng và phí Stripe của họ; Tuturuuu chưa thu phí nền tảng ở giai đoạn này.",
       "reserving": "Đang giữ hàng...",
       "retry": "Thử lại",
+      "soldOut": "Hết hàng",
       "store": "Cửa hàng",
       "storefrontErrorDescription": "Hãy làm mới cửa hàng hoặc thử lại sau.",
       "storefrontErrorTitle": "Không thể tải cửa hàng",
@@ -1065,7 +1142,7 @@
       "audits": {
         "cards": {
           "0": {
-            "detail": "Giữ hàng, phiên checkout, khoản charge Stripe, phân bổ phí và payout dùng chung một correlation id.",
+            "detail": "Giữ hàng, phiên checkout, đơn Polar, quyết toán và payout dùng chung một correlation id.",
             "meta": "Liên sổ cái",
             "title": "Chuỗi sự kiện thống nhất"
           },
@@ -1095,7 +1172,7 @@
             "value": "99,4%"
           },
           "1": {
-            "detail": "Thời gian từ webhook Stripe đến xác nhận sổ cái tồn kho.",
+            "detail": "Thời gian từ webhook Polar đến xác nhận sổ cái tồn kho.",
             "label": "Độ trễ trung vị",
             "value": "41 giây"
           },
@@ -1121,7 +1198,7 @@
             "title": "Chặn theo tồn thành phần"
           },
           "2": {
-            "detail": "Khuyến mãi luôn hiển thị biên lợi nhuận, phí nền tảng và giả định phí Stripe trước khi xuất bản.",
+            "detail": "Khuyến mãi luôn hiển thị tồn kho, biên lợi nhuận và mức sẵn sàng Polar checkout trước khi xuất bản.",
             "meta": "Biên lợi nhuận",
             "title": "Kinh tế khuyến mãi"
           }
@@ -1130,7 +1207,7 @@
         "eyebrow": "Quản lý combo",
         "insights": {
           "0": "Giữ tồn kho thành phần theo cách nguyên tử khi checkout combo bắt đầu.",
-          "1": "Hiển thị biên lợi nhuận sau giảm giá, phí Stripe, phí nền tảng và phí chuyển đổi.",
+          "1": "Dùng dữ liệu quyết toán Polar cho phí nền tảng Polar, phí Stripe và phí chuyển đổi.",
           "2": "Tách tồn kho chiến dịch khỏi tồn kho catalog luôn bán."
         },
         "insightTitle": "Quy tắc khuyến mãi",
@@ -1157,7 +1234,7 @@
       "checkout": {
         "cards": {
           "0": {
-            "detail": "Mỗi checkout hiển thị tạm tính, giảm giá, vận chuyển, phí xử lý Stripe, phí nền tảng Tuturuuu, phí chuyển đổi và payout người bán.",
+            "detail": "Mỗi checkout hiển thị tạm tính, trạng thái giữ hàng, trạng thái Polar checkout và dữ liệu quyết toán khi Polar trả về.",
             "meta": "Minh bạch",
             "title": "Hiển thị rõ phí cho khách và người bán"
           },
@@ -1167,23 +1244,23 @@
             "title": "Checkout an toàn cho tồn kho"
           },
           "2": {
-            "detail": "Giao dịch số dư Stripe nên được đối soát với ước tính phí để khách hàng hiểu mọi chênh lệch quyết toán.",
+            "detail": "Trạng thái checkout và đơn Polar nên được đối soát với giữ hàng tồn kho để người vận hành hiểu mọi chênh lệch quyết toán.",
             "meta": "Đối soát",
             "title": "Đối soát phí"
           }
         },
-        "description": "Thiết kế checkout xoay quanh dòng phí rõ ràng, giữ hàng tồn kho và đối soát quyết toán cho bán hàng kiểu marketplace B2B2C.",
+        "description": "Thiết kế checkout xoay quanh giữ hàng tồn kho, trạng thái Polar checkout và đối soát quyết toán.",
         "eyebrow": "Checkout thanh toán",
         "insights": {
-          "0": "Không ẩn phí nền tảng trong giá sản phẩm khi người bán cần báo cáo payout.",
-          "1": "Lưu ước tính đã hiển thị ở checkout và phí Stripe thực tế nhận sau quyết toán.",
+          "0": "Không tự tạo phí ngoài dữ liệu quyết toán Polar và Stripe mà Polar đã tính.",
+          "1": "Lưu trạng thái checkout và đơn Polar thay vì ước tính phí cục bộ.",
           "2": "Giải phóng tồn kho khi checkout hết hạn, thanh toán thất bại hoặc kiểm tra gian lận chặn capture."
         },
         "insightTitle": "Yêu cầu checkout",
         "metrics": {
           "0": {
-            "detail": "Phiên checkout có chi tiết phí hiển thị.",
-            "label": "Độ rõ phí",
+            "detail": "Phiên checkout có trạng thái Polar thực.",
+            "label": "Độ rõ trạng thái",
             "value": "100%"
           },
           "1": {
@@ -1192,8 +1269,8 @@
             "value": "342"
           },
           "2": {
-            "detail": "Dòng phí ước tính đã khớp với dòng sổ cái Stripe thực tế.",
-            "label": "Phí đã khớp",
+            "detail": "Dòng quyết toán provider đã khớp với giữ hàng checkout.",
+            "label": "Quyết toán đã khớp",
             "value": "96,8%"
           }
         },
@@ -1249,7 +1326,7 @@
       "overview": {
         "cards": {
           "0": {
-            "detail": "Người vận hành thấy sức khỏe tồn kho, giữ hàng checkout, onboarding Stripe và đối soát phí trong cùng workspace.",
+            "detail": "Người vận hành thấy sức khỏe tồn kho, giữ hàng checkout, mức sẵn sàng Polar và đối soát quyết toán trong cùng workspace.",
             "meta": "Điều phối",
             "title": "Một bề mặt vận hành"
           },
@@ -1259,17 +1336,17 @@
             "title": "Phân loại linh hoạt"
           },
           "2": {
-            "detail": "Sự kiện thanh toán, phí, hoàn tiền, tồn kho và payout được thiết kế để kiểm toán cùng nhau thay vì ghép thủ công về sau.",
+            "detail": "Sự kiện thanh toán, hoàn tiền, tồn kho và payout được thiết kế để kiểm toán cùng nhau thay vì ghép thủ công về sau.",
             "meta": "Kiểm toán",
             "title": "Quan sát theo sổ cái"
           }
         },
-        "description": "Workspace để quản lý sản phẩm, tồn kho, combo, kinh tế checkout, trạng thái Stripe Connect và kiểm soát vận hành.",
+        "description": "Workspace để quản lý sản phẩm, tồn kho, combo, mức sẵn sàng Polar checkout và kiểm soát vận hành.",
         "eyebrow": "Trung tâm điều phối kho hàng",
         "insights": {
           "0": "Phiếu giữ hàng nên liên kết với phiên checkout trước khi capture thanh toán.",
-          "1": "Minh bạch phí cần xuất hiện trong checkout, báo cáo người bán và đối soát tài chính.",
-          "2": "Onboarding Stripe Connect nên được xem là cổng sẵn sàng kinh doanh."
+          "1": "Trạng thái Polar checkout thuộc về checkout, báo cáo người bán và đối soát tài chính.",
+          "2": "Mức sẵn sàng Polar nên được xem là cổng sẵn sàng kinh doanh."
         },
         "insightTitle": "Nguyên tắc vận hành",
         "metrics": {
@@ -1284,12 +1361,12 @@
             "value": "126"
           },
           "2": {
-            "detail": "Người bán đã kết nối và sẵn sàng nhận payout Stripe.",
-            "label": "Người bán sẵn sàng Stripe",
+            "detail": "Cửa hàng sẵn sàng route checkout qua Polar.",
+            "label": "Cửa hàng sẵn sàng Polar",
             "value": "38"
           }
         },
-        "title": "Vận hành tồn kho, checkout và phí",
+        "title": "Vận hành tồn kho và checkout",
         "workTitle": "Luồng workspace"
       },
       "stock": {
@@ -1305,7 +1382,7 @@
             "title": "Tín hiệu đặt lại"
           },
           "2": {
-            "detail": "Phiếu giữ hàng khóa số lượng có thể bán trong lúc Stripe checkout đang chờ và giải phóng sạch khi phiên hết hạn.",
+            "detail": "Phiếu giữ hàng khóa số lượng có thể bán trong lúc Polar checkout đang chờ và giải phóng sạch khi phiên hết hạn.",
             "meta": "An toàn checkout",
             "title": "Kiểm soát giữ hàng"
           }
@@ -1341,50 +1418,50 @@
       "stripe": {
         "cards": {
           "0": {
-            "detail": "Khách hàng có thể kết nối tài khoản Stripe của họ để Tuturuuu điều phối checkout storefront trong khi người bán nhận payout qua tài khoản của họ.",
-            "meta": "Connect",
-            "title": "Tài khoản Stripe thuộc người bán"
+            "detail": "Khách hàng cấu hình token Polar do workspace sở hữu để đơn storefront có thể tạo checkout Polar.",
+            "meta": "Polar",
+            "title": "Polar checkout thuộc workspace"
           },
           "1": {
-            "detail": "Trạng thái capability, hoàn tất onboarding, sẵn sàng payout và thiếu hồ sơ kinh doanh nên chặn các luồng checkout rủi ro.",
+            "detail": "Xác thực token, trạng thái sản phẩm checkout và môi trường mặc định nên chặn các luồng checkout rủi ro.",
             "meta": "Sẵn sàng",
             "title": "Cổng sẵn sàng kinh doanh"
           },
           "2": {
-            "detail": "Phí ứng dụng, phí xử lý, phí chuyển đổi, hoàn tiền, tranh chấp và payout cần các dòng sổ cái riêng cho báo cáo người bán.",
-            "meta": "Phí",
-            "title": "Sổ cái phí"
+            "detail": "Trạng thái đơn Polar, hoàn tiền, tranh chấp và payout cần các dòng sổ cái riêng khi có dữ liệu quyết toán.",
+            "meta": "Quyết toán",
+            "title": "Sổ cái quyết toán"
           }
         },
-        "connectDescription": "Ứng dụng đã được đăng ký cho inventory.tuturuuu.com và sẵn sàng nhận route Stripe Connect tập trung từ apps/web. API thanh toán được bảo vệ nên nằm sau apps/web để chống bot, ghi audit và giữ bí mật provider tập trung.",
-        "connectTitle": "Ranh giới Stripe Connect",
-        "description": "Chuẩn bị onboarding B2B2C nơi khách hàng liên kết tài khoản Stripe và bán qua Tuturuuu với phí rõ ràng cùng khả năng quan sát payout.",
-        "eyebrow": "Stripe Connect",
+        "connectDescription": "Ứng dụng đã được đăng ký cho inventory.tuturuuu.com và sẵn sàng nhận route Polar checkout tập trung từ apps/web. API thanh toán được bảo vệ nên nằm sau apps/web để chống bot, ghi audit và giữ bí mật provider tập trung.",
+        "connectTitle": "Ranh giới Polar checkout",
+        "description": "Chuẩn bị checkout storefront với token Polar do workspace sở hữu, trạng thái giữ hàng rõ ràng và quan sát payout từ dữ liệu quyết toán provider.",
+        "eyebrow": "Polar checkout",
         "insights": {
-          "0": "Lưu id tài khoản Stripe và trạng thái capability tập trung; không bao giờ lộ provider secret cho satellite app.",
-          "1": "Dùng account onboarding link và account update link từ ranh giới API web được bảo vệ.",
-          "2": "Xem giao dịch số dư Stripe là nguồn sự thật cho phí thực tế sau quyết toán."
+          "0": "Lưu fingerprint token Polar tập trung; không bao giờ lộ provider secret cho satellite app.",
+          "1": "Dùng ranh giới API web được bảo vệ cho tạo checkout và xác thực token.",
+          "2": "Xem dữ liệu đơn và quyết toán Polar là nguồn sự thật cho phí sau quyết toán."
         },
         "insightTitle": "Mô hình Connect",
         "metrics": {
           "0": {
-            "detail": "Workspace người bán có id tài khoản đã kết nối.",
-            "label": "Người bán đã kết nối",
+            "detail": "Workspace đã lưu fingerprint token Polar.",
+            "label": "Workspace đã cấu hình",
             "value": "38"
           },
           "1": {
-            "detail": "Tài khoản đã sẵn sàng charges, transfers và payouts.",
-            "label": "Sẵn sàng payout",
+            "detail": "Môi trường đã có sản phẩm checkout sẵn sàng.",
+            "label": "Sẵn sàng checkout",
             "value": "31"
           },
           "2": {
-            "detail": "Thanh toán còn thiếu đối soát phí Stripe cuối cùng.",
-            "label": "Lệch phí",
+            "detail": "Đơn còn thiếu đối soát quyết toán provider cuối cùng.",
+            "label": "Lệch quyết toán",
             "value": "12"
           }
         },
-        "title": "Sẵn sàng Stripe Connect",
-        "workTitle": "Vận hành Connect"
+        "title": "Sẵn sàng Polar checkout",
+        "workTitle": "Vận hành Polar"
       }
     }
   },

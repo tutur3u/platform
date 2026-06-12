@@ -1,13 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { listStorefrontListings, listStorefronts } from './repository';
+import {
+  getStorefront,
+  listStorefrontListings,
+  listStorefronts,
+} from './repository';
 
 vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => {
+  const from = vi.fn();
   const rpc = vi.fn();
-  const schema = vi.fn(() => ({ rpc }));
+  const schema = vi.fn(() => ({ from, rpc }));
   return {
     createAdminClient: vi.fn(),
+    from,
     rpc,
     schema,
   };
@@ -53,6 +59,71 @@ describe('inventory commerce repository RPC reads', () => {
       p_search: 'shop',
       p_status: 'published',
       p_ws_id: 'ws-1',
+    });
+  });
+
+  it('loads an admin storefront with mapped theme fields', async () => {
+    const storefrontBuilder = {
+      eq: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          accent_color: '#123abc',
+          corner_style: 'soft',
+          created_at: '2026-06-12T00:00:00.000Z',
+          currency: 'USD',
+          description: 'Preview copy',
+          hero_image_url: 'https://example.com/hero.jpg',
+          id: 'storefront-1',
+          layout_style: 'feature',
+          name: 'Preview Shop',
+          show_inventory_badges: false,
+          slug: 'preview-shop',
+          status: 'published',
+          surface_style: 'glass',
+          theme_preset: 'editorial',
+          updated_at: '2026-06-12T00:00:00.000Z',
+          visibility: 'public',
+          ws_id: 'ws-1',
+        },
+        error: null,
+      }),
+      select: vi.fn(),
+    };
+    storefrontBuilder.select.mockReturnValue(storefrontBuilder);
+    storefrontBuilder.eq.mockReturnValue(storefrontBuilder);
+
+    const countBuilder = {
+      eq: vi.fn().mockResolvedValue({ count: 3, error: null }),
+      select: vi.fn(),
+    };
+    countBuilder.select.mockReturnValue(countBuilder);
+    mocks.from
+      .mockReturnValueOnce(storefrontBuilder)
+      .mockReturnValueOnce(countBuilder);
+
+    await expect(getStorefront('ws-1', 'storefront-1')).resolves.toMatchObject({
+      accentColor: '#123abc',
+      cornerStyle: 'soft',
+      heroImageUrl: 'https://example.com/hero.jpg',
+      id: 'storefront-1',
+      layoutStyle: 'feature',
+      listingsCount: 3,
+      showInventoryBadges: false,
+      slug: 'preview-shop',
+      surfaceStyle: 'glass',
+      themePreset: 'editorial',
+    });
+
+    expect(mocks.from).toHaveBeenNthCalledWith(1, 'inventory_storefronts');
+    expect(storefrontBuilder.eq).toHaveBeenCalledWith('id', 'storefront-1');
+    expect(storefrontBuilder.eq).toHaveBeenCalledWith('ws_id', 'ws-1');
+    expect(mocks.from).toHaveBeenNthCalledWith(
+      2,
+      'inventory_storefront_listings'
+    );
+    expect(countBuilder.select).toHaveBeenCalledWith('id', {
+      count: 'exact',
+      head: true,
     });
   });
 

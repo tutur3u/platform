@@ -76,7 +76,7 @@ export function SaleDetailPanel({
         />
       )}
       <button
-        className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-dynamic-blue px-3 font-medium text-dynamic-blue-foreground text-sm disabled:opacity-50"
+        className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm disabled:opacity-50"
         disabled={!activeSaleId || mutation.isPending}
         type="submit"
       >
