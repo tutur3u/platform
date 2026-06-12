@@ -99,6 +99,61 @@ function resolveCurrentPortlessOrigin(
   return url.port && isLocalTuturuuuHostname(url.hostname) ? origin : null;
 }
 
+function normalizePortlessPort(value: string | null | undefined) {
+  const port = firstConfiguredValue(value);
+
+  if (!port || !/^\d+$/u.test(port)) {
+    return null;
+  }
+
+  const portNumber = Number(port);
+
+  return portNumber > 0 && portNumber <= 65535 ? String(portNumber) : null;
+}
+
+function normalizeConfiguredPortlessOrigin(
+  value: string | null | undefined,
+  env: NodeJS.ProcessEnv
+) {
+  const configuredValue = firstConfiguredValue(value);
+
+  if (!configuredValue) {
+    return null;
+  }
+
+  try {
+    const url = new URL(withDefaultScheme(configuredValue));
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+
+    if (!isLocalTuturuuuHostname(url.hostname)) {
+      return null;
+    }
+
+    const port = url.port || normalizePortlessPort(env.PORTLESS_PORT);
+
+    if (port) {
+      url.port = port;
+    }
+
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function resolveConfiguredPortlessOrigin(env: NodeJS.ProcessEnv) {
+  return (
+    normalizeConfiguredPortlessOrigin(env.PORTLESS_URL, env) ||
+    normalizeConfiguredPortlessOrigin(env.BASE_URL, env) ||
+    normalizeConfiguredPortlessOrigin(env.WEB_APP_URL, env) ||
+    normalizeConfiguredPortlessOrigin(env.NEXT_PUBLIC_WEB_APP_URL, env) ||
+    normalizeConfiguredPortlessOrigin(env.NEXT_PUBLIC_APP_URL, env)
+  );
+}
+
 function resolveConfiguredWebOrigin(env: NodeJS.ProcessEnv) {
   return (
     normalizeConfiguredWebOrigin(env.WEB_APP_URL) ||
@@ -148,8 +203,9 @@ export function resolveAuthRedirectOrigin({
   request,
 }: AuthRedirectOriginOptions = {}) {
   return (
-    resolveConfiguredWebOrigin(env) ||
     resolveCurrentPortlessOrigin(currentOrigin) ||
+    resolveConfiguredPortlessOrigin(env) ||
+    resolveConfiguredWebOrigin(env) ||
     resolveForwardedOrigin(request) ||
     normalizeHttpOrigin(currentOrigin) ||
     (isProduction

@@ -1,10 +1,13 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   isWildcardAuthRedirectHostname,
   resolveAuthRedirectOrigin,
 } from './auth-redirect-origin';
 
-function clearConfiguredWebOrigins() {
+function clearConfiguredAuthOrigins() {
+  vi.stubEnv('PORTLESS_URL', '');
+  vi.stubEnv('BASE_URL', '');
+  vi.stubEnv('PORTLESS_PORT', '');
   vi.stubEnv('WEB_APP_URL', '');
   vi.stubEnv('NEXT_PUBLIC_WEB_APP_URL', '');
   vi.stubEnv('NEXT_PUBLIC_APP_URL', '');
@@ -13,6 +16,10 @@ function clearConfiguredWebOrigins() {
 }
 
 describe('auth redirect origin', () => {
+  beforeEach(() => {
+    clearConfiguredAuthOrigins();
+  });
+
   afterEach(() => {
     vi.unstubAllEnvs();
   });
@@ -35,7 +42,6 @@ describe('auth redirect origin', () => {
   });
 
   it('ignores configured non-platform app origins', () => {
-    clearConfiguredWebOrigins();
     vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://chat.tuturuuu.com');
 
     expect(
@@ -46,8 +52,6 @@ describe('auth redirect origin', () => {
   });
 
   it('uses forwarded public host headers when the current origin is wildcard', () => {
-    clearConfiguredWebOrigins();
-
     expect(
       resolveAuthRedirectOrigin({
         currentOrigin: 'http://0.0.0.0:7803',
@@ -62,8 +66,6 @@ describe('auth redirect origin', () => {
   });
 
   it('preserves the local Portless port before forwarded host fallback', () => {
-    clearConfiguredWebOrigins();
-
     expect(
       resolveAuthRedirectOrigin({
         currentOrigin: 'https://tuturuuu.localhost:1355',
@@ -77,8 +79,36 @@ describe('auth redirect origin', () => {
     ).toBe('https://tuturuuu.localhost:1355');
   });
 
+  it('uses a configured Portless origin when request metadata omits the local port', () => {
+    vi.stubEnv('PORTLESS_URL', 'https://tuturuuu.localhost:1355');
+    vi.stubEnv('PORTLESS_PORT', '1355');
+
+    expect(
+      resolveAuthRedirectOrigin({
+        currentOrigin: 'https://tuturuuu.localhost',
+        request: {
+          headers: new Headers({
+            'x-forwarded-host': 'tuturuuu.localhost',
+            'x-forwarded-proto': 'https',
+          }),
+        },
+      })
+    ).toBe('https://tuturuuu.localhost:1355');
+  });
+
+  it('synthesizes a Portless port before using a no-port configured Web origin', () => {
+    vi.stubEnv('BASE_URL', 'https://tuturuuu.localhost');
+    vi.stubEnv('PORTLESS_PORT', '1355');
+    vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.localhost');
+
+    expect(
+      resolveAuthRedirectOrigin({
+        currentOrigin: 'https://tuturuuu.localhost',
+      })
+    ).toBe('https://tuturuuu.localhost:1355');
+  });
+
   it('falls back to localhost outside production', () => {
-    clearConfiguredWebOrigins();
     vi.stubEnv('PORT', '7803');
 
     expect(
@@ -90,8 +120,6 @@ describe('auth redirect origin', () => {
   });
 
   it('falls back to the production origin in production', () => {
-    clearConfiguredWebOrigins();
-
     expect(
       resolveAuthRedirectOrigin({
         currentOrigin: 'http://0.0.0.0:7803',

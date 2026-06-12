@@ -32,6 +32,9 @@ vi.mock('@/lib/auth/diagnostics', () => ({
 }));
 
 function clearConfiguredWebOrigins() {
+  vi.stubEnv('PORTLESS_URL', '');
+  vi.stubEnv('BASE_URL', '');
+  vi.stubEnv('PORTLESS_PORT', '');
   vi.stubEnv('WEB_APP_URL', '');
   vi.stubEnv('NEXT_PUBLIC_WEB_APP_URL', '');
   vi.stubEnv('NEXT_PUBLIC_APP_URL', '');
@@ -46,6 +49,7 @@ describe('auth callback route', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    clearConfiguredWebOrigins();
     mocks.createAuthDiagnosticCode.mockReturnValue('AUTH-OAUTH-ABC123');
     mocks.createClient.mockResolvedValue({
       auth: {

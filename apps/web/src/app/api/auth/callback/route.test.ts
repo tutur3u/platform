@@ -12,6 +12,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 function clearConfiguredWebOrigins() {
+  vi.stubEnv('PORTLESS_URL', '');
+  vi.stubEnv('BASE_URL', '');
+  vi.stubEnv('PORTLESS_PORT', '');
   vi.stubEnv('WEB_APP_URL', '');
   vi.stubEnv('NEXT_PUBLIC_WEB_APP_URL', '');
   vi.stubEnv('NEXT_PUBLIC_APP_URL', '');
@@ -126,6 +129,29 @@ describe('auth callback route', () => {
     expect(response.headers.get('location')).toBe(
       'http://localhost/add-account?returnUrl=%2Fen%2Fpersonal%2Ftasks%3Fview%3Dboard'
     );
+  });
+
+  it('preserves a configured local Portless port for multi-account callbacks when the request origin lacks it', async () => {
+    vi.stubEnv('PORTLESS_URL', 'https://tuturuuu.localhost:1355');
+    vi.stubEnv('PORTLESS_PORT', '1355');
+    vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.localhost');
+
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.localhost/api/auth/callback?code=oauth-code&multiAccount=true&returnUrl=%2Fen%2Fpersonal%2Ftasks',
+        {
+          headers: {
+            'x-forwarded-host': 'tuturuuu.localhost',
+            'x-forwarded-proto': 'https',
+          },
+        }
+      )
+    );
+
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.origin).toBe('https://tuturuuu.localhost:1355');
+    expect(location.pathname).toBe('/add-account');
+    expect(location.searchParams.get('returnUrl')).toBe('/en/personal/tasks');
   });
 
   it('normalizes the reported verification returnUrl on the public platform origin', async () => {
