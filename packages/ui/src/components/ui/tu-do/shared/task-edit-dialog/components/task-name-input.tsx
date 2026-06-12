@@ -2,6 +2,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { MAX_TASK_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
+import { useLayoutEffect, useRef } from 'react';
 import {
   getNormalizedCursorPosition,
   normalizeLiveTextReplacements,
@@ -41,6 +42,20 @@ export function TaskNameInput({
 }: TaskNameInputProps) {
   const t = useTranslations('ws-task-boards.dialog');
   const isCompact = variant === 'compact';
+  const hasPlacedInitialCaretRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (hasPlacedInitialCaretRef.current || disabled) return;
+
+    const titleInput = titleInputRef.current;
+    if (!titleInput) return;
+
+    hasPlacedInitialCaretRef.current = true;
+    const endPosition = titleInput.value.length;
+
+    titleInput.focus();
+    titleInput.setSelectionRange(endPosition, endPosition);
+  }, [disabled, titleInputRef]);
 
   const focusDescriptionEditor = () => {
     if (isCompact) return;
