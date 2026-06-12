@@ -2,6 +2,7 @@
 
 import {
   Boxes,
+  Calculator,
   CircleDollarSign,
   ClipboardList,
   Layers3,
@@ -15,7 +16,9 @@ import { useMemo } from 'react';
 import { AuditRows } from './audit-rows';
 import { BundleComponentsPanel } from './bundle-components-panel';
 import { CommercePanel } from './commerce-panel';
+import { CostingPanel } from './costing-panel';
 import { BundleForm, StorefrontForm } from './inventory-forms';
+import { InventoryGuidance } from './inventory-guidance';
 import {
   LoadingRows,
   SectionShell,
@@ -89,6 +92,15 @@ export function InventoryOperatorClient({
       ];
     }
 
+    if (view === 'costing') {
+      return [
+        all,
+        { label: t('statuses.draft'), value: 'draft' },
+        { label: t('statuses.active'), value: 'active' },
+        { label: t('statuses.archived'), value: 'archived' },
+      ];
+    }
+
     if (view === 'commerce' && commerceTab === 'checkouts') {
       return [
         all,
@@ -130,6 +142,11 @@ export function InventoryOperatorClient({
           t('views.commerce.title'),
           t('views.commerce.description'),
         ],
+        costing: [
+          Calculator,
+          t('views.costing.title'),
+          t('views.costing.description'),
+        ],
         overview: [
           Boxes,
           t('views.overview.title'),
@@ -152,17 +169,29 @@ export function InventoryOperatorClient({
   const Icon = section[0] as typeof Boxes;
   const activeQueries = [
     view === 'overview' ? data.overview : null,
-    ['bundles', 'catalog', 'stock', 'setup', 'storefront', 'overview'].includes(
-      view
-    )
+    view === 'overview' ? data.costingProfiles : null,
+    view === 'overview' ? data.costingAnalytics : null,
+    [
+      'bundles',
+      'catalog',
+      'costing',
+      'stock',
+      'setup',
+      'storefront',
+      'overview',
+    ].includes(view)
       ? data.products
       : null,
     view === 'storefront' ? data.storefronts : null,
     ['bundles', 'storefront'].includes(view) ? data.bundles : null,
     view === 'commerce' && commerceTab === 'checkouts' ? data.checkouts : null,
     view === 'commerce' && commerceTab === 'sales' ? data.sales : null,
+    view === 'costing' ? data.costingProfiles : null,
+    view === 'costing' ? data.costingAnalytics : null,
     view === 'audits' ? data.audits : null,
-    ['catalog', 'stock', 'setup', 'bundles', 'storefront'].includes(view)
+    ['catalog', 'stock', 'setup', 'bundles', 'storefront', 'costing'].includes(
+      view
+    )
       ? data.formOptions
       : null,
     view === 'setup' ? data.suppliers : null,
@@ -206,13 +235,22 @@ export function InventoryOperatorClient({
           />
         ) : null}
         {!isLoading && !isError && view === 'overview' ? (
-          <OverviewPanel
-            bundles={bundles}
-            lowStock={lowStock}
-            polarSettings={data.polarSettings.data}
-            products={products}
-            storefronts={storefronts}
-          />
+          <>
+            <InventoryGuidance
+              costingProfilesCount={data.costingProfiles.data?.data.length ?? 0}
+              productsCount={products.length}
+              storefrontsCount={storefronts.length}
+              view={view}
+              wsId={wsId}
+            />
+            <OverviewPanel
+              bundles={bundles}
+              lowStock={lowStock}
+              polarSettings={data.polarSettings.data}
+              products={products}
+              storefronts={storefronts}
+            />
+          </>
         ) : null}
         {!isLoading && !isError && (view === 'catalog' || view === 'stock') ? (
           <>
@@ -230,27 +268,39 @@ export function InventoryOperatorClient({
             wsId={wsId}
           />
         ) : null}
+        {!isLoading && !isError && view === 'costing' ? (
+          <CostingPanel
+            analytics={data.costingAnalytics.data}
+            options={data.formOptions.data}
+            profiles={data.costingProfiles.data?.data ?? []}
+            wsId={wsId}
+          />
+        ) : null}
         {!isLoading && !isError && view === 'storefront' ? (
           <>
             <StorefrontForm wsId={wsId} />
             <SimpleRows rows={storefronts} type="storefronts" wsId={wsId} />
-            <StorefrontListingsPanel
-              bundles={bundles}
-              products={products}
-              storefronts={storefronts}
-              wsId={wsId}
-            />
+            {storefronts.length > 0 ? (
+              <StorefrontListingsPanel
+                bundles={bundles}
+                products={products}
+                storefronts={storefronts}
+                wsId={wsId}
+              />
+            ) : null}
           </>
         ) : null}
         {!isLoading && !isError && view === 'bundles' ? (
           <>
             <BundleForm wsId={wsId} />
             <SimpleRows rows={bundles} type="bundles" wsId={wsId} />
-            <BundleComponentsPanel
-              bundles={bundles}
-              products={products}
-              wsId={wsId}
-            />
+            {bundles.length > 0 ? (
+              <BundleComponentsPanel
+                bundles={bundles}
+                products={products}
+                wsId={wsId}
+              />
+            ) : null}
           </>
         ) : null}
         {!isLoading && !isError && view === 'commerce' ? (

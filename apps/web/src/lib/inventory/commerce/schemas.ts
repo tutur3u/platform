@@ -26,6 +26,12 @@ export const StorefrontCornerStyleSchema = z.enum([
   'soft',
 ]);
 
+export const StorefrontCheckoutModeSchema = z.enum([
+  'polar',
+  'simulated',
+  'disabled',
+]);
+
 export const ListingStatusSchema = z.enum([
   'draft',
   'published',
@@ -62,6 +68,7 @@ export const storefrontPayloadSchema = z.object({
   currency: z.string().trim().length(3).optional(),
   description: z.string().trim().max(2000).nullable().optional(),
   heroImageUrl: z.url().nullable().optional(),
+  checkoutMode: StorefrontCheckoutModeSchema.optional(),
   themePreset: StorefrontThemePresetSchema.optional(),
   layoutStyle: StorefrontLayoutStyleSchema.optional(),
   surfaceStyle: StorefrontSurfaceStyleSchema.optional(),

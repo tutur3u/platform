@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(15);
 
 select ok(
   to_regclass('public.inventory_storefronts') is null,
@@ -24,6 +24,7 @@ select ok(
       'layout_style',
       'surface_style',
       'corner_style',
+      'checkout_mode',
       'show_inventory_badges'
     ]) as required(column_name)
     where not exists (
@@ -34,7 +35,20 @@ select ok(
         and c.column_name = required.column_name
     )
   ),
-  'inventory storefront theme columns exist in the private schema'
+  'inventory storefront theme and checkout mode columns exist in the private schema'
+);
+
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'inventory_cost_profiles',
+      'inventory_cost_scenarios',
+      'inventory_cost_profit_shares'
+    ]) as table_name
+    where to_regclass(format('private.%I', table_name)) is null
+  ),
+  'inventory costing tables exist in the private schema'
 );
 
 select ok(
@@ -98,6 +112,20 @@ select ok(
 select ok(
   has_table_privilege('service_role', 'private.inventory_products', 'select'),
   'service role can select private inventory products'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'private.inventory_cost_profiles', 'select'),
+  'authenticated cannot select private inventory costing profiles'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'private.get_inventory_costing_analytics(uuid)',
+    'execute'
+  ),
+  'service role can execute private inventory costing analytics'
 );
 
 select ok(

@@ -9,6 +9,7 @@ import { getCheckoutByPublicToken } from '@/lib/inventory/commerce/checkouts';
 import { createInventoryPolarCheckout } from '@/lib/inventory/commerce/polar';
 import { getPublicStorefront } from '@/lib/inventory/commerce/public-storefront';
 import { checkoutCreatePayloadSchema } from '@/lib/inventory/commerce/schemas';
+import { createSimulatedCheckoutResponse } from '@/lib/inventory/commerce/simulated-checkout';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -48,14 +49,16 @@ function getStorefrontUrl(request: Request) {
     : 'http://localhost:7822';
 }
 
-async function authorizeCheckoutAccess(request: Request, slug: string) {
+async function loadAuthorizedStorefront(request: Request, slug: string) {
   const payload = await getPublicStorefront(slug);
 
   if (!payload || !(await isInventoryEnabled(payload.storefront.wsId))) {
-    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+    return {
+      response: NextResponse.json({ message: 'Not found' }, { status: 404 }),
+    };
   }
 
-  if (payload.storefront.visibility !== 'private') return null;
+  if (payload.storefront.visibility !== 'private') return { payload };
 
   const auth = await resolveSessionAuthContext(request, {
     allowAppSessionAuth: {
@@ -63,7 +66,7 @@ async function authorizeCheckoutAccess(request: Request, slug: string) {
     },
   });
 
-  if (!auth.ok) return auth.response;
+  if (!auth.ok) return { response: auth.response };
 
   const membership = await verifyWorkspaceMembershipType({
     supabase: auth.supabase,
@@ -72,26 +75,53 @@ async function authorizeCheckoutAccess(request: Request, slug: string) {
   });
 
   if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { message: 'Failed to verify workspace access' },
-      { status: 500 }
-    );
+    return {
+      response: NextResponse.json(
+        { message: 'Failed to verify workspace access' },
+        { status: 500 }
+      ),
+    };
   }
 
   if (!membership.ok) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    return {
+      response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
+    };
   }
 
-  return null;
+  return { payload };
 }
 
 export async function POST(request: Request, { params }: Params) {
   try {
     const { slug } = await params;
-    const accessResponse = await authorizeCheckoutAccess(request, slug);
-    if (accessResponse) return accessResponse;
+    const access = await loadAuthorizedStorefront(request, slug);
+    if (access.response) return access.response;
+    const storefrontPayload = access.payload;
+    if (!storefrontPayload) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 });
+    }
 
     const payload = checkoutCreatePayloadSchema.parse(await request.json());
+
+    if (storefrontPayload.storefront.checkoutMode === 'disabled') {
+      return NextResponse.json(
+        { message: 'Checkout is disabled for this storefront' },
+        { status: 409 }
+      );
+    }
+
+    if (storefrontPayload.storefront.checkoutMode === 'simulated') {
+      return NextResponse.json(
+        createSimulatedCheckoutResponse({
+          payload,
+          storeSlug: slug,
+          storefrontPayload,
+        }),
+        { status: 201 }
+      );
+    }
+
     const sbAdmin = (await createAdminClient()) as unknown as RpcClient;
     const privateRpc = sbAdmin.schema('private');
     const { data, error } = await privateRpc.rpc(

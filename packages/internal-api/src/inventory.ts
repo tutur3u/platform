@@ -34,6 +34,11 @@ export type InventoryStorefrontSurfaceStyle = 'glass' | 'soft' | 'solid';
 
 export type InventoryStorefrontCornerStyle = 'compact' | 'rounded' | 'soft';
 
+export type InventoryStorefrontCheckoutMode =
+  | 'disabled'
+  | 'polar'
+  | 'simulated';
+
 export type InventoryListingStatus =
   | 'draft'
   | 'published'
@@ -59,6 +64,7 @@ export type InventoryStorefront = {
   heroImageUrl: string | null;
   accentColor: string | null;
   currency: string;
+  checkoutMode: InventoryStorefrontCheckoutMode;
   themePreset: InventoryStorefrontThemePreset;
   layoutStyle: InventoryStorefrontLayoutStyle;
   surfaceStyle: InventoryStorefrontSurfaceStyle;
@@ -411,6 +417,10 @@ export type InventoryNamedListQuery = {
   pageSize?: number;
 };
 
+export type InventoryCostProfileListQuery = InventoryNamedListQuery & {
+  status?: InventoryCostProfileStatus | 'all';
+};
+
 export type InventoryManufacturerPayload = {
   name: string;
 };
@@ -433,6 +443,7 @@ export type InventoryStorefrontPayload = {
   heroImageUrl?: string | null;
   accentColor?: string | null;
   currency?: string;
+  checkoutMode?: InventoryStorefrontCheckoutMode;
   themePreset?: InventoryStorefrontThemePreset;
   layoutStyle?: InventoryStorefrontLayoutStyle;
   surfaceStyle?: InventoryStorefrontSurfaceStyle;
@@ -483,6 +494,134 @@ export type InventoryCheckoutCreatePayload = {
     bundleId?: string;
     quantity: number;
   }>;
+};
+
+export type InventoryCostProfileStatus = 'active' | 'archived' | 'draft';
+
+export type InventoryCostScenarioMetrics = {
+  batchCost: number;
+  breakEvenQuantity: number | null;
+  grossMarginPercentage: number;
+  grossProfitPerUnit: number;
+  totalCostPerUnit: number;
+};
+
+export type InventoryCostScenario = {
+  id: string;
+  profileId: string;
+  wsId: string;
+  name: string;
+  batchSize: number;
+  manufacturingCostPerUnit: number;
+  artCommissionCost: number;
+  shippingCost: number;
+  tariffCost: number;
+  packagingCostPerUnit: number;
+  otherCostPerUnit: number;
+  sortOrder: number;
+  metrics: InventoryCostScenarioMetrics;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type InventoryCostProfitShare = {
+  id: string;
+  profileId: string;
+  wsId: string;
+  recipientLabel: string;
+  sharePercentage: number;
+  sortOrder: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type InventoryCostProfile = {
+  id: string;
+  wsId: string;
+  productId: string | null;
+  productName?: string | null;
+  categoryId: string | null;
+  categoryName?: string | null;
+  name: string;
+  status: InventoryCostProfileStatus;
+  currency: string;
+  targetRetailPrice: number;
+  notes: string | null;
+  scenarios: InventoryCostScenario[];
+  profitShares: InventoryCostProfitShare[];
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type InventoryCostProfilePayload = {
+  productId?: string | null;
+  categoryId?: string | null;
+  name: string;
+  status?: InventoryCostProfileStatus;
+  currency?: string;
+  targetRetailPrice: number;
+  notes?: string | null;
+  scenarios?: Array<{
+    id?: string;
+    name: string;
+    batchSize: number;
+    manufacturingCostPerUnit?: number;
+    artCommissionCost?: number;
+    shippingCost?: number;
+    tariffCost?: number;
+    packagingCostPerUnit?: number;
+    otherCostPerUnit?: number;
+    sortOrder?: number;
+  }>;
+  profitShares?: Array<{
+    id?: string;
+    recipientLabel: string;
+    sharePercentage: number;
+    sortOrder?: number;
+  }>;
+};
+
+export type InventoryCostImportPreviewRow = {
+  itemCategory: string;
+  batchSize: number;
+  manufacturingCostPerUnit: number;
+  totalCostPerUnit: number | null;
+  targetRetailPrice: number;
+  talentProfitPerSale?: number | null;
+  partnerProfitPerSale?: number | null;
+};
+
+export type InventoryCostImportPreview = {
+  rows: InventoryCostImportPreviewRow[];
+  warnings: string[];
+};
+
+export type InventoryCostImportPayload = {
+  csv: string;
+  commit?: boolean;
+};
+
+export type InventoryCostingAnalyticsScenario = {
+  profileId: string;
+  profileName: string;
+  scenarioId: string;
+  scenarioName: string;
+  currency: string;
+  batchSize: number;
+  targetRetailPrice: number;
+  totalCostPerUnit: number;
+  grossProfitPerUnit: number;
+  grossMarginPercentage: number;
+  breakEvenQuantity: number | null;
+  batchCost: number;
+};
+
+export type InventoryCostingAnalytics = {
+  profilesCount: number;
+  scenariosCount: number;
+  averageMarginPercentage: number;
+  lowestBreakEvenQuantity: number | null;
+  scenarios: InventoryCostingAnalyticsScenario[];
 };
 
 export type InventoryListResponse<T> = {
@@ -588,6 +727,99 @@ export function getInventoryStorefront(
       `/storefronts/${encodePathSegment(storefrontId)}`
     ),
     { cache: 'no-store' }
+  );
+}
+
+export function listInventoryCostProfiles(
+  wsId: string,
+  query?: InventoryCostProfileListQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryListResponse<InventoryCostProfile>
+  >(workspaceInventoryPath(wsId, '/costing'), {
+    cache: 'no-store',
+    query: paginatedQuery(query),
+  });
+}
+
+export function getInventoryCostProfile(
+  wsId: string,
+  profileId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryCostProfile }>(
+    workspaceInventoryPath(wsId, `/costing/${encodePathSegment(profileId)}`),
+    { cache: 'no-store' }
+  );
+}
+
+export function getInventoryCostingAnalytics(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryCostingAnalytics>(
+    workspaceInventoryPath(wsId, '/costing/analytics'),
+    { cache: 'no-store' }
+  );
+}
+
+export function importInventoryCostingCsv(
+  wsId: string,
+  payload: InventoryCostImportPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryCostImportPreview & { createdProfiles?: InventoryCostProfile[] }
+  >(workspaceInventoryPath(wsId, '/costing/import'), {
+    body: JSON.stringify(payload),
+    headers: jsonHeaders(options?.defaultHeaders),
+    method: 'POST',
+  });
+}
+
+export function createInventoryCostProfile(
+  wsId: string,
+  payload: InventoryCostProfilePayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryCostProfile }>(
+    workspaceInventoryPath(wsId, '/costing'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventoryCostProfile(
+  wsId: string,
+  profileId: string,
+  payload: Partial<InventoryCostProfilePayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryCostProfile }>(
+    workspaceInventoryPath(wsId, `/costing/${encodePathSegment(profileId)}`),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PATCH',
+    }
+  );
+}
+
+export function deleteInventoryCostProfile(
+  wsId: string,
+  profileId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ ok: boolean }>(
+    workspaceInventoryPath(wsId, `/costing/${encodePathSegment(profileId)}`),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
   );
 }
 

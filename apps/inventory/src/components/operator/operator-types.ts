@@ -3,6 +3,7 @@ export type InventoryOperatorView =
   | 'bundles'
   | 'catalog'
   | 'commerce'
+  | 'costing'
   | 'overview'
   | 'setup'
   | 'stock'

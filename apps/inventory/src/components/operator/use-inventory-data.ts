@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
+  getInventoryCostingAnalytics,
   getInventoryOverview,
   getInventoryPolarSettings,
   getInventoryProductFormOptions,
@@ -9,6 +10,7 @@ import {
   listInventoryBatches,
   listInventoryBundles,
   listInventoryCheckouts,
+  listInventoryCostProfiles,
   listInventoryProducts,
   listInventorySales,
   listInventoryStorefronts,
@@ -91,6 +93,24 @@ export function useInventoryData(
       }),
     queryKey: ['inventory', wsId, 'checkouts', filters.q, filters.status],
   });
+  const costingProfiles = useQuery({
+    enabled: view === 'costing' || view === 'overview',
+    queryFn: () =>
+      listInventoryCostProfiles(wsId, {
+        pageSize: 50,
+        q: filters.q,
+        status:
+          status === 'active' || status === 'archived' || status === 'draft'
+            ? status
+            : undefined,
+      }),
+    queryKey: ['inventory', wsId, 'costing', filters.q, filters.status],
+  });
+  const costingAnalytics = useQuery({
+    enabled: view === 'costing' || view === 'overview',
+    queryFn: () => getInventoryCostingAnalytics(wsId),
+    queryKey: ['inventory', wsId, 'costing-analytics'],
+  });
   const sales = useQuery({
     enabled: view === 'commerce' && commerceTab === 'sales',
     queryFn: () => listInventorySales(wsId, { limit: 50 }),
@@ -102,9 +122,14 @@ export function useInventoryData(
     queryKey: ['inventory', wsId, 'audits'],
   });
   const formOptions = useQuery({
-    enabled: ['bundles', 'catalog', 'setup', 'stock', 'storefront'].includes(
-      view
-    ),
+    enabled: [
+      'bundles',
+      'catalog',
+      'costing',
+      'setup',
+      'stock',
+      'storefront',
+    ].includes(view),
     queryFn: () => getInventoryProductFormOptions(wsId),
     queryKey: ['inventory', wsId, 'form-options'],
   });
@@ -129,6 +154,8 @@ export function useInventoryData(
     batches,
     bundles,
     checkouts,
+    costingAnalytics,
+    costingProfiles,
     filters,
     formOptions,
     overview,

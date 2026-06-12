@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getCheckoutByPublicToken } from '@/lib/inventory/commerce/checkouts';
+import {
+  getSimulatedOrderResponse,
+  isSimulatedOrderToken,
+} from '@/lib/inventory/commerce/simulated-checkout';
 
 interface Params {
   params: Promise<{ publicToken: string }>;
@@ -9,6 +13,10 @@ interface Params {
 export async function GET(_request: Request, { params }: Params) {
   try {
     const { publicToken } = await params;
+    if (isSimulatedOrderToken(publicToken)) {
+      return NextResponse.json(getSimulatedOrderResponse(publicToken));
+    }
+
     const order = await getCheckoutByPublicToken(publicToken);
 
     if (!order) {

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createInventoryBatch,
   createInventoryCheckoutSession,
+  createInventoryCostProfile,
   createInventoryOwner,
   createInventoryProduct,
   createInventoryProductCategory,
@@ -11,6 +12,7 @@ import {
   createInventoryWarehouse,
   deleteInventoryBatch,
   deleteInventoryBundle,
+  deleteInventoryCostProfile,
   deleteInventoryOwner,
   deleteInventoryProduct,
   deleteInventoryProductCategory,
@@ -20,14 +22,18 @@ import {
   deleteInventorySupplier,
   deleteInventoryUnit,
   deleteInventoryWarehouse,
+  getInventoryCostingAnalytics,
   getInventoryPublicOrder,
   getInventoryPublicStorefront,
   getInventorySale,
+  importInventoryCostingCsv,
   listInventoryBundles,
+  listInventoryCostProfiles,
   listInventoryStorefronts,
   listInventoryUnits,
   releaseInventoryCheckout,
   updateInventoryBatch,
+  updateInventoryCostProfile,
   updateInventoryOwner,
   updateInventoryProduct,
   updateInventoryProductCategory,
@@ -563,6 +569,74 @@ describe('inventory internal API helpers', () => {
       3,
       'https://internal.example.com/api/v1/inventory/orders/order_token',
       expect.objectContaining({ headers: expect.any(Headers) })
+    );
+  });
+
+  it('routes costing helpers through inventory costing APIs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: { id: 'cost_1' },
+        rows: [],
+      })
+    );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await listInventoryCostProfiles('ws 1', { q: 'poster' }, options);
+    await getInventoryCostingAnalytics('ws 1', options);
+    await importInventoryCostingCsv(
+      'ws 1',
+      { commit: false, csv: 'Item Category,Batch Size (Units)\nPoster,10' },
+      options
+    );
+    await createInventoryCostProfile(
+      'ws 1',
+      {
+        name: 'Poster',
+        scenarios: [{ batchSize: 10, name: '10 units' }],
+        targetRetailPrice: 20,
+      },
+      options
+    );
+    await updateInventoryCostProfile(
+      'ws 1',
+      'cost 1',
+      { status: 'archived' },
+      options
+    );
+    await deleteInventoryCostProfile('ws 1', 'cost 1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/costing?q=poster&response=paginated',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/costing/analytics',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/costing/import',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/costing',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/costing/cost%201',
+      expect.objectContaining({ method: 'PATCH' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/costing/cost%201',
+      expect.objectContaining({ method: 'DELETE' })
     );
   });
 });

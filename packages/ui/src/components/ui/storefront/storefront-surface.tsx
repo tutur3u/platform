@@ -126,6 +126,22 @@ export function StorefrontSurface({
                   {labels.previewBadge}
                 </Badge>
               ) : null}
+              {storefront.checkoutMode === 'simulated' ? (
+                <Badge
+                  className="border-border bg-background"
+                  variant="outline"
+                >
+                  {labels.simulatedBadge}
+                </Badge>
+              ) : null}
+              {storefront.checkoutMode === 'disabled' ? (
+                <Badge
+                  className="border-border bg-background"
+                  variant="outline"
+                >
+                  {labels.checkoutDisabledBadge}
+                </Badge>
+              ) : null}
             </div>
             <h1 className="mt-0.5 truncate font-semibold text-xl">
               {storefront.name}

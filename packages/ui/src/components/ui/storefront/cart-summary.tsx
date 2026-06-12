@@ -36,6 +36,8 @@ export function StorefrontCartSummary({
   total: number;
 }) {
   const hasCart = cartEntries.length > 0;
+  const isCheckoutDisabled = storefront.checkoutMode === 'disabled';
+  const submitDisabled = !hasCart || isSubmitting || isCheckoutDisabled;
 
   return (
     <aside
@@ -112,12 +114,12 @@ export function StorefrontCartSummary({
             name="note"
             placeholder={labels.form.note}
           />
-          <AccentButton disabled={!hasCart || isSubmitting} radius={radius}>
+          <AccentButton disabled={submitDisabled} radius={radius}>
             {isSubmitting ? labels.reserving : labels.reserve}
             <ArrowRight className="h-4 w-4" />
           </AccentButton>
         </form>
-      ) : isPreview ? (
+      ) : isPreview || isCheckoutDisabled ? (
         <Button className={cn('mt-4 w-full', radius)} disabled type="button">
           {labels.checkoutDisabled}
         </Button>

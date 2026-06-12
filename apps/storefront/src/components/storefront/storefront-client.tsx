@@ -49,6 +49,8 @@ export function StorefrontClient({
   });
   const storefront = storefrontQuery.data?.storefront;
   const isDemoStorefront = isDemoStorefrontFixture(storefront);
+  const isSimulatedCheckout =
+    isDemoStorefront || storefront?.checkoutMode === 'simulated';
   const orderQuery = useQuery({
     enabled:
       mode === 'order' &&
@@ -179,6 +181,7 @@ export function StorefrontClient({
     cart: t('cart'),
     checkout: t('checkout'),
     checkoutDisabled: t('checkoutDisabled'),
+    checkoutDisabledBadge: t('checkoutDisabledBadge'),
     demoBadge: t('demoBadge'),
     emptyCart: t('emptyCart'),
     emptyListingsDescription: t('emptyListingsDescription'),
@@ -195,9 +198,12 @@ export function StorefrontClient({
     product: t('product'),
     publicStore: t('publicStore'),
     quantity: t('quantity'),
-    reserve: isDemoStorefront ? t('demoReserve') : t('reserve'),
-    reserving: isDemoStorefront ? t('demoReserving') : t('reserving'),
-    reservedCopy: isDemoStorefront ? t('demoReservedCopy') : t('reservedCopy'),
+    reserve: isSimulatedCheckout ? t('simulatedReserve') : t('reserve'),
+    reserving: isSimulatedCheckout ? t('simulatedReserving') : t('reserving'),
+    reservedCopy: isSimulatedCheckout
+      ? t('simulatedReservedCopy')
+      : t('reservedCopy'),
+    simulatedBadge: t('simulatedBadge'),
     soldOut: t('soldOut'),
     total: t('total'),
   };

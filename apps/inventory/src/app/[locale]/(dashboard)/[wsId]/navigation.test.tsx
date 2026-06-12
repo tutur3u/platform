@@ -18,6 +18,7 @@ describe('Inventory navigation', () => {
       '/acme/catalog',
       '/acme/stock',
       '/acme/bundles',
+      '/acme/costing',
       '/acme/commerce',
       '/acme/storefront',
       '/acme/setup',
@@ -27,15 +28,15 @@ describe('Inventory navigation', () => {
       aliases: ['/acme/items'],
       sectionKey: 'sections.operations',
     });
-    expect(visibleLinks[4]).toMatchObject({
+    expect(visibleLinks[5]).toMatchObject({
       aliases: ['/acme/checkout', '/acme/checkouts', '/acme/sales'],
       sectionKey: 'sections.commerce',
       titleKey: 'commerce.title',
     });
-    expect(visibleLinks[5]).toMatchObject({
+    expect(visibleLinks[6]).toMatchObject({
       aliases: ['/acme/storefront/preview', '/acme/stripe'],
     });
-    expect(visibleLinks[6]).toMatchObject({
+    expect(visibleLinks[7]).toMatchObject({
       sectionKey: 'sections.controls',
     });
   });

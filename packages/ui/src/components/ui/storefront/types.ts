@@ -25,6 +25,7 @@ export type StorefrontSurfaceLabels = {
   cart: string;
   checkout: string;
   checkoutDisabled: string;
+  checkoutDisabledBadge: string;
   demoBadge: string;
   emptyCart: string;
   emptyListingsDescription: string;
@@ -44,6 +45,7 @@ export type StorefrontSurfaceLabels = {
   reserve: string;
   reserving: string;
   reservedCopy: string;
+  simulatedBadge: string;
   soldOut: string;
   total: string;
 };
@@ -56,6 +58,7 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
   cart: 'Cart',
   checkout: 'Checkout',
   checkoutDisabled: 'Checkout is disabled in preview',
+  checkoutDisabledBadge: 'Checkout disabled',
   demoBadge: 'Demo',
   emptyCart: 'Add a listing to start checkout.',
   emptyListingsDescription:
@@ -76,7 +79,8 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
   reserve: 'Reserve with Polar',
   reserving: 'Reserving...',
   reservedCopy:
-    'Checkout is reserved through Polar. Polar accounts for its platform and Stripe fees.',
+    'Review your cart, then continue with the available checkout mode.',
+  simulatedBadge: 'Simulated checkout',
   soldOut: 'Sold out',
   total: 'Total',
 };

@@ -8,6 +8,7 @@ import type {
   InventoryPolarCheckoutStatus,
   InventoryPolarEnvironment,
   InventoryStorefront,
+  InventoryStorefrontCheckoutMode,
   InventoryStorefrontListing,
   InventoryStorefrontStatus,
   InventoryStorefrontVisibility,
@@ -17,6 +18,7 @@ export type StorefrontRow = {
   accent_color: string | null;
   created_at: string | null;
   currency: string;
+  checkout_mode: InventoryStorefrontCheckoutMode | null;
   description: string | null;
   hero_image_url: string | null;
   theme_preset: InventoryStorefront['themePreset'];
@@ -138,6 +140,7 @@ export function mapStorefront(row: StorefrontRow): InventoryStorefront {
     accentColor: row.accent_color,
     createdAt: row.created_at,
     currency: row.currency,
+    checkoutMode: row.checkout_mode ?? 'polar',
     description: row.description,
     heroImageUrl: row.hero_image_url,
     themePreset: row.theme_preset ?? 'minimal',

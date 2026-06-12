@@ -56,7 +56,8 @@ describe('inventory storefront checkout route', () => {
     mocks.schema.mockReturnValue({ rpc: mocks.rpc });
     mocks.createAdminClient.mockResolvedValue({ schema: mocks.schema });
     mocks.getPublicStorefront.mockResolvedValue({
-      storefront: { visibility: 'public', wsId: 'ws-1' },
+      listings: [],
+      storefront: { checkoutMode: 'polar', visibility: 'public', wsId: 'ws-1' },
     });
     mocks.isInventoryEnabled.mockResolvedValue(true);
     mocks.resolveSessionAuthContext.mockResolvedValue({
@@ -150,5 +151,84 @@ describe('inventory storefront checkout route', () => {
       'create_inventory_checkout_session',
       expect.anything()
     );
+  });
+
+  it('blocks disabled storefront checkout before creating reservations', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        checkoutMode: 'disabled',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+
+    const response = await POST(
+      new Request('http://test.local/api', {
+        body: JSON.stringify({
+          customerEmail: 'buyer@example.com',
+          customerName: 'Buyer',
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+
+    expect(response.status).toBe(409);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('returns simulated checkout responses without Polar or reservation RPCs', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [
+        {
+          availableQuantity: 10,
+          id: '00000000-0000-4000-8000-000000000001',
+          maxPerOrder: 5,
+          price: 25,
+          productId: 'product-1',
+          title: 'Poster',
+          unitId: 'unit-1',
+          warehouseId: 'warehouse-1',
+        },
+      ],
+      storefront: {
+        checkoutMode: 'simulated',
+        currency: 'USD',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+
+    const response = await POST(
+      new Request('http://test.local/api', {
+        body: JSON.stringify({
+          customerEmail: 'buyer@example.com',
+          customerName: 'Buyer',
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 2,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.checkout.publicToken).toMatch(/^simulated-order-/);
+    expect(body.checkout.totalAmount).toBe(50);
+    expect(body.checkoutUrl).toContain('/store/shop/orders/simulated-order-');
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.createInventoryPolarCheckout).not.toHaveBeenCalled();
   });
 });

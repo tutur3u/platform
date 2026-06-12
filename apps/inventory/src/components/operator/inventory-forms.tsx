@@ -5,6 +5,7 @@ import { Layers3, Store } from '@tuturuuu/icons';
 import {
   createInventoryBundle,
   createInventoryStorefront,
+  type InventoryStorefrontCheckoutMode,
   type InventoryStorefrontCornerStyle,
   type InventoryStorefrontLayoutStyle,
   type InventoryStorefrontStatus,
@@ -35,6 +36,11 @@ const storefrontStatuses: InventoryStorefrontStatus[] = [
 const storefrontVisibilities: InventoryStorefrontVisibility[] = [
   'public',
   'private',
+];
+const checkoutModes: InventoryStorefrontCheckoutMode[] = [
+  'polar',
+  'simulated',
+  'disabled',
 ];
 const themePresets: InventoryStorefrontThemePreset[] = [
   'minimal',
@@ -70,6 +76,8 @@ export function StorefrontForm({ wsId }: { wsId: string }) {
   const [status, setStatus] = useState<InventoryStorefrontStatus>('draft');
   const [visibility, setVisibility] =
     useState<InventoryStorefrontVisibility>('public');
+  const [checkoutMode, setCheckoutMode] =
+    useState<InventoryStorefrontCheckoutMode>('simulated');
   const [themePreset, setThemePreset] =
     useState<InventoryStorefrontThemePreset>('minimal');
   const [layoutStyle, setLayoutStyle] =
@@ -84,6 +92,7 @@ export function StorefrontForm({ wsId }: { wsId: string }) {
     mutationFn: () =>
       createInventoryStorefront(wsId, {
         accentColor: sanitizeStorefrontAccentColor(accentColor),
+        checkoutMode,
         cornerStyle,
         currency: currency.trim().toUpperCase() || 'USD',
         description: description || null,
@@ -107,6 +116,7 @@ export function StorefrontForm({ wsId }: { wsId: string }) {
       setCurrency('USD');
       setStatus('draft');
       setVisibility('public');
+      setCheckoutMode('simulated');
       setThemePreset('minimal');
       setLayoutStyle('grid');
       setSurfaceStyle('solid');
@@ -206,6 +216,17 @@ export function StorefrontForm({ wsId }: { wsId: string }) {
                   value,
                 }))}
                 value={visibility}
+              />
+              <SelectValueField
+                label={t('forms.checkoutMode')}
+                onChange={(value) =>
+                  setCheckoutMode(value as InventoryStorefrontCheckoutMode)
+                }
+                options={checkoutModes.map((value) => ({
+                  label: t(`forms.checkoutModes.${value}`),
+                  value,
+                }))}
+                value={checkoutMode}
               />
               <SelectValueField
                 label={t('forms.themePreset')}

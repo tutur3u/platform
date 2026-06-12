@@ -287,7 +287,9 @@ export function CommercePanel({
       ) : (
         <>
           <SaleRows query={query} rows={sales} wsId={wsId} />
-          <SaleDetailPanel sales={sales} wsId={wsId} />
+          {sales.length > 0 ? (
+            <SaleDetailPanel sales={sales} wsId={wsId} />
+          ) : null}
         </>
       )}
     </div>

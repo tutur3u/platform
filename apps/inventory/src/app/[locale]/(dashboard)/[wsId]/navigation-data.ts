@@ -9,6 +9,7 @@ export type InventoryNavigationItem = {
     | 'bundles'
     | 'catalog'
     | 'commerce'
+    | 'costing'
     | 'overview'
     | 'setup'
     | 'stock'
@@ -44,6 +45,11 @@ export function getInventoryNavigationItems({
       titleKey: 'bundles.title',
       href: `/${workspaceSlug}/bundles`,
       icon: 'bundles',
+    },
+    {
+      titleKey: 'costing.title',
+      href: `/${workspaceSlug}/costing`,
+      icon: 'costing',
     },
     null,
     {

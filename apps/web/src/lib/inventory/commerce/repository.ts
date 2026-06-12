@@ -18,7 +18,7 @@ type ListRpcRow<TKey extends string, TValue> = {
 } & Record<TKey, TValue | null>;
 
 const storefrontSelect =
-  'id, ws_id, slug, name, description, status, visibility, hero_image_url, accent_color, currency, theme_preset, layout_style, surface_style, corner_style, show_inventory_badges, created_at, updated_at';
+  'id, ws_id, slug, name, description, status, visibility, hero_image_url, accent_color, currency, checkout_mode, theme_preset, layout_style, surface_style, corner_style, show_inventory_badges, created_at, updated_at';
 
 function normalizePagination(page?: number, pageSize?: number) {
   const limit = Math.max(1, Math.min(pageSize ?? 25, 100));
@@ -132,6 +132,7 @@ export async function createStorefront(
     .from('inventory_storefronts')
     .insert({
       accent_color: payload.accentColor ?? null,
+      checkout_mode: payload.checkoutMode ?? 'polar',
       corner_style: payload.cornerStyle ?? 'rounded',
       currency: payload.currency ?? 'USD',
       description: payload.description ?? null,
@@ -173,6 +174,9 @@ export async function updateStorefront(
   if (payload.status !== undefined) update.status = payload.status;
   if (payload.visibility !== undefined) update.visibility = payload.visibility;
   if (payload.currency !== undefined) update.currency = payload.currency;
+  if (payload.checkoutMode !== undefined) {
+    update.checkout_mode = payload.checkoutMode;
+  }
   if (payload.themePreset !== undefined) {
     update.theme_preset = payload.themePreset;
   }

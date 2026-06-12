@@ -183,6 +183,10 @@
       "types": "./src/components/ui/button.tsx",
       "import": "./src/components/ui/button.tsx"
     },
+    "./chart": {
+      "types": "./src/components/ui/chart.tsx",
+      "import": "./src/components/ui/chart.tsx"
+    },
     "./command": {
       "types": "./src/components/ui/command.tsx",
       "import": "./src/components/ui/command.tsx"

@@ -19,6 +19,7 @@ export const demoStorefront: InventoryStorefront = {
   cornerStyle: 'rounded',
   createdAt: DEMO_CREATED_AT,
   currency: 'USD',
+  checkoutMode: 'simulated',
   description:
     'A temporary testing storefront that demonstrates product browsing, cart review, checkout, and order status without touching production inventory.',
   heroImageUrl: null,

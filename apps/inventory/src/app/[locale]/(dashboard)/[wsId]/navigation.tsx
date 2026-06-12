@@ -1,5 +1,6 @@
 import {
   Boxes,
+  Calculator,
   ClipboardList,
   CreditCard,
   Layers3,
@@ -29,6 +30,8 @@ function getNavigationIcon(icon: InventoryNavigationItem['icon']) {
       return <PackageSearch className={className} />;
     case 'commerce':
       return <CreditCard className={className} />;
+    case 'costing':
+      return <Calculator className={className} />;
     case 'overview':
       return <LayoutDashboard className={className} />;
     case 'setup':

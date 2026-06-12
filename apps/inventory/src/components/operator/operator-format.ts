@@ -1,7 +1,11 @@
-export function currency(value: number | null | undefined, code = 'USD') {
+export function currency(
+  value: number | null | undefined,
+  code = 'USD',
+  maximumFractionDigits = 0
+) {
   return new Intl.NumberFormat(undefined, {
     currency: code,
-    maximumFractionDigits: 0,
+    maximumFractionDigits,
     style: 'currency',
   }).format(Number(value ?? 0));
 }

@@ -71,6 +71,7 @@ describe('inventory commerce repository RPC reads', () => {
           corner_style: 'soft',
           created_at: '2026-06-12T00:00:00.000Z',
           currency: 'USD',
+          checkout_mode: 'simulated',
           description: 'Preview copy',
           hero_image_url: 'https://example.com/hero.jpg',
           id: 'storefront-1',
@@ -103,6 +104,7 @@ describe('inventory commerce repository RPC reads', () => {
 
     await expect(getStorefront('ws-1', 'storefront-1')).resolves.toMatchObject({
       accentColor: '#123abc',
+      checkoutMode: 'simulated',
       cornerStyle: 'soft',
       heroImageUrl: 'https://example.com/hero.jpg',
       id: 'storefront-1',

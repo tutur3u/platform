@@ -70,6 +70,7 @@ describe('getOptionalInventoryPublicStorefront', () => {
   });
 
   it('returns a local demo checkout URL and synthetic demo order', () => {
+    expect(demoPublicStorefront.storefront.checkoutMode).toBe('simulated');
     expect(createDemoCheckoutResponse('demo')).toMatchObject({
       checkout: {
         publicToken: DEMO_ORDER_PUBLIC_TOKEN,

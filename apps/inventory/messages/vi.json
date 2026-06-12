@@ -834,6 +834,10 @@
         "description": "Rà soát độ phủ quan sát và kiểm soát.",
         "title": "Kiểm soát"
       },
+      "costing": {
+        "description": "Theo dõi chi phí theo lô, biên lợi nhuận, chia lợi nhuận và điểm hòa vốn.",
+        "title": "Chi phí"
+      },
       "items": {
         "description": "Phân loại sản phẩm theo loại, chủ sở hữu và talent.",
         "title": "Mặt hàng"
@@ -891,6 +895,39 @@
           "sales": "Bán hàng"
         }
       },
+      "costing": {
+        "addScenario": "Thêm kịch bản",
+        "averageMargin": "Biên trung bình",
+        "batchSize": "Cỡ lô",
+        "breakEven": "SL hòa vốn",
+        "breakEvenChart": "Số lượng hòa vốn theo kịch bản",
+        "commitImport": "Nhập hồ sơ",
+        "emptyDescription": "Nhập CSV từ Google Sheets hoặc tạo kịch bản lô đầu tiên để bắt đầu theo dõi biên lợi nhuận.",
+        "emptyTitle": "Chưa có hồ sơ chi phí.",
+        "importCsv": "Nhập CSV",
+        "importDescription": "Dán CSV xuất từ Google Sheets có các cột danh mục mặt hàng, cỡ lô, chi phí sản xuất, tổng chi phí và giá bán mục tiêu.",
+        "importError": "Không thể nhập CSV chi phí.",
+        "importNoRows": "Không tìm thấy dòng có thể nhập.",
+        "importPlaceholder": "Dán CSV tại đây",
+        "importTitle": "Nhập CSV chi phí",
+        "item": "Mặt hàng",
+        "itemName": "Tên mặt hàng hoặc hồ sơ",
+        "lowestBreakEven": "Hòa vốn thấp nhất",
+        "margin": "Biên lợi nhuận",
+        "marginChart": "Biên gộp theo kịch bản",
+        "newProfile": "Hồ sơ chi phí mới",
+        "previewImport": "Xem trước",
+        "profiles": "Hồ sơ",
+        "retail": "Giá bán",
+        "saveProfile": "Lưu hồ sơ",
+        "scenario": "Kịch bản",
+        "scenarios": "Kịch bản",
+        "summary": "Không gian chi phí",
+        "summaryDescription": "Thay thế bảng tính biên lợi nhuận bằng kịch bản lô và giả định chia lợi nhuận có thể tái sử dụng.",
+        "totalCost": "Tổng chi phí/đơn vị",
+        "uncategorized": "Chưa phân loại",
+        "unitCost": "Chi phí SX/đơn vị"
+      },
       "empty": "Không có bản ghi kho hàng phù hợp với chế độ xem này.",
       "emptyDescriptions": {
         "audits": "Sự kiện kiểm toán sẽ xuất hiện sau các thay đổi checkout, tồn kho hoặc thiết lập.",
@@ -906,6 +943,12 @@
         "bundle": "Combo",
         "bundleName": "Tên combo",
         "category": "Danh mục",
+        "checkoutMode": "Chế độ thanh toán",
+        "checkoutModes": {
+          "disabled": "Đã tắt",
+          "polar": "Polar",
+          "simulated": "Mô phỏng"
+        },
         "cornerStyle": "Bo góc",
         "cornerStyles": {
           "compact": "Gọn",
@@ -988,6 +1031,35 @@
         "visibilityPrivate": "Riêng tư",
         "visibilityPublic": "Công khai",
         "warehouse": "Kho"
+      },
+      "guidance": {
+        "bannerDescription": "Mở lộ trình hướng dẫn cho thiết lập, chi phí, mở cửa hàng và chọn chế độ thanh toán.",
+        "bannerTitle": "Hướng dẫn sẵn sàng mở bán",
+        "description": "Dùng hướng dẫn này để đưa workspace trống từ bản ghi thiết lập đến cửa hàng có thể mở với Polar hoặc thanh toán mô phỏng.",
+        "done": "Xong",
+        "replay": "Xem lại hướng dẫn",
+        "start": "Bắt đầu hướng dẫn",
+        "steps": {
+          "checkout": {
+            "description": "Chọn thanh toán mô phỏng khi Polar còn tùy chọn, rồi chuyển sang Polar khi thông tin sandbox hoặc production đã sẵn sàng.",
+            "title": "Chọn chế độ thanh toán"
+          },
+          "costing": {
+            "description": "Nhập CSV chi phí merch hoặc tạo kịch bản cho cỡ lô, tổng chi phí đơn vị, biên lợi nhuận và số lượng hòa vốn.",
+            "title": "Mô hình chi phí"
+          },
+          "setup": {
+            "description": "Tạo danh mục, chủ sở hữu, đơn vị, kho, nhà cung cấp và ít nhất một sản phẩm có tồn kho ban đầu.",
+            "title": "Chuẩn bị bản ghi thiết lập"
+          },
+          "storefront": {
+            "description": "Tạo cửa hàng, tùy chỉnh giao diện, thêm listing đã xuất bản và dùng xem trước trước khi chia sẻ.",
+            "title": "Xuất bản cửa hàng"
+          }
+        },
+        "tipDescription": "Thiết lập Polar là tùy chọn cho sandbox và production. Nếu bỏ qua, đặt chế độ thanh toán của cửa hàng thành Mô phỏng để demo an toàn.",
+        "tipTitle": "Có thể mô phỏng thanh toán",
+        "title": "Hướng dẫn mở bán Inventory"
       },
       "metrics": {
         "bundles": "Combo",
@@ -1087,6 +1159,10 @@
         "commerce": {
           "description": "Theo dõi phiên checkout đang giữ hàng và doanh số đã hoàn tất trong cùng một không gian gọn.",
           "title": "Bàn thương mại"
+        },
+        "costing": {
+          "description": "Theo dõi kịch bản lô, biên gộp, chia lợi nhuận và số lượng hòa vốn.",
+          "title": "Phòng chi phí"
         },
         "overview": {
           "description": "Quét nhanh sức khỏe sản phẩm, mức sẵn sàng cửa hàng và rủi ro sắp hết hàng.",

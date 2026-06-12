@@ -834,6 +834,10 @@
         "description": "Review observability and control coverage.",
         "title": "Controls"
       },
+      "costing": {
+        "description": "Track batch costs, margins, profit shares, and break-even points.",
+        "title": "Costing"
+      },
       "items": {
         "description": "Categorize products by type, owner, and talent.",
         "title": "Items"
@@ -891,6 +895,39 @@
           "sales": "Sales"
         }
       },
+      "costing": {
+        "addScenario": "Add scenario",
+        "averageMargin": "Average margin",
+        "batchSize": "Batch size",
+        "breakEven": "Break-even qty",
+        "breakEvenChart": "Break-even quantity by scenario",
+        "commitImport": "Import profiles",
+        "emptyDescription": "Import a Google Sheets CSV or create a first batch scenario to start tracking margins.",
+        "emptyTitle": "No costing profiles yet.",
+        "importCsv": "Import CSV",
+        "importDescription": "Paste an exported Google Sheets CSV with item category, batch size, manufacturing cost, total cost, and target retail price columns.",
+        "importError": "Could not import costing CSV.",
+        "importNoRows": "No importable rows were found.",
+        "importPlaceholder": "Paste CSV here",
+        "importTitle": "Import costing CSV",
+        "item": "Item",
+        "itemName": "Item or profile name",
+        "lowestBreakEven": "Lowest break-even",
+        "margin": "Margin",
+        "marginChart": "Gross margin by scenario",
+        "newProfile": "New costing profile",
+        "previewImport": "Preview",
+        "profiles": "Profiles",
+        "retail": "Retail price",
+        "saveProfile": "Save profile",
+        "scenario": "Scenario",
+        "scenarios": "Scenarios",
+        "summary": "Costing workspace",
+        "summaryDescription": "Replace spreadsheet margin tracking with reusable batch scenarios and profit-share assumptions.",
+        "totalCost": "Total cost/unit",
+        "uncategorized": "Uncategorized",
+        "unitCost": "Mfg cost/unit"
+      },
       "empty": "No inventory records match this view.",
       "emptyDescriptions": {
         "audits": "Audit events will appear after checkout, stock, or setup changes are recorded.",
@@ -906,6 +943,12 @@
         "bundle": "Bundle",
         "bundleName": "Bundle name",
         "category": "Category",
+        "checkoutMode": "Checkout mode",
+        "checkoutModes": {
+          "disabled": "Disabled",
+          "polar": "Polar",
+          "simulated": "Simulated"
+        },
         "cornerStyle": "Corners",
         "cornerStyles": {
           "compact": "Compact",
@@ -988,6 +1031,35 @@
         "visibilityPrivate": "Private",
         "visibilityPublic": "Public",
         "warehouse": "Warehouse"
+      },
+      "guidance": {
+        "bannerDescription": "Open the guided path for setup, costing, storefront launch, and checkout mode selection.",
+        "bannerTitle": "Launch readiness guide",
+        "description": "Use this walkthrough to move an empty workspace from setup records to a storefront that can open with Polar or simulated checkout.",
+        "done": "Done",
+        "replay": "Replay guide",
+        "start": "Start guide",
+        "steps": {
+          "checkout": {
+            "description": "Choose simulated checkout while Polar is optional, then switch to Polar when sandbox or production credentials are ready.",
+            "title": "Choose checkout mode"
+          },
+          "costing": {
+            "description": "Import the merch cost CSV or create scenarios for batch size, total unit cost, margin, and break-even quantity.",
+            "title": "Model costing"
+          },
+          "setup": {
+            "description": "Create categories, owners, units, warehouses, suppliers, and at least one product with opening stock.",
+            "title": "Prepare setup records"
+          },
+          "storefront": {
+            "description": "Create a storefront, customize its theme, add published listings, and use preview before sharing it.",
+            "title": "Publish storefront"
+          }
+        },
+        "tipDescription": "Polar setup is optional for sandbox and production. If it is skipped, set the storefront checkout mode to Simulated for a safe buyer demo.",
+        "tipTitle": "Checkout can be simulated",
+        "title": "Inventory launch walkthrough"
       },
       "metrics": {
         "bundles": "Bundles",
@@ -1087,6 +1159,10 @@
         "commerce": {
           "description": "Track live checkout reservations and finalized sales in one compact workspace.",
           "title": "Commerce desk"
+        },
+        "costing": {
+          "description": "Track batch scenarios, gross margin, profit shares, and break-even quantity.",
+          "title": "Costing lab"
         },
         "overview": {
           "description": "Scan product health, storefront readiness, and low-stock risk.",

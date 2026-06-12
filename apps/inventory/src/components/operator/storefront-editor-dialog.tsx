@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Settings2 } from '@tuturuuu/icons';
 import {
   type InventoryStorefront,
+  type InventoryStorefrontCheckoutMode,
   type InventoryStorefrontCornerStyle,
   type InventoryStorefrontLayoutStyle,
   type InventoryStorefrontStatus,
@@ -29,6 +30,11 @@ import { type FormEvent, useState } from 'react';
 
 const statuses: InventoryStorefrontStatus[] = ['draft', 'published', 'paused'];
 const visibilities: InventoryStorefrontVisibility[] = ['public', 'private'];
+const checkoutModes: InventoryStorefrontCheckoutMode[] = [
+  'polar',
+  'simulated',
+  'disabled',
+];
 const themePresets: InventoryStorefrontThemePreset[] = [
   'minimal',
   'editorial',
@@ -190,6 +196,20 @@ export function StorefrontEditorDialog({
               value={form.visibility}
             />
             <SelectField
+              label={t('checkoutMode')}
+              onChange={(checkoutMode) =>
+                setForm((current) => ({
+                  ...current,
+                  checkoutMode: checkoutMode as InventoryStorefrontCheckoutMode,
+                }))
+              }
+              options={checkoutModes.map((value) => ({
+                label: t(`checkoutModes.${value}`),
+                value,
+              }))}
+              value={form.checkoutMode}
+            />
+            <SelectField
               label={t('themePreset')}
               onChange={(themePreset) =>
                 setForm((current) => ({
@@ -283,6 +303,7 @@ function getInitialForm(storefront: InventoryStorefront) {
     heroImageUrl: storefront.heroImageUrl ?? '',
     layoutStyle: storefront.layoutStyle,
     name: storefront.name,
+    checkoutMode: storefront.checkoutMode,
     showInventoryBadges: storefront.showInventoryBadges,
     slug: storefront.slug,
     status: storefront.status,
