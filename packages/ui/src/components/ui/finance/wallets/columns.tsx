@@ -8,6 +8,7 @@ import {
   Scale,
   TrendingDown,
   TrendingUp,
+  TriangleAlert,
   Wallet as WalletIcon,
   X,
 } from '@tuturuuu/icons';
@@ -44,9 +45,13 @@ interface WalletExtraData {
   isPersonalWorkspace?: boolean;
 }
 
-function getAmountBadgeClassName(
-  tone: ReturnType<typeof getWalletBalanceTone>
-) {
+type AmountBadgeTone = ReturnType<typeof getWalletBalanceTone> | 'varied';
+
+function getAmountBadgeClassName(tone: AmountBadgeTone) {
+  if (tone === 'varied') {
+    return 'border-dynamic-orange/40 bg-dynamic-orange/10 font-semibold text-dynamic-orange';
+  }
+
   if (tone === 'positive') {
     return 'border-dynamic-green/30 bg-dynamic-green/10 font-semibold text-dynamic-green';
   }
@@ -75,11 +80,12 @@ function AmountBadge({
   children: ReactNode;
   icon?: ReactNode;
   label?: string;
-  tone: ReturnType<typeof getWalletBalanceTone>;
+  tone: AmountBadgeTone;
 }) {
   return (
     <Badge
       variant="outline"
+      data-wallet-balance-badge={tone}
       className={cn(
         'flex w-fit items-center gap-1 whitespace-nowrap',
         getAmountBadgeClassName(tone)
@@ -193,7 +199,9 @@ function WalletBalanceCell({
     );
   }
 
-  const balanceTone = getWalletBalanceTone(displayBalance);
+  const balanceTone = showAuditContext
+    ? 'varied'
+    : getWalletBalanceTone(displayBalance);
 
   function handleAuditContextBlur(event: FocusEvent<HTMLDivElement>) {
     const nextTarget = event.relatedTarget as Node | null;
@@ -221,6 +229,8 @@ function WalletBalanceCell({
                 <TrendingUp className="h-3 w-3" />
               ) : balanceTone === 'negative' ? (
                 <TrendingDown className="h-3 w-3" />
+              ) : balanceTone === 'varied' ? (
+                <TriangleAlert className="h-3 w-3" />
               ) : undefined
             }
           >

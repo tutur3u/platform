@@ -354,9 +354,14 @@ function DetailItem({
 }) {
   if (!value) return undefined;
   return (
-    <div className="flex items-center gap-1">
-      {icon}
-      <span className="font-semibold">{label}:</span> {value}
+    <div className="flex min-w-0 items-start gap-3 rounded-md py-1.5">
+      <span className="mt-0.5 flex shrink-0 text-muted-foreground [&_svg]:h-5 [&_svg]:w-5">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-muted-foreground text-xs">{label}</div>
+        <div className="min-w-0 font-medium">{value}</div>
+      </div>
     </div>
   );
 }

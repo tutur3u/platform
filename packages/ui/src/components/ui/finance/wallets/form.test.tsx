@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WalletFormValues } from './form';
@@ -52,6 +52,20 @@ function renderWalletForm(
   );
 }
 
+function typeIntoCurrencyInput(input: HTMLInputElement, value: string) {
+  fireEvent.focus(input);
+
+  for (const character of value) {
+    const nextValue = `${input.value}${character}`;
+    fireEvent.change(input, {
+      target: {
+        selectionStart: nextValue.length,
+        value: nextValue,
+      },
+    });
+  }
+}
+
 describe('WalletForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -102,5 +116,28 @@ describe('WalletForm', () => {
     expect(screen.getByLabelText('wallet-data-table.payment_date')).toHaveValue(
       15
     );
+  });
+
+  it('keeps accepting large credit limits after locale grouping is inserted', () => {
+    renderWalletForm({
+      data: {
+        balance: 0,
+        currency: 'VND',
+        id: 'wallet-1',
+        limit: undefined,
+        name: 'Credit Wallet',
+        payment_date: 25,
+        statement_date: 10,
+        type: 'CREDIT',
+      } as never,
+    });
+
+    const creditLimitInput = screen.getByLabelText(
+      'wallet-data-table.credit_limit'
+    ) as HTMLInputElement;
+
+    typeIntoCurrencyInput(creditLimitInput, '39999');
+
+    expect(creditLimitInput).toHaveValue('39.999');
   });
 });

@@ -50,6 +50,47 @@ function getRoundingUnit(v: number): number {
   return 1;
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getLocaleNumberSeparators(locale: string) {
+  const parts = new Intl.NumberFormat(locale).formatToParts(1000.1);
+
+  return {
+    decimal: parts.find((part) => part.type === 'decimal')?.value ?? '.',
+    group: parts.find((part) => part.type === 'group')?.value ?? ',',
+  };
+}
+
+function normalizeCurrencyInputText(
+  value: string,
+  separators: ReturnType<typeof getLocaleNumberSeparators>
+) {
+  let normalized = value;
+
+  if (separators.group) {
+    normalized = normalized.replace(
+      new RegExp(escapeRegExp(separators.group), 'g'),
+      ''
+    );
+  }
+
+  if (separators.decimal && separators.decimal !== '.') {
+    normalized = normalized.replace(
+      new RegExp(escapeRegExp(separators.decimal), 'g'),
+      '.'
+    );
+  }
+
+  const numericText = normalized.replace(/[^\d.]/g, '');
+  const [integerPart = '', ...fractionParts] = numericText.split('.');
+
+  if (fractionParts.length === 0) return integerPart;
+
+  return `${integerPart}.${fractionParts.join('')}`;
+}
+
 /**
  * A currency input component that formats numbers while preserving cursor position.
  *
@@ -87,6 +128,10 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 
     // Expose the input ref
     useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
+    const localeSeparators = useMemo(
+      () => getLocaleNumberSeparators(locale),
+      [locale]
+    );
 
     // Format number for display (with thousand separators)
     const formatForDisplay = useCallback(
@@ -101,20 +146,17 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
     );
 
     // Parse display string back to number
-    const parseValue = useCallback((str: string): number => {
-      if (!str) return 0;
-      // Remove all non-numeric characters except decimal point
-      // Handle both comma and period as decimal separators
-      const normalized = str
-        .replace(/[^\d.,]/g, '')
-        // If there are both commas and periods, assume the last one is decimal
-        .replace(/,(?=\d{3}(?:[.,]|$))/g, '') // Remove thousand separators (commas followed by 3 digits)
-        .replace(/\.(?=\d{3}(?:[.,]|$))/g, '') // Remove thousand separators (periods followed by 3 digits)
-        .replace(/,/g, '.'); // Convert remaining commas to periods for parsing
+    const parseValue = useCallback(
+      (str: string): number => {
+        if (!str) return 0;
 
-      const parsed = parseFloat(normalized);
-      return Number.isNaN(parsed) ? 0 : parsed;
-    }, []);
+        const parsed = parseFloat(
+          normalizeCurrencyInputText(str, localeSeparators)
+        );
+        return Number.isNaN(parsed) ? 0 : parsed;
+      },
+      [localeSeparators]
+    );
 
     // Format the raw input while preserving cursor position
     const formatWithCursor = useCallback(
@@ -122,10 +164,10 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         rawValue: string,
         cursorPos: number
       ): { formatted: string; newCursor: number } => {
-        // Extract just the numeric characters and decimal
-        const cleanValue = rawValue.replace(/[^\d.]/g, '');
-
-        // Handle multiple decimals - keep only the first
+        const cleanValue = normalizeCurrencyInputText(
+          rawValue,
+          localeSeparators
+        );
         const parts = cleanValue.split('.');
         let normalized = parts[0] || '';
         if (parts.length > 1) {
@@ -162,7 +204,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         // Count how many digits are before the cursor in the original
         let digitsBeforeCursor = 0;
         for (let i = 0; i < cursorPos && i < rawValue.length; i++) {
-          if (/[\d.]/.test(rawValue[i]!)) {
+          if (/[\d.,]/.test(rawValue[i]!)) {
             digitsBeforeCursor++;
           }
         }
@@ -172,7 +214,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         let digitCount = 0;
         for (let i = 0; i < formatted.length; i++) {
           if (digitCount >= digitsBeforeCursor) break;
-          if (/[\d.]/.test(formatted[i]!)) {
+          if (/[\d.,]/.test(formatted[i]!)) {
             digitCount++;
           }
           newCursor = i + 1;
@@ -180,7 +222,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 
         return { formatted, newCursor };
       },
-      [locale, maximumFractionDigits]
+      [locale, localeSeparators, maximumFractionDigits]
     );
 
     // Sync external value to display
@@ -261,8 +303,8 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         return;
       }
 
-      // Allow numbers and decimal point
-      if (/^[\d.]$/.test(e.key)) return;
+      // Allow numbers and common decimal separators
+      if (/^[\d.,]$/.test(e.key)) return;
 
       // Block all other keys
       e.preventDefault();

@@ -79,8 +79,12 @@ describe('wallet balance badge rendering', () => {
     const trigger = screen
       .getByText('$95.00')
       .closest('[data-wallet-balance-trigger]');
+    const balanceBadge = screen
+      .getByText('$95.00')
+      .closest('[data-wallet-balance-badge="varied"]');
 
     expect(trigger).not.toBeNull();
+    expect(balanceBadge).toHaveClass('text-dynamic-orange');
     fireEvent.mouseEnter(trigger as Element);
 
     expect(screen.getByText('ledger')).toBeInTheDocument();
