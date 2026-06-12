@@ -13,6 +13,12 @@ import {
   type InternalApiClientOptions,
   type InternalApiQuery,
 } from './client';
+import {
+  parseSignedUploadPayload,
+  uploadFileWithSignedUrl,
+  type WorkspaceStorageUploadProgress,
+  type WorkspaceUploadUrlResponse,
+} from './storage';
 
 export type InventoryStorefrontStatus =
   | 'draft'
@@ -216,6 +222,7 @@ export type InventoryOverviewResponse = {
 
 export type InventoryProductSummary = {
   archived?: boolean;
+  avatar_url?: string | null;
   category?: string | null;
   category_id?: string | null;
   description?: string | null;
@@ -260,6 +267,7 @@ export type InventoryProductInventoryItem = {
 
 export type InventoryProductPayload = {
   name: string;
+  avatar_url?: string | null;
   manufacturer_id?: string | null;
   manufacturer?: string | null;
   description?: string;
@@ -269,6 +277,24 @@ export type InventoryProductPayload = {
   finance_category_id?: string | null;
   inventory?: InventoryProductInventoryItem[];
   archived?: boolean;
+};
+
+export type InventoryMediaUploadTarget =
+  | 'bundle-image'
+  | 'listing-image'
+  | 'product-featured-image'
+  | 'storefront-hero';
+
+export type InventoryMediaUploadUrlResponse = WorkspaceUploadUrlResponse & {
+  readUrl: string;
+  target: InventoryMediaUploadTarget;
+};
+
+export type InventoryMediaUploadResult = {
+  fullPath: string | null;
+  path: string;
+  target: InventoryMediaUploadTarget;
+  url: string;
 };
 
 export type InventoryProductInventoryPayload = {
@@ -701,6 +727,62 @@ function paginatedQuery(query?: InventoryNamedListQuery) {
     ...query,
     response: 'paginated',
   });
+}
+
+export async function createInventoryMediaUploadUrl(
+  wsId: string,
+  payload: {
+    contentType?: string;
+    filename: string;
+    size?: number;
+    target: InventoryMediaUploadTarget;
+  },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryMediaUploadUrlResponse>(
+    workspaceInventoryPath(wsId, '/media/upload-url'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export async function uploadInventoryMedia(
+  wsId: string,
+  file: File,
+  target: InventoryMediaUploadTarget,
+  options?: InternalApiClientOptions & {
+    onUploadProgress?: (progress: WorkspaceStorageUploadProgress) => void;
+  }
+): Promise<InventoryMediaUploadResult> {
+  const uploadTarget = await createInventoryMediaUploadUrl(
+    wsId,
+    {
+      contentType: file.type || undefined,
+      filename: file.name,
+      size: file.size,
+      target,
+    },
+    options
+  );
+  const uploadPayload = parseSignedUploadPayload(uploadTarget);
+
+  await uploadFileWithSignedUrl(
+    file,
+    uploadPayload,
+    options?.fetch ?? globalThis.fetch,
+    options?.onUploadProgress
+  );
+
+  return {
+    fullPath: uploadPayload.fullPath,
+    path: uploadPayload.path,
+    target: uploadTarget.target,
+    url: uploadTarget.readUrl,
+  };
 }
 
 export function listInventoryStorefronts(

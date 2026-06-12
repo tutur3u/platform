@@ -122,6 +122,27 @@ export async function getInventoryCatalogProducts({
     .filter((product): product is InventoryCatalogRpcProduct =>
       Boolean(product)
     );
+  const productIds = products
+    .map((product) => product.id)
+    .filter((id): id is string => Boolean(id));
+
+  if (productIds.length > 0) {
+    const { data: imageRows, error: imageError } = await sbAdmin
+      .from('workspace_products')
+      .select('id, avatar_url')
+      .eq('ws_id', wsId)
+      .in('id', productIds);
+
+    if (imageError) throw imageError;
+
+    const imageByProductId = new Map(
+      (imageRows ?? []).map((row) => [row.id, row.avatar_url])
+    );
+
+    for (const product of products) {
+      product.avatar_url = imageByProductId.get(product.id) ?? null;
+    }
+  }
 
   return {
     count: Number(rows[0]?.total_count ?? 0),

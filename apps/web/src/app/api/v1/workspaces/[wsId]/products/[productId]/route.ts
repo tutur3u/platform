@@ -156,6 +156,7 @@ export async function GET(req: Request, { params }: Params) {
 
   const formattedProduct = {
     archived: product.archived ?? false,
+    avatar_url: item.avatar_url,
     id: item.id,
     name: item.name,
     manufacturer_id: product.manufacturer_id ?? null,
@@ -314,7 +315,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const { data: existingProduct, error: existingProductError } = await sbAdmin
     .from('workspace_products')
     .select(
-      'id, name, category_id, owner_id, finance_category_id, manufacturer_id, description, usage'
+      'id, name, avatar_url, category_id, owner_id, finance_category_id, manufacturer_id, description, usage'
     )
     .eq('id', productId)
     .eq('ws_id', wsId)
@@ -399,6 +400,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const actor = await getInventoryActorContext(req, wsId);
   const before = {
     name: existingProduct.name,
+    avatar_url: existingProduct.avatar_url,
     manufacturer_id: existingProduct.manufacturer_id,
     description: existingProduct.description,
     usage: existingProduct.usage,
@@ -408,6 +410,10 @@ export async function PATCH(req: Request, { params }: Params) {
   };
   const after = {
     name: data.name ?? existingProduct.name,
+    avatar_url:
+      data.avatar_url === undefined
+        ? existingProduct.avatar_url
+        : data.avatar_url,
     manufacturer_id:
       resolvedManufacturer.manufacturerId === undefined
         ? existingProduct.manufacturer_id

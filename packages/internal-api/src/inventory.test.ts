@@ -3,6 +3,7 @@ import {
   createInventoryBatch,
   createInventoryCheckoutSession,
   createInventoryCostProfile,
+  createInventoryMediaUploadUrl,
   createInventoryOwner,
   createInventoryProduct,
   createInventoryProductCategory,
@@ -43,6 +44,7 @@ import {
   updateInventorySupplier,
   updateInventoryUnit,
   updateInventoryWarehouse,
+  uploadInventoryMedia,
 } from './inventory';
 
 function createJsonResponse(data: unknown) {
@@ -638,5 +640,101 @@ describe('inventory internal API helpers', () => {
       'https://internal.example.com/api/v1/workspaces/ws%201/inventory/costing/cost%201',
       expect.objectContaining({ method: 'DELETE' })
     );
+  });
+
+  it('uploads inventory media through the scoped inventory media endpoint', async () => {
+    const file = new File(['image'], 'poster.webp', { type: 'image/webp' });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          contentType: 'image/webp',
+          fullPath:
+            'ws-1/inventory/media/product-featured-image/upload-id-poster.webp',
+          headers: { 'Content-Type': 'image/webp' },
+          path: 'inventory/media/product-featured-image/upload-id-poster.webp',
+          provider: 'r2',
+          readUrl: 'https://storage.example.com/read',
+          signedUrl: 'https://storage.example.com/upload',
+          target: 'product-featured-image',
+        })
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          contentType: 'image/webp',
+          fullPath:
+            'ws-1/inventory/media/product-featured-image/upload-id-poster.webp',
+          headers: { 'Content-Type': 'image/webp' },
+          path: 'inventory/media/product-featured-image/upload-id-poster.webp',
+          provider: 'r2',
+          readUrl: 'https://storage.example.com/read',
+          signedUrl: 'https://storage.example.com/upload',
+          target: 'product-featured-image',
+        })
+      )
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => '',
+      });
+
+    await createInventoryMediaUploadUrl(
+      'ws 1',
+      {
+        contentType: 'image/webp',
+        filename: 'poster.webp',
+        size: file.size,
+        target: 'product-featured-image',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    const result = await uploadInventoryMedia(
+      'ws 1',
+      file,
+      'product-featured-image',
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/media/upload-url',
+      expect.objectContaining({
+        body: JSON.stringify({
+          contentType: 'image/webp',
+          filename: 'poster.webp',
+          size: file.size,
+          target: 'product-featured-image',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/media/upload-url',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://storage.example.com/upload',
+      expect.objectContaining({
+        body: file,
+        method: 'PUT',
+      })
+    );
+    expect(result).toEqual({
+      fullPath:
+        'ws-1/inventory/media/product-featured-image/upload-id-poster.webp',
+      path: 'inventory/media/product-featured-image/upload-id-poster.webp',
+      target: 'product-featured-image',
+      url: 'https://storage.example.com/read',
+    });
   });
 });

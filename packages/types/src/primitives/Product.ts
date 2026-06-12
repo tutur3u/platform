@@ -1,5 +1,6 @@
 export interface Product {
   archived?: boolean;
+  avatar_url?: string | null;
   id: string;
   manufacturer_id?: string | null;
   name?: string;
@@ -67,6 +68,7 @@ export interface Product {
 // TODO: deprecate Product type for Product2
 export interface Product2 {
   archived?: boolean;
+  avatar_url?: string | null;
   id: string;
   name: string;
   manufacturer_id?: string | null;

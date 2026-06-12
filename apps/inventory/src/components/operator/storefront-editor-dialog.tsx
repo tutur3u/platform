@@ -27,35 +27,16 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { sanitizeStorefrontAccentColor } from '@tuturuuu/ui/storefront';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
-
-const statuses: InventoryStorefrontStatus[] = ['draft', 'published', 'paused'];
-const visibilities: InventoryStorefrontVisibility[] = ['public', 'private'];
-const checkoutModes: InventoryStorefrontCheckoutMode[] = [
-  'polar',
-  'simulated',
-  'disabled',
-];
-const themePresets: InventoryStorefrontThemePreset[] = [
-  'minimal',
-  'editorial',
-  'boutique',
-  'catalog',
-];
-const layoutStyles: InventoryStorefrontLayoutStyle[] = [
-  'grid',
-  'list',
-  'feature',
-];
-const surfaceStyles: InventoryStorefrontSurfaceStyle[] = [
-  'solid',
-  'soft',
-  'glass',
-];
-const cornerStyles: InventoryStorefrontCornerStyle[] = [
-  'compact',
-  'rounded',
-  'soft',
-];
+import { InventoryImageUploadField } from './inventory-image-upload';
+import {
+  checkoutModes,
+  cornerStyles,
+  layoutStyles,
+  storefrontStatuses,
+  storefrontVisibilities,
+  surfaceStyles,
+  themePresets,
+} from './storefront-form-options';
 
 export function StorefrontEditorDialog({
   storefront,
@@ -142,13 +123,18 @@ export function StorefrontEditorDialog({
                 value={form.description}
               />
             </label>
-            <TextField
-              label={t('heroImageUrl')}
-              onChange={(heroImageUrl) =>
-                setForm((current) => ({ ...current, heroImageUrl }))
-              }
-              value={form.heroImageUrl}
-            />
+            <div className="md:col-span-2">
+              <InventoryImageUploadField
+                description={t('heroImageDescription')}
+                label={t('heroImageUrl')}
+                onChange={(heroImageUrl) =>
+                  setForm((current) => ({ ...current, heroImageUrl }))
+                }
+                target="storefront-hero"
+                value={form.heroImageUrl}
+                wsId={wsId}
+              />
+            </div>
             <TextField
               label={t('currency')}
               onChange={(currency) =>
@@ -172,7 +158,7 @@ export function StorefrontEditorDialog({
                   status: status as InventoryStorefrontStatus,
                 }))
               }
-              options={statuses.map((value) => ({
+              options={storefrontStatuses.map((value) => ({
                 label: t(`storefrontStatus.${value}`),
                 value,
               }))}
@@ -186,7 +172,7 @@ export function StorefrontEditorDialog({
                   visibility: visibility as InventoryStorefrontVisibility,
                 }))
               }
-              options={visibilities.map((value) => ({
+              options={storefrontVisibilities.map((value) => ({
                 label:
                   value === 'public'
                     ? t('visibilityPublic')

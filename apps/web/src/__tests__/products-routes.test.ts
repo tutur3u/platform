@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => {
   const productMaybeSingle = vi.fn();
   const productInsertSingle = vi.fn();
   const productCountSingle = vi.fn();
+  const productAvatarIn = vi.fn();
   const inventoryInsert = vi.fn();
   const inventorySelectEq = vi.fn();
   const inventoryDeleteEq = vi.fn();
@@ -96,6 +97,14 @@ const mocks = vi.hoisted(() => {
                 eq: vi.fn().mockReturnValue({
                   single: productCountSingle,
                 }),
+              }),
+            };
+          }
+
+          if (fields === 'id, avatar_url') {
+            return {
+              eq: vi.fn().mockReturnValue({
+                in: productAvatarIn,
               }),
             };
           }
@@ -236,6 +245,7 @@ const mocks = vi.hoisted(() => {
     productCountSingle,
     productInsertSingle,
     productMaybeSingle,
+    productAvatarIn,
     sessionSupabase,
     stockChangesInsert,
   };
@@ -281,6 +291,12 @@ describe('product routes', () => {
       data: { id: 'relation-id' },
       error: null,
     });
+    mocks.productAvatarIn.mockImplementation((_column: string, ids: string[]) =>
+      Promise.resolve({
+        data: ids.map((id) => ({ id, avatar_url: null })),
+        error: null,
+      })
+    );
     mocks.inventoryCatalogRpc.mockImplementation(async () => {
       const result = await mocks.productMaybeSingle();
       if (!result?.data) return { data: [], error: result?.error ?? null };
@@ -310,6 +326,12 @@ describe('product routes', () => {
       },
       error: null,
     });
+    mocks.productAvatarIn.mockResolvedValueOnce({
+      data: [
+        { id: productId, avatar_url: 'https://cdn.example.com/product.webp' },
+      ],
+      error: null,
+    });
 
     const { GET } = await import(
       '@/app/api/v1/workspaces/[wsId]/products/[productId]/route'
@@ -324,6 +346,10 @@ describe('product routes', () => {
     );
 
     expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      avatar_url: 'https://cdn.example.com/product.webp',
+    });
+    expect(mocks.productAvatarIn).toHaveBeenCalledWith('id', [productId]);
     expect(mocks.privateSupabase.rpc).toHaveBeenCalledWith(
       'get_inventory_catalog_products',
       expect.objectContaining({

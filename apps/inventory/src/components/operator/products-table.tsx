@@ -47,7 +47,25 @@ export function ProductsTable({
 
             return (
               <tr className="border-border border-t" key={row.id}>
-                <td className="p-3 font-medium">{row.name}</td>
+                <td className="p-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted/40">
+                      {row.avatar_url ? (
+                        // biome-ignore lint/performance/noImgElement: thumbnails use arbitrary signed workspace media URLs.
+                        <img
+                          alt={row.name}
+                          className="h-full w-full object-cover"
+                          src={row.avatar_url}
+                        />
+                      ) : (
+                        <span className="font-semibold text-muted-foreground text-xs">
+                          {row.name.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <span className="truncate font-medium">{row.name}</span>
+                  </div>
+                </td>
                 <td className="p-3 text-muted-foreground">
                   {row.manufacturer ?? '-'}
                 </td>

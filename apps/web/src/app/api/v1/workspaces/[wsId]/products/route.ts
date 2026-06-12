@@ -8,6 +8,7 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_NAME_LENGTH,
+  MAX_URL_LENGTH,
 } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -35,6 +36,7 @@ const InventoryItemSchema = z.object({
 
 export const ProductCreateSchema = z.object({
   name: z.string().min(1).max(MAX_NAME_LENGTH),
+  avatar_url: z.url().max(MAX_URL_LENGTH).nullable().optional(),
   manufacturer_id: z.guid().nullable().optional(),
   manufacturer: z.string().max(MAX_NAME_LENGTH).nullable().optional(),
   description: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
@@ -250,7 +252,7 @@ export async function POST(req: Request, { params }: Params) {
       ws_id: wsId,
     })
     .select(
-      'id, name, owner_id, finance_category_id, category_id, manufacturer_id'
+      'id, name, avatar_url, owner_id, finance_category_id, category_id, manufacturer_id'
     )
     .single();
 
@@ -346,6 +348,7 @@ export async function POST(req: Request, { params }: Params) {
     summary: `Created product ${data.name}`,
     changedFields: [
       'name',
+      ...(data.avatar_url ? ['avatar_url'] : []),
       'category_id',
       'owner_id',
       ...(resolvedManufacturer.manufacturerId ? ['manufacturer_id'] : []),

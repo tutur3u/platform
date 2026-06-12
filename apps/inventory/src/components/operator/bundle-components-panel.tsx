@@ -1,16 +1,16 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2 } from '@tuturuuu/icons';
+import { Boxes, PackagePlus, Trash2 } from '@tuturuuu/icons';
 import type {
   InventoryBundle,
   InventoryProductSummary,
 } from '@tuturuuu/internal-api/inventory';
 import { updateInventoryBundle } from '@tuturuuu/internal-api/inventory';
+import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
-import { EmptyRow } from './operator-shell';
 
 export function BundleComponentsPanel({
   bundles,
@@ -54,28 +54,50 @@ export function BundleComponentsPanel({
   const canAdd = Boolean(
     activeBundle &&
       productId &&
-      activeInventory.unit_id &&
-      activeInventory.warehouse_id
+      stringField(activeInventory, 'unit_id') &&
+      stringField(activeInventory, 'warehouse_id')
   );
 
-  if (!bundles.length) return <EmptyRow label={t('emptyResource')} />;
+  if (!bundles.length) return null;
 
   return (
-    <section className="border-border border-t">
+    <section className="grid gap-3 rounded-lg border border-border bg-background p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="grid h-9 w-9 place-items-center rounded-md bg-muted text-muted-foreground">
+            <Boxes className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="font-semibold text-sm">{t('components')}</h3>
+            <p className="text-muted-foreground text-xs">
+              {t('bundleComponentsManageDescription')}
+            </p>
+          </div>
+        </div>
+      </div>
       <form
-        className="grid gap-2 p-3 lg:grid-cols-[1fr_1fr_120px_auto]"
+        className="grid gap-2 lg:grid-cols-[1fr_1fr_120px_auto]"
         onSubmit={(event: FormEvent) => {
           event.preventDefault();
           if (!(canAdd && activeBundle)) return;
+          const unitId = stringField(activeInventory, 'unit_id');
+          const warehouseId = stringField(activeInventory, 'warehouse_id');
+          const componentId = `${productId}-${unitId}-${warehouseId}`;
           mutation.mutate([
-            ...activeBundle.components,
+            ...activeBundle.components.filter(
+              (component) => component.id !== componentId
+            ),
             {
               bundleId: activeBundle.id,
-              id: `${productId}-${activeInventory.unit_id}-${activeInventory.warehouse_id}`,
+              id: componentId,
+              productName: activeProduct?.name ?? null,
               productId,
               quantity: Number(quantity || 1),
-              unitId: String(activeInventory.unit_id),
-              warehouseId: String(activeInventory.warehouse_id),
+              unitId,
+              unitName: stringField(activeInventory, 'unit_name') || null,
+              warehouseId,
+              warehouseName:
+                stringField(activeInventory, 'warehouse_name') || null,
             },
           ]);
         }}
@@ -110,20 +132,16 @@ export function BundleComponentsPanel({
           placeholder={t('quantity')}
           value={quantity}
         />
-        <button
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm disabled:opacity-50"
-          disabled={!canAdd || mutation.isPending}
-          type="submit"
-        >
-          <Plus className="h-4 w-4" />
-          {t('create')}
-        </button>
+        <Button disabled={!canAdd || mutation.isPending} type="submit">
+          <PackagePlus className="h-4 w-4" />
+          {t('addComponent')}
+        </Button>
       </form>
-      <div className="divide-y divide-border">
+      <div className="grid gap-2">
         {activeBundle?.components.length ? (
           activeBundle.components.map((component) => (
             <div
-              className="grid gap-2 p-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center"
+              className="grid gap-2 rounded-md border border-border bg-muted/20 p-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center"
               key={component.id}
             >
               <div>
@@ -136,8 +154,7 @@ export function BundleComponentsPanel({
                 </p>
               </div>
               <span>{component.quantity}</span>
-              <button
-                className="inline-flex h-8 items-center justify-center rounded-md border border-destructive/30 px-2 text-destructive"
+              <Button
                 onClick={() =>
                   mutation.mutate(
                     activeBundle.components.filter(
@@ -145,16 +162,25 @@ export function BundleComponentsPanel({
                     )
                   )
                 }
+                size="sm"
                 type="button"
+                variant="destructive"
               >
                 <Trash2 className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           ))
         ) : (
-          <EmptyRow label={t('emptyResource')} />
+          <p className="rounded-md border border-border border-dashed p-4 text-center text-muted-foreground text-sm">
+            {t('noBundleComponents')}
+          </p>
         )}
       </div>
     </section>
   );
+}
+
+function stringField(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === 'string' ? value : '';
 }

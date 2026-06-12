@@ -292,7 +292,7 @@ export function InventoryOperatorClient({
         ) : null}
         {!isLoading && !isError && view === 'bundles' ? (
           <>
-            <BundleForm wsId={wsId} />
+            <BundleForm products={products} wsId={wsId} />
             <SimpleRows rows={bundles} type="bundles" wsId={wsId} />
             {bundles.length > 0 ? (
               <BundleComponentsPanel

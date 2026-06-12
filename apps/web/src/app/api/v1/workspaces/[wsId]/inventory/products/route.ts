@@ -143,6 +143,7 @@ export async function GET(request: Request, { params }: Params) {
 
       return {
         archived: product.archived ?? false,
+        avatar_url: item.avatar_url,
         id: item.id,
         name: item.name,
         manufacturer_id: product.manufacturer_id ?? null,
