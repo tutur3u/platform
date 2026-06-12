@@ -362,6 +362,10 @@ beta-store workflow only:
   `tuturuuu-mobile-deployment` audience, then fetches an Android or iOS bundle
   from `https://tuturuuu.com/api/v1/mobile-deployment/bundle` with the issued
   `MOBILE_DEPLOYMENT_CI_TOKEN`.
+- If `MOBILE_DEPLOYMENT_CI_TOKEN` is not configured in the `mobile-store-beta`
+  GitHub Environment yet, the credentials preflight emits a notice and skips the
+  Android and iOS publish jobs instead of failing the workflow. A non-empty but
+  invalid token still fails during the bundle fetch.
 - The apps/web mobile deployment vault verifies the CI token, GitHub OIDC
   issuer, audience, repository, `production` ref, workflow file, and
   `mobile-store-beta` environment before returning any plaintext.

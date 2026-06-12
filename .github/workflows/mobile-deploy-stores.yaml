@@ -26,10 +26,33 @@ jobs:
     with:
       workflow_name: mobile-deploy-stores.yaml
 
-  publish-android-internal:
-    name: Publish Android to Google Play internal
+  mobile-credentials-preflight:
+    name: Check mobile deployment credentials
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    environment: mobile-store-beta
+    outputs:
+      has_ci_token: ${{ steps.credentials.outputs.has_ci_token }}
+    steps:
+      - name: Check mobile deployment CI token
+        id: credentials
+        shell: bash
+        env:
+          MOBILE_DEPLOYMENT_CI_TOKEN: ${{ secrets.MOBILE_DEPLOYMENT_CI_TOKEN }}
+        run: |
+          if [ -z "${MOBILE_DEPLOYMENT_CI_TOKEN:-}" ]; then
+            echo "has_ci_token=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Mobile store deployment skipped::MOBILE_DEPLOYMENT_CI_TOKEN is not configured in the mobile-store-beta environment."
+            exit 0
+          fi
+
+          echo "has_ci_token=true" >> "$GITHUB_OUTPUT"
+
+  publish-android-internal:
+    name: Publish Android to Google Play internal
+    needs: [check-ci, mobile-credentials-preflight]
+    if: needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: mobile-store-beta
@@ -127,8 +150,8 @@ jobs:
 
   publish-ios-testflight:
     name: Upload iOS to TestFlight
-    needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    needs: [check-ci, mobile-credentials-preflight]
+    if: needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'
     runs-on: macos-latest
     timeout-minutes: 120
     environment: mobile-store-beta

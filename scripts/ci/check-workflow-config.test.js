@@ -253,6 +253,26 @@ test('mobile store deployment workflow is production-push beta delivery only', (
   assert.match(workflow, /branches:\n\s+- production/);
   assert.match(workflow, /environment: mobile-store-beta/);
   assert.match(workflow, /id-token:\s*write/);
+  assert.match(workflow, /mobile-credentials-preflight:/);
+  assert.match(workflow, /name: Check mobile deployment credentials/);
+  assert.match(
+    workflow,
+    /has_ci_token: \$\{\{ steps\.credentials\.outputs\.has_ci_token \}\}/
+  );
+  assert.match(workflow, /echo "has_ci_token=false" >> "\$GITHUB_OUTPUT"/);
+  assert.match(
+    workflow,
+    /::notice title=Mobile store deployment skipped::MOBILE_DEPLOYMENT_CI_TOKEN is not configured/
+  );
+  assert.match(workflow, /echo "has_ci_token=true" >> "\$GITHUB_OUTPUT"/);
+  assert.match(
+    workflow,
+    /publish-android-internal:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.outputs\.has_ci_token == 'true'/
+  );
+  assert.match(
+    workflow,
+    /publish-ios-testflight:[\s\S]*?needs: \[check-ci, mobile-credentials-preflight\][\s\S]*?if: needs\.check-ci\.outputs\.should_run == 'true' && needs\.mobile-credentials-preflight\.outputs\.has_ci_token == 'true'/
+  );
   assert.match(workflow, /MOBILE_DEPLOYMENT_CI_TOKEN/);
   assert.match(workflow, /audience=tuturuuu-mobile-deployment/);
   assert.match(

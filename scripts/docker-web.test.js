@@ -1847,16 +1847,50 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
   );
   assert.match(config, /proxy_next_upstream_tries 2;/);
   assert.match(config, /proxy_pass http:\/\/web_upstream;/);
+  assert.match(
+    config,
+    /map "\$http_host\|\$http_x_forwarded_host" \$platform_forwarded_host \{/
+  );
+  assert.ok(
+    config.includes(
+      '  "~^(?:127\\.0\\.0\\.1|localhost):7803\\|(?:[A-Za-z0-9-]+\\.)+localhost:1355$" $http_x_forwarded_host;'
+    )
+  );
+  assert.match(
+    config,
+    /map "\$http_host\|\$http_x_forwarded_host\|\$http_x_forwarded_proto" \$platform_forwarded_proto \{/
+  );
+  assert.ok(
+    config.includes(
+      '  "~^(?:127\\.0\\.0\\.1|localhost):7803\\|(?:[A-Za-z0-9-]+\\.)+localhost:1355\\|https?$" $http_x_forwarded_proto;'
+    )
+  );
   assert.equal(
     (config.match(/proxy_set_header Host \$http_host;/gu) ?? []).length,
     7
   );
   assert.equal(
-    (config.match(/proxy_set_header X-Forwarded-Host \$http_host;/gu) ?? [])
-      .length,
+    (
+      config.match(
+        /proxy_set_header X-Forwarded-Host \$platform_forwarded_host;/gu
+      ) ?? []
+    ).length,
+    7
+  );
+  assert.equal(
+    (
+      config.match(
+        /proxy_set_header X-Forwarded-Proto \$platform_forwarded_proto;/gu
+      ) ?? []
+    ).length,
     7
   );
   assert.doesNotMatch(config, /proxy_set_header Host \$host;/u);
+  assert.doesNotMatch(
+    config,
+    /proxy_set_header X-Forwarded-Host \$http_host;/u
+  );
+  assert.doesNotMatch(config, /proxy_set_header X-Forwarded-Proto \$scheme;/u);
 });
 
 test('writeBlueGreenActiveColor persists the selected color', () => {
