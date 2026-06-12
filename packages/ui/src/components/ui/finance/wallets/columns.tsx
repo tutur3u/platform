@@ -2,8 +2,10 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import {
+  BookOpen,
   Check,
   CreditCard,
+  Scale,
   TrendingDown,
   TrendingUp,
   Wallet as WalletIcon,
@@ -20,7 +22,8 @@ import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import type { FocusEvent, ReactNode } from 'react';
+import { useState } from 'react';
 import type { FinanceBalanceMode } from '../shared/use-finance-balance-mode';
 import {
   FINANCE_HIDDEN_AMOUNT,
@@ -55,6 +58,14 @@ function getAmountBadgeClassName(
   return 'font-semibold text-muted-foreground';
 }
 
+function getContextAmountBadgeClassName(tone: 'ledger' | 'variance') {
+  if (tone === 'ledger') {
+    return 'border-dynamic-blue/30 bg-dynamic-blue/10 font-semibold text-dynamic-blue';
+  }
+
+  return 'border-dynamic-purple/30 bg-dynamic-purple/10 font-semibold text-dynamic-purple';
+}
+
 function AmountBadge({
   children,
   icon,
@@ -81,6 +92,33 @@ function AmountBadge({
   );
 }
 
+function ContextAmountBadge({
+  children,
+  icon,
+  label,
+  tone,
+}: {
+  children: ReactNode;
+  icon?: ReactNode;
+  label: string;
+  tone: 'ledger' | 'variance';
+}) {
+  return (
+    <Badge
+      variant="outline"
+      data-wallet-balance-context-badge={tone}
+      className={cn(
+        'flex w-fit items-center gap-1 whitespace-nowrap',
+        getContextAmountBadgeClassName(tone)
+      )}
+    >
+      {icon}
+      <span className="font-medium opacity-75">{label}</span>
+      <span>{children}</span>
+    </Badge>
+  );
+}
+
 function WalletBalanceCell({
   balanceMode,
   wallet,
@@ -95,6 +133,7 @@ function WalletBalanceCell({
   exchangeRates?: ExchangeRate[];
 }) {
   const t = useTranslations('wallet-checkpoints');
+  const [isAuditContextOpen, setIsAuditContextOpen] = useState(false);
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
   const {
@@ -155,51 +194,68 @@ function WalletBalanceCell({
   }
 
   const balanceTone = getWalletBalanceTone(displayBalance);
-  const varianceTone = getWalletBalanceTone(auditVariance ?? 0);
+
+  function handleAuditContextBlur(event: FocusEvent<HTMLDivElement>) {
+    const nextTarget = event.relatedTarget as Node | null;
+    if (!nextTarget || !event.currentTarget.contains(nextTarget)) {
+      setIsAuditContextOpen(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-0.5">
       <div className="flex flex-wrap items-center gap-1.5">
-        <AmountBadge
-          tone={balanceTone}
-          icon={
-            balanceTone === 'positive' ? (
-              <TrendingUp className="h-3 w-3" />
-            ) : balanceTone === 'negative' ? (
-              <TrendingDown className="h-3 w-3" />
-            ) : undefined
-          }
+        <div
+          data-wallet-balance-trigger
+          className="relative w-fit rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          onBlur={handleAuditContextBlur}
+          onFocus={() => setIsAuditContextOpen(true)}
+          onMouseEnter={() => setIsAuditContextOpen(true)}
+          onMouseLeave={() => setIsAuditContextOpen(false)}
+          tabIndex={showAuditContext ? 0 : undefined}
         >
-          {formattedBalance}
-        </AmountBadge>
-        {showAuditContext && typeof contextBalance === 'number' && (
-          <>
-            <AmountBadge
-              tone={getWalletBalanceTone(contextBalance)}
-              icon={<WalletIcon className="h-3 w-3" />}
-              label={contextLabel}
-            >
-              {formatCurrency(contextBalance, walletCurrency, undefined, {
-                signDisplay: 'auto',
-              })}
-            </AmountBadge>
-            <AmountBadge
-              tone={varianceTone}
-              icon={
-                varianceTone === 'negative' ? (
-                  <TrendingDown className="h-3 w-3" />
-                ) : (
-                  <TrendingUp className="h-3 w-3" />
-                )
-              }
-              label={t('variance')}
-            >
-              {formatCurrency(auditVariance ?? 0, walletCurrency, undefined, {
-                signDisplay: 'always',
-              })}
-            </AmountBadge>
-          </>
-        )}
+          <AmountBadge
+            tone={balanceTone}
+            icon={
+              balanceTone === 'positive' ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : balanceTone === 'negative' ? (
+                <TrendingDown className="h-3 w-3" />
+              ) : undefined
+            }
+          >
+            {formattedBalance}
+          </AmountBadge>
+          {showAuditContext &&
+            isAuditContextOpen &&
+            typeof contextBalance === 'number' && (
+              <div className="absolute top-full left-0 z-20 mt-1 flex min-w-max flex-wrap items-center gap-1.5 rounded-md border bg-popover p-1.5 shadow-md">
+                <ContextAmountBadge
+                  tone="ledger"
+                  icon={<BookOpen className="h-3 w-3" />}
+                  label={contextLabel}
+                >
+                  {formatCurrency(contextBalance, walletCurrency, undefined, {
+                    signDisplay: 'auto',
+                  })}
+                </ContextAmountBadge>
+                <ContextAmountBadge
+                  tone="variance"
+                  icon={<Scale className="h-3 w-3" />}
+                  label={t('variance')}
+                >
+                  {formatCurrency(
+                    auditVariance ?? 0,
+                    walletCurrency,
+                    undefined,
+                    {
+                      signDisplay: 'always',
+                    }
+                  )}
+                </ContextAmountBadge>
+              </div>
+            )}
+        </div>
       </div>
       {convertedText && (
         <span className="text-muted-foreground text-xs">

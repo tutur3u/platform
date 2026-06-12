@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -64,7 +64,7 @@ describe('wallet balance badge rendering', () => {
     expect(screen.queryByText('variance')).not.toBeInTheDocument();
   });
 
-  it('shows compact context badges for unresolved nonzero variance', () => {
+  it('shows distinct context badges only while hovering the balance', () => {
     renderBalanceCell({
       audit_balance: 95,
       audit_status: 'unresolved',
@@ -73,8 +73,34 @@ describe('wallet balance badge rendering', () => {
       currency: 'USD',
     } as Wallet);
 
+    expect(screen.queryByText('ledger')).not.toBeInTheDocument();
+    expect(screen.queryByText('variance')).not.toBeInTheDocument();
+
+    const trigger = screen
+      .getByText('$95.00')
+      .closest('[data-wallet-balance-trigger]');
+
+    expect(trigger).not.toBeNull();
+    fireEvent.mouseEnter(trigger as Element);
+
     expect(screen.getByText('ledger')).toBeInTheDocument();
     expect(screen.getByText('variance')).toBeInTheDocument();
+
+    expect(
+      screen
+        .getByText('ledger')
+        .closest('[data-wallet-balance-context-badge="ledger"]')
+    ).toHaveClass('text-dynamic-blue');
+    expect(
+      screen
+        .getByText('variance')
+        .closest('[data-wallet-balance-context-badge="variance"]')
+    ).toHaveClass('text-dynamic-purple');
+
+    fireEvent.mouseLeave(trigger as Element);
+
+    expect(screen.queryByText('ledger')).not.toBeInTheDocument();
+    expect(screen.queryByText('variance')).not.toBeInTheDocument();
   });
 
   it('hides all audit amount context when numbers are hidden', () => {
