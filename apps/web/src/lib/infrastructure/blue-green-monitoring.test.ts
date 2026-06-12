@@ -246,33 +246,15 @@ describe('readBlueGreenMonitoringSnapshot', () => {
     }
   });
 
-  it('reads production promotion and deployment revert control state', () => {
+  it('reads deployment revert control state', () => {
     const tempDir = fs.mkdtempSync(
-      path.join(os.tmpdir(), 'blue-green-monitoring-production-promote-')
+      path.join(os.tmpdir(), 'blue-green-monitoring-deployment-revert-')
     );
 
     try {
       fs.mkdirSync(path.join(tempDir, 'watch', 'control'), {
         recursive: true,
       });
-      fs.writeFileSync(
-        path.join(
-          tempDir,
-          'watch',
-          'control',
-          'blue-green-production-promote.request.json'
-        ),
-        JSON.stringify({
-          bypassChecks: true,
-          bypassDelay: true,
-          kind: 'production-promote',
-          requestedAt: '2026-06-10T06:00:00.000Z',
-          requestedBy: 'user-1',
-          requestedByEmail: 'ops@platform.test',
-          sourceBranch: 'main',
-          targetBranch: 'production',
-        })
-      );
       fs.writeFileSync(
         path.join(
           tempDir,
@@ -293,91 +275,13 @@ describe('readBlueGreenMonitoringSnapshot', () => {
           requestedByEmail: null,
         })
       );
-      fs.writeFileSync(
-        path.join(
-          tempDir,
-          'watch',
-          'blue-green-production-promotion.state.json'
-        ),
-        JSON.stringify({
-          ci: {
-            completed: 4,
-            failing: 0,
-            pending: 0,
-            state: 'passing',
-            total: 4,
-            unavailableReason: null,
-          },
-          decision: {
-            blockedReasons: [],
-            bypassed: false,
-            ready: true,
-            status: 'ready',
-          },
-          kind: 'production-promotion-state',
-          main: {
-            committedAt: '2026-06-10T05:45:00.000Z',
-            hash: 'main123456789',
-            shortHash: 'main123',
-            subject: 'Ship main',
-          },
-          nextCheckAt: 2000,
-          prebuild: {
-            durationMs: 12_000,
-            failureReason: null,
-            imageTag: 'platform-web-cache:main123',
-            standbyColor: 'green',
-            startedAt: 500,
-            status: 'cached',
-            updatedAt: 1500,
-          },
-          production: {
-            committedAt: '2026-06-10T05:00:00.000Z',
-            hash: 'prod123456789',
-            shortHash: 'prod123',
-            subject: 'Current production',
-          },
-          queuedRequest: null,
-          requiredDelayMs: 600000,
-          sourceBranch: 'main',
-          targetBranch: 'production',
-          updatedAt: '2026-06-10T06:10:00.000Z',
-          waitRemainingMs: 0,
-        })
-      );
       process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
 
       const snapshot = readBlueGreenMonitoringSnapshot({ now: 3000 });
 
-      expect(snapshot.control.productionPromoteRequest).toMatchObject({
-        kind: 'production-promote',
-        requestedBy: 'user-1',
-      });
       expect(snapshot.control.deploymentRevertRequest).toMatchObject({
         commitHash: 'old123456789',
         instant: true,
-      });
-      expect(snapshot.productionPromotion).toMatchObject({
-        ci: {
-          state: 'passing',
-          total: 4,
-        },
-        decision: {
-          ready: true,
-          status: 'ready',
-        },
-        main: {
-          shortHash: 'main123',
-        },
-        prebuild: {
-          durationMs: 12_000,
-          failureReason: null,
-          imageTag: 'platform-web-cache:main123',
-          standbyColor: 'green',
-          startedAt: 500,
-          status: 'cached',
-          updatedAt: 1500,
-        },
       });
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });

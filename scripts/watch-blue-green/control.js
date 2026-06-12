@@ -25,60 +25,6 @@ function readInstantRolloutRequest(paths = getWatchPaths(), fsImpl = fs) {
   }
 }
 
-function isProductionPromoteRequest(value) {
-  return (
-    value &&
-    typeof value === 'object' &&
-    !Array.isArray(value) &&
-    value.kind === 'production-promote' &&
-    value.sourceBranch === 'main' &&
-    value.targetBranch === 'production' &&
-    value.bypassChecks === true &&
-    value.bypassDelay === true &&
-    typeof value.requestedAt === 'string' &&
-    typeof value.requestedBy === 'string'
-  );
-}
-
-function readProductionPromoteRequest(paths = getWatchPaths(), fsImpl = fs) {
-  if (!fsImpl.existsSync(paths.productionPromoteRequestFile)) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(
-      fsImpl.readFileSync(paths.productionPromoteRequestFile, 'utf8')
-    );
-
-    return isProductionPromoteRequest(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeProductionPromoteRequest(
-  request,
-  { fsImpl = fs, paths = getWatchPaths() } = {}
-) {
-  if (!isProductionPromoteRequest(request)) {
-    throw new Error('Invalid production promote request.');
-  }
-
-  fsImpl.mkdirSync(paths.controlDir, { recursive: true });
-  fsImpl.writeFileSync(
-    paths.productionPromoteRequestFile,
-    JSON.stringify(request, null, 2),
-    'utf8'
-  );
-}
-
-function clearProductionPromoteRequest({
-  fsImpl = fs,
-  paths = getWatchPaths(),
-} = {}) {
-  fsImpl.rmSync(paths.productionPromoteRequestFile, { force: true });
-}
-
 function isDeploymentRevertRequest(value) {
   return (
     value &&
@@ -205,13 +151,10 @@ module.exports = {
   clearDeploymentRevertRequest,
   clearDeploymentPin,
   clearInstantRolloutRequest,
-  clearProductionPromoteRequest,
   readDeploymentRevertRequest,
   readDeploymentPin,
   readInstantRolloutRequest,
-  readProductionPromoteRequest,
   writeDeploymentRevertRequest,
   writeDeploymentPin,
   writeInstantRolloutRequest,
-  writeProductionPromoteRequest,
 };

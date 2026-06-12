@@ -4,11 +4,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   Clock,
-  GitBranch,
   Loader2,
   PinOff,
   RefreshCw,
-  Rocket,
   RotateCcw,
   Search,
   SlidersHorizontal,
@@ -24,7 +22,6 @@ import type {
 import {
   clearBlueGreenDeploymentPin,
   requestBlueGreenDeploymentRevert,
-  requestBlueGreenProductionPromote,
 } from '@tuturuuu/internal-api/infrastructure';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -40,7 +37,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 type StageStatus = BlueGreenDeploymentStage['status'];
 type StageDisplayStatus = StageStatus | 'not-applicable';
@@ -86,55 +83,6 @@ function timeLabel(value: number | null | undefined) {
     minute: '2-digit',
     month: 'short',
   }).format(value);
-}
-
-function durationLabel(value: number | null | undefined) {
-  if (value == null || !Number.isFinite(value)) return '-';
-
-  const seconds = Math.ceil(value / 1000);
-  if (seconds < 60) return `${seconds}s`;
-
-  return `${Math.ceil(seconds / 60)}m`;
-}
-
-function useNow(enabled: boolean, intervalMs = 1000) {
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (!enabled) return;
-
-    setNow(Date.now());
-    const timer = window.setInterval(() => setNow(Date.now()), intervalMs);
-
-    return () => window.clearInterval(timer);
-  }, [enabled, intervalMs]);
-
-  return now;
-}
-
-function getProductionBlockerTranslationKey(reason: string) {
-  switch (reason) {
-    case 'ci-not-green':
-      return 'controls.production_blocker_ci_not_green';
-    case 'deployment-active':
-      return 'controls.production_blocker_deployment_active';
-    case 'git-unavailable':
-      return 'controls.production_blocker_git_unavailable';
-    case 'not-fast-forward':
-      return 'controls.production_blocker_not_fast_forward';
-    case 'prebuild-missing':
-      return 'controls.production_blocker_prebuild_missing';
-    case 'up-to-date':
-      return 'controls.production_blocker_up_to_date';
-    case 'watcher-branch-mismatch':
-      return 'controls.production_blocker_watcher_branch_mismatch';
-    case 'watcher-dirty-worktree':
-      return 'controls.production_blocker_watcher_dirty_worktree';
-    case 'waiting-for-age':
-      return 'controls.production_blocker_waiting_for_age';
-    default:
-      return null;
-  }
 }
 
 function findCachedDeployment(
@@ -389,9 +337,7 @@ export function ObservabilityDeploymentsPanel({
   const [stage, setStage] = useState<StageFilter>('all');
   const [cacheMode, setCacheMode] = useState<CacheMode>('all');
   const [q, setQ] = useState('');
-  const [confirmAction, setConfirmAction] = useState<
-    'promote' | 'revert' | null
-  >(null);
+  const [confirmAction, setConfirmAction] = useState<'revert' | null>(null);
   const stageLabels: Record<StageKey, string> = {
     'hive-migrate': t('deployments.stages.hive-migrate'),
     'hive-promote': t('deployments.stages.hive-promote'),
@@ -456,86 +402,7 @@ export function ObservabilityDeploymentsPanel({
     selectedRollbackTarget?.commitHash
   );
   const deploymentPin = snapshot?.control.deploymentPin ?? null;
-  const promotionState = snapshot?.productionPromotion ?? null;
-  const prebuildBuilding = promotionState?.prebuild?.status === 'building';
-  const nowMs = useNow(prebuildBuilding);
-  const productionPrebuildText = useMemo(() => {
-    const prebuild = promotionState?.prebuild ?? null;
-    const promotionFailureReason =
-      promotionState?.decision.status === 'promote-failed'
-        ? (promotionState.decision.blockedReasons.at(-1) ?? null)
-        : null;
-
-    if (promotionFailureReason) {
-      return rootT('controls.production_promotion_failed', {
-        reason: promotionFailureReason,
-      });
-    }
-
-    if (prebuild?.status === 'building') {
-      const elapsed =
-        prebuild.startedAt == null
-          ? null
-          : Math.max(0, nowMs - prebuild.startedAt);
-
-      return rootT('controls.production_prebuild_building', {
-        elapsed: durationLabel(elapsed),
-      });
-    }
-
-    if (prebuild?.status === 'cached' || prebuild?.status === 'prebuilt') {
-      return rootT('controls.production_prebuild_completed', {
-        duration: durationLabel(prebuild.durationMs),
-      });
-    }
-
-    if (prebuild?.status === 'failed') {
-      return rootT('controls.production_prebuild_failed', {
-        duration: durationLabel(prebuild.durationMs),
-        reason: prebuild.failureReason ?? rootT('states.unknown'),
-      });
-    }
-
-    if (prebuild?.status === 'not-needed') {
-      return rootT('controls.production_prebuild_not_needed');
-    }
-
-    const blockingReason =
-      promotionState?.decision.blockedReasons.find(
-        (reason) => reason !== 'prebuild-missing'
-      ) ?? null;
-
-    if (blockingReason) {
-      const blockerKey = getProductionBlockerTranslationKey(blockingReason);
-
-      return rootT('controls.production_prebuild_blocked', {
-        reason: blockerKey ? rootT(blockerKey) : blockingReason,
-      });
-    }
-
-    if (prebuild?.status === 'missing') {
-      return rootT('controls.production_prebuild_missing');
-    }
-
-    return rootT('controls.production_prebuild_status', {
-      status: prebuild?.status ?? rootT('states.none'),
-    });
-  }, [nowMs, promotionState, rootT]);
-  const queuedProductionPromote = snapshot?.control.productionPromoteRequest;
   const queuedDeploymentRevert = snapshot?.control.deploymentRevertRequest;
-  const promoteMutation = useMutation({
-    mutationFn: () => requestBlueGreenProductionPromote(),
-    onSuccess: async () => {
-      toast.success(rootT('controls.production_promote_success'));
-      setConfirmAction(null);
-      await queryClient.invalidateQueries({
-        queryKey: ['infrastructure', 'monitoring', 'blue-green'],
-      });
-    },
-    onError: () => {
-      toast.error(rootT('controls.production_promote_error'));
-    },
-  });
   const revertMutation = useMutation({
     mutationFn: () =>
       requestBlueGreenDeploymentRevert({
@@ -566,234 +433,135 @@ export function ObservabilityDeploymentsPanel({
       toast.error(rootT('controls.clear_pin_error'));
     },
   });
-  const promoteDisabled =
-    !snapshot ||
-    promoteMutation.isPending ||
-    Boolean(queuedProductionPromote) ||
-    snapshot.watcher.health !== 'live';
   const revertDisabled =
     !selectedRollbackTarget ||
     revertMutation.isPending ||
     Boolean(queuedDeploymentRevert);
-  const confirmTitle =
-    confirmAction === 'promote'
-      ? rootT('controls.production_promote_confirm_title')
-      : rootT('controls.deployment_revert_confirm_title');
-  const confirmDescription =
-    confirmAction === 'promote'
-      ? rootT('controls.production_promote_confirm_description')
-      : rootT('controls.deployment_revert_confirm_description', {
-          commit:
-            selectedRollbackTarget?.commitShortHash ??
-            selectedRollbackTarget?.commitHash?.slice(0, 12) ??
-            rootT('states.unknown'),
-          mode: selectedCachedRollback?.imageTag
-            ? rootT('controls.deployment_revert_mode_instant')
-            : rootT('controls.deployment_revert_mode_rebuild'),
-        });
+  const confirmTitle = rootT('controls.deployment_revert_confirm_title');
+  const confirmDescription = rootT(
+    'controls.deployment_revert_confirm_description',
+    {
+      commit:
+        selectedRollbackTarget?.commitShortHash ??
+        selectedRollbackTarget?.commitHash?.slice(0, 12) ??
+        rootT('states.unknown'),
+      mode: selectedCachedRollback?.imageTag
+        ? rootT('controls.deployment_revert_mode_instant')
+        : rootT('controls.deployment_revert_mode_rebuild'),
+    }
+  );
 
   return (
     <div className="space-y-4">
       {snapshot ? (
         <section className="rounded-lg border border-border bg-background p-4">
-          <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">
-                  {rootT('controls.production_promote_badge')}
-                </Badge>
-                <Badge variant="outline">
-                  {promotionState?.decision.status ?? rootT('states.unknown')}
-                </Badge>
-                {queuedProductionPromote ? (
-                  <Badge
-                    className="border-dynamic-yellow/35 bg-dynamic-yellow/10 text-dynamic-yellow"
-                    variant="outline"
-                  >
-                    {rootT('controls.production_promote_queued')}
-                  </Badge>
-                ) : null}
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-lg">
-                  {rootT('controls.production_promote_title')}
-                </h3>
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {rootT('controls.production_promote_description')}
-                </p>
-              </div>
-
-              <div className="grid gap-2 sm:grid-cols-4">
-                <PromotionMetric
-                  label={rootT('controls.production_main_commit')}
-                  value={
-                    promotionState?.main?.shortHash ??
-                    snapshot.watcher.latestCommit?.shortHash ??
-                    rootT('states.unknown')
-                  }
-                />
-                <PromotionMetric
-                  label={rootT('controls.production_branch_commit')}
-                  value={
-                    promotionState?.production?.shortHash ??
-                    rootT('states.unknown')
-                  }
-                />
-                <PromotionMetric
-                  label={rootT('controls.production_ci_status')}
-                  value={
-                    promotionState
-                      ? rootT(
-                          `controls.production_ci_${promotionState.ci.state}`
-                        )
-                      : rootT('states.unknown')
-                  }
-                />
-                <PromotionMetric
-                  label={rootT('controls.production_wait_remaining')}
-                  value={durationLabel(promotionState?.waitRemainingMs)}
-                />
-              </div>
-
-              <div className="flex flex-wrap gap-2 text-xs">
-                <StatusBadge
-                  icon={<GitBranch className="h-3.5 w-3.5" />}
-                  text={productionPrebuildText}
-                />
-                <StatusBadge
-                  icon={<Clock className="h-3.5 w-3.5" />}
-                  text={rootT('controls.production_next_check', {
-                    time: timeLabel(promotionState?.nextCheckAt),
-                  })}
-                />
-              </div>
-
-              <Button
-                disabled={promoteDisabled}
-                onClick={() => setConfirmAction('promote')}
-              >
-                {promoteMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Rocket className="mr-2 h-4 w-4" />
-                )}
-                {queuedProductionPromote
-                  ? rootT('controls.production_promote_queued')
-                  : rootT('controls.production_promote_action')}
-              </Button>
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-semibold text-base">
+                {rootT('controls.deployment_revert_title')}
+              </h3>
+              <p className="mt-1 text-muted-foreground text-sm">
+                {rootT('controls.deployment_revert_description', {
+                  count: snapshot.recoveryCache.limit,
+                })}
+              </p>
             </div>
 
-            <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
-              <div>
-                <h3 className="font-semibold text-base">
-                  {rootT('controls.deployment_revert_title')}
-                </h3>
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {rootT('controls.deployment_revert_description', {
-                    count: snapshot.recoveryCache.limit,
-                  })}
-                </p>
-              </div>
-
-              {deploymentPin ? (
-                <div className="flex flex-col gap-3 rounded-md border border-dynamic-amber/25 bg-dynamic-amber/10 p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="font-medium text-dynamic-amber text-sm">
-                      {rootT('controls.pin_active_title')}
-                    </p>
-                    <p className="mt-1 text-muted-foreground text-sm">
-                      {rootT('controls.pin_active_description', {
-                        commit:
-                          deploymentPin.commitShortHash ??
-                          deploymentPin.commitHash.slice(0, 12),
-                      })}
-                    </p>
-                  </div>
-                  <Button
-                    className="shrink-0"
-                    disabled={clearPinMutation.isPending}
-                    onClick={() => clearPinMutation.mutate()}
-                    size="sm"
-                    variant="outline"
-                  >
-                    {clearPinMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <PinOff className="mr-2 h-4 w-4" />
-                    )}
-                    {clearPinMutation.isPending
-                      ? rootT('controls.clear_pin_pending')
-                      : rootT('controls.clear_pin_action')}
-                  </Button>
+            {deploymentPin ? (
+              <div className="flex flex-col gap-3 rounded-md border border-dynamic-amber/25 bg-dynamic-amber/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-medium text-dynamic-amber text-sm">
+                    {rootT('controls.pin_active_title')}
+                  </p>
+                  <p className="mt-1 text-muted-foreground text-sm">
+                    {rootT('controls.pin_active_description', {
+                      commit:
+                        deploymentPin.commitShortHash ??
+                        deploymentPin.commitHash.slice(0, 12),
+                    })}
+                  </p>
                 </div>
-              ) : null}
-
-              <select
-                className={cn(selectClassName(), 'w-full')}
-                disabled={rollbackTargets.length === 0}
-                onChange={(event) =>
-                  setSelectedRollbackHash(event.target.value)
-                }
-                value={selectedRollbackTarget?.commitHash ?? ''}
-              >
-                {rollbackTargets.map((deployment) => {
-                  const cached = findCachedDeployment(
-                    snapshot.recoveryCache,
-                    deployment.commitHash
-                  );
-                  return (
-                    <option
-                      key={deployment.commitHash}
-                      value={deployment.commitHash ?? ''}
-                    >
-                      {deployment.commitShortHash ??
-                        deployment.commitHash?.slice(0, 12)}{' '}
-                      {deployment.commitSubject ?? rootT('states.none')}{' '}
-                      {cached
-                        ? rootT('controls.deployment_revert_option_cached')
-                        : rootT('controls.deployment_revert_option_rebuild')}
-                    </option>
-                  );
-                })}
-              </select>
-
-              <div className="flex flex-wrap gap-2">
-                <Badge
-                  className={
-                    selectedCachedRollback
-                      ? 'border-dynamic-green/35 bg-dynamic-green/10 text-dynamic-green'
-                      : 'border-dynamic-yellow/35 bg-dynamic-yellow/10 text-dynamic-yellow'
-                  }
+                <Button
+                  className="shrink-0"
+                  disabled={clearPinMutation.isPending}
+                  onClick={() => clearPinMutation.mutate()}
+                  size="sm"
                   variant="outline"
                 >
-                  {selectedCachedRollback
-                    ? rootT('controls.deployment_revert_mode_instant')
-                    : rootT('controls.deployment_revert_mode_rebuild')}
-                </Badge>
-                {queuedDeploymentRevert ? (
-                  <Badge variant="outline">
-                    {rootT('controls.deployment_revert_queued')}
-                  </Badge>
-                ) : null}
+                  {clearPinMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <PinOff className="mr-2 h-4 w-4" />
+                  )}
+                  {clearPinMutation.isPending
+                    ? rootT('controls.clear_pin_pending')
+                    : rootT('controls.clear_pin_action')}
+                </Button>
               </div>
+            ) : null}
 
-              <Button
-                className="w-full"
-                disabled={revertDisabled}
-                onClick={() => setConfirmAction('revert')}
+            <select
+              className={cn(selectClassName(), 'w-full')}
+              disabled={rollbackTargets.length === 0}
+              onChange={(event) => setSelectedRollbackHash(event.target.value)}
+              value={selectedRollbackTarget?.commitHash ?? ''}
+            >
+              {rollbackTargets.map((deployment) => {
+                const cached = findCachedDeployment(
+                  snapshot.recoveryCache,
+                  deployment.commitHash
+                );
+                return (
+                  <option
+                    key={deployment.commitHash}
+                    value={deployment.commitHash ?? ''}
+                  >
+                    {deployment.commitShortHash ??
+                      deployment.commitHash?.slice(0, 12)}{' '}
+                    {deployment.commitSubject ?? rootT('states.none')}{' '}
+                    {cached
+                      ? rootT('controls.deployment_revert_option_cached')
+                      : rootT('controls.deployment_revert_option_rebuild')}
+                  </option>
+                );
+              })}
+            </select>
+
+            <div className="flex flex-wrap gap-2">
+              <Badge
+                className={
+                  selectedCachedRollback
+                    ? 'border-dynamic-green/35 bg-dynamic-green/10 text-dynamic-green'
+                    : 'border-dynamic-yellow/35 bg-dynamic-yellow/10 text-dynamic-yellow'
+                }
                 variant="outline"
               >
-                {revertMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                )}
                 {selectedCachedRollback
-                  ? rootT('controls.deployment_revert_instant_action')
-                  : rootT('controls.deployment_revert_rebuild_action')}
-              </Button>
+                  ? rootT('controls.deployment_revert_mode_instant')
+                  : rootT('controls.deployment_revert_mode_rebuild')}
+              </Badge>
+              {queuedDeploymentRevert ? (
+                <Badge variant="outline">
+                  {rootT('controls.deployment_revert_queued')}
+                </Badge>
+              ) : null}
             </div>
+
+            <Button
+              className="w-full"
+              disabled={revertDisabled}
+              onClick={() => setConfirmAction('revert')}
+              variant="outline"
+            >
+              {revertMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="mr-2 h-4 w-4" />
+              )}
+              {selectedCachedRollback
+                ? rootT('controls.deployment_revert_instant_action')
+                : rootT('controls.deployment_revert_rebuild_action')}
+            </Button>
           </div>
         </section>
       ) : null}
@@ -1095,44 +863,18 @@ export function ObservabilityDeploymentsPanel({
               {rootT('controls.confirm_cancel')}
             </Button>
             <Button
-              disabled={promoteMutation.isPending || revertMutation.isPending}
-              onClick={() => {
-                if (confirmAction === 'promote') {
-                  promoteMutation.mutate();
-                } else if (confirmAction === 'revert') {
-                  revertMutation.mutate();
-                }
-              }}
+              disabled={revertMutation.isPending}
+              onClick={() => revertMutation.mutate()}
               type="button"
             >
-              {promoteMutation.isPending || revertMutation.isPending ? (
+              {revertMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              {confirmAction === 'promote'
-                ? rootT('controls.production_promote_confirm_action')
-                : rootT('controls.deployment_revert_confirm_action')}
+              {rootT('controls.deployment_revert_confirm_action')}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function PromotionMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-border/60 bg-muted/20 p-3">
-      <div className="text-muted-foreground text-xs">{label}</div>
-      <div className="mt-1 truncate font-semibold text-sm">{value}</div>
-    </div>
-  );
-}
-
-function StatusBadge({ icon, text }: { icon: ReactNode; text: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background px-2 py-1 text-muted-foreground">
-      {icon}
-      {text}
-    </span>
   );
 }

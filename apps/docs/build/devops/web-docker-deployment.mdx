@@ -1263,7 +1263,7 @@ The watcher container mounts:
 Behavior:
 
 1. Reads the built-in `platform` project from the log-drain Postgres project registry. The production watcher service is wired with `PLATFORM_LOG_DRAIN_DATABASE_URL` so a live watcher can consume queued Infrastructure project deployments instead of falling back to the legacy single-branch loop.
-2. The seeded branch is `production`, but operators can change it from Infrastructure → Monitoring → Projects. If the selected project branch differs from the current checkout, the watcher restarts its child process, fetches, and checks out that branch only when the worktree is clean. Dirty worktrees are reported as blocked instead of being force-switched. If the watcher is already stuck on the wrong branch, the monitoring UI queues a watcher recovery request and `web-cron-runner` recreates `web-blue-green-watcher` through Docker Compose out of band.
+2. The seeded branch is `production`, but operators can change it from Infrastructure → Monitoring → Projects. If the selected project branch differs from the current checkout, the watcher restarts its child process, resets tracked changes, removes untracked files, fetches, and checks out that branch. Set `DOCKER_WEB_WATCHER_WORKTREE_RESET_DISABLED=1` to restore the protective dirty-worktree block instead. If the watcher is already stuck on the wrong branch, the monitoring UI queues a watcher recovery request and `web-cron-runner` recreates `web-blue-green-watcher` through Docker Compose out of band.
 3. Locks the selected local branch and tracked upstream at startup.
 4. Writes a PID-backed lock file at `tmp/docker-web/watch/blue-green-auto-deploy.lock`.
 5. Renders a live terminal dashboard with the locked branch, tracked upstream,
@@ -1273,75 +1273,55 @@ Behavior:
 7. Auto-clears and redraws the dashboard in place on each state change when
    attached to a TTY.
 8. Runs the Git and deploy subprocesses quietly so the dashboard is not
-   disrupted by `git fetch`, `git pull`, or Docker build output during normal
+   disrupted by `git fetch`, `git reset`, or Docker build output during normal
    watcher operation.
-9. Skips pulls if the worktree is dirty.
-10. Uses `git pull --ff-only` only when the local branch is strictly behind the
-    locked upstream.
+9. Treats the watcher-managed checkout as disposable by default. Before each
+   upstream comparison it runs `git reset --hard HEAD`, `git clean -fd`,
+   fetches the locked upstream, and hard-resets to the tracked upstream when
+   local `HEAD` is behind, ahead, or diverged. Ignored files are left alone.
+10. Set `DOCKER_WEB_WATCHER_WORKTREE_RESET_DISABLED=1` only when you need to
+    preserve manual edits in a deployment clone. With that escape hatch, dirty
+    worktrees block polling, ahead/diverged branches are skipped, and only
+    fast-forward pulls are attempted.
 11. Runs `bun install --frozen-lockfile` automatically after every successful
-    fast-forward pull so installed dependencies match the reviewed `bun.lock`
+    upstream sync so installed dependencies match the reviewed `bun.lock`
     before the deploy handoff continues. The watcher does not run `bun upgrade`
     or a non-frozen install on the production host.
-12. Treats any dirty `bun.lock` as a blocking worktree change. Lockfile updates
-    must be reviewed and committed before the watcher can continue polling or
-    deploying.
-13. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
-    pull.
+12. Resets dirty `bun.lock` changes by default with the rest of the disposable
+    checkout. When `DOCKER_WEB_WATCHER_WORKTREE_RESET_DISABLED=1` is set,
+    dirty `bun.lock` remains a blocking worktree change.
+13. Runs `bun serve:web:docker:bg` automatically after a successful upstream
+    sync.
 14. Polls imported Infrastructure projects from log-drain Postgres, synchronizes enabled public GitHub projects into `tmp/docker-web/projects/<projectId>/repo`, deploys them through generated Next.js compose files under the shared `tuturuuu` Compose project, and merges hostname routes into the central nginx proxy.
     The imported-project and manual deployment queue cadence is independent
     from the normal Git polling interval, so a watcher configured with a long
     Git interval such as 1000 seconds still wakes on the shorter project queue
     interval to advance queued Deploy actions.
     Platform project state is updated on both queue-only deploys and normal
-    fast-forward deploys, so a successful pull/deploy clears `queued` and
+    upstream deploys, so a successful sync/deploy clears `queued` and
     refreshes the latest commit columns instead of relying only on deployment
     history.
     Imported project builds share the same deployment build lock as platform
     blue/green builds. If platform, standby, recovery, or another imported
     project build is already active, the project poll is deferred instead of
     starting a second Docker build.
-15. When the locked branch is `production`, the watcher also evaluates
-    `main` for production promotion every 5 seconds. It prebuilds the newest
-    fast-forward `main` candidate from a disposable detached worktree under
-    `tmp/docker-web/worktrees/production-prebuild/<mainShortHash>`, copies the
-    effective production `.env.local` layout into that clone, and keeps watcher
-    runtime/control/history files in `tmp/docker-web/watch`. The production
-    checkout stays on `production`; the disposable prebuild worktree is removed
-    after success or failure, and watcher-owned stale prebuild worktrees older
-    than the build timeout plus one hour are swept on startup and before new
-    prebuilds. The watcher then updates `production` to `main` only after the
-    `main` commit is at least 10 minutes old and every latest GitHub check
-    run/status is non-failing with at least one CI signal. The promotion writes
-    `tmp/docker-web/watch/blue-green-production-promotion.state.json` with the
-    main/production SHAs, age gate, CI summary, prebuild state, prebuild
-    duration/failure details, next evaluation time, and latest decision.
-    Missing CI inspection, dirty worktrees, deployment locks, divergent
-    `production`, or an active rollback pin block automatic promotion.
-    Build-lock conflicts during the prebuild or standby-refresh phase are
-    recorded as a `deployment-active` deferral instead of a failed deployment
-    attempt, so active Docker work does not poison retry limits.
-16. Infrastructure operators can queue
-    `tmp/docker-web/watch/control/blue-green-production-promote.request.json`
-    from the deployments dashboard to promote `main` immediately. Manual
-    promotion bypasses only the CI-green and 10 minute age gates; it still uses
-    a non-forced update, requires a fast-forward ancestry relationship, and
-    leaves normal post-switch blue/green health checks in the deploy path. Once
-    those Git safety checks pass, the request is an operator-authorized override
-    that cancels any active blue/green build before updating `production`; it
-    also clears an active rollback pin as operator intent to resume production.
-    When `GITHUB_TOKEN` is configured, the watcher updates the GitHub ref
-    through the API; otherwise it uses the host's configured Git credentials with
-    `git push <remote> <mainHash>:refs/heads/production`.
+15. The watcher no longer prebuilds `main` or advances `production` on its own.
+    Advance production outside the watcher through the release process, then
+    let the watcher deploy the locked branch that is already checked out on the
+    host.
+16. Rollback pins intentionally pause normal upstream sync for the pinned
+    deployment state. Remove the pin when the locked branch contains the
+    corrective commit that should resume normal deployment.
 17. Infrastructure operators can queue
     `tmp/docker-web/watch/control/blue-green-deployment-revert.request.json`
     to revert production to a retained successful deployment. The watcher keeps
     the 5 newest unique successful deployed image tags for instant revert; a
-    cached revert verifies the cached target first, supersedes any queued
-    manual production promotion request, cancels any active blue/green build,
+    cached revert verifies the cached target first, cancels any active
+    blue/green build,
     retags the selected image, starts active/standby with `--no-build`,
     health-checks through the normal proxy path, records deployment kind
-    `instant-revert`, and writes a deployment pin so automatic promotion does
-    not immediately overwrite the rollback. Older retained deployments remain
+    `instant-revert`, and writes a deployment pin so normal upstream
+    deployment does not immediately overwrite the rollback. Older retained deployments remain
     revertable through the existing rollback pin path, which may rebuild
     because no cached image is available and still respects the active build
     lock.
@@ -1386,8 +1366,9 @@ Operational notes for the containerized watcher:
   deployment-build lock at
   `tmp/docker-web/watch/blue-green-deployment-build.lock`. This lock is
   separate from `blue-green-auto-deploy.lock`: the watcher may remain alive, but
-  only one build/deploy phase can be active across manual deploys, auto-pulls,
-  standby refreshes, rollback pins, cached recovery, and reconcile deploys.
+  only one build/deploy phase can be active across manual deploys, watcher
+  upstream sync, standby refreshes, rollback pins, cached recovery, and
+  reconcile deploys.
 - If a manual deploy sees that lock or a live watcher status of `building` or
   `deploying`, an interactive terminal prompts before it interrupts the active
   deployment. Confirming stops `web-blue-green-watcher`, stops/resets the
@@ -1524,20 +1505,22 @@ Dashboard details:
   sidecar entrypoints so a running watcher refreshes helper containers during
   the next deploy handoff, not just the web app container.
 - Host dependency refreshes must not rewrite `bun.lock` on the production host.
-  The watcher treats a dirty lockfile as a blocking worktree change, and its
-  automatic dependency sync uses `bun install --frozen-lockfile` only.
+  The watcher resets a dirty lockfile by default with the rest of the disposable
+  deployment checkout. With `DOCKER_WEB_WATCHER_WORKTREE_RESET_DISABLED=1`, a
+  dirty lockfile remains a blocking worktree change. Automatic dependency sync
+  uses `bun install --frozen-lockfile` only.
 - Runtime upgrades are an explicit operator action. The watcher does not run
   `bun upgrade`; update the host Bun runtime only after reviewing the pinned
   version in the repository and the watcher image.
 - Recoverable Git poll failures stay visible in the dashboard as a retrying
   watcher state instead of terminating the process, and the next-check timer
   reflects the active backoff delay.
-- If `git fetch` or `git pull --ff-only` fails only because a Git lock already
-  exists, the watcher inspects the lock age and removes it automatically only
-  when it is stale (older than 2 minutes). This covers `.git/index.lock`,
-  `.git/packed-refs.lock`, and remote-ref locks such as
-  `.git/refs/remotes/origin/staging.lock`. Fresh lock files are left in place
-  so active Git operations are not interrupted.
+- If `git reset`, `git fetch`, or the reset-disabled `git pull --ff-only` path
+  fails only because a Git lock already exists, the watcher inspects the lock
+  age and removes it automatically only when it is stale (older than 2 minutes).
+  This covers `.git/index.lock`, `.git/packed-refs.lock`, and remote-ref locks
+  such as `.git/refs/remotes/origin/staging.lock`. Fresh lock files are left in
+  place so active Git operations are not interrupted.
 - Build/deploy failures also stay inside the watcher loop. The watcher records
   failed attempts in deployment history, clears stale pending handoff files
   after recovery failures, and stops retrying the same commit after the third
@@ -1823,10 +1806,15 @@ Operational signals:
 
 Operational notes:
 
-- This is intended for clean deployment clones on a server, not for active
-  developer worktrees.
-- If the local branch is ahead of or diverged from the tracked upstream, the
-  watcher logs and skips the pull instead of forcing a merge or reset.
+- This is intended for disposable deployment clones on a server, not for active
+  developer worktrees or manual hotfix edits.
+- By default the watcher resets tracked changes, deletes untracked files and
+  directories, fetches, and hard-resets to the locked upstream when the local
+  checkout is behind, ahead, or diverged.
+- Set `DOCKER_WEB_WATCHER_WORKTREE_RESET_DISABLED=1` before starting the
+  watcher to preserve the old protective behavior: dirty worktrees block,
+  ahead/diverged branches are skipped, and only fast-forward pulls are
+  attempted.
 - The self-restart path only triggers when the watcher script itself changed in
   the fetched revision; normal app-code deploys keep the current watcher
   process alive.

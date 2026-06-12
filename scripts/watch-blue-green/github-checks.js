@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const https = require('node:https');
 const path = require('node:path');
 
-const { getGitHubRepository } = require('./production-promotion.js');
+const { gitStdout } = require('./deploy-watcher-git.js');
 const { getWatchPaths } = require('./paths.js');
 const {
   GITHUB_CHECKS_TOKEN_CLIENT_TOKEN_ENV,
@@ -44,9 +44,6 @@ const STAGE_LABELS = new Map([
   ['deploy', 'Deploy'],
   ['hive-migrate', 'Hive migration'],
   ['hive-promote', 'Hive promotion'],
-  ['production-gates', 'Production gates'],
-  ['production-prebuild', 'Production prebuild'],
-  ['production-promote', 'Production promotion'],
   ['proxy-reload', 'Proxy reload'],
   ['support-refresh', 'Support refresh'],
   ['watcher', 'Watcher'],
@@ -58,7 +55,6 @@ const SUCCESS_WATCHER_STATUSES = new Set([
   'deployed',
   'instant-reverted',
   'pinned-deployed',
-  'production-promoted',
   'recovered',
   'standby-refreshed',
 ]);
@@ -66,8 +62,6 @@ const FAILURE_WATCHER_STATUSES = new Set([
   'deploy-failed',
   'instant-revert-failed',
   'pin-deploy-failed',
-  'production-prebuild-failed',
-  'production-promotion-failed',
   'retry-limited',
   'standby-refresh-failed',
 ]);
@@ -82,8 +76,6 @@ const ACTION_REQUIRED_WATCHER_STATUSES = new Set([
 const QUEUED_WATCHER_STATUSES = new Set([
   'cached',
   'pinned',
-  'production-prebuild-check',
-  'production-prebuilt',
   'queued',
   'waiting',
 ]);
@@ -91,7 +83,6 @@ const IN_PROGRESS_WATCHER_STATUSES = new Set([
   'building',
   'deployment-active',
   'deploying',
-  'prebuild-building',
   'restarting',
 ]);
 const NEUTRAL_WATCHER_STATUSES = new Set([
@@ -106,6 +97,47 @@ function trimString(value) {
   return typeof value === 'string' && value.trim().length > 0
     ? value.trim()
     : null;
+}
+
+function parseGitHubRepositoryFromRemote(remoteUrl) {
+  const value = String(remoteUrl ?? '').trim();
+  const sshMatch = value.match(/^git@github\.com:([^/]+)\/(.+?)(?:\.git)?$/u);
+
+  if (sshMatch) {
+    return {
+      owner: sshMatch[1],
+      repo: sshMatch[2],
+    };
+  }
+
+  try {
+    const url = new URL(value);
+
+    if (url.hostname !== 'github.com') {
+      return null;
+    }
+
+    const [owner, repo] = url.pathname
+      .replace(/^\/+/u, '')
+      .replace(/\.git$/u, '')
+      .split('/');
+
+    return owner && repo ? { owner, repo } : null;
+  } catch {
+    return null;
+  }
+}
+
+async function getGitHubRepository({ env, rootDir, runCommand } = {}) {
+  const remoteUrl = (
+    await gitStdout(['config', '--get', 'remote.origin.url'], {
+      cwd: rootDir,
+      env,
+      runCommand,
+    })
+  ).trim();
+
+  return parseGitHubRepositoryFromRemote(remoteUrl);
 }
 
 function isGitHubChecksEnabled(env = process.env, tokenSource = null) {
@@ -335,37 +367,11 @@ function getLatestDeployment(state) {
   );
 }
 
-function getProductionPromotion(state) {
-  const promotion = state?.lastResult?.productionPromotion;
-
-  return promotion && typeof promotion === 'object' && !Array.isArray(promotion)
-    ? promotion
-    : null;
-}
-
-function resolveCommit(state, latestDeployment, productionPromotion) {
-  const promotionMainHash = normalizeCommitHash(
-    productionPromotion?.main?.hash
-  );
-  const promotionProductionHash = normalizeCommitHash(
-    productionPromotion?.production?.hash
-  );
-
-  if (promotionMainHash && promotionMainHash !== promotionProductionHash) {
-    return {
-      hash: promotionMainHash,
-      shortHash: getShortHash(
-        promotionMainHash,
-        productionPromotion?.main?.shortHash
-      ),
-    };
-  }
-
+function resolveCommit(state, latestDeployment) {
   const hash =
     normalizeCommitHash(latestDeployment?.commitHash) ??
     normalizeCommitHash(state?.latestCommit?.hash) ??
-    normalizeCommitHash(state?.lastResult?.latestCommit?.hash) ??
-    promotionMainHash;
+    normalizeCommitHash(state?.lastResult?.latestCommit?.hash);
 
   return hash
     ? {
@@ -374,27 +380,18 @@ function resolveCommit(state, latestDeployment, productionPromotion) {
           hash,
           latestDeployment?.commitShortHash ??
             state?.latestCommit?.shortHash ??
-            state?.lastResult?.latestCommit?.shortHash ??
-            productionPromotion?.main?.shortHash
+            state?.lastResult?.latestCommit?.shortHash
         ),
       }
     : null;
 }
 
-function getWatcherStatus(state, latestDeployment, productionPromotion) {
+function getWatcherStatus(state, latestDeployment) {
   if (
     latestDeployment &&
     ['building', 'deploying'].includes(String(latestDeployment.status ?? ''))
   ) {
     return String(latestDeployment.status);
-  }
-
-  const promotionStatus = trimString(productionPromotion?.decision?.status);
-  if (
-    promotionStatus === 'waiting' ||
-    promotionStatus === 'prebuild-building'
-  ) {
-    return promotionStatus;
   }
 
   return (
@@ -405,7 +402,7 @@ function getWatcherStatus(state, latestDeployment, productionPromotion) {
   );
 }
 
-function createSyntheticStage(watcherStatus, deploymentKind, checkState) {
+function createSyntheticStage(watcherStatus, checkState) {
   const status =
     checkState.status === 'completed'
       ? checkState.conclusion === 'failure'
@@ -416,21 +413,13 @@ function createSyntheticStage(watcherStatus, deploymentKind, checkState) {
       : checkState.status === 'in_progress'
         ? 'running'
         : 'pending';
-  const kind = String(deploymentKind ?? '');
   const normalizedStatus = String(watcherStatus ?? '');
   const id =
-    kind === 'production-prebuild' || normalizedStatus.includes('prebuild')
-      ? 'production-prebuild'
-      : normalizedStatus.includes('promot')
-        ? 'production-promote'
-        : normalizedStatus === 'building'
-          ? 'web-build'
-          : normalizedStatus === 'deploying' ||
-              normalizedStatus === 'restarting'
-            ? 'deploy'
-            : normalizedStatus === 'waiting'
-              ? 'production-gates'
-              : 'watcher';
+    normalizedStatus === 'building'
+      ? 'web-build'
+      : normalizedStatus === 'deploying' || normalizedStatus === 'restarting'
+        ? 'deploy'
+        : 'watcher';
 
   return {
     id,
@@ -439,7 +428,7 @@ function createSyntheticStage(watcherStatus, deploymentKind, checkState) {
   };
 }
 
-function getCurrentStage(stages, watcherStatus, deploymentKind, checkState) {
+function getCurrentStage(stages, watcherStatus, checkState) {
   const running = stages.find((stage) => stage.status === 'running');
   if (running) return running;
 
@@ -450,7 +439,7 @@ function getCurrentStage(stages, watcherStatus, deploymentKind, checkState) {
     return stages[stages.length - 1];
   }
 
-  return createSyntheticStage(watcherStatus, deploymentKind, checkState);
+  return createSyntheticStage(watcherStatus, checkState);
 }
 
 function mapWatcherStatusToCheckState(watcherStatus, latestDeployment) {
@@ -601,8 +590,7 @@ function buildGitHubCheckRunContext(
   }
 
   const latestDeployment = getLatestDeployment(state);
-  const productionPromotion = getProductionPromotion(state);
-  const commit = resolveCommit(state, latestDeployment, productionPromotion);
+  const commit = resolveCommit(state, latestDeployment);
 
   if (!commit?.hash) {
     return {
@@ -611,11 +599,7 @@ function buildGitHubCheckRunContext(
     };
   }
 
-  const watcherStatus = getWatcherStatus(
-    state,
-    latestDeployment,
-    productionPromotion
-  );
+  const watcherStatus = getWatcherStatus(state, latestDeployment);
   const checkState = mapWatcherStatusToCheckState(
     watcherStatus,
     latestDeployment
@@ -625,12 +609,7 @@ function buildGitHubCheckRunContext(
     latestDeployment?.deploymentKind ?? state?.lastResult?.deploymentKind,
     80
   );
-  const currentStage = getCurrentStage(
-    stages,
-    watcherStatus,
-    deploymentKind,
-    checkState
-  );
+  const currentStage = getCurrentStage(stages, watcherStatus, checkState);
   const stageCounts = getStageCounts(
     stages.length > 0 ? stages : [currentStage]
   );

@@ -11,6 +11,8 @@ const {
 } = require('./watcher-constants.js');
 
 const AUTO_RESTORABLE_LOCKFILE_PATHS = new Set(['bun.lock']);
+const WATCHER_WORKTREE_RESET_DISABLED_ENV =
+  'DOCKER_WEB_WATCHER_WORKTREE_RESET_DISABLED';
 
 async function gitStdout(
   args,
@@ -418,6 +420,156 @@ async function pullTrackedBranch(
   }
 }
 
+function isTruthyEnv(value) {
+  return ['1', 'true', 'yes', 'on'].includes(
+    String(value ?? '')
+      .trim()
+      .toLowerCase()
+  );
+}
+
+function isWatcherWorktreeResetDisabled(env = process.env) {
+  return isTruthyEnv(env?.[WATCHER_WORKTREE_RESET_DISABLED_ENV]);
+}
+
+async function resetTrackedWorktreeChanges({
+  cwd = ROOT_DIR,
+  env,
+  fsImpl = require('node:fs'),
+  log,
+  now = () => Date.now(),
+  runCommand: run = runCommand,
+} = {}) {
+  await runGitWithStaleLockRetry(['reset', '--hard', 'HEAD'], {
+    cwd,
+    env,
+    fsImpl,
+    log,
+    now,
+    rootDir: cwd,
+    runCommand: run,
+  });
+}
+
+async function removeUntrackedWorktreeFiles({
+  cwd = ROOT_DIR,
+  env,
+  fsImpl = require('node:fs'),
+  log,
+  now = () => Date.now(),
+  runCommand: run = runCommand,
+} = {}) {
+  await runGitWithStaleLockRetry(['clean', '-fd'], {
+    cwd,
+    env,
+    fsImpl,
+    log,
+    now,
+    rootDir: cwd,
+    runCommand: run,
+  });
+}
+
+async function hardResetToRevision(
+  revision,
+  {
+    cwd = ROOT_DIR,
+    env,
+    fsImpl = require('node:fs'),
+    log,
+    now = () => Date.now(),
+    runCommand: run = runCommand,
+  } = {}
+) {
+  await runGitWithStaleLockRetry(['reset', '--hard', revision], {
+    cwd,
+    env,
+    fsImpl,
+    log,
+    now,
+    rootDir: cwd,
+    runCommand: run,
+  });
+}
+
+async function forceSyncWatcherWorktree(
+  target,
+  {
+    cwd,
+    env,
+    fsImpl = require('node:fs'),
+    log,
+    now = () => Date.now(),
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  const workDir = cwd ?? rootDir;
+
+  await resetTrackedWorktreeChanges({
+    cwd: workDir,
+    env,
+    fsImpl,
+    log,
+    now,
+    runCommand: run,
+  });
+  await removeUntrackedWorktreeFiles({
+    cwd: workDir,
+    env,
+    fsImpl,
+    log,
+    now,
+    runCommand: run,
+  });
+  await fetchTrackedBranch(target, {
+    cwd: workDir,
+    env,
+    fsImpl,
+    log,
+    now,
+    runCommand: run,
+  });
+
+  const localHead = await getRevision('HEAD', {
+    cwd: workDir,
+    env,
+    runCommand: run,
+  });
+  const upstreamHead = await getRevision(target.upstreamRef, {
+    cwd: workDir,
+    env,
+    runCommand: run,
+  });
+
+  if (localHead !== upstreamHead) {
+    log?.warn?.(
+      `Resetting watcher checkout from ${localHead.slice(0, 12)} to ${target.upstreamRef} ${upstreamHead.slice(0, 12)}.`
+    );
+    await hardResetToRevision(target.upstreamRef, {
+      cwd: workDir,
+      env,
+      fsImpl,
+      log,
+      now,
+      runCommand: run,
+    });
+  }
+
+  const updatedHead = await getRevision('HEAD', {
+    cwd: workDir,
+    env,
+    runCommand: run,
+  });
+
+  return {
+    localHead,
+    resetToUpstream: localHead !== updatedHead,
+    updatedHead,
+    upstreamHead,
+  };
+}
+
 async function listDirtyWorktreePaths({
   cwd = ROOT_DIR,
   env,
@@ -600,6 +752,7 @@ module.exports = {
   checkoutBranch,
   checkoutRevision,
   fetchTrackedBranch,
+  forceSyncWatcherWorktree,
   getCommitMetadata,
   getCurrentBranch,
   getCurrentBranchName,
@@ -609,6 +762,7 @@ module.exports = {
   gitStdout,
   hasDirtyWorktree,
   hasWatchedScriptChanges,
+  isWatcherWorktreeResetDisabled,
   isAncestor,
   isGitIndexLockError,
   isGitLockError,
@@ -617,6 +771,9 @@ module.exports = {
   listDirtyWorktreePaths,
   parseUpstreamRef,
   pullTrackedBranch,
+  removeUntrackedWorktreeFiles,
+  WATCHER_WORKTREE_RESET_DISABLED_ENV,
+  resetTrackedWorktreeChanges,
   removeStaleGitLock,
   removeStaleGitIndexLock,
   resolveLockedBranchTarget,

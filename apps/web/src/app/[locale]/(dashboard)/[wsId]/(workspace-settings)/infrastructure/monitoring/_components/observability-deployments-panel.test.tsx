@@ -13,7 +13,6 @@ import { ObservabilityDeploymentsPanel } from './observability-deployments-panel
 const apiMocks = vi.hoisted(() => ({
   clearBlueGreenDeploymentPin: vi.fn(),
   requestBlueGreenDeploymentRevert: vi.fn(),
-  requestBlueGreenProductionPromote: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/internal-api/infrastructure', async (importOriginal) => {
@@ -26,8 +25,6 @@ vi.mock('@tuturuuu/internal-api/infrastructure', async (importOriginal) => {
     ...actual,
     clearBlueGreenDeploymentPin: apiMocks.clearBlueGreenDeploymentPin,
     requestBlueGreenDeploymentRevert: apiMocks.requestBlueGreenDeploymentRevert,
-    requestBlueGreenProductionPromote:
-      apiMocks.requestBlueGreenProductionPromote,
   };
 });
 
@@ -91,50 +88,8 @@ const messages: Record<string, string> = {
   'controls.deployment_revert_rebuild_action': 'Rebuild And Pin',
   'controls.deployment_revert_success': 'Queued revert.',
   'controls.deployment_revert_title': 'Revert production',
-  'controls.production_branch_commit': 'Production',
-  'controls.production_blocker_ci_not_green': 'CI is not green',
-  'controls.production_blocker_deployment_active':
-    'another deployment is active',
-  'controls.production_blocker_git_unavailable': 'Git state is unavailable',
-  'controls.production_blocker_not_fast_forward': 'main is not a fast-forward',
-  'controls.production_blocker_prebuild_missing': 'prebuild is missing',
-  'controls.production_blocker_up_to_date': 'production is up to date',
-  'controls.production_blocker_watcher_branch_mismatch':
-    'watcher checkout is on another branch',
-  'controls.production_blocker_watcher_dirty_worktree':
-    'watcher checkout has local changes',
-  'controls.production_blocker_waiting_for_age': 'waiting for the age gate',
-  'controls.production_ci_failing': 'Failing',
-  'controls.production_ci_missing': 'Missing',
-  'controls.production_ci_passing': 'Passing',
-  'controls.production_ci_pending': 'Pending',
-  'controls.production_ci_status': 'CI',
-  'controls.production_ci_unavailable': 'Unavailable',
-  'controls.production_main_commit': 'Main',
-  'controls.production_next_check': 'Next check {time}',
   'controls.pin_active_description': 'Production is pinned to {commit}.',
   'controls.pin_active_title': 'Deployment pin active',
-  'controls.production_prebuild_blocked': 'Prebuild blocked: {reason}',
-  'controls.production_prebuild_building': 'Prebuilding main · {elapsed}',
-  'controls.production_prebuild_completed': 'Prebuilt main · {duration}',
-  'controls.production_prebuild_failed':
-    'Prebuild failed · {duration}: {reason}',
-  'controls.production_prebuild_missing': 'Prebuild missing',
-  'controls.production_prebuild_not_needed': 'Prebuild not needed',
-  'controls.production_prebuild_status': 'Prebuild {status}',
-  'controls.production_promotion_failed': 'Promotion failed: {reason}',
-  'controls.production_promote_action': 'Promote Main Now',
-  'controls.production_promote_badge': 'Production Promotion',
-  'controls.production_promote_confirm_action': 'Promote Now',
-  'controls.production_promote_confirm_description':
-    'Queue immediate promotion.',
-  'controls.production_promote_confirm_title': 'Promote main to production',
-  'controls.production_promote_description': 'Auto promote description.',
-  'controls.production_promote_error': 'Could not queue promotion.',
-  'controls.production_promote_queued': 'Promotion queued',
-  'controls.production_promote_success': 'Queued promotion.',
-  'controls.production_promote_title': 'Auto promote main to production',
-  'controls.production_wait_remaining': 'Wait',
   'infinite.end': 'End',
   'infinite.loading': 'Loading...',
   load_older: 'Load Older',
@@ -302,7 +257,6 @@ function createSnapshot(): BlueGreenMonitoringSnapshot {
         updatedByEmail: null,
       },
       instantRolloutRequest: null,
-      productionPromoteRequest: null,
     },
     deployments: [
       {
@@ -335,51 +289,6 @@ function createSnapshot(): BlueGreenMonitoringSnapshot {
       totalDeployments: 1,
       totalPersistedLogs: 0,
       totalRequestsServed: 0,
-    },
-    productionPromotion: {
-      ci: {
-        completed: 4,
-        failing: 0,
-        pending: 0,
-        state: 'passing',
-        total: 4,
-        unavailableReason: null,
-      },
-      decision: {
-        blockedReasons: [],
-        bypassed: false,
-        ready: true,
-        status: 'ready',
-      },
-      kind: 'production-promotion-state',
-      main: {
-        committedAt: '2026-06-10T10:00:00.000Z',
-        hash: 'main123456789',
-        shortHash: 'main123',
-        subject: 'Ship main',
-      },
-      nextCheckAt: 2000,
-      prebuild: {
-        durationMs: 9000,
-        failureReason: null,
-        imageTag: 'platform-web-cache:main123',
-        standbyColor: 'green',
-        startedAt: 1000,
-        status: 'cached',
-        updatedAt: 1000,
-      },
-      production: {
-        committedAt: '2026-06-10T09:00:00.000Z',
-        hash: 'prod123456789',
-        shortHash: 'prod123',
-        subject: 'Current production',
-      },
-      queuedRequest: null,
-      requiredDelayMs: 600_000,
-      sourceBranch: 'main',
-      targetBranch: 'production',
-      updatedAt: '2026-06-10T10:20:00.000Z',
-      waitRemainingMs: 0,
     },
     recoveryCache: {
       deployments: [
@@ -457,22 +366,9 @@ describe('ObservabilityDeploymentsPanel', () => {
   beforeEach(() => {
     apiMocks.clearBlueGreenDeploymentPin.mockReset();
     apiMocks.requestBlueGreenDeploymentRevert.mockReset();
-    apiMocks.requestBlueGreenProductionPromote.mockReset();
   });
 
-  it('shows production promotion and instant revert controls from the watcher snapshot', async () => {
-    apiMocks.requestBlueGreenProductionPromote.mockResolvedValueOnce({
-      request: {
-        bypassChecks: true,
-        bypassDelay: true,
-        kind: 'production-promote',
-        requestedAt: '2026-06-10T10:00:00.000Z',
-        requestedBy: 'user-1',
-        requestedByEmail: null,
-        sourceBranch: 'main',
-        targetBranch: 'production',
-      },
-    });
+  it('shows instant revert controls from the watcher snapshot', async () => {
     apiMocks.requestBlueGreenDeploymentRevert.mockResolvedValueOnce({
       request: {
         commitHash: 'cached123456789',
@@ -490,18 +386,10 @@ describe('ObservabilityDeploymentsPanel', () => {
 
     renderPanel({ snapshot: createSnapshot() });
 
-    expect(screen.getByText('Auto promote main to production')).toBeVisible();
+    expect(
+      screen.queryByText('Auto promote main to production')
+    ).not.toBeInTheDocument();
     expect(screen.getByText('Instant cached revert')).toBeVisible();
-    expect(screen.getByText('Prebuilt main · 9s')).toBeVisible();
-
-    fireEvent.click(screen.getByRole('button', { name: /Promote Main Now/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Promote Now/i }));
-
-    await waitFor(() => {
-      expect(apiMocks.requestBlueGreenProductionPromote).toHaveBeenCalledTimes(
-        1
-      );
-    });
 
     fireEvent.click(screen.getByRole('button', { name: /Instant Revert/i }));
     fireEvent.click(screen.getByRole('button', { name: /Queue Revert/i }));
@@ -542,127 +430,6 @@ describe('ObservabilityDeploymentsPanel', () => {
     await waitFor(() => {
       expect(apiMocks.clearBlueGreenDeploymentPin).toHaveBeenCalledTimes(1);
     });
-  });
-
-  it('ignores stale queued promotion state when no control request exists', () => {
-    const snapshot = createSnapshot();
-    snapshot.productionPromotion!.queuedRequest = {
-      bypassChecks: true,
-      bypassDelay: true,
-      kind: 'production-promote',
-      requestedAt: '2026-06-10T10:00:00.000Z',
-      requestedBy: 'user-1',
-      requestedByEmail: null,
-      sourceBranch: 'main',
-      targetBranch: 'production',
-    };
-
-    renderPanel({ snapshot });
-
-    expect(screen.queryByText('Promotion queued')).not.toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /Promote Main Now/i })
-    ).toBeEnabled();
-  });
-
-  it('shows queued promotion only while the control request exists', () => {
-    const snapshot = createSnapshot();
-    snapshot.control.productionPromoteRequest = {
-      bypassChecks: true,
-      bypassDelay: true,
-      kind: 'production-promote',
-      requestedAt: '2026-06-10T10:00:00.000Z',
-      requestedBy: 'user-1',
-      requestedByEmail: null,
-      sourceBranch: 'main',
-      targetBranch: 'production',
-    };
-
-    renderPanel({ snapshot });
-
-    expect(screen.getAllByText('Promotion queued').length).toBeGreaterThan(0);
-    expect(
-      screen.getByRole('button', { name: /Promotion queued/i })
-    ).toBeDisabled();
-  });
-
-  it('shows elapsed time while the main prebuild is building', () => {
-    const snapshot = createSnapshot();
-    snapshot.productionPromotion!.prebuild = {
-      durationMs: null,
-      failureReason: null,
-      imageTag: null,
-      standbyColor: 'green',
-      startedAt: Date.now() - 65_000,
-      status: 'building',
-      updatedAt: Date.now() - 65_000,
-    };
-
-    renderPanel({ snapshot });
-
-    expect(screen.getByText('Prebuilding main · 2m')).toBeInTheDocument();
-  });
-
-  it('shows explicit failed and blocked main prebuild states', () => {
-    const failedSnapshot = createSnapshot();
-    failedSnapshot.productionPromotion!.prebuild = {
-      durationMs: 61_000,
-      failureReason: 'docker build failed',
-      imageTag: null,
-      standbyColor: 'green',
-      startedAt: 1000,
-      status: 'failed',
-      updatedAt: 62_000,
-    };
-
-    const { rerender } = renderPanel({ snapshot: failedSnapshot });
-
-    expect(
-      screen.getByText('Prebuild failed · 2m: docker build failed')
-    ).toBeInTheDocument();
-
-    const blockedSnapshot = createSnapshot();
-    blockedSnapshot.productionPromotion!.decision = {
-      blockedReasons: ['ci-not-green'],
-      bypassed: false,
-      ready: false,
-      status: 'waiting',
-    };
-    blockedSnapshot.productionPromotion!.prebuild = {
-      durationMs: null,
-      failureReason: null,
-      imageTag: null,
-      standbyColor: null,
-      startedAt: null,
-      status: 'missing',
-      updatedAt: null,
-    };
-
-    rerender(
-      <QueryClientProvider
-        client={
-          new QueryClient({
-            defaultOptions: { queries: { retry: false } },
-          })
-        }
-      >
-        <ObservabilityDeploymentsPanel
-          deployments={[createDeployment()]}
-          emptyLabel="No deployments"
-          hasMore={false}
-          isFetchingMore={false}
-          isLoading={false}
-          loaded={1}
-          onLoadMore={() => {}}
-          snapshot={blockedSnapshot}
-          total={1}
-        />
-      </QueryClientProvider>
-    );
-
-    expect(
-      screen.getByText('Prebuild blocked: CI is not green')
-    ).toBeInTheDocument();
   });
 
   it('shows partial web promotion, failed Hive migration, and stage filters', () => {

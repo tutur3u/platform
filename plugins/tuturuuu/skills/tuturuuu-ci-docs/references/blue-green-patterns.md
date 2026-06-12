@@ -19,36 +19,31 @@ infrastructure dashboard changes.
 
 ## Watcher Behavior
 
-- Long-running watchers must lock branch and upstream at startup, use
-  fast-forward pulls, and stop if the checked-out branch changes.
-- Dirty or diverged worktrees should be logged and skipped instead of forcing
-  merges.
-- Production watchers can auto-promote `main` to `production` only when
-  `production` is a fast-forward ancestor of `main`, the newest `main` commit is
-  at least 10 minutes old, and every latest GitHub check/status for that SHA is
-  complete and non-failing with at least one reported CI signal. Record the
-  promotion state under `tmp/docker-web/watch` and poll the gates every 5
-  seconds.
-- Prebuild the newest fast-forward `main` candidate on standby before CI is
-  green when GitHub checks are inspectable, but never update `production` until
-  the promotion gates pass or an authorized manual override request bypasses
-  only the CI/age gates. Treat build-lock conflicts during prebuild/standby
-  refresh as `deployment-active` deferrals, not failed deployment attempts.
-- Dashboard promotion and revert controls must flow through control request
-  files, stay operator-authorized, respect dirty-worktree/build-lock/divergence
-  safety gates, and avoid native browser dialogs. Read revert requests before
-  queued promotion requests; cached revert supersedes queued promotion.
-- Authorized manual production promotion and cached production revert are
-  active-build-canceling operator overrides. Manual promotion cancels only after
-  fast-forward/up-to-date validation passes and clears an active rollback pin as
-  operator intent to resume production. Cached revert verifies the cached target
-  first, clears pending promotion, cancels active build work, then runs the
+- Long-running watchers must lock one branch and upstream at startup, stay on
+  that locked branch, and stop if the checked-out branch changes unexpectedly.
+- Watcher-managed deployment checkouts are disposable by default. Before
+  startup branch switches and before each poll's upstream comparison, reset
+  tracked changes with `git reset --hard HEAD`, remove untracked files and
+  directories with `git clean -fd`, fetch the locked upstream, and hard-reset to
+  the tracked upstream if local `HEAD` is behind, ahead, or diverged. Ignored
+  files are left alone.
+- `DOCKER_WEB_WATCHER_WORKTREE_RESET_DISABLED=1` is the escape hatch for
+  preserving the old protective behavior: dirty worktrees block, ahead/diverged
+  branches are skipped, and only fast-forward pulls are attempted.
+- Do not implement watcher-managed `main` prebuilds or `main` to `production`
+  promotion. Advance production outside the watcher through the release process,
+  then let the watcher deploy the locked branch.
+- Dashboard revert controls must flow through control request files, stay
+  operator-authorized, respect build-lock safety, and avoid native browser
+  dialogs.
+- Cached production revert is an active-build-canceling operator override. It
+  verifies the cached target first, cancels active build work, then runs the
   no-build recovery and writes the rollback pin.
 - Keep the 5 newest unique successful deployed blue/green image tags for cached
   instant revert. Cached revert should use the no-build recovery path, record
-  deployment kind `instant-revert`, and write a deployment pin so auto-promotion
-  does not immediately overwrite the rollback. Older retained deployments fall
-  back to the rollback-pin path and may rebuild.
+  deployment kind `instant-revert`, and write a deployment pin so normal
+  upstream sync does not immediately overwrite the rollback. Older retained
+  deployments fall back to the rollback-pin path and may rebuild.
 - PID locks need explicit fail/resume/replace behavior. Stale Git
   `index.lock` files may be auto-removed only when the error is an index-lock
   conflict and the lock is old enough to be safe.

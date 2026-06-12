@@ -939,17 +939,6 @@ export interface BlueGreenInstantRolloutRequest {
   requestedByEmail: string | null;
 }
 
-export interface BlueGreenProductionPromoteRequest {
-  bypassChecks: true;
-  bypassDelay: true;
-  kind: 'production-promote';
-  requestedAt: string;
-  requestedBy: string;
-  requestedByEmail: string | null;
-  sourceBranch: 'main';
-  targetBranch: 'production';
-}
-
 export interface BlueGreenDeploymentRevertRequest {
   commitHash: string;
   commitShortHash: string | null;
@@ -961,52 +950,6 @@ export interface BlueGreenDeploymentRevertRequest {
   requestedAt: string;
   requestedBy: string;
   requestedByEmail: string | null;
-}
-
-export interface BlueGreenProductionPromotionState {
-  ci: {
-    completed: number;
-    failing: number;
-    pending: number;
-    state: 'failing' | 'missing' | 'passing' | 'pending' | 'unavailable';
-    total: number;
-    unavailableReason: string | null;
-  };
-  decision: {
-    blockedReasons: string[];
-    bypassed: boolean;
-    ready: boolean;
-    status: string | null;
-  };
-  kind: 'production-promotion-state';
-  main: {
-    committedAt: string | null;
-    hash: string | null;
-    shortHash: string | null;
-    subject: string | null;
-  } | null;
-  nextCheckAt: number | null;
-  prebuild: {
-    durationMs: number | null;
-    failureReason: string | null;
-    imageTag: string | null;
-    standbyColor: string | null;
-    startedAt: number | null;
-    status: string | null;
-    updatedAt: number | null;
-  } | null;
-  production: {
-    committedAt: string | null;
-    hash: string | null;
-    shortHash: string | null;
-    subject: string | null;
-  } | null;
-  queuedRequest: BlueGreenProductionPromoteRequest | null;
-  requiredDelayMs: number;
-  sourceBranch: 'main';
-  targetBranch: 'production';
-  updatedAt: string | null;
-  waitRemainingMs: number | null;
 }
 
 export interface BlueGreenWatcherRecoveryRequest {
@@ -1308,7 +1251,6 @@ export interface BlueGreenMonitoringSnapshot {
     deploymentPin: BlueGreenDeploymentPin | null;
     dockerRecoverySettings: BlueGreenDockerRecoverySettings;
     instantRolloutRequest: BlueGreenInstantRolloutRequest | null;
-    productionPromoteRequest: BlueGreenProductionPromoteRequest | null;
   };
   deployments: BlueGreenMonitoringDeployment[];
   buildCache: BlueGreenBuildCache;
@@ -1317,7 +1259,6 @@ export interface BlueGreenMonitoringSnapshot {
     limit: number;
     total: number;
   };
-  productionPromotion: BlueGreenProductionPromotionState | null;
   dockerResources: {
     allContainers: BlueGreenMonitoringDockerContainer[];
     containers: BlueGreenMonitoringContainerResource[];
@@ -1396,11 +1337,6 @@ export interface BlueGreenMonitoringSnapshot {
 export interface RequestBlueGreenInstantRolloutResponse {
   message: string;
   request: BlueGreenInstantRolloutRequest;
-}
-
-export interface RequestBlueGreenProductionPromoteResponse {
-  message: string;
-  request: BlueGreenProductionPromoteRequest;
 }
 
 export interface RequestBlueGreenDeploymentRevertPayload {
@@ -3453,19 +3389,6 @@ export async function requestBlueGreenInstantRollout(
   const client = getInternalApiClient(options);
   return client.json<RequestBlueGreenInstantRolloutResponse>(
     '/api/v1/infrastructure/monitoring/blue-green/instant-rollout',
-    {
-      cache: 'no-store',
-      method: 'POST',
-    }
-  );
-}
-
-export async function requestBlueGreenProductionPromote(
-  options?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(options);
-  return client.json<RequestBlueGreenProductionPromoteResponse>(
-    '/api/v1/infrastructure/monitoring/blue-green/production-promote',
     {
       cache: 'no-store',
       method: 'POST',

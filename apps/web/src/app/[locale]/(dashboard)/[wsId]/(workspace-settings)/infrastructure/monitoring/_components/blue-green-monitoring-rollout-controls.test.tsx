@@ -131,7 +131,6 @@ function createSnapshot(overrides: SnapshotOverrides = {}) {
         updatedByEmail: null,
       },
       instantRolloutRequest: null,
-      productionPromoteRequest: null,
     },
     dockerResources: {
       allContainers: [],
@@ -214,7 +213,6 @@ function createSnapshot(overrides: SnapshotOverrides = {}) {
       limit: 5,
       total: 0,
     },
-    productionPromotion: null,
     source: {
       historyAvailable: true,
       monitoringDirAvailable: true,

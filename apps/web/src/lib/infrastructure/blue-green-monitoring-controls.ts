@@ -8,8 +8,6 @@ type FsLike = Pick<
 
 const DOCKER_WEB_CONTROL_ENV_KEY = 'PLATFORM_BLUE_GREEN_CONTROL_DIR';
 const INSTANT_ROLLOUT_REQUEST_FILE = 'blue-green-instant-rollout.request.json';
-const PRODUCTION_PROMOTE_REQUEST_FILE =
-  'blue-green-production-promote.request.json';
 const DEPLOYMENT_REVERT_REQUEST_FILE =
   'blue-green-deployment-revert.request.json';
 const DEPLOYMENT_PIN_FILE = 'blue-green-deployment-pin.json';
@@ -31,17 +29,6 @@ export interface BlueGreenInstantRolloutRequest {
   requestedAt: string;
   requestedBy: string;
   requestedByEmail: string | null;
-}
-
-export interface BlueGreenProductionPromoteRequest {
-  bypassChecks: true;
-  bypassDelay: true;
-  kind: 'production-promote';
-  requestedAt: string;
-  requestedBy: string;
-  requestedByEmail: string | null;
-  sourceBranch: 'main';
-  targetBranch: 'production';
 }
 
 export interface BlueGreenDeploymentRevertRequest {
@@ -320,76 +307,6 @@ export function readBlueGreenInstantRolloutRequest({
       typeof parsed.requestedBy === 'string'
     ) {
       return parsed as BlueGreenInstantRolloutRequest;
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
-
-export function queueBlueGreenProductionPromoteRequest(
-  {
-    requestedAt = new Date().toISOString(),
-    requestedBy,
-    requestedByEmail,
-  }: {
-    requestedAt?: string;
-    requestedBy: string;
-    requestedByEmail: string | null;
-  },
-  { fsImpl = fs }: { fsImpl?: FsLike } = {}
-) {
-  const controlDir = resolveMonitoringControlDir(fsImpl);
-  const request: BlueGreenProductionPromoteRequest = {
-    bypassChecks: true,
-    bypassDelay: true,
-    kind: 'production-promote',
-    requestedAt,
-    requestedBy,
-    requestedByEmail,
-    sourceBranch: 'main',
-    targetBranch: 'production',
-  };
-
-  fsImpl.mkdirSync(controlDir.path, { recursive: true });
-  fsImpl.writeFileSync(
-    path.join(controlDir.path, PRODUCTION_PROMOTE_REQUEST_FILE),
-    JSON.stringify(request, null, 2),
-    'utf8'
-  );
-
-  return request;
-}
-
-export function readBlueGreenProductionPromoteRequest({
-  fsImpl = fs,
-}: {
-  fsImpl?: FsLike;
-} = {}) {
-  const controlDir = resolveMonitoringControlDir(fsImpl);
-  const filePath = path.join(controlDir.path, PRODUCTION_PROMOTE_REQUEST_FILE);
-
-  if (!fsImpl.existsSync(filePath)) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(fsImpl.readFileSync(filePath, 'utf8'));
-
-    if (
-      parsed &&
-      typeof parsed === 'object' &&
-      !Array.isArray(parsed) &&
-      parsed.kind === 'production-promote' &&
-      parsed.sourceBranch === 'main' &&
-      parsed.targetBranch === 'production' &&
-      parsed.bypassChecks === true &&
-      parsed.bypassDelay === true &&
-      typeof parsed.requestedAt === 'string' &&
-      typeof parsed.requestedBy === 'string'
-    ) {
-      return parsed as BlueGreenProductionPromoteRequest;
     }
   } catch {
     return null;

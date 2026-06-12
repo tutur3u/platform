@@ -542,7 +542,7 @@ test('buildGitHubCheckRunContext maps watcher statuses to GitHub check states', 
     buildGitHubCheckRunContext(
       createDeploymentState({
         deployments: [],
-        lastResult: { status: 'production-prebuild-check' },
+        lastResult: { status: 'waiting' },
       }),
       { env: ENABLED_ENV, now: 1000 }
     ).checkState,

@@ -5,12 +5,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   clearBlueGreenDeploymentPin,
   queueBlueGreenDeploymentRevertRequest,
-  queueBlueGreenProductionPromoteRequest,
   readBlueGreenDeploymentPin,
   readBlueGreenDeploymentRevertRequest,
   readBlueGreenDockerRecoveryAlertState,
   readBlueGreenDockerRecoverySettings,
-  readBlueGreenProductionPromoteRequest,
   writeBlueGreenDeploymentPin,
   writeBlueGreenDockerRecoveryAlertState,
   writeBlueGreenDockerRecoverySettings,
@@ -63,19 +61,14 @@ describe('blue-green monitoring controls', () => {
     }
   });
 
-  it('persists production promote and deployment revert requests', () => {
+  it('persists deployment revert requests', () => {
     const tempDir = fs.mkdtempSync(
-      path.join(os.tmpdir(), 'blue-green-promote-revert-')
+      path.join(os.tmpdir(), 'blue-green-revert-')
     );
 
     try {
       process.env.PLATFORM_BLUE_GREEN_CONTROL_DIR = tempDir;
 
-      const promote = queueBlueGreenProductionPromoteRequest({
-        requestedAt: '2026-06-10T10:00:00.000Z',
-        requestedBy: 'user-1',
-        requestedByEmail: 'ops@platform.test',
-      });
       const revert = queueBlueGreenDeploymentRevertRequest({
         commitHash: 'old123456789',
         commitShortHash: 'old1234',
@@ -88,15 +81,6 @@ describe('blue-green monitoring controls', () => {
         requestedByEmail: null,
       });
 
-      expect(promote).toMatchObject({
-        bypassChecks: true,
-        kind: 'production-promote',
-        sourceBranch: 'main',
-      });
-      expect(readBlueGreenProductionPromoteRequest()).toMatchObject({
-        requestedBy: 'user-1',
-        targetBranch: 'production',
-      });
       expect(revert).toMatchObject({
         commitHash: 'old123456789',
         instant: true,

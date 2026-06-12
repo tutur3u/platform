@@ -52,6 +52,7 @@ const {
   createQuietRunCommand,
   createWatchUi,
   fetchTrackedBranch,
+  forceSyncWatcherWorktree,
   finalizeComposeProjectMigrationIfRequested,
   formatCountdown,
   formatRelativeTime,
@@ -75,14 +76,12 @@ const {
   parseContainerConsoleLogEntries,
   parseProxyLogEntries,
   parseUpstreamRef,
-  prepareProductionPrebuildWorktree,
   pullTrackedBranch,
   readDeploymentHistory,
   readWatchArgsFile,
   readWatchLock,
   readPendingDeployRequest,
   releaseWatchLock,
-  removeManagedProductionPrebuildWorktree,
   restoreTargetBranchIfDetached,
   resolveCurrentBlueGreenStatus,
   runBunFrozenInstall,
@@ -90,21 +89,18 @@ const {
   runPendingDeployAfterRestart,
   runDeployWatchIteration,
   runDeploymentRevertRequestIteration,
-  runProductionPromotionIteration,
   runDeployWatchLoop,
   runWatcherCommand,
   removeStaleGitLock,
   removeStaleGitIndexLock,
   startBlueGreenWatcherContainer,
   streamBlueGreenWatcherLogs,
-  sweepManagedProductionPrebuildWorktrees,
   waitForDockerDaemonRecovery,
   main,
   spawnReplacementWatcher,
   stripAnsi,
   summarizeRequestRate,
   getLatestDeploymentSummary,
-  getProductionPrebuildWorktreePath,
   writeDeploymentHistory,
   writeWatchArgsFile,
   loadRuntimeSnapshot,
@@ -136,6 +132,8 @@ const {
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const PROD_COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.prod.yml');
+const WATCHER_WORKTREE_RESET_DISABLED_ENV =
+  'DOCKER_WEB_WATCHER_WORKTREE_RESET_DISABLED';
 const LOCAL_SUPABASE_TEST_ENV = {
   DOCKER_WEB_ALLOW_LOCAL_SUPABASE: '1',
   PATH: 'test-path',
@@ -263,6 +261,14 @@ function createRunCommandMock(responses) {
       return createResult('apps/web/src/app/page.tsx\n');
     }
 
+    if (
+      command === 'git' &&
+      ((args[0] === 'reset' && args[1] === '--hard') ||
+        (args[0] === 'clean' && args[1] === '-fd'))
+    ) {
+      return createResult('');
+    }
+
     if (!responses.has(key)) {
       throw new Error(`Unexpected command: ${key}`);
     }
@@ -272,215 +278,65 @@ function createRunCommandMock(responses) {
   };
 }
 
-test('production prebuild uses a detached managed worktree and cleans env files before removal', async () => {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-prebuild-'));
-  const paths = getWatchPaths(tempDir);
-  const mainHash = 'main123456789main123456789main123456789main1234';
-  const rootEnvFile = path.join(tempDir, '.env.local');
-  const appEnvFile = path.join(tempDir, 'apps', 'web', '.env.local');
-  const staleWorktree = path.join(paths.productionPrebuildWorktreeDir, 'stale');
+test('forceSyncWatcherWorktree resets tracked changes, removes untracked files, fetches, and resets to upstream', async () => {
   const calls = [];
-  const logs = [];
-  let cleanupSawEnvFilesRemoved = false;
+  let headReadCount = 0;
 
-  try {
-    fs.mkdirSync(path.dirname(appEnvFile), { recursive: true });
-    fs.mkdirSync(staleWorktree, { recursive: true });
-    fs.writeFileSync(rootEnvFile, 'ROOT_SECRET=do-not-log-root\n', 'utf8');
-    fs.writeFileSync(appEnvFile, 'APP_SECRET=do-not-log-app\n', 'utf8');
-    fs.writeFileSync(
-      path.join(staleWorktree, '.tuturuuu-production-prebuild-worktree.json'),
-      JSON.stringify({
-        createdAt: new Date(0).toISOString(),
-        kind: 'tuturuuu-production-prebuild-worktree',
-      }),
-      'utf8'
-    );
-
-    const runCommand = async (command, args, options = {}) => {
-      const key = `${command} ${args.join(' ')}`;
-      calls.push(key);
-
-      if (command === 'git' && args[0] === 'worktree' && args[1] === 'add') {
-        assert.deepEqual(args.slice(0, 3), ['worktree', 'add', '--detach']);
-        assert.equal(args[4], mainHash);
-        fs.mkdirSync(args[3], { recursive: true });
-        return createResult('');
-      }
-
-      if (command === 'git' && args[0] === 'worktree' && args[1] === 'remove') {
-        const worktreePath = args[3];
-
-        if (worktreePath.includes('main123')) {
-          cleanupSawEnvFilesRemoved =
-            !fs.existsSync(path.join(worktreePath, '.env.local')) &&
-            !fs.existsSync(
-              path.join(worktreePath, 'apps', 'web', '.env.local')
-            );
-        }
-
-        fs.rmSync(worktreePath, { force: true, recursive: true });
-        return createResult('');
-      }
-
-      if (command === 'git' && args[0] === 'worktree' && args[1] === 'prune') {
-        assert.equal(options.cwd, tempDir);
-        return createResult('');
-      }
-
-      throw new Error(`Unexpected command: ${key}`);
-    };
-
-    const prebuildWorktree = await prepareProductionPrebuildWorktree({
-      deployCommit: {
-        hash: mainHash,
-        shortHash: 'main123',
-      },
-      env: { PATH: 'test-path' },
-      envFilePath: rootEnvFile,
-      fsImpl: fs,
-      log: {
-        warn(message) {
-          logs.push(message);
-        },
-      },
-      now: () => 10_000_000,
-      paths,
-      rootDir: tempDir,
-      runCommand,
-    });
-
-    assert.equal(
-      prebuildWorktree.worktreePath,
-      path.join(paths.productionPrebuildWorktreeDir, 'main123')
-    );
-    assert.equal(prebuildWorktree.rootDir, prebuildWorktree.worktreePath);
-    assert.equal(
-      prebuildWorktree.env.PLATFORM_HOST_WORKSPACE_DIR,
-      prebuildWorktree.worktreePath
-    );
-    assert.equal(
-      prebuildWorktree.envFilePath,
-      path.join(prebuildWorktree.worktreePath, '.env.local')
-    );
-    assert.equal(
-      fs.readFileSync(
-        path.join(prebuildWorktree.worktreePath, '.env.local'),
-        'utf8'
-      ),
-      'ROOT_SECRET=do-not-log-root\n'
-    );
-    assert.equal(
-      fs.readFileSync(
-        path.join(prebuildWorktree.worktreePath, 'apps', 'web', '.env.local'),
-        'utf8'
-      ),
-      'APP_SECRET=do-not-log-app\n'
-    );
-    assert.equal(fs.existsSync(staleWorktree), false);
-    assert.ok(
-      calls.indexOf(`git worktree remove --force ${staleWorktree}`) <
-        calls.indexOf(
-          `git worktree add --detach ${prebuildWorktree.worktreePath} ${mainHash}`
-        )
-    );
-    assert.equal(
-      calls.some((call) => /git (checkout|switch)\b/u.test(call)),
-      false
-    );
-    assert.equal(JSON.stringify(logs).includes('do-not-log'), false);
-
-    await removeManagedProductionPrebuildWorktree({
-      copiedEnvFiles: prebuildWorktree.copiedEnvFiles,
-      fsImpl: fs,
-      paths,
-      rootDir: tempDir,
-      runCommand,
-      worktreePath: prebuildWorktree.worktreePath,
-    });
-
-    assert.equal(cleanupSawEnvFilesRemoved, true);
-    assert.equal(fs.existsSync(prebuildWorktree.worktreePath), false);
-    assert.ok(calls.includes('git worktree prune'));
-  } finally {
-    fs.rmSync(tempDir, { force: true, recursive: true });
-  }
-});
-
-test('production prebuild cleanup sweeps only stale watcher-owned managed worktrees', async () => {
-  const tempDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'watch-prebuild-sweep-')
-  );
-  const paths = getWatchPaths(tempDir);
-  const staleManaged = path.join(paths.productionPrebuildWorktreeDir, 'stale');
-  const freshManaged = path.join(paths.productionPrebuildWorktreeDir, 'fresh');
-  const unowned = path.join(paths.productionPrebuildWorktreeDir, 'unowned');
-  const calls = [];
-
-  try {
-    for (const dirPath of [staleManaged, freshManaged, unowned]) {
-      fs.mkdirSync(dirPath, { recursive: true });
-    }
-
-    fs.writeFileSync(
-      path.join(staleManaged, '.tuturuuu-production-prebuild-worktree.json'),
-      JSON.stringify({
-        createdAt: new Date(0).toISOString(),
-        kind: 'tuturuuu-production-prebuild-worktree',
-      }),
-      'utf8'
-    );
-    fs.writeFileSync(
-      path.join(freshManaged, '.tuturuuu-production-prebuild-worktree.json'),
-      JSON.stringify({
-        createdAt: new Date(9500).toISOString(),
-        kind: 'tuturuuu-production-prebuild-worktree',
-      }),
-      'utf8'
-    );
-
-    const removed = await sweepManagedProductionPrebuildWorktrees({
-      fsImpl: fs,
-      maxAgeMs: 1000,
-      now: 10_000,
-      paths,
-      rootDir: tempDir,
+  const result = await forceSyncWatcherWorktree(
+    {
+      branch: 'main',
+      remote: 'origin',
+      upstreamBranch: 'main',
+      upstreamRef: 'origin/main',
+    },
+    {
+      rootDir: '/workspace/platform',
       runCommand: async (command, args) => {
         const key = `${command} ${args.join(' ')}`;
         calls.push(key);
 
         if (
-          command === 'git' &&
-          args[0] === 'worktree' &&
-          args[1] === 'remove'
+          key === 'git reset --hard HEAD' ||
+          key === 'git clean -fd' ||
+          key === 'git fetch origin main' ||
+          key === 'git reset --hard origin/main'
         ) {
-          fs.rmSync(args[3], { force: true, recursive: true });
           return createResult('');
         }
 
-        if (
-          command === 'git' &&
-          args[0] === 'worktree' &&
-          args[1] === 'prune'
-        ) {
-          return createResult('');
+        if (key === 'git rev-parse HEAD') {
+          headReadCount += 1;
+          return createResult(
+            headReadCount === 1
+              ? 'aaa1111111111111111111111111111111111111\n'
+              : 'bbb2222222222222222222222222222222222222\n'
+          );
+        }
+
+        if (key === 'git rev-parse origin/main') {
+          return createResult('bbb2222222222222222222222222222222222222\n');
         }
 
         throw new Error(`Unexpected command: ${key}`);
       },
-    });
+    }
+  );
 
-    assert.deepEqual(removed, [staleManaged]);
-    assert.equal(fs.existsSync(staleManaged), false);
-    assert.equal(fs.existsSync(freshManaged), true);
-    assert.equal(fs.existsSync(unowned), true);
-    assert.deepEqual(calls, [
-      `git worktree remove --force ${staleManaged}`,
-      'git worktree prune',
-    ]);
-  } finally {
-    fs.rmSync(tempDir, { force: true, recursive: true });
-  }
+  assert.deepEqual(calls, [
+    'git reset --hard HEAD',
+    'git clean -fd',
+    'git fetch origin main',
+    'git rev-parse HEAD',
+    'git rev-parse origin/main',
+    'git reset --hard origin/main',
+    'git rev-parse HEAD',
+  ]);
+  assert.deepEqual(result, {
+    localHead: 'aaa1111111111111111111111111111111111111',
+    resetToUpstream: true,
+    updatedHead: 'bbb2222222222222222222222222222222222222',
+    upstreamHead: 'bbb2222222222222222222222222222222222222',
+  });
 });
 
 test('runBlueGreenDeploy gives child deploys a stage handoff file', async () => {
@@ -3241,7 +3097,7 @@ test('loadRuntimeSnapshot parses docker stats that use comma decimals', async ()
   }
 });
 
-test('runDeployWatchIteration skips dirty worktrees before fetch and still reports runtime state', async () => {
+test('runDeployWatchIteration resets dirty worktrees before comparing upstream by default', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-dirty-'));
   const paths = getWatchPaths(tempDir);
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
@@ -3255,11 +3111,29 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
     }
 
     if (key === 'git status --porcelain') {
-      return createResult(' M package.json\n');
+      return createResult(' M package.json\n?? tmp/watcher-local-file\n');
     }
 
-    if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+    if (
+      key === 'git reset --hard HEAD' ||
+      key === 'git clean -fd' ||
+      key === 'git fetch origin main'
+    ) {
       return createResult('');
+    }
+
+    if (key === 'git rev-parse HEAD') {
+      return createResult('aaa1111111111111111111111111111111111111\n');
+    }
+
+    if (key === 'git rev-parse origin/main') {
+      return createResult('aaa1111111111111111111111111111111111111\n');
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return createResult(
+        'aaa1111111111111111111111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+      );
     }
 
     throw new Error(`Unexpected command: ${key}`);
@@ -3281,38 +3155,87 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
         log: { error() {}, info() {}, warn() {} },
         now: () => 1234,
         paths,
+        attachRuntime: async (state) => state,
+        platformProjectReader: async () => ({
+          deploymentStatus: 'ready',
+          selectedBranch: 'main',
+          source: 'test',
+        }),
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(result.status, 'up-to-date');
+    assert.deepEqual(calls.slice(0, 9), [
+      'git rev-parse --abbrev-ref HEAD',
+      'git status --porcelain',
+      'git reset --hard HEAD',
+      'git clean -fd',
+      'git fetch origin main',
+      'git rev-parse HEAD',
+      'git rev-parse origin/main',
+      'git rev-parse HEAD',
+      'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration blocks dirty worktrees when watcher reset is disabled', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-dirty-disabled-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (key === 'git rev-parse --abbrev-ref HEAD') {
+      return createResult('main\n');
+    }
+
+    if (key === 'git status --porcelain') {
+      return createResult(' M package.json\n');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        attachRuntime: async (state) => state,
+        env: { [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1' },
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: () => 1234,
+        paths,
         rootDir: tempDir,
         runCommand,
       }
     );
 
     assert.equal(result.status, 'dirty');
-    assert.equal(result.currentBlueGreen.state, 'idle');
-    assert.deepEqual(result.deployments, []);
-    const expectedRuntimeSnapshotCalls = [
+    assert.deepEqual(calls.slice(0, 2), [
       'git rev-parse --abbrev-ref HEAD',
       'git status --porcelain',
-      prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
-      `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`,
-      'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}',
-    ];
-    const optionalProxyStatusCalls = [
-      prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
-      `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`,
-    ];
-
-    assert.deepEqual(
-      calls.slice(0, expectedRuntimeSnapshotCalls.length),
-      expectedRuntimeSnapshotCalls
-    );
-    assert.ok(
-      calls.length === expectedRuntimeSnapshotCalls.length ||
-        (calls.length ===
-          expectedRuntimeSnapshotCalls.length +
-            optionalProxyStatusCalls.length &&
-          JSON.stringify(calls.slice(expectedRuntimeSnapshotCalls.length)) ===
-            JSON.stringify(optionalProxyStatusCalls))
-    );
+    ]);
+    assert.equal(calls.includes('git reset --hard HEAD'), false);
+    assert.equal(calls.includes('git clean -fd'), false);
+    assert.equal(calls.includes('git fetch origin main'), false);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -3473,797 +3396,6 @@ test('runDeployWatchIteration deploys a pinned rollback without fetching upstrea
       'rollback-pin'
     );
     assert.ok(!calls.includes('git fetch origin main'));
-  } finally {
-    fs.rmSync(tempDir, { force: true, recursive: true });
-  }
-});
-
-test('runProductionPromotionIteration lets manual promote bypass only CI and age gates', async () => {
-  const tempDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'watch-production-promote-')
-  );
-  const paths = getWatchPaths(tempDir);
-  const calls = [];
-  const githubRequests = [];
-  const checkedAt = Date.parse('2026-06-10T10:00:00.000Z');
-  const mainHash = 'bbb2222222222222222222222222222222222222';
-  const productionHash = 'aaa1111111111111111111111111111111111111';
-
-  try {
-    fs.mkdirSync(paths.controlDir, { recursive: true });
-    fs.writeFileSync(
-      paths.productionPromoteRequestFile,
-      JSON.stringify(
-        {
-          bypassChecks: true,
-          bypassDelay: true,
-          kind: 'production-promote',
-          requestedAt: '2026-06-10T10:00:00.000Z',
-          requestedBy: 'user-1',
-          requestedByEmail: 'ops@platform.test',
-          sourceBranch: 'main',
-          targetBranch: 'production',
-        },
-        null,
-        2
-      ),
-      'utf8'
-    );
-
-    const runCommand = async (command, args) => {
-      const key = `${command} ${args.join(' ')}`;
-      calls.push(key);
-
-      if (
-        key ===
-        'git fetch origin refs/heads/main:refs/remotes/origin/main refs/heads/production:refs/remotes/origin/production'
-      ) {
-        return createResult('');
-      }
-
-      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/main') {
-        return createResult(
-          `${mainHash}\nbbb222\nFresh main candidate\n2026-06-10T09:59:30.000Z\n`
-        );
-      }
-
-      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/production') {
-        return createResult(
-          `${productionHash}\naaa111\nCurrent production\n2026-06-10T09:30:00.000Z\n`
-        );
-      }
-
-      if (
-        key === `git merge-base --is-ancestor ${productionHash} ${mainHash}`
-      ) {
-        return createResult('');
-      }
-
-      if (key === 'git config --get remote.origin.url') {
-        return createResult('git@github.com:tutur3u/platform.git\n');
-      }
-
-      if (
-        key ===
-        'git fetch origin refs/heads/production:refs/remotes/origin/production'
-      ) {
-        return createResult('');
-      }
-
-      if (key === 'git merge --ff-only origin/production') {
-        return createResult('');
-      }
-
-      throw new Error(`Unexpected command: ${key}`);
-    };
-
-    const githubRequestJson = async (requestPath, options = {}) => {
-      githubRequests.push({
-        body: options.body ?? null,
-        method: options.method ?? 'GET',
-        requestPath,
-      });
-
-      if (requestPath.includes('/check-runs')) {
-        return {
-          check_runs: [{ conclusion: 'failure', status: 'completed' }],
-        };
-      }
-
-      if (requestPath.endsWith('/status')) {
-        return {
-          statuses: [{ context: 'legacy-ci', state: 'failure' }],
-        };
-      }
-
-      if (options.method === 'PATCH') {
-        return { object: { sha: mainHash } };
-      }
-
-      throw new Error(`Unexpected GitHub request: ${requestPath}`);
-    };
-
-    const result = await runProductionPromotionIteration(
-      {
-        branch: 'production',
-        remote: 'origin',
-        upstreamBranch: 'production',
-        upstreamRef: 'origin/production',
-      },
-      {
-        attachRuntime: async (state) => state,
-        checkedAt,
-        env: { GITHUB_TOKEN: 'test-token' },
-        fsImpl: fs,
-        githubRequestJson,
-        log: { info() {}, warn() {} },
-        now: () => checkedAt,
-        paths,
-        rootDir: tempDir,
-        runCommand,
-      }
-    );
-
-    const state = JSON.parse(
-      fs.readFileSync(paths.productionPromotionStateFile, 'utf8')
-    );
-    const patchRequest = githubRequests.find(
-      (request) => request.method === 'PATCH'
-    );
-
-    assert.equal(result.status, 'production-promoted');
-    assert.equal(state.decision.bypassed, true);
-    assert.equal(state.decision.status, 'manual-promoted');
-    assert.equal(state.production.hash, mainHash);
-    assert.equal(state.nextCheckAt, checkedAt + 5_000);
-    assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
-    assert.deepEqual(patchRequest.body, {
-      force: false,
-      sha: mainHash,
-    });
-    assert.ok(
-      calls.includes(
-        'git fetch origin refs/heads/production:refs/remotes/origin/production'
-      )
-    );
-    assert.ok(calls.includes('git merge --ff-only origin/production'));
-  } finally {
-    fs.rmSync(tempDir, { force: true, recursive: true });
-  }
-});
-
-test('runProductionPromotionIteration manually promotes with host git credentials when GITHUB_TOKEN is absent', async () => {
-  const tempDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'watch-production-promote-git-')
-  );
-  const paths = getWatchPaths(tempDir);
-  const calls = [];
-  const githubRequests = [];
-  const checkedAt = Date.parse('2026-06-10T10:00:00.000Z');
-  const mainHash = 'bbb2222222222222222222222222222222222222';
-  const productionHash = 'aaa1111111111111111111111111111111111111';
-
-  try {
-    fs.mkdirSync(paths.controlDir, { recursive: true });
-    fs.writeFileSync(
-      paths.productionPromoteRequestFile,
-      JSON.stringify(
-        {
-          bypassChecks: true,
-          bypassDelay: true,
-          kind: 'production-promote',
-          requestedAt: '2026-06-10T10:00:00.000Z',
-          requestedBy: 'user-1',
-          requestedByEmail: 'ops@platform.test',
-          sourceBranch: 'main',
-          targetBranch: 'production',
-        },
-        null,
-        2
-      ),
-      'utf8'
-    );
-
-    const runCommand = async (command, args) => {
-      const key = `${command} ${args.join(' ')}`;
-      calls.push(key);
-
-      if (
-        key ===
-        'git fetch origin refs/heads/main:refs/remotes/origin/main refs/heads/production:refs/remotes/origin/production'
-      ) {
-        return createResult('');
-      }
-
-      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/main') {
-        return createResult(
-          `${mainHash}\nbbb222\nFresh main candidate\n2026-06-10T09:59:30.000Z\n`
-        );
-      }
-
-      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/production') {
-        return createResult(
-          `${productionHash}\naaa111\nCurrent production\n2026-06-10T09:30:00.000Z\n`
-        );
-      }
-
-      if (
-        key === `git merge-base --is-ancestor ${productionHash} ${mainHash}`
-      ) {
-        return createResult('');
-      }
-
-      if (key === 'git config --get remote.origin.url') {
-        return createResult('git@github.com:tutur3u/platform.git\n');
-      }
-
-      if (key === `git push origin ${mainHash}:refs/heads/production`) {
-        return createResult('');
-      }
-
-      if (
-        key ===
-        'git fetch origin refs/heads/production:refs/remotes/origin/production'
-      ) {
-        return createResult('');
-      }
-
-      if (key === 'git merge --ff-only origin/production') {
-        return createResult('');
-      }
-
-      throw new Error(`Unexpected command: ${key}`);
-    };
-
-    const result = await runProductionPromotionIteration(
-      {
-        branch: 'production',
-        remote: 'origin',
-        upstreamBranch: 'production',
-        upstreamRef: 'origin/production',
-      },
-      {
-        attachRuntime: async (state) => state,
-        checkedAt,
-        env: {},
-        fsImpl: fs,
-        githubRequestJson: async (requestPath, options = {}) => {
-          githubRequests.push({
-            body: options.body ?? null,
-            method: options.method ?? 'GET',
-            requestPath,
-          });
-          throw new Error(`Unexpected GitHub request: ${requestPath}`);
-        },
-        log: { info() {}, warn() {} },
-        now: () => checkedAt,
-        paths,
-        rootDir: tempDir,
-        runCommand,
-      }
-    );
-
-    const state = JSON.parse(
-      fs.readFileSync(paths.productionPromotionStateFile, 'utf8')
-    );
-
-    assert.equal(result.status, 'production-promoted');
-    assert.equal(state.decision.status, 'manual-promoted');
-    assert.equal(state.production.hash, mainHash);
-    assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
-    assert.equal(githubRequests.length, 0);
-    assert.ok(
-      calls.includes(`git push origin ${mainHash}:refs/heads/production`)
-    );
-    assert.equal(
-      calls.includes(
-        `git push --force origin ${mainHash}:refs/heads/production`
-      ),
-      false
-    );
-  } finally {
-    fs.rmSync(tempDir, { force: true, recursive: true });
-  }
-});
-
-test('runProductionPromotionIteration cancels an active build after fast-forward validation and clears rollback pin', async () => {
-  const tempDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'watch-production-promote-cancel-')
-  );
-  const paths = getWatchPaths(tempDir);
-  const calls = [];
-  const githubRequests = [];
-  const checkedAt = Date.parse('2026-06-10T10:00:00.000Z');
-  const mainHash = 'bbb2222222222222222222222222222222222222';
-  const productionHash = 'aaa1111111111111111111111111111111111111';
-
-  try {
-    fs.mkdirSync(paths.controlDir, { recursive: true });
-    fs.writeFileSync(
-      paths.productionPromoteRequestFile,
-      JSON.stringify(
-        {
-          bypassChecks: true,
-          bypassDelay: true,
-          kind: 'production-promote',
-          requestedAt: '2026-06-10T10:00:00.000Z',
-          requestedBy: 'user-1',
-          requestedByEmail: 'ops@platform.test',
-          sourceBranch: 'main',
-          targetBranch: 'production',
-        },
-        null,
-        2
-      ),
-      'utf8'
-    );
-    fs.writeFileSync(
-      paths.deploymentPinFile,
-      JSON.stringify(
-        {
-          commitHash: productionHash,
-          commitShortHash: 'aaa111',
-          commitSubject: 'Pinned rollback',
-          kind: 'deployment-pin',
-          requestedAt: '2026-06-10T09:30:00.000Z',
-          requestedBy: 'user-2',
-          requestedByEmail: 'ops@platform.test',
-        },
-        null,
-        2
-      ),
-      'utf8'
-    );
-
-    const runCommand = async (command, args) => {
-      const key = `${command} ${args.join(' ')}`;
-      calls.push(key);
-
-      if (
-        key ===
-        'git fetch origin refs/heads/main:refs/remotes/origin/main refs/heads/production:refs/remotes/origin/production'
-      ) {
-        return createResult('');
-      }
-
-      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/main') {
-        return createResult(
-          `${mainHash}\nbbb222\nFresh main candidate\n2026-06-10T09:59:30.000Z\n`
-        );
-      }
-
-      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/production') {
-        return createResult(
-          `${productionHash}\naaa111\nCurrent production\n2026-06-10T09:30:00.000Z\n`
-        );
-      }
-
-      if (
-        key === `git merge-base --is-ancestor ${productionHash} ${mainHash}`
-      ) {
-        return createResult('');
-      }
-
-      if (key === 'git config --get remote.origin.url') {
-        return createResult('git@github.com:tutur3u/platform.git\n');
-      }
-
-      if (key === 'git rev-parse --abbrev-ref HEAD') {
-        return createResult('production\n');
-      }
-
-      if (key === prodComposeStopKey('buildkit')) {
-        return createResult('');
-      }
-
-      if (key === 'docker buildx rm tuturuuu') {
-        return createResult('');
-      }
-
-      if (
-        key ===
-        'git fetch origin refs/heads/production:refs/remotes/origin/production'
-      ) {
-        return createResult('');
-      }
-
-      if (key === 'git merge --ff-only origin/production') {
-        return createResult('');
-      }
-
-      throw new Error(`Unexpected command: ${key}`);
-    };
-
-    const githubRequestJson = async (requestPath, options = {}) => {
-      githubRequests.push({
-        body: options.body ?? null,
-        method: options.method ?? 'GET',
-        requestPath,
-      });
-
-      if (requestPath.includes('/check-runs')) {
-        return {
-          check_runs: [{ conclusion: 'failure', status: 'completed' }],
-        };
-      }
-
-      if (requestPath.endsWith('/status')) {
-        return {
-          statuses: [{ context: 'legacy-ci', state: 'failure' }],
-        };
-      }
-
-      if (options.method === 'PATCH') {
-        return { object: { sha: mainHash } };
-      }
-
-      throw new Error(`Unexpected GitHub request: ${requestPath}`);
-    };
-
-    const result = await runProductionPromotionIteration(
-      {
-        branch: 'production',
-        remote: 'origin',
-        upstreamBranch: 'production',
-        upstreamRef: 'origin/production',
-      },
-      {
-        activeDeploymentConflict: {
-          elapsedMs: 1000,
-          lock: {
-            command: 'bun serve:web:docker:bg',
-            commitHash: 'build123456789',
-            commitShortHash: 'build123',
-            commitSubject: 'Build in flight',
-            deploymentKind: 'promotion',
-            ownerPid: 9876,
-            startedAt: checkedAt - 1000,
-          },
-          source: 'lock',
-          status: 'building',
-        },
-        attachRuntime: async (state) => state,
-        checkedAt,
-        env: { GITHUB_TOKEN: 'test-token' },
-        fsImpl: fs,
-        githubRequestJson,
-        log: { info() {}, warn() {} },
-        now: () => checkedAt,
-        paths,
-        processImpl: { pid: 4321 },
-        rootDir: tempDir,
-        runCommand,
-      }
-    );
-
-    const mergeBaseIndex = calls.indexOf(
-      `git merge-base --is-ancestor ${productionHash} ${mainHash}`
-    );
-    const cancelIndex = calls.indexOf(prodComposeStopKey('buildkit'));
-    const history = readDeploymentHistory(paths, fs);
-
-    assert.equal(result.status, 'production-promoted');
-    assert.ok(mergeBaseIndex >= 0);
-    assert.ok(cancelIndex > mergeBaseIndex);
-    assert.equal(history[0].status, 'canceled');
-    assert.equal(history[0].commitShortHash, 'build123');
-    assert.match(history[0].cancellationReason, /manual production promotion/);
-    assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
-    assert.equal(fs.existsSync(paths.deploymentPinFile), false);
-    assert.ok(calls.includes(prodComposeStopKey('buildkit')));
-    assert.equal(
-      calls.includes(
-        prodComposeStopKey(BLUE_GREEN_WATCHER_SERVICE, 'buildkit')
-      ),
-      false
-    );
-    assert.ok(calls.includes('docker buildx rm tuturuuu'));
-    assert.deepEqual(
-      githubRequests.find((request) => request.method === 'PATCH').body,
-      {
-        force: false,
-        sha: mainHash,
-      }
-    );
-  } finally {
-    fs.rmSync(tempDir, { force: true, recursive: true });
-  }
-});
-
-test('runProductionPromotionIteration does not cancel an active build before failed ancestry validation', async () => {
-  const tempDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'watch-production-promote-not-ff-')
-  );
-  const paths = getWatchPaths(tempDir);
-  const calls = [];
-  const checkedAt = Date.parse('2026-06-10T10:00:00.000Z');
-  const mainHash = 'bbb2222222222222222222222222222222222222';
-  const productionHash = 'aaa1111111111111111111111111111111111111';
-
-  try {
-    fs.mkdirSync(paths.controlDir, { recursive: true });
-    fs.writeFileSync(
-      paths.productionPromoteRequestFile,
-      JSON.stringify(
-        {
-          bypassChecks: true,
-          bypassDelay: true,
-          kind: 'production-promote',
-          requestedAt: '2026-06-10T10:00:00.000Z',
-          requestedBy: 'user-1',
-          requestedByEmail: 'ops@platform.test',
-          sourceBranch: 'main',
-          targetBranch: 'production',
-        },
-        null,
-        2
-      ),
-      'utf8'
-    );
-
-    const result = await runProductionPromotionIteration(
-      {
-        branch: 'production',
-        remote: 'origin',
-        upstreamBranch: 'production',
-        upstreamRef: 'origin/production',
-      },
-      {
-        activeDeploymentConflict: {
-          elapsedMs: 1000,
-          lock: {
-            command: 'bun serve:web:docker:bg',
-            commitHash: 'build123456789',
-            commitShortHash: 'build123',
-            commitSubject: 'Build in flight',
-            deploymentKind: 'promotion',
-            ownerPid: 9876,
-            startedAt: checkedAt - 1000,
-          },
-          source: 'lock',
-          status: 'building',
-        },
-        attachRuntime: async (state) => state,
-        checkedAt,
-        env: { GITHUB_TOKEN: 'test-token' },
-        fsImpl: fs,
-        githubRequestJson: async (requestPath) => {
-          if (requestPath.includes('/check-runs')) {
-            return { check_runs: [] };
-          }
-
-          if (requestPath.endsWith('/status')) {
-            return { statuses: [] };
-          }
-
-          throw new Error(`Unexpected GitHub request: ${requestPath}`);
-        },
-        log: { info() {}, warn() {} },
-        now: () => checkedAt,
-        paths,
-        processImpl: { pid: 4321 },
-        rootDir: tempDir,
-        runCommand: async (command, args) => {
-          const key = `${command} ${args.join(' ')}`;
-          calls.push(key);
-
-          if (
-            key ===
-            'git fetch origin refs/heads/main:refs/remotes/origin/main refs/heads/production:refs/remotes/origin/production'
-          ) {
-            return createResult('');
-          }
-
-          if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/main') {
-            return createResult(
-              `${mainHash}\nbbb222\nFresh main candidate\n2026-06-10T09:59:30.000Z\n`
-            );
-          }
-
-          if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/production') {
-            return createResult(
-              `${productionHash}\naaa111\nCurrent production\n2026-06-10T09:30:00.000Z\n`
-            );
-          }
-
-          if (
-            key === `git merge-base --is-ancestor ${productionHash} ${mainHash}`
-          ) {
-            return createResult('', { code: 1 });
-          }
-
-          if (key === 'git config --get remote.origin.url') {
-            return createResult('git@github.com:tutur3u/platform.git\n');
-          }
-
-          throw new Error(`Unexpected command: ${key}`);
-        },
-      }
-    );
-
-    assert.equal(result, null);
-    assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
-    const state = JSON.parse(
-      fs.readFileSync(paths.productionPromotionStateFile, 'utf8')
-    );
-
-    assert.equal(state.queuedRequest, null);
-    assert.equal(state.decision.bypassed, false);
-    assert.equal(readDeploymentHistory(paths, fs).length, 0);
-    assert.equal(calls.includes(prodComposeStopKey('buildkit')), false);
-    assert.equal(calls.includes('docker buildx rm tuturuuu'), false);
-  } finally {
-    fs.rmSync(tempDir, { force: true, recursive: true });
-  }
-});
-
-test('runProductionPromotionIteration defers lock-conflicted prebuild without failed history', async () => {
-  const tempDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'watch-production-prebuild-lock-')
-  );
-  const paths = getWatchPaths(tempDir);
-  const envFilePath = path.join(tempDir, '.env.local');
-  const calls = [];
-  const checkedAt = Date.parse('2026-06-10T10:00:00.000Z');
-  const mainHash = 'bbb2222222222222222222222222222222222222';
-  const productionHash = 'aaa1111111111111111111111111111111111111';
-  const worktreePath = getProductionPrebuildWorktreePath(
-    {
-      hash: mainHash,
-      shortHash: 'bbb222',
-    },
-    paths
-  );
-
-  try {
-    fs.mkdirSync(tempDir, { recursive: true });
-    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
-    writeDeploymentBuildLock(
-      {
-        command: 'bun serve:web:docker:bg',
-        commitHash: 'build123456789',
-        commitShortHash: 'build123',
-        commitSubject: 'Build in flight',
-        deploymentKind: 'promotion',
-        lockToken: 'active-token',
-        ownerPid: 9876,
-        startedAt: checkedAt - 1000,
-      },
-      { fsImpl: fs, paths }
-    );
-
-    const runCommand = async (command, args) => {
-      const key = `${command} ${args.join(' ')}`;
-      calls.push(key);
-
-      if (
-        key ===
-        'git fetch origin refs/heads/main:refs/remotes/origin/main refs/heads/production:refs/remotes/origin/production'
-      ) {
-        return createResult('');
-      }
-
-      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/main') {
-        return createResult(
-          `${mainHash}\nbbb222\nFresh main candidate\n2026-06-10T09:45:00.000Z\n`
-        );
-      }
-
-      if (key === 'git log -1 --format=%H%n%h%n%s%n%cI origin/production') {
-        return createResult(
-          `${productionHash}\naaa111\nCurrent production\n2026-06-10T09:30:00.000Z\n`
-        );
-      }
-
-      if (
-        key === `git merge-base --is-ancestor ${productionHash} ${mainHash}`
-      ) {
-        return createResult('');
-      }
-
-      if (key === 'git config --get remote.origin.url') {
-        return createResult('git@github.com:tutur3u/platform.git\n');
-      }
-
-      if (key === `git worktree add --detach ${worktreePath} ${mainHash}`) {
-        fs.mkdirSync(worktreePath, { recursive: true });
-        return createResult('');
-      }
-
-      if (key === `git diff --name-only oldstandby ${mainHash}`) {
-        return createResult('apps/web/src/app/page.tsx\n');
-      }
-
-      if (key === `git worktree remove --force ${worktreePath}`) {
-        fs.rmSync(worktreePath, { force: true, recursive: true });
-        return createResult('');
-      }
-
-      if (key === 'git worktree prune') {
-        return createResult('');
-      }
-
-      throw new Error(`Unexpected command: ${key}`);
-    };
-
-    const result = await runProductionPromotionIteration(
-      {
-        branch: 'production',
-        remote: 'origin',
-        upstreamBranch: 'production',
-        upstreamRef: 'origin/production',
-      },
-      {
-        attachRuntime: async (state) => ({
-          ...state,
-          currentBlueGreen: {
-            activeColor: 'blue',
-            liveColors: ['blue', 'green'],
-            standbyColor: 'green',
-          },
-          deployments: [
-            {
-              activatedAt: checkedAt - 20 * 60_000,
-              commitHash: productionHash,
-              runtimeState: 'active',
-              status: 'successful',
-            },
-            {
-              activatedAt: checkedAt - 30 * 60_000,
-              commitHash: 'oldstandby',
-              runtimeState: 'standby',
-              status: 'successful',
-            },
-          ],
-        }),
-        checkedAt,
-        env: { GITHUB_TOKEN: 'test-token' },
-        envFilePath,
-        fsImpl: fs,
-        githubRequestJson: async (requestPath) => {
-          if (requestPath.includes('/check-runs')) {
-            return {
-              check_runs: [{ conclusion: 'success', status: 'completed' }],
-            };
-          }
-
-          if (requestPath.endsWith('/status')) {
-            return {
-              statuses: [{ context: 'legacy-ci', state: 'success' }],
-            };
-          }
-
-          throw new Error(`Unexpected GitHub request: ${requestPath}`);
-        },
-        log: { info() {}, warn() {} },
-        now: () => checkedAt,
-        paths,
-        processImpl: {
-          kill(pid) {
-            if (pid !== 9876) {
-              const error = new Error('missing');
-              error.code = 'ESRCH';
-              throw error;
-            }
-          },
-          pid: 4321,
-        },
-        rootDir: tempDir,
-        runCommand,
-      }
-    );
-
-    const state = JSON.parse(
-      fs.readFileSync(paths.productionPromotionStateFile, 'utf8')
-    );
-
-    assert.equal(result.status, 'deployment-active');
-    assert.equal(readDeploymentHistory(paths, fs).length, 0);
-    assert.equal(state.decision.status, 'deployment-active');
-    assert.deepEqual(state.decision.blockedReasons, ['deployment-active']);
-    assert.equal(state.prebuild.status, 'missing');
-    assert.equal(fs.existsSync(worktreePath), false);
-    assert.ok(calls.includes(`git worktree remove --force ${worktreePath}`));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -4523,78 +3655,6 @@ test('runDeploymentRevertRequestIteration cancels an active build before cached 
       JSON.stringify(request, null, 2),
       'utf8'
     );
-    fs.writeFileSync(
-      paths.productionPromoteRequestFile,
-      JSON.stringify(
-        {
-          bypassChecks: true,
-          bypassDelay: true,
-          kind: 'production-promote',
-          requestedAt: '2026-06-10T10:04:00.000Z',
-          requestedBy: 'user-2',
-          requestedByEmail: 'ops@platform.test',
-          sourceBranch: 'main',
-          targetBranch: 'production',
-        },
-        null,
-        2
-      ),
-      'utf8'
-    );
-    fs.writeFileSync(
-      paths.productionPromotionStateFile,
-      JSON.stringify(
-        {
-          ci: {
-            completed: 0,
-            failing: 0,
-            pending: 0,
-            state: 'unavailable',
-            total: 0,
-            unavailableReason: null,
-          },
-          decision: {
-            blockedReasons: [],
-            bypassed: true,
-            ready: true,
-            status: 'manual-ready',
-          },
-          kind: 'production-promotion-state',
-          main: {
-            committedAt: '2026-06-10T09:59:30.000Z',
-            hash: 'new9999999999999999999999999999999999999',
-            shortHash: 'new999',
-            subject: 'Current production',
-          },
-          nextCheckAt: checkedAt + 5000,
-          prebuild: null,
-          production: {
-            committedAt: '2026-06-10T09:00:00.000Z',
-            hash: request.commitHash,
-            shortHash: request.commitShortHash,
-            subject: request.commitSubject,
-          },
-          queuedRequest: {
-            bypassChecks: true,
-            bypassDelay: true,
-            kind: 'production-promote',
-            requestedAt: '2026-06-10T10:04:00.000Z',
-            requestedBy: 'user-2',
-            requestedByEmail: 'ops@platform.test',
-            sourceBranch: 'main',
-            targetBranch: 'production',
-          },
-          requiredDelayMs: 600000,
-          sourceBranch: 'main',
-          targetBranch: 'production',
-          updatedAt: '2026-06-10T10:04:00.000Z',
-          waitRemainingMs: 0,
-        },
-        null,
-        2
-      ),
-      'utf8'
-    );
     writeDeploymentHistory(
       [
         {
@@ -4767,14 +3827,7 @@ test('runDeploymentRevertRequestIteration cancels an active build before cached 
       history[1].cancellationReason,
       /instant cached production revert/
     );
-    const promotionState = JSON.parse(
-      fs.readFileSync(paths.productionPromotionStateFile, 'utf8')
-    );
-
     assert.equal(fs.existsSync(paths.deploymentRevertRequestFile), false);
-    assert.equal(fs.existsSync(paths.productionPromoteRequestFile), false);
-    assert.equal(promotionState.queuedRequest, null);
-    assert.equal(promotionState.decision.bypassed, false);
     assert.ok(calls.includes(prodComposeStopKey('buildkit')));
     assert.equal(
       calls.includes(
@@ -4957,6 +4010,10 @@ test('runDeployWatchIteration returns from detached HEAD when the deployment pin
       return createResult('');
     }
 
+    if (key === 'git reset --hard HEAD' || key === 'git clean -fd') {
+      return createResult('');
+    }
+
     if (key === 'git fetch origin main') {
       return createResult('');
     }
@@ -5016,7 +4073,7 @@ test('runDeployWatchIteration restarts before deployment when the watcher script
   const paths = getWatchPaths(tempDir);
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const deployCommands = [];
-  let pullCompleted = false;
+  let syncCompleted = false;
   const nowValues = [1000, 2000, 4000];
   const now = () => nowValues.shift() ?? 4000;
   const runCommand = async (command, args) => {
@@ -5035,20 +4092,20 @@ test('runDeployWatchIteration restarts before deployment when the watcher script
     }
 
     if (key === 'git rev-parse HEAD') {
-      return createResult(pullCompleted ? 'bbb222\n' : 'aaa111\n');
+      return createResult(syncCompleted ? 'bbb222\n' : 'aaa111\n');
     }
 
     if (key === 'git rev-parse origin/main') {
       return createResult('bbb222\n');
     }
 
-    if (key === 'git merge-base --is-ancestor aaa111 bbb222') {
+    if (key === 'git reset --hard HEAD' || key === 'git clean -fd') {
       return createResult('');
     }
 
-    if (key === 'git pull --ff-only origin main') {
-      pullCompleted = true;
-      return createResult('Updating aaa111..bbb222\n');
+    if (key === 'git reset --hard origin/main') {
+      syncCompleted = true;
+      return createResult('');
     }
 
     if (key === 'bun install --frozen-lockfile') {
@@ -5123,7 +4180,7 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const pendingStates = [];
   const projectStatusUpdates = [];
-  let pullCompleted = false;
+  let syncCompleted = false;
   const runCommand = async (command, args) => {
     const key = `${command} ${args.join(' ')}`;
 
@@ -5140,20 +4197,20 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
     }
 
     if (key === 'git rev-parse HEAD') {
-      return createResult(pullCompleted ? 'bbb222\n' : 'aaa111\n');
+      return createResult(syncCompleted ? 'bbb222\n' : 'aaa111\n');
     }
 
     if (key === 'git rev-parse origin/main') {
       return createResult('bbb222\n');
     }
 
-    if (key === 'git merge-base --is-ancestor aaa111 bbb222') {
+    if (key === 'git reset --hard HEAD' || key === 'git clean -fd') {
       return createResult('');
     }
 
-    if (key === 'git pull --ff-only origin main') {
-      pullCompleted = true;
-      return createResult('Updating aaa111..bbb222\n');
+    if (key === 'git reset --hard origin/main') {
+      syncCompleted = true;
+      return createResult('');
     }
 
     if (key === 'bun install --frozen-lockfile') {
@@ -5611,6 +4668,7 @@ test('runDeployWatchIteration blocks when bun.lock is the only dirty file', asyn
         upstreamRef: 'origin/main',
       },
       {
+        env: { [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1' },
         envFilePath,
         fsImpl: fs,
         log: { error() {}, info() {}, warn() {} },
@@ -5621,6 +4679,8 @@ test('runDeployWatchIteration blocks when bun.lock is the only dirty file', asyn
     );
 
     assert.equal(result.status, 'dirty');
+    assert.ok(!calls.includes('git reset --hard HEAD'));
+    assert.ok(!calls.includes('git clean -fd'));
     assert.ok(!calls.includes('git fetch origin main'));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -5964,6 +5024,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         upstreamRef: 'origin/main',
       },
       {
+        env: { [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1' },
         envFilePath,
         fsImpl: fs,
         log: { error() {}, info() {}, warn() {} },
@@ -6273,6 +5334,7 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
         upstreamRef: 'origin/main',
       },
       {
+        env: { [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1' },
         envFilePath,
         fsImpl: fs,
         log: { error() {}, info() {}, warn() {} },
@@ -6559,6 +5621,7 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
         upstreamRef: 'origin/main',
       },
       {
+        env: { [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1' },
         envFilePath,
         fsImpl: fs,
         log: { error() {}, info() {}, warn() {} },
@@ -6606,6 +5669,7 @@ test('runDeployWatchLoop backs off for git failures instead of exiting immediate
             upstreamRef: 'origin/main',
           },
           {
+            env: { [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1' },
             log: { error() {}, info() {}, warn() {} },
             onIterationResult: (value) => {
               iterationResults.push(value);
@@ -6875,6 +5939,7 @@ test('runDeployWatchLoop honors once mode without sleeping', async () => {
         upstreamRef: 'origin/main',
       },
       {
+        env: { [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1' },
         envFilePath,
         fsImpl: fs,
         log: { error() {}, info() {}, warn() {} },
@@ -6951,6 +6016,7 @@ test('runDeployWatchLoop caps long git intervals to the project queue poll inter
             upstreamRef: 'origin/main',
           },
           {
+            env: { [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1' },
             intervalMs: 1_000_000,
             log: { error() {}, info() {}, warn() {} },
             onIterationResult: (value) => {
@@ -7684,6 +6750,14 @@ test('restoreTargetBranchIfDetached checks out the locked branch on a clean deta
           return createResult('');
         }
 
+        if (key === 'git reset --hard HEAD') {
+          return createResult('');
+        }
+
+        if (key === 'git clean -fd') {
+          return createResult('');
+        }
+
         if (key === 'git checkout production') {
           checkedOutBranch = true;
           return createResult('');
@@ -7873,7 +6947,9 @@ test('runWatcherCommand boots the watcher container before tailing logs', async 
     fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await runWatcherCommand(['--once'], {
-      env: { PATH: process.env.PATH },
+      env: {
+        PATH: process.env.PATH,
+      },
       envFilePath,
       fsImpl: fs,
       reconnectDelayMs: 0,
@@ -7998,7 +7074,9 @@ test('runWatcherCommand reconnects log tail after a transient docker logs failur
     fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await runWatcherCommand(['--once'], {
-      env: { PATH: process.env.PATH },
+      env: {
+        PATH: process.env.PATH,
+      },
       envFilePath,
       fsImpl: fs,
       reconnectDelayMs: 0,
@@ -8066,7 +7144,9 @@ test('runWatcherCommand waits for Docker daemon recovery before recreating watch
     fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await runWatcherCommand(['--once'], {
-      env: { PATH: process.env.PATH },
+      env: {
+        PATH: process.env.PATH,
+      },
       envFilePath,
       fsImpl: fs,
       reconnectDelayMs: 0,
@@ -8213,7 +7293,9 @@ test('runWatcherCommand reconnects after watcher service recreation', async () =
     fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await runWatcherCommand(['--once'], {
-      env: { PATH: process.env.PATH },
+      env: {
+        PATH: process.env.PATH,
+      },
       envFilePath,
       fsImpl: fs,
       reconnectDelayMs: 0,
@@ -8281,7 +7363,9 @@ test('runWatcherCommand recreates the watcher when the log stream completes afte
     fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await runWatcherCommand(['--once'], {
-      env: { PATH: process.env.PATH },
+      env: {
+        PATH: process.env.PATH,
+      },
       envFilePath,
       fsImpl: fs,
       reconnectDelayMs: 0,
@@ -8511,6 +7595,7 @@ test('runDeployWatchIteration stops retrying a commit after three failed deploym
         upstreamRef: 'origin/main',
       },
       {
+        env: { [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1' },
         envFilePath,
         fsImpl: fs,
         log: {
@@ -8608,6 +7693,7 @@ test('runDeployWatchIteration stops retrying a commit after three failed deploym
         upstreamRef: 'origin/main',
       },
       {
+        env: { [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1' },
         envFilePath,
         fsImpl: fs,
         log: {
@@ -8735,7 +7821,10 @@ test('main keeps watching after recovered pending deployment failure and caps re
     );
 
     await main(['--once'], {
-      env: { PATH: process.env.PATH },
+      env: {
+        PATH: process.env.PATH,
+        [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1',
+      },
       envFilePath,
       fsImpl: fs,
       now: (() => {
@@ -8879,7 +7968,10 @@ test('main deploys the latest fetched revision after recovery when the last succ
     );
 
     await main(['--once'], {
-      env: { PATH: process.env.PATH },
+      env: {
+        PATH: process.env.PATH,
+        [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1',
+      },
       envFilePath,
       fsImpl: fs,
       now: (() => {
@@ -9055,7 +8147,10 @@ test('main skips recovery deploys when the latest successful build already match
     fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await main(['--once'], {
-      env: { PATH: process.env.PATH },
+      env: {
+        PATH: process.env.PATH,
+        [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1',
+      },
       envFilePath,
       fsImpl: fs,
       processImpl: {
@@ -9179,6 +8274,14 @@ test('main checks out production when startup is detached and no target lock rem
           return createResult('');
         }
 
+        if (key === 'git reset --hard HEAD') {
+          return createResult('');
+        }
+
+        if (key === 'git clean -fd') {
+          return createResult('');
+        }
+
         if (key === 'git checkout production') {
           checkedOutBranch = true;
           return createResult('');
@@ -9289,6 +8392,14 @@ test('main recovers the locked branch from target metadata when the checkout is 
           return createResult('');
         }
 
+        if (key === 'git reset --hard HEAD') {
+          return createResult('');
+        }
+
+        if (key === 'git clean -fd') {
+          return createResult('');
+        }
+
         if (key === 'git checkout production') {
           checkedOutBranch = true;
           return createResult('');
@@ -9379,7 +8490,10 @@ test('main reconciles HEAD when git is current but the latest successful deploym
     fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await main(['--once'], {
-      env: { PATH: process.env.PATH },
+      env: {
+        PATH: process.env.PATH,
+        [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1',
+      },
       envFilePath,
       fsImpl: fs,
       processImpl: {
@@ -9477,7 +8591,10 @@ test('main restarts the watcher with a pending deploy handoff env when the watch
     fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
 
     await main([], {
-      env: { PATH: process.env.PATH },
+      env: {
+        PATH: process.env.PATH,
+        [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1',
+      },
       envFilePath,
       fsImpl: fs,
       processImpl: {
@@ -9607,6 +8724,7 @@ test('main exits with the container restart code when the watcher script changes
     await main([], {
       env: {
         PATH: process.env.PATH,
+        [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1',
         [WATCHER_CONTAINER_ENV]: '1',
       },
       envFilePath,
@@ -9727,6 +8845,7 @@ test('main exits with the container refresh code when critical watcher runtime f
     await main([], {
       env: {
         PATH: process.env.PATH,
+        [WATCHER_WORKTREE_RESET_DISABLED_ENV]: '1',
         [WATCHER_CONTAINER_ENV]: '1',
       },
       envFilePath,

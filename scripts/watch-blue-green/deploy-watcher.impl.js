@@ -22,7 +22,6 @@ const {
   ensureWebEnvFile,
   getComposeEnvironment,
   getDockerWebComposeProjectName,
-  getWebEnvFileCandidates,
   LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
   WEB_ENV_FILE,
 } = require('../docker-web/env.js');
@@ -87,13 +86,10 @@ const {
 } = require('./projects.js');
 const {
   clearDeploymentRevertRequest,
-  clearDeploymentPin,
   clearInstantRolloutRequest,
-  clearProductionPromoteRequest,
   readDeploymentRevertRequest,
   readDeploymentPin,
   readInstantRolloutRequest,
-  readProductionPromoteRequest,
   writeDeploymentPin,
 } = require('./control.js');
 const { cancelActiveBlueGreenBuild } = require('./active-build-cancel.js');
@@ -132,6 +128,7 @@ const {
   checkoutBranch,
   checkoutRevision,
   fetchTrackedBranch,
+  forceSyncWatcherWorktree,
   getCommitMetadata,
   getCurrentBranch,
   getCurrentBranchName,
@@ -145,12 +142,15 @@ const {
   isGitIndexLockError,
   isGitLockError,
   isRecoverableGitCommandError,
+  isWatcherWorktreeResetDisabled,
   listChangedFilesBetweenRevisions,
   listDirtyWorktreePaths,
   parseUpstreamRef,
   pullTrackedBranch,
+  removeUntrackedWorktreeFiles,
   removeStaleGitLock,
   removeStaleGitIndexLock,
+  resetTrackedWorktreeChanges,
   resolveLockedBranchTarget,
 } = require('./deploy-watcher-git.js');
 const {
@@ -166,17 +166,6 @@ const {
   CONTAINER_REFRESH_WATCHED_FILES,
   SELF_WATCHED_FILES,
 } = require('./deploy-watcher-watched-paths.js');
-const {
-  clearQueuedProductionPromotionState,
-  createProductionPromotionState,
-  evaluateProductionPromotion,
-  fastForwardLocalProduction,
-  fetchProductionPromotionRefs,
-  getGitHubCiSummary,
-  getGitHubRepository,
-  updateProductionRefToMain,
-  writeProductionPromotionState,
-} = require('./production-promotion.js');
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
 const DEFAULT_STANDBY_REFRESH_AFTER_MS = 15 * 60_000;
 const DEFAULT_LOCK_CONFLICT_ACTION = 'fail';
@@ -185,9 +174,6 @@ const CONTAINER_SELF_RESTART_EXIT_CODE = 75;
 const CONTAINER_REFRESH_EXIT_CODE = 76;
 const MAX_FAILED_DEPLOYMENTS_PER_COMMIT = 3;
 const MAX_RECOVERY_CACHE_IMAGES = 5;
-const PRODUCTION_PREBUILD_WORKTREE_MARKER =
-  '.tuturuuu-production-prebuild-worktree.json';
-const PRODUCTION_PREBUILD_STALE_EXTRA_MS = 60 * 60_000;
 
 function normalizeGitHubChecksPublisher(publisher) {
   if (!publisher) {
@@ -259,395 +245,6 @@ function wrapWatchUiStateChange(ui, onStateChange) {
   };
 }
 
-function isPathInside(parentPath, candidatePath) {
-  const relative = path.relative(parentPath, candidatePath);
-
-  return (
-    relative === '' ||
-    (relative.length > 0 &&
-      !relative.startsWith('..') &&
-      !path.isAbsolute(relative))
-  );
-}
-
-function getProductionPrebuildWorktreeRoot(paths = getWatchPaths()) {
-  return (
-    paths.productionPrebuildWorktreeDir ??
-    path.join(
-      path.dirname(paths.runtimeDir),
-      'worktrees',
-      'production-prebuild'
-    )
-  );
-}
-
-function getProductionPrebuildWorktreeName(deployCommit) {
-  const rawName =
-    deployCommit?.shortHash ?? deployCommit?.hash?.slice(0, 12) ?? 'unknown';
-  const sanitized = rawName.replace(/[^a-zA-Z0-9._-]/gu, '-');
-
-  return sanitized.length > 0 ? sanitized : 'unknown';
-}
-
-function getProductionPrebuildWorktreePath(
-  deployCommit,
-  paths = getWatchPaths()
-) {
-  return path.join(
-    getProductionPrebuildWorktreeRoot(paths),
-    getProductionPrebuildWorktreeName(deployCommit)
-  );
-}
-
-function getProductionPrebuildMarkerPath(worktreePath) {
-  return path.join(worktreePath, PRODUCTION_PREBUILD_WORKTREE_MARKER);
-}
-
-function readProductionPrebuildMarker(worktreePath, fsImpl = fs) {
-  const markerPath = getProductionPrebuildMarkerPath(worktreePath);
-
-  if (!fsImpl.existsSync(markerPath)) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(fsImpl.readFileSync(markerPath, 'utf8'));
-  } catch {
-    return null;
-  }
-}
-
-function getManagedProductionPrebuildAgeMs({
-  fsImpl = fs,
-  now = Date.now(),
-  worktreePath,
-}) {
-  const marker = readProductionPrebuildMarker(worktreePath, fsImpl);
-  const createdAt = Date.parse(marker?.createdAt ?? '');
-
-  if (Number.isFinite(createdAt)) {
-    return Math.max(0, now - createdAt);
-  }
-
-  try {
-    return Math.max(
-      0,
-      now -
-        fsImpl.statSync(getProductionPrebuildMarkerPath(worktreePath)).mtimeMs
-    );
-  } catch {
-    return null;
-  }
-}
-
-function resolveSourceEnvFilePath(envFilePath, rootDir = ROOT_DIR) {
-  const resolved = envFilePath ?? path.join(rootDir, '.env.local');
-
-  return path.isAbsolute(resolved) ? resolved : path.join(rootDir, resolved);
-}
-
-function getClonedPathForSource({ sourcePath, sourceRootDir, worktreePath }) {
-  const relativePath = path.relative(sourceRootDir, sourcePath);
-
-  if (
-    relativePath &&
-    !relativePath.startsWith('..') &&
-    !path.isAbsolute(relativePath)
-  ) {
-    return path.join(worktreePath, relativePath);
-  }
-
-  return path.join(worktreePath, '.env.local');
-}
-
-function copyProductionPrebuildEnvFiles({
-  envFilePath = WEB_ENV_FILE,
-  fsImpl = fs,
-  rootDir = ROOT_DIR,
-  worktreePath,
-} = {}) {
-  const resolvedEnvFilePath = resolveSourceEnvFilePath(envFilePath, rootDir);
-  const copiedEnvFiles = [];
-
-  for (const candidatePath of getWebEnvFileCandidates({
-    envFilePath: resolvedEnvFilePath,
-    rootDir,
-  })) {
-    if (!fsImpl.existsSync(candidatePath)) {
-      continue;
-    }
-
-    const destinationPath = getClonedPathForSource({
-      sourcePath: candidatePath,
-      sourceRootDir: rootDir,
-      worktreePath,
-    });
-    fsImpl.mkdirSync(path.dirname(destinationPath), { recursive: true });
-    fsImpl.copyFileSync(candidatePath, destinationPath);
-    copiedEnvFiles.push(destinationPath);
-  }
-
-  return {
-    copiedEnvFiles,
-    envFilePath: getClonedPathForSource({
-      sourcePath: resolvedEnvFilePath,
-      sourceRootDir: rootDir,
-      worktreePath,
-    }),
-  };
-}
-
-async function pruneProductionPrebuildGitWorktrees({
-  env,
-  log = console,
-  rootDir = ROOT_DIR,
-  runCommand: run = runCommand,
-} = {}) {
-  try {
-    await runChecked('git', ['worktree', 'prune'], {
-      cwd: rootDir,
-      env,
-      runCommand: run,
-      stdio: 'pipe',
-    });
-  } catch (error) {
-    log.warn?.(
-      `Unable to prune stale Git worktree metadata: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-}
-
-async function removeManagedProductionPrebuildWorktree({
-  copiedEnvFiles = [],
-  env,
-  fsImpl = fs,
-  log = console,
-  paths = getWatchPaths(),
-  rootDir = ROOT_DIR,
-  runCommand: run = runCommand,
-  worktreePath,
-} = {}) {
-  const worktreeRoot = getProductionPrebuildWorktreeRoot(paths);
-
-  if (!worktreePath || !isPathInside(worktreeRoot, worktreePath)) {
-    throw new Error(
-      'Refusing to remove production prebuild path outside the managed worktree root.'
-    );
-  }
-
-  if (!fsImpl.existsSync(getProductionPrebuildMarkerPath(worktreePath))) {
-    return false;
-  }
-
-  for (const copiedEnvFile of copiedEnvFiles) {
-    if (isPathInside(worktreePath, copiedEnvFile)) {
-      fsImpl.rmSync(copiedEnvFile, { force: true });
-    }
-  }
-
-  try {
-    await runChecked('git', ['worktree', 'remove', '--force', worktreePath], {
-      cwd: rootDir,
-      env,
-      runCommand: run,
-      stdio: 'pipe',
-    });
-  } catch (error) {
-    log.warn?.(
-      `Git worktree removal failed for ${worktreePath}; removing managed directory directly: ${error instanceof Error ? error.message : String(error)}`
-    );
-    fsImpl.rmSync(worktreePath, { force: true, recursive: true });
-  }
-
-  await pruneProductionPrebuildGitWorktrees({
-    env,
-    log,
-    rootDir,
-    runCommand: run,
-  });
-
-  return true;
-}
-
-async function sweepManagedProductionPrebuildWorktrees({
-  env,
-  fsImpl = fs,
-  log = console,
-  maxAgeMs,
-  now = Date.now(),
-  paths = getWatchPaths(),
-  rootDir = ROOT_DIR,
-  runCommand: run = runCommand,
-} = {}) {
-  const worktreeRoot = getProductionPrebuildWorktreeRoot(paths);
-  const staleAfterMs =
-    maxAgeMs ??
-    getDeploymentBuildTimeoutMs(env ?? process.env) +
-      PRODUCTION_PREBUILD_STALE_EXTRA_MS;
-  const removed = [];
-
-  if (!fsImpl.existsSync(worktreeRoot)) {
-    return removed;
-  }
-
-  for (const entry of fsImpl.readdirSync(worktreeRoot, {
-    withFileTypes: true,
-  })) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
-
-    const worktreePath = path.join(worktreeRoot, entry.name);
-    const markerPath = getProductionPrebuildMarkerPath(worktreePath);
-
-    if (
-      !isPathInside(worktreeRoot, worktreePath) ||
-      !fsImpl.existsSync(markerPath)
-    ) {
-      continue;
-    }
-
-    const ageMs = getManagedProductionPrebuildAgeMs({
-      fsImpl,
-      now,
-      worktreePath,
-    });
-
-    if (ageMs == null || ageMs < staleAfterMs) {
-      continue;
-    }
-
-    if (
-      await removeManagedProductionPrebuildWorktree({
-        env,
-        fsImpl,
-        log,
-        paths,
-        rootDir,
-        runCommand: run,
-        worktreePath,
-      })
-    ) {
-      removed.push(worktreePath);
-    }
-  }
-
-  return removed;
-}
-
-async function prepareProductionPrebuildWorktree({
-  deployCommit,
-  env,
-  envFilePath = WEB_ENV_FILE,
-  fsImpl = fs,
-  log = console,
-  now = () => Date.now(),
-  paths = getWatchPaths(),
-  rootDir = ROOT_DIR,
-  runCommand: run = runCommand,
-} = {}) {
-  if (!deployCommit?.hash) {
-    throw new Error('Production prebuild requires a main commit hash.');
-  }
-
-  await sweepManagedProductionPrebuildWorktrees({
-    env,
-    fsImpl,
-    log,
-    now: now(),
-    paths,
-    rootDir,
-    runCommand: run,
-  });
-
-  const worktreeRoot = getProductionPrebuildWorktreeRoot(paths);
-  const worktreePath = getProductionPrebuildWorktreePath(deployCommit, paths);
-
-  if (!isPathInside(worktreeRoot, worktreePath)) {
-    throw new Error(
-      'Refusing to create production prebuild worktree outside the managed root.'
-    );
-  }
-
-  if (fsImpl.existsSync(worktreePath)) {
-    if (!fsImpl.existsSync(getProductionPrebuildMarkerPath(worktreePath))) {
-      throw new Error(
-        `Production prebuild worktree path is not watcher-owned: ${worktreePath}`
-      );
-    }
-
-    await removeManagedProductionPrebuildWorktree({
-      env,
-      fsImpl,
-      log,
-      paths,
-      rootDir,
-      runCommand: run,
-      worktreePath,
-    });
-  }
-
-  fsImpl.mkdirSync(worktreeRoot, { recursive: true });
-  await runChecked(
-    'git',
-    ['worktree', 'add', '--detach', worktreePath, deployCommit.hash],
-    {
-      cwd: rootDir,
-      env,
-      runCommand: run,
-      stdio: 'pipe',
-    }
-  );
-
-  fsImpl.writeFileSync(
-    getProductionPrebuildMarkerPath(worktreePath),
-    JSON.stringify(
-      {
-        commitHash: deployCommit.hash,
-        createdAt: new Date(now()).toISOString(),
-        kind: 'tuturuuu-production-prebuild-worktree',
-      },
-      null,
-      2
-    ),
-    'utf8'
-  );
-
-  try {
-    const envCopy = copyProductionPrebuildEnvFiles({
-      envFilePath,
-      fsImpl,
-      rootDir,
-      worktreePath,
-    });
-    const projectName = getDockerWebComposeProjectName({
-      baseEnv: env ?? process.env,
-      rootDir,
-    });
-
-    return {
-      ...envCopy,
-      env: {
-        ...(env ?? process.env),
-        DOCKER_WEB_COMPOSE_PROJECT_NAME: projectName,
-        [HOST_WORKSPACE_DIR_ENV]: worktreePath,
-      },
-      rootDir: worktreePath,
-      worktreePath,
-    };
-  } catch (error) {
-    await removeManagedProductionPrebuildWorktree({
-      env,
-      fsImpl,
-      log,
-      paths,
-      rootDir,
-      runCommand: run,
-      worktreePath,
-    });
-    throw error;
-  }
-}
 const DOCKER_DAEMON_RECOVERY_POLL_MS_ENV =
   'DOCKER_WEB_WATCHER_DOCKER_RECOVERY_POLL_MS';
 const DOCKER_DAEMON_RECOVERY_TIMEOUT_MS_ENV =
@@ -3749,9 +3346,6 @@ async function runDeploymentRevertRequestIteration(
       ? deployment.imageTag
       : null;
 
-  clearProductionPromoteRequest({ fsImpl, paths });
-  clearQueuedProductionPromotionState({ fsImpl, now: now(), paths });
-
   if (!cachedImageTag) {
     if (activeDeploymentConflict) {
       logActiveDeploymentDeferralOnce(
@@ -4015,7 +3609,7 @@ async function runPinnedDeploymentIteration(
   const currentHead = await getRevision('HEAD', { env, runCommand: run });
   if (currentHead !== deploymentPin.commitHash) {
     log.warn?.(
-      `Deployment pin is active. Checking out ${deploymentPin.commitShortHash ?? deploymentPin.commitHash.slice(0, 12)} in detached mode and pausing normal auto-pulls.`
+      `Deployment pin is active. Checking out ${deploymentPin.commitShortHash ?? deploymentPin.commitHash.slice(0, 12)} in detached mode and pausing normal upstream sync.`
     );
     await checkoutRevision(deploymentPin.commitHash, {
       env,
@@ -4072,7 +3666,7 @@ async function runPinnedDeploymentIteration(
 
   try {
     log.warn?.(
-      `Deploying pinned rollback ${latestCommit.shortHash}; auto-pulls remain paused until the pin is cleared.`
+      `Deploying pinned rollback ${latestCommit.shortHash}; upstream sync remains paused until the pin is cleared.`
     );
     await runBlueGreenDeploy({
       deploymentKind: 'rollback-pin',
@@ -4213,568 +3807,6 @@ async function runPinnedDeploymentIteration(
   }
 }
 
-async function runProductionPromotionIteration(
-  target,
-  {
-    activeDeploymentConflict = null,
-    attachRuntime,
-    checkedAt,
-    env,
-    envFilePath = WEB_ENV_FILE,
-    fsImpl = fs,
-    githubRequestJson = null,
-    log = console,
-    now = () => Date.now(),
-    onDeploymentStart = () => {},
-    paths = getWatchPaths(),
-    processImpl = process,
-    rootDir = ROOT_DIR,
-    runCommand: run = runCommand,
-  } = {}
-) {
-  if (target.branch !== 'production') {
-    return null;
-  }
-
-  const request = readProductionPromoteRequest(paths, fsImpl);
-  let refs;
-
-  try {
-    refs = await fetchProductionPromotionRefs({
-      env,
-      remote: target.remote,
-      rootDir,
-      runCommand: run,
-      targetBranch: target.branch,
-    });
-  } catch (error) {
-    writeProductionPromotionState(
-      createProductionPromotionState({
-        ci: {
-          completed: 0,
-          failing: 0,
-          pending: 0,
-          state: 'unavailable',
-          total: 0,
-          unavailableReason:
-            error instanceof Error ? error.message : String(error),
-        },
-        evaluation: {
-          blockedReasons: ['git-unavailable'],
-          bypassed: Boolean(request),
-          ready: false,
-          waitRemainingMs: null,
-        },
-        now: checkedAt,
-        request,
-        status: 'git-unavailable',
-        target,
-      }),
-      { fsImpl, paths }
-    );
-    log.warn?.(
-      `Unable to inspect main -> production promotion state: ${error instanceof Error ? error.message : String(error)}`
-    );
-    return request
-      ? attachRuntime({
-          checkedAt,
-          error,
-          status: 'production-promotion-failed',
-        })
-      : null;
-  }
-
-  const deploymentHistory = readDeploymentHistory(paths, fsImpl);
-  const cachedDeployment = getLatestCachedSuccessfulDeployment(
-    deploymentHistory,
-    refs.main.hash
-  );
-  const repository = await getGitHubRepository({
-    env,
-    rootDir,
-    runCommand: run,
-  }).catch(() => null);
-  const ci = await getGitHubCiSummary({
-    env,
-    mainHash: refs.main.hash,
-    owner: repository?.owner,
-    repo: repository?.repo,
-    ...(githubRequestJson ? { requestJson: githubRequestJson } : {}),
-  });
-  const prebuild = cachedDeployment
-    ? {
-        durationMs: cachedDeployment.buildDurationMs ?? null,
-        imageTag: cachedDeployment.imageTag ?? null,
-        startedAt: cachedDeployment.startedAt ?? null,
-        status: 'cached',
-        updatedAt: cachedDeployment.finishedAt ?? null,
-      }
-    : {
-        durationMs: null,
-        failureReason: null,
-        imageTag: null,
-        startedAt: null,
-        status:
-          refs.main.hash === refs.production.hash ? 'not-needed' : 'missing',
-        standbyColor: null,
-        updatedAt: null,
-      };
-  const evaluation = evaluateProductionPromotion({
-    ci,
-    isFastForward: refs.fastForward,
-    main: refs.main,
-    now: checkedAt,
-    prebuild,
-    production: refs.production,
-    request,
-  });
-  const stateStatus = evaluation.ready
-    ? request
-      ? 'manual-ready'
-      : 'ready'
-    : refs.main.hash === refs.production.hash
-      ? 'up-to-date'
-      : 'waiting';
-
-  writeProductionPromotionState(
-    createProductionPromotionState({
-      ci,
-      evaluation,
-      main: refs.main,
-      now: checkedAt,
-      prebuild,
-      production: refs.production,
-      request,
-      status: stateStatus,
-      target,
-    }),
-    { fsImpl, paths }
-  );
-
-  if (
-    refs.main.hash &&
-    refs.production.hash &&
-    refs.main.hash !== refs.production.hash &&
-    refs.fastForward &&
-    !cachedDeployment &&
-    !request &&
-    !hasReachedDeploymentFailureLimit(deploymentHistory, refs.main.hash)
-  ) {
-    const runtimeSnapshot = await attachRuntime({
-      checkedAt,
-      latestCommit: refs.main,
-      status: 'production-prebuild-check',
-    });
-    const standbyRefreshCandidate = getStandbyRefreshCandidate(
-      runtimeSnapshot,
-      refs.main,
-      {
-        now: checkedAt,
-        refreshAfterMs: 0,
-      }
-    );
-
-    if (standbyRefreshCandidate) {
-      log.info?.(
-        `Prebuilding production candidate ${refs.main.shortHash} on standby ${standbyRefreshCandidate.standbyColor}.`
-      );
-      const prebuildStartedAt = now();
-      let prebuildWorktree = null;
-      let prebuildResult = null;
-      let prebuildError = null;
-
-      try {
-        prebuildWorktree = await prepareProductionPrebuildWorktree({
-          deployCommit: refs.main,
-          env,
-          envFilePath,
-          fsImpl,
-          log,
-          now,
-          paths,
-          rootDir,
-          runCommand: run,
-        });
-
-        writeProductionPromotionState(
-          createProductionPromotionState({
-            ci,
-            evaluation,
-            main: refs.main,
-            now: prebuildStartedAt,
-            prebuild: {
-              durationMs: null,
-              failureReason: null,
-              imageTag: null,
-              startedAt: prebuildStartedAt,
-              standbyColor: standbyRefreshCandidate.standbyColor ?? null,
-              status: 'building',
-              updatedAt: prebuildStartedAt,
-            },
-            production: refs.production,
-            request,
-            status: 'prebuild-building',
-            target,
-          }),
-          { fsImpl, paths }
-        );
-
-        prebuildResult = await runDetachedParentFallbackStandbyRefresh({
-          buildRootDir: prebuildWorktree.rootDir,
-          checkedAt,
-          deployCommit: refs.main,
-          deploymentKind: 'production-prebuild',
-          env: prebuildWorktree.env,
-          envFilePath: prebuildWorktree.envFilePath,
-          fsImpl,
-          log,
-          manageCheckout: false,
-          now,
-          onDeploymentStart,
-          paths,
-          processImpl,
-          rootDir,
-          runCommand: run,
-          standbyRefreshCandidate,
-          targetBranch: target.branch,
-        });
-      } catch (error) {
-        prebuildError = error;
-        prebuildResult = {
-          error,
-          history: null,
-          success: false,
-        };
-      } finally {
-        if (prebuildWorktree) {
-          await removeManagedProductionPrebuildWorktree({
-            copiedEnvFiles: prebuildWorktree.copiedEnvFiles,
-            env,
-            fsImpl,
-            log,
-            paths,
-            rootDir,
-            runCommand: run,
-            worktreePath: prebuildWorktree.worktreePath,
-          });
-        }
-      }
-
-      if (prebuildResult?.buildLockConflict) {
-        const activeConflict = getConflictFromDeploymentBuildLockError(
-          prebuildResult.error,
-          now
-        );
-
-        writeProductionPromotionState(
-          createProductionPromotionState({
-            ci,
-            evaluation: {
-              ...evaluation,
-              blockedReasons: [
-                ...evaluation.blockedReasons,
-                'deployment-active',
-              ],
-              ready: false,
-            },
-            main: refs.main,
-            now: now(),
-            prebuild: {
-              durationMs: null,
-              failureReason: null,
-              imageTag: null,
-              startedAt: prebuildStartedAt,
-              standbyColor: standbyRefreshCandidate.standbyColor ?? null,
-              status: 'missing',
-              updatedAt: now(),
-            },
-            production: refs.production,
-            request,
-            status: 'deployment-active',
-            target,
-          }),
-          { fsImpl, paths }
-        );
-        logActiveDeploymentDeferralOnce(
-          `Production prebuild for ${refs.main.shortHash} is waiting because another deployment is already active`,
-          activeConflict,
-          { fsImpl, log, paths }
-        );
-
-        return attachRuntime(
-          createDeploymentActiveResult(activeConflict, {
-            checkedAt,
-            error: prebuildResult.error,
-            latestCommit: refs.main,
-          })
-        );
-      }
-
-      const prebuiltDeployment = prebuildResult.history?.find?.(
-        (entry) =>
-          entry?.commitHash === refs.main.hash &&
-          typeof entry?.imageTag === 'string'
-      );
-      const prebuildFinishedAt = now();
-      const prebuildFailureReason =
-        prebuildResult.error instanceof Error
-          ? prebuildResult.error.message
-          : prebuildResult.error
-            ? String(prebuildResult.error)
-            : prebuildError instanceof Error
-              ? prebuildError.message
-              : prebuildError
-                ? String(prebuildError)
-                : null;
-
-      writeProductionPromotionState(
-        createProductionPromotionState({
-          ci,
-          evaluation,
-          main: refs.main,
-          now: now(),
-          prebuild: {
-            durationMs: Math.max(0, prebuildFinishedAt - prebuildStartedAt),
-            failureReason: prebuildResult.success
-              ? null
-              : prebuildFailureReason,
-            imageTag: prebuiltDeployment?.imageTag ?? null,
-            startedAt: prebuildStartedAt,
-            standbyColor: standbyRefreshCandidate.standbyColor ?? null,
-            status: prebuildResult.success ? 'prebuilt' : 'failed',
-            updatedAt: prebuildFinishedAt,
-          },
-          production: refs.production,
-          request,
-          status: prebuildResult.success ? 'prebuilt' : 'prebuild-failed',
-          target,
-        }),
-        { fsImpl, paths }
-      );
-
-      return attachRuntime(
-        {
-          checkedAt,
-          error: prebuildResult.error,
-          latestCommit: refs.main,
-          status: prebuildResult.success
-            ? 'production-prebuilt'
-            : 'production-prebuild-failed',
-        },
-        prebuildResult.history
-      );
-    }
-  }
-
-  if (!evaluation.ready) {
-    if (
-      request &&
-      evaluation.blockedReasons.some((reason) =>
-        ['not-fast-forward', 'up-to-date'].includes(reason)
-      )
-    ) {
-      clearProductionPromoteRequest({ fsImpl, paths });
-      clearQueuedProductionPromotionState({ fsImpl, now: checkedAt, paths });
-    }
-
-    return null;
-  }
-
-  try {
-    if (request) {
-      const deploymentPin = readDeploymentPin(paths, fsImpl);
-
-      if (deploymentPin || activeDeploymentConflict) {
-        const currentBranch = await getCurrentBranchName({
-          env,
-          runCommand: run,
-        });
-
-        if (!deploymentPin && currentBranch !== target.branch) {
-          throw new Error(
-            `Current branch changed from ${target.branch} to ${currentBranch}. The watcher is locked to ${target.branch}.`
-          );
-        }
-
-        if (deploymentPin) {
-          if (currentBranch === 'HEAD') {
-            const hasBlockingDirtyWorktree = await hasDirtyWorktree({
-              env,
-              runCommand: run,
-            });
-
-            if (hasBlockingDirtyWorktree) {
-              throw new Error(
-                `Cannot clear rollback pin for manual production promotion because the detached watcher worktree has uncommitted changes.`
-              );
-            }
-
-            clearDeploymentPin({ fsImpl, paths });
-            log.warn?.(
-              `Manual production promotion clears the active rollback pin for ${deploymentPin.commitShortHash ?? deploymentPin.commitHash.slice(0, 12)}.`
-            );
-            await checkoutBranch(target.branch, {
-              env,
-              runCommand: run,
-            });
-          } else if (currentBranch === target.branch) {
-            clearDeploymentPin({ fsImpl, paths });
-            log.warn?.(
-              `Manual production promotion clears the active rollback pin for ${deploymentPin.commitShortHash ?? deploymentPin.commitHash.slice(0, 12)}.`
-            );
-          } else {
-            throw new Error(
-              `Current branch changed from ${target.branch} to ${currentBranch}. The watcher is locked to ${target.branch}.`
-            );
-          }
-        }
-      }
-
-      if (activeDeploymentConflict) {
-        await cancelActiveDeploymentForWatcherRequest({
-          cancellationSource: 'manual production promotion',
-          conflict: activeDeploymentConflict,
-          env,
-          envFilePath,
-          fsImpl,
-          latestCommit: refs.main,
-          now,
-          paths,
-          processImpl,
-          rootDir,
-          runCommand: run,
-        });
-      }
-    }
-
-    const promotionUpdate = await updateProductionRefToMain({
-      env,
-      mainHash: refs.main.hash,
-      owner: repository?.owner,
-      remote: target.remote,
-      repo: repository?.repo,
-      rootDir,
-      runCommand: run,
-      ...(githubRequestJson ? { requestJson: githubRequestJson } : {}),
-    });
-    await fastForwardLocalProduction({
-      env,
-      remote: target.remote,
-      rootDir,
-      runCommand: run,
-      targetBranch: target.branch,
-    });
-    clearProductionPromoteRequest({ fsImpl, paths });
-
-    const promotedState = createProductionPromotionState({
-      ci,
-      evaluation,
-      main: refs.main,
-      now: now(),
-      prebuild,
-      production: refs.main,
-      request: null,
-      status: request ? 'manual-promoted' : 'promoted',
-      target,
-    });
-    writeProductionPromotionState(promotedState, { fsImpl, paths });
-    log.info?.(
-      `Promoted production to main ${refs.main.shortHash} via ${promotionUpdate.transport === 'git-push' ? 'host git push' : 'GitHub ref update'}.`
-    );
-
-    return attachRuntime({
-      checkedAt,
-      latestCommit: refs.main,
-      productionPromotion: promotedState,
-      status: 'production-promoted',
-    });
-  } catch (error) {
-    if (request) {
-      clearProductionPromoteRequest({ fsImpl, paths });
-    }
-
-    const failedState = createProductionPromotionState({
-      ci,
-      evaluation: {
-        ...evaluation,
-        blockedReasons: [
-          ...evaluation.blockedReasons,
-          error instanceof Error ? error.message : String(error),
-        ],
-        ready: false,
-      },
-      main: refs.main,
-      now: now(),
-      prebuild,
-      production: refs.production,
-      request: request ? null : request,
-      status: 'promote-failed',
-      target,
-    });
-    writeProductionPromotionState(failedState, { fsImpl, paths });
-    log.warn?.(
-      `Production promotion for ${refs.main.shortHash} failed: ${error instanceof Error ? error.message : String(error)}`
-    );
-
-    return request
-      ? attachRuntime({
-          checkedAt,
-          error,
-          latestCommit: refs.main,
-          productionPromotion: failedState,
-          status: 'production-promotion-failed',
-        })
-      : null;
-  }
-}
-
-function writeProductionPromotionWatcherBlocker({
-  blockedReason,
-  checkedAt,
-  fsImpl,
-  paths,
-  request = null,
-  status,
-  target,
-}) {
-  if (target.branch !== 'production') {
-    return;
-  }
-
-  writeProductionPromotionState(
-    createProductionPromotionState({
-      ci: {
-        completed: 0,
-        failing: 0,
-        pending: 0,
-        state: 'unavailable',
-        total: 0,
-        unavailableReason: blockedReason,
-      },
-      evaluation: {
-        blockedReasons: [blockedReason],
-        bypassed: Boolean(request),
-        ready: false,
-        waitRemainingMs: null,
-      },
-      now: checkedAt,
-      prebuild: {
-        durationMs: null,
-        failureReason: null,
-        imageTag: null,
-        standbyColor: null,
-        startedAt: null,
-        status: 'missing',
-        updatedAt: null,
-      },
-      request,
-      status,
-      target,
-    }),
-    { fsImpl, paths }
-  );
-}
-
 async function runDeployWatchIteration(
   target,
   {
@@ -4840,7 +3872,6 @@ async function runDeployWatchIteration(
 
   const deploymentPin = readDeploymentPin(paths, fsImpl);
   const deploymentRevertRequest = readDeploymentRevertRequest(paths, fsImpl);
-  const productionPromoteRequest = readProductionPromoteRequest(paths, fsImpl);
   const activeDeploymentConflict = getActiveDeploymentConflict({
     env,
     fsImpl,
@@ -4875,50 +3906,7 @@ async function runDeployWatchIteration(
     );
   }
 
-  if (
-    activeDeploymentConflict &&
-    productionPromoteRequest &&
-    target.branch === 'production'
-  ) {
-    const productionPromotionResult = await runProductionPromotionIteration(
-      target,
-      {
-        activeDeploymentConflict,
-        attachRuntime,
-        checkedAt,
-        env,
-        envFilePath,
-        fsImpl,
-        log,
-        now,
-        onDeploymentStart,
-        paths,
-        processImpl,
-        rootDir,
-        runCommand: run,
-      }
-    );
-
-    if (productionPromotionResult) {
-      return productionPromotionResult;
-    }
-  }
-
   if (activeDeploymentConflict) {
-    const pendingProductionPromoteRequest = readProductionPromoteRequest(
-      paths,
-      fsImpl
-    );
-
-    writeProductionPromotionWatcherBlocker({
-      blockedReason: 'deployment-active',
-      checkedAt,
-      fsImpl,
-      paths,
-      request: pendingProductionPromoteRequest,
-      status: 'deployment-active',
-      target,
-    });
     logActiveDeploymentDeferralOnce(
       'Skipping watcher deployment poll because another deployment is already active',
       activeDeploymentConflict,
@@ -4930,10 +3918,7 @@ async function runDeployWatchIteration(
     );
   }
 
-  if (
-    deploymentPin &&
-    !(productionPromoteRequest && target.branch === 'production')
-  ) {
+  if (deploymentPin) {
     return runPinnedDeploymentIteration(target, deploymentPin, {
       deployCommand,
       env,
@@ -4951,37 +3936,50 @@ async function runDeployWatchIteration(
     });
   }
 
+  const resetDisabled = isWatcherWorktreeResetDisabled(env);
   let currentBranch = await getCurrentBranchName({ env, runCommand: run });
 
   if (currentBranch === 'HEAD') {
     const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+      cwd: rootDir,
       env,
       runCommand: run,
     });
 
-    if (hasBlockingDirtyWorktree) {
+    if (hasBlockingDirtyWorktree && resetDisabled) {
       log.warn?.(
         `Skipping poll because the detached worktree has uncommitted changes before returning to ${target.branch}.`
       );
-      writeProductionPromotionWatcherBlocker({
-        blockedReason: 'watcher-dirty-worktree',
-        checkedAt,
-        fsImpl,
-        paths,
-        request: readProductionPromoteRequest(paths, fsImpl),
-        status: 'watcher-dirty',
-        target,
-      });
       return attachRuntime({
         checkedAt,
         status: 'dirty',
       });
     }
 
+    if (hasBlockingDirtyWorktree) {
+      log.warn?.(
+        `Resetting detached watcher checkout before returning to ${target.branch}.`
+      );
+      await resetTrackedWorktreeChanges({
+        cwd: rootDir,
+        env,
+        fsImpl,
+        log,
+        now,
+        runCommand: run,
+      });
+      await removeUntrackedWorktreeFiles({
+        cwd: rootDir,
+        env,
+        fsImpl,
+        log,
+        now,
+        runCommand: run,
+      });
+    }
+
     log.info?.(
-      deploymentPin && productionPromoteRequest
-        ? `Queued production promotion will clear the rollback pin; checking out ${target.branch}.`
-        : `Deployment pin is clear. Checking out ${target.branch} and resuming normal auto-pulls.`
+      `Deployment pin is clear. Checking out ${target.branch} and resuming normal upstream sync.`
     );
     await checkoutBranch(target.branch, {
       env,
@@ -4991,81 +3989,59 @@ async function runDeployWatchIteration(
   }
 
   if (currentBranch !== target.branch) {
-    writeProductionPromotionWatcherBlocker({
-      blockedReason: 'watcher-branch-mismatch',
-      checkedAt,
-      fsImpl,
-      paths,
-      request: readProductionPromoteRequest(paths, fsImpl),
-      status: 'watcher-branch-mismatch',
-      target,
-    });
     throw new Error(
       `Current branch changed from ${target.branch} to ${currentBranch}. The watcher is locked to ${target.branch} and will stop.`
     );
   }
 
   const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+    cwd: rootDir,
     env,
     runCommand: run,
   });
 
-  if (hasBlockingDirtyWorktree) {
+  if (hasBlockingDirtyWorktree && resetDisabled) {
     log.warn?.(
       `Skipping poll because the worktree has uncommitted changes on ${target.branch}.`
     );
-    writeProductionPromotionWatcherBlocker({
-      blockedReason: 'watcher-dirty-worktree',
-      checkedAt,
-      fsImpl,
-      paths,
-      request: readProductionPromoteRequest(paths, fsImpl),
-      status: 'watcher-dirty',
-      target,
-    });
     return attachRuntime({
       checkedAt,
       status: 'dirty',
     });
   }
 
-  const productionPromotionResult = await runProductionPromotionIteration(
-    target,
-    {
-      attachRuntime,
-      checkedAt,
-      env,
-      envFilePath,
-      fsImpl,
-      log,
-      now,
-      onDeploymentStart,
-      paths,
-      processImpl,
-      rootDir,
-      runCommand: run,
-    }
-  );
-
-  if (productionPromotionResult) {
-    return productionPromotionResult;
-  }
-
   try {
-    await fetchTrackedBranch(target, {
-      cwd: rootDir,
-      env,
-      fsImpl,
-      log,
-      now,
-      runCommand: run,
-    });
+    const syncResult = resetDisabled
+      ? null
+      : await forceSyncWatcherWorktree(target, {
+          env,
+          fsImpl,
+          log,
+          now,
+          rootDir,
+          runCommand: run,
+        });
 
-    const localHead = await getRevision('HEAD', { env, runCommand: run });
-    const upstreamHead = await getRevision(target.upstreamRef, {
-      env,
-      runCommand: run,
-    });
+    if (!syncResult) {
+      await fetchTrackedBranch(target, {
+        cwd: rootDir,
+        env,
+        fsImpl,
+        log,
+        now,
+        runCommand: run,
+      });
+    }
+
+    const localHead =
+      syncResult?.localHead ??
+      (await getRevision('HEAD', { env, runCommand: run }));
+    const upstreamHead =
+      syncResult?.upstreamHead ??
+      (await getRevision(target.upstreamRef, {
+        env,
+        runCommand: run,
+      }));
 
     if (localHead === upstreamHead) {
       const latestCommit = await getCommitMetadata('HEAD', {
@@ -6183,17 +5159,25 @@ async function runDeployWatchIteration(
       }
     }
 
-    if (await isAncestor(localHead, upstreamHead, { env, runCommand: run })) {
-      await pullTrackedBranch(target, {
-        env,
-        fsImpl,
-        log,
-        now,
-        rootDir,
-        runCommand: run,
-      });
+    const shouldDeploySyncedHead = syncResult
+      ? syncResult.updatedHead !== syncResult.localHead
+      : await isAncestor(localHead, upstreamHead, { env, runCommand: run });
 
-      const updatedHead = await getRevision('HEAD', { env, runCommand: run });
+    if (shouldDeploySyncedHead) {
+      if (!syncResult) {
+        await pullTrackedBranch(target, {
+          env,
+          fsImpl,
+          log,
+          now,
+          rootDir,
+          runCommand: run,
+        });
+      }
+
+      const updatedHead =
+        syncResult?.updatedHead ??
+        (await getRevision('HEAD', { env, runCommand: run }));
 
       if (updatedHead === localHead) {
         return attachRuntime({
@@ -6238,7 +5222,7 @@ async function runDeployWatchIteration(
       );
 
       log.info?.(
-        `Pulled ${target.branch} from ${localHead.slice(
+        `${syncResult ? 'Synced' : 'Pulled'} ${target.branch} from ${localHead.slice(
           0,
           12
         )} to ${updatedHead.slice(0, 12)}.`
@@ -6772,7 +5756,10 @@ async function runDeployWatchIteration(
       }
     }
 
-    if (await isAncestor(upstreamHead, localHead, { env, runCommand: run })) {
+    if (
+      !syncResult &&
+      (await isAncestor(upstreamHead, localHead, { env, runCommand: run }))
+    ) {
       log.warn?.(
         `Local branch ${target.branch} is ahead of ${target.upstreamRef}; skipping auto-pull.`
       );
@@ -6780,6 +5767,14 @@ async function runDeployWatchIteration(
         checkedAt,
         latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
         status: 'ahead',
+      });
+    }
+
+    if (syncResult) {
+      return attachRuntime({
+        checkedAt,
+        latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
+        status: 'up-to-date',
       });
     }
 
@@ -6842,16 +5837,6 @@ async function runDeployWatchLoop(
 ) {
   let consecutiveGitFailures = 0;
   let lastProjectPollAt = 0;
-
-  await sweepManagedProductionPrebuildWorktrees({
-    env,
-    fsImpl,
-    log,
-    now: now(),
-    paths,
-    rootDir,
-    runCommand: run,
-  });
 
   while (true) {
     const startedAt = now();
@@ -6974,6 +5959,7 @@ async function resolveInitialWatcherTarget({
   fsImpl,
   log,
   paths,
+  rootDir = ROOT_DIR,
   runCommand: run,
 } = {}) {
   try {
@@ -6994,6 +5980,7 @@ async function resolveInitialWatcherTarget({
     }
 
     const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+      cwd: rootDir,
       env,
       runCommand: run,
     });
@@ -7002,16 +5989,40 @@ async function resolveInitialWatcherTarget({
       platformProject.selectedBranch
     );
 
-    if (hasBlockingDirtyWorktree) {
+    if (hasBlockingDirtyWorktree && isWatcherWorktreeResetDisabled(env)) {
       throw new Error(
         `Watcher started from detached HEAD without a persisted target lock, but the worktree has uncommitted changes. Check out ${selectedBranch} manually after preserving those changes.`
       );
     }
 
+    if (hasBlockingDirtyWorktree) {
+      log?.warn?.(
+        `Watcher started from detached HEAD with local changes. Resetting the checkout before switching to ${selectedBranch}.`
+      );
+      await resetTrackedWorktreeChanges({
+        cwd: rootDir,
+        env,
+        fsImpl,
+        log,
+        runCommand: run,
+      });
+      await removeUntrackedWorktreeFiles({
+        cwd: rootDir,
+        env,
+        fsImpl,
+        log,
+        runCommand: run,
+      });
+    }
+
     log?.warn?.(
       `Watcher started from detached HEAD without a persisted target lock. Checking out ${selectedBranch} before locking the branch.`
     );
-    await checkoutBranch(selectedBranch, { env, runCommand: run });
+    await checkoutBranch(selectedBranch, {
+      cwd: rootDir,
+      env,
+      runCommand: run,
+    });
 
     return {
       branch: selectedBranch,
@@ -7242,8 +6253,19 @@ async function main(argv = process.argv.slice(2), options = {}) {
       fsImpl,
       log: ui,
       paths,
+      rootDir,
       runCommand: run,
     });
+    if (!isWatcherWorktreeResetDisabled(env)) {
+      await forceSyncWatcherWorktree(initialTarget, {
+        env,
+        fsImpl,
+        log: ui,
+        now: options.now ?? (() => Date.now()),
+        rootDir,
+        runCommand: run,
+      });
+    }
     const projectTarget = await resolvePlatformProjectTarget(initialTarget, {
       env,
       listDirtyWorktreePaths,
@@ -7839,13 +6861,12 @@ module.exports = {
   appendDeploymentHistory,
   buildDashboardView,
   clearInstantRolloutRequest,
-  clearProductionPromoteRequest,
   clearWatchStatus,
-  copyProductionPrebuildEnvFiles,
   clearContainerManagedWatcherState,
   clearPendingDeployRequest,
   createWatchUi,
   fetchTrackedBranch,
+  forceSyncWatcherWorktree,
   finalizeComposeProjectMigrationIfRequested,
   formatClockTime,
   formatCountdown,
@@ -7862,7 +6883,6 @@ module.exports = {
   getCurrentBranch,
   getMigrationRequest,
   getMigrationTargetWatcherEnv,
-  getProductionPrebuildWorktreePath,
   getDockerDaemonRestartAfterMs,
   getDockerDaemonRestartCommand,
   getDockerDaemonRestartCooldownMs,
@@ -7878,6 +6898,7 @@ module.exports = {
   handoffLegacyWatcherToTargetProject,
   listDirtyWorktreePaths,
   hasWatchedScriptChanges,
+  isWatcherWorktreeResetDisabled,
   isRecoverableGitCommandError,
   isGitIndexLockError,
   isGitLockError,
@@ -7891,12 +6912,10 @@ module.exports = {
   parseProxyLogEntries,
   parseUpstreamRef,
   prependPendingDeployment,
-  prepareProductionPrebuildWorktree,
   pullTrackedBranch,
   readDeploymentHistory,
   readDockerDaemonRecoverySettings,
   readInstantRolloutRequest,
-  readProductionPromoteRequest,
   readPendingDeployRequest,
   readWatchArgsFile,
   readWatchLock,
@@ -7910,17 +6929,16 @@ module.exports = {
   runPendingDeployAfterRestart,
   runDeployWatchIteration,
   runDeploymentRevertRequestIteration,
-  runProductionPromotionIteration,
   runDeployWatchLoop,
   runWatcherCommand,
-  removeManagedProductionPrebuildWorktree,
+  removeUntrackedWorktreeFiles,
   removeStaleGitLock,
   removeStaleGitIndexLock,
+  resetTrackedWorktreeChanges,
   sleep,
   spawnReplacementWatcher,
   startBlueGreenWatcherContainer,
   stripAnsi,
-  sweepManagedProductionPrebuildWorktrees,
   summarizeRequestRate,
   streamBlueGreenWatcherLogs,
   terminateExistingWatcher,
