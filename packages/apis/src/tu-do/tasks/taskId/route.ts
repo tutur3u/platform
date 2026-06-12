@@ -27,6 +27,7 @@ import {
   replacePersonalTaskLabels,
   replacePersonalTaskProjects,
 } from '../personal-overlays';
+import { publishTaskRealtime } from '../realtime-broadcast';
 import {
   paramsSchema,
   restoreTaskSchema,
@@ -741,6 +742,17 @@ export async function handleTaskDetailRoutePUT(
       );
       const metadata = metadataByTaskId.get(taskId);
 
+      await publishTaskRealtime({
+        actorUserId: user.id,
+        event: 'task:relations-changed',
+        payload: {
+          taskId,
+          taskIds: [taskId],
+        },
+        sbAdmin,
+        taskIds: [taskId],
+      });
+
       return NextResponse.json({
         task: {
           id: taskId,
@@ -1069,7 +1081,16 @@ export async function handleTaskDetailRoutePUT(
       );
     }
 
-    return NextResponse.json({ task: serializeTask(updatedTaskResult.task) });
+    const serializedTask = serializeTask(updatedTaskResult.task);
+    await publishTaskRealtime({
+      actorUserId: user.id,
+      event: 'task:upsert',
+      sbAdmin,
+      taskIds: [taskId],
+      taskPayloadsById: new Map([[taskId, serializedTask]]),
+    });
+
+    return NextResponse.json({ task: serializedTask });
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
@@ -1152,6 +1173,13 @@ export async function handleTaskDetailRouteDELETE(
     ) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
+
+    await publishTaskRealtime({
+      actorUserId: access.user.id,
+      event: 'task:delete',
+      sbAdmin,
+      taskIds: [taskId],
+    });
 
     return NextResponse.json({
       success: true,
@@ -1238,6 +1266,23 @@ export async function handleTaskDetailRoutePATCH(
     ) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
+
+    await publishTaskRealtime({
+      actorUserId: user.id,
+      event: 'task:upsert',
+      sbAdmin,
+      taskIds: [taskId],
+      taskPayloadsById: new Map([
+        [
+          taskId,
+          {
+            id: taskId,
+            deleted_at: null,
+            list_id: task.list_id,
+          },
+        ],
+      ]),
+    });
 
     return NextResponse.json({
       success: true,

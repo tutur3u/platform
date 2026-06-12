@@ -223,6 +223,18 @@ export function useBoardRealtime(
           payload as BoardRealtimePayload
         );
       })
+      .on('broadcast', { event: 'task:upsert:batch' }, ({ payload }) => {
+        handleBoardRealtimeEvent(
+          'task:upsert:batch',
+          payload as BoardRealtimePayload
+        );
+      })
+      .on('broadcast', { event: 'task:delete:batch' }, ({ payload }) => {
+        handleBoardRealtimeEvent(
+          'task:delete:batch',
+          payload as BoardRealtimePayload
+        );
+      })
       .on('broadcast', { event: 'list:upsert' }, ({ payload }) => {
         handleBoardRealtimeEvent(
           'list:upsert',
@@ -235,6 +247,18 @@ export function useBoardRealtime(
           payload as BoardRealtimePayload
         );
       })
+      .on('broadcast', { event: 'list:upsert:batch' }, ({ payload }) => {
+        handleBoardRealtimeEvent(
+          'list:upsert:batch',
+          payload as BoardRealtimePayload
+        );
+      })
+      .on('broadcast', { event: 'list:delete:batch' }, ({ payload }) => {
+        handleBoardRealtimeEvent(
+          'list:delete:batch',
+          payload as BoardRealtimePayload
+        );
+      })
       .on('broadcast', { event: 'task:relations-changed' }, ({ payload }) => {
         handleBoardRealtimeEvent(
           'task:relations-changed',
@@ -244,6 +268,22 @@ export function useBoardRealtime(
       .on('broadcast', { event: 'task:deps-changed' }, ({ payload }) => {
         handleBoardRealtimeEvent(
           'task:deps-changed',
+          payload as BoardRealtimePayload
+        );
+      })
+      .on(
+        'broadcast',
+        { event: 'task:relations-changed:batch' },
+        ({ payload }) => {
+          handleBoardRealtimeEvent(
+            'task:relations-changed:batch',
+            payload as BoardRealtimePayload
+          );
+        }
+      )
+      .on('broadcast', { event: 'task:deps-changed:batch' }, ({ payload }) => {
+        handleBoardRealtimeEvent(
+          'task:deps-changed:batch',
           payload as BoardRealtimePayload
         );
       });
@@ -328,11 +368,24 @@ export function useBoardRealtime(
           const existing = merged.get(task.id);
           merged.set(task.id, existing ? { ...existing, ...task } : task);
         }
-        for (const task of merged.values()) {
+        const tasks = [...merged.values()];
+        if (tasks.length > 1) {
+          sendBoardRealtimeEvent(channel, 'task:upsert:batch', {
+            payloads: tasks.map((task) => ({ task })),
+          });
+          continue;
+        }
+        for (const task of tasks) {
           sendBoardRealtimeEvent(channel, event, { task });
         }
       } else {
         // Other events (task:delete, list:upsert, list:delete) — send each
+        if (payloads.length > 1) {
+          sendBoardRealtimeEvent(channel, `${event}:batch`, {
+            payloads,
+          });
+          continue;
+        }
         for (const p of payloads) {
           sendBoardRealtimeEvent(channel, event, p);
         }

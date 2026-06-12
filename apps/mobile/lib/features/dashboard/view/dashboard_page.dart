@@ -86,7 +86,11 @@ class DashboardPage extends StatelessWidget {
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     if (workspace == null) return;
     unawaited(
-      cubit.loadTasks(wsId: workspace.id, isPersonal: workspace.personal),
+      cubit.loadTasks(
+        wsId: workspace.id,
+        isPersonal: workspace.personal,
+        userId: context.read<AuthCubit>().state.user?.id,
+      ),
     );
   }
 
@@ -128,6 +132,7 @@ class _DashboardView extends StatelessWidget {
               context.read<TaskListCubit>().loadTasks(
                 wsId: workspace.id,
                 isPersonal: workspace.personal,
+                userId: context.read<AuthCubit>().state.user?.id,
               ),
             );
             unawaited(context.read<CalendarCubit>().loadEvents(workspace.id));
@@ -151,6 +156,7 @@ class _DashboardView extends StatelessWidget {
                 wsId: workspace.id,
                 isPersonal: workspace.personal,
                 forceRefresh: true,
+                userId: state.user?.id,
               ),
             );
             unawaited(
@@ -317,6 +323,7 @@ class _DashboardView extends StatelessWidget {
         wsId: workspace.id,
         isPersonal: workspace.personal,
         forceRefresh: true,
+        userId: context.read<AuthCubit>().state.user?.id,
       ),
       context.read<CalendarCubit>().loadEvents(
         workspace.id,

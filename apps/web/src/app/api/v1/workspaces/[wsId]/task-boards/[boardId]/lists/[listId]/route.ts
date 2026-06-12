@@ -1,3 +1,4 @@
+import { publishBoardListRealtime } from '@tuturuuu/apis/tu-do/tasks/realtime-broadcast';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -70,7 +71,7 @@ export const PATCH = withSessionAuth<Params>(
       });
       if ('error' in access) return access.error;
 
-      const { sbAdmin, boardId } = access;
+      const { sbAdmin, boardId, user } = access;
       if (!('listId' in access) || !access.listId) {
         return NextResponse.json(
           { error: 'Task list not found' },
@@ -159,6 +160,16 @@ export const PATCH = withSessionAuth<Params>(
           { status: 404 }
         );
       }
+
+      await publishBoardListRealtime({
+        actorUserId: user?.id ?? null,
+        boardId,
+        event: list.deleted ? 'list:delete' : 'list:upsert',
+        list: list.deleted ? undefined : list,
+        listId,
+        logWarning: serverLogger.warn.bind(serverLogger),
+        sbAdmin,
+      });
 
       return NextResponse.json({ list });
     } catch (error) {

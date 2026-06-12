@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/internal-api';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { getActiveTaskUserBroadcast } from '@tuturuuu/ui/hooks/useTaskUserRealtime';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
@@ -38,6 +39,7 @@ export function useTaskContextActions({
   const [isLoading, setIsLoading] = useState(false);
   const taskWorkspaceId = task.list?.board?.ws_id ?? null;
   const taskBoardId = task.list?.board?.id ?? null;
+  const taskListId = task.list_id ?? task.list?.id ?? null;
 
   const invalidateQueries = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: [MY_TASKS_QUERY_KEY] });
@@ -66,6 +68,63 @@ export function useTaskContextActions({
     [queryClient, task.id]
   );
 
+  const broadcastTaskUpsert = useCallback(
+    (updates: Record<string, unknown>) => {
+      const broadcast = getActiveTaskUserBroadcast();
+      if (!broadcast) return;
+
+      const nextListId =
+        typeof updates.list_id === 'string' ? updates.list_id : taskListId;
+      broadcast('task:upsert', {
+        actor_user_id: userId,
+        actorUserId: userId,
+        boardId: taskBoardId,
+        listId: nextListId,
+        task: {
+          id: task.id,
+          name: task.name,
+          description: task.description ?? null,
+          priority: task.priority ?? null,
+          start_date: task.start_date ?? null,
+          end_date: task.end_date ?? null,
+          list_id: nextListId,
+          created_at: task.created_at ?? null,
+          list: task.list,
+          overrides: task.overrides,
+          ...updates,
+        },
+      });
+    },
+    [task, taskBoardId, taskListId, userId]
+  );
+
+  const broadcastTaskDelete = useCallback(() => {
+    const broadcast = getActiveTaskUserBroadcast();
+    if (!broadcast) return;
+
+    broadcast('task:delete', {
+      actor_user_id: userId,
+      actorUserId: userId,
+      boardId: taskBoardId,
+      listId: taskListId,
+      taskId: task.id,
+    });
+  }, [task.id, taskBoardId, taskListId, userId]);
+
+  const broadcastTaskRelationsChanged = useCallback(() => {
+    const broadcast = getActiveTaskUserBroadcast();
+    if (!broadcast) return;
+
+    broadcast('task:relations-changed', {
+      actor_user_id: userId,
+      actorUserId: userId,
+      boardId: taskBoardId,
+      listId: taskListId,
+      taskId: task.id,
+      taskIds: [task.id],
+    });
+  }, [task.id, taskBoardId, taskListId, userId]);
+
   const handlePriorityChange = useCallback(
     async (priority: TaskPriority | null) => {
       setIsLoading(true);
@@ -73,6 +132,7 @@ export function useTaskContextActions({
       try {
         if (!taskWorkspaceId) throw new Error('Task workspace not found');
         await updateWorkspaceTask(taskWorkspaceId, task.id, { priority });
+        broadcastTaskUpsert({ priority });
         invalidateQueries();
         dispatchTaskSoundCue('update');
       } catch {
@@ -82,7 +142,14 @@ export function useTaskContextActions({
         setIsLoading(false);
       }
     },
-    [task.id, taskWorkspaceId, updateTaskInCache, invalidateQueries, t]
+    [
+      task.id,
+      taskWorkspaceId,
+      updateTaskInCache,
+      invalidateQueries,
+      broadcastTaskUpsert,
+      t,
+    ]
   );
 
   const handleDueDateChange = useCallback(
@@ -98,6 +165,7 @@ export function useTaskContextActions({
         await updateWorkspaceTask(taskWorkspaceId, task.id, {
           end_date: newDate,
         });
+        broadcastTaskUpsert({ end_date: newDate });
         invalidateQueries();
         dispatchTaskSoundCue('update');
       } catch {
@@ -107,7 +175,14 @@ export function useTaskContextActions({
         setIsLoading(false);
       }
     },
-    [task.id, taskWorkspaceId, updateTaskInCache, invalidateQueries, t]
+    [
+      task.id,
+      taskWorkspaceId,
+      updateTaskInCache,
+      invalidateQueries,
+      broadcastTaskUpsert,
+      t,
+    ]
   );
 
   const handleToggleLabel = useCallback(
@@ -121,6 +196,7 @@ export function useTaskContextActions({
         } else {
           await addWorkspaceTaskLabel(taskWorkspaceId, task.id, labelId);
         }
+        broadcastTaskRelationsChanged();
         invalidateQueries();
         dispatchTaskSoundCue('update');
       } catch {
@@ -130,7 +206,14 @@ export function useTaskContextActions({
         setIsLoading(false);
       }
     },
-    [task.id, task.labels, taskWorkspaceId, invalidateQueries, t]
+    [
+      task.id,
+      task.labels,
+      taskWorkspaceId,
+      invalidateQueries,
+      broadcastTaskRelationsChanged,
+      t,
+    ]
   );
 
   const handleComplete = useCallback(async () => {
@@ -149,6 +232,9 @@ export function useTaskContextActions({
       }
 
       await updateWorkspaceTask(taskWorkspaceId, task.id, {
+        list_id: doneList.id,
+      });
+      broadcastTaskUpsert({
         list_id: doneList.id,
       });
 
@@ -182,6 +268,7 @@ export function useTaskContextActions({
     taskBoardId,
     taskWorkspaceId,
     task.overrides,
+    broadcastTaskUpsert,
     onTaskUpdate,
     onClose,
     t,
@@ -199,6 +286,7 @@ export function useTaskContextActions({
         }
       );
       if (!response.ok) throw new Error('Failed');
+      broadcastTaskDelete();
       onTaskUpdate();
       onClose();
       dispatchTaskSoundCue('complete');
@@ -207,7 +295,7 @@ export function useTaskContextActions({
     } finally {
       setIsLoading(false);
     }
-  }, [task.id, onTaskUpdate, onClose, t]);
+  }, [task.id, broadcastTaskDelete, onTaskUpdate, onClose, t]);
 
   const handleUndoDoneWithMyPart = useCallback(async () => {
     setIsLoading(true);
@@ -224,6 +312,13 @@ export function useTaskContextActions({
         }
       );
       if (!response.ok) throw new Error('Failed');
+      broadcastTaskUpsert({
+        overrides: {
+          ...task.overrides,
+          personally_unassigned: false,
+          completed_at: null,
+        },
+      });
       onTaskUpdate();
       onClose();
       dispatchTaskSoundCue('update');
@@ -232,7 +327,7 @@ export function useTaskContextActions({
     } finally {
       setIsLoading(false);
     }
-  }, [task.id, onTaskUpdate, onClose, t]);
+  }, [task.id, task.overrides, broadcastTaskUpsert, onTaskUpdate, onClose, t]);
 
   const handleUndoComplete = useCallback(async () => {
     if (!taskBoardId || !taskWorkspaceId) return;
@@ -254,6 +349,7 @@ export function useTaskContextActions({
       await updateWorkspaceTask(taskWorkspaceId, task.id, {
         list_id: activeList.id,
       });
+      broadcastTaskUpsert({ list_id: activeList.id });
 
       onTaskUpdate();
       onClose();
@@ -263,7 +359,15 @@ export function useTaskContextActions({
     } finally {
       setIsLoading(false);
     }
-  }, [task.id, taskBoardId, taskWorkspaceId, onTaskUpdate, onClose, t]);
+  }, [
+    task.id,
+    taskBoardId,
+    taskWorkspaceId,
+    broadcastTaskUpsert,
+    onTaskUpdate,
+    onClose,
+    t,
+  ]);
 
   const handleUnassignMe = useCallback(async () => {
     setIsLoading(true);
@@ -291,6 +395,7 @@ export function useTaskContextActions({
             Boolean(assigneeId && assigneeId !== userId)
           ),
       });
+      broadcastTaskDelete();
       onTaskUpdate();
       onClose();
       dispatchTaskSoundCue('update');
@@ -310,6 +415,7 @@ export function useTaskContextActions({
     invalidateQueries,
     t,
     task.assignees,
+    broadcastTaskDelete,
   ]);
 
   const handleDelete = useCallback(async () => {
@@ -317,6 +423,7 @@ export function useTaskContextActions({
     try {
       if (!taskWorkspaceId) throw new Error('Task workspace not found');
       await deleteWorkspaceTask(taskWorkspaceId, task.id);
+      broadcastTaskDelete();
       onTaskUpdate();
       onClose();
       dispatchTaskSoundCue('delete');
@@ -325,7 +432,7 @@ export function useTaskContextActions({
     } finally {
       setIsLoading(false);
     }
-  }, [task.id, taskWorkspaceId, onTaskUpdate, onClose, t]);
+  }, [task.id, taskWorkspaceId, broadcastTaskDelete, onTaskUpdate, onClose, t]);
 
   return {
     isLoading,

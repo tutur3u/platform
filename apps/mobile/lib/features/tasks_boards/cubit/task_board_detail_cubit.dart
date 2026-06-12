@@ -15,13 +15,18 @@ import 'package:mobile/data/models/task_bulk.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/features/tasks_boards/data/task_broadcast_client.dart';
 
 part 'task_board_detail_state.dart';
 
 class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
-  TaskBoardDetailCubit({required TaskRepository taskRepository})
-    : _taskRepository = taskRepository,
-      super(const TaskBoardDetailState());
+  TaskBoardDetailCubit({
+    required TaskRepository taskRepository,
+    TaskBroadcastClient? taskBroadcastClient,
+  }) : _taskRepository = taskRepository,
+       _taskBroadcastClient =
+           taskBroadcastClient ?? SupabaseTaskBroadcastClient(),
+       super(const TaskBoardDetailState());
 
   static const int _listTaskPageSize = 50;
   static const int _initialPrefetchListCount = 3;
@@ -33,11 +38,18 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
   static const Object _taskUpdateDescriptionUnset = Object();
 
   final TaskRepository _taskRepository;
+  final TaskBroadcastClient _taskBroadcastClient;
   int _loadRequestToken = 0;
   List<TaskBoardTask>? _cachedDeletedTasks;
   DateTime? _cachedDeletedTasksAt;
   String? _cachedDeletedTasksWorkspaceId;
   String? _cachedDeletedTasksBoardId;
+  TaskBroadcastSubscription? _boardBroadcastSubscription;
+  String? _subscribedRealtimeBoardId;
+  Timer? _realtimeRefreshTimer;
+  bool _pendingRealtimeBoardReload = false;
+  final Set<String> _pendingRealtimeListIds = <String>{};
+  final Set<String> _seenRealtimeEventIds = <String>{};
 
   static TaskBoardDetail _decodeBoardDetailCache(Object? json) {
     if (json is! Map) {
@@ -92,6 +104,171 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     );
   }
 
+  void _ensureBoardRealtimeSubscription(String boardId) {
+    if (_subscribedRealtimeBoardId == boardId) {
+      return;
+    }
+
+    final previousSubscription = _boardBroadcastSubscription;
+    _boardBroadcastSubscription = null;
+    _subscribedRealtimeBoardId = boardId;
+    unawaited(previousSubscription?.cancel());
+
+    _boardBroadcastSubscription = _taskBroadcastClient.subscribeToBoard(
+      boardId: boardId,
+      onEvent: _handleTaskBroadcastEvent,
+    );
+  }
+
+  bool _rememberRealtimeEvent(TaskBroadcastEvent event) {
+    final eventId = event.eventId;
+    if (eventId == null || eventId.isEmpty) {
+      return false;
+    }
+    if (_seenRealtimeEventIds.contains(eventId)) {
+      return true;
+    }
+
+    _seenRealtimeEventIds.add(eventId);
+    while (_seenRealtimeEventIds.length > 500) {
+      _seenRealtimeEventIds.remove(_seenRealtimeEventIds.first);
+    }
+
+    return false;
+  }
+
+  void _handleTaskBroadcastEvent(TaskBroadcastEvent event) {
+    if (isClosed || _rememberRealtimeEvent(event)) {
+      return;
+    }
+
+    final boardId = state.boardId;
+    if (boardId == null) {
+      return;
+    }
+
+    final affectedBoardIds = event.affectedBoardIds.toSet();
+    if (affectedBoardIds.isNotEmpty && !affectedBoardIds.contains(boardId)) {
+      return;
+    }
+
+    switch (event.event) {
+      case 'task:upsert':
+        final task = _taskFromBroadcast(event);
+        if (task != null) {
+          _upsertTaskSnapshot(task);
+        }
+        _scheduleRealtimeRefresh(
+          {
+            ...event.affectedListIds,
+            if (task?.listId != null) task!.listId,
+          },
+        );
+      case 'task:delete':
+        final taskId = event.taskId;
+        if (taskId != null) {
+          _removeTaskSnapshot(taskId);
+        }
+        _scheduleRealtimeRefresh(event.affectedListIds);
+      case 'task:relations-changed':
+      case 'task:deps-changed':
+        _scheduleRealtimeRefresh(_affectedListsForBroadcast(event));
+      case 'list:upsert':
+      case 'list:delete':
+        _scheduleRealtimeRefresh(
+          event.affectedListIds,
+          reloadBoard: true,
+        );
+    }
+  }
+
+  TaskBoardTask? _taskFromBroadcast(TaskBroadcastEvent event) {
+    final taskJson = event.task;
+    if (taskJson == null) {
+      return null;
+    }
+
+    final normalized = Map<String, dynamic>.from(taskJson);
+    normalized['list_id'] ??= event.listId;
+    if (normalized['id'] is! String || normalized['list_id'] is! String) {
+      return null;
+    }
+
+    try {
+      return TaskBoardTask.fromJson(normalized);
+    } on Object {
+      return null;
+    }
+  }
+
+  Set<String> _affectedListsForBroadcast(TaskBroadcastEvent event) {
+    final listIds = event.affectedListIds.toSet();
+    for (final taskId in event.taskIds) {
+      final listId = _findTaskListId(taskId);
+      if (listId != null) {
+        listIds.add(listId);
+      }
+    }
+    return listIds;
+  }
+
+  void _scheduleRealtimeRefresh(
+    Iterable<String> listIds, {
+    bool reloadBoard = false,
+  }) {
+    if (isClosed) {
+      return;
+    }
+
+    _pendingRealtimeListIds.addAll(
+      listIds.where((listId) => listId.trim().isNotEmpty),
+    );
+    _pendingRealtimeBoardReload = _pendingRealtimeBoardReload || reloadBoard;
+    _realtimeRefreshTimer?.cancel();
+    _realtimeRefreshTimer = Timer(const Duration(milliseconds: 250), () {
+      final pendingListIds = Set<String>.from(_pendingRealtimeListIds);
+      final shouldReloadBoard = _pendingRealtimeBoardReload;
+      _pendingRealtimeListIds.clear();
+      _pendingRealtimeBoardReload = false;
+      unawaited(
+        _flushRealtimeRefresh(
+          pendingListIds,
+          reloadBoard: shouldReloadBoard,
+        ),
+      );
+    });
+  }
+
+  Future<void> _flushRealtimeRefresh(
+    Set<String> listIds, {
+    required bool reloadBoard,
+  }) async {
+    if (isClosed) {
+      return;
+    }
+
+    if (reloadBoard) {
+      await reload(listIds: listIds);
+      return;
+    }
+
+    final loadedListIds = listIds
+        .where(
+          (listId) =>
+              state.loadedListIds.contains(listId) ||
+              state.listTasksByListId.containsKey(listId),
+        )
+        .toSet();
+    if (loadedListIds.isEmpty) {
+      return;
+    }
+
+    await _refreshTaskLists(
+      loadedListIds,
+      pageSizeHints: _pageSizeHintsForListIds(loadedListIds),
+    );
+  }
+
   Future<void> loadBoardDetail({
     required String wsId,
     required String boardId,
@@ -104,6 +281,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     if (targetChanged) {
       _invalidateDeletedTasksCache();
     }
+    _ensureBoardRealtimeSubscription(boardId);
 
     var hasCachedDetail = false;
     if (!forceRefresh) {
@@ -834,6 +1012,98 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       state.copyWith(
         board: nextBoard,
         listTasksByListId: Map.unmodifiable(nextTasksByList),
+        taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
+          nextBoard.tasks,
+        ),
+      ),
+    );
+  }
+
+  void _upsertTaskSnapshot(TaskBoardTask replacement) {
+    final board = state.board;
+    if (board == null) {
+      return;
+    }
+
+    final listBelongsToBoard = board.lists.any(
+      (list) => list.id == replacement.listId,
+    );
+    if (!listBelongsToBoard) {
+      return;
+    }
+
+    var foundInBoard = false;
+    final nextBoardTasks = board.tasks
+        .map((task) {
+          if (task.id != replacement.id) {
+            return task;
+          }
+          foundInBoard = true;
+          return replacement;
+        })
+        .toList(growable: false);
+    if (!foundInBoard) {
+      nextBoardTasks.add(replacement);
+    }
+
+    final nextTasksByList = <String, List<TaskBoardTask>>{};
+    for (final entry in state.listTasksByListId.entries) {
+      final withoutTask = entry.value
+          .where((task) => task.id != replacement.id)
+          .toList(growable: false);
+      if (entry.key == replacement.listId) {
+        nextTasksByList[entry.key] = List.unmodifiable([
+          replacement,
+          ...withoutTask,
+        ]);
+      } else {
+        nextTasksByList[entry.key] = List.unmodifiable(withoutTask);
+      }
+    }
+
+    final nextBoard = board.copyWith(tasks: List.unmodifiable(nextBoardTasks));
+    emit(
+      state.copyWith(
+        board: nextBoard,
+        listTasksByListId: Map.unmodifiable(nextTasksByList),
+        taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
+          nextBoard.tasks,
+        ),
+      ),
+    );
+  }
+
+  void _removeTaskSnapshot(String taskId) {
+    final board = state.board;
+    if (board == null) {
+      return;
+    }
+
+    final nextBoardTasks = board.tasks
+        .where((task) => task.id != taskId)
+        .toList(growable: false);
+    final nextTasksByList = <String, List<TaskBoardTask>>{};
+    for (final entry in state.listTasksByListId.entries) {
+      nextTasksByList[entry.key] = List.unmodifiable(
+        entry.value.where((task) => task.id != taskId),
+      );
+    }
+
+    final nextBoard = board.copyWith(tasks: List.unmodifiable(nextBoardTasks));
+    final sanitizedSelectedTaskIds = _sanitizeSelectedTaskIds(
+      state.selectedTaskIds,
+      nextBoard.tasks,
+    );
+    emit(
+      state.copyWith(
+        board: nextBoard,
+        listTasksByListId: Map.unmodifiable(nextTasksByList),
+        selectedTaskId: state.selectedTaskId == taskId
+            ? null
+            : state.selectedTaskId,
+        selectedTaskIds: sanitizedSelectedTaskIds,
+        isBulkSelectMode:
+            state.isBulkSelectMode && sanitizedSelectedTaskIds.isNotEmpty,
         taskDescriptionSearchIndex: _buildTaskDescriptionSearchIndex(
           nextBoard.tasks,
         ),
@@ -2747,5 +3017,19 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       }
     }
     return Map.unmodifiable(next);
+  }
+
+  @override
+  Future<void> close() async {
+    _realtimeRefreshTimer?.cancel();
+    _pendingRealtimeListIds.clear();
+    _seenRealtimeEventIds.clear();
+    final subscription = _boardBroadcastSubscription;
+    _boardBroadcastSubscription = null;
+    _subscribedRealtimeBoardId = null;
+    if (subscription != null) {
+      await subscription.cancel();
+    }
+    return super.close();
   }
 }

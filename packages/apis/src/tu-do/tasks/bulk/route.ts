@@ -26,6 +26,10 @@ import {
   replacePersonalTaskLabels,
   replacePersonalTaskProjects,
 } from '../personal-overlays';
+import {
+  publishTaskRealtime,
+  type TaskRealtimeEvent,
+} from '../realtime-broadcast';
 
 const MAX_BULK_TASKS = 200;
 
@@ -973,6 +977,50 @@ export async function POST(
         });
       }
     }
+
+    const relationOperation =
+      operation.type === 'add_label' ||
+      operation.type === 'remove_label' ||
+      operation.type === 'clear_labels' ||
+      operation.type === 'add_project' ||
+      operation.type === 'remove_project' ||
+      operation.type === 'clear_projects' ||
+      operation.type === 'add_assignee' ||
+      operation.type === 'remove_assignee' ||
+      operation.type === 'clear_assignees';
+    const realtimeEvent: TaskRealtimeEvent =
+      operation.type === 'update_fields' && operation.updates.deleted === true
+        ? 'task:delete'
+        : relationOperation
+          ? 'task:relations-changed'
+          : 'task:upsert';
+    const taskPayloadsById = new Map<string, Record<string, unknown>>();
+    if (realtimeEvent === 'task:upsert') {
+      for (const taskId of succeededTaskIds) {
+        const task = taskById.get(taskId);
+        const meta = taskMetaById[taskId] ?? {};
+        taskPayloadsById.set(taskId, {
+          id: taskId,
+          list_id: meta.list_id ?? task?.list_id,
+          ...(operation.type === 'update_fields'
+            ? buildTaskUpdatePayload(operation)
+            : {}),
+          ...meta,
+        });
+      }
+    }
+
+    await publishTaskRealtime({
+      actorUserId: user.id,
+      event: realtimeEvent,
+      payload:
+        realtimeEvent === 'task:relations-changed'
+          ? { taskIds: succeededTaskIds }
+          : undefined,
+      sbAdmin,
+      taskIds: succeededTaskIds,
+      taskPayloadsById,
+    });
 
     return NextResponse.json({
       successCount: succeededTaskIds.length,

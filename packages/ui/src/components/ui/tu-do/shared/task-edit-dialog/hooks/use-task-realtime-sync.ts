@@ -66,7 +66,6 @@ export function useTaskRealtimeSync({
   isCreateMode,
   isOpen,
   realtimeEnabled = true,
-  isPersonalWorkspace = false,
   name,
   priority,
   startDate,
@@ -262,7 +261,7 @@ export function useTaskRealtimeSync({
   );
 
   const { broadcast } = useBoardRealtime(boardId, {
-    enabled: realtimeActive && !isPersonalWorkspace,
+    enabled: realtimeActive,
     onTaskChange: handleTaskChange,
     onTaskRelationsChange: handleTaskRelationsChange,
   });

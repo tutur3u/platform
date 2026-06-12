@@ -1,3 +1,4 @@
+import { publishBoardListRealtime } from '@tuturuuu/apis/tu-do/tasks/realtime-broadcast';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -141,7 +142,7 @@ export const POST = withSessionAuth<Params>(
       });
       if ('error' in access) return access.error;
 
-      const { sbAdmin, boardId } = access;
+      const { sbAdmin, boardId, user } = access;
       const body = createListSchema.parse(await request.json());
 
       const { data: list, error } = await sbAdmin.rpc(
@@ -184,6 +185,15 @@ export const POST = withSessionAuth<Params>(
           { status: 500 }
         );
       }
+
+      await publishBoardListRealtime({
+        actorUserId: user?.id ?? null,
+        boardId,
+        event: 'list:upsert',
+        list: createdList,
+        logWarning: serverLogger.warn.bind(serverLogger),
+        sbAdmin,
+      });
 
       return NextResponse.json({ list: createdList }, { status: 201 });
     } catch (error) {

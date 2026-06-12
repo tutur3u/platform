@@ -142,9 +142,7 @@ export function BoardClient({
   // Fetch workspace labels once at the board level
   const { data: workspaceLabels = [] } = useWorkspaceLabels(boardWorkspaceId);
 
-  const { broadcast } = useBoardRealtime(boardId, {
-    enabled: !workspace.personal,
-  });
+  const { broadcast } = useBoardRealtime(boardId);
 
   const refreshActiveBoard = useCallback(
     (options?: BoardRefreshOptions) => {

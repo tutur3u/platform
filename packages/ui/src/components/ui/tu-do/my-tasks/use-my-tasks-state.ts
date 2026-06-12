@@ -16,6 +16,7 @@ import {
 } from '@tuturuuu/internal-api';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { AI_CREDITS_QUERY_KEY } from '@tuturuuu/ui/hooks/use-ai-credits';
+import { useTaskUserRealtime } from '@tuturuuu/ui/hooks/useTaskUserRealtime';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { useBoardConfig } from '@tuturuuu/utils/task-helper';
@@ -51,6 +52,7 @@ export function useMyTasksState({
   const t = useTranslations();
   const queryClient = useQueryClient();
   const { onUpdate, openTaskById } = useTaskDialog();
+  useTaskUserRealtime(userId);
 
   // Filter state (declared before query so it can be passed as param)
   const [taskFilters, setTaskFilters] = useState<{

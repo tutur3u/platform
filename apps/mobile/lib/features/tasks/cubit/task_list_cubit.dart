@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:mobile/core/cache/cache_context.dart';
@@ -7,6 +9,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/user_tasks_page.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/features/tasks_boards/data/task_broadcast_client.dart';
 
 part 'task_list_state.dart';
 
@@ -15,17 +18,26 @@ const _sentinel = Object();
 class TaskListCubit extends Cubit<TaskListState> {
   TaskListCubit({
     required TaskRepository taskRepository,
+    TaskBroadcastClient? taskBroadcastClient,
     TaskListState? initialState,
   }) : _repo = taskRepository,
+       _taskBroadcastClient =
+           taskBroadcastClient ?? SupabaseTaskBroadcastClient(),
        super(initialState ?? const TaskListState());
 
   final TaskRepository _repo;
+  final TaskBroadcastClient _taskBroadcastClient;
   static const CachePolicy _cachePolicy = CachePolicies.summary;
   static const _cacheTag = 'tasks:list';
 
   String? _wsId;
+  String? _userId;
   bool _isPersonal = false;
   int _requestVersion = 0;
+  TaskBroadcastSubscription? _userBroadcastSubscription;
+  String? _subscribedRealtimeUserId;
+  Timer? _realtimeReloadTimer;
+  final Set<String> _seenRealtimeEventIds = <String>{};
 
   static Map<String, dynamic> _decodeCacheJson(Object? json) {
     if (json is! Map) {
@@ -100,10 +112,15 @@ class TaskListCubit extends Cubit<TaskListState> {
     required String wsId,
     required bool isPersonal,
     bool forceRefresh = false,
+    String? userId,
   }) async {
     final preserveData =
         _wsId == wsId && _isPersonal == isPersonal && state.hasLoadedOnce;
     _wsId = wsId;
+    if (userId != null && userId.trim().isNotEmpty) {
+      _userId = userId.trim();
+      _ensureUserRealtimeSubscription(_userId);
+    }
     _isPersonal = isPersonal;
     final requestVersion = ++_requestVersion;
     final cacheKey = _cacheKey(wsId: wsId, isPersonal: isPersonal);
@@ -229,7 +246,7 @@ class TaskListCubit extends Cubit<TaskListState> {
   Future<void> reload() async {
     final wsId = _wsId;
     if (wsId == null) return;
-    await loadTasks(wsId: wsId, isPersonal: _isPersonal);
+    await loadTasks(wsId: wsId, isPersonal: _isPersonal, userId: _userId);
   }
 
   Future<void> loadMoreCompleted() async {
@@ -298,6 +315,116 @@ class TaskListCubit extends Cubit<TaskListState> {
     );
   }
 
+  void _ensureUserRealtimeSubscription(String? userId) {
+    if (userId == null || userId.isEmpty) {
+      return;
+    }
+    if (_subscribedRealtimeUserId == userId) {
+      return;
+    }
+
+    final previousSubscription = _userBroadcastSubscription;
+    _userBroadcastSubscription = null;
+    _subscribedRealtimeUserId = userId;
+    unawaited(previousSubscription?.cancel());
+
+    _userBroadcastSubscription = _taskBroadcastClient.subscribeToUser(
+      userId: userId,
+      onEvent: _handleUserRealtimeEvent,
+    );
+  }
+
+  bool _rememberRealtimeEvent(TaskBroadcastEvent event) {
+    final eventId = event.eventId;
+    if (eventId == null || eventId.isEmpty) {
+      return false;
+    }
+    if (_seenRealtimeEventIds.contains(eventId)) {
+      return true;
+    }
+
+    _seenRealtimeEventIds.add(eventId);
+    while (_seenRealtimeEventIds.length > 500) {
+      _seenRealtimeEventIds.remove(_seenRealtimeEventIds.first);
+    }
+    return false;
+  }
+
+  void _handleUserRealtimeEvent(TaskBroadcastEvent event) {
+    if (isClosed || _rememberRealtimeEvent(event)) {
+      return;
+    }
+
+    switch (event.event) {
+      case 'task:upsert':
+        final task = _userTaskFromBroadcast(event);
+        if (task != null) {
+          _patchVisibleTask(task);
+        }
+        _scheduleRealtimeReload();
+      case 'task:delete':
+        final taskId = event.taskId;
+        if (taskId != null) {
+          _removeVisibleTask(taskId);
+        }
+        _scheduleRealtimeReload();
+      case 'task:relations-changed':
+      case 'task:deps-changed':
+      case 'list:upsert':
+      case 'list:delete':
+        _scheduleRealtimeReload();
+    }
+  }
+
+  UserTask? _userTaskFromBroadcast(TaskBroadcastEvent event) {
+    final taskJson = event.task;
+    if (taskJson == null) {
+      return null;
+    }
+
+    try {
+      return UserTask.fromJson(taskJson);
+    } on Object {
+      return null;
+    }
+  }
+
+  void _patchVisibleTask(UserTask replacement) {
+    List<UserTask> patch(List<UserTask> tasks) => tasks
+        .map((task) => task.id == replacement.id ? replacement : task)
+        .toList(growable: false);
+
+    emit(
+      state.copyWith(
+        overdueTasks: patch(state.overdueTasks),
+        todayTasks: patch(state.todayTasks),
+        upcomingTasks: patch(state.upcomingTasks),
+        completedTasks: patch(state.completedTasks),
+      ),
+    );
+  }
+
+  void _removeVisibleTask(String taskId) {
+    List<UserTask> remove(List<UserTask> tasks) =>
+        tasks.where((task) => task.id != taskId).toList(growable: false);
+
+    emit(
+      state.copyWith(
+        overdueTasks: remove(state.overdueTasks),
+        todayTasks: remove(state.todayTasks),
+        upcomingTasks: remove(state.upcomingTasks),
+        completedTasks: remove(state.completedTasks),
+      ),
+    );
+  }
+
+  void _scheduleRealtimeReload() {
+    _realtimeReloadTimer?.cancel();
+    _realtimeReloadTimer = Timer(const Duration(milliseconds: 250), () {
+      unawaited(reload());
+    });
+  }
+
   void toggleSection(TaskListSection section) {
     emit(
       switch (section) {
@@ -315,5 +442,18 @@ class TaskListCubit extends Cubit<TaskListState> {
         ),
       },
     );
+  }
+
+  @override
+  Future<void> close() async {
+    _realtimeReloadTimer?.cancel();
+    _seenRealtimeEventIds.clear();
+    final subscription = _userBroadcastSubscription;
+    _userBroadcastSubscription = null;
+    _subscribedRealtimeUserId = null;
+    if (subscription != null) {
+      await subscription.cancel();
+    }
+    return super.close();
   }
 }

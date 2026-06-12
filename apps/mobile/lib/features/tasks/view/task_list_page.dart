@@ -33,6 +33,7 @@ Future<void> _reload(BuildContext context) async {
     wsId: ws.id,
     isPersonal: ws.personal,
     forceRefresh: true,
+    userId: context.read<AuthCubit>().state.user?.id,
   );
 }
 
@@ -99,6 +100,7 @@ class _ClassicTaskListPage extends StatelessWidget {
       cubit.loadTasks(
         wsId: ws.id,
         isPersonal: ws.personal,
+        userId: context.read<AuthCubit>().state.user?.id,
       ),
     );
   }
@@ -361,6 +363,7 @@ class _TaskListViewState extends State<_TaskListView> {
                 context.read<TaskListCubit>().loadTasks(
                   wsId: ws.id,
                   isPersonal: ws.personal,
+                  userId: context.read<AuthCubit>().state.user?.id,
                 ),
               );
             },
@@ -377,6 +380,7 @@ class _TaskListViewState extends State<_TaskListView> {
                   wsId: ws.id,
                   isPersonal: ws.personal,
                   forceRefresh: true,
+                  userId: state.user?.id,
                 ),
               );
             },

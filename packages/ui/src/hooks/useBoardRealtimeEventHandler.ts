@@ -76,11 +76,120 @@ function updateBoardTaskCaches(
   boardId: string,
   updater: (old: Task[] | undefined) => Task[] | undefined
 ) {
-  queryClient.setQueryData(['tasks', boardId], updater);
+  queryClient.setQueryData<Task[]>(['tasks', boardId], updater);
+  queryClient.setQueryData<Task[]>(['tasks-full', boardId], updater);
+  queryClient.setQueriesData<Task[]>({ queryKey: ['tasks', boardId] }, updater);
+  queryClient.setQueriesData<Task[]>(
+    { queryKey: ['tasks-full', boardId] },
+    updater
+  );
+}
 
-  if (queryClient.getQueryData<Task[]>(['tasks-full', boardId])) {
-    queryClient.setQueryData(['tasks-full', boardId], updater);
-  }
+function patchWorkspaceTaskCaches(
+  queryClient: QueryClient,
+  taskData: Partial<Task> & { id: string }
+) {
+  queryClient.setQueriesData<{ task?: Task | null }>(
+    {
+      predicate: (query) =>
+        Array.isArray(query.queryKey) &&
+        query.queryKey[0] === 'workspaceTask' &&
+        query.queryKey[2] === taskData.id,
+    },
+    (old) =>
+      old?.task
+        ? {
+            ...old,
+            task: { ...old.task, ...taskData },
+          }
+        : old
+  );
+}
+
+function patchMyTasksCaches(
+  queryClient: QueryClient,
+  taskData: Partial<Task> & { id: string }
+) {
+  const patchTask = <T extends { id?: string }>(task: T): T =>
+    task.id === taskData.id ? ({ ...task, ...taskData } as T) : task;
+
+  queryClient.setQueriesData<{
+    overdue?: Array<{ id?: string }>;
+    today?: Array<{ id?: string }>;
+    upcoming?: Array<{ id?: string }>;
+    completed?: Array<{ id?: string }>;
+  }>({ queryKey: ['my-tasks'] }, (old) =>
+    old
+      ? {
+          ...old,
+          overdue: old.overdue?.map(patchTask) ?? old.overdue,
+          today: old.today?.map(patchTask) ?? old.today,
+          upcoming: old.upcoming?.map(patchTask) ?? old.upcoming,
+          completed: old.completed?.map(patchTask) ?? old.completed,
+        }
+      : old
+  );
+
+  queryClient.setQueriesData<{
+    pages?: Array<{ completed?: Array<{ id?: string }> }>;
+  }>({ queryKey: ['my-completed-tasks'] }, (old) =>
+    old?.pages
+      ? {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            completed: page.completed?.map(patchTask) ?? page.completed,
+          })),
+        }
+      : old
+  );
+}
+
+function deleteFromMyTasksCaches(queryClient: QueryClient, taskId: string) {
+  const removeTask = <T extends { id?: string }>(tasks: T[] | undefined) =>
+    tasks?.filter((task) => task.id !== taskId);
+
+  queryClient.setQueriesData<{
+    overdue?: Array<{ id?: string }>;
+    today?: Array<{ id?: string }>;
+    upcoming?: Array<{ id?: string }>;
+    completed?: Array<{ id?: string }>;
+  }>({ queryKey: ['my-tasks'] }, (old) =>
+    old
+      ? {
+          ...old,
+          overdue: removeTask(old.overdue) ?? old.overdue,
+          today: removeTask(old.today) ?? old.today,
+          upcoming: removeTask(old.upcoming) ?? old.upcoming,
+          completed: removeTask(old.completed) ?? old.completed,
+        }
+      : old
+  );
+
+  queryClient.setQueriesData<{
+    pages?: Array<{ completed?: Array<{ id?: string }> }>;
+  }>({ queryKey: ['my-completed-tasks'] }, (old) =>
+    old?.pages
+      ? {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            completed: removeTask(page.completed) ?? page.completed,
+          })),
+        }
+      : old
+  );
+}
+
+function invalidateTaskMembershipQueries(
+  queryClient: QueryClient,
+  boardId: string
+) {
+  void queryClient.invalidateQueries({
+    queryKey: ['task-list-counts', boardId],
+  });
+  void queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+  void queryClient.invalidateQueries({ queryKey: ['my-completed-tasks'] });
 }
 
 export function useBoardRealtimeEventHandler({
@@ -164,6 +273,10 @@ export function useBoardRealtimeEventHandler({
           return relations ? { ...task, ...relations } : task;
         });
       });
+      for (const [taskId, relations] of relationsMap.entries()) {
+        patchWorkspaceTaskCaches(queryClient, { id: taskId, ...relations });
+        patchMyTasksCaches(queryClient, { id: taskId, ...relations });
+      }
     } catch (err) {
       if (DEV_MODE) {
         console.error(
@@ -178,8 +291,40 @@ export function useBoardRealtimeEventHandler({
     (event: string, payload: BoardRealtimePayload) => {
       if (rememberEventId(payload)) return;
 
+      if (event.endsWith(':batch')) {
+        const baseEvent = event.slice(0, -':batch'.length);
+        const payloads = Array.isArray(payload.payloads)
+          ? payload.payloads
+          : Array.isArray(payload.events)
+            ? payload.events
+                .filter((entry) => {
+                  return (
+                    typeof entry === 'object' &&
+                    entry !== null &&
+                    'payload' in entry
+                  );
+                })
+                .map((entry) => (entry as { payload: unknown }).payload)
+            : [];
+
+        for (const childPayload of payloads) {
+          if (
+            typeof childPayload === 'object' &&
+            childPayload !== null &&
+            !Array.isArray(childPayload)
+          ) {
+            handleBoardRealtimeEvent(
+              baseEvent,
+              childPayload as BoardRealtimePayload
+            );
+          }
+        }
+        return;
+      }
+
       if (event === 'task:upsert') {
         const taskData = payload.task as Partial<Task> & { id: string };
+        if (!taskData?.id) return;
         if (DEV_MODE) {
           console.log('[useBoardRealtime] task:upsert received', taskData.id);
         }
@@ -193,6 +338,17 @@ export function useBoardRealtimeEventHandler({
         updateBoardTaskCaches(queryClient, boardId, (old) =>
           mergeRealtimeTask(old, taskData)
         );
+        patchWorkspaceTaskCaches(queryClient, taskData);
+        patchMyTasksCaches(queryClient, taskData);
+        if (
+          'list_id' in taskData ||
+          'completed' in taskData ||
+          'completed_at' in taskData ||
+          'closed_at' in taskData ||
+          'deleted_at' in taskData
+        ) {
+          invalidateTaskMembershipQueries(queryClient, boardId);
+        }
         return;
       }
 
@@ -208,6 +364,14 @@ export function useBoardRealtimeEventHandler({
         updateBoardTaskCaches(queryClient, boardId, (old) =>
           deleteRealtimeTask(old, taskId)
         );
+        deleteFromMyTasksCaches(queryClient, taskId);
+        queryClient.removeQueries({
+          predicate: (query) =>
+            Array.isArray(query.queryKey) &&
+            query.queryKey[0] === 'workspaceTask' &&
+            query.queryKey[2] === taskId,
+        });
+        invalidateTaskMembershipQueries(queryClient, boardId);
 
         if (deleted) {
           onTaskChangeRef.current?.(deleted, 'DELETE');
@@ -262,6 +426,7 @@ export function useBoardRealtimeEventHandler({
         updateBoardTaskCaches(queryClient, boardId, (old) =>
           old?.filter((task) => task.list_id !== listId)
         );
+        invalidateTaskMembershipQueries(queryClient, boardId);
 
         if (deleted) {
           onListChangeRef.current?.(deleted, 'DELETE');
