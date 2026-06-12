@@ -78,6 +78,27 @@ function normalizeConfiguredWebOrigin(value: string | null | undefined) {
     : origin;
 }
 
+function isLocalTuturuuuHostname(hostname: string) {
+  return (
+    hostname === 'tuturuuu.localhost' ||
+    hostname.endsWith('.tuturuuu.localhost')
+  );
+}
+
+function resolveCurrentPortlessOrigin(
+  currentOrigin: string | null | undefined
+) {
+  const origin = normalizeHttpOrigin(currentOrigin);
+
+  if (!origin) {
+    return null;
+  }
+
+  const url = new URL(origin);
+
+  return url.port && isLocalTuturuuuHostname(url.hostname) ? origin : null;
+}
+
 function resolveConfiguredWebOrigin(env: NodeJS.ProcessEnv) {
   return (
     normalizeConfiguredWebOrigin(env.WEB_APP_URL) ||
@@ -128,6 +149,7 @@ export function resolveAuthRedirectOrigin({
 }: AuthRedirectOriginOptions = {}) {
   return (
     resolveConfiguredWebOrigin(env) ||
+    resolveCurrentPortlessOrigin(currentOrigin) ||
     resolveForwardedOrigin(request) ||
     normalizeHttpOrigin(currentOrigin) ||
     (isProduction

@@ -61,6 +61,22 @@ describe('auth redirect origin', () => {
     ).toBe('https://tuturuuu.com');
   });
 
+  it('preserves the local Portless port before forwarded host fallback', () => {
+    clearConfiguredWebOrigins();
+
+    expect(
+      resolveAuthRedirectOrigin({
+        currentOrigin: 'https://tuturuuu.localhost:1355',
+        request: {
+          headers: new Headers({
+            'x-forwarded-host': 'tuturuuu.localhost',
+            'x-forwarded-proto': 'https',
+          }),
+        },
+      })
+    ).toBe('https://tuturuuu.localhost:1355');
+  });
+
   it('falls back to localhost outside production', () => {
     clearConfiguredWebOrigins();
     vi.stubEnv('PORT', '7803');

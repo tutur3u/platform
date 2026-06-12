@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAuthDiagnosticCode: vi.fn(),
@@ -31,7 +31,19 @@ vi.mock('@/lib/auth/diagnostics', () => ({
     mocks.logAuthDiagnostic(...args),
 }));
 
+function clearConfiguredWebOrigins() {
+  vi.stubEnv('WEB_APP_URL', '');
+  vi.stubEnv('NEXT_PUBLIC_WEB_APP_URL', '');
+  vi.stubEnv('NEXT_PUBLIC_APP_URL', '');
+  vi.stubEnv('COOLIFY_URL', '');
+  vi.stubEnv('COOLIFY_FQDN', '');
+}
+
 describe('auth callback route', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createAuthDiagnosticCode.mockReturnValue('AUTH-OAUTH-ABC123');
@@ -91,5 +103,27 @@ describe('auth callback route', () => {
     expect(location.searchParams.get('returnUrl')).toBe(
       'https://learn.tuturuuu.com/verify-token?nextUrl=/onboarding'
     );
+  });
+
+  it('preserves a local Portless port for multi-account callback redirects', async () => {
+    clearConfiguredWebOrigins();
+
+    const { GET } = await import('@/app/api/auth/callback/route');
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.localhost:1355/api/auth/callback?multiAccount=true&returnUrl=%2Fen%2Fpersonal%2Ftasks',
+        {
+          headers: {
+            'x-forwarded-host': 'tuturuuu.localhost',
+            'x-forwarded-proto': 'https',
+          },
+        }
+      )
+    );
+
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.origin).toBe('https://tuturuuu.localhost:1355');
+    expect(location.pathname).toBe('/add-account');
+    expect(location.searchParams.get('returnUrl')).toBe('/en/personal/tasks');
   });
 });
