@@ -15,7 +15,7 @@ surface you are changing:
 - `$tuturuuu-web-release` for version badge, release metadata,
   `TUTURUUU_PLATFORM_VERSION`, or blue/green release snapshot work.
 - `$tuturuuu-agent-coordination` for dirty/shared worktrees, handoffs, staged
-  path safety, and coordination notes.
+  path safety, coordination notes, and commit-window coordination.
 - `$tuturuuu-development-tooling` for plugin skills, validation scripts, root
   scripts, CI, and durable agent workflow improvements.
 - `$tuturuuu-database` for Supabase migrations, RLS, protected-table API writes,
@@ -55,6 +55,11 @@ surface you are changing:
 - Inspect active `tmp/agent-coordination/` notes before broad or overlapping
   work. Create a coordination note for dirty worktrees, long-running work,
   overlap, handoffs, or changes to agent/tooling/deployment rules.
+- Before staging, unstaging, committing, amending, rebasing, or user-requested
+  commit-and-push work in a shared checkout, claim the Git commit window with
+  `bun git-commit-window claim` or wait with `bun git-commit-window wait`.
+  Claims last 5-10 minutes, default to 10 minutes, and must be released after
+  the commit operation finishes or aborts.
 - Use Conventional Commits for authored commits and branch names accepted by the
   repo checker (`feature/`, `feat/`, `fix/`, `bugfix/`, `hotfix/`, `release/`,
   `chore/`, `docs/`, `style/`, `refactor/`, `perf/`, `dependabot/`,
@@ -149,10 +154,18 @@ generated type files.
 Use `tmp/agent-coordination/<YYYYMMDD-HHMMSS>-<agent-or-task>.md` for live
 coordination when work may overlap or when changing coordination/plugin/tooling
 rules. Include Agent, Intent, Owned paths, Observed dirty paths, Status, Needs,
-Verification, and Risks. Do not edit another agent's note unless explicitly
-asked. Archive only your own completed `done` notes under
+Verification, Risks, and Commit window when a commit may be needed. Do not edit
+another agent's note unless explicitly asked. Archive only your own completed
+`done` notes under
 `tmp/agent-coordination/archive/<YYYY>/` when no handoff must remain visible.
 Never stage coordination notes.
+
+`bun git-commit-window` stores an advisory lock at
+`tmp/agent-coordination/git-commit-window.lock.json`. It serializes Git index
+and commit operations only; it does not grant file ownership or permission to
+stage unrelated paths. Use `wait` to sleep until another agent releases the
+window and then atomically claim it. Keep claims short; the tool enforces a
+5-10 minute TTL so agents use the window only for focused commit work.
 
 ## 6. Pattern Catalogs
 

@@ -1,7 +1,7 @@
 ---
 title: 'Agent Operating Manual'
 description: 'Field guide summarizing the AGENTS.md policies for autonomous contributors inside the Tuturuuu monorepo.'
-updatedAt: '2026-05-15'
+updatedAt: '2026-06-12'
 ---
 
 This page distills the canonical rules defined in [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md). Treat the original document as the source of truth. The root file is now a hard-policy index; detailed reusable implementation patterns live in the repo-local Tuturuuu Codex plugin skills under `plugins/tuturuuu/skills/*/references/`.
@@ -63,6 +63,8 @@ Use the repo-local Tuturuuu Codex plugin for detailed pattern catalogs:
 - `$tuturuuu-database` for Supabase, protected-table API, and storage patterns.
 - `$tuturuuu-ci-docs` for docs, CI, and Docker blue/green deployment runbooks.
 - `$tuturuuu-development-tooling` for root scripts, plugin validation, and CI/tooling behavior.
+- `$tuturuuu-agent-coordination` for shared worktrees, active notes, handoffs, and commit-window coordination.
+- `$tuturuuu-commit` for scoped commits, exact staging, and commit-window claim/wait/release.
 - `$tuturuuu-mobile-task-board` for Flutter mobile task-board and mobile UX patterns.
 
 ## Collaboration Protocol
@@ -89,10 +91,29 @@ Each note should include:
 - `Observed dirty paths`: relevant pre-existing paths the agent will not touch.
 - `Status`: `working`, `blocked`, `handoff`, or `done`.
 - `Needs`: specific question or response requested from other agents.
+- `Commit window`: `not needed`, `claimed`, `waiting`, `blocked`, or `released` when a commit may be needed.
 - `Verification`: commands already run, when available.
 - `Risks`: remaining overlap or validation risk, when relevant.
 
 If two agents need the same file set, do not race. Reply in `tmp/agent-coordination/`, choose a disjoint slice, or ask the human partner to arbitrate. Do not edit another agent's note unless explicitly asked. Before the final response or handoff, update your own note to `done`, `handoff`, or `blocked` with verification and residual risks. Archive only your own completed `done` note unless the human partner explicitly requests broader cleanup. When committing, stage explicit paths only and never stage coordination notes or archived coordination notes. If a repo-wide check or commit hook fails because of another agent's files, do not fix those files just to satisfy the hook; report the blocker and keep your own diff scoped.
+
+### Git Commit Window
+
+Use `bun git-commit-window` to serialize Git index and commit operations in a shared checkout. The lock lives at `tmp/agent-coordination/git-commit-window.lock.json`, which is ignored by Git. It is advisory: it does not grant ownership of files and does not allow broad staging. Claims default to 10 minutes, may only be 5-10 minutes, and should be held only for focused staging and commit work.
+
+Claim the window immediately before staging, unstaging, committing, amending, rebasing, or commit-and-push work:
+
+```bash
+bun git-commit-window claim --owner "<agent/task>" --scope "<commit scope>"
+```
+
+If another agent owns the window and waiting is appropriate, use `wait`. It sleeps until the current lock is released or expires, then atomically claims the window before notifying the waiting agent. The wait timeout can be longer than the claim TTL, but the claim received after waking is still limited to 5-10 minutes:
+
+```bash
+bun git-commit-window wait --owner "<agent/task>" --scope "<commit scope>"
+```
+
+Use `status` to inspect, `check --token <token>` before committing if needed, and `release --token <token>` after the commit operation succeeds or aborts. Do not put tokens in coordination notes.
 
 ## Tooling & Environment Rules
 

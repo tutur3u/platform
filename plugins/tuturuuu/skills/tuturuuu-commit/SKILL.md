@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-commit
-description: Tuturuuu scoped commit workflow guidance. Use when the user asks Codex to commit, commit and push, split commits by scope or domain, stage work safely in a shared worktree, or report final commit hashes after validation.
+description: Tuturuuu scoped commit workflow guidance. Use when the user asks Codex to commit, commit and push, split commits by scope or domain, claim or wait for a commit window, stage work safely in a shared worktree, or report final commit hashes after validation.
 ---
 
 # Tuturuuu Commit
@@ -17,6 +17,13 @@ and failure handling before creating commits.
 
 - Run `git status --short` before staging.
 - Treat unknown dirty and untracked files as user-owned or other-agent-owned.
+- Claim the commit window with `bun git-commit-window claim` immediately before
+  changing the staged set or committing in a shared checkout. Use
+  `bun git-commit-window wait` when another agent owns the window and waiting is
+  appropriate.
+- Keep the commit window tight: claims default to 10 minutes, only accept
+  5-10-minute TTLs, and should be released as soon as commit work finishes or
+  aborts.
 - Stage only files intentionally changed for the current commit.
 - Avoid `git add .` in shared worktrees.
 - Keep commits atomic by product domain, package, behavior, or independently
@@ -46,10 +53,12 @@ behavior they validate or expose.
 
 For each commit:
 
-1. Stage the exact paths for that scope.
-2. Inspect `git diff --cached --stat` and `git diff --cached --name-only`.
-3. Commit with a Conventional Commit subject.
-4. Let commit hooks run unless a known unrelated blocker exists and the user has
+1. Claim or wait for the commit window and keep the token out of notes.
+2. Stage the exact paths for that scope.
+3. Inspect `git diff --cached --stat` and `git diff --cached --name-only`.
+4. Commit with a Conventional Commit subject.
+5. Release the commit window after the commit succeeds or aborts.
+6. Let commit hooks run unless a known unrelated blocker exists and the user has
    enough context to accept `--no-verify`.
 
 If a hook fails because of unrelated dirty files or pre-existing repo failures,

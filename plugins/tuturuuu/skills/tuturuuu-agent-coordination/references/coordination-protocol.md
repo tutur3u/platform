@@ -29,7 +29,13 @@ It complements `git status`; it does not replace it.
    - `stale-unclear`: an old note is still marked active and might overlap.
    - `archived-context`: only archived notes match; use them as historical
      guidance, not as a blocking ownership claim.
-5. Pick a non-overlapping write set before editing. If the task truly needs an
+5. If a commit may be needed, inspect the commit window:
+
+   ```bash
+   bun git-commit-window status
+   ```
+
+6. Pick a non-overlapping write set before editing. If the task truly needs an
    overlapped path, coordinate first.
 
 ## When To Create A Note
@@ -45,6 +51,8 @@ applies:
   `apps/database`, `apps/docs`, `.github`, `scripts`, or `plugins/tuturuuu`.
 - The task changes coordination, commit, validation, CI, deployment, or skill
   behavior for future agents.
+- The task may stage, unstage, commit, amend, rebase, or push commits in a
+  shared checkout.
 
 ## Note Template
 
@@ -60,6 +68,7 @@ Observed dirty paths:
 - <pre-existing path you will not touch>
 Status: working | blocked | handoff | done
 Needs: <specific question or response requested, or None>
+Commit window: not needed | claimed | waiting | blocked | released
 Verification:
 - <command already run, if any>
 Risks:
@@ -68,6 +77,10 @@ Risks:
 
 Keep claims narrow. If the task scope shrinks, update the note with the smaller
 owned path set so other agents can proceed around you.
+
+Do not record `bun git-commit-window` tokens in coordination notes. Tokens are
+printed in the terminal for the agent that claimed the window and should be used
+only to check or release that lock.
 
 ## Archived Coordination Notes
 
@@ -108,6 +121,53 @@ takes over or a human asks for cleanup.
   have checked `git status` and read the note. Old age alone is not permission to
   take over.
 
+## Commit Window Coordination
+
+Use the commit window for exclusive access to the Git index and commit operation
+in shared checkouts. It does not replace path ownership, active-note checks, or
+exact-path staging.
+
+Claims default to 10 minutes and may only be 5-10 minutes. Use the window only
+when ready to stage, inspect, commit, amend, rebase, or push follow-through;
+release it immediately when that operation completes or aborts.
+
+Claim the window immediately before staging, unstaging, committing, amending,
+rebasing, or user-requested commit-and-push work:
+
+```bash
+bun git-commit-window claim --owner "<agent/task>" --scope "<commit scope>" \
+  --path AGENTS.md --path scripts/git-commit-window.js
+```
+
+If another agent already owns the window and waiting is appropriate, use
+`wait`. It sleeps until the active lock is released or expires, then atomically
+claims the window before telling the waiting agent to proceed:
+
+```bash
+bun git-commit-window wait --owner "<agent/task>" --scope "<commit scope>" \
+  --path AGENTS.md --timeout-minutes 60 --poll-ms 1000
+```
+
+The `wait` timeout controls how long an agent may sleep while another agent owns
+the window. The claim it receives after waking still uses the 5-10 minute TTL.
+
+If files are already staged, claim or wait only after inspecting
+`git diff --cached --stat` and `git diff --cached --name-only`, then pass
+`--allow-staged` when the staged set is intentional and preserved.
+
+Useful operations:
+
+```bash
+bun git-commit-window status
+bun git-commit-window check --token <token>
+bun git-commit-window release --token <token>
+bun git-commit-window release --force-stale
+```
+
+`release --force-stale` only clears an expired lock. It must not be used to take
+over a currently active lock. If an active lock appears stale but is not expired,
+read the owner note and ask for arbitration before proceeding.
+
 ## Status Transitions
 
 - `working`: you are actively editing or validating the owned paths.
@@ -124,8 +184,11 @@ coordination notes.
 
 ## Commit And Verification Hygiene
 
+- Claim or wait for the commit window before changing the staged set or creating
+  commits in a shared checkout.
 - Stage explicit paths only.
 - Inspect staged paths before committing.
+- Release the commit window after the commit operation completes or aborts.
 - If checks fail on unrelated dirty files, do not fix them for convenience.
   Report the blocker and keep your diff scoped.
 - When using commit hooks, keep unrelated dirty files unstaged. If a hook reads

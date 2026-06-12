@@ -61,7 +61,8 @@ Use the more focused plugin skills when they match the task:
   E2E failures.
 - `$tuturuuu-cli` for installing, using, debugging, or publishing the native `ttr` CLI and browser/copy-token login flows.
 - `$tuturuuu-commit` for explicit commit requests, scoped staging, atomic
-  Conventional Commits, commit-and-push follow-through, and commit reporting.
+  Conventional Commits, commit-window coordination, commit-and-push
+  follow-through, and commit reporting.
 - `$tuturuuu-agent-coordination` for dirty/shared worktrees, active ownership
   notes, archived context, overlapping edits, handoffs, and path-scoped staging
   safety.
@@ -94,7 +95,9 @@ Keep the improvement small and tied to the task.
 
 When the user asks to commit, treat the commit as part of the deliverable. Use
 `$tuturuuu-commit`, split commits by product domain or independently revertible
-scope, and stage only paths intentionally changed in this session.
+scope, claim or wait for the commit window before changing the staged set, and
+stage only paths intentionally changed in this session. The commit window is
+limited to 5-10 minutes, so claim it only when ready to stage and commit.
 
 ## Verification
 

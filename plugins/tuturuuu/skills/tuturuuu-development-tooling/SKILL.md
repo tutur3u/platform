@@ -37,6 +37,8 @@ future work. Examples:
   `$tuturuuu-agent-coordination`
 - extract repeated commit behavior into `$tuturuuu-commit` instead of relying on
   memory or final-response habits
+- add or refine root helpers such as `bun git-commit-window` when recurring
+  agent workflow coordination needs script-backed enforcement
 
 Do not expand scope into broad refactors. Keep improvements tied to evidence from
 the current task or recent local failures.
@@ -67,10 +69,10 @@ of drifting into local notes or issue trackers.
 
 Use `$tuturuuu-agent-coordination` when the task is about shared worktree
 ownership, dirty-path handling, active coordination notes, archived context,
-overlap resolution, handoff behavior, or staged-path safety. When changing that
-protocol, keep `AGENTS.md`, `apps/docs/overview/agent-operating-manual.mdx`, the
-Codex plugin docs, the platform checklist, and the dedicated coordination skill
-aligned.
+overlap resolution, handoff behavior, commit-window locking, wait/release
+behavior, or staged-path safety. When changing that protocol, keep `AGENTS.md`,
+`apps/docs/overview/agent-operating-manual.mdx`, the Codex plugin docs, the
+platform checklist, and the dedicated coordination skill aligned.
 
 ## Documentation Follow-Through
 

@@ -14,9 +14,11 @@ Codex discovers repo-local plugins through
 `tuturuuu`, displays as `Tuturuuu`, and points its local plugin entry at
 `./plugins/tuturuuu`.
 
-After changing marketplace metadata or plugin files, bump
-`plugins/tuturuuu/.codex-plugin/plugin.json` so Codex has a new cache target,
-then refresh the repo-local marketplace from the repo root:
+After changing marketplace metadata or plugin files, validate the plugin and
+refresh the repo-local marketplace from the repo root. Do not bump
+`plugins/tuturuuu/.codex-plugin/plugin.json` `version` for ordinary authored
+workflow updates unless a release workflow or user request requires it.
+The repo-local plugin manifest is currently refreshed to `0.2.23`.
 
 ```bash
 codex plugin marketplace add ./
@@ -94,10 +96,12 @@ Then verify the cached page after refresh at
   Docker-parity auth checks.
 - `$tuturuuu-commit`: scoped commit workflow guidance for explicit commit,
   commit-and-push, atomic staging, Conventional Commit subjects, shared-worktree
-  path isolation, hook failure handling, and final commit reporting.
+  path isolation, commit-window claim/wait/release, hook failure handling, and
+  final commit reporting.
 - `$tuturuuu-agent-coordination`: shared-worktree coordination guidance for
   dirty checkouts, active ownership notes, archived context, overlapping edits,
-  stale handoffs, explicit write sets, and path-scoped staging safety.
+  stale handoffs, explicit write sets, commit-window coordination, and
+  path-scoped staging safety.
 - `$tuturuuu-cli`: core native `ttr` CLI install, browser login, copy-token
   login, workspace discovery, scoped help, SDK-backed command surfaces, version
   checks, and release verification guidance. It documents autonomous Bun and CLI
@@ -166,6 +170,7 @@ The CI check currently verifies:
   release lookup
 - durable CI tooling guidance for bounded Codecov coverage test retries
 - scoped commit workflow coverage for explicit commit requests
+- commit-window claim, wait, release, and stale-lock guidance
 - repo marketplace metadata at `.agents/plugins/marketplace.json`
 - public skills.sh discovery metadata at `.claude-plugin/marketplace.json`
 - public skills.sh grouping metadata at `skills.sh.json`
@@ -196,6 +201,16 @@ current worktree. Keep active notes as direct files under
 `tmp/agent-coordination/`; archive completed notes under
 `tmp/agent-coordination/archive/<YYYY>/<original-note-name>.md` after they are
 marked `done` and no longer need top-level visibility.
+
+Use `bun git-commit-window` before changing the staged set or creating commits
+in a shared checkout. `claim` creates an advisory lock under
+`tmp/agent-coordination/git-commit-window.lock.json`; `wait` sleeps until the
+current lock is released or expires, then claims it before notifying the waiting
+agent that it can commit. Claims default to 10 minutes, accept only 5-10-minute
+TTLs, and should be held only while staging, inspecting, committing, amending,
+rebasing, or finishing commit-and-push follow-through. Release the lock with
+`bun git-commit-window release --token <token>` after the commit operation
+finishes or aborts, and do not record tokens in coordination notes.
 
 Archived notes are historical context for targeted lookup, not locks. Agents
 should search them by path, feature, or workflow only when previous decisions or
@@ -265,7 +280,8 @@ library.
 
 - Keep `plugins/tuturuuu/.codex-plugin/plugin.json` aligned with the plugin
   folder name. Do not bump its `version` for ordinary authored work unless a
-  release workflow or user request requires it.
+  release workflow or user request requires it; when a user explicitly asks for
+  a plugin refresh, bump the manifest and keep this page current.
 - Keep each skill folder name aligned with its `SKILL.md` frontmatter `name`.
 - Keep plugin and skill default prompts short, natural, and action-oriented.
   Marketplace prompt cards should read like user goals, for example "Clear the
@@ -274,8 +290,9 @@ library.
   `<repo-root>`, or `~` over user-specific absolute paths.
 - Put detailed guidance in `references/` and keep `SKILL.md` focused on the
   workflow that should be loaded immediately.
-- Keep shared-worktree coordination guidance aligned across `AGENTS.md`, the
-  Agent Operating Manual, and `$tuturuuu-agent-coordination`.
+- Keep shared-worktree and commit-window coordination guidance aligned across
+  `AGENTS.md`, the Agent Operating Manual, `$tuturuuu-agent-coordination`, and
+  `$tuturuuu-commit`.
 - Keep platform release/version guidance aligned across `AGENTS.md`,
   `$tuturuuu-web-release`, and the Web Docker Deployment runbook.
 - Add marketplace metadata only when deciding where the plugin should be

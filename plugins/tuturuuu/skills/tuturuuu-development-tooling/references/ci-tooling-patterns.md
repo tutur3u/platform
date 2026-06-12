@@ -23,6 +23,10 @@ formatting behavior, or repo-wide verification.
 
 - Root script tests belong in `node --test scripts/*.test.js` and should be
   wired into `scripts/check.js` when a new utility needs CI coverage.
+- Agent workflow helpers such as `bun git-commit-window` should use ignored
+  runtime state under `tmp/agent-coordination/`, expose focused subcommands,
+  enforce a short 5-10-minute claim TTL, and include `node:test` coverage for
+  conflict, stale-lock, and wait behavior.
 - ANSI strip helpers in root scripts should use `new RegExp(...)` forms when
   Biome would otherwise flag control characters in regex literals.
 - Literal `${...}` source checks should use regex or escaped forms, not plain

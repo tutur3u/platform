@@ -14,6 +14,10 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
   status, and needs.
 - Use `$tuturuuu-agent-coordination` for dirty worktrees, active overlap,
   archived context, handoff, or path-scoped staging decisions.
+- If a commit may be needed in a shared checkout, inspect
+  `bun git-commit-window status` before committing and plan to claim or wait for
+  the window immediately before changing the staged set. Claims default to 10
+  minutes and cannot exceed 10 minutes.
 - Read the task-local code and docs before proposing abstractions.
 - Check for existing helpers in `packages/internal-api`, `packages/types`, `packages/ui`, and app-local utilities.
 - Identify whether the change affects user-facing copy, route navigation, database schema, generated types, docs, or mobile localization.
@@ -60,6 +64,9 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
 - If you created a coordination note, update it with final status, verification,
   and risks. Archive it before the final response when the status is `done` and
   no active handoff needs it in the top-level directory.
+- Release any `bun git-commit-window` lock you claimed after the commit
+  operation completes or aborts. Do not hold the 5-10-minute window while doing
+  unrelated validation or editing.
 - Stage only paths you intentionally changed. Do not fix, format, or stage
   unrelated dirty files owned by a human or another agent.
 - Use Conventional Commit style if asked to commit.

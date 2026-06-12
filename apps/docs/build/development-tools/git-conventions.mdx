@@ -1,7 +1,7 @@
 ---
 title: 'Git Conventions'
 description: 'Learn how Tuturuuu uses Conventional Commits and Branch naming to improve development workflow.'
-updatedAt: '2026-05-20'
+updatedAt: '2026-06-12'
 ---
 
 <Info>
@@ -310,6 +310,37 @@ The implementation follows the RFC 6238 standard.
 
 Closes #123
 ```
+
+### Coordinating Commits In Shared Checkouts
+
+When multiple agents or humans may commit in the same checkout, use the commit
+window before changing the staged set. The lock is advisory and lives under the
+ignored `tmp/agent-coordination/` directory, so it protects the Git index and
+commit operation without becoming part of a commit. Claims default to 10
+minutes and may only be 5-10 minutes, so claim only when ready to stage,
+inspect, and commit.
+
+```bash
+bun git-commit-window status
+bun git-commit-window claim --owner "<agent/task>" --scope "type(scope): subject"
+git add path/to/file-a path/to/file-b
+git diff --cached --stat
+git diff --cached --name-only
+git commit -m "type(scope): subject"
+bun git-commit-window release --token <token>
+```
+
+If another agent owns the window and it is appropriate to wait, use `wait`. The
+command sleeps until the active lock is released or expires, then claims the
+window before reporting that it is safe to proceed. The waiting period can be
+longer than the claim TTL, but the claimed window remains capped at 10 minutes:
+
+```bash
+bun git-commit-window wait --owner "<agent/task>" --scope "type(scope): subject"
+```
+
+Use `--allow-staged` only after inspecting existing staged files. The commit
+window does not grant ownership of files or permission to stage unrelated paths.
 
 ### Branch Management
 
