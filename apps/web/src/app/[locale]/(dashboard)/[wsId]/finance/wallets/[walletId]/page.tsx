@@ -10,6 +10,7 @@ interface Props {
     walletId: string;
   }>;
   searchParams: Promise<{
+    action?: string;
     q: string;
     page: string;
     pageSize: string;

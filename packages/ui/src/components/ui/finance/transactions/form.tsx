@@ -73,6 +73,9 @@ export function TransactionForm({
   canUpdateConfidentialTransactions,
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
+  initialMode = 'transaction',
+  initialTransaction,
+  initialTransfer,
   permissionRequestUser,
 }: TransactionFormProps) {
   const t = useTranslations();
@@ -83,7 +86,8 @@ export function TransactionForm({
   const [attachments, setAttachments] = useState<TransactionAttachmentDraft[]>(
     []
   );
-  const [isTransfer, setIsTransfer] = useState(!!data?.transfer);
+  const initialIsTransfer = initialMode === 'transfer' || !!data?.transfer;
+  const [isTransfer, setIsTransfer] = useState(initialIsTransfer);
   // Start in override mode when editing an existing transfer (preserve stored amounts).
   // Start in auto mode for new transfers so the exchange rate pre-fills destination.
   const [isDestinationOverridden, setIsDestinationOverridden] = useState(
@@ -144,18 +148,39 @@ export function TransactionForm({
     resolver: zodResolver(TransactionFormSchema),
     defaultValues: {
       id: data?.id,
-      description: data?.description || '',
-      amount: data?.amount ? Math.abs(data.amount) : undefined,
-      origin_wallet_id: data?.wallet_id || '',
-      destination_wallet_id: data?.transfer?.linked_wallet_id || '',
+      description:
+        data?.description ||
+        (initialIsTransfer
+          ? initialTransfer?.description
+          : initialTransaction?.description) ||
+        '',
+      amount: data?.amount
+        ? Math.abs(data.amount)
+        : initialIsTransfer
+          ? initialTransfer?.amount
+          : initialTransaction?.amount,
+      origin_wallet_id:
+        data?.wallet_id ||
+        (initialIsTransfer
+          ? initialTransfer?.origin_wallet_id
+          : initialTransaction?.origin_wallet_id) ||
+        '',
+      destination_wallet_id:
+        data?.transfer?.linked_wallet_id ||
+        initialTransfer?.destination_wallet_id ||
+        '',
       destination_amount: data?.transfer?.linked_amount
         ? Math.abs(data.transfer.linked_amount)
-        : undefined,
-      category_id: data?.category_id || '',
-      taken_at: data?.taken_at ? new Date(data.taken_at) : new Date(),
+        : initialTransfer?.destination_amount,
+      category_id: data?.category_id || initialTransaction?.category_id || '',
+      taken_at: data?.taken_at
+        ? new Date(data.taken_at)
+        : initialIsTransfer
+          ? (initialTransfer?.taken_at ?? new Date())
+          : (initialTransaction?.taken_at ?? new Date()),
       report_opt_in: data?.report_opt_in ?? true,
       tag_ids: [] as string[],
-      is_transfer: !!data?.transfer,
+      is_transfer: initialIsTransfer,
       is_amount_confidential:
         (data as Record<string, unknown>)?.is_amount_confidential === true,
       is_description_confidential:
@@ -189,7 +214,12 @@ export function TransactionForm({
     const isUserEdited =
       originWalletState.isDirty || originWalletState.isTouched;
     const currentWalletId = form.getValues('origin_wallet_id');
-    const contextualWalletId = data?.wallet_id || '';
+    const contextualWalletId =
+      data?.wallet_id ||
+      (initialIsTransfer
+        ? initialTransfer?.origin_wallet_id
+        : initialTransaction?.origin_wallet_id) ||
+      '';
 
     if (data?.id || isUserEdited) return;
     if (!wallets || wallets.length === 0) return;
@@ -241,6 +271,9 @@ export function TransactionForm({
     data?.wallet_id,
     defaultWalletId,
     form,
+    initialIsTransfer,
+    initialTransaction?.origin_wallet_id,
+    initialTransfer?.origin_wallet_id,
     isLastSelectionsInitialized,
     isLoadingRememberLastSelections,
     lastSelections.walletId,
@@ -253,7 +286,22 @@ export function TransactionForm({
     const categoryState = form.getFieldState('category_id');
     const isUserEdited = categoryState.isDirty || categoryState.isTouched;
     const currentCategoryId = form.getValues('category_id');
-    const contextualCategoryId = data?.category_id || '';
+    const contextualCategoryId =
+      data?.category_id || initialTransaction?.category_id || '';
+    const categoryKind = initialTransaction?.categoryKind;
+    const matchesCategoryKind = (category: { is_expense?: boolean | null }) => {
+      if (!categoryKind) return true;
+      return categoryKind === 'income'
+        ? category.is_expense === false
+        : category.is_expense !== false;
+    };
+    const hasSelectableCategory = (categoryId?: string | null) =>
+      !!categoryId &&
+      (categories ?? []).some(
+        (category) =>
+          category.id === categoryId &&
+          (!categoryKind || matchesCategoryKind(category))
+      );
 
     if (data?.id || isUserEdited) return;
     if (!categories || categories.length === 0) return;
@@ -263,24 +311,33 @@ export function TransactionForm({
     const rememberedCategoryId =
       rememberLastSelections &&
       lastSelections.categoryId &&
-      categories.some((category) => category.id === lastSelections.categoryId)
+      hasSelectableCategory(lastSelections.categoryId)
         ? lastSelections.categoryId
+        : '';
+    const contextualCategorySelection = hasSelectableCategory(
+      contextualCategoryId
+    )
+      ? contextualCategoryId
+      : '';
+    const defaultCategorySelection = hasSelectableCategory(defaultCategoryId)
+      ? defaultCategoryId
+      : '';
+    const intentCategorySelection =
+      categoryKind && categories.find(matchesCategoryKind)?.id
+        ? categories.find(matchesCategoryKind)?.id
         : '';
     const nextCategorySelection =
       rememberedCategoryId ||
-      (contextualCategoryId &&
-      categories.some((category) => category.id === contextualCategoryId)
-        ? contextualCategoryId
-        : '') ||
-      (defaultCategoryId &&
-      categories.some((category) => category.id === defaultCategoryId)
-        ? defaultCategoryId
-        : '');
+      contextualCategorySelection ||
+      defaultCategorySelection ||
+      intentCategorySelection;
     const sourceLabel = rememberedCategoryId
       ? t('transaction-data-table.prefill_source_last_used')
-      : contextualCategoryId && nextCategorySelection === contextualCategoryId
+      : contextualCategorySelection &&
+          nextCategorySelection === contextualCategorySelection
         ? t('transaction-data-table.prefill_source_current_context')
-        : defaultCategoryId && nextCategorySelection === defaultCategoryId
+        : defaultCategorySelection &&
+            nextCategorySelection === defaultCategorySelection
           ? t('transaction-data-table.prefill_source_workspace_default')
           : '';
 
@@ -304,6 +361,8 @@ export function TransactionForm({
     data?.id,
     defaultCategoryId,
     form,
+    initialTransaction?.categoryKind,
+    initialTransaction?.category_id,
     isLastSelectionsInitialized,
     isLoadingRememberLastSelections,
     lastSelections.categoryId,

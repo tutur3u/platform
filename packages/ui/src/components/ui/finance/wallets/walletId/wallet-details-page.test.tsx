@@ -1,3 +1,5 @@
+import { render } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
@@ -31,6 +33,8 @@ const mocks = vi.hoisted(() => {
     notFound: vi.fn(() => {
       throw new Error('notFound');
     }),
+    creditWalletSummary: vi.fn((_props: unknown) => null),
+    walletDetailsActions: vi.fn((_props: unknown) => null),
     withForwardedInternalApiAuth: vi.fn(() => ({ headers: {} })),
   };
 });
@@ -101,7 +105,9 @@ vi.mock('../checkpoints/wallet-checkpoint-panel', () => ({
 }));
 
 vi.mock('./credit-wallet-summary', () => ({
-  CreditWalletSummary: () => null,
+  CreditWalletSummary: (
+    ...args: Parameters<typeof mocks.creditWalletSummary>
+  ) => mocks.creditWalletSummary(...args),
 }));
 
 vi.mock('./interest', () => ({
@@ -109,7 +115,9 @@ vi.mock('./interest', () => ({
 }));
 
 vi.mock('./wallet-details-actions', () => ({
-  WalletDetailsActions: () => null,
+  WalletDetailsActions: (
+    ...args: Parameters<typeof mocks.walletDetailsActions>
+  ) => mocks.walletDetailsActions(...args),
 }));
 
 vi.mock('./wallet-role-access-dialog', () => ({
@@ -161,5 +169,59 @@ describe('wallet details page', () => {
     expect(mocks.getWallet).toHaveBeenCalledWith('ws-1', 'wallet-1', {
       headers: {},
     });
+  });
+
+  it('forwards credit wallet actions to the shared actions component', async () => {
+    mocks.getWallet.mockResolvedValue({
+      id: 'wallet-1',
+      name: 'Rewards Card',
+      type: 'CREDIT',
+      currency: 'USD',
+      balance: -120,
+    });
+
+    const { default: WalletDetailsPageModule } = await import(
+      './wallet-details-page.js'
+    );
+    const WalletDetailsPage = WalletDetailsPageModule as unknown as (props: {
+      wsId: string;
+      walletId: string;
+      searchParams: {
+        action?: string;
+        q: string;
+        page: string;
+        pageSize: string;
+      };
+    }) => Promise<ReactElement>;
+
+    const element = await WalletDetailsPage({
+      wsId: 'ws-1',
+      walletId: 'wallet-1',
+      searchParams: { action: 'payment', q: '', page: '1', pageSize: '10' },
+    });
+
+    render(element);
+
+    expect(mocks.walletDetailsActions).toHaveBeenCalled();
+    const actionProps = mocks.walletDetailsActions.mock.calls[0]?.[0];
+
+    expect(actionProps).toEqual(
+      expect.objectContaining({
+        initialAction: 'payment',
+        walletId: 'wallet-1',
+      })
+    );
+    expect(mocks.creditWalletSummary).toHaveBeenCalled();
+    const summaryProps = mocks.creditWalletSummary.mock.calls[0]?.[0];
+
+    expect(summaryProps).toEqual(
+      expect.objectContaining({
+        wsId: 'ws-1',
+        wallet: expect.objectContaining({
+          id: 'wallet-1',
+          type: 'CREDIT',
+        }),
+      })
+    );
   });
 });

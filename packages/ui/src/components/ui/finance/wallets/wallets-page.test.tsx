@@ -1,6 +1,9 @@
+import { render } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  createDialogFeatureSummary: vi.fn((_props: unknown) => null),
   getPermissions: vi.fn(),
   getTranslations: vi.fn(),
   getWorkspace: vi.fn(),
@@ -10,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   notFound: vi.fn(() => {
     throw new Error('notFound');
   }),
+  walletForm: vi.fn((_props: unknown) => null),
   withForwardedInternalApiAuth: vi.fn(() => ({ headers: {} })),
 }));
 
@@ -50,8 +54,17 @@ vi.mock('@tuturuuu/ui/custom/feature-summary', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/finance/shared/create-dialog-feature-summary', () => ({
-  CreateDialogFeatureSummary: () => null,
+  CreateDialogFeatureSummary: (
+    ...args: Parameters<typeof mocks.createDialogFeatureSummary>
+  ) => mocks.createDialogFeatureSummary(...args),
 }));
+
+vi.mock(
+  '@tuturuuu/ui/finance/wallets/checkpoints/wallet-checkpoint-history-dialog',
+  () => ({
+    WalletCheckpointHistoryDialog: () => null,
+  })
+);
 
 vi.mock(
   '@tuturuuu/ui/finance/wallets/checkpoints/wallet-total-check-dialog',
@@ -61,7 +74,8 @@ vi.mock(
 );
 
 vi.mock('@tuturuuu/ui/finance/wallets/form', () => ({
-  WalletForm: () => null,
+  WalletForm: (...args: Parameters<typeof mocks.walletForm>) =>
+    mocks.walletForm(...args),
 }));
 
 vi.mock('@tuturuuu/ui/finance/wallets/wallets-data-table', () => ({
@@ -110,5 +124,50 @@ describe('wallets page', () => {
 
     expect(mocks.withForwardedInternalApiAuth).toHaveBeenCalled();
     expect(mocks.listWallets).toHaveBeenCalledWith('ws-1', { headers: {} });
+  });
+
+  it('opens wallet creation in credit-card mode from search params', async () => {
+    const { default: WalletsPageModule } = await import('./wallets-page.js');
+    const WalletsPage = WalletsPageModule as unknown as (props: {
+      wsId: string;
+      searchParams: {
+        create?: string;
+        q: string;
+        page: string;
+        pageSize: string;
+      };
+      page?: string;
+      pageSize?: string;
+    }) => Promise<ReactElement>;
+
+    const element = await WalletsPage({
+      wsId: 'ws-1',
+      searchParams: {
+        create: 'credit-card',
+        q: '',
+        page: '1',
+        pageSize: '10',
+      },
+      page: '1',
+      pageSize: '10',
+    });
+
+    render(element);
+
+    const createDialogProps =
+      mocks.createDialogFeatureSummary.mock.calls[0]?.[0];
+
+    expect(createDialogProps).toEqual(
+      expect.objectContaining({
+        defaultOpen: true,
+      })
+    );
+    const form = (createDialogProps as { form?: ReactElement }).form;
+
+    expect(form?.props).toEqual(
+      expect.objectContaining({
+        defaultType: 'CREDIT',
+      })
+    );
   });
 });

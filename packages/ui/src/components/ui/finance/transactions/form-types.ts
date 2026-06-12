@@ -23,6 +23,26 @@ export type TransactionCategory = DbTransactionCategory;
 export type Wallet = DbWallet;
 export type TagDraft = Pick<DbTag, 'name'> & Partial<Pick<DbTag, 'color'>>;
 
+export type TransactionFormInitialMode = 'transaction' | 'transfer';
+
+export interface TransactionFormInitialTransaction {
+  amount?: number;
+  category_id?: string;
+  categoryKind?: 'expense' | 'income';
+  description?: string;
+  origin_wallet_id?: string;
+  taken_at?: Date;
+}
+
+export interface TransactionFormInitialTransfer {
+  amount?: number;
+  description?: string;
+  destination_amount?: number;
+  destination_wallet_id?: string;
+  origin_wallet_id?: string;
+  taken_at?: Date;
+}
+
 export interface TransactionFormProps {
   wsId: string;
   data?: Partial<Transaction>;
@@ -33,6 +53,9 @@ export interface TransactionFormProps {
   canUpdateConfidentialTransactions?: boolean;
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
+  initialMode?: TransactionFormInitialMode;
+  initialTransaction?: TransactionFormInitialTransaction;
+  initialTransfer?: TransactionFormInitialTransfer;
   permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 

@@ -33,7 +33,7 @@ export default async function WorkspaceWalletsPage({
       currency={context.currency}
       financePrefix=""
       internalApiOptions={internalApiOptions}
-      openCreateDialog={sp.create === 'wallet'}
+      openCreateDialog={sp.create === 'wallet' || sp.create === 'credit-card'}
       page={sp.page}
       pageSize={sp.pageSize}
       permissions={context.permissions}

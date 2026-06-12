@@ -65,6 +65,7 @@ describe('wallet credit summary route', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.getAccessibleWallet).toHaveBeenCalledWith({
+      authContext: undefined,
       req: expect.any(Request),
       requiredPermission: 'view_transactions',
       select: 'id',
@@ -94,5 +95,69 @@ describe('wallet credit summary route', () => {
       totalOutstanding: 200,
       utilization: 20,
     });
+  });
+
+  it('forwards an optional finance route auth context to wallet access', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        availableCredit: 800,
+        balance: -200,
+        currentActivity: -50,
+        cycleEnd: '2026-06-15',
+        cycleStart: '2026-05-15',
+        daysUntilPayment: 10,
+        daysUntilStatement: 20,
+        limit: 1000,
+        nextPaymentDate: '2026-06-25',
+        nextStatementDate: '2026-06-15',
+        prevCycleEnd: '2026-05-15',
+        prevCycleStart: '2026-04-15',
+        statementBalance: -150,
+        totalOutstanding: 200,
+        utilization: 20,
+      },
+      error: null,
+    });
+    const authContext = {
+      sbAdmin: {},
+      supabase: {},
+      user: {
+        id: 'user-1',
+      },
+    };
+
+    mocks.getAccessibleWallet.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-resolved',
+        sbAdmin: {
+          schema: vi.fn(() => ({ rpc })),
+        },
+        userId: 'user-1',
+      },
+      wallet: {
+        id: 'wallet-1',
+      },
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new Request('http://localhost/wallets/wallet-1/credit-summary'),
+      {
+        params: Promise.resolve({
+          wsId: 'personal',
+          walletId: 'wallet-1',
+        }),
+      },
+      authContext as never
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.getAccessibleWallet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authContext,
+        walletId: 'wallet-1',
+        wsId: 'personal',
+      })
+    );
   });
 });

@@ -30,7 +30,10 @@ import { WalletCheckpointPanel } from '../checkpoints/wallet-checkpoint-panel';
 import { WalletIconDisplay } from '../wallet-icon-display';
 import { CreditWalletSummary } from './credit-wallet-summary';
 import { WalletInterestSection } from './interest';
-import { WalletDetailsActions } from './wallet-details-actions';
+import {
+  type WalletDetailsAction,
+  WalletDetailsActions,
+} from './wallet-details-actions';
 import { WalletDetailsAmount } from './wallet-details-amount';
 import WalletRoleAccessDialog from './wallet-role-access-dialog';
 
@@ -38,6 +41,7 @@ interface Props {
   wsId: string;
   walletId: string;
   searchParams: {
+    action?: string;
     q: string;
     page: string;
     pageSize: string;
@@ -54,6 +58,7 @@ interface Props {
 export default async function WalletDetailsPage({
   wsId,
   walletId,
+  searchParams,
   defaultCurrency,
   internalApiOptions,
   permissions,
@@ -113,6 +118,7 @@ export default async function WalletDetailsPage({
 
   const currency = wallet.currency || resolvedDefaultCurrency || 'USD';
   const workspaceCurrency = resolvedDefaultCurrency || 'USD';
+  const initialAction = getInitialWalletAction(searchParams.action);
 
   // Fetch exchange rates for conversion display
   const exchangeRates = await getExchangeRates();
@@ -138,6 +144,7 @@ export default async function WalletDetailsPage({
           wsId={wsId}
           walletId={walletId}
           wallet={wallet as Wallet}
+          initialAction={initialAction}
           canUpdateWallets={canUpdateWallets}
           canCreateTransactions={canCreateTransactions}
           canCreateConfidentialTransactions={canCreateConfidentialTransactions}
@@ -149,6 +156,12 @@ export default async function WalletDetailsPage({
         />
       </div>
       <Separator className="my-4" />
+      {wallet.type === 'CREDIT' && (
+        <>
+          <CreditWalletSummary wsId={wsId} wallet={wallet as Wallet} />
+          <Separator className="my-4" />
+        </>
+      )}
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <Card className="grid gap-4">
           <div className="grid h-fit gap-2 rounded-lg p-4">
@@ -277,12 +290,6 @@ export default async function WalletDetailsPage({
           <Separator className="my-4" />
         </>
       )}
-      {wallet.type === 'CREDIT' && (
-        <>
-          <CreditWalletSummary wsId={wsId} wallet={wallet as Wallet} />
-          <Separator className="my-4" />
-        </>
-      )}
       <WalletCheckpointPanel
         wsId={wsId}
         walletId={walletId}
@@ -322,6 +329,18 @@ export default async function WalletDetailsPage({
       </Suspense>
     </div>
   );
+}
+
+function getInitialWalletAction(action?: string): WalletDetailsAction | null {
+  switch (action) {
+    case 'charge':
+    case 'payment':
+    case 'credit':
+    case 'edit':
+      return action;
+    default:
+      return null;
+  }
 }
 
 function DetailItem({

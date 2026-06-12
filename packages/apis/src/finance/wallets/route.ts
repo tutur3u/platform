@@ -1,4 +1,3 @@
-import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { canSetAnyFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -13,6 +12,7 @@ import {
   selectIncludesWalletCreditData,
   stripWalletCreditSelect,
 } from './wallet-access';
+import { parseWalletPayload } from './wallet-payload';
 
 const FULL_WALLET_SELECT =
   '*, credit_wallets(limit, statement_date, payment_date)';
@@ -322,7 +322,13 @@ export async function POST(
   authContext?: FinanceRouteAuthContext
 ) {
   const { wsId } = await params;
-  const data: Wallet = await req.json();
+  const parsed = await parseWalletPayload(req);
+
+  if (parsed.response) {
+    return parsed.response;
+  }
+
+  const data = parsed.data;
   const access = await getFinanceRouteContext(req, wsId, authContext);
 
   if (access.response) {
@@ -372,11 +378,24 @@ export async function POST(
 
   // Handle credit wallet data
   if (data.type === 'CREDIT' && upsertedWallet) {
+    const { limit, payment_date, statement_date } = data;
+
+    if (
+      limit === undefined ||
+      payment_date === undefined ||
+      statement_date === undefined
+    ) {
+      return NextResponse.json(
+        { message: 'Invalid wallet data' },
+        { status: 400 }
+      );
+    }
+
     const { error: creditError } = await sbAdmin.from('credit_wallets').upsert({
       wallet_id: upsertedWallet.id,
-      statement_date: data.statement_date ?? 1,
-      payment_date: data.payment_date ?? 1,
-      limit: data.limit ?? 0,
+      statement_date,
+      payment_date,
+      limit,
     });
 
     if (creditError) {

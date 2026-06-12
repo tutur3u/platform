@@ -8,6 +8,7 @@ import { SelectField } from '@tuturuuu/ui/custom/select-field';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -23,7 +24,7 @@ import {
 } from '@tuturuuu/utils/currencies';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import * as z from 'zod';
 import { toast } from '../../sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
@@ -32,7 +33,8 @@ import {
   useFinanceConfidentialVisibility,
 } from '../shared/use-finance-confidential-visibility';
 import { invalidateWalletMutationQueries } from './query-invalidation';
-import { WalletIconImagePicker } from './wallet-icon-image-picker';
+import { WalletBasicsFields } from './wallet-basics-fields';
+import { WalletCreditFields } from './wallet-credit-fields';
 import WalletRoleAccess from './walletId/wallet-role-access';
 
 const walletValidationMessageKeys = {
@@ -87,11 +89,14 @@ const createWalletFormSchema = (
       }
     });
 
-type WalletFormValues = z.infer<ReturnType<typeof createWalletFormSchema>>;
+export type WalletFormValues = z.infer<
+  ReturnType<typeof createWalletFormSchema>
+>;
 
 interface Props {
   wsId: string;
   data?: Wallet;
+  defaultType?: WalletFormValues['type'];
   onFinish?: (data: WalletFormValues) => void;
   isPersonalWorkspace?: boolean;
 }
@@ -99,6 +104,7 @@ interface Props {
 export function WalletForm({
   wsId,
   data,
+  defaultType = 'STANDARD',
   onFinish,
   isPersonalWorkspace,
 }: Props) {
@@ -111,11 +117,6 @@ export function WalletForm({
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Local state for immediate UI updates (icon/image)
-  const [localIcon, setLocalIcon] = useState<string | null>(data?.icon || null);
-  const [localImageSrc, setLocalImageSrc] = useState<string | null>(
-    data?.image_src || null
-  );
   const formSchema = useMemo(() => createWalletFormSchema(t), [t]);
 
   const form = useForm({
@@ -125,36 +126,20 @@ export function WalletForm({
       name: data?.name || '',
       description: data?.description || '',
       balance: data?.balance || 0,
-      type: data?.type || 'STANDARD',
+      type: data?.type || defaultType,
       currency: data?.currency || workspaceCurrency || 'USD',
       icon: data?.icon || null,
       image_src: data?.image_src || null,
       limit: data?.limit ?? undefined,
-      statement_date: data?.statement_date ?? undefined,
-      payment_date: data?.payment_date ?? undefined,
+      statement_date:
+        data?.statement_date ?? (defaultType === 'CREDIT' ? 1 : undefined),
+      payment_date:
+        data?.payment_date ?? (defaultType === 'CREDIT' ? 15 : undefined),
     },
   });
 
   const walletType = useWatch({ control: form.control, name: 'type' });
   const walletCurrency = useWatch({ control: form.control, name: 'currency' });
-
-  // Handle icon change - update both local state and form
-  const handleIconChange = useCallback(
-    (value: string | null) => {
-      setLocalIcon(value);
-      form.setValue('icon', value);
-    },
-    [form]
-  );
-
-  // Handle image_src change - update both local state and form
-  const handleImageSrcChange = useCallback(
-    (value: string | null) => {
-      setLocalImageSrc(value);
-      form.setValue('image_src', value);
-    },
-    [form]
-  );
 
   async function onSubmit(formData: WalletFormValues) {
     setLoading(true);
@@ -184,88 +169,11 @@ export function WalletForm({
   const formContent = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-        <div className="flex items-end gap-2">
-          <FormField
-            control={form.control}
-            name="icon"
-            render={() => (
-              <FormItem>
-                <FormLabel>{t('wallet-data-table.icon')}</FormLabel>
-                <FormControl>
-                  <WalletIconImagePicker
-                    icon={localIcon}
-                    imageSrc={localImageSrc}
-                    onIconChange={handleIconChange}
-                    onImageSrcChange={handleImageSrcChange}
-                    disabled={loading}
-                    translations={{
-                      selectIconOrImage: t(
-                        'wallet-data-table.select_icon_or_image'
-                      ),
-                      iconTab: t('wallet-data-table.icon_tab'),
-                      bankTab: t('wallet-data-table.bank_tab'),
-                      mobileTab: t('wallet-data-table.mobile_tab'),
-                      searchPlaceholder: t('wallet-data-table.search'),
-                      clear: t('common.clear'),
-                      selectIcon: t('wallet-data-table.select_icon'),
-                      iconDescription: t('wallet-data-table.icon_description'),
-                      changeIconOrImageDescription: t(
-                        'wallet-data-table.change_icon_or_image_description'
-                      ),
-                      chooseIconOrImageDescription: t(
-                        'wallet-data-table.choose_icon_or_image_description'
-                      ),
-                      searchIcons: t('wallet-data-table.search_icons'),
-                      noIcon: t('wallet-data-table.no_icon'),
-                      banksAvailable: (count) =>
-                        t('wallet-data-table.banks_available', { count }),
-                      mobileProvidersAvailable: (count) =>
-                        t('wallet-data-table.mobile_providers_available', {
-                          count,
-                        }),
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="name"
-            disabled={loading}
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>{t('wallet-data-table.wallet_name')}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t('wallet-data-table.wallet_name_placeholder')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="description"
-          disabled={loading}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('wallet-data-table.description')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('wallet-data-table.description_placeholder')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+        <WalletBasicsFields
+          form={form}
+          loading={loading}
+          defaultIcon={data?.icon}
+          defaultImageSrc={data?.image_src}
         />
 
         <FormField
@@ -336,9 +244,25 @@ export function WalletForm({
                   ]}
                   classNames={{ root: 'w-full' }}
                   value={field.value}
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+
+                    if (value === 'CREDIT') {
+                      if (!form.getValues('statement_date')) {
+                        form.setValue('statement_date', 1);
+                      }
+                      if (!form.getValues('payment_date')) {
+                        form.setValue('payment_date', 15);
+                      }
+                    }
+                  }}
                 />
               </FormControl>
+              <FormDescription>
+                {walletType === 'CREDIT'
+                  ? t('wallet-data-table.wallet_type_credit_description')
+                  : t('wallet-data-table.wallet_type_standard_description')}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -369,91 +293,11 @@ export function WalletForm({
         />
 
         {walletType === 'CREDIT' && (
-          <div className="space-y-2 rounded-lg border p-3">
-            <div className="font-medium text-sm">
-              {t('wallet-data-table.credit_details')}
-            </div>
-
-            <FormField
-              control={form.control}
-              name="limit"
-              disabled={loading}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('wallet-data-table.credit_limit')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      {...field}
-                      value={field.value ?? ''}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        field.onChange(Number.isNaN(val) ? undefined : val);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-2">
-              <FormField
-                control={form.control}
-                name="statement_date"
-                disabled={loading}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t('wallet-data-table.statement_date')}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={31}
-                        placeholder="1"
-                        {...field}
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value, 10);
-                          field.onChange(Number.isNaN(val) ? undefined : val);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="payment_date"
-                disabled={loading}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('wallet-data-table.payment_date')}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={31}
-                        placeholder="1"
-                        {...field}
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value, 10);
-                          field.onChange(Number.isNaN(val) ? undefined : val);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
+          <WalletCreditFields
+            form={form}
+            loading={loading}
+            currency={walletCurrency || workspaceCurrency || 'USD'}
+          />
         )}
 
         <div className="h-2" />

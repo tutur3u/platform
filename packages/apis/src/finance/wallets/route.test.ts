@@ -5,7 +5,10 @@ const mocks = vi.hoisted(() => ({
   getWorkspaceConfig: vi.fn(),
   creditWalletIn: vi.fn(),
   creditWalletSelect: vi.fn(),
+  creditWalletUpsert: vi.fn(),
   privateRpc: vi.fn(),
+  privateWalletSingle: vi.fn(),
+  privateWalletUpsert: vi.fn(),
   roleMembersEq: vi.fn(),
   roleMembersWorkspaceEq: vi.fn(),
   walletEq: vi.fn(),
@@ -49,6 +52,7 @@ describe('wallets route', () => {
                   eq: mocks.walletEq,
                 };
               }),
+              upsert: mocks.privateWalletUpsert,
             };
           }
 
@@ -73,6 +77,7 @@ describe('wallets route', () => {
               in: mocks.creditWalletIn,
             };
           }),
+          upsert: mocks.creditWalletUpsert,
         };
       }
 
@@ -100,6 +105,21 @@ describe('wallets route', () => {
         },
       ],
       error: null,
+    });
+    mocks.creditWalletUpsert.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    mocks.privateWalletSingle.mockResolvedValue({
+      data: {
+        id: 'wallet-created',
+      },
+      error: null,
+    });
+    mocks.privateWalletUpsert.mockReturnValue({
+      select: vi.fn(() => ({
+        single: mocks.privateWalletSingle,
+      })),
     });
     mocks.privateRpc.mockResolvedValue({
       data: [
@@ -272,5 +292,146 @@ describe('wallets route', () => {
     expect(mocks.creditWalletIn).toHaveBeenCalledWith('wallet_id', [
       'wallet-default',
     ]);
+  });
+
+  it('returns 400 for malformed wallet create JSON before resolving access', async () => {
+    const { POST } = await import('./route.js');
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/wallets', {
+        method: 'POST',
+        body: '{',
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Malformed JSON request body',
+    });
+    expect(mocks.getFinanceRouteContext).not.toHaveBeenCalled();
+  });
+
+  it('requires positive credit metadata for credit wallet creation', async () => {
+    const { POST } = await import('./route.js');
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/wallets', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Rewards Card',
+          currency: 'USD',
+          type: 'CREDIT',
+          limit: 0,
+          statement_date: 0,
+          payment_date: 32,
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual(
+      expect.objectContaining({
+        message: 'Invalid wallet data',
+        errors: expect.arrayContaining([
+          expect.objectContaining({ path: ['limit'] }),
+          expect.objectContaining({ path: ['statement_date'] }),
+          expect.objectContaining({ path: ['payment_date'] }),
+        ]),
+      })
+    );
+    expect(mocks.getFinanceRouteContext).not.toHaveBeenCalled();
+  });
+
+  it('ignores credit fields for standard wallet creation', async () => {
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: withPermissions(['create_wallets']),
+        sbAdmin: createAdminClient(),
+        user: {
+          id: 'user-1',
+        },
+      },
+    });
+
+    const { POST } = await import('./route.js');
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/wallets', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Cash',
+          currency: 'USD',
+          type: 'STANDARD',
+          limit: 3000,
+          statement_date: 1,
+          payment_date: 15,
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.privateWalletUpsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        currency: 'USD',
+        name: 'Cash',
+        type: 'STANDARD',
+        ws_id: 'ws-1',
+      }),
+    ]);
+    expect(mocks.creditWalletUpsert).not.toHaveBeenCalled();
+  });
+
+  it('upserts credit metadata for credit wallet creation', async () => {
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: withPermissions(['create_wallets']),
+        sbAdmin: createAdminClient(),
+        user: {
+          id: 'user-1',
+        },
+      },
+    });
+
+    const { POST } = await import('./route.js');
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/wallets', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Rewards Card',
+          currency: 'USD',
+          type: 'CREDIT',
+          limit: 5000,
+          statement_date: 3,
+          payment_date: 25,
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.creditWalletUpsert).toHaveBeenCalledWith({
+      wallet_id: 'wallet-created',
+      statement_date: 3,
+      payment_date: 25,
+      limit: 5000,
+    });
   });
 });

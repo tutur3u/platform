@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { FinanceRouteAuthContext } from '../../request-access';
 import { attachWalletAuditData } from '../audit-balance';
 import { flattenWalletCreditData, getAccessibleWallet } from '../wallet-access';
+import { parseWalletPayload } from '../wallet-payload';
 
 interface Params {
   params: Promise<{
@@ -46,7 +47,13 @@ export async function PUT(
   { params }: Params,
   authContext?: FinanceRouteAuthContext
 ) {
-  const data = await req.json();
+  const parsed = await parseWalletPayload(req);
+
+  if (parsed.response) {
+    return parsed.response;
+  }
+
+  const data = parsed.data;
   const { walletId: id, wsId } = await params;
   const access = await getAccessibleWallet({
     req,
@@ -91,9 +98,9 @@ export async function PUT(
       .from('credit_wallets')
       .upsert({
         wallet_id: id,
-        statement_date: statement_date ?? 1,
-        payment_date: payment_date ?? 1,
-        limit: limit ?? 0,
+        statement_date,
+        payment_date,
+        limit,
       });
 
     if (creditError) {

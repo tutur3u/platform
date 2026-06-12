@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import type { FinanceRouteAuthContext } from '../../../request-access';
 import { getAccessibleWallet } from '../../wallet-access';
 
 interface Params {
@@ -27,9 +28,14 @@ const creditSummarySchema = z.object({
   utilization: z.coerce.number().default(0),
 });
 
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { walletId, wsId } = await params;
   const access = await getAccessibleWallet({
+    authContext,
     req,
     wsId,
     walletId,

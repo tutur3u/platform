@@ -91,12 +91,20 @@ export function QuickActions({
           </DropdownMenuItem>
         )}
         {canCreateWallets && (
-          <DropdownMenuItem
-            onClick={() => pushFinanceHref('/wallets?create=wallet')}
-          >
-            <Wallet className="mr-2 h-4 w-4" />
-            <span>{t('new_wallet')}</span>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem
+              onClick={() => pushFinanceHref('/wallets?create=wallet')}
+            >
+              <Wallet className="mr-2 h-4 w-4" />
+              <span>{t('new_wallet')}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => pushFinanceHref('/wallets?create=credit-card')}
+            >
+              <CreditCard className="mr-2 h-4 w-4" />
+              <span>{t('new_credit_card')}</span>
+            </DropdownMenuItem>
+          </>
         )}
         {canManageFinance && (
           <DropdownMenuItem

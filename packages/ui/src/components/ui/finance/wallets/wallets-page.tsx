@@ -81,6 +81,7 @@ export default async function WalletsPage({
     href: `/${wsId}${financePrefix}/wallets/${d.id}`,
     ws_id: wsId,
   }));
+  const isCreditCardCreate = searchParams.create === 'credit-card';
 
   return (
     <>
@@ -90,8 +91,19 @@ export default async function WalletsPage({
         description={t('ws-wallets.description')}
         createTitle={t('ws-wallets.create')}
         createDescription={t('ws-wallets.create_description')}
-        defaultOpen={openCreateDialog || searchParams.create === 'wallet'}
-        form={canCreateWallets ? <WalletForm wsId={wsId} /> : undefined}
+        defaultOpen={
+          openCreateDialog ||
+          searchParams.create === 'wallet' ||
+          isCreditCardCreate
+        }
+        form={
+          canCreateWallets ? (
+            <WalletForm
+              wsId={wsId}
+              defaultType={isCreditCardCreate ? 'CREDIT' : 'STANDARD'}
+            />
+          ) : undefined
+        }
       />
       <Separator className="my-4" />
       <div className="mb-4 flex flex-wrap justify-end gap-2">
