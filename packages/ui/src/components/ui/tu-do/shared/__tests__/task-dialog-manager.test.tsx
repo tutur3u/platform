@@ -34,7 +34,7 @@ vi.mock('next/navigation', () => ({
 
 const {
   mockGetCurrentUserProfile,
-  mockGetCurrentUserTask,
+  mockGetTaskDialogHydration,
   mockGetUserConfig,
   mockGetWorkspaceTask,
   mockListWorkspaceLabels,
@@ -43,7 +43,7 @@ const {
   mockResolveTaskProjectWorkspaceId,
 } = vi.hoisted(() => ({
   mockGetCurrentUserProfile: vi.fn(),
-  mockGetCurrentUserTask: vi.fn(),
+  mockGetTaskDialogHydration: vi.fn(),
   mockGetUserConfig: vi.fn(),
   mockGetWorkspaceTask: vi.fn(),
   mockListWorkspaceLabels: vi.fn(),
@@ -57,7 +57,7 @@ vi.mock('@tuturuuu/internal-api', () => ({
 }));
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
-  getCurrentUserTask: mockGetCurrentUserTask,
+  getTaskDialogHydration: mockGetTaskDialogHydration,
   getWorkspaceTask: mockGetWorkspaceTask,
   listWorkspaceLabels: mockListWorkspaceLabels,
   listWorkspaceTaskProjectsByIds: mockListWorkspaceTaskProjectsByIds,
@@ -279,7 +279,7 @@ beforeEach(() => {
         configId === 'TASK_DIALOG_DEFAULT_PRESENTATION' ? 'compact' : 'false',
     })
   );
-  mockGetCurrentUserTask.mockResolvedValue({
+  mockGetTaskDialogHydration.mockResolvedValue({
     task: {
       ...mockTask,
       list: { board_id: 'board-1' },
@@ -495,8 +495,9 @@ describe('TaskDialogManager', () => {
     );
 
     await waitFor(() => {
-      expect(mockGetCurrentUserTask).toHaveBeenCalledWith(
+      expect(mockGetTaskDialogHydration).toHaveBeenCalledWith(
         'task-2',
+        expect.any(Object),
         expect.any(Object)
       );
     });
@@ -607,7 +608,7 @@ describe('TaskDialogManager', () => {
       taskWorkspacePersonal: boolean;
       taskWorkspaceTier: 'PRO';
     }>();
-    mockGetCurrentUserTask.mockReturnValueOnce(deferred.promise);
+    mockGetTaskDialogHydration.mockReturnValueOnce(deferred.promise);
 
     const { getByTestId } = render(
       <Wrapper>
@@ -663,8 +664,9 @@ describe('TaskDialogManager', () => {
     );
 
     await waitFor(() => {
-      expect(mockGetCurrentUserTask).toHaveBeenCalledWith(
+      expect(mockGetTaskDialogHydration).toHaveBeenCalledWith(
         'task-42',
+        expect.any(Object),
         expect.any(Object)
       );
     });
@@ -707,7 +709,7 @@ describe('TaskDialogManager', () => {
       expect(getByTestId('task-name')).toHaveTextContent('Test Task');
     });
 
-    mockGetCurrentUserTask.mockClear();
+    mockGetTaskDialogHydration.mockClear();
     mockGetWorkspaceTask.mockClear();
 
     fireEvent.click(getByTestId('navigate-button'));
@@ -716,7 +718,7 @@ describe('TaskDialogManager', () => {
       expect(getByTestId('task-name')).toHaveTextContent('Cached Related Task');
     });
 
-    expect(mockGetCurrentUserTask).not.toHaveBeenCalled();
+    expect(mockGetTaskDialogHydration).not.toHaveBeenCalled();
   });
 
   it('should use replaceState to revert URL when dialog closes', async () => {

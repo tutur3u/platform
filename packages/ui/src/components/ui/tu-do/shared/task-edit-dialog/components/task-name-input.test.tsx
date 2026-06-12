@@ -27,7 +27,9 @@ function renderTaskNameInput({
   editorElement.tabIndex = -1;
   editorWrapper.append(editorElement);
 
-  const titleInputRef = { current: null };
+  const titleInputRef = {
+    current: null as HTMLInputElement | HTMLTextAreaElement | null,
+  };
   const editorRef = { current: editorWrapper };
   const lastCursorPositionRef = { current: null };
   const targetEditorCursorRef = { current: targetCursor };
@@ -153,9 +155,11 @@ describe('TaskNameInput', () => {
 
     const eventAllowed = fireEvent.keyDown(input, { key: 'Enter' });
 
+    expect(input.tagName).toBe('TEXTAREA');
     expect(eventAllowed).toBe(false);
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(targetEditorCursorRef.current).toBe(12);
+    expect(input).toHaveProperty('value', 'APIs for Agent Pi');
 
     vi.runOnlyPendingTimers();
 

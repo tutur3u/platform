@@ -26,6 +26,7 @@ interface CompactTaskDialogPanelProps {
   titleInput: ReactNode;
   taskStatus?: ReactNode;
   propertyControls: ReactNode;
+  editActions?: ReactNode;
   smartAction?: ReactNode;
   smartPanel?: ReactNode;
   saveAsDraft?: boolean;
@@ -83,6 +84,7 @@ export function CompactTaskDialogPanel({
   titleInput,
   taskStatus,
   propertyControls,
+  editActions,
   smartAction,
   smartPanel,
   saveAsDraft,
@@ -219,6 +221,12 @@ export function CompactTaskDialogPanel({
               </>
             )}
           </Button>
+        </div>
+      )}
+
+      {!hasCreateActions && editActions && (
+        <div className="flex items-center justify-end gap-1.5 border-t bg-muted/20 px-4 py-3">
+          {editActions}
         </div>
       )}
     </div>

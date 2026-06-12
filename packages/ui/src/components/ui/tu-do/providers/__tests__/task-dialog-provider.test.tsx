@@ -9,8 +9,8 @@ import {
   useTaskDialogContext,
 } from '../task-dialog-provider';
 
-const { mockGetCurrentUserTask } = vi.hoisted(() => ({
-  mockGetCurrentUserTask: vi.fn(),
+const { mockGetTaskDialogHydration } = vi.hoisted(() => ({
+  mockGetTaskDialogHydration: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/internal-api/tasks', async () => {
@@ -20,7 +20,7 @@ vi.mock('@tuturuuu/internal-api/tasks', async () => {
 
   return {
     ...actual,
-    getCurrentUserTask: mockGetCurrentUserTask,
+    getTaskDialogHydration: mockGetTaskDialogHydration,
   };
 });
 
@@ -72,12 +72,12 @@ function createDeferred<T>() {
 
 describe('TaskDialogProvider', () => {
   afterEach(() => {
-    mockGetCurrentUserTask.mockReset();
+    mockGetTaskDialogHydration.mockReset();
     vi.useRealTimers();
   });
 
   it('should enable collaborationMode for paid task workspaces opened by id', async () => {
-    mockGetCurrentUserTask.mockResolvedValueOnce({
+    mockGetTaskDialogHydration.mockResolvedValueOnce({
       task: {
         ...mockTask,
         list: { board_id: 'board-1' },
@@ -99,7 +99,7 @@ describe('TaskDialogProvider', () => {
   });
 
   it('should disable collaborationMode for free task workspaces opened by id', async () => {
-    mockGetCurrentUserTask.mockResolvedValueOnce({
+    mockGetTaskDialogHydration.mockResolvedValueOnce({
       task: {
         ...mockTask,
         list: { board_id: 'board-1' },
@@ -140,7 +140,7 @@ describe('TaskDialogProvider', () => {
       taskWorkspacePersonal: boolean;
       taskWorkspaceTier: 'PRO';
     }>();
-    mockGetCurrentUserTask.mockReturnValueOnce(deferred.promise);
+    mockGetTaskDialogHydration.mockReturnValueOnce(deferred.promise);
 
     const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
     let openPromise!: Promise<boolean>;
@@ -183,6 +183,17 @@ describe('TaskDialogProvider', () => {
       await openPromise;
     });
 
+    expect(mockGetTaskDialogHydration).toHaveBeenCalledWith(
+      mockTask.id,
+      {
+        taskWsId: 'workspace-1',
+        taskWorkspacePersonal: undefined,
+        taskWorkspaceTier: undefined,
+      },
+      expect.objectContaining({
+        fetch: expect.any(Function),
+      })
+    );
     expect(result.current.state).toMatchObject({
       isOpen: true,
       isHydratingTask: false,
@@ -213,7 +224,7 @@ describe('TaskDialogProvider', () => {
       workspaceProjects: [],
     };
     const deferred = createDeferred<never>();
-    mockGetCurrentUserTask.mockReturnValueOnce(deferred.promise);
+    mockGetTaskDialogHydration.mockReturnValueOnce(deferred.promise);
 
     const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
     let openPromise!: Promise<boolean>;
@@ -254,7 +265,7 @@ describe('TaskDialogProvider', () => {
       taskWorkspacePersonal: boolean;
       taskWorkspaceTier: 'PRO';
     }>();
-    mockGetCurrentUserTask.mockReturnValueOnce(firstDeferred.promise);
+    mockGetTaskDialogHydration.mockReturnValueOnce(firstDeferred.promise);
 
     const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
     let firstOpenPromise!: Promise<boolean>;

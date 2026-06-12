@@ -154,6 +154,12 @@ export interface CurrentUserTaskDialogResponse {
   taskWorkspaceTier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
 }
 
+export interface TaskDialogHydrationOptions {
+  taskWsId?: string;
+  taskWorkspacePersonal?: boolean;
+  taskWorkspaceTier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
+}
+
 export interface ListWorkspaceTasksOptions {
   boardId?: string;
   listId?: string;
@@ -1216,6 +1222,55 @@ export async function getCurrentUserTask(
       cache: 'no-store',
     }
   );
+}
+
+function getTaskDialogBoardId(task: WorkspaceTaskApiTask) {
+  const taskWithBoardContext = task as WorkspaceTaskApiTask & {
+    list?: { board_id?: string | null } | null;
+    task_lists?: { board_id?: string | null } | null;
+  };
+
+  return (
+    taskWithBoardContext.board_id ??
+    taskWithBoardContext.list?.board_id ??
+    taskWithBoardContext.task_lists?.board_id ??
+    taskWithBoardContext.source_board_id ??
+    null
+  );
+}
+
+export async function getTaskDialogHydration(
+  taskId: string,
+  hydrationOptions: TaskDialogHydrationOptions = {},
+  clientOptions?: InternalApiClientOptions
+): Promise<CurrentUserTaskDialogResponse> {
+  if (!hydrationOptions.taskWsId) {
+    return getCurrentUserTask(taskId, clientOptions);
+  }
+
+  const { task } = await getWorkspaceTask(
+    hydrationOptions.taskWsId,
+    taskId,
+    clientOptions
+  );
+  const boardId = getTaskDialogBoardId(task);
+  const availableLists = boardId
+    ? ((
+        await listWorkspaceTaskLists(
+          hydrationOptions.taskWsId,
+          boardId,
+          clientOptions
+        )
+      ).lists ?? [])
+    : [];
+
+  return {
+    task,
+    availableLists,
+    taskWsId: hydrationOptions.taskWsId,
+    taskWorkspacePersonal: hydrationOptions.taskWorkspacePersonal ?? false,
+    taskWorkspaceTier: hydrationOptions.taskWorkspaceTier ?? 'FREE',
+  };
 }
 
 export async function upsertCurrentUserTaskPersonalPlacement(

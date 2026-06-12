@@ -6,6 +6,7 @@ import {
   deleteWorkspaceLabel,
   deleteWorkspaceTaskBoard,
   deleteWorkspaceTaskProject,
+  getTaskDialogHydration,
   getWorkspaceBoardsData,
   getWorkspaceTaskBoard,
   getWorkspaceTaskProjectTasks,
@@ -293,6 +294,116 @@ describe('workspace board internal-api helpers', () => {
         cache: 'no-store',
       })
     );
+  });
+
+  it('hydrates an external task dialog through the source workspace task and list routes', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          task: {
+            id: 'task-1',
+            name: 'External source task',
+            list_id: 'list-1',
+            board_id: 'board-1',
+            display_number: 12,
+            created_at: '2026-06-12T00:00:00.000Z',
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          lists: [
+            {
+              id: 'list-1',
+              board_id: 'board-1',
+              name: 'Todo',
+              status: 'not_started',
+              deleted: false,
+            },
+          ],
+        })
+      );
+
+    const response = await getTaskDialogHydration(
+      'task-1',
+      {
+        taskWsId: 'source-ws',
+        taskWorkspacePersonal: false,
+        taskWorkspaceTier: 'PRO',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/source-ws/tasks/task-1',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/source-ws/task-boards/board-1/lists',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url).includes('/users/me/'))
+    ).toBe(false);
+    expect(response).toMatchObject({
+      task: {
+        id: 'task-1',
+        name: 'External source task',
+      },
+      availableLists: [
+        {
+          id: 'list-1',
+          board_id: 'board-1',
+        },
+      ],
+      taskWsId: 'source-ws',
+      taskWorkspacePersonal: false,
+      taskWorkspaceTier: 'PRO',
+    });
+  });
+
+  it('hydrates a user task dialog through the current user route when no source workspace is known', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        task: {
+          id: 'task-1',
+          name: 'User task',
+          list_id: 'list-1',
+          display_number: 12,
+          created_at: '2026-06-12T00:00:00.000Z',
+        },
+        availableLists: [],
+        taskWsId: 'workspace-1',
+        taskWorkspacePersonal: true,
+        taskWorkspaceTier: 'FREE',
+      })
+    );
+
+    const response = await getTaskDialogHydration(
+      'task-1',
+      {},
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/users/me/tasks/task-1',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(response).toMatchObject({
+      task: { id: 'task-1', name: 'User task' },
+      taskWsId: 'workspace-1',
+      taskWorkspacePersonal: true,
+      taskWorkspaceTier: 'FREE',
+    });
   });
 
   it('lists workspace tasks with task state filters', async () => {

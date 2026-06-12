@@ -36,7 +36,7 @@ export interface TaskDescriptionEditorProps {
   // Refs
   editorRef: React.RefObject<HTMLDivElement | null>;
   richTextEditorRef: React.RefObject<HTMLDivElement | null>;
-  titleInputRef: React.RefObject<HTMLInputElement | null>;
+  titleInputRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
   lastCursorPositionRef: React.RefObject<number | null>;
   targetEditorCursorRef: React.RefObject<number | null>;
   flushEditorPendingRef: React.RefObject<

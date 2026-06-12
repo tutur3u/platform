@@ -481,17 +481,25 @@ export function TaskDialogProvider({
       }
 
       try {
-        const { getCurrentUserTask } = await import(
+        const { getTaskDialogHydration } = await import(
           '@tuturuuu/internal-api/tasks'
         );
 
-        const response = await getCurrentUserTask(taskId, {
-          fetch: (input, init) =>
-            fetch(new URL(String(input), window.location.origin).toString(), {
-              ...init,
-              cache: 'no-store',
-            }),
-        });
+        const response = await getTaskDialogHydration(
+          taskId,
+          {
+            taskWsId: options?.taskWsId,
+            taskWorkspacePersonal: options?.taskWorkspacePersonal,
+            taskWorkspaceTier: options?.taskWorkspaceTier,
+          },
+          {
+            fetch: (input, init) =>
+              fetch(new URL(String(input), window.location.origin).toString(), {
+                ...init,
+                cache: 'no-store',
+              }),
+          }
+        );
 
         if (!response) {
           markHydratingDialogFailed(requestId);

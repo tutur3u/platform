@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
+import { CheckCircle2, CircleX, Trash2 } from '@tuturuuu/icons';
 import {
   checkWorkspacePermission,
   createWorkspaceTask,
@@ -16,6 +17,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import { cn } from '@tuturuuu/utils/format';
@@ -264,7 +266,7 @@ export function TaskEditDialog({
   });
 
   // Refs
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const richTextEditorRef = useRef<HTMLDivElement>(null);
   const lastCursorPositionRef = useRef<number | null>(null);
@@ -834,6 +836,39 @@ export function TaskEditDialog({
     fallbackBroadcast: taskRealtimeBroadcast,
     onUpdate,
   });
+
+  const currentList = availableLists?.find(
+    (list) => list.id === formState.selectedListId
+  );
+  const doneList = availableLists?.find(
+    (list) => list.status === 'done' && !list.deleted
+  );
+  const closedList = availableLists?.find(
+    (list) => list.status === 'closed' && !list.deleted
+  );
+  const isDeletedTask = Boolean(
+    task?.deleted_at ||
+      (task as (Task & { deleted?: boolean }) | undefined)?.deleted
+  );
+  const canShowCompactEditActions =
+    !isCreateMode &&
+    !!task?.id &&
+    task.id !== 'new' &&
+    !isDeletedTask &&
+    !taskControlsDisabled;
+  const canShowCompactStatusActions =
+    canShowCompactEditActions && currentList?.status !== 'documents';
+  const showCompactDoneAction =
+    canShowCompactStatusActions &&
+    !!doneList &&
+    doneList.id !== formState.selectedListId &&
+    currentList?.status !== 'done';
+  const showCompactClosedAction =
+    canShowCompactStatusActions &&
+    !!closedList &&
+    closedList.id !== formState.selectedListId &&
+    closedList.id !== doneList?.id &&
+    currentList?.status !== 'closed';
 
   // Task relationships
   const {
@@ -2014,6 +2049,62 @@ export function TaskEditDialog({
       rootT,
     ]
   );
+  const compactEditActions = canShowCompactEditActions ? (
+    <>
+      {showCompactDoneAction && doneList && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t('mark_as_done')}
+              disabled={isLoading}
+              className="h-8 w-8 text-muted-foreground hover:text-dynamic-green"
+              onClick={() => void updateList(doneList.id)}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">{t('mark_as_done')}</TooltipContent>
+        </Tooltip>
+      )}
+      {showCompactClosedAction && closedList && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t('mark_as_closed')}
+              disabled={isLoading}
+              className="h-8 w-8 text-muted-foreground hover:text-dynamic-purple"
+              onClick={() => void updateList(closedList.id)}
+            >
+              <CircleX className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">{t('mark_as_closed')}</TooltipContent>
+        </Tooltip>
+      )}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t('delete_task')}
+            disabled={isLoading}
+            className="h-8 w-8 text-muted-foreground hover:text-dynamic-red"
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">{t('delete_task')}</TooltipContent>
+      </Tooltip>
+    </>
+  ) : undefined;
 
   // Update refs
   quickDueRef.current = handleQuickDueDate;
@@ -2199,6 +2290,7 @@ export function TaskEditDialog({
               }
               isLoading={isLoading}
               isPersonalWorkspace={isPersonalWorkspace}
+              editActions={compactEditActions}
               onSaveAsDraftChange={isCreateMode ? setSaveAsDraft : undefined}
               onCreateMultipleChange={
                 isCreateMode ? setCreateMultiple : undefined

@@ -177,4 +177,59 @@ describe('CompactTaskCreatePopover', () => {
       })
     ).not.toBeInTheDocument();
   });
+
+  it('renders compact edit actions when provided', () => {
+    const onDelete = vi.fn();
+    const onDone = vi.fn();
+    const onClosed = vi.fn();
+
+    render(
+      <Dialog open={true}>
+        <CompactTaskCreatePopover
+          title="Edit task"
+          titleInput={<input aria-label="Task title" defaultValue="Existing" />}
+          propertyControls={
+            <button type="button" aria-label="List: Inbox">
+              List
+            </button>
+          }
+          editActions={
+            <>
+              <button
+                type="button"
+                aria-label="common.mark_as_done"
+                onClick={onDone}
+              >
+                Done
+              </button>
+              <button
+                type="button"
+                aria-label="common.mark_as_closed"
+                onClick={onClosed}
+              >
+                Closed
+              </button>
+              <button
+                type="button"
+                aria-label="common.delete_task"
+                onClick={onDelete}
+              >
+                Delete
+              </button>
+            </>
+          }
+          onClose={vi.fn()}
+          onFullscreen={vi.fn()}
+        />
+      </Dialog>
+    );
+
+    fireEvent.click(screen.getByLabelText('common.mark_as_done'));
+    fireEvent.click(screen.getByLabelText('common.mark_as_closed'));
+    fireEvent.click(screen.getByLabelText('common.delete_task'));
+
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(onClosed).toHaveBeenCalledTimes(1);
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
 });
