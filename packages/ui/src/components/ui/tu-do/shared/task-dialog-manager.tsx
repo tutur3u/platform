@@ -505,11 +505,14 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     wsId,
   ]);
 
-  // Determine if the task needs its own presence provider (cross-workspace tasks)
+  // Determine if the task needs its own presence provider (cross-workspace tasks).
+  // Keep the provider shell mounted from the initial snapshot when taskWsId is
+  // already known, otherwise hydration can wrap the open dialog in a new
+  // provider and Radix replays the compact dialog entrance animation.
   const needsOwnProvider =
-    state.realtimeEnabled &&
-    state.taskWsId &&
-    (!wsPresence?.realtimeEnabled || state.taskWsId !== wsId);
+    state.taskWsId && (!wsPresence?.realtimeEnabled || state.taskWsId !== wsId);
+  const ownProviderEnabled =
+    !!state.realtimeEnabled && !state.taskWorkspacePersonal;
 
   if (!state.isOpen || !state.task) {
     return null;
@@ -560,7 +563,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       <WorkspacePresenceProvider
         wsId={state.taskWsId}
         tier={state.taskWorkspaceTier ?? null}
-        enabled={!state.taskWorkspacePersonal}
+        enabled={ownProviderEnabled}
       >
         {dialog}
       </WorkspacePresenceProvider>

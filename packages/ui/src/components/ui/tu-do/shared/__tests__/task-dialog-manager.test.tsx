@@ -13,8 +13,12 @@ import { RECENT_SIDEBAR_VISIT_EVENT } from '../recent-sidebar-events';
 import { TaskDialogManager } from '../task-dialog-manager';
 import { REQUEST_OPEN_TASK_EVENT } from '../task-open-events';
 
-const { mockSearchParams } = vi.hoisted(() => ({
+const { mockSearchParams, taskDialogRenderStats } = vi.hoisted(() => ({
   mockSearchParams: new URLSearchParams(),
+  taskDialogRenderStats: {
+    mounts: 0,
+    unmounts: 0,
+  },
 }));
 
 // Mock Next.js navigation (no longer needs useRouter/usePathname for URL manipulation)
@@ -177,27 +181,37 @@ vi.mock('../task-edit-dialog', () => ({
     task?: Task;
     onClose: () => void;
     onNavigateToTask?: (taskId: string) => Promise<void>;
-  }) => (
-    <div
-      data-testid="task-edit-dialog"
-      data-default-presentation={defaultPresentation}
-      data-hydrating={String(!!isHydratingTask)}
-      data-load-error={String(!!taskLoadError)}
-      data-open={isOpen}
-    >
-      {task && <div data-testid="task-name">{task.name}</div>}
-      <button
-        type="button"
-        onClick={() => void onNavigateToTask?.('task-2')}
-        data-testid="navigate-button"
+  }) => {
+    React.useEffect(() => {
+      taskDialogRenderStats.mounts += 1;
+
+      return () => {
+        taskDialogRenderStats.unmounts += 1;
+      };
+    }, []);
+
+    return (
+      <div
+        data-testid="task-edit-dialog"
+        data-default-presentation={defaultPresentation}
+        data-hydrating={String(!!isHydratingTask)}
+        data-load-error={String(!!taskLoadError)}
+        data-open={isOpen}
       >
-        Navigate
-      </button>
-      <button type="button" onClick={onClose} data-testid="close-button">
-        Close
-      </button>
-    </div>
-  ),
+        {task && <div data-testid="task-name">{task.name}</div>}
+        <button
+          type="button"
+          onClick={() => void onNavigateToTask?.('task-2')}
+          data-testid="navigate-button"
+        >
+          Navigate
+        </button>
+        <button type="button" onClick={onClose} data-testid="close-button">
+          Close
+        </button>
+      </div>
+    );
+  },
 }));
 
 // Mock task data
@@ -265,6 +279,8 @@ beforeEach(() => {
   mockSearchParams.forEach((_, key) => {
     mockSearchParams.delete(key);
   });
+  taskDialogRenderStats.mounts = 0;
+  taskDialogRenderStats.unmounts = 0;
   pushStateSpy = vi.spyOn(window.history, 'pushState');
   replaceStateSpy = vi.spyOn(window.history, 'replaceState');
   mockGetCurrentUserProfile.mockResolvedValue({
@@ -651,6 +667,93 @@ describe('TaskDialogManager', () => {
         'false'
       );
       expect(getByTestId('task-name')).toHaveTextContent('Hydrated Event Task');
+    });
+  });
+
+  it('keeps the same dialog mounted when a source-workspace task finishes hydrating', async () => {
+    const deferred = createDeferred<{
+      task: Task & { list?: { board_id?: string | null } | null };
+      availableLists: TaskList[];
+      taskWsId: string;
+      taskWorkspacePersonal: boolean;
+      taskWorkspaceTier: 'PRO';
+    }>();
+    mockGetTaskDialogHydration.mockReturnValueOnce(deferred.promise);
+
+    const TestComponent = () => {
+      const { openTaskById } = useTaskDialogContext();
+
+      React.useEffect(() => {
+        void openTaskById('external-task-1', {
+          initialTask: {
+            ...mockTask,
+            id: 'external-task-1',
+            name: 'External snapshot',
+          },
+          boardId: 'external-board-1',
+          availableLists: [
+            {
+              ...mockList,
+              id: 'external-list-1',
+              board_id: 'external-board-1',
+            },
+          ],
+          taskWsId: 'source-workspace-1',
+          taskWorkspacePersonal: false,
+        });
+      }, [openTaskById]);
+
+      return <TaskDialogManager wsId="personal-workspace-1" />;
+    };
+
+    const { getByTestId } = render(
+      <Wrapper>
+        <TestComponent />
+      </Wrapper>
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('task-edit-dialog')).toHaveAttribute(
+        'data-hydrating',
+        'true'
+      );
+      expect(getByTestId('task-name')).toHaveTextContent('External snapshot');
+    });
+    expect(taskDialogRenderStats).toMatchObject({
+      mounts: 1,
+      unmounts: 0,
+    });
+
+    await act(async () => {
+      deferred.resolve({
+        task: {
+          ...mockTask,
+          id: 'external-task-1',
+          name: 'Hydrated external task',
+          list: { board_id: 'external-board-1' },
+        },
+        availableLists: [
+          { ...mockList, id: 'external-list-1', board_id: 'external-board-1' },
+        ],
+        taskWsId: 'source-workspace-1',
+        taskWorkspacePersonal: false,
+        taskWorkspaceTier: 'PRO',
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('task-edit-dialog')).toHaveAttribute(
+        'data-hydrating',
+        'false'
+      );
+      expect(getByTestId('task-name')).toHaveTextContent(
+        'Hydrated external task'
+      );
+    });
+    expect(taskDialogRenderStats).toMatchObject({
+      mounts: 1,
+      unmounts: 0,
     });
   });
 
