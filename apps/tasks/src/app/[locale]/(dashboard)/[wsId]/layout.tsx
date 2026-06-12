@@ -3,6 +3,7 @@ import {
   getPendingWorkspaceInvitation,
   SatelliteWorkspaceInvitationCard,
 } from '@tuturuuu/satellite/workspace-invitation';
+import { getSidebarBehaviorUpdatedAt } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
@@ -60,8 +61,10 @@ export default async function Layout({ children, params }: LayoutProps) {
     personal: !!workspace.personal,
   });
 
-  const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
-  const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
+  const cookieStore = await cookies();
+  const collapsed = cookieStore.get(SIDEBAR_COLLAPSED_COOKIE_NAME);
+  const behaviorCookie = cookieStore.get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
+  const sidebarBehaviorUpdatedAt = getSidebarBehaviorUpdatedAt(cookieStore);
 
   const rawBehavior = behaviorCookie?.value;
   const isValidBehavior = (
@@ -87,7 +90,10 @@ export default async function Layout({ children, params }: LayoutProps) {
   }
 
   return (
-    <SidebarProvider initialBehavior={sidebarBehavior}>
+    <SidebarProvider
+      initialBehavior={sidebarBehavior}
+      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
+    >
       <Structure
         wsId={wsId}
         workspace={workspace}

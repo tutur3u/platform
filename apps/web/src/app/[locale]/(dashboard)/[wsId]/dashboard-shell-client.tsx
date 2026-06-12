@@ -39,6 +39,7 @@ interface DashboardShellClientProps {
   personalWorkspacePrompt?: ReactNode;
   showPersonalWorkspaceCollaborationBanner: boolean;
   sidebarBehavior: 'expanded' | 'collapsed' | 'hover';
+  sidebarBehaviorUpdatedAt: number | null;
   tier: WorkspaceProductTier | null;
   user: WorkspaceUser;
   userPopover: ReactNode;
@@ -87,6 +88,7 @@ export function DashboardShellClient({
   personalWorkspacePrompt,
   showPersonalWorkspaceCollaborationBanner,
   sidebarBehavior,
+  sidebarBehaviorUpdatedAt,
   tier,
   user,
   userPopover,
@@ -133,7 +135,10 @@ export function DashboardShellClient({
   );
 
   const shellContent = (
-    <SidebarProvider initialBehavior={sidebarBehavior}>
+    <SidebarProvider
+      initialBehavior={sidebarBehavior}
+      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
+    >
       {SettingsDialogHost && (
         <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
       )}

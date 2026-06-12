@@ -15,6 +15,8 @@ import {
 } from 'react';
 
 export const SIDEBAR_BEHAVIOR_COOKIE_NAME = 'sidebar-behavior';
+export const SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME =
+  'sidebar-behavior-updated-at';
 export const SIDEBAR_BEHAVIOR_CONFIG_KEY = 'SIDEBAR_BEHAVIOR';
 
 export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover';
@@ -33,7 +35,33 @@ export const SidebarContext = createContext<SidebarContextProps | undefined>(
 );
 
 // Persistent cookie options — ensures setting survives browser restarts
-const COOKIE_OPTIONS = { maxAge: 365 * 24 * 60 * 60, path: '/' } as const;
+export const SIDEBAR_COOKIE_OPTIONS = {
+  maxAge: 365 * 24 * 60 * 60,
+  path: '/',
+} as const;
+
+function parseSidebarBehaviorUpdatedAt(value: string | undefined | null) {
+  if (!value) return null;
+
+  const updatedAt = Number(value);
+  return Number.isSafeInteger(updatedAt) && updatedAt > 0 ? updatedAt : null;
+}
+
+function getSidebarBehaviorUpdatedAtFromDocument() {
+  if (typeof document === 'undefined') return null;
+
+  const cookie = document.cookie
+    .split('; ')
+    .find((part) =>
+      part.startsWith(`${SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME}=`)
+    );
+
+  if (!cookie) return null;
+
+  return parseSidebarBehaviorUpdatedAt(
+    decodeURIComponent(cookie.split('=').slice(1).join('='))
+  );
+}
 
 type SidebarRemoteBehaviorBridgeComponent = ComponentType<{
   behavior: SidebarBehavior;
@@ -41,6 +69,7 @@ type SidebarRemoteBehaviorBridgeComponent = ComponentType<{
   localOverrideVersion: number;
   onApplyRemoteBehavior: (newBehavior: SidebarBehavior) => void;
   onRemoteBehaviorAvailable: (remoteBehavior: SidebarBehavior) => void;
+  behaviorUpdatedAt: number | null;
   userChangeVersion: number;
 }>;
 
@@ -70,11 +99,16 @@ function useSidebarRemoteBehaviorBridge() {
 export const SidebarProvider = ({
   children,
   initialBehavior,
+  initialBehaviorUpdatedAt,
 }: {
   children: ReactNode;
   initialBehavior: SidebarBehavior;
+  initialBehaviorUpdatedAt?: number | null;
 }) => {
   const [behavior, setBehavior] = useState<SidebarBehavior>(initialBehavior);
+  const [behaviorUpdatedAt, setBehaviorUpdatedAt] = useState<number | null>(
+    () => initialBehaviorUpdatedAt ?? getSidebarBehaviorUpdatedAtFromDocument()
+  );
   const [localOverride, setLocalOverrideRaw] = useLocalStorage(
     'sidebar-local-override',
     false
@@ -86,14 +120,41 @@ export const SidebarProvider = ({
   const [localOverrideVersion, setLocalOverrideVersion] = useState(0);
   const RemoteBehaviorBridge = useSidebarRemoteBehaviorBridge();
 
-  const applyBehavior = useCallback((newBehavior: SidebarBehavior) => {
-    setBehavior(newBehavior);
-    setCookie(SIDEBAR_BEHAVIOR_COOKIE_NAME, newBehavior, COOKIE_OPTIONS);
-  }, []);
+  useEffect(() => {
+    if (initialBehaviorUpdatedAt !== undefined) return;
+
+    const updatedAt = getSidebarBehaviorUpdatedAtFromDocument();
+    if (updatedAt !== null) setBehaviorUpdatedAt(updatedAt);
+  }, [initialBehaviorUpdatedAt]);
+
+  const applyBehavior = useCallback(
+    (
+      newBehavior: SidebarBehavior,
+      options: { markLocalChange?: boolean } = {}
+    ) => {
+      setBehavior(newBehavior);
+      setCookie(
+        SIDEBAR_BEHAVIOR_COOKIE_NAME,
+        newBehavior,
+        SIDEBAR_COOKIE_OPTIONS
+      );
+
+      if (!options.markLocalChange) return;
+
+      const updatedAt = Date.now();
+      setBehaviorUpdatedAt(updatedAt);
+      setCookie(
+        SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME,
+        String(updatedAt),
+        SIDEBAR_COOKIE_OPTIONS
+      );
+    },
+    []
+  );
 
   const handleBehaviorChange = useCallback(
     (newBehavior: SidebarBehavior) => {
-      applyBehavior(newBehavior);
+      applyBehavior(newBehavior, { markLocalChange: true });
 
       if (!localOverride) {
         setUserChangeVersion((version) => version + 1);
@@ -127,6 +188,7 @@ export const SidebarProvider = ({
       {RemoteBehaviorBridge && (
         <RemoteBehaviorBridge
           behavior={behavior}
+          behaviorUpdatedAt={behaviorUpdatedAt}
           localOverride={localOverride}
           localOverrideVersion={localOverrideVersion}
           onApplyRemoteBehavior={applyBehavior}

@@ -26,7 +26,7 @@ import {
 } from 'react';
 import { PROD_MODE } from '@/constants/env';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/sidebar';
-import { useSidebar } from '@/context/sidebar-context';
+import { SIDEBAR_COOKIE_OPTIONS, useSidebar } from '@/context/sidebar-context';
 import {
   useRecentSidebarItemsComponent,
   useSidebarActiveTimerComponent,
@@ -700,7 +700,11 @@ export function StructureImpl({
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
-    setCookie(SIDEBAR_COLLAPSED_COOKIE_NAME, newCollapsed);
+    setCookie(
+      SIDEBAR_COLLAPSED_COOKIE_NAME,
+      newCollapsed,
+      SIDEBAR_COOKIE_OPTIONS
+    );
 
     if (behavior === 'expanded' && newCollapsed) {
       handleBehaviorChange('collapsed');

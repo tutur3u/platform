@@ -2,6 +2,7 @@ import {
   getPendingWorkspaceInvitation,
   SatelliteWorkspaceInvitationCard,
 } from '@tuturuuu/satellite/workspace-invitation';
+import { getSidebarBehaviorUpdatedAt } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
@@ -60,9 +61,13 @@ export default async function MindWorkspaceLayout({
     rawBehavior === 'expanded' || rawBehavior === 'hover'
       ? rawBehavior
       : 'collapsed';
+  const sidebarBehaviorUpdatedAt = getSidebarBehaviorUpdatedAt(cookieStore);
 
   return (
-    <SidebarProvider initialBehavior={sidebarBehavior}>
+    <SidebarProvider
+      initialBehavior={sidebarBehavior}
+      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
+    >
       <Structure
         actions={
           <Suspense

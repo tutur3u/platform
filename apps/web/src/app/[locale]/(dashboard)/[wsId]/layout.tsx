@@ -7,6 +7,7 @@ import { type ReactNode, Suspense } from 'react';
 import { PROD_MODE } from '@/constants/env';
 import {
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/sidebar';
 import { isPolarWorkspaceSetupEnabled } from '@/lib/polar-config';
@@ -142,8 +143,12 @@ export default async function Layout({ children, params }: LayoutProps) {
     personal: !!workspace.personal,
   });
 
-  const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
-  const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
+  const cookieStore = await cookies();
+  const collapsed = cookieStore.get(SIDEBAR_COLLAPSED_COOKIE_NAME);
+  const behaviorCookie = cookieStore.get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
+  const behaviorUpdatedAtCookie = cookieStore.get(
+    SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME
+  );
 
   const rawBehavior = behaviorCookie?.value;
   const isValidBehavior = (
@@ -158,6 +163,15 @@ export default async function Layout({ children, params }: LayoutProps) {
   )
     ? rawBehavior
     : 'expanded';
+  const parsedBehaviorUpdatedAt = behaviorUpdatedAtCookie?.value
+    ? Number(behaviorUpdatedAtCookie.value)
+    : null;
+  const sidebarBehaviorUpdatedAt =
+    parsedBehaviorUpdatedAt &&
+    Number.isSafeInteger(parsedBehaviorUpdatedAt) &&
+    parsedBehaviorUpdatedAt > 0
+      ? parsedBehaviorUpdatedAt
+      : null;
 
   let defaultCollapsed: boolean;
   if (sidebarBehavior === 'collapsed') {
@@ -297,6 +311,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       defaultCollapsed={defaultCollapsed}
       links={visibleNavigationLinks}
       sidebarBehavior={sidebarBehavior}
+      sidebarBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
       isGuestWorkspace={isGuestWorkspace}
       tier={workspace.tier ?? null}
       enablePresence={!workspace.personal && !isGuestWorkspace}

@@ -6,6 +6,7 @@ import {
   SatelliteWorkspaceInvitationCard,
 } from '@tuturuuu/satellite/workspace-invitation';
 import {
+  getSidebarBehaviorUpdatedAt,
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
@@ -44,13 +45,17 @@ export default async function Layout({ children, params }: LayoutProps) {
   const { user, workspace, workspaceSlug, wsId } =
     await getMeetWorkspaceContext(id);
   const sidebarBehavior = parseSidebarBehavior(cookieStore);
+  const sidebarBehaviorUpdatedAt = getSidebarBehaviorUpdatedAt(cookieStore);
   const defaultCollapsed = getSidebarCollapsedState(
     cookieStore,
     sidebarBehavior
   );
 
   return (
-    <SidebarProvider initialBehavior={sidebarBehavior}>
+    <SidebarProvider
+      initialBehavior={sidebarBehavior}
+      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
+    >
       <Structure
         actions={
           <Suspense

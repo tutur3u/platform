@@ -9,12 +9,14 @@ import { useEffect, useRef } from 'react';
 type SidebarBehavior = 'expanded' | 'collapsed' | 'hover';
 
 const SIDEBAR_BEHAVIOR_CONFIG_KEY = 'SIDEBAR_BEHAVIOR';
+const RECENT_LOCAL_BEHAVIOR_GRACE_MS = 5 * 60 * 1000;
 
 const isValidBehavior = (value: string | undefined): value is SidebarBehavior =>
   value === 'expanded' || value === 'collapsed' || value === 'hover';
 
 interface SidebarRemoteBehaviorBridgeProps {
   behavior: SidebarBehavior;
+  behaviorUpdatedAt: number | null;
   localOverride: boolean;
   localOverrideVersion: number;
   onApplyRemoteBehavior: (newBehavior: SidebarBehavior) => void;
@@ -24,6 +26,7 @@ interface SidebarRemoteBehaviorBridgeProps {
 
 export function SidebarRemoteBehaviorBridge({
   behavior,
+  behaviorUpdatedAt,
   localOverride,
   localOverrideVersion,
   onApplyRemoteBehavior,
@@ -38,6 +41,12 @@ export function SidebarRemoteBehaviorBridge({
   const hasAppliedRemote = useRef(false);
   const persistedUserChangeVersion = useRef(0);
   const handledLocalOverrideVersion = useRef(0);
+
+  const hasRecentLocalBehavior =
+    typeof behaviorUpdatedAt === 'number' &&
+    Number.isFinite(behaviorUpdatedAt) &&
+    Date.now() - behaviorUpdatedAt >= 0 &&
+    Date.now() - behaviorUpdatedAt <= RECENT_LOCAL_BEHAVIOR_GRACE_MS;
 
   useEffect(() => {
     if (!remoteLoaded || !isValidBehavior(remoteBehavior)) return;
@@ -58,15 +67,25 @@ export function SidebarRemoteBehaviorBridge({
 
     hasAppliedRemote.current = true;
 
-    if (remoteBehavior !== behavior) {
-      onApplyRemoteBehavior(remoteBehavior);
+    if (remoteBehavior === behavior) return;
+
+    if (hasRecentLocalBehavior) {
+      updateConfig.mutate({
+        configId: SIDEBAR_BEHAVIOR_CONFIG_KEY,
+        value: behavior,
+      });
+      return;
     }
+
+    onApplyRemoteBehavior(remoteBehavior);
   }, [
     behavior,
+    hasRecentLocalBehavior,
     localOverride,
     onApplyRemoteBehavior,
     remoteBehavior,
     remoteLoaded,
+    updateConfig,
     userChangeVersion,
   ]);
 

@@ -1,6 +1,7 @@
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import {
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '../constants/common';
 
@@ -38,4 +39,17 @@ export function getSidebarCollapsedState(
 
   const collapsed = cookies.get(SIDEBAR_COLLAPSED_COOKIE_NAME);
   return collapsed ? JSON.parse(collapsed.value) : false;
+}
+
+/**
+ * Parse the local sidebar behavior timestamp from cookies.
+ */
+export function getSidebarBehaviorUpdatedAt(
+  cookies: ReadonlyRequestCookies
+): number | null {
+  const updatedAtCookie = cookies.get(SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME);
+  if (!updatedAtCookie?.value) return null;
+
+  const updatedAt = Number(updatedAtCookie.value);
+  return Number.isSafeInteger(updatedAt) && updatedAt > 0 ? updatedAt : null;
 }
