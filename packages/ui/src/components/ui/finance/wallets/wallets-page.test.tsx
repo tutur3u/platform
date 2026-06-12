@@ -8,21 +8,13 @@ const mocks = vi.hoisted(() => ({
   getTranslations: vi.fn(),
   getWorkspace: vi.fn(),
   getWorkspaceConfig: vi.fn(),
-  headers: vi.fn(),
-  listWallets: vi.fn(),
   notFound: vi.fn(() => {
     throw new Error('notFound');
   }),
+  walletCheckpointHistoryDialog: vi.fn((_props: unknown) => null),
   walletForm: vi.fn((_props: unknown) => null),
-  withForwardedInternalApiAuth: vi.fn(() => ({ headers: {} })),
-}));
-
-vi.mock('@tuturuuu/internal-api', () => ({
-  listWallets: (...args: Parameters<typeof mocks.listWallets>) =>
-    mocks.listWallets(...args),
-  withForwardedInternalApiAuth: (
-    ...args: Parameters<typeof mocks.withForwardedInternalApiAuth>
-  ) => mocks.withForwardedInternalApiAuth(...args),
+  walletTotalCheckDialog: vi.fn((_props: unknown) => null),
+  walletsDataTable: vi.fn((_props: unknown) => null),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -32,11 +24,6 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     mocks.getWorkspace(...args),
   getWorkspaceConfig: (...args: Parameters<typeof mocks.getWorkspaceConfig>) =>
     mocks.getWorkspaceConfig(...args),
-}));
-
-vi.mock('next/headers', () => ({
-  headers: (...args: Parameters<typeof mocks.headers>) =>
-    mocks.headers(...args),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -59,17 +46,29 @@ vi.mock('@tuturuuu/ui/finance/shared/create-dialog-feature-summary', () => ({
   ) => mocks.createDialogFeatureSummary(...args),
 }));
 
+vi.mock('@tuturuuu/ui/finance/shared/balance-mode-toggle', () => ({
+  FinanceBalanceModeToggle: () => null,
+}));
+
+vi.mock('@tuturuuu/ui/finance/shared/numbers-visibility-toggle', () => ({
+  FinanceNumbersVisibilityToggle: () => null,
+}));
+
 vi.mock(
   '@tuturuuu/ui/finance/wallets/checkpoints/wallet-checkpoint-history-dialog',
   () => ({
-    WalletCheckpointHistoryDialog: () => null,
+    WalletCheckpointHistoryDialog: (
+      ...args: Parameters<typeof mocks.walletCheckpointHistoryDialog>
+    ) => mocks.walletCheckpointHistoryDialog(...args),
   })
 );
 
 vi.mock(
   '@tuturuuu/ui/finance/wallets/checkpoints/wallet-total-check-dialog',
   () => ({
-    WalletTotalCheckDialog: () => null,
+    WalletTotalCheckDialog: (
+      ...args: Parameters<typeof mocks.walletTotalCheckDialog>
+    ) => mocks.walletTotalCheckDialog(...args),
   })
 );
 
@@ -79,7 +78,8 @@ vi.mock('@tuturuuu/ui/finance/wallets/form', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/finance/wallets/wallets-data-table', () => ({
-  WalletsDataTable: () => null,
+  WalletsDataTable: (...args: Parameters<typeof mocks.walletsDataTable>) =>
+    mocks.walletsDataTable(...args),
 }));
 
 vi.mock('@tuturuuu/ui/separator', () => ({
@@ -93,37 +93,60 @@ describe('wallets page', () => {
     mocks.getTranslations.mockResolvedValue((key: string) => key);
     mocks.getPermissions.mockResolvedValue({
       containsPermission: vi.fn((permission: string) =>
-        ['create_wallets', 'update_wallets', 'delete_wallets'].includes(
-          permission
-        )
+        [
+          'create_transactions',
+          'create_wallets',
+          'update_wallets',
+          'delete_wallets',
+        ].includes(permission)
       ),
     });
     mocks.getWorkspaceConfig.mockResolvedValue('USD');
     mocks.getWorkspace.mockResolvedValue({ personal: false });
-    mocks.headers.mockResolvedValue(new Headers());
-    mocks.listWallets.mockResolvedValue([
-      { id: 'wallet-1', name: 'Primary Wallet' },
-    ]);
   });
 
-  it('loads wallets through the internal API helper', async () => {
+  it('passes wallet controls and the search query to the infinite table', async () => {
     const { default: WalletsPageModule } = await import('./wallets-page.js');
     const WalletsPage = WalletsPageModule as unknown as (props: {
       wsId: string;
-      searchParams: { q: string; page: string; pageSize: string };
-      page?: string;
-      pageSize?: string;
+      searchParams: { q: string };
     }) => Promise<unknown>;
 
-    await WalletsPage({
+    const element = await WalletsPage({
       wsId: 'ws-1',
-      searchParams: { q: '', page: '1', pageSize: '10' },
-      page: '1',
-      pageSize: '10',
+      searchParams: { q: 'bank' },
     });
 
-    expect(mocks.withForwardedInternalApiAuth).toHaveBeenCalled();
-    expect(mocks.listWallets).toHaveBeenCalledWith('ws-1', { headers: {} });
+    render(element as ReactElement);
+
+    expect(mocks.walletsDataTable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canDeleteWallets: true,
+        canUpdateWallets: true,
+        currency: 'USD',
+        financePrefix: '/finance',
+        isPersonalWorkspace: false,
+        query: 'bank',
+        wsId: 'ws-1',
+      }),
+      undefined
+    );
+    expect(mocks.walletTotalCheckDialog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canUpdateWallets: true,
+        currency: 'USD',
+        wsId: 'ws-1',
+      }),
+      undefined
+    );
+    expect(mocks.walletCheckpointHistoryDialog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canCreateTransactions: true,
+        financePrefix: '/finance',
+        wsId: 'ws-1',
+      }),
+      undefined
+    );
   });
 
   it('opens wallet creation in credit-card mode from search params', async () => {
@@ -133,11 +156,7 @@ describe('wallets page', () => {
       searchParams: {
         create?: string;
         q: string;
-        page: string;
-        pageSize: string;
       };
-      page?: string;
-      pageSize?: string;
     }) => Promise<ReactElement>;
 
     const element = await WalletsPage({
@@ -145,11 +164,7 @@ describe('wallets page', () => {
       searchParams: {
         create: 'credit-card',
         q: '',
-        page: '1',
-        pageSize: '10',
       },
-      page: '1',
-      pageSize: '10',
     });
 
     render(element);

@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   deleteWalletCheckpoint: vi.fn(),
   getWalletCheckpointHistory: vi.fn(),
   isConfidential: true,
+  listWallets: vi.fn(),
   listTransactionCategories: vi.fn(),
   listWalletCheckpoints: vi.fn(),
   success: vi.fn(),
@@ -34,6 +35,8 @@ vi.mock('@tuturuuu/internal-api/finance', () => ({
   getWalletCheckpointHistory: (
     ...args: Parameters<typeof mocks.getWalletCheckpointHistory>
   ) => mocks.getWalletCheckpointHistory(...args),
+  listWallets: (...args: Parameters<typeof mocks.listWallets>) =>
+    mocks.listWallets(...args),
   listTransactionCategories: (
     ...args: Parameters<typeof mocks.listTransactionCategories>
   ) => mocks.listTransactionCategories(...args),
@@ -135,6 +138,7 @@ describe('wallet checkpoint UI', () => {
       totals_by_currency: [],
       wallets: [],
     });
+    mocks.listWallets.mockResolvedValue([]);
     mocks.listTransactionCategories.mockResolvedValue([]);
     mocks.listWalletCheckpoints.mockResolvedValue({
       data: [],
@@ -158,31 +162,36 @@ describe('wallet checkpoint UI', () => {
   });
 
   it('saves all-wallet checks with typed decimal values intact', async () => {
+    mocks.listWallets.mockResolvedValue([
+      {
+        balance: 0,
+        currency: 'USD',
+        id: 'wallet-1',
+        name: 'Cash',
+      },
+      {
+        balance: 0,
+        currency: 'VND',
+        id: 'wallet-2',
+        name: 'Bank',
+      },
+    ]);
+
     renderWithQueryClient(
-      <WalletTotalCheckDialog
-        wsId="ws-1"
-        canUpdateWallets
-        wallets={[
-          {
-            balance: 0,
-            currency: 'USD',
-            id: 'wallet-1',
-            name: 'Cash',
-          },
-          {
-            balance: 0,
-            currency: 'VND',
-            id: 'wallet-2',
-            name: 'Bank',
-          },
-        ]}
-      />
+      <WalletTotalCheckDialog wsId="ws-1" canUpdateWallets currency="USD" />
     );
 
+    expect(mocks.listWallets).not.toHaveBeenCalled();
+
     fireEvent.click(screen.getByRole('button', { name: 'all_wallet_check' }));
+    await waitFor(() => {
+      expect(mocks.listWallets).toHaveBeenCalledWith('ws-1');
+    });
     expect(
       screen.getByRole('button', { name: 'save_checkpoints' })
     ).toBeDisabled();
+
+    await screen.findByLabelText('actual_balance_with_currency:USD');
 
     fireEvent.change(
       screen.getByLabelText('actual_balance_with_currency:USD'),

@@ -50,6 +50,40 @@ export async function listWallets(
   );
 }
 
+export interface InfiniteWalletsQuery {
+  limit?: number;
+  offset?: number;
+  q?: string;
+}
+
+export interface InfiniteWalletsResponse {
+  data: Wallet[];
+  hasMore: boolean;
+  nextOffset: number | null;
+  totalCount: number;
+}
+
+export async function listInfiniteWallets(
+  workspaceId: string,
+  query: InfiniteWalletsQuery = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const apiQuery: InternalApiQuery = {
+    limit: query.limit,
+    offset: query.offset,
+    q: query.q?.trim() || undefined,
+  };
+
+  return client.json<InfiniteWalletsResponse>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/infinite`,
+    {
+      cache: 'no-store',
+      query: apiQuery,
+    }
+  );
+}
+
 export async function getWallet(
   workspaceId: string,
   walletId: string,

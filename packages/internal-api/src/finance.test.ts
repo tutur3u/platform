@@ -17,6 +17,7 @@ import {
   listFinanceBalanceTrend,
   listFinanceIncomeExpenseSummary,
   listFinanceInvoices,
+  listInfiniteWallets,
   listPendingFinanceInvoices,
   listWalletCheckpoints,
   listWalletRoleAccess,
@@ -62,6 +63,33 @@ describe('finance internal API helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/workspaces/workspace%201/wallets/wallet%2F1/roles',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('lists infinite wallets through the workspace wallet API with no-store cache', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [],
+        hasMore: false,
+        nextOffset: null,
+        totalCount: 0,
+      })
+    );
+
+    await listInfiniteWallets(
+      'workspace 1',
+      { limit: 20, offset: 40, q: ' bank ' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/workspaces/workspace%201/wallets/infinite?limit=20&offset=40&q=bank',
       expect.objectContaining({
         cache: 'no-store',
       })

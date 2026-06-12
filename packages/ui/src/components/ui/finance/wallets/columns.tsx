@@ -20,6 +20,7 @@ import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import type { FinanceBalanceMode } from '../shared/use-finance-balance-mode';
 import {
   FINANCE_HIDDEN_AMOUNT,
@@ -38,6 +39,46 @@ interface WalletExtraData {
   currency?: string;
   exchangeRates?: ExchangeRate[];
   isPersonalWorkspace?: boolean;
+}
+
+function getAmountBadgeClassName(
+  tone: ReturnType<typeof getWalletBalanceTone>
+) {
+  if (tone === 'positive') {
+    return 'border-dynamic-green/30 bg-dynamic-green/10 font-semibold text-dynamic-green';
+  }
+
+  if (tone === 'negative') {
+    return 'border-dynamic-red/30 bg-dynamic-red/10 font-semibold text-dynamic-red';
+  }
+
+  return 'font-semibold text-muted-foreground';
+}
+
+function AmountBadge({
+  children,
+  icon,
+  label,
+  tone,
+}: {
+  children: ReactNode;
+  icon?: ReactNode;
+  label?: string;
+  tone: ReturnType<typeof getWalletBalanceTone>;
+}) {
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        'flex w-fit items-center gap-1 whitespace-nowrap',
+        getAmountBadgeClassName(tone)
+      )}
+    >
+      {icon}
+      {label && <span className="font-medium opacity-75">{label}</span>}
+      <span>{children}</span>
+    </Badge>
+  );
 }
 
 function WalletBalanceCell({
@@ -66,7 +107,12 @@ function WalletBalanceCell({
   } = resolveWalletBalanceForMode(wallet, balanceMode);
   const contextLabel = isAuditedMode ? t('ledger') : t('audited');
   const showAuditContext =
-    hasAuditedBalance && auditStatus && auditStatus !== 'no_checkpoint';
+    hasAuditedBalance &&
+    auditStatus &&
+    auditStatus !== 'clean' &&
+    auditStatus !== 'no_checkpoint' &&
+    auditVariance !== null &&
+    auditVariance !== 0;
 
   const formattedBalance = formatCurrency(
     displayBalance,
@@ -109,62 +155,55 @@ function WalletBalanceCell({
   }
 
   const balanceTone = getWalletBalanceTone(displayBalance);
+  const varianceTone = getWalletBalanceTone(auditVariance ?? 0);
 
   return (
     <div className="flex flex-col gap-0.5">
-      <div className="flex items-center gap-2">
-        {balanceTone === 'positive' && (
-          <Badge
-            variant="outline"
-            className={cn(
-              'border-dynamic-green/30 bg-dynamic-green/10 font-semibold text-dynamic-green',
-              'flex items-center gap-1'
-            )}
-          >
-            <TrendingUp className="h-3 w-3" />
-            {formattedBalance}
-          </Badge>
-        )}
-        {balanceTone === 'negative' && (
-          <Badge
-            variant="outline"
-            className={cn(
-              'border-dynamic-red/30 bg-dynamic-red/10 font-semibold text-dynamic-red',
-              'flex items-center gap-1'
-            )}
-          >
-            <TrendingDown className="h-3 w-3" />
-            {formattedBalance}
-          </Badge>
-        )}
-        {balanceTone === 'neutral' && (
-          <Badge
-            variant="outline"
-            className="font-semibold text-muted-foreground"
-          >
-            {formattedBalance}
-          </Badge>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <AmountBadge
+          tone={balanceTone}
+          icon={
+            balanceTone === 'positive' ? (
+              <TrendingUp className="h-3 w-3" />
+            ) : balanceTone === 'negative' ? (
+              <TrendingDown className="h-3 w-3" />
+            ) : undefined
+          }
+        >
+          {formattedBalance}
+        </AmountBadge>
+        {showAuditContext && typeof contextBalance === 'number' && (
+          <>
+            <AmountBadge
+              tone={getWalletBalanceTone(contextBalance)}
+              icon={<WalletIcon className="h-3 w-3" />}
+              label={contextLabel}
+            >
+              {formatCurrency(contextBalance, walletCurrency, undefined, {
+                signDisplay: 'auto',
+              })}
+            </AmountBadge>
+            <AmountBadge
+              tone={varianceTone}
+              icon={
+                varianceTone === 'negative' ? (
+                  <TrendingDown className="h-3 w-3" />
+                ) : (
+                  <TrendingUp className="h-3 w-3" />
+                )
+              }
+              label={t('variance')}
+            >
+              {formatCurrency(auditVariance ?? 0, walletCurrency, undefined, {
+                signDisplay: 'always',
+              })}
+            </AmountBadge>
+          </>
         )}
       </div>
       {convertedText && (
         <span className="text-muted-foreground text-xs">
           {'\u2248'} {convertedText}
-        </span>
-      )}
-      {showAuditContext && typeof contextBalance === 'number' && (
-        <span className="text-muted-foreground text-xs">
-          {contextLabel}:{' '}
-          {formatCurrency(contextBalance, walletCurrency, undefined, {
-            signDisplay: 'auto',
-          })}
-          {auditVariance !== null
-            ? ` · ${t('variance')}: ${formatCurrency(
-                auditVariance,
-                walletCurrency,
-                undefined,
-                { signDisplay: 'always' }
-              )}`
-            : null}
         </span>
       )}
       {isAuditedMode && auditStatus === 'no_checkpoint' && (
