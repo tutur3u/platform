@@ -826,6 +826,10 @@
         "description": "Monitor reserved carts, checkout expiry, and order status.",
         "title": "Checkouts"
       },
+      "commerce": {
+        "description": "Monitor checkouts and review finalized sales.",
+        "title": "Commerce"
+      },
       "controls": {
         "description": "Review observability and control coverage.",
         "title": "Controls"
@@ -865,6 +869,10 @@
       }
     },
     "operator": {
+      "audit": {
+        "changedFields": "{count, plural, one {# field changed} other {# fields changed}}",
+        "systemActor": "System"
+      },
       "columns": {
         "actions": "Actions",
         "category": "Category",
@@ -873,6 +881,15 @@
         "manufacturer": "Manufacturer",
         "owner": "Owner",
         "stock": "Stock"
+      },
+      "commerce": {
+        "items": "{count, plural, one {# item} other {# items}}",
+        "release": "Release",
+        "tabs": {
+          "checkouts": "Checkouts",
+          "label": "Commerce view",
+          "sales": "Sales"
+        }
       },
       "empty": "No inventory records match this view.",
       "emptyDescriptions": {
@@ -885,6 +902,7 @@
       "forms": {
         "accentColor": "Accent color",
         "amount": "Amount",
+        "batch": "Batch",
         "bundle": "Bundle",
         "bundleName": "Bundle name",
         "category": "Category",
@@ -909,6 +927,7 @@
         "createStorefrontTitle": "Create storefront",
         "creating": "Creating...",
         "currency": "Currency",
+        "delete": "Delete",
         "deleteError": "Could not delete record.",
         "deleteSuccess": "Record deleted.",
         "description": "Description",
@@ -987,7 +1006,6 @@
           "sandbox": "Sandbox"
         },
         "environmentLabel": "Environment",
-        "feeResponsibility": "Tuturuuu does not add a platform fee at this stage. Users are accountable for Polar platform fees and Stripe fees that Polar accounts for.",
         "manage": "Manage Polar",
         "notConfigured": "No token saved",
         "pending": "Pending",
@@ -1035,8 +1053,6 @@
         "warehouses": "Warehouses"
       },
       "states": {
-        "checkoutFeeDescription": "Checkout fees are not estimated here. Polar accounts for its platform fees and Stripe fees; Tuturuuu does not add a platform fee at this stage.",
-        "checkoutFeeTitle": "Real checkout state only",
         "errorDescription": "Refresh this view or try again after the API recovers.",
         "errorTitle": "Inventory data could not be loaded",
         "retry": "Retry"
@@ -1067,6 +1083,10 @@
         "checkouts": {
           "description": "Watch reservations, expiry windows, and public checkout status.",
           "title": "Checkout queue"
+        },
+        "commerce": {
+          "description": "Track live checkout reservations and finalized sales in one compact workspace.",
+          "title": "Commerce desk"
         },
         "overview": {
           "description": "Scan product health, storefront readiness, and low-stock risk.",

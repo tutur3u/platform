@@ -137,10 +137,6 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
           </Dialog>
         </div>
 
-        <p className="mt-4 rounded-md border border-border bg-muted/35 px-3 py-2 text-muted-foreground text-sm leading-6">
-          {t('feeResponsibility')}
-        </p>
-
         <form
           className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end"
           onSubmit={(event: FormEvent<HTMLFormElement>) => {

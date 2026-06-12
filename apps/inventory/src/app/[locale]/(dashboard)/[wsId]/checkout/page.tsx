@@ -6,5 +6,5 @@ export default async function InventoryCheckoutPage({
   params: Promise<{ wsId: string }>;
 }) {
   const { wsId } = await params;
-  redirect(`/${wsId}/checkouts`);
+  redirect(`/${wsId}/commerce?tab=checkouts`);
 }

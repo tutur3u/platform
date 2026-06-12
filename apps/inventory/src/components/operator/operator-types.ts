@@ -2,12 +2,13 @@ export type InventoryOperatorView =
   | 'audits'
   | 'bundles'
   | 'catalog'
-  | 'checkouts'
+  | 'commerce'
   | 'overview'
-  | 'sales'
   | 'setup'
   | 'stock'
   | 'storefront';
+
+export type InventoryCommerceTab = 'checkouts' | 'sales';
 
 export type InventoryFilters = {
   q: string;

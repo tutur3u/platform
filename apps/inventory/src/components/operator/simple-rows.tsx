@@ -1,26 +1,20 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Archive, ExternalLink, Eye, RotateCcw, Trash2 } from '@tuturuuu/icons';
+import { Archive, ExternalLink, Eye, Trash2 } from '@tuturuuu/icons';
 import type {
-  InventoryAuditLogSummary,
   InventoryBundle,
-  InventoryCheckoutSession,
-  InventorySaleSummary,
   InventoryStorefront,
 } from '@tuturuuu/internal-api/inventory';
 import {
   deleteInventoryBundle,
-  deleteInventorySale,
   deleteInventoryStorefront,
-  releaseInventoryCheckout,
   updateInventoryBundle,
   updateInventoryStorefront,
 } from '@tuturuuu/internal-api/inventory';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { STOREFRONT_APP_URL } from '@/constants/common';
-import { currency } from './operator-format';
 import { EmptyRow } from './operator-shell';
 import { StorefrontEditorDialog } from './storefront-editor-dialog';
 
@@ -37,14 +31,8 @@ export function SimpleRows({
   type,
   wsId,
 }: {
-  rows: Array<
-    | InventoryAuditLogSummary
-    | InventoryBundle
-    | InventoryCheckoutSession
-    | InventorySaleSummary
-    | InventoryStorefront
-  >;
-  type: 'audits' | 'bundles' | 'checkouts' | 'sales' | 'storefronts';
+  rows: Array<InventoryBundle | InventoryStorefront>;
+  type: 'bundles' | 'storefronts';
   wsId?: string;
 }) {
   const t = useTranslations('inventory.operator');
@@ -90,25 +78,6 @@ export function SimpleRows({
       invalidate();
     },
   });
-  const releaseCheckout = useMutation({
-    mutationFn: (row: InventoryCheckoutSession) =>
-      releaseInventoryCheckout(wsId ?? '', row.id),
-    onError: () => toast.error(actionText('saveError')),
-    onSuccess: () => {
-      toast.success(actionText('saveSuccess'));
-      invalidate();
-    },
-  });
-  const deleteSale = useMutation({
-    mutationFn: (row: InventorySaleSummary) =>
-      deleteInventorySale(wsId ?? '', row.id),
-    onError: () => toast.error(actionText('deleteError')),
-    onSuccess: () => {
-      toast.success(actionText('deleteSuccess'));
-      invalidate();
-    },
-  });
-
   if (rows.length === 0) {
     return (
       <EmptyRow
@@ -122,17 +91,8 @@ export function SimpleRows({
     <div className="grid gap-2">
       {rows.map((row) => {
         const anyRow = row as Record<string, unknown>;
-        const title = String(
-          anyRow.name ??
-            anyRow.customerName ??
-            anyRow.customer_name ??
-            anyRow.summary ??
-            anyRow.id
-        );
-        const value =
-          type === 'sales'
-            ? currency(Number(anyRow.paid_amount ?? 0))
-            : String(anyRow.status ?? anyRow.event_kind ?? '');
+        const title = String(anyRow.name ?? anyRow.id);
+        const value = String(anyRow.status ?? '');
 
         return (
           <article
@@ -215,27 +175,6 @@ export function SimpleRows({
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </>
-              ) : null}
-              {wsId && type === 'checkouts' ? (
-                <button
-                  className="inline-flex h-8 items-center rounded-md border border-border px-2 disabled:opacity-50"
-                  disabled={String(anyRow.status) === 'completed'}
-                  onClick={() =>
-                    releaseCheckout.mutate(row as InventoryCheckoutSession)
-                  }
-                  type="button"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-              ) : null}
-              {wsId && type === 'sales' ? (
-                <button
-                  className="inline-flex h-8 items-center rounded-md border border-destructive/30 px-2 text-destructive"
-                  onClick={() => deleteSale.mutate(row as InventorySaleSummary)}
-                  type="button"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
               ) : null}
             </div>
           </article>

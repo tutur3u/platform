@@ -15,14 +15,24 @@ import {
   listInventorySuppliers,
 } from '@tuturuuu/internal-api/inventory';
 import { parseAsString, useQueryStates } from 'nuqs';
-import type { InventoryOperatorView } from './operator-types';
+import type {
+  InventoryCommerceTab,
+  InventoryOperatorView,
+} from './operator-types';
 
-export function useInventoryData(wsId: string, view: InventoryOperatorView) {
+export function useInventoryData(
+  wsId: string,
+  view: InventoryOperatorView,
+  options?: {
+    commerceTab?: InventoryCommerceTab;
+  }
+) {
   const [filters, setFilters] = useQueryStates({
     q: parseAsString.withDefault(''),
     status: parseAsString.withDefault('all'),
   });
   const status = filters.status === 'all' ? undefined : filters.status;
+  const commerceTab = options?.commerceTab ?? 'checkouts';
 
   const overview = useQuery({
     enabled: view === 'overview',
@@ -71,7 +81,7 @@ export function useInventoryData(wsId: string, view: InventoryOperatorView) {
     queryKey: ['inventory', wsId, 'bundles', filters.q, filters.status],
   });
   const checkouts = useQuery({
-    enabled: view === 'checkouts',
+    enabled: view === 'commerce' && commerceTab === 'checkouts',
     queryFn: () =>
       listInventoryCheckouts(wsId, {
         pageSize: 50,
@@ -82,7 +92,7 @@ export function useInventoryData(wsId: string, view: InventoryOperatorView) {
     queryKey: ['inventory', wsId, 'checkouts', filters.q, filters.status],
   });
   const sales = useQuery({
-    enabled: view === 'sales',
+    enabled: view === 'commerce' && commerceTab === 'sales',
     queryFn: () => listInventorySales(wsId, { limit: 50 }),
     queryKey: ['inventory', wsId, 'sales'],
   });
@@ -109,7 +119,7 @@ export function useInventoryData(wsId: string, view: InventoryOperatorView) {
     queryKey: ['inventory', wsId, 'batches'],
   });
   const polarSettings = useQuery({
-    enabled: ['checkouts', 'overview', 'storefront'].includes(view),
+    enabled: view === 'overview',
     queryFn: () => getInventoryPolarSettings(wsId),
     queryKey: ['inventory', wsId, 'polar-settings'],
   });

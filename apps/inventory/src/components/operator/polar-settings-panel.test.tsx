@@ -32,4 +32,24 @@ describe('PolarSettingsPanel', () => {
     expect(source.slice(0, dialogStart)).not.toContain('name="accessToken"');
     expect(source.slice(0, dialogStart)).not.toContain('tokenPlaceholder');
   });
+
+  it('is only mounted from the settings dialog, not operator page bodies', () => {
+    const operatorSource = readFileSync(
+      join(
+        process.cwd(),
+        'apps/inventory/src/components/operator/inventory-operator-client.tsx'
+      ),
+      'utf8'
+    );
+    const settingsSource = readFileSync(
+      join(
+        process.cwd(),
+        'apps/inventory/src/components/settings/settings-dialog.tsx'
+      ),
+      'utf8'
+    );
+
+    expect(operatorSource).not.toContain('<PolarSettingsPanel');
+    expect(settingsSource).toContain('<PolarSettingsPanel');
+  });
 });

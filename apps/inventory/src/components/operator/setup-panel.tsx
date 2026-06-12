@@ -1,7 +1,16 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Save, Trash2 } from '@tuturuuu/icons';
+import {
+  Boxes,
+  Layers3,
+  PackageSearch,
+  Plus,
+  Save,
+  Store,
+  Trash2,
+  User,
+} from '@tuturuuu/icons';
 import type { InventoryProductFormOptionsResponse } from '@tuturuuu/internal-api/inventory';
 import {
   createInventoryBatch,
@@ -29,12 +38,13 @@ import type { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useState } from 'react';
+import { type ComponentType, type FormEvent, useState } from 'react';
 import { EmptyRow } from './operator-shell';
 
 type NamedResource = { id: string; name?: string | null };
 type ResourceConfig = {
   key: string;
+  icon: ComponentType<{ className?: string }>;
   title: string;
   rows: NamedResource[];
   create: (name: string) => Promise<unknown>;
@@ -123,6 +133,7 @@ function ResourceSection({
   const t = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
+  const Icon = config.icon;
   const createMutation = useMutation({
     mutationFn: () => config.create(name),
     onError: () => toast.error(t('saveError')),
@@ -134,7 +145,20 @@ function ResourceSection({
   });
 
   return (
-    <section className="border-border border-t">
+    <section className="overflow-hidden rounded-lg border border-border bg-card">
+      <div className="flex items-center justify-between gap-3 border-border border-b px-3 py-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <Icon className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate font-medium text-sm">{config.title}</p>
+            <p className="text-muted-foreground text-xs">
+              {config.rows.length}
+            </p>
+          </div>
+        </div>
+      </div>
       <form
         className="grid gap-2 p-3 sm:grid-cols-[1fr_auto]"
         onSubmit={(event: FormEvent) => {
@@ -157,7 +181,6 @@ function ResourceSection({
           {t('create')}
         </button>
       </form>
-      <div className="px-3 pb-2 font-medium text-sm">{config.title}</div>
       {config.rows.length ? (
         config.rows.map((item) => (
           <ResourceRow
@@ -168,7 +191,9 @@ function ResourceSection({
           />
         ))
       ) : (
-        <EmptyRow label={t('emptyResource')} />
+        <div className="px-3 pb-3">
+          <EmptyRow label={t('emptyResource')} />
+        </div>
       )}
     </section>
   );
@@ -206,7 +231,16 @@ function BatchSection({
   });
 
   return (
-    <section className="border-border border-t">
+    <section className="overflow-hidden rounded-lg border border-border bg-card">
+      <div className="flex items-center gap-2 border-border border-b px-3 py-2">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <Layers3 className="h-4 w-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-medium text-sm">{t('batch')}</p>
+          <p className="text-muted-foreground text-xs">{batches.length}</p>
+        </div>
+      </div>
       <form
         className="grid gap-2 p-3 sm:grid-cols-[1fr_1fr_120px_auto]"
         onSubmit={(event: FormEvent) => {
@@ -261,7 +295,9 @@ function BatchSection({
           )
           .map((batch) => <BatchRow batch={batch} key={batch.id} wsId={wsId} />)
       ) : (
-        <EmptyRow label={t('emptyResource')} />
+        <div className="px-3 pb-3">
+          <EmptyRow label={t('emptyResource')} />
+        </div>
       )}
     </section>
   );
@@ -321,6 +357,7 @@ export function SetupPanel({
   const configs: ResourceConfig[] = [
     {
       create: (name) => createInventoryProductCategory(wsId, { name }),
+      icon: PackageSearch,
       key: 'categories',
       remove: (id) => deleteInventoryProductCategory(wsId, id),
       rows: options?.categories ?? [],
@@ -329,6 +366,7 @@ export function SetupPanel({
     },
     {
       create: (name) => createInventoryOwner(wsId, { name }),
+      icon: User,
       key: 'owners',
       remove: (id) => deleteInventoryOwner(wsId, id),
       rows: options?.owners ?? [],
@@ -337,6 +375,7 @@ export function SetupPanel({
     },
     {
       create: (name) => createInventoryManufacturer(wsId, { name }),
+      icon: PackageSearch,
       key: 'manufacturers',
       remove: (id) => deleteInventoryManufacturer(wsId, id),
       rows: options?.manufacturers ?? [],
@@ -345,6 +384,7 @@ export function SetupPanel({
     },
     {
       create: (name) => createInventoryUnit(wsId, { name }),
+      icon: Boxes,
       key: 'units',
       remove: (id) => deleteInventoryUnit(wsId, id),
       rows: options?.units ?? [],
@@ -353,6 +393,7 @@ export function SetupPanel({
     },
     {
       create: (name) => createInventoryWarehouse(wsId, { name }),
+      icon: Boxes,
       key: 'warehouses',
       remove: (id) => deleteInventoryWarehouse(wsId, id),
       rows: options?.warehouses ?? [],
@@ -361,6 +402,7 @@ export function SetupPanel({
     },
     {
       create: (name) => createInventorySupplier(wsId, { name }),
+      icon: Store,
       key: 'suppliers',
       remove: (id) => deleteInventorySupplier(wsId, id),
       rows: namedRows(suppliers),
@@ -370,7 +412,7 @@ export function SetupPanel({
   ];
 
   return (
-    <div>
+    <div className="grid gap-3">
       <div className="grid gap-3 lg:grid-cols-2">
         {configs.map((config) => (
           <ResourceSection config={config} key={config.key} wsId={wsId} />

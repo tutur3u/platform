@@ -349,14 +349,28 @@ export type InventorySaleUpdatePayload = {
 };
 
 export type InventoryAuditLogSummary = {
-  actor_auth_uid?: string | null;
-  created_at: string | null;
-  entity_id?: string | null;
-  entity_kind: string;
-  entity_label?: string | null;
-  event_kind: string;
-  id: string;
+  auditRecordId: string;
+  eventKind: string;
+  entityKind: string;
+  entityId: string | null;
+  entityLabel: string | null;
   summary: string;
+  changedFields: string[];
+  fieldChanges: Array<{
+    field: string;
+    label: string;
+    before: string | null;
+    after: string | null;
+  }>;
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+  actor: {
+    authUid: string | null;
+    workspaceUserId: string | null;
+    displayName: string | null;
+  };
+  occurredAt: string | null;
+  source: string | null;
 };
 
 export type InventoryStorefrontListQuery = {
@@ -823,7 +837,7 @@ export function listInventorySuppliers(
 ) {
   return getInternalApiClient(options).json<
     InventoryListResponse<ProductSupplier>
-  >(workspacePath(wsId, '/product-suppliers'), {
+  >(workspaceInventoryPath(wsId, '/suppliers'), {
     cache: 'no-store',
     query: paginatedQuery(query),
   });
@@ -834,8 +848,8 @@ export function createInventorySupplier(
   payload: InventorySupplierPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ message: string }>(
-    workspacePath(wsId, '/product-suppliers'),
+  return getInternalApiClient(options).json<{ data: ProductSupplier }>(
+    workspaceInventoryPath(wsId, '/suppliers'),
     {
       body: JSON.stringify(payload),
       headers: jsonHeaders(options?.defaultHeaders),
@@ -850,8 +864,8 @@ export function updateInventorySupplier(
   payload: Partial<InventorySupplierPayload>,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ message: string }>(
-    workspacePath(wsId, `/product-suppliers/${encodePathSegment(supplierId)}`),
+  return getInternalApiClient(options).json<{ data: ProductSupplier }>(
+    workspaceInventoryPath(wsId, `/suppliers/${encodePathSegment(supplierId)}`),
     {
       body: JSON.stringify(payload),
       headers: jsonHeaders(options?.defaultHeaders),
@@ -866,7 +880,7 @@ export function deleteInventorySupplier(
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<{ message: string }>(
-    workspacePath(wsId, `/product-suppliers/${encodePathSegment(supplierId)}`),
+    workspaceInventoryPath(wsId, `/suppliers/${encodePathSegment(supplierId)}`),
     {
       headers: options?.defaultHeaders,
       method: 'DELETE',

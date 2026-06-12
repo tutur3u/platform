@@ -384,7 +384,7 @@ describe('inventory internal API helpers', () => {
     );
   });
 
-  it('routes setup resource CRUD through existing workspace APIs', async () => {
+  it('routes setup resource CRUD through setup APIs', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({
         data: { id: 'resource_1' },
@@ -441,8 +441,18 @@ describe('inventory internal API helpers', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       7,
-      'https://internal.example.com/api/v1/workspaces/ws_1/product-suppliers',
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/suppliers',
       expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      8,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/suppliers/supplier%201',
+      expect.objectContaining({ method: 'PUT' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      9,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/suppliers/supplier%201',
+      expect.objectContaining({ method: 'DELETE' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       10,

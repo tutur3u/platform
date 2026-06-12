@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   PackageSearch,
   Settings2,
-  ShieldCheck,
   Store,
 } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
@@ -28,12 +27,10 @@ function getNavigationIcon(icon: InventoryNavigationItem['icon']) {
       return <Layers3 className={className} />;
     case 'catalog':
       return <PackageSearch className={className} />;
-    case 'checkouts':
+    case 'commerce':
       return <CreditCard className={className} />;
     case 'overview':
       return <LayoutDashboard className={className} />;
-    case 'sales':
-      return <ShieldCheck className={className} />;
     case 'setup':
       return <Settings2 className={className} />;
     case 'stock':

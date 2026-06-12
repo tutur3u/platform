@@ -10,8 +10,11 @@ import {
   TriangleAlert,
 } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { useMemo } from 'react';
+import { AuditRows } from './audit-rows';
 import { BundleComponentsPanel } from './bundle-components-panel';
+import { CommercePanel } from './commerce-panel';
 import { BundleForm, StorefrontForm } from './inventory-forms';
 import {
   LoadingRows,
@@ -20,14 +23,13 @@ import {
   Toolbar,
 } from './operator-shell';
 import type {
+  InventoryCommerceTab,
   InventoryOperatorView,
   InventoryStatusOption,
 } from './operator-types';
 import { OverviewPanel } from './overview-panel';
-import { PolarSettingsPanel } from './polar-settings-panel';
 import { ProductCreateForm } from './product-management';
 import { ProductsTable } from './products-table';
-import { SaleDetailPanel } from './sale-detail-panel';
 import { SetupPanel } from './setup-panel';
 import { SimpleRows } from './simple-rows';
 import { StorefrontListingsPanel } from './storefront-listings-panel';
@@ -46,12 +48,20 @@ type InventoryQueryState = {
   refetch: () => unknown;
 };
 
+const commerceTabs = ['checkouts', 'sales'] as const;
+
 export function InventoryOperatorClient({
   view,
   wsId,
 }: InventoryOperatorClientProps) {
   const t = useTranslations('inventory.operator');
-  const data = useInventoryData(wsId, view);
+  const [commerceTab, setCommerceTab] = useQueryState(
+    'tab',
+    parseAsStringLiteral(commerceTabs)
+      .withDefault('checkouts')
+      .withOptions({ shallow: true })
+  );
+  const data = useInventoryData(wsId, view, { commerceTab });
   const products = data.products.data?.data ?? [];
   const storefronts = data.storefronts.data?.data ?? [];
   const bundles = data.bundles.data?.data ?? [];
@@ -79,7 +89,7 @@ export function InventoryOperatorClient({
       ];
     }
 
-    if (view === 'checkouts') {
+    if (view === 'commerce' && commerceTab === 'checkouts') {
       return [
         all,
         { label: t('statuses.reserved'), value: 'reserved' },
@@ -87,12 +97,16 @@ export function InventoryOperatorClient({
       ];
     }
 
+    if (view === 'commerce' && commerceTab === 'sales') {
+      return [all];
+    }
+
     return [
       all,
       { label: t('statuses.active'), value: 'active' },
       { label: t('statuses.archived'), value: 'archived' },
     ];
-  }, [t, view]);
+  }, [commerceTab, t, view]);
   const section = useMemo(
     () =>
       ({
@@ -111,20 +125,15 @@ export function InventoryOperatorClient({
           t('views.catalog.title'),
           t('views.catalog.description'),
         ],
-        checkouts: [
+        commerce: [
           CircleDollarSign,
-          t('views.checkouts.title'),
-          t('views.checkouts.description'),
+          t('views.commerce.title'),
+          t('views.commerce.description'),
         ],
         overview: [
           Boxes,
           t('views.overview.title'),
           t('views.overview.description'),
-        ],
-        sales: [
-          CircleDollarSign,
-          t('views.sales.title'),
-          t('views.sales.description'),
         ],
         setup: [Boxes, t('views.setup.title'), t('views.setup.description')],
         stock: [
@@ -150,8 +159,8 @@ export function InventoryOperatorClient({
       : null,
     view === 'storefront' ? data.storefronts : null,
     ['bundles', 'storefront'].includes(view) ? data.bundles : null,
-    view === 'checkouts' ? data.checkouts : null,
-    view === 'sales' ? data.sales : null,
+    view === 'commerce' && commerceTab === 'checkouts' ? data.checkouts : null,
+    view === 'commerce' && commerceTab === 'sales' ? data.sales : null,
     view === 'audits' ? data.audits : null,
     ['catalog', 'stock', 'setup', 'bundles', 'storefront'].includes(view)
       ? data.formOptions
@@ -231,7 +240,6 @@ export function InventoryOperatorClient({
               storefronts={storefronts}
               wsId={wsId}
             />
-            <PolarSettingsPanel wsId={wsId} />
           </>
         ) : null}
         {!isLoading && !isError && view === 'bundles' ? (
@@ -245,28 +253,21 @@ export function InventoryOperatorClient({
             />
           </>
         ) : null}
-        {!isLoading && !isError && view === 'checkouts' ? (
-          <>
-            <StatePanel
-              description={t('states.checkoutFeeDescription')}
-              title={t('states.checkoutFeeTitle')}
-            />
-            <PolarSettingsPanel wsId={wsId} />
-            <SimpleRows
-              rows={data.checkouts.data?.data ?? []}
-              type="checkouts"
-              wsId={wsId}
-            />
-          </>
-        ) : null}
-        {!isLoading && !isError && view === 'sales' ? (
-          <>
-            <SimpleRows rows={sales} type="sales" wsId={wsId} />
-            <SaleDetailPanel sales={sales} wsId={wsId} />
-          </>
+        {!isLoading && !isError && view === 'commerce' ? (
+          <CommercePanel
+            checkouts={data.checkouts.data?.data ?? []}
+            query={data.filters.q}
+            sales={sales}
+            setTab={(tab: InventoryCommerceTab) => {
+              void data.setFilters({ status: 'all' });
+              void setCommerceTab(tab);
+            }}
+            tab={commerceTab}
+            wsId={wsId}
+          />
         ) : null}
         {!isLoading && !isError && view === 'audits' ? (
-          <SimpleRows rows={data.audits.data?.data ?? []} type="audits" />
+          <AuditRows rows={data.audits.data?.data ?? []} />
         ) : null}
       </div>
     </SectionShell>

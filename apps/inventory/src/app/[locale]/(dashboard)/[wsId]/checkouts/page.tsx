@@ -1,4 +1,4 @@
-import { InventoryOperatorClient } from '@/components/operator/inventory-operator-client';
+import { redirect } from 'next/navigation';
 
 export default async function InventoryCheckoutsPage({
   params,
@@ -6,5 +6,5 @@ export default async function InventoryCheckoutsPage({
   params: Promise<{ wsId: string }>;
 }) {
   const { wsId } = await params;
-  return <InventoryOperatorClient view="checkouts" wsId={wsId} />;
+  redirect(`/${wsId}/commerce?tab=checkouts`);
 }

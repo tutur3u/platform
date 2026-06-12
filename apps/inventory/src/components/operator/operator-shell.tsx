@@ -16,7 +16,7 @@ export function EmptyRow({
   label: string;
 }) {
   return (
-    <div className="grid min-h-44 place-items-center rounded-lg border border-border border-dashed bg-muted/25 p-6 text-center">
+    <div className="grid min-h-32 place-items-center rounded-lg border border-border border-dashed bg-muted/20 p-5 text-center">
       <div className="max-w-sm">
         <PackageOpen className="mx-auto h-8 w-8 text-muted-foreground" />
         <p className="mt-3 font-medium">{label}</p>
@@ -92,9 +92,14 @@ export function Toolbar({
   statusOptions: InventoryStatusOption[];
 }) {
   const t = useTranslations('inventory.operator');
+  const selectedStatus = statusOptions.some(
+    (option) => option.value === filters.status
+  )
+    ? filters.status
+    : (statusOptions[0]?.value ?? 'all');
 
   return (
-    <div className="sticky top-0 z-20 flex flex-col gap-2 border-border border-b bg-background/95 py-3 backdrop-blur lg:flex-row lg:items-center lg:justify-between">
+    <div className="sticky top-0 z-20 flex flex-col gap-2 bg-transparent py-2 lg:flex-row lg:items-center lg:justify-between">
       <label className="relative flex min-w-0 flex-1 items-center">
         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -107,7 +112,7 @@ export function Toolbar({
       <select
         className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring/40"
         onChange={(event) => setFilters({ status: event.target.value })}
-        value={filters.status}
+        value={selectedStatus}
       >
         {statusOptions.map((option) => (
           <option key={option.value} value={option.value}>

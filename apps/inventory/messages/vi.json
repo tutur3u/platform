@@ -826,6 +826,10 @@
         "description": "Theo dõi giỏ đã giữ hàng, thời hạn giữ và trạng thái đơn.",
         "title": "Checkout"
       },
+      "commerce": {
+        "description": "Theo dõi checkout và rà soát doanh số đã hoàn tất.",
+        "title": "Thương mại"
+      },
       "controls": {
         "description": "Rà soát độ phủ quan sát và kiểm soát.",
         "title": "Kiểm soát"
@@ -865,6 +869,10 @@
       }
     },
     "operator": {
+      "audit": {
+        "changedFields": "{count, plural, one {# trường thay đổi} other {# trường thay đổi}}",
+        "systemActor": "Hệ thống"
+      },
       "columns": {
         "actions": "Thao tác",
         "category": "Danh mục",
@@ -873,6 +881,15 @@
         "manufacturer": "Nhà sản xuất",
         "owner": "Chủ sở hữu",
         "stock": "Tồn kho"
+      },
+      "commerce": {
+        "items": "{count, plural, one {# mặt hàng} other {# mặt hàng}}",
+        "release": "Giải phóng",
+        "tabs": {
+          "checkouts": "Checkout",
+          "label": "Chế độ thương mại",
+          "sales": "Bán hàng"
+        }
       },
       "empty": "Không có bản ghi kho hàng phù hợp với chế độ xem này.",
       "emptyDescriptions": {
@@ -885,6 +902,7 @@
       "forms": {
         "accentColor": "Màu nhấn",
         "amount": "Số lượng",
+        "batch": "Lô hàng",
         "bundle": "Combo",
         "bundleName": "Tên combo",
         "category": "Danh mục",
@@ -909,6 +927,7 @@
         "createStorefrontTitle": "Tạo cửa hàng",
         "creating": "Đang tạo...",
         "currency": "Tiền tệ",
+        "delete": "Xóa",
         "deleteError": "Không thể xóa bản ghi.",
         "deleteSuccess": "Đã xóa bản ghi.",
         "description": "Mô tả",
@@ -987,7 +1006,6 @@
           "sandbox": "Sandbox"
         },
         "environmentLabel": "Môi trường",
-        "feeResponsibility": "Tuturuuu chưa thu phí nền tảng ở giai đoạn này. Người dùng chịu các phí nền tảng Polar và phí Stripe mà Polar đã tính.",
         "manage": "Quản lý Polar",
         "notConfigured": "Chưa lưu token",
         "pending": "Đang chờ",
@@ -1035,8 +1053,6 @@
         "warehouses": "Kho"
       },
       "states": {
-        "checkoutFeeDescription": "Không ước tính phí checkout tại đây. Polar tính phí nền tảng của họ và phí Stripe; Tuturuuu chưa thu phí nền tảng ở giai đoạn này.",
-        "checkoutFeeTitle": "Chỉ hiển thị trạng thái checkout thực",
         "errorDescription": "Hãy làm mới chế độ xem này hoặc thử lại sau khi API hoạt động ổn định.",
         "errorTitle": "Không thể tải dữ liệu kho",
         "retry": "Thử lại"
@@ -1067,6 +1083,10 @@
         "checkouts": {
           "description": "Theo dõi giữ hàng, thời hạn hết hạn và trạng thái checkout công khai.",
           "title": "Hàng đợi checkout"
+        },
+        "commerce": {
+          "description": "Theo dõi phiên checkout đang giữ hàng và doanh số đã hoàn tất trong cùng một không gian gọn.",
+          "title": "Bàn thương mại"
         },
         "overview": {
           "description": "Quét nhanh sức khỏe sản phẩm, mức sẵn sàng cửa hàng và rủi ro sắp hết hàng.",
