@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
-import { CheckCircle2, CircleX, Trash2 } from '@tuturuuu/icons';
+import { Archive, CheckCircle2, Trash2 } from '@tuturuuu/icons';
 import {
   checkWorkspacePermission,
   createWorkspaceTask,
@@ -20,7 +20,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
-import { cn } from '@tuturuuu/utils/format';
 import {
   getTicketIdentifier,
   invalidateTaskCaches,
@@ -223,6 +222,7 @@ export function TaskEditDialog({
   // User requested: always disable editing for shared tasks, regardless of permission
   const disabled = !!shareCode;
   const taskControlsDisabled = disabled || isHydratingTask || taskLoadError;
+  const taskTitleDisabled = disabled || taskLoadError;
   const effectiveRealtimeEnabled =
     realtimeEnabled && !isHydratingTask && !taskLoadError;
   const effectiveCollaborationMode =
@@ -276,6 +276,7 @@ export function TaskEditDialog({
   );
   const nameUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingNameRef = useRef<string | null>(null);
+  const nameEditedDuringHydrationRef = useRef(false);
   const quickDueRef = useRef<(days: number | null) => void>(() => {});
   const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
   const handleConvertToTaskRef = useRef<(() => Promise<void>) | null>(null);
@@ -286,6 +287,17 @@ export function TaskEditDialog({
   useEffect(() => {
     descriptionRef.current = formState.description;
   }, [formState.description]);
+
+  const setTaskName = useCallback(
+    (value: string) => {
+      if (isHydratingTask) {
+        nameEditedDuringHydrationRef.current = true;
+      }
+
+      formState.setName(value);
+    },
+    [formState.setName, isHydratingTask]
+  );
 
   // User state
   const [user, setUser] = useState<TaskDialogUserIdentity | null>(
@@ -855,7 +867,9 @@ export function TaskEditDialog({
     !!task?.id &&
     task.id !== 'new' &&
     !isDeletedTask &&
-    !taskControlsDisabled;
+    !disabled &&
+    !taskLoadError;
+  const compactEditActionsDisabled = isLoading || isHydratingTask;
   const canShowCompactStatusActions =
     canShowCompactEditActions && currentList?.status !== 'documents';
   const showCompactDoneAction =
@@ -949,6 +963,7 @@ export function TaskEditDialog({
     task,
     filters,
     taskHydrationVersion,
+    preserveNameOnHydration: nameEditedDuringHydrationRef.current,
     setName: formState.setName,
     setDescription: formState.setDescription,
     setPriority: formState.setPriority,
@@ -960,6 +975,12 @@ export function TaskEditDialog({
     setSelectedAssignees: formState.setSelectedAssignees,
     setSelectedProjects: formState.setSelectedProjects,
   });
+
+  useEffect(() => {
+    if (!isHydratingTask) {
+      nameEditedDuringHydrationRef.current = false;
+    }
+  }, [isHydratingTask]);
 
   // Yjs sync
   useTaskYjsSync({
@@ -2002,32 +2023,24 @@ export function TaskEditDialog({
   ]);
 
   const showCompactDialog = presentation === 'compact' && !draftId;
-  const taskHydrationNotice =
-    isHydratingTask || taskLoadError ? (
-      <div
-        className={cn(
-          'mx-4 mb-2 flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm md:mx-8',
-          taskLoadError
-            ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
-            : 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow'
-        )}
-        role={taskLoadError ? 'alert' : 'status'}
-      >
-        <span>
-          {taskLoadError ? t('please_try_again_later') : t('loading')}
-        </span>
-        {taskLoadError && onRetryTaskLoad && (
-          <Button
-            type="button"
-            variant="secondary"
-            size="xs"
-            onClick={onRetryTaskLoad}
-          >
-            {t('retry')}
-          </Button>
-        )}
-      </div>
-    ) : null;
+  const taskHydrationNotice = taskLoadError ? (
+    <div
+      className="mx-4 mb-2 flex items-center justify-between gap-3 rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-sm md:mx-8"
+      role="alert"
+    >
+      <span>{t('please_try_again_later')}</span>
+      {onRetryTaskLoad && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="xs"
+          onClick={onRetryTaskLoad}
+        >
+          {t('retry')}
+        </Button>
+      )}
+    </div>
+  ) : null;
   const compactHeaderInfo = useMemo(
     () =>
       getTaskDialogHeaderInfo(
@@ -2059,8 +2072,8 @@ export function TaskEditDialog({
               variant="ghost"
               size="icon"
               aria-label={t('mark_as_done')}
-              disabled={isLoading}
-              className="h-8 w-8 text-muted-foreground hover:text-dynamic-green"
+              disabled={compactEditActionsDisabled}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
               onClick={() => void updateList(doneList.id)}
             >
               <CheckCircle2 className="h-4 w-4" />
@@ -2076,15 +2089,15 @@ export function TaskEditDialog({
               type="button"
               variant="ghost"
               size="icon"
-              aria-label={t('mark_as_closed')}
-              disabled={isLoading}
-              className="h-8 w-8 text-muted-foreground hover:text-dynamic-purple"
+              aria-label={t('archive')}
+              disabled={compactEditActionsDisabled}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
               onClick={() => void updateList(closedList.id)}
             >
-              <CircleX className="h-4 w-4" />
+              <Archive className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">{t('mark_as_closed')}</TooltipContent>
+          <TooltipContent side="top">{t('archive')}</TooltipContent>
         </Tooltip>
       )}
       <Tooltip>
@@ -2094,8 +2107,8 @@ export function TaskEditDialog({
             variant="ghost"
             size="icon"
             aria-label={t('delete_task')}
-            disabled={isLoading}
-            className="h-8 w-8 text-muted-foreground hover:text-dynamic-red"
+            disabled={compactEditActionsDisabled}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
             onClick={() => setShowDeleteConfirm(true)}
           >
             <Trash2 className="h-4 w-4" />
@@ -2257,6 +2270,7 @@ export function TaskEditDialog({
               icon={compactHeaderInfo.icon}
               iconBgClass={compactHeaderInfo.iconBgClass}
               iconRingClass={compactHeaderInfo.iconRingClass}
+              showHeaderTitle={isCreateMode}
               titleInput={
                 <TaskNameInput
                   name={formState.name}
@@ -2265,10 +2279,10 @@ export function TaskEditDialog({
                   editorRef={editorRef}
                   lastCursorPositionRef={lastCursorPositionRef}
                   targetEditorCursorRef={targetEditorCursorRef}
-                  setName={formState.setName}
+                  setName={setTaskName}
                   updateName={updateName}
                   flushNameUpdate={flushNameUpdate}
-                  disabled={taskControlsDisabled}
+                  disabled={taskTitleDisabled}
                   variant="compact"
                   onSubmit={
                     isCreateMode && !taskControlsDisabled
@@ -2385,10 +2399,10 @@ export function TaskEditDialog({
                       editorRef={editorRef}
                       lastCursorPositionRef={lastCursorPositionRef}
                       targetEditorCursorRef={targetEditorCursorRef}
-                      setName={formState.setName}
+                      setName={setTaskName}
                       updateName={updateName}
                       flushNameUpdate={flushNameUpdate}
-                      disabled={taskControlsDisabled}
+                      disabled={taskTitleDisabled}
                     />
 
                     {smartSuggestionsButton && (

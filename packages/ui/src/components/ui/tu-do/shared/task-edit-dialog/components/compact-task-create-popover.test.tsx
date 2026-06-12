@@ -204,10 +204,10 @@ describe('CompactTaskCreatePopover', () => {
               </button>
               <button
                 type="button"
-                aria-label="common.mark_as_closed"
+                aria-label="common.archive"
                 onClick={onClosed}
               >
-                Closed
+                Archive
               </button>
               <button
                 type="button"
@@ -225,11 +225,44 @@ describe('CompactTaskCreatePopover', () => {
     );
 
     fireEvent.click(screen.getByLabelText('common.mark_as_done'));
-    fireEvent.click(screen.getByLabelText('common.mark_as_closed'));
+    fireEvent.click(screen.getByLabelText('common.archive'));
     fireEvent.click(screen.getByLabelText('common.delete_task'));
 
+    expect(
+      screen.getByLabelText('common.delete_task').closest('.border-b')
+    ).toBeTruthy();
+    expect(
+      screen.getByLabelText('common.delete_task').closest('.border-t')
+    ).toBeNull();
     expect(onDone).toHaveBeenCalledTimes(1);
     expect(onClosed).toHaveBeenCalledTimes(1);
     expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the compact edit title accessible but not visibly rendered', () => {
+    render(
+      <Dialog open={true}>
+        <CompactTaskCreatePopover
+          title="Edit task"
+          showHeaderTitle={false}
+          titleInput={<input aria-label="Task title" defaultValue="Existing" />}
+          propertyControls={
+            <button type="button" aria-label="List: Inbox">
+              List
+            </button>
+          }
+          editActions={
+            <button type="button" aria-label="common.delete_task">
+              Delete
+            </button>
+          }
+          onClose={vi.fn()}
+          onFullscreen={vi.fn()}
+        />
+      </Dialog>
+    );
+
+    expect(screen.getByText('Edit task')).toHaveClass('sr-only');
+    expect(screen.getByLabelText('common.delete_task')).toBeTruthy();
   });
 });

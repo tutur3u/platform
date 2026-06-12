@@ -31,6 +31,7 @@ export interface UseTaskFormResetProps {
   task?: Task;
   filters?: TaskFilters;
   taskHydrationVersion?: number;
+  preserveNameOnHydration?: boolean;
 
   // State setters - using React dispatch types for compatibility
   setName: React.Dispatch<React.SetStateAction<string>>;
@@ -57,6 +58,7 @@ export function useTaskFormReset({
   task,
   filters,
   taskHydrationVersion = 0,
+  preserveNameOnHydration = false,
   setName,
   setDescription,
   setPriority,
@@ -98,7 +100,9 @@ export function useTaskFormReset({
       !isCreateMode &&
       (taskIdChanged || taskHydrationVersionChanged || justOpened)
     ) {
-      setName(task?.name || '');
+      if (!(taskHydrationVersionChanged && preserveNameOnHydration)) {
+        setName(task?.name || '');
+      }
       setDescription(getDescriptionContent(task?.description));
       setPriority(task?.priority || null);
       setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
@@ -133,6 +137,7 @@ export function useTaskFormReset({
     isOpen,
     task,
     taskHydrationVersion,
+    preserveNameOnHydration,
     filters,
     setName,
     setDescription,

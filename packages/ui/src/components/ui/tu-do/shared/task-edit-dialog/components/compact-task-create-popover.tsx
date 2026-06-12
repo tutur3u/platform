@@ -24,6 +24,7 @@ interface CompactTaskDialogPanelProps {
   iconBgClass?: string;
   iconRingClass?: string;
   titleInput: ReactNode;
+  showHeaderTitle?: boolean;
   taskStatus?: ReactNode;
   propertyControls: ReactNode;
   editActions?: ReactNode;
@@ -82,6 +83,7 @@ export function CompactTaskDialogPanel({
   iconBgClass = 'bg-dynamic-orange/10',
   iconRingClass = 'ring-dynamic-orange/20',
   titleInput,
+  showHeaderTitle = true,
   taskStatus,
   propertyControls,
   editActions,
@@ -109,36 +111,47 @@ export function CompactTaskDialogPanel({
   const saveLabel = saveAsDraft
     ? t('task-drafts.save_as_draft')
     : t('ws-task-boards.dialog.create_task');
+  const hasHeaderTitle = showHeaderTitle;
 
   return (
     <div
       data-testid="compact-task-dialog-panel"
       className="flex max-h-[calc(100vh-2rem)] min-h-0 flex-col overflow-hidden rounded-lg bg-background"
     >
-      <div className="flex items-start justify-between gap-3 border-b px-4 py-3">
-        <div className="flex min-w-0 items-start gap-2.5">
-          <div
-            className={cn(
-              'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1',
-              iconBgClass,
-              iconRingClass
-            )}
-          >
-            {icon ?? <ListTodo className="h-4 w-4 text-dynamic-orange" />}
+      <div
+        className={cn(
+          'flex items-start gap-3 border-b px-4 py-3',
+          hasHeaderTitle ? 'justify-between' : 'justify-end'
+        )}
+      >
+        {hasHeaderTitle ? (
+          <div className="flex min-w-0 items-start gap-2.5">
+            <div
+              className={cn(
+                'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1',
+                iconBgClass,
+                iconRingClass
+              )}
+            >
+              {icon ?? <ListTodo className="h-4 w-4 text-dynamic-orange" />}
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <DialogTitle className="truncate font-semibold text-base">
+                {title}
+              </DialogTitle>
+              {description && (
+                <DialogDescription className="truncate text-muted-foreground text-xs">
+                  {description}
+                </DialogDescription>
+              )}
+            </div>
           </div>
-          <div className="min-w-0 space-y-0.5">
-            <DialogTitle className="truncate font-semibold text-base">
-              {title}
-            </DialogTitle>
-            {description && (
-              <DialogDescription className="truncate text-muted-foreground text-xs">
-                {description}
-              </DialogDescription>
-            )}
-          </div>
-        </div>
+        ) : (
+          <DialogTitle className="sr-only">{title}</DialogTitle>
+        )}
         <div className="flex shrink-0 items-center gap-1">
           {smartAction}
+          {editActions}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -221,12 +234,6 @@ export function CompactTaskDialogPanel({
               </>
             )}
           </Button>
-        </div>
-      )}
-
-      {!hasCreateActions && editActions && (
-        <div className="flex items-center justify-end gap-1.5 border-t bg-muted/20 px-4 py-3">
-          {editActions}
         </div>
       )}
     </div>
