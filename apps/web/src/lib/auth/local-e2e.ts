@@ -20,9 +20,21 @@ const LOCAL_REQUEST_WEB_ORIGINS = new Set([
 
 const LOCAL_INTERNAL_WEB_ORIGINS = new Set([
   'http://0.0.0.0:7803',
+  'http://0.0.0.0',
+  'https://0.0.0.0:7803',
+  'https://0.0.0.0',
   'http://web:7803',
+  'http://web',
+  'https://web:7803',
+  'https://web',
   'http://web-blue:7803',
+  'http://web-blue',
+  'https://web-blue:7803',
+  'https://web-blue',
   'http://web-green:7803',
+  'http://web-green',
+  'https://web-green:7803',
+  'https://web-green',
 ]);
 
 const LOCAL_SUPABASE_ORIGINS = new Set([

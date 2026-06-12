@@ -371,10 +371,33 @@ function canUpgradeToRegisteredHttpsOrigin(value: URL, registeredUrl: URL) {
 
 const PORTLESS_APP_HOSTS = new Set(Object.values(TUTURUUU_PORTLESS_APP_HOSTS));
 
+function canUseLocalPortlessProxyPort(value: URL, registeredUrl: URL) {
+  return (
+    value.protocol === registeredUrl.protocol &&
+    !registeredUrl.port &&
+    Boolean(value.port) &&
+    PORTLESS_APP_HOSTS.has(registeredUrl.hostname)
+  );
+}
+
+function hasCompatiblePortlessPort(value: URL, registeredUrl: URL) {
+  return (
+    value.port === registeredUrl.port ||
+    canUseLocalPortlessProxyPort(value, registeredUrl)
+  );
+}
+
+function matchesPortlessProxyOrigin(value: URL, registeredUrl: URL) {
+  return (
+    canUseLocalPortlessProxyPort(value, registeredUrl) &&
+    value.hostname === registeredUrl.hostname
+  );
+}
+
 function matchesPrefixedPortlessOrigin(value: URL, registeredUrl: URL) {
   if (
     value.protocol !== registeredUrl.protocol ||
-    value.port !== registeredUrl.port ||
+    !hasCompatiblePortlessPort(value, registeredUrl) ||
     !PORTLESS_APP_HOSTS.has(registeredUrl.hostname) ||
     PORTLESS_APP_HOSTS.has(value.hostname)
   ) {
@@ -411,7 +434,8 @@ function matchesAppDomainUrl(value: URL, domain: AppDomain) {
 
   if (
     domain.kind === 'internal' &&
-    matchesPrefixedPortlessOrigin(value, registeredUrl)
+    (matchesPortlessProxyOrigin(value, registeredUrl) ||
+      matchesPrefixedPortlessOrigin(value, registeredUrl))
   ) {
     return true;
   }
@@ -427,11 +451,13 @@ function canonicalizeAppDomainUrl(value: URL, domain: AppDomain) {
   if (
     registeredUrl &&
     domain.kind === 'internal' &&
-    canUpgradeToRegisteredHttpsOrigin(value, registeredUrl)
+    (canUpgradeToRegisteredHttpsOrigin(value, registeredUrl) ||
+      matchesPortlessProxyOrigin(value, registeredUrl))
   ) {
     const canonicalUrl = new URL(value.toString());
     canonicalUrl.protocol = registeredUrl.protocol;
-    canonicalUrl.host = registeredUrl.host;
+    canonicalUrl.hostname = registeredUrl.hostname;
+    canonicalUrl.port = registeredUrl.port;
     return serializeUrl(canonicalUrl);
   }
 

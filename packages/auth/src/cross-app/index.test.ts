@@ -148,8 +148,22 @@ describe('mapUrlToApp', () => {
     ).toBe('calendar');
   });
 
+  it('maps Portless local proxy return URLs with the CI proxy port', () => {
+    expect(
+      mapUrlToApp(
+        'https://tuturuuu.localhost:1355/verify-token?nextUrl=%2Fen%2Fpersonal%2Ftasks'
+      )
+    ).toBe('platform');
+    expect(
+      mapUrlToApp(
+        'https://tasks.tuturuuu.localhost:1355/verify-token?nextUrl=%2Fpersonal'
+      )
+    ).toBe('tasks');
+  });
+
   it('rejects hostname prefix lookalikes', () => {
     expect(mapUrlToApp('https://learn.tuturuuu.com.evil.test')).toBeNull();
+    expect(mapUrlToApp('https://tuturuuu.localhost.evil.test:1355')).toBeNull();
   });
 
   it('does not map configured external app domains as internal app returns', () => {

@@ -226,6 +226,8 @@ function renderLoginForm(returnUrl: string, options: { origin?: string } = {}) {
 
 const platformVerifyTokenReturnUrl =
   'http://tuturuuu.com/verify-token?nextUrl=%2F';
+const localPortlessPlatformVerifyTokenReturnUrl =
+  'https://tuturuuu.localhost:1355/verify-token?nextUrl=%2Fen%2Fpersonal%2Ftasks';
 
 describe('LoginForm returnUrl navigation', () => {
   beforeEach(() => {
@@ -371,6 +373,26 @@ describe('LoginForm returnUrl navigation', () => {
       screen.queryByRole('button', {
         name: 'login.continue_with_email',
       })
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('hard redirects authenticated bootstrap for local Portless platform verify-token returnUrls', async () => {
+    const queryClient = renderLoginForm(
+      localPortlessPlatformVerifyTokenReturnUrl
+    );
+
+    await screen.findByText('account_switcher.redirecting');
+
+    await waitFor(() => {
+      expect(mocks.replace).toHaveBeenCalledWith('/en/personal/tasks');
+    });
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
+    expect(
+      mocks.resolveCrossAppReturnUrlWithInternalApi
+    ).not.toHaveBeenCalled();
+    expect(
+      screen.queryByText('login.invalid_return_url_title')
     ).not.toBeInTheDocument();
     queryClient.clear();
   });

@@ -89,6 +89,34 @@ describe('resolveInternalAppUrl', () => {
     ).toBe('chat');
   });
 
+  it('recognizes local Portless proxy ports for registered app URLs', () => {
+    expect(
+      getAppDomainByUrl(
+        'https://tuturuuu.localhost:1355/verify-token?nextUrl=%2Fen%2Fpersonal%2Ftasks'
+      )
+    ).toMatchObject({
+      canonicalUrl:
+        'https://tuturuuu.localhost/verify-token?nextUrl=%2Fen%2Fpersonal%2Ftasks',
+      kind: 'internal',
+      name: 'platform',
+    });
+    expect(
+      getAppDomainByUrl(
+        'https://tasks.tuturuuu.localhost:1355/verify-token?nextUrl=%2Fpersonal'
+      )
+    ).toMatchObject({
+      canonicalUrl:
+        'https://tasks.tuturuuu.localhost/verify-token?nextUrl=%2Fpersonal',
+      kind: 'internal',
+      name: 'tasks',
+    });
+    expect(
+      getAppDomainByUrl(
+        'https://tuturuuu.localhost.evil.test:1355/verify-token?nextUrl=%2F'
+      )
+    ).toBeNull();
+  });
+
   it('canonicalizes production internal app URLs to their registered HTTPS origins', () => {
     expect(
       resolveInternalAppUrl({

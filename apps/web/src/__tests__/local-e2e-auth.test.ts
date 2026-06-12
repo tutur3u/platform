@@ -138,6 +138,42 @@ describe('isLocalE2EAuthRequestAllowed', () => {
     ).toBe(true);
   });
 
+  it('allows CI Portless browser requests with the public proxy port', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('https://tuturuuu.localhost:1355/api/auth/dev-session', {
+          host: 'tuturuuu.localhost:1355',
+          origin: 'https://tuturuuu.localhost:1355',
+          referer: 'https://tuturuuu.localhost:1355/login',
+        }),
+        {
+          ...localE2EEnv,
+          BASE_URL: 'https://tuturuuu.localhost:1355',
+          PORTLESS_URL: 'https://tuturuuu.localhost:1355',
+        }
+      )
+    ).toBe(true);
+  });
+
+  it('allows Docker web service hosts without explicit ports behind Portless', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://web-blue/api/auth/dev-session', {
+          host: 'web-blue',
+          origin: 'https://tuturuuu.localhost:1355',
+          referer: 'https://tuturuuu.localhost:1355/login',
+          'x-forwarded-host': 'tuturuuu.localhost:1355',
+          'x-forwarded-proto': 'https',
+        }),
+        {
+          ...localE2EEnv,
+          BASE_URL: 'https://tuturuuu.localhost:1355',
+          PORTLESS_URL: 'https://tuturuuu.localhost:1355',
+        }
+      )
+    ).toBe(true);
+  });
+
   it('allows portless localhost request origins produced by standalone proxies', () => {
     expect(
       isLocalE2EAuthRequestAllowed(

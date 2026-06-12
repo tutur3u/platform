@@ -368,6 +368,73 @@ describe('dev-session route', () => {
     expect(mocks.createClient).toHaveBeenCalledWith(request);
   });
 
+  it('allows production-mode CI Portless browser requests with the public proxy port', async () => {
+    mocks.devMode = false;
+    stubLocalE2EEnv({
+      BASE_URL: 'https://tuturuuu.localhost:1355',
+      PORTLESS_URL: 'https://tuturuuu.localhost:1355',
+      SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
+    });
+    mockSuccessfulSession();
+
+    const request = new NextRequest(
+      'https://tuturuuu.localhost:1355/api/auth/dev-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          host: 'tuturuuu.localhost:1355',
+          origin: 'https://tuturuuu.localhost:1355',
+          referer: 'https://tuturuuu.localhost:1355/login',
+        },
+        body: JSON.stringify({
+          email: 'local@tuturuuu.com',
+          locale: 'en',
+        }),
+      }
+    );
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
+    expect(mocks.createClient).toHaveBeenCalledWith(request);
+  });
+
+  it('allows production-mode Docker web service hosts without explicit ports behind Portless', async () => {
+    mocks.devMode = false;
+    stubLocalE2EEnv({
+      BASE_URL: 'https://tuturuuu.localhost:1355',
+      PORTLESS_URL: 'https://tuturuuu.localhost:1355',
+      SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
+    });
+    mockSuccessfulSession();
+
+    const request = new NextRequest('http://web-blue/api/auth/dev-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        host: 'web-blue',
+        origin: 'https://tuturuuu.localhost:1355',
+        referer: 'https://tuturuuu.localhost:1355/login',
+        'x-forwarded-host': 'tuturuuu.localhost:1355',
+        'x-forwarded-proto': 'https',
+      },
+      body: JSON.stringify({
+        email: 'local@tuturuuu.com',
+        locale: 'en',
+      }),
+    });
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
+    expect(mocks.createClient).toHaveBeenCalledWith(request);
+  });
+
   it('allows production-mode Portless E2E requests on the injected backend port', async () => {
     mocks.devMode = false;
     stubLocalE2EEnv({
