@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/tutur3u/platform/compare/chat-v0.3.1...chat-v0.3.2) (2026-06-13)
+
+
+### Bug Fixes
+
+* **sidebar:** persist collapsed state across refresh ([cb0eb6d](https://github.com/tutur3u/platform/commit/cb0eb6d0d30ecc8b3f3231255f9906e60a895f04))
+
 ## [0.3.1](https://github.com/tutur3u/platform/compare/chat-v0.3.0...chat-v0.3.1) (2026-06-11)
 
 

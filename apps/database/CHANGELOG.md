@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.6.0](https://github.com/tutur3u/platform/compare/database-v1.5.0...database-v1.6.0) (2026-06-13)
+
+
+### Features
+
+* **ci:** add GitHub bot check auto-pickup ([9e62daa](https://github.com/tutur3u/platform/commit/9e62daa5267b29ca5e55ed85c7d560415cef3b77))
+* **finance:** add wallet checkpoint audit history ([11139c7](https://github.com/tutur3u/platform/commit/11139c7e354a8f29e83187748711f6ae39c48e70))
+* **inventory:** add costing and simulated storefront checkout ([7fcdabb](https://github.com/tutur3u/platform/commit/7fcdabb145e6fa9cc899b563b117e65f7772643a))
+* **inventory:** revamp storefront commerce experience ([72a2bde](https://github.com/tutur3u/platform/commit/72a2bde46a1e6c2815d0b2111fc743373c7bec9b))
+
+
+### Bug Fixes
+
+* **ci:** stabilize e2e and package release checks ([ae768f5](https://github.com/tutur3u/platform/commit/ae768f5b46dbfde5943a130cc2b49c15c9676ac2))
+* **inventory:** restore operator CRUD and commerce APIs ([dd38d43](https://github.com/tutur3u/platform/commit/dd38d43bea0e812e48ccc989c7204d1212ae4649))
+
 ## [1.5.0](https://github.com/tutur3u/platform/compare/database-v1.4.1...database-v1.5.0) (2026-06-11)
 
 

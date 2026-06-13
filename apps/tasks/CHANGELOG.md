@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/tasks-v0.6.0...tasks-v0.7.0) (2026-06-13)
+
+
+### Features
+
+* **tasks:** add compact task dialog AI suggestions ([99058e9](https://github.com/tutur3u/platform/commit/99058e90a4f81153f664eb92fdbacade1e2188c6))
+
+
+### Bug Fixes
+
+* **sidebar:** persist collapsed state across refresh ([cb0eb6d](https://github.com/tutur3u/platform/commit/cb0eb6d0d30ecc8b3f3231255f9906e60a895f04))
+* **tasks:** sync task realtime with broadcasts ([8c56154](https://github.com/tutur3u/platform/commit/8c56154e517797dcac0ec0971d8a474b50292706))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/tasks-v0.5.1...tasks-v0.6.0) (2026-06-11)
 
 

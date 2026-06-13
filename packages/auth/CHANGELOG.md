@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/tutur3u/platform/compare/auth-v0.2.1...auth-v0.2.2) (2026-06-13)
+
+
+### Bug Fixes
+
+* **auth:** allow local portless e2e auth ([928da7d](https://github.com/tutur3u/platform/commit/928da7d75ff72298bd1f0d2af6872e951decae3b))
+
 ## [0.2.1](https://github.com/tutur3u/platform/compare/auth-v0.2.0...auth-v0.2.1) (2026-06-10)
 
 

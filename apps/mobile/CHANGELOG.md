@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.1](https://github.com/tutur3u/platform/compare/mobile-v0.6.0...mobile-v0.6.1) (2026-06-13)
+
+
+### Bug Fixes
+
+* **ci:** restore mobile and auth callback jobs ([65f0b0a](https://github.com/tutur3u/platform/commit/65f0b0af0d054129198b894155d0feefb4a941b0))
+* **mobile:** restore windows ci build ([cb4ae6d](https://github.com/tutur3u/platform/commit/cb4ae6ddd02f4a6d41cd73d7c490500a1c1757ab))
+* **tasks:** sync task realtime with broadcasts ([8c56154](https://github.com/tutur3u/platform/commit/8c56154e517797dcac0ec0971d8a474b50292706))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/mobile-v0.5.2...mobile-v0.6.0) (2026-06-10)
 
 

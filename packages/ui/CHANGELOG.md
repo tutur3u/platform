@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/ui-v0.5.0...ui-v0.6.0) (2026-06-13)
+
+
+### Features
+
+* **finance:** add infinite wallet loading ([76eba7a](https://github.com/tutur3u/platform/commit/76eba7a849c3a6b948e231a1e83e1e2faa10bb16))
+* **finance:** add reconciliation defaults and audited balances ([206f941](https://github.com/tutur3u/platform/commit/206f9416351ade0cfbd1ed822595d44843efbaeb))
+* **finance:** add wallet checkpoint audit history ([11139c7](https://github.com/tutur3u/platform/commit/11139c7e354a8f29e83187748711f6ae39c48e70))
+* **finance:** improve credit wallet support ([3a737fe](https://github.com/tutur3u/platform/commit/3a737fe1f1daf2294ca79a8f0f08f85c69697057))
+* **inventory:** add costing and simulated storefront checkout ([7fcdabb](https://github.com/tutur3u/platform/commit/7fcdabb145e6fa9cc899b563b117e65f7772643a))
+* **inventory:** revamp storefront commerce experience ([72a2bde](https://github.com/tutur3u/platform/commit/72a2bde46a1e6c2815d0b2111fc743373c7bec9b))
+* **tasks:** add compact task dialog AI suggestions ([99058e9](https://github.com/tutur3u/platform/commit/99058e90a4f81153f664eb92fdbacade1e2188c6))
+
+
+### Bug Fixes
+
+* **finance:** improve wallet credit limit and balance ux ([6295d5c](https://github.com/tutur3u/platform/commit/6295d5c0013b2bbe064855712a984d17225d3271))
+* **finance:** reveal wallet audit context on hover ([8b78454](https://github.com/tutur3u/platform/commit/8b784543093243cd44bacec0f0ab59cb4cac7ec7))
+* **inventory:** improve combobox creation and overflow ([a1e1a78](https://github.com/tutur3u/platform/commit/a1e1a78d66384d54b59460f42d04349c4e358cba))
+* **sidebar:** persist collapsed state across refresh ([cb0eb6d](https://github.com/tutur3u/platform/commit/cb0eb6d0d30ecc8b3f3231255f9906e60a895f04))
+* **tasks:** hydrate external dialogs from source workspace ([95a7a23](https://github.com/tutur3u/platform/commit/95a7a23ec8957918cffc81698e8fdc8951adf400))
+* **tasks:** open external task dialogs immediately ([d1535f3](https://github.com/tutur3u/platform/commit/d1535f377cf0d39c5f73d28566322d8dbbdd8331))
+* **tasks:** open task dialogs immediately ([7980e66](https://github.com/tutur3u/platform/commit/7980e66b6a11cd62b9e04ad6d421deee915b2dea))
+* **tasks:** place task title caret at end ([27af729](https://github.com/tutur3u/platform/commit/27af729a673c2bb712819a6d2d95ba0198a558ce))
+* **tasks:** prevent external dialog hydration flash ([8aa7765](https://github.com/tutur3u/platform/commit/8aa7765dfa235c240e2156e404c6255909ec7aee))
+* **tasks:** refine compact task dialog actions ([dcf6b03](https://github.com/tutur3u/platform/commit/dcf6b033f2c134d115d74b53d4b875c16cd7070c))
+* **tasks:** sync task realtime with broadcasts ([8c56154](https://github.com/tutur3u/platform/commit/8c56154e517797dcac0ec0971d8a474b50292706))
+* **ui:** make package graph installable ([f3eb0ff](https://github.com/tutur3u/platform/commit/f3eb0ff3cbed2e43fd77dfb8164e60c5d195a36b))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/ui-v0.4.1...ui-v0.5.0) (2026-06-11)
 
 

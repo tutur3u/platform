@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1](https://github.com/tutur3u/platform/compare/utils-v0.6.0...utils-v0.6.1) (2026-06-13)
+
+
+### Bug Fixes
+
+* **auth:** allow local portless e2e auth ([928da7d](https://github.com/tutur3u/platform/commit/928da7d75ff72298bd1f0d2af6872e951decae3b))
+* **ui:** make package graph installable ([f3eb0ff](https://github.com/tutur3u/platform/commit/f3eb0ff3cbed2e43fd77dfb8164e60c5d195a36b))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/utils-v0.5.1...utils-v0.6.0) (2026-06-11)
 
 

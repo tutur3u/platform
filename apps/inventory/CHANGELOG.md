@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/inventory-v0.3.2...inventory-v0.4.0) (2026-06-13)
+
+
+### Features
+
+* **inventory:** add costing and simulated storefront checkout ([7fcdabb](https://github.com/tutur3u/platform/commit/7fcdabb145e6fa9cc899b563b117e65f7772643a))
+* **inventory:** improve operator form workflows ([aa853a6](https://github.com/tutur3u/platform/commit/aa853a69c5d0166a55d2111ac962d0676bf91a56))
+* **inventory:** revamp storefront commerce experience ([72a2bde](https://github.com/tutur3u/platform/commit/72a2bde46a1e6c2815d0b2111fc743373c7bec9b))
+
+
+### Bug Fixes
+
+* **inventory:** consolidate commerce setup flows ([447cc3d](https://github.com/tutur3u/platform/commit/447cc3dbd64c864bda2d6cf88c2245cf16a1eac2))
+* **inventory:** improve combobox creation and overflow ([a1e1a78](https://github.com/tutur3u/platform/commit/a1e1a78d66384d54b59460f42d04349c4e358cba))
+* **inventory:** restore operator CRUD and commerce APIs ([dd38d43](https://github.com/tutur3u/platform/commit/dd38d43bea0e812e48ccc989c7204d1212ae4649))
+* **inventory:** standardize operator form flows ([867521c](https://github.com/tutur3u/platform/commit/867521c582add46375f19cd25cbeb24cec9e1c72))
+
 ## [0.3.2](https://github.com/tutur3u/platform/compare/inventory-v0.3.1...inventory-v0.3.2) (2026-06-11)
 
 

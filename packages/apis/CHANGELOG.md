@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/apis-v0.3.0...apis-v0.4.0) (2026-06-13)
+
+
+### Features
+
+* **finance:** add infinite wallet loading ([76eba7a](https://github.com/tutur3u/platform/commit/76eba7a849c3a6b948e231a1e83e1e2faa10bb16))
+* **finance:** add wallet checkpoint audit history ([11139c7](https://github.com/tutur3u/platform/commit/11139c7e354a8f29e83187748711f6ae39c48e70))
+* **finance:** improve credit wallet support ([3a737fe](https://github.com/tutur3u/platform/commit/3a737fe1f1daf2294ca79a8f0f08f85c69697057))
+
+
+### Bug Fixes
+
+* **finance:** tolerate pending checkpoint storage ([f6205a9](https://github.com/tutur3u/platform/commit/f6205a9647d21ed37eb2fa779c7edec6d3316a35))
+* **tasks:** sync task realtime with broadcasts ([8c56154](https://github.com/tutur3u/platform/commit/8c56154e517797dcac0ec0971d8a474b50292706))
+* **ui:** make package graph installable ([f3eb0ff](https://github.com/tutur3u/platform/commit/f3eb0ff3cbed2e43fd77dfb8164e60c5d195a36b))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/apis-v0.2.0...apis-v0.3.0) (2026-06-11)
 
 

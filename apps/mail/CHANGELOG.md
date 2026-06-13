@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/tutur3u/platform/compare/mail-v0.1.2...mail-v0.1.3) (2026-06-13)
+
+
+### Bug Fixes
+
+* **sidebar:** persist collapsed state across refresh ([cb0eb6d](https://github.com/tutur3u/platform/commit/cb0eb6d0d30ecc8b3f3231255f9906e60a895f04))
+
 ## [0.1.2](https://github.com/tutur3u/platform/compare/mail-v0.1.1...mail-v0.1.2) (2026-06-11)
 
 
