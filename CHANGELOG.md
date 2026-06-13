@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/tutur3u/platform/compare/platform-v0.10.1...platform-v0.10.2) (2026-06-13)
+
+
+### Bug Fixes
+
+* **ci:** make platform package gate non-blocking ([895cee0](https://github.com/tutur3u/platform/commit/895cee009fac0e5464fdb4f9c5c4c9ef0481c854))
+
 ## [0.10.1](https://github.com/tutur3u/platform/compare/platform-v0.10.0...platform-v0.10.1) (2026-06-13)
 
 
