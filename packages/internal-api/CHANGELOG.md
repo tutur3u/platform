@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/tutur3u/platform/compare/internal-api-v0.7.0...internal-api-v0.7.1) (2026-06-13)
+
+
+### Bug Fixes
+
+* **inventory:** route setup references through inventory APIs ([ae465ee](https://github.com/tutur3u/platform/commit/ae465ee90b202de02176c52037fa3f20b017a758))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/internal-api-v0.6.0...internal-api-v0.7.0) (2026-06-13)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/tutur3u/platform/compare/ai-v0.2.1...ai-v0.2.2) (2026-06-13)
+
+
+### Bug Fixes
+
+* **packages:** refresh public install graph ([c303782](https://github.com/tutur3u/platform/commit/c303782aefa8554a1bd1d9e9a651962a0ab56d76))
+
 ## [0.2.1](https://github.com/tutur3u/platform/compare/ai-v0.2.0...ai-v0.2.1) (2026-06-11)
 
 
