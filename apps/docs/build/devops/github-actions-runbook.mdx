@@ -298,9 +298,13 @@ The platform production Vercel workflow also runs
 `node scripts/ci/package-release-readiness.js wait-changed-package-versions`
 before installing dependencies. Release-please package bumps therefore publish
 and become visible on npm before the normal production platform build validation
-continues. When the push payload omits changed package files, the helper fetches
-the missing base SHA before falling back to `git diff`, so shallow checkout
-depth does not break the release gate.
+continues. The helper intentionally checks only the checked-out latest commit,
+not the whole push event payload, so package changes from earlier commits in a
+multi-commit push are not bound to an unrelated newer SHA. If the latest commit
+does change package manifests, the deploy job grants `actions: write` because
+the helper may dispatch missing package release workflows for that same
+production SHA; npm publish authority remains isolated to package `publish-npm`
+jobs.
 
 Filtered production Docker installs only include the selected app and the
 dependencies that app needs. Workspace packages with direct `tsgo` build scripts

@@ -791,6 +791,17 @@ function getChangedFiles({
   });
 }
 
+function getLatestCommitChangedFiles({
+  headRef = process.env.GITHUB_SHA || 'HEAD',
+  repoRoot,
+}) {
+  return runGitDiff({
+    baseRef: 'HEAD^',
+    headRef,
+    repoRoot,
+  });
+}
+
 function getChangedPublishablePackages({ changedFiles, repoRoot }) {
   const publishablePackages = getPublishableWorkspacePackages(repoRoot);
   const publishableByPackageJsonPath = new Map(
@@ -950,7 +961,10 @@ async function runCli(argv = process.argv.slice(2), env = process.env) {
   }
 
   if (command === 'wait-changed-package-versions') {
-    const changedFiles = getChangedFiles({ env, repoRoot });
+    const changedFiles = getLatestCommitChangedFiles({
+      headRef: env.GITHUB_SHA || 'HEAD',
+      repoRoot,
+    });
     const changedPackages = getChangedPublishablePackages({
       changedFiles,
       repoRoot,
@@ -1004,6 +1018,7 @@ module.exports = {
   getChangedFiles,
   getChangedFilesFromEventPayload,
   getChangedPublishablePackages,
+  getLatestCommitChangedFiles,
   getDependentWorkspacePackages,
   getPackageInfo,
   getPublishableWorkspacePackages,

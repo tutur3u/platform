@@ -145,7 +145,7 @@ test('Platform production build waits for release package visibility when it is 
     /node scripts\/ci\/package-release-readiness\.js wait-changed-package-versions/
   );
   assert.match(deployJob, /TUTURUUU_NEXT_CACHE_COMPONENTS: "0"/);
-  assert.match(deployJob, /actions:\s*read/);
+  assert.match(deployJob, /actions:\s*write/);
   assert.match(deployJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
 });
 

@@ -23,7 +23,7 @@ jobs:
     environment: vercel-production-platform
     runs-on: ubuntu-latest
     permissions:
-      actions: read
+      actions: write
       contents: read
       deployments: write
     steps:

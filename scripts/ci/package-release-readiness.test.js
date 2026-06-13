@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -11,6 +12,7 @@ const {
   gatePackageRelease,
   getChangedFiles,
   getChangedPublishablePackages,
+  getLatestCommitChangedFiles,
   getPublishableWorkspacePackages,
   getRelatedWorkflowRunStatus,
   getVersionCheckOutputs,
@@ -28,6 +30,21 @@ function writeJson(filePath, value) {
 function createVersionExists(existingPackageVersions) {
   return ({ packageName, packageVersion }) =>
     existingPackageVersions.has(`${packageName}@${packageVersion}`);
+}
+
+function git(rootDir, args) {
+  return execFileSync('git', args, {
+    cwd: rootDir,
+    encoding: 'utf8',
+  }).trim();
+}
+
+function initializeGitRepo(rootDir) {
+  git(rootDir, ['init', '-b', 'main']);
+  git(rootDir, ['config', 'user.email', 'ci@example.com']);
+  git(rootDir, ['config', 'user.name', 'CI Test']);
+  git(rootDir, ['add', '.']);
+  git(rootDir, ['commit', '-m', 'initial']);
 }
 
 function writeWorkflow(rootDir, workflowName, packageDir) {
@@ -189,6 +206,57 @@ test('prefers push event changed files when available', () => {
       'packages/types/package.json',
       'packages/unused/package.json',
     ]
+  );
+});
+
+test('latest commit resolver ignores earlier package changes in push batches', () => {
+  const rootDir = createFixtureRoot();
+  const eventPath = path.join(rootDir, 'event.json');
+
+  initializeGitRepo(rootDir);
+
+  writeJson(path.join(rootDir, 'packages/types/package.json'), {
+    name: '@tuturuuu/types',
+    version: '1.0.1',
+  });
+  git(rootDir, ['add', 'packages/types/package.json']);
+  git(rootDir, ['commit', '-m', 'release types']);
+
+  fs.writeFileSync(path.join(rootDir, 'README.md'), 'latest head commit\n');
+  git(rootDir, ['add', 'README.md']);
+  git(rootDir, ['commit', '-m', 'docs only']);
+
+  writeJson(eventPath, {
+    before: 'abc123',
+    commits: [
+      {
+        added: [],
+        modified: ['packages/types/package.json'],
+        removed: [],
+      },
+      {
+        added: ['README.md'],
+        modified: [],
+        removed: [],
+      },
+    ],
+  });
+
+  assert.deepEqual(
+    getChangedFiles({
+      env: {
+        GITHUB_EVENT_PATH: eventPath,
+      },
+      repoRoot: rootDir,
+    }),
+    ['README.md', 'packages/types/package.json']
+  );
+  assert.deepEqual(
+    getLatestCommitChangedFiles({
+      headRef: 'HEAD',
+      repoRoot: rootDir,
+    }),
+    ['README.md']
   );
 });
 
