@@ -1,6 +1,12 @@
 'use client';
 
-import { TriangleAlert } from '@tuturuuu/icons';
+import {
+  CheckCircle2,
+  ImageOff,
+  Tags,
+  TriangleAlert,
+  User,
+} from '@tuturuuu/icons';
 import type { InventoryProductSummary } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -44,6 +50,34 @@ export function ProductsTable({
               inventory.min_amount ?? row.min_amount ?? 0
             );
             const low = view === 'stock' && amount <= minAmount;
+            const badges = [
+              {
+                icon: row.avatar_url ? CheckCircle2 : ImageOff,
+                label: row.avatar_url
+                  ? t('badges.imageReady')
+                  : t('badges.imageMissing'),
+                tone: row.avatar_url ? 'ready' : 'missing',
+              },
+              {
+                icon: low ? TriangleAlert : CheckCircle2,
+                label: low ? t('badges.lowStock') : t('badges.stockReady'),
+                tone: low ? 'danger' : 'ready',
+              },
+              {
+                icon: Tags,
+                label: row.category
+                  ? t('badges.categoryReady')
+                  : t('badges.categoryMissing'),
+                tone: row.category ? 'ready' : 'missing',
+              },
+              {
+                icon: User,
+                label: row.owner?.name
+                  ? t('badges.ownerReady')
+                  : t('badges.ownerMissing'),
+                tone: row.owner?.name ? 'ready' : 'missing',
+              },
+            ];
 
             return (
               <tr className="border-border border-t" key={row.id}>
@@ -63,7 +97,36 @@ export function ProductsTable({
                         </span>
                       )}
                     </div>
-                    <span className="truncate font-medium">{row.name}</span>
+                    <div className="min-w-0">
+                      <span className="block truncate font-medium">
+                        {row.name}
+                      </span>
+                      <span className="mt-1 flex min-w-0 flex-wrap gap-1">
+                        {badges.map((badge) => {
+                          const Icon = badge.icon;
+
+                          return (
+                            <span
+                              className={cn(
+                                'inline-flex h-5 min-w-0 items-center gap-1 rounded border px-1.5 text-[11px]',
+                                badge.tone === 'ready' &&
+                                  'border-primary/25 bg-primary/10 text-primary',
+                                badge.tone === 'missing' &&
+                                  'border-border bg-muted text-muted-foreground',
+                                badge.tone === 'danger' &&
+                                  'border-destructive/25 bg-destructive/10 text-destructive'
+                              )}
+                              key={badge.label}
+                            >
+                              <Icon className="h-3 w-3 shrink-0" />
+                              <span className="max-w-24 truncate">
+                                {badge.label}
+                              </span>
+                            </span>
+                          );
+                        })}
+                      </span>
+                    </div>
                   </div>
                 </td>
                 <td className="p-3 text-muted-foreground">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Layers3, Plus, Trash2 } from '@tuturuuu/icons';
+import { Layers3, PackageOpen, Plus, Trash2 } from '@tuturuuu/icons';
 import type { InventoryProductFormOptionsResponse } from '@tuturuuu/internal-api/inventory';
 import {
   createInventoryBatch,
@@ -26,7 +26,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { SelectField } from './operator-form-fields';
-import { EmptyRow } from './operator-shell';
 import { invalidateSetup, namedRows } from './setup-helpers';
 
 function BatchCreateDialog({
@@ -227,7 +226,10 @@ export function BatchSection({
           .map((batch) => <BatchRow batch={batch} key={batch.id} wsId={wsId} />)
       ) : (
         <div className="p-3">
-          <EmptyRow label={t('emptyResource')} />
+          <div className="flex min-w-0 items-center gap-2 rounded-md border border-border border-dashed bg-muted/20 p-3 text-muted-foreground text-sm">
+            <PackageOpen className="h-4 w-4 shrink-0" />
+            <p className="truncate">{t('emptyResource')}</p>
+          </div>
         </div>
       )}
     </section>

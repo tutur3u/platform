@@ -21,7 +21,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useMemo, useState } from 'react';
+import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
 import {
   BundleComponentPicker,
   type DraftBundleComponent,
@@ -51,9 +51,11 @@ const initialForm = {
 
 export function BundleForm({
   products,
+  trigger,
   wsId,
 }: {
   products: InventoryProductSummary[];
+  trigger?: ReactNode;
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.forms');
@@ -180,10 +182,12 @@ export function BundleForm({
         open={open}
       >
         <DialogTrigger asChild>
-          <Button type="button" variant="secondary">
-            <Layers3 className="h-4 w-4" />
-            {t('newBundle')}
-          </Button>
+          {trigger ?? (
+            <Button type="button" variant="secondary">
+              <Layers3 className="h-4 w-4" />
+              {t('newBundle')}
+            </Button>
+          )}
         </DialogTrigger>
         <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),64rem)] overflow-y-auto">
           <DialogHeader>

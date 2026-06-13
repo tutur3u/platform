@@ -1,6 +1,9 @@
 import 'server-only';
 
-import type { InventoryManufacturer } from '@tuturuuu/internal-api';
+import type {
+  InventoryDashboardSnapshot,
+  InventoryManufacturer,
+} from '@tuturuuu/internal-api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { InventoryOwner } from '@tuturuuu/types/primitives/InventoryOwner';
 import type { RawInventoryProductWithChanges } from '@tuturuuu/types/primitives/InventoryProductRelations';
@@ -231,6 +234,25 @@ export async function getInventoryOverviewMetrics({
     total_income: Number(metrics.total_income ?? 0),
     wallets_count: Number(metrics.wallets_count ?? 0),
   };
+}
+
+export async function getInventoryDashboardSnapshot({
+  sbAdmin,
+  wsId,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}): Promise<InventoryDashboardSnapshot | null> {
+  const { data, error } = await sbAdmin.schema('private').rpc(
+    'get_inventory_dashboard_snapshot' as never,
+    {
+      p_ws_id: wsId,
+    } as never
+  );
+
+  if (error) throw error;
+
+  return (data ?? null) as InventoryDashboardSnapshot | null;
 }
 
 export async function getInventoryProductFormOptions({

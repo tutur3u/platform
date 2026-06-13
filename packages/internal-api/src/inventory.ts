@@ -213,12 +213,125 @@ export type InventoryPolarSettingsPayload = {
 
 export type InventoryOverviewResponse = {
   category_breakdown?: Array<Record<string, unknown>>;
+  dashboard?: InventoryDashboardSnapshot | null;
   low_stock_products?: Array<Record<string, unknown>>;
   owner_breakdown?: Array<Record<string, unknown>>;
   realtime_enabled?: boolean;
   recent_sales?: Array<Record<string, unknown>>;
   totals?: Record<string, number>;
 };
+
+export type InventoryDashboardCounts = {
+  products: number;
+  stockRows: number;
+  lowStock: number;
+  categories: number;
+  owners: number;
+  manufacturers: number;
+  units: number;
+  warehouses: number;
+  suppliers: number;
+  batches: number;
+  storefronts: number;
+  publishedStorefronts: number;
+  listings: number;
+  publishedListings: number;
+  bundles: number;
+  activeBundles: number;
+  checkouts: number;
+  reservedCheckouts: number;
+  staleCheckouts: number;
+  sales: number;
+  costingProfiles: number;
+  polarReady: number;
+  simulatedCheckoutStorefronts: number;
+};
+
+export type InventoryDashboardReadinessItem = {
+  key: 'checkout' | 'costing' | 'products' | 'setup' | 'storefront';
+  view: 'catalog' | 'commerce' | 'costing' | 'setup' | 'storefront';
+  score: number;
+  completed: number;
+  total: number;
+};
+
+export type InventoryDashboardRisk = {
+  kind: 'low_stock' | 'stale_checkout' | 'storefront_ready';
+  severity: 'high' | 'medium' | 'low';
+  view: InventoryOperatorDashboardView;
+  entityId: string | null;
+  label: string;
+  detail: string | null;
+  metric: number | null;
+};
+
+export type InventoryDashboardAction = {
+  kind:
+    | 'create_costing'
+    | 'create_product'
+    | 'publish_storefront'
+    | 'resolve_low_stock'
+    | 'setup_resources';
+  view: InventoryOperatorDashboardView;
+  priority: number;
+};
+
+export type InventoryDashboardTrendPoint = {
+  date: string;
+  revenue: number;
+  quantity: number;
+};
+
+export type InventoryDashboardMixPoint = {
+  label: string;
+  revenue: number;
+  quantity: number;
+};
+
+export type InventoryDashboardScenarioSummary = {
+  profileId: string;
+  profileName: string;
+  scenarioId: string;
+  scenarioName: string;
+  grossMarginPercentage: number;
+  breakEvenQuantity: number | null;
+};
+
+export type InventoryDashboardSnapshot = {
+  counts: InventoryDashboardCounts;
+  readiness: InventoryDashboardReadinessItem[];
+  risks: InventoryDashboardRisk[];
+  actions: InventoryDashboardAction[];
+  analytics: {
+    revenueTrend: InventoryDashboardTrendPoint[];
+    categoryMix: InventoryDashboardMixPoint[];
+    ownerMix: InventoryDashboardMixPoint[];
+  };
+  costing: {
+    profilesCount: number;
+    scenariosCount: number;
+    averageMarginPercentage: number;
+    lowestBreakEvenQuantity: number | null;
+    bestScenario: InventoryDashboardScenarioSummary | null;
+    weakestScenario: InventoryDashboardScenarioSummary | null;
+  };
+  storefrontHealth: {
+    published: number;
+    withoutPublishedListings: number;
+    themeGaps: number;
+    polarCheckout: number;
+    simulatedCheckout: number;
+    disabledCheckout: number;
+  };
+};
+
+export type InventoryOperatorDashboardView =
+  | 'catalog'
+  | 'commerce'
+  | 'costing'
+  | 'setup'
+  | 'stock'
+  | 'storefront';
 
 export type InventoryProductSummary = {
   archived?: boolean;

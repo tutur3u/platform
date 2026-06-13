@@ -28,7 +28,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 import { FormStepper, StepPanel, StepperDialogFooter } from './form-stepper';
 import { InventoryImageUploadField } from './inventory-image-upload';
 import {
@@ -61,9 +61,11 @@ const initialState: ProductFormState = {
 
 export function ProductCreateForm({
   options,
+  trigger,
   wsId,
 }: {
   options?: InventoryProductFormOptionsResponse;
+  trigger?: ReactNode;
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.forms');
@@ -161,10 +163,12 @@ export function ProductCreateForm({
         open={open}
       >
         <DialogTrigger asChild>
-          <Button type="button">
-            <PackagePlus className="h-4 w-4" />
-            {t('newProduct')}
-          </Button>
+          {trigger ?? (
+            <Button type="button">
+              <PackagePlus className="h-4 w-4" />
+              {t('newProduct')}
+            </Button>
+          )}
         </DialogTrigger>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-5xl">
           <DialogHeader>

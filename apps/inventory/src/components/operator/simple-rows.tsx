@@ -94,6 +94,34 @@ export function SimpleRows({
         const anyRow = row as Record<string, unknown>;
         const title = String(anyRow.name ?? anyRow.id);
         const value = String(anyRow.status ?? '');
+        const details =
+          type === 'storefronts'
+            ? [
+                t('rowDetails.listings', {
+                  count:
+                    typeof anyRow.listingsCount === 'number'
+                      ? anyRow.listingsCount
+                      : 0,
+                }),
+                t('rowDetails.checkoutMode', {
+                  mode: actionText(
+                    `checkoutModes.${String(anyRow.checkoutMode ?? 'disabled')}`
+                  ),
+                }),
+              ]
+            : [
+                actionText('componentCount', {
+                  count: Array.isArray((row as InventoryBundle).components)
+                    ? (row as InventoryBundle).components.length
+                    : 0,
+                }),
+                t('rowDetails.available', {
+                  count:
+                    typeof anyRow.availableQuantity === 'number'
+                      ? anyRow.availableQuantity
+                      : 0,
+                }),
+              ];
 
         return (
           <article
@@ -110,6 +138,16 @@ export function SimpleRows({
                     anyRow.id
                 )}
               </p>
+              <div className="mt-2 flex min-w-0 flex-wrap gap-1">
+                {details.map((detail) => (
+                  <span
+                    className="inline-flex h-6 max-w-full items-center rounded-md border border-border bg-muted/35 px-2 text-muted-foreground text-xs"
+                    key={detail}
+                  >
+                    <span className="truncate">{detail}</span>
+                  </span>
+                ))}
+              </div>
             </div>
             <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
               {value ? <StatusBadge value={value} /> : null}

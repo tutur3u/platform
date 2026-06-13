@@ -1,6 +1,13 @@
 'use client';
 
-import { Boxes, PackageSearch, Store, User } from '@tuturuuu/icons';
+import {
+  Boxes,
+  CheckCircle2,
+  Layers3,
+  PackageSearch,
+  Store,
+  User,
+} from '@tuturuuu/icons';
 import type { InventoryProductFormOptionsResponse } from '@tuturuuu/internal-api/inventory';
 import {
   createInventoryManufacturer,
@@ -25,6 +32,7 @@ import {
 import type { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
 import { useTranslations } from 'next-intl';
+import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { BatchSection } from './setup-batch-section';
 import { namedRows, type ResourceConfig } from './setup-helpers';
 import { ResourceSection } from './setup-resource-section';
@@ -97,9 +105,34 @@ export function SetupPanel({
       update: (id, name) => updateInventorySupplier(wsId, id, { name }),
     },
   ];
+  const readyGroups = configs.filter((config) => config.rows.length > 0).length;
+  const totalRecords =
+    configs.reduce((total, config) => total + config.rows.length, 0) +
+    batches.length;
 
   return (
     <div className="grid gap-3">
+      <div className="grid min-w-0 gap-3 md:grid-cols-3">
+        <OperatorMetricCard
+          description={t('matrix.readyGroupsDescription')}
+          icon={CheckCircle2}
+          label={t('matrix.readyGroups')}
+          tone={readyGroups === configs.length ? 'success' : 'warning'}
+          value={`${readyGroups}/${configs.length}`}
+        />
+        <OperatorMetricCard
+          description={t('matrix.recordsDescription')}
+          icon={Boxes}
+          label={t('matrix.records')}
+          value={totalRecords}
+        />
+        <OperatorMetricCard
+          description={t('matrix.batchesDescription')}
+          icon={Layers3}
+          label={t('matrix.batches')}
+          value={batches.length}
+        />
+      </div>
       <div className="grid min-w-0 gap-3 lg:grid-cols-2">
         {configs.map((config) => (
           <ResourceSection config={config} key={config.key} wsId={wsId} />

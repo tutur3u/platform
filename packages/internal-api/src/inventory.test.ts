@@ -24,6 +24,7 @@ import {
   deleteInventoryUnit,
   deleteInventoryWarehouse,
   getInventoryCostingAnalytics,
+  getInventoryOverview,
   getInventoryPublicOrder,
   getInventoryPublicStorefront,
   getInventorySale,
@@ -56,6 +57,28 @@ function createJsonResponse(data: unknown) {
 }
 
 describe('inventory internal API helpers', () => {
+  it('loads the protected dashboard overview through the workspace API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        dashboard: null,
+        realtime_enabled: false,
+      })
+    );
+
+    await getInventoryOverview('workspace 1', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/workspace%201/inventory/overview',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
   it('lists protected storefronts through the workspace API with filters', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({

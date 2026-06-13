@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarDays,
+  CircleDollarSign,
   CreditCard,
   RotateCcw,
   ShieldCheck,
@@ -21,6 +22,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { currency } from './operator-format';
 import { EmptyRow, LoadingRows } from './operator-shell';
 import type { InventoryCommerceTab } from './operator-types';
@@ -286,8 +288,43 @@ export function CommercePanel({
   tab: InventoryCommerceTab;
   wsId: string;
 }) {
+  const t = useTranslations('inventory.operator.commerce');
+  const reserved = checkouts.filter((row) => row.status === 'reserved').length;
+  const completed = checkouts.filter(
+    (row) => row.status === 'completed'
+  ).length;
+  const salesTotal = sales.reduce((total, row) => total + row.paid_amount, 0);
+
   return (
     <div className="grid gap-3">
+      <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <OperatorMetricCard
+          description={t('metrics.reservedDescription')}
+          icon={CreditCard}
+          label={t('metrics.reserved')}
+          tone={reserved > 0 ? 'warning' : 'default'}
+          value={reserved}
+        />
+        <OperatorMetricCard
+          description={t('metrics.completedDescription')}
+          icon={ShieldCheck}
+          label={t('metrics.completed')}
+          tone={completed > 0 ? 'success' : 'default'}
+          value={completed}
+        />
+        <OperatorMetricCard
+          description={t('metrics.salesDescription')}
+          icon={User}
+          label={t('metrics.sales')}
+          value={sales.length}
+        />
+        <OperatorMetricCard
+          description={t('metrics.revenueDescription')}
+          icon={CircleDollarSign}
+          label={t('metrics.revenue')}
+          value={currency(salesTotal)}
+        />
+      </div>
       <CommerceTabs onChange={setTab} tab={tab} />
       {isLoading ? (
         <LoadingRows />

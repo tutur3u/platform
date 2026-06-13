@@ -1,18 +1,21 @@
 'use client';
 
-import { BarChart3, Plus } from '@tuturuuu/icons';
+import { BarChart3, Plus, TrendingUp, TriangleAlert } from '@tuturuuu/icons';
 import type {
   InventoryCostingAnalytics,
+  InventoryCostingAnalyticsScenario,
   InventoryCostProfile,
   InventoryProductFormOptionsResponse,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { CostingCharts } from './costing-charts';
 import { CostingImportDialog } from './costing-import-dialog';
 import { CostingMetricCard } from './costing-metric-card';
 import { CostingProfileDialog } from './costing-profile-form';
 import { CostingProfileList } from './costing-profile-list';
+import { currency } from './operator-format';
 import { EmptyRow } from './operator-shell';
 
 export function CostingPanel({
@@ -27,6 +30,18 @@ export function CostingPanel({
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.costing');
+  const bestScenario = analytics?.scenarios.length
+    ? [...analytics.scenarios].sort(
+        (first, second) =>
+          second.grossMarginPercentage - first.grossMarginPercentage
+      )[0]
+    : null;
+  const weakestScenario = analytics?.scenarios.length
+    ? [...analytics.scenarios].sort(
+        (first, second) =>
+          first.grossMarginPercentage - second.grossMarginPercentage
+      )[0]
+    : null;
 
   return (
     <div className="grid gap-4">
@@ -70,6 +85,24 @@ export function CostingPanel({
           value={analytics?.lowestBreakEvenQuantity ?? '-'}
         />
       </div>
+      {bestScenario || weakestScenario ? (
+        <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+          {bestScenario ? (
+            <ScenarioSignal
+              icon={<TrendingUp className="h-4 w-4" />}
+              label={t('bestScenario')}
+              scenario={bestScenario}
+            />
+          ) : null}
+          {weakestScenario ? (
+            <ScenarioSignal
+              icon={<TriangleAlert className="h-4 w-4" />}
+              label={t('weakestScenario')}
+              scenario={weakestScenario}
+            />
+          ) : null}
+        </div>
+      ) : null}
       <CostingCharts analytics={analytics} />
       {profiles.length === 0 ? (
         <EmptyRow
@@ -94,5 +127,59 @@ export function CostingPanel({
       ) : null}
       <CostingProfileList profiles={profiles} wsId={wsId} />
     </div>
+  );
+}
+
+function ScenarioSignal({
+  icon,
+  label,
+  scenario,
+}: {
+  icon: ReactNode;
+  label: string;
+  scenario: InventoryCostingAnalyticsScenario;
+}) {
+  const t = useTranslations('inventory.operator.costing');
+
+  return (
+    <article className="grid min-w-0 gap-2 rounded-lg border border-border bg-card p-3 text-sm">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-medium">{label}</p>
+          <p className="truncate text-muted-foreground text-xs">
+            {scenario.profileName} / {scenario.scenarioName}
+          </p>
+        </div>
+      </div>
+      <div className="grid min-w-0 gap-2 sm:grid-cols-3">
+        <span className="rounded-md border border-border bg-background p-2">
+          <span className="block text-muted-foreground text-xs">
+            {t('margin')}
+          </span>
+          <span className="font-semibold">
+            {scenario.grossMarginPercentage}%
+          </span>
+        </span>
+        <span className="rounded-md border border-border bg-background p-2">
+          <span className="block text-muted-foreground text-xs">
+            {t('breakEven')}
+          </span>
+          <span className="font-semibold">
+            {scenario.breakEvenQuantity ?? '-'}
+          </span>
+        </span>
+        <span className="rounded-md border border-border bg-background p-2">
+          <span className="block text-muted-foreground text-xs">
+            {t('retail')}
+          </span>
+          <span className="font-semibold">
+            {currency(scenario.targetRetailPrice, scenario.currency)}
+          </span>
+        </span>
+      </div>
+    </article>
   );
 }

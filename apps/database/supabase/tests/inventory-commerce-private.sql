@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(15);
+select plan(18);
 
 select ok(
   to_regclass('public.inventory_storefronts') is null,
@@ -126,6 +126,30 @@ select ok(
     'execute'
   ),
   'service role can execute private inventory costing analytics'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'private.get_inventory_dashboard_snapshot(uuid)',
+    'execute'
+  ),
+  'service role can execute private inventory dashboard snapshot'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'private.get_inventory_dashboard_snapshot(uuid)',
+    'execute'
+  ),
+  'authenticated cannot execute private inventory dashboard snapshot'
+);
+
+select is(
+  jsonb_typeof(private.get_inventory_dashboard_snapshot(gen_random_uuid())),
+  'object',
+  'inventory dashboard snapshot returns a JSON object for empty workspaces'
 );
 
 select ok(

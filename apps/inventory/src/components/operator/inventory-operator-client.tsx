@@ -191,9 +191,15 @@ export function InventoryOperatorClient({
     view === 'costing' ? data.costingProfiles : null,
     view === 'costing' ? data.costingAnalytics : null,
     view === 'audits' ? data.audits : null,
-    ['catalog', 'stock', 'setup', 'bundles', 'storefront', 'costing'].includes(
-      view
-    )
+    [
+      'catalog',
+      'stock',
+      'setup',
+      'bundles',
+      'storefront',
+      'costing',
+      'overview',
+    ].includes(view)
       ? data.formOptions
       : null,
     view === 'setup' ? data.suppliers : null,
@@ -257,10 +263,13 @@ export function InventoryOperatorClient({
             />
             <OverviewPanel
               bundles={bundles}
+              dashboard={data.overview.data?.dashboard}
+              formOptions={data.formOptions.data}
               lowStock={lowStock}
               polarSettings={data.polarSettings.data}
               products={products}
               storefronts={storefronts}
+              wsId={wsId}
             />
           </>
         ) : null}

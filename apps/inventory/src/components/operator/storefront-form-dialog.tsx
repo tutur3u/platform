@@ -15,7 +15,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { sanitizeStorefrontAccentColor } from '@tuturuuu/ui/storefront';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useMemo, useState } from 'react';
+import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
 import { FormStepper, StepperDialogFooter } from './form-stepper';
 import {
   createSlugSuggestion,
@@ -42,7 +42,13 @@ const initialForm: StorefrontFormState = {
   visibility: 'public',
 };
 
-export function StorefrontForm({ wsId }: { wsId: string }) {
+export function StorefrontForm({
+  trigger,
+  wsId,
+}: {
+  trigger?: ReactNode;
+  wsId: string;
+}) {
   const t = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
   const [form, setForm] = useState(initialForm);
@@ -150,10 +156,12 @@ export function StorefrontForm({ wsId }: { wsId: string }) {
         open={open}
       >
         <DialogTrigger asChild>
-          <Button type="button">
-            <Store className="h-4 w-4" />
-            {t('newStorefront')}
-          </Button>
+          {trigger ?? (
+            <Button type="button">
+              <Store className="h-4 w-4" />
+              {t('newStorefront')}
+            </Button>
+          )}
         </DialogTrigger>
         <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),64rem)] overflow-y-auto">
           <DialogHeader>

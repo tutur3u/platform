@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, Trash2 } from '@tuturuuu/icons';
+import { PackageOpen, Pencil, Plus, Trash2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -16,7 +16,6 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useState } from 'react';
-import { EmptyRow } from './operator-shell';
 import {
   invalidateSetup,
   type NamedResource,
@@ -196,7 +195,10 @@ export function ResourceSection({
         ))
       ) : (
         <div className="p-3">
-          <EmptyRow label={t('emptyResource')} />
+          <div className="flex min-w-0 items-center gap-2 rounded-md border border-border border-dashed bg-muted/20 p-3 text-muted-foreground text-sm">
+            <PackageOpen className="h-4 w-4 shrink-0" />
+            <p className="truncate">{t('emptyResource')}</p>
+          </div>
         </div>
       )}
     </section>

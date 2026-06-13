@@ -1,3 +1,4 @@
+import type { InventoryDashboardSnapshot } from '@tuturuuu/internal-api';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
@@ -9,6 +10,7 @@ import {
   canViewInventoryStock,
 } from '@/lib/inventory/permissions';
 import {
+  getInventoryDashboardSnapshot,
   getInventoryLowStockProducts,
   getInventoryOverviewMetrics,
 } from '@/lib/inventory/product-rpc';
@@ -18,6 +20,45 @@ interface Params {
   params: Promise<{
     wsId: string;
   }>;
+}
+
+function dashboardForPermissions({
+  canViewAnalytics,
+  canViewSales,
+  dashboard,
+}: {
+  canViewAnalytics: boolean;
+  canViewSales: boolean;
+  dashboard: InventoryDashboardSnapshot | null;
+}) {
+  if (!dashboard) return null;
+
+  return {
+    ...dashboard,
+    analytics: canViewAnalytics
+      ? dashboard.analytics
+      : {
+          categoryMix: [],
+          ownerMix: [],
+          revenueTrend: [],
+        },
+    costing: canViewAnalytics
+      ? dashboard.costing
+      : {
+          ...dashboard.costing,
+          averageMarginPercentage: 0,
+          bestScenario: null,
+          lowestBreakEvenQuantity: null,
+          weakestScenario: null,
+        },
+    counts: {
+      ...dashboard.counts,
+      sales: canViewSales ? dashboard.counts.sales : 0,
+    },
+    risks: canViewSales
+      ? dashboard.risks
+      : dashboard.risks.filter((risk) => risk.kind !== 'stale_checkout'),
+  };
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -36,19 +77,29 @@ export async function GET(req: Request, { params }: Params) {
   const canViewSales = canViewInventorySales(permissions);
   const canViewAnalytics = canViewInventoryAnalytics(permissions);
 
-  const [lowStockResult, metricsResult, realtimeEnabled] = await Promise.all([
-    canViewStock
-      ? getInventoryLowStockProducts({ sbAdmin, wsId })
-          .then((data) => ({ data, error: null }))
-          .catch((error) => ({ data: [], error }))
-      : Promise.resolve({ data: [], error: null }),
-    canViewSales || canViewAnalytics
-      ? getInventoryOverviewMetrics({ sbAdmin, wsId })
-          .then((data) => ({ data, error: null }))
-          .catch((error) => ({ data: null, error }))
-      : Promise.resolve({ data: null, error: null }),
-    isInventoryRealtimeEnabled(wsId),
-  ]);
+  const [dashboardResult, lowStockResult, metricsResult, realtimeEnabled] =
+    await Promise.all([
+      getInventoryDashboardSnapshot({ sbAdmin, wsId })
+        .then((data) => ({ data, error: null }))
+        .catch((error) => ({ data: null, error })),
+      canViewStock
+        ? getInventoryLowStockProducts({ sbAdmin, wsId })
+            .then((data) => ({ data, error: null }))
+            .catch((error) => ({ data: [], error }))
+        : Promise.resolve({ data: [], error: null }),
+      canViewSales || canViewAnalytics
+        ? getInventoryOverviewMetrics({ sbAdmin, wsId })
+            .then((data) => ({ data, error: null }))
+            .catch((error) => ({ data: null, error }))
+        : Promise.resolve({ data: null, error: null }),
+      isInventoryRealtimeEnabled(wsId),
+    ]);
+
+  if (dashboardResult.error) {
+    serverLogger.error('Error fetching inventory dashboard snapshot', {
+      dashboardError: dashboardResult.error,
+    });
+  }
 
   if (lowStockResult.error || metricsResult.error) {
     serverLogger.error('Error fetching inventory overview', {
@@ -86,5 +137,10 @@ export async function GET(req: Request, { params }: Params) {
     recent_sales: recentSales,
     owner_breakdown: ownerBreakdown,
     category_breakdown: categoryBreakdown,
+    dashboard: dashboardForPermissions({
+      canViewAnalytics,
+      canViewSales,
+      dashboard: dashboardResult.data,
+    }),
   });
 }

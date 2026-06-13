@@ -875,7 +875,18 @@
     "operator": {
       "audit": {
         "changedFields": "{count, plural, one {# field changed} other {# fields changed}}",
-        "systemActor": "System"
+        "systemActor": "System",
+        "unknownDate": "Undated"
+      },
+      "badges": {
+        "categoryMissing": "No category",
+        "categoryReady": "Categorized",
+        "imageMissing": "No image",
+        "imageReady": "Image",
+        "lowStock": "Low stock",
+        "ownerMissing": "No owner",
+        "ownerReady": "Owner",
+        "stockReady": "Stock ready"
       },
       "columns": {
         "actions": "Actions",
@@ -888,6 +899,16 @@
       },
       "commerce": {
         "items": "{count, plural, one {# item} other {# items}}",
+        "metrics": {
+          "completed": "Completed",
+          "completedDescription": "Checkout sessions finalized in this view",
+          "reserved": "Reserved",
+          "reservedDescription": "Live holds that may need follow-up",
+          "revenue": "Sales revenue",
+          "revenueDescription": "Finalized sales total loaded for this tab",
+          "sales": "Sales",
+          "salesDescription": "Finalized sale records"
+        },
         "release": "Release",
         "tabs": {
           "checkouts": "Checkouts",
@@ -899,6 +920,7 @@
         "addScenario": "Add scenario",
         "averageMargin": "Average margin",
         "batchSize": "Batch size",
+        "bestScenario": "Best margin scenario",
         "breakEven": "Break-even qty",
         "breakEvenChart": "Break-even quantity by scenario",
         "commitImport": "Import profiles",
@@ -932,7 +954,117 @@
         "summaryDescription": "Replace spreadsheet margin tracking with reusable batch scenarios and profit-share assumptions.",
         "totalCost": "Total cost/unit",
         "uncategorized": "Uncategorized",
-        "unitCost": "Mfg cost/unit"
+        "unitCost": "Mfg cost/unit",
+        "weakestScenario": "Weakest margin scenario"
+      },
+      "dashboard": {
+        "actions": {
+          "create_costing": {
+            "description": "Model batch margin and break-even for key products.",
+            "label": "Create costing profile"
+          },
+          "create_product": {
+            "description": "Add the first sellable product and opening stock.",
+            "label": "Create product"
+          },
+          "publish_storefront": {
+            "description": "Prepare a buyer-facing storefront and published listings.",
+            "label": "Publish storefront"
+          },
+          "resolve_low_stock": {
+            "description": "Review stock rows that are at or below threshold.",
+            "label": "Resolve low stock"
+          },
+          "setup_resources": {
+            "description": "Fill in setup records used by products and stock rows.",
+            "label": "Complete setup"
+          }
+        },
+        "attention": "Attention queue",
+        "attentionDescription": "Operational risks that need follow-up before the storefront opens.",
+        "categoryMix": "Category mix",
+        "costing": "Costing signal",
+        "costingDescription": "Margin and break-even coverage from costing profiles.",
+        "itemsSold": "{count, plural, one {# unit sold} other {# units sold}}",
+        "kpis": {
+          "bundles": "Bundles",
+          "bundlesDescription": "{count, plural, one {# active} other {# active}}",
+          "lowStock": "Low stock",
+          "lowStockDescription": "Rows at or below minimum threshold",
+          "products": "Products",
+          "productsDescription": "{count, plural, one {# stock row} other {# stock rows}}",
+          "readiness": "Readiness",
+          "readinessDescription": "Average setup, product, costing, storefront, and checkout score",
+          "revenue": "14-day revenue",
+          "storefronts": "Storefronts",
+          "storefrontsDescription": "{count, plural, one {# published} other {# published}}"
+        },
+        "loading": "Loading command center...",
+        "mixDescription": "Buyer revenue and quantity grouped by product category.",
+        "noMix": "Category mix appears after sales have buyer-facing line items.",
+        "noRecommendations": "No next actions right now.",
+        "noRecommendationsDescription": "Core launch signals look ready from the available data.",
+        "noRevenue": "Revenue trend appears after completed sales.",
+        "noRisks": "No urgent risks",
+        "noRisksDescription": "Low-stock, checkout, and storefront readiness queues are clear.",
+        "quick": {
+          "bundle": "Create bundle",
+          "bundleDescription": "Build a stock-backed campaign pack",
+          "costing": "Create costing",
+          "costingDescription": "Track margin and break-even",
+          "product": "Create product",
+          "productDescription": "Add item details and opening stock",
+          "storefront": "Create storefront",
+          "storefrontDescription": "Publish a buyer-ready shop"
+        },
+        "quickActions": "Quick actions",
+        "quickActionsDescription": "Open the existing guided dialogs without leaving the dashboard.",
+        "readiness": {
+          "checkout": {
+            "title": "Checkout"
+          },
+          "costing": {
+            "title": "Costing"
+          },
+          "description": "Launch-critical modules scored from setup, catalog, costing, storefront, and checkout data.",
+          "products": {
+            "title": "Products"
+          },
+          "setup": {
+            "title": "Setup"
+          },
+          "storefront": {
+            "title": "Storefront"
+          },
+          "title": "Readiness lane"
+        },
+        "recommendations": "Recommended next actions",
+        "recommendationsDescription": "Ranked actions generated from the current inventory snapshot.",
+        "revenue": "Revenue",
+        "revenueDescription": "Completed sales over the last 14 days.",
+        "revenueTrend": "Revenue trend",
+        "risk": {
+          "low_stock": "Low stock",
+          "stale_checkout": "Stale checkout",
+          "storefront_ready": "Storefront readiness"
+        },
+        "riskMetric": "{count, plural, one {# affected} other {# affected}}",
+        "severity": {
+          "high": "High priority",
+          "low": "Monitor",
+          "medium": "Needs review"
+        },
+        "storefrontHealth": "Storefront health",
+        "storefrontHealthDescription": "Published listings and checkout mode coverage.",
+        "summary": {
+          "averageMargin": "Average margin",
+          "lowestBreakEven": "Lowest break-even",
+          "polarCheckout": "Polar checkout",
+          "profiles": "Profiles",
+          "publishedListings": "Published listings",
+          "simulatedCheckout": "Simulated checkout"
+        },
+        "unknownProduct": "Unnamed product"
       },
       "empty": "No inventory records match this view.",
       "emptyDescriptions": {
@@ -1257,11 +1389,24 @@
         "title": "Buyer preview"
       },
       "previewStore": "Preview",
+      "rowDetails": {
+        "available": "{count, plural, one {# available} other {# available}}",
+        "checkoutMode": "Checkout: {mode}",
+        "listings": "{count, plural, one {# listing} other {# listings}}"
+      },
       "search": "Search inventory",
       "setup": {
         "batches": "Batches",
         "categories": "Categories",
         "manufacturers": "Manufacturers",
+        "matrix": {
+          "batches": "Batches",
+          "batchesDescription": "Warehouse intake batches available for stock planning",
+          "readyGroups": "Ready groups",
+          "readyGroupsDescription": "Setup groups with at least one usable record",
+          "records": "Setup records",
+          "recordsDescription": "Categories, owners, units, warehouses, suppliers, and batches"
+        },
         "owners": "Owners",
         "suppliers": "Suppliers",
         "units": "Units",

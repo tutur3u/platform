@@ -875,7 +875,18 @@
     "operator": {
       "audit": {
         "changedFields": "{count, plural, one {# trường thay đổi} other {# trường thay đổi}}",
-        "systemActor": "Hệ thống"
+        "systemActor": "Hệ thống",
+        "unknownDate": "Chưa có ngày"
+      },
+      "badges": {
+        "categoryMissing": "Chưa có danh mục",
+        "categoryReady": "Có danh mục",
+        "imageMissing": "Chưa có ảnh",
+        "imageReady": "Có ảnh",
+        "lowStock": "Tồn kho thấp",
+        "ownerMissing": "Chưa có chủ sở hữu",
+        "ownerReady": "Có chủ sở hữu",
+        "stockReady": "Tồn kho sẵn sàng"
       },
       "columns": {
         "actions": "Thao tác",
@@ -888,6 +899,16 @@
       },
       "commerce": {
         "items": "{count, plural, one {# mặt hàng} other {# mặt hàng}}",
+        "metrics": {
+          "completed": "Hoàn tất",
+          "completedDescription": "Phiên checkout đã hoàn tất trong chế độ xem này",
+          "reserved": "Đã giữ",
+          "reservedDescription": "Lượt giữ hàng đang cần theo dõi",
+          "revenue": "Doanh thu bán hàng",
+          "revenueDescription": "Tổng doanh số đã hoàn tất đang tải trong tab này",
+          "sales": "Doanh số",
+          "salesDescription": "Bản ghi doanh số đã hoàn tất"
+        },
         "release": "Giải phóng",
         "tabs": {
           "checkouts": "Checkout",
@@ -899,6 +920,7 @@
         "addScenario": "Thêm kịch bản",
         "averageMargin": "Biên trung bình",
         "batchSize": "Cỡ lô",
+        "bestScenario": "Kịch bản biên tốt nhất",
         "breakEven": "SL hòa vốn",
         "breakEvenChart": "Số lượng hòa vốn theo kịch bản",
         "commitImport": "Nhập hồ sơ",
@@ -932,7 +954,117 @@
         "summaryDescription": "Thay thế bảng tính biên lợi nhuận bằng kịch bản lô và giả định chia lợi nhuận có thể tái sử dụng.",
         "totalCost": "Tổng chi phí/đơn vị",
         "uncategorized": "Chưa phân loại",
-        "unitCost": "Chi phí SX/đơn vị"
+        "unitCost": "Chi phí SX/đơn vị",
+        "weakestScenario": "Kịch bản biên yếu nhất"
+      },
+      "dashboard": {
+        "actions": {
+          "create_costing": {
+            "description": "Mô hình biên lợi nhuận và hòa vốn cho sản phẩm chính.",
+            "label": "Tạo hồ sơ chi phí"
+          },
+          "create_product": {
+            "description": "Thêm sản phẩm đầu tiên và tồn kho ban đầu.",
+            "label": "Tạo sản phẩm"
+          },
+          "publish_storefront": {
+            "description": "Chuẩn bị cửa hàng và listing đã xuất bản cho người mua.",
+            "label": "Xuất bản cửa hàng"
+          },
+          "resolve_low_stock": {
+            "description": "Rà soát các dòng tồn kho đang chạm ngưỡng tối thiểu.",
+            "label": "Xử lý tồn kho thấp"
+          },
+          "setup_resources": {
+            "description": "Hoàn tất bản ghi thiết lập dùng cho sản phẩm và tồn kho.",
+            "label": "Hoàn tất thiết lập"
+          }
+        },
+        "attention": "Hàng đợi cần xử lý",
+        "attentionDescription": "Rủi ro vận hành cần theo dõi trước khi mở cửa hàng.",
+        "categoryMix": "Cơ cấu danh mục",
+        "costing": "Tín hiệu chi phí",
+        "costingDescription": "Mức phủ biên lợi nhuận và hòa vốn từ hồ sơ chi phí.",
+        "itemsSold": "{count, plural, one {# đơn vị đã bán} other {# đơn vị đã bán}}",
+        "kpis": {
+          "bundles": "Combo",
+          "bundlesDescription": "{count, plural, one {# đang hoạt động} other {# đang hoạt động}}",
+          "lowStock": "Tồn kho thấp",
+          "lowStockDescription": "Dòng tồn kho ở hoặc dưới ngưỡng tối thiểu",
+          "products": "Sản phẩm",
+          "productsDescription": "{count, plural, one {# dòng tồn kho} other {# dòng tồn kho}}",
+          "readiness": "Sẵn sàng",
+          "readinessDescription": "Điểm trung bình của thiết lập, sản phẩm, chi phí, cửa hàng và checkout",
+          "revenue": "Doanh thu 14 ngày",
+          "storefronts": "Cửa hàng",
+          "storefrontsDescription": "{count, plural, one {# đã xuất bản} other {# đã xuất bản}}"
+        },
+        "loading": "Đang tải trung tâm điều phối...",
+        "mixDescription": "Doanh thu và số lượng người mua theo danh mục sản phẩm.",
+        "noMix": "Cơ cấu danh mục sẽ xuất hiện sau khi có doanh số với dòng hàng cho người mua.",
+        "noRecommendations": "Chưa có hành động tiếp theo.",
+        "noRecommendationsDescription": "Các tín hiệu mở bán chính đang ổn theo dữ liệu hiện có.",
+        "noRevenue": "Xu hướng doanh thu sẽ xuất hiện sau khi có doanh số hoàn tất.",
+        "noRisks": "Không có rủi ro khẩn cấp",
+        "noRisksDescription": "Hàng đợi tồn kho thấp, checkout và mức sẵn sàng cửa hàng đang trống.",
+        "quick": {
+          "bundle": "Tạo combo",
+          "bundleDescription": "Tạo gói chiến dịch có tồn kho",
+          "costing": "Tạo chi phí",
+          "costingDescription": "Theo dõi biên lợi nhuận và hòa vốn",
+          "product": "Tạo sản phẩm",
+          "productDescription": "Thêm chi tiết và tồn kho ban đầu",
+          "storefront": "Tạo cửa hàng",
+          "storefrontDescription": "Xuất bản shop sẵn sàng cho người mua"
+        },
+        "quickActions": "Thao tác nhanh",
+        "quickActionsDescription": "Mở các dialog hướng dẫn hiện có mà không rời dashboard.",
+        "readiness": {
+          "checkout": {
+            "title": "Checkout"
+          },
+          "costing": {
+            "title": "Chi phí"
+          },
+          "description": "Các module quan trọng cho mở bán được chấm theo thiết lập, danh mục, chi phí, cửa hàng và checkout.",
+          "products": {
+            "title": "Sản phẩm"
+          },
+          "setup": {
+            "title": "Thiết lập"
+          },
+          "storefront": {
+            "title": "Cửa hàng"
+          },
+          "title": "Làn sẵn sàng"
+        },
+        "recommendations": "Hành động gợi ý",
+        "recommendationsDescription": "Hành động được xếp hạng từ snapshot kho hiện tại.",
+        "revenue": "Doanh thu",
+        "revenueDescription": "Doanh số hoàn tất trong 14 ngày gần nhất.",
+        "revenueTrend": "Xu hướng doanh thu",
+        "risk": {
+          "low_stock": "Tồn kho thấp",
+          "stale_checkout": "Checkout quá hạn",
+          "storefront_ready": "Sẵn sàng cửa hàng"
+        },
+        "riskMetric": "{count, plural, one {# bị ảnh hưởng} other {# bị ảnh hưởng}}",
+        "severity": {
+          "high": "Ưu tiên cao",
+          "low": "Theo dõi",
+          "medium": "Cần rà soát"
+        },
+        "storefrontHealth": "Sức khỏe cửa hàng",
+        "storefrontHealthDescription": "Mức phủ listing đã xuất bản và chế độ checkout.",
+        "summary": {
+          "averageMargin": "Biên trung bình",
+          "lowestBreakEven": "Hòa vốn thấp nhất",
+          "polarCheckout": "Checkout Polar",
+          "profiles": "Hồ sơ",
+          "publishedListings": "Listing đã xuất bản",
+          "simulatedCheckout": "Checkout mô phỏng"
+        },
+        "unknownProduct": "Sản phẩm chưa đặt tên"
       },
       "empty": "Không có bản ghi kho hàng phù hợp với chế độ xem này.",
       "emptyDescriptions": {
@@ -1257,11 +1389,24 @@
         "title": "Xem trước người mua"
       },
       "previewStore": "Xem trước",
+      "rowDetails": {
+        "available": "{count, plural, one {# có sẵn} other {# có sẵn}}",
+        "checkoutMode": "Checkout: {mode}",
+        "listings": "{count, plural, one {# listing} other {# listing}}"
+      },
       "search": "Tìm trong kho",
       "setup": {
         "batches": "Lô hàng",
         "categories": "Danh mục",
         "manufacturers": "Nhà sản xuất",
+        "matrix": {
+          "batches": "Lô hàng",
+          "batchesDescription": "Lô nhập kho có sẵn cho lập kế hoạch tồn kho",
+          "readyGroups": "Nhóm sẵn sàng",
+          "readyGroupsDescription": "Nhóm thiết lập đã có ít nhất một bản ghi dùng được",
+          "records": "Bản ghi thiết lập",
+          "recordsDescription": "Danh mục, chủ sở hữu, đơn vị, kho, nhà cung cấp và lô hàng"
+        },
         "owners": "Chủ sở hữu",
         "suppliers": "Nhà cung cấp",
         "units": "Đơn vị",
