@@ -38,6 +38,7 @@ import {
   SelectField,
   TextAreaField,
   TextField,
+  ToggleField,
 } from './operator-form-fields';
 import { useProductSuggestions } from './product-form-suggestions';
 import type { ProductFormState } from './product-form-types';
@@ -55,6 +56,7 @@ const initialState: ProductFormState = {
   ownerId: '',
   price: '',
   unitId: '',
+  unlimitedStock: false,
   usage: '',
   warehouseId: '',
 };
@@ -99,24 +101,30 @@ export function ProductCreateForm({
       title: t('steps.review'),
     },
   ];
+  const amountValue = form.amount.trim();
+  const minAmountValue = form.minAmount.trim();
+  const priceValue = form.price.trim();
+  const hasStockValues = Boolean(amountValue || minAmountValue || priceValue);
+  const hasStockTarget = Boolean(form.unitId && form.warehouseId);
+  const needsStockTarget = Boolean(form.unlimitedStock || hasStockValues);
+  const shouldCreateStockRow = hasStockTarget && needsStockTarget;
   const mutation = useMutation({
     mutationFn: () =>
       createInventoryProduct(wsId, {
         avatar_url: form.avatarUrl || null,
         category_id: form.categoryId,
         description: form.description || undefined,
-        inventory:
-          form.unitId && form.warehouseId
-            ? [
-                {
-                  amount: Number(form.amount || 0),
-                  min_amount: Number(form.minAmount || 0),
-                  price: Number(form.price || 0),
-                  unit_id: form.unitId,
-                  warehouse_id: form.warehouseId,
-                },
-              ]
-            : [],
+        inventory: shouldCreateStockRow
+          ? [
+              {
+                amount: form.unlimitedStock ? null : Number(amountValue || 0),
+                min_amount: Number(minAmountValue || 0),
+                price: Number(priceValue || 0),
+                unit_id: form.unitId,
+                warehouse_id: form.warehouseId,
+              },
+            ]
+          : [],
         manufacturer_id: form.manufacturerId || null,
         name: form.name,
         owner_id: form.ownerId || undefined,
@@ -132,7 +140,12 @@ export function ProductCreateForm({
     },
   });
   const canSubmit = Boolean(form.name && form.categoryId && form.ownerId);
-  const canContinue = step === 0 ? canSubmit : true;
+  const canContinue =
+    step === 0
+      ? canSubmit
+      : step === 2
+        ? !needsStockTarget || hasStockTarget
+        : true;
   const suggestions = useProductSuggestions(form, setForm, options);
   const createReference = async (create: () => Promise<unknown>) => {
     try {
@@ -298,6 +311,26 @@ export function ProductCreateForm({
                   title={t('steps.productStock')}
                 >
                   <div className="grid gap-3 md:grid-cols-2">
+                    <ToggleField
+                      checked={form.unlimitedStock}
+                      className="items-start md:col-span-2"
+                      onChange={(unlimitedStock) =>
+                        setForm((current) => ({
+                          ...current,
+                          amount: unlimitedStock ? '' : current.amount,
+                          unlimitedStock,
+                        }))
+                      }
+                    >
+                      <span className="grid gap-1">
+                        <span className="font-medium">
+                          {t('unlimitedStock')}
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {t('unlimitedStockDescription')}
+                        </span>
+                      </span>
+                    </ToggleField>
                     <SelectField
                       createText={referenceCreateText(t('unit'))}
                       creatingText={referenceCreatingText(t('unit'))}
@@ -335,11 +368,16 @@ export function ProductCreateForm({
                       value={form.warehouseId}
                     />
                     <NumberField
+                      disabled={form.unlimitedStock}
                       label={t('amount')}
                       onChange={(amount) =>
                         setForm((current) => ({ ...current, amount }))
                       }
-                      placeholder={t('placeholders.amount')}
+                      placeholder={
+                        form.unlimitedStock
+                          ? t('unlimitedStock')
+                          : t('placeholders.amount')
+                      }
                       value={form.amount}
                     />
                     <NumberField
@@ -374,8 +412,31 @@ export function ProductCreateForm({
                       t('featuredImage'),
                       form.avatarUrl ? t('attached') : t('notSet'),
                     ],
-                    [t('amount'), form.amount || t('notSet')],
-                    [t('price'), form.price || t('notSet')],
+                    [
+                      t('steps.productStock'),
+                      shouldCreateStockRow
+                        ? form.unlimitedStock
+                          ? t('unlimitedStock')
+                          : t('limitedStock')
+                        : t('notSet'),
+                    ],
+                    ...(shouldCreateStockRow
+                      ? ([
+                          [
+                            t('warehouse'),
+                            labelFor(options?.warehouses, form.warehouseId),
+                          ],
+                          [t('unit'), labelFor(options?.units, form.unitId)],
+                          [
+                            t('amount'),
+                            form.unlimitedStock
+                              ? t('unlimitedStock')
+                              : form.amount || t('notSet'),
+                          ],
+                          [t('minAmount'), form.minAmount || t('notSet')],
+                          [t('price'), form.price || t('notSet')],
+                        ] satisfies [string, string][])
+                      : []),
                   ]}
                 />
               ) : null}

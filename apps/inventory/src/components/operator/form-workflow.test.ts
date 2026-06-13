@@ -118,6 +118,21 @@ describe('Inventory operator form workflows', () => {
     expect(productSource).toContain('avatar_url: form.avatarUrl || null');
   });
 
+  it('creates product stock rows only when stock is explicit and supports unlimited stock', () => {
+    const productSource = source('product-create-dialog.tsx');
+    const rowActionsSource = source('product-row-actions.tsx');
+
+    expect(productSource).toContain('shouldCreateStockRow');
+    expect(productSource).toContain(
+      'amount: form.unlimitedStock ? null : Number(amountValue || 0)'
+    );
+    expect(productSource).toContain('disabled={form.unlimitedStock}');
+    expect(rowActionsSource).toContain(
+      'amount: unlimitedStock ? null : Number(amount || 0)'
+    );
+    expect(rowActionsSource).toContain('disabled={unlimitedStock}');
+  });
+
   it('supports direct storefront hero uploads in create and edit flows', () => {
     const createSource = source('storefront-form-step.tsx');
     const editSource = source('storefront-editor-dialog.tsx');

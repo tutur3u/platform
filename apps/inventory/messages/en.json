@@ -1155,6 +1155,7 @@
           "grid": "Grid",
           "list": "List"
         },
+        "limitedStock": "Limited stock",
         "listingTitle": "Listing title",
         "listingType": "Listing type",
         "manageComponents": "Manage",
@@ -1297,6 +1298,8 @@
           "minimal": "Minimal"
         },
         "unit": "Unit",
+        "unlimitedStock": "Unlimited stock",
+        "unlimitedStockDescription": "Treat this stock row as always available. The stored amount is unlimited instead of a counted quantity.",
         "uploadingImage": "Uploading...",
         "uploadToDrive": "Upload to Drive",
         "usage": "Usage",

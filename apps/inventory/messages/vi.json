@@ -1155,6 +1155,7 @@
           "grid": "Lưới",
           "list": "Danh sách"
         },
+        "limitedStock": "Tồn kho giới hạn",
         "listingTitle": "Tiêu đề listing",
         "listingType": "Loại listing",
         "manageComponents": "Quản lý",
@@ -1297,6 +1298,8 @@
           "minimal": "Tối giản"
         },
         "unit": "Đơn vị",
+        "unlimitedStock": "Tồn kho không giới hạn",
+        "unlimitedStockDescription": "Xem dòng tồn kho này là luôn có sẵn. Số lượng được lưu là không giới hạn thay vì số lượng đếm được.",
         "uploadingImage": "Đang tải lên...",
         "uploadToDrive": "Tải lên Drive",
         "usage": "Mục đích dùng",

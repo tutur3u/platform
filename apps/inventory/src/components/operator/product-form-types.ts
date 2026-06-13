@@ -9,6 +9,7 @@ export type ProductFormState = {
   ownerId: string;
   price: string;
   unitId: string;
+  unlimitedStock: boolean;
   usage: string;
   warehouseId: string;
 };

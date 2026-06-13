@@ -14,6 +14,7 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 export function TextField({
   className,
+  disabled,
   inputMode,
   label,
   onChange,
@@ -21,6 +22,7 @@ export function TextField({
   value,
 }: {
   className?: string;
+  disabled?: boolean;
   inputMode?:
     | 'decimal'
     | 'email'
@@ -39,6 +41,7 @@ export function TextField({
       <span className="font-medium">{label}</span>
       <Input
         className="h-10"
+        disabled={disabled}
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -248,14 +251,21 @@ export function SelectValueField({
 export function ToggleField({
   checked,
   children,
+  className,
   onChange,
 }: {
   checked: boolean;
   children: ReactNode;
+  className?: string;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm">
+    <label
+      className={cn(
+        'flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm',
+        className
+      )}
+    >
       <Checkbox
         checked={checked}
         onCheckedChange={(nextChecked) => onChange(nextChecked === true)}

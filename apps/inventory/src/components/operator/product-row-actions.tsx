@@ -22,6 +22,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { ToggleField } from './operator-form-fields';
 
 export function invalidateProducts(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -42,9 +43,14 @@ export function ProductRowActions({
   const queryClient = useQueryClient();
   const inventory = row.inventory?.[0] ?? {};
   const [stockOpen, setStockOpen] = useState(false);
-  const [amount, setAmount] = useState(String(inventory.amount ?? 0));
+  const [amount, setAmount] = useState(
+    inventory.amount == null ? '' : String(inventory.amount)
+  );
   const [minAmount, setMinAmount] = useState(String(inventory.min_amount ?? 0));
   const [price, setPrice] = useState(String(inventory.price ?? 0));
+  const [unlimitedStock, setUnlimitedStock] = useState(
+    inventory.amount == null
+  );
 
   const archiveMutation = useMutation({
     mutationFn: () =>
@@ -69,7 +75,7 @@ export function ProductRowActions({
       updateInventoryProductInventory(wsId, row.id, {
         inventory: [
           {
-            amount: Number(amount || 0),
+            amount: unlimitedStock ? null : Number(amount || 0),
             min_amount: Number(minAmount || 0),
             price: Number(price || 0),
             unit_id: String(inventory.unit_id ?? ''),
@@ -99,9 +105,12 @@ export function ProductRowActions({
         <Dialog
           onOpenChange={(nextOpen) => {
             if (nextOpen) {
-              setAmount(String(inventory.amount ?? 0));
+              setAmount(
+                inventory.amount == null ? '' : String(inventory.amount)
+              );
               setMinAmount(String(inventory.min_amount ?? 0));
               setPrice(String(inventory.price ?? 0));
+              setUnlimitedStock(inventory.amount == null);
             }
             setStockOpen(nextOpen);
           }}
@@ -125,12 +134,32 @@ export function ProductRowActions({
                 stockMutation.mutate();
               }}
             >
+              <ToggleField
+                checked={unlimitedStock}
+                className="items-start"
+                onChange={(nextUnlimitedStock) => {
+                  setUnlimitedStock(nextUnlimitedStock);
+                  if (nextUnlimitedStock) setAmount('');
+                }}
+              >
+                <span className="grid gap-1">
+                  <span className="font-medium">{t('unlimitedStock')}</span>
+                  <span className="text-muted-foreground text-xs">
+                    {t('unlimitedStockDescription')}
+                  </span>
+                </span>
+              </ToggleField>
               <label className="grid min-w-0 gap-1 text-sm">
                 <span className="font-medium">{t('amount')}</span>
                 <Input
+                  disabled={unlimitedStock}
                   inputMode="numeric"
                   onChange={(event) => setAmount(event.target.value)}
-                  placeholder={t('placeholders.amount')}
+                  placeholder={
+                    unlimitedStock
+                      ? t('unlimitedStock')
+                      : t('placeholders.amount')
+                  }
                   value={amount}
                 />
               </label>
