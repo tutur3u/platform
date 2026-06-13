@@ -24,12 +24,11 @@ describe('PolarSettingsPanel', () => {
       ),
       'utf8'
     );
-    const dialogStart = source.indexOf('<DialogContent>');
-    const tokenStart = source.indexOf('name="accessToken"');
+    const dialogStart = source.indexOf('<DialogContent');
+    const tokenStart = source.indexOf('tokenPlaceholder');
 
     expect(dialogStart).toBeGreaterThan(-1);
     expect(tokenStart).toBeGreaterThan(dialogStart);
-    expect(source.slice(0, dialogStart)).not.toContain('name="accessToken"');
     expect(source.slice(0, dialogStart)).not.toContain('tokenPlaceholder');
   });
 

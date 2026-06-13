@@ -155,7 +155,7 @@ export function StorefrontForm({ wsId }: { wsId: string }) {
             {t('newStorefront')}
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-5xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),64rem)] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('createStorefrontTitle')}</DialogTitle>
             <DialogDescription>
@@ -170,7 +170,7 @@ export function StorefrontForm({ wsId }: { wsId: string }) {
             }}
           >
             <FormStepper activeIndex={step} steps={steps} />
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
               <StorefrontStep
                 form={form}
                 setForm={setForm}

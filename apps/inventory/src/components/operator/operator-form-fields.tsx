@@ -1,6 +1,19 @@
 'use client';
 
+import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Input } from '@tuturuuu/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
+
+const EMPTY_SELECT_VALUE = '__inventory_empty__';
 
 export function TextField({
   className,
@@ -21,14 +34,14 @@ export function TextField({
     | 'url';
   label: string;
   onChange: (value: string) => void;
-  placeholder?: string;
+  placeholder: string;
   value: string;
 }) {
   return (
-    <label className={`grid gap-1 text-sm ${className ?? ''}`}>
+    <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
       <span className="font-medium">{label}</span>
-      <input
-        className="h-10 rounded-md border border-input bg-background px-3"
+      <Input
+        className="h-10"
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
@@ -48,19 +61,22 @@ export function TextAreaField({
   className,
   label,
   onChange,
+  placeholder,
   value,
 }: {
   className?: string;
   label: string;
   onChange: (value: string) => void;
+  placeholder: string;
   value: string;
 }) {
   return (
-    <label className={`grid gap-1 text-sm ${className ?? ''}`}>
+    <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
       <span className="font-medium">{label}</span>
-      <textarea
-        className="min-h-20 rounded-md border border-input bg-background px-3 py-2"
+      <Textarea
+        className="min-h-20"
         onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
         value={value}
       />
     </label>
@@ -68,60 +84,81 @@ export function TextAreaField({
 }
 
 export function SelectField({
+  className,
   label,
   onChange,
   options = [],
+  placeholder,
   value,
 }: {
+  className?: string;
   label: string;
   onChange: (value: string) => void;
   options?: { id: string; name?: string | null }[];
+  placeholder: string;
   value: string;
 }) {
   return (
-    <label className="grid gap-1 text-sm">
+    <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
       <span className="font-medium">{label}</span>
-      <select
-        className="h-10 rounded-md border border-input bg-background px-3"
-        onChange={(event) => onChange(event.target.value)}
-        value={value}
+      <Select
+        onValueChange={(nextValue) =>
+          onChange(nextValue === EMPTY_SELECT_VALUE ? '' : nextValue)
+        }
+        value={value || EMPTY_SELECT_VALUE}
       >
-        <option value="">{label}</option>
-        {options.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.name ?? item.id}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="h-10 min-w-0">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={EMPTY_SELECT_VALUE}>{placeholder}</SelectItem>
+          {options.map((item) => (
+            <SelectItem key={item.id} value={item.id}>
+              {item.name ?? item.id}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </label>
   );
 }
 
 export function SelectValueField({
+  className,
   label,
   onChange,
   options,
+  placeholder,
   value,
 }: {
+  className?: string;
   label: string;
   onChange: (value: string) => void;
   options: { label: string; value: string }[];
+  placeholder: string;
   value: string;
 }) {
   return (
-    <label className="grid gap-1 text-sm">
+    <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
       <span className="font-medium">{label}</span>
-      <select
-        className="h-10 rounded-md border border-input bg-background px-3"
-        onChange={(event) => onChange(event.target.value)}
-        value={value}
+      <Select
+        onValueChange={(nextValue) =>
+          onChange(nextValue === EMPTY_SELECT_VALUE ? '' : nextValue)
+        }
+        value={value || EMPTY_SELECT_VALUE}
       >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="h-10 min-w-0">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={EMPTY_SELECT_VALUE}>{placeholder}</SelectItem>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </label>
   );
 }
@@ -137,11 +174,9 @@ export function ToggleField({
 }) {
   return (
     <label className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm">
-      <input
+      <Checkbox
         checked={checked}
-        className="h-4 w-4"
-        onChange={(event) => onChange(event.target.checked)}
-        type="checkbox"
+        onCheckedChange={(nextChecked) => onChange(nextChecked === true)}
       />
       <span>{children}</span>
     </label>

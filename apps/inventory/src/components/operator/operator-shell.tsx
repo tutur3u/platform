@@ -1,6 +1,15 @@
 'use client';
 
 import { PackageOpen, RefreshCw, Search } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { Input } from '@tuturuuu/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -56,14 +65,15 @@ export function StatePanel({
       <p className="font-semibold">{title}</p>
       <p className="mt-1 text-sm leading-6 opacity-80">{description}</p>
       {actionLabel && onAction ? (
-        <button
-          className="mt-4 inline-flex h-9 items-center gap-2 rounded-md border border-current/25 px-3 font-medium text-sm"
+        <Button
+          className="mt-4 border-current/25"
           onClick={onAction}
           type="button"
+          variant="outline"
         >
           <RefreshCw className="h-4 w-4" />
           {actionLabel}
-        </button>
+        </Button>
       ) : null}
     </div>
   );
@@ -102,24 +112,28 @@ export function Toolbar({
     <div className="sticky top-0 z-20 flex flex-col gap-2 bg-transparent py-2 lg:flex-row lg:items-center lg:justify-between">
       <label className="relative flex min-w-0 flex-1 items-center">
         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          className="h-9 w-full rounded-md border border-input bg-background pr-3 pl-9 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring/40"
+        <Input
+          className="h-9 pl-9"
           onChange={(event) => setFilters({ q: event.target.value })}
           placeholder={t('search')}
           value={filters.q}
         />
       </label>
-      <select
-        className="h-9 rounded-md border border-input bg-background px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring/40"
-        onChange={(event) => setFilters({ status: event.target.value })}
+      <Select
+        onValueChange={(status) => setFilters({ status })}
         value={selectedStatus}
       >
-        {statusOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="h-9 min-w-36">
+          <SelectValue placeholder={t('statuses.all')} />
+        </SelectTrigger>
+        <SelectContent>
+          {statusOptions.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

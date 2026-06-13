@@ -17,6 +17,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { Input } from '@tuturuuu/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import type { FormEvent } from 'react';
@@ -28,22 +36,30 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
   const t = useTranslations('inventory.operator.polar');
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [accessToken, setAccessToken] = useState('');
+  const [tokenEnvironment, setTokenEnvironment] =
+    useState<InventoryPolarEnvironment>('sandbox');
+  const [testingEnvironment, setTestingEnvironment] = useState<
+    InventoryPolarEnvironment | ''
+  >('');
+  const [productionEnvironment, setProductionEnvironment] = useState<
+    InventoryPolarEnvironment | ''
+  >('');
   const settings = useQuery({
     queryFn: () => getInventoryPolarSettings(wsId),
     queryKey: ['inventory', wsId, 'polar-settings'],
   });
   const tokenMutation = useMutation({
-    mutationFn: (formData: FormData) =>
+    mutationFn: () =>
       updateInventoryPolarSettings(wsId, {
-        accessToken: String(formData.get('accessToken') ?? '') || undefined,
-        environment: String(
-          formData.get('environment') ?? 'sandbox'
-        ) as InventoryPolarEnvironment,
+        accessToken: accessToken || undefined,
+        environment: tokenEnvironment,
       }),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('saveError')),
     onSuccess: () => {
       setOpen(false);
+      setAccessToken('');
       toast.success(t('saveSuccess'));
       queryClient.invalidateQueries({
         queryKey: ['inventory', wsId, 'polar-settings'],
@@ -51,14 +67,12 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
     },
   });
   const defaultsMutation = useMutation({
-    mutationFn: (formData: FormData) =>
+    mutationFn: () =>
       updateInventoryPolarSettings(wsId, {
-        productionEnvironment: String(
-          formData.get('productionEnvironment') ?? 'production'
-        ) as InventoryPolarEnvironment,
-        testingEnvironment: String(
-          formData.get('testingEnvironment') ?? 'sandbox'
-        ) as InventoryPolarEnvironment,
+        productionEnvironment:
+          productionEnvironment || data?.productionEnvironment || 'production',
+        testingEnvironment:
+          testingEnvironment || data?.testingEnvironment || 'sandbox',
       }),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('saveError')),
@@ -70,6 +84,10 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
     },
   });
   const data = settings.data;
+  const selectedTestingEnvironment =
+    testingEnvironment || data?.testingEnvironment || 'sandbox';
+  const selectedProductionEnvironment =
+    productionEnvironment || data?.productionEnvironment || 'production';
 
   return (
     <section className="grid gap-4">
@@ -93,7 +111,7 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
                 {t('manage')}
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),32rem)] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t('dialogTitle')}</DialogTitle>
                 <DialogDescription>{t('dialogDescription')}</DialogDescription>
@@ -102,29 +120,37 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
                 className="grid gap-3"
                 onSubmit={(event: FormEvent<HTMLFormElement>) => {
                   event.preventDefault();
-                  tokenMutation.mutate(new FormData(event.currentTarget));
+                  tokenMutation.mutate();
                 }}
               >
-                <label className="grid gap-1 text-sm">
+                <label className="grid min-w-0 gap-1 text-sm">
                   <span className="font-medium">{t('environmentLabel')}</span>
-                  <select
-                    className="h-10 rounded-md border border-input bg-background px-3"
-                    name="environment"
+                  <Select
+                    onValueChange={(value) =>
+                      setTokenEnvironment(value as InventoryPolarEnvironment)
+                    }
+                    value={tokenEnvironment}
                   >
-                    {environments.map((environment) => (
-                      <option key={environment} value={environment}>
-                        {t(`environment.${environment}`)}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="h-10 min-w-0">
+                      <SelectValue placeholder={t('environmentLabel')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {environments.map((environment) => (
+                        <SelectItem key={environment} value={environment}>
+                          {t(`environment.${environment}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
-                <label className="grid gap-1 text-sm">
+                <label className="grid min-w-0 gap-1 text-sm">
                   <span className="font-medium">{t('tokenLabel')}</span>
-                  <input
-                    className="h-10 rounded-md border border-input bg-background px-3"
-                    name="accessToken"
+                  <Input
+                    className="h-10"
+                    onChange={(event) => setAccessToken(event.target.value)}
                     placeholder={t('tokenPlaceholder')}
                     type="password"
+                    value={accessToken}
                   />
                 </label>
                 <DialogFooter>
@@ -141,38 +167,50 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
           className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end"
           onSubmit={(event: FormEvent<HTMLFormElement>) => {
             event.preventDefault();
-            defaultsMutation.mutate(new FormData(event.currentTarget));
+            defaultsMutation.mutate();
           }}
         >
-          <label className="grid gap-1 text-sm">
+          <label className="grid min-w-0 gap-1 text-sm">
             <span className="text-muted-foreground">{t('testingDefault')}</span>
-            <select
-              className="h-10 rounded-md border border-input bg-background px-3"
-              defaultValue={data?.testingEnvironment ?? 'sandbox'}
-              name="testingEnvironment"
+            <Select
+              onValueChange={(value) =>
+                setTestingEnvironment(value as InventoryPolarEnvironment)
+              }
+              value={selectedTestingEnvironment}
             >
-              {environments.map((environment) => (
-                <option key={environment} value={environment}>
-                  {t(`environment.${environment}`)}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-10 min-w-0">
+                <SelectValue placeholder={t('testingDefault')} />
+              </SelectTrigger>
+              <SelectContent>
+                {environments.map((environment) => (
+                  <SelectItem key={environment} value={environment}>
+                    {t(`environment.${environment}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
-          <label className="grid gap-1 text-sm">
+          <label className="grid min-w-0 gap-1 text-sm">
             <span className="text-muted-foreground">
               {t('productionDefault')}
             </span>
-            <select
-              className="h-10 rounded-md border border-input bg-background px-3"
-              defaultValue={data?.productionEnvironment ?? 'production'}
-              name="productionEnvironment"
+            <Select
+              onValueChange={(value) =>
+                setProductionEnvironment(value as InventoryPolarEnvironment)
+              }
+              value={selectedProductionEnvironment}
             >
-              {environments.map((environment) => (
-                <option key={environment} value={environment}>
-                  {t(`environment.${environment}`)}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-10 min-w-0">
+                <SelectValue placeholder={t('productionDefault')} />
+              </SelectTrigger>
+              <SelectContent>
+                {environments.map((environment) => (
+                  <SelectItem key={environment} value={environment}>
+                    {t(`environment.${environment}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <Button disabled={defaultsMutation.isPending} type="submit">
             {defaultsMutation.isPending ? t('saving') : t('saveDefaults')}

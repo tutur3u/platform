@@ -131,7 +131,7 @@ export function StorefrontPreviewPage({
             const Icon = deviceIcons[value];
 
             return (
-              <button
+              <Button
                 className={cn(
                   'inline-flex h-9 items-center gap-2 rounded-sm px-3 font-medium text-sm transition',
                   device === value
@@ -141,10 +141,11 @@ export function StorefrontPreviewPage({
                 key={value}
                 onClick={() => setDevice(value)}
                 type="button"
+                variant="ghost"
               >
                 <Icon className="h-4 w-4" />
                 {t(`devices.${value}`)}
-              </button>
+              </Button>
             );
           })}
         </div>

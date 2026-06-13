@@ -12,6 +12,7 @@ import {
   updateInventoryBundle,
   updateInventoryStorefront,
 } from '@tuturuuu/internal-api/inventory';
+import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { STOREFRONT_APP_URL } from '@/constants/common';
@@ -138,42 +139,46 @@ export function SimpleRows({
                     storefront={row as InventoryStorefront}
                     wsId={wsId}
                   />
-                  <button
-                    className="inline-flex h-8 items-center rounded-md border border-border px-2"
+                  <Button
                     onClick={() =>
                       archiveStorefront.mutate(row as InventoryStorefront)
                     }
+                    size="icon"
                     type="button"
+                    variant="outline"
                   >
                     <Archive className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="inline-flex h-8 items-center rounded-md border border-destructive/30 px-2 text-destructive"
+                  </Button>
+                  <Button
                     onClick={() =>
                       deleteStorefront.mutate(row as InventoryStorefront)
                     }
+                    size="icon"
                     type="button"
+                    variant="destructive"
                   >
                     <Trash2 className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </>
               ) : null}
               {wsId && type === 'bundles' ? (
                 <>
-                  <button
-                    className="inline-flex h-8 items-center rounded-md border border-border px-2"
+                  <Button
                     onClick={() => archiveBundle.mutate(row as InventoryBundle)}
+                    size="icon"
                     type="button"
+                    variant="outline"
                   >
                     <Archive className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="inline-flex h-8 items-center rounded-md border border-destructive/30 px-2 text-destructive"
+                  </Button>
+                  <Button
                     onClick={() => deleteBundle.mutate(row as InventoryBundle)}
+                    size="icon"
                     type="button"
+                    variant="destructive"
                   >
                     <Trash2 className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </>
               ) : null}
             </div>

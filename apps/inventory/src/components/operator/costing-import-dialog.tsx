@@ -17,6 +17,7 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -52,13 +53,13 @@ export function CostingImportDialog({ wsId }: { wsId: string }) {
           {t('importCsv')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),48rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('importTitle')}</DialogTitle>
           <DialogDescription>{t('importDescription')}</DialogDescription>
         </DialogHeader>
-        <textarea
-          className="min-h-48 rounded-md border border-border bg-background p-3 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        <Textarea
+          className="min-h-48 font-mono"
           onChange={(event) => setCsv(event.target.value)}
           placeholder={t('importPlaceholder')}
           value={csv}

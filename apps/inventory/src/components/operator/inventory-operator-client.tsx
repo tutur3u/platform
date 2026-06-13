@@ -46,7 +46,9 @@ type InventoryOperatorClientProps = {
 };
 
 type InventoryQueryState = {
+  hasData: boolean;
   isError: boolean;
+  isFetching: boolean;
   isPending: boolean;
   refetch: () => unknown;
 };
@@ -200,15 +202,25 @@ export function InventoryOperatorClient({
     query
       ? [
           {
+            hasData: Boolean(query.data),
             isError: query.isError,
+            isFetching: query.isFetching,
             isPending: query.isPending,
             refetch: query.refetch,
           } satisfies InventoryQueryState,
         ]
       : []
   );
-  const isLoading = activeQueries.some((query) => query.isPending);
+  const isLoading = activeQueries.some(
+    (query) => query.isPending && !query.hasData
+  );
   const isError = activeQueries.some((query) => query.isError);
+  const commerceLoading =
+    view === 'commerce' && commerceTab === 'checkouts'
+      ? data.checkouts.isPending || data.checkouts.isFetching
+      : view === 'commerce' && commerceTab === 'sales'
+        ? data.sales.isPending || data.sales.isFetching
+        : false;
 
   return (
     <SectionShell
@@ -222,7 +234,7 @@ export function InventoryOperatorClient({
         statusOptions={statusOptions}
       />
       <div className="grid gap-4">
-        {isLoading ? <LoadingRows /> : null}
+        {isLoading && view !== 'commerce' ? <LoadingRows /> : null}
         {isError ? (
           <StatePanel
             actionLabel={t('states.retry')}
@@ -303,9 +315,10 @@ export function InventoryOperatorClient({
             ) : null}
           </>
         ) : null}
-        {!isLoading && !isError && view === 'commerce' ? (
+        {!isError && view === 'commerce' ? (
           <CommercePanel
             checkouts={data.checkouts.data?.data ?? []}
+            isLoading={commerceLoading}
             query={data.filters.q}
             sales={sales}
             setTab={(tab: InventoryCommerceTab) => {

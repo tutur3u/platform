@@ -6,8 +6,18 @@ import type {
   InventoryProductSummary,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import { Input } from '@tuturuuu/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+
+const EMPTY_SELECT_VALUE = '__inventory_empty__';
 
 export type DraftBundleComponent = Pick<
   InventoryBundleComponent,
@@ -42,23 +52,32 @@ export function BundleComponentPicker({
 
   return (
     <div className="grid gap-3 rounded-lg border border-border bg-muted/20 p-3">
-      <div className="grid gap-2 md:grid-cols-[1fr_120px_auto]">
-        <select
-          className="h-10 rounded-md border border-input bg-background px-3"
-          onChange={(event) => setProductId(event.target.value)}
-          value={productId}
+      <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(0,1fr)_120px_auto]">
+        <Select
+          onValueChange={(value) =>
+            setProductId(value === EMPTY_SELECT_VALUE ? '' : value)
+          }
+          value={productId || EMPTY_SELECT_VALUE}
         >
-          <option value="">{t('product')}</option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name}
-            </option>
-          ))}
-        </select>
-        <input
-          className="h-10 rounded-md border border-input bg-background px-3"
+          <SelectTrigger className="h-10 min-w-0">
+            <SelectValue placeholder={t('placeholders.product')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={EMPTY_SELECT_VALUE}>
+              {t('placeholders.product')}
+            </SelectItem>
+            {products.map((product) => (
+              <SelectItem key={product.id} value={product.id}>
+                {product.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          className="h-10"
           inputMode="numeric"
           onChange={(event) => setQuantity(event.target.value)}
+          placeholder={t('placeholders.quantity')}
           value={quantity}
         />
         <Button

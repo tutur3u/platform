@@ -29,6 +29,12 @@ import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { InventoryImageUploadField } from './inventory-image-upload';
 import {
+  SelectValueField,
+  TextAreaField,
+  TextField,
+  ToggleField,
+} from './operator-form-fields';
+import {
   checkoutModes,
   cornerStyles,
   layoutStyles,
@@ -78,14 +84,11 @@ export function StorefrontEditorDialog({
       open={open}
     >
       <DialogTrigger asChild>
-        <button
-          className="inline-flex h-8 items-center rounded-md border border-border px-2"
-          type="button"
-        >
+        <Button size="icon" type="button" variant="outline">
           <Settings2 className="h-4 w-4" />
-        </button>
+        </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),48rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('editStorefrontTitle')}</DialogTitle>
           <DialogDescription>
@@ -103,26 +106,24 @@ export function StorefrontEditorDialog({
             <TextField
               label={t('storeName')}
               onChange={(name) => setForm((current) => ({ ...current, name }))}
+              placeholder={t('placeholders.storeName')}
               value={form.name}
             />
             <TextField
               label={t('slug')}
               onChange={(slug) => setForm((current) => ({ ...current, slug }))}
+              placeholder={t('placeholders.slug')}
               value={form.slug}
             />
-            <label className="grid gap-1 text-sm md:col-span-2">
-              <span className="font-medium">{t('description')}</span>
-              <textarea
-                className="min-h-20 rounded-md border border-input bg-background px-3 py-2"
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    description: event.target.value,
-                  }))
-                }
-                value={form.description}
-              />
-            </label>
+            <TextAreaField
+              className="md:col-span-2"
+              label={t('description')}
+              onChange={(description) =>
+                setForm((current) => ({ ...current, description }))
+              }
+              placeholder={t('placeholders.storeDescription')}
+              value={form.description}
+            />
             <div className="md:col-span-2">
               <InventoryImageUploadField
                 description={t('heroImageDescription')}
@@ -140,6 +141,7 @@ export function StorefrontEditorDialog({
               onChange={(currency) =>
                 setForm((current) => ({ ...current, currency }))
               }
+              placeholder={t('placeholders.currency')}
               value={form.currency}
             />
             <TextField
@@ -147,10 +149,10 @@ export function StorefrontEditorDialog({
               onChange={(accentColor) =>
                 setForm((current) => ({ ...current, accentColor }))
               }
-              placeholder="#7c3aed"
+              placeholder={t('placeholders.accentColor')}
               value={form.accentColor}
             />
-            <SelectField
+            <SelectValueField
               label={t('status')}
               onChange={(status) =>
                 setForm((current) => ({
@@ -162,9 +164,10 @@ export function StorefrontEditorDialog({
                 label: t(`storefrontStatus.${value}`),
                 value,
               }))}
+              placeholder={t('placeholders.status')}
               value={form.status}
             />
-            <SelectField
+            <SelectValueField
               label={t('visibility')}
               onChange={(visibility) =>
                 setForm((current) => ({
@@ -179,9 +182,10 @@ export function StorefrontEditorDialog({
                     : t('visibilityPrivate'),
                 value,
               }))}
+              placeholder={t('placeholders.visibility')}
               value={form.visibility}
             />
-            <SelectField
+            <SelectValueField
               label={t('checkoutMode')}
               onChange={(checkoutMode) =>
                 setForm((current) => ({
@@ -193,9 +197,10 @@ export function StorefrontEditorDialog({
                 label: t(`checkoutModes.${value}`),
                 value,
               }))}
+              placeholder={t('placeholders.checkoutMode')}
               value={form.checkoutMode}
             />
-            <SelectField
+            <SelectValueField
               label={t('themePreset')}
               onChange={(themePreset) =>
                 setForm((current) => ({
@@ -207,9 +212,10 @@ export function StorefrontEditorDialog({
                 label: t(`themePresets.${value}`),
                 value,
               }))}
+              placeholder={t('placeholders.themePreset')}
               value={form.themePreset}
             />
-            <SelectField
+            <SelectValueField
               label={t('layoutStyle')}
               onChange={(layoutStyle) =>
                 setForm((current) => ({
@@ -221,9 +227,10 @@ export function StorefrontEditorDialog({
                 label: t(`layoutStyles.${value}`),
                 value,
               }))}
+              placeholder={t('placeholders.layoutStyle')}
               value={form.layoutStyle}
             />
-            <SelectField
+            <SelectValueField
               label={t('surfaceStyle')}
               onChange={(surfaceStyle) =>
                 setForm((current) => ({
@@ -235,9 +242,10 @@ export function StorefrontEditorDialog({
                 label: t(`surfaceStyles.${value}`),
                 value,
               }))}
+              placeholder={t('placeholders.surfaceStyle')}
               value={form.surfaceStyle}
             />
-            <SelectField
+            <SelectValueField
               label={t('cornerStyle')}
               onChange={(cornerStyle) =>
                 setForm((current) => ({
@@ -249,22 +257,22 @@ export function StorefrontEditorDialog({
                 label: t(`cornerStyles.${value}`),
                 value,
               }))}
+              placeholder={t('placeholders.cornerStyle')}
               value={form.cornerStyle}
             />
-            <label className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm md:col-span-2">
-              <input
+            <div className="md:col-span-2">
+              <ToggleField
                 checked={form.showInventoryBadges}
-                className="h-4 w-4"
-                onChange={(event) =>
+                onChange={(showInventoryBadges) =>
                   setForm((current) => ({
                     ...current,
-                    showInventoryBadges: event.target.checked,
+                    showInventoryBadges,
                   }))
                 }
-                type="checkbox"
-              />
-              <span>{t('showInventoryBadges')}</span>
-            </label>
+              >
+                {t('showInventoryBadges')}
+              </ToggleField>
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -297,57 +305,4 @@ function getInitialForm(storefront: InventoryStorefront) {
     themePreset: storefront.themePreset,
     visibility: storefront.visibility,
   };
-}
-
-function TextField({
-  label,
-  onChange,
-  placeholder,
-  value,
-}: {
-  label: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  value: string;
-}) {
-  return (
-    <label className="grid gap-1 text-sm">
-      <span className="font-medium">{label}</span>
-      <input
-        className="h-10 rounded-md border border-input bg-background px-3"
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        value={value}
-      />
-    </label>
-  );
-}
-
-function SelectField({
-  label,
-  onChange,
-  options,
-  value,
-}: {
-  label: string;
-  onChange: (value: string) => void;
-  options: { label: string; value: string }[];
-  value: string;
-}) {
-  return (
-    <label className="grid gap-1 text-sm">
-      <span className="font-medium">{label}</span>
-      <select
-        className="h-10 rounded-md border border-input bg-background px-3"
-        onChange={(event) => onChange(event.target.value)}
-        value={value}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
 }

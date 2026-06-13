@@ -7,6 +7,7 @@ import {
   uploadInventoryMedia,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -97,16 +98,16 @@ export function InventoryImageUploadField({
           )}
         </div>
         <div className="grid content-start gap-3">
-          <label className="grid gap-1 text-sm">
+          <label className="grid min-w-0 gap-1 text-sm">
             <span className="flex items-center gap-2 font-medium">
               <Link className="h-4 w-4" />
               {t('imageUrl')}
             </span>
-            <input
-              className="h-10 rounded-md border border-input bg-background px-3"
+            <Input
+              className="h-10"
               inputMode="url"
               onChange={(event) => onChange(event.target.value)}
-              placeholder="https://..."
+              placeholder={t('placeholders.imageUrl')}
               value={value}
             />
           </label>

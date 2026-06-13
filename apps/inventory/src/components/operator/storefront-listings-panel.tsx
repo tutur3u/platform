@@ -23,11 +23,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { Input } from '@tuturuuu/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { currency } from './operator-format';
 import { EmptyRow, LoadingRows } from './operator-shell';
+
+const EMPTY_SELECT_VALUE = '__inventory_empty__';
 
 export function StorefrontListingsPanel({
   bundles,
@@ -106,19 +116,20 @@ export function StorefrontListingsPanel({
   return (
     <section className="grid gap-3 rounded-lg border border-border bg-card p-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <label className="grid min-w-64 flex-1 gap-1 text-sm">
+        <label className="grid min-w-0 flex-1 gap-1 text-sm">
           <span className="font-medium">{t('storefront')}</span>
-          <select
-            className="h-10 rounded-md border border-input bg-background px-3"
-            onChange={(event) => setStorefrontId(event.target.value)}
-            value={activeStorefrontId}
-          >
-            {storefronts.map((storefront) => (
-              <option key={storefront.id} value={storefront.id}>
-                {storefront.name}
-              </option>
-            ))}
-          </select>
+          <Select onValueChange={setStorefrontId} value={activeStorefrontId}>
+            <SelectTrigger className="h-10 min-w-0">
+              <SelectValue placeholder={t('placeholders.storefront')} />
+            </SelectTrigger>
+            <SelectContent>
+              {storefronts.map((storefront) => (
+                <SelectItem key={storefront.id} value={storefront.id}>
+                  {storefront.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </label>
         <Dialog onOpenChange={setOpen} open={open}>
           <DialogTrigger asChild>
@@ -127,7 +138,7 @@ export function StorefrontListingsPanel({
               {t('newListing')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+          <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),42rem)] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{t('createListingTitle')}</DialogTitle>
               <DialogDescription>
@@ -142,53 +153,67 @@ export function StorefrontListingsPanel({
               }}
             >
               <div className="grid gap-3 md:grid-cols-2">
-                <label className="grid gap-1 text-sm">
+                <label className="grid min-w-0 gap-1 text-sm">
                   <span className="font-medium">{t('product')}</span>
-                  <select
-                    className="h-10 rounded-md border border-input bg-background px-3"
-                    onChange={(event) => {
-                      setListingType(
-                        event.target.value as 'product' | 'bundle'
-                      );
+                  <Select
+                    onValueChange={(value) => {
+                      setListingType(value as 'product' | 'bundle');
                       setTargetId('');
                     }}
                     value={listingType}
                   >
-                    <option value="product">{t('product')}</option>
-                    <option value="bundle">{t('bundle')}</option>
-                  </select>
+                    <SelectTrigger className="h-10 min-w-0">
+                      <SelectValue
+                        placeholder={t('placeholders.listingType')}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="product">{t('product')}</SelectItem>
+                      <SelectItem value="bundle">{t('bundle')}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </label>
-                <label className="grid gap-1 text-sm">
+                <label className="grid min-w-0 gap-1 text-sm">
                   <span className="font-medium">{t('target')}</span>
-                  <select
-                    className="h-10 rounded-md border border-input bg-background px-3"
-                    onChange={(event) => setTargetId(event.target.value)}
-                    value={targetId}
+                  <Select
+                    onValueChange={(value) =>
+                      setTargetId(value === EMPTY_SELECT_VALUE ? '' : value)
+                    }
+                    value={targetId || EMPTY_SELECT_VALUE}
                   >
-                    <option value="">{t('target')}</option>
-                    {(listingType === 'product' ? products : bundles).map(
-                      (item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      )
-                    )}
-                  </select>
+                    <SelectTrigger className="h-10 min-w-0">
+                      <SelectValue placeholder={t('placeholders.target')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={EMPTY_SELECT_VALUE}>
+                        {t('placeholders.target')}
+                      </SelectItem>
+                      {(listingType === 'product' ? products : bundles).map(
+                        (item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {item.name}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
                 </label>
-                <label className="grid gap-1 text-sm">
+                <label className="grid min-w-0 gap-1 text-sm">
                   <span className="font-medium">{t('listingTitle')}</span>
-                  <input
-                    className="h-10 rounded-md border border-input bg-background px-3"
+                  <Input
+                    className="h-10"
                     onChange={(event) => setTitle(event.target.value)}
+                    placeholder={t('placeholders.listingTitle')}
                     value={title}
                   />
                 </label>
-                <label className="grid gap-1 text-sm">
+                <label className="grid min-w-0 gap-1 text-sm">
                   <span className="font-medium">{t('price')}</span>
-                  <input
-                    className="h-10 rounded-md border border-input bg-background px-3"
+                  <Input
+                    className="h-10"
                     inputMode="numeric"
                     onChange={(event) => setPrice(event.target.value)}
+                    placeholder={t('placeholders.price')}
                     value={price}
                   />
                 </label>
@@ -263,20 +288,22 @@ function ListingRow({
         <p className="text-muted-foreground text-xs">{listing.status}</p>
       </div>
       <span>{currency(listing.price)}</span>
-      <button
-        className="inline-flex h-8 items-center justify-center rounded-md border border-border px-2"
+      <Button
         onClick={() => archiveMutation.mutate()}
+        size="icon"
         type="button"
+        variant="outline"
       >
         <Archive className="h-4 w-4" />
-      </button>
-      <button
-        className="inline-flex h-8 items-center justify-center rounded-md border border-destructive/30 px-2 text-destructive"
+      </Button>
+      <Button
         onClick={() => deleteMutation.mutate()}
+        size="icon"
         type="button"
+        variant="destructive"
       >
         <Trash2 className="h-4 w-4" />
-      </button>
+      </Button>
     </div>
   );
 }

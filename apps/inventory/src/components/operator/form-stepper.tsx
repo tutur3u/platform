@@ -25,7 +25,7 @@ export function FormStepper({
   steps: OperatorFormStep[];
 }) {
   return (
-    <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+    <ol className="grid min-w-0 gap-2 [grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))]">
       {steps.map((step, index) => {
         const Icon = step.icon;
         const isActive = index === activeIndex;
@@ -34,7 +34,7 @@ export function FormStepper({
         return (
           <li
             className={cn(
-              'rounded-lg border p-3 transition',
+              'min-w-0 rounded-lg border p-3 transition',
               isActive
                 ? 'border-primary/50 bg-primary/10 text-primary'
                 : 'border-border bg-muted/20 text-muted-foreground',
@@ -42,7 +42,7 @@ export function FormStepper({
             )}
             key={step.id}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <span
                 className={cn(
                   'grid h-7 w-7 place-items-center rounded-md border text-xs',
@@ -57,9 +57,11 @@ export function FormStepper({
                   <Icon className="h-4 w-4" />
                 )}
               </span>
-              <span className="font-medium text-sm">{step.title}</span>
+              <span className="truncate font-medium text-sm">{step.title}</span>
             </div>
-            <p className="mt-2 text-xs leading-5">{step.description}</p>
+            <p className="mt-2 hidden text-xs leading-5 md:line-clamp-2 md:block">
+              {step.description}
+            </p>
           </li>
         );
       })}
@@ -77,8 +79,8 @@ export function StepPanel({
   title: string;
 }) {
   return (
-    <section className="grid gap-4">
-      <div>
+    <section className="grid min-w-0 gap-4">
+      <div className="min-w-0">
         <h3 className="font-semibold text-lg">{title}</h3>
         <p className="mt-1 max-w-2xl text-muted-foreground text-sm leading-6">
           {description}

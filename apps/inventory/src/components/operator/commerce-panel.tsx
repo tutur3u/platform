@@ -17,13 +17,14 @@ import {
   deleteInventorySale,
   releaseInventoryCheckout,
 } from '@tuturuuu/internal-api/inventory';
+import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { currency } from './operator-format';
-import { EmptyRow } from './operator-shell';
+import { EmptyRow, LoadingRows } from './operator-shell';
 import type { InventoryCommerceTab } from './operator-types';
-import { SaleDetailPanel } from './sale-detail-panel';
+import { SaleNoteDialog } from './sale-detail-panel';
 
 function StatusBadge({ value }: { value: string }) {
   return (
@@ -72,7 +73,7 @@ function CommerceTabs({
         const active = item.value === tab;
 
         return (
-          <button
+          <Button
             aria-selected={active}
             className={`inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 font-medium text-sm transition ${
               active
@@ -83,10 +84,11 @@ function CommerceTabs({
             onClick={() => onChange(item.value)}
             role="tab"
             type="button"
+            variant="ghost"
           >
             <Icon className="h-4 w-4" />
             {item.label}
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -154,17 +156,18 @@ function CheckoutRows({
               <StatusBadge value={row.status} />
               {row.polarStatus ? <StatusBadge value={row.polarStatus} /> : null}
               <StatusBadge value={currency(row.totalAmount, row.currency)} />
-              <button
-                className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-2 font-medium text-xs disabled:opacity-50"
+              <Button
                 disabled={
                   row.status === 'completed' || releaseCheckout.isPending
                 }
                 onClick={() => releaseCheckout.mutate(row)}
+                size="sm"
                 type="button"
+                variant="outline"
               >
                 <RotateCcw className="h-4 w-4" />
                 {t('commerce.release')}
-              </button>
+              </Button>
             </div>
           </article>
         );
@@ -247,15 +250,17 @@ function SaleRows({
             </div>
             <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
               <StatusBadge value={currency(row.paid_amount)} />
-              <button
-                className="inline-flex h-8 items-center gap-2 rounded-md border border-destructive/30 px-2 font-medium text-destructive text-xs disabled:opacity-50"
+              <SaleNoteDialog sale={row} wsId={wsId} />
+              <Button
                 disabled={deleteSale.isPending}
                 onClick={() => deleteSale.mutate(row)}
+                size="sm"
                 type="button"
+                variant="destructive"
               >
                 <Trash2 className="h-4 w-4" />
                 {actionText('delete')}
-              </button>
+              </Button>
             </div>
           </article>
         );
@@ -266,6 +271,7 @@ function SaleRows({
 
 export function CommercePanel({
   checkouts,
+  isLoading,
   query,
   sales,
   setTab,
@@ -273,6 +279,7 @@ export function CommercePanel({
   wsId,
 }: {
   checkouts: InventoryCheckoutSession[];
+  isLoading?: boolean;
   query: string;
   sales: InventorySaleSummary[];
   setTab: (tab: InventoryCommerceTab) => void;
@@ -282,15 +289,12 @@ export function CommercePanel({
   return (
     <div className="grid gap-3">
       <CommerceTabs onChange={setTab} tab={tab} />
-      {tab === 'checkouts' ? (
+      {isLoading ? (
+        <LoadingRows />
+      ) : tab === 'checkouts' ? (
         <CheckoutRows rows={checkouts} wsId={wsId} />
       ) : (
-        <>
-          <SaleRows query={query} rows={sales} wsId={wsId} />
-          {sales.length > 0 ? (
-            <SaleDetailPanel sales={sales} wsId={wsId} />
-          ) : null}
-        </>
+        <SaleRows query={query} rows={sales} wsId={wsId} />
       )}
     </div>
   );

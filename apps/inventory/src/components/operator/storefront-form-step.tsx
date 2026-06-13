@@ -56,11 +56,13 @@ export function StorefrontStep({
           <TextField
             label={t('storeName')}
             onChange={(name) => setForm((current) => ({ ...current, name }))}
+            placeholder={t('placeholders.storeName')}
             value={form.name}
           />
           <TextField
             label={t('slug')}
             onChange={(slug) => setForm((current) => ({ ...current, slug }))}
+            placeholder={t('placeholders.slug')}
             value={form.slug}
           />
           <TextAreaField
@@ -69,6 +71,7 @@ export function StorefrontStep({
             onChange={(description) =>
               setForm((current) => ({ ...current, description }))
             }
+            placeholder={t('placeholders.storeDescription')}
             value={form.description}
           />
         </div>
@@ -100,7 +103,7 @@ export function StorefrontStep({
             onChange={(accentColor) =>
               setForm((current) => ({ ...current, accentColor }))
             }
-            placeholder="#111827"
+            placeholder={t('placeholders.accentColor')}
             value={form.accentColor}
           />
           <TextField
@@ -108,6 +111,7 @@ export function StorefrontStep({
             onChange={(currency) =>
               setForm((current) => ({ ...current, currency }))
             }
+            placeholder={t('placeholders.currency')}
             value={form.currency}
           />
           <SelectValueField
@@ -122,6 +126,7 @@ export function StorefrontStep({
               label: t(`themePresets.${value}`),
               value,
             }))}
+            placeholder={t('placeholders.themePreset')}
             value={form.themePreset}
           />
           <SelectValueField
@@ -136,6 +141,7 @@ export function StorefrontStep({
               label: t(`layoutStyles.${value}`),
               value,
             }))}
+            placeholder={t('placeholders.layoutStyle')}
             value={form.layoutStyle}
           />
           <SelectValueField
@@ -150,6 +156,7 @@ export function StorefrontStep({
               label: t(`surfaceStyles.${value}`),
               value,
             }))}
+            placeholder={t('placeholders.surfaceStyle')}
             value={form.surfaceStyle}
           />
           <SelectValueField
@@ -164,6 +171,7 @@ export function StorefrontStep({
               label: t(`cornerStyles.${value}`),
               value,
             }))}
+            placeholder={t('placeholders.cornerStyle')}
             value={form.cornerStyle}
           />
           <div className="md:col-span-2">
@@ -200,6 +208,7 @@ export function StorefrontStep({
               label: t(`checkoutModes.${value}`),
               value,
             }))}
+            placeholder={t('placeholders.checkoutMode')}
             value={form.checkoutMode}
           />
           <SelectValueField
@@ -214,6 +223,7 @@ export function StorefrontStep({
               label: t(`storefrontStatus.${value}`),
               value,
             }))}
+            placeholder={t('placeholders.status')}
             value={form.status}
           />
           <SelectValueField
@@ -231,6 +241,7 @@ export function StorefrontStep({
                   : t('visibilityPrivate'),
               value,
             }))}
+            placeholder={t('placeholders.visibility')}
             value={form.visibility}
           />
         </div>

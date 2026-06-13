@@ -1,16 +1,17 @@
 'use client';
 
-import { BarChart3, FileSpreadsheet, Plus } from '@tuturuuu/icons';
+import { BarChart3, Plus } from '@tuturuuu/icons';
 import type {
   InventoryCostingAnalytics,
   InventoryCostProfile,
   InventoryProductFormOptionsResponse,
 } from '@tuturuuu/internal-api/inventory';
+import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { CostingCharts } from './costing-charts';
 import { CostingImportDialog } from './costing-import-dialog';
 import { CostingMetricCard } from './costing-metric-card';
-import { CostingProfileForm } from './costing-profile-form';
+import { CostingProfileDialog } from './costing-profile-form';
 import { CostingProfileList } from './costing-profile-list';
 import { EmptyRow } from './operator-shell';
 
@@ -42,6 +43,16 @@ export function CostingPanel({
           </div>
         </div>
         <div className="flex flex-wrap gap-2 lg:justify-end">
+          <CostingProfileDialog
+            options={options}
+            trigger={
+              <Button type="button">
+                <Plus className="h-4 w-4" />
+                {t('newProfile')}
+              </Button>
+            }
+            wsId={wsId}
+          />
           <CostingImportDialog wsId={wsId} />
         </div>
       </section>
@@ -64,21 +75,23 @@ export function CostingPanel({
         <EmptyRow
           action={
             <div className="flex flex-wrap justify-center gap-2">
-              <span className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 font-medium text-sm">
-                <Plus className="h-4 w-4" />
-                {t('newProfile')}
-              </span>
-              <span className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 font-medium text-sm">
-                <FileSpreadsheet className="h-4 w-4" />
-                {t('importCsv')}
-              </span>
+              <CostingProfileDialog
+                options={options}
+                trigger={
+                  <Button type="button" variant="outline">
+                    <Plus className="h-4 w-4" />
+                    {t('newProfile')}
+                  </Button>
+                }
+                wsId={wsId}
+              />
+              <CostingImportDialog wsId={wsId} />
             </div>
           }
           description={t('emptyDescription')}
           label={t('emptyTitle')}
         />
       ) : null}
-      <CostingProfileForm options={options} wsId={wsId} />
       <CostingProfileList profiles={profiles} wsId={wsId} />
     </div>
   );

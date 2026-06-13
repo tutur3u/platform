@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash2 } from '@tuturuuu/icons';
 import type { InventoryCostProfile } from '@tuturuuu/internal-api/inventory';
 import { deleteInventoryCostProfile } from '@tuturuuu/internal-api/inventory';
+import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { currency } from './operator-format';
@@ -68,14 +69,15 @@ export function CostingProfileList({
                   {firstScenario?.metrics.breakEvenQuantity ?? '-'}
                 </td>
                 <td className="px-3 py-3">
-                  <button
-                    className="inline-flex h-8 items-center rounded-md border border-destructive/30 px-2 text-destructive"
+                  <Button
                     disabled={deleteMutation.isPending}
                     onClick={() => deleteMutation.mutate(profile.id)}
+                    size="icon"
                     type="button"
+                    variant="destructive"
                   >
                     <Trash2 className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </td>
               </tr>
             );

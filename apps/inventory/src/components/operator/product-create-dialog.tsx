@@ -169,6 +169,7 @@ export function ProductCreateForm({
                       onChange={(name) =>
                         setForm((current) => ({ ...current, name }))
                       }
+                      placeholder={t('placeholders.productName')}
                       value={form.name}
                     />
                     <SelectField
@@ -177,6 +178,7 @@ export function ProductCreateForm({
                         setForm((current) => ({ ...current, categoryId }))
                       }
                       options={options?.categories}
+                      placeholder={t('placeholders.category')}
                       value={form.categoryId}
                     />
                     <SelectField
@@ -185,6 +187,7 @@ export function ProductCreateForm({
                         setForm((current) => ({ ...current, ownerId }))
                       }
                       options={options?.owners}
+                      placeholder={t('placeholders.owner')}
                       value={form.ownerId}
                     />
                     <SelectField
@@ -193,6 +196,7 @@ export function ProductCreateForm({
                         setForm((current) => ({ ...current, manufacturerId }))
                       }
                       options={options?.manufacturers}
+                      placeholder={t('placeholders.manufacturer')}
                       value={form.manufacturerId}
                     />
                     <TextField
@@ -200,6 +204,7 @@ export function ProductCreateForm({
                       onChange={(usage) =>
                         setForm((current) => ({ ...current, usage }))
                       }
+                      placeholder={t('placeholders.usage')}
                       value={form.usage}
                     />
                     <TextAreaField
@@ -208,6 +213,7 @@ export function ProductCreateForm({
                       onChange={(description) =>
                         setForm((current) => ({ ...current, description }))
                       }
+                      placeholder={t('placeholders.productDescription')}
                       value={form.description}
                     />
                   </div>
@@ -242,6 +248,7 @@ export function ProductCreateForm({
                         setForm((current) => ({ ...current, unitId }))
                       }
                       options={options?.units}
+                      placeholder={t('placeholders.unit')}
                       value={form.unitId}
                     />
                     <SelectField
@@ -250,6 +257,7 @@ export function ProductCreateForm({
                         setForm((current) => ({ ...current, warehouseId }))
                       }
                       options={options?.warehouses}
+                      placeholder={t('placeholders.warehouse')}
                       value={form.warehouseId}
                     />
                     <NumberField
@@ -257,6 +265,7 @@ export function ProductCreateForm({
                       onChange={(amount) =>
                         setForm((current) => ({ ...current, amount }))
                       }
+                      placeholder={t('placeholders.amount')}
                       value={form.amount}
                     />
                     <NumberField
@@ -264,6 +273,7 @@ export function ProductCreateForm({
                       onChange={(minAmount) =>
                         setForm((current) => ({ ...current, minAmount }))
                       }
+                      placeholder={t('placeholders.minAmount')}
                       value={form.minAmount}
                     />
                     <NumberField
@@ -271,6 +281,7 @@ export function ProductCreateForm({
                       onChange={(price) =>
                         setForm((current) => ({ ...current, price }))
                       }
+                      placeholder={t('placeholders.price')}
                       value={form.price}
                     />
                   </div>

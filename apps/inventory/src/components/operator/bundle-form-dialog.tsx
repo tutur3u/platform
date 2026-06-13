@@ -185,7 +185,7 @@ export function BundleForm({
             {t('newBundle')}
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-5xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),64rem)] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('createBundleTitle')}</DialogTitle>
             <DialogDescription>
@@ -200,7 +200,7 @@ export function BundleForm({
             }}
           >
             <FormStepper activeIndex={step} steps={steps} />
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
               {step === 0 ? (
                 <StepPanel
                   description={t('steps.bundleDetailsDescription')}
@@ -212,6 +212,7 @@ export function BundleForm({
                       onChange={(name) =>
                         setForm((current) => ({ ...current, name }))
                       }
+                      placeholder={t('placeholders.bundleName')}
                       value={form.name}
                     />
                     <TextField
@@ -219,6 +220,7 @@ export function BundleForm({
                       onChange={(slug) =>
                         setForm((current) => ({ ...current, slug }))
                       }
+                      placeholder={t('placeholders.slug')}
                       value={form.slug}
                     />
                     <NumberField
@@ -226,6 +228,7 @@ export function BundleForm({
                       onChange={(price) =>
                         setForm((current) => ({ ...current, price }))
                       }
+                      placeholder={t('placeholders.price')}
                       value={form.price}
                     />
                     <NumberField
@@ -233,6 +236,7 @@ export function BundleForm({
                       onChange={(maxPerOrder) =>
                         setForm((current) => ({ ...current, maxPerOrder }))
                       }
+                      placeholder={t('placeholders.maxPerOrder')}
                       value={form.maxPerOrder}
                     />
                     <TextAreaField
@@ -241,6 +245,7 @@ export function BundleForm({
                       onChange={(description) =>
                         setForm((current) => ({ ...current, description }))
                       }
+                      placeholder={t('placeholders.bundleDescription')}
                       value={form.description}
                     />
                   </div>

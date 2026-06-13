@@ -1,13 +1,24 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Archive, Save, Trash2 } from '@tuturuuu/icons';
+import { Archive, Pencil, Save, Trash2 } from '@tuturuuu/icons';
 import type { InventoryProductSummary } from '@tuturuuu/internal-api/inventory';
 import {
   deleteInventoryProduct,
   updateInventoryProduct,
   updateInventoryProductInventory,
 } from '@tuturuuu/internal-api/inventory';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@tuturuuu/ui/dialog';
+import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -30,6 +41,7 @@ export function ProductRowActions({
   const t = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
   const inventory = row.inventory?.[0] ?? {};
+  const [stockOpen, setStockOpen] = useState(false);
   const [amount, setAmount] = useState(String(inventory.amount ?? 0));
   const [minAmount, setMinAmount] = useState(String(inventory.min_amount ?? 0));
   const [price, setPrice] = useState(String(inventory.price ?? 0));
@@ -48,6 +60,7 @@ export function ProductRowActions({
     onError: () => toast.error(t('saveError')),
     onSuccess: () => {
       toast.success(t('saveSuccess'));
+      setStockOpen(false);
       invalidateProducts(queryClient, wsId);
     },
   });
@@ -83,55 +96,94 @@ export function ProductRowActions({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {canUpdateStock ? (
-        <>
-          <input
-            className="h-8 w-20 rounded-md border border-border bg-background px-2 text-sm"
-            inputMode="numeric"
-            onChange={(event) => setAmount(event.target.value)}
-            value={amount}
-          />
-          <input
-            className="h-8 w-20 rounded-md border border-border bg-background px-2 text-sm"
-            inputMode="numeric"
-            onChange={(event) => setMinAmount(event.target.value)}
-            value={minAmount}
-          />
-          <input
-            className="h-8 w-24 rounded-md border border-border bg-background px-2 text-sm"
-            inputMode="numeric"
-            onChange={(event) => setPrice(event.target.value)}
-            value={price}
-          />
-          <button
-            className="inline-flex h-8 items-center justify-center rounded-md border border-border px-2 disabled:opacity-50"
-            disabled={stockMutation.isPending}
-            onClick={() => stockMutation.mutate()}
-            type="button"
-          >
-            <Save className="h-4 w-4" />
-          </button>
-        </>
+        <Dialog
+          onOpenChange={(nextOpen) => {
+            if (nextOpen) {
+              setAmount(String(inventory.amount ?? 0));
+              setMinAmount(String(inventory.min_amount ?? 0));
+              setPrice(String(inventory.price ?? 0));
+            }
+            setStockOpen(nextOpen);
+          }}
+          open={stockOpen}
+        >
+          <DialogTrigger asChild>
+            <Button size="sm" type="button" variant="outline">
+              <Pencil className="h-4 w-4" />
+              {t('editStock')}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),32rem)] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t('editStockTitle')}</DialogTitle>
+              <DialogDescription>{t('editStockDescription')}</DialogDescription>
+            </DialogHeader>
+            <form
+              className="grid gap-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                stockMutation.mutate();
+              }}
+            >
+              <label className="grid min-w-0 gap-1 text-sm">
+                <span className="font-medium">{t('amount')}</span>
+                <Input
+                  inputMode="numeric"
+                  onChange={(event) => setAmount(event.target.value)}
+                  placeholder={t('placeholders.amount')}
+                  value={amount}
+                />
+              </label>
+              <label className="grid min-w-0 gap-1 text-sm">
+                <span className="font-medium">{t('minAmount')}</span>
+                <Input
+                  inputMode="numeric"
+                  onChange={(event) => setMinAmount(event.target.value)}
+                  placeholder={t('placeholders.minAmount')}
+                  value={minAmount}
+                />
+              </label>
+              <label className="grid min-w-0 gap-1 text-sm">
+                <span className="font-medium">{t('price')}</span>
+                <Input
+                  inputMode="numeric"
+                  onChange={(event) => setPrice(event.target.value)}
+                  placeholder={t('placeholders.price')}
+                  value={price}
+                />
+              </label>
+              <DialogFooter>
+                <Button disabled={stockMutation.isPending} type="submit">
+                  <Save className="h-4 w-4" />
+                  {t('save')}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       ) : null}
-      <button
-        className="inline-flex h-8 items-center justify-center rounded-md border border-border px-2 disabled:opacity-50"
+      <Button
         disabled={
           archiveMutation.isPending ||
           !row.category_id ||
           !(row.owner_id ?? row.owner?.id)
         }
         onClick={() => archiveMutation.mutate()}
+        size="icon"
         type="button"
+        variant="outline"
       >
         <Archive className="h-4 w-4" />
-      </button>
-      <button
-        className="inline-flex h-8 items-center justify-center rounded-md border border-destructive/30 px-2 text-destructive disabled:opacity-50"
+      </Button>
+      <Button
         disabled={deleteMutation.isPending}
         onClick={() => deleteMutation.mutate()}
+        size="icon"
         type="button"
+        variant="destructive"
       >
         <Trash2 className="h-4 w-4" />
-      </button>
+      </Button>
     </div>
   );
 }
