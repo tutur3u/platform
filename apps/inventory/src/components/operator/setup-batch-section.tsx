@@ -5,6 +5,8 @@ import { Layers3, Plus, Trash2 } from '@tuturuuu/icons';
 import type { InventoryProductFormOptionsResponse } from '@tuturuuu/internal-api/inventory';
 import {
   createInventoryBatch,
+  createInventorySupplier,
+  createInventoryWarehouse,
   deleteInventoryBatch,
 } from '@tuturuuu/internal-api/inventory';
 import type { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
@@ -20,22 +22,12 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
+import { SelectField } from './operator-form-fields';
 import { EmptyRow } from './operator-shell';
-import {
-  EMPTY_SELECT_VALUE,
-  invalidateSetup,
-  namedRows,
-} from './setup-helpers';
+import { invalidateSetup, namedRows } from './setup-helpers';
 
 function BatchCreateDialog({
   options,
@@ -52,6 +44,19 @@ function BatchCreateDialog({
   const [warehouseId, setWarehouseId] = useState('');
   const [supplierId, setSupplierId] = useState('');
   const [price, setPrice] = useState('');
+  const createReference = async (create: () => Promise<unknown>) => {
+    try {
+      const result = await create();
+      invalidateSetup(queryClient, wsId);
+      return result;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('saveError'));
+      throw error;
+    }
+  };
+  const createText = (resource: string) => t('createOption', { resource });
+  const creatingText = (resource: string) => t('creatingOption', { resource });
+  const searchText = (resource: string) => t('searchOptions', { resource });
   const createMutation = useMutation({
     mutationFn: () =>
       createInventoryBatch(wsId, {
@@ -90,52 +95,34 @@ function BatchCreateDialog({
             if (warehouseId) createMutation.mutate();
           }}
         >
-          <label className="grid min-w-0 gap-1 text-sm">
-            <span className="font-medium">{t('warehouse')}</span>
-            <Select
-              onValueChange={(value) =>
-                setWarehouseId(value === EMPTY_SELECT_VALUE ? '' : value)
-              }
-              value={warehouseId || EMPTY_SELECT_VALUE}
-            >
-              <SelectTrigger className="min-w-0">
-                <SelectValue placeholder={t('placeholders.warehouse')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={EMPTY_SELECT_VALUE}>
-                  {t('placeholders.warehouse')}
-                </SelectItem>
-                {options?.warehouses.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-          <label className="grid min-w-0 gap-1 text-sm">
-            <span className="font-medium">{t('supplier')}</span>
-            <Select
-              onValueChange={(value) =>
-                setSupplierId(value === EMPTY_SELECT_VALUE ? '' : value)
-              }
-              value={supplierId || EMPTY_SELECT_VALUE}
-            >
-              <SelectTrigger className="min-w-0">
-                <SelectValue placeholder={t('placeholders.supplier')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={EMPTY_SELECT_VALUE}>
-                  {t('placeholders.supplier')}
-                </SelectItem>
-                {namedRows(suppliers).map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
+          <SelectField
+            createText={createText(t('warehouse'))}
+            creatingText={creatingText(t('warehouse'))}
+            emptyText={t('emptyOptions')}
+            label={t('warehouse')}
+            onChange={setWarehouseId}
+            onCreate={(name) =>
+              createReference(() => createInventoryWarehouse(wsId, { name }))
+            }
+            options={options?.warehouses}
+            placeholder={t('placeholders.warehouse')}
+            searchPlaceholder={searchText(t('warehouse'))}
+            value={warehouseId}
+          />
+          <SelectField
+            createText={createText(t('supplier'))}
+            creatingText={creatingText(t('supplier'))}
+            emptyText={t('emptyOptions')}
+            label={t('supplier')}
+            onChange={setSupplierId}
+            onCreate={(name) =>
+              createReference(() => createInventorySupplier(wsId, { name }))
+            }
+            options={namedRows(suppliers)}
+            placeholder={t('placeholders.supplier')}
+            searchPlaceholder={searchText(t('supplier'))}
+            value={supplierId}
+          />
           <label className="grid min-w-0 gap-1 text-sm">
             <span className="font-medium">{t('price')}</span>
             <Input

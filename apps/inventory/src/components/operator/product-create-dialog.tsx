@@ -9,7 +9,14 @@ import {
   Tags,
 } from '@tuturuuu/icons';
 import type { InventoryProductFormOptionsResponse } from '@tuturuuu/internal-api/inventory';
-import { createInventoryProduct } from '@tuturuuu/internal-api/inventory';
+import {
+  createInventoryManufacturer,
+  createInventoryOwner,
+  createInventoryProduct,
+  createInventoryProductCategory,
+  createInventoryUnit,
+  createInventoryWarehouse,
+} from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -125,6 +132,24 @@ export function ProductCreateForm({
   const canSubmit = Boolean(form.name && form.categoryId && form.ownerId);
   const canContinue = step === 0 ? canSubmit : true;
   const suggestions = useProductSuggestions(form, setForm, options);
+  const createReference = async (create: () => Promise<unknown>) => {
+    try {
+      const result = await create();
+      queryClient.invalidateQueries({
+        queryKey: ['inventory', wsId, 'form-options'],
+      });
+      return result;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('saveError'));
+      throw error;
+    }
+  };
+  const referenceCreateText = (resource: string) =>
+    t('createOption', { resource });
+  const referenceCreatingText = (resource: string) =>
+    t('creatingOption', { resource });
+  const referenceSearchText = (resource: string) =>
+    t('searchOptions', { resource });
 
   return (
     <div className="flex justify-end">
@@ -173,30 +198,57 @@ export function ProductCreateForm({
                       value={form.name}
                     />
                     <SelectField
+                      createText={referenceCreateText(t('category'))}
+                      creatingText={referenceCreatingText(t('category'))}
+                      emptyText={t('emptyOptions')}
                       label={t('category')}
                       onChange={(categoryId) =>
                         setForm((current) => ({ ...current, categoryId }))
                       }
+                      onCreate={(name) =>
+                        createReference(() =>
+                          createInventoryProductCategory(wsId, { name })
+                        )
+                      }
                       options={options?.categories}
                       placeholder={t('placeholders.category')}
+                      searchPlaceholder={referenceSearchText(t('category'))}
                       value={form.categoryId}
                     />
                     <SelectField
+                      createText={referenceCreateText(t('owner'))}
+                      creatingText={referenceCreatingText(t('owner'))}
+                      emptyText={t('emptyOptions')}
                       label={t('owner')}
                       onChange={(ownerId) =>
                         setForm((current) => ({ ...current, ownerId }))
                       }
+                      onCreate={(name) =>
+                        createReference(() =>
+                          createInventoryOwner(wsId, { name })
+                        )
+                      }
                       options={options?.owners}
                       placeholder={t('placeholders.owner')}
+                      searchPlaceholder={referenceSearchText(t('owner'))}
                       value={form.ownerId}
                     />
                     <SelectField
+                      createText={referenceCreateText(t('manufacturer'))}
+                      creatingText={referenceCreatingText(t('manufacturer'))}
+                      emptyText={t('emptyOptions')}
                       label={t('manufacturer')}
                       onChange={(manufacturerId) =>
                         setForm((current) => ({ ...current, manufacturerId }))
                       }
+                      onCreate={(name) =>
+                        createReference(() =>
+                          createInventoryManufacturer(wsId, { name })
+                        )
+                      }
                       options={options?.manufacturers}
                       placeholder={t('placeholders.manufacturer')}
+                      searchPlaceholder={referenceSearchText(t('manufacturer'))}
                       value={form.manufacturerId}
                     />
                     <TextField
@@ -243,21 +295,39 @@ export function ProductCreateForm({
                 >
                   <div className="grid gap-3 md:grid-cols-2">
                     <SelectField
+                      createText={referenceCreateText(t('unit'))}
+                      creatingText={referenceCreatingText(t('unit'))}
+                      emptyText={t('emptyOptions')}
                       label={t('unit')}
                       onChange={(unitId) =>
                         setForm((current) => ({ ...current, unitId }))
                       }
+                      onCreate={(name) =>
+                        createReference(() =>
+                          createInventoryUnit(wsId, { name })
+                        )
+                      }
                       options={options?.units}
                       placeholder={t('placeholders.unit')}
+                      searchPlaceholder={referenceSearchText(t('unit'))}
                       value={form.unitId}
                     />
                     <SelectField
+                      createText={referenceCreateText(t('warehouse'))}
+                      creatingText={referenceCreatingText(t('warehouse'))}
+                      emptyText={t('emptyOptions')}
                       label={t('warehouse')}
                       onChange={(warehouseId) =>
                         setForm((current) => ({ ...current, warehouseId }))
                       }
+                      onCreate={(name) =>
+                        createReference(() =>
+                          createInventoryWarehouse(wsId, { name })
+                        )
+                      }
                       options={options?.warehouses}
                       placeholder={t('placeholders.warehouse')}
+                      searchPlaceholder={referenceSearchText(t('warehouse'))}
                       value={form.warehouseId}
                     />
                     <NumberField

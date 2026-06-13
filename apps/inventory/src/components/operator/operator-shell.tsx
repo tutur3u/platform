@@ -2,14 +2,8 @@
 
 import { PackageOpen, RefreshCw, Search } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -109,7 +103,7 @@ export function Toolbar({
     : (statusOptions[0]?.value ?? 'all');
 
   return (
-    <div className="sticky top-0 z-20 flex flex-col gap-2 bg-transparent py-2 lg:flex-row lg:items-center lg:justify-between">
+    <div className="sticky top-0 z-20 grid min-w-0 grid-cols-1 gap-2 bg-transparent py-2 lg:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)] lg:items-center">
       <label className="relative flex min-w-0 flex-1 items-center">
         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -119,21 +113,20 @@ export function Toolbar({
           value={filters.q}
         />
       </label>
-      <Select
-        onValueChange={(status) => setFilters({ status })}
-        value={selectedStatus}
-      >
-        <SelectTrigger className="h-9 min-w-36">
-          <SelectValue placeholder={t('statuses.all')} />
-        </SelectTrigger>
-        <SelectContent>
-          {statusOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Combobox
+        className="min-w-0"
+        emptyText={t('statusEmpty')}
+        onChange={(status) =>
+          setFilters({ status: typeof status === 'string' ? status : 'all' })
+        }
+        options={statusOptions.map((option) => ({
+          label: option.label,
+          value: option.value,
+        }))}
+        placeholder={t('statuses.all')}
+        searchPlaceholder={t('statusSearch')}
+        selected={selectedStatus}
+      />
     </div>
   );
 }

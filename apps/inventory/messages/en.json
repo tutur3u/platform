@@ -945,6 +945,7 @@
       "forms": {
         "accentColor": "Accent color",
         "actions": "Actions",
+        "addComponent": "Add component",
         "amount": "Amount",
         "attached": "Attached",
         "back": "Back",
@@ -979,6 +980,7 @@
         "createBundleTitle": "Create bundle",
         "createListingDescription": "Choose a product or bundle, then set the buyer-facing title and price.",
         "createListingTitle": "Create storefront listing",
+        "createOption": "Create {resource}",
         "createProductDescription": "Add product details and optional opening stock in a warehouse.",
         "createProductTitle": "Create product",
         "createResourceDescription": "Add a {resource} record for products, stock rows, and storefront readiness.",
@@ -988,6 +990,7 @@
         "createStorefrontSuccess": "Storefront created.",
         "createStorefrontTitle": "Create storefront",
         "creating": "Creating...",
+        "creatingOption": "Creating {resource}...",
         "currency": "Currency",
         "delete": "Delete",
         "deleteError": "Could not delete record.",
@@ -1003,6 +1006,7 @@
         "editStockTitle": "Edit stock row",
         "editStorefrontDescription": "Customize storefront copy, visibility, and buyer-facing theme.",
         "editStorefrontTitle": "Customize storefront",
+        "emptyOptions": "No matching options.",
         "emptyResource": "No setup records yet.",
         "featuredImage": "Featured image",
         "featuredImageDescription": "Upload a product image to Tuturuuu Drive or paste a hosted product image URL.",
@@ -1020,6 +1024,7 @@
           "list": "List"
         },
         "listingTitle": "Listing title",
+        "listingType": "Listing type",
         "manageComponents": "Manage",
         "manageComponentsTitle": "Manage bundle components",
         "manufacturer": "Manufacturer",
@@ -1086,6 +1091,7 @@
         "save": "Save",
         "saveError": "Could not save changes.",
         "saveSuccess": "Changes saved.",
+        "searchOptions": "Search {resource}",
         "showInventoryBadges": "Show inventory badges on buyer listings",
         "slug": "slug",
         "status": "Status",
@@ -1208,6 +1214,7 @@
         "description": "Save workspace-owned Polar tokens and choose checkout environments for storefront orders.",
         "dialogDescription": "Paste the workspace-owned Polar organization token for one environment. The token is never shown in the page body.",
         "dialogTitle": "Manage Polar token",
+        "emptyEnvironments": "No environments found.",
         "environment": {
           "production": "Production",
           "sandbox": "Sandbox"
@@ -1225,6 +1232,7 @@
         "saveSuccess": "Polar settings saved.",
         "saveToken": "Save token",
         "saving": "Saving...",
+        "searchEnvironments": "Search environments",
         "testingDefault": "Testing default",
         "title": "Polar checkout",
         "tokenEnding": "Token ending in {last4}",
@@ -1264,6 +1272,7 @@
         "errorTitle": "Inventory data could not be loaded",
         "retry": "Retry"
       },
+      "statusEmpty": "No statuses found.",
       "statuses": {
         "active": "Active",
         "all": "All",
@@ -1274,6 +1283,7 @@
         "published": "Published",
         "reserved": "Reserved"
       },
+      "statusSearch": "Search status",
       "views": {
         "audits": {
           "description": "Trace inventory, checkout, and finance events in one audit timeline.",

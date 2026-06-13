@@ -24,8 +24,8 @@ function formatDate(value: string | null, locale: string) {
 
 function AuditBadge({ children }: { children: string }) {
   return (
-    <span className="inline-flex h-6 items-center rounded-md border border-border bg-muted/45 px-2 font-medium text-muted-foreground text-xs">
-      {children}
+    <span className="inline-flex h-6 min-w-0 max-w-full items-center rounded-md border border-border bg-muted/45 px-2 font-medium text-muted-foreground text-xs">
+      <span className="truncate">{children}</span>
     </span>
   );
 }
@@ -57,16 +57,16 @@ export function AuditRows({ rows }: { rows: InventoryAuditLogSummary[] }) {
 
         return (
           <article
-            className="grid gap-3 rounded-lg border border-border bg-card p-3 text-sm"
+            className="grid min-w-0 gap-3 overflow-hidden rounded-lg border border-border bg-card p-3 text-sm"
             key={row.auditRecordId}
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
+            <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 max-w-full">
                 <div className="flex min-w-0 items-center gap-2">
                   <ClipboardList className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <p className="truncate font-medium">{row.summary}</p>
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
+                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
                   <AuditBadge>{labelFrom(row.eventKind)}</AuditBadge>
                   <AuditBadge>{labelFrom(row.entityKind)}</AuditBadge>
                   {row.changedFields.length > 0 ? (
@@ -79,7 +79,7 @@ export function AuditRows({ rows }: { rows: InventoryAuditLogSummary[] }) {
                 </div>
               </div>
             </div>
-            <div className="grid gap-2 text-muted-foreground text-xs sm:grid-cols-3">
+            <div className="grid min-w-0 gap-2 text-muted-foreground text-xs sm:grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))]">
               <span className="inline-flex min-w-0 items-center gap-2">
                 <FileText className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{entity}</span>

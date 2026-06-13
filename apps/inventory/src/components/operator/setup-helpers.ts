@@ -1,8 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { ComponentType } from 'react';
 
-export const EMPTY_SELECT_VALUE = '__inventory_empty__';
-
 export type NamedResource = { id: string; name?: string | null };
 
 export type ResourceConfig = {

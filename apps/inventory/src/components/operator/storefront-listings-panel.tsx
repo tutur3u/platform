@@ -24,20 +24,12 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
+import { SelectField, SelectValueField } from './operator-form-fields';
 import { currency } from './operator-format';
 import { EmptyRow, LoadingRows } from './operator-shell';
-
-const EMPTY_SELECT_VALUE = '__inventory_empty__';
 
 export function StorefrontListingsPanel({
   bundles,
@@ -116,21 +108,19 @@ export function StorefrontListingsPanel({
   return (
     <section className="grid gap-3 rounded-lg border border-border bg-card p-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <label className="grid min-w-0 flex-1 gap-1 text-sm">
-          <span className="font-medium">{t('storefront')}</span>
-          <Select onValueChange={setStorefrontId} value={activeStorefrontId}>
-            <SelectTrigger className="h-10 min-w-0">
-              <SelectValue placeholder={t('placeholders.storefront')} />
-            </SelectTrigger>
-            <SelectContent>
-              {storefronts.map((storefront) => (
-                <SelectItem key={storefront.id} value={storefront.id}>
-                  {storefront.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </label>
+        <SelectField
+          allowEmpty={false}
+          className="min-w-0 flex-1"
+          emptyText={t('emptyOptions')}
+          label={t('storefront')}
+          onChange={setStorefrontId}
+          options={storefronts}
+          placeholder={t('placeholders.storefront')}
+          searchPlaceholder={t('searchOptions', {
+            resource: t('storefront'),
+          })}
+          value={activeStorefrontId}
+        />
         <Dialog onOpenChange={setOpen} open={open}>
           <DialogTrigger asChild>
             <Button type="button" variant="secondary">
@@ -153,51 +143,35 @@ export function StorefrontListingsPanel({
               }}
             >
               <div className="grid gap-3 md:grid-cols-2">
-                <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{t('product')}</span>
-                  <Select
-                    onValueChange={(value) => {
-                      setListingType(value as 'product' | 'bundle');
-                      setTargetId('');
-                    }}
-                    value={listingType}
-                  >
-                    <SelectTrigger className="h-10 min-w-0">
-                      <SelectValue
-                        placeholder={t('placeholders.listingType')}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="product">{t('product')}</SelectItem>
-                      <SelectItem value="bundle">{t('bundle')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </label>
-                <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{t('target')}</span>
-                  <Select
-                    onValueChange={(value) =>
-                      setTargetId(value === EMPTY_SELECT_VALUE ? '' : value)
-                    }
-                    value={targetId || EMPTY_SELECT_VALUE}
-                  >
-                    <SelectTrigger className="h-10 min-w-0">
-                      <SelectValue placeholder={t('placeholders.target')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={EMPTY_SELECT_VALUE}>
-                        {t('placeholders.target')}
-                      </SelectItem>
-                      {(listingType === 'product' ? products : bundles).map(
-                        (item) => (
-                          <SelectItem key={item.id} value={item.id}>
-                            {item.name}
-                          </SelectItem>
-                        )
-                      )}
-                    </SelectContent>
-                  </Select>
-                </label>
+                <SelectValueField
+                  allowEmpty={false}
+                  emptyText={t('emptyOptions')}
+                  label={t('listingType')}
+                  onChange={(value) => {
+                    setListingType(value as 'product' | 'bundle');
+                    setTargetId('');
+                  }}
+                  options={[
+                    { label: t('product'), value: 'product' },
+                    { label: t('bundle'), value: 'bundle' },
+                  ]}
+                  placeholder={t('placeholders.listingType')}
+                  searchPlaceholder={t('searchOptions', {
+                    resource: t('listingType'),
+                  })}
+                  value={listingType}
+                />
+                <SelectField
+                  emptyText={t('emptyOptions')}
+                  label={t('target')}
+                  onChange={setTargetId}
+                  options={listingType === 'product' ? products : bundles}
+                  placeholder={t('placeholders.target')}
+                  searchPlaceholder={t('searchOptions', {
+                    resource: t('target'),
+                  })}
+                  value={targetId}
+                />
                 <label className="grid min-w-0 gap-1 text-sm">
                   <span className="font-medium">{t('listingTitle')}</span>
                   <Input
@@ -282,10 +256,12 @@ function ListingRow({
   });
 
   return (
-    <div className="grid gap-2 rounded-md border border-border bg-background p-3 text-sm sm:grid-cols-[1fr_auto_auto_auto] sm:items-center">
-      <div>
-        <p className="font-medium">{listing.title}</p>
-        <p className="text-muted-foreground text-xs">{listing.status}</p>
+    <div className="grid min-w-0 gap-2 rounded-md border border-border bg-background p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-center">
+      <div className="min-w-0">
+        <p className="truncate font-medium">{listing.title}</p>
+        <p className="truncate text-muted-foreground text-xs">
+          {listing.status}
+        </p>
       </div>
       <span>{currency(listing.price)}</span>
       <Button

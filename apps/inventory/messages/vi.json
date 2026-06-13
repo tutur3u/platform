@@ -945,6 +945,7 @@
       "forms": {
         "accentColor": "Màu nhấn",
         "actions": "Thao tác",
+        "addComponent": "Thêm thành phần",
         "amount": "Số lượng",
         "attached": "Đã đính kèm",
         "back": "Quay lại",
@@ -979,6 +980,7 @@
         "createBundleTitle": "Tạo combo",
         "createListingDescription": "Chọn sản phẩm hoặc combo, rồi đặt tiêu đề và giá hiển thị cho khách.",
         "createListingTitle": "Tạo listing cửa hàng",
+        "createOption": "Tạo {resource}",
         "createProductDescription": "Thêm thông tin sản phẩm và tồn kho ban đầu nếu cần.",
         "createProductTitle": "Tạo sản phẩm",
         "createResourceDescription": "Thêm bản ghi {resource} cho sản phẩm, dòng tồn kho và mức sẵn sàng của cửa hàng.",
@@ -988,6 +990,7 @@
         "createStorefrontSuccess": "Đã tạo cửa hàng.",
         "createStorefrontTitle": "Tạo cửa hàng",
         "creating": "Đang tạo...",
+        "creatingOption": "Đang tạo {resource}...",
         "currency": "Tiền tệ",
         "delete": "Xóa",
         "deleteError": "Không thể xóa bản ghi.",
@@ -1003,6 +1006,7 @@
         "editStockTitle": "Chỉnh sửa dòng tồn kho",
         "editStorefrontDescription": "Tùy chỉnh nội dung, hiển thị và giao diện cửa hàng.",
         "editStorefrontTitle": "Tùy chỉnh cửa hàng",
+        "emptyOptions": "Không có tùy chọn phù hợp.",
         "emptyResource": "Chưa có bản ghi thiết lập.",
         "featuredImage": "Ảnh đại diện",
         "featuredImageDescription": "Tải ảnh sản phẩm lên Tuturuuu Drive hoặc dán URL ảnh đã lưu trữ.",
@@ -1020,6 +1024,7 @@
           "list": "Danh sách"
         },
         "listingTitle": "Tiêu đề listing",
+        "listingType": "Loại listing",
         "manageComponents": "Quản lý",
         "manageComponentsTitle": "Quản lý thành phần combo",
         "manufacturer": "Nhà sản xuất",
@@ -1086,6 +1091,7 @@
         "save": "Lưu",
         "saveError": "Không thể lưu thay đổi.",
         "saveSuccess": "Đã lưu thay đổi.",
+        "searchOptions": "Tìm {resource}",
         "showInventoryBadges": "Hiển thị nhãn tồn kho trên listing",
         "slug": "slug",
         "status": "Trạng thái",
@@ -1208,6 +1214,7 @@
         "description": "Lưu token Polar của workspace và chọn môi trường thanh toán cho đơn cửa hàng.",
         "dialogDescription": "Dán token tổ chức Polar do workspace sở hữu cho từng môi trường. Token không hiển thị trong thân trang.",
         "dialogTitle": "Quản lý token Polar",
+        "emptyEnvironments": "Không tìm thấy môi trường.",
         "environment": {
           "production": "Production",
           "sandbox": "Sandbox"
@@ -1225,6 +1232,7 @@
         "saveSuccess": "Đã lưu cài đặt Polar.",
         "saveToken": "Lưu token",
         "saving": "Đang lưu...",
+        "searchEnvironments": "Tìm môi trường",
         "testingDefault": "Mặc định testing",
         "title": "Thanh toán Polar",
         "tokenEnding": "Token kết thúc bằng {last4}",
@@ -1264,6 +1272,7 @@
         "errorTitle": "Không thể tải dữ liệu kho",
         "retry": "Thử lại"
       },
+      "statusEmpty": "Không tìm thấy trạng thái.",
       "statuses": {
         "active": "Đang hoạt động",
         "all": "Tất cả",
@@ -1274,6 +1283,7 @@
         "published": "Đã xuất bản",
         "reserved": "Đã giữ hàng"
       },
+      "statusSearch": "Tìm trạng thái",
       "views": {
         "audits": {
           "description": "Truy vết tồn kho, checkout và tài chính trong một timeline kiểm toán.",

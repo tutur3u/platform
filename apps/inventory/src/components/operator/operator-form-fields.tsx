@@ -1,19 +1,16 @@
 'use client';
 
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import { Input } from '@tuturuuu/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
+  Combobox,
+  type ComboboxAction,
+  type ComboboxCreateResult,
+  type ComboboxOption,
+} from '@tuturuuu/ui/custom/combobox';
+import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import type { ReactNode } from 'react';
-
-const EMPTY_SELECT_VALUE = '__inventory_empty__';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 export function TextField({
   className,
@@ -84,81 +81,166 @@ export function TextAreaField({
 }
 
 export function SelectField({
+  actions,
+  allowEmpty = true,
   className,
+  createText,
+  creatingText,
+  emptyText,
   label,
   onChange,
+  onCreate,
   options = [],
   placeholder,
+  searchPlaceholder,
   value,
 }: {
+  actions?: ComboboxAction[];
+  allowEmpty?: boolean;
   className?: string;
+  createText?: string;
+  creatingText?: string;
+  emptyText?: string;
   label: string;
   onChange: (value: string) => void;
+  onCreate?: (value: string) => ComboboxCreateResult | Promise<unknown>;
   options?: { id: string; name?: string | null }[];
   placeholder: string;
+  searchPlaceholder?: string;
   value: string;
 }) {
+  const [pendingCreatedName, setPendingCreatedName] = useState<string | null>(
+    null
+  );
+  const normalizedPendingCreatedName = normalizeOptionText(
+    pendingCreatedName ?? ''
+  );
+  const comboboxOptions = useMemo<ComboboxOption[]>(
+    () => [
+      ...(allowEmpty
+        ? [
+            {
+              label: placeholder,
+              muted: true,
+              searchValue: placeholder,
+              value: '',
+            },
+          ]
+        : []),
+      ...options.map((item) => ({
+        label: item.name ?? item.id,
+        searchValue: `${item.name ?? ''} ${item.id}`,
+        value: item.id,
+      })),
+    ],
+    [allowEmpty, options, placeholder]
+  );
+
+  useEffect(() => {
+    if (!normalizedPendingCreatedName) return;
+
+    const match = options.find(
+      (option) =>
+        normalizeOptionText(option.name ?? option.id) ===
+        normalizedPendingCreatedName
+    );
+
+    if (!match) return;
+
+    onChange(match.id);
+    setPendingCreatedName(null);
+  }, [normalizedPendingCreatedName, onChange, options]);
+
+  const handleCreate = onCreate
+    ? async (name: string): Promise<ComboboxCreateResult> => {
+        const result = await onCreate(name);
+        const option = optionFromCreateResult(result, name);
+
+        if (!option) {
+          setPendingCreatedName(name);
+        }
+
+        return option;
+      }
+    : undefined;
+
   return (
     <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
       <span className="font-medium">{label}</span>
-      <Select
-        onValueChange={(nextValue) =>
-          onChange(nextValue === EMPTY_SELECT_VALUE ? '' : nextValue)
+      <Combobox
+        actions={actions}
+        className="min-w-0"
+        createText={createText}
+        creatingText={creatingText}
+        emptyText={emptyText}
+        onChange={(nextValue) =>
+          onChange(typeof nextValue === 'string' ? nextValue : '')
         }
-        value={value || EMPTY_SELECT_VALUE}
-      >
-        <SelectTrigger className="h-10 min-w-0">
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={EMPTY_SELECT_VALUE}>{placeholder}</SelectItem>
-          {options.map((item) => (
-            <SelectItem key={item.id} value={item.id}>
-              {item.name ?? item.id}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        onCreate={handleCreate}
+        options={comboboxOptions}
+        placeholder={placeholder}
+        searchPlaceholder={searchPlaceholder ?? placeholder}
+        selected={value}
+      />
     </label>
   );
 }
 
 export function SelectValueField({
+  actions,
+  allowEmpty = true,
   className,
+  emptyText,
   label,
   onChange,
   options,
   placeholder,
+  searchPlaceholder,
   value,
 }: {
+  actions?: ComboboxAction[];
+  allowEmpty?: boolean;
   className?: string;
+  emptyText?: string;
   label: string;
   onChange: (value: string) => void;
   options: { label: string; value: string }[];
   placeholder: string;
+  searchPlaceholder?: string;
   value: string;
 }) {
+  const comboboxOptions = useMemo<ComboboxOption[]>(
+    () => [
+      ...(allowEmpty
+        ? [
+            {
+              label: placeholder,
+              muted: true,
+              searchValue: placeholder,
+              value: '',
+            },
+          ]
+        : []),
+      ...options,
+    ],
+    [allowEmpty, options, placeholder]
+  );
+
   return (
     <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
       <span className="font-medium">{label}</span>
-      <Select
-        onValueChange={(nextValue) =>
-          onChange(nextValue === EMPTY_SELECT_VALUE ? '' : nextValue)
+      <Combobox
+        actions={actions}
+        className="min-w-0"
+        emptyText={emptyText}
+        onChange={(nextValue) =>
+          onChange(typeof nextValue === 'string' ? nextValue : '')
         }
-        value={value || EMPTY_SELECT_VALUE}
-      >
-        <SelectTrigger className="h-10 min-w-0">
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={EMPTY_SELECT_VALUE}>{placeholder}</SelectItem>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        options={comboboxOptions}
+        placeholder={placeholder}
+        searchPlaceholder={searchPlaceholder ?? placeholder}
+        selected={value}
+      />
     </label>
   );
 }
@@ -210,4 +292,45 @@ export function ReviewRows({
       ))}
     </dl>
   );
+}
+
+function normalizeOptionText(value: string) {
+  return value.trim().toLocaleLowerCase();
+}
+
+function optionFromCreateResult(
+  result: unknown,
+  fallbackName: string
+): ComboboxCreateResult {
+  if (typeof result === 'string') return result;
+  if (!result || typeof result !== 'object') return undefined;
+
+  if ('value' in result && typeof result.value === 'string') {
+    return result as ComboboxOption;
+  }
+
+  const maybeData =
+    'data' in result && result.data && typeof result.data === 'object'
+      ? result.data
+      : result;
+
+  if (
+    maybeData &&
+    typeof maybeData === 'object' &&
+    'id' in maybeData &&
+    typeof maybeData.id === 'string'
+  ) {
+    const name =
+      'name' in maybeData && typeof maybeData.name === 'string'
+        ? maybeData.name
+        : fallbackName;
+
+    return {
+      label: name,
+      searchValue: `${name} ${maybeData.id}`,
+      value: maybeData.id,
+    };
+  }
+
+  return undefined;
 }

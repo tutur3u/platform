@@ -14,7 +14,6 @@ import {
   CommandSeparator,
 } from '../command';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
-import { Separator } from '../separator';
 
 export type ComboboxOption = {
   value: string;
@@ -35,6 +34,8 @@ export type ComboboxAction = {
   icon?: React.ReactNode;
   disabled?: boolean;
 };
+
+export type ComboboxCreateResult = string | ComboboxOption | undefined;
 
 /** @deprecated Use ComboboxOption instead */
 export type ComboboxOptions = ComboboxOption;
@@ -62,6 +63,8 @@ interface ComboboxProps {
   emptyText?: string;
   /** Text to display when creating a new item (used with onCreate) */
   createText?: string;
+  /** Text to display while a new item is being created */
+  creatingText?: string;
   /** Override label shown on the trigger button */
   label?: React.ReactNode;
   /** Additional class name for the container */
@@ -71,7 +74,7 @@ interface ComboboxProps {
   /** Whether to select the first option by default */
   useFirstValueAsDefault?: boolean;
   /** Callback to create a new option from the search query */
-  onCreate?: (value: string) => void;
+  onCreate?: (value: string) => unknown | Promise<unknown>;
   /** Callback when search input changes */
   onSearchChange?: (value: string) => void;
   /** Whether there are more options to load */
@@ -102,6 +105,7 @@ export function Combobox({
   searchPlaceholder,
   emptyText,
   createText,
+  creatingText,
   label,
   className,
   disabled,
@@ -117,14 +121,31 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState<string>('');
+  const [creating, setCreating] = React.useState(false);
+  const createInFlightRef = React.useRef(false);
   const actionValuePrefix = '__combobox_action__';
+  const createValuePrefix = '__combobox_create__';
 
   // Resolve text with fallbacks: explicit prop > t function > default
   const resolvedEmptyText =
     emptyText ?? t?.('common.empty') ?? 'No results found.';
   const resolvedCreateText = createText ?? t?.('common.add') ?? 'Create';
+  const resolvedCreatingText =
+    creatingText ?? t?.('common.creating') ?? 'Creating...';
   const resolvedSearchPlaceholder =
     searchPlaceholder ?? placeholder ?? 'Search...';
+  const normalizedQuery = normalizeComboboxText(query);
+  const trimmedQuery = query.trim();
+  const hasExactQueryMatch = React.useMemo(() => {
+    if (!normalizedQuery) return false;
+
+    return options.some((option) =>
+      [option.label, option.value, option.searchValue]
+        .filter((value): value is string => typeof value === 'string')
+        .some((value) => normalizeComboboxText(value) === normalizedQuery)
+    );
+  }, [normalizedQuery, options]);
+  const canCreate = Boolean(onCreate && normalizedQuery && !hasExactQueryMatch);
 
   React.useEffect(() => {
     if (!open) {
@@ -206,8 +227,55 @@ export function Combobox({
     );
   };
 
+  const commitCreatedValue = React.useCallback(
+    (result: unknown) => {
+      if (!onChange) return;
+
+      const createdValue =
+        typeof result === 'string'
+          ? result
+          : result &&
+              typeof result === 'object' &&
+              'value' in result &&
+              typeof result.value === 'string'
+            ? result.value
+            : undefined;
+
+      if (!createdValue) return;
+
+      if (mode === 'multiple' && Array.isArray(selected)) {
+        if (!selected.includes(createdValue)) {
+          onChange([...selected, createdValue]);
+        }
+        return;
+      }
+
+      onChange(createdValue);
+    },
+    [mode, onChange, selected]
+  );
+
+  const handleCreate = React.useCallback(async () => {
+    if (!onCreate || !trimmedQuery || createInFlightRef.current) return;
+
+    createInFlightRef.current = true;
+    setCreating(true);
+
+    try {
+      const result = await onCreate(trimmedQuery);
+      commitCreatedValue(result);
+      setOpen(false);
+      setQuery('');
+    } catch {
+      // Keep the popover open so callers can surface their own error UI.
+    } finally {
+      createInFlightRef.current = false;
+      setCreating(false);
+    }
+  }, [commitCreatedValue, onCreate, trimmedQuery]);
+
   return (
-    <div className={cn('block', className)}>
+    <div className={cn('block min-w-0', className)}>
       <Popover open={open} onOpenChange={setOpen} modal={true}>
         <PopoverTrigger asChild>
           <Button
@@ -216,7 +284,7 @@ export function Combobox({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              'w-full justify-between',
+              'w-full min-w-0 justify-between overflow-hidden',
               !selectedLabel && 'text-muted-foreground'
             )}
             disabled={disabled}
@@ -254,7 +322,7 @@ export function Combobox({
                     : selectedOption.icon}
                 </span>
               )}
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0 flex-1 truncate text-left">
                 {label ? (
                   label
                 ) : (
@@ -281,13 +349,14 @@ export function Combobox({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="z-9999 w-(--radix-popover-trigger-width) p-0"
+          className="z-9999 w-(--radix-popover-trigger-width) max-w-[calc(100vw-2rem)] p-0"
           align="start"
           sideOffset={4}
         >
           <Command
             filter={(value, search) => {
               if (value.startsWith(actionValuePrefix)) return 1;
+              if (value.startsWith(createValuePrefix)) return 1;
               if (value.toLowerCase().includes(search.toLowerCase())) return 1;
               return 0;
             }}
@@ -300,38 +369,11 @@ export function Combobox({
                 onSearchChange?.(value);
               }}
             />
-            <CommandEmpty className="flex flex-col items-center justify-center p-1">
-              <div className="p-8 text-muted-foreground text-sm">
-                {resolvedEmptyText}
-              </div>
-              {onCreate && (
-                <>
-                  <Separator />
-                  <Button
-                    variant="ghost"
-                    className="mt-1 w-full"
-                    onClick={() => {
-                      if (onCreate) {
-                        onCreate(query);
-                        setOpen(false);
-                        setQuery('');
-                      }
-                    }}
-                    disabled={!query || !onCreate}
-                  >
-                    <Plus className="mr-2 h-4 w-4 shrink-0" />
-                    <div className="w-full truncate">
-                      <span className="font-normal">{resolvedCreateText}</span>{' '}
-                      <span className="underline decoration-dashed underline-offset-2">
-                        {query}
-                      </span>
-                    </div>
-                  </Button>
-                </>
-              )}
+            <CommandEmpty className="p-8 text-center text-muted-foreground text-sm">
+              {resolvedEmptyText}
             </CommandEmpty>
             <CommandList
-              className="max-h-50 overflow-y-auto overscroll-contain"
+              className="max-h-[min(20rem,calc(100dvh-8rem))] overflow-y-auto overscroll-contain"
               onScroll={handleListScroll}
               style={
                 {
@@ -343,6 +385,29 @@ export function Combobox({
               {actionsPosition === 'top' && actions?.length ? (
                 <>
                   {renderActions()}
+                  <CommandSeparator />
+                </>
+              ) : null}
+              {canCreate ? (
+                <>
+                  <CommandGroup>
+                    <CommandItem
+                      value={`${createValuePrefix}:${trimmedQuery}`}
+                      disabled={creating}
+                      onSelect={handleCreate}
+                      className="font-medium text-primary [&_svg]:text-primary"
+                    >
+                      <Plus className="h-4 w-4 shrink-0" />
+                      <span className="min-w-0 flex-1 truncate">
+                        <span className="font-normal">
+                          {creating ? resolvedCreatingText : resolvedCreateText}
+                        </span>{' '}
+                        <span className="underline decoration-dashed underline-offset-2">
+                          {trimmedQuery}
+                        </span>
+                      </span>
+                    </CommandItem>
+                  </CommandGroup>
                   <CommandSeparator />
                 </>
               ) : null}
@@ -462,4 +527,8 @@ export function Combobox({
       </Popover>
     </div>
   );
+}
+
+function normalizeComboboxText(value: string) {
+  return value.trim().toLocaleLowerCase();
 }

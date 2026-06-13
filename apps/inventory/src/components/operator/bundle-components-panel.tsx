@@ -18,18 +18,10 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
-
-const EMPTY_SELECT_VALUE = '__inventory_empty__';
+import { SelectField } from './operator-form-fields';
 
 export function BundleComponentsPanel({
   bundles,
@@ -170,26 +162,18 @@ function BundleComponentsDialog({
           }}
         >
           <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(0,1fr)_120px_auto]">
-            <Select
-              onValueChange={(value) =>
-                setProductId(value === EMPTY_SELECT_VALUE ? '' : value)
-              }
-              value={productId || EMPTY_SELECT_VALUE}
-            >
-              <SelectTrigger className="min-w-0">
-                <SelectValue placeholder={t('placeholders.product')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={EMPTY_SELECT_VALUE}>
-                  {t('placeholders.product')}
-                </SelectItem>
-                {products.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectField
+              className="gap-0"
+              emptyText={t('emptyOptions')}
+              label={t('product')}
+              onChange={setProductId}
+              options={products}
+              placeholder={t('placeholders.product')}
+              searchPlaceholder={t('searchOptions', {
+                resource: t('product'),
+              })}
+              value={productId}
+            />
             <Input
               inputMode="numeric"
               onChange={(event) => setQuantity(event.target.value)}

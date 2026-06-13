@@ -18,17 +18,11 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
+import { SelectValueField } from './operator-form-fields';
 
 const environments: InventoryPolarEnvironment[] = ['sandbox', 'production'];
 
@@ -88,6 +82,10 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
     testingEnvironment || data?.testingEnvironment || 'sandbox';
   const selectedProductionEnvironment =
     productionEnvironment || data?.productionEnvironment || 'production';
+  const environmentOptions = environments.map((environment) => ({
+    label: t(`environment.${environment}`),
+    value: environment,
+  }));
 
   return (
     <section className="grid gap-4">
@@ -123,26 +121,18 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
                   tokenMutation.mutate();
                 }}
               >
-                <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{t('environmentLabel')}</span>
-                  <Select
-                    onValueChange={(value) =>
-                      setTokenEnvironment(value as InventoryPolarEnvironment)
-                    }
-                    value={tokenEnvironment}
-                  >
-                    <SelectTrigger className="h-10 min-w-0">
-                      <SelectValue placeholder={t('environmentLabel')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {environments.map((environment) => (
-                        <SelectItem key={environment} value={environment}>
-                          {t(`environment.${environment}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
+                <SelectValueField
+                  allowEmpty={false}
+                  emptyText={t('emptyEnvironments')}
+                  label={t('environmentLabel')}
+                  onChange={(value) =>
+                    setTokenEnvironment(value as InventoryPolarEnvironment)
+                  }
+                  options={environmentOptions}
+                  placeholder={t('environmentLabel')}
+                  searchPlaceholder={t('searchEnvironments')}
+                  value={tokenEnvironment}
+                />
                 <label className="grid min-w-0 gap-1 text-sm">
                   <span className="font-medium">{t('tokenLabel')}</span>
                   <Input
@@ -170,48 +160,30 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
             defaultsMutation.mutate();
           }}
         >
-          <label className="grid min-w-0 gap-1 text-sm">
-            <span className="text-muted-foreground">{t('testingDefault')}</span>
-            <Select
-              onValueChange={(value) =>
-                setTestingEnvironment(value as InventoryPolarEnvironment)
-              }
-              value={selectedTestingEnvironment}
-            >
-              <SelectTrigger className="h-10 min-w-0">
-                <SelectValue placeholder={t('testingDefault')} />
-              </SelectTrigger>
-              <SelectContent>
-                {environments.map((environment) => (
-                  <SelectItem key={environment} value={environment}>
-                    {t(`environment.${environment}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-          <label className="grid min-w-0 gap-1 text-sm">
-            <span className="text-muted-foreground">
-              {t('productionDefault')}
-            </span>
-            <Select
-              onValueChange={(value) =>
-                setProductionEnvironment(value as InventoryPolarEnvironment)
-              }
-              value={selectedProductionEnvironment}
-            >
-              <SelectTrigger className="h-10 min-w-0">
-                <SelectValue placeholder={t('productionDefault')} />
-              </SelectTrigger>
-              <SelectContent>
-                {environments.map((environment) => (
-                  <SelectItem key={environment} value={environment}>
-                    {t(`environment.${environment}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
+          <SelectValueField
+            allowEmpty={false}
+            emptyText={t('emptyEnvironments')}
+            label={t('testingDefault')}
+            onChange={(value) =>
+              setTestingEnvironment(value as InventoryPolarEnvironment)
+            }
+            options={environmentOptions}
+            placeholder={t('testingDefault')}
+            searchPlaceholder={t('searchEnvironments')}
+            value={selectedTestingEnvironment}
+          />
+          <SelectValueField
+            allowEmpty={false}
+            emptyText={t('emptyEnvironments')}
+            label={t('productionDefault')}
+            onChange={(value) =>
+              setProductionEnvironment(value as InventoryPolarEnvironment)
+            }
+            options={environmentOptions}
+            placeholder={t('productionDefault')}
+            searchPlaceholder={t('searchEnvironments')}
+            value={selectedProductionEnvironment}
+          />
           <Button disabled={defaultsMutation.isPending} type="submit">
             {defaultsMutation.isPending ? t('saving') : t('saveDefaults')}
           </Button>

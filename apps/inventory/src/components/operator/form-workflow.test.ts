@@ -62,6 +62,45 @@ describe('Inventory operator form workflows', () => {
     expect(violations).toEqual([]);
   });
 
+  it('routes operator dropdowns through combobox-backed wrappers', () => {
+    const violations = operatorSources().flatMap(({ fileName, source }) => {
+      const rawSelectImport = source.includes('@tuturuuu/ui/select');
+      const rawSelectElement = /<Select(?!Field|ValueField)\b/.test(source);
+
+      return rawSelectImport || rawSelectElement ? [fileName] : [];
+    });
+
+    expect(violations).toEqual([]);
+    expect(source('operator-form-fields.tsx')).toContain(
+      '@tuturuuu/ui/custom/combobox'
+    );
+  });
+
+  it('supports direct creation for simple setup-backed combobox fields', () => {
+    const productSource = source('product-create-dialog.tsx');
+    const setupBatchSource = source('setup-batch-section.tsx');
+    const costingSource = source('costing-profile-form.tsx');
+
+    expect(productSource).toContain('createInventoryProductCategory');
+    expect(productSource).toContain('createInventoryOwner');
+    expect(productSource).toContain('createInventoryManufacturer');
+    expect(productSource).toContain('createInventoryUnit');
+    expect(productSource).toContain('createInventoryWarehouse');
+    expect(setupBatchSource).toContain('createInventorySupplier');
+    expect(setupBatchSource).toContain('createInventoryWarehouse');
+    expect(costingSource).toContain('createInventoryProductCategory');
+  });
+
+  it('keeps toolbar and audit metadata layouts overflow-safe', () => {
+    expect(source('operator-shell.tsx')).toContain(
+      'lg:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)]'
+    );
+    expect(source('audit-rows.tsx')).toContain(
+      'repeat(auto-fit,minmax(min(100%,12rem),1fr))'
+    );
+    expect(source('audit-rows.tsx')).toContain('overflow-hidden');
+  });
+
   it('keeps dense mutating workflows dialog-only', () => {
     expect(source('setup-resource-section.tsx')).toContain('<DialogContent');
     expect(source('setup-batch-section.tsx')).toContain('<DialogContent');

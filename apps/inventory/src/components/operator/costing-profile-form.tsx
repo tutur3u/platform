@@ -9,7 +9,10 @@ import {
   Trash2,
 } from '@tuturuuu/icons';
 import type { InventoryProductFormOptionsResponse } from '@tuturuuu/internal-api/inventory';
-import { createInventoryCostProfile } from '@tuturuuu/internal-api/inventory';
+import {
+  createInventoryCostProfile,
+  createInventoryProductCategory,
+} from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -20,26 +23,17 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import { FormStepper, StepPanel, StepperDialogFooter } from './form-stepper';
-import { labelFor, ReviewRows } from './operator-form-fields';
+import { labelFor, ReviewRows, SelectField } from './operator-form-fields';
 
 type ScenarioInput = {
   batchSize: string;
   manufacturingCostPerUnit: string;
   totalCostPerUnit: string;
 };
-
-const EMPTY_SELECT_VALUE = '__inventory_empty__';
 
 const defaultScenario = (): ScenarioInput => ({
   batchSize: '30',
@@ -72,6 +66,18 @@ export function CostingProfileDialog({
   const [scenarios, setScenarios] = useState<ScenarioInput[]>([
     defaultScenario(),
   ]);
+  const createCategory = async (name: string) => {
+    try {
+      const result = await createInventoryProductCategory(wsId, { name });
+      queryClient.invalidateQueries({
+        queryKey: ['inventory', wsId, 'form-options'],
+      });
+      return result;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : forms('saveError'));
+      throw error;
+    }
+  };
   const steps = [
     {
       description: t('steps.profileDescription'),
@@ -173,31 +179,24 @@ export function CostingProfileDialog({
                     value={name}
                   />
                 </label>
-                <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{forms('category')}</span>
-                  <Select
-                    onValueChange={(value) =>
-                      setCategoryId(value === EMPTY_SELECT_VALUE ? '' : value)
-                    }
-                    value={categoryId || EMPTY_SELECT_VALUE}
-                  >
-                    <SelectTrigger className="min-w-0">
-                      <SelectValue
-                        placeholder={forms('placeholders.category')}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={EMPTY_SELECT_VALUE}>
-                        {t('uncategorized')}
-                      </SelectItem>
-                      {(options?.categories ?? []).map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
+                <SelectField
+                  createText={forms('createOption', {
+                    resource: forms('category'),
+                  })}
+                  creatingText={forms('creatingOption', {
+                    resource: forms('category'),
+                  })}
+                  emptyText={forms('emptyOptions')}
+                  label={forms('category')}
+                  onChange={setCategoryId}
+                  onCreate={createCategory}
+                  options={options?.categories}
+                  placeholder={t('uncategorized')}
+                  searchPlaceholder={forms('searchOptions', {
+                    resource: forms('category'),
+                  })}
+                  value={categoryId}
+                />
                 <label className="grid min-w-0 gap-1 text-sm">
                   <span className="font-medium">{t('retail')}</span>
                   <Input
