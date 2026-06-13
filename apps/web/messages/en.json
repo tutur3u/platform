@@ -14731,6 +14731,212 @@
       "visibility": "Visibility",
       "weekStart": "Week start"
     },
+    "docs": {
+      "code": {
+        "copied": "Copied",
+        "copy": "Copy code"
+      },
+      "components": {
+        "badge": "Components",
+        "categoryDescription": "{count} documented components",
+        "description": "Browse {count} documented primitives, composed patterns, imports, examples, API exports, and related components.",
+        "itemDescription": "A {category} component from {importPath}.",
+        "title": "Components"
+      },
+      "contributing": {
+        "badge": "Contributor guide",
+        "description": "Keep the catalog accurate when shared UI changes. Add metadata, previews, translations, and tests in the same change.",
+        "items": {
+          "docs": {
+            "description": "Every public component needs installation, usage, examples, API exports, customization points, and related links.",
+            "title": "Document the component"
+          },
+          "messages": {
+            "description": "Add public copy to both English and Vietnamese message bundles, then sort the bundles.",
+            "title": "Update translations"
+          },
+          "package": {
+            "description": "Do not hand-edit package versions or release metadata. Release Please owns package bumps.",
+            "title": "Respect package release flow"
+          },
+          "preview": {
+            "description": "Add a contained preview for safe primitives. Mark complex app shells as pattern previews when they cannot run standalone.",
+            "title": "Add or review the preview"
+          },
+          "registry": {
+            "description": "Start in the route-local registry so component IDs, categories, imports, exports, and usage snippets stay consistent.",
+            "title": "Update the registry"
+          },
+          "tests": {
+            "description": "Run registry integrity tests, route render tests, focused preview tests, type-check, and the final repo check when possible.",
+            "title": "Verify the change"
+          }
+        },
+        "title": "Contributing to the UI docs",
+        "validationDescription": "Use focused checks first, then run the repo checks required for TypeScript and message changes.",
+        "validationTitle": "Validation",
+        "workflowDescription": "Use this checklist before opening a UI docs change for review.",
+        "workflowTitle": "Workflow"
+      },
+      "detail": {
+        "api": {
+          "description": "Description",
+          "exportDescription": "{name} is exported from {importPath}. Inspect the source for component-specific props and composition details.",
+          "kind": "Kind",
+          "kinds": {
+            "component": "Component",
+            "helper": "Helper",
+            "primitive": "Primitive",
+            "provider": "Provider"
+          },
+          "name": "Name"
+        },
+        "apiDescription": "The public exports currently available from this component entry.",
+        "apiTitle": "API reference",
+        "customizationDescription": "Common props, states, and composition points to review before using this component.",
+        "customizationTitle": "Customization",
+        "description": "Preview {name}, copy setup snippets, review examples, and inspect API exports for {importPath}.",
+        "examples": {
+          "composition": {
+            "description": "Use the grouped exports when the primitive has slots, triggers, content regions, or providers.",
+            "title": "Composition"
+          },
+          "default": {
+            "description": "A minimal implementation using the current registry snippet.",
+            "title": "Default"
+          },
+          "imports": {
+            "description": "Import through the public package path so workspace and external apps share the same contract.",
+            "title": "Package import"
+          }
+        },
+        "examplesDescription": "Examples reuse the registry snippets so the docs stay aligned with the component catalog.",
+        "examplesTitle": "Examples",
+        "installationDescription": "Install the shared UI package, import global styles once, then import the component from its public subpath.",
+        "installationTitle": "Installation",
+        "manualStep": "manual step",
+        "next": "Next",
+        "previewDescription": "A contained preview using the same shared primitive exported by the package.",
+        "previewTitle": "Preview",
+        "previous": "Previous",
+        "relatedDescription": "Continue through nearby primitives in the same category.",
+        "relatedItemDescription": "A {category} component from {importPath}.",
+        "relatedTitle": "Related components",
+        "toc": {
+          "api": "API reference",
+          "customization": "Customization",
+          "examples": "Examples",
+          "installation": "Installation",
+          "preview": "Preview",
+          "related": "Related",
+          "usage": "Usage"
+        },
+        "usageDescription": "Copy the default usage snippet and adapt labels, state, and event handlers to the product surface.",
+        "usageTitle": "Usage"
+      },
+      "metadata": {
+        "componentDescription": "Preview {name}, copy usage examples, and review API exports for {importPath}.",
+        "componentsDescription": "Browse Tuturuuu UI components with setup notes, imports, examples, and API exports.",
+        "componentsTitle": "Tuturuuu UI components",
+        "componentTitle": "{name} - Tuturuuu UI",
+        "contributingDescription": "Contributor workflow for keeping Tuturuuu UI documentation accurate.",
+        "contributingTitle": "Contributing to Tuturuuu UI docs",
+        "overviewDescription": "A shadcn-style documentation hub for the Tuturuuu UI package.",
+        "overviewTitle": "Tuturuuu UI documentation",
+        "setupDescription": "Install, import, theme, and contribute to the Tuturuuu UI package.",
+        "setupTitle": "Set up Tuturuuu UI"
+      },
+      "nav": {
+        "components": "Components",
+        "contributing": "Contributing",
+        "description": "Setup, discovery, and component reference.",
+        "empty": "No components found",
+        "emptyHint": "Clear the search to browse every documented component.",
+        "menu": "Menu",
+        "overview": "Overview",
+        "search": "Search components",
+        "searchPlaceholder": "Button, dialog, table...",
+        "setup": "Setup",
+        "title": "Tuturuuu UI"
+      },
+      "onThisPage": "On this page",
+      "overview": {
+        "badge": "UI documentation",
+        "buttonDescription": "Start with the most common action primitive and inspect variants, examples, and API exports.",
+        "buttonTitle": "Button reference",
+        "componentCount": "{count} components",
+        "componentsDescription": "Browse the full catalog grouped by category, with each entry linked to a focused reference page.",
+        "componentsTitle": "Discover components",
+        "contributingDescription": "Use the internal workflow for adding registry entries, previews, translations, and tests.",
+        "contributingTitle": "Contribute docs",
+        "description": "A practical documentation hub for the shared primitives behind Tuturuuu products. Use it to install the package, discover components, copy imports, and review examples.",
+        "internal": "Internal",
+        "metrics": {
+          "categories": "Categories",
+          "components": "Components",
+          "live": "Live previews"
+        },
+        "publicAndInternal": "Public and internal",
+        "quickstartDescription": "The package entry points are designed for direct imports from the component subpath.",
+        "quickstartTitle": "Quick start",
+        "setupDescription": "Install the package, import global styles, use public package paths, and understand the contributor workflow.",
+        "setupTitle": "Set up the package",
+        "startDescription": "Choose a path based on whether you are consuming the package or maintaining the shared library.",
+        "startTitle": "Start here",
+        "title": "Tuturuuu UI documentation"
+      },
+      "setup": {
+        "badge": "Setup",
+        "contributorsDescription": "Internal maintainers should update the docs route, registry, messages, and tests together.",
+        "contributorSteps": {
+          "exports": {
+            "description": "Check the package export map before documenting a new public import path.",
+            "title": "Verify exports"
+          },
+          "metadata": {
+            "description": "Add component docs metadata in the category split that owns the component.",
+            "title": "Add metadata"
+          },
+          "preview": {
+            "description": "Use a live preview for safe primitives and a pattern preview for complex app shells.",
+            "title": "Add preview coverage"
+          },
+          "tests": {
+            "description": "Update integrity tests, route render tests, and focused preview tests before final checks.",
+            "title": "Add tests"
+          }
+        },
+        "contributorsTitle": "Contributor setup",
+        "description": "Install and wire the shared package for product apps, then follow the contributor workflow when the library changes.",
+        "importsDescription": "Import every primitive from its public subpath. Keep workspace apps behind the same package boundary as external consumers.",
+        "importsTitle": "Package imports",
+        "publicDescription": "Use the package from product apps by installing the shared package, loading global CSS once, and importing components by subpath.",
+        "publicSteps": {
+          "css": {
+            "description": "Import `@tuturuuu/ui/globals.css` once at the app root so tokens and base styles are available.",
+            "title": "Load global styles"
+          },
+          "imports": {
+            "description": "Import components from public subpaths such as `@tuturuuu/ui/button`.",
+            "title": "Use subpath imports"
+          },
+          "install": {
+            "description": "Install `@tuturuuu/ui` and `@tuturuuu/icons` with the owning app package manager.",
+            "title": "Install packages"
+          },
+          "theme": {
+            "description": "Use existing design tokens and dynamic color utilities instead of hard-coded hue classes.",
+            "title": "Use theme tokens"
+          }
+        },
+        "publicTitle": "Public package setup",
+        "title": "Set up Tuturuuu UI"
+      },
+      "status": {
+        "live": "Live preview",
+        "pattern": "Pattern preview"
+      }
+    },
     "empty": {
       "description": "Clear the search or choose another category to keep browsing the library.",
       "title": "No components found"

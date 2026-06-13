@@ -14731,6 +14731,212 @@
       "visibility": "Visibility",
       "weekStart": "Week start"
     },
+    "docs": {
+      "code": {
+        "copied": "Đã sao chép",
+        "copy": "Sao chép mã"
+      },
+      "components": {
+        "badge": "Thành phần",
+        "categoryDescription": "{count} thành phần được ghi tài liệu",
+        "description": "Duyệt {count} primitive, mẫu kết hợp, import, ví dụ, export API và thành phần liên quan.",
+        "itemDescription": "Thành phần {category} từ {importPath}.",
+        "title": "Thành phần"
+      },
+      "contributing": {
+        "badge": "Hướng dẫn đóng góp",
+        "description": "Giữ catalog chính xác khi UI dùng chung thay đổi. Thêm metadata, preview, bản dịch và test trong cùng thay đổi.",
+        "items": {
+          "docs": {
+            "description": "Mỗi thành phần công khai cần phần cài đặt, cách dùng, ví dụ, export API, điểm tùy biến và liên kết liên quan.",
+            "title": "Ghi tài liệu thành phần"
+          },
+          "messages": {
+            "description": "Thêm copy công khai vào cả bundle tiếng Anh và tiếng Việt, sau đó sắp xếp bundle.",
+            "title": "Cập nhật bản dịch"
+          },
+          "package": {
+            "description": "Không sửa thủ công phiên bản package hay metadata phát hành. Release Please quản lý việc bump package.",
+            "title": "Tôn trọng luồng phát hành package"
+          },
+          "preview": {
+            "description": "Thêm preview gọn cho primitive an toàn. Đánh dấu app shell phức tạp là pattern preview khi không thể chạy riêng.",
+            "title": "Thêm hoặc kiểm tra preview"
+          },
+          "registry": {
+            "description": "Bắt đầu từ registry trong route để ID, danh mục, import, export và snippet cách dùng luôn nhất quán.",
+            "title": "Cập nhật registry"
+          },
+          "tests": {
+            "description": "Chạy test toàn vẹn registry, test render route, test preview tập trung, type-check và repo check cuối khi có thể.",
+            "title": "Xác minh thay đổi"
+          }
+        },
+        "title": "Đóng góp cho tài liệu UI",
+        "validationDescription": "Dùng check tập trung trước, sau đó chạy các check repo bắt buộc cho TypeScript và message.",
+        "validationTitle": "Xác minh",
+        "workflowDescription": "Dùng checklist này trước khi mở thay đổi tài liệu UI để review.",
+        "workflowTitle": "Quy trình"
+      },
+      "detail": {
+        "api": {
+          "description": "Mô tả",
+          "exportDescription": "{name} được export từ {importPath}. Xem source để biết props và chi tiết kết hợp riêng của thành phần.",
+          "kind": "Loại",
+          "kinds": {
+            "component": "Thành phần",
+            "helper": "Helper",
+            "primitive": "Primitive",
+            "provider": "Provider"
+          },
+          "name": "Tên"
+        },
+        "apiDescription": "Các export công khai hiện có từ entry thành phần này.",
+        "apiTitle": "Tham chiếu API",
+        "customizationDescription": "Các prop, trạng thái và điểm kết hợp cần xem trước khi dùng thành phần.",
+        "customizationTitle": "Tùy biến",
+        "description": "Xem trước {name}, sao chép snippet setup, xem ví dụ và kiểm tra export API cho {importPath}.",
+        "examples": {
+          "composition": {
+            "description": "Dùng các export nhóm khi primitive có slot, trigger, vùng nội dung hoặc provider.",
+            "title": "Kết hợp"
+          },
+          "default": {
+            "description": "Một cách dùng tối thiểu dựa trên snippet registry hiện tại.",
+            "title": "Mặc định"
+          },
+          "imports": {
+            "description": "Import qua đường dẫn package công khai để app workspace và app ngoài dùng chung một contract.",
+            "title": "Import package"
+          }
+        },
+        "examplesDescription": "Ví dụ dùng lại snippet registry để tài liệu luôn khớp với catalog thành phần.",
+        "examplesTitle": "Ví dụ",
+        "installationDescription": "Cài package UI dùng chung, import global styles một lần, sau đó import thành phần từ subpath công khai.",
+        "installationTitle": "Cài đặt",
+        "manualStep": "bước thủ công",
+        "next": "Tiếp",
+        "previewDescription": "Preview gọn dùng cùng primitive dùng chung được export bởi package.",
+        "previewTitle": "Xem trước",
+        "previous": "Trước",
+        "relatedDescription": "Tiếp tục với các primitive gần đó trong cùng danh mục.",
+        "relatedItemDescription": "Thành phần {category} từ {importPath}.",
+        "relatedTitle": "Thành phần liên quan",
+        "toc": {
+          "api": "Tham chiếu API",
+          "customization": "Tùy biến",
+          "examples": "Ví dụ",
+          "installation": "Cài đặt",
+          "preview": "Xem trước",
+          "related": "Liên quan",
+          "usage": "Cách dùng"
+        },
+        "usageDescription": "Sao chép snippet mặc định và điều chỉnh nhãn, trạng thái, handler theo bề mặt sản phẩm.",
+        "usageTitle": "Cách dùng"
+      },
+      "metadata": {
+        "componentDescription": "Xem trước {name}, sao chép ví dụ cách dùng và xem export API cho {importPath}.",
+        "componentsDescription": "Duyệt thành phần UI Tuturuuu với ghi chú setup, import, ví dụ và export API.",
+        "componentsTitle": "Thành phần UI Tuturuuu",
+        "componentTitle": "{name} - Tuturuuu UI",
+        "contributingDescription": "Quy trình đóng góp để giữ tài liệu UI Tuturuuu chính xác.",
+        "contributingTitle": "Đóng góp cho tài liệu UI Tuturuuu",
+        "overviewDescription": "Trung tâm tài liệu kiểu shadcn cho package Tuturuuu UI.",
+        "overviewTitle": "Tài liệu UI Tuturuuu",
+        "setupDescription": "Cài đặt, import, theming và đóng góp cho package Tuturuuu UI.",
+        "setupTitle": "Cài đặt Tuturuuu UI"
+      },
+      "nav": {
+        "components": "Thành phần",
+        "contributing": "Đóng góp",
+        "description": "Setup, khám phá và tham chiếu thành phần.",
+        "empty": "Không tìm thấy thành phần",
+        "emptyHint": "Xóa tìm kiếm để duyệt mọi thành phần được ghi tài liệu.",
+        "menu": "Menu",
+        "overview": "Tổng quan",
+        "search": "Tìm thành phần",
+        "searchPlaceholder": "Button, dialog, table...",
+        "setup": "Cài đặt",
+        "title": "Tuturuuu UI"
+      },
+      "onThisPage": "Trong trang này",
+      "overview": {
+        "badge": "Tài liệu UI",
+        "buttonDescription": "Bắt đầu với primitive hành động phổ biến nhất và xem variant, ví dụ, export API.",
+        "buttonTitle": "Tham chiếu Button",
+        "componentCount": "{count} thành phần",
+        "componentsDescription": "Duyệt toàn bộ catalog theo danh mục, mỗi entry liên kết tới trang tham chiếu riêng.",
+        "componentsTitle": "Khám phá thành phần",
+        "contributingDescription": "Dùng quy trình nội bộ để thêm registry entry, preview, bản dịch và test.",
+        "contributingTitle": "Đóng góp tài liệu",
+        "description": "Trung tâm tài liệu thực dụng cho các primitive dùng chung trong sản phẩm Tuturuuu. Dùng để cài package, khám phá thành phần, sao chép import và xem ví dụ.",
+        "internal": "Nội bộ",
+        "metrics": {
+          "categories": "Danh mục",
+          "components": "Thành phần",
+          "live": "Preview trực tiếp"
+        },
+        "publicAndInternal": "Công khai và nội bộ",
+        "quickstartDescription": "Các entry point của package được thiết kế để import trực tiếp từ subpath thành phần.",
+        "quickstartTitle": "Bắt đầu nhanh",
+        "setupDescription": "Cài package, import global styles, dùng đường dẫn package công khai và nắm quy trình đóng góp.",
+        "setupTitle": "Cài đặt package",
+        "startDescription": "Chọn hướng đi dựa trên việc bạn đang dùng package hay bảo trì thư viện dùng chung.",
+        "startTitle": "Bắt đầu tại đây",
+        "title": "Tài liệu UI Tuturuuu"
+      },
+      "setup": {
+        "badge": "Cài đặt",
+        "contributorsDescription": "Maintainer nội bộ nên cập nhật route docs, registry, messages và tests cùng lúc.",
+        "contributorSteps": {
+          "exports": {
+            "description": "Kiểm tra export map của package trước khi ghi tài liệu đường import công khai mới.",
+            "title": "Kiểm tra export"
+          },
+          "metadata": {
+            "description": "Thêm metadata tài liệu thành phần trong phần danh mục sở hữu thành phần.",
+            "title": "Thêm metadata"
+          },
+          "preview": {
+            "description": "Dùng live preview cho primitive an toàn và pattern preview cho app shell phức tạp.",
+            "title": "Thêm preview"
+          },
+          "tests": {
+            "description": "Cập nhật test toàn vẹn, test render route và test preview tập trung trước check cuối.",
+            "title": "Thêm test"
+          }
+        },
+        "contributorsTitle": "Setup cho người đóng góp",
+        "description": "Cài đặt và nối package dùng chung cho app sản phẩm, sau đó theo quy trình đóng góp khi thư viện thay đổi.",
+        "importsDescription": "Import mọi primitive từ subpath công khai. Giữ app workspace sau cùng package boundary với người dùng ngoài.",
+        "importsTitle": "Import package",
+        "publicDescription": "Dùng package trong app sản phẩm bằng cách cài package dùng chung, load global CSS một lần và import thành phần theo subpath.",
+        "publicSteps": {
+          "css": {
+            "description": "Import `@tuturuuu/ui/globals.css` một lần tại app root để token và base styles sẵn sàng.",
+            "title": "Load global styles"
+          },
+          "imports": {
+            "description": "Import thành phần từ subpath công khai như `@tuturuuu/ui/button`.",
+            "title": "Dùng subpath import"
+          },
+          "install": {
+            "description": "Cài `@tuturuuu/ui` và `@tuturuuu/icons` bằng package manager của app sở hữu.",
+            "title": "Cài packages"
+          },
+          "theme": {
+            "description": "Dùng design token và tiện ích màu động hiện có thay vì hard-code hue class.",
+            "title": "Dùng theme tokens"
+          }
+        },
+        "publicTitle": "Setup package công khai",
+        "title": "Cài đặt Tuturuuu UI"
+      },
+      "status": {
+        "live": "Preview trực tiếp",
+        "pattern": "Pattern preview"
+      }
+    },
     "empty": {
       "description": "Xoa tim kiem hoac chon danh muc khac de tiep tuc duyet thu vien.",
       "title": "Khong tim thay thanh phan"
