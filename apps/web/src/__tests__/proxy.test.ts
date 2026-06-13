@@ -854,6 +854,33 @@ describe('web proxy api handling', () => {
     );
   });
 
+  it('redirects the legacy dashboard alias to the default workspace home', async () => {
+    const adminQueryBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    };
+
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn().mockReturnValue(adminQueryBuilder),
+    });
+    mocks.getUserDefaultWorkspace.mockResolvedValue({
+      id: 'ws-1',
+      personal: false,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest('http://localhost/dashboard'));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('http://localhost/ws-1');
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalledWith(
+      'dashboard',
+      expect.anything()
+    );
+  });
+
   it('applies the personal default board preference only from the root redirect', async () => {
     const workspaceConfigBuilder = {
       select: vi.fn().mockReturnThis(),
@@ -945,6 +972,37 @@ describe('web proxy api handling', () => {
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
       'http://localhost/vi/ws-1/tasks/boards/board-1'
+    );
+  });
+
+  it('preserves locale when redirecting the legacy dashboard alias to workspace home', async () => {
+    const adminQueryBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    };
+
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn().mockReturnValue(adminQueryBuilder),
+    });
+    mocks.getUserDefaultWorkspace.mockResolvedValue({
+      id: 'ws-personal',
+      personal: true,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/vi/dashboard')
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/vi/personal'
+    );
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalledWith(
+      'dashboard',
+      expect.anything()
     );
   });
 

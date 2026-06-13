@@ -1082,6 +1082,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     (pathSegments.length === 2 &&
       supportedLocales.includes(pathSegments[0] as Locale) &&
       pathSegments[1] === 'home');
+  const isDashboardRootPath =
+    req.nextUrl.pathname === '/dashboard' ||
+    (pathSegments.length === 2 &&
+      supportedLocales.includes(pathSegments[0] as Locale) &&
+      pathSegments[1] === 'dashboard');
 
   if (isHomePath) {
     const redirectUrl = new URL('/', req.nextUrl);
@@ -1198,6 +1203,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   if (
     isDirectWorkspaceHomePath &&
+    !isDashboardRootPath &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
     !isMultiAccountFlow
@@ -1239,7 +1245,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // Handle authenticated users accessing the root path or root with locale
+  // Handle authenticated users accessing the root path, root with locale, or
+  // legacy dashboard alias.
   // Skip workspace redirect if no-redirect parameter is present (from /home redirect)
   const isRootPath = req.nextUrl.pathname === '/';
 
@@ -1248,7 +1255,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     supportedLocales.includes(pathSegments[0] as Locale);
 
   if (
-    (isRootPath || isLocaleRootPath) &&
+    (isRootPath || isLocaleRootPath || isDashboardRootPath) &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
     !isMultiAccountFlow
