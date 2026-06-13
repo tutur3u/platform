@@ -457,18 +457,33 @@ describe('inventory internal API helpers', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://internal.example.com/api/v1/workspaces/ws_1/product-categories',
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/categories',
       expect.objectContaining({ method: 'POST' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://internal.example.com/api/v1/workspaces/ws_1/product-categories/category%201',
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/categories/category%201',
       expect.objectContaining({ method: 'PUT' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/categories/category%201',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
       4,
-      'https://internal.example.com/api/v1/workspaces/ws_1/product-warehouses',
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/warehouses',
       expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/warehouses/warehouse%201',
+      expect.objectContaining({ method: 'PUT' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/warehouses/warehouse%201',
+      expect.objectContaining({ method: 'DELETE' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       7,

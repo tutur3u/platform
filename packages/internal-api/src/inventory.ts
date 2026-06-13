@@ -1142,7 +1142,7 @@ export function listInventoryProductCategories(
 ) {
   return getInternalApiClient(options).json<
     InventoryListResponse<ProductCategory>
-  >(workspacePath(wsId, '/product-categories'), {
+  >(workspaceInventoryPath(wsId, '/categories'), {
     cache: 'no-store',
     query: paginatedQuery(query),
   });
@@ -1153,14 +1153,13 @@ export function createInventoryProductCategory(
   payload: InventoryCategoryPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ message: string }>(
-    workspacePath(wsId, '/product-categories'),
-    {
-      body: JSON.stringify(payload),
-      headers: jsonHeaders(options?.defaultHeaders),
-      method: 'POST',
-    }
-  );
+  return getInternalApiClient(options).json<{
+    data: ProductCategory;
+  }>(workspaceInventoryPath(wsId, '/categories'), {
+    body: JSON.stringify(payload),
+    headers: jsonHeaders(options?.defaultHeaders),
+    method: 'POST',
+  });
 }
 
 export function updateInventoryProductCategory(
@@ -1169,8 +1168,13 @@ export function updateInventoryProductCategory(
   payload: Partial<InventoryCategoryPayload>,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ message: string }>(
-    workspacePath(wsId, `/product-categories/${encodePathSegment(categoryId)}`),
+  return getInternalApiClient(options).json<{
+    data: ProductCategory;
+  }>(
+    workspaceInventoryPath(
+      wsId,
+      `/categories/${encodePathSegment(categoryId)}`
+    ),
     {
       body: JSON.stringify(payload),
       headers: jsonHeaders(options?.defaultHeaders),
@@ -1185,7 +1189,10 @@ export function deleteInventoryProductCategory(
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<{ message: string }>(
-    workspacePath(wsId, `/product-categories/${encodePathSegment(categoryId)}`),
+    workspaceInventoryPath(
+      wsId,
+      `/categories/${encodePathSegment(categoryId)}`
+    ),
     {
       headers: options?.defaultHeaders,
       method: 'DELETE',
@@ -1200,7 +1207,7 @@ export function listInventoryWarehouses(
 ) {
   return getInternalApiClient(options).json<
     InventoryListResponse<ProductWarehouse>
-  >(workspacePath(wsId, '/product-warehouses'), {
+  >(workspaceInventoryPath(wsId, '/warehouses'), {
     cache: 'no-store',
     query: paginatedQuery(query),
   });
@@ -1211,14 +1218,13 @@ export function createInventoryWarehouse(
   payload: InventoryWarehousePayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ message: string }>(
-    workspacePath(wsId, '/product-warehouses'),
-    {
-      body: JSON.stringify(payload),
-      headers: jsonHeaders(options?.defaultHeaders),
-      method: 'POST',
-    }
-  );
+  return getInternalApiClient(options).json<{
+    data: ProductWarehouse;
+  }>(workspaceInventoryPath(wsId, '/warehouses'), {
+    body: JSON.stringify(payload),
+    headers: jsonHeaders(options?.defaultHeaders),
+    method: 'POST',
+  });
 }
 
 export function updateInventoryWarehouse(
@@ -1227,10 +1233,12 @@ export function updateInventoryWarehouse(
   payload: Partial<InventoryWarehousePayload>,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ message: string }>(
-    workspacePath(
+  return getInternalApiClient(options).json<{
+    data: ProductWarehouse;
+  }>(
+    workspaceInventoryPath(
       wsId,
-      `/product-warehouses/${encodePathSegment(warehouseId)}`
+      `/warehouses/${encodePathSegment(warehouseId)}`
     ),
     {
       body: JSON.stringify(payload),
@@ -1246,9 +1254,9 @@ export function deleteInventoryWarehouse(
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<{ message: string }>(
-    workspacePath(
+    workspaceInventoryPath(
       wsId,
-      `/product-warehouses/${encodePathSegment(warehouseId)}`
+      `/warehouses/${encodePathSegment(warehouseId)}`
     ),
     {
       headers: options?.defaultHeaders,
