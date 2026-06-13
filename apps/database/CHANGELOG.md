@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/tutur3u/platform/compare/database-v1.6.0...database-v1.7.0) (2026-06-13)
+
+
+### Features
+
+* **inventory:** add command center dashboard ([37ea5c5](https://github.com/tutur3u/platform/commit/37ea5c5e32c8be149a077269f246f4a369739f84))
+
 ## [1.6.0](https://github.com/tutur3u/platform/compare/database-v1.5.0...database-v1.6.0) (2026-06-13)
 
 

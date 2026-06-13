@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/inventory-v0.4.0...inventory-v0.5.0) (2026-06-13)
+
+
+### Features
+
+* **inventory:** add command center dashboard ([37ea5c5](https://github.com/tutur3u/platform/commit/37ea5c5e32c8be149a077269f246f4a369739f84))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/inventory-v0.3.2...inventory-v0.4.0) (2026-06-13)
 
 

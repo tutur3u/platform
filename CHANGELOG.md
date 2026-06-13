@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/platform-v0.9.0...platform-v0.10.0) (2026-06-13)
+
+
+### Features
+
+* **inventory:** add command center dashboard ([37ea5c5](https://github.com/tutur3u/platform/commit/37ea5c5e32c8be149a077269f246f4a369739f84))
+
+
+### Bug Fixes
+
+* **ci:** align package gate with latest commit ([7550307](https://github.com/tutur3u/platform/commit/755030712b6ee0b2877a7ee1abdf784592f10d2b))
+* **web:** redirect dashboard alias to workspace ([3bcfc6f](https://github.com/tutur3u/platform/commit/3bcfc6f9652c3c32d3fe869b250688c02089a0c2))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/platform-v0.8.0...platform-v0.9.0) (2026-06-13)
 
 
