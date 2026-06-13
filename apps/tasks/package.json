@@ -60,7 +60,7 @@
     "@tanstack/react-query-devtools": "^5.101.0",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
-    "@types/node": "^25.9.2",
+    "@types/node": "^25.9.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "^1.0.0",

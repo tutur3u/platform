@@ -102,7 +102,7 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.2",
+    "@types/node": "^25.9.3",
     "@typescript/native-preview": "^7.0.0-dev.20260610.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"

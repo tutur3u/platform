@@ -18,6 +18,7 @@ import {
   resolvePlanModel,
 } from '../../credits/resolve-plan-model';
 import { withAiMemory } from '../../memory';
+import { createGoogleSearchToolSet } from '../../tools/google-search-tool';
 import type { CreditSource as SharedCreditSource } from '../credit-source';
 import {
   shouldForceGoogleSearchForLatestUserMessage,
@@ -495,9 +496,7 @@ export function createPOST(
       );
 
       // Provider-native Google Search tool for non-Mira mode.
-      const googleSearchTool = {
-        google_search: google.tools.googleSearch({}),
-      };
+      const googleSearchTool = createGoogleSearchToolSet();
 
       type PrepareStep = NonNullable<
         NonNullable<Parameters<typeof streamText>[0]>['prepareStep']

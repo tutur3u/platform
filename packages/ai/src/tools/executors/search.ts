@@ -2,6 +2,7 @@ import { google } from '@ai-sdk/google';
 import { generateText, stepCountIs } from 'ai';
 import { z } from 'zod';
 import { withAiMemory } from '../../memory';
+import { createGoogleSearchToolSet } from '../google-search-tool';
 import type { MiraToolContext } from '../mira-tools';
 
 const SEARCH_WRAPPER_MODEL = 'gemini-3.1-flash-lite';
@@ -85,9 +86,7 @@ async function runGoogleSearchWrapper(
       userId: ctx.userId,
       wsId: ctx.workspaceContext?.wsId ?? ctx.wsId,
     }),
-    tools: {
-      google_search: google.tools.googleSearch({}),
-    },
+    tools: createGoogleSearchToolSet(),
     prompt,
     stopWhen: stepCountIs(4),
     ...(forceTool ? { toolChoice: 'required' as const } : {}),
