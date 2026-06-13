@@ -1,7 +1,8 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2 } from '@tuturuuu/icons';
+import { AlertTriangle, Loader2, RefreshCw } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { useTranslations } from 'next-intl';
 import {
@@ -336,15 +337,11 @@ export function WorkspaceUsersTable({
     setExcludedGroups,
   ]);
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <p className="text-destructive">
-          Error loading users. Please try again.
-        </p>
-      </div>
-    );
-  }
+  const handleRetry = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: ['workspace-users', wsId],
+    });
+  }, [queryClient, wsId]);
 
   // Show loading overlay when fetching new data (but not on initial load)
   const showLoadingOverlay =
@@ -363,6 +360,43 @@ export function WorkspaceUsersTable({
           </div>
         </div>
       )}
+
+      {error ? (
+        <div
+          role="alert"
+          className="mb-3 flex flex-col gap-3 rounded-lg border border-dynamic-red/30 bg-dynamic-red/10 p-3 text-dynamic-red sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex min-w-0 items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p className="min-w-0 text-sm">
+              {t('common.error')}
+              {error instanceof Error && error.message
+                ? `: ${error.message}`
+                : null}
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRetry}
+              className="border-dynamic-red/30 bg-background text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {t('common.retry')}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleResetParams}
+            >
+              {t('common.reset')}
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <DataTable
         t={t}

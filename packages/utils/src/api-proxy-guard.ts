@@ -259,6 +259,15 @@ const TASK_BOARD_READ_RATE_LIMITS: RateLimitProfile = {
   mutate: DEFAULT_MUTATE_RATE_LIMITS,
 };
 
+const USERS_DATABASE_READ_OVER_POST_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    { window: 'minute', limit: 300, duration: '1 m' },
+    { window: 'hour', limit: 3000, duration: '1 h' },
+    { window: 'day', limit: 20_000, duration: '1 d' },
+  ],
+};
+
 const FINANCE_READ_RATE_LIMITS: RateLimitProfile = {
   get: [
     createConfig('minute', '1 m', 1200, 'API_PROXY_FINANCE_READ_LIMIT_MINUTE', [
@@ -296,6 +305,16 @@ function isFinanceRead(req: NextRequest) {
 
   return FINANCE_READ_PATH_PATTERNS.some((pattern) =>
     pattern.test(req.nextUrl.pathname)
+  );
+}
+
+function isUsersDatabaseReadOverPost(req: NextRequest) {
+  if (req.method !== 'POST') {
+    return false;
+  }
+
+  return /^\/api\/v1\/workspaces\/[^/]+\/users\/(?:database|groups\/(?:featured-counts|possible-excluded))\/?$/u.test(
+    req.nextUrl.pathname
   );
 }
 
@@ -362,6 +381,11 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
           req.nextUrl.pathname
         )),
     rateLimits: TASK_BOARD_READ_RATE_LIMITS,
+  },
+  {
+    key: 'users-database-read-over-post',
+    matches: isUsersDatabaseReadOverPost,
+    rateLimits: USERS_DATABASE_READ_OVER_POST_RATE_LIMITS,
   },
   {
     key: 'finance-read',

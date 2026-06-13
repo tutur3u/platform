@@ -2,7 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  AlertTriangle,
   ArrowRight,
+  RefreshCw,
   Settings,
   User,
   UserMinus,
@@ -407,6 +409,41 @@ export default function ReferralSectionClient({
                     placeholder={t('search_person_to_refer_placeholder')}
                     onSearchChange={setSearchQuery}
                   />
+                  {availableUsersQuery.error ? (
+                    <div
+                      className="flex items-start justify-between gap-3 rounded-md border border-dynamic-red/30 bg-dynamic-red/5 p-3 text-dynamic-red text-sm"
+                      role="alert"
+                    >
+                      <div className="flex min-w-0 items-start gap-2">
+                        <AlertTriangle
+                          className="mt-0.5 h-4 w-4 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <div className="min-w-0">
+                          <div className="font-medium">{t('common.error')}</div>
+                          {availableUsersQuery.error instanceof Error &&
+                          availableUsersQuery.error.message ? (
+                            <div className="break-words opacity-80">
+                              {availableUsersQuery.error.message}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15 hover:text-dynamic-red"
+                        onClick={() => {
+                          void availableUsersQuery.refetch();
+                        }}
+                        disabled={availableUsersQuery.isFetching}
+                      >
+                        <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                        {t('retry')}
+                      </Button>
+                    </div>
+                  ) : null}
                   {/* No pagination */}
                 </div>
 

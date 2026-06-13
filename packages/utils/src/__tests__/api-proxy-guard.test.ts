@@ -542,6 +542,90 @@ describe('guardApiProxyRequest', () => {
     });
   });
 
+  it('uses the users database read-over-post bucket for search and filter POST reads', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValue({
+      success: false,
+      limit: 300,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    for (const path of [
+      '/api/v1/workspaces/ws-1/users/database',
+      '/api/v1/workspaces/ws-1/users/groups/featured-counts',
+      '/api/v1/workspaces/ws-1/users/groups/possible-excluded',
+    ]) {
+      const response = await guardApiProxyRequest(makeRequest(path, 'POST'), {
+        prefixBase: 'proxy:test:api',
+      });
+
+      expect(response?.status).toBe(429);
+      expect(response?.headers.get('X-RateLimit-Limit')).toBe('300');
+      expect(response?.headers.get('X-RateLimit-Policy')).toBe(
+        'users-database-read-over-post'
+      );
+    }
+
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 300,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 3000,
+      window: '1 h',
+    });
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 20_000,
+      window: '1 d',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:users-database-read-over-post:anonymous:mutate:minute'
+    );
+  });
+
+  it('keeps users mutations on the default mutation bucket', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValue({
+      success: false,
+      limit: 30,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest(
+        '/api/v1/workspaces/ws-1/users/11111111-1111-4111-8111-111111111111/referrals',
+        'POST'
+      ),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('30');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
+  });
+
   it('keeps finance invoice mutations on the default mutation bucket', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');

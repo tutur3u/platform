@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkspaceUsersTable } from './workspace-users-table';
@@ -97,9 +97,13 @@ vi.mock('@tuturuuu/ui/custom/tables/data-table', () => ({
 }));
 
 function renderWithQueryClient(node: ReactNode) {
-  return render(
-    <QueryClientProvider client={new QueryClient()}>{node}</QueryClientProvider>
-  );
+  const queryClient = new QueryClient();
+  return {
+    queryClient,
+    ...render(
+      <QueryClientProvider client={queryClient}>{node}</QueryClientProvider>
+    ),
+  };
 }
 
 describe('WorkspaceUsersTable', () => {
@@ -247,6 +251,70 @@ describe('WorkspaceUsersTable', () => {
       requireAttention: 'true',
       groupMembership: 'none',
       effectiveExcludedGroups: ['excluded-group'],
+    });
+  });
+
+  it('keeps search controls available when the users query errors', async () => {
+    useWorkspaceUsersMock.mockReturnValue({
+      data: {
+        data: [{ id: 'user-1' }],
+        count: 1,
+      },
+      isLoading: false,
+      isFetching: false,
+      error: new Error('Rate limit exceeded'),
+    });
+
+    const { queryClient } = renderWithQueryClient(
+      <WorkspaceUsersTable
+        wsId="ws-123"
+        locale="en"
+        permissions={{
+          hasPrivateInfo: true,
+          hasPublicInfo: true,
+          canCreateUsers: true,
+          canUpdateUsers: true,
+          canDeleteUsers: true,
+          canCheckUserAttendance: true,
+        }}
+      />
+    );
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    await waitFor(() => {
+      expect(dataTableMock).toHaveBeenCalled();
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'common.error: Rate limit exceeded'
+    );
+    expect(screen.getByTestId('users-data-table')).toBeInTheDocument();
+
+    const dataTableProps = dataTableMock.mock.calls.at(-1)?.[0] as {
+      data?: Array<{ href?: string; id: string }>;
+      count: number;
+      onSearch?: (query: string) => void;
+      resetParams?: () => void;
+    };
+
+    expect(dataTableProps.count).toBe(1);
+    expect(dataTableProps.data).toEqual([
+      expect.objectContaining({
+        href: '/ws-123/users/database/user-1',
+        id: 'user-1',
+      }),
+    ]);
+
+    dataTableProps.onSearch?.('alice');
+    expect(querySetters.q).toHaveBeenCalledWith('alice');
+    expect(querySetters.page).toHaveBeenCalledWith(1);
+
+    dataTableProps.resetParams?.();
+    expect(querySetters.q).toHaveBeenCalledWith(null);
+
+    fireEvent.click(screen.getByRole('button', { name: /common.retry/u }));
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ['workspace-users', 'ws-123'],
     });
   });
 });
