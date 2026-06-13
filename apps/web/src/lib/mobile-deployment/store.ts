@@ -53,6 +53,8 @@ import type {
   MobileDeploymentVersionStatus,
 } from './types';
 import {
+  assertMobileDeploymentEnvKey,
+  normalizeEnvEntry,
   parseEnvFile,
   renderEnvFile,
   validateFileArtifact,
@@ -60,6 +62,7 @@ import {
 } from './validation';
 
 type AdminClient = SupabaseClient<Database>;
+type MobileDeploymentSecretKind = MobileDeploymentSecretValueRow['kind'];
 
 export class MobileDeploymentStoreError extends Error {
   constructor(
@@ -146,6 +149,34 @@ function mapFileStatus(
     size: row.plaintext_size,
     updatedAt: row.updated_at,
     validationErrors: row.validation_errors ?? [],
+  };
+}
+
+function buildSecretValueRow({
+  dataKey,
+  kind,
+  name,
+  userId,
+  value,
+  versionId,
+}: {
+  dataKey: Buffer;
+  kind: MobileDeploymentSecretKind;
+  name: string;
+  userId: string;
+  value: string;
+  versionId: string;
+}) {
+  return {
+    encrypted_value: encryptSecretValue(value, dataKey),
+    kind,
+    name,
+    plaintext_last_four: redactLastFour(value),
+    plaintext_sha256: sha256Base64Url(value),
+    updated_at: nowIso(),
+    updated_by: userId,
+    value_size: new TextEncoder().encode(value).byteLength,
+    version_id: versionId,
   };
 }
 
@@ -425,17 +456,16 @@ export async function saveMobileDeploymentEnvFile({
   const environment = await getProductionEnvironment(db);
   const draft = await getOrCreateDraftVersion(db, environment.id, userId);
   const dataKey = await decryptDataKey(draft.data_key_ciphertext);
-  const rows = Object.entries(entries).map(([name, value]) => ({
-    encrypted_value: encryptSecretValue(value, dataKey),
-    kind: 'env',
-    name,
-    plaintext_last_four: redactLastFour(value),
-    plaintext_sha256: sha256Base64Url(value),
-    updated_at: nowIso(),
-    updated_by: userId,
-    value_size: new TextEncoder().encode(value).byteLength,
-    version_id: draft.id,
-  }));
+  const rows = Object.entries(entries).map(([name, value]) =>
+    buildSecretValueRow({
+      dataKey,
+      kind: 'env',
+      name,
+      userId,
+      value,
+      versionId: draft.id,
+    })
+  );
 
   const schema = privateDb(db);
   const { error: deleteError } = await schema
@@ -465,6 +495,84 @@ export async function saveMobileDeploymentEnvFile({
   return listMobileDeploymentState(db);
 }
 
+export async function saveMobileDeploymentEnvKey({
+  db,
+  name,
+  userId,
+  value,
+}: {
+  db: AdminClient;
+  name: string;
+  userId: string;
+  value: string;
+}) {
+  const normalized = normalizeEnvEntry(name, value);
+  const environment = await getProductionEnvironment(db);
+  const draft = await getOrCreateDraftVersion(db, environment.id, userId);
+  const dataKey = await decryptDataKey(draft.data_key_ciphertext);
+
+  const { error } = await privateDb(db)
+    .from('mobile_deployment_secret_values')
+    .upsert(
+      buildSecretValueRow({
+        dataKey,
+        kind: 'env',
+        name: normalized.key,
+        userId,
+        value: normalized.value,
+        versionId: draft.id,
+      }),
+      { onConflict: 'version_id,kind,name' }
+    );
+  assertNoError(error, 'Failed to save mobile deployment env value');
+
+  await recordAudit(db, {
+    actorType: 'user',
+    actorUserId: userId,
+    environmentId: environment.id,
+    eventType: 'env.saved',
+    metadata: { name: normalized.key },
+    resourceKind: normalized.key,
+    versionId: draft.id,
+  });
+
+  return listMobileDeploymentState(db);
+}
+
+export async function clearMobileDeploymentEnvKey({
+  db,
+  name,
+  userId,
+}: {
+  db: AdminClient;
+  name: string;
+  userId: string;
+}) {
+  const key = assertMobileDeploymentEnvKey(name);
+  const environment = await getProductionEnvironment(db);
+  const draft = await getOrCreateDraftVersion(db, environment.id, userId);
+
+  const { error } = await privateDb(db)
+    .from('mobile_deployment_secret_values')
+    .delete()
+    .eq('version_id', draft.id)
+    .eq('kind', 'env')
+    .eq('name', key);
+  assertNoError(error, 'Failed to clear mobile deployment env value');
+
+  await recordAudit(db, {
+    actorType: 'user',
+    actorUserId: userId,
+    environmentId: environment.id,
+    eventType: 'env.cleared',
+    metadata: { name: key },
+    resourceKind: key,
+    versionId: draft.id,
+  });
+
+  return listMobileDeploymentState(db);
+}
+
 export async function saveMobileDeploymentScalar({
   db,
   name,
@@ -484,17 +592,14 @@ export async function saveMobileDeploymentScalar({
   const { error } = await privateDb(db)
     .from('mobile_deployment_secret_values')
     .upsert(
-      {
-        encrypted_value: encryptSecretValue(normalizedValue, dataKey),
+      buildSecretValueRow({
+        dataKey,
         kind: 'scalar',
         name,
-        plaintext_last_four: redactLastFour(normalizedValue),
-        plaintext_sha256: sha256Base64Url(normalizedValue),
-        updated_at: nowIso(),
-        updated_by: userId,
-        value_size: new TextEncoder().encode(normalizedValue).byteLength,
-        version_id: draft.id,
-      },
+        userId,
+        value: normalizedValue,
+        versionId: draft.id,
+      }),
       { onConflict: 'version_id,kind,name' }
     );
   assertNoError(error, 'Failed to save mobile deployment scalar');
@@ -504,6 +609,39 @@ export async function saveMobileDeploymentScalar({
     actorUserId: userId,
     environmentId: environment.id,
     eventType: 'scalar.saved',
+    metadata: { name },
+    resourceKind: name,
+    versionId: draft.id,
+  });
+
+  return listMobileDeploymentState(db);
+}
+
+export async function clearMobileDeploymentScalar({
+  db,
+  name,
+  userId,
+}: {
+  db: AdminClient;
+  name: MobileDeploymentScalarName;
+  userId: string;
+}) {
+  const environment = await getProductionEnvironment(db);
+  const draft = await getOrCreateDraftVersion(db, environment.id, userId);
+
+  const { error } = await privateDb(db)
+    .from('mobile_deployment_secret_values')
+    .delete()
+    .eq('version_id', draft.id)
+    .eq('kind', 'scalar')
+    .eq('name', name);
+  assertNoError(error, 'Failed to clear mobile deployment scalar');
+
+  await recordAudit(db, {
+    actorType: 'user',
+    actorUserId: userId,
+    environmentId: environment.id,
+    eventType: 'scalar.cleared',
     metadata: { name },
     resourceKind: name,
     versionId: draft.id,

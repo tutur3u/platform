@@ -9,12 +9,18 @@ import {
   type MobileDeploymentScalarName,
 } from '@/lib/mobile-deployment/constants';
 import {
+  clearMobileDeploymentEnvKey,
+  clearMobileDeploymentScalar,
   listMobileDeploymentState,
   MobileDeploymentStoreError,
   saveMobileDeploymentEnvFile,
+  saveMobileDeploymentEnvKey,
   saveMobileDeploymentScalar,
 } from '@/lib/mobile-deployment/store';
-import { assertMobileDeploymentScalarName } from '@/lib/mobile-deployment/validation';
+import {
+  assertMobileDeploymentScalarName,
+  MobileDeploymentValidationError,
+} from '@/lib/mobile-deployment/validation';
 
 const SavePayloadSchema = z.discriminatedUnion('action', [
   z.object({
@@ -22,13 +28,37 @@ const SavePayloadSchema = z.discriminatedUnion('action', [
     envFile: z.string().max(512 * 1024),
   }),
   z.object({
+    action: z.literal('save_env_key'),
+    name: z.string().max(80),
+    value: z.string().max(16 * 1024),
+  }),
+  z.object({
+    action: z.literal('clear_env_key'),
+    name: z.string().max(80),
+  }),
+  z.object({
     action: z.literal('save_scalar'),
     name: z.enum(MOBILE_DEPLOYMENT_SCALAR_NAMES),
     value: z.string().max(32 * 1024),
   }),
+  z.object({
+    action: z.literal('clear_scalar'),
+    name: z.enum(MOBILE_DEPLOYMENT_SCALAR_NAMES),
+  }),
 ]);
 
 function errorResponse(error: unknown) {
+  if (error instanceof MobileDeploymentValidationError) {
+    return NextResponse.json(
+      {
+        code: 'mobile_deployment_validation_error',
+        errors: error.errors,
+        message: error.message,
+      },
+      { status: 400 }
+    );
+  }
+
   if (error instanceof MobileDeploymentStoreError) {
     return NextResponse.json(
       { code: error.code, message: error.message },
@@ -95,14 +125,47 @@ export async function PUT(request: Request) {
       );
     }
 
+    if (parsed.data.action === 'save_env_key') {
+      return NextResponse.json(
+        await saveMobileDeploymentEnvKey({
+          db: access.db,
+          name: parsed.data.name,
+          userId: access.userId,
+          value: parsed.data.value,
+        })
+      );
+    }
+
+    if (parsed.data.action === 'clear_env_key') {
+      return NextResponse.json(
+        await clearMobileDeploymentEnvKey({
+          db: access.db,
+          name: parsed.data.name,
+          userId: access.userId,
+        })
+      );
+    }
+
+    if (parsed.data.action === 'save_scalar') {
+      return NextResponse.json(
+        await saveMobileDeploymentScalar({
+          db: access.db,
+          name: assertMobileDeploymentScalarName(
+            parsed.data.name
+          ) as MobileDeploymentScalarName,
+          userId: access.userId,
+          value: parsed.data.value,
+        })
+      );
+    }
+
     return NextResponse.json(
-      await saveMobileDeploymentScalar({
+      await clearMobileDeploymentScalar({
         db: access.db,
         name: assertMobileDeploymentScalarName(
           parsed.data.name
         ) as MobileDeploymentScalarName,
         userId: access.userId,
-        value: parsed.data.value,
       })
     );
   } catch (error) {

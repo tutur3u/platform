@@ -4,8 +4,11 @@ import {
   EXPECTED_IOS_BUNDLE_ID,
 } from './constants';
 import {
+  assertMobileDeploymentEnvKey,
   MobileDeploymentValidationError,
+  normalizeEnvEntry,
   parseEnvFile,
+  renderEnvFile,
   validateFileArtifact,
   validateScalarValue,
 } from './validation';
@@ -15,6 +18,36 @@ describe('mobile deployment validation', () => {
     expect(() =>
       parseEnvFile('MOBILE_ANDROID_GOOGLE_SERVICES_JSON_B64=secret\n')
     ).toThrow(MobileDeploymentValidationError);
+  });
+
+  it('normalizes single env key values', () => {
+    expect(normalizeEnvEntry(' API_BASE_URL ', 'https://tuturuuu.com')).toEqual(
+      {
+        key: 'API_BASE_URL',
+        value: 'https://tuturuuu.com',
+      }
+    );
+  });
+
+  it('rejects invalid single env key names', () => {
+    expect(() => assertMobileDeploymentEnvKey('not_allowed')).toThrow(
+      MobileDeploymentValidationError
+    );
+  });
+
+  it('rejects blocked single env key names', () => {
+    expect(() =>
+      normalizeEnvEntry('MOBILE_IOS_GOOGLE_SERVICE_INFO_PLIST_B64', 'secret')
+    ).toThrow(MobileDeploymentValidationError);
+  });
+
+  it('renders env files in stable key order', () => {
+    expect(
+      renderEnvFile({
+        TURNSTILE_SITE_KEY: 'site-key',
+        API_BASE_URL: 'https://tuturuuu.com',
+      })
+    ).toBe('API_BASE_URL=https://tuturuuu.com\nTURNSTILE_SITE_KEY=site-key\n');
   });
 
   it('rejects multi-line scalar values', () => {

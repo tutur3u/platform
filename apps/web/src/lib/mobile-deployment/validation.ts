@@ -91,36 +91,57 @@ export function assertMobileDeploymentScalarName(
   return value as MobileDeploymentScalarName;
 }
 
+export function assertMobileDeploymentEnvKey(value: string) {
+  const key = value.trim();
+
+  if (!ENV_KEY_PATTERN.test(key)) {
+    throw new MobileDeploymentValidationError(
+      `${key || '(empty)'} is not an allowed env key name`
+    );
+  }
+
+  if ((BLOCKED_ENV_FILE_KEYS as readonly string[]).includes(key)) {
+    throw new MobileDeploymentValidationError(
+      `${key} must be uploaded as a file or scalar resource`
+    );
+  }
+
+  return key;
+}
+
+export function normalizeEnvEntry(rawKey: string, rawValue: string) {
+  const key = assertMobileDeploymentEnvKey(rawKey);
+  const value = String(rawValue);
+
+  try {
+    assertSingleLineUtf8Value(value, MAX_ENV_VALUE_BYTES);
+  } catch (error) {
+    throw new MobileDeploymentValidationError(
+      'Invalid mobile deployment env value',
+      [
+        `${key}: ${error instanceof Error ? error.message : 'invalid env value'}`,
+      ]
+    );
+  }
+
+  return { key, value };
+}
+
 export function normalizeEnvEntries(entries: Record<string, string>) {
   const normalized: Record<string, string> = {};
   const errors: string[] = [];
 
   for (const [rawKey, rawValue] of Object.entries(entries)) {
-    const key = rawKey.trim();
-    const value = String(rawValue);
-
-    if (!ENV_KEY_PATTERN.test(key)) {
-      errors.push(`${key || '(empty)'} is not an allowed env key name`);
-      continue;
-    }
-
-    if ((BLOCKED_ENV_FILE_KEYS as readonly string[]).includes(key)) {
-      errors.push(`${key} must be uploaded as a file or scalar resource`);
-      continue;
-    }
-
     try {
-      assertSingleLineUtf8Value(value, MAX_ENV_VALUE_BYTES);
+      const { key, value } = normalizeEnvEntry(rawKey, rawValue);
+      normalized[key] = value;
     } catch (error) {
-      errors.push(
-        `${key}: ${
-          error instanceof Error ? error.message : 'invalid env value'
-        }`
-      );
-      continue;
+      if (error instanceof MobileDeploymentValidationError) {
+        errors.push(...error.errors);
+      } else {
+        errors.push('invalid env value');
+      }
     }
-
-    normalized[key] = value;
   }
 
   if (errors.length) {

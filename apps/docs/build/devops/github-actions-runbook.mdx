@@ -393,7 +393,10 @@ environment restricted to the `production` branch and store only
 `MOBILE_DEPLOYMENT_CI_TOKEN` there. Mobile signing, Firebase, store API, and
 `.env.github` resources live in the root workspace mobile deployment vault at
 `/internal/infrastructure/mobile-deployment` and require
-`manage_workspace_secrets`.
+`manage_workspace_secrets`. Manage `.env.github` as row-level env keys in that
+vault, then use the vault's Verify action before activating the draft. Legacy
+base64 file payload env keys are intentionally blocked; Firebase, signing, and
+store credential payloads must be uploaded as file resources.
 
 Local release-build verification should run before relying on the workflow:
 

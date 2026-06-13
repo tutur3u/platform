@@ -44,6 +44,7 @@ export type MobileDeploymentScalarName =
   | 'APPLE_TEAM_ID'
   | 'APP_STORE_CONNECT_API_KEY_ID'
   | 'APP_STORE_CONNECT_ISSUER_ID';
+export type MobileDeploymentEnvKeyName = string;
 
 export interface MobileDeploymentResourceStatus {
   configured: boolean;
@@ -2008,6 +2009,37 @@ export async function replaceMobileDeploymentEnvFile(
   });
 }
 
+export async function saveMobileDeploymentEnvKeyValue(
+  name: MobileDeploymentEnvKeyName,
+  value: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
+    body: JSON.stringify({ action: 'save_env_key', name, value }),
+    cache: 'no-store',
+    headers: mobileDeploymentMutationHeaders({
+      'Content-Type': 'application/json',
+    }),
+    method: 'PUT',
+  });
+}
+
+export async function clearMobileDeploymentEnvKeyValue(
+  name: MobileDeploymentEnvKeyName,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
+    body: JSON.stringify({ action: 'clear_env_key', name }),
+    cache: 'no-store',
+    headers: mobileDeploymentMutationHeaders({
+      'Content-Type': 'application/json',
+    }),
+    method: 'PUT',
+  });
+}
+
 export async function saveMobileDeploymentScalarValue(
   name: MobileDeploymentScalarName,
   value: string,
@@ -2016,6 +2048,21 @@ export async function saveMobileDeploymentScalarValue(
   const client = getInternalApiClient(options);
   return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
     body: JSON.stringify({ action: 'save_scalar', name, value }),
+    cache: 'no-store',
+    headers: mobileDeploymentMutationHeaders({
+      'Content-Type': 'application/json',
+    }),
+    method: 'PUT',
+  });
+}
+
+export async function clearMobileDeploymentScalarValue(
+  name: MobileDeploymentScalarName,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
+    body: JSON.stringify({ action: 'clear_scalar', name }),
     cache: 'no-store',
     headers: mobileDeploymentMutationHeaders({
       'Content-Type': 'application/json',

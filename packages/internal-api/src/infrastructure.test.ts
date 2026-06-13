@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  clearMobileDeploymentEnvKeyValue,
+  clearMobileDeploymentScalarValue,
   createAIWhitelistDomain,
   createAIWhitelistEmail,
   createChatIntegration,
@@ -21,6 +23,8 @@ import {
   saveAiAgent,
   saveAiAgentIdentityLink,
   saveGitHubBotConfiguration,
+  saveMobileDeploymentEnvKeyValue,
+  saveMobileDeploymentScalarValue,
   testAiAgentChannel,
   testGitHubBotConfiguration,
   updateAIWhitelistDomain,
@@ -285,6 +289,103 @@ describe('AI gateway model internal API helpers', () => {
       ],
       pagination: { limit: 25, page: 2, total: 51 },
     });
+  });
+});
+
+describe('mobile deployment internal API helpers', () => {
+  it('saves and clears env keys with the dedicated CSRF header', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await saveMobileDeploymentEnvKeyValue(
+      'API_BASE_URL',
+      'https://tuturuuu.com',
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await clearMobileDeploymentEnvKeyValue('API_BASE_URL', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/mobile-deployment',
+      expect.objectContaining({
+        body: JSON.stringify({
+          action: 'save_env_key',
+          name: 'API_BASE_URL',
+          value: 'https://tuturuuu.com',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/mobile-deployment',
+      expect.objectContaining({
+        body: JSON.stringify({
+          action: 'clear_env_key',
+          name: 'API_BASE_URL',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+
+    const saveHeaders = getCalledHeaders(fetchMock);
+    const clearHeaders = getCalledHeaders(fetchMock, 1);
+    expect(saveHeaders.get('Content-Type')).toBe('application/json');
+    expect(saveHeaders.get('x-tuturuuu-mobile-deployment-action')).toBe('1');
+    expect(clearHeaders.get('x-tuturuuu-mobile-deployment-action')).toBe('1');
+  });
+
+  it('saves and clears scalar keys with the dedicated CSRF header', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await saveMobileDeploymentScalarValue('ANDROID_KEYSTORE_ALIAS', 'upload', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    await clearMobileDeploymentScalarValue('ANDROID_KEYSTORE_ALIAS', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/mobile-deployment',
+      expect.objectContaining({
+        body: JSON.stringify({
+          action: 'save_scalar',
+          name: 'ANDROID_KEYSTORE_ALIAS',
+          value: 'upload',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/mobile-deployment',
+      expect.objectContaining({
+        body: JSON.stringify({
+          action: 'clear_scalar',
+          name: 'ANDROID_KEYSTORE_ALIAS',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+
+    expect(
+      getCalledHeaders(fetchMock).get('x-tuturuuu-mobile-deployment-action')
+    ).toBe('1');
+    expect(
+      getCalledHeaders(fetchMock, 1).get('x-tuturuuu-mobile-deployment-action')
+    ).toBe('1');
   });
 });
 

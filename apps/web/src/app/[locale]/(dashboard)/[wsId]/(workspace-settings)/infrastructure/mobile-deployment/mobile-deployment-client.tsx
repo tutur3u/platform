@@ -2,129 +2,46 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  CheckCircle2,
   KeyRound,
   RefreshCw,
   Rocket,
   RotateCcw,
   Upload,
-  XCircle,
 } from '@tuturuuu/icons';
 import {
   activateMobileDeploymentDraft,
+  clearMobileDeploymentEnvKeyValue,
+  clearMobileDeploymentScalarValue,
   getMobileDeploymentState,
   issueMobileDeploymentCiToken,
   type MobileDeploymentFileKind,
   type MobileDeploymentScalarName,
   type MobileDeploymentState,
-  replaceMobileDeploymentEnvFile,
   revokeMobileDeploymentCiToken,
   rollbackMobileDeploymentVersion,
+  saveMobileDeploymentEnvKeyValue,
   saveMobileDeploymentScalarValue,
   uploadMobileDeploymentFileResource,
 } from '@tuturuuu/internal-api/infrastructure';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { MOBILE_DEPLOYMENT_FILE_KINDS } from './mobile-deployment-config';
+import { MobileDeploymentEnvPanel } from './mobile-deployment-env-panel';
+import {
+  ResourceBadge,
+  ResourceMetadata,
+  VersionSummary,
+} from './mobile-deployment-resource-status';
+import { MobileDeploymentScalarPanel } from './mobile-deployment-scalar-panel';
 
 const QUERY_KEY = ['mobile-deployment-state'];
-
-const FILE_KINDS: MobileDeploymentFileKind[] = [
-  'android_google_services_json',
-  'ios_google_service_info_plist',
-  'android_upload_keystore',
-  'google_play_service_account_json',
-  'apple_distribution_certificate_p12',
-  'apple_app_store_provisioning_profile',
-  'app_store_connect_private_key_p8',
-];
-
-const SCALAR_NAMES: MobileDeploymentScalarName[] = [
-  'ANDROID_KEYSTORE_ALIAS',
-  'ANDROID_KEYSTORE_PASSWORD',
-  'ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD',
-  'GOOGLE_PLAY_PACKAGE_NAME',
-  'GOOGLE_PLAY_TRACK',
-  'APPLE_BUNDLE_ID',
-  'APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD',
-  'APPLE_TEAM_ID',
-  'APP_STORE_CONNECT_API_KEY_ID',
-  'APP_STORE_CONNECT_ISSUER_ID',
-];
-
-function ResourceBadge({
-  missingLabel,
-  ok,
-  readyLabel,
-}: {
-  missingLabel: string;
-  ok: boolean;
-  readyLabel: string;
-}) {
-  return ok ? (
-    <Badge variant="default">
-      <CheckCircle2 className="mr-1 h-3 w-3" />
-      {readyLabel}
-    </Badge>
-  ) : (
-    <Badge variant="secondary">
-      <XCircle className="mr-1 h-3 w-3" />
-      {missingLabel}
-    </Badge>
-  );
-}
-
-function VersionSummary({
-  label,
-  missingLabel,
-  noneLabel,
-  readyLabel,
-  version,
-}: {
-  label: string;
-  missingLabel: string;
-  noneLabel: string;
-  readyLabel: string;
-  version: MobileDeploymentState['activeVersion'];
-}) {
-  if (!version) {
-    return (
-      <div className="rounded-md border border-dashed p-3 text-muted-foreground text-sm">
-        {label}: {noneLabel}
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-md border p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="font-medium text-sm">
-          {label}: v{version.version} ({version.status})
-        </div>
-        <ResourceBadge
-          missingLabel={missingLabel}
-          ok={version.ready}
-          readyLabel={readyLabel}
-        />
-      </div>
-      {version.readinessErrors.length > 0 && (
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground text-xs">
-          {version.readinessErrors.slice(0, 6).map((error) => (
-            <li key={error}>{error}</li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
 
 export function MobileDeploymentClient({
   initialData,
@@ -134,15 +51,10 @@ export function MobileDeploymentClient({
   const t = useTranslations('mobile-deployment-settings');
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [envFile, setEnvFile] = useState('');
-  const [scalarName, setScalarName] = useState<MobileDeploymentScalarName>(
-    'ANDROID_KEYSTORE_ALIAS'
-  );
-  const [scalarValue, setScalarValue] = useState('');
   const [tokenName, setTokenName] = useState('GitHub Actions mobile deploy');
   const [issuedToken, setIssuedToken] = useState<string | null>(null);
 
-  const { data } = useQuery({
+  const { data, isFetching, refetch } = useQuery({
     initialData,
     queryFn: () => getMobileDeploymentState(),
     queryKey: QUERY_KEY,
@@ -155,24 +67,67 @@ export function MobileDeploymentClient({
     queryClient.invalidateQueries({ queryKey: QUERY_KEY });
   };
 
-  const envMutation = useMutation({
-    mutationFn: (value: string) => replaceMobileDeploymentEnvFile(value),
+  const envSaveMutation = useMutation({
+    mutationFn: async ({
+      name,
+      previousName,
+      value,
+    }: {
+      name: string;
+      previousName?: string;
+      value: string;
+    }) => {
+      const normalizedName = name.trim();
+      const state = await saveMobileDeploymentEnvKeyValue(
+        normalizedName,
+        value
+      );
+
+      if (previousName && previousName !== normalizedName) {
+        return clearMobileDeploymentEnvKeyValue(previousName);
+      }
+
+      return state;
+    },
+    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
     onSuccess: (state) => {
-      setEnvFile('');
       refresh(state);
       toast({ title: t('saved') });
     },
-    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
   });
 
-  const scalarMutation = useMutation({
-    mutationFn: () => saveMobileDeploymentScalarValue(scalarName, scalarValue),
+  const envClearMutation = useMutation({
+    mutationFn: (name: string) => clearMobileDeploymentEnvKeyValue(name),
+    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
     onSuccess: (state) => {
-      setScalarValue('');
+      refresh(state);
+      toast({ title: t('cleared') });
+    },
+  });
+
+  const scalarSaveMutation = useMutation({
+    mutationFn: ({
+      name,
+      value,
+    }: {
+      name: MobileDeploymentScalarName;
+      value: string;
+    }) => saveMobileDeploymentScalarValue(name, value),
+    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
+    onSuccess: (state) => {
       refresh(state);
       toast({ title: t('saved') });
     },
+  });
+
+  const scalarClearMutation = useMutation({
+    mutationFn: (name: MobileDeploymentScalarName) =>
+      clearMobileDeploymentScalarValue(name),
     onError: (error) => toast({ title: error.message, variant: 'destructive' }),
+    onSuccess: (state) => {
+      refresh(state);
+      toast({ title: t('cleared') });
+    },
   });
 
   const fileMutation = useMutation({
@@ -183,29 +138,29 @@ export function MobileDeploymentClient({
       file: File;
       kind: MobileDeploymentFileKind;
     }) => uploadMobileDeploymentFileResource(kind, file),
+    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
     onSuccess: (state) => {
       refresh(state);
       toast({ title: t('uploaded') });
     },
-    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
   });
 
   const activateMutation = useMutation({
     mutationFn: () => activateMobileDeploymentDraft(),
+    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
     onSuccess: (state) => {
       refresh(state);
       toast({ title: t('activated') });
     },
-    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
   });
 
   const rollbackMutation = useMutation({
     mutationFn: () => rollbackMobileDeploymentVersion(),
+    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
     onSuccess: (state) => {
       refresh(state);
       toast({ title: t('rolledBack') });
     },
-    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
   });
 
   const issueTokenMutation = useMutation({
@@ -215,32 +170,35 @@ export function MobileDeploymentClient({
         name: tokenName,
         platforms: ['android', 'ios'],
       }),
+    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
     onSuccess: ({ state, token }) => {
       setIssuedToken(token);
       refresh(state);
       toast({ title: t('tokenIssued') });
     },
-    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
   });
 
   const revokeTokenMutation = useMutation({
     mutationFn: (tokenId: string) => revokeMobileDeploymentCiToken(tokenId),
+    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
     onSuccess: (state) => {
       refresh(state);
       toast({ title: t('tokenRevoked') });
     },
-    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
   });
 
-  const configuredEnv = new Set(data.envKeys.map((entry) => entry.name));
-  const configuredScalars = new Set(
-    data.scalarValues.map((entry) => entry.name)
+  const fileStatusByName = useMemo(
+    () => new Map(data.fileArtifacts.map((entry) => [entry.name, entry])),
+    [data.fileArtifacts]
   );
-  const configuredFiles = new Set(
-    data.fileArtifacts
-      .filter((entry) => entry.configured)
-      .map((entry) => entry.name)
-  );
+
+  const verify = async () => {
+    const result = await refetch();
+    if (result.data) {
+      refresh(result.data);
+    }
+    toast({ title: t('verified') });
+  };
 
   return (
     <div className="space-y-4">
@@ -261,133 +219,80 @@ export function MobileDeploymentClient({
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t('envTitle')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Textarea
-            className="min-h-40 font-mono text-xs"
-            onChange={(event) => setEnvFile(event.target.value)}
-            placeholder="NEXT_PUBLIC_APP_URL=https://tuturuuu.com"
-            value={envFile}
-          />
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-muted-foreground text-sm">
-              {t('configuredKeys', { count: configuredEnv.size })}
-            </div>
-            <Button
-              disabled={!envFile.trim() || envMutation.isPending}
-              onClick={() => envMutation.mutate(envFile)}
-            >
-              <KeyRound className="mr-2 h-4 w-4" />
-              {t('replaceEnv')}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex justify-end">
+        <Button disabled={isFetching} onClick={verify} variant="outline">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          {t('verify')}
+        </Button>
+      </div>
+
+      <MobileDeploymentEnvPanel
+        clearPending={envClearMutation.isPending}
+        envKeys={data.envKeys}
+        onClear={(name) => envClearMutation.mutate(name)}
+        onSave={async (payload) => {
+          await envSaveMutation.mutateAsync(payload);
+        }}
+        savePending={envSaveMutation.isPending}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">{t('scalarsTitle')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-              <div className="space-y-1">
-                <Label htmlFor="mobile-deployment-scalar-name">
-                  {t('name')}
-                </Label>
-                <select
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  id="mobile-deployment-scalar-name"
-                  onChange={(event) =>
-                    setScalarName(
-                      event.target.value as MobileDeploymentScalarName
-                    )
-                  }
-                  value={scalarName}
-                >
-                  {SCALAR_NAMES.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="mobile-deployment-scalar-value">
-                  {t('value')}
-                </Label>
-                <Input
-                  id="mobile-deployment-scalar-value"
-                  onChange={(event) => setScalarValue(event.target.value)}
-                  type="password"
-                  value={scalarValue}
-                />
-              </div>
-              <Button
-                className="self-end"
-                disabled={!scalarValue || scalarMutation.isPending}
-                onClick={() => scalarMutation.mutate()}
-              >
-                <KeyRound className="mr-2 h-4 w-4" />
-                {t('save')}
-              </Button>
-            </div>
-
-            <div className="grid gap-2">
-              {SCALAR_NAMES.map((name) => (
-                <div
-                  className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm"
-                  key={name}
-                >
-                  <span className="min-w-0 truncate font-mono">{name}</span>
-                  <ResourceBadge
-                    missingLabel={t('missing')}
-                    ok={configuredScalars.has(name)}
-                    readyLabel={t('ready')}
-                  />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <MobileDeploymentScalarPanel
+          clearPending={scalarClearMutation.isPending}
+          onClear={(name) => scalarClearMutation.mutate(name)}
+          onSave={async (payload) => {
+            await scalarSaveMutation.mutateAsync(payload);
+          }}
+          savePending={scalarSaveMutation.isPending}
+          scalarValues={data.scalarValues}
+        />
 
         <Card>
           <CardHeader>
             <CardTitle className="text-base">{t('filesTitle')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {FILE_KINDS.map((kind) => (
-              <div
-                className="grid gap-2 rounded-md border p-2 md:grid-cols-[1fr_auto_auto] md:items-center"
-                key={kind}
-              >
-                <div className="min-w-0 truncate font-mono text-sm">{kind}</div>
-                <ResourceBadge
-                  missingLabel={t('missing')}
-                  ok={configuredFiles.has(kind)}
-                  readyLabel={t('ready')}
-                />
-                <Label className="inline-flex cursor-pointer items-center justify-center rounded-md border px-3 py-2 text-sm">
-                  <Upload className="mr-2 h-4 w-4" />
-                  {t('upload')}
-                  <input
-                    className="sr-only"
-                    disabled={fileMutation.isPending}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) {
-                        fileMutation.mutate({ file, kind });
-                      }
-                      event.currentTarget.value = '';
-                    }}
-                    type="file"
-                  />
-                </Label>
-              </div>
-            ))}
+            {MOBILE_DEPLOYMENT_FILE_KINDS.map((kind) => {
+              const status = fileStatusByName.get(kind);
+              const configured = Boolean(status?.configured);
+
+              return (
+                <div
+                  className="grid gap-3 rounded-md border p-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+                  key={kind}
+                >
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="min-w-0 truncate font-mono text-sm">
+                        {kind}
+                      </span>
+                      <ResourceBadge
+                        missingLabel={t('missing')}
+                        ok={configured}
+                        readyLabel={t('ready')}
+                      />
+                    </div>
+                    <ResourceMetadata status={status} />
+                  </div>
+                  <Label className="inline-flex cursor-pointer items-center justify-center rounded-md border px-3 py-2 text-sm">
+                    <Upload className="mr-2 h-4 w-4" />
+                    {t('upload')}
+                    <input
+                      className="sr-only"
+                      disabled={fileMutation.isPending}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) {
+                          fileMutation.mutate({ file, kind });
+                        }
+                        event.currentTarget.value = '';
+                      }}
+                      type="file"
+                    />
+                  </Label>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       </div>
@@ -467,10 +372,6 @@ export function MobileDeploymentClient({
         >
           <RotateCcw className="mr-2 h-4 w-4" />
           {t('rollback')}
-        </Button>
-        <Button onClick={() => refresh()} variant="ghost">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          {t('refresh')}
         </Button>
       </div>
 
