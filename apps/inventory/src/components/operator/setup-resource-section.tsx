@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { PackageOpen, Pencil, Plus, Trash2 } from '@tuturuuu/icons';
+import { Pencil, Plus, Trash2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -16,13 +16,14 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useState } from 'react';
+import { operatorDialogContentClassName } from './operator-dialog';
 import {
   invalidateSetup,
   type NamedResource,
   type ResourceConfig,
 } from './setup-helpers';
 
-function ResourceDialog({
+export function ResourceDialog({
   config,
   item,
   trigger,
@@ -58,7 +59,7 @@ function ResourceDialog({
       open={open}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),28rem)] overflow-y-auto">
+      <DialogContent className={operatorDialogContentClassName('compact')}>
         <DialogHeader>
           <DialogTitle>
             {item
@@ -184,23 +185,16 @@ export function ResourceSection({
           wsId={wsId}
         />
       </div>
-      {config.rows.length ? (
-        config.rows.map((item) => (
-          <ResourceRow
-            config={config}
-            item={item}
-            key={`${config.key}-${item.id}`}
-            wsId={wsId}
-          />
-        ))
-      ) : (
-        <div className="p-3">
-          <div className="flex min-w-0 items-center gap-2 rounded-md border border-border border-dashed bg-muted/20 p-3 text-muted-foreground text-sm">
-            <PackageOpen className="h-4 w-4 shrink-0" />
-            <p className="truncate">{t('emptyResource')}</p>
-          </div>
-        </div>
-      )}
+      {config.rows.length
+        ? config.rows.map((item) => (
+            <ResourceRow
+              config={config}
+              item={item}
+              key={`${config.key}-${item.id}`}
+              wsId={wsId}
+            />
+          ))
+        : null}
     </section>
   );
 }

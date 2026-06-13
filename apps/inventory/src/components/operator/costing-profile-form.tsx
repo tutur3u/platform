@@ -8,7 +8,10 @@ import {
   Plus,
   Trash2,
 } from '@tuturuuu/icons';
-import type { InventoryProductFormOptionsResponse } from '@tuturuuu/internal-api/inventory';
+import type {
+  InventoryProductFormOptionsResponse,
+  InventoryProductSummary,
+} from '@tuturuuu/internal-api/inventory';
 import {
   createInventoryCostProfile,
   createInventoryProductCategory,
@@ -27,7 +30,9 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import { FormStepper, StepPanel, StepperDialogFooter } from './form-stepper';
+import { operatorDialogContentClassName } from './operator-dialog';
 import { labelFor, ReviewRows, SelectField } from './operator-form-fields';
+import { numberOrZero } from './operator-stock';
 
 type ScenarioInput = {
   batchSize: string;
@@ -48,10 +53,12 @@ function numeric(value: string) {
 
 export function CostingProfileDialog({
   options,
+  products,
   trigger,
   wsId,
 }: {
   options?: InventoryProductFormOptionsResponse;
+  products?: InventoryProductSummary[];
   trigger: ReactNode;
   wsId: string;
 }) {
@@ -60,6 +67,7 @@ export function CostingProfileDialog({
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
+  const [productId, setProductId] = useState('');
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [targetRetailPrice, setTargetRetailPrice] = useState('');
@@ -104,6 +112,7 @@ export function CostingProfileDialog({
         categoryId: categoryId || null,
         currency: 'USD',
         name,
+        productId: productId || null,
         profitShares: [
           { recipientLabel: 'Talent', sharePercentage: 70, sortOrder: 0 },
           { recipientLabel: 'Partner', sharePercentage: 30, sortOrder: 1 },
@@ -131,6 +140,7 @@ export function CostingProfileDialog({
     onError: () => toast.error(forms('saveError')),
     onSuccess: () => {
       toast.success(forms('saveSuccess'));
+      setProductId('');
       setName('');
       setCategoryId('');
       setTargetRetailPrice('');
@@ -142,6 +152,21 @@ export function CostingProfileDialog({
   });
   const canSubmit = Boolean(name && targetRetailPrice);
   const canContinue = step === 0 ? canSubmit : true;
+  const handleProductChange = (nextProductId: string) => {
+    setProductId(nextProductId);
+
+    const product = products?.find((item) => item.id === nextProductId);
+    if (!product) return;
+
+    setName((current) => current || product.name);
+    setCategoryId((current) => current || product.category_id || '');
+    setTargetRetailPrice((current) => {
+      if (current) return current;
+
+      const price = numberOrZero(product.inventory?.[0]?.price);
+      return price > 0 ? String(price) : current;
+    });
+  };
 
   return (
     <Dialog
@@ -152,7 +177,7 @@ export function CostingProfileDialog({
       open={open}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),56rem)] overflow-y-auto">
+      <DialogContent className={operatorDialogContentClassName('large')}>
         <DialogHeader>
           <DialogTitle>{t('newProfile')}</DialogTitle>
           <DialogDescription>{t('summaryDescription')}</DialogDescription>
@@ -161,6 +186,7 @@ export function CostingProfileDialog({
           className="grid gap-5"
           onSubmit={(event: FormEvent) => {
             event.preventDefault();
+            if (step !== steps.length - 1) return;
             if (canSubmit) createMutation.mutate();
           }}
         >
@@ -170,7 +196,20 @@ export function CostingProfileDialog({
               description={t('steps.profileDescription')}
               title={t('steps.profile')}
             >
-              <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_220px_160px]">
+              <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_220px_160px]">
+                <SelectField
+                  allowEmpty
+                  className="md:col-span-2 xl:col-span-1"
+                  emptyText={forms('emptyOptions')}
+                  label={forms('product')}
+                  onChange={handleProductChange}
+                  options={products}
+                  placeholder={forms('placeholders.product')}
+                  searchPlaceholder={forms('searchOptions', {
+                    resource: forms('product'),
+                  })}
+                  value={productId}
+                />
                 <label className="grid min-w-0 gap-1 text-sm">
                   <span className="font-medium">{t('itemName')}</span>
                   <Input
@@ -310,6 +349,11 @@ export function CostingProfileDialog({
               <ReviewRows
                 rows={[
                   [t('itemName'), name],
+                  [
+                    forms('product'),
+                    products?.find((product) => product.id === productId)
+                      ?.name ?? forms('notSet'),
+                  ],
                   [
                     forms('category'),
                     labelFor(options?.categories, categoryId),

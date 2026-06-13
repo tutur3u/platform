@@ -1,23 +1,33 @@
 'use client';
 
 import {
+  Calculator,
   CheckCircle2,
   ImageOff,
   Tags,
   TriangleAlert,
   User,
 } from '@tuturuuu/icons';
-import type { InventoryProductSummary } from '@tuturuuu/internal-api/inventory';
+import type {
+  InventoryCostProfile,
+  InventoryProductSummary,
+} from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { EmptyRow } from './operator-shell';
+import {
+  getInventoryStockState,
+  stockAmountFromRecords,
+} from './operator-stock';
 import { ProductRowActions } from './product-management';
 
 export function ProductsTable({
+  costingProfiles = [],
   rows,
   view,
   wsId,
 }: {
+  costingProfiles?: InventoryCostProfile[];
   rows: InventoryProductSummary[];
   view: string;
   wsId: string;
@@ -43,13 +53,13 @@ export function ProductsTable({
         <tbody>
           {rows.map((row) => {
             const inventory = row.inventory?.[0] ?? {};
-            const amount = Number(
-              inventory.amount ?? row.stock?.[0]?.amount ?? 0
-            );
-            const minAmount = Number(
-              inventory.min_amount ?? row.min_amount ?? 0
-            );
-            const low = view === 'stock' && amount <= minAmount;
+            const amount = stockAmountFromRecords(inventory, row.stock?.[0]);
+            const stockState = getInventoryStockState({
+              amount,
+              minAmount: inventory.min_amount ?? row.min_amount,
+            });
+            const low = view === 'stock' && stockState.isLowStock;
+            const hasCosting = hasCostingCoverage(row, costingProfiles);
             const badges = [
               {
                 icon: row.avatar_url ? CheckCircle2 : ImageOff,
@@ -60,7 +70,11 @@ export function ProductsTable({
               },
               {
                 icon: low ? TriangleAlert : CheckCircle2,
-                label: low ? t('badges.lowStock') : t('badges.stockReady'),
+                label: stockState.isUnlimited
+                  ? t('badges.stockUnlimited')
+                  : low
+                    ? t('badges.lowStock')
+                    : t('badges.stockReady'),
                 tone: low ? 'danger' : 'ready',
               },
               {
@@ -76,6 +90,13 @@ export function ProductsTable({
                   ? t('badges.ownerReady')
                   : t('badges.ownerMissing'),
                 tone: row.owner?.name ? 'ready' : 'missing',
+              },
+              {
+                icon: Calculator,
+                label: hasCosting
+                  ? t('badges.costingReady')
+                  : t('badges.costingMissing'),
+                tone: hasCosting ? 'ready' : 'missing',
               },
             ];
 
@@ -142,7 +163,9 @@ export function ProductsTable({
                   {low ? (
                     <TriangleAlert className="mr-1 inline h-4 w-4" />
                   ) : null}
-                  {amount}
+                  <span className={stockState.isUnlimited ? 'font-bold' : ''}>
+                    {stockState.displayAmount}
+                  </span>
                 </td>
                 <td className="p-3 text-muted-foreground">
                   {String(inventory.warehouse_name ?? row.warehouse ?? '-')}
@@ -157,4 +180,36 @@ export function ProductsTable({
       </table>
     </div>
   );
+}
+
+function hasCostingCoverage(
+  product: InventoryProductSummary,
+  profiles: InventoryCostProfile[]
+) {
+  if (!profiles.length) return false;
+
+  const productName = normalizeMatch(product.name);
+  const categoryName = normalizeMatch(product.category ?? '');
+
+  return profiles.some((profile) => {
+    if (profile.productId && profile.productId === product.id) return true;
+    if (profile.categoryId && profile.categoryId === product.category_id) {
+      return true;
+    }
+
+    const profileProductName = normalizeMatch(profile.productName ?? '');
+    const profileName = normalizeMatch(profile.name);
+    const profileCategoryName = normalizeMatch(profile.categoryName ?? '');
+
+    return (
+      Boolean(productName) &&
+      (profileProductName === productName ||
+        profileName === productName ||
+        (Boolean(categoryName) && profileCategoryName === categoryName))
+    );
+  });
+}
+
+function normalizeMatch(value: string) {
+  return value.trim().toLocaleLowerCase();
 }

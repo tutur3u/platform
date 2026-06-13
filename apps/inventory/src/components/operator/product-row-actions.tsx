@@ -22,7 +22,9 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { operatorDialogContentClassName } from './operator-dialog';
 import { ToggleField } from './operator-form-fields';
+import { stockAmountFromRecords } from './operator-stock';
 
 export function invalidateProducts(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -42,15 +44,14 @@ export function ProductRowActions({
   const t = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
   const inventory = row.inventory?.[0] ?? {};
+  const stockAmount = stockAmountFromRecords(inventory, row.stock?.[0]);
   const [stockOpen, setStockOpen] = useState(false);
   const [amount, setAmount] = useState(
-    inventory.amount == null ? '' : String(inventory.amount)
+    stockAmount == null ? '' : String(stockAmount)
   );
   const [minAmount, setMinAmount] = useState(String(inventory.min_amount ?? 0));
   const [price, setPrice] = useState(String(inventory.price ?? 0));
-  const [unlimitedStock, setUnlimitedStock] = useState(
-    inventory.amount == null
-  );
+  const [unlimitedStock, setUnlimitedStock] = useState(stockAmount === null);
 
   const archiveMutation = useMutation({
     mutationFn: () =>
@@ -105,12 +106,10 @@ export function ProductRowActions({
         <Dialog
           onOpenChange={(nextOpen) => {
             if (nextOpen) {
-              setAmount(
-                inventory.amount == null ? '' : String(inventory.amount)
-              );
+              setAmount(stockAmount == null ? '' : String(stockAmount));
               setMinAmount(String(inventory.min_amount ?? 0));
               setPrice(String(inventory.price ?? 0));
-              setUnlimitedStock(inventory.amount == null);
+              setUnlimitedStock(stockAmount === null);
             }
             setStockOpen(nextOpen);
           }}
@@ -122,7 +121,7 @@ export function ProductRowActions({
               {t('editStock')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),32rem)] overflow-y-auto">
+          <DialogContent className={operatorDialogContentClassName('compact')}>
             <DialogHeader>
               <DialogTitle>{t('editStockTitle')}</DialogTitle>
               <DialogDescription>{t('editStockDescription')}</DialogDescription>

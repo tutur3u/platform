@@ -6,6 +6,7 @@ import type {
   InventoryCostingAnalyticsScenario,
   InventoryCostProfile,
   InventoryProductFormOptionsResponse,
+  InventoryProductSummary,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
@@ -22,11 +23,13 @@ export function CostingPanel({
   analytics,
   options,
   profiles,
+  products,
   wsId,
 }: {
   analytics?: InventoryCostingAnalytics;
   options?: InventoryProductFormOptionsResponse;
   profiles: InventoryCostProfile[];
+  products: InventoryProductSummary[];
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.costing');
@@ -60,6 +63,7 @@ export function CostingPanel({
         <div className="flex flex-wrap gap-2 lg:justify-end">
           <CostingProfileDialog
             options={options}
+            products={products}
             trigger={
               <Button type="button">
                 <Plus className="h-4 w-4" />
@@ -110,6 +114,7 @@ export function CostingPanel({
             <div className="flex flex-wrap justify-center gap-2">
               <CostingProfileDialog
                 options={options}
+                products={products}
                 trigger={
                   <Button type="button" variant="outline">
                     <Plus className="h-4 w-4" />

@@ -24,6 +24,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { operatorDialogContentClassName } from './operator-dialog';
 import type { InventoryOperatorView } from './operator-types';
 
 const GUIDE_CONFIG_ID = 'inventory.launch_walkthrough';
@@ -118,7 +119,7 @@ export function InventoryGuidance({
         {completed ? t('replay') : t('start')}
       </Button>
       <Dialog onOpenChange={setOpen} open={open}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className={operatorDialogContentClassName('medium')}>
           <DialogHeader>
             <DialogTitle>{t('title')}</DialogTitle>
             <DialogDescription>{t('description')}</DialogDescription>

@@ -94,7 +94,7 @@ export function useInventoryData(
     queryKey: ['inventory', wsId, 'checkouts', filters.q, filters.status],
   });
   const costingProfiles = useQuery({
-    enabled: view === 'costing' || view === 'overview',
+    enabled: ['catalog', 'costing', 'overview', 'stock'].includes(view),
     queryFn: () =>
       listInventoryCostProfiles(wsId, {
         pageSize: 50,

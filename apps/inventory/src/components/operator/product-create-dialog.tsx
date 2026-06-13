@@ -31,6 +31,7 @@ import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import { FormStepper, StepPanel, StepperDialogFooter } from './form-stepper';
 import { InventoryImageUploadField } from './inventory-image-upload';
+import { operatorDialogContentClassName } from './operator-dialog';
 import {
   labelFor,
   NumberField,
@@ -183,7 +184,7 @@ export function ProductCreateForm({
             </Button>
           )}
         </DialogTrigger>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-5xl">
+        <DialogContent className={operatorDialogContentClassName('xlarge')}>
           <DialogHeader>
             <DialogTitle>{t('createProductTitle')}</DialogTitle>
             <DialogDescription>
@@ -194,11 +195,12 @@ export function ProductCreateForm({
             className="grid gap-5"
             onSubmit={(event: FormEvent) => {
               event.preventDefault();
+              if (step !== steps.length - 1) return;
               if (canSubmit) mutation.mutate();
             }}
           >
             <FormStepper activeIndex={step} steps={steps} />
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
               {step === 0 ? (
                 <StepPanel
                   description={t('steps.productDetailsDescription')}

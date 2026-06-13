@@ -190,6 +190,7 @@ export function InventoryOperatorClient({
     view === 'commerce' && commerceTab === 'sales' ? data.sales : null,
     view === 'costing' ? data.costingProfiles : null,
     view === 'costing' ? data.costingAnalytics : null,
+    ['catalog', 'stock'].includes(view) ? data.costingProfiles : null,
     view === 'audits' ? data.audits : null,
     [
       'catalog',
@@ -278,7 +279,12 @@ export function InventoryOperatorClient({
             {view === 'catalog' ? (
               <ProductCreateForm options={data.formOptions.data} wsId={wsId} />
             ) : null}
-            <ProductsTable rows={products} view={view} wsId={wsId} />
+            <ProductsTable
+              costingProfiles={data.costingProfiles.data?.data ?? []}
+              rows={products}
+              view={view}
+              wsId={wsId}
+            />
           </>
         ) : null}
         {!isLoading && !isError && view === 'setup' ? (
@@ -294,6 +300,7 @@ export function InventoryOperatorClient({
             analytics={data.costingAnalytics.data}
             options={data.formOptions.data}
             profiles={data.costingProfiles.data?.data ?? []}
+            products={products}
             wsId={wsId}
           />
         ) : null}

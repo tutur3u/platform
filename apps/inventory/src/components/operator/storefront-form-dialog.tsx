@@ -17,6 +17,7 @@ import { sanitizeStorefrontAccentColor } from '@tuturuuu/ui/storefront';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
 import { FormStepper, StepperDialogFooter } from './form-stepper';
+import { operatorDialogContentClassName } from './operator-dialog';
 import {
   createSlugSuggestion,
   type SmartSuggestion,
@@ -163,7 +164,7 @@ export function StorefrontForm({
             </Button>
           )}
         </DialogTrigger>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),64rem)] overflow-y-auto">
+        <DialogContent className={operatorDialogContentClassName('xlarge')}>
           <DialogHeader>
             <DialogTitle>{t('createStorefrontTitle')}</DialogTitle>
             <DialogDescription>
@@ -174,6 +175,7 @@ export function StorefrontForm({
             className="grid gap-5"
             onSubmit={(event: FormEvent) => {
               event.preventDefault();
+              if (step !== steps.length - 1) return;
               if (canSubmit) mutation.mutate();
             }}
           >

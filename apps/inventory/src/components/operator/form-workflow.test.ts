@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { getInventoryStockState } from './operator-stock';
 
 const operatorDir = join(
   process.cwd(),
@@ -111,6 +112,57 @@ describe('Inventory operator form workflows', () => {
     expect(source('sale-detail-panel.tsx')).toContain('SaleNoteDialog');
   });
 
+  it('uses uncapped shared dialog sizing for Inventory dialogs', () => {
+    expect(source('operator-dialog.ts')).toContain('max-w-none');
+
+    const violations = operatorSources().flatMap(({ fileName, source }) => {
+      const dialogContentTags =
+        source.match(/<DialogContent className=\{?[^>\n]+/g) ?? [];
+
+      return dialogContentTags
+        .filter((tag) => !tag.includes('operatorDialogContentClassName'))
+        .map((tag) => `${fileName}: ${tag}`);
+    });
+
+    expect(violations).toEqual([]);
+  });
+
+  it('does not submit stepper forms before the review step', () => {
+    for (const fileName of [
+      'bundle-form-dialog.tsx',
+      'costing-profile-form.tsx',
+      'product-create-dialog.tsx',
+      'storefront-form-dialog.tsx',
+    ]) {
+      expect(source(fileName)).toContain(
+        'if (step !== steps.length - 1) return;'
+      );
+    }
+  });
+
+  it('renders unlimited stock as non-low stock with the infinity symbol', () => {
+    expect(
+      getInventoryStockState({ amount: null, minAmount: 10 })
+    ).toMatchObject({
+      displayAmount: '∞',
+      isLowStock: false,
+      isUnlimited: true,
+    });
+
+    expect(getInventoryStockState({ amount: 0, minAmount: 10 })).toMatchObject({
+      displayAmount: '0',
+      isLowStock: true,
+      isUnlimited: false,
+    });
+  });
+
+  it('keeps setup empty states centralized instead of repeated per-card boxes', () => {
+    expect(source('setup-panel.tsx')).toContain('emptyWorkspaceTitle');
+    expect(source('setup-panel.tsx')).toContain('ResourceDialog');
+    expect(source('setup-resource-section.tsx')).not.toContain('PackageOpen');
+    expect(source('setup-batch-section.tsx')).not.toContain('PackageOpen');
+  });
+
   it('keeps featured product images on the scoped Inventory Drive upload route', () => {
     const productSource = source('product-create-dialog.tsx');
 
@@ -131,6 +183,19 @@ describe('Inventory operator form workflows', () => {
       'amount: unlimitedStock ? null : Number(amount || 0)'
     );
     expect(rowActionsSource).toContain('disabled={unlimitedStock}');
+    expect(rowActionsSource).toContain('stockAmount === null');
+    expect(source('products-table.tsx')).toContain('stockState.isUnlimited');
+  });
+
+  it('connects costing profiles back to catalog products', () => {
+    const costingSource = source('costing-profile-form.tsx');
+    const tableSource = source('products-table.tsx');
+
+    expect(costingSource).toContain('productId: productId || null');
+    expect(costingSource).toContain('handleProductChange');
+    expect(costingSource).toContain('product.inventory?.[0]?.price');
+    expect(tableSource).toContain('hasCostingCoverage');
+    expect(tableSource).toContain("t('badges.costingReady')");
   });
 
   it('supports direct storefront hero uploads in create and edit flows', () => {

@@ -50,6 +50,7 @@ function renderPanel(profiles: InventoryCostProfile[]) {
           ),
         }}
         profiles={profiles}
+        products={[]}
         wsId="ws-1"
       />
     </QueryClientProvider>

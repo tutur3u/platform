@@ -28,6 +28,7 @@ import {
 } from './bundle-component-picker';
 import { FormStepper, StepPanel, StepperDialogFooter } from './form-stepper';
 import { InventoryImageUploadField } from './inventory-image-upload';
+import { operatorDialogContentClassName } from './operator-dialog';
 import {
   NumberField,
   ReviewRows,
@@ -189,7 +190,7 @@ export function BundleForm({
             </Button>
           )}
         </DialogTrigger>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),64rem)] overflow-y-auto">
+        <DialogContent className={operatorDialogContentClassName('xlarge')}>
           <DialogHeader>
             <DialogTitle>{t('createBundleTitle')}</DialogTitle>
             <DialogDescription>
@@ -200,6 +201,7 @@ export function BundleForm({
             className="grid gap-5"
             onSubmit={(event: FormEvent) => {
               event.preventDefault();
+              if (step !== steps.length - 1) return;
               if (canSubmit) mutation.mutate();
             }}
           >

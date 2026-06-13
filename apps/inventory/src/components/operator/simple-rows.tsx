@@ -94,6 +94,14 @@ export function SimpleRows({
         const anyRow = row as Record<string, unknown>;
         const title = String(anyRow.name ?? anyRow.id);
         const value = String(anyRow.status ?? '');
+        const availableQuantity = anyRow.availableQuantity;
+        const availableDetail =
+          availableQuantity === null
+            ? t('rowDetails.availableUnlimited')
+            : t('rowDetails.available', {
+                count:
+                  typeof availableQuantity === 'number' ? availableQuantity : 0,
+              });
         const details =
           type === 'storefronts'
             ? [
@@ -115,12 +123,14 @@ export function SimpleRows({
                     ? (row as InventoryBundle).components.length
                     : 0,
                 }),
-                t('rowDetails.available', {
-                  count:
-                    typeof anyRow.availableQuantity === 'number'
-                      ? anyRow.availableQuantity
-                      : 0,
-                }),
+                availableQuantity === null
+                  ? availableDetail
+                  : t('rowDetails.available', {
+                      count:
+                        typeof availableQuantity === 'number'
+                          ? availableQuantity
+                          : 0,
+                    }),
               ];
 
         return (

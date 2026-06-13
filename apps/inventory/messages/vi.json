@@ -881,12 +881,15 @@
       "badges": {
         "categoryMissing": "Chưa có danh mục",
         "categoryReady": "Có danh mục",
+        "costingMissing": "Chưa có chi phí",
+        "costingReady": "Có chi phí",
         "imageMissing": "Chưa có ảnh",
         "imageReady": "Có ảnh",
         "lowStock": "Tồn kho thấp",
         "ownerMissing": "Chưa có chủ sở hữu",
         "ownerReady": "Có chủ sở hữu",
-        "stockReady": "Tồn kho sẵn sàng"
+        "stockReady": "Tồn kho sẵn sàng",
+        "stockUnlimited": "Không giới hạn"
       },
       "columns": {
         "actions": "Thao tác",
@@ -1394,6 +1397,7 @@
       "previewStore": "Xem trước",
       "rowDetails": {
         "available": "{count, plural, one {# có sẵn} other {# có sẵn}}",
+        "availableUnlimited": "∞ có sẵn",
         "checkoutMode": "Checkout: {mode}",
         "listings": "{count, plural, one {# listing} other {# listing}}"
       },
@@ -1401,6 +1405,8 @@
       "setup": {
         "batches": "Lô hàng",
         "categories": "Danh mục",
+        "emptyWorkspaceDescription": "Tạo các bản ghi tham chiếu cơ bản một lần, sau đó sản phẩm, chi phí, tồn kho, bundle và listing cửa hàng đều có thể dùng lại.",
+        "emptyWorkspaceTitle": "Bắt đầu với bản ghi thiết lập chung.",
         "manufacturers": "Nhà sản xuất",
         "matrix": {
           "batches": "Lô hàng",

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Layers3, PackageOpen, Plus, Trash2 } from '@tuturuuu/icons';
+import { Layers3, Plus, Trash2 } from '@tuturuuu/icons';
 import type { InventoryProductFormOptionsResponse } from '@tuturuuu/internal-api/inventory';
 import {
   createInventoryBatch,
@@ -25,6 +25,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
+import { operatorDialogContentClassName } from './operator-dialog';
 import { SelectField } from './operator-form-fields';
 import { invalidateSetup, namedRows } from './setup-helpers';
 
@@ -82,7 +83,7 @@ function BatchCreateDialog({
           {t('create')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),36rem)] overflow-y-auto">
+      <DialogContent className={operatorDialogContentClassName('medium')}>
         <DialogHeader>
           <DialogTitle>{t('createBatchTitle')}</DialogTitle>
           <DialogDescription>{t('createBatchDescription')}</DialogDescription>
@@ -218,20 +219,15 @@ export function BatchSection({
           wsId={wsId}
         />
       </div>
-      {batches.length ? (
-        batches
-          .filter((batch): batch is ProductBatch & { id: string } =>
-            Boolean(batch.id)
-          )
-          .map((batch) => <BatchRow batch={batch} key={batch.id} wsId={wsId} />)
-      ) : (
-        <div className="p-3">
-          <div className="flex min-w-0 items-center gap-2 rounded-md border border-border border-dashed bg-muted/20 p-3 text-muted-foreground text-sm">
-            <PackageOpen className="h-4 w-4 shrink-0" />
-            <p className="truncate">{t('emptyResource')}</p>
-          </div>
-        </div>
-      )}
+      {batches.length
+        ? batches
+            .filter((batch): batch is ProductBatch & { id: string } =>
+              Boolean(batch.id)
+            )
+            .map((batch) => (
+              <BatchRow batch={batch} key={batch.id} wsId={wsId} />
+            ))
+        : null}
     </section>
   );
 }

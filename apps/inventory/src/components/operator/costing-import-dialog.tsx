@@ -20,6 +20,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { operatorDialogContentClassName } from './operator-dialog';
 
 export function CostingImportDialog({ wsId }: { wsId: string }) {
   const t = useTranslations('inventory.operator.costing');
@@ -53,7 +54,7 @@ export function CostingImportDialog({ wsId }: { wsId: string }) {
           {t('importCsv')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),48rem)] overflow-y-auto">
+      <DialogContent className={operatorDialogContentClassName('medium')}>
         <DialogHeader>
           <DialogTitle>{t('importTitle')}</DialogTitle>
           <DialogDescription>{t('importDescription')}</DialogDescription>

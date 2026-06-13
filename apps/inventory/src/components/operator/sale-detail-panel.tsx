@@ -21,6 +21,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
+import { operatorDialogContentClassName } from './operator-dialog';
 import { LoadingRows } from './operator-shell';
 
 export function SaleNoteDialog({
@@ -65,7 +66,7 @@ export function SaleNoteDialog({
           {t('note')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),32rem)] overflow-y-auto">
+      <DialogContent className={operatorDialogContentClassName('compact')}>
         <DialogHeader>
           <DialogTitle>{t('editSaleNoteTitle')}</DialogTitle>
           <DialogDescription>{t('editSaleNoteDescription')}</DialogDescription>

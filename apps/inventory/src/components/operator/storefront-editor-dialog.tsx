@@ -28,6 +28,7 @@ import { sanitizeStorefrontAccentColor } from '@tuturuuu/ui/storefront';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { InventoryImageUploadField } from './inventory-image-upload';
+import { operatorDialogContentClassName } from './operator-dialog';
 import {
   SelectValueField,
   TextAreaField,
@@ -88,7 +89,7 @@ export function StorefrontEditorDialog({
           <Settings2 className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[min(calc(100vw-2rem),48rem)] overflow-y-auto">
+      <DialogContent className={operatorDialogContentClassName('large')}>
         <DialogHeader>
           <DialogTitle>{t('editStorefrontTitle')}</DialogTitle>
           <DialogDescription>

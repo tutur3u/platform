@@ -881,12 +881,15 @@
       "badges": {
         "categoryMissing": "No category",
         "categoryReady": "Categorized",
+        "costingMissing": "No costing",
+        "costingReady": "Costing",
         "imageMissing": "No image",
         "imageReady": "Image",
         "lowStock": "Low stock",
         "ownerMissing": "No owner",
         "ownerReady": "Owner",
-        "stockReady": "Stock ready"
+        "stockReady": "Stock ready",
+        "stockUnlimited": "Unlimited"
       },
       "columns": {
         "actions": "Actions",
@@ -1394,6 +1397,7 @@
       "previewStore": "Preview",
       "rowDetails": {
         "available": "{count, plural, one {# available} other {# available}}",
+        "availableUnlimited": "∞ available",
         "checkoutMode": "Checkout: {mode}",
         "listings": "{count, plural, one {# listing} other {# listings}}"
       },
@@ -1401,6 +1405,8 @@
       "setup": {
         "batches": "Batches",
         "categories": "Categories",
+        "emptyWorkspaceDescription": "Create the basic reference records once, then products, costing, stock, bundles, and storefront listings can all reuse them.",
+        "emptyWorkspaceTitle": "Start with shared setup records.",
         "manufacturers": "Manufacturers",
         "matrix": {
           "batches": "Batches",

@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Layers3,
   PackageSearch,
+  Plus,
   Store,
   User,
 } from '@tuturuuu/icons';
@@ -31,11 +32,13 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import type { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
+import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
+import { EmptyRow } from './operator-shell';
 import { BatchSection } from './setup-batch-section';
 import { namedRows, type ResourceConfig } from './setup-helpers';
-import { ResourceSection } from './setup-resource-section';
+import { ResourceDialog, ResourceSection } from './setup-resource-section';
 
 export function SetupPanel({
   batches,
@@ -109,6 +112,7 @@ export function SetupPanel({
   const totalRecords =
     configs.reduce((total, config) => total + config.rows.length, 0) +
     batches.length;
+  const isEmptyWorkspace = totalRecords === 0;
 
   return (
     <div className="grid gap-3">
@@ -133,6 +137,29 @@ export function SetupPanel({
           value={batches.length}
         />
       </div>
+      {isEmptyWorkspace ? (
+        <EmptyRow
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              {configs.slice(0, 5).map((config) => (
+                <ResourceDialog
+                  config={config}
+                  key={config.key}
+                  trigger={
+                    <Button size="sm" type="button" variant="outline">
+                      <Plus className="h-4 w-4" />
+                      {config.title}
+                    </Button>
+                  }
+                  wsId={wsId}
+                />
+              ))}
+            </div>
+          }
+          description={t('emptyWorkspaceDescription')}
+          label={t('emptyWorkspaceTitle')}
+        />
+      ) : null}
       <div className="grid min-w-0 gap-3 lg:grid-cols-2">
         {configs.map((config) => (
           <ResourceSection config={config} key={config.key} wsId={wsId} />
