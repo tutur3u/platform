@@ -1050,19 +1050,29 @@ test('package publish workflows release from production version bumps', () => {
       workflowName,
       'check-version-bump'
     );
+    const releaseGateJob = readWorkflowJobBlock(workflowName, 'release-gate');
     const buildJob = readWorkflowJobBlock(workflowName, 'build');
     const prepareJob = readWorkflowJobBlock(
       workflowName,
       'prepare-publish-npm'
     );
     const publishJob = readWorkflowJobBlock(workflowName, 'publish-npm');
+    const dispatchJob = readWorkflowJobBlock(
+      workflowName,
+      'dispatch-dependent-releases'
+    );
 
     assert.match(workflow, /\n {2}push:\n {4}branches:\s*\[production\]/);
     assert.match(workflow, new RegExp(`"${packagePath}/package\\.json"`));
     assert.match(workflow, new RegExp(`"\\.github/workflows/${workflowName}"`));
+    assert.match(
+      workflow,
+      /\nconcurrency:\n {2}group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}\n {2}cancel-in-progress: false\n/
+    );
     assert.doesNotMatch(workflow, /\n {2}pull_request:\n/);
     assert.doesNotMatch(workflow, /github\.event\.pull_request/);
     assert.doesNotMatch(workflow, /pull_request\.title/);
+    assert.doesNotMatch(workflow, /wait-workspace-dependencies/);
     assert.doesNotMatch(workflow, /jsr/);
     assert.doesNotMatch(workflow, /npm\.pkg\.github\.com/);
     assert.doesNotMatch(workflow, /publish-jsr/);
@@ -1083,19 +1093,36 @@ test('package publish workflows release from production version bumps', () => {
       checkVersionBumpJob,
       /if: github\.ref == 'refs\/heads\/production' && needs\.check-ci\.outputs\.should_run == 'true'/
     );
+    assert.match(releaseGateJob, /needs:\s*\[check-version-bump\]/);
     assert.match(
-      buildJob,
+      releaseGateJob,
       /if: github\.ref == 'refs\/heads\/production' && needs\.check-version-bump\.outputs\.should_release == 'true'/
     );
+    assert.match(releaseGateJob, /actions:\s*write/);
+    assert.match(releaseGateJob, /contents:\s*read/);
+    assert.match(releaseGateJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+    assert.match(
+      releaseGateJob,
+      /dependent_workflows: \$\{\{ steps\.gate\.outputs\.dependent_workflows \}\}/
+    );
+    assert.ok(
+      releaseGateJob.includes(
+        `node scripts/ci/package-release-readiness.js gate-package-release ${packagePath}`
+      ),
+      `${workflowName} must gate package releases before build starts`
+    );
+    assert.match(buildJob, /needs:\s*release-gate/);
+    assert.match(
+      buildJob,
+      /if: github\.ref == 'refs\/heads\/production' && needs\.release-gate\.outputs\.should_publish == 'true' && needs\.release-gate\.outputs\.dependencies_ready == 'true'/
+    );
     assert.match(prepareJob, /if: github\.ref == 'refs\/heads\/production'/);
-    assert.match(prepareJob, /actions:\s*write/);
-    assert.match(prepareJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+    assert.match(prepareJob, /contents:\s*read/);
+    assert.doesNotMatch(prepareJob, /actions:\s*write/);
+    assert.doesNotMatch(prepareJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
     assert.match(
       prepareJob,
       /npm view "\$\{PACKAGE_NAME\}@\$\{PACKAGE_VERSION\}" version/
-    );
-    const dependencyWaitIndex = prepareJob.indexOf(
-      `node scripts/ci/package-release-readiness.js wait-workspace-dependencies ${packagePath}`
     );
     assert.match(prepareJob, /npm pack --pack-destination/);
     const prepareManifestIndex = prepareJob.indexOf(
@@ -1104,18 +1131,9 @@ test('package publish workflows release from production version bumps', () => {
     const packIndex = prepareJob.indexOf('npm pack --pack-destination');
 
     assert.notEqual(
-      dependencyWaitIndex,
-      -1,
-      `${workflowName} must wait for publishable workspace dependencies before packing`
-    );
-    assert.notEqual(
       prepareManifestIndex,
       -1,
       `${workflowName} must prepare npm package manifests before packing`
-    );
-    assert.ok(
-      dependencyWaitIndex < prepareManifestIndex,
-      `${workflowName} must wait for npm workspace dependencies before rewriting the publish manifest`
     );
     assert.ok(
       prepareManifestIndex < packIndex,
@@ -1127,6 +1145,23 @@ test('package publish workflows release from production version bumps', () => {
       publishJob,
       /if: github\.ref == 'refs\/heads\/production' && needs\.prepare-publish-npm\.outputs\.should_publish == 'true'/
     );
+    assert.match(dispatchJob, /needs:\s*\[release-gate, publish-npm\]/);
+    assert.match(dispatchJob, /needs\.publish-npm\.result == 'success'/);
+    assert.match(
+      dispatchJob,
+      /needs\.release-gate\.outputs\.dependent_workflows != '\[\]'/
+    );
+    assert.match(dispatchJob, /actions:\s*write/);
+    assert.match(dispatchJob, /contents:\s*read/);
+    assert.match(
+      dispatchJob,
+      /DEPENDENT_WORKFLOWS: \$\{\{ needs\.release-gate\.outputs\.dependent_workflows \}\}/
+    );
+    assert.doesNotMatch(dispatchJob, /id-token:\s*write/);
+    assert.doesNotMatch(dispatchJob, /actions\/checkout@/);
+    assert.doesNotMatch(dispatchJob, /npm publish/);
+    assert.doesNotMatch(dispatchJob, /NODE_AUTH_TOKEN/);
+    assert.doesNotMatch(dispatchJob, /\bsecrets\./);
   }
 });
 

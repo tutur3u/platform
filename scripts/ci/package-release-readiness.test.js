@@ -6,7 +6,9 @@ const path = require('node:path');
 const {
   buildWorkflowDispatchUrl,
   buildWorkflowRunsUrl,
+  dispatchDependentWorkflows,
   dispatchRelatedWorkflow,
+  gatePackageRelease,
   getChangedFiles,
   getChangedPublishablePackages,
   getPublishableWorkspacePackages,
@@ -16,9 +18,16 @@ const {
   waitForPackageVersion,
 } = require('./package-release-readiness.js');
 
+const silentLogger = { log() {} };
+
 function writeJson(filePath, value) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function createVersionExists(existingPackageVersions) {
+  return ({ packageName, packageVersion }) =>
+    existingPackageVersions.has(`${packageName}@${packageVersion}`);
 }
 
 function writeWorkflow(rootDir, workflowName, packageDir) {
@@ -206,6 +215,203 @@ test('reports whether a package version should publish', () => {
     package_version: '1.0.0',
     should_publish: 'true',
   });
+});
+
+test('release gate reports ready when publishable dependencies are visible', async () => {
+  const rootDir = createFixtureRoot();
+  const outputs = await gatePackageRelease({
+    dispatchWorkflow: async () => {
+      throw new Error('release gate should not dispatch ready dependencies');
+    },
+    getRelatedWorkflowStatus: async () => {
+      throw new Error('release gate should not inspect ready dependencies');
+    },
+    logger: silentLogger,
+    packageDir: 'packages/internal-api',
+    repoRoot: rootDir,
+    versionExists: createVersionExists(
+      new Set(['@tuturuuu/types@1.0.0', '@tuturuuu/typescript-config@^3.0.0'])
+    ),
+  });
+
+  assert.deepEqual(outputs, {
+    dependencies_ready: 'true',
+    dependent_workflows: '[]',
+    package_name: '@tuturuuu/internal-api',
+    package_version: '2.0.0',
+    should_publish: 'true',
+  });
+});
+
+test('release gate dispatches missing dependency workflows and defers without sleeping', async () => {
+  const rootDir = createFixtureRoot();
+  const dispatchedWorkflows = [];
+  const workflowStatusChecks = [];
+  const outputs = await gatePackageRelease({
+    dispatchWorkflow: async ({ workflowName }) => {
+      dispatchedWorkflows.push(workflowName);
+    },
+    getRelatedWorkflowStatus: async ({ workflowName }) => {
+      workflowStatusChecks.push(workflowName);
+      return { state: 'missing' };
+    },
+    logger: silentLogger,
+    packageDir: 'packages/internal-api',
+    repoRoot: rootDir,
+    versionExists: createVersionExists(
+      new Set(['@tuturuuu/typescript-config@^3.0.0'])
+    ),
+  });
+
+  assert.equal(outputs.should_publish, 'true');
+  assert.equal(outputs.dependencies_ready, 'false');
+  assert.deepEqual(workflowStatusChecks, ['release-types-package.yaml']);
+  assert.deepEqual(dispatchedWorkflows, ['release-types-package.yaml']);
+});
+
+test('release gate defers pending dependency workflows without dispatching', async () => {
+  const rootDir = createFixtureRoot();
+  const dispatchedWorkflows = [];
+  const outputs = await gatePackageRelease({
+    dispatchWorkflow: async ({ workflowName }) => {
+      dispatchedWorkflows.push(workflowName);
+    },
+    getRelatedWorkflowStatus: async () => ({
+      state: 'pending',
+      status: 'queued',
+    }),
+    logger: silentLogger,
+    packageDir: 'packages/internal-api',
+    repoRoot: rootDir,
+    versionExists: createVersionExists(
+      new Set(['@tuturuuu/typescript-config@^3.0.0'])
+    ),
+  });
+
+  assert.equal(outputs.should_publish, 'true');
+  assert.equal(outputs.dependencies_ready, 'false');
+  assert.deepEqual(dispatchedWorkflows, []);
+});
+
+test('release gate fails immediately when a dependency workflow failed', async () => {
+  const rootDir = createFixtureRoot();
+
+  await assert.rejects(
+    gatePackageRelease({
+      env: {
+        GITHUB_SHA: 'abc123',
+      },
+      getRelatedWorkflowStatus: async () => ({
+        conclusion: 'failure',
+        state: 'failed',
+        url: 'https://example.test/run',
+      }),
+      logger: silentLogger,
+      packageDir: 'packages/internal-api',
+      repoRoot: rootDir,
+      versionExists: createVersionExists(
+        new Set(['@tuturuuu/typescript-config@^3.0.0'])
+      ),
+    }),
+    /@tuturuuu\/internal-api@2\.0\.0 is blocked because release-types-package\.yaml failed/
+  );
+});
+
+test('release gate fails when dependency workflow succeeded but npm is still missing', async () => {
+  const rootDir = createFixtureRoot();
+
+  await assert.rejects(
+    gatePackageRelease({
+      env: {
+        GITHUB_SHA: 'abc123',
+      },
+      getRelatedWorkflowStatus: async () => ({
+        state: 'success',
+        url: 'https://example.test/run',
+      }),
+      logger: silentLogger,
+      packageDir: 'packages/internal-api',
+      repoRoot: rootDir,
+      versionExists: createVersionExists(
+        new Set(['@tuturuuu/typescript-config@^3.0.0'])
+      ),
+    }),
+    /@tuturuuu\/types@1\.0\.0 is missing from npm even though release-types-package\.yaml completed successfully/
+  );
+});
+
+test('release gate fails when dependency workflow status is unreadable', async () => {
+  const rootDir = createFixtureRoot();
+
+  await assert.rejects(
+    gatePackageRelease({
+      getRelatedWorkflowStatus: async () => ({
+        state: 'unknown',
+      }),
+      logger: silentLogger,
+      packageDir: 'packages/internal-api',
+      repoRoot: rootDir,
+      versionExists: createVersionExists(
+        new Set(['@tuturuuu/typescript-config@^3.0.0'])
+      ),
+    }),
+    /cannot confirm @tuturuuu\/types@1\.0\.0 readiness because release-types-package\.yaml status is unreadable/
+  );
+});
+
+test('dependent workflow dispatch targets direct unpublished dependents only', async () => {
+  const rootDir = createFixtureRoot();
+  const dispatchedWorkflows = [];
+
+  writeJson(path.join(rootDir, 'packages/ui/package.json'), {
+    dependencies: {
+      '@tuturuuu/internal-api': 'workspace:*',
+    },
+    name: '@tuturuuu/ui',
+    version: '5.0.0',
+  });
+  writeJson(path.join(rootDir, 'packages/sdk/package.json'), {
+    dependencies: {
+      '@tuturuuu/internal-api': 'workspace:*',
+    },
+    name: 'tuturuuu',
+    version: '6.0.0',
+  });
+  writeWorkflow(rootDir, 'release-ui-package.yaml', 'packages/ui');
+  writeWorkflow(rootDir, 'release-sdk-package.yaml', 'packages/sdk');
+
+  const dispatched = await dispatchDependentWorkflows({
+    dispatchWorkflow: async ({ workflowName }) => {
+      dispatchedWorkflows.push(workflowName);
+    },
+    logger: silentLogger,
+    packageDir: 'packages/internal-api',
+    repoRoot: rootDir,
+    versionExists: createVersionExists(
+      new Set(['@tuturuuu/internal-api@2.0.0', 'tuturuuu@6.0.0'])
+    ),
+  });
+
+  assert.deepEqual(dispatchedWorkflows, ['release-ui-package.yaml']);
+  assert.deepEqual(
+    dispatched.map((dependent) => dependent.packageName),
+    ['@tuturuuu/ui']
+  );
+
+  await assert.rejects(
+    dispatchDependentWorkflows({
+      dispatchWorkflow: async () => {
+        throw new Error(
+          'dispatch should not run before current package exists'
+        );
+      },
+      logger: silentLogger,
+      packageDir: 'packages/internal-api',
+      repoRoot: rootDir,
+      versionExists: () => false,
+    }),
+    /Refusing to dispatch dependent workflows before @tuturuuu\/internal-api@2\.0\.0 is visible on npm/
+  );
 });
 
 test('builds GitHub workflow run lookup URLs for the current push', () => {

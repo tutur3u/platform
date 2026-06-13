@@ -200,12 +200,17 @@ release-please version bump lands on `production`. Local manifests keep
 Tuturuuu workspace dependencies as `workspace:*`; npm release workflows rewrite
 the checked-out package manifest with
 `scripts/ci/prepare-npm-package-manifest.js` immediately before `npm pack` so
-published artifacts contain installable npm version ranges. Before that rewrite,
-`scripts/ci/package-release-readiness.js` waits for publishable Tuturuuu
-workspace dependency versions on npm, and publish jobs wait for their own
-version to become visible after `npm publish`. Dependency waits inspect the
-related release workflow for the same production SHA and fail fast when that
-workflow already failed. Workflow-published package manifests must carry
+published artifacts contain installable npm version ranges. Before any build or
+pack work starts, package workflows run
+`scripts/ci/package-release-readiness.js gate-package-release packages/<name>`.
+The gate checks publishable Tuturuuu workspace dependency versions on npm once,
+dispatches missing dependency workflows, and exits green without occupying a
+runner while dependencies are pending. If the related dependency workflow for
+the same production SHA failed, completed successfully without npm visibility,
+or cannot be inspected, the gate fails immediately. Publish jobs still wait for
+their own version to become visible after `npm publish`, then a separate
+non-OIDC job dispatches direct dependent package workflows. Workflow-published
+package manifests must carry
 provenance-compatible `repository` metadata for `tutur3u/platform`; otherwise
 npm rejects trusted publishes with `E422`. For example,
 `release-types-package.yaml` triggers from production changes to

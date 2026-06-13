@@ -8,6 +8,10 @@ on:
       - ".github/workflows/release-types-package.yaml"
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   reject-non-production-ref:
     if: github.ref != 'refs/heads/production'
@@ -35,9 +39,37 @@ jobs:
       - id: check
         run: echo "should_release=true" >> $GITHUB_OUTPUT
 
-  build:
-    needs: check-version-bump
+  release-gate:
+    needs: [check-version-bump]
     if: github.ref == 'refs/heads/production' && needs.check-version-bump.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      package_name: ${{ steps.gate.outputs.package_name }}
+      package_version: ${{ steps.gate.outputs.package_version }}
+      should_publish: ${{ steps.gate.outputs.should_publish }}
+      dependencies_ready: ${{ steps.gate.outputs.dependencies_ready }}
+      dependent_workflows: ${{ steps.gate.outputs.dependent_workflows }}
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Gate package release
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/package-release-readiness.js gate-package-release packages/types
+
+  build:
+    needs: release-gate
+    if: github.ref == 'refs/heads/production' && needs.release-gate.outputs.should_publish == 'true' && needs.release-gate.outputs.dependencies_ready == 'true'
     runs-on: ubuntu-latest
 
     env:
@@ -82,7 +114,6 @@ jobs:
       package_version: ${{ steps.version-check.outputs.package_version }}
       should_publish: ${{ steps.version-check.outputs.should_publish }}
     permissions:
-      actions: write
       contents: read
     steps:
       - uses: actions/checkout@v6
@@ -117,11 +148,6 @@ jobs:
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Wait for npm workspace dependencies
-        if: steps.version-check.outputs.should_publish == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/types
 
       - name: Build package
         if: steps.version-check.outputs.should_publish == 'true'
@@ -275,3 +301,79 @@ jobs:
 
           echo "::error::${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION} was published but did not become visible on npm before timeout."
           exit 1
+
+  dispatch-dependent-releases:
+    needs: [release-gate, publish-npm]
+    if: github.ref == 'refs/heads/production' && needs.publish-npm.result == 'success' && needs.release-gate.outputs.dependent_workflows != '[]'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Dispatch dependent package releases
+        env:
+          DEPENDENT_WORKFLOWS: ${{ needs.release-gate.outputs.dependent_workflows }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node <<'NODE'
+          const workflows = JSON.parse(process.env.DEPENDENT_WORKFLOWS || '[]');
+          const token = process.env.GH_TOKEN;
+          const repository = process.env.GITHUB_REPOSITORY;
+          const ref =
+            process.env.GITHUB_REF_NAME ||
+            (process.env.GITHUB_REF || '').replace(/^refs\/heads\//u, '');
+
+          if (!Array.isArray(workflows)) {
+            throw new Error('DEPENDENT_WORKFLOWS must be a JSON array.');
+          }
+
+          if (workflows.length === 0) {
+            console.log('No dependent package release workflows to dispatch.');
+            process.exit(0);
+          }
+
+          if (!token || !repository || !ref) {
+            throw new Error('Missing GitHub token, repository, or ref for dependent dispatch.');
+          }
+
+          (async () => {
+            for (const workflowName of workflows) {
+              const url =
+                'https://api.github.com/repos/' +
+                repository +
+                '/actions/workflows/' +
+                encodeURIComponent(workflowName) +
+                '/dispatches';
+
+              const response = await fetch(url, {
+                body: JSON.stringify({ ref }),
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+                  'User-Agent': 'tuturuuu-package-release-dispatch',
+                },
+                method: 'POST',
+              });
+
+              if (!response.ok) {
+                const body = await response.text().catch(() => '');
+                throw new Error(
+                  `Unable to dispatch ${workflowName} on ${ref}: ${response.status} ${response.statusText}${
+                    body ? ` ${body}` : ''
+                  }`
+                );
+              }
+
+              console.log(`Dispatched ${workflowName} on ${ref}.`);
+            }
+          })().catch((error) => {
+            console.error(`::error::${error.message}`);
+            process.exit(1);
+          });
+          NODE

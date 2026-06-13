@@ -98,17 +98,27 @@ formatting behavior, or repo-wide verification.
   Packages publish jobs, and do not wire `jsr.json` version files into Release
   Please while those registries are paused.
 - Keep local Tuturuuu package dependencies on `workspace:*` in source
-  manifests. Before `npm pack`, package release workflows must run
-  `node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/<name>`
-  so release-please package bumps wait for publishable workspace dependencies
-  to be visible on npm. The wait must inspect the dependency package workflow
-  run for the same SHA across push and workflow dispatch runs. If no matching
-  run exists yet, it must dispatch the dependency workflow once with
-  `workflow_dispatch`, then keep polling npm. If the related workflow already
-  failed or dispatch is denied, fail immediately instead of burning the full
-  npm polling timeout. The prepare job therefore needs `actions: write`, while
-  `id-token: write` remains isolated to the final publish job.
-  Then run
+  manifests. Package release workflows must use workflow-level concurrency for
+  `${{ github.workflow }}-${{ github.ref }}` and run
+  `node scripts/ci/package-release-readiness.js gate-package-release packages/<name>`
+  before build, pack, or publish work starts. The gate checks the package's own
+  npm version and each publishable `workspace:*` dependency exactly once. When a
+  dependency is missing from npm, the gate inspects the dependency package
+  workflow for the same SHA; it dispatches missing dependency workflows once,
+  defers green without sleeping when dependencies are pending, and fails fast
+  when the dependency workflow failed, succeeded without npm visibility, or has
+  unreadable status. The gate job needs `actions: write`; build, pack, and
+  publish jobs must run only when `should_publish == true` and
+  `dependencies_ready == true`.
+  After the package is visible on npm, a separate non-OIDC dependent dispatch
+  job may wake direct dependent package workflows, but it must not checkout the
+  repo or carry publish authority. The internal
+  `dispatch-dependent-workflows packages/<name>` command is available for
+  direct/manual dispatches that can read the checkout; workflow jobs should use
+  the release gate's precomputed `dependent_workflows` output when they need to
+  stay checkout-free. `wait-workspace-dependencies` may remain as a compatibility
+  command, but package publish workflows and docs should not use it for normal
+  package releases. Before `npm pack`, run
   `node scripts/ci/prepare-npm-package-manifest.js packages/<name>` so packed
   artifacts contain concrete npm-compatible versions instead of `workspace:`
   protocol ranges.

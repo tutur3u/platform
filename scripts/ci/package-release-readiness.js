@@ -177,6 +177,66 @@ function getWorkspaceDependencies({ packageDir, repoRoot }) {
   return dependencies;
 }
 
+function packageHasWorkspaceDependency(packageJson, dependencyName) {
+  for (const field of dependencyFields) {
+    const dependencyRange = packageJson[field]?.[dependencyName];
+
+    if (
+      typeof dependencyRange === 'string' &&
+      dependencyRange.startsWith('workspace:')
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getDependentWorkspacePackages({
+  packageDir,
+  registry = DEFAULT_REGISTRY,
+  repoRoot,
+  versionExists = packageVersionExists,
+}) {
+  const { packageName } = getPackageInfo(repoRoot, packageDir);
+  const publishablePackages = getPublishableWorkspacePackages(repoRoot);
+  const dependents = [];
+
+  for (const publishablePackage of [...publishablePackages.values()].sort(
+    (left, right) => left.packageDir.localeCompare(right.packageDir)
+  )) {
+    if (publishablePackage.packageDir === packageDir) continue;
+
+    if (
+      !packageHasWorkspaceDependency(
+        publishablePackage.packageJson,
+        packageName
+      )
+    ) {
+      continue;
+    }
+
+    if (
+      versionExists({
+        packageName: publishablePackage.packageJson.name,
+        packageVersion: publishablePackage.version,
+        registry,
+      })
+    ) {
+      continue;
+    }
+
+    dependents.push({
+      packageDir: publishablePackage.packageDir,
+      packageName: publishablePackage.packageJson.name,
+      packageVersion: publishablePackage.version,
+      workflowName: publishablePackage.workflowName,
+    });
+  }
+
+  return dependents;
+}
+
 function packageVersionExists({
   npmCommand = 'npm',
   packageName,
@@ -437,6 +497,183 @@ async function waitForPackageVersion({
   );
 }
 
+async function gatePackageRelease({
+  dispatchWorkflow = dispatchRelatedWorkflow,
+  env = process.env,
+  getRelatedWorkflowStatus = getRelatedWorkflowRunStatus,
+  logger = console,
+  packageDir,
+  registry = DEFAULT_REGISTRY,
+  repoRoot,
+  versionExists = packageVersionExists,
+}) {
+  const { packageName, packageVersion } = getPackageInfo(repoRoot, packageDir);
+  const shouldPublish = !versionExists({
+    packageName,
+    packageVersion,
+    registry,
+  });
+  const dependents = getDependentWorkspacePackages({
+    packageDir,
+    registry,
+    repoRoot,
+    versionExists,
+  });
+  const outputs = {
+    dependencies_ready: 'true',
+    dependent_workflows: JSON.stringify(
+      dependents.map((dependent) => dependent.workflowName)
+    ),
+    package_name: packageName,
+    package_version: packageVersion,
+    should_publish: shouldPublish ? 'true' : 'false',
+  };
+
+  if (!shouldPublish) {
+    logger.log(`${packageName}@${packageVersion} already exists on npm.`);
+    return outputs;
+  }
+
+  const dependencies = getWorkspaceDependencies({ packageDir, repoRoot });
+
+  if (dependencies.length === 0) {
+    logger.log(`${packageDir} has no publishable workspace dependencies.`);
+    return outputs;
+  }
+
+  let dependenciesReady = true;
+
+  for (const dependency of dependencies) {
+    if (
+      versionExists({
+        packageName: dependency.packageName,
+        packageVersion: dependency.packageVersion,
+        registry,
+      })
+    ) {
+      logger.log(
+        `${dependency.packageName}@${dependency.packageVersion} is visible on npm.`
+      );
+      continue;
+    }
+
+    const workflowStatus = await getRelatedWorkflowStatus({
+      env,
+      workflowName: dependency.workflowName,
+    });
+
+    if (workflowStatus.state === 'failed') {
+      throw new Error(
+        `${packageName}@${packageVersion} is blocked because ` +
+          `${dependency.workflowName} failed for ${env.GITHUB_SHA}. ` +
+          `Conclusion: ${workflowStatus.conclusion}. ` +
+          `Run: ${workflowStatus.url ?? '(unavailable)'}`
+      );
+    }
+
+    if (workflowStatus.state === 'success') {
+      throw new Error(
+        `${packageName}@${packageVersion} is blocked because ` +
+          `${dependency.packageName}@${dependency.packageVersion} is missing ` +
+          `from npm even though ${dependency.workflowName} completed ` +
+          `successfully for ${env.GITHUB_SHA}.`
+      );
+    }
+
+    if (workflowStatus.state === 'missing') {
+      await dispatchWorkflow({
+        env,
+        logger,
+        workflowName: dependency.workflowName,
+      });
+      dependenciesReady = false;
+      logger.log(
+        `${packageName}@${packageVersion} deferred until ` +
+          `${dependency.packageName}@${dependency.packageVersion} is published.`
+      );
+      continue;
+    }
+
+    if (workflowStatus.state === 'pending') {
+      dependenciesReady = false;
+      logger.log(
+        `${packageName}@${packageVersion} deferred while ` +
+          `${dependency.workflowName} is ${workflowStatus.status ?? 'pending'}.`
+      );
+      continue;
+    }
+
+    throw new Error(
+      `${packageName}@${packageVersion} cannot confirm ` +
+        `${dependency.packageName}@${dependency.packageVersion} readiness ` +
+        `because ${dependency.workflowName} status is unreadable.`
+    );
+  }
+
+  outputs.dependencies_ready = dependenciesReady ? 'true' : 'false';
+
+  if (dependenciesReady) {
+    logger.log(`${packageName}@${packageVersion} dependencies are ready.`);
+  } else {
+    logger.log(
+      `${packageName}@${packageVersion} release deferred without occupying a runner.`
+    );
+  }
+
+  return outputs;
+}
+
+async function dispatchDependentWorkflows({
+  dispatchWorkflow = dispatchRelatedWorkflow,
+  env = process.env,
+  logger = console,
+  packageDir,
+  registry = DEFAULT_REGISTRY,
+  repoRoot,
+  versionExists = packageVersionExists,
+}) {
+  const { packageName, packageVersion } = getPackageInfo(repoRoot, packageDir);
+
+  if (
+    !versionExists({
+      packageName,
+      packageVersion,
+      registry,
+    })
+  ) {
+    throw new Error(
+      `Refusing to dispatch dependent workflows before ` +
+        `${packageName}@${packageVersion} is visible on npm.`
+    );
+  }
+
+  const dependents = getDependentWorkspacePackages({
+    packageDir,
+    registry,
+    repoRoot,
+    versionExists,
+  });
+  const dispatched = [];
+
+  if (dependents.length === 0) {
+    logger.log(
+      `${packageName}@${packageVersion} has no unpublished dependents.`
+    );
+    return dispatched;
+  }
+
+  for (const dependent of dependents) {
+    await dispatchWorkflow({
+      env,
+      logger,
+      workflowName: dependent.workflowName,
+    });
+    dispatched.push(dependent);
+  }
+
+  return dispatched;
+}
+
 function appendGithubOutput(outputs, env = process.env) {
   if (!env.GITHUB_OUTPUT) return;
 
@@ -644,6 +881,43 @@ async function runCli(argv = process.argv.slice(2), env = process.env) {
     return;
   }
 
+  if (command === 'gate-package-release') {
+    const [packageDir] = args;
+
+    if (!packageDir) {
+      throw new Error(
+        'Usage: node scripts/ci/package-release-readiness.js gate-package-release <package-dir>'
+      );
+    }
+
+    const outputs = await gatePackageRelease({
+      ...waitOptions,
+      env,
+      packageDir,
+      repoRoot,
+    });
+    appendGithubOutput(outputs, env);
+    return;
+  }
+
+  if (command === 'dispatch-dependent-workflows') {
+    const [packageDir] = args;
+
+    if (!packageDir) {
+      throw new Error(
+        'Usage: node scripts/ci/package-release-readiness.js dispatch-dependent-workflows <package-dir>'
+      );
+    }
+
+    await dispatchDependentWorkflows({
+      ...waitOptions,
+      env,
+      packageDir,
+      repoRoot,
+    });
+    return;
+  }
+
   if (command === 'wait-workspace-dependencies') {
     const [packageDir] = args;
 
@@ -704,7 +978,7 @@ async function runCli(argv = process.argv.slice(2), env = process.env) {
 
   throw new Error(
     'Usage: node scripts/ci/package-release-readiness.js ' +
-      '<check-version|wait-version|wait-workspace-dependencies|wait-changed-package-versions>'
+      '<check-version|wait-version|gate-package-release|dispatch-dependent-workflows|wait-workspace-dependencies|wait-changed-package-versions>'
   );
 }
 
@@ -723,11 +997,14 @@ module.exports = {
   FAILED_WORKFLOW_CONCLUSIONS,
   buildWorkflowRunsUrl,
   buildWorkflowDispatchUrl,
+  dispatchDependentWorkflows,
   dispatchRelatedWorkflow,
+  gatePackageRelease,
   getBeforeRefFromEventPayload,
   getChangedFiles,
   getChangedFilesFromEventPayload,
   getChangedPublishablePackages,
+  getDependentWorkspacePackages,
   getPackageInfo,
   getPublishableWorkspacePackages,
   getReleaseWorkflowFiles,

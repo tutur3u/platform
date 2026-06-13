@@ -270,24 +270,28 @@ normal Release Please action can create the releases. If the script reports
 Keep internal Tuturuuu dependencies as `workspace:*` in source package
 manifests so local builds always use the checked-out workspace. Package release
 workflows must first run
-`node scripts/ci/package-release-readiness.js wait-workspace-dependencies packages/<name>`
-so publishable Tuturuuu dependencies are visible on npm before the dependent
-tarball is packed. That wait also inspects the dependency package workflow run
-for the same production SHA across push and workflow-dispatch recovery runs. If
-the dependency workflow is missing for that SHA, the wait dispatches it once and
-continues polling npm. If that related workflow has already failed or dispatch
-is denied, the wait fails immediately instead of burning the full npm polling
-timeout. It must then
-rewrite the checked-out manifest immediately
-before `npm pack` with
+`node scripts/ci/package-release-readiness.js gate-package-release packages/<name>`
+in a short pre-build gate. The gate checks the package version and publishable
+Tuturuuu workspace dependencies once, dispatches missing dependency workflows,
+and exits green without build, pack, or publish work while dependencies are
+pending. If a dependency workflow for the same production SHA already failed,
+completed successfully without npm visibility, or cannot be inspected, the gate
+fails immediately. When the gate outputs `should_publish == true` and
+`dependencies_ready == true`, the workflow can build and rewrite the checked-out
+manifest immediately before `npm pack` with
 `node scripts/ci/prepare-npm-package-manifest.js packages/<name>`. That
 temporary rewrite replaces `workspace:` protocol ranges with the current
 workspace package versions so npm consumers can install the tarball. After
 `npm publish`, the publish job polls `npm view` for the exact published version
-before it reports success. If npm returns first-publish or permission errors,
-fix the npm package access and trusted publisher setup instead of skipping the
-package. If a published package depends on another release-please-managed
-Tuturuuu package, that dependency also needs its own
+before it reports success, then a separate non-OIDC job dispatches direct
+dependent package workflows without checking out the repo or carrying publish
+authority. The internal
+`node scripts/ci/package-release-readiness.js dispatch-dependent-workflows packages/<name>`
+command is available for direct/manual dispatches that can read the checkout.
+If npm returns first-publish or permission errors, fix the npm package access and
+trusted publisher setup instead of skipping the package. If a published package
+depends on another release-please-managed Tuturuuu package, that dependency also
+needs its own
 `release-*-package.yaml` workflow and matching `tuturuuu.ts` entry.
 
 The platform production Vercel workflow also runs
