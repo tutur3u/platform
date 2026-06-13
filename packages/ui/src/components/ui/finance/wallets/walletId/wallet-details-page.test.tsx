@@ -30,6 +30,7 @@ const mocks = vi.hoisted(() => {
     getWorkspace: vi.fn(),
     getWorkspaceConfig: vi.fn(),
     headers: vi.fn(),
+    infiniteTransactionsList: vi.fn((_props: unknown) => null),
     notFound: vi.fn(() => {
       throw new Error('notFound');
     }),
@@ -81,7 +82,9 @@ vi.mock('@tuturuuu/ui/custom/feature-summary', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/finance/transactions/infinite-transactions-list', () => ({
-  InfiniteTransactionsList: () => null,
+  InfiniteTransactionsList: (
+    ...args: Parameters<typeof mocks.infiniteTransactionsList>
+  ) => mocks.infiniteTransactionsList(...args),
 }));
 
 vi.mock('@tuturuuu/ui/separator', () => ({
@@ -129,7 +132,10 @@ describe('wallet details page', () => {
     vi.resetModules();
     vi.clearAllMocks();
     mocks.getTranslations.mockResolvedValue((key: string) => key);
-    mocks.getWorkspace.mockResolvedValue({ personal: false });
+    mocks.getWorkspace.mockResolvedValue({
+      personal: false,
+      timezone: 'Asia/Ho_Chi_Minh',
+    });
     mocks.getWorkspaceConfig.mockResolvedValue('USD');
     mocks.getPermissions.mockResolvedValue({
       withoutPermission: vi.fn(() => false),
@@ -208,6 +214,16 @@ describe('wallet details page', () => {
     expect(actionProps).toEqual(
       expect.objectContaining({
         initialAction: 'payment',
+        timezone: 'Asia/Ho_Chi_Minh',
+        walletId: 'wallet-1',
+      })
+    );
+    expect(mocks.infiniteTransactionsList).toHaveBeenCalled();
+    const listProps = mocks.infiniteTransactionsList.mock.calls[0]?.[0];
+
+    expect(listProps).toEqual(
+      expect.objectContaining({
+        timezone: 'Asia/Ho_Chi_Minh',
         walletId: 'wallet-1',
       })
     );

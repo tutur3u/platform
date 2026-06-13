@@ -35,6 +35,7 @@ interface WalletDetailsActionsProps {
   canSetFinanceWalletsOnCreate?: boolean;
   canDeleteWallets: boolean;
   isPersonalWorkspace: boolean;
+  timezone?: string | null;
   permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 
@@ -50,6 +51,7 @@ export function WalletDetailsActions({
   canSetFinanceWalletsOnCreate,
   canDeleteWallets,
   isPersonalWorkspace,
+  timezone,
   permissionRequestUser,
 }: WalletDetailsActionsProps) {
   const t = useTranslations();
@@ -208,6 +210,9 @@ export function WalletDetailsActions({
                 canCreateConfidentialTransactions={
                   canCreateConfidentialTransactions
                 }
+                timezone={timezone}
+                preferInitialWalletSelection={transactionAction !== 'payment'}
+                refreshPageOnFinish
                 permissionRequestUser={permissionRequestUser}
               />
             }

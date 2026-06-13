@@ -15,6 +15,7 @@ interface Props {
     locale: string;
   }>;
   internalApiOptions?: InternalApiClientOptions;
+  timezone?: string | null;
 }
 
 type TransactionDetailsData = {
@@ -26,6 +27,7 @@ type TransactionDetailsData = {
 export default async function TransactionDetailsPage({
   params,
   internalApiOptions,
+  timezone,
 }: Props) {
   const { wsId, transactionId } = await params;
 
@@ -55,6 +57,7 @@ export default async function TransactionDetailsPage({
         wsId={wsId}
         transaction={transaction}
         tags={tags}
+        timezone={timezone}
       />
     </div>
   );

@@ -9225,6 +9225,7 @@
     "financial_overview_description": "Theo dõi thu nhập, chi tiêu và tình hình tài chính tổng thể",
     "hide_confidential": "Ẩn số liệu",
     "id": "Mã số",
+    "include_time": "Bao gồm giờ",
     "income": "Thu nhập",
     "monthly_total_from_12_recent_months": "Tổng số tiền hàng tháng từ 12 tháng gần nhất",
     "no_tags_hint": "Chưa có thẻ. Nhập để tạo mới.",

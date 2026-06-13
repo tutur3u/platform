@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import type { ComponentProps } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransactionEditDialog } from './transaction-edit-dialog';
 
@@ -40,7 +41,9 @@ vi.mock('next/image', () => ({
   default: () => null,
 }));
 
-function renderDialog() {
+function renderDialog(
+  props: Partial<ComponentProps<typeof TransactionEditDialog>> = {}
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -68,6 +71,7 @@ function renderDialog() {
           } as never
         }
         wsId="ws-1"
+        {...props}
       />
     </QueryClientProvider>
   );
@@ -97,5 +101,25 @@ describe('TransactionEditDialog', () => {
 
     expect(await screen.findByText('•••••')).toBeVisible();
     expect(screen.queryByText('+$123')).not.toBeInTheDocument();
+  });
+
+  it('enables the optional time control for existing transactions', async () => {
+    renderDialog();
+
+    expect(
+      await screen.findByRole('switch', {
+        name: 'transaction-data-table.include_time',
+      })
+    ).toHaveAttribute('data-state', 'checked');
+  });
+
+  it('disables the optional time control when update access is missing', async () => {
+    renderDialog({ canUpdateTransactions: false });
+
+    expect(
+      await screen.findByRole('switch', {
+        name: 'transaction-data-table.include_time',
+      })
+    ).toBeDisabled();
   });
 });

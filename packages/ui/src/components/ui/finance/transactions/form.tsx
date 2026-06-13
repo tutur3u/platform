@@ -39,6 +39,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { shouldLockFinanceWalletSelectionOnCreate } from '@tuturuuu/utils/finance';
 import { joinPath } from '@tuturuuu/utils/path-helper';
+import {
+  buildDateInTimezone,
+  getDatePartsInTimezone,
+} from '@tuturuuu/utils/task-date-timezone';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -62,6 +66,67 @@ import {
 } from './transaction-attachments-field';
 
 const TRANSACTION_ATTACHMENT_PAGE_SIZE = 100;
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function startOfDayInTimezone(date: Date, timezone?: string | null) {
+  const resolvedTimezone = timezone || 'auto';
+  const parts = getDatePartsInTimezone(date, resolvedTimezone);
+
+  return buildDateInTimezone(
+    parts.year,
+    parts.month,
+    parts.day,
+    0,
+    0,
+    resolvedTimezone
+  );
+}
+
+function parseDateOnlyInTimezone(value: string, timezone?: string | null) {
+  const [year, month, day] = value.split('-').map(Number);
+
+  if (!year || !month || !day)
+    return startOfDayInTimezone(new Date(), timezone);
+
+  return buildDateInTimezone(year, month, day, 0, 0, timezone || 'auto');
+}
+
+function resolveInitialTakenAt({
+  data,
+  initialIsTransfer,
+  initialTransaction,
+  initialTransfer,
+  timezone,
+}: Pick<
+  TransactionFormProps,
+  'data' | 'initialTransaction' | 'initialTransfer' | 'timezone'
+> & {
+  initialIsTransfer: boolean;
+}) {
+  const existingTakenAt = data?.taken_at;
+
+  if (existingTakenAt) {
+    const isDateOnly =
+      typeof existingTakenAt === 'string' &&
+      DATE_ONLY_PATTERN.test(existingTakenAt);
+
+    return {
+      date: isDateOnly
+        ? parseDateOnlyInTimezone(existingTakenAt, timezone)
+        : new Date(existingTakenAt),
+      includeTime: !!data?.id,
+    };
+  }
+
+  const initialTakenAt = initialIsTransfer
+    ? initialTransfer?.taken_at
+    : initialTransaction?.taken_at;
+
+  return {
+    date: startOfDayInTimezone(initialTakenAt ?? new Date(), timezone),
+    includeTime: false,
+  };
+}
 
 export function TransactionForm({
   wsId,
@@ -76,6 +141,9 @@ export function TransactionForm({
   initialMode = 'transaction',
   initialTransaction,
   initialTransfer,
+  timezone,
+  preferInitialWalletSelection = false,
+  refreshPageOnFinish = false,
   permissionRequestUser,
 }: TransactionFormProps) {
   const t = useTranslations();
@@ -87,6 +155,20 @@ export function TransactionForm({
     []
   );
   const initialIsTransfer = initialMode === 'transfer' || !!data?.transfer;
+  const initialTakenAt = useMemo(
+    () =>
+      resolveInitialTakenAt({
+        data,
+        initialIsTransfer,
+        initialTransaction,
+        initialTransfer,
+        timezone,
+      }),
+    [data, initialIsTransfer, initialTransaction, initialTransfer, timezone]
+  );
+  const [includeTakenAtTime, setIncludeTakenAtTime] = useState(
+    initialTakenAt.includeTime
+  );
   const [isTransfer, setIsTransfer] = useState(initialIsTransfer);
   // Start in override mode when editing an existing transfer (preserve stored amounts).
   // Start in auto mode for new transfers so the exchange rate pre-fills destination.
@@ -173,11 +255,7 @@ export function TransactionForm({
         ? Math.abs(data.transfer.linked_amount)
         : initialTransfer?.destination_amount,
       category_id: data?.category_id || initialTransaction?.category_id || '',
-      taken_at: data?.taken_at
-        ? new Date(data.taken_at)
-        : initialIsTransfer
-          ? (initialTransfer?.taken_at ?? new Date())
-          : (initialTransaction?.taken_at ?? new Date()),
+      taken_at: initialTakenAt.date,
       report_opt_in: data?.report_opt_in ?? true,
       tag_ids: [] as string[],
       is_transfer: initialIsTransfer,
@@ -189,6 +267,10 @@ export function TransactionForm({
         (data as Record<string, unknown>)?.is_category_confidential === true,
     },
   });
+
+  useEffect(() => {
+    setIncludeTakenAtTime(initialTakenAt.includeTime);
+  }, [initialTakenAt.includeTime]);
 
   // Keep is_transfer in sync with local state
   useEffect(() => {
@@ -232,25 +314,35 @@ export function TransactionForm({
       wallets.some((wallet) => wallet.id === lastSelections.walletId)
         ? lastSelections.walletId
         : '';
-    const nextWalletSelection =
-      rememberedWalletId ||
-      (contextualWalletId &&
+    const contextualWalletSelection =
+      contextualWalletId &&
       wallets.some((wallet) => wallet.id === contextualWalletId)
         ? contextualWalletId
-        : '') ||
-      (defaultWalletId &&
-      wallets.some((wallet) => wallet.id === defaultWalletId)
+        : '';
+    const defaultWalletSelection =
+      defaultWalletId && wallets.some((wallet) => wallet.id === defaultWalletId)
         ? defaultWalletId
-        : '') ||
+        : '';
+    const nextWalletSelection =
+      (preferInitialWalletSelection
+        ? contextualWalletSelection ||
+          rememberedWalletId ||
+          defaultWalletSelection
+        : rememberedWalletId ||
+          contextualWalletSelection ||
+          defaultWalletSelection) ||
       wallets[0]?.id ||
       '';
-    const sourceLabel = rememberedWalletId
-      ? t('transaction-data-table.prefill_source_last_used')
-      : contextualWalletId && nextWalletSelection === contextualWalletId
-        ? t('transaction-data-table.prefill_source_current_context')
-        : defaultWalletId && nextWalletSelection === defaultWalletId
-          ? t('transaction-data-table.prefill_source_workspace_default')
-          : '';
+    const sourceLabel =
+      rememberedWalletId && nextWalletSelection === rememberedWalletId
+        ? t('transaction-data-table.prefill_source_last_used')
+        : contextualWalletSelection &&
+            nextWalletSelection === contextualWalletSelection
+          ? t('transaction-data-table.prefill_source_current_context')
+          : defaultWalletSelection &&
+              nextWalletSelection === defaultWalletSelection
+            ? t('transaction-data-table.prefill_source_workspace_default')
+            : '';
 
     if (!nextWalletSelection) return;
 
@@ -277,6 +369,7 @@ export function TransactionForm({
     isLastSelectionsInitialized,
     isLoadingRememberLastSelections,
     lastSelections.walletId,
+    preferInitialWalletSelection,
     rememberLastSelections,
     t,
     wallets,
@@ -430,7 +523,7 @@ export function TransactionForm({
   const refreshTransactions = async () => {
     await invalidateTransactionMutationQueries(queryClient, wsId);
 
-    if (!onFinish) {
+    if (refreshPageOnFinish || !onFinish) {
       router.refresh();
     }
   };
@@ -981,6 +1074,9 @@ export function TransactionForm({
                 suggestedExchangeRate={suggestedExchangeRate}
                 isDestinationOverridden={isDestinationOverridden}
                 setIsDestinationOverridden={setIsDestinationOverridden}
+                includeTakenAtTime={includeTakenAtTime}
+                setIncludeTakenAtTime={setIncludeTakenAtTime}
+                timezone={timezone}
                 setNewContentType={setNewContentType}
                 setNewContent={setNewContent}
                 walletPrefillMeta={walletPrefillMeta}

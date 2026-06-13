@@ -55,6 +55,7 @@ import {
   type FinancePermissionRequestUser,
   FinancePermissionWarningDialog,
 } from '@tuturuuu/ui/finance/shared/finance-permission-warning-dialog';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -71,6 +72,7 @@ import {
   listTransactionPeriodsWithInternalApi,
 } from './internal-api';
 import { PeriodBreakdownPanel } from './period-charts';
+import { invalidateTransactionMutationQueries } from './query-invalidation';
 import { TransactionCard } from './transaction-card';
 import { TransactionStatistics } from './transaction-statistics';
 import { mergeLinkedTransferTransactions } from './transfer-merge';
@@ -144,6 +146,7 @@ export function InfiniteTransactionsList({
   const t = useTranslations();
   const locale = useLocale();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { data: exchangeRatesData } = useExchangeRates();
   const exchangeRates = exchangeRatesData?.data ?? [];
@@ -181,12 +184,11 @@ export function InfiniteTransactionsList({
   };
 
   const handleTransactionUpdate = () => {
-    queryClient.invalidateQueries({
-      predicate: (query) =>
-        Array.isArray(query.queryKey) &&
-        typeof query.queryKey[0] === 'string' &&
-        query.queryKey[0].includes(`/api/workspaces/${wsId}/transactions`),
-    });
+    void invalidateTransactionMutationQueries(queryClient, wsId);
+
+    if (walletId) {
+      router.refresh();
+    }
   };
 
   const deleteMutation = useMutation({
@@ -1065,6 +1067,8 @@ export function InfiniteTransactionsList({
               canUpdateConfidentialTransactions={
                 canUpdateConfidentialTransactions
               }
+              timezone={resolvedTimezone}
+              refreshPageOnFinish={!!walletId}
               permissionRequestUser={permissionRequestUser}
               onFinish={() => {
                 handleTransactionUpdate();
@@ -1098,6 +1102,9 @@ export function InfiniteTransactionsList({
               canCreateConfidentialTransactions={
                 canCreateConfidentialTransactions
               }
+              timezone={resolvedTimezone}
+              preferInitialWalletSelection={!!walletId}
+              refreshPageOnFinish={!!walletId}
               permissionRequestUser={permissionRequestUser}
               onFinish={() => {
                 handleTransactionUpdate();

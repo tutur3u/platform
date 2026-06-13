@@ -18,6 +18,7 @@ import {
   FormLabel,
 } from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
+import { OptionalTimePicker } from '@tuturuuu/ui/optional-time-picker';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Bar, BarChart, XAxis } from 'recharts';
@@ -81,6 +82,31 @@ export function DateTimePickerPreview() {
       preferences={{ timeFormat: '24h', weekStartsOn: 1 }}
       setDate={setDate}
     />
+  );
+}
+
+export function OptionalTimePickerPreview({ s }: { s: SampleTranslator }) {
+  const [date, setDate] = useState<Date | undefined>(
+    new Date(2026, 5, 3, 0, 0)
+  );
+  const [includeTime, setIncludeTime] = useState(false);
+
+  return (
+    <div className="w-full max-w-sm">
+      <OptionalTimePicker
+        date={date}
+        setDate={setDate}
+        includeTime={includeTime}
+        setIncludeTime={setIncludeTime}
+        includeTimeLabel={s('includeTime')}
+        allowClear={false}
+        preferences={{
+          timezone: 'Asia/Ho_Chi_Minh',
+          timeFormat: '24h',
+          weekStartsOn: 1,
+        }}
+      />
+    </div>
   );
 }
 

@@ -51,6 +51,7 @@ interface Props {
   permissions?: PermissionsResult;
   workspace?: {
     personal?: boolean | null;
+    timezone?: string | null;
   };
   permissionRequestUser?: FinancePermissionRequestUser | null;
 }
@@ -152,6 +153,7 @@ export default async function WalletDetailsPage({
           canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
           canDeleteWallets={canDeleteWallets}
           isPersonalWorkspace={!!resolvedWorkspace.personal}
+          timezone={resolvedWorkspace.timezone}
           permissionRequestUser={permissionRequestUser}
         />
       </div>
@@ -314,6 +316,7 @@ export default async function WalletDetailsPage({
           wsId={wsId}
           walletId={walletId}
           currency={currency}
+          timezone={resolvedWorkspace.timezone}
           canCreateTransactions={canCreateTransactions}
           canCreateConfidentialTransactions={canCreateConfidentialTransactions}
           canUpdateTransactions={canUpdateTransactions}

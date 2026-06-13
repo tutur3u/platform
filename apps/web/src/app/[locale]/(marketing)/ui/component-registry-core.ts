@@ -48,6 +48,7 @@ export type PreviewKind =
   | 'menubar'
   | 'navbar'
   | 'navigation-menu'
+  | 'optional-time-picker'
   | 'pagination'
   | 'popover'
   | 'progress'

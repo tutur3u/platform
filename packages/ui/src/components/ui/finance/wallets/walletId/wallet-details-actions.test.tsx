@@ -50,7 +50,7 @@ describe('WalletDetailsActions', () => {
   });
 
   it('prefills card payments as transfers into the credit wallet', () => {
-    render(<WalletDetailsActions {...baseProps} />);
+    render(<WalletDetailsActions {...baseProps} timezone="Asia/Ho_Chi_Minh" />);
 
     fireEvent.click(screen.getByText('wallet-data-table.credit_payment'));
 
@@ -63,6 +63,9 @@ describe('WalletDetailsActions', () => {
         initialTransfer: expect.objectContaining({
           destination_wallet_id: 'wallet-1',
         }),
+        preferInitialWalletSelection: false,
+        refreshPageOnFinish: true,
+        timezone: 'Asia/Ho_Chi_Minh',
       })
     );
   });
@@ -81,6 +84,8 @@ describe('WalletDetailsActions', () => {
           categoryKind: 'expense',
           origin_wallet_id: 'wallet-1',
         }),
+        preferInitialWalletSelection: true,
+        refreshPageOnFinish: true,
       })
     );
   });
@@ -99,6 +104,38 @@ describe('WalletDetailsActions', () => {
           categoryKind: 'income',
           origin_wallet_id: 'wallet-1',
         }),
+        preferInitialWalletSelection: true,
+        refreshPageOnFinish: true,
+      })
+    );
+  });
+
+  it('prefills standard wallet transactions as source-wallet transactions', () => {
+    render(
+      <WalletDetailsActions
+        {...baseProps}
+        wallet={
+          {
+            id: 'wallet-1',
+            name: 'Cash',
+            type: 'STANDARD',
+          } as never
+        }
+      />
+    );
+
+    fireEvent.click(screen.getByText('ws-transactions.singular'));
+
+    const props = mocks.transactionForm.mock.calls.at(-1)?.[0];
+
+    expect(props).toEqual(
+      expect.objectContaining({
+        initialMode: 'transaction',
+        initialTransaction: expect.objectContaining({
+          origin_wallet_id: 'wallet-1',
+        }),
+        preferInitialWalletSelection: true,
+        refreshPageOnFinish: true,
       })
     );
   });

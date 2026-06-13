@@ -81,6 +81,7 @@ import {
   CurrencyInputPreview,
   DateTimePickerPreview,
   FormPreview,
+  OptionalTimePickerPreview,
 } from './preview-foundation-controls';
 import { renderFoundationLayoutPreview } from './preview-foundation-layouts';
 
@@ -196,6 +197,8 @@ export function renderFoundationPreview(
       return <CurrencyInputPreview />;
     case 'date-time-picker':
       return <DateTimePickerPreview />;
+    case 'optional-time-picker':
+      return <OptionalTimePickerPreview s={s} />;
     case 'dialog':
       return (
         <Dialog>

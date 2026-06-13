@@ -1,10 +1,8 @@
 'use client';
 
-import { CalendarIcon, PlusIcon } from '@tuturuuu/icons';
+import { PlusIcon } from '@tuturuuu/icons';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
-import { Button } from '@tuturuuu/ui/button';
-import { Calendar } from '@tuturuuu/ui/calendar';
 import { CurrencyInput } from '@tuturuuu/ui/currency-input';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { getIconComponentByKey } from '@tuturuuu/ui/custom/icon-picker';
@@ -22,10 +20,8 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { OptionalTimePicker } from '@tuturuuu/ui/optional-time-picker';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
-import { format } from 'date-fns';
-import { enUS, vi } from 'date-fns/locale';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
@@ -52,6 +48,9 @@ interface FormBasicTabProps {
   suggestedExchangeRate: number | null;
   isDestinationOverridden: boolean;
   setIsDestinationOverridden: (value: boolean) => void;
+  includeTakenAtTime: boolean;
+  setIncludeTakenAtTime: (value: boolean) => void;
+  timezone?: string | null;
   setNewContentType: (value: NewContentType) => void;
   setNewContent: (value: NewContent) => void;
   walletPrefillMeta?: {
@@ -83,6 +82,9 @@ export function FormBasicTab({
   suggestedExchangeRate,
   isDestinationOverridden,
   setIsDestinationOverridden,
+  includeTakenAtTime,
+  setIncludeTakenAtTime,
+  timezone,
   setNewContentType,
   setNewContent,
   walletPrefillMeta,
@@ -320,49 +322,31 @@ export function FormBasicTab({
         )}
       />
 
-      <Popover>
-        <FormField
-          control={form.control}
-          name="taken_at"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>{t('transaction-data-table.taken_at')}</FormLabel>
-              <PopoverTrigger asChild>
-                <FormControl>
-                  <Button
-                    variant="outline"
-                    className="pl-3 text-left font-normal"
-                    disabled={!hasFormPermission}
-                  >
-                    {field.value ? (
-                      format(
-                        field.value,
-                        locale === 'vi' ? 'dd/MM/yyyy, ppp' : 'PPP',
-                        {
-                          locale: locale === 'vi' ? vi : enUS,
-                        }
-                      )
-                    ) : (
-                      <span>{t('transaction-data-table.taken_at')}</span>
-                    )}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </FormControl>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="center">
-                <Calendar
-                  mode="single"
-                  selected={field.value}
-                  onSelect={field.onChange}
-                  onSubmit={field.onChange}
-                  initialFocus
-                />
-              </PopoverContent>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </Popover>
+      <FormField
+        control={form.control}
+        name="taken_at"
+        render={({ field }) => (
+          <FormItem className="flex flex-col">
+            <FormLabel>{t('transaction-data-table.taken_at')}</FormLabel>
+            <FormControl>
+              <OptionalTimePicker
+                date={field.value}
+                setDate={field.onChange}
+                includeTime={includeTakenAtTime}
+                setIncludeTime={setIncludeTakenAtTime}
+                includeTimeLabel={t('transaction-data-table.include_time')}
+                disabled={loading || !hasFormPermission}
+                allowClear={false}
+                preferences={{
+                  timezone: timezone || 'auto',
+                  timeFormat: locale === 'vi' ? '24h' : '12h',
+                }}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 }

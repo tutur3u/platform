@@ -293,6 +293,19 @@ export const foundationComponentEntries: ComponentEntry[] = [
     ),
   },
   {
+    id: 'optional-time-picker',
+    name: 'Optional Time Picker',
+    category: 'inputs',
+    importPath: '@tuturuuu/ui/optional-time-picker',
+    exports: ['OptionalTimePicker'],
+    customizationKeys: ['includeTime', 'timezone', 'timeFormat', 'disabled'],
+    usage: usage(
+      '@tuturuuu/ui/optional-time-picker',
+      ['OptionalTimePicker'],
+      `<OptionalTimePicker\n  date={date}\n  setDate={setDate}\n  includeTime={includeTime}\n  setIncludeTime={setIncludeTime}\n  includeTimeLabel="Include time"\n/>`
+    ),
+  },
+  {
     id: 'dialog',
     name: 'Dialog',
     category: 'overlays',

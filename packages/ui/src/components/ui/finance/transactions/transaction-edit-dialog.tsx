@@ -50,7 +50,6 @@ import {
   getIconComponentByKey,
   type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
-import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
   DialogContent,
@@ -58,6 +57,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Label } from '@tuturuuu/ui/label';
+import { OptionalTimePicker } from '@tuturuuu/ui/optional-time-picker';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -65,6 +65,10 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
+import {
+  buildDateInTimezone,
+  getDatePartsInTimezone,
+} from '@tuturuuu/utils/task-date-timezone';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -148,6 +152,21 @@ interface TransactionEditDialogProps {
   canViewConfidentialAmount?: boolean;
   canViewConfidentialDescription?: boolean;
   canViewConfidentialCategory?: boolean;
+  timezone?: string | null;
+}
+
+function startOfDayInTimezone(date: Date, timezone?: string | null) {
+  const resolvedTimezone = timezone || 'auto';
+  const parts = getDatePartsInTimezone(date, resolvedTimezone);
+
+  return buildDateInTimezone(
+    parts.year,
+    parts.month,
+    parts.day,
+    0,
+    0,
+    resolvedTimezone
+  );
 }
 
 export function TransactionEditDialog({
@@ -164,6 +183,7 @@ export function TransactionEditDialog({
   canViewConfidentialAmount,
   canViewConfidentialDescription,
   canViewConfidentialCategory,
+  timezone,
 }: TransactionEditDialogProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -210,7 +230,12 @@ export function TransactionEditDialog({
   const [walletId, setWalletId] = useState(transaction?.wallet_id || '');
   const [categoryId, setCategoryId] = useState(transaction?.category_id || '');
   const [takenAt, setTakenAt] = useState<Date | undefined>(
-    transaction?.taken_at ? new Date(transaction.taken_at) : new Date()
+    transaction?.taken_at
+      ? new Date(transaction.taken_at)
+      : startOfDayInTimezone(new Date(), timezone)
+  );
+  const [includeTakenAtTime, setIncludeTakenAtTime] = useState(
+    !!transaction?.taken_at
   );
   const [reportOptIn, setReportOptIn] = useState(
     transaction?.report_opt_in ?? true
@@ -290,8 +315,11 @@ export function TransactionEditDialog({
       setWalletId(transaction.wallet_id || '');
       setCategoryId(transaction.category_id || '');
       setTakenAt(
-        transaction.taken_at ? new Date(transaction.taken_at) : new Date()
+        transaction.taken_at
+          ? new Date(transaction.taken_at)
+          : startOfDayInTimezone(new Date(), timezone)
       );
+      setIncludeTakenAtTime(!!transaction.taken_at);
       setReportOptIn(transaction.report_opt_in ?? true);
       setIsAmountConfidential(
         (transaction as any)?.is_amount_confidential ?? false
@@ -308,13 +336,14 @@ export function TransactionEditDialog({
       setAmount(0);
       setWalletId('');
       setCategoryId('');
-      setTakenAt(new Date());
+      setTakenAt(startOfDayInTimezone(new Date(), timezone));
+      setIncludeTakenAtTime(false);
       setReportOptIn(true);
       setIsAmountConfidential(false);
       setIsDescriptionConfidential(false);
       setIsCategoryConfidential(false);
     }
-  }, [isOpen, transaction]);
+  }, [isOpen, transaction, timezone]);
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const isExpense = selectedCategory?.is_expense !== false;
@@ -748,13 +777,19 @@ export function TransactionEditDialog({
                   </div>
                   {t('transaction-data-table.taken_at')}
                 </Label>
-                <DateTimePicker
+                <OptionalTimePicker
                   date={takenAt}
                   setDate={setTakenAt}
-                  showTimeSelect={true}
+                  includeTime={includeTakenAtTime}
+                  setIncludeTime={setIncludeTakenAtTime}
+                  includeTimeLabel={t('transaction-data-table.include_time')}
                   allowClear={false}
                   showFooterControls={true}
                   disabled={isDisabled || !canUpdateTransactions}
+                  preferences={{
+                    timezone: timezone || 'auto',
+                    timeFormat: locale === 'vi' ? '24h' : '12h',
+                  }}
                 />
               </div>
 

@@ -9225,6 +9225,7 @@
     "financial_overview_description": "Track your income, expenses, and overall financial health",
     "hide_confidential": "Hide numbers",
     "id": "ID",
+    "include_time": "Include time",
     "income": "Income",
     "monthly_total_from_12_recent_months": "Monthly total from 12 most recent months",
     "no_tags_hint": "No tags yet. Type to create one.",

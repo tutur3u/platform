@@ -19,6 +19,7 @@ interface TransactionsCreateSummaryProps {
   permissionRequestUser?: FinancePermissionRequestUser | null;
   pluralTitle: string;
   singularTitle: string;
+  timezone?: string | null;
   wsId: string;
 }
 
@@ -34,6 +35,7 @@ export function TransactionsCreateSummary({
   permissionRequestUser,
   pluralTitle,
   singularTitle,
+  timezone,
   wsId,
 }: TransactionsCreateSummaryProps) {
   return (
@@ -54,6 +56,7 @@ export function TransactionsCreateSummary({
             canCreateConfidentialTransactions={
               canCreateConfidentialTransactions
             }
+            timezone={timezone}
             permissionRequestUser={permissionRequestUser}
           />
         ) : (

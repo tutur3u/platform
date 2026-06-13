@@ -107,6 +107,7 @@ export default async function TransactionsPage({
         canChangeFinanceWallets={canChangeFinanceWallets}
         canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
         canCreateConfidentialTransactions={canCreateConfidentialTransactions}
+        timezone={resolvedWorkspace.timezone}
         permissionRequestUser={permissionRequestUser}
       />
       <Separator className="my-4" />

@@ -34,6 +34,7 @@ interface Props {
   currency?: string;
   transaction: any;
   tags: Array<{ id: string; name: string; color: string }>;
+  timezone?: string | null;
 }
 
 export function TransactionDetailsClientPage({
@@ -41,6 +42,7 @@ export function TransactionDetailsClientPage({
   currency = 'USD',
   transaction,
   tags,
+  timezone,
 }: Props) {
   const t = useTranslations();
   const financeHref = useFinanceHref();
@@ -289,6 +291,7 @@ export function TransactionDetailsClientPage({
         wsId={wsId}
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}
+        timezone={timezone}
       />
     </>
   );

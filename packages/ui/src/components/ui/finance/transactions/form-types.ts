@@ -56,6 +56,9 @@ export interface TransactionFormProps {
   initialMode?: TransactionFormInitialMode;
   initialTransaction?: TransactionFormInitialTransaction;
   initialTransfer?: TransactionFormInitialTransfer;
+  timezone?: string | null;
+  preferInitialWalletSelection?: boolean;
+  refreshPageOnFinish?: boolean;
   permissionRequestUser?: FinancePermissionRequestUser | null;
 }
 

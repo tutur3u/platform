@@ -30,6 +30,7 @@ export default async function WorkspaceTransactionDetailsPage({
           wsId: context.wsId,
         })}
         internalApiOptions={internalApiOptions}
+        timezone={context.workspace.timezone}
       />
     </Suspense>
   );
