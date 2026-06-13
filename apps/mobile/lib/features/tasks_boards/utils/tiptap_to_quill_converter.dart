@@ -34,11 +34,7 @@ Delta _tipTapDocToDelta(Map<String, dynamic> doc) {
   return delta;
 }
 
-void _appendBlockNodeToDelta(
-  Object? node,
-  Delta delta, {
-  int indent = 0,
-}) {
+void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
   if (node is! Map<String, dynamic>) {
     return;
   }

@@ -22,12 +22,7 @@ class AppTabCubit extends Cubit<AppTabState> {
   Future<void> clearSelection() async {
     _bumpSelectionVersion();
     if (state.selectedId != null || state.shouldAutoFocus) {
-      emit(
-        state.copyWith(
-          selectedId: () => null,
-          shouldAutoFocus: false,
-        ),
-      );
+      emit(state.copyWith(selectedId: () => null, shouldAutoFocus: false));
     }
     try {
       await _settings.clearLastAppRoute();
@@ -68,12 +63,7 @@ class AppTabCubit extends Cubit<AppTabState> {
 
   Future<void> openWithSearch() async {
     _bumpSelectionVersion();
-    emit(
-      state.copyWith(
-        selectedId: () => null,
-        shouldAutoFocus: true,
-      ),
-    );
+    emit(state.copyWith(selectedId: () => null, shouldAutoFocus: true));
     try {
       await _settings.clearLastAppRoute();
       await _settings.setLastTabRoute(Routes.apps);

@@ -15,9 +15,7 @@ void main() {
           AssistantMessage(
             id: 'u1',
             role: 'user',
-            parts: const [
-              AssistantMessagePart(type: 'text', text: 'Hi'),
-            ],
+            parts: const [AssistantMessagePart(type: 'text', text: 'Hi')],
             createdAt: DateTime.utc(2025, 1, 2, 3, 5),
           ),
         ],

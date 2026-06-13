@@ -21,10 +21,7 @@ extension on _TaskBoardDetailPageViewState {
                     leading: const Icon(Icons.sort),
                     title: Text(context.l10n.sortBy),
                     subtitle: Text(
-                      taskBoardListViewSortFieldLabel(
-                        context,
-                        _listSort.field,
-                      ),
+                      taskBoardListViewSortFieldLabel(context, _listSort.field),
                     ),
                     onTap: () {
                       Navigator.of(sheetContext).pop();
@@ -197,10 +194,7 @@ extension on _TaskBoardDetailPageViewState {
               setState(() => isMutating = true);
               try {
                 for (final taskId in taskIdsToRestore) {
-                  await cubit.restoreTask(
-                    taskId: taskId,
-                    reloadBoard: false,
-                  );
+                  await cubit.restoreTask(taskId: taskId, reloadBoard: false);
                   if (!context.mounted) return;
                   setState(() {
                     deletedTasks = deletedTasks
@@ -329,17 +323,12 @@ extension on _TaskBoardDetailPageViewState {
                         Expanded(
                           child: Row(
                             children: [
-                              const Icon(
-                                Icons.delete_outline,
-                                size: 20,
-                              ),
+                              const Icon(Icons.delete_outline, size: 20),
                               const shad.Gap(8),
                               Text(
                                 context.l10n.taskBoardDetailRecycleBin,
                                 style: shad.Theme.of(context).typography.large
-                                    .copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                    .copyWith(fontWeight: FontWeight.w700),
                               ),
                             ],
                           ),
@@ -479,9 +468,7 @@ extension on _TaskBoardDetailPageViewState {
                                     style: shad.Theme.of(context)
                                         .typography
                                         .small
-                                        .copyWith(
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        .copyWith(fontWeight: FontWeight.w500),
                                   ),
                                 ],
                               ),
@@ -613,43 +600,32 @@ extension on _TaskBoardDetailPageViewState {
         confirmLabel: context.l10n.taskBoardDetailCreateList,
         successMessage: context.l10n.taskBoardDetailListCreated,
         existingLists: board.lists,
-        onSubmit:
-            ({
-              required name,
-              required status,
-              required color,
-            }) async {
-              final currentBoard = context
-                  .read<TaskBoardDetailCubit>()
-                  .state
-                  .board;
-              if (currentBoard == null) return false;
-              if (!_taskBoardCanCreateListInStatus(
-                currentBoard.lists,
-                status,
-              )) {
-                final toastContext = Navigator.of(
-                  context,
-                  rootNavigator: true,
-                ).context;
-                if (!toastContext.mounted) return false;
-                shad.showToast(
-                  context: toastContext,
-                  builder: (context, overlay) => shad.Alert.destructive(
-                    content: Text(
-                      context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
-                    ),
-                  ),
-                );
-                return false;
-              }
-              await context.read<TaskBoardDetailCubit>().createList(
-                name: name,
-                status: status,
-                color: color,
-              );
-              return true;
-            },
+        onSubmit: ({required name, required status, required color}) async {
+          final currentBoard = context.read<TaskBoardDetailCubit>().state.board;
+          if (currentBoard == null) return false;
+          if (!_taskBoardCanCreateListInStatus(currentBoard.lists, status)) {
+            final toastContext = Navigator.of(
+              context,
+              rootNavigator: true,
+            ).context;
+            if (!toastContext.mounted) return false;
+            shad.showToast(
+              context: toastContext,
+              builder: (context, overlay) => shad.Alert.destructive(
+                content: Text(
+                  context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
+                ),
+              ),
+            );
+            return false;
+          }
+          await context.read<TaskBoardDetailCubit>().createList(
+            name: name,
+            status: status,
+            color: color,
+          );
+          return true;
+        },
       ),
     );
   }
@@ -675,45 +651,37 @@ extension on _TaskBoardDetailPageViewState {
             TaskBoardList.normalizeSupportedColor(list.color) ?? 'GRAY',
         currentListId: list.id,
         existingLists: board.lists,
-        onSubmit:
-            ({
-              required name,
-              required status,
-              required color,
-            }) async {
-              final currentBoard = context
-                  .read<TaskBoardDetailCubit>()
-                  .state
-                  .board;
-              if (currentBoard == null) return false;
-              if (!_taskBoardCanCreateListInStatus(
-                currentBoard.lists,
-                status,
-                excludingListId: list.id,
-              )) {
-                final toastContext = Navigator.of(
-                  context,
-                  rootNavigator: true,
-                ).context;
-                if (!toastContext.mounted) return false;
-                shad.showToast(
-                  context: toastContext,
-                  builder: (context, overlay) => shad.Alert.destructive(
-                    content: Text(
-                      context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
-                    ),
-                  ),
-                );
-                return false;
-              }
-              await context.read<TaskBoardDetailCubit>().updateList(
-                listId: list.id,
-                name: name,
-                status: status,
-                color: color,
-              );
-              return true;
-            },
+        onSubmit: ({required name, required status, required color}) async {
+          final currentBoard = context.read<TaskBoardDetailCubit>().state.board;
+          if (currentBoard == null) return false;
+          if (!_taskBoardCanCreateListInStatus(
+            currentBoard.lists,
+            status,
+            excludingListId: list.id,
+          )) {
+            final toastContext = Navigator.of(
+              context,
+              rootNavigator: true,
+            ).context;
+            if (!toastContext.mounted) return false;
+            shad.showToast(
+              context: toastContext,
+              builder: (context, overlay) => shad.Alert.destructive(
+                content: Text(
+                  context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
+                ),
+              ),
+            );
+            return false;
+          }
+          await context.read<TaskBoardDetailCubit>().updateList(
+            listId: list.id,
+            name: name,
+            status: status,
+            color: color,
+          );
+          return true;
+        },
       ),
     );
   }
@@ -1417,10 +1385,7 @@ class _TaskBoardBulkActionsDrawerState
 /// A container widget that groups related bulk action controls with visual
 /// hierarchy through subtle background tint, border, and optional icon header.
 class _SectionContainer extends StatelessWidget {
-  const _SectionContainer({
-    required this.children,
-    this.icon,
-  });
+  const _SectionContainer({required this.children, this.icon});
 
   final List<Widget> children;
   final IconData? icon;
@@ -1434,9 +1399,7 @@ class _SectionContainer extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.secondary.withAlpha(12),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.border,
-        ),
+        border: Border.all(color: colorScheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1487,10 +1450,7 @@ class _SectionContainer extends StatelessWidget {
 }
 
 class _DueDateActionSection extends StatelessWidget {
-  const _DueDateActionSection({
-    required this.enabled,
-    required this.onSelect,
-  });
+  const _DueDateActionSection({required this.enabled, required this.onSelect});
 
   final bool enabled;
   final void Function(String? preset, DateTime? customDate) onSelect;
@@ -1514,9 +1474,7 @@ class _DueDateActionSection extends StatelessWidget {
           onPressed: () => unawaited(_showDueDateSheet(context)),
           child: Row(
             children: [
-              Expanded(
-                child: Text(l10n.taskBoardDetailSetDueDate),
-              ),
+              Expanded(child: Text(l10n.taskBoardDetailSetDueDate)),
               const shad.Gap(8),
               const Icon(Icons.keyboard_arrow_down, size: 16),
             ],
@@ -1545,12 +1503,9 @@ class _DueDateActionSection extends StatelessWidget {
                     Expanded(
                       child: Text(
                         l10n.taskBoardDetailTaskEndDate,
-                        style:
-                            shad.Theme.of(
-                              context,
-                            ).typography.large.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                        style: shad.Theme.of(context).typography.large.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     shad.IconButton.ghost(
@@ -1655,9 +1610,7 @@ class _EstimationActionSection extends StatelessWidget {
           onPressed: () => unawaited(_showEstimationSheet(context)),
           child: Row(
             children: [
-              Expanded(
-                child: Text(l10n.taskBoardDetailSetEstimation),
-              ),
+              Expanded(child: Text(l10n.taskBoardDetailSetEstimation)),
               const shad.Gap(8),
               const Icon(Icons.keyboard_arrow_down, size: 16),
             ],
@@ -1687,12 +1640,9 @@ class _EstimationActionSection extends StatelessWidget {
                     Expanded(
                       child: Text(
                         l10n.taskBoardDetailTaskEstimation,
-                        style:
-                            shad.Theme.of(
-                              context,
-                            ).typography.large.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                        style: shad.Theme.of(context).typography.large.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     shad.IconButton.ghost(
@@ -1772,9 +1722,7 @@ class _MoveToBoardActionSectionState extends State<_MoveToBoardActionSection> {
               else
                 const Icon(Icons.compare_arrows_outlined, size: 16),
               const shad.Gap(8),
-              Expanded(
-                child: Text(l10n.taskBoardDetailBulkMoveToBoard),
-              ),
+              Expanded(child: Text(l10n.taskBoardDetailBulkMoveToBoard)),
               if (!_isLoading) ...[
                 const shad.Gap(8),
                 const Icon(Icons.keyboard_arrow_down, size: 16),
@@ -1962,10 +1910,7 @@ class _ItemPickerSheet<T> extends StatelessWidget {
 }
 
 class _BoardPickerSheet extends StatelessWidget {
-  const _BoardPickerSheet({
-    required this.title,
-    required this.boards,
-  });
+  const _BoardPickerSheet({required this.title, required this.boards});
 
   final String title;
   final List<TaskBoardSummary> boards;
@@ -1977,10 +1922,7 @@ class _BoardPickerSheet extends StatelessWidget {
       title: title,
       items: boards,
       leadingBuilder: (_, board) => Icon(
-        resolvePlatformIcon(
-          board.icon,
-          fallback: Icons.dashboard_outlined,
-        ),
+        resolvePlatformIcon(board.icon, fallback: Icons.dashboard_outlined),
       ),
       labelBuilder: (_, board) => board.name?.trim().isNotEmpty == true
           ? board.name!.trim()
@@ -1991,10 +1933,7 @@ class _BoardPickerSheet extends StatelessWidget {
 }
 
 class _ListPickerSheet extends StatelessWidget {
-  const _ListPickerSheet({
-    required this.title,
-    required this.lists,
-  });
+  const _ListPickerSheet({required this.title, required this.lists});
 
   final String title;
   final List<TaskBoardList> lists;
@@ -2007,10 +1946,7 @@ class _ListPickerSheet extends StatelessWidget {
       items: lists,
       leadingBuilder: (context, list) => Icon(
         _taskBoardListStatusIcon(list.status),
-        color: _taskBoardListStatusBadgeColors(
-          context,
-          list.status,
-        ).textColor,
+        color: _taskBoardListStatusBadgeColors(context, list.status).textColor,
       ),
       labelBuilder: (_, list) => list.name?.trim().isNotEmpty == true
           ? list.name!.trim()

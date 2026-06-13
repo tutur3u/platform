@@ -314,9 +314,7 @@ class _CalendarView extends StatelessWidget {
                 .currentWorkspace
                 ?.id;
             if (wsId != null) {
-              unawaited(
-                context.read<CalendarCubit>().loadMoreForward(wsId),
-              );
+              unawaited(context.read<CalendarCubit>().loadMoreForward(wsId));
             }
           },
         );
@@ -390,10 +388,7 @@ class _CalendarView extends StatelessWidget {
     );
   }
 
-  void _showCalendarModeMenu(
-    BuildContext context,
-    CalendarState state,
-  ) {
+  void _showCalendarModeMenu(BuildContext context, CalendarState state) {
     final currentMode = _calendarTabModeFor(state.viewMode);
     shad.showDropdown<void>(
       context: context,
@@ -483,10 +478,7 @@ class _CalendarView extends StatelessWidget {
     };
   }
 
-  Future<void> _createEvent(
-    BuildContext context, {
-    DateTime? startTime,
-  }) async {
+  Future<void> _createEvent(BuildContext context, {DateTime? startTime}) async {
     final cubit = context.read<CalendarCubit>();
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
@@ -557,10 +549,7 @@ class _ErrorView extends StatelessWidget {
             color: Theme.of(context).colorScheme.error,
           ),
           const SizedBox(height: 16),
-          Text(
-            error ?? l10n.calendarTitle,
-            textAlign: TextAlign.center,
-          ),
+          Text(error ?? l10n.calendarTitle, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           FilledButton.tonal(
             onPressed: () => _reload(context),

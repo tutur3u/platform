@@ -347,45 +347,43 @@ class _CategoryPickerSheet extends StatelessWidget {
             ),
           ),
           const shad.Gap(8),
-          ...categories.map(
-            (category) {
-              final categoryColor = resolveTimeTrackingCategoryColor(
-                context,
-                category.color,
-                fallback: theme.colorScheme.primary,
-              );
+          ...categories.map((category) {
+            final categoryColor = resolveTimeTrackingCategoryColor(
+              context,
+              category.color,
+              fallback: theme.colorScheme.primary,
+            );
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: shad.OutlineButton(
-                  onPressed: () => Navigator.of(context).pop(category.id),
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: categoryColor,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: shad.OutlineButton(
+                onPressed: () => Navigator.of(context).pop(category.id),
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: categoryColor,
+                        borderRadius: BorderRadius.circular(999),
                       ),
-                      const shad.Gap(8),
-                      Expanded(
-                        child: Text(category.name ?? l10n.timerNoCategory),
+                    ),
+                    const shad.Gap(8),
+                    Expanded(
+                      child: Text(category.name ?? l10n.timerNoCategory),
+                    ),
+                    if (selectedCategory == category.id)
+                      Icon(
+                        shad.LucideIcons.check,
+                        size: 16,
+                        color: theme.colorScheme.foreground,
                       ),
-                      if (selectedCategory == category.id)
-                        Icon(
-                          shad.LucideIcons.check,
-                          size: 16,
-                          color: theme.colorScheme.foreground,
-                        ),
-                    ],
-                  ),
+                  ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          }),
         ],
       ),
     );

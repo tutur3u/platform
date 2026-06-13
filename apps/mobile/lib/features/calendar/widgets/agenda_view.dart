@@ -461,12 +461,7 @@ class _NowIndicatorState extends State<_NowIndicator> {
             ),
           ),
           const SizedBox(width: 8),
-          Expanded(
-            child: Container(
-              height: 1.5,
-              color: colorScheme.error,
-            ),
-          ),
+          Expanded(child: Container(height: 1.5, color: colorScheme.error)),
           const SizedBox(width: 8),
           Text(
             timeStr,
@@ -514,10 +509,7 @@ class _AllDayBanner extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          margin: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 3,
-          ),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -532,12 +524,7 @@ class _AllDayBanner extends StatelessWidget {
             children: [
               // Main content row.
               Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  12,
-                  10,
-                  12,
-                  10,
-                ),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 child: Row(
                   children: [
                     // Leading icon.
@@ -624,11 +611,7 @@ class _AllDayBanner extends StatelessWidget {
       return const _DayInfo(dayNumber: 1, totalDays: 1);
     }
 
-    final day = DateTime(
-      displayDate.year,
-      displayDate.month,
-      displayDate.day,
-    );
+    final day = DateTime(displayDate.year, displayDate.month, displayDate.day);
     final dayNumber = day.difference(startDay).inDays + 1;
     return _DayInfo(dayNumber: dayNumber, totalDays: totalDays);
   }
@@ -684,9 +667,7 @@ class _AgendaEventCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: EventColors.background(event.color),
             borderRadius: BorderRadius.circular(10),
-            border: Border(
-              left: BorderSide(color: accentColor, width: 4),
-            ),
+            border: Border(left: BorderSide(color: accentColor, width: 4)),
           ),
           child: Row(
             children: [

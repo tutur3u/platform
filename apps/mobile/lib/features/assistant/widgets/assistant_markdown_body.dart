@@ -24,9 +24,7 @@ class AssistantMarkdownBody extends StatelessWidget {
       data: data,
       selectable: true,
       blockSyntaxes: const [_MermaidFenceSyntax()],
-      builders: {
-        'mermaid-diagram': _MermaidDiagramBuilder(subdued: subdued),
-      },
+      builders: {'mermaid-diagram': _MermaidDiagramBuilder(subdued: subdued)},
       onTapLink: (text, href, title) {
         if (href == null || href.trim().isEmpty) {
           return;

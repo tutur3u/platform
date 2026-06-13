@@ -411,10 +411,7 @@ class _RequestsViewState extends State<_RequestsView> {
               return;
             }
             unawaited(
-              _loadPermissionsAndThreshold(
-                wsId,
-                forceRefreshRequests: true,
-              ),
+              _loadPermissionsAndThreshold(wsId, forceRefreshRequests: true),
             );
           },
         ),

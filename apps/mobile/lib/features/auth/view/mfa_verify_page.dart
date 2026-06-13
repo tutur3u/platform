@@ -144,10 +144,7 @@ class _MfaVerifyPageState extends State<MfaVerifyPage> {
 }
 
 class _SignOutButton extends StatelessWidget {
-  const _SignOutButton({
-    required this.l10n,
-    required this.isBusy,
-  });
+  const _SignOutButton({required this.l10n, required this.isBusy});
 
   final AppLocalizations l10n;
   final bool isBusy;

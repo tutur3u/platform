@@ -46,11 +46,7 @@ class TaskBoardTaskAssignee extends Equatable {
 }
 
 class TaskBoardTaskLabel extends Equatable {
-  const TaskBoardTaskLabel({
-    required this.id,
-    this.name,
-    this.color,
-  });
+  const TaskBoardTaskLabel({required this.id, this.name, this.color});
 
   factory TaskBoardTaskLabel.fromJson(Map<String, dynamic> json) {
     final labelJson = (json['label'] is Map<String, dynamic>)
@@ -75,21 +71,14 @@ class TaskBoardTaskLabel extends Equatable {
   final String? name;
   final String? color;
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'color': color,
-  };
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'color': color};
 
   @override
   List<Object?> get props => [id, name, color];
 }
 
 class TaskBoardTaskProject extends Equatable {
-  const TaskBoardTaskProject({
-    required this.id,
-    this.name,
-  });
+  const TaskBoardTaskProject({required this.id, this.name});
 
   factory TaskBoardTaskProject.fromJson(Map<String, dynamic> json) {
     final projectJson = (json['project'] is Map<String, dynamic>)
@@ -112,10 +101,7 @@ class TaskBoardTaskProject extends Equatable {
   final String id;
   final String? name;
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-  };
+  Map<String, dynamic> toJson() => {'id': id, 'name': name};
 
   @override
   List<Object?> get props => [id, name];

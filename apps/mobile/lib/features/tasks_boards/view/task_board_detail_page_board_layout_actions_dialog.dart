@@ -25,9 +25,7 @@ class _TaskBoardListActionsDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _TaskBoardPickerHandle(
-              color: theme.colorScheme.mutedForeground,
-            ),
+            _TaskBoardPickerHandle(color: theme.colorScheme.mutedForeground),
             const shad.Gap(16),
             Text(
               context.l10n.taskBoardDetailListActions,

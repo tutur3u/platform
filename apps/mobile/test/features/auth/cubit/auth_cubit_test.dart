@@ -30,9 +30,9 @@ void main() {
     setUp(() {
       authRepository = _MockAuthRepository();
       when(() => authRepository.getCurrentUserSync()).thenReturn(null);
-      when(() => authRepository.onAuthStateChange()).thenAnswer(
-        (_) => const Stream<supa.AuthState>.empty(),
-      );
+      when(
+        () => authRepository.onAuthStateChange(),
+      ).thenAnswer((_) => const Stream<supa.AuthState>.empty());
       when(() => authRepository.dispose()).thenReturn(null);
       when(() => authRepository.checkMfaRequired()).thenReturn(false);
       when(
@@ -63,9 +63,9 @@ void main() {
         when(
           () => authRepository.signInWithGoogle(),
         ).thenAnswer((_) async => const AuthActionResult.success());
-        when(() => authRepository.getCurrentUser()).thenAnswer(
-          (_) async => _user(),
-        );
+        when(
+          () => authRepository.getCurrentUser(),
+        ).thenAnswer((_) async => _user());
         return AuthCubit(authRepository: authRepository);
       },
       act: (cubit) => cubit.signInWithGoogle(),
@@ -105,9 +105,7 @@ void main() {
     blocTest<AuthCubit, AuthState>(
       'stores a localized error code when Google sign-in fails',
       build: () {
-        when(
-          () => authRepository.signInWithGoogle(),
-        ).thenAnswer(
+        when(() => authRepository.signInWithGoogle()).thenAnswer(
           (_) async => const AuthActionResult.failure(
             AuthErrorCode.googleBrowserLaunchFailed,
           ),
@@ -140,9 +138,9 @@ void main() {
             ),
           ),
         ).thenAnswer((_) async => (success: true, error: null));
-        when(() => authRepository.getCurrentUser()).thenAnswer(
-          (_) async => _user(),
-        );
+        when(
+          () => authRepository.getCurrentUser(),
+        ).thenAnswer((_) async => _user());
         return AuthCubit(authRepository: authRepository);
       },
       act: (cubit) => cubit.signInWithQrLoginSession(
@@ -164,9 +162,7 @@ void main() {
     blocTest<AuthCubit, AuthState>(
       'stores a localized error code when Microsoft sign-in fails',
       build: () {
-        when(
-          () => authRepository.signInWithMicrosoft(),
-        ).thenAnswer(
+        when(() => authRepository.signInWithMicrosoft()).thenAnswer(
           (_) async => const AuthActionResult.failure(
             AuthErrorCode.microsoftBrowserLaunchFailed,
           ),
@@ -191,9 +187,7 @@ void main() {
     blocTest<AuthCubit, AuthState>(
       'stores a localized error code when Apple sign-in fails',
       build: () {
-        when(
-          () => authRepository.signInWithApple(),
-        ).thenAnswer(
+        when(() => authRepository.signInWithApple()).thenAnswer(
           (_) async => const AuthActionResult.failure(
             AuthErrorCode.appleBrowserLaunchFailed,
           ),
@@ -218,9 +212,7 @@ void main() {
     blocTest<AuthCubit, AuthState>(
       'stores a localized error code when GitHub sign-in fails',
       build: () {
-        when(
-          () => authRepository.signInWithGithub(),
-        ).thenAnswer(
+        when(() => authRepository.signInWithGithub()).thenAnswer(
           (_) async => const AuthActionResult.failure(
             AuthErrorCode.githubBrowserLaunchFailed,
           ),
@@ -245,9 +237,7 @@ void main() {
     blocTest<AuthCubit, AuthState>(
       'stores repository error messages when present',
       build: () {
-        when(
-          () => authRepository.signInWithGoogle(),
-        ).thenAnswer(
+        when(() => authRepository.signInWithGoogle()).thenAnswer(
           (_) async => const AuthActionResult.failure(
             AuthErrorCode.googleSignInFailed,
             errorMessage: 'Unacceptable audience in id_token',
@@ -335,9 +325,9 @@ void main() {
     setUp(() {
       authRepository = _MockAuthRepository();
       when(() => authRepository.getCurrentUserSync()).thenReturn(_user());
-      when(() => authRepository.onAuthStateChange()).thenAnswer(
-        (_) => const Stream<supa.AuthState>.empty(),
-      );
+      when(
+        () => authRepository.onAuthStateChange(),
+      ).thenAnswer((_) => const Stream<supa.AuthState>.empty());
       when(() => authRepository.dispose()).thenReturn(null);
       when(() => authRepository.checkMfaRequired()).thenReturn(false);
       when(
@@ -356,21 +346,18 @@ void main() {
       ).thenAnswer((_) async => (success: false, error: null));
     });
 
-    test(
-      'beginAddAccountFlow keeps the current session active',
-      () async {
-        final cubit = AuthCubit(authRepository: authRepository);
-        addTearDown(cubit.close);
+    test('beginAddAccountFlow keeps the current session active', () async {
+      final cubit = AuthCubit(authRepository: authRepository);
+      addTearDown(cubit.close);
 
-        final started = await cubit.beginAddAccountFlow();
+      final started = await cubit.beginAddAccountFlow();
 
-        expect(started, isTrue);
-        expect(cubit.state.status, AuthStatus.authenticated);
-        expect(cubit.state.isAddAccountFlow, isTrue);
-        expect(cubit.state.activeAccountId, 'user-1');
-        verifyNever(() => authRepository.switchToStoredAccount(any()));
-      },
-    );
+      expect(started, isTrue);
+      expect(cubit.state.status, AuthStatus.authenticated);
+      expect(cubit.state.isAddAccountFlow, isTrue);
+      expect(cubit.state.activeAccountId, 'user-1');
+      verifyNever(() => authRepository.switchToStoredAccount(any()));
+    });
 
     test(
       'cancelAddAccountFlow exits without restoring when still authenticated',
@@ -396,9 +383,9 @@ void main() {
     setUp(() {
       authRepository = _MockAuthRepository();
       when(() => authRepository.getCurrentUserSync()).thenReturn(_user());
-      when(() => authRepository.onAuthStateChange()).thenAnswer(
-        (_) => const Stream<supa.AuthState>.empty(),
-      );
+      when(
+        () => authRepository.onAuthStateChange(),
+      ).thenAnswer((_) => const Stream<supa.AuthState>.empty());
       when(() => authRepository.dispose()).thenReturn(null);
       when(() => authRepository.checkMfaRequired()).thenReturn(false);
       when(
@@ -439,9 +426,9 @@ void main() {
     setUp(() {
       authRepository = _MockAuthRepository();
       when(() => authRepository.getCurrentUserSync()).thenReturn(_user());
-      when(() => authRepository.onAuthStateChange()).thenAnswer(
-        (_) => const Stream<supa.AuthState>.empty(),
-      );
+      when(
+        () => authRepository.onAuthStateChange(),
+      ).thenAnswer((_) => const Stream<supa.AuthState>.empty());
       when(() => authRepository.dispose()).thenReturn(null);
       when(() => authRepository.checkMfaRequired()).thenReturn(true);
       when(
@@ -458,9 +445,9 @@ void main() {
       when(
         () => authRepository.verifyMfaCode(any()),
       ).thenAnswer((_) async => (success: true, error: null));
-      when(() => authRepository.getCurrentUser()).thenAnswer(
-        (_) async => _user(),
-      );
+      when(
+        () => authRepository.getCurrentUser(),
+      ).thenAnswer((_) async => _user());
     });
 
     test('syncs the aal2 session after MFA verification succeeds', () async {

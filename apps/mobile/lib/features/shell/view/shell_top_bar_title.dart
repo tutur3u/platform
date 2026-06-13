@@ -90,10 +90,7 @@ class _ShellTopBarTitleContent extends StatelessWidget {
 }
 
 class _AnimatedTitleText extends StatefulWidget {
-  const _AnimatedTitleText({
-    required this.title,
-    this.onTitleSubmitted,
-  });
+  const _AnimatedTitleText({required this.title, this.onTitleSubmitted});
 
   final String title;
   final Future<void> Function(String title)? onTitleSubmitted;
@@ -233,10 +230,7 @@ class _AnimatedTitleTextState extends State<_AnimatedTitleText> {
       switchOutCurve: Curves.easeInCubic,
       layoutBuilder: (currentChild, previousChildren) => Stack(
         alignment: Alignment.centerLeft,
-        children: [
-          ...previousChildren,
-          if (currentChild != null) currentChild,
-        ],
+        children: [...previousChildren, if (currentChild != null) currentChild],
       ),
       transitionBuilder: (child, animation) {
         final offsetAnimation = Tween<Offset>(
@@ -282,9 +276,7 @@ class _AnimatedTitleTextState extends State<_AnimatedTitleText> {
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: constraints.maxWidth,
-                  ),
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(

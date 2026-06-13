@@ -24,11 +24,7 @@ void main() {
         () => apiClient.getJson(
           '/api/v1/workspaces/ws_1/settings/DEFAULT_CURRENCY',
         ),
-      ).thenAnswer(
-        (_) async => {
-          'value': 'VND',
-        },
-      );
+      ).thenAnswer((_) async => {'value': 'VND'});
 
       final first = await repository.getWorkspaceDefaultCurrency('ws_1');
       final second = await repository.getWorkspaceDefaultCurrency('ws_1');
@@ -47,11 +43,7 @@ void main() {
         () => apiClient.getJsonList('/api/workspaces/ws_1/wallets'),
       ).thenAnswer(
         (_) async => [
-          {
-            'id': 'wallet_1',
-            'name': 'Cash',
-            'currency': 'USD',
-          },
+          {'id': 'wallet_1', 'name': 'Cash', 'currency': 'USD'},
         ],
       );
 
@@ -156,11 +148,7 @@ void main() {
               'wallet_id': 'wallet_1',
               'wallet_currency': 'USD',
               'tags': [
-                {
-                  'id': 'tag_1',
-                  'name': 'Urgent',
-                  'color': '#ff0000',
-                },
+                {'id': 'tag_1', 'name': 'Urgent', 'color': '#ff0000'},
               ],
             },
           ],
@@ -393,12 +381,7 @@ void main() {
       verify(
         () => apiClient.putJson(
           '/api/workspaces/ws_1/transactions/categories/cat_1',
-          {
-            'name': 'Bills',
-            'is_expense': true,
-            'icon': null,
-            'color': null,
-          },
+          {'name': 'Bills', 'is_expense': true, 'icon': null, 'color': null},
         ),
       ).called(1);
     });
@@ -418,9 +401,7 @@ void main() {
     });
 
     test('getTags maps list response', () async {
-      when(
-        () => apiClient.getJsonList('/api/workspaces/ws_1/tags'),
-      ).thenAnswer(
+      when(() => apiClient.getJsonList('/api/workspaces/ws_1/tags')).thenAnswer(
         (_) async => [
           {
             'id': 'tag_1',
@@ -495,9 +476,7 @@ void main() {
 
       verify(
         () => apiClient.deleteJson('/api/workspaces/ws_1/tags/tag_1'),
-      ).called(
-        1,
-      );
+      ).called(1);
     });
 
     test(
@@ -505,9 +484,9 @@ void main() {
       () async {
         Map<String, dynamic>? sentBody;
 
-        when(
-          () => apiClient.putJson(any(), any()),
-        ).thenAnswer((invocation) async {
+        when(() => apiClient.putJson(any(), any())).thenAnswer((
+          invocation,
+        ) async {
           sentBody = invocation.positionalArguments[1] as Map<String, dynamic>;
           return {'message': 'success'};
         });
@@ -582,9 +561,9 @@ void main() {
 
     test('createTransaction includes tag_ids when provided', () async {
       Map<String, dynamic>? sentBody;
-      when(
-        () => apiClient.postJson(any(), any()),
-      ).thenAnswer((invocation) async {
+      when(() => apiClient.postJson(any(), any())).thenAnswer((
+        invocation,
+      ) async {
         sentBody = invocation.positionalArguments[1] as Map<String, dynamic>;
         return {'message': 'success'};
       });

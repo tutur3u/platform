@@ -99,9 +99,8 @@ class _WorkspaceSelectPageState extends State<WorkspaceSelectPage> {
       if (!mounted) return;
       shad.showToast(
         context: context,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(l10n.workspaceSelectError),
-        ),
+        builder: (context, overlay) =>
+            shad.Alert.destructive(title: Text(l10n.workspaceSelectError)),
       );
     } finally {
       if (mounted) {

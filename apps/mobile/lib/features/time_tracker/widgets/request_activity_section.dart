@@ -526,10 +526,7 @@ class _PaginationRow extends StatelessWidget {
         Expanded(
           child: Center(
             child: Text(
-              l10n.timerRequestActivityPageInfo(
-                currentPage,
-                totalPages,
-              ),
+              l10n.timerRequestActivityPageInfo(currentPage, totalPages),
             ),
           ),
         ),

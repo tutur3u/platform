@@ -247,10 +247,7 @@ class TaskSurfaceSectionHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (trailing != null) ...[
-          const SizedBox(width: 12),
-          trailing!,
-        ],
+        if (trailing != null) ...[const SizedBox(width: 12), trailing!],
       ],
     );
   }
@@ -295,9 +292,7 @@ class TaskSurfaceMessageCard extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: theme.typography.large.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: theme.typography.large.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           Text(
@@ -308,10 +303,7 @@ class TaskSurfaceMessageCard extends StatelessWidget {
               height: 1.4,
             ),
           ),
-          if (action != null) ...[
-            const SizedBox(height: 18),
-            action!,
-          ],
+          if (action != null) ...[const SizedBox(height: 18), action!],
         ],
       ),
     );

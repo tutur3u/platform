@@ -58,19 +58,17 @@ class CalendarConnectionsRepository {
     required String connectionId,
     required bool isEnabled,
   }) async {
-    await _api.patchJson(
-      '/api/v1/calendar/connections',
-      {'id': connectionId, 'isEnabled': isEnabled},
-    );
+    await _api.patchJson('/api/v1/calendar/connections', {
+      'id': connectionId,
+      'isEnabled': isEnabled,
+    });
   }
 
   // ── OAuth ──────────────────────────────────────────────────────────
 
   /// Returns the Google OAuth URL to open in an external browser.
   Future<String> getGoogleOAuthUrl(String wsId) async {
-    final response = await _api.getJson(
-      '/api/v1/calendar/auth?wsId=$wsId',
-    );
+    final response = await _api.getJson('/api/v1/calendar/auth?wsId=$wsId');
     return response['authUrl'] as String;
   }
 

@@ -84,10 +84,7 @@ class EducationRepository {
     );
   }
 
-  Future<void> createQuizSet(
-    String wsId, {
-    required String name,
-  }) async {
+  Future<void> createQuizSet(String wsId, {required String name}) async {
     await _api.postJson(EducationEndpoints.quizSets(wsId), {'name': name});
   }
 
@@ -135,10 +132,7 @@ class EducationRepository {
   }) async {
     await _api.postJson(EducationEndpoints.quizzes(wsId), {
       'quizzes': [
-        {
-          'question': question,
-          'quiz_options': options,
-        },
+        {'question': question, 'quiz_options': options},
       ],
     });
   }

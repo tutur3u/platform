@@ -97,11 +97,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
         final gap = _num(props['gap'])?.toDouble() ?? 12;
         final alignedChildren = _withGap(children, gap: gap);
         return horizontal
-            ? Wrap(
-                spacing: gap,
-                runSpacing: gap,
-                children: alignedChildren,
-              )
+            ? Wrap(spacing: gap, runSpacing: gap, children: alignedChildren)
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: alignedChildren,
@@ -141,10 +137,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
           child: Text((props['fallback'] as String? ?? '?').trim()),
         );
       case 'Separator':
-        return Divider(
-          height: 24,
-          color: Theme.of(context).dividerColor,
-        );
+        return Divider(height: 24, color: Theme.of(context).dividerColor);
       case 'Callout':
         return _buildCallout(
           context,
@@ -651,9 +644,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
         const SizedBox(height: 8),
         shad.SecondaryButton(
           onPressed: () async {
-            final result = await FilePicker.pickFiles(
-              allowMultiple: true,
-            );
+            final result = await FilePicker.pickFiles(allowMultiple: true);
             final paths =
                 result?.files
                     .map((file) => file.path)
@@ -779,11 +770,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
   }) async {
     final values = Map<String, dynamic>.from(_state);
     final actionName =
-        _shouldUseTimeTrackingRequestAction(
-          submitAction,
-          values,
-          submitParams,
-        )
+        _shouldUseTimeTrackingRequestAction(submitAction, values, submitParams)
         ? 'create_time_tracking_request'
         : (submitAction ?? 'submit_form');
 
@@ -810,17 +797,15 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
       if (!context.mounted) return;
       shad.showToast(
         context: context,
-        builder: (context, overlay) => shad.Alert(
-          content: const Text('Submitted successfully'),
-        ),
+        builder: (context, overlay) =>
+            shad.Alert(content: const Text('Submitted successfully')),
       );
     } on Exception catch (error) {
       if (!context.mounted) return;
       shad.showToast(
         context: context,
-        builder: (context, overlay) => shad.Alert.destructive(
-          content: Text(error.toString()),
-        ),
+        builder: (context, overlay) =>
+            shad.Alert.destructive(content: Text(error.toString())),
       );
     }
   }
@@ -903,10 +888,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
               Text(title, style: Theme.of(context).textTheme.titleMedium),
               if (description != null && description.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                Text(description, style: Theme.of(context).textTheme.bodySmall),
               ],
               const SizedBox(height: 12),
             ],
@@ -950,10 +932,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (title != null && title.isNotEmpty)
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
+            Text(title, style: Theme.of(context).textTheme.titleSmall),
           if (title != null && title.isNotEmpty) const SizedBox(height: 4),
           MarkdownBody(data: content),
         ],

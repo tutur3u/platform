@@ -52,9 +52,7 @@ class _CurrentTimeIndicatorState extends State<CurrentTimeIndicator> {
               color: Colors.red,
             ),
           ),
-          Expanded(
-            child: Container(height: 1.5, color: Colors.red),
-          ),
+          Expanded(child: Container(height: 1.5, color: Colors.red)),
         ],
       ),
     );

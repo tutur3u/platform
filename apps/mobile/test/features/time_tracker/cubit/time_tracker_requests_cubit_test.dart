@@ -85,11 +85,9 @@ void main() {
               ApprovalStatus.approved,
             )
             .having((state) => state.workspaceId, 'workspaceId', 'ws_1')
-            .having(
-              (state) => state.requests,
-              'requests',
-              [_request('req_approved', ApprovalStatus.approved)],
-            )
+            .having((state) => state.requests, 'requests', [
+              _request('req_approved', ApprovalStatus.approved),
+            ])
             .having((state) => state.lastUpdatedAt, 'lastUpdatedAt', isNotNull),
       ],
       verify: (_) {
@@ -141,10 +139,9 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(cubit.state.selectedStatus, ApprovalStatus.approved);
-      expect(
-        cubit.state.requests,
-        [_request('req_approved', ApprovalStatus.approved)],
-      );
+      expect(cubit.state.requests, [
+        _request('req_approved', ApprovalStatus.approved),
+      ]);
 
       verify(
         () => repository.getRequests(
@@ -356,10 +353,9 @@ void main() {
         forceRefresh: true,
       );
 
-      expect(
-        cubit.state.requests,
-        [_request('req_fresh', ApprovalStatus.pending)],
-      );
+      expect(cubit.state.requests, [
+        _request('req_fresh', ApprovalStatus.pending),
+      ]);
       verify(
         () => repository.getRequests(
           'ws_1',
@@ -382,10 +378,7 @@ void main() {
           userDisplayName: 'Sam',
           userAvatarUrl: 'https://example.com/a.png',
         );
-        const fresh = TimeTrackingRequest(
-          id: 'req_1',
-          title: 'New title',
-        );
+        const fresh = TimeTrackingRequest(id: 'req_1', title: 'New title');
 
         final cubit = TimeTrackerRequestsCubit(
           repository: repository,

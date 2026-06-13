@@ -56,9 +56,7 @@ void main() {
         when(
           () => profileRepository.getCachedProfile(),
         ).thenAnswer((_) async => (profile: null, fetchedAt: null));
-        when(
-          () => profileRepository.getProfile(),
-        ).thenAnswer(
+        when(() => profileRepository.getProfile()).thenAnswer(
           (_) async => (
             profile: const UserProfile(
               id: 'user-1',
@@ -93,9 +91,7 @@ void main() {
         when(
           () => profileRepository.getCachedProfile(),
         ).thenAnswer((_) async => (profile: null, fetchedAt: null));
-        when(
-          () => profileRepository.getProfile(),
-        ).thenAnswer(
+        when(() => profileRepository.getProfile()).thenAnswer(
           (_) async => (
             profile: const UserProfile(
               id: 'user-1',
@@ -140,9 +136,7 @@ void main() {
         when(
           () => profileRepository.getCachedProfile(),
         ).thenAnswer((_) async => (profile: null, fetchedAt: null));
-        when(
-          () => profileRepository.getProfile(),
-        ).thenAnswer((_) async {
+        when(() => profileRepository.getProfile()).thenAnswer((_) async {
           getProfileCalls++;
           if (getProfileCalls == 1) {
             return (

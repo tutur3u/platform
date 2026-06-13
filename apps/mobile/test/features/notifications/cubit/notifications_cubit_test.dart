@@ -24,10 +24,7 @@ void main() {
       name: 'Personal',
       personal: true,
     );
-    const teamWorkspace = Workspace(
-      id: 'team_ws',
-      name: 'Team',
-    );
+    const teamWorkspace = Workspace(id: 'team_ws', name: 'Team');
 
     AppNotification buildNotification({
       required String id,
@@ -190,10 +187,7 @@ void main() {
         final inviteNotification = buildNotification(
           id: 'notif_invite',
           type: 'workspace_invite',
-          data: const {
-            'workspace_id': 'team_ws',
-            'workspace_name': 'Team',
-          },
+          data: const {'workspace_id': 'team_ws', 'workspace_name': 'Team'},
         );
         var unreadCountCalls = 0;
         var notificationCalls = 0;

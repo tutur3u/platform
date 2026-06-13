@@ -118,10 +118,7 @@ class _SpeedDialFabState extends State<SpeedDialFab> {
 }
 
 class _ActionItem extends StatelessWidget {
-  const _ActionItem({
-    required this.action,
-    required this.onTap,
-  });
+  const _ActionItem({required this.action, required this.onTap});
 
   final FabAction action;
   final VoidCallback onTap;

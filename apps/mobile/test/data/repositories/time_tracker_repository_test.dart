@@ -50,9 +50,9 @@ void main() {
         String? generatedRequestId;
         Map<String, dynamic>? createBody;
 
-        when(
-          () => apiClient.postJson(any(), any()),
-        ).thenAnswer((invocation) async {
+        when(() => apiClient.postJson(any(), any())).thenAnswer((
+          invocation,
+        ) async {
           final path = invocation.positionalArguments[0] as String;
           final body =
               invocation.positionalArguments[1] as Map<String, dynamic>;
@@ -134,9 +134,7 @@ void main() {
 
       Map<String, dynamic>? updateBody;
 
-      when(
-        () => apiClient.postJson(any(), any()),
-      ).thenAnswer((_) async {
+      when(() => apiClient.postJson(any(), any())).thenAnswer((_) async {
         return {
           'uploads': [
             {
@@ -148,9 +146,9 @@ void main() {
         };
       });
 
-      when(
-        () => apiClient.putJson(any(), any()),
-      ).thenAnswer((invocation) async {
+      when(() => apiClient.putJson(any(), any())).thenAnswer((
+        invocation,
+      ) async {
         updateBody = invocation.positionalArguments[1] as Map<String, dynamic>;
         return {
           'request': {

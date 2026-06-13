@@ -104,9 +104,7 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final horizontalPadding = ResponsivePadding.horizontal(
-      context.deviceClass,
-    );
+    final horizontalPadding = ResponsivePadding.horizontal(context.deviceClass);
 
     return shad.Scaffold(
       child: BlocListener<WorkspaceCubit, WorkspaceState>(

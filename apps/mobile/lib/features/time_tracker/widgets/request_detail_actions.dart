@@ -43,10 +43,7 @@ class RequestReasonBox extends StatelessWidget {
             ],
           ),
           const shad.Gap(4),
-          Text(
-            text,
-            style: theme.typography.small.copyWith(color: color),
-          ),
+          Text(text, style: theme.typography.small.copyWith(color: color)),
         ],
       ),
     );
@@ -192,9 +189,8 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
 
       shad.showToast(
         context: toastContext,
-        builder: (context, overlay) => shad.Alert(
-          title: Text(context.l10n.timerRequestApproved),
-        ),
+        builder: (context, overlay) =>
+            shad.Alert(title: Text(context.l10n.timerRequestApproved)),
       );
     } on Exception catch (e) {
       if (!toastContext.mounted) {
@@ -256,9 +252,8 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
 
               shad.showToast(
                 context: toastContext,
-                builder: (ctx, overlay) => shad.Alert(
-                  title: Text(ctx.l10n.timerRequestUpdated),
-                ),
+                builder: (ctx, overlay) =>
+                    shad.Alert(title: Text(ctx.l10n.timerRequestUpdated)),
               );
             } on Exception catch (e) {
               if (!toastContext.mounted) return;

@@ -158,12 +158,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         if (task != null) {
           _upsertTaskSnapshot(task);
         }
-        _scheduleRealtimeRefresh(
-          {
-            ...event.affectedListIds,
-            if (task?.listId != null) task!.listId,
-          },
-        );
+        _scheduleRealtimeRefresh({
+          ...event.affectedListIds,
+          if (task?.listId != null) task!.listId,
+        });
       case 'task:delete':
         final taskId = event.taskId;
         if (taskId != null) {
@@ -175,10 +173,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         _scheduleRealtimeRefresh(_affectedListsForBroadcast(event));
       case 'list:upsert':
       case 'list:delete':
-        _scheduleRealtimeRefresh(
-          event.affectedListIds,
-          reloadBoard: true,
-        );
+        _scheduleRealtimeRefresh(event.affectedListIds, reloadBoard: true);
     }
   }
 
@@ -231,10 +226,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       _pendingRealtimeListIds.clear();
       _pendingRealtimeBoardReload = false;
       unawaited(
-        _flushRealtimeRefresh(
-          pendingListIds,
-          reloadBoard: shouldReloadBoard,
-        ),
+        _flushRealtimeRefresh(pendingListIds, reloadBoard: shouldReloadBoard),
       );
     });
   }
@@ -294,10 +286,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         hasCachedDetail = true;
         final cachedTasksByList = _mergeTaskListSnapshots(
           _groupTasksByKnownLists(cachedDetail.tasks, cachedDetail.lists),
-          _filterTasksByKnownLists(
-            state.listTasksByListId,
-            cachedDetail.lists,
-          ),
+          _filterTasksByKnownLists(state.listTasksByListId, cachedDetail.lists),
         );
         final cachedBoard = cachedDetail.copyWith(
           tasks: _flattenTasks(cachedDetail.lists, cachedTasksByList),
@@ -401,10 +390,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
       final retainedTasksByList = _mergeTaskListSnapshots(
         _groupTasksByKnownLists(detail.tasks, detail.lists),
-        _filterTasksByKnownLists(
-          state.listTasksByListId,
-          detail.lists,
-        ),
+        _filterTasksByKnownLists(state.listTasksByListId, detail.lists),
       );
       final nextBoard = detail.copyWith(
         tasks: _flattenTasks(detail.lists, retainedTasksByList),
@@ -477,10 +463,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
   }
 
-  Future<void> reload({
-    Iterable<String>? listIds,
-    int? pageSizeHint,
-  }) async {
+  Future<void> reload({Iterable<String>? listIds, int? pageSizeHint}) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
     if (wsId == null || boardId == null) return;
@@ -494,9 +477,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     final refreshedBoard = state.board;
     if (refreshedBoard == null) return;
 
-    final availableListIds = {
-      for (final list in refreshedBoard.lists) list.id,
-    };
+    final availableListIds = {for (final list in refreshedBoard.lists) list.id};
     final requestedListIds = listIds?.toSet();
     final targetListIds =
         (requestedListIds == null || requestedListIds.isEmpty
@@ -804,47 +785,42 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
     TaskBoardTask? updatedTask;
     try {
-      await _runMutation(
-        () async {
-          updatedTask = await _taskRepository.updateBoardTask(
+      await _runMutation(() async {
+        updatedTask = await _taskRepository.updateBoardTask(
+          wsId: wsId,
+          taskId: taskId,
+          name: name,
+          priority: priority,
+          startDate: startDate,
+          endDate: endDate,
+          estimationPoints: estimationPoints,
+          labelIds: labelIds,
+          projectIds: projectIds,
+          assigneeIds: sanitizedAssigneeIds,
+          clearStartDate: clearStartDate,
+          clearEndDate: clearEndDate,
+          clearEstimationPoints: clearEstimationPoints,
+        );
+
+        if (description != null || clearDescription) {
+          await _taskRepository.updateTaskDescription(
             wsId: wsId,
             taskId: taskId,
-            name: name,
-            priority: priority,
-            startDate: startDate,
-            endDate: endDate,
-            estimationPoints: estimationPoints,
-            labelIds: labelIds,
-            projectIds: projectIds,
-            assigneeIds: sanitizedAssigneeIds,
-            clearStartDate: clearStartDate,
-            clearEndDate: clearEndDate,
-            clearEstimationPoints: clearEstimationPoints,
+            description: clearDescription ? null : description,
           );
+          updatedTask = updatedTask?.copyWith(
+            description: clearDescription ? null : description,
+          );
+        }
 
-          if (description != null || clearDescription) {
-            await _taskRepository.updateTaskDescription(
-              wsId: wsId,
-              taskId: taskId,
-              description: clearDescription ? null : description,
-            );
-            updatedTask = updatedTask?.copyWith(
-              description: clearDescription ? null : description,
-            );
-          }
-
-          return null;
-        },
-        reloadBoard: false,
-      );
+        return null;
+      }, reloadBoard: false);
     } on Exception {
       if (!isClosed && state.workspaceId == wsId && state.boardId == board.id) {
         await _refreshBoardAndTaskLists(
           wsId: wsId,
           boardId: board.id,
-          affectedListIds: {
-            if (affectedListId != null) affectedListId,
-          },
+          affectedListIds: {if (affectedListId != null) affectedListId},
           pageSizeHints: {
             if (affectedListId != null) affectedListId: pageSizeHint,
           },
@@ -1297,10 +1273,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
     final targetTasks = nextTasksByList[listId];
     if (targetTasks != null && !targetTasks.any((task) => task.id == taskId)) {
-      nextTasksByList[listId] = List.unmodifiable([
-        movedTask,
-        ...targetTasks,
-      ]);
+      nextTasksByList[listId] = List.unmodifiable([movedTask, ...targetTasks]);
     }
 
     final nextBoard = board.copyWith(tasks: List.unmodifiable(nextBoardTasks));
@@ -1508,9 +1481,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     await _refreshBoardAndTaskLists(
       wsId: wsId,
       boardId: boardId,
-      affectedListIds: {
-        if (restoredListId != null) restoredListId,
-      },
+      affectedListIds: {if (restoredListId != null) restoredListId},
       pageSizeHints: {
         if (restoredListId != null)
           restoredListId: state.listPageSizeById[restoredListId],
@@ -1631,25 +1602,23 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
 
     var taskFound = false;
     final nextTasks = board.tasks
-        .map(
-          (task) {
-            if (task.id != taskId) {
-              return task;
-            }
-            taskFound = true;
-            return task.copyWith(
-              relationships: relationships,
-              relationshipsLoaded: true,
-              relationshipSummary: TaskRelationshipSummary(
-                parentTaskId: relationships.parentTask?.id,
-                childCount: relationships.childTasks.length,
-                blockedByCount: relationships.blockedBy.length,
-                blockingCount: relationships.blocking.length,
-                relatedCount: relationships.relatedTasks.length,
-              ),
-            );
-          },
-        )
+        .map((task) {
+          if (task.id != taskId) {
+            return task;
+          }
+          taskFound = true;
+          return task.copyWith(
+            relationships: relationships,
+            relationshipsLoaded: true,
+            relationshipSummary: TaskRelationshipSummary(
+              parentTaskId: relationships.parentTask?.id,
+              childCount: relationships.childTasks.length,
+              blockedByCount: relationships.blockedBy.length,
+              blockingCount: relationships.blocking.length,
+              relatedCount: relationships.relatedTasks.length,
+            ),
+          );
+        })
         .toList(growable: false);
 
     if (!taskFound) {
@@ -1856,12 +1825,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       }
     }
 
-    emit(
-      state.copyWith(
-        isBulkSelectMode: true,
-        selectedTaskIds: nextSelected,
-      ),
-    );
+    emit(state.copyWith(isBulkSelectMode: true, selectedTaskIds: nextSelected));
   }
 
   void exitBulkSelectMode() {
@@ -1889,10 +1853,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
 
     emit(
-      state.copyWith(
-        selectedTaskIds: next,
-        isBulkSelectMode: next.isNotEmpty,
-      ),
+      state.copyWith(selectedTaskIds: next, isBulkSelectMode: next.isNotEmpty),
     );
   }
 
@@ -1904,10 +1865,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     emit(
       state.copyWith(
         isBulkSelectMode: true,
-        selectedTaskIds: _sanitizeSelectedTaskIds(
-          ids,
-          board.tasks,
-        ),
+        selectedTaskIds: _sanitizeSelectedTaskIds(ids, board.tasks),
       ),
     );
   }
@@ -2136,10 +2094,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }, reloadBoard: false);
   }
 
-  Future<void> renameBoard({
-    required String name,
-    String? icon,
-  }) async {
+  Future<void> renameBoard({required String name, String? icon}) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
     if (wsId == null || boardId == null) {
@@ -2208,11 +2163,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       );
 
       if (reloadBoard) {
-        await loadBoardDetail(
-          wsId: wsId,
-          boardId: boardId,
-          forceRefresh: true,
-        );
+        await loadBoardDetail(wsId: wsId, boardId: boardId, forceRefresh: true);
       }
     } on Exception catch (error) {
       if (isClosed) {
@@ -2231,9 +2182,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
   }
 
-  Future<TaskBulkResult> _runBulkOperation(
-    TaskBulkOperation operation,
-  ) async {
+  Future<TaskBulkResult> _runBulkOperation(TaskBulkOperation operation) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
 
@@ -2350,11 +2299,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           pageSizeHints: _pageSizeHintsForListIds(affectedListIds),
         );
       } else {
-        await loadBoardDetail(
-          wsId: wsId,
-          boardId: boardId,
-          forceRefresh: true,
-        );
+        await loadBoardDetail(wsId: wsId, boardId: boardId, forceRefresh: true);
       }
       return result;
     } on Exception catch (error) {
@@ -2679,10 +2624,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       return;
     }
 
-    await _refreshTaskLists(
-      refreshableListIds,
-      pageSizeHints: pageSizeHints,
-    );
+    await _refreshTaskLists(refreshableListIds, pageSizeHints: pageSizeHints);
   }
 
   String? _findTaskListId(String taskId) {
@@ -2791,10 +2733,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
   }
 
   Future<void> _invalidateBoardCaches({required String wsId}) {
-    return CacheStore.instance.invalidateTags(
-      [_detailCacheTag, _listTasksCacheTag],
-      workspaceId: wsId,
-    );
+    return CacheStore.instance.invalidateTags([
+      _detailCacheTag,
+      _listTasksCacheTag,
+    ], workspaceId: wsId);
   }
 
   bool _emitListTasksPage({
@@ -2886,15 +2828,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
   }
 
   static DateTime _endOfDay(DateTime date) {
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-      23,
-      59,
-      59,
-      999,
-    );
+    return DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
   }
 
   static Map<String, List<TaskBoardTask>> _mergeCurrentBoardTaskSnapshots({
@@ -2985,10 +2919,8 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
     return Map.unmodifiable(
       next.map(
-        (listId, listTasks) => MapEntry(
-          listId,
-          List<TaskBoardTask>.unmodifiable(listTasks),
-        ),
+        (listId, listTasks) =>
+            MapEntry(listId, List<TaskBoardTask>.unmodifiable(listTasks)),
       ),
     );
   }
@@ -2999,10 +2931,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
   ) {
     if (base.isEmpty) return overlay;
     if (overlay.isEmpty) return base;
-    return Map.unmodifiable({
-      ...base,
-      ...overlay,
-    });
+    return Map.unmodifiable({...base, ...overlay});
   }
 
   static Map<String, T> _filterMapByKeys<T>(

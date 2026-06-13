@@ -80,10 +80,7 @@ class DriveRepository {
   }) async {
     await _api.deleteJson(
       DriveEndpoints.folders(wsId),
-      body: {
-        'path': path ?? '',
-        'name': name,
-      },
+      body: {'path': path ?? '', 'name': name},
     );
   }
 
@@ -98,10 +95,7 @@ class DriveRepository {
     });
     final signedUrl = response['signedUrl'] as String?;
     if (signedUrl == null || signedUrl.isEmpty) {
-      throw const ApiException(
-        message: 'Missing signed URL',
-        statusCode: 0,
-      );
+      throw const ApiException(message: 'Missing signed URL', statusCode: 0);
     }
     return signedUrl;
   }

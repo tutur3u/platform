@@ -1,20 +1,14 @@
 import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleIdentityTokens {
-  const GoogleIdentityTokens({
-    required this.idToken,
-    this.accessToken,
-  });
+  const GoogleIdentityTokens({required this.idToken, this.accessToken});
 
   final String idToken;
   final String? accessToken;
 }
 
 abstract interface class GoogleIdentityClient {
-  Future<void> initialize({
-    String? clientId,
-    String? serverClientId,
-  });
+  Future<void> initialize({String? clientId, String? serverClientId});
 
   bool supportsAuthenticate();
 
@@ -24,18 +18,14 @@ abstract interface class GoogleIdentityClient {
 }
 
 class GoogleIdentityClientImpl implements GoogleIdentityClient {
-  GoogleIdentityClientImpl({
-    GoogleSignIn? googleSignIn,
-  }) : _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
+  GoogleIdentityClientImpl({GoogleSignIn? googleSignIn})
+    : _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
 
   final GoogleSignIn _googleSignIn;
   Future<void>? _initializeFuture;
 
   @override
-  Future<void> initialize({
-    String? clientId,
-    String? serverClientId,
-  }) {
+  Future<void> initialize({String? clientId, String? serverClientId}) {
     return _initializeFuture ??= _googleSignIn.initialize(
       clientId: clientId,
       serverClientId: serverClientId,

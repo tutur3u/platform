@@ -45,10 +45,7 @@ import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AssistantPage extends StatefulWidget {
-  const AssistantPage({
-    this.replayToken = 0,
-    super.key,
-  });
+  const AssistantPage({this.replayToken = 0, super.key});
 
   final int replayToken;
 
@@ -704,9 +701,7 @@ class _AssistantPageState extends State<AssistantPage> {
     );
   }
 
-  void _syncComposerVisibilityForBuild({
-    required bool keyboardVisible,
-  }) {
+  void _syncComposerVisibilityForBuild({required bool keyboardVisible}) {
     if (!keyboardVisible || _isComposerVisible) {
       return;
     }
@@ -835,9 +830,7 @@ class _AssistantPageState extends State<AssistantPage> {
   }
 
   Future<void> _pickFiles(String wsId) async {
-    final result = await FilePicker.pickFiles(
-      allowMultiple: true,
-    );
+    final result = await FilePicker.pickFiles(allowMultiple: true);
     if (result == null || result.files.isEmpty) {
       return;
     }
@@ -873,11 +866,7 @@ class _AssistantPageState extends State<AssistantPage> {
           if (!mounted) {
             return;
           }
-          await _startNewConversation(
-            wsId,
-            _chatCubit.state,
-            _liveCubit.state,
-          );
+          await _startNewConversation(wsId, _chatCubit.state, _liveCubit.state);
         },
         onSelectChat: (chat) async {
           await dismissAdaptiveDrawerOverlay(drawerContext);
@@ -1302,10 +1291,7 @@ class _AssistantPageState extends State<AssistantPage> {
 }
 
 class _AssistantComposerFab extends StatelessWidget {
-  const _AssistantComposerFab({
-    required this.label,
-    required this.onPressed,
-  });
+  const _AssistantComposerFab({required this.label, required this.onPressed});
 
   final String label;
   final VoidCallback onPressed;

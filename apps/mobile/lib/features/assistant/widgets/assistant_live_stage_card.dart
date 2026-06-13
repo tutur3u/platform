@@ -41,9 +41,10 @@ class AssistantLiveStageCard extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: _statusColor(theme, liveState.status).withValues(
-                alpha: 0.14,
-              ),
+              color: _statusColor(
+                theme,
+                liveState.status,
+              ).withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -167,9 +168,7 @@ String _stageSummary(BuildContext context, AssistantLiveState liveState) {
     return liveState.error!;
   }
   if (liveState.goAwayTimeLeft?.isNotEmpty == true) {
-    return context.l10n.assistantLiveReconnectBanner(
-      liveState.goAwayTimeLeft!,
-    );
+    return context.l10n.assistantLiveReconnectBanner(liveState.goAwayTimeLeft!);
   }
   if (liveState.microphonePermission == AssistantLivePermissionState.denied ||
       liveState.cameraPermission == AssistantLivePermissionState.denied) {

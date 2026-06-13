@@ -45,10 +45,7 @@ Map<String, dynamic> _listResponseJson() => {
     {
       'tracker': _trackerJson('tracker-1'),
       'current_member': {
-        'member': {
-          'user_id': 'user-1',
-          'display_name': 'Alex',
-        },
+        'member': {'user_id': 'user-1', 'display_name': 'Alex'},
         'total': 12,
         'entry_count': 4,
         'current_period_total': 4,
@@ -73,10 +70,7 @@ Map<String, dynamic> _listResponseJson() => {
     },
   ],
   'members': [
-    {
-      'user_id': 'user-1',
-      'display_name': 'Alex',
-    },
+    {'user_id': 'user-1', 'display_name': 'Alex'},
   ],
   'scope': 'self',
   'viewerUserId': 'viewer-1',
@@ -254,9 +248,7 @@ void main() {
             'use_case': 'generic',
             'template_category': 'custom',
             'composer_mode': 'advanced_custom',
-            'composer_config': {
-              'progress_variant': 'ring',
-            },
+            'composer_config': {'progress_variant': 'ring'},
             'start_date': '2026-03-25',
             'is_active': true,
           },

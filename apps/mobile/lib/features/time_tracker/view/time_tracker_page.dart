@@ -78,10 +78,7 @@ class TimeTrackerPage extends StatelessWidget {
         return TimeTrackerCubit(
           repository: repo,
           initialState: wsId != null && userId != null
-              ? TimeTrackerCubit.seedStateFor(
-                  wsId: wsId,
-                  userId: userId,
-                )
+              ? TimeTrackerCubit.seedStateFor(wsId: wsId, userId: userId)
               : null,
         );
       },
@@ -183,11 +180,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
         return;
       }
       unawaited(
-        timeTrackerCubit.loadData(
-          wsId,
-          userId,
-          firstDayOfWeek: firstDayOfWeek,
-        ),
+        timeTrackerCubit.loadData(wsId, userId, firstDayOfWeek: firstDayOfWeek),
       );
     });
   }
@@ -408,10 +401,7 @@ class _ErrorView extends StatelessWidget {
             color: shad.Theme.of(context).colorScheme.destructive,
           ),
           const shad.Gap(16),
-          Text(
-            error ?? l10n.timerTitle,
-            textAlign: TextAlign.center,
-          ),
+          Text(error ?? l10n.timerTitle, textAlign: TextAlign.center),
           const shad.Gap(16),
           shad.SecondaryButton(
             onPressed: () async {

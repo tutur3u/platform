@@ -9,10 +9,7 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockCalendarRepository extends Mock implements CalendarRepository {}
 
-CalendarEvent _event({
-  required String id,
-  required DateTime startAt,
-}) {
+CalendarEvent _event({required String id, required DateTime startAt}) {
   return CalendarEvent(
     id: id,
     title: 'Event $id',

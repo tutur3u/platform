@@ -24,9 +24,7 @@ class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
 
 class _FakeTaskRepository extends TaskRepository {
   _FakeTaskRepository() {
-    _taskById = {
-      for (final task in _seedTasks) task.id: task,
-    };
+    _taskById = {for (final task in _seedTasks) task.id: task};
     _relationshipsByTaskId = {
       for (final task in _seedTasks) task.id: TaskRelationshipsResponse.empty,
     };

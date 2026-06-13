@@ -23,9 +23,7 @@ class CounterView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return shad.Scaffold(
-      headers: [
-        shad.AppBar(title: Text(l10n.counterAppBarTitle)),
-      ],
+      headers: [shad.AppBar(title: Text(l10n.counterAppBarTitle))],
       child: Stack(
         children: [
           const Center(child: CounterText()),

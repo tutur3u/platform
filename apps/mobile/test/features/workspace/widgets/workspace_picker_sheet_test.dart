@@ -34,10 +34,7 @@ void main() {
       name: 'Ops',
       tier: workspaceTierEnterprise,
     );
-    const freeWorkspace = Workspace(
-      id: 'ws_2',
-      name: 'Design',
-    );
+    const freeWorkspace = Workspace(id: 'ws_2', name: 'Design');
 
     setUp(() {
       workspaceCubit = _MockWorkspaceCubit();

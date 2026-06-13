@@ -71,10 +71,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
     });
 
     try {
-      final result = await _repository.getAuditLogs(
-        wsId,
-        limit: _pageSize,
-      );
+      final result = await _repository.getAuditLogs(wsId, limit: _pageSize);
 
       if (!mounted || requestToken != _requestToken) {
         return;
@@ -270,10 +267,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
 }
 
 class _AuditEntryCard extends StatelessWidget {
-  const _AuditEntryCard({
-    required this.entry,
-    required this.onTap,
-  });
+  const _AuditEntryCard({required this.entry, required this.onTap});
 
   final InventoryAuditLogEntry entry;
   final VoidCallback onTap;
@@ -411,9 +405,7 @@ class _AuditEntryDetailDialog extends StatelessWidget {
               value: entry.entityLabel!.trim(),
             ),
           const shad.Gap(16),
-          FinanceSectionHeader(
-            title: context.l10n.inventoryAuditChangedFields,
-          ),
+          FinanceSectionHeader(title: context.l10n.inventoryAuditChangedFields),
           const shad.Gap(12),
           if (fieldChanges.isEmpty)
             Text(context.l10n.inventoryAuditNoChanges)
@@ -455,10 +447,7 @@ class _AuditEntryDetailDialog extends StatelessWidget {
 }
 
 class _AuditDetailRow extends StatelessWidget {
-  const _AuditDetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _AuditDetailRow({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -483,9 +472,9 @@ class _AuditDetailRow extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: shad.Theme.of(context).typography.small.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: shad.Theme.of(
+                context,
+              ).typography.small.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -495,10 +484,7 @@ class _AuditDetailRow extends StatelessWidget {
 }
 
 class _AuditDiffRow extends StatelessWidget {
-  const _AuditDiffRow({
-    required this.label,
-    required this.value,
-  });
+  const _AuditDiffRow({required this.label, required this.value});
 
   final String label;
   final String? value;
@@ -525,10 +511,7 @@ class _AuditDiffRow extends StatelessWidget {
 }
 
 class _AuditBadge extends StatelessWidget {
-  const _AuditBadge({
-    required this.label,
-    required this.color,
-  });
+  const _AuditBadge({required this.label, required this.color});
 
   final String label;
   final Color color;

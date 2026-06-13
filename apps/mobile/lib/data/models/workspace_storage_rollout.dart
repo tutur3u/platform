@@ -41,10 +41,7 @@ class WorkspaceStorageBackendState {
       'selected': selected,
       'misconfigured': misconfigured,
       'message': message,
-      'overview': {
-        'totalSize': totalSize,
-        'fileCount': fileCount,
-      },
+      'overview': {'totalSize': totalSize, 'fileCount': fileCount},
     };
   }
 }
@@ -57,9 +54,7 @@ class WorkspaceStorageAutoExtractState {
     required this.proxyTokenConfigured,
   });
 
-  factory WorkspaceStorageAutoExtractState.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory WorkspaceStorageAutoExtractState.fromJson(Map<String, dynamic> json) {
     return WorkspaceStorageAutoExtractState(
       enabled: json['enabled'] == true,
       configured: json['configured'] == true,
@@ -123,9 +118,7 @@ class WorkspaceStorageRolloutState {
     return {
       'activeProvider': activeProvider,
       'activeProviderMisconfigured': activeProviderMisconfigured,
-      'backends': backends.map(
-        (key, value) => MapEntry(key, value.toJson()),
-      ),
+      'backends': backends.map((key, value) => MapEntry(key, value.toJson())),
       'autoExtract': autoExtract.toJson(),
     };
   }
@@ -166,9 +159,7 @@ Map<String, dynamic>? _readMap(Object? value) {
     return value;
   }
   if (value is Map) {
-    return value.map(
-      (key, entry) => MapEntry(key.toString(), entry),
-    );
+    return value.map((key, entry) => MapEntry(key.toString(), entry));
   }
   return null;
 }

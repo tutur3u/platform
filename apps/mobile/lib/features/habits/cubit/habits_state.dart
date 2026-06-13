@@ -6,10 +6,7 @@ const _sentinel = Object();
 enum HabitsStatus { initial, loading, loaded, error }
 
 class HabitActivityEntry extends Equatable {
-  const HabitActivityEntry({
-    required this.tracker,
-    required this.entry,
-  });
+  const HabitActivityEntry({required this.tracker, required this.entry});
 
   final HabitTracker tracker;
   final HabitTrackerEntry entry;

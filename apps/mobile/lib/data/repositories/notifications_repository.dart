@@ -3,11 +3,9 @@ import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 class NotificationsRepository {
-  NotificationsRepository({
-    ApiClient? apiClient,
-    bool ownsApiClient = false,
-  }) : _apiClient = apiClient ?? ApiClient(),
-       _ownsApiClient = apiClient == null || ownsApiClient;
+  NotificationsRepository({ApiClient? apiClient, bool ownsApiClient = false})
+    : _apiClient = apiClient ?? ApiClient(),
+      _ownsApiClient = apiClient == null || ownsApiClient;
 
   final ApiClient _apiClient;
   final bool _ownsApiClient;
@@ -41,14 +39,10 @@ class NotificationsRepository {
     return json['count'] as int? ?? 0;
   }
 
-  Future<void> markRead({
-    required String id,
-    required bool read,
-  }) async {
-    await _apiClient.patchJson(
-      NotificationEndpoints.notification(id),
-      {'read': read},
-    );
+  Future<void> markRead({required String id, required bool read}) async {
+    await _apiClient.patchJson(NotificationEndpoints.notification(id), {
+      'read': read,
+    });
   }
 
   Future<void> markAllRead({String? wsId}) async {
@@ -62,10 +56,7 @@ class NotificationsRepository {
     required String id,
     required Map<String, dynamic> metadata,
   }) async {
-    await _apiClient.patchJson(
-      NotificationEndpoints.metadata(id),
-      metadata,
-    );
+    await _apiClient.patchJson(NotificationEndpoints.metadata(id), metadata);
   }
 
   Future<void> acceptWorkspaceInvite(String wsId) async {

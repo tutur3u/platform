@@ -42,17 +42,11 @@ class CacheWarmupCoordinator {
     return _runGroup('home', forceRefresh: forceRefresh);
   }
 
-  Future<void> prewarmModule(
-    String moduleId, {
-    bool forceRefresh = false,
-  }) {
+  Future<void> prewarmModule(String moduleId, {bool forceRefresh = false}) {
     return _runGroup(moduleId, forceRefresh: forceRefresh);
   }
 
-  Future<void> _runGroup(
-    String groupId, {
-    required bool forceRefresh,
-  }) async {
+  Future<void> _runGroup(String groupId, {required bool forceRefresh}) async {
     final ids = _groups[groupId] ?? const <String>[];
     if (ids.isEmpty) return;
 

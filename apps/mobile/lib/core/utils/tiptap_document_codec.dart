@@ -1,10 +1,7 @@
 import 'dart:convert';
 
 class DecodedTipTapDescription {
-  const DecodedTipTapDescription({
-    required this.trimmed,
-    this.document,
-  });
+  const DecodedTipTapDescription({required this.trimmed, this.document});
 
   final String trimmed;
   final Map<String, dynamic>? document;

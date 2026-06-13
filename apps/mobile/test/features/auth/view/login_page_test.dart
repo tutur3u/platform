@@ -378,9 +378,7 @@ void main() {
     testWidgets(
       'opens OTP step on rate-limited OTP send so password fallback remains '
       'available',
-      (
-        tester,
-      ) async {
+      (tester) async {
         const state = AuthState.unauthenticated();
         when(() => authCubit.state).thenReturn(state);
         whenListen(
@@ -443,9 +441,7 @@ void main() {
 
     testWidgets(
       'clears stale OTP send errors when switching to password step',
-      (
-        tester,
-      ) async {
+      (tester) async {
         const initialState = AuthState.unauthenticated();
         final otpRateLimitState = const AuthState.unauthenticated().copyWith(
           error: 'Too many OTP requests. Please try again later.',

@@ -13,12 +13,10 @@ part 'chat_state.dart';
 part 'chat_cubit_actions.dart';
 
 class ChatCubit extends Cubit<ChatState> {
-  ChatCubit({
-    ChatRepository? repository,
-    ChatRealtimeClient? realtimeClient,
-  }) : _repository = repository ?? ChatRepository(),
-       _realtimeClient = realtimeClient ?? ChatRealtimeClient(),
-       super(const ChatState());
+  ChatCubit({ChatRepository? repository, ChatRealtimeClient? realtimeClient})
+    : _repository = repository ?? ChatRepository(),
+      _realtimeClient = realtimeClient ?? ChatRealtimeClient(),
+      super(const ChatState());
 
   final ChatRepository _repository;
   final ChatRealtimeClient _realtimeClient;
@@ -75,12 +73,7 @@ class ChatCubit extends Cubit<ChatState> {
       unawaited(loadFriendRequests());
     } on ApiException catch (error) {
       if (isClosed || token != _loadToken) return;
-      emit(
-        state.copyWith(
-          status: ChatStatus.error,
-          error: error.message,
-        ),
-      );
+      emit(state.copyWith(status: ChatStatus.error, error: error.message));
     } on Object catch (error) {
       if (isClosed || token != _loadToken) return;
       emit(state.copyWith(status: ChatStatus.error, error: error.toString()));

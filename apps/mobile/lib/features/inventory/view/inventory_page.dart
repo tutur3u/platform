@@ -152,9 +152,7 @@ class _InventoryPageState extends State<InventoryPage> {
                       ],
                     ),
                     const shad.Gap(24),
-                    FinanceSectionHeader(
-                      title: l10n.inventoryOverviewLowStock,
-                    ),
+                    FinanceSectionHeader(title: l10n.inventoryOverviewLowStock),
                     const shad.Gap(12),
                     if (overview.lowStockProducts.isEmpty)
                       _InventoryEmptyPanel(
@@ -287,9 +285,7 @@ class _InventoryPageState extends State<InventoryPage> {
                             ),
                           ),
                     const shad.Gap(16),
-                    FinanceSectionHeader(
-                      title: l10n.inventoryOverviewOwners,
-                    ),
+                    FinanceSectionHeader(title: l10n.inventoryOverviewOwners),
                     const shad.Gap(12),
                     _BreakdownList(entries: overview.ownerBreakdown),
                     const shad.Gap(16),
@@ -370,10 +366,7 @@ class _InventoryEmptyPanel extends StatelessWidget {
 }
 
 class _InventoryErrorView extends StatelessWidget {
-  const _InventoryErrorView({
-    required this.onRetry,
-    this.body,
-  });
+  const _InventoryErrorView({required this.onRetry, this.body});
 
   final VoidCallback onRetry;
   final String? body;

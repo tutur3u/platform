@@ -31,11 +31,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
        _onSoulRefreshRequested = onSoulRefreshRequested,
        _onImmersiveModeChanged = onImmersiveModeChanged,
        _onChatRestored = onChatRestored,
-       super(
-         AssistantChatState(
-           fallbackChatId: repository.generateUuid(),
-         ),
-       );
+       super(AssistantChatState(fallbackChatId: repository.generateUuid()));
 
   final AssistantRepository _repository;
   final AssistantPreferences _preferences;
@@ -398,12 +394,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         ),
       );
     } else {
-      emit(
-        state.copyWith(
-          queuedMessages: queuedMessages,
-          clearError: true,
-        ),
-      );
+      emit(state.copyWith(queuedMessages: queuedMessages, clearError: true));
     }
 
     if (state.isBusy) {

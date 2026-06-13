@@ -79,11 +79,9 @@ class QrLoginPollResult {
 }
 
 class QrLoginRepository {
-  QrLoginRepository({
-    ApiClient? apiClient,
-    DevicePlatform? devicePlatform,
-  }) : _apiClient = apiClient ?? ApiClient(),
-       _devicePlatform = devicePlatform ?? const DefaultDevicePlatform();
+  QrLoginRepository({ApiClient? apiClient, DevicePlatform? devicePlatform})
+    : _apiClient = apiClient ?? ApiClient(),
+      _devicePlatform = devicePlatform ?? const DefaultDevicePlatform();
 
   final ApiClient _apiClient;
   final DevicePlatform _devicePlatform;
@@ -150,10 +148,7 @@ class QrLoginRepository {
             : QrLoginChallenge.fromJson(challengeJson),
       );
     } on ApiException catch (error) {
-      return QrLoginCreateChallengeResult(
-        success: false,
-        error: error.message,
-      );
+      return QrLoginCreateChallengeResult(success: false, error: error.message);
     } on Exception catch (error) {
       return QrLoginCreateChallengeResult(
         success: false,

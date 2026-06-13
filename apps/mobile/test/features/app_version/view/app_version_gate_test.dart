@@ -43,9 +43,7 @@ void main() {
     testWidgets('renders the blocking update screen for required updates', (
       tester,
     ) async {
-      when(
-        () => versionCheckRepository.checkCurrentVersion(),
-      ).thenAnswer(
+      when(() => versionCheckRepository.checkCurrentVersion()).thenAnswer(
         (_) async => const MobileVersionCheck(
           platform: 'ios',
           currentVersion: '1.0.0',
@@ -78,9 +76,7 @@ void main() {
     testWidgets('shows the recommended update dialog when needed', (
       tester,
     ) async {
-      when(
-        () => versionCheckRepository.checkCurrentVersion(),
-      ).thenAnswer(
+      when(() => versionCheckRepository.checkCurrentVersion()).thenAnswer(
         (_) async => const MobileVersionCheck(
           platform: 'android',
           currentVersion: '1.2.0',

@@ -325,11 +325,7 @@ class HabitsCubit extends Cubit<HabitsState> {
       if (effectiveScope == HabitTrackerScope.member &&
           nextMemberId != previousMemberId &&
           nextMemberId != null) {
-        await loadWorkspace(
-          wsId,
-          refresh: true,
-          scopeOverride: effectiveScope,
-        );
+        await loadWorkspace(wsId, refresh: true, scopeOverride: effectiveScope);
         return;
       }
 
@@ -476,10 +472,8 @@ class HabitsCubit extends Cubit<HabitsState> {
           details
               .expand(
                 (detail) => detail.entries.map(
-                  (entry) => HabitActivityEntry(
-                    tracker: detail.tracker,
-                    entry: entry,
-                  ),
+                  (entry) =>
+                      HabitActivityEntry(tracker: detail.tracker, entry: entry),
                 ),
               )
               .toList(growable: false)
@@ -951,10 +945,7 @@ class HabitsCubit extends Cubit<HabitsState> {
             nextCurrentPeriod: nextCurrentPeriod,
           );
 
-    return summary.copyWith(
-      currentMember: nextCurrentMember,
-      team: nextTeam,
-    );
+    return summary.copyWith(currentMember: nextCurrentMember, team: nextTeam);
   }
 
   HabitTrackerMemberSummary? _buildFallbackCurrentMember(
@@ -1272,10 +1263,7 @@ class HabitsCubit extends Cubit<HabitsState> {
 }
 
 class _HabitsCacheEntry {
-  const _HabitsCacheEntry({
-    required this.state,
-    required this.fetchedAt,
-  });
+  const _HabitsCacheEntry({required this.state, required this.fetchedAt});
 
   final HabitsState state;
   final DateTime fetchedAt;

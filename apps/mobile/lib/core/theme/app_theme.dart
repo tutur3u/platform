@@ -19,9 +19,7 @@ abstract final class AppTheme {
     }
   }
 
-  static SystemUiOverlayStyle systemUiOverlayStyleFor(
-    Brightness brightness,
-  ) {
+  static SystemUiOverlayStyle systemUiOverlayStyleFor(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
     return SystemUiOverlayStyle(
@@ -82,9 +80,7 @@ abstract final class AppTheme {
         systemNavigationBarDividerColor: Colors.transparent,
       ),
     ),
-    dividerTheme: const DividerThemeData(
-      color: AppColors.borderLight,
-    ),
+    dividerTheme: const DividerThemeData(color: AppColors.borderLight),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.surfaceLight,
       indicatorColor: AppColors.primary.withValues(alpha: 0.12),
@@ -111,9 +107,7 @@ abstract final class AppTheme {
         systemNavigationBarDividerColor: Colors.transparent,
       ),
     ),
-    dividerTheme: const DividerThemeData(
-      color: AppColors.borderDark,
-    ),
+    dividerTheme: const DividerThemeData(color: AppColors.borderDark),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.surfaceDark,
       indicatorColor: AppColors.primaryDark.withValues(alpha: 0.12),

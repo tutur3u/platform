@@ -25,10 +25,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 enum _LoginStage { identify, otp, password }
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({
-    this.addAccountMode = false,
-    super.key,
-  });
+  const LoginPage({this.addAccountMode = false, super.key});
 
   final bool addAccountMode;
 
@@ -124,9 +121,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  ({bool isResolving, bool otpEnabled}) _otpAvailability(
-    BuildContext context,
-  ) {
+  ({bool isResolving, bool otpEnabled}) _otpAvailability(BuildContext context) {
     try {
       final cubit = BlocProvider.of<AppVersionCubit>(context);
       final versionState = cubit.state;
@@ -470,9 +465,7 @@ class _LoginPageState extends State<LoginPage> {
                 padding: const EdgeInsets.only(top: 16),
                 child: Text(
                   errorText,
-                  style: TextStyle(
-                    color: theme.colorScheme.destructive,
-                  ),
+                  style: TextStyle(color: theme.colorScheme.destructive),
                   textAlign: TextAlign.center,
                 ),
               );
@@ -718,9 +711,7 @@ class _LoginPageState extends State<LoginPage> {
                   obscureText: true,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _handlePasswordLogin(),
-                  features: const [
-                    shad.InputFeature.passwordToggle(),
-                  ],
+                  features: const [shad.InputFeature.passwordToggle()],
                 ),
               ),
               const shad.Gap(8),

@@ -99,10 +99,7 @@ abstract final class Routes {
     queryParameters: {'taskId': taskId},
   ).toString();
 
-  static String timerRequestsPath({
-    String? requestId,
-    String? status,
-  }) {
+  static String timerRequestsPath({String? requestId, String? status}) {
     final queryParameters = <String, String>{
       if (requestId != null && requestId.isNotEmpty) 'requestId': requestId,
       if (status != null && status.isNotEmpty) 'status': status,

@@ -308,10 +308,7 @@ class _ConnectionToggle extends StatelessWidget {
       leading: Container(
         width: 12,
         height: 12,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: calColor,
-        ),
+        decoration: BoxDecoration(shape: BoxShape.circle, color: calColor),
       ),
       title: Text(
         connection.calendarName,
@@ -323,10 +320,7 @@ class _ConnectionToggle extends StatelessWidget {
               height: 20,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : Switch.adaptive(
-              value: connection.isEnabled,
-              onChanged: onChanged,
-            ),
+          : Switch.adaptive(value: connection.isEnabled, onChanged: onChanged),
     );
   }
 
@@ -551,10 +545,7 @@ class _LoadedBodyState extends State<_LoadedBody> {
                     unawaited(
                       context
                           .read<CalendarConnectionsCubit>()
-                          .disconnectAccount(
-                            account.id,
-                            widget.wsId,
-                          ),
+                          .disconnectAccount(account.id, widget.wsId),
                     );
                   },
                   child: Text(l10n.calendarConnectionsDisconnect),

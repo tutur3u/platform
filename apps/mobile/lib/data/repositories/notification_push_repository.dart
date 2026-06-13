@@ -2,11 +2,9 @@ import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
 class NotificationPushRepository {
-  NotificationPushRepository({
-    ApiClient? apiClient,
-    bool ownsApiClient = false,
-  }) : _apiClient = apiClient ?? ApiClient(),
-       _ownsApiClient = apiClient == null || ownsApiClient;
+  NotificationPushRepository({ApiClient? apiClient, bool ownsApiClient = false})
+    : _apiClient = apiClient ?? ApiClient(),
+      _ownsApiClient = apiClient == null || ownsApiClient;
 
   final ApiClient _apiClient;
   final bool _ownsApiClient;

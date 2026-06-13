@@ -24,10 +24,7 @@ class DocumentRepository {
     return WorkspaceDocumentsPage.fromJson(response);
   }
 
-  Future<WorkspaceDocument> getDocument(
-    String wsId,
-    String documentId,
-  ) async {
+  Future<WorkspaceDocument> getDocument(String wsId, String documentId) async {
     final response = await _api.getJson(
       DocumentsEndpoints.document(wsId, documentId),
     );

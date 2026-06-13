@@ -172,9 +172,7 @@ void main() {
 
     testWidgets(
       'uses current manager display name on optimistic status update',
-      (
-        tester,
-      ) async {
+      (tester) async {
         await tester.pumpApp(
           Scaffold(
             body: RequestDetailSheet(
@@ -208,9 +206,7 @@ void main() {
 
     testWidgets(
       'shows feedback and allows owner to resubmit needs-info request',
-      (
-        tester,
-      ) async {
+      (tester) async {
         var didResubmit = false;
 
         final needsInfoRequest = TimeTrackingRequest(

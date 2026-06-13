@@ -122,9 +122,7 @@ class _NotificationsViewState extends State<NotificationsView> {
             isPending: state.isPending(notification.id),
             openLabel: _openActionLabel(context, notification),
             onToggleRead: () => unawaited(
-              context.read<NotificationsCubit>().toggleRead(
-                notification,
-              ),
+              context.read<NotificationsCubit>().toggleRead(notification),
             ),
             onAcceptInvite:
                 notification.type == 'workspace_invite' &&
@@ -137,9 +135,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                 ? () => unawaited(_declineInvite(context, notification))
                 : null,
             onOpen: _canOpenNotification(notification)
-                ? () => unawaited(
-                    _openNotification(context, notification),
-                  )
+                ? () => unawaited(_openNotification(context, notification))
                 : null,
           ),
         );
@@ -278,10 +274,7 @@ class _NotificationsViewState extends State<NotificationsView> {
                       ),
                     ],
             ),
-            child: SafeArea(
-              top: !context.isCompact,
-              child: content,
-            ),
+            child: SafeArea(top: !context.isCompact, child: content),
           ),
         );
       },
@@ -301,10 +294,7 @@ class _NotificationsViewState extends State<NotificationsView> {
     };
   }
 
-  String? _openActionLabel(
-    BuildContext context,
-    AppNotification notification,
-  ) {
+  String? _openActionLabel(BuildContext context, AppNotification notification) {
     return switch (notification.entityType) {
       'task' => context.l10n.notificationsOpenTaskAction,
       'time_tracking_request' => context.l10n.notificationsOpenRequestAction,
@@ -472,16 +462,8 @@ class _NotificationsHeaderCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? const [
-                  Color(0xFF162334),
-                  Color(0xFF1E1D3B),
-                  Color(0xFF16303A),
-                ]
-              : const [
-                  Color(0xFFEAF3FF),
-                  Color(0xFFF1EBFF),
-                  Color(0xFFE8F9F7),
-                ],
+              ? const [Color(0xFF162334), Color(0xFF1E1D3B), Color(0xFF16303A)]
+              : const [Color(0xFFEAF3FF), Color(0xFFF1EBFF), Color(0xFFE8F9F7)],
           stops: const [0, 0.58, 1],
         ),
         borderRadius: BorderRadius.circular(22),
@@ -686,20 +668,15 @@ class _NotificationsListState extends State<_NotificationsList> {
             child: widget.itemBuilder(notification),
           );
         },
-        separatorBuilder: (context, index) => SizedBox(
-          height: widget.pageMode ? 12 : 10,
-        ),
+        separatorBuilder: (context, index) =>
+            SizedBox(height: widget.pageMode ? 12 : 10),
         itemCount: feed.items.length + (feed.isLoadingMore ? 1 : 0),
       );
     }
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
-      child: widget.pageMode
-          ? child
-          : _NotificationsSurface(
-              child: child,
-            ),
+      child: widget.pageMode ? child : _NotificationsSurface(child: child),
     );
   }
 }
@@ -750,9 +727,10 @@ class _NotificationTile extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: _accentColor(context, notification.type).withValues(
-                    alpha: 0.12,
-                  ),
+                  color: _accentColor(
+                    context,
+                    notification.type,
+                  ).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
@@ -910,20 +888,14 @@ class _NotificationsSectionHeader extends StatelessWidget {
             ),
           ),
         ),
-        if (action != null)
-          TextButton(
-            onPressed: onAction,
-            child: action!,
-          ),
+        if (action != null) TextButton(onPressed: onAction, child: action!),
       ],
     );
   }
 }
 
 class _NotificationsSurface extends StatelessWidget {
-  const _NotificationsSurface({
-    required this.child,
-  });
+  const _NotificationsSurface({required this.child});
 
   final Widget child;
 
@@ -1085,7 +1057,5 @@ String _formatRelativeTime(BuildContext context, DateTime timestamp) {
   }
   return DateFormat.MMMd(
     Localizations.localeOf(context).toLanguageTag(),
-  ).format(
-    timestamp,
-  );
+  ).format(timestamp);
 }

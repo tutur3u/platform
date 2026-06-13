@@ -503,10 +503,7 @@ class _InventoryProductCard extends StatelessWidget {
                 .map(
                   (row) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: _InventoryStockRow(
-                      row: row,
-                      currency: currency,
-                    ),
+                    child: _InventoryStockRow(row: row, currency: currency),
                   ),
                 ),
           ],
@@ -517,10 +514,7 @@ class _InventoryProductCard extends StatelessWidget {
 }
 
 class _InventoryStockRow extends StatelessWidget {
-  const _InventoryStockRow({
-    required this.row,
-    required this.currency,
-  });
+  const _InventoryStockRow({required this.row, required this.currency});
 
   final InventoryStockEntry row;
   final String currency;
@@ -539,10 +533,7 @@ class _InventoryStockRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                [
-                      row.warehouseName,
-                      row.unitName,
-                    ]
+                [row.warehouseName, row.unitName]
                     .whereType<String>()
                     .where((value) => value.isNotEmpty)
                     .join(' • '),
@@ -564,21 +555,14 @@ class _InventoryStockRow extends StatelessWidget {
           ),
         ),
         if (isLow)
-          Icon(
-            Icons.warning_amber_rounded,
-            size: 16,
-            color: palette.negative,
-          ),
+          Icon(Icons.warning_amber_rounded, size: 16, color: palette.negative),
       ],
     );
   }
 }
 
 class _InventoryBadge extends StatelessWidget {
-  const _InventoryBadge({
-    required this.label,
-    required this.color,
-  });
+  const _InventoryBadge({required this.label, required this.color});
 
   final String label;
   final Color color;

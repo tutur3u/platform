@@ -102,10 +102,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
       );
     } else {
       emit(
-        state.copyWith(
-          status: TransactionListStatus.loading,
-          clearError: true,
-        ),
+        state.copyWith(status: TransactionListStatus.loading, clearError: true),
       );
     }
 
@@ -135,10 +132,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
       return;
     }
     emit(
-      state.copyWith(
-        status: TransactionListStatus.loading,
-        clearError: true,
-      ),
+      state.copyWith(status: TransactionListStatus.loading, clearError: true),
     );
     await _fetch(replaceExisting: false);
   }

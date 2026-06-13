@@ -12,9 +12,9 @@ class _SheetHeader extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w900,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
           ),
         ),
         shad.IconButton.ghost(
@@ -116,10 +116,7 @@ class _FriendRequestGroup extends StatelessWidget {
                       ),
                     ),
                     if (actionsBuilder != null)
-                      Wrap(
-                        spacing: 6,
-                        children: actionsBuilder!(request),
-                      ),
+                      Wrap(spacing: 6, children: actionsBuilder!(request)),
                   ],
                 ),
               ),

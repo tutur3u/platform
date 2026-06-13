@@ -29,10 +29,7 @@ const workspacePermissionCatalog = <WorkspacePermissionGroupCatalog>[
       'manage_changelog',
     ],
   ),
-  WorkspacePermissionGroupCatalog(
-    id: 'ai',
-    permissions: ['ai_chat', 'ai_lab'],
-  ),
+  WorkspacePermissionGroupCatalog(id: 'ai', permissions: ['ai_chat', 'ai_lab']),
   WorkspacePermissionGroupCatalog(
     id: 'calendar',
     permissions: ['manage_calendar'],
@@ -54,11 +51,7 @@ const workspacePermissionCatalog = <WorkspacePermissionGroupCatalog>[
   ),
   WorkspacePermissionGroupCatalog(
     id: 'drive',
-    permissions: [
-      'view_drive',
-      'manage_drive',
-      'manage_drive_tasks_directory',
-    ],
+    permissions: ['view_drive', 'manage_drive', 'manage_drive_tasks_directory'],
   ),
   WorkspacePermissionGroupCatalog(
     id: 'users',
@@ -154,10 +147,7 @@ const workspacePermissionCatalog = <WorkspacePermissionGroupCatalog>[
   ),
   WorkspacePermissionGroupCatalog(
     id: 'infrastructure',
-    permissions: [
-      'view_infrastructure',
-      'manage_external_migrations',
-    ],
+    permissions: ['view_infrastructure', 'manage_external_migrations'],
   ),
 ];
 

@@ -39,10 +39,7 @@ class AssistantLiveRepository {
     required String scopeKey,
   }) async {
     final query = Uri(
-      queryParameters: {
-        'wsId': wsId,
-        'scopeKey': scopeKey,
-      },
+      queryParameters: {'wsId': wsId, 'scopeKey': scopeKey},
     ).query;
     await _apiClient.deleteJson('/api/v1/live/session?$query');
   }

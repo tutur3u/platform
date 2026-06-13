@@ -105,9 +105,7 @@ class _SettingsViewState extends State<_SettingsView> {
 
   @override
   Widget build(BuildContext context) {
-    final horizontalPadding = ResponsivePadding.horizontal(
-      context.deviceClass,
-    );
+    final horizontalPadding = ResponsivePadding.horizontal(context.deviceClass);
     return MultiBlocListener(
       listeners: [
         BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -754,10 +752,7 @@ class _PreferencesSection extends StatelessWidget {
           onTap: onToggleFinanceAmounts,
           showChevron: false,
           trailing: IgnorePointer(
-            child: shad.Switch(
-              value: showFinanceAmounts,
-              onChanged: (_) {},
-            ),
+            child: shad.Switch(value: showFinanceAmounts, onChanged: (_) {}),
           ),
         ),
         SettingsTile(
@@ -789,9 +784,7 @@ class _PreferencesSection extends StatelessWidget {
 }
 
 class _SettingsHeroCard extends StatelessWidget {
-  const _SettingsHeroCard({
-    required this.isRefreshing,
-  });
+  const _SettingsHeroCard({required this.isRefreshing});
 
   final bool isRefreshing;
 

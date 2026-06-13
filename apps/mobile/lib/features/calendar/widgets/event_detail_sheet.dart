@@ -94,10 +94,7 @@ class _EventDetailContent extends StatelessWidget {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                event.description!,
-                style: textTheme.bodyMedium,
-              ),
+              child: Text(event.description!, style: textTheme.bodyMedium),
             ),
           ],
 

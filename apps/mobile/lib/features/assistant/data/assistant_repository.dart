@@ -86,9 +86,7 @@ class AssistantRepository {
     if (json is! Map) {
       throw const FormatException('Invalid assistant chat cache payload.');
     }
-    return AssistantRestoredChat.fromJson(
-      Map<String, dynamic>.from(json),
-    );
+    return AssistantRestoredChat.fromJson(Map<String, dynamic>.from(json));
   }
 
   static AssistantSoul _decodeSoulCache(Object? json) {
@@ -157,11 +155,7 @@ class AssistantRepository {
       key: _assistantChatCacheKey(wsId: wsId, chatId: chatId),
       policy: _assistantChatCachePolicy,
       payload: restored.toJson(),
-      tags: [
-        _assistantChatCacheTag,
-        'workspace:$wsId',
-        'module:assistant',
-      ],
+      tags: [_assistantChatCacheTag, 'workspace:$wsId', 'module:assistant'],
     );
   }
 
@@ -235,17 +229,10 @@ class AssistantRepository {
       policy: _assistantInsightCachePolicy,
       decode: _decodeTasksInsightCache,
       forceRefresh: forceRefresh,
-      tags: [
-        _assistantMetadataCacheTag,
-        'workspace:$wsId',
-        'module:assistant',
-      ],
+      tags: [_assistantMetadataCacheTag, 'workspace:$wsId', 'module:assistant'],
       fetch: () async {
         final query = Uri(
-          queryParameters: {
-            'wsId': wsId,
-            'isPersonal': isPersonal.toString(),
-          },
+          queryParameters: {'wsId': wsId, 'isPersonal': isPersonal.toString()},
         ).query;
         final response = await _apiClient.getJson('/api/v1/mira/tasks?$query');
         return AssistantTasksInsight.fromJson(response).toJson();
@@ -266,11 +253,7 @@ class AssistantRepository {
       policy: _assistantInsightCachePolicy,
       decode: _decodeCalendarInsightCache,
       forceRefresh: forceRefresh,
-      tags: [
-        _assistantMetadataCacheTag,
-        'workspace:$wsId',
-        'module:assistant',
-      ],
+      tags: [_assistantMetadataCacheTag, 'workspace:$wsId', 'module:assistant'],
       fetch: () async {
         final query = Uri(queryParameters: {'wsId': wsId}).query;
         final response = await _apiClient.getJson(
@@ -294,11 +277,7 @@ class AssistantRepository {
       policy: _assistantInsightCachePolicy,
       decode: _decodeCreditsCache,
       forceRefresh: forceRefresh,
-      tags: [
-        _assistantMetadataCacheTag,
-        'workspace:$wsId',
-        'module:assistant',
-      ],
+      tags: [_assistantMetadataCacheTag, 'workspace:$wsId', 'module:assistant'],
       fetch: () async {
         final response = await _apiClient.getJson(
           '/api/v1/workspaces/$wsId/ai/credits',
@@ -437,30 +416,22 @@ class AssistantRepository {
       }
     }
 
-    final nativeRestored = await _restoreNativeChat(
-      wsId: wsId,
-      chatId: chatId,
-    );
+    final nativeRestored = await _restoreNativeChat(wsId: wsId, chatId: chatId);
     if (nativeRestored != null) {
       await CacheStore.instance.write(
         key: cacheKey,
         policy: _assistantChatCachePolicy,
         payload: nativeRestored.toJson(),
-        tags: [
-          _assistantChatCacheTag,
-          'workspace:$wsId',
-          'module:assistant',
-        ],
+        tags: [_assistantChatCacheTag, 'workspace:$wsId', 'module:assistant'],
       );
       return nativeRestored;
     }
 
     late final Map<String, dynamic> payload;
     try {
-      payload = await _apiClient.postJson(
-        '/api/ai/chat/restore',
-        {'chatId': chatId},
-      );
+      payload = await _apiClient.postJson('/api/ai/chat/restore', {
+        'chatId': chatId,
+      });
     } on ApiException {
       if (!forceRefresh) {
         final cached = await CacheStore.instance.read<AssistantRestoredChat>(
@@ -489,10 +460,7 @@ class AssistantRepository {
 
     final attachmentResponse = await _apiClient.postJson(
       '/api/ai/chat/file-urls',
-      {
-        'wsId': wsId,
-        'chatId': chatId,
-      },
+      {'wsId': wsId, 'chatId': chatId},
     );
 
     final attachmentsByMessageId = <String, List<AssistantAttachment>>{};
@@ -559,11 +527,7 @@ class AssistantRepository {
       key: cacheKey,
       policy: _assistantChatCachePolicy,
       payload: restored.toJson(),
-      tags: [
-        _assistantChatCacheTag,
-        'workspace:$wsId',
-        'module:assistant',
-      ],
+      tags: [_assistantChatCacheTag, 'workspace:$wsId', 'module:assistant'],
     );
 
     return restored;
@@ -588,9 +552,7 @@ class AssistantRepository {
           forceRefresh: forceRefresh,
         ),
       ),
-      ignoreWarmupError(
-        fetchCalendarInsight(wsId, forceRefresh: forceRefresh),
-      ),
+      ignoreWarmupError(fetchCalendarInsight(wsId, forceRefresh: forceRefresh)),
       ignoreWarmupError(fetchCredits(wsId, forceRefresh: forceRefresh)),
       ignoreWarmupError(fetchGatewayModels(forceRefresh: forceRefresh)),
       ignoreWarmupError(
@@ -825,10 +787,7 @@ class AssistantRepository {
     final initialType = _uploadContentType(file.mimeType);
     var response = await _httpClient.put(
       Uri.parse(signedUrl),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': initialType,
-      },
+      headers: {'Authorization': 'Bearer $token', 'Content-Type': initialType},
       body: bytes,
     );
 
@@ -891,9 +850,7 @@ class AssistantRepository {
 
     final readResponse = await _apiClient.postJson(
       '/api/ai/chat/signed-read-url',
-      {
-        'paths': normalizedPaths,
-      },
+      {'paths': normalizedPaths},
     );
     final urls = (readResponse['urls'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>();
@@ -921,9 +878,7 @@ class AssistantRepository {
       return AssistantRestoredChat(
         chat: AssistantChatRecord(id: chatId),
         messages: messages.map(_assistantMessageFromChatMessage).toList(),
-        attachmentsByMessageId: _assistantAttachmentsFromChatMessages(
-          messages,
-        ),
+        attachmentsByMessageId: _assistantAttachmentsFromChatMessages(messages),
       );
     } on ApiException catch (error) {
       if (error.statusCode == 404 || error.statusCode == 403) {

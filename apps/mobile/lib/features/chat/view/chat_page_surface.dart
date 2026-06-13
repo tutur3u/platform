@@ -22,10 +22,7 @@ class _ChatSurface extends StatelessWidget {
         child: isWide
             ? Row(
                 children: [
-                  SizedBox(
-                    width: 340,
-                    child: _ConversationPane(state: state),
-                  ),
+                  SizedBox(width: 340, child: _ConversationPane(state: state)),
                   const SizedBox(width: 12),
                   Expanded(child: _ThreadPane(state: state)),
                 ],
@@ -52,10 +49,7 @@ class _CompactChatSurface extends StatelessWidget {
               state: state,
               showBack: true,
             )
-          : _ConversationPane(
-              key: const ValueKey('list'),
-              state: state,
-            ),
+          : _ConversationPane(key: const ValueKey('list'), state: state),
     );
   }
 }
@@ -93,11 +87,7 @@ class _ConversationPane extends StatelessWidget {
 }
 
 class _ThreadPane extends StatelessWidget {
-  const _ThreadPane({
-    required this.state,
-    this.showBack = false,
-    super.key,
-  });
+  const _ThreadPane({required this.state, this.showBack = false, super.key});
 
   final ChatState state;
   final bool showBack;
@@ -138,9 +128,8 @@ class _ThreadPane extends StatelessWidget {
             onRemoveAttachment: cubit.removePendingAttachment,
             onReaction: (message, reaction) =>
                 unawaited(cubit.toggleReaction(message, reaction)),
-            onDetails: () => unawaited(
-              showChatDetailsSheet(context: context, cubit: cubit),
-            ),
+            onDetails: () =>
+                unawaited(showChatDetailsSheet(context: context, cubit: cubit)),
             onPin: state.selectedConversation == null
                 ? () {}
                 : () => unawaited(cubit.togglePin(state.selectedConversation!)),

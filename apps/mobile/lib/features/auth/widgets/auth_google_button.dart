@@ -149,35 +149,23 @@ class AuthSocialButtons extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AuthGoogleButton(
-          isLoading: isLoading,
-          onPressed: onGooglePressed,
-        ),
+        AuthGoogleButton(isLoading: isLoading, onPressed: onGooglePressed),
         const shad.Gap(12),
         AuthMicrosoftButton(
           isLoading: isLoading,
           onPressed: onMicrosoftPressed,
         ),
         const shad.Gap(12),
-        AuthAppleButton(
-          isLoading: isLoading,
-          onPressed: onApplePressed,
-        ),
+        AuthAppleButton(isLoading: isLoading, onPressed: onApplePressed),
         const shad.Gap(12),
-        AuthGithubButton(
-          isLoading: isLoading,
-          onPressed: onGithubPressed,
-        ),
+        AuthGithubButton(isLoading: isLoading, onPressed: onGithubPressed),
       ],
     );
   }
 }
 
 class AuthMethodDivider extends StatelessWidget {
-  const AuthMethodDivider({
-    this.label,
-    super.key,
-  });
+  const AuthMethodDivider({this.label, super.key});
 
   final String? label;
 
@@ -187,9 +175,7 @@ class AuthMethodDivider extends StatelessWidget {
 
     return Row(
       children: [
-        Expanded(
-          child: Divider(color: theme.colorScheme.border),
-        ),
+        Expanded(child: Divider(color: theme.colorScheme.border)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
@@ -199,9 +185,7 @@ class AuthMethodDivider extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(
-          child: Divider(color: theme.colorScheme.border),
-        ),
+        Expanded(child: Divider(color: theme.colorScheme.border)),
       ],
     );
   }

@@ -80,9 +80,7 @@ void main() {
 
     when(() => supabaseClient.auth).thenReturn(goTrueClient);
     when(() => googleIdentityClient.signOut()).thenAnswer((_) async {});
-    when(
-      () => secureStorage.read(key: any(named: 'key')),
-    ).thenAnswer(
+    when(() => secureStorage.read(key: any(named: 'key'))).thenAnswer(
       (invocation) async =>
           secureStorageValues[invocation.namedArguments[#key] as String],
     );
@@ -100,9 +98,9 @@ void main() {
         secureStorageValues[key] = value;
       }
     });
-    when(
-      () => secureStorage.delete(key: any(named: 'key')),
-    ).thenAnswer((invocation) async {
+    when(() => secureStorage.delete(key: any(named: 'key'))).thenAnswer((
+      invocation,
+    ) async {
       secureStorageValues.remove(invocation.namedArguments[#key] as String);
     });
 
@@ -122,14 +120,10 @@ void main() {
   group('AuthRepository.signInWithGoogle', () {
     test('returns success after native Google sign-in succeeds', () async {
       when(
-        () => googleIdentityClient.initialize(
-          serverClientId: 'web-client-id',
-        ),
+        () => googleIdentityClient.initialize(serverClientId: 'web-client-id'),
       ).thenAnswer((_) async {});
       when(() => googleIdentityClient.supportsAuthenticate()).thenReturn(true);
-      when(
-        () => googleIdentityClient.authenticate(),
-      ).thenAnswer(
+      when(() => googleIdentityClient.authenticate()).thenAnswer(
         (_) async => const GoogleIdentityTokens(
           idToken: 'id-token',
           accessToken: 'access-token',
@@ -161,16 +155,13 @@ void main() {
       'falls back to browser OAuth after recoverable native failure',
       () async {
         when(
-          () => googleIdentityClient.initialize(
-            serverClientId: 'web-client-id',
-          ),
+          () =>
+              googleIdentityClient.initialize(serverClientId: 'web-client-id'),
         ).thenAnswer((_) async {});
         when(
           () => googleIdentityClient.supportsAuthenticate(),
         ).thenReturn(true);
-        when(
-          () => googleIdentityClient.authenticate(),
-        ).thenThrow(
+        when(() => googleIdentityClient.authenticate()).thenThrow(
           const GoogleSignInException(
             code: GoogleSignInExceptionCode.clientConfigurationError,
             description: 'native configuration failed',
@@ -181,10 +172,7 @@ void main() {
             authClient: goTrueClient,
             provider: OAuthProvider.google,
             redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
-            queryParams: const {
-              'access_type': 'offline',
-              'prompt': 'consent',
-            },
+            queryParams: const {'access_type': 'offline', 'prompt': 'consent'},
           ),
         ).thenAnswer((_) async => true);
 
@@ -201,95 +189,72 @@ void main() {
       },
     );
 
-    test(
-      'returns a failure instead of silently falling back',
-      () async {
-        when(
-          () => googleIdentityClient.initialize(
-            serverClientId: 'web-client-id',
-          ),
-        ).thenAnswer((_) async {});
-        when(
-          () => googleIdentityClient.supportsAuthenticate(),
-        ).thenReturn(true);
-        when(
-          () => googleIdentityClient.authenticate(),
-        ).thenAnswer(
-          (_) async => const GoogleIdentityTokens(
-            idToken: 'id-token',
-            accessToken: 'access-token',
-          ),
-        );
-        when(
-          () => goTrueClient.signInWithIdToken(
-            provider: OAuthProvider.google,
-            idToken: 'id-token',
-            accessToken: 'access-token',
-          ),
-        ).thenThrow(
-          const AuthException('Supabase rejected the Google token'),
-        );
+    test('returns a failure instead of silently falling back', () async {
+      when(
+        () => googleIdentityClient.initialize(serverClientId: 'web-client-id'),
+      ).thenAnswer((_) async {});
+      when(() => googleIdentityClient.supportsAuthenticate()).thenReturn(true);
+      when(() => googleIdentityClient.authenticate()).thenAnswer(
+        (_) async => const GoogleIdentityTokens(
+          idToken: 'id-token',
+          accessToken: 'access-token',
+        ),
+      );
+      when(
+        () => goTrueClient.signInWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: 'id-token',
+          accessToken: 'access-token',
+        ),
+      ).thenThrow(const AuthException('Supabase rejected the Google token'));
 
-        final result = await repository.signInWithGoogle();
+      final result = await repository.signInWithGoogle();
 
-        expect(result.status, AuthActionStatus.failure);
-        expect(result.errorCode, AuthErrorCode.googleSignInFailed);
-        verifyNever(
-          () => oauthUrlLauncher.launchProviderSignIn(
-            authClient: goTrueClient,
-            provider: OAuthProvider.google,
-            redirectTo: any(named: 'redirectTo'),
-            queryParams: any(named: 'queryParams'),
-            scopes: any(named: 'scopes'),
-          ),
-        );
-      },
-    );
+      expect(result.status, AuthActionStatus.failure);
+      expect(result.errorCode, AuthErrorCode.googleSignInFailed);
+      verifyNever(
+        () => oauthUrlLauncher.launchProviderSignIn(
+          authClient: goTrueClient,
+          provider: OAuthProvider.google,
+          redirectTo: any(named: 'redirectTo'),
+          queryParams: any(named: 'queryParams'),
+          scopes: any(named: 'scopes'),
+        ),
+      );
+    });
 
-    test(
-      'falls back to browser OAuth when Android native sign-in reports '
-      'canceled',
-      () async {
-        when(
-          () => googleIdentityClient.initialize(
-            serverClientId: 'web-client-id',
-          ),
-        ).thenAnswer((_) async {});
-        when(
-          () => googleIdentityClient.supportsAuthenticate(),
-        ).thenReturn(true);
-        when(
-          () => googleIdentityClient.authenticate(),
-        ).thenThrow(
-          const GoogleSignInException(
-            code: GoogleSignInExceptionCode.canceled,
-            description: 'credential manager returned canceled',
-          ),
-        );
-        when(
-          () => oauthUrlLauncher.launchProviderSignIn(
-            authClient: goTrueClient,
-            provider: OAuthProvider.google,
-            redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
-            queryParams: const {
-              'access_type': 'offline',
-              'prompt': 'consent',
-            },
-          ),
-        ).thenAnswer((_) async => true);
+    test('falls back to browser OAuth when Android native sign-in reports '
+        'canceled', () async {
+      when(
+        () => googleIdentityClient.initialize(serverClientId: 'web-client-id'),
+      ).thenAnswer((_) async {});
+      when(() => googleIdentityClient.supportsAuthenticate()).thenReturn(true);
+      when(() => googleIdentityClient.authenticate()).thenThrow(
+        const GoogleSignInException(
+          code: GoogleSignInExceptionCode.canceled,
+          description: 'credential manager returned canceled',
+        ),
+      );
+      when(
+        () => oauthUrlLauncher.launchProviderSignIn(
+          authClient: goTrueClient,
+          provider: OAuthProvider.google,
+          redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
+          queryParams: const {'access_type': 'offline', 'prompt': 'consent'},
+        ),
+      ).thenAnswer((_) async => true);
 
-        final result = await repository.signInWithGoogle();
+      final result = await repository.signInWithGoogle();
 
-        expect(result.status, AuthActionStatus.externalFlowStarted);
-        verifyNever(
-          () => goTrueClient.signInWithIdToken(
-            provider: OAuthProvider.google,
-            idToken: any(named: 'idToken'),
-            accessToken: any(named: 'accessToken'),
-          ),
-        );
-      },
-    );
+      expect(result.status, AuthActionStatus.externalFlowStarted);
+      verifyNever(
+        () => goTrueClient.signInWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: any(named: 'idToken'),
+          accessToken: any(named: 'accessToken'),
+        ),
+      );
+    });
 
     test(
       'uses bundled iOS config when no explicit iOS client ID is provided',
@@ -307,16 +272,13 @@ void main() {
         );
 
         when(
-          () => googleIdentityClient.initialize(
-            serverClientId: 'web-client-id',
-          ),
+          () =>
+              googleIdentityClient.initialize(serverClientId: 'web-client-id'),
         ).thenAnswer((_) async {});
         when(
           () => googleIdentityClient.supportsAuthenticate(),
         ).thenReturn(true);
-        when(
-          () => googleIdentityClient.authenticate(),
-        ).thenAnswer(
+        when(() => googleIdentityClient.authenticate()).thenAnswer(
           (_) async => const GoogleIdentityTokens(
             idToken: 'id-token',
             accessToken: 'access-token',
@@ -334,9 +296,8 @@ void main() {
 
         expect(result.status, AuthActionStatus.success);
         verify(
-          () => googleIdentityClient.initialize(
-            serverClientId: 'web-client-id',
-          ),
+          () =>
+              googleIdentityClient.initialize(serverClientId: 'web-client-id'),
         ).called(1);
       },
     );
@@ -365,9 +326,7 @@ void main() {
         when(
           () => googleIdentityClient.supportsAuthenticate(),
         ).thenReturn(true);
-        when(
-          () => googleIdentityClient.authenticate(),
-        ).thenThrow(
+        when(() => googleIdentityClient.authenticate()).thenThrow(
           const GoogleSignInException(
             code: GoogleSignInExceptionCode.canceled,
             description: 'user cancelled',
@@ -444,9 +403,7 @@ void main() {
         when(
           () => appleIdentityClient.isAvailable(),
         ).thenAnswer((_) async => true);
-        when(
-          () => appleIdentityClient.authenticate(),
-        ).thenAnswer(
+        when(() => appleIdentityClient.authenticate()).thenAnswer(
           (_) async => const AppleIdentityTokens(
             idToken: 'apple-id-token',
             rawNonce: 'raw-nonce',
@@ -464,9 +421,7 @@ void main() {
         when(
           () => goTrueClient.updateUser(
             UserAttributes(
-              data: <String, dynamic>{
-                'full_name': 'Ada Lovelace',
-              },
+              data: <String, dynamic>{'full_name': 'Ada Lovelace'},
             ),
           ),
         ).thenAnswer((_) async => UserResponse.fromJson(_user().toJson()));
@@ -502,9 +457,7 @@ void main() {
       when(
         () => appleIdentityClient.isAvailable(),
       ).thenAnswer((_) async => true);
-      when(
-        () => appleIdentityClient.authenticate(),
-      ).thenThrow(
+      when(() => appleIdentityClient.authenticate()).thenThrow(
         const SignInWithAppleAuthorizationException(
           code: AuthorizationErrorCode.canceled,
           message: 'user cancelled',

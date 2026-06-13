@@ -129,10 +129,7 @@ extension _ShellPageLayout on _ShellPageState {
                 : Colors.black.withValues(alpha: 0.08),
           ),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: child,
-        ),
+        child: ClipRRect(borderRadius: BorderRadius.circular(24), child: child),
       ),
     );
   }
@@ -273,12 +270,13 @@ extension _ShellPageLayout on _ShellPageState {
           ? 'mini-nav-${activeModule.id}'
           : 'global-nav',
     );
+    final injectedTransitionSignature = injectedMiniNavRegistration == null
+        ? null
+        : _injectedMiniNavTransitionSignature(injectedMiniNavRegistration);
     final navTransitionKey = ValueKey<String>(
       useInjectedMiniNav
           ? 'injected-mini-nav-${injectedMiniNavRegistration.ownerId}-'
-                '${_injectedMiniNavTransitionSignature(
-                  injectedMiniNavRegistration,
-                )}'
+                '$injectedTransitionSignature'
           : activeModule != null
           ? 'mini-nav-${activeModule.id}-'
                 '${_miniAppNavTransitionSignature(activeMiniNavItems)}'
@@ -313,10 +311,7 @@ extension _ShellPageLayout on _ShellPageState {
             key: navVariantKey,
             selectedKey: selectedKey,
             onSelected: (key) => useInjectedMiniNav
-                ? _onInjectedMiniNavItemTapped(
-                    key,
-                    injectedMiniNavRegistration,
-                  )
+                ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration)
                 : isMiniAppRoute
                 ? _onMiniAppItemTapped(
                     key,
@@ -324,10 +319,7 @@ extension _ShellPageLayout on _ShellPageState {
                     activeModule,
                     activeMiniNavItems,
                   )
-                : _onItemTapped(
-                    _ShellPageState._indexForKey(key),
-                    context,
-                  ),
+                : _onItemTapped(_ShellPageState._indexForKey(key), context),
             expandItems: false,
             minItemWidth: _ShellPageState._floatingNavMinItemWidth,
             children: isMiniAppRoute ? miniItems : globalItems,
@@ -447,10 +439,7 @@ extension _ShellPageLayout on _ShellPageState {
       activeModule,
       activeMiniNavItems,
     );
-    final miniSelectedKey = _miniSelectedKey(
-      context,
-      activeMiniNavItems,
-    );
+    final miniSelectedKey = _miniSelectedKey(context, activeMiniNavItems);
     final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
     final isCompact = context.isCompact;
     final showBottomNav = MediaQuery.viewInsetsOf(context).bottom <= 0;
@@ -561,10 +550,7 @@ extension _ShellPageLayout on _ShellPageState {
         });
       },
       children: [
-        KeyedSubtree(
-          key: _ShellPageState._globalLayerKey,
-          child: globalBody,
-        ),
+        KeyedSubtree(key: _ShellPageState._globalLayerKey, child: globalBody),
         KeyedSubtree(
           key: _ShellPageState._miniLayerKey,
           child: _buildNormalizedChild(),

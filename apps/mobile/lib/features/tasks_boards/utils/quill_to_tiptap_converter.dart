@@ -107,10 +107,7 @@ Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
     ),
   );
 
-  return <String, dynamic>{
-    'type': 'doc',
-    'content': nodes,
-  };
+  return <String, dynamic>{'type': 'doc', 'content': nodes};
 }
 
 Map<String, dynamic>? _lineToTipTapNode(QuillLine line) {
@@ -134,10 +131,7 @@ Map<String, dynamic>? _lineToTipTapNode(QuillLine line) {
     return {
       'type': 'blockquote',
       'content': [
-        {
-          'type': 'paragraph',
-          'content': inlineNodes,
-        },
+        {'type': 'paragraph', 'content': inlineNodes},
       ],
     };
   }
@@ -197,10 +191,7 @@ Map<String, dynamic>? _lineToTipTapNode(QuillLine line) {
       line.segments.first.kind == QuillSegmentKind.image) {
     final attrs = _imageResizeAttrsFromEmbed(line.segments.first.src);
     if (attrs != null) {
-      return {
-        'type': 'imageResize',
-        'attrs': attrs,
-      };
+      return {'type': 'imageResize', 'attrs': attrs};
     }
     return null;
   }
@@ -366,10 +357,7 @@ List<Map<String, dynamic>> _buildListTree(List<Map<String, dynamic>> nodes) {
   return result;
 }
 
-void _mergeListItems(
-  Map<String, dynamic> target,
-  Map<String, dynamic> source,
-) {
+void _mergeListItems(Map<String, dynamic> target, Map<String, dynamic> source) {
   final targetContent =
       (target['content'] as List?)?.cast<Map<String, dynamic>>() ?? [];
   final sourceContent =
@@ -499,10 +487,7 @@ String? _nonEmptyString(Object? value) {
   return value is String && value.trim().isNotEmpty ? value.trim() : null;
 }
 
-Map<String, dynamic> _wrapListForDepth(
-  Map<String, dynamic> child,
-  int depth,
-) {
+Map<String, dynamic> _wrapListForDepth(Map<String, dynamic> child, int depth) {
   if (depth <= 1) {
     return child;
   }

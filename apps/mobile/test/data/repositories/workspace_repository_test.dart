@@ -17,9 +17,7 @@ void main() {
     });
 
     test('preserves API tiers and personal metadata', () async {
-      when(
-        () => apiClient.getJsonList('/api/v1/workspaces'),
-      ).thenAnswer(
+      when(() => apiClient.getJsonList('/api/v1/workspaces')).thenAnswer(
         (_) async => [
           {
             'id': 'personal-ws',
@@ -58,15 +56,9 @@ void main() {
     });
 
     test('defaults missing API tier to free', () async {
-      when(
-        () => apiClient.getJsonList('/api/v1/workspaces'),
-      ).thenAnswer(
+      when(() => apiClient.getJsonList('/api/v1/workspaces')).thenAnswer(
         (_) async => [
-          {
-            'id': 'ws-free',
-            'name': 'Operations',
-            'personal': false,
-          },
+          {'id': 'ws-free', 'name': 'Operations', 'personal': false},
         ],
       );
 

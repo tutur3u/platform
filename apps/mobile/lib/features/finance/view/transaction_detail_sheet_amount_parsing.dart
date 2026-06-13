@@ -30,10 +30,7 @@ String formatInitialAmount(double value) {
   return trimmed;
 }
 
-String formatEditableAmount(
-  double value, {
-  required String decimalSeparator,
-}) {
+String formatEditableAmount(double value, {required String decimalSeparator}) {
   final formatted = formatInitialAmount(value);
   if (decimalSeparator == '.') return formatted;
   return formatted.replaceAll('.', decimalSeparator);
@@ -165,15 +162,13 @@ String formatAmountExpressionPreview(
         buffer.write(' ');
       }
       buffer
-        ..write(
-          switch (char) {
-            '*' => '×',
-            '/' => '÷',
-            '+' => '+',
-            '-' => '−',
-            _ => char,
-          },
-        )
+        ..write(switch (char) {
+          '*' => '×',
+          '/' => '÷',
+          '+' => '+',
+          '-' => '−',
+          _ => char,
+        })
         ..write(' ');
       continue;
     }

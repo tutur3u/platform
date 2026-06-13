@@ -25,9 +25,7 @@ void main() {
     blocTest<HabitsAccessCubit, HabitsAccessState>(
       'emits cached access first and keeps it when refresh fails',
       build: () {
-        when(
-          () => repository.readCachedHabitsAccess('team-1'),
-        ).thenAnswer(
+        when(() => repository.readCachedHabitsAccess('team-1')).thenAnswer(
           (_) async => CacheReadResult<bool>(
             state: CacheEntryState.stale,
             data: true,
@@ -58,12 +56,9 @@ void main() {
     blocTest<HabitsAccessCubit, HabitsAccessState>(
       'shows loading when no cached access exists',
       build: () {
-        when(
-          () => repository.readCachedHabitsAccess('team-1'),
-        ).thenAnswer(
-          (_) async => const CacheReadResult<bool>(
-            state: CacheEntryState.missing,
-          ),
+        when(() => repository.readCachedHabitsAccess('team-1')).thenAnswer(
+          (_) async =>
+              const CacheReadResult<bool>(state: CacheEntryState.missing),
         );
         when(
           () => repository.isHabitsEnabled('team-1'),
@@ -72,10 +67,7 @@ void main() {
       },
       act: (cubit) => cubit.syncWorkspace('team-1'),
       expect: () => const [
-        HabitsAccessState(
-          status: HabitsAccessStatus.loading,
-          wsId: 'team-1',
-        ),
+        HabitsAccessState(status: HabitsAccessStatus.loading, wsId: 'team-1'),
         HabitsAccessState(
           status: HabitsAccessStatus.loaded,
           enabled: true,

@@ -84,10 +84,7 @@ class CalendarCubit extends Cubit<CalendarState> {
     bool forceRefresh = false,
   }) async {
     final center = DateTime.now();
-    final targetRange = _targetRangeFor(
-      center,
-      CalendarViewMode.agenda,
-    );
+    final targetRange = _targetRangeFor(center, CalendarViewMode.agenda);
     final start = targetRange.start;
     final end = targetRange.end;
     await CacheStore.instance.prefetch<Map<String, dynamic>>(
@@ -504,10 +501,7 @@ class CalendarCubit extends Cubit<CalendarState> {
     _rememberCachedState(wsId, nextState);
   }
 
-  static DateTimeRange _targetRangeFor(
-    DateTime center,
-    CalendarViewMode mode,
-  ) {
+  static DateTimeRange _targetRangeFor(DateTime center, CalendarViewMode mode) {
     switch (mode) {
       case CalendarViewMode.year:
         return DateTimeRange(
@@ -528,10 +522,7 @@ class CalendarCubit extends Cubit<CalendarState> {
 }
 
 class _CalendarCacheEntry {
-  const _CalendarCacheEntry({
-    required this.state,
-    required this.fetchedAt,
-  });
+  const _CalendarCacheEntry({required this.state, required this.fetchedAt});
 
   final CalendarState state;
   final DateTime fetchedAt;

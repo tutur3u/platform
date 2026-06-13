@@ -269,11 +269,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     if (_selectedRows.isEmpty ||
         _walletId == null ||
         _resolvedCategoryId == null) {
-      showInventoryToast(
-        context,
-        _validationMessage(),
-        destructive: true,
-      );
+      showInventoryToast(context, _validationMessage(), destructive: true);
       return;
     }
 
@@ -344,31 +340,17 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
             )
             .toList(growable: false),
       );
-      await _settingsRepository.setLastIncomeCategory(
-        wsId,
-        resolvedCategoryId,
-      );
+      await _settingsRepository.setLastIncomeCategory(wsId, resolvedCategoryId);
 
       if (!mounted) return;
-      showInventoryToast(
-        context,
-        context.l10n.inventorySaleCreated,
-      );
+      showInventoryToast(context, context.l10n.inventorySaleCreated);
       context.pop(true);
     } on ApiException catch (error) {
       if (!mounted) return;
-      showInventoryToast(
-        context,
-        error.message,
-        destructive: true,
-      );
+      showInventoryToast(context, error.message, destructive: true);
     } on Exception catch (error) {
       if (!mounted) return;
-      showInventoryToast(
-        context,
-        error.toString(),
-        destructive: true,
-      );
+      showInventoryToast(context, error.toString(), destructive: true);
     } finally {
       if (mounted) {
         setState(() => _saving = false);
@@ -450,9 +432,8 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                           _CategoryFilterChip(
                             label: l10n.inventoryCheckoutAllCategories,
                             selected: _selectedProductCategory == null,
-                            onTap: () => setState(
-                              () => _selectedProductCategory = null,
-                            ),
+                            onTap: () =>
+                                setState(() => _selectedProductCategory = null),
                           ),
                           for (final category in _productCategories) ...[
                             const shad.Gap(8),
@@ -587,10 +568,8 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                           _categories
                               .firstWhere(
                                 (item) => item.id == _resolvedCategoryId,
-                                orElse: () => const TransactionCategory(
-                                  id: '',
-                                  name: '',
-                                ),
+                                orElse: () =>
+                                    const TransactionCategory(id: '', name: ''),
                               )
                               .name ??
                           '',
@@ -606,9 +585,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                 body: l10n.inventoryCheckoutCartEmpty,
               )
             else ...[
-              FinanceSectionHeader(
-                title: l10n.inventoryCheckoutSelectedItems,
-              ),
+              FinanceSectionHeader(title: l10n.inventoryCheckoutSelectedItems),
               const shad.Gap(12),
               ..._selectedRows.map(
                 (row) => Padding(
@@ -633,10 +610,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
 }
 
 class _SellableRow {
-  const _SellableRow({
-    required this.product,
-    required this.inventory,
-  });
+  const _SellableRow({required this.product, required this.inventory});
 
   final InventoryProduct product;
   final InventoryStockEntry inventory;
@@ -1049,10 +1023,7 @@ class _CheckoutStepper extends StatelessWidget {
 }
 
 class _CheckoutInfoRow extends StatelessWidget {
-  const _CheckoutInfoRow({
-    required this.label,
-    required this.value,
-  });
+  const _CheckoutInfoRow({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -1084,9 +1055,7 @@ class _CheckoutInfoRow extends StatelessWidget {
           const shad.Gap(6),
           Text(
             value.isEmpty ? '-' : value,
-            style: theme.typography.small.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: theme.typography.small.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),

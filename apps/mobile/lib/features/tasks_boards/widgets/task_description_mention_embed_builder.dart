@@ -101,11 +101,7 @@ class TaskDescriptionMentionChip extends StatelessWidget {
                         ),
                       );
                     })()
-                  : Icon(
-                      Icons.person_outline,
-                      size: 11,
-                      color: mentionBorder,
-                    ),
+                  : Icon(Icons.person_outline, size: 11, color: mentionBorder),
             ),
           ),
           const SizedBox(width: 5),

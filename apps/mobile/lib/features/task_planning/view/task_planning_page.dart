@@ -124,10 +124,7 @@ class TaskPlanningPage extends StatelessWidget {
 enum _TaskPlanningTab { estimates, labels, projects, initiatives }
 
 class TaskPlanningView extends StatefulWidget {
-  const TaskPlanningView({
-    super.key,
-    this.permissionsRepository,
-  });
+  const TaskPlanningView({super.key, this.permissionsRepository});
 
   final WorkspacePermissionsRepository? permissionsRepository;
 
@@ -146,10 +143,8 @@ class _TaskPlanningViewState extends State<TaskPlanningView> {
   bool _isCheckingPermissions = false;
   bool _hasResolvedPermissions = false;
 
-  TaskPortfolioActions get _portfolioActions => TaskPortfolioActions(
-    context: context,
-    taskRepository: _taskRepository,
-  );
+  TaskPortfolioActions get _portfolioActions =>
+      TaskPortfolioActions(context: context, taskRepository: _taskRepository);
 
   void _updateState(VoidCallback update) {
     if (!mounted) return;

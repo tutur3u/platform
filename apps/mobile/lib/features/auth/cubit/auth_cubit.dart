@@ -44,12 +44,7 @@ class AuthCubit extends Cubit<AuthState> {
     final accounts = await _repo.getStoredAccounts();
     final activeAccountId = await _repo.getActiveStoredAccountId();
     if (isClosed) return;
-    emit(
-      state.copyWith(
-        accounts: accounts,
-        activeAccountId: activeAccountId,
-      ),
-    );
+    emit(state.copyWith(accounts: accounts, activeAccountId: activeAccountId));
 
     if (state.status == AuthStatus.authenticated) {
       await _repo.syncCurrentSessionToMultiAccountStore();
@@ -62,12 +57,7 @@ class AuthCubit extends Cubit<AuthState> {
     final accounts = await _repo.getStoredAccounts();
     final activeAccountId = await _repo.getActiveStoredAccountId();
     if (isClosed) return;
-    emit(
-      state.copyWith(
-        accounts: accounts,
-        activeAccountId: activeAccountId,
-      ),
-    );
+    emit(state.copyWith(accounts: accounts, activeAccountId: activeAccountId));
   }
 
   /// Resolves auth state synchronously from the cached Supabase session.
@@ -170,11 +160,7 @@ class AuthCubit extends Cubit<AuthState> {
       return (success: result.success, retryAfter: result.retryAfter);
     }
     emit(
-      state.copyWith(
-        isLoading: false,
-        error: result.error,
-        errorCode: null,
-      ),
+      state.copyWith(isLoading: false, error: result.error, errorCode: null),
     );
     return (success: result.success, retryAfter: result.retryAfter);
   }
@@ -212,11 +198,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
     }
     emit(
-      state.copyWith(
-        isLoading: false,
-        error: result.error,
-        errorCode: null,
-      ),
+      state.copyWith(isLoading: false, error: result.error, errorCode: null),
     );
     return false;
   }
@@ -264,11 +246,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
     }
     emit(
-      state.copyWith(
-        isLoading: false,
-        error: result.error,
-        errorCode: null,
-      ),
+      state.copyWith(isLoading: false, error: result.error, errorCode: null),
     );
     return false;
   }
@@ -336,11 +314,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
 
     emit(
-      state.copyWith(
-        isLoading: false,
-        error: result.error,
-        errorCode: null,
-      ),
+      state.copyWith(isLoading: false, error: result.error, errorCode: null),
     );
     return false;
   }
@@ -352,10 +326,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(isLoading: true, error: null, errorCode: null));
     final result = await action();
     if (isClosed) return;
-    await _handleAuthActionResult(
-      result,
-      fallbackErrorCode: fallbackErrorCode,
-    );
+    await _handleAuthActionResult(result, fallbackErrorCode: fallbackErrorCode);
   }
 
   Future<void> _handleAuthActionResult(
@@ -435,11 +406,7 @@ class AuthCubit extends Cubit<AuthState> {
       }
     }
     emit(
-      state.copyWith(
-        isLoading: false,
-        error: result.error,
-        errorCode: null,
-      ),
+      state.copyWith(isLoading: false, error: result.error, errorCode: null),
     );
     return false;
   }
@@ -449,11 +416,7 @@ class AuthCubit extends Cubit<AuthState> {
     final result = await _repo.signUp(email, password);
     if (isClosed) return result.success;
     emit(
-      state.copyWith(
-        isLoading: false,
-        error: result.error,
-        errorCode: null,
-      ),
+      state.copyWith(isLoading: false, error: result.error, errorCode: null),
     );
     return result.success;
   }
@@ -465,11 +428,7 @@ class AuthCubit extends Cubit<AuthState> {
     final result = await _repo.resetPassword(email);
     if (isClosed) return result.success;
     emit(
-      state.copyWith(
-        isLoading: false,
-        error: result.error,
-        errorCode: null,
-      ),
+      state.copyWith(isLoading: false, error: result.error, errorCode: null),
     );
     return result.success;
   }
@@ -590,12 +549,7 @@ class AuthCubit extends Cubit<AuthState> {
         // Truly no account to restore – leave add-account flow entirely.
         _isInAddAccountFlow = false;
         if (isClosed) return false;
-        emit(
-          state.copyWith(
-            isLoading: false,
-            isAddAccountFlow: false,
-          ),
-        );
+        emit(state.copyWith(isLoading: false, isAddAccountFlow: false));
         return false;
       }
 
@@ -633,17 +587,15 @@ class AuthCubit extends Cubit<AuthState> {
       if (isClosed) return false;
       if (_repo.checkMfaRequired()) {
         emit(
-          AuthState.mfaRequired(user).copyWith(
-            isLoading: false,
-            isAddAccountFlow: false,
-          ),
+          AuthState.mfaRequired(
+            user,
+          ).copyWith(isLoading: false, isAddAccountFlow: false),
         );
       } else {
         emit(
-          AuthState.authenticated(user).copyWith(
-            isLoading: false,
-            isAddAccountFlow: false,
-          ),
+          AuthState.authenticated(
+            user,
+          ).copyWith(isLoading: false, isAddAccountFlow: false),
         );
       }
       await _reloadStoredAccounts();
@@ -680,11 +632,7 @@ class AuthCubit extends Cubit<AuthState> {
     if (isClosed) return false;
     if (!result.success) {
       emit(
-        state.copyWith(
-          isLoading: false,
-          error: result.error,
-          errorCode: null,
-        ),
+        state.copyWith(isLoading: false, error: result.error, errorCode: null),
       );
       return false;
     }
@@ -745,11 +693,7 @@ class AuthCubit extends Cubit<AuthState> {
     if (isClosed) return false;
     if (!result.success) {
       emit(
-        state.copyWith(
-          isLoading: false,
-          error: result.error,
-          errorCode: null,
-        ),
+        state.copyWith(isLoading: false, error: result.error, errorCode: null),
       );
       return false;
     }
@@ -798,11 +742,7 @@ class AuthCubit extends Cubit<AuthState> {
     if (isClosed) return false;
     if (result.error != null) {
       emit(
-        state.copyWith(
-          isLoading: false,
-          error: result.error,
-          errorCode: null,
-        ),
+        state.copyWith(isLoading: false, error: result.error, errorCode: null),
       );
       return false;
     }

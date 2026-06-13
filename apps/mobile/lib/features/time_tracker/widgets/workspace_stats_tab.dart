@@ -245,9 +245,8 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
     final appliedQuery = await showAdaptiveSheet<String>(
       context: context,
       useRootNavigator: true,
-      builder: (sheetContext) => _WorkspaceSearchSheet(
-        initialQuery: _searchCtrl.text.trim(),
-      ),
+      builder: (sheetContext) =>
+          _WorkspaceSearchSheet(initialQuery: _searchCtrl.text.trim()),
     );
     if (appliedQuery == null || !mounted) {
       return;
@@ -270,13 +269,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
         ? null
         : _searchCtrl.text.trim();
     final range = _currentRange();
-    final cacheKey = _cacheKey(
-      wsId,
-      search,
-      _period,
-      range.start,
-      range.end,
-    );
+    final cacheKey = _cacheKey(wsId, search, _period, range.start, range.end);
 
     final cached = wsId.isEmpty
         ? null

@@ -123,9 +123,7 @@ List<TaskBoardList> _listViewVisibleLists(
   if (filters.statuses.isEmpty && filters.listIds.isEmpty) {
     return lists
         .where((list) => !_taskBoardListIsHiddenByDefaultInListView(list))
-        .toList(
-          growable: false,
-        );
+        .toList(growable: false);
   }
 
   return lists;
@@ -390,10 +388,7 @@ class _TaskPriorityStyle {
 enum _TaskRelationshipKind { parent, child, blockedBy, blocking, related }
 
 class _TaskRelationshipIndicator {
-  const _TaskRelationshipIndicator({
-    required this.kind,
-    required this.count,
-  });
+  const _TaskRelationshipIndicator({required this.kind, required this.count});
 
   final _TaskRelationshipKind kind;
   final int count;

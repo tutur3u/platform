@@ -32,10 +32,7 @@ Future<String?> showAccountSwitcherSheet(
 }
 
 class _AccountSwitcherSheet extends StatelessWidget {
-  const _AccountSwitcherSheet({
-    this.onAddAccount,
-    this.onManageAccounts,
-  });
+  const _AccountSwitcherSheet({this.onAddAccount, this.onManageAccounts});
 
   final Future<void> Function()? onAddAccount;
   final Future<void> Function()? onManageAccounts;
@@ -246,9 +243,7 @@ class _EmptyAccountsState extends StatelessWidget {
         children: [
           Text(
             context.l10n.authNoStoredAccounts,
-            style: theme.typography.small.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: theme.typography.small.copyWith(fontWeight: FontWeight.w700),
           ),
           const shad.Gap(6),
           Text(

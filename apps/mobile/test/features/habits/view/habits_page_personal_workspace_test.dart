@@ -108,10 +108,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
       tracker: tracker,
       entries: const [],
       currentMember: const HabitTrackerMemberSummary(
-        member: HabitTrackerMember(
-          userId: 'user-1',
-          displayName: 'Alex',
-        ),
+        member: HabitTrackerMember(userId: 'user-1', displayName: 'Alex'),
         total: 8,
         entryCount: 4,
         currentPeriodTotal: 4,
@@ -149,10 +146,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
         HabitTrackerCardSummary(
           tracker: tracker,
           currentMember: const HabitTrackerMemberSummary(
-            member: HabitTrackerMember(
-              userId: 'user-1',
-              displayName: 'Alex',
-            ),
+            member: HabitTrackerMember(userId: 'user-1', displayName: 'Alex'),
             total: 8,
             entryCount: 4,
             currentPeriodTotal: 4,

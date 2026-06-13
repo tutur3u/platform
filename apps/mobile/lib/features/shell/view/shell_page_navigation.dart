@@ -19,11 +19,7 @@ extension _ShellPageNavigation on _ShellPageState {
         key: _ShellPageState._homeKey,
         spacing: _ShellPageState._navItemSpacing,
         label: isCompact
-            ? _buildNavLabel(
-                l10n.navHome,
-                labelStyle,
-                itemIndex: 0,
-              )
+            ? _buildNavLabel(l10n.navHome, labelStyle, itemIndex: 0)
             : null,
         child: isCompact
             ? _buildAnimatedNavElement(
@@ -53,11 +49,7 @@ extension _ShellPageNavigation on _ShellPageState {
         key: useGlobalKey ? _appsTabKey : _ShellPageState._appsKey,
         spacing: _ShellPageState._navItemSpacing,
         label: isCompact
-            ? _buildNavLabel(
-                l10n.navApps,
-                labelStyle,
-                itemIndex: 2,
-              )
+            ? _buildNavLabel(l10n.navApps, labelStyle, itemIndex: 2)
             : null,
         child: isCompact
             ? _buildAnimatedNavElement(
@@ -178,11 +170,7 @@ extension _ShellPageNavigation on _ShellPageState {
         alignment: Alignment.center,
         marginAlignment: Alignment.center,
         label: isCompact
-            ? _buildNavLabel(
-                l10n.navBack,
-                miniLabelStyle,
-                itemIndex: 0,
-              )
+            ? _buildNavLabel(l10n.navBack, miniLabelStyle, itemIndex: 0)
             : null,
         child: isCompact
             ? _buildAnimatedNavElement(

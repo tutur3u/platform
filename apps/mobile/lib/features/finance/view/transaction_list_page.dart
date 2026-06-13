@@ -141,9 +141,8 @@ class _TransactionListViewState extends State<_TransactionListView> {
     if (toastContext.mounted) {
       shad.showToast(
         context: toastContext,
-        builder: (ctx, _) => shad.Alert(
-          content: Text(ctx.l10n.financeTransactionCreated),
-        ),
+        builder: (ctx, _) =>
+            shad.Alert(content: Text(ctx.l10n.financeTransactionCreated)),
       );
     }
   }
@@ -177,9 +176,8 @@ class _TransactionListViewState extends State<_TransactionListView> {
                       ? l10n.financeActivityClearSearch
                       : l10n.financeSearchTransactions,
                   highlighted: _isSearchVisible,
-                  onPressed: () => setState(
-                    () => _isSearchVisible = !_isSearchVisible,
-                  ),
+                  onPressed: () =>
+                      setState(() => _isSearchVisible = !_isSearchVisible),
                 ),
                 financeAmountVisibilityAction(
                   context,
@@ -363,9 +361,7 @@ class _ActivityHeaderCard extends StatelessWidget {
         hintText: l10n.financeSearchTransactions,
         onChanged: onChanged,
         features: [
-          const shad.InputFeature.leading(
-            Icon(Icons.search_rounded, size: 18),
-          ),
+          const shad.InputFeature.leading(Icon(Icons.search_rounded, size: 18)),
           if (state.search.isNotEmpty)
             shad.InputFeature.trailing(
               shad.IconButton.ghost(

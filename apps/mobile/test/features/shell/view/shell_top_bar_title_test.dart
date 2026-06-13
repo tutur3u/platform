@@ -21,9 +21,7 @@ void main() {
       workspaceCubit = _MockWorkspaceCubit();
     });
 
-    testWidgets('shows logo and Home title on home', (
-      tester,
-    ) async {
+    testWidgets('shows logo and Home title on home', (tester) async {
       const state = WorkspaceState(status: WorkspaceStatus.loaded);
       when(() => workspaceCubit.state).thenReturn(state);
       whenListen(

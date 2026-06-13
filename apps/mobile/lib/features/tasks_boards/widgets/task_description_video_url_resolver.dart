@@ -51,13 +51,7 @@ Future<String> resolveTaskDescriptionVideoUrl(
       }
 
       final headResponse = await http
-          .head(
-            internalUri,
-            headers: {
-              ...?headers,
-              'Accept': '*/*',
-            },
-          )
+          .head(internalUri, headers: {...?headers, 'Accept': '*/*'})
           .timeout(const Duration(seconds: 10));
 
       final sanitizedHeadUrl = sanitizeResolvedTaskDescriptionVideoUrl(

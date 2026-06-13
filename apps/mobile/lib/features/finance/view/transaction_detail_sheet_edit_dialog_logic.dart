@@ -201,9 +201,8 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     if (amount == null || amount <= 0) {
       shad.showToast(
         context: rootCtx,
-        builder: (ctx, overlay) => shad.Alert.destructive(
-          content: Text(l10n.financeInvalidAmount),
-        ),
+        builder: (ctx, overlay) =>
+            shad.Alert.destructive(content: Text(l10n.financeInvalidAmount)),
       );
       return;
     }
@@ -508,10 +507,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         );
       } on Exception {
         failedCount += 1;
-        _setAttachmentStatus(
-          attachment.id,
-          _TransactionAttachmentStatus.error,
-        );
+        _setAttachmentStatus(attachment.id, _TransactionAttachmentStatus.error);
       }
     }
 
@@ -739,13 +735,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     final selected = _tagIds.toSet();
     return fallbackTags
         .where((tag) => selected.contains(tag.id))
-        .map(
-          (tag) => FinanceTag(
-            id: tag.id,
-            name: tag.name,
-            color: tag.color,
-          ),
-        )
+        .map((tag) => FinanceTag(id: tag.id, name: tag.name, color: tag.color))
         .toList(growable: false);
   }
 
@@ -866,10 +856,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     return formatCurrency(parsed.abs(), currency);
   }
 
-  String _formatMoneySuggestion(
-    double value, {
-    required String currencyCode,
-  }) {
+  String _formatMoneySuggestion(double value, {required String currencyCode}) {
     final locale = Localizations.localeOf(context).toString();
     final digits = _currencyFractionDigits(currencyCode);
     final formatter = NumberFormat.decimalPattern(locale)
@@ -906,10 +893,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
         .toList(growable: false);
   }
 
-  String _formatEditableAmountForInput(
-    double value, {
-    String? currencyCode,
-  }) {
+  String _formatEditableAmountForInput(double value, {String? currencyCode}) {
     final digits = _currencyFractionDigits(currencyCode ?? _selectedCurrency);
     final factor = _pow10(digits);
     final rounded = (value * factor).roundToDouble() / factor;

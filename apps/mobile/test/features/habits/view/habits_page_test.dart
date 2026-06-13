@@ -125,10 +125,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
         ),
       ],
       currentMember: const HabitTrackerMemberSummary(
-        member: HabitTrackerMember(
-          userId: 'user-1',
-          displayName: 'Alex',
-        ),
+        member: HabitTrackerMember(userId: 'user-1', displayName: 'Alex'),
         total: 8,
         entryCount: 4,
         currentPeriodTotal: 4,
@@ -166,10 +163,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
         HabitTrackerCardSummary(
           tracker: tracker,
           currentMember: const HabitTrackerMemberSummary(
-            member: HabitTrackerMember(
-              userId: 'user-1',
-              displayName: 'Alex',
-            ),
+            member: HabitTrackerMember(userId: 'user-1', displayName: 'Alex'),
             total: 8,
             entryCount: 4,
             currentPeriodTotal: 4,
@@ -254,9 +248,7 @@ void main() {
     when(() => workspaceCubit.state).thenReturn(
       const WorkspaceState(
         status: WorkspaceStatus.loaded,
-        workspaces: [
-          Workspace(id: 'ws-1', name: 'Workspace'),
-        ],
+        workspaces: [Workspace(id: 'ws-1', name: 'Workspace')],
         currentWorkspace: Workspace(id: 'ws-1', name: 'Workspace'),
       ),
     );

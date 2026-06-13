@@ -23,9 +23,7 @@ extension PumpApp on WidgetTester {
 
     return pumpWidget(
       shad.ShadcnApp.router(
-        theme: const shad.ThemeData(
-          colorScheme: shad.ColorSchemes.lightZinc,
-        ),
+        theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
         darkTheme: const shad.ThemeData.dark(
           colorScheme: shad.ColorSchemes.darkZinc,
         ),

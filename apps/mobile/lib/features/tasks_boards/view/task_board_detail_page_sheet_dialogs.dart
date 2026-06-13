@@ -37,10 +37,7 @@ class _MoveTaskListDialog extends StatelessWidget {
 }
 
 class _TaskListPickerDialog extends StatelessWidget {
-  const _TaskListPickerDialog({
-    required this.title,
-    required this.lists,
-  });
+  const _TaskListPickerDialog({required this.title, required this.lists});
 
   final String title;
   final List<TaskBoardList> lists;
@@ -152,17 +149,14 @@ class _TaskRelationshipPickerDialogState
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                title,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              Text(title, overflow: TextOverflow.ellipsis),
                               if (metadata.isNotEmpty)
                                 Text(
                                   metadata.join(' · '),
-                                  style:
-                                      shad.Theme.of(
-                                        context,
-                                      ).typography.xSmall.copyWith(
+                                  style: shad.Theme.of(context)
+                                      .typography
+                                      .xSmall
+                                      .copyWith(
                                         color: shad.Theme.of(
                                           context,
                                         ).colorScheme.mutedForeground,
@@ -224,11 +218,7 @@ class _TaskBoardListOptionRow extends StatelessWidget {
             ],
           ),
         ),
-        Icon(
-          style.statusIcon,
-          size: 16,
-          color: style.statusBadge.textColor,
-        ),
+        Icon(style.statusIcon, size: 16, color: style.statusBadge.textColor),
       ],
     );
   }

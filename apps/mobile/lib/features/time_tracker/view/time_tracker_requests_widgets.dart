@@ -17,18 +17,13 @@ class _RequestsMetaRow extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        shad.OutlineBadge(
-          child: Text('$requestCount'),
-        ),
+        shad.OutlineBadge(child: Text('$requestCount')),
         if (hasActiveFilters)
           shad.OutlineBadge(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.filter_alt_outlined,
-                  size: 14,
-                ),
+                const Icon(Icons.filter_alt_outlined, size: 14),
                 const SizedBox(width: 6),
                 Text(activeFilterLabel),
               ],
@@ -127,9 +122,7 @@ class _RequestTile extends StatelessWidget {
                     if (request.images.isNotEmpty)
                       _MetaChip(
                         icon: Icons.attach_file_rounded,
-                        label: l10n.timerAttachmentCount(
-                          request.images.length,
-                        ),
+                        label: l10n.timerAttachmentCount(request.images.length),
                       ),
                   ],
                 ),

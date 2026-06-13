@@ -16,10 +16,9 @@ class OAuthUrlLauncher {
 }
 
 class SupabaseOAuthUrlLauncher extends OAuthUrlLauncher {
-  const SupabaseOAuthUrlLauncher({
-    required DevicePlatform devicePlatform,
-  }) : _devicePlatform = devicePlatform,
-       super();
+  const SupabaseOAuthUrlLauncher({required DevicePlatform devicePlatform})
+    : _devicePlatform = devicePlatform,
+      super();
 
   final DevicePlatform _devicePlatform;
 

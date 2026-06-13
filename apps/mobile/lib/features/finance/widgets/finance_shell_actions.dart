@@ -27,10 +27,7 @@ class FinanceAmountVisibilityShellAction extends StatelessWidget {
       ownerId: ownerId,
       locations: locations,
       actions: [
-        financeAmountVisibilityAction(
-          context,
-          showAmounts: showAmounts,
-        ),
+        financeAmountVisibilityAction(context, showAmounts: showAmounts),
       ],
     );
   }
@@ -51,8 +48,7 @@ ShellActionSpec financeAmountVisibilityAction(
         : context.l10n.financeShowAmounts,
     callbackToken: showAmounts,
     highlighted: showAmounts,
-    onPressed: () => unawaited(
-      context.read<FinancePreferencesCubit>().toggleShowAmounts(),
-    ),
+    onPressed: () =>
+        unawaited(context.read<FinancePreferencesCubit>().toggleShowAmounts()),
   );
 }

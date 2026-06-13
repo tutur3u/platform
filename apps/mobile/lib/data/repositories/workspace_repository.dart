@@ -265,9 +265,7 @@ class WorkspaceRepository {
     if (json == null) return null;
 
     try {
-      return _workspaceFromJson(
-        jsonDecode(json) as Map<String, dynamic>,
-      );
+      return _workspaceFromJson(jsonDecode(json) as Map<String, dynamic>);
     } on Object catch (_) {
       return null;
     }
@@ -293,12 +291,7 @@ class WorkspaceRepository {
     String name, {
     File? avatarFile,
   }) async {
-    final json = await _api.postJson(
-      WorkspaceEndpoints.team,
-      {
-        'name': name,
-      },
-    );
+    final json = await _api.postJson(WorkspaceEndpoints.team, {'name': name});
 
     final wsId = json['id'] as String;
     var avatarUploadFailed = false;
@@ -333,9 +326,7 @@ class WorkspaceRepository {
   Future<void> updateWorkspaceAvatar(String wsId, File avatarFile) async {
     final uploadJson = await _api.postJson(
       WorkspaceEndpoints.avatarUploadUrl(wsId),
-      {
-        'filename': avatarFile.uri.pathSegments.last,
-      },
+      {'filename': avatarFile.uri.pathSegments.last},
     );
     final upload = AvatarUploadUrlResponse.fromJson(uploadJson);
 

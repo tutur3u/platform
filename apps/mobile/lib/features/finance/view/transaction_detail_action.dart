@@ -9,14 +9,11 @@ import 'package:mobile/features/finance/view/transaction_detail_sheet.dart';
 
 Future<void> invalidateFinanceMutationCaches(String wsId) async {
   FinanceCubit.clearWorkspaceCache(wsId);
-  await CacheStore.instance.invalidateTags(
-    const [
-      financeOverviewCacheTag,
-      financeTransactionsCacheTag,
-      financeWalletsCacheTag,
-    ],
-    workspaceId: wsId,
-  );
+  await CacheStore.instance.invalidateTags(const [
+    financeOverviewCacheTag,
+    financeTransactionsCacheTag,
+    financeWalletsCacheTag,
+  ], workspaceId: wsId);
 }
 
 Future<bool> openTransactionDetailSheet(

@@ -48,10 +48,8 @@ void main() {
     blocTest<AppLockCubit, AppLockState>(
       'enables lock only after local authentication succeeds',
       build: buildCubit,
-      act: (cubit) => cubit.setEnabled(
-        enabled: true,
-        reason: 'Enable app lock',
-      ),
+      act: (cubit) =>
+          cubit.setEnabled(enabled: true, reason: 'Enable app lock'),
       expect: () => [
         const AppLockState(status: AppLockStatus.authenticating),
         const AppLockState(enabled: true),

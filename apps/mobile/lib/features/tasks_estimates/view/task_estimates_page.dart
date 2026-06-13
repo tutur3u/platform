@@ -66,9 +66,7 @@ class TaskEstimatesPage extends StatelessWidget {
             },
           ),
         ],
-        child: TaskEstimatesView(
-          permissionsRepository: permissionsRepository,
-        ),
+        child: TaskEstimatesView(permissionsRepository: permissionsRepository),
       ),
     );
   }

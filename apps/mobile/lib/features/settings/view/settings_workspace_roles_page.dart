@@ -59,9 +59,7 @@ class _SettingsWorkspaceRolesViewState
 
   @override
   Widget build(BuildContext context) {
-    final horizontalPadding = ResponsivePadding.horizontal(
-      context.deviceClass,
-    );
+    final horizontalPadding = ResponsivePadding.horizontal(context.deviceClass);
     final l10n = context.l10n;
 
     return BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -268,10 +266,7 @@ class _SettingsWorkspaceRolesViewState
       context: context,
       builder: (_) => RepositoryProvider.value(
         value: repository,
-        child: WorkspaceRoleEditorPage(
-          wsId: wsId,
-          roleId: role.id,
-        ),
+        child: WorkspaceRoleEditorPage(wsId: wsId, roleId: role.id),
       ),
     );
     if (changed == true && mounted) {
@@ -287,10 +282,7 @@ class _SettingsWorkspaceRolesViewState
       context: context,
       builder: (_) => RepositoryProvider.value(
         value: repository,
-        child: WorkspaceRoleEditorPage(
-          wsId: wsId,
-          forceDefault: true,
-        ),
+        child: WorkspaceRoleEditorPage(wsId: wsId, forceDefault: true),
       ),
     );
     if (changed == true && mounted) {
@@ -519,11 +511,7 @@ class _WorkspaceRoleEditorPageState extends State<WorkspaceRoleEditorPage> {
           ? const <WorkspaceMemberListItem>[]
           : await repository.getMembers(widget.wsId);
 
-      var detail = const WorkspaceRoleDetail(
-        id: '',
-        name: '',
-        permissions: [],
-      );
+      var detail = const WorkspaceRoleDetail(id: '', name: '', permissions: []);
       var currentMemberIds = const <String>{};
 
       if (widget.forceDefault) {
@@ -664,9 +652,9 @@ class _RoleSummaryCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: shad.Theme.of(context).typography.small.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: shad.Theme.of(
+                    context,
+                  ).typography.small.copyWith(fontWeight: FontWeight.w800),
                 ),
                 if (subtitle?.trim().isNotEmpty ?? false) ...[
                   const shad.Gap(4),
@@ -693,10 +681,7 @@ class _RoleSummaryCard extends StatelessWidget {
 }
 
 class _PermissionGroupCard extends StatelessWidget {
-  const _PermissionGroupCard({
-    required this.title,
-    required this.children,
-  });
+  const _PermissionGroupCard({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -712,9 +697,9 @@ class _PermissionGroupCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: shad.Theme.of(context).typography.textSmall.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: shad.Theme.of(
+              context,
+            ).typography.textSmall.copyWith(fontWeight: FontWeight.w800),
           ),
           const shad.Gap(10),
           ...children,
@@ -745,9 +730,9 @@ class _PermissionToggleRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: shad.Theme.of(context).typography.textSmall.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: shad.Theme.of(
+                context,
+              ).typography.textSmall.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           const shad.Gap(12),
@@ -782,9 +767,9 @@ class _MemberAssignmentRow extends StatelessWidget {
               children: [
                 Text(
                   member.label,
-                  style: shad.Theme.of(context).typography.textSmall.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: shad.Theme.of(
+                    context,
+                  ).typography.textSmall.copyWith(fontWeight: FontWeight.w700),
                 ),
                 if (member.email != null && member.email != member.label) ...[
                   const shad.Gap(4),

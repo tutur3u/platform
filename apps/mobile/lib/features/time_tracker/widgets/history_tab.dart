@@ -313,9 +313,7 @@ class _HistoryTabState extends State<HistoryTab> {
                         ),
                       ),
                   ],
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: 96),
-                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 96)),
                 ],
               ),
             ),
@@ -354,10 +352,7 @@ class _HistoryTabState extends State<HistoryTab> {
     );
   }
 
-  String _currentPeriodLabel(
-    AppLocalizations l10n,
-    HistoryViewMode mode,
-  ) {
+  String _currentPeriodLabel(AppLocalizations l10n, HistoryViewMode mode) {
     return switch (mode) {
       HistoryViewMode.day => l10n.timerToday,
       HistoryViewMode.week => l10n.timerThisWeek,
@@ -386,10 +381,7 @@ class _HistoryTabState extends State<HistoryTab> {
 
     return groups.entries.map((entry) {
       if (entry.key == 'unknown') {
-        return _DayGroup(
-          label: l10n.timerUnknownDate,
-          sessions: entry.value,
-        );
+        return _DayGroup(label: l10n.timerUnknownDate, sessions: entry.value);
       }
 
       final firstSession = entry.value.first;
@@ -397,10 +389,7 @@ class _HistoryTabState extends State<HistoryTab> {
       final label = firstStartTime == null
           ? l10n.timerUnknownDate
           : dateFmt.format(firstStartTime.toLocal());
-      return _DayGroup(
-        label: label,
-        sessions: entry.value,
-      );
+      return _DayGroup(label: label, sessions: entry.value);
     }).toList();
   }
 
@@ -416,31 +405,21 @@ class _HistoryTabState extends State<HistoryTab> {
           session: session,
           categories: cubit.state.categories,
           thresholdDays: cubit.state.thresholdDays,
-          onDelete: () => _deleteSession(
-            context,
-            session.id,
-            throwOnError: true,
-          ),
-          onSave:
-              ({
-                title,
-                description,
-                categoryId,
-                startTime,
-                endTime,
-              }) async {
-                await cubit.editSession(
-                  session.id,
-                  wsId,
-                  userId: supabase.auth.currentUser?.id,
-                  title: title,
-                  description: description,
-                  categoryId: categoryId,
-                  startTime: startTime,
-                  endTime: endTime,
-                  throwOnError: true,
-                );
-              },
+          onDelete: () =>
+              _deleteSession(context, session.id, throwOnError: true),
+          onSave: ({title, description, categoryId, startTime, endTime}) async {
+            await cubit.editSession(
+              session.id,
+              wsId,
+              userId: supabase.auth.currentUser?.id,
+              title: title,
+              description: description,
+              categoryId: categoryId,
+              startTime: startTime,
+              endTime: endTime,
+              throwOnError: true,
+            );
+          },
         ),
       ),
     );
@@ -458,26 +437,19 @@ class _HistoryTabState extends State<HistoryTab> {
           session: session,
           categories: cubit.state.categories,
           thresholdDays: cubit.state.thresholdDays,
-          onSave:
-              ({
-                title,
-                description,
-                categoryId,
-                startTime,
-                endTime,
-              }) async {
-                await cubit.editSession(
-                  session.id,
-                  wsId,
-                  userId: supabase.auth.currentUser?.id,
-                  title: title,
-                  description: description,
-                  categoryId: categoryId,
-                  startTime: startTime,
-                  endTime: endTime,
-                  throwOnError: true,
-                );
-              },
+          onSave: ({title, description, categoryId, startTime, endTime}) async {
+            await cubit.editSession(
+              session.id,
+              wsId,
+              userId: supabase.auth.currentUser?.id,
+              title: title,
+              description: description,
+              categoryId: categoryId,
+              startTime: startTime,
+              endTime: endTime,
+              throwOnError: true,
+            );
+          },
         ),
       ),
     );

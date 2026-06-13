@@ -167,9 +167,7 @@ void main() {
 
     testWidgets(
       'long press enters bulk mode and toggles selection in list view',
-      (
-        tester,
-      ) async {
+      (tester) async {
         await pumpBoard(tester);
 
         await tester.longPress(find.text('Alpha task').first);

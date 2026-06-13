@@ -167,9 +167,7 @@ void main() {
 
       await tester.pumpApp(
         Material(
-          child: TaskDescriptionTableEditorSheet(
-            initialTableNode: oneRowTable,
-          ),
+          child: TaskDescriptionTableEditorSheet(initialTableNode: oneRowTable),
         ),
       );
       await tester.pump();
@@ -273,9 +271,7 @@ void main() {
 
       await tester.pumpApp(
         Material(
-          child: TaskDescriptionTableEditorSheet(
-            initialTableNode: oneColTable,
-          ),
+          child: TaskDescriptionTableEditorSheet(initialTableNode: oneColTable),
         ),
       );
       await tester.pump();

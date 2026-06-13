@@ -39,14 +39,8 @@ class MyTasksHeader extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [
-                  const Color(0xFF11151D),
-                  const Color(0xFF0C1017),
-                ]
-              : [
-                  const Color(0xFFF2F7FF),
-                  const Color(0xFFFFFFFF),
-                ],
+              ? [const Color(0xFF11151D), const Color(0xFF0C1017)]
+              : [const Color(0xFFF2F7FF), const Color(0xFFFFFFFF)],
         ),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
@@ -206,11 +200,7 @@ class _TaskDigestChip extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: accentColor,
-          ),
+          Icon(icon, size: 16, color: accentColor),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -218,13 +218,9 @@ class _HabitsViewState extends State<_HabitsView> {
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             padding: EdgeInsets.fromLTRB(
-                              ResponsivePadding.horizontal(
-                                context.deviceClass,
-                              ),
+                              ResponsivePadding.horizontal(context.deviceClass),
                               12,
-                              ResponsivePadding.horizontal(
-                                context.deviceClass,
-                              ),
+                              ResponsivePadding.horizontal(context.deviceClass),
                               24 + MediaQuery.paddingOf(context).bottom,
                             ),
                             children: [
@@ -364,9 +360,7 @@ class _HabitsViewState extends State<_HabitsView> {
     });
   }
 
-  Future<void> _openCreateTracker({
-    HabitTrackerTemplate? template,
-  }) async {
+  Future<void> _openCreateTracker({HabitTrackerTemplate? template}) async {
     await showFinanceFullscreenModal<void>(
       context: context,
       builder: (sheetContext) => HabitTrackerFormSheet(

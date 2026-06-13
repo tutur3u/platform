@@ -211,12 +211,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   Future<void> toggleMicrophone() async {
     if (state.isMicrophoneActive) {
       await _recorder.stop();
-      emit(
-        state.copyWith(
-          isMicrophoneActive: false,
-          audioLevel: 0,
-        ),
-      );
+      emit(state.copyWith(isMicrophoneActive: false, audioLevel: 0));
       return;
     }
 
@@ -433,10 +428,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
             isInterrupted: false,
           ),
         );
-      case AssistantLiveSocketTranscriptDelta(
-        :final text,
-        :final isUserInput,
-      ):
+      case AssistantLiveSocketTranscriptDelta(:final text, :final isUserInput):
         _ensureActiveTurn();
         if (isUserInput) {
           _currentUserTranscript = _mergeProgressiveText(
@@ -450,9 +442,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
             text,
           );
           emit(
-            state.copyWith(
-              assistantTranscript: _currentAssistantTranscript,
-            ),
+            state.copyWith(assistantTranscript: _currentAssistantTranscript),
           );
         }
       case AssistantLiveSocketAudioChunk(:final bytes):
@@ -531,9 +521,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         functionResponses.add({
           'id': call.id,
           'name': call.name,
-          'response': {
-            'result': result,
-          },
+          'response': {'result': result},
         });
         final card = _buildInsightCard(call, result);
         if (card != null) {
@@ -636,12 +624,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
         messages: messages,
       );
       await _onHistoryUpdated(wsId, chatId);
-      emit(
-        state.copyWith(
-          isPersisting: false,
-          clearError: true,
-        ),
-      );
+      emit(state.copyWith(isPersisting: false, clearError: true));
     } on ApiException catch (error) {
       _emitError(error.message, preserveDrafts: true);
     } on Exception catch (error) {
@@ -859,10 +842,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     return super.close();
   }
 
-  void _markAssistantActivity({
-    Uint8List? chunkBytes,
-    bool textOnly = false,
-  }) {
+  void _markAssistantActivity({Uint8List? chunkBytes, bool textOnly = false}) {
     if (isClosed) {
       return;
     }
@@ -871,22 +851,12 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     final level = textOnly
         ? 0.22
         : ((chunkBytes?.lengthInBytes ?? 0) / 12000).clamp(0.26, 1.0);
-    emit(
-      state.copyWith(
-        assistantAudioLevel: level,
-        isAssistantSpeaking: true,
-      ),
-    );
+    emit(state.copyWith(assistantAudioLevel: level, isAssistantSpeaking: true));
     _assistantSpeakingTimer = Timer(const Duration(milliseconds: 240), () {
       if (isClosed) {
         return;
       }
-      emit(
-        state.copyWith(
-          assistantAudioLevel: 0,
-          isAssistantSpeaking: false,
-        ),
-      );
+      emit(state.copyWith(assistantAudioLevel: 0, isAssistantSpeaking: false));
     });
   }
 
@@ -896,11 +866,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     if (isClosed) {
       return;
     }
-    emit(
-      state.copyWith(
-        assistantAudioLevel: 0,
-        isAssistantSpeaking: false,
-      ),
-    );
+    emit(state.copyWith(assistantAudioLevel: 0, isAssistantSpeaking: false));
   }
 }

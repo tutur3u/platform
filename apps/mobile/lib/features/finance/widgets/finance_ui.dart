@@ -81,9 +81,7 @@ class FinancePanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor ?? palette.panel,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(
-          color: borderColor ?? palette.subtleBorder,
-        ),
+        border: Border.all(color: borderColor ?? palette.subtleBorder),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(
@@ -96,10 +94,7 @@ class FinancePanel extends StatelessWidget {
           ),
         ],
       ),
-      child: Padding(
-        padding: padding,
-        child: child,
-      ),
+      child: Padding(padding: padding, child: child),
     );
 
     if (onTap == null) {
@@ -158,10 +153,7 @@ class FinanceSectionHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (action != null) ...[
-          const shad.Gap(12),
-          action!,
-        ],
+        if (action != null) ...[const shad.Gap(12), action!],
       ],
     );
   }
@@ -355,9 +347,7 @@ class FinanceEmptyState extends StatelessWidget {
           const shad.Gap(14),
           Text(
             title,
-            style: theme.typography.large.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: theme.typography.large.copyWith(fontWeight: FontWeight.w700),
             textAlign: TextAlign.center,
           ),
           const shad.Gap(6),
@@ -368,10 +358,7 @@ class FinanceEmptyState extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          if (action != null) ...[
-            const shad.Gap(16),
-            action!,
-          ],
+          if (action != null) ...[const shad.Gap(16), action!],
         ],
       ),
     );
@@ -420,10 +407,7 @@ class FinanceKeyValueRow extends StatelessWidget {
                   ),
                 ),
               ),
-              if (trailing != null) ...[
-                const shad.Gap(8),
-                trailing!,
-              ],
+              if (trailing != null) ...[const shad.Gap(8), trailing!],
             ],
           ),
         ),

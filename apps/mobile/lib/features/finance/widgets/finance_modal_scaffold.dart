@@ -21,12 +21,10 @@ Future<T?> showFinanceFullscreenModal<T>({
   required BuildContext context,
   required Widget Function(BuildContext) builder,
 }) {
-  return Navigator.of(context, rootNavigator: true).push<T>(
-    MaterialPageRoute<T>(
-      fullscreenDialog: true,
-      builder: builder,
-    ),
-  );
+  return Navigator.of(
+    context,
+    rootNavigator: true,
+  ).push<T>(MaterialPageRoute<T>(fullscreenDialog: true, builder: builder));
 }
 
 class FinanceModalScaffold extends StatelessWidget {
@@ -89,16 +87,11 @@ class FinanceModalScaffold extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (trailing != null) ...[
-                      const shad.Gap(12),
-                      trailing!,
-                    ],
+                    if (trailing != null) ...[const shad.Gap(12), trailing!],
                   ],
                 ),
                 const shad.Gap(18),
-                Expanded(
-                  child: child,
-                ),
+                Expanded(child: child),
               ],
             ),
           ),
@@ -114,9 +107,7 @@ class FinanceModalScaffold extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: palette.elevatedPanel,
-              border: Border(
-                top: BorderSide(color: palette.subtleBorder),
-              ),
+              border: Border(top: BorderSide(color: palette.subtleBorder)),
             ),
             child: Wrap(
               alignment: WrapAlignment.end,
@@ -168,10 +159,7 @@ class FinanceModalScaffold extends StatelessWidget {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.sizeOf(context).height * maxBodyHeightFactor,
       ),
-      child: ColoredBox(
-        color: palette.panel,
-        child: body,
-      ),
+      child: ColoredBox(color: palette.panel, child: body),
     );
   }
 }
@@ -251,10 +239,7 @@ class FinanceFullscreenFormScaffold extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (footerTop != null) ...[
-                footerTop!,
-                const shad.Gap(12),
-              ],
+              if (footerTop != null) ...[footerTop!, const shad.Gap(12)],
               Row(
                 children: [
                   Expanded(
@@ -272,10 +257,7 @@ class FinanceFullscreenFormScaffold extends StatelessWidget {
                       child: Center(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text(
-                            context.l10n.commonCancel,
-                            maxLines: 1,
-                          ),
+                          child: Text(context.l10n.commonCancel, maxLines: 1),
                         ),
                       ),
                     ),
@@ -355,9 +337,7 @@ class FinanceFormSection extends StatelessWidget {
         children: [
           Text(
             title,
-            style: theme.typography.small.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: theme.typography.small.copyWith(fontWeight: FontWeight.w800),
           ),
           if (subtitle?.trim().isNotEmpty ?? false) ...[
             const shad.Gap(4),
@@ -409,10 +389,7 @@ class FinancePickerTile extends StatelessWidget {
           : palette.panel,
       child: Row(
         children: [
-          if (leading != null) ...[
-            leading!,
-            const shad.Gap(12),
-          ],
+          if (leading != null) ...[leading!, const shad.Gap(12)],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

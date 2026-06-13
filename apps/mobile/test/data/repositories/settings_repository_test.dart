@@ -18,22 +18,13 @@ void main() {
       await repository.setLastInventoryProductCategory('ws_1', 'category_1');
       await repository.setLastInventoryProductOwner('ws_2', 'owner_2');
 
-      expect(
-        await repository.getLastInventoryProductOwner('ws_1'),
-        'owner_1',
-      );
+      expect(await repository.getLastInventoryProductOwner('ws_1'), 'owner_1');
       expect(
         await repository.getLastInventoryProductCategory('ws_1'),
         'category_1',
       );
-      expect(
-        await repository.getLastInventoryProductOwner('ws_2'),
-        'owner_2',
-      );
-      expect(
-        await repository.getLastInventoryProductCategory('ws_2'),
-        isNull,
-      );
+      expect(await repository.getLastInventoryProductOwner('ws_2'), 'owner_2');
+      expect(await repository.getLastInventoryProductCategory('ws_2'), isNull);
     });
 
     test('clears the remembered linked finance category when unset', () async {

@@ -70,11 +70,7 @@ class _EditableImageTile extends StatelessWidget {
                 color: Colors.black54,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.close,
-                color: Colors.white,
-                size: 14,
-              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 14),
             ),
           ),
         ),

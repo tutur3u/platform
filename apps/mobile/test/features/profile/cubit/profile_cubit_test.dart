@@ -80,17 +80,12 @@ void main() {
           () => profileRepository.getCurrentUserIdSync(),
         ).thenReturn('user-1');
         when(() => profileRepository.getCachedProfile()).thenAnswer(
-          (_) async => (
-            profile: cachedProfile,
-            fetchedAt: DateTime(2026, 4, 17, 12),
-          ),
+          (_) async =>
+              (profile: cachedProfile, fetchedAt: DateTime(2026, 4, 17, 12)),
         );
-        when(() => profileRepository.getProfile()).thenAnswer(
-          (_) async => (
-            profile: cachedProfile,
-            error: null,
-          ),
-        );
+        when(
+          () => profileRepository.getProfile(),
+        ).thenAnswer((_) async => (profile: cachedProfile, error: null));
         when(
           () => profileRepository.saveCachedProfile(any()),
         ).thenAnswer((_) async {});

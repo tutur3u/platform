@@ -331,9 +331,10 @@ class _MonthlyCalendarView extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                DateFormat('MMMM yyyy', localeTag).format(
-                                  selectedMonth,
-                                ),
+                                DateFormat(
+                                  'MMMM yyyy',
+                                  localeTag,
+                                ).format(selectedMonth),
                                 textAlign: TextAlign.center,
                                 style: theme.typography.small.copyWith(
                                   fontWeight: FontWeight.w700,
@@ -565,9 +566,10 @@ class _CompactCardsView extends StatelessWidget {
         children: visibleKeys.map((key) {
           final data = monthly[key]!;
           final segments = key.split('-');
-          final label = DateFormat('MMMM yyyy', localeTag).format(
-            DateTime(int.parse(segments[0]), int.parse(segments[1])),
-          );
+          final label = DateFormat(
+            'MMMM yyyy',
+            localeTag,
+          ).format(DateTime(int.parse(segments[0]), int.parse(segments[1])));
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),

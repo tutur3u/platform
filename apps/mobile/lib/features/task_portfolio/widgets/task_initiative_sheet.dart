@@ -1,11 +1,7 @@
 part of 'task_portfolio_dialogs.dart';
 
 class TaskInitiativeSheet extends StatefulWidget {
-  const TaskInitiativeSheet({
-    super.key,
-    this.initiative,
-    this.onSubmit,
-  });
+  const TaskInitiativeSheet({super.key, this.initiative, this.onSubmit});
 
   final TaskInitiativeSummary? initiative;
   final Future<bool> Function(TaskInitiativeFormValue value)? onSubmit;

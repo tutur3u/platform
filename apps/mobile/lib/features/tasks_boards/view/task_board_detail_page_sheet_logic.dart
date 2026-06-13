@@ -383,11 +383,7 @@ Future<void> _removeTaskRelationship(
   }
 }
 
-({
-  String sourceTaskId,
-  String targetTaskId,
-  TaskRelationshipType type,
-})
+({String sourceTaskId, String targetTaskId, TaskRelationshipType type})
 _relationshipMutation({
   required String currentTaskId,
   required String selectedTaskId,
@@ -785,9 +781,8 @@ Future<void> _deleteTaskEditorTask(_TaskBoardTaskEditorSheetState state) async {
   if (!toastContext.mounted) return;
   shad.showToast(
     context: toastContext,
-    builder: (context, overlay) => shad.Alert(
-      content: Text(context.l10n.taskBoardDetailTaskDeleted),
-    ),
+    builder: (context, overlay) =>
+        shad.Alert(content: Text(context.l10n.taskBoardDetailTaskDeleted)),
   );
   await state._closeEditor();
 }

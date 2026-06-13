@@ -102,12 +102,7 @@ class _TimeTrackerFilterSheetState extends State<TimeTrackerFilterSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          16,
-          16,
-          16,
-          16,
-        ),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

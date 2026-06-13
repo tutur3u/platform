@@ -38,10 +38,8 @@ Future<void> showChatDirectorySheet({
   return showAdaptiveSheet<void>(
     context: context,
     useRootNavigator: true,
-    builder: (_) => BlocProvider.value(
-      value: cubit,
-      child: const ChatDirectorySheet(),
-    ),
+    builder: (_) =>
+        BlocProvider.value(value: cubit, child: const ChatDirectorySheet()),
   );
 }
 
@@ -52,10 +50,8 @@ Future<void> showChatSearchSheet({
   return showAdaptiveSheet<void>(
     context: context,
     useRootNavigator: true,
-    builder: (_) => BlocProvider.value(
-      value: cubit,
-      child: const ChatSearchSheet(),
-    ),
+    builder: (_) =>
+        BlocProvider.value(value: cubit, child: const ChatSearchSheet()),
   );
 }
 
@@ -67,9 +63,7 @@ Future<void> showChatDetailsSheet({
     context: context,
     useRootNavigator: true,
     maxDialogWidth: 680,
-    builder: (_) => BlocProvider.value(
-      value: cubit,
-      child: const ChatDetailsSheet(),
-    ),
+    builder: (_) =>
+        BlocProvider.value(value: cubit, child: const ChatDetailsSheet()),
   );
 }

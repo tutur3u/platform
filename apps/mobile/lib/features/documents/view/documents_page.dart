@@ -382,9 +382,7 @@ class _DocumentTile extends StatelessWidget {
                     document.content.trim(),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: theme.colorScheme.mutedForeground,
-                    ),
+                    style: TextStyle(color: theme.colorScheme.mutedForeground),
                   ),
                 ],
               ],

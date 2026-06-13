@@ -193,9 +193,7 @@ class _StatsTabState extends State<StatsTab> {
                   else
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(
-                        child: shad.CircularProgressIndicator(),
-                      ),
+                      child: Center(child: shad.CircularProgressIndicator()),
                     ),
                 ],
               ),

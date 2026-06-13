@@ -113,86 +113,81 @@ void main() {
       );
     });
 
-    test(
-      'maps TipTap mention into a Quill inline embed '
-      'and table into a block embed',
-      () {
-        final tiptap = jsonEncode({
-          'type': 'doc',
-          'content': [
-            {
-              'type': 'paragraph',
-              'content': [
-                {
-                  'type': 'mention',
-                  'attrs': {'displayName': 'Sam'},
-                },
-              ],
-            },
-            {
-              'type': 'table',
-              'content': [
-                {
-                  'type': 'tableRow',
-                  'content': [
-                    {
-                      'type': 'tableHeader',
-                      'content': [
-                        {
-                          'type': 'paragraph',
-                          'content': [
-                            {'type': 'text', 'text': 'A'},
-                          ],
-                        },
-                      ],
-                    },
-                    {
-                      'type': 'tableHeader',
-                      'content': [
-                        {
-                          'type': 'paragraph',
-                          'content': [
-                            {'type': 'text', 'text': 'B'},
-                          ],
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        });
+    test('maps TipTap mention into a Quill inline embed '
+        'and table into a block embed', () {
+      final tiptap = jsonEncode({
+        'type': 'doc',
+        'content': [
+          {
+            'type': 'paragraph',
+            'content': [
+              {
+                'type': 'mention',
+                'attrs': {'displayName': 'Sam'},
+              },
+            ],
+          },
+          {
+            'type': 'table',
+            'content': [
+              {
+                'type': 'tableRow',
+                'content': [
+                  {
+                    'type': 'tableHeader',
+                    'content': [
+                      {
+                        'type': 'paragraph',
+                        'content': [
+                          {'type': 'text', 'text': 'A'},
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    'type': 'tableHeader',
+                    'content': [
+                      {
+                        'type': 'paragraph',
+                        'content': [
+                          {'type': 'text', 'text': 'B'},
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
 
-        final document = tipTapJsonToQuillDocument(tiptap);
-        final ops = document.toDelta().toJson();
+      final document = tipTapJsonToQuillDocument(tiptap);
+      final ops = document.toDelta().toJson();
 
-        // Mention must be a Quill embed with the attrs JSON, not plain @Sam.
-        final hasMentionEmbed = ops.any(
-          (op) =>
-              op['insert'] is Map &&
-              (op['insert'] as Map).containsKey('mention'),
-        );
-        expect(hasMentionEmbed, isTrue);
-        // The mention embed must carry the original displayName.
-        final mentionOp = ops.firstWhere(
-          (op) =>
-              op['insert'] is Map &&
-              (op['insert'] as Map).containsKey('mention'),
-        );
-        final mentionJson =
-            jsonDecode((mentionOp['insert'] as Map)['mention'] as String)
-                as Map<String, dynamic>;
-        expect(mentionJson['displayName'], equals('Sam'));
+      // Mention must be a Quill embed with the attrs JSON, not plain @Sam.
+      final hasMentionEmbed = ops.any(
+        (op) =>
+            op['insert'] is Map && (op['insert'] as Map).containsKey('mention'),
+      );
+      expect(hasMentionEmbed, isTrue);
+      // The mention embed must carry the original displayName.
+      final mentionOp = ops.firstWhere(
+        (op) =>
+            op['insert'] is Map && (op['insert'] as Map).containsKey('mention'),
+      );
+      final mentionJson =
+          jsonDecode((mentionOp['insert'] as Map)['mention'] as String)
+              as Map<String, dynamic>;
+      expect(mentionJson['displayName'], equals('Sam'));
 
-        // Table must be a Quill block embed, not pipe-delimited plain text.
-        final hasTableEmbed = ops.any(
-          (op) =>
-              op['insert'] is Map && (op['insert'] as Map).containsKey('table'),
-        );
-        expect(hasTableEmbed, isTrue);
-      },
-    );
+      // Table must be a Quill block embed, not pipe-delimited plain text.
+      final hasTableEmbed = ops.any(
+        (op) =>
+            op['insert'] is Map && (op['insert'] as Map).containsKey('table'),
+      );
+      expect(hasTableEmbed, isTrue);
+    });
 
     test('maps TipTap video blocks into a Quill video embed', () {
       final tiptap = jsonEncode({
@@ -361,10 +356,7 @@ void main() {
       expect(parentItems.length, 1);
       final parentItemContent = (parentItems.first['content'] as List)
           .cast<Map<String, dynamic>>();
-      expect(
-        parentItemContent.any((n) => n['type'] == 'bulletList'),
-        isTrue,
-      );
+      expect(parentItemContent.any((n) => n['type'] == 'bulletList'), isTrue);
     });
 
     test('keeps indented Quill content when indentation skips a level', () {
@@ -601,14 +593,11 @@ void main() {
 
     test('preserves underline/script/highlight marks when serializing', () {
       final delta = Delta()
-        ..insert(
-          'Rich',
-          {
-            'underline': true,
-            'script': 'super',
-            'background': '#ff0',
-          },
-        )
+        ..insert('Rich', {
+          'underline': true,
+          'script': 'super',
+          'background': '#ff0',
+        })
         ..insert('\n');
       final document = Document.fromDelta(delta);
 
@@ -931,10 +920,7 @@ void main() {
               as Map<String, dynamic>)['text'];
       expect(editedCellText, equals('Cell A1 Edited'));
 
-      expect(
-        content.any((node) => node['type'] == 'paragraph'),
-        isTrue,
-      );
+      expect(content.any((node) => node['type'] == 'paragraph'), isTrue);
     });
 
     test(

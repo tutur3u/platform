@@ -42,11 +42,7 @@ class RequestStatusBadge extends StatelessWidget {
 }
 
 class RequestInfoRow extends StatelessWidget {
-  const RequestInfoRow({
-    required this.label,
-    required this.value,
-    super.key,
-  });
+  const RequestInfoRow({required this.label, required this.value, super.key});
 
   final String label;
   final String value;

@@ -84,10 +84,7 @@ class _ListViewAssigneeAvatar extends StatelessWidget {
         height: 24,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(
-            color: theme.colorScheme.card,
-            width: 2,
-          ),
+          border: Border.all(color: theme.colorScheme.card, width: 2),
         ),
         child: ClipOval(
           child: Image.network(
@@ -117,10 +114,7 @@ class _ListViewAssigneeAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: avatarColor,
-        border: Border.all(
-          color: theme.colorScheme.card,
-          width: 2,
-        ),
+        border: Border.all(color: theme.colorScheme.card, width: 2),
       ),
       child: Center(
         child: Text(

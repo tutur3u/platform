@@ -48,10 +48,8 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
   late final TaskPortfolioPermissionsController _permissionsController;
   late final TaskRepository _taskRepository;
 
-  TaskPortfolioActions get _actions => TaskPortfolioActions(
-    context: context,
-    taskRepository: _taskRepository,
-  );
+  TaskPortfolioActions get _actions =>
+      TaskPortfolioActions(context: context, taskRepository: _taskRepository);
 
   AuthCubit? _authCubitOrNull() {
     try {
@@ -255,9 +253,8 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
             ),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => context.push(
-                Routes.taskPortfolioProjectPath(project.id),
-              ),
+              onTap: () =>
+                  context.push(Routes.taskPortfolioProjectPath(project.id)),
               child: TaskProjectCard(
                 project: project,
                 onEdit: () => _openEditProject(project),

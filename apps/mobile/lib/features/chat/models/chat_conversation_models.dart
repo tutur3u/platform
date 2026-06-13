@@ -138,10 +138,7 @@ class ChatConversation extends Equatable {
 }
 
 class ChatConversationPage extends Equatable {
-  const ChatConversationPage({
-    required this.conversations,
-    this.nextOffset,
-  });
+  const ChatConversationPage({required this.conversations, this.nextOffset});
 
   factory ChatConversationPage.fromJson(Map<String, dynamic> json) {
     return ChatConversationPage(

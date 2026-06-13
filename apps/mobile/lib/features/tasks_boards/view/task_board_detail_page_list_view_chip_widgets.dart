@@ -15,10 +15,7 @@ class _MetadataChip extends StatelessWidget {
         children: [
           Icon(icon, size: 12, color: theme.colorScheme.mutedForeground),
           const shad.Gap(3),
-          Text(
-            label,
-            style: theme.typography.small.copyWith(fontSize: 11),
-          ),
+          Text(label, style: theme.typography.small.copyWith(fontSize: 11)),
         ],
       ),
     );
@@ -44,10 +41,7 @@ class _ProjectChip extends StatelessWidget {
             color: theme.colorScheme.mutedForeground,
           ),
           const shad.Gap(3),
-          Text(
-            label,
-            style: theme.typography.small.copyWith(fontSize: 11),
-          ),
+          Text(label, style: theme.typography.small.copyWith(fontSize: 11)),
         ],
       ),
     );
@@ -119,10 +113,7 @@ class _CompactLabelChip extends StatelessWidget {
 
     if (color == null) {
       return shad.OutlineBadge(
-        child: Text(
-          resolvedLabel,
-          style: const TextStyle(fontSize: 10),
-        ),
+        child: Text(resolvedLabel, style: const TextStyle(fontSize: 10)),
       );
     }
 
@@ -216,17 +207,9 @@ class _DueDateDisplay extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (isOverdue && !isCompleted) ...[
-          Icon(
-            Icons.error_outline,
-            size: 12,
-            color: color,
-          ),
+          Icon(Icons.error_outline, size: 12, color: color),
         ] else
-          Icon(
-            Icons.calendar_today_outlined,
-            size: 12,
-            color: color,
-          ),
+          Icon(Icons.calendar_today_outlined, size: 12, color: color),
         const shad.Gap(4),
         Flexible(
           child: Text(

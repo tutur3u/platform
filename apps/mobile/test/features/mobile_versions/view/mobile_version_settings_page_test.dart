@@ -122,9 +122,9 @@ void main() {
           isCreator: false,
         ),
       );
-      when(() => policyRepository.getPolicies()).thenAnswer(
-        (_) async => initialPolicies,
-      );
+      when(
+        () => policyRepository.getPolicies(),
+      ).thenAnswer((_) async => initialPolicies);
       when(() => policyRepository.updatePolicies(any())).thenAnswer(
         (invocation) async =>
             (invocation.positionalArguments.first as MobileVersionPolicies)

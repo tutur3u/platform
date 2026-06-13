@@ -70,10 +70,7 @@ extension _TaskPlanningActions on _TaskPlanningViewState {
         );
       case _TaskPlanningTab.projects:
       case _TaskPlanningTab.initiatives:
-        await context.read<TaskPortfolioCubit>().load(
-          wsId,
-          forceRefresh: true,
-        );
+        await context.read<TaskPortfolioCubit>().load(wsId, forceRefresh: true);
     }
   }
 

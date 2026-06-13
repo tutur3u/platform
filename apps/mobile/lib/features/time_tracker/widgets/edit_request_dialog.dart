@@ -240,9 +240,8 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
 
       shad.showToast(
         context: toastContext,
-        builder: (context, overlay) => shad.Alert(
-          title: Text(context.l10n.timerRequestUpdated),
-        ),
+        builder: (context, overlay) =>
+            shad.Alert(title: Text(context.l10n.timerRequestUpdated)),
       );
     } on ApiException catch (e) {
       if (!mounted) {
@@ -305,13 +304,7 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
     if (time == null) return;
 
     onChanged(
-      DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time.hour,
-        time.minute,
-      ),
+      DateTime(date.year, date.month, date.day, time.hour, time.minute),
     );
   }
 }

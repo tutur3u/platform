@@ -16,9 +16,7 @@ class _TransactionAttachmentDraft {
   final PlatformFile file;
   final _TransactionAttachmentStatus status;
 
-  _TransactionAttachmentDraft copyWith({
-    _TransactionAttachmentStatus? status,
-  }) {
+  _TransactionAttachmentDraft copyWith({_TransactionAttachmentStatus? status}) {
     return _TransactionAttachmentDraft(
       id: id,
       file: file,
@@ -42,10 +40,7 @@ String _formatAttachmentSize(int bytes) {
 }
 
 class _FormSectionCard extends StatelessWidget {
-  const _FormSectionCard({
-    required this.title,
-    required this.child,
-  });
+  const _FormSectionCard({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -64,9 +59,9 @@ class _FormSectionCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: shad.Theme.of(context).typography.small.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: shad.Theme.of(
+                    context,
+                  ).typography.small.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
             ],
@@ -275,10 +270,7 @@ class _TransactionAttachmentTile extends StatelessWidget {
 }
 
 class _ModeSelectorCard extends StatelessWidget {
-  const _ModeSelectorCard({
-    required this.isTransfer,
-    required this.onChanged,
-  });
+  const _ModeSelectorCard({required this.isTransfer, required this.onChanged});
 
   final bool isTransfer;
   final ValueChanged<bool> onChanged;
@@ -527,11 +519,7 @@ class _PrimaryAmountComposer extends StatelessWidget {
               ),
               if (chips.isNotEmpty) ...[
                 const shad.Gap(12),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: chips,
-                ),
+                Wrap(spacing: 6, runSpacing: 6, children: chips),
               ],
             ],
           ),
@@ -1167,9 +1155,7 @@ class _WalletPickerDialogState extends State<_WalletPickerDialog> {
             onChanged: (_) => setState(() {}),
             placeholder: Text(context.l10n.financeSearchWallets),
             features: const [
-              shad.InputFeature.leading(
-                Icon(Icons.search_rounded, size: 18),
-              ),
+              shad.InputFeature.leading(Icon(Icons.search_rounded, size: 18)),
             ],
           ),
           const shad.Gap(12),
@@ -1313,9 +1299,7 @@ class _CategoryPickerDialogState extends State<_CategoryPickerDialog> {
             onChanged: (_) => setState(() {}),
             placeholder: Text(context.l10n.financeSearchCategories),
             features: const [
-              shad.InputFeature.leading(
-                Icon(Icons.search_rounded, size: 18),
-              ),
+              shad.InputFeature.leading(Icon(Icons.search_rounded, size: 18)),
             ],
           ),
           const shad.Gap(12),
@@ -1430,9 +1414,7 @@ class _CategoryPickerTile extends StatelessWidget {
 }
 
 class _PickerSectionHeader extends StatelessWidget {
-  const _PickerSectionHeader({
-    required this.title,
-  });
+  const _PickerSectionHeader({required this.title});
 
   final String title;
 
@@ -1481,11 +1463,7 @@ class _PickerEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 28,
-              color: theme.colorScheme.mutedForeground,
-            ),
+            Icon(icon, size: 28, color: theme.colorScheme.mutedForeground),
             const shad.Gap(10),
             Text(
               title,
@@ -1934,10 +1912,7 @@ class _FormToggleTile extends StatelessWidget {
             ),
           ),
           const shad.Gap(10),
-          shad.Switch(
-            value: value,
-            onChanged: onChanged,
-          ),
+          shad.Switch(value: value, onChanged: onChanged),
         ],
       ),
     );

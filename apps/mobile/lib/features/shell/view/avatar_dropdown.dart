@@ -81,9 +81,8 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
       }
       shad.showToast(
         context: toastContext,
-        builder: (toastContext, _) => shad.Alert(
-          title: Text(toastContext.l10n.authNoStoredAccounts),
-        ),
+        builder: (toastContext, _) =>
+            shad.Alert(title: Text(toastContext.l10n.authNoStoredAccounts)),
       );
       return;
     }

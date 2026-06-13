@@ -24,10 +24,7 @@ class AssistantLiveSeedPart extends Equatable {
 }
 
 class AssistantLiveSeedContent extends Equatable {
-  const AssistantLiveSeedContent({
-    required this.role,
-    required this.parts,
-  });
+  const AssistantLiveSeedContent({required this.role, required this.parts});
 
   factory AssistantLiveSeedContent.fromJson(Map<String, dynamic> json) =>
       AssistantLiveSeedContent(

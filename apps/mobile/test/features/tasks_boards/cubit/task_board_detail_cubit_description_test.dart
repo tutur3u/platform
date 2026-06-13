@@ -22,9 +22,9 @@ void main() {
       repository = _MockTaskRepository();
       cubit = TaskBoardDetailCubit(taskRepository: repository);
 
-      when(() => repository.getTaskBoardDetail('ws-1', 'board-1')).thenAnswer(
-        (_) async => boardDetail,
-      );
+      when(
+        () => repository.getTaskBoardDetail('ws-1', 'board-1'),
+      ).thenAnswer((_) async => boardDetail);
       when(
         () => repository.updateBoardTask(
           wsId: any(named: 'wsId'),
@@ -136,10 +136,7 @@ void main() {
     test(
       'skips dedicated description endpoint when description is unchanged',
       () async {
-        await cubit.updateTask(
-          taskId: 'task-1',
-          name: 'Task updated',
-        );
+        await cubit.updateTask(taskId: 'task-1', name: 'Task updated');
 
         verifyNever(
           () => repository.updateTaskDescription(

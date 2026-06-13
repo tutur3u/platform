@@ -62,9 +62,7 @@ class _SettingsWorkspaceMembersViewState
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final horizontalPadding = ResponsivePadding.horizontal(
-      context.deviceClass,
-    );
+    final horizontalPadding = ResponsivePadding.horizontal(context.deviceClass);
     final activeMembers = _members.where((member) => !member.pending).toList();
     final pendingMembers = _members.where((member) => member.pending).toList();
 
@@ -592,10 +590,7 @@ class _InviteLinkEditorPageState extends State<_InviteLinkEditorPage> {
 }
 
 class _MemberCard extends StatelessWidget {
-  const _MemberCard({
-    required this.member,
-    this.onRemove,
-  });
+  const _MemberCard({required this.member, this.onRemove});
 
   final WorkspaceMemberListItem member;
   final VoidCallback? onRemove;
@@ -707,9 +702,9 @@ class _InviteLinkCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   link.code,
-                  style: shad.Theme.of(context).typography.small.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: shad.Theme.of(
+                    context,
+                  ).typography.small.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
               _StatusChip(label: status),

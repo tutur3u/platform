@@ -103,9 +103,7 @@ class _TaskBoardDescriptionAccordion extends StatelessWidget {
 }
 
 class _TaskBoardDescriptionDocument extends StatelessWidget {
-  const _TaskBoardDescriptionDocument({
-    required this.description,
-  });
+  const _TaskBoardDescriptionDocument({required this.description});
 
   final ParsedTipTapDescription description;
 
@@ -117,8 +115,6 @@ class _TaskBoardDescriptionDocument extends StatelessWidget {
         ? normalizedRawJson
         : description.markdown;
 
-    return TaskDescriptionViewer(
-      descriptionJson: descriptionPayload,
-    );
+    return TaskDescriptionViewer(descriptionJson: descriptionPayload);
   }
 }

@@ -67,9 +67,8 @@ class _PomodoroSettingsDialogState extends State<PomodoroSettingsDialog> {
             max: 15,
             suffix: l10n.settingsMinutesUnit,
             onChanged: (v) => setState(
-              () => _settings = _settings.copyWith(
-                shortBreakMinutes: v.round(),
-              ),
+              () =>
+                  _settings = _settings.copyWith(shortBreakMinutes: v.round()),
             ),
           ),
           _SliderSetting(

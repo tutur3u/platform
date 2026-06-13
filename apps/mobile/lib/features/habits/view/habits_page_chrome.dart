@@ -27,11 +27,7 @@ class HabitsSummaryHeader extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final gradient = isDark
-        ? const [
-            Color(0xFF182332),
-            Color(0xFF171B29),
-            Color(0xFF143130),
-          ]
+        ? const [Color(0xFF182332), Color(0xFF171B29), Color(0xFF143130)]
         : [
             const Color(0xFFFFF2DF),
             colorScheme.surface,
@@ -80,24 +76,17 @@ class HabitsSummaryHeader extends StatelessWidget {
                       color: colorScheme.surface.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      leadingIcon,
-                      size: 18,
-                      color: titleColor,
-                    ),
+                    child: Icon(leadingIcon, size: 18, color: titleColor),
                   ),
                   const SizedBox(width: 10),
                 ],
                 Expanded(
                   child: Text(
                     title!,
-                    style:
-                        Theme.of(
-                          context,
-                        ).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: titleColor,
-                        ),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: titleColor,
+                    ),
                   ),
                 ),
               ],
@@ -251,10 +240,7 @@ class HabitsSearchField extends StatelessWidget {
                 onChanged: onChanged,
               ),
             )
-          : const SizedBox(
-              key: ValueKey('habits-search-hidden'),
-              height: 12,
-            ),
+          : const SizedBox(key: ValueKey('habits-search-hidden'), height: 12),
     );
   }
 }
@@ -354,14 +340,11 @@ class _SummaryMetric extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             value,
-            style:
-                Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 26,
-                  color: highlighted ? colorScheme.onSurface : null,
-                ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              fontSize: 26,
+              color: highlighted ? colorScheme.onSurface : null,
+            ),
           ),
         ],
       ),

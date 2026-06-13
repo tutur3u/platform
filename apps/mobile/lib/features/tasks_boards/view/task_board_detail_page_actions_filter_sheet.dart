@@ -70,35 +70,31 @@ class _TaskBoardAdvancedFilterSheetState
         )
         .toList(growable: false);
     final statusOptions = availableStatuses
-        .map(
-          (status) {
-            final badge = _taskBoardListStatusBadgeColors(context, status);
-            return _FilterMenuOption(
-              id: status,
-              label: _taskBoardListStatusLabel(context, status),
-              kind: _FilterMenuOptionKind.status,
-              foreground: badge.textColor,
-              background: badge.backgroundColor,
-              border: badge.borderColor,
-            );
-          },
-        )
+        .map((status) {
+          final badge = _taskBoardListStatusBadgeColors(context, status);
+          return _FilterMenuOption(
+            id: status,
+            label: _taskBoardListStatusLabel(context, status),
+            kind: _FilterMenuOptionKind.status,
+            foreground: badge.textColor,
+            background: badge.backgroundColor,
+            border: badge.borderColor,
+          );
+        })
         .toList(growable: false);
     final priorityOptions = _priorityOptions
-        .map(
-          (priority) {
-            final style = _taskPriorityStyle(context, priority);
-            return _FilterMenuOption(
-              id: priority,
-              label: style.label,
-              icon: style.icon,
-              kind: _FilterMenuOptionKind.priority,
-              foreground: style.foreground,
-              background: style.background,
-              border: style.border,
-            );
-          },
-        )
+        .map((priority) {
+          final style = _taskPriorityStyle(context, priority);
+          return _FilterMenuOption(
+            id: priority,
+            label: style.label,
+            icon: style.icon,
+            kind: _FilterMenuOptionKind.priority,
+            foreground: style.foreground,
+            background: style.background,
+            border: style.border,
+          );
+        })
         .toList(growable: false);
     final assigneeOptions = widget.members
         .map(
@@ -143,9 +139,9 @@ class _TaskBoardAdvancedFilterSheetState
                   Expanded(
                     child: Text(
                       context.l10n.taskBoardDetailFilters,
-                      style: shad.Theme.of(context).typography.large.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: shad.Theme.of(
+                        context,
+                      ).typography.large.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
                   shad.IconButton.ghost(

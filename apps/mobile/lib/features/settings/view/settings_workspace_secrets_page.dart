@@ -86,9 +86,7 @@ class _SettingsWorkspaceSecretsPageState
 
   @override
   Widget build(BuildContext context) {
-    final horizontalPadding = ResponsivePadding.horizontal(
-      context.deviceClass,
-    );
+    final horizontalPadding = ResponsivePadding.horizontal(context.deviceClass);
     final workspace = context.watch<WorkspaceCubit>().state.currentWorkspace;
     final filteredSecrets = _filteredSecrets;
 
@@ -498,10 +496,8 @@ class _SettingsWorkspaceSecretsPageState
         cancelLabel: context.l10n.commonCancel,
         confirmLabel: context.l10n.settingsWorkspaceSecretsDeleteTitle,
         toastContext: context,
-        onConfirm: () => _repository.deleteSecret(
-          wsId: workspaceId,
-          secretId: secret.id!,
-        ),
+        onConfirm: () =>
+            _repository.deleteSecret(wsId: workspaceId, secretId: secret.id!),
       ),
     );
 

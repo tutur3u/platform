@@ -36,10 +36,7 @@ class _TaskMetadataRow extends StatelessWidget {
       chips
         ..add(const shad.Gap(6))
         ..add(
-          _MetadataChip(
-            icon: Icons.timer_outlined,
-            label: estimationLabel,
-          ),
+          _MetadataChip(icon: Icons.timer_outlined, label: estimationLabel),
         );
     }
 
@@ -117,9 +114,7 @@ class _TaskMetadataRow extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: metadataWidgets,
-      ),
+      child: Row(children: metadataWidgets),
     );
   }
 }

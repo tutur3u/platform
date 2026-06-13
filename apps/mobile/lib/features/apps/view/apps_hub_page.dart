@@ -16,10 +16,7 @@ import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppsHubPage extends StatefulWidget {
-  const AppsHubPage({
-    this.replayToken = 0,
-    super.key,
-  });
+  const AppsHubPage({this.replayToken = 0, super.key});
 
   final int replayToken;
 
@@ -131,9 +128,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
       'crm',
     ];
 
-    final moduleById = {
-      for (final module in modules) module.id: module,
-    };
+    final moduleById = {for (final module in modules) module.id: module};
     final ordered = <AppModule>[];
     final seen = <String>{};
 
@@ -221,11 +216,7 @@ class _AppEditorialCard extends StatelessWidget {
                     color: palette.iconBackground,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: Icon(
-                    module.icon,
-                    color: palette.iconColor,
-                    size: 28,
-                  ),
+                  child: Icon(module.icon, color: palette.iconColor, size: 28),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

@@ -10,10 +10,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 /// Supports: headings, lists, task lists, tables, mentions, images, videos,
 /// code blocks, blockquotes, and all inline formatting.
 class TaskDescriptionViewer extends StatefulWidget {
-  const TaskDescriptionViewer({
-    required this.descriptionJson,
-    super.key,
-  });
+  const TaskDescriptionViewer({required this.descriptionJson, super.key});
 
   /// The TipTap JSON description string.
   final String descriptionJson;

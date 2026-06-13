@@ -102,9 +102,7 @@ class WorkspaceManagementRepository {
     if (toAdd.isNotEmpty) {
       await _api.postJson(
         WorkspaceSettingsEndpoints.roleMembers(wsId, roleId),
-        {
-          'memberIds': toAdd,
-        },
+        {'memberIds': toAdd},
       );
     }
 
@@ -140,11 +138,7 @@ class WorkspaceManagementRepository {
     String? email,
   }) async {
     await _api.deleteJson(
-      WorkspaceSettingsEndpoints.members(
-        wsId,
-        userId: userId,
-        email: email,
-      ),
+      WorkspaceSettingsEndpoints.members(wsId, userId: userId, email: email),
     );
   }
 

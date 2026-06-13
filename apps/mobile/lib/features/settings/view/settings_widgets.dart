@@ -346,11 +346,7 @@ class SettingsWorkspaceSection extends StatelessWidget {
 }
 
 class SettingsMetaChip extends StatelessWidget {
-  const SettingsMetaChip({
-    required this.label,
-    required this.value,
-    super.key,
-  });
+  const SettingsMetaChip({required this.label, required this.value, super.key});
 
   final String label;
   final String value;

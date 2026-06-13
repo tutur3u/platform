@@ -3,11 +3,7 @@ import 'package:equatable/equatable.dart';
 const _appNotificationSentinel = Object();
 
 class NotificationActor extends Equatable {
-  const NotificationActor({
-    required this.id,
-    this.displayName,
-    this.avatarUrl,
-  });
+  const NotificationActor({required this.id, this.displayName, this.avatarUrl});
 
   factory NotificationActor.fromJson(Map<String, dynamic> json) {
     return NotificationActor(

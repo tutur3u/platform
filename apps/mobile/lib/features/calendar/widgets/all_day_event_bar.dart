@@ -95,9 +95,9 @@ class _AllDayEventBarState extends State<AllDayEventBar> {
                   _expanded
                       ? '- Show less'
                       : '+${widget.events.length - 3} more',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.primary,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelSmall?.copyWith(color: colorScheme.primary),
                 ),
               ),
             ),

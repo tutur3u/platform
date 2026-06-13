@@ -78,9 +78,7 @@ void main() {
       () => apiClient.getJson(any()),
     ).thenThrow(const ApiException(message: 'not needed', statusCode: 500));
 
-    when(
-      () => secureStorage.read(key: any(named: 'key')),
-    ).thenAnswer(
+    when(() => secureStorage.read(key: any(named: 'key'))).thenAnswer(
       (invocation) async =>
           secureStorageValues[invocation.namedArguments[#key] as String],
     );
@@ -98,9 +96,9 @@ void main() {
         secureStorageValues[key] = value;
       }
     });
-    when(
-      () => secureStorage.delete(key: any(named: 'key')),
-    ).thenAnswer((invocation) async {
+    when(() => secureStorage.delete(key: any(named: 'key'))).thenAnswer((
+      invocation,
+    ) async {
       secureStorageValues.remove(invocation.namedArguments[#key] as String);
     });
 
@@ -112,39 +110,36 @@ void main() {
     );
   });
 
-  test(
-    'syncCurrentSessionToMultiAccountStore keeps '
-    'active account valid after trim',
-    () async {
-      secureStorageValues[StorageKeys.multiAccountStore] = jsonEncode({
-        'version': 1,
-        'activeAccountId': 'evicted-active',
-        'accounts': [
-          _storedAccount(id: 'evicted-active', lastActiveAt: 10),
-          _storedAccount(id: 'user-a', lastActiveAt: 50),
-          _storedAccount(id: 'user-b', lastActiveAt: 40),
-          _storedAccount(id: 'user-c', lastActiveAt: 30),
-          _storedAccount(id: 'user-d', lastActiveAt: 20),
-        ],
-      });
+  test('syncCurrentSessionToMultiAccountStore keeps '
+      'active account valid after trim', () async {
+    secureStorageValues[StorageKeys.multiAccountStore] = jsonEncode({
+      'version': 1,
+      'activeAccountId': 'evicted-active',
+      'accounts': [
+        _storedAccount(id: 'evicted-active', lastActiveAt: 10),
+        _storedAccount(id: 'user-a', lastActiveAt: 50),
+        _storedAccount(id: 'user-b', lastActiveAt: 40),
+        _storedAccount(id: 'user-c', lastActiveAt: 30),
+        _storedAccount(id: 'user-d', lastActiveAt: 20),
+      ],
+    });
 
-      await service.syncCurrentSessionToMultiAccountStore(
-        switchImmediately: false,
-      );
+    await service.syncCurrentSessionToMultiAccountStore(
+      switchImmediately: false,
+    );
 
-      final raw = secureStorageValues[StorageKeys.multiAccountStore];
-      expect(raw, isNotNull);
-      final decoded = jsonDecode(raw!) as Map<String, dynamic>;
-      final accounts = decoded['accounts'] as List<dynamic>;
-      final activeAccountId = decoded['activeAccountId'] as String?;
+    final raw = secureStorageValues[StorageKeys.multiAccountStore];
+    expect(raw, isNotNull);
+    final decoded = jsonDecode(raw!) as Map<String, dynamic>;
+    final accounts = decoded['accounts'] as List<dynamic>;
+    final activeAccountId = decoded['activeAccountId'] as String?;
 
-      expect(accounts.length, 5);
-      final hasActiveAccount = accounts.whereType<Map<String, dynamic>>().any(
-        (account) => account['id'] == activeAccountId,
-      );
-      expect(hasActiveAccount, isTrue);
-    },
-  );
+    expect(accounts.length, 5);
+    final hasActiveAccount = accounts.whereType<Map<String, dynamic>>().any(
+      (account) => account['id'] == activeAccountId,
+    );
+    expect(hasActiveAccount, isTrue);
+  });
 
   test(
     'removeStoredAccount signs out Google when removing final account',
@@ -224,31 +219,28 @@ void main() {
     },
   );
 
-  test(
-    'signOutAllAccounts keeps store when Supabase sign-out fails',
-    () async {
-      secureStorageValues[StorageKeys.multiAccountStore] = jsonEncode({
-        'version': 1,
-        'activeAccountId': 'user-a',
-        'accounts': [
-          _storedAccount(id: 'user-a', lastActiveAt: 100, refreshToken: ''),
-          _storedAccount(id: 'user-b', lastActiveAt: 90, refreshToken: ''),
-        ],
-      });
-      when(
-        () => goTrueClient.signOut(),
-      ).thenThrow(const AuthException('sign-out failed'));
+  test('signOutAllAccounts keeps store when Supabase sign-out fails', () async {
+    secureStorageValues[StorageKeys.multiAccountStore] = jsonEncode({
+      'version': 1,
+      'activeAccountId': 'user-a',
+      'accounts': [
+        _storedAccount(id: 'user-a', lastActiveAt: 100, refreshToken: ''),
+        _storedAccount(id: 'user-b', lastActiveAt: 90, refreshToken: ''),
+      ],
+    });
+    when(
+      () => goTrueClient.signOut(),
+    ).thenThrow(const AuthException('sign-out failed'));
 
-      final result = await service.signOutAllAccounts();
+    final result = await service.signOutAllAccounts();
 
-      expect(result.success, isFalse);
-      expect(result.error, 'sign-out failed');
-      expect(
-        secureStorageValues.containsKey(StorageKeys.multiAccountStore),
-        isTrue,
-      );
-      verify(() => goTrueClient.signOut()).called(1);
-      verify(() => googleIdentityClient.signOut()).called(1);
-    },
-  );
+    expect(result.success, isFalse);
+    expect(result.error, 'sign-out failed');
+    expect(
+      secureStorageValues.containsKey(StorageKeys.multiAccountStore),
+      isTrue,
+    );
+    verify(() => goTrueClient.signOut()).called(1);
+    verify(() => googleIdentityClient.signOut()).called(1);
+  });
 }

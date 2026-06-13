@@ -319,9 +319,7 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
                           readOnly: true,
                           onTap: _pickDate,
                           decoration: const InputDecoration(
-                            suffixIcon: Icon(
-                              Icons.calendar_today_outlined,
-                            ),
+                            suffixIcon: Icon(Icons.calendar_today_outlined),
                           ),
                         ),
                       ),
@@ -433,20 +431,13 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
                             .map(
                               (value) => DropdownMenuItem(
                                 value: value,
-                                child: Text(
-                                  _aggregationLabel(
-                                    context,
-                                    value,
-                                  ),
-                                ),
+                                child: Text(_aggregationLabel(context, value)),
                               ),
                             )
                             .toList(growable: false),
                         onChanged: (value) {
                           if (value != null) {
-                            setState(
-                              () => _aggregationStrategy = value,
-                            );
+                            setState(() => _aggregationStrategy = value);
                           }
                         },
                       ),
@@ -538,9 +529,7 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
             subtitle: l10n.habitsPrimaryMetricLabel,
             action: shad.OutlineButton(
               onPressed: () {
-                setState(
-                  () => _showAdvancedFields = !_showAdvancedFields,
-                );
+                setState(() => _showAdvancedFields = !_showAdvancedFields);
               },
               child: Text(
                 _showAdvancedFields
@@ -583,9 +572,7 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
                           _fields[index] = next;
                           if (!next.manualKey) {
                             _fields[index] = _fields[index].copyWith(
-                              key: slugifyHabitFieldKey(
-                                next.label,
-                              ),
+                              key: slugifyHabitFieldKey(next.label),
                             );
                           }
                           if (!_fields.any(
@@ -874,9 +861,9 @@ class _FormPreviewCard extends StatelessWidget {
                       trackerName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: shad.Theme.of(context).typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: shad.Theme.of(
+                        context,
+                      ).typography.large.copyWith(fontWeight: FontWeight.w800),
                     ),
                     if (description.trim().isNotEmpty) ...[
                       const SizedBox(height: 4),
@@ -1062,11 +1049,8 @@ class _TemplateChooser extends StatelessWidget {
                           border: Border.all(
                             color: selected
                                 ? accent.withValues(alpha: 0.34)
-                                : Theme.of(
-                                    context,
-                                  ).colorScheme.outlineVariant.withValues(
-                                    alpha: 0.7,
-                                  ),
+                                : Theme.of(context).colorScheme.outlineVariant
+                                      .withValues(alpha: 0.7),
                           ),
                         ),
                         child: Row(

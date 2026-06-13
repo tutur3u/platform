@@ -163,10 +163,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                l10n.timerAddMissedEntry,
-                style: theme.typography.h3,
-              ),
+              Text(l10n.timerAddMissedEntry, style: theme.typography.h3),
               const shad.Gap(24),
               shad.FormField(
                 key: const shad.FormKey<String>(#missedEntryTitle),
@@ -242,16 +239,12 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                   decoration: BoxDecoration(
                     color: warningBackgroundColor,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: warningBorderColor,
-                    ),
+                    border: Border.all(color: warningBorderColor),
                   ),
                   child: Text(
                     widget.thresholdDays == 0
                         ? l10n.timerThresholdWarningAll
-                        : l10n.timerThresholdWarning(
-                            widget.thresholdDays ?? 0,
-                          ),
+                        : l10n.timerThresholdWarning(widget.thresholdDays ?? 0),
                     style: theme.typography.small.copyWith(
                       color: warningTextColor,
                     ),
@@ -709,11 +702,7 @@ class _MissedEntryDateTimeSegment extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(
-                icon,
-                size: 16,
-                color: colorScheme.primary,
-              ),
+              Icon(icon, size: 16, color: colorScheme.primary),
               const shad.Gap(8),
               Expanded(
                 child: Text(

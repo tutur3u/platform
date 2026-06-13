@@ -65,9 +65,7 @@ Widget _buildRouterApp({
 }
 
 class _NotificationsLauncher extends StatelessWidget {
-  const _NotificationsLauncher({
-    required this.cubit,
-  });
+  const _NotificationsLauncher({required this.cubit});
 
   final NotificationsCubit cubit;
 
@@ -256,10 +254,7 @@ void main() {
       addTearDown(router.dispose);
 
       await tester.pumpWidget(
-        _buildRouterApp(
-          router: router,
-          workspaceCubit: workspaceCubit,
-        ),
+        _buildRouterApp(router: router, workspaceCubit: workspaceCubit),
       );
       await tester.pump();
       await tester.pump();
@@ -287,10 +282,7 @@ void main() {
       name: 'Personal',
       personal: true,
     );
-    const teamWorkspace = Workspace(
-      id: 'team_ws',
-      name: 'Team Workspace',
-    );
+    const teamWorkspace = Workspace(id: 'team_ws', name: 'Team Workspace');
 
     setUp(() async {
       workspaceCubit = _MockWorkspaceCubit();
@@ -411,10 +403,7 @@ void main() {
 
       clearInteractions(workspaceCubit);
       await tester.pumpWidget(
-        _buildRouterApp(
-          router: taskRouter,
-          workspaceCubit: workspaceCubit,
-        ),
+        _buildRouterApp(router: taskRouter, workspaceCubit: workspaceCubit),
       );
       await tester.pumpAndSettle();
 

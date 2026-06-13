@@ -52,10 +52,7 @@ class _FieldBlock extends StatelessWidget {
 }
 
 class _HeroCard extends StatelessWidget {
-  const _HeroCard({
-    required this.title,
-    required this.description,
-  });
+  const _HeroCard({required this.title, required this.description});
 
   final String title;
   final String description;
@@ -141,10 +138,7 @@ class _MessagePanel extends StatelessWidget {
               color: theme.colorScheme.mutedForeground,
             ),
           ),
-          if (action != null) ...[
-            const shad.Gap(16),
-            action!,
-          ],
+          if (action != null) ...[const shad.Gap(16), action!],
         ],
       ),
     );
@@ -173,10 +167,7 @@ class _PlatformPoliciesGrid extends StatelessWidget {
               iosCard,
               const shad.Gap(16),
               androidCard,
-              if (webCard != null) ...[
-                const shad.Gap(16),
-                webCard!,
-              ],
+              if (webCard != null) ...[const shad.Gap(16), webCard!],
             ],
           );
         }
@@ -191,10 +182,7 @@ class _PlatformPoliciesGrid extends StatelessWidget {
                 Expanded(child: androidCard),
               ],
             ),
-            if (webCard != null) ...[
-              const shad.Gap(16),
-              webCard!,
-            ],
+            if (webCard != null) ...[const shad.Gap(16), webCard!],
           ],
         );
       },
@@ -281,10 +269,7 @@ class _PlatformPolicyCard extends StatelessWidget {
                   ),
                 ),
                 const shad.Gap(12),
-                shad.Switch(
-                  value: otpEnabled,
-                  onChanged: onOtpEnabledChanged,
-                ),
+                shad.Switch(value: otpEnabled, onChanged: onOtpEnabledChanged),
               ],
             ),
           ),
@@ -334,10 +319,7 @@ class _PlatformPolicyCard extends StatelessWidget {
 }
 
 class _WebOtpCard extends StatelessWidget {
-  const _WebOtpCard({
-    required this.enabled,
-    required this.onChanged,
-  });
+  const _WebOtpCard({required this.enabled, required this.onChanged});
 
   final bool enabled;
   final ValueChanged<bool> onChanged;
@@ -372,10 +354,7 @@ class _WebOtpCard extends StatelessWidget {
             ),
           ),
           const shad.Gap(16),
-          shad.Switch(
-            value: enabled,
-            onChanged: onChanged,
-          ),
+          shad.Switch(value: enabled, onChanged: onChanged),
         ],
       ),
     );

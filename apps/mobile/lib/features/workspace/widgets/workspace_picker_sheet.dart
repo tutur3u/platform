@@ -122,12 +122,7 @@ class _WorkspacePickerContentState extends State<_WorkspacePickerContent> {
           ),
         ),
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            18,
-            14,
-            18,
-            24 + mediaPadding.bottom,
-          ),
+          padding: EdgeInsets.fromLTRB(18, 14, 18, 24 + mediaPadding.bottom),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -366,9 +361,7 @@ class _WorkspaceSearchEmptyState extends StatelessWidget {
             Expanded(
               child: Text(
                 context.l10n.commonNoSearchResults,
-                style: theme.typography.p.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.typography.p.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
             shad.OutlineButton(
@@ -583,10 +576,7 @@ class _PickerHeaderIconButton extends StatelessWidget {
 }
 
 class _WorkspaceLimitsCard extends StatelessWidget {
-  const _WorkspaceLimitsCard({
-    required this.currentCount,
-    required this.limit,
-  });
+  const _WorkspaceLimitsCard({required this.currentCount, required this.limit});
 
   final int currentCount;
   final int limit;
@@ -604,9 +594,7 @@ class _WorkspaceLimitsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: palette.background,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: palette.border.withValues(alpha: 0.9),
-        ),
+        border: Border.all(color: palette.border.withValues(alpha: 0.9)),
         boxShadow: [
           BoxShadow(
             color: palette.shadow,
@@ -835,10 +823,7 @@ class _WorkspaceTile extends StatelessWidget {
 }
 
 class _WorkspaceLeading extends StatelessWidget {
-  const _WorkspaceLeading({
-    required this.workspace,
-    required this.size,
-  });
+  const _WorkspaceLeading({required this.workspace, required this.size});
 
   final Workspace workspace;
   final double size;
@@ -850,10 +835,7 @@ class _WorkspaceLeading extends StatelessWidget {
 }
 
 class _WorkspaceMetaChip extends StatelessWidget {
-  const _WorkspaceMetaChip({
-    required this.palette,
-    required this.label,
-  });
+  const _WorkspaceMetaChip({required this.palette, required this.label});
 
   final AppCardPalette palette;
   final String label;
@@ -883,10 +865,7 @@ class _WorkspaceMetaChip extends StatelessWidget {
 }
 
 class _WorkspaceEmptyState extends StatelessWidget {
-  const _WorkspaceEmptyState({
-    required this.canCreate,
-    required this.onCreate,
-  });
+  const _WorkspaceEmptyState({required this.canCreate, required this.onCreate});
 
   final bool canCreate;
   final VoidCallback onCreate;

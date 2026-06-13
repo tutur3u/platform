@@ -36,9 +36,7 @@ void main() {
       final firstEvents = parser.addChunk(
         utf8.encode('data: {"type":"text-delta","id":"text-1",'),
       );
-      final secondEvents = parser.addChunk(
-        utf8.encode('"delta":"Hi"}\n\n'),
-      );
+      final secondEvents = parser.addChunk(utf8.encode('"delta":"Hi"}\n\n'));
 
       expect(firstEvents, isEmpty);
       expect(secondEvents, hasLength(1));

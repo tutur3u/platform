@@ -214,10 +214,7 @@ class _TaskBoardEnhancedListViewState
             name: context.l10n.taskBoardDetailUntitledList,
           ),
     };
-    final orderedLists = [
-      ...widget.lists,
-      ...fallbackListsById.values,
-    ];
+    final orderedLists = [...widget.lists, ...fallbackListsById.values];
     final sections = <_TaskBoardListViewSection>[];
 
     for (final list in orderedLists) {
@@ -241,11 +238,7 @@ class _TaskBoardEnhancedListViewState
         }
       }
       sections.add(
-        _TaskBoardListViewSection(
-          list,
-          listTasks,
-          isCollapsed: isCollapsed,
-        ),
+        _TaskBoardListViewSection(list, listTasks, isCollapsed: isCollapsed),
       );
     }
 
@@ -334,9 +327,7 @@ class _TaskListStickySection extends StatelessWidget {
                           onToggleDone: (targetStatus) =>
                               onTaskToggleDone(tasks[index], targetStatus),
                           isBulkSelectMode: isBulkSelectMode,
-                          isSelected: selectedTaskIds.contains(
-                            tasks[index].id,
-                          ),
+                          isSelected: selectedTaskIds.contains(tasks[index].id),
                           onToggleSelected: () =>
                               onToggleTaskSelection(tasks[index]),
                         ),
@@ -402,11 +393,7 @@ class _ListSectionHeader extends StatelessWidget {
                 ),
               ),
               const shad.Gap(4),
-              Icon(
-                style.statusIcon,
-                size: 15,
-                color: style.accent,
-              ),
+              Icon(style.statusIcon, size: 15, color: style.accent),
               const shad.Gap(7),
               Expanded(
                 child: Text(

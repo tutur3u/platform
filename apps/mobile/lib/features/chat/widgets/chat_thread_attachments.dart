@@ -66,10 +66,7 @@ class _NoConversationSelected extends StatelessWidget {
 }
 
 class _ThreadEmpty extends StatelessWidget {
-  const _ThreadEmpty({
-    required this.title,
-    required this.description,
-  });
+  const _ThreadEmpty({required this.title, required this.description});
 
   final String title;
   final String description;
@@ -92,9 +89,9 @@ class _ThreadEmpty extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 6),
             Text(

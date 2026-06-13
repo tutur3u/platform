@@ -274,9 +274,8 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
       if (successMessage != null && toastContext.mounted) {
         shad.showToast(
           context: toastContext,
-          builder: (context, overlay) => shad.Alert(
-            content: Text(successMessage),
-          ),
+          builder: (context, overlay) =>
+              shad.Alert(content: Text(successMessage)),
         );
       }
     } on ApiException catch (error) {

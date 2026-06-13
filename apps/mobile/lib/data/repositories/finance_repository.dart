@@ -43,9 +43,7 @@ class FinanceRepository {
 
   static String _decodeWorkspaceCurrency(Object? json) {
     if (json is! String) {
-      throw const FormatException(
-        'Invalid workspace currency cache payload.',
-      );
+      throw const FormatException('Invalid workspace currency cache payload.');
     }
     return json.trim().toUpperCase();
   }
@@ -98,21 +96,13 @@ class FinanceRepository {
   }) async {
     final normalized = _normalizeWorkspaceCurrencyValue(currency);
     final now = DateTime.now();
-    _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(
-      wsId,
-    )] = _WorkspaceCurrencyCacheEntry(
-      currency: normalized,
-      fetchedAt: now,
-    );
+    _workspaceCurrencyCache[_workspaceCurrencyMemoryKey(wsId)] =
+        _WorkspaceCurrencyCacheEntry(currency: normalized, fetchedAt: now);
     await CacheStore.instance.write(
       key: _workspaceCurrencyCacheKey(wsId),
       policy: _workspaceCurrencyCachePolicy,
       payload: normalized,
-      tags: [
-        _workspaceCurrencyCacheTag,
-        'workspace:$wsId',
-        'module:finance',
-      ],
+      tags: [_workspaceCurrencyCacheTag, 'workspace:$wsId', 'module:finance'],
     );
   }
 
@@ -200,14 +190,9 @@ class FinanceRepository {
   }) async {
     await _api.putJson(
       FinanceEndpoints.workspaceConfig(wsId, 'DEFAULT_CURRENCY'),
-      {
-        'value': currency.trim().toUpperCase(),
-      },
+      {'value': currency.trim().toUpperCase()},
     );
-    await _storeWorkspaceDefaultCurrencyCache(
-      wsId: wsId,
-      currency: currency,
-    );
+    await _storeWorkspaceDefaultCurrencyCache(wsId: wsId, currency: currency);
   }
 
   Future<List<ExchangeRate>> getExchangeRates() async {
@@ -409,9 +394,7 @@ class FinanceRepository {
         .limit(limit + 1);
 
     return (response as List<dynamic>)
-        .map(
-          (e) => Transaction.fromJson(e as Map<String, dynamic>),
-        )
+        .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
@@ -608,22 +591,14 @@ class FinanceRepository {
     };
 
     var uploadResponse = await http
-        .put(
-          Uri.parse(signedUrl),
-          headers: headers,
-          body: bytes,
-        )
+        .put(Uri.parse(signedUrl), headers: headers, body: bytes)
         .timeout(const Duration(seconds: 60));
 
     if (uploadResponse.statusCode < 200 || uploadResponse.statusCode >= 300) {
       final fallbackHeaders = <String, String>{...headers}
         ..remove('Content-Type');
       uploadResponse = await http
-          .put(
-            Uri.parse(signedUrl),
-            headers: fallbackHeaders,
-            body: bytes,
-          )
+          .put(Uri.parse(signedUrl), headers: fallbackHeaders, body: bytes)
           .timeout(const Duration(seconds: 60));
     }
 

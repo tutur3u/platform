@@ -382,9 +382,7 @@ class _WalletDialogState extends State<WalletDialog> {
   Future<void> _pickCurrency() async {
     final selected = await showFinanceModal<String>(
       context: context,
-      builder: (_) => CurrencyPickerDialog(
-        initialCurrencyCode: _currency,
-      ),
+      builder: (_) => CurrencyPickerDialog(initialCurrencyCode: _currency),
     );
 
     if (!mounted || selected == null) {
@@ -567,10 +565,7 @@ class _WalletPreviewCard extends StatelessWidget {
             ),
           ),
           const shad.Gap(12),
-          _WalletPill(
-            label: typeLabel,
-            color: accent,
-          ),
+          _WalletPill(label: typeLabel, color: accent),
         ],
       ),
     );
@@ -825,11 +820,7 @@ class _WalletVisualSurface extends StatelessWidget {
                 const shad.Gap(8),
                 shad.GhostButton(
                   onPressed: onClear,
-                  child: Icon(
-                    Icons.close_rounded,
-                    size: 18,
-                    color: accent,
-                  ),
+                  child: Icon(Icons.close_rounded, size: 18, color: accent),
                 ),
               ],
             ],
@@ -951,10 +942,7 @@ class _WalletFieldErrorText extends StatelessWidget {
 }
 
 class _WalletPill extends StatelessWidget {
-  const _WalletPill({
-    required this.label,
-    required this.color,
-  });
+  const _WalletPill({required this.label, required this.color});
 
   final String label;
   final Color color;
@@ -969,10 +957,9 @@ class _WalletPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: shad.Theme.of(context).typography.xSmall.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
+        style: shad.Theme.of(
+          context,
+        ).typography.xSmall.copyWith(color: color, fontWeight: FontWeight.w700),
       ),
     );
   }

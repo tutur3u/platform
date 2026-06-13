@@ -27,9 +27,8 @@ Future<ImageSource?> showImageSourcePickerDialog({
             children: [
               Expanded(
                 child: shad.OutlineButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(
-                    ImageSource.camera,
-                  ),
+                  onPressed: () =>
+                      Navigator.of(dialogContext).pop(ImageSource.camera),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -43,9 +42,8 @@ Future<ImageSource?> showImageSourcePickerDialog({
               const shad.Gap(12),
               Expanded(
                 child: shad.PrimaryButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(
-                    ImageSource.gallery,
-                  ),
+                  onPressed: () =>
+                      Navigator.of(dialogContext).pop(ImageSource.gallery),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

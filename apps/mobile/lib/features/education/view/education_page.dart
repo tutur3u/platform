@@ -859,9 +859,7 @@ class _EducationPageState extends State<EducationPage> {
         ],
       ),
       const SizedBox(height: 24),
-      FinanceSectionHeader(
-        title: l10n.educationOverviewRecentCoursesTitle,
-      ),
+      FinanceSectionHeader(title: l10n.educationOverviewRecentCoursesTitle),
       const SizedBox(height: 12),
       if (_coursePreview.isEmpty)
         FinanceEmptyState(
@@ -877,9 +875,7 @@ class _EducationPageState extends State<EducationPage> {
           ),
         ),
       const SizedBox(height: 24),
-      FinanceSectionHeader(
-        title: l10n.educationOverviewRecentAttemptsTitle,
-      ),
+      FinanceSectionHeader(title: l10n.educationOverviewRecentAttemptsTitle),
       const SizedBox(height: 12),
       if (_attemptPreview.isEmpty)
         FinanceEmptyState(
@@ -1143,9 +1139,9 @@ class _EducationSummaryTile extends StatelessWidget {
             const SizedBox(height: 14),
             Text(
               NumberFormat.compact().format(value),
-              style: shad.Theme.of(context).typography.h3.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: shad.Theme.of(
+                context,
+              ).typography.h3.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 4),
             Text(
@@ -1188,9 +1184,9 @@ class _EducationBadge extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: shad.Theme.of(context).typography.small.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: shad.Theme.of(
+              context,
+            ).typography.small.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -1261,9 +1257,9 @@ class _CourseCard extends StatelessWidget {
                 children: [
                   Text(
                     course.name,
-                    style: shad.Theme.of(context).typography.large.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: shad.Theme.of(
+                      context,
+                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
                   ),
                   if (course.description?.isNotEmpty ?? false) ...[
                     const SizedBox(height: 4),
@@ -1327,11 +1323,7 @@ class _CourseCard extends StatelessWidget {
 }
 
 class _QuizSetCard extends StatelessWidget {
-  const _QuizSetCard({
-    required this.quizSet,
-    this.onEdit,
-    this.onDelete,
-  });
+  const _QuizSetCard({required this.quizSet, this.onEdit, this.onDelete});
 
   final EducationQuizSet quizSet;
   final VoidCallback? onEdit;
@@ -1364,9 +1356,9 @@ class _QuizSetCard extends StatelessWidget {
                 children: [
                   Text(
                     quizSet.name,
-                    style: shad.Theme.of(context).typography.large.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: shad.Theme.of(
+                      context,
+                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 8),
                   _EducationBadge(
@@ -1401,11 +1393,7 @@ class _QuizSetCard extends StatelessWidget {
 }
 
 class _QuizCard extends StatelessWidget {
-  const _QuizCard({
-    required this.quiz,
-    this.onEdit,
-    this.onDelete,
-  });
+  const _QuizCard({required this.quiz, this.onEdit, this.onDelete});
 
   final EducationQuiz quiz;
   final VoidCallback? onEdit;
@@ -1426,9 +1414,9 @@ class _QuizCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     quiz.question,
-                    style: shad.Theme.of(context).typography.large.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: shad.Theme.of(
+                      context,
+                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
                 PopupMenuButton<String>(
@@ -1474,11 +1462,7 @@ class _QuizCard extends StatelessWidget {
 }
 
 class _FlashcardCard extends StatelessWidget {
-  const _FlashcardCard({
-    required this.flashcard,
-    this.onEdit,
-    this.onDelete,
-  });
+  const _FlashcardCard({required this.flashcard, this.onEdit, this.onDelete});
 
   final EducationFlashcard flashcard;
   final VoidCallback? onEdit;
@@ -1498,9 +1482,9 @@ class _FlashcardCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     flashcard.front,
-                    style: shad.Theme.of(context).typography.large.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: shad.Theme.of(
+                      context,
+                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
                 PopupMenuButton<String>(
@@ -1536,10 +1520,7 @@ class _FlashcardCard extends StatelessWidget {
 }
 
 class _AttemptCard extends StatelessWidget {
-  const _AttemptCard({
-    required this.attempt,
-    required this.onTap,
-  });
+  const _AttemptCard({required this.attempt, required this.onTap});
 
   final EducationAttemptSummary attempt;
   final VoidCallback onTap;
@@ -1573,9 +1554,9 @@ class _AttemptCard extends StatelessWidget {
                 children: [
                   Text(
                     attempt.learnerName ?? attempt.learnerEmail ?? attempt.id,
-                    style: shad.Theme.of(context).typography.large.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: shad.Theme.of(
+                      context,
+                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -1688,9 +1669,9 @@ class _CourseSheetState extends State<_CourseSheet> {
         children: [
           Text(
             widget.title,
-            style: shad.Theme.of(context).typography.large.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: shad.Theme.of(
+              context,
+            ).typography.large.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -1810,9 +1791,9 @@ class _SimpleEducationSheetState extends State<_SimpleEducationSheet> {
         children: [
           Text(
             widget.title,
-            style: shad.Theme.of(context).typography.large.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: shad.Theme.of(
+              context,
+            ).typography.large.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -1953,9 +1934,9 @@ class _QuizSheetState extends State<_QuizSheet> {
         children: [
           Text(
             widget.title,
-            style: shad.Theme.of(context).typography.large.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: shad.Theme.of(
+              context,
+            ).typography.large.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -2099,9 +2080,9 @@ class _AttemptsFilterSheetState extends State<_AttemptsFilterSheet> {
         children: [
           Text(
             context.l10n.commonFilters,
-            style: shad.Theme.of(context).typography.large.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: shad.Theme.of(
+              context,
+            ).typography.large.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
@@ -2132,9 +2113,7 @@ class _AttemptsFilterSheetState extends State<_AttemptsFilterSheet> {
               labelText: context.l10n.educationAttemptQuizSetLabel,
             ),
             items: [
-              DropdownMenuItem(
-                child: Text(context.l10n.commonAll),
-              ),
+              DropdownMenuItem(child: Text(context.l10n.commonAll)),
               ...widget.sets.map(
                 (set) => DropdownMenuItem<String?>(
                   value: set.id,
@@ -2149,20 +2128,18 @@ class _AttemptsFilterSheetState extends State<_AttemptsFilterSheet> {
             children: [
               Expanded(
                 child: TextButton(
-                  onPressed: () => Navigator.of(context).pop({
-                    'status': 'all',
-                    'setId': null,
-                  }),
+                  onPressed: () => Navigator.of(
+                    context,
+                  ).pop({'status': 'all', 'setId': null}),
                   child: Text(context.l10n.educationClearFilters),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
-                  onPressed: () => Navigator.of(context).pop({
-                    'status': _status,
-                    'setId': _setId,
-                  }),
+                  onPressed: () => Navigator.of(
+                    context,
+                  ).pop({'status': _status, 'setId': _setId}),
                   child: Text(context.l10n.commonApply),
                 ),
               ),
@@ -2189,9 +2166,9 @@ class _AttemptDetailSheet extends StatelessWidget {
             detail.learner?.fullName ??
                 detail.learner?.email ??
                 detail.attempt.id,
-            style: shad.Theme.of(context).typography.h3.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: shad.Theme.of(
+              context,
+            ).typography.h3.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -2221,9 +2198,9 @@ class _AttemptDetailSheet extends StatelessWidget {
                   children: [
                     Text(
                       answer.question ?? answer.quizId,
-                      style: shad.Theme.of(context).typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: shad.Theme.of(
+                        context,
+                      ).typography.large.copyWith(fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 8),
                     if (answer.selectedOptionValue != null)

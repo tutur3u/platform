@@ -563,9 +563,7 @@ class _EntriesTab extends StatelessWidget {
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                '${block.sets} x ${block.reps}$weightLabel',
-                              ),
+                              Text('${block.sets} x ${block.reps}$weightLabel'),
                               if (block.notes?.trim().isNotEmpty == true) ...[
                                 const SizedBox(height: 4),
                                 Text(block.notes!.trim()),

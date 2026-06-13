@@ -113,11 +113,7 @@ class WorkspaceSecretsRepository {
       fetch: () async => (await _fetchSecretsRemote(
         wsId,
       )).map((secret) => secret.toJson()).toList(growable: false),
-      tags: [
-        _secretsCacheTag,
-        'workspace:$wsId',
-        'module:settings',
-      ],
+      tags: [_secretsCacheTag, 'workspace:$wsId', 'module:settings'],
     );
 
     return cached.data ?? const [];
@@ -134,11 +130,7 @@ class WorkspaceSecretsRepository {
           decode: _decodeRolloutState,
           forceRefresh: forceRefresh,
           fetch: () async => (await _fetchRolloutStateRemote(wsId)).toJson(),
-          tags: [
-            _rolloutCacheTag,
-            'workspace:$wsId',
-            'module:settings',
-          ],
+          tags: [_rolloutCacheTag, 'workspace:$wsId', 'module:settings'],
         );
 
     if (cached.data == null) {

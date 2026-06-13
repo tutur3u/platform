@@ -34,16 +34,10 @@ class _StaggeredEntranceState extends State<StaggeredEntrance>
     parent: _controller,
     curve: widget.curve,
   );
-  late final Animation<Offset> _slide =
-      Tween<Offset>(
-        begin: widget.offset,
-        end: Offset.zero,
-      ).animate(
-        CurvedAnimation(
-          parent: _controller,
-          curve: widget.curve,
-        ),
-      );
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: widget.offset,
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
   Timer? _delayTimer;
 
   @override
@@ -86,10 +80,7 @@ class _StaggeredEntranceState extends State<StaggeredEntrance>
   Widget build(BuildContext context) {
     return FadeTransition(
       opacity: _opacity,
-      child: SlideTransition(
-        position: _slide,
-        child: widget.child,
-      ),
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }

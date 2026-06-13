@@ -73,10 +73,7 @@ class _TaskLabelCard extends StatelessWidget {
               color: color,
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.28),
-                  blurRadius: 14,
-                ),
+                BoxShadow(color: color.withValues(alpha: 0.28), blurRadius: 14),
               ],
             ),
           ),

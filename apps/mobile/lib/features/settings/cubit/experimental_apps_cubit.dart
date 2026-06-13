@@ -40,12 +40,7 @@ class ExperimentalAppsCubit extends Cubit<ExperimentalAppsState> {
   Future<void> load() async {
     final enabledModuleIds = await _settingsRepository
         .getEnabledExperimentalAppIds();
-    emit(
-      state.copyWith(
-        enabledModuleIds: enabledModuleIds,
-        loaded: true,
-      ),
-    );
+    emit(state.copyWith(enabledModuleIds: enabledModuleIds, loaded: true));
   }
 
   Future<void> setModuleEnabled({
@@ -64,12 +59,7 @@ class ExperimentalAppsCubit extends Cubit<ExperimentalAppsState> {
       nextModuleIds.remove(normalizedModuleId);
     }
 
-    emit(
-      state.copyWith(
-        enabledModuleIds: nextModuleIds,
-        loaded: true,
-      ),
-    );
+    emit(state.copyWith(enabledModuleIds: nextModuleIds, loaded: true));
     await _settingsRepository.setExperimentalAppEnabled(
       moduleId: normalizedModuleId,
       enabled: enabled,

@@ -1,11 +1,7 @@
 part of 'task_board_detail_page.dart';
 
 class _TaskBoardTaskDetailRow extends StatelessWidget {
-  const _TaskBoardTaskDetailRow({
-    required this.label,
-    this.value,
-    this.child,
-  });
+  const _TaskBoardTaskDetailRow({required this.label, this.value, this.child});
 
   final String label;
   final String? value;
@@ -38,10 +34,7 @@ class _TaskBoardTaskDetailRow extends StatelessWidget {
 }
 
 class _AssigneeChip extends StatelessWidget {
-  const _AssigneeChip({
-    required this.label,
-    this.avatarUrl,
-  });
+  const _AssigneeChip({required this.label, this.avatarUrl});
 
   final String label;
   final String? avatarUrl;

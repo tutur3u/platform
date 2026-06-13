@@ -19,10 +19,7 @@ void main() {
       name: 'Personal',
       personal: true,
     );
-    const teamWorkspace = Workspace(
-      id: 'team_ws',
-      name: 'Team',
-    );
+    const teamWorkspace = Workspace(id: 'team_ws', name: 'Team');
 
     setUp(() {
       repository = _MockWorkspaceRepository();
@@ -50,9 +47,7 @@ void main() {
     blocTest<WorkspaceCubit, WorkspaceState>(
       'emits cached workspaces and keeps them when remote refresh fails',
       build: () {
-        when(
-          () => repository.readCachedWorkspaces(),
-        ).thenAnswer(
+        when(() => repository.readCachedWorkspaces()).thenAnswer(
           (_) async => CacheReadResult<List<Workspace>>(
             state: CacheEntryState.stale,
             data: const [personalWorkspace, teamWorkspace],
@@ -83,16 +78,14 @@ void main() {
     blocTest<WorkspaceCubit, WorkspaceState>(
       'forces remote fetch when requested',
       build: () {
-        when(() => repository.getWorkspaces()).thenAnswer(
-          (_) async => const [teamWorkspace],
-        );
+        when(
+          () => repository.getWorkspaces(),
+        ).thenAnswer((_) async => const [teamWorkspace]);
         return cubit;
       },
       act: (cubit) => cubit.loadWorkspaces(forceRefresh: true),
       expect: () => const [
-        WorkspaceState(
-          status: WorkspaceStatus.loading,
-        ),
+        WorkspaceState(status: WorkspaceStatus.loading),
         WorkspaceState(
           status: WorkspaceStatus.loaded,
           workspaces: [teamWorkspace],

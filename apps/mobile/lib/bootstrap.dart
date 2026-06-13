@@ -46,14 +46,9 @@ Future<void> bootstrap(
   final settingsRepository = SettingsRepository();
   shad.ThemeMode initialThemeMode;
   try {
-    initialThemeMode = _parseThemeMode(
-      await settingsRepository.getThemeMode(),
-    );
+    initialThemeMode = _parseThemeMode(await settingsRepository.getThemeMode());
   } on Object catch (e, st) {
-    log(
-      'Failed to load theme mode, defaulting to system: $e',
-      stackTrace: st,
-    );
+    log('Failed to load theme mode, defaulting to system: $e', stackTrace: st);
     initialThemeMode = shad.ThemeMode.system;
   }
   final resolvedBrightness = AppTheme.resolveBrightness(
@@ -62,9 +57,7 @@ Future<void> bootstrap(
   );
 
   // Ensure system UI is visible and properly configured
-  await SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.edgeToEdge,
-  );
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     AppTheme.systemUiOverlayStyleFor(resolvedBrightness),
   );
@@ -77,9 +70,7 @@ Future<void> bootstrap(
 
   // Initialize Supabase with secure storage
   try {
-    await Firebase.initializeApp(
-      options: firebaseOptionsForFlavor(appFlavor),
-    );
+    await Firebase.initializeApp(options: firebaseOptionsForFlavor(appFlavor));
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   } on Object catch (e, st) {
     log('Failed to initialize Firebase: $e', stackTrace: st);

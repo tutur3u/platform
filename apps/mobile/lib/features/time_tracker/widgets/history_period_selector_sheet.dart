@@ -92,9 +92,7 @@ class _HistoryPeriodSelectorSheetState
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.background,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(16),
-        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: SafeArea(
         top: false,
@@ -137,9 +135,9 @@ class _HistoryPeriodSelectorSheetState
           initialDate: clampedInitialDate,
           firstDate: firstDate,
           lastDate: lastDate,
-          onDateChanged: (date) => Navigator.of(context).pop(
-            DateTime(date.year, date.month, date.day),
-          ),
+          onDateChanged: (date) => Navigator.of(
+            context,
+          ).pop(DateTime(date.year, date.month, date.day)),
         ),
       ],
     );
@@ -148,11 +146,7 @@ class _HistoryPeriodSelectorSheetState
   Widget _buildWeekPicker(BuildContext context, AppLocalizations l10n) {
     final localeTag = Localizations.localeOf(context).toLanguageTag();
     if (_showYearPicker) {
-      return _buildYearPickerGrid(
-        context,
-        l10n,
-        onYearSelected: _selectYear,
-      );
+      return _buildYearPickerGrid(context, l10n, onYearSelected: _selectYear);
     }
     final weekStarts = _weekStartsForMonth(
       _selectedYear,
@@ -165,9 +159,9 @@ class _HistoryPeriodSelectorSheetState
     );
     final now = DateTime.now();
     final currentWeekStart = _weekStart(now, widget.firstDayOfWeek);
-    final monthLabel = DateFormat.yMMMM(localeTag).format(
-      DateTime(_selectedYear, _selectedMonth),
-    );
+    final monthLabel = DateFormat.yMMMM(
+      localeTag,
+    ).format(DateTime(_selectedYear, _selectedMonth));
     return SizedBox(
       height: 480,
       child: Column(
@@ -321,11 +315,7 @@ class _HistoryPeriodSelectorSheetState
     );
   }
 
-  List<DateTime> _weekStartsForMonth(
-    int year,
-    int month,
-    int firstDayOfWeek,
-  ) {
+  List<DateTime> _weekStartsForMonth(int year, int month, int firstDayOfWeek) {
     final monthStart = DateTime(year, month);
     final monthEnd = DateTime(year, month + 1, 0);
     final starts = <DateTime>[];

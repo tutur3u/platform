@@ -9,10 +9,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class AssistantToolResultsSection extends StatefulWidget {
-  const AssistantToolResultsSection({
-    required this.parts,
-    super.key,
-  });
+  const AssistantToolResultsSection({required this.parts, super.key});
 
   final List<AssistantMessagePart> parts;
 
@@ -22,10 +19,7 @@ class AssistantToolResultsSection extends StatefulWidget {
 }
 
 class AssistantInlineToolImages extends StatelessWidget {
-  const AssistantInlineToolImages({
-    required this.parts,
-    super.key,
-  });
+  const AssistantInlineToolImages({required this.parts, super.key});
 
   final List<AssistantMessagePart> parts;
 
@@ -326,10 +320,7 @@ class _AssistantToolResultTileState extends State<_AssistantToolResultTile> {
               when prompt.trim().isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 10),
-              child: AssistantMarkdownBody(
-                data: prompt.trim(),
-                subdued: true,
-              ),
+              child: AssistantMarkdownBody(data: prompt.trim(), subdued: true),
             ),
         ],
       );
@@ -611,10 +602,7 @@ class _AssistantImageFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: child,
-      ),
+      child: AspectRatio(aspectRatio: 1, child: child),
     );
   }
 }
@@ -669,10 +657,7 @@ class _AssistantJsonPreview extends StatelessWidget {
       _ => encoder.convert(data),
     };
 
-    return AssistantMarkdownBody(
-      data: '```json\n$pretty\n```',
-      subdued: true,
-    );
+    return AssistantMarkdownBody(data: '```json\n$pretty\n```', subdued: true);
   }
 }
 
@@ -684,10 +669,7 @@ IconData _toolIcon(String? toolName) {
   };
 }
 
-String? _toolCollapsedSummary(
-  BuildContext context,
-  AssistantMessagePart part,
-) {
+String? _toolCollapsedSummary(BuildContext context, AssistantMessagePart part) {
   final inputRecord = _asMap(part.input);
   final outputRecord = _asMap(part.output);
 

@@ -473,11 +473,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       final runningSessionFuture = _repo.getRunningSession(wsId);
       final categoriesFuture = _repo.getCategories(wsId);
       final recentSessionsFuture = _repo.getSessions(wsId, limit: 5);
-      final statsFuture = _repo.getStats(
-        wsId,
-        userId,
-        timezone: timezone,
-      );
+      final statsFuture = _repo.getStats(wsId, userId, timezone: timezone);
       final historyPageFuture = _repo.getHistorySessions(
         wsId,
         dateFrom: periodRange.start,
@@ -783,10 +779,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     }
   }
 
-  void setHistoryContext({
-    HistoryViewMode? viewMode,
-    DateTime? anchorDate,
-  }) {
+  void setHistoryContext({HistoryViewMode? viewMode, DateTime? anchorDate}) {
     final normalizedAnchorDate = anchorDate == null
         ? null
         : DateTime(anchorDate.year, anchorDate.month, anchorDate.day);
@@ -817,11 +810,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         ),
       );
     }
-    await loadHistoryInitial(
-      wsId,
-      userId,
-      firstDayOfWeek: firstDayOfWeek,
-    );
+    await loadHistoryInitial(wsId, userId, firstDayOfWeek: firstDayOfWeek);
   }
 
   Future<void> goToPreviousPeriod(
@@ -832,11 +821,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     _historyFirstDayOfWeek = firstDayOfWeek;
     final nextAnchor = _moveHistoryAnchor(-1);
     emit(state.copyWith(historyAnchorDate: nextAnchor));
-    await loadHistoryInitial(
-      wsId,
-      userId,
-      firstDayOfWeek: firstDayOfWeek,
-    );
+    await loadHistoryInitial(wsId, userId, firstDayOfWeek: firstDayOfWeek);
   }
 
   Future<void> goToNextPeriod(
@@ -847,11 +832,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     _historyFirstDayOfWeek = firstDayOfWeek;
     final nextAnchor = _moveHistoryAnchor(1);
     emit(state.copyWith(historyAnchorDate: nextAnchor));
-    await loadHistoryInitial(
-      wsId,
-      userId,
-      firstDayOfWeek: firstDayOfWeek,
-    );
+    await loadHistoryInitial(wsId, userId, firstDayOfWeek: firstDayOfWeek);
   }
 
   Future<void> goToCurrentPeriod(
@@ -861,11 +842,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   }) async {
     _historyFirstDayOfWeek = firstDayOfWeek;
     emit(state.copyWith(historyAnchorDate: DateTime.now()));
-    await loadHistoryInitial(
-      wsId,
-      userId,
-      firstDayOfWeek: firstDayOfWeek,
-    );
+    await loadHistoryInitial(wsId, userId, firstDayOfWeek: firstDayOfWeek);
   }
 
   Future<void> refreshHistory(
@@ -874,11 +851,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     int firstDayOfWeek = DateTime.monday,
   }) async {
     _historyFirstDayOfWeek = firstDayOfWeek;
-    await loadHistoryInitial(
-      wsId,
-      userId,
-      firstDayOfWeek: firstDayOfWeek,
-    );
+    await loadHistoryInitial(wsId, userId, firstDayOfWeek: firstDayOfWeek);
   }
 
   Future<void> loadHistoryInitial(
@@ -1118,12 +1091,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
 
       final (recentSessions, stats) = await _loadRecentAndSummary(wsId, userId);
 
-      emit(
-        state.copyWith(
-          recentSessions: recentSessions,
-          stats: stats,
-        ),
-      );
+      emit(state.copyWith(recentSessions: recentSessions, stats: stats));
       await loadHistoryInitial(wsId, userId);
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
@@ -1468,12 +1436,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         ? state.pomodoroSessionCount + 1
         : state.pomodoroSessionCount;
 
-    emit(
-      state.copyWith(
-        pomodoroPhase: nextPhase,
-        pomodoroSessionCount: count,
-      ),
-    );
+    emit(state.copyWith(pomodoroPhase: nextPhase, pomodoroSessionCount: count));
   }
 
   PomodoroPhase _nextBreakPhase() {
@@ -1606,9 +1569,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         );
         final end = start
             .add(const Duration(days: 1))
-            .subtract(
-              const Duration(microseconds: 1),
-            );
+            .subtract(const Duration(microseconds: 1));
         return (start: start, end: end);
       case HistoryViewMode.week:
         final normalizedAnchor = DateTime(
@@ -1624,9 +1585,10 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         return (start: start, end: end);
       case HistoryViewMode.month:
         final start = DateTime(localAnchor.year, localAnchor.month);
-        final end = DateTime(localAnchor.year, localAnchor.month + 1).subtract(
-          const Duration(microseconds: 1),
-        );
+        final end = DateTime(
+          localAnchor.year,
+          localAnchor.month + 1,
+        ).subtract(const Duration(microseconds: 1));
         return (start: start, end: end);
     }
   }

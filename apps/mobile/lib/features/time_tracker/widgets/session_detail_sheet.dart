@@ -109,10 +109,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
                   children: [
                     const Icon(shad.LucideIcons.pencil, size: 14),
                     const shad.Gap(4),
-                    Text(
-                      l10n.timerEditSession,
-                      style: theme.typography.small,
-                    ),
+                    Text(l10n.timerEditSession, style: theme.typography.small),
                   ],
                 ),
               ),
@@ -191,10 +188,7 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
                       ),
                     ),
                     const shad.Gap(6),
-                    Text(
-                      _session.description!,
-                      style: theme.typography.base,
-                    ),
+                    Text(_session.description!, style: theme.typography.base),
                   ],
                 ],
               ),
@@ -239,9 +233,8 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
           if (!context.mounted) return;
           shad.showToast(
             context: context,
-            builder: (ctx, overlay) => shad.Alert(
-              content: Text(ctx.l10n.timerSessionDeleted),
-            ),
+            builder: (ctx, overlay) =>
+                shad.Alert(content: Text(ctx.l10n.timerSessionDeleted)),
           );
         },
         title: l10n.timerDeleteSession,
@@ -333,11 +326,7 @@ class _DetailRow extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: theme.colorScheme.mutedForeground,
-        ),
+        Icon(icon, size: 16, color: theme.colorScheme.mutedForeground),
         const shad.Gap(10),
         SizedBox(
           width: 88,
@@ -355,9 +344,7 @@ class _DetailRow extends StatelessWidget {
                 _ColorDot(color: colorDot!),
                 const shad.Gap(6),
               ],
-              Expanded(
-                child: Text(value, style: textStyle),
-              ),
+              Expanded(child: Text(value, style: textStyle)),
             ],
           ),
         ),

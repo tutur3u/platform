@@ -25,10 +25,7 @@ class TaskDescriptionImageEmbedBuilder extends EmbedBuilder {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: _TaskDescriptionImagePreview(
-        url: resolved,
-        headers: headers,
-      ),
+      child: _TaskDescriptionImagePreview(url: resolved, headers: headers),
     );
   }
 
@@ -56,10 +53,7 @@ class TaskDescriptionImageEmbedBuilder extends EmbedBuilder {
 }
 
 class _TaskDescriptionImagePreview extends StatelessWidget {
-  const _TaskDescriptionImagePreview({
-    required this.url,
-    this.headers,
-  });
+  const _TaskDescriptionImagePreview({required this.url, this.headers});
 
   final String url;
   final Map<String, String>? headers;
@@ -202,10 +196,7 @@ class _TaskDescriptionImageFullscreenPage extends StatelessWidget {
                   ),
                   child: IconButton(
                     tooltip: MaterialLocalizations.of(context).closeButtonLabel,
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      color: Colors.white,
-                    ),
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
                     onPressed: () => Navigator.of(context).maybePop(),
                   ),
                 ),

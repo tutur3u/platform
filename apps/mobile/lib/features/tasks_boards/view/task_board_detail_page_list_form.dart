@@ -89,10 +89,7 @@ class _TaskBoardListFormSheetState extends State<_TaskBoardListFormSheet> {
               ),
               const shad.Gap(16),
               // Title
-              Text(
-                widget.title,
-                style: theme.typography.h4,
-              ),
+              Text(widget.title, style: theme.typography.h4),
               const shad.Gap(24),
               Flexible(
                 child: SingleChildScrollView(
@@ -240,9 +237,8 @@ class _TaskBoardListFormSheetState extends State<_TaskBoardListFormSheet> {
       if (!toastContext.mounted) return;
       shad.showToast(
         context: toastContext,
-        builder: (context, overlay) => shad.Alert(
-          content: Text(widget.successMessage),
-        ),
+        builder: (context, overlay) =>
+            shad.Alert(content: Text(widget.successMessage)),
       );
       Navigator.of(context).pop();
     } on ApiException catch (error) {
@@ -320,11 +316,7 @@ class _StatusCategoryDropdown extends StatelessWidget {
       },
       child: Row(
         children: [
-          Icon(
-            selectedOption.icon,
-            size: 18,
-            color: selectedOption.color,
-          ),
+          Icon(selectedOption.icon, size: 18, color: selectedOption.color),
           const shad.Gap(12),
           Expanded(
             child: Text(
@@ -382,9 +374,7 @@ class _ColorDropdown extends StatelessWidget {
             decoration: BoxDecoration(
               color: selectedOption.color,
               shape: BoxShape.circle,
-              border: Border.all(
-                color: theme.colorScheme.border,
-              ),
+              border: Border.all(color: theme.colorScheme.border),
             ),
           ),
           const shad.Gap(12),
@@ -428,9 +418,7 @@ class _StatusCategoryPickerSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _TaskBoardPickerHandle(
-                color: theme.colorScheme.mutedForeground,
-              ),
+              _TaskBoardPickerHandle(color: theme.colorScheme.mutedForeground),
               const shad.Gap(16),
               Text(
                 context.l10n.taskBoardDetailStatusCategoryLabel,
@@ -522,9 +510,7 @@ class _ColorPickerSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _TaskBoardPickerHandle(
-                color: theme.colorScheme.mutedForeground,
-              ),
+              _TaskBoardPickerHandle(color: theme.colorScheme.mutedForeground),
               const shad.Gap(16),
               Text(
                 context.l10n.taskBoardDetailColorLabel,
@@ -669,10 +655,7 @@ class _TaskBoardRenameBoardSheetState
               ),
               const shad.Gap(16),
               // Title
-              Text(
-                widget.title,
-                style: theme.typography.h4,
-              ),
+              Text(widget.title, style: theme.typography.h4),
               const shad.Gap(24),
               // Board name field
               shad.TextField(
@@ -755,9 +738,8 @@ class _TaskBoardRenameBoardSheetState
       if (!toastContext.mounted) return;
       shad.showToast(
         context: toastContext,
-        builder: (context, overlay) => shad.Alert(
-          content: Text(widget.successMessage),
-        ),
+        builder: (context, overlay) =>
+            shad.Alert(content: Text(widget.successMessage)),
       );
       Navigator.of(context).pop();
     } on ApiException catch (error) {

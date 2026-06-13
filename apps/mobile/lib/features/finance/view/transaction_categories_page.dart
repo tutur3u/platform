@@ -251,11 +251,7 @@ class _TransactionCategoriesViewState
                       listBottomPadding,
                       showAmounts,
                     )
-                  : _buildTagsContent(
-                      l10n,
-                      listBottomPadding,
-                      showAmounts,
-                    ),
+                  : _buildTagsContent(l10n, listBottomPadding, showAmounts),
             ),
             SpeedDialFab(
               label: l10n.financeCreateCategory,
@@ -787,10 +783,7 @@ class _CategoryCacheEntry {
 }
 
 class _TagCacheEntry {
-  const _TagCacheEntry({
-    required this.tags,
-    required this.fetchedAt,
-  });
+  const _TagCacheEntry({required this.tags, required this.fetchedAt});
 
   final List<FinanceTag> tags;
   final DateTime fetchedAt;
@@ -1063,11 +1056,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
 }
 
 class _TagDialog extends StatefulWidget {
-  const _TagDialog({
-    required this.wsId,
-    required this.repository,
-    this.tag,
-  });
+  const _TagDialog({required this.wsId, required this.repository, this.tag});
 
   final String wsId;
   final FinanceRepository repository;

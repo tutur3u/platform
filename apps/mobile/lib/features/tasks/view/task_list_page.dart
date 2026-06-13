@@ -38,11 +38,7 @@ Future<void> _reload(BuildContext context) async {
 }
 
 class TaskListPage extends StatelessWidget {
-  const TaskListPage({
-    super.key,
-    this.taskRepository,
-    this.settingsRepository,
-  });
+  const TaskListPage({super.key, this.taskRepository, this.settingsRepository});
 
   final TaskRepository? taskRepository;
   final SettingsRepository? settingsRepository;
@@ -154,10 +150,7 @@ class _DefaultPersonalTaskBoardGateState
     final workspaceId = widget.workspaceId;
 
     if (_memoryDefaultBoardIds.containsKey(workspaceId)) {
-      _applyDefaultBoardId(
-        _memoryDefaultBoardIds[workspaceId],
-        notify: notify,
-      );
+      _applyDefaultBoardId(_memoryDefaultBoardIds[workspaceId], notify: notify);
       unawaited(_refreshDefaultBoardId(requestToken, workspaceId));
       return;
     }
@@ -285,10 +278,7 @@ class _DefaultPersonalTaskBoardGateState
       }
       _pendingRedirectBoardId = null;
       context.go(
-        taskBoardViewLocation(
-          boardId: boardId,
-          view: taskBoardDetailViewList,
-        ),
+        taskBoardViewLocation(boardId: boardId, view: taskBoardDetailViewList),
       );
     });
   }
@@ -430,10 +420,9 @@ class _TaskListViewState extends State<_TaskListView> {
                         ).colorScheme.destructive,
                         tasks: state.overdueTasks,
                         isCollapsed: state.isOverdueCollapsed,
-                        onToggle: () =>
-                            context.read<TaskListCubit>().toggleSection(
-                              TaskListSection.overdue,
-                            ),
+                        onToggle: () => context
+                            .read<TaskListCubit>()
+                            .toggleSection(TaskListSection.overdue),
                       ),
                     if (state.overdueTasks.isNotEmpty)
                       const SizedBox(height: 10),
@@ -449,10 +438,9 @@ class _TaskListViewState extends State<_TaskListView> {
                         accentColor: Colors.orange,
                         tasks: state.todayTasks,
                         isCollapsed: state.isTodayCollapsed,
-                        onToggle: () =>
-                            context.read<TaskListCubit>().toggleSection(
-                              TaskListSection.today,
-                            ),
+                        onToggle: () => context
+                            .read<TaskListCubit>()
+                            .toggleSection(TaskListSection.today),
                       ),
                     if (state.todayTasks.isNotEmpty) const SizedBox(height: 12),
                     if (state.upcomingTasks.isNotEmpty)
@@ -467,10 +455,9 @@ class _TaskListViewState extends State<_TaskListView> {
                         accentColor: shad.Theme.of(context).colorScheme.primary,
                         tasks: state.upcomingTasks,
                         isCollapsed: state.isUpcomingCollapsed,
-                        onToggle: () =>
-                            context.read<TaskListCubit>().toggleSection(
-                              TaskListSection.upcoming,
-                            ),
+                        onToggle: () => context
+                            .read<TaskListCubit>()
+                            .toggleSection(TaskListSection.upcoming),
                       ),
                     if (state.upcomingTasks.isNotEmpty)
                       const SizedBox(height: 12),
@@ -491,10 +478,9 @@ class _TaskListViewState extends State<_TaskListView> {
                         tasks: state.completedTasks,
                         trailingCount: state.totalCompletedTasks,
                         isCollapsed: state.isCompletedCollapsed,
-                        onToggle: () =>
-                            context.read<TaskListCubit>().toggleSection(
-                              TaskListSection.completed,
-                            ),
+                        onToggle: () => context
+                            .read<TaskListCubit>()
+                            .toggleSection(TaskListSection.completed),
                       ),
                     if (state.completedTasks.isNotEmpty &&
                         !state.isCompletedCollapsed &&

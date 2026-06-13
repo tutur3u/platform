@@ -120,10 +120,7 @@ class _WalletsViewState extends State<_WalletsView> {
 
     setState(() {
       _workspaceCurrency = cachedCurrency;
-      _wallets = _sortWallets(
-        cached.data!,
-        workspaceCurrency: cachedCurrency,
-      );
+      _wallets = _sortWallets(cached.data!, workspaceCurrency: cachedCurrency);
       _loadedWorkspaceId = resolvedWsId;
       _isLoading = false;
       _error = null;
@@ -168,9 +165,7 @@ class _WalletsViewState extends State<_WalletsView> {
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
         listener: (context, state) {
-          _seedWalletsFromCacheIfNeeded(
-            wsId: state.currentWorkspace?.id,
-          );
+          _seedWalletsFromCacheIfNeeded(wsId: state.currentWorkspace?.id);
           unawaited(_loadWallets());
         },
         child: Stack(
@@ -181,10 +176,7 @@ class _WalletsViewState extends State<_WalletsView> {
             ),
             RefreshIndicator(
               onRefresh: () => _loadWallets(forceRefresh: true),
-              child: _buildBody(
-                listBottomPadding,
-                showAmounts: showAmounts,
-              ),
+              child: _buildBody(listBottomPadding, showAmounts: showAmounts),
             ),
             ExtendedFab(
               icon: Icons.add,
@@ -198,10 +190,7 @@ class _WalletsViewState extends State<_WalletsView> {
     );
   }
 
-  Widget _buildBody(
-    double listBottomPadding, {
-    required bool showAmounts,
-  }) {
+  Widget _buildBody(double listBottomPadding, {required bool showAmounts}) {
     final l10n = context.l10n;
 
     if (_isLoading) {
@@ -364,9 +353,7 @@ class _WalletsViewState extends State<_WalletsView> {
     final resolvedWallets = cached?.wallets ?? diskCached.data;
     final hasVisibleData = _loadedWorkspaceId == wsId;
     final cachedCurrency = await repository
-        .readWorkspaceDefaultCurrencyFromCache(
-          wsId,
-        );
+        .readWorkspaceDefaultCurrencyFromCache(wsId);
 
     if (!forceRefresh && resolvedWallets != null) {
       if (!mounted || requestToken != _currentWalletsRequestToken) {
@@ -453,10 +440,7 @@ class _WalletsViewState extends State<_WalletsView> {
     }
   }
 
-  Future<bool> _showWalletDialog({
-    required String wsId,
-    Wallet? wallet,
-  }) async {
+  Future<bool> _showWalletDialog({required String wsId, Wallet? wallet}) async {
     final result = await showFinanceFullscreenModal<bool>(
       context: context,
       builder: (_) => WalletDialog(
@@ -471,10 +455,7 @@ class _WalletsViewState extends State<_WalletsView> {
 }
 
 class _WalletsCacheEntry {
-  const _WalletsCacheEntry({
-    required this.wallets,
-    required this.fetchedAt,
-  });
+  const _WalletsCacheEntry({required this.wallets, required this.fetchedAt});
 
   final List<Wallet> wallets;
   final DateTime fetchedAt;
@@ -656,10 +637,9 @@ class _WalletMetaPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: shad.Theme.of(context).typography.xSmall.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
+        style: shad.Theme.of(
+          context,
+        ).typography.xSmall.copyWith(color: color, fontWeight: FontWeight.w700),
       ),
     );
   }

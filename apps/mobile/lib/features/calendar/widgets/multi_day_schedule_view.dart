@@ -494,13 +494,7 @@ class _MultiDayTimelineColumn extends StatelessWidget {
         final hour = roundedMinutes ~/ 60;
         final minute = roundedMinutes % 60;
         onCreateAtTime(
-          DateTime(
-            date.year,
-            date.month,
-            date.day,
-            hour.clamp(0, 23),
-            minute,
-          ),
+          DateTime(date.year, date.month, date.day, hour.clamp(0, 23), minute),
         );
       },
       child: Container(
@@ -619,9 +613,7 @@ class _MultiDayEventCardSurface extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(10),
-            border: Border(
-              left: BorderSide(color: accentColor, width: 3),
-            ),
+            border: Border(left: BorderSide(color: accentColor, width: 3)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.03),
@@ -696,10 +688,7 @@ class _MultiDayAllDayRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final layout = calculateAllDayLayout(
-      visibleDates: dates,
-      events: events,
-    );
+    final layout = calculateAllDayLayout(visibleDates: dates, events: events);
     if (layout.spans.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -744,10 +733,7 @@ class _MultiDayAllDayRow extends StatelessWidget {
 }
 
 class _MultiDayAllDayChip extends StatelessWidget {
-  const _MultiDayAllDayChip({
-    required this.event,
-    required this.onTap,
-  });
+  const _MultiDayAllDayChip({required this.event, required this.onTap});
 
   final CalendarEvent event;
   final VoidCallback onTap;
@@ -767,9 +753,7 @@ class _MultiDayAllDayChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: EventColors.background(event.color),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: accentColor.withValues(alpha: 0.22),
-            ),
+            border: Border.all(color: accentColor.withValues(alpha: 0.22)),
           ),
           alignment: Alignment.centerLeft,
           child: Text(

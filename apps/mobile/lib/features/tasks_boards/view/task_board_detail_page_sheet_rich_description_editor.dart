@@ -386,10 +386,7 @@ class _TaskDescriptionRichEditorState
         border: Border.all(color: theme.colorScheme.border),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(11),
-        child: editor,
-      ),
+      child: ClipRRect(borderRadius: BorderRadius.circular(11), child: editor),
     );
   }
 }

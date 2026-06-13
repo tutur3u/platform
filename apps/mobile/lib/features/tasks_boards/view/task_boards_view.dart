@@ -32,10 +32,7 @@ part 'task_boards_cards.dart';
 part 'task_boards_states.dart';
 
 class TaskBoardsView extends StatefulWidget {
-  const TaskBoardsView({
-    super.key,
-    this.permissionsRepository,
-  });
+  const TaskBoardsView({super.key, this.permissionsRepository});
 
   final WorkspacePermissionsRepository? permissionsRepository;
 
@@ -197,10 +194,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
           return Stack(
             children: [
               shellActionRegistration,
-              _ErrorView(
-                error: state.error,
-                onRetry: _reload,
-              ),
+              _ErrorView(error: state.error, onRetry: _reload),
             ],
           );
         }
@@ -226,9 +220,8 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                       child: _TaskBoardCard(
                         canManage: _canManageProjects,
                         board: board,
-                        onTap: () => context.push(
-                          Routes.taskBoardDetailPath(board.id),
-                        ),
+                        onTap: () =>
+                            context.push(Routes.taskBoardDetailPath(board.id)),
                         onEdit: () => _openEditBoard(board),
                         onDuplicate: () => _duplicateBoard(board),
                         onArchive: () => _archiveBoard(board),
@@ -303,11 +296,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
       });
 
       if (canManageProjects && mounted) {
-        unawaited(
-          context.read<TaskBoardsCubit>().loadBoards(
-            wsId,
-          ),
-        );
+        unawaited(context.read<TaskBoardsCubit>().loadBoards(wsId));
       }
     } on Exception {
       if (!_canUpdatePermissionsState(capturedWsId)) return;

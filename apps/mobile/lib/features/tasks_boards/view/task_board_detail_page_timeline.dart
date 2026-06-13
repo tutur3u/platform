@@ -300,25 +300,19 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
                                       resizeHandleWidth: _resizeHandleWidth,
                                       onTaskTap: widget.onTaskTap,
                                       onInteractionStart:
-                                          (
-                                            task,
-                                            mode,
-                                            details,
-                                          ) => _onInteractionStart(
-                                            task: task,
-                                            mode: mode,
-                                            details: details,
-                                          ),
+                                          (task, mode, details) =>
+                                              _onInteractionStart(
+                                                task: task,
+                                                mode: mode,
+                                                details: details,
+                                              ),
                                       onInteractionUpdate:
-                                          (
-                                            task,
-                                            mode,
-                                            details,
-                                          ) => _onInteractionUpdate(
-                                            task: task,
-                                            mode: mode,
-                                            details: details,
-                                          ),
+                                          (task, mode, details) =>
+                                              _onInteractionUpdate(
+                                                task: task,
+                                                mode: mode,
+                                                details: details,
+                                              ),
                                       onInteractionEnd: _onInteractionEnd,
                                     ),
                                 ],
@@ -440,9 +434,7 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
     for (final task in scheduledTasks) {
       grouped
           .putIfAbsent(task.listId, () => <_TimelineScheduledTask>[])
-          .add(
-            task,
-          );
+          .add(task);
     }
 
     return {
@@ -677,10 +669,7 @@ String _timelineRangeLabel(
 }
 
 class _TimelineSummaryChip extends StatelessWidget {
-  const _TimelineSummaryChip({
-    required this.icon,
-    required this.label,
-  });
+  const _TimelineSummaryChip({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
@@ -1266,9 +1255,7 @@ class _TaskBoardTimelineEmptyState extends StatelessWidget {
         children: [
           Text(
             context.l10n.taskBoardDetailTimelineEmptyTitle,
-            style: theme.typography.p.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: theme.typography.p.copyWith(fontWeight: FontWeight.w700),
           ),
           const shad.Gap(6),
           Text(
@@ -1310,9 +1297,7 @@ class _TaskBoardTimelineUnscheduledSection extends StatelessWidget {
       children: [
         Text(
           context.l10n.taskBoardDetailTimelineUnscheduledTitle,
-          style: theme.typography.p.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+          style: theme.typography.p.copyWith(fontWeight: FontWeight.w700),
         ),
         const shad.Gap(8),
         for (final task in tasks.take(8)) ...[
@@ -1342,10 +1327,7 @@ class _TaskBoardTimelineUnscheduledSection extends StatelessWidget {
 }
 
 class _TimelineUnscheduledTaskTile extends StatelessWidget {
-  const _TimelineUnscheduledTaskTile({
-    required this.task,
-    required this.onTap,
-  });
+  const _TimelineUnscheduledTaskTile({required this.task, required this.onTap});
 
   final TaskBoardTask task;
   final VoidCallback onTap;

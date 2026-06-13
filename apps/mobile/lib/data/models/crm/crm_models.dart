@@ -193,10 +193,7 @@ class CrmUsersResult extends Equatable {
 }
 
 class CrmGroup extends Equatable {
-  const CrmGroup({
-    required this.id,
-    required this.name,
-  });
+  const CrmGroup({required this.id, required this.name});
 
   factory CrmGroup.fromJson(Map<String, dynamic> json) {
     return CrmGroup(
@@ -377,11 +374,7 @@ class CrmAuditActor extends Equatable {
 }
 
 class CrmAuditAffectedUser extends Equatable {
-  const CrmAuditAffectedUser({
-    required this.id,
-    this.name,
-    this.email,
-  });
+  const CrmAuditAffectedUser({required this.id, this.name, this.email});
 
   factory CrmAuditAffectedUser.fromJson(Map<String, dynamic> json) {
     return CrmAuditAffectedUser(
@@ -488,10 +481,7 @@ class CrmAuditEvent extends Equatable {
 }
 
 class CrmAuditResult extends Equatable {
-  const CrmAuditResult({
-    required this.items,
-    required this.count,
-  });
+  const CrmAuditResult({required this.items, required this.count});
 
   factory CrmAuditResult.fromJson(Map<String, dynamic> json) {
     return CrmAuditResult(
@@ -581,12 +571,7 @@ class CrmDuplicateCluster extends Equatable {
   final String suggestedTargetId;
 
   @override
-  List<Object?> get props => [
-    clusterId,
-    matchReason,
-    users,
-    suggestedTargetId,
-  ];
+  List<Object?> get props => [clusterId, matchReason, users, suggestedTargetId];
 }
 
 class CrmDuplicateDetectionResult extends Equatable {
@@ -613,10 +598,7 @@ class CrmDuplicateDetectionResult extends Equatable {
 }
 
 class CrmMergeResult extends Equatable {
-  const CrmMergeResult({
-    required this.success,
-    required this.message,
-  });
+  const CrmMergeResult({required this.success, required this.message});
 
   factory CrmMergeResult.fromJson(Map<String, dynamic> json) {
     final message = crmAsString(json['message']) ?? 'success';

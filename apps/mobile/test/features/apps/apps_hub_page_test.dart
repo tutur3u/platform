@@ -62,11 +62,7 @@ void main() {
     }
     await tester.pumpAndSettle();
 
-    final labels = <String>[
-      'Tasks',
-      'Calendar',
-      'Finance',
-    ];
+    final labels = <String>['Tasks', 'Calendar', 'Finance'];
 
     for (final label in labels) {
       expect(find.text(label), findsOneWidget);

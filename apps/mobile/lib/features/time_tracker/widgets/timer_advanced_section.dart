@@ -174,9 +174,7 @@ class _TaskLinkField extends StatelessWidget {
         name,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: theme.typography.small.copyWith(
-          color: colorScheme.foreground,
-        ),
+        style: theme.typography.small.copyWith(color: colorScheme.foreground),
       );
     }
 
@@ -184,18 +182,13 @@ class _TaskLinkField extends StatelessWidget {
       taskId ?? '',
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: theme.typography.small.copyWith(
-        color: colorScheme.foreground,
-      ),
+      style: theme.typography.small.copyWith(color: colorScheme.foreground),
     );
   }
 }
 
 class _ClearButton extends StatelessWidget {
-  const _ClearButton({
-    required this.onClear,
-    required this.colorScheme,
-  });
+  const _ClearButton({required this.onClear, required this.colorScheme});
 
   final VoidCallback onClear;
   final shad.ColorScheme colorScheme;
@@ -211,9 +204,7 @@ class _ClearButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(color: colorScheme.border),
-          ),
+          border: Border(left: BorderSide(color: colorScheme.border)),
         ),
         child: Icon(
           shad.LucideIcons.x,

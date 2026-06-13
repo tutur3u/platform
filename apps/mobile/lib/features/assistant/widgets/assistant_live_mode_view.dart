@@ -237,10 +237,7 @@ class _LiveModeHeader extends StatelessWidget {
         IconButton(
           tooltip: context.l10n.assistantLiveDisconnect,
           onPressed: onDisconnect,
-          icon: Icon(
-            Icons.call_end_rounded,
-            color: theme.colorScheme.error,
-          ),
+          icon: Icon(Icons.call_end_rounded, color: theme.colorScheme.error),
         ),
       ],
     );

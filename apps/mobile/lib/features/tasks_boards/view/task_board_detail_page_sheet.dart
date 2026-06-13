@@ -317,9 +317,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
                   },
                   children: [
                     shad.TabItem(
-                      child: Text(
-                        context.l10n.taskBoardDetailEditorDetailsTab,
-                      ),
+                      child: Text(context.l10n.taskBoardDetailEditorDetailsTab),
                     ),
                     shad.TabItem(
                       child: _TaskEditorTabLabel(
@@ -1255,9 +1253,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   }
 
   Set<String> _workspaceMemberAssigneeIds(Iterable<String> assigneeIds) {
-    final workspaceMemberIds = {
-      for (final member in widget.members) member.id,
-    };
+    final workspaceMemberIds = {for (final member in widget.members) member.id};
     if (workspaceMemberIds.isEmpty) {
       return <String>{};
     }
@@ -1360,12 +1356,7 @@ class _TaskDescriptionEditorOverlay extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.typography.large,
-                ),
-              ),
+              Expanded(child: Text(title, style: theme.typography.large)),
               shad.IconButton.ghost(
                 icon: const Icon(Icons.close),
                 onPressed: () => Navigator.maybePop(context),

@@ -121,9 +121,7 @@ class CacheStore {
     await init();
     final record = _memory[key.value];
     if (record == null) {
-      return CacheReadResult<T>(
-        state: CacheEntryState.missing,
-      );
+      return CacheReadResult<T>(state: CacheEntryState.missing);
     }
 
     final decoded = _decodeRecordPayload(
@@ -135,9 +133,7 @@ class CacheStore {
       },
     );
     if (decoded == null) {
-      return CacheReadResult<T>(
-        state: CacheEntryState.missing,
-      );
+      return CacheReadResult<T>(state: CacheEntryState.missing);
     }
     return CacheReadResult<T>(
       state: record.state,
@@ -153,16 +149,12 @@ class CacheStore {
     required CacheJsonDecoder<T> decode,
   }) {
     if (!_initialized) {
-      return CacheReadResult<T>(
-        state: CacheEntryState.missing,
-      );
+      return CacheReadResult<T>(state: CacheEntryState.missing);
     }
 
     final record = _memory[key.value];
     if (record == null) {
-      return CacheReadResult<T>(
-        state: CacheEntryState.missing,
-      );
+      return CacheReadResult<T>(state: CacheEntryState.missing);
     }
 
     final decoded = _decodeRecordPayload(
@@ -174,9 +166,7 @@ class CacheStore {
       },
     );
     if (decoded == null) {
-      return CacheReadResult<T>(
-        state: CacheEntryState.missing,
-      );
+      return CacheReadResult<T>(state: CacheEntryState.missing);
     }
     return CacheReadResult<T>(
       state: record.state,
@@ -254,10 +244,7 @@ class CacheStore {
     }
   }
 
-  Future<void> clearScope({
-    String? userId,
-    String? workspaceId,
-  }) async {
+  Future<void> clearScope({String? userId, String? workspaceId}) async {
     await init();
     final keysToDelete = <String>[];
     for (final entry in _memory.entries) {
@@ -346,12 +333,7 @@ class CacheStore {
     }
 
     final payload = await fetch();
-    await write(
-      key: key,
-      policy: policy,
-      payload: payload,
-      tags: tags,
-    );
+    await write(key: key, policy: policy, payload: payload, tags: tags);
 
     return CacheReadResult<T>(
       state: CacheEntryState.fresh,

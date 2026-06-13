@@ -162,18 +162,14 @@ class _GroupedTransactionAccordionState
 
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: shad.CircularProgressIndicator(),
-              ),
+              child: Center(child: shad.CircularProgressIndicator()),
             );
           }
 
           if (bodyIndex >= groups.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: shad.CircularProgressIndicator(),
-              ),
+              child: Center(child: shad.CircularProgressIndicator()),
             );
           }
 
@@ -220,9 +216,7 @@ class _GroupedTransactionAccordionState
         if (widget.showLoadingMore)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 24),
-            child: Center(
-              child: shad.CircularProgressIndicator(),
-            ),
+            child: Center(child: shad.CircularProgressIndicator()),
           ),
       ],
     );
@@ -523,9 +517,8 @@ class _DayGroup extends StatelessWidget {
                       showAmounts: showAmounts,
                     );
                   },
-                  separatorBuilder: (context, index) => SizedBox(
-                    height: usePanelChrome ? 10 : 12,
-                  ),
+                  separatorBuilder: (context, index) =>
+                      SizedBox(height: usePanelChrome ? 10 : 12),
                 )
               : const SizedBox.shrink(),
         ),
@@ -736,11 +729,7 @@ class _TransactionTile extends StatelessWidget {
                       color: categoryColor.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(15),
                     ),
-                    child: Icon(
-                      categoryIcon,
-                      size: 18,
-                      color: categoryColor,
-                    ),
+                    child: Icon(categoryIcon, size: 18, color: categoryColor),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -855,11 +844,7 @@ class _TransactionTile extends StatelessWidget {
                   color: categoryColor.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: Icon(
-                  categoryIcon,
-                  size: 18,
-                  color: categoryColor,
-                ),
+                child: Icon(categoryIcon, size: 18, color: categoryColor),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1032,11 +1017,7 @@ class _SummaryPill extends StatelessWidget {
 }
 
 class _MutedInlineInfo extends StatelessWidget {
-  const _MutedInlineInfo({
-    required this.icon,
-    required this.label,
-    this.color,
-  });
+  const _MutedInlineInfo({required this.icon, required this.label, this.color});
 
   final IconData icon;
   final String label;
@@ -1054,9 +1035,7 @@ class _MutedInlineInfo extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: theme.typography.xSmall.copyWith(
-            color: resolvedColor,
-          ),
+          style: theme.typography.xSmall.copyWith(color: resolvedColor),
         ),
       ],
     );
@@ -1085,9 +1064,7 @@ class _Chip extends StatelessWidget {
       decoration: BoxDecoration(
         color: effectiveColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: effectiveColor.withValues(alpha: 0.25),
-        ),
+        border: Border.all(color: effectiveColor.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

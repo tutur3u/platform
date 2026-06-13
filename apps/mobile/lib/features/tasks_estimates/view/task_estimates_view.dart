@@ -29,10 +29,7 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskEstimatesView extends StatefulWidget {
-  const TaskEstimatesView({
-    super.key,
-    this.permissionsRepository,
-  });
+  const TaskEstimatesView({super.key, this.permissionsRepository});
 
   final WorkspacePermissionsRepository? permissionsRepository;
 

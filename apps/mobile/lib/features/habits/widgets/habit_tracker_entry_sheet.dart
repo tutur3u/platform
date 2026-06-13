@@ -22,11 +22,7 @@ class HabitTrackerEntrySheet extends StatefulWidget {
 }
 
 class _WorkoutBlockDraft {
-  _WorkoutBlockDraft({
-    this.sets = 4,
-    this.reps = 8,
-    this.unit,
-  });
+  _WorkoutBlockDraft({this.sets = 4, this.reps = 8, this.unit});
 
   String exerciseName = '';
   int sets;
@@ -142,10 +138,7 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _DateField(
-                  controller: _dateController,
-                  onTap: _pickDate,
-                ),
+                _DateField(controller: _dateController, onTap: _pickDate),
                 const SizedBox(height: 14),
                 _LabeledField(
                   label: context.l10n.habitsEntryNoteLabel,
@@ -445,9 +438,9 @@ class _EntryFooterSummary extends StatelessWidget {
             '${context.l10n.habitsSummaryVolume}: $currentLabel',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         const SizedBox(width: 12),
@@ -657,10 +650,7 @@ class _MeasurementComposer extends StatelessWidget {
 }
 
 class _AdvancedComposer extends StatelessWidget {
-  const _AdvancedComposer({
-    required this.tracker,
-    required this.controller,
-  });
+  const _AdvancedComposer({required this.tracker, required this.controller});
 
   final HabitTracker tracker;
   final TextEditingController controller;

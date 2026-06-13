@@ -49,10 +49,7 @@ HabitTrackerListResponse _listResponse({
           updatedAt: DateTime(2026, 3, 25),
         ),
         currentMember: const HabitTrackerMemberSummary(
-          member: HabitTrackerMember(
-            userId: 'user-1',
-            displayName: 'Alex',
-          ),
+          member: HabitTrackerMember(userId: 'user-1', displayName: 'Alex'),
           total: 8,
           entryCount: 4,
           currentPeriodTotal: 4,
@@ -184,10 +181,7 @@ void main() {
         ),
       ).thenAnswer((_) async => _detailResponse('tracker-1'));
       when(
-        () => repository.listTrackers(
-          'ws-1',
-          scope: HabitTrackerScope.member,
-        ),
+        () => repository.listTrackers('ws-1', scope: HabitTrackerScope.member),
       ).thenAnswer(
         (_) async => _listResponse(trackerId: 'tracker-1', members: members),
       );
@@ -276,10 +270,7 @@ void main() {
         ),
       ).thenThrow(const ApiException(message: 'Not found', statusCode: 404));
 
-      await HabitsCubit.prewarm(
-        repository: repository,
-        wsId: 'ws-404',
-      );
+      await HabitsCubit.prewarm(repository: repository, wsId: 'ws-404');
 
       expect(HabitsCubit.cachedStateForWorkspace('ws-404'), isNull);
     });
@@ -303,11 +294,7 @@ void main() {
           ),
         ).thenAnswer((_) async => _detailResponse('tracker-1'));
         when(
-          () => repository.createEntry(
-            'ws-1',
-            'tracker-1',
-            any(),
-          ),
+          () => repository.createEntry('ws-1', 'tracker-1', any()),
         ).thenAnswer(
           (_) async => HabitTrackerEntry(
             id: 'entry-1',

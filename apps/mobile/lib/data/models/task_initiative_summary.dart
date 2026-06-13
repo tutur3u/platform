@@ -19,11 +19,7 @@ class TaskInitiativeLinkedProject extends Equatable {
   final String name;
   final String? status;
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'status': status,
-  };
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'status': status};
 
   @override
   List<Object?> get props => [id, name, status];

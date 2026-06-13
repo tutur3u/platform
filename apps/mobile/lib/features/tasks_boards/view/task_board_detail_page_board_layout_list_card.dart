@@ -108,10 +108,7 @@ class _BoardLayoutMoveButton extends StatelessWidget {
 }
 
 class _BoardLayoutActionButton extends StatelessWidget {
-  const _BoardLayoutActionButton({
-    required this.onPressed,
-    required this.icon,
-  });
+  const _BoardLayoutActionButton({required this.onPressed, required this.icon});
 
   final VoidCallback onPressed;
   final IconData icon;
@@ -123,11 +120,7 @@ class _BoardLayoutActionButton extends StatelessWidget {
     return shad.GhostButton(
       onPressed: onPressed,
       density: shad.ButtonDensity.icon,
-      child: Icon(
-        icon,
-        size: 16,
-        color: theme.colorScheme.foreground,
-      ),
+      child: Icon(icon, size: 16, color: theme.colorScheme.foreground),
     );
   }
 }

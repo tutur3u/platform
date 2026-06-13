@@ -323,10 +323,7 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
     );
   }
 
-  Future<void> _runMutation(
-    String wsId,
-    Future<void> Function() action,
-  ) async {
+  Future<void> _runMutation(String wsId, Future<void> Function() action) async {
     emit(state.copyWith(status: TaskBoardsStatus.mutating, clearError: true));
     try {
       await action();
@@ -344,10 +341,7 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
     } catch (_) {
       if (state.workspaceId == wsId) {
         emit(
-          state.copyWith(
-            status: TaskBoardsStatus.loaded,
-            isLoadingMore: false,
-          ),
+          state.copyWith(status: TaskBoardsStatus.loaded, isLoadingMore: false),
         );
       }
       rethrow;

@@ -6,10 +6,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Manages the state of calendar account connections and calendar visibility.
 class CalendarConnectionsCubit extends Cubit<CalendarConnectionsState> {
-  CalendarConnectionsCubit({
-    CalendarConnectionsRepository? repository,
-  }) : _repo = repository ?? CalendarConnectionsRepository(),
-       super(const CalendarConnectionsState());
+  CalendarConnectionsCubit({CalendarConnectionsRepository? repository})
+    : _repo = repository ?? CalendarConnectionsRepository(),
+      super(const CalendarConnectionsState());
 
   final CalendarConnectionsRepository _repo;
 
@@ -29,10 +28,7 @@ class CalendarConnectionsCubit extends Cubit<CalendarConnectionsState> {
     } on Exception catch (e) {
       final message = e is ApiException ? e.message : e.toString();
       emit(
-        state.copyWith(
-          status: CalendarConnectionsStatus.error,
-          error: message,
-        ),
+        state.copyWith(status: CalendarConnectionsStatus.error, error: message),
       );
     }
   }

@@ -142,10 +142,7 @@ class ApiClient {
     } on ApiException {
       rethrow;
     } on FormatException {
-      throw const ApiException(
-        message: 'Invalid JSON response',
-        statusCode: 0,
-      );
+      throw const ApiException(message: 'Invalid JSON response', statusCode: 0);
     }
   }
 
@@ -256,16 +253,13 @@ class ApiClient {
   }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
 
-    return _performStreamedRequest(
-      () async {
-        final request = http.Request('GET', url)
-          ..headers.addAll(
-            await _getHeaders(accept: accept, requiresAuth: requiresAuth),
-          );
-        return request.send();
-      },
-      requiresAuth: requiresAuth,
-    );
+    return _performStreamedRequest(() async {
+      final request = http.Request('GET', url)
+        ..headers.addAll(
+          await _getHeaders(accept: accept, requiresAuth: requiresAuth),
+        );
+      return request.send();
+    }, requiresAuth: requiresAuth);
   }
 
   Future<http.StreamedResponse> sendJsonStream(
@@ -277,21 +271,18 @@ class ApiClient {
   }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
 
-    return _performStreamedRequest(
-      () async {
-        final request = http.Request(method, url)
-          ..headers.addAll(
-            await _getHeaders(
-              accept: accept,
-              contentType: 'application/json',
-              requiresAuth: requiresAuth,
-            ),
-          )
-          ..body = jsonEncode(body);
-        return request.send();
-      },
-      requiresAuth: requiresAuth,
-    );
+    return _performStreamedRequest(() async {
+      final request = http.Request(method, url)
+        ..headers.addAll(
+          await _getHeaders(
+            accept: accept,
+            contentType: 'application/json',
+            requiresAuth: requiresAuth,
+          ),
+        )
+        ..body = jsonEncode(body);
+      return request.send();
+    }, requiresAuth: requiresAuth);
   }
 
   Future<Map<String, dynamic>> sendMultipart(
@@ -303,30 +294,27 @@ class ApiClient {
   }) async {
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
 
-    final streamedResponse = await _performStreamedRequest(
-      () async {
-        final request = http.MultipartRequest(method, url)
-          ..headers.addAll(await _getHeaders(requiresAuth: requiresAuth));
+    final streamedResponse = await _performStreamedRequest(() async {
+      final request = http.MultipartRequest(method, url)
+        ..headers.addAll(await _getHeaders(requiresAuth: requiresAuth));
 
-        if (fields != null) {
-          request.fields.addAll(fields);
-        }
+      if (fields != null) {
+        request.fields.addAll(fields);
+      }
 
-        for (final file in files) {
-          request.files.add(
-            await http.MultipartFile.fromPath(
-              file.field,
-              file.filePath,
-              filename: file.filename,
-              contentType: file.contentType,
-            ),
-          );
-        }
+      for (final file in files) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            file.field,
+            file.filePath,
+            filename: file.filename,
+            contentType: file.contentType,
+          ),
+        );
+      }
 
-        return request.send();
-      },
-      requiresAuth: requiresAuth,
-    );
+      return request.send();
+    }, requiresAuth: requiresAuth);
 
     final response = await http.Response.fromStream(streamedResponse);
     return _handleResponse(response);

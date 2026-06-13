@@ -45,10 +45,7 @@ class TaskEstimateBoardsSection extends StatelessWidget {
 }
 
 class _TaskEstimateBoardTile extends StatelessWidget {
-  const _TaskEstimateBoardTile({
-    required this.board,
-    required this.enabled,
-  });
+  const _TaskEstimateBoardTile({required this.board, required this.enabled});
 
   final TaskEstimateBoard board;
   final bool enabled;

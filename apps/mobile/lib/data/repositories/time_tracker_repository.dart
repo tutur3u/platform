@@ -252,13 +252,11 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     }
 
     final encoded = entries
-        .map(
-          (entry) {
-            final key = Uri.encodeQueryComponent(entry.key);
-            final value = Uri.encodeQueryComponent(entry.value!);
-            return '$key=$value';
-          },
-        )
+        .map((entry) {
+          final key = Uri.encodeQueryComponent(entry.key);
+          final value = Uri.encodeQueryComponent(entry.value!);
+          return '$key=$value';
+        })
         .join('&');
     return '$path?$encoded';
   }
@@ -634,9 +632,8 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
       dailyActivity:
           (data['dailyActivity'] as List<dynamic>?)
               ?.map(
-                (entry) => DailyActivity.fromJson(
-                  entry as Map<String, dynamic>,
-                ),
+                (entry) =>
+                    DailyActivity.fromJson(entry as Map<String, dynamic>),
               )
               .toList() ??
           const <DailyActivity>[],
@@ -1016,10 +1013,7 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     final data = await _api.getJson(
       _withQuery(
         '/api/v1/workspaces/$wsId/time-tracking/requests/$requestId/activity',
-        {
-          'page': '$page',
-          'limit': '$limit',
-        },
+        {'page': '$page', 'limit': '$limit'},
       ),
     );
 

@@ -111,10 +111,7 @@ class _SecretsHeroPanel extends StatelessWidget {
 }
 
 class _StatChip extends StatelessWidget {
-  const _StatChip({
-    required this.label,
-    required this.value,
-  });
+  const _StatChip({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -186,10 +183,7 @@ class _MessagePanel extends StatelessWidget {
               color: theme.colorScheme.mutedForeground,
             ),
           ),
-          if (action != null) ...[
-            const shad.Gap(16),
-            action!,
-          ],
+          if (action != null) ...[const shad.Gap(16), action!],
         ],
       ),
     );
@@ -242,9 +236,9 @@ class _WorkspaceSecretsRolloutPanel extends StatelessWidget {
             children: [
               Text(
                 l10n.settingsWorkspaceSecretsRolloutTitle,
-                style: shad.Theme.of(context).typography.large.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+                style: shad.Theme.of(
+                  context,
+                ).typography.large.copyWith(fontWeight: FontWeight.w800),
               ),
               const shad.Gap(6),
               Text(
@@ -314,11 +308,7 @@ class _WorkspaceSecretsRolloutPanel extends StatelessWidget {
 
                   if (!useTwoColumns) {
                     return Column(
-                      children: [
-                        supabaseCard,
-                        const shad.Gap(12),
-                        r2Card,
-                      ],
+                      children: [supabaseCard, const shad.Gap(12), r2Card],
                     );
                   }
 
@@ -540,10 +530,7 @@ class _BackendOverviewCard extends StatelessWidget {
 }
 
 class _MetricTile extends StatelessWidget {
-  const _MetricTile({
-    required this.label,
-    required this.value,
-  });
+  const _MetricTile({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -959,10 +946,7 @@ class _WorkspaceSecretCard extends StatelessWidget {
 }
 
 class _EmptyStatePanel extends StatelessWidget {
-  const _EmptyStatePanel({
-    required this.title,
-    required this.description,
-  });
+  const _EmptyStatePanel({required this.title, required this.description});
 
   final String title;
   final String description;

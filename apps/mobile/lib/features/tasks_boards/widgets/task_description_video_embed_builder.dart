@@ -321,10 +321,7 @@ class _TaskDescriptionVideoFullscreenPage extends StatelessWidget {
                   ),
                   child: IconButton(
                     tooltip: MaterialLocalizations.of(context).closeButtonLabel,
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      color: Colors.white,
-                    ),
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
                     onPressed: () => Navigator.of(context).maybePop(),
                   ),
                 ),

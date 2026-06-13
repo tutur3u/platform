@@ -166,9 +166,8 @@ GoRouter _buildRouter({
           ),
           GoRoute(
             path: Routes.walletDetail,
-            builder: (context, state) => _RoutePage(
-              label: 'wallet-${state.pathParameters['walletId']}',
-            ),
+            builder: (context, state) =>
+                _RoutePage(label: 'wallet-${state.pathParameters['walletId']}'),
           ),
           GoRoute(
             path: Routes.timer,
@@ -451,9 +450,7 @@ void main() {
 
     testWidgets(
       'shared shell header actions stay mounted between apps and module roots',
-      (
-        tester,
-      ) async {
+      (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(390, 844);
         addTearDown(() {
@@ -821,9 +818,7 @@ void main() {
 
     testWidgets(
       'back handling ignores duplicate PopScope callback at mini-app root',
-      (
-        tester,
-      ) async {
+      (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(390, 844);
         addTearDown(() {
@@ -987,9 +982,7 @@ void main() {
 
     testWidgets(
       'system back falls back to mini-app root for deep-linked routes',
-      (
-        tester,
-      ) async {
+      (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(390, 844);
         addTearDown(() {
@@ -1066,9 +1059,7 @@ void main() {
 
     testWidgets(
       'system back falls back to finance root for deep-linked wallet detail',
-      (
-        tester,
-      ) async {
+      (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(390, 844);
         addTearDown(() {
@@ -1105,9 +1096,7 @@ void main() {
 
     testWidgets(
       'persists /apps as last tab after returning from mini-app root',
-      (
-        tester,
-      ) async {
+      (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(390, 844);
         addTearDown(() {
@@ -1180,9 +1169,8 @@ void main() {
       addTearDown(showAlternateItems.dispose);
       final router = _buildRouter(
         initialLocation: Routes.taskPlanning,
-        taskPlanningBuilder: (context) => _MutableMiniNavRoutePage(
-          showAlternateItems: showAlternateItems,
-        ),
+        taskPlanningBuilder: (context) =>
+            _MutableMiniNavRoutePage(showAlternateItems: showAlternateItems),
       );
       addTearDown(router.dispose);
 
@@ -1280,10 +1268,7 @@ List<double?> _textDataFontSizes(WidgetTester tester, String value) {
       .toList(growable: false);
 }
 
-List<double> _nearestFadeOpacitiesForIcon(
-  WidgetTester tester,
-  IconData icon,
-) {
+List<double> _nearestFadeOpacitiesForIcon(WidgetTester tester, IconData icon) {
   final opacities = <double>[];
   for (final element in tester.elementList(
     find.byType(Icon, skipOffstage: false),

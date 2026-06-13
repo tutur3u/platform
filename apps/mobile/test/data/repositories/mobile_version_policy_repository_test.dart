@@ -73,24 +73,22 @@ void main() {
         );
 
         when(
-          () => apiClient.putJson(
-            MobileEndpoints.infrastructureMobileVersions,
-            {
-              'ios': {
-                'effectiveVersion': '1.5.0',
-                'minimumVersion': '1.3.0',
-                'otpEnabled': true,
-                'storeUrl': 'https://apps.apple.com/app/id1',
-              },
-              'android': <String, dynamic>{
-                'effectiveVersion': null,
-                'minimumVersion': null,
-                'otpEnabled': false,
-                'storeUrl': null,
-              },
-              'webOtpEnabled': true,
-            },
-          ),
+          () =>
+              apiClient.putJson(MobileEndpoints.infrastructureMobileVersions, {
+                'ios': {
+                  'effectiveVersion': '1.5.0',
+                  'minimumVersion': '1.3.0',
+                  'otpEnabled': true,
+                  'storeUrl': 'https://apps.apple.com/app/id1',
+                },
+                'android': <String, dynamic>{
+                  'effectiveVersion': null,
+                  'minimumVersion': null,
+                  'otpEnabled': false,
+                  'storeUrl': null,
+                },
+                'webOtpEnabled': true,
+              }),
         ).thenAnswer(
           (_) async => {
             'message': 'success',

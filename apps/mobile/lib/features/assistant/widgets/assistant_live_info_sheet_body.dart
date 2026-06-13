@@ -190,10 +190,7 @@ class _LiveInfoHeaderIcon extends StatelessWidget {
 }
 
 class _InfoTile extends StatelessWidget {
-  const _InfoTile({
-    required this.label,
-    required this.trailing,
-  });
+  const _InfoTile({required this.label, required this.trailing});
 
   final String label;
   final Widget trailing;
@@ -224,10 +221,7 @@ class _InfoTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            DefaultTextStyle.merge(
-              textAlign: TextAlign.end,
-              child: trailing,
-            ),
+            DefaultTextStyle.merge(textAlign: TextAlign.end, child: trailing),
           ],
         ),
       ),

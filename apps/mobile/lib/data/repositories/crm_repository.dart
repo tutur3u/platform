@@ -45,10 +45,7 @@ class CrmRepository {
     return CrmUsersResult.fromJson(response);
   }
 
-  Future<void> createUser(
-    String wsId,
-    Map<String, dynamic> payload,
-  ) async {
+  Future<void> createUser(String wsId, Map<String, dynamic> payload) async {
     await _api.postJson(CrmEndpoints.users(wsId), payload);
   }
 
@@ -71,12 +68,7 @@ class CrmRepository {
     int pageSize = 200,
   }) async {
     final response = await _api.getJson(
-      CrmEndpoints.userGroups(
-        wsId,
-        ids: ids,
-        page: page,
-        pageSize: pageSize,
-      ),
+      CrmEndpoints.userGroups(wsId, ids: ids, page: page, pageSize: pageSize),
     );
     return (response['data'] as List<dynamic>? ?? const <dynamic>[])
         .whereType<Map<String, dynamic>>()
@@ -132,10 +124,7 @@ class CrmRepository {
   }) async {
     await _api.putJson(
       '${CrmEndpoints.feedbacks(wsId)}?feedbackId=$feedbackId',
-      {
-        'content': content,
-        'require_attention': requireAttention,
-      },
+      {'content': content, 'require_attention': requireAttention},
     );
   }
 

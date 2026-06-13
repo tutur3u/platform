@@ -275,9 +275,7 @@ class _QrLoginSignInPageState extends State<QrLoginSignInPage> {
                     dataModuleStyle: const QrDataModuleStyle(
                       color: Colors.black,
                     ),
-                    eyeStyle: const QrEyeStyle(
-                      color: Colors.black,
-                    ),
+                    eyeStyle: const QrEyeStyle(color: Colors.black),
                   ),
                 ),
               ),

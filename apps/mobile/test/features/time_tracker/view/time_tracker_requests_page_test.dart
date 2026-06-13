@@ -65,15 +65,10 @@ void main() {
       );
 
       when(
-        () => repository.getRequests(
-          'ws-1',
-          status: 'pending',
-          userId: 'user-1',
-        ),
+        () =>
+            repository.getRequests('ws-1', status: 'pending', userId: 'user-1'),
       ).thenAnswer((_) async => const []);
-      when(
-        () => repository.getWorkspaceSettings('ws-1'),
-      ).thenAnswer(
+      when(() => repository.getWorkspaceSettings('ws-1')).thenAnswer(
         (_) async => const WorkspaceSettings(missedEntryDateThreshold: 0),
       );
       when(
@@ -92,25 +87,24 @@ void main() {
       );
     });
 
-    testWidgets(
-      'loads the missed-entry threshold for non-managers',
-      (tester) async {
-        await tester.pumpApp(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthCubit>.value(value: authCubit),
-              BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
-            ],
-            child: TimeTrackerRequestsPage(
-              repository: repository,
-              workspacePermissionsRepository: permissionsRepository,
-            ),
+    testWidgets('loads the missed-entry threshold for non-managers', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>.value(value: authCubit),
+            BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+          ],
+          child: TimeTrackerRequestsPage(
+            repository: repository,
+            workspacePermissionsRepository: permissionsRepository,
           ),
-        );
-        await tester.pumpAndSettle();
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        verify(() => repository.getWorkspaceSettings('ws-1')).called(1);
-      },
-    );
+      verify(() => repository.getWorkspaceSettings('ws-1')).called(1);
+    });
   });
 }

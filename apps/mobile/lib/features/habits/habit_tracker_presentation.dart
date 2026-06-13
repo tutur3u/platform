@@ -28,24 +28,20 @@ const List<String> habitTrackerColorOptions = [
   'YELLOW',
 ];
 
-HabitTrackerFieldSchema _textField(
-  String key,
-  String label,
-) => HabitTrackerFieldSchema(
-  key: key,
-  label: label,
-  type: HabitTrackerFieldType.text,
-);
+HabitTrackerFieldSchema _textField(String key, String label) =>
+    HabitTrackerFieldSchema(
+      key: key,
+      label: label,
+      type: HabitTrackerFieldType.text,
+    );
 
-HabitTrackerFieldSchema _booleanField(
-  String key,
-  String label,
-) => HabitTrackerFieldSchema(
-  key: key,
-  label: label,
-  type: HabitTrackerFieldType.boolean,
-  required: true,
-);
+HabitTrackerFieldSchema _booleanField(String key, String label) =>
+    HabitTrackerFieldSchema(
+      key: key,
+      label: label,
+      type: HabitTrackerFieldType.boolean,
+      required: true,
+    );
 
 HabitTrackerTemplate _quickIncrementTemplate({
   required String id,

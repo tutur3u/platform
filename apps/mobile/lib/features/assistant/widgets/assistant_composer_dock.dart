@@ -59,11 +59,7 @@ class AssistantComposerDock extends StatelessWidget {
       decoration: BoxDecoration(
         color: navSurface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-          top: BorderSide(
-            color: separatorColor,
-          ),
-        ),
+        border: Border(top: BorderSide(color: separatorColor)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -342,23 +338,11 @@ class _DropdownGhostButton extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            leadingIcon,
-            size: 16,
-            color: iconColor,
-          ),
+          Icon(leadingIcon, size: 16, color: iconColor),
           const SizedBox(width: 6),
-          Icon(
-            Icons.chevron_right_rounded,
-            size: 16,
-            color: iconColor,
-          ),
+          Icon(Icons.chevron_right_rounded, size: 16, color: iconColor),
           const SizedBox(width: 6),
-          Icon(
-            trailingIcon,
-            size: 16,
-            color: iconColor,
-          ),
+          Icon(trailingIcon, size: 16, color: iconColor),
         ],
       ),
     );
@@ -366,10 +350,7 @@ class _DropdownGhostButton extends StatelessWidget {
 }
 
 class _LabeledDropdownGhostButton extends StatelessWidget {
-  const _LabeledDropdownGhostButton({
-    required this.icon,
-    required this.label,
-  });
+  const _LabeledDropdownGhostButton({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
@@ -388,11 +369,7 @@ class _LabeledDropdownGhostButton extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(width: 6),
           Text(
             label,

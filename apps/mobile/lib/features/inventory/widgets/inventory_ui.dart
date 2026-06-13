@@ -15,12 +15,8 @@ void showInventoryToast(
   shad.showToast(
     context: toastContext,
     builder: (context, overlay) => destructive
-        ? shad.Alert.destructive(
-            title: Text(message),
-          )
-        : shad.Alert(
-            title: Text(message),
-          ),
+        ? shad.Alert.destructive(title: Text(message))
+        : shad.Alert(title: Text(message)),
   );
 }
 
@@ -82,11 +78,7 @@ class InventoryHeroCard extends StatelessWidget {
                   color: palette.accent.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: Icon(
-                  icon,
-                  size: 26,
-                  color: palette.accent,
-                ),
+                child: Icon(icon, size: 26, color: palette.accent),
               ),
               const shad.Gap(14),
               Expanded(
@@ -111,31 +103,17 @@ class InventoryHeroCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (headerAction != null) ...[
-                const shad.Gap(12),
-                headerAction!,
-              ],
+              if (headerAction != null) ...[const shad.Gap(12), headerAction!],
             ],
           ),
           if (metrics.isNotEmpty) ...[
             const shad.Gap(18),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: metrics,
-            ),
+            Wrap(spacing: 12, runSpacing: 12, children: metrics),
           ],
-          if (child != null) ...[
-            const shad.Gap(18),
-            child!,
-          ],
+          if (child != null) ...[const shad.Gap(18), child!],
           if (actions.isNotEmpty) ...[
             const shad.Gap(18),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: actions,
-            ),
+            Wrap(spacing: 10, runSpacing: 10, children: actions),
           ],
         ],
       ),
@@ -159,11 +137,6 @@ class InventoryMetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FinanceStatChip(
-      label: label,
-      value: value,
-      icon: icon,
-      tint: tint,
-    );
+    return FinanceStatChip(label: label, value: value, icon: icon, tint: tint);
   }
 }

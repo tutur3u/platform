@@ -73,9 +73,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
   static Map<String, dynamic> _stateToCachePayload(
     List<TimeTrackingRequest> requests,
   ) {
-    return {
-      'requests': requests.map(_requestToJson).toList(growable: false),
-    };
+    return {'requests': requests.map(_requestToJson).toList(growable: false)};
   }
 
   static Map<String, dynamic> _decodeCacheJson(Object? json) {
@@ -403,11 +401,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
     } else {
       emit(state.copyWith(selectedStatus: status));
     }
-    await loadRequests(
-      wsId,
-      userId: userId,
-      statusOverride: statusOverride,
-    );
+    await loadRequests(wsId, userId: userId, statusOverride: statusOverride);
   }
 
   void reset() {
@@ -422,10 +416,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         requestId,
         status: ApprovalStatus.approved,
       );
-      _applyStatusMutationToCurrentState(
-        requestId,
-        ApprovalStatus.approved,
-      );
+      _applyStatusMutationToCurrentState(requestId, ApprovalStatus.approved);
       await _persistCurrentStateToCache(wsId);
       await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
       await loadRequests(wsId);
@@ -494,10 +485,7 @@ class TimeTrackerRequestsCubit extends Cubit<TimeTrackerRequestsState> {
         requestId,
         status: ApprovalStatus.pending,
       );
-      _applyStatusMutationToCurrentState(
-        requestId,
-        ApprovalStatus.pending,
-      );
+      _applyStatusMutationToCurrentState(requestId, ApprovalStatus.pending);
       await _persistCurrentStateToCache(wsId);
       await CacheStore.instance.invalidateTags([_cacheTag], workspaceId: wsId);
       await loadRequests(wsId);

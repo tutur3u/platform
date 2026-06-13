@@ -23,9 +23,7 @@ String _extractTextFromContent(Object? content) {
 }
 
 class TaskDescriptionTableEmbedBuilder extends EmbedBuilder {
-  const TaskDescriptionTableEmbedBuilder({
-    this.onTableUpdated,
-  });
+  const TaskDescriptionTableEmbedBuilder({this.onTableUpdated});
 
   final Future<void> Function(EmbedContext context, String tableJson)?
   onTableUpdated;
@@ -83,9 +81,7 @@ class TaskDescriptionTableEmbedBuilder extends EmbedBuilder {
             child: Text(
               text,
               style: isHeader
-                  ? theme.typography.small.copyWith(
-                      fontWeight: FontWeight.w600,
-                    )
+                  ? theme.typography.small.copyWith(fontWeight: FontWeight.w600)
                   : theme.typography.small,
             ),
           ),
@@ -119,11 +115,8 @@ class TaskDescriptionTableEmbedBuilder extends EmbedBuilder {
               alignment: Alignment.centerRight,
               child: shad.GhostButton(
                 density: shad.ButtonDensity.compact,
-                onPressed: () => _openTableEditor(
-                  context,
-                  embedContext,
-                  tableNode,
-                ),
+                onPressed: () =>
+                    _openTableEditor(context, embedContext, tableNode),
                 leading: const Icon(Icons.edit_outlined, size: 14),
                 child: Text(l10n.timerGoalsEdit),
               ),
@@ -131,9 +124,7 @@ class TaskDescriptionTableEmbedBuilder extends EmbedBuilder {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Table(
-              border: TableBorder.all(
-                color: theme.colorScheme.border,
-              ),
+              border: TableBorder.all(color: theme.colorScheme.border),
               defaultColumnWidth: const IntrinsicColumnWidth(),
               children: tableRows,
             ),
@@ -151,9 +142,8 @@ class TaskDescriptionTableEmbedBuilder extends EmbedBuilder {
     final edited = await showAdaptiveSheet<Map<String, dynamic>>(
       context: context,
       maxDialogWidth: 920,
-      builder: (sheetContext) => TaskDescriptionTableEditorSheet(
-        initialTableNode: tableNode,
-      ),
+      builder: (sheetContext) =>
+          TaskDescriptionTableEditorSheet(initialTableNode: tableNode),
     );
     if (edited == null || onTableUpdated == null || !context.mounted) {
       return;
@@ -221,10 +211,7 @@ class TaskDescriptionTableEditorSheetState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l10n.timerGoalsEdit,
-                style: theme.typography.h4,
-              ),
+              Text(l10n.timerGoalsEdit, style: theme.typography.h4),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -420,14 +407,12 @@ class TaskDescriptionTableEditorSheetState
         );
       }
 
-      rows.add(
-        <String, dynamic>{
-          'type': 'tableRow',
-          if (originalRow?['attrs'] is Map)
-            'attrs': (originalRow!['attrs'] as Map).cast<String, dynamic>(),
-          'content': cells,
-        },
-      );
+      rows.add(<String, dynamic>{
+        'type': 'tableRow',
+        if (originalRow?['attrs'] is Map)
+          'attrs': (originalRow!['attrs'] as Map).cast<String, dynamic>(),
+        'content': cells,
+      });
     }
 
     return <String, dynamic>{
@@ -455,10 +440,7 @@ class TaskDescriptionTableEditorSheetState
         'attrs': (originalParagraph!['attrs'] as Map).cast<String, dynamic>(),
       if (text.trim().isNotEmpty)
         'content': [
-          <String, dynamic>{
-            'type': 'text',
-            'text': text,
-          },
+          <String, dynamic>{'type': 'text', 'text': text},
         ],
     };
 

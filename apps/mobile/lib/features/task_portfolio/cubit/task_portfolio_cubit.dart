@@ -92,10 +92,7 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
     );
   }
 
-  Future<void> load(
-    String wsId, {
-    bool forceRefresh = false,
-  }) async {
+  Future<void> load(String wsId, {bool forceRefresh = false}) async {
     final requestToken = ++_loadRequestToken;
     final workspaceChanged = state.workspaceId != wsId;
     final cacheKey = _cacheKey(wsId);
@@ -349,10 +346,7 @@ class TaskPortfolioCubit extends Cubit<TaskPortfolioState> {
     );
   }
 
-  Future<void> _runMutation(
-    String wsId,
-    Future<void> Function() action,
-  ) async {
+  Future<void> _runMutation(String wsId, Future<void> Function() action) async {
     emit(state.copyWith(isMutating: true, clearError: true));
     try {
       await action();

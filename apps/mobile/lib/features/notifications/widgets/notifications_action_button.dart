@@ -63,10 +63,7 @@ class ShellNotificationsActionSlot extends StatelessWidget {
 }
 
 class NotificationsActionButton extends StatefulWidget {
-  const NotificationsActionButton({
-    this.notificationsRepository,
-    super.key,
-  });
+  const NotificationsActionButton({this.notificationsRepository, super.key});
 
   final NotificationsRepository? notificationsRepository;
 

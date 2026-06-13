@@ -165,11 +165,7 @@ class _TaskQuickActionButton extends StatelessWidget {
       onPressed: onPressed,
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16),
-          const shad.Gap(6),
-          Text(label),
-        ],
+        children: [Icon(icon, size: 16), const shad.Gap(6), Text(label)],
       ),
     );
   }
@@ -194,11 +190,7 @@ class _TaskQuickPriorityButton extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            style.icon,
-            size: 15,
-            color: selected ? style.foreground : null,
-          ),
+          Icon(style.icon, size: 15, color: selected ? style.foreground : null),
           const shad.Gap(5),
           Text(
             style.label,

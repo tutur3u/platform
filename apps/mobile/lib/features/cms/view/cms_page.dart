@@ -895,10 +895,7 @@ class _AttentionTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            item.title,
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
+          Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text(
             item.detail,

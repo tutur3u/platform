@@ -29,12 +29,7 @@ class AssistantChromeCubit extends Cubit<AssistantChromeState> {
   }
 
   void setLiveMode({required bool value}) {
-    emit(
-      state.copyWith(
-        isLiveMode: value,
-        isFullscreen: value,
-      ),
-    );
+    emit(state.copyWith(isLiveMode: value, isFullscreen: value));
   }
 }
 
@@ -47,10 +42,7 @@ class AssistantChromeState extends Equatable {
   final bool isFullscreen;
   final bool isLiveMode;
 
-  AssistantChromeState copyWith({
-    bool? isFullscreen,
-    bool? isLiveMode,
-  }) {
+  AssistantChromeState copyWith({bool? isFullscreen, bool? isLiveMode}) {
     return AssistantChromeState(
       isFullscreen: isFullscreen ?? this.isFullscreen,
       isLiveMode: isLiveMode ?? this.isLiveMode,

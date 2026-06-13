@@ -107,9 +107,9 @@ class _MessageBubble extends StatelessWidget {
                 if (message.content.isNotEmpty)
                   Text(
                     message.content,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      height: 1.35,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(height: 1.35),
                   ),
                 if (message.attachments.isNotEmpty) ...[
                   const SizedBox(height: 8),

@@ -34,10 +34,7 @@ class ProfilePage extends StatelessWidget {
         final cubit = ProfileCubit(
           profileRepository:
               profileRepository ??
-              ProfileRepository(
-                ownsApiClient: true,
-                ownsHttpClient: true,
-              ),
+              ProfileRepository(ownsApiClient: true, ownsHttpClient: true),
         );
         unawaited(cubit.loadProfile());
         return cubit;
@@ -115,10 +112,9 @@ class _ProfileView extends StatelessWidget {
                       ),
                       const shad.Gap(16),
                       shad.PrimaryButton(
-                        onPressed: () =>
-                            context.read<ProfileCubit>().loadProfile(
-                              forceRefresh: true,
-                            ),
+                        onPressed: () => context
+                            .read<ProfileCubit>()
+                            .loadProfile(forceRefresh: true),
                         child: Text(l10n.commonRetry),
                       ),
                     ],
@@ -133,9 +129,8 @@ class _ProfileView extends StatelessWidget {
             }
 
             return RefreshIndicator.adaptive(
-              onRefresh: () => context.read<ProfileCubit>().loadProfile(
-                forceRefresh: true,
-              ),
+              onRefresh: () =>
+                  context.read<ProfileCubit>().loadProfile(forceRefresh: true),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
@@ -657,10 +652,7 @@ class _ProfileActionTile extends StatelessWidget {
 }
 
 class _ProfileHeroCard extends StatelessWidget {
-  const _ProfileHeroCard({
-    required this.profile,
-    required this.state,
-  });
+  const _ProfileHeroCard({required this.profile, required this.state});
 
   final UserProfile profile;
   final ProfileState state;
@@ -822,9 +814,9 @@ class _ProfileStatusGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final joined = profile.createdAt == null
         ? context.l10n.profileStatusUnknown
-        : DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(
-            profile.createdAt!,
-          );
+        : DateFormat.yMMMd(
+            Localizations.localeOf(context).toString(),
+          ).format(profile.createdAt!);
 
     return Column(
       children: [
@@ -883,11 +875,7 @@ class _StatusCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             alignment: Alignment.center,
-            child: Icon(
-              icon,
-              size: 18,
-              color: theme.colorScheme.primary,
-            ),
+            child: Icon(icon, size: 18, color: theme.colorScheme.primary),
           ),
           const shad.Gap(10),
           Expanded(

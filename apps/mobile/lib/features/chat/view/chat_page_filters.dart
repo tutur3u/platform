@@ -52,9 +52,8 @@ class _ChatFilters extends StatelessWidget {
             ChoiceChip(
               label: Text(l10n.chatActive),
               selected: state.archivedFilter == ChatArchivedFilter.active,
-              onSelected: (_) => unawaited(
-                cubit.setArchivedFilter(ChatArchivedFilter.active),
-              ),
+              onSelected: (_) =>
+                  unawaited(cubit.setArchivedFilter(ChatArchivedFilter.active)),
             ),
             ChoiceChip(
               label: Text(l10n.chatArchived),
@@ -66,9 +65,8 @@ class _ChatFilters extends StatelessWidget {
             ChoiceChip(
               label: Text(l10n.chatAll),
               selected: state.archivedFilter == ChatArchivedFilter.all,
-              onSelected: (_) => unawaited(
-                cubit.setArchivedFilter(ChatArchivedFilter.all),
-              ),
+              onSelected: (_) =>
+                  unawaited(cubit.setArchivedFilter(ChatArchivedFilter.all)),
             ),
           ],
         ),
@@ -78,10 +76,7 @@ class _ChatFilters extends StatelessWidget {
 }
 
 class _TypeChip extends StatelessWidget {
-  const _TypeChip({
-    required this.type,
-    required this.label,
-  });
+  const _TypeChip({required this.type, required this.label});
 
   final ChatConversationType type;
   final String label;

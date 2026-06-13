@@ -100,10 +100,7 @@ class _ChatPageState extends State<ChatPage> {
             if (state.status == ChatStatus.error &&
                 state.conversations.isEmpty) {
               final isForbidden =
-                  state.error?.toLowerCase().contains(
-                    'permission',
-                  ) ??
-                  false;
+                  state.error?.toLowerCase().contains('permission') ?? false;
               return Stack(
                 children: [
                   shellActions,
@@ -191,9 +188,7 @@ class _ChatPageState extends State<ChatPage> {
       if (requestedConversationId != null &&
           requestedConversationId != _openedInitialConversationId) {
         _openedInitialConversationId = requestedConversationId;
-        unawaited(
-          _chatCubit.selectConversation(requestedConversationId),
-        );
+        unawaited(_chatCubit.selectConversation(requestedConversationId));
       }
       return;
     }

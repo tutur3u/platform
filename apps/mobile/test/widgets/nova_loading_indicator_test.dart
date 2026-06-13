@@ -10,11 +10,7 @@ void main() {
   ) async {
     await tester.pumpApp(
       const Center(
-        child: SizedBox(
-          width: 200,
-          height: 80,
-          child: NovaLoadingIndicator(),
-        ),
+        child: SizedBox(width: 200, height: 80, child: NovaLoadingIndicator()),
       ),
     );
 

@@ -47,11 +47,7 @@ class AssistantLiveStatusPanel extends StatelessWidget {
                     color: toneColor.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    _icon,
-                    color: toneColor,
-                    size: 20,
-                  ),
+                  child: Icon(_icon, color: toneColor, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

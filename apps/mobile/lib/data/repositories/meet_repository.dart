@@ -46,10 +46,7 @@ class MeetRepository {
   }) async {
     final response = await _api.putJson(
       MeetEndpoints.meeting(wsId, meetingId),
-      {
-        'name': name,
-        'time': time.toUtc().toIso8601String(),
-      },
+      {'name': name, 'time': time.toUtc().toIso8601String()},
     );
     return MeetMeeting.fromJson(
       response['meeting'] as Map<String, dynamic>? ?? const <String, dynamic>{},

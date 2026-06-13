@@ -31,11 +31,7 @@ class WalletVisualAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(shape: BoxShape.circle, color: bg),
       child: imageSrc == null
-          ? Icon(
-              resolvedIcon,
-              size: size * 0.46,
-              color: colorScheme.primary,
-            )
+          ? Icon(resolvedIcon, size: size * 0.46, color: colorScheme.primary)
           : Padding(
               padding: EdgeInsets.all(size * 0.18),
               child: ClipRRect(

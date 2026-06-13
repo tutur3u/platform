@@ -198,9 +198,7 @@ extension _RequestsViewActions on _RequestsViewState {
         manageTimeTrackingRequestsPermission,
       );
       final canManageWorkspaceSettings = workspacePermissions
-          .containsPermission(
-            manageWorkspaceSettingsPermission,
-          );
+          .containsPermission(manageWorkspaceSettingsPermission);
       final isPersonalWorkspace = workspace?.personal ?? true;
       canManageThresholdSettings =
           !isPersonalWorkspace &&
@@ -299,10 +297,7 @@ extension _RequestsViewActions on _RequestsViewState {
       _statusChangeGracePeriodMinutes = statusChangeGracePeriodMinutes;
       _isThresholdLoading = false;
     });
-    await _loadRequests(
-      wsIdOverride: wsId,
-      forceRefresh: forceRefreshRequests,
-    );
+    await _loadRequests(wsIdOverride: wsId, forceRefresh: forceRefreshRequests);
   }
 
   Future<void> _showThresholdSettingsDialog() async {

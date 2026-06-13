@@ -58,9 +58,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
 
   @override
   Widget build(BuildContext context) {
-    final horizontalPadding = ResponsivePadding.horizontal(
-      context.deviceClass,
-    );
+    final horizontalPadding = ResponsivePadding.horizontal(context.deviceClass);
     return MultiBlocListener(
       listeners: [
         BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -76,9 +74,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
         child: RefreshIndicator.adaptive(
           onRefresh: () => _refresh(context),
           child: ResponsiveWrapper(
-            maxWidth: ResponsivePadding.maxContentWidth(
-              context.deviceClass,
-            ),
+            maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(
                 parent: BouncingScrollPhysics(),
@@ -91,24 +87,21 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
               ),
               children: [
                 SettingsWorkspaceSection(
-                  onSelectCurrentWorkspace: () => showWorkspacePickerSheet(
-                    context,
-                  ),
+                  onSelectCurrentWorkspace: () =>
+                      showWorkspacePickerSheet(context),
                   onSelectDefaultWorkspace: () => showWorkspacePickerSheet(
                     context,
                     mode: WorkspacePickerMode.defaultWorkspace,
                   ),
                   canEditWorkspaceProperties: _canManageWorkspaceSettings,
                   isWorkspacePermissionLoading: _isWorkspacePermissionLoading,
-                  onEditWorkspaceProperties: (workspace) => unawaited(
-                    _showWorkspacePropertiesDialog(workspace),
-                  ),
+                  onEditWorkspaceProperties: (workspace) =>
+                      unawaited(_showWorkspacePropertiesDialog(workspace)),
                   defaultCurrency: _workspaceDefaultCurrency,
                   canEditWorkspaceDefaultCurrency: _canManageWorkspaceSettings,
                   isWorkspaceCurrencyLoading: _isWorkspaceCurrencyLoading,
-                  onEditWorkspaceDefaultCurrency: () => unawaited(
-                    _showWorkspaceDefaultCurrencyEditor(),
-                  ),
+                  onEditWorkspaceDefaultCurrency: () =>
+                      unawaited(_showWorkspaceDefaultCurrencyEditor()),
                   canManageWorkspaceMembers: _canManageWorkspaceMembers,
                   canManageWorkspaceSecrets: _canManageWorkspaceSecrets,
                   canManageWorkspaceRoles: _canManageWorkspaceRoles,

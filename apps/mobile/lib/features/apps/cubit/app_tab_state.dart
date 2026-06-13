@@ -1,10 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class AppTabState extends Equatable {
-  const AppTabState({
-    this.selectedId,
-    this.shouldAutoFocus = false,
-  });
+  const AppTabState({this.selectedId, this.shouldAutoFocus = false});
 
   final String? selectedId;
   final bool shouldAutoFocus;

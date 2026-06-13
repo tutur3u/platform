@@ -26,9 +26,9 @@ class AssistantStarterPrompts extends StatelessWidget {
           replayKey: 'assistant-starter-title-$replayToken',
           child: Text(
             context.l10n.assistantStarterTitle,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
             textAlign: TextAlign.center,
           ),
         ),
@@ -63,10 +63,7 @@ class AssistantStarterPrompts extends StatelessWidget {
 }
 
 class _StarterPromptCard extends StatelessWidget {
-  const _StarterPromptCard({
-    required this.prompt,
-    required this.onTap,
-  });
+  const _StarterPromptCard({required this.prompt, required this.onTap});
 
   final _StarterPrompt prompt;
   final VoidCallback onTap;
@@ -121,11 +118,7 @@ class _StarterPromptCard extends StatelessWidget {
                   color: prompt.iconBackground,
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: Icon(
-                  prompt.icon,
-                  color: prompt.iconColor,
-                  size: 28,
-                ),
+                child: Icon(prompt.icon, color: prompt.iconColor, size: 28),
               ),
               const SizedBox(width: 16),
               Expanded(

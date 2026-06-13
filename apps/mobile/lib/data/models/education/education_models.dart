@@ -193,10 +193,7 @@ class EducationPagedResult<T> extends Equatable {
 }
 
 class EducationAttemptFilterSet extends Equatable {
-  const EducationAttemptFilterSet({
-    required this.id,
-    required this.name,
-  });
+  const EducationAttemptFilterSet({required this.id, required this.name});
 
   factory EducationAttemptFilterSet.fromJson(Map<String, dynamic> json) {
     return EducationAttemptFilterSet(

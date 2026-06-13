@@ -3,12 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:mobile/features/security/data/app_lock_settings_store.dart';
 import 'package:mobile/features/security/data/local_auth_service.dart';
 
-enum AppLockStatus {
-  idle,
-  loading,
-  authenticating,
-  unavailable,
-}
+enum AppLockStatus { idle, loading, authenticating, unavailable }
 
 class AppLockState extends Equatable {
   const AppLockState({
@@ -55,12 +50,7 @@ class AppLockCubit extends Cubit<AppLockState> {
   Future<void> load({bool lockIfEnabled = false}) async {
     emit(state.copyWith(status: AppLockStatus.loading));
     final enabled = await _settingsStore.isEnabled();
-    emit(
-      AppLockState(
-        enabled: enabled,
-        locked: enabled && lockIfEnabled,
-      ),
-    );
+    emit(AppLockState(enabled: enabled, locked: enabled && lockIfEnabled));
   }
 
   Future<void> setEnabled({

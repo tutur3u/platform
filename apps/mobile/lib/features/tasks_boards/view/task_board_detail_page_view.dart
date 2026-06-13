@@ -231,10 +231,7 @@ int _tasksPageSizeHintForViewport(double viewportHeight) {
 }
 
 class _TaskQuickCreateFab extends StatelessWidget {
-  const _TaskQuickCreateFab({
-    required this.label,
-    required this.onPressed,
-  });
+  const _TaskQuickCreateFab({required this.label, required this.onPressed});
 
   final String label;
   final VoidCallback onPressed;
@@ -281,10 +278,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   final Set<String> _initialListLoadRequested = <String>{};
   String? _initialListLoadBoardKey;
   String? _selectedTaskId;
-  TaskBoardListViewSortField _listSort = (
-    field: 'priority',
-    ascending: false,
-  );
+  TaskBoardListViewSortField _listSort = (field: 'priority', ascending: false);
   late int _currentKanbanPageIndex;
 
   bool _isPersonalWorkspaceForBoard(
@@ -820,10 +814,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     _openTaskCreateSheet(
                       context,
                       lists: sortedLists,
-                      defaultListId: _defaultCreateListId(
-                        sortedLists,
-                        state,
-                      ),
+                      defaultListId: _defaultCreateListId(sortedLists, state),
                     ),
                   ),
                 ),
@@ -914,10 +905,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         label: context.l10n.navTasks,
         selected: state.currentView == TaskBoardDetailView.list,
         callbackToken: 'tasks',
-        onPressed: () => _openBoardViewRoute(
-          context,
-          TaskBoardDetailView.list,
-        ),
+        onPressed: () => _openBoardViewRoute(context, TaskBoardDetailView.list),
       ),
       ShellMiniNavItemSpec(
         id: 'kanban',
@@ -925,10 +913,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         label: context.l10n.taskBoardDetailKanbanView,
         selected: state.currentView == TaskBoardDetailView.kanban,
         callbackToken: 'kanban',
-        onPressed: () => _openBoardViewRoute(
-          context,
-          TaskBoardDetailView.kanban,
-        ),
+        onPressed: () =>
+            _openBoardViewRoute(context, TaskBoardDetailView.kanban),
       ),
       ShellMiniNavItemSpec(
         id: 'timeline',
@@ -936,10 +922,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         label: context.l10n.taskBoardDetailTimelineView,
         selected: state.currentView == TaskBoardDetailView.timeline,
         callbackToken: 'timeline',
-        onPressed: () => _openBoardViewRoute(
-          context,
-          TaskBoardDetailView.timeline,
-        ),
+        onPressed: () =>
+            _openBoardViewRoute(context, TaskBoardDetailView.timeline),
       ),
       ShellMiniNavItemSpec(
         id: 'planning',
@@ -1192,10 +1176,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     _restoreScrollOffsetsForCurrentBoard();
   }
 
-  Future<void> _openTaskDetails(
-    BuildContext context,
-    TaskBoardTask task,
-  ) {
+  Future<void> _openTaskDetails(BuildContext context, TaskBoardTask task) {
     final board = context.read<TaskBoardDetailCubit>().state.board;
     if (board == null) return Future<void>.value();
     final router = GoRouter.of(context);
@@ -1527,9 +1508,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   children: [
                     Text(
                       context.l10n.taskBoardDetailSearchTitle,
-                      style: shad.Theme.of(context).typography.large.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: shad.Theme.of(
+                        context,
+                      ).typography.large.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const shad.Gap(12),
                     shad.TextField(
@@ -1722,10 +1703,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
           : context.l10n.taskBoardDetailBulkMarkClosed;
       selectedListId = await shad.showDialog<String>(
         context: context,
-        builder: (dialogContext) => _TaskListPickerDialog(
-          title: title,
-          lists: targetLists,
-        ),
+        builder: (dialogContext) =>
+            _TaskListPickerDialog(title: title, lists: targetLists),
       );
     }
 

@@ -67,9 +67,9 @@ class HabitsActivitySection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
             child: Text(
               _formatGroupLabel(context, group.date),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           for (final item in group.items) ...[
@@ -131,9 +131,7 @@ class _ActivityEntryCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            border: Border.all(
-              color: accentColor.withValues(alpha: 0.22),
-            ),
+            border: Border.all(color: accentColor.withValues(alpha: 0.22)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,9 +175,9 @@ class _ActivityEntryCard extends StatelessWidget {
                       vertical: 7,
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface.withValues(
-                        alpha: 0.92,
-                      ),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surface.withValues(alpha: 0.92),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -198,9 +196,9 @@ class _ActivityEntryCard extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withValues(
-                      alpha: 0.86,
-                    ),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surface.withValues(alpha: 0.86),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Row(
@@ -250,9 +248,9 @@ class _ActivityEntryCard extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(13),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withValues(
-                      alpha: 0.55,
-                    ),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surface.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
@@ -275,9 +273,7 @@ class _ActivityEntryCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(999),
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surface,
+                            color: Theme.of(context).colorScheme.surface,
                           ),
                           child: Text(
                             '#$tag',
@@ -336,9 +332,9 @@ class _ValueChip extends StatelessWidget {
       ),
       child: Text(
         '$label: $value',
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -364,9 +360,9 @@ class _ActivityEmptyState extends StatelessWidget {
           end: Alignment.bottomCenter,
         ),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(
-            alpha: 0.45,
-          ),
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.45),
         ),
       ),
       child: Column(

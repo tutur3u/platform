@@ -318,10 +318,7 @@ class _AssistantMessageMarkdownBodyState
 String _markdownPlainText(String markdown) {
   return markdown
       .replaceAll(RegExp(r'```[\s\S]*?```'), ' ')
-      .replaceAllMapped(
-        RegExp('`([^`]*)`'),
-        (match) => match.group(1) ?? '',
-      )
+      .replaceAllMapped(RegExp('`([^`]*)`'), (match) => match.group(1) ?? '')
       .replaceAll(RegExp(r'!\[([^\]]*)\]\([^)]+\)'), r'$1')
       .replaceAll(RegExp(r'\[([^\]]+)\]\([^)]+\)'), r'$1')
       .replaceAll(RegExp(r'(^|\s)[#>*_~-]+', multiLine: true), ' ')

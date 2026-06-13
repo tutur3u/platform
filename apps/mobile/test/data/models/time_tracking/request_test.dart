@@ -75,9 +75,7 @@ void main() {
         approvedAt: DateTime.utc(2026, 2, 24, 12),
         rejectionReason: 'Old reason',
       );
-      const fresh = TimeTrackingRequest(
-        id: 'r1',
-      );
+      const fresh = TimeTrackingRequest(id: 'r1');
 
       final merged = mergeTimeTrackingRequestPreservingUserEnrichment(
         previous,

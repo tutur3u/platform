@@ -24,9 +24,7 @@ void main() {
     test(
       'suppresses the recommended prompt when the version was dismissed',
       () async {
-        when(
-          () => versionCheckRepository.checkCurrentVersion(),
-        ).thenAnswer(
+        when(() => versionCheckRepository.checkCurrentVersion()).thenAnswer(
           (_) async => const MobileVersionCheck(
             platform: 'ios',
             currentVersion: '1.2.0',
@@ -56,9 +54,7 @@ void main() {
     );
 
     test('persists the dismissed effective version', () async {
-      when(
-        () => versionCheckRepository.checkCurrentVersion(),
-      ).thenAnswer(
+      when(() => versionCheckRepository.checkCurrentVersion()).thenAnswer(
         (_) async => const MobileVersionCheck(
           platform: 'android',
           currentVersion: '1.2.0',

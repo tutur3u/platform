@@ -170,11 +170,7 @@ Future<void> showMissedEntryDialogForTimeTrackerCubit(
     thresholdDays: cubit.state.thresholdDays,
     onCreateCategory:
         onCreateCategory ??
-        ({
-          required name,
-          color,
-          description,
-        }) => cubit.createCategory(
+        ({required name, color, description}) => cubit.createCategory(
           wsId,
           name,
           color: color,

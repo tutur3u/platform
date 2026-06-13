@@ -42,12 +42,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
         return;
       }
     } else {
-      emit(
-        state.copyWith(
-          status: WorkspaceStatus.loading,
-          error: null,
-        ),
-      );
+      emit(state.copyWith(status: WorkspaceStatus.loading, error: null));
     }
 
     try {
@@ -66,22 +61,14 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
       if (hasCachedWorkspaces) {
         return;
       }
-      emit(
-        state.copyWith(
-          status: WorkspaceStatus.error,
-          error: e.toString(),
-        ),
-      );
+      emit(state.copyWith(status: WorkspaceStatus.error, error: e.toString()));
     }
   }
 
   /// Selects the active workspace for the current device/session.
   Future<void> selectWorkspace(Workspace workspace) async {
     emit(
-      state.copyWith(
-        currentWorkspace: workspace,
-        hiddenModuleIds: const [],
-      ),
+      state.copyWith(currentWorkspace: workspace, hiddenModuleIds: const []),
     );
     await _repo.saveSelectedWorkspace(workspace);
     unawaited(_loadMobileModuleFlags(workspace.id));
@@ -102,10 +89,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     emit(state.copyWith(isCreating: true));
 
     try {
-      final result = await _repo.createWorkspace(
-        name,
-        avatarFile: avatarFile,
-      );
+      final result = await _repo.createWorkspace(name, avatarFile: avatarFile);
 
       emit(
         state.copyWith(

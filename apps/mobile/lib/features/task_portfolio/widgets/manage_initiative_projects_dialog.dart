@@ -44,9 +44,9 @@ class _ManageInitiativeProjectsDialogState
           children: [
             Text(
               context.l10n.taskPortfolioLinkedProjects,
-              style: shad.Theme.of(context).typography.small.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: shad.Theme.of(
+                context,
+              ).typography.small.copyWith(fontWeight: FontWeight.w600),
             ),
             const shad.Gap(8),
             if (widget.initiative.linkedProjects.isEmpty)
@@ -75,9 +75,9 @@ class _ManageInitiativeProjectsDialogState
             const shad.Gap(16),
             Text(
               context.l10n.taskPortfolioLinkProject,
-              style: shad.Theme.of(context).typography.small.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: shad.Theme.of(
+                context,
+              ).typography.small.copyWith(fontWeight: FontWeight.w600),
             ),
             const shad.Gap(8),
             if (widget.availableProjects.isEmpty)

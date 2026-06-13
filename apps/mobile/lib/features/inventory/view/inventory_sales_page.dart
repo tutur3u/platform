@@ -254,9 +254,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
             );
 
             return ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(
-                context.deviceClass,
-              ),
+              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
               child: Stack(
                 children: [
                   RefreshIndicator(
@@ -564,9 +562,7 @@ class _InventorySaleDetailDialogState
                 child: Text(l10n.commonRetry),
               ),
             ],
-            child: Text(
-              snapshot.error?.toString() ?? l10n.inventorySalesLabel,
-            ),
+            child: Text(snapshot.error?.toString() ?? l10n.inventorySalesLabel),
           );
         }
 
@@ -600,9 +596,9 @@ class _InventorySaleDetailDialogState
             children: [
               Text(
                 formatCurrency(sale.paidAmount, widget.currency),
-                style: shad.Theme.of(context).typography.h2.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+                style: shad.Theme.of(
+                  context,
+                ).typography.h2.copyWith(fontWeight: FontWeight.w900),
               ),
               const shad.Gap(8),
               Wrap(
@@ -632,91 +628,84 @@ class _InventorySaleDetailDialogState
                 ],
               ),
               const shad.Gap(16),
-              _DetailInfoGrid(
-                currency: widget.currency,
-                sale: sale,
-              ),
+              _DetailInfoGrid(currency: widget.currency, sale: sale),
               if (sale.lines.isNotEmpty) ...[
                 const shad.Gap(18),
                 FinanceSectionHeader(title: l10n.inventorySalesLineItems),
                 const shad.Gap(12),
-                ...sale.lines.map(
-                  (line) {
-                    final quantityText = line.quantity.toStringAsFixed(
-                      line.quantity % 1 == 0 ? 0 : 1,
-                    );
+                ...sale.lines.map((line) {
+                  final quantityText = line.quantity.toStringAsFixed(
+                    line.quantity % 1 == 0 ? 0 : 1,
+                  );
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: FinancePanel(
-                        radius: 18,
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    line.productName,
-                                    style: shad.Theme.of(context)
-                                        .typography
-                                        .small
-                                        .copyWith(fontWeight: FontWeight.w800),
-                                  ),
-                                ),
-                                Text(
-                                  formatCurrency(
-                                    line.price * line.quantity,
-                                    widget.currency,
-                                  ),
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: FinancePanel(
+                      radius: 18,
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  line.productName,
                                   style: shad.Theme.of(context).typography.small
                                       .copyWith(fontWeight: FontWeight.w800),
                                 ),
-                              ],
-                            ),
-                            const shad.Gap(6),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                if (line.ownerName?.trim().isNotEmpty ?? false)
-                                  _SaleBadge(
-                                    label: line.ownerName!.trim(),
-                                    color: FinancePalette.of(context).positive,
-                                  ),
-                                if (line.warehouseName?.trim().isNotEmpty ??
-                                    false)
-                                  _SaleBadge(
-                                    label: line.warehouseName!.trim(),
-                                    color: shad.Theme.of(
-                                      context,
-                                    ).colorScheme.mutedForeground,
-                                  ),
-                                if (line.unitName?.trim().isNotEmpty ?? false)
-                                  _SaleBadge(
-                                    label: line.unitName!.trim(),
-                                    color: FinancePalette.of(context).accent,
-                                  ),
-                              ],
-                            ),
-                            const shad.Gap(8),
-                            Text(
-                              '${formatCurrency(line.price, widget.currency)} '
-                              '× $quantityText',
-                              style: shad.Theme.of(context).typography.textSmall
-                                  .copyWith(
-                                    color: shad.Theme.of(
-                                      context,
-                                    ).colorScheme.mutedForeground,
-                                  ),
-                            ),
-                          ],
-                        ),
+                              ),
+                              Text(
+                                formatCurrency(
+                                  line.price * line.quantity,
+                                  widget.currency,
+                                ),
+                                style: shad.Theme.of(context).typography.small
+                                    .copyWith(fontWeight: FontWeight.w800),
+                              ),
+                            ],
+                          ),
+                          const shad.Gap(6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (line.ownerName?.trim().isNotEmpty ?? false)
+                                _SaleBadge(
+                                  label: line.ownerName!.trim(),
+                                  color: FinancePalette.of(context).positive,
+                                ),
+                              if (line.warehouseName?.trim().isNotEmpty ??
+                                  false)
+                                _SaleBadge(
+                                  label: line.warehouseName!.trim(),
+                                  color: shad.Theme.of(
+                                    context,
+                                  ).colorScheme.mutedForeground,
+                                ),
+                              if (line.unitName?.trim().isNotEmpty ?? false)
+                                _SaleBadge(
+                                  label: line.unitName!.trim(),
+                                  color: FinancePalette.of(context).accent,
+                                ),
+                            ],
+                          ),
+                          const shad.Gap(8),
+                          Text(
+                            '${formatCurrency(line.price, widget.currency)} '
+                            '× $quantityText',
+                            style: shad.Theme.of(context).typography.textSmall
+                                .copyWith(
+                                  color: shad.Theme.of(
+                                    context,
+                                  ).colorScheme.mutedForeground,
+                                ),
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                }),
               ],
             ],
           ),
@@ -727,10 +716,7 @@ class _InventorySaleDetailDialogState
 }
 
 class _DetailInfoGrid extends StatelessWidget {
-  const _DetailInfoGrid({
-    required this.currency,
-    required this.sale,
-  });
+  const _DetailInfoGrid({required this.currency, required this.sale});
 
   final String currency;
   final InventorySaleDetail sale;
@@ -776,11 +762,7 @@ class _DetailInfoGrid extends StatelessWidget {
       ),
     );
 
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: items,
-    );
+    return Wrap(spacing: 10, runSpacing: 10, children: items);
   }
 }
 
@@ -812,9 +794,9 @@ class _DetailStat extends StatelessWidget {
           const shad.Gap(4),
           Text(
             value,
-            style: shad.Theme.of(context).typography.small.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: shad.Theme.of(
+              context,
+            ).typography.small.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -825,20 +807,14 @@ class _DetailStat extends StatelessWidget {
     }
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(
-        minWidth: 180,
-        maxWidth: 220,
-      ),
+      constraints: const BoxConstraints(minWidth: 180, maxWidth: 220),
       child: child,
     );
   }
 }
 
 class _SaleBadge extends StatelessWidget {
-  const _SaleBadge({
-    required this.label,
-    required this.color,
-  });
+  const _SaleBadge({required this.label, required this.color});
 
   final String label;
   final Color color;

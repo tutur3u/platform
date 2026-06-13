@@ -128,9 +128,7 @@ class AssistantLiveSocketClient {
         'model': model,
         'config': {
           'responseModalities': ['AUDIO'],
-          'historyConfig': {
-            'initialHistoryInClientContent': true,
-          },
+          'historyConfig': {'initialHistoryInClientContent': true},
           'sessionResumption': sessionHandle == null
               ? <String, dynamic>{}
               : {'handle': sessionHandle},
@@ -142,9 +140,7 @@ class AssistantLiveSocketClient {
   void sendText(String text) {
     if (text.trim().isEmpty) return;
     _send({
-      'realtimeInput': {
-        'text': text,
-      },
+      'realtimeInput': {'text': text},
     });
   }
 
@@ -164,19 +160,14 @@ class AssistantLiveSocketClient {
     if (jpegBytes.isEmpty) return;
     _send({
       'realtimeInput': {
-        'video': {
-          'data': base64Encode(jpegBytes),
-          'mimeType': 'image/jpeg',
-        },
+        'video': {'data': base64Encode(jpegBytes), 'mimeType': 'image/jpeg'},
       },
     });
   }
 
   void sendToolResponses(List<Map<String, dynamic>> functionResponses) {
     _send({
-      'toolResponse': {
-        'functionResponses': functionResponses,
-      },
+      'toolResponse': {'functionResponses': functionResponses},
     });
   }
 
@@ -264,10 +255,7 @@ class AssistantLiveSocketClient {
       final text = outputTranscription['text'] as String?;
       if (text != null && text.isNotEmpty) {
         _events.add(
-          AssistantLiveSocketTranscriptDelta(
-            text: text,
-            isUserInput: false,
-          ),
+          AssistantLiveSocketTranscriptDelta(text: text, isUserInput: false),
         );
       }
     }
@@ -277,10 +265,7 @@ class AssistantLiveSocketClient {
       final text = inputTranscription['text'] as String?;
       if (text != null && text.isNotEmpty) {
         _events.add(
-          AssistantLiveSocketTranscriptDelta(
-            text: text,
-            isUserInput: true,
-          ),
+          AssistantLiveSocketTranscriptDelta(text: text, isUserInput: true),
         );
       }
     }

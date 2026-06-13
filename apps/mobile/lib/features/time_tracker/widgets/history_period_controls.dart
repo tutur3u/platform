@@ -103,11 +103,7 @@ class HistoryPeriodControls extends StatelessWidget {
         final start = DateTime(anchor.year, anchor.month, anchor.day);
         return (start: start, end: start);
       case HistoryViewMode.week:
-        final localAnchor = DateTime(
-          anchor.year,
-          anchor.month,
-          anchor.day,
-        );
+        final localAnchor = DateTime(anchor.year, anchor.month, anchor.day);
         final offset = (localAnchor.weekday - firstDayOfWeek + 7) % 7;
         final start = localAnchor.subtract(Duration(days: offset));
         final end = start.add(const Duration(days: 6));

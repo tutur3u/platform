@@ -53,13 +53,7 @@ void main() {
         (field: 'priority', ascending: false),
       );
 
-      expect(sorted.map((task) => task.id), [
-        'b',
-        'normal',
-        'a',
-        'none',
-        'c',
-      ]);
+      expect(sorted.map((task) => task.id), ['b', 'normal', 'a', 'none', 'c']);
     });
 
     test('sorts by name ascending for non-completed tasks', () {

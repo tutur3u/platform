@@ -19,10 +19,7 @@ String taskBoardDetailLocation({
   return '$boardRoute?taskId=$encodedTaskId';
 }
 
-String taskBoardViewLocation({
-  required String boardId,
-  required String view,
-}) {
+String taskBoardViewLocation({required String boardId, required String view}) {
   return Routes.taskBoardDetailViewPath(boardId, view);
 }
 

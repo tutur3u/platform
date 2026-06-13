@@ -6,9 +6,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 
 typedef OfflineMutationDispatcher =
-    Future<void> Function(
-      PendingMutationRecord record,
-    );
+    Future<void> Function(PendingMutationRecord record);
 
 class OfflineMutationQueue {
   OfflineMutationQueue._();

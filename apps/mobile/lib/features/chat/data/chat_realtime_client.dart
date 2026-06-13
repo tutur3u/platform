@@ -39,10 +39,7 @@ class ChatRealtimeConversationDeletedEvent extends ChatRealtimeEvent {
 }
 
 class ChatRealtimeMessageEvent extends ChatRealtimeEvent {
-  const ChatRealtimeMessageEvent({
-    required this.type,
-    required this.message,
-  });
+  const ChatRealtimeMessageEvent({required this.type, required this.message});
 
   final String type;
   final ChatMessage message;

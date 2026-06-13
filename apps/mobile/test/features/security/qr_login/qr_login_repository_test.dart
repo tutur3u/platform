@@ -18,14 +18,10 @@ void main() {
 
     test('creates a mobile login challenge without an auth session', () async {
       when(
-        () => apiClient.postJson(
-          AuthEndpoints.qrLoginChallenges,
-          {
-            'locale': 'en',
-            'origin': 'https://tuturuuu.com',
-          },
-          requiresAuth: false,
-        ),
+        () => apiClient.postJson(AuthEndpoints.qrLoginChallenges, {
+          'locale': 'en',
+          'origin': 'https://tuturuuu.com',
+        }, requiresAuth: false),
       ).thenAnswer(
         (_) async => {
           'success': true,

@@ -59,9 +59,9 @@ class StatsCards extends StatelessWidget {
                   value: _formatSeconds(stats?.weekTime ?? 0),
                   icon: shad.LucideIcons.trendingUp,
                   iconColor: const Color(0xFF16A34A),
-                  iconBackgroundColor: const Color(0xFF16A34A).withValues(
-                    alpha: 0.16,
-                  ),
+                  iconBackgroundColor: const Color(
+                    0xFF16A34A,
+                  ).withValues(alpha: 0.16),
                 ),
               ),
               SizedBox(
@@ -71,9 +71,9 @@ class StatsCards extends StatelessWidget {
                   value: _formatSeconds(stats?.monthTime ?? 0),
                   icon: shad.LucideIcons.zap,
                   iconColor: const Color(0xFF7C3AED),
-                  iconBackgroundColor: const Color(0xFF7C3AED).withValues(
-                    alpha: 0.16,
-                  ),
+                  iconBackgroundColor: const Color(
+                    0xFF7C3AED,
+                  ).withValues(alpha: 0.16),
                 ),
               ),
               SizedBox(
@@ -138,18 +138,12 @@ class _StatCard extends StatelessWidget {
                   color: iconBackgroundColor,
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: Icon(
-                  icon,
-                  size: 16,
-                  color: iconColor,
-                ),
+                child: Icon(icon, size: 16, color: iconColor),
               ),
             ),
             Text(
               value,
-              style: theme.typography.p.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: theme.typography.p.copyWith(fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             const shad.Gap(2),

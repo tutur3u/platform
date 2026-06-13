@@ -77,9 +77,7 @@ class AuthScaffold extends StatelessWidget {
                   vertical: 24,
                 ),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                  ),
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Align(
                     alignment: Alignment.topCenter,
                     child: ConstrainedBox(

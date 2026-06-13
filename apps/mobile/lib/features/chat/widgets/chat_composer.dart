@@ -39,9 +39,7 @@ class _ChatComposerState extends State<ChatComposer> {
   }
 
   Future<void> _pickAttachment() async {
-    final result = await FilePicker.pickFiles(
-      withData: true,
-    );
+    final result = await FilePicker.pickFiles(withData: true);
     final file = result?.files.firstOrNull;
     if (file != null) {
       widget.onPickAttachment(file);

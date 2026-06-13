@@ -143,18 +143,14 @@ class AuthRepository {
   }) async {
     try {
       final deviceId = await getDeviceId();
-      final response = await _apiClient.postJson(
-        AuthEndpoints.otpSend,
-        {
-          'client': 'mobile',
-          'email': email,
-          'locale': getLocale(),
-          'platform': _mobileOtpPlatform,
-          if (deviceId != null) 'deviceId': deviceId,
-          if (captchaToken != null) 'captchaToken': captchaToken,
-        },
-        requiresAuth: false,
-      );
+      final response = await _apiClient.postJson(AuthEndpoints.otpSend, {
+        'client': 'mobile',
+        'email': email,
+        'locale': getLocale(),
+        'platform': _mobileOtpPlatform,
+        if (deviceId != null) 'deviceId': deviceId,
+        if (captchaToken != null) 'captchaToken': captchaToken,
+      }, requiresAuth: false);
 
       if (response['error'] != null) {
         return (
@@ -178,18 +174,14 @@ class AuthRepository {
   ) async {
     try {
       final deviceId = await getDeviceId();
-      final response = await _apiClient.postJson(
-        AuthEndpoints.otpVerify,
-        {
-          'client': 'mobile',
-          'email': email,
-          'locale': getLocale(),
-          'otp': otp,
-          'platform': _mobileOtpPlatform,
-          if (deviceId != null) 'deviceId': deviceId,
-        },
-        requiresAuth: false,
-      );
+      final response = await _apiClient.postJson(AuthEndpoints.otpVerify, {
+        'client': 'mobile',
+        'email': email,
+        'locale': getLocale(),
+        'otp': otp,
+        'platform': _mobileOtpPlatform,
+        if (deviceId != null) 'deviceId': deviceId,
+      }, requiresAuth: false);
 
       if (response['error'] != null) {
         return (success: false, error: response['error'] as String);
@@ -222,18 +214,14 @@ class AuthRepository {
   }) async {
     try {
       final deviceId = await getDeviceId();
-      final response = await _apiClient.postJson(
-        AuthEndpoints.passwordLogin,
-        {
-          'client': 'mobile',
-          'email': email,
-          'password': password,
-          'locale': getLocale(),
-          if (deviceId != null) 'deviceId': deviceId,
-          if (captchaToken != null) 'captchaToken': captchaToken,
-        },
-        requiresAuth: false,
-      );
+      final response = await _apiClient.postJson(AuthEndpoints.passwordLogin, {
+        'client': 'mobile',
+        'email': email,
+        'password': password,
+        'locale': getLocale(),
+        if (deviceId != null) 'deviceId': deviceId,
+        if (captchaToken != null) 'captchaToken': captchaToken,
+      }, requiresAuth: false);
 
       if (response['error'] != null) {
         return (
@@ -547,11 +535,7 @@ class AuthRepository {
 
       if (metadata.isNotEmpty) {
         try {
-          await _client.auth.updateUser(
-            UserAttributes(
-              data: metadata,
-            ),
-          );
+          await _client.auth.updateUser(UserAttributes(data: metadata));
         } on AuthException {
           // Apple only returns name fields on the first authorization.
           // Do not fail sign-in if persisting that optional metadata fails.
@@ -590,9 +574,7 @@ class AuthRepository {
     return parts.join(' ');
   }
 
-  bool _shouldFallbackToBrowserFromNativeError(
-    GoogleSignInExceptionCode code,
-  ) {
+  bool _shouldFallbackToBrowserFromNativeError(GoogleSignInExceptionCode code) {
     return switch (code) {
       GoogleSignInExceptionCode.clientConfigurationError ||
       GoogleSignInExceptionCode.providerConfigurationError ||
@@ -610,10 +592,7 @@ class AuthRepository {
   Future<AuthActionResult> _launchBrowserGoogleSignIn() async {
     return _launchBrowserOAuthSignIn(
       provider: OAuthProvider.google,
-      queryParams: const {
-        'access_type': 'offline',
-        'prompt': 'consent',
-      },
+      queryParams: const {'access_type': 'offline', 'prompt': 'consent'},
       errorCode: AuthErrorCode.googleBrowserLaunchFailed,
     );
   }

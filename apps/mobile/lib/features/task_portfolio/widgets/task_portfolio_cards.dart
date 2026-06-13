@@ -41,10 +41,7 @@ class TaskProjectCard extends StatelessWidget {
                   color: accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
-                  Icons.folder_open_outlined,
-                  color: accent,
-                ),
+                child: Icon(Icons.folder_open_outlined, color: accent),
               ),
               const shad.Gap(12),
               Expanded(
@@ -172,10 +169,7 @@ class TaskInitiativeCard extends StatelessWidget {
                   color: accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(
-                  Icons.account_tree_outlined,
-                  color: accent,
-                ),
+                child: const Icon(Icons.account_tree_outlined, color: accent),
               ),
               const shad.Gap(12),
               Expanded(

@@ -511,15 +511,13 @@ GoRouter createAppRouter(
           ),
           GoRoute(
             path: Routes.settingsAbout,
-            builder: (context, state) => const SettingsPage(
-              section: SettingsSectionDestination.about,
-            ),
+            builder: (context, state) =>
+                const SettingsPage(section: SettingsSectionDestination.about),
           ),
           GoRoute(
             path: Routes.settingsSession,
-            builder: (context, state) => const SettingsPage(
-              section: SettingsSectionDestination.session,
-            ),
+            builder: (context, state) =>
+                const SettingsPage(section: SettingsSectionDestination.session),
           ),
           GoRoute(
             path: Routes.settingsQrLoginScan,

@@ -25,9 +25,7 @@ void main() {
     blocTest<InventoryAccessCubit, InventoryAccessState>(
       'emits cached access first and keeps it when refresh fails',
       build: () {
-        when(
-          () => repository.readCachedInventoryAccess('team-1'),
-        ).thenAnswer(
+        when(() => repository.readCachedInventoryAccess('team-1')).thenAnswer(
           (_) async => CacheReadResult<bool>(
             state: CacheEntryState.stale,
             data: true,
@@ -58,12 +56,9 @@ void main() {
     blocTest<InventoryAccessCubit, InventoryAccessState>(
       'shows loading when no cached access exists',
       build: () {
-        when(
-          () => repository.readCachedInventoryAccess('team-1'),
-        ).thenAnswer(
-          (_) async => const CacheReadResult<bool>(
-            state: CacheEntryState.missing,
-          ),
+        when(() => repository.readCachedInventoryAccess('team-1')).thenAnswer(
+          (_) async =>
+              const CacheReadResult<bool>(state: CacheEntryState.missing),
         );
         when(
           () => repository.isInventoryEnabled('team-1'),

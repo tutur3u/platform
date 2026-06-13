@@ -134,10 +134,8 @@ class _MobileMfaApprovalListenerState extends State<MobileMfaApprovalListener>
     _dialogOpen = true;
     final approved = await shad.showDialog<bool>(
       context: context,
-      builder: (_) => _MfaApprovalDialog(
-        approval: approval,
-        repository: _repository,
-      ),
+      builder: (_) =>
+          _MfaApprovalDialog(approval: approval, repository: _repository),
     );
 
     if (!mounted) {
@@ -187,10 +185,7 @@ class _MobileMfaApprovalListenerState extends State<MobileMfaApprovalListener>
 }
 
 class _MfaApprovalDialog extends StatefulWidget {
-  const _MfaApprovalDialog({
-    required this.approval,
-    required this.repository,
-  });
+  const _MfaApprovalDialog({required this.approval, required this.repository});
 
   final PendingMfaApproval approval;
   final MfaApprovalRepository repository;

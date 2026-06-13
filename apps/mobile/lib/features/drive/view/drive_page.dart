@@ -180,9 +180,7 @@ class _DrivePageState extends State<DrivePage> {
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: InputDecoration(
-            hintText: context.l10n.driveFolderName,
-          ),
+          decoration: InputDecoration(hintText: context.l10n.driveFolderName),
         ),
         actions: [
           TextButton(
@@ -223,9 +221,7 @@ class _DrivePageState extends State<DrivePage> {
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: InputDecoration(
-            hintText: context.l10n.driveRenameHint,
-          ),
+          decoration: InputDecoration(hintText: context.l10n.driveRenameHint),
         ),
         actions: [
           TextButton(
@@ -289,11 +285,7 @@ class _DrivePageState extends State<DrivePage> {
     try {
       for (final entry in entries) {
         if (entry.isFolder) {
-          await _repository.deleteFolder(
-            _wsId!,
-            path: _path,
-            name: entry.name,
-          );
+          await _repository.deleteFolder(_wsId!, path: _path, name: entry.name);
         } else {
           final fullPath = _path.isEmpty ? entry.name : '$_path/${entry.name}';
           await _repository.deleteFile(_wsId!, path: fullPath);
@@ -484,10 +476,8 @@ class _DrivePageState extends State<DrivePage> {
       if (!mounted) return;
       await Navigator.of(context).push<void>(
         MaterialPageRoute(
-          builder: (_) => _DrivePreviewPage(
-            title: entry.name,
-            signedUrl: signedUrl,
-          ),
+          builder: (_) =>
+              _DrivePreviewPage(title: entry.name, signedUrl: signedUrl),
         ),
       );
     } on ApiException catch (error) {
@@ -625,9 +615,7 @@ class _DrivePageState extends State<DrivePage> {
           padding: const EdgeInsets.all(12),
           child: Text(
             message,
-            style: TextStyle(
-              color: destructive ? Colors.red : null,
-            ),
+            style: TextStyle(color: destructive ? Colors.red : null),
           ),
         ),
       ),
@@ -732,9 +720,7 @@ class _DrivePageState extends State<DrivePage> {
                     highlighted: _selectedNames.isNotEmpty,
                     onPressed: () => _deleteEntries(
                       _entries
-                          .where(
-                            (entry) => _selectedNames.contains(entry.name),
-                          )
+                          .where((entry) => _selectedNames.contains(entry.name))
                           .toList(growable: false),
                     ),
                   ),
@@ -1008,10 +994,7 @@ class _DriveListTile extends StatelessWidget {
               ),
               Column(
                 children: [
-                  Checkbox(
-                    value: selected,
-                    onChanged: (_) => onLongPress(),
-                  ),
+                  Checkbox(value: selected, onChanged: (_) => onLongPress()),
                   PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'rename') {
@@ -1242,10 +1225,7 @@ class _DriveMessageCard extends StatelessWidget {
 }
 
 class _DrivePreviewPage extends StatelessWidget {
-  const _DrivePreviewPage({
-    required this.title,
-    required this.signedUrl,
-  });
+  const _DrivePreviewPage({required this.title, required this.signedUrl});
 
   final String title;
   final String signedUrl;
@@ -1254,9 +1234,7 @@ class _DrivePreviewPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: InAppWebView(
-        initialUrlRequest: URLRequest(url: WebUri(signedUrl)),
-      ),
+      body: InAppWebView(initialUrlRequest: URLRequest(url: WebUri(signedUrl))),
     );
   }
 }

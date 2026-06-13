@@ -48,10 +48,7 @@ class TaskBulkOperation extends Equatable {
   }
 
   factory TaskBulkOperation.removeAssignee(String assigneeId) {
-    return TaskBulkOperation._(
-      type: 'remove_assignee',
-      assigneeId: assigneeId,
-    );
+    return TaskBulkOperation._(type: 'remove_assignee', assigneeId: assigneeId);
   }
 
   static const TaskBulkOperation clearLabels = TaskBulkOperation._(
@@ -97,11 +94,7 @@ class TaskBulkOperation extends Equatable {
 }
 
 class TaskBulkTaskMeta extends Equatable {
-  const TaskBulkTaskMeta({
-    this.listId,
-    this.completedAt,
-    this.closedAt,
-  });
+  const TaskBulkTaskMeta({this.listId, this.completedAt, this.closedAt});
 
   factory TaskBulkTaskMeta.fromJson(Map<String, dynamic> json) {
     return TaskBulkTaskMeta(

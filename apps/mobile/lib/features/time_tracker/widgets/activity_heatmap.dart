@@ -68,10 +68,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
     final formattedDate = DateFormat('yyyy-MM-dd').format(normalizedDate);
     final targetUri = Uri(
       path: Routes.timerHistory,
-      queryParameters: {
-        'historyPeriod': 'day',
-        'historyDate': formattedDate,
-      },
+      queryParameters: {'historyPeriod': 'day', 'historyDate': formattedDate},
     );
     unawaited(context.push(targetUri.toString()));
   }
@@ -83,10 +80,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
       useRootNavigator: true,
       builder: (_) => HistoryPeriodSelectorSheet(
         viewMode: HistoryViewMode.month,
-        initialAnchorDate: DateTime(
-          _selectedMonth.year,
-          _selectedMonth.month,
-        ),
+        initialAnchorDate: DateTime(_selectedMonth.year, _selectedMonth.month),
         firstDayOfWeek: firstDayOfWeek,
       ),
     );
@@ -210,12 +204,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: _LegendRow(maxDuration: maxDuration),
           ),
-        _buildModeContent(
-          context,
-          activityByDate,
-          maxDuration,
-          localeTag,
-        ),
+        _buildModeContent(context, activityByDate, maxDuration, localeTag),
       ],
     );
   }

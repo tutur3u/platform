@@ -143,10 +143,9 @@ class ProfileRepository {
     String? avatarUrl,
   ) async {
     try {
-      await _apiClient.patchJson(
-        ProfileEndpoints.profile,
-        {'avatar_url': avatarUrl},
-      );
+      await _apiClient.patchJson(ProfileEndpoints.profile, {
+        'avatar_url': avatarUrl,
+      });
 
       return (success: true, error: null);
     } on ApiException catch (e) {
@@ -161,10 +160,9 @@ class ProfileRepository {
     String displayName,
   ) async {
     try {
-      await _apiClient.patchJson(
-        ProfileEndpoints.profile,
-        {'display_name': displayName},
-      );
+      await _apiClient.patchJson(ProfileEndpoints.profile, {
+        'display_name': displayName,
+      });
 
       return (success: true, error: null);
     } on ApiException catch (e) {
@@ -177,10 +175,7 @@ class ProfileRepository {
   /// Updates email.
   Future<({bool success, String? error})> updateEmail(String email) async {
     try {
-      await _apiClient.patchJson(
-        ProfileEndpoints.email,
-        {'email': email},
-      );
+      await _apiClient.patchJson(ProfileEndpoints.email, {'email': email});
 
       return (success: true, error: null);
     } on ApiException catch (e) {
@@ -195,10 +190,9 @@ class ProfileRepository {
     String fullName,
   ) async {
     try {
-      await _apiClient.patchJson(
-        ProfileEndpoints.fullName,
-        {'full_name': fullName},
-      );
+      await _apiClient.patchJson(ProfileEndpoints.fullName, {
+        'full_name': fullName,
+      });
 
       return (success: true, error: null);
     } on ApiException catch (e) {
@@ -221,9 +215,7 @@ class ProfileRepository {
           .put(
             Uri.parse(uploadUrl),
             body: bytes,
-            headers: {
-              'Content-Type': contentType,
-            },
+            headers: {'Content-Type': contentType},
           )
           .timeout(const Duration(seconds: 60));
 

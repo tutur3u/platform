@@ -298,9 +298,7 @@ class _ApprovalPanel extends StatelessWidget {
         children: [
           Text(
             l10n.qrLoginApproveTitle,
-            style: theme.typography.large.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: theme.typography.large.copyWith(fontWeight: FontWeight.w800),
           ),
           const shad.Gap(10),
           Text(

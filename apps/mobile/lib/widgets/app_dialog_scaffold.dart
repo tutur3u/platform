@@ -37,14 +37,8 @@ class AppDialogScaffold extends StatelessWidget {
     final mediaQuery = MediaQuery.of(context);
     final viewInsets = mediaQuery.viewInsets;
     final body = scrollable
-        ? SingleChildScrollView(
-            padding: padding,
-            child: child,
-          )
-        : Padding(
-            padding: padding,
-            child: child,
-          );
+        ? SingleChildScrollView(padding: padding, child: child)
+        : Padding(padding: padding, child: child);
 
     return SafeArea(
       top: false,

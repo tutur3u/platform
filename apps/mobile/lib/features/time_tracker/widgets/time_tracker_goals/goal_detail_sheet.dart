@@ -14,10 +14,8 @@ Future<GoalDetailAction?> showGoalDetailSheet(
 }) {
   return showAdaptiveSheet<GoalDetailAction>(
     context: context,
-    builder: (sheetContext) => GoalDetailSheet(
-      goal: goal,
-      categoryName: categoryName,
-    ),
+    builder: (sheetContext) =>
+        GoalDetailSheet(goal: goal, categoryName: categoryName),
   );
 }
 

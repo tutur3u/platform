@@ -36,9 +36,7 @@ class _TaskBoardTaskDetailFullscreenViewState
   bool _isDescriptionEditing = false;
 
   @override
-  void didUpdateWidget(
-    covariant _TaskBoardTaskDetailFullscreenView oldWidget,
-  ) {
+  void didUpdateWidget(covariant _TaskBoardTaskDetailFullscreenView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.task.id != widget.task.id) {
       _section = _TaskBoardTaskDetailSection.information;
@@ -55,9 +53,7 @@ class _TaskBoardTaskDetailFullscreenViewState
 
     return Stack(
       children: [
-        Positioned.fill(
-          child: ColoredBox(color: theme.colorScheme.background),
-        ),
+        Positioned.fill(child: ColoredBox(color: theme.colorScheme.background)),
         ShellTitleOverride(
           ownerId: 'task-board-task-title-${widget.task.id}',
           locations: {boardRoute},
@@ -159,9 +155,7 @@ class _TaskBoardTaskDetailFullscreenViewState
       return;
     }
 
-    final workspaceMemberIds = {
-      for (final member in widget.members) member.id,
-    };
+    final workspaceMemberIds = {for (final member in widget.members) member.id};
     final assigneeIds =
         workspaceMemberIds.isEmpty
               ? <String>[]
@@ -267,25 +261,22 @@ class _TaskBoardTaskDetailFallbackNav extends StatelessWidget {
                 icon: Icons.info_outline_rounded,
                 label: context.l10n.taskBoardDetailInformation,
                 selected: section == _TaskBoardTaskDetailSection.information,
-                onTap: () => onSectionChanged(
-                  _TaskBoardTaskDetailSection.information,
-                ),
+                onTap: () =>
+                    onSectionChanged(_TaskBoardTaskDetailSection.information),
               ),
               _TaskBoardTaskDetailFallbackNavItem(
                 icon: Icons.notes_rounded,
                 label: context.l10n.taskBoardDetailTaskDescriptionLabel,
                 selected: section == _TaskBoardTaskDetailSection.description,
-                onTap: () => onSectionChanged(
-                  _TaskBoardTaskDetailSection.description,
-                ),
+                onTap: () =>
+                    onSectionChanged(_TaskBoardTaskDetailSection.description),
               ),
               _TaskBoardTaskDetailFallbackNavItem(
                 icon: Icons.account_tree_outlined,
                 label: context.l10n.taskBoardDetailEditorRelationshipsTab,
                 selected: section == _TaskBoardTaskDetailSection.relationships,
-                onTap: () => onSectionChanged(
-                  _TaskBoardTaskDetailSection.relationships,
-                ),
+                onTap: () =>
+                    onSectionChanged(_TaskBoardTaskDetailSection.relationships),
               ),
             ],
           ),
@@ -428,9 +419,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
   void initState() {
     super.initState();
     _task = widget.task;
-    _titleController = TextEditingController(
-      text: _task.name?.trim() ?? '',
-    );
+    _titleController = TextEditingController(text: _task.name?.trim() ?? '');
     _titleFocusNode = FocusNode();
     if (!_task.relationshipsLoaded) {
       unawaited(_loadRelationships());
@@ -549,10 +538,8 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
           _compactSheetMaxSize,
         ],
         expand: false,
-        builder: (context, scrollController) => _buildScrollableBody(
-          context,
-          scrollController: scrollController,
-        ),
+        builder: (context, scrollController) =>
+            _buildScrollableBody(context, scrollController: scrollController),
       );
     }
 
@@ -873,9 +860,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
         Expanded(
           child: Text(
             title,
-            style: theme.typography.large.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: theme.typography.large.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
         _buildTaskActionButtons(context),
@@ -889,9 +874,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     return Row(
       children: [
         if (identifier != null) ...[
-          shad.OutlineBadge(
-            child: Text(identifier),
-          ),
+          shad.OutlineBadge(child: Text(identifier)),
           const shad.Gap(8),
         ],
         const Spacer(),
@@ -954,11 +937,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
                 blendMode: BlendMode.dstIn,
                 shaderCallback: (bounds) {
                   return const LinearGradient(
-                    colors: [
-                      Colors.white,
-                      Colors.white,
-                      Colors.transparent,
-                    ],
+                    colors: [Colors.white, Colors.white, Colors.transparent],
                     stops: [0, 0.84, 1],
                   ).createShader(bounds);
                 },
@@ -966,9 +945,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minWidth: constraints.maxWidth,
-                    ),
+                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -1066,9 +1043,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     );
   }
 
-  Widget _buildInformationSection(
-    BuildContext context,
-  ) {
+  Widget _buildInformationSection(BuildContext context) {
     final assignees = _task.assignees
         .where(
           (assignee) =>
@@ -1155,9 +1130,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
               runSpacing: 8,
               children: _task.labels
                   .map(_TaskLabelBadge.new)
-                  .toList(
-                    growable: false,
-                  ),
+                  .toList(growable: false),
             ),
           ),
           const shad.Gap(12),
@@ -1170,9 +1143,8 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
               runSpacing: 8,
               children: _task.projects
                   .map(
-                    (project) => _ProjectBadge(
-                      label: _taskProjectLabel(project),
-                    ),
+                    (project) =>
+                        _ProjectBadge(label: _taskProjectLabel(project)),
                   )
                   .toList(growable: false),
             ),
@@ -1229,9 +1201,7 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
             const shad.Gap(18),
             Text(
               context.l10n.taskBoardDetailTaskNoDescription,
-              style: theme.typography.h4.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: theme.typography.h4.copyWith(fontWeight: FontWeight.w800),
             ),
             const shad.Gap(8),
             Text(
@@ -1952,9 +1922,8 @@ class _TaskBoardTaskDetailSheetState extends State<_TaskBoardTaskDetailSheet> {
     if (!toastContext.mounted) return;
     shad.showToast(
       context: toastContext,
-      builder: (context, overlay) => shad.Alert(
-        content: Text(context.l10n.taskBoardDetailTaskDeleted),
-      ),
+      builder: (context, overlay) =>
+          shad.Alert(content: Text(context.l10n.taskBoardDetailTaskDeleted)),
     );
 
     await shad.closeOverlay<void>(context);

@@ -99,10 +99,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
               ),
             ),
             const shad.Gap(16),
-            Text(
-              l10n.timerEditSession,
-              style: theme.typography.h3,
-            ),
+            Text(l10n.timerEditSession, style: theme.typography.h3),
             if (!canEditTimes) ...[
               const shad.Gap(12),
               Container(
@@ -354,10 +351,7 @@ class _DateTimePicker extends StatelessWidget {
     final theme = shad.Theme.of(context);
     return Row(
       children: [
-        Text(
-          label,
-          style: theme.typography.small,
-        ),
+        Text(label, style: theme.typography.small),
         const Spacer(),
         shad.GhostButton(
           onPressed: enabled

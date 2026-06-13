@@ -164,9 +164,7 @@ class _DayScheduleViewState extends State<DayScheduleView> {
                                   SizedBox(
                                     width: gutterW,
                                     child: Padding(
-                                      padding: const EdgeInsets.only(
-                                        right: 8,
-                                      ),
+                                      padding: const EdgeInsets.only(right: 8),
                                       child: Text(
                                         _formatHour(hour),
                                         textAlign: TextAlign.right,

@@ -6,10 +6,7 @@ import 'package:mobile/widgets/platform_icon_picker.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskBoardFormValue {
-  const TaskBoardFormValue({
-    required this.name,
-    this.icon,
-  });
+  const TaskBoardFormValue({required this.name, this.icon});
 
   final String name;
   final String? icon;
@@ -112,8 +109,6 @@ class _TaskBoardFormDialogState extends State<TaskBoardFormDialog> {
     final safeIcon = platformIconOptions.any((o) => o.key == _selectedIcon)
         ? _selectedIcon
         : null;
-    Navigator.of(
-      context,
-    ).pop(TaskBoardFormValue(name: name, icon: safeIcon));
+    Navigator.of(context).pop(TaskBoardFormValue(name: name, icon: safeIcon));
   }
 }

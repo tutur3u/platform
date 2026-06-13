@@ -308,10 +308,7 @@ class TaskRepository {
 
     final response = await _apiClient.postJson(
       '/api/v1/workspaces/$wsId/tasks/bulk',
-      {
-        'taskIds': normalizedTaskIds,
-        'operation': operation.toJson(),
-      },
+      {'taskIds': normalizedTaskIds, 'operation': operation.toJson()},
     );
     return TaskBulkResult.fromJson(response);
   }
@@ -664,9 +661,7 @@ class TaskRepository {
     }
 
     if (endDate != null && clearEndDate) {
-      throw ArgumentError(
-        'endDate and clearEndDate cannot both be provided',
-      );
+      throw ArgumentError('endDate and clearEndDate cannot both be provided');
     }
 
     if (estimationPoints != null && clearEstimationPoints) {
@@ -748,11 +743,7 @@ class TaskRepository {
 
     final response = await _apiClient.postJson(
       '/api/v1/workspaces/$wsId/task-boards/$boardId/lists',
-      {
-        'name': name,
-        'status': normalizedStatus,
-        'color': normalizedColor,
-      },
+      {'name': name, 'status': normalizedStatus, 'color': normalizedColor},
     );
     final list = response['list'];
     if (list is! Map<String, dynamic>) {
@@ -999,10 +990,7 @@ class TaskRepository {
 
     final response = await _apiClient.postJson(
       '/api/v1/workspaces/$wsId/labels',
-      {
-        'name': name,
-        'color': normalizedColor,
-      },
+      {'name': name, 'color': normalizedColor},
     );
 
     return TaskLabel.fromJson(response);
@@ -1021,10 +1009,7 @@ class TaskRepository {
 
     final response = await _apiClient.patchJson(
       '/api/v1/workspaces/$wsId/labels/$labelId',
-      {
-        'name': name,
-        'color': normalizedColor,
-      },
+      {'name': name, 'color': normalizedColor},
     );
 
     return TaskLabel.fromJson(response);

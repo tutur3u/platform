@@ -10,13 +10,7 @@ import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-enum AvatarMenuAction {
-  workspace,
-  profile,
-  settings,
-  switchAccount,
-  logout,
-}
+enum AvatarMenuAction { workspace, profile, settings, switchAccount, logout }
 
 class AvatarDropdownMenuData {
   const AvatarDropdownMenuData({
@@ -169,10 +163,7 @@ Rect? _resolveTriggerRect(BuildContext context, GlobalKey triggerKey) {
 }
 
 class _AvatarMenuDialog extends StatelessWidget {
-  const _AvatarMenuDialog({
-    required this.child,
-    this.anchorRect,
-  });
+  const _AvatarMenuDialog({required this.child, this.anchorRect});
 
   final Rect? anchorRect;
   final Widget child;
@@ -256,10 +247,7 @@ class _AvatarMenuCompactContent extends StatelessWidget {
 }
 
 class _AvatarMenuDesktopCard extends StatelessWidget {
-  const _AvatarMenuDesktopCard({
-    required this.data,
-    required this.onSelected,
-  });
+  const _AvatarMenuDesktopCard({required this.data, required this.onSelected});
 
   final AvatarDropdownMenuData data;
   final Future<void> Function(AvatarMenuAction action) onSelected;
@@ -463,10 +451,7 @@ class _AccountHeader extends StatelessWidget {
 }
 
 class _WorkspaceCard extends StatelessWidget {
-  const _WorkspaceCard({
-    required this.data,
-    required this.onTap,
-  });
+  const _WorkspaceCard({required this.data, required this.onTap});
 
   final AvatarDropdownMenuData data;
   final VoidCallback onTap;
@@ -576,9 +561,7 @@ class _WorkspaceCard extends StatelessWidget {
 }
 
 class _ActionGroup extends StatelessWidget {
-  const _ActionGroup({
-    required this.children,
-  });
+  const _ActionGroup({required this.children});
 
   final List<Widget> children;
 
@@ -820,10 +803,7 @@ class _UserAvatarState extends State<_UserAvatar> {
 }
 
 class _AvatarFallback extends StatelessWidget {
-  const _AvatarFallback({
-    required this.name,
-    required this.textStyle,
-  });
+  const _AvatarFallback({required this.name, required this.textStyle});
 
   final String name;
   final TextStyle textStyle;

@@ -3,11 +3,7 @@ import 'package:equatable/equatable.dart';
 // ── Tag ────────────────────────────────────────────────────────────────────
 
 class TransactionTag extends Equatable {
-  const TransactionTag({
-    required this.id,
-    required this.name,
-    this.color,
-  });
+  const TransactionTag({required this.id, required this.name, this.color});
 
   factory TransactionTag.fromJson(Map<String, dynamic> json) => TransactionTag(
     id: json['id'] as String,
@@ -94,15 +90,14 @@ class InfiniteTransactionResponse extends Equatable {
     this.nextCursor,
   });
 
-  factory InfiniteTransactionResponse.fromJson(
-    Map<String, dynamic> json,
-  ) => InfiniteTransactionResponse(
-    data: (json['data'] as List<dynamic>)
-        .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    hasMore: json['hasMore'] as bool? ?? false,
-    nextCursor: json['nextCursor'] as String?,
-  );
+  factory InfiniteTransactionResponse.fromJson(Map<String, dynamic> json) =>
+      InfiniteTransactionResponse(
+        data: (json['data'] as List<dynamic>)
+            .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        hasMore: json['hasMore'] as bool? ?? false,
+        nextCursor: json['nextCursor'] as String?,
+      );
 
   final List<Transaction> data;
   final bool hasMore;
@@ -348,9 +343,7 @@ class Transaction extends Equatable {
     final tagsRaw = json['tags'] as List<dynamic>?;
     final tags =
         tagsRaw
-            ?.map(
-              (t) => TransactionTag.fromJson(t as Map<String, dynamic>),
-            )
+            ?.map((t) => TransactionTag.fromJson(t as Map<String, dynamic>))
             .toList() ??
         const <TransactionTag>[];
 
@@ -523,13 +516,7 @@ class Transaction extends Equatable {
     'wallet_image_src': walletImageSrc,
     'creator_full_name': creatorFullName,
     'tags': tags
-        .map(
-          (tag) => {
-            'id': tag.id,
-            'name': tag.name,
-            'color': tag.color,
-          },
-        )
+        .map((tag) => {'id': tag.id, 'name': tag.name, 'color': tag.color})
         .toList(),
     'transfer': transfer == null
         ? null

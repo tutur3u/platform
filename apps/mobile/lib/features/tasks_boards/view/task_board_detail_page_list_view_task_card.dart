@@ -30,11 +30,8 @@ class _TaskCard extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final list = lists.firstWhere(
       (l) => l.id == task.listId,
-      orElse: () => TaskBoardList(
-        id: task.listId,
-        boardId: board.id,
-        name: 'Unknown',
-      ),
+      orElse: () =>
+          TaskBoardList(id: task.listId, boardId: board.id, name: 'Unknown'),
     );
     final isOverdue = _taskIsOverdueForList(task, list);
     final isCompleted = _taskIsCompletedInBoard(task, list);
@@ -48,11 +45,7 @@ class _TaskCard extends StatelessWidget {
         ? listStyle.accent.withValues(alpha: 0.36)
         : listStyle.surfaceBorder.withValues(alpha: 0.18);
     final titleColor =
-        Color.lerp(
-          theme.colorScheme.foreground,
-          listStyle.accent,
-          0.16,
-        ) ??
+        Color.lerp(theme.colorScheme.foreground, listStyle.accent, 0.16) ??
         theme.colorScheme.foreground;
 
     return Padding(

@@ -66,10 +66,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
 }
 
 class ShellInjectedActionsHost extends StatefulWidget {
-  const ShellInjectedActionsHost({
-    required this.matchedLocation,
-    super.key,
-  });
+  const ShellInjectedActionsHost({required this.matchedLocation, super.key});
 
   final String matchedLocation;
 
@@ -183,9 +180,7 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
           curve: Curves.easeOutCubic,
           alignment: Alignment.centerRight,
           child: actions.isEmpty
-              ? const SizedBox(
-                  key: ValueKey<String>('shell-actions-empty'),
-                )
+              ? const SizedBox(key: ValueKey<String>('shell-actions-empty'))
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

@@ -107,9 +107,7 @@ class SessionTile extends StatelessWidget {
                         ),
                       ),
                       const shad.Gap(10),
-                      _SessionDurationBadge(
-                        label: durationText,
-                      ),
+                      _SessionDurationBadge(label: durationText),
                     ],
                   ),
                   const shad.Gap(8),
@@ -271,11 +269,7 @@ class _SessionTimeRangeChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.schedule,
-            size: 13,
-            color: blue.withAlpha(230),
-          ),
+          Icon(Icons.schedule, size: 13, color: blue.withAlpha(230)),
           const shad.Gap(5),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 168),

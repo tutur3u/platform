@@ -98,9 +98,5 @@ WorkspaceSections splitWorkspaceSections(Iterable<Workspace> workspaces) {
   system.sort(compareWorkspaces);
   team.sort(compareWorkspaces);
 
-  return WorkspaceSections(
-    personal: personal,
-    system: system,
-    team: team,
-  );
+  return WorkspaceSections(personal: personal, system: system, team: team);
 }

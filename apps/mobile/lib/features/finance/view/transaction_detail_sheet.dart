@@ -125,10 +125,7 @@ Future<T?> _showTransactionComposerRoute<T>(
   required Widget child,
 }) {
   return Navigator.of(context, rootNavigator: true).push<T>(
-    MaterialPageRoute<T>(
-      fullscreenDialog: true,
-      builder: (_) => child,
-    ),
+    MaterialPageRoute<T>(fullscreenDialog: true, builder: (_) => child),
   );
 }
 
@@ -255,9 +252,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
       if (toastContext.mounted) {
         shad.showToast(
           context: toastContext,
-          builder: (ctx, _) => shad.Alert(
-            content: Text(ctx.l10n.financeTransactionUpdated),
-          ),
+          builder: (ctx, _) =>
+              shad.Alert(content: Text(ctx.l10n.financeTransactionUpdated)),
         );
       }
     } on ApiException catch (error) {
@@ -811,9 +807,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
           if (!mounted) return;
           shad.showToast(
             context: context,
-            builder: (ctx, overlay) => shad.Alert(
-              content: Text(ctx.l10n.financeTransactionDeleted),
-            ),
+            builder: (ctx, overlay) =>
+                shad.Alert(content: Text(ctx.l10n.financeTransactionDeleted)),
           );
           _closeSheet(true);
         },
@@ -841,9 +836,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     if (toastContext.mounted) {
       shad.showToast(
         context: toastContext,
-        builder: (ctx, overlay) => shad.Alert(
-          content: Text(ctx.l10n.financeTransactionUpdated),
-        ),
+        builder: (ctx, overlay) =>
+            shad.Alert(content: Text(ctx.l10n.financeTransactionUpdated)),
       );
     }
     _closeSheet(true);
@@ -967,11 +961,7 @@ class _TransactionSummaryCard extends StatelessWidget {
                   color: categoryColor.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: Icon(
-                  categoryIcon,
-                  size: 18,
-                  color: categoryColor,
-                ),
+                child: Icon(categoryIcon, size: 18, color: categoryColor),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1152,9 +1142,7 @@ class _SummaryChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: effectiveColor.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: effectiveColor.withValues(alpha: 0.25),
-        ),
+        border: Border.all(color: effectiveColor.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1163,11 +1151,7 @@ class _SummaryChip extends StatelessWidget {
             leading!,
             const SizedBox(width: 4),
           ] else if (icon != null) ...[
-            Icon(
-              icon,
-              size: 11,
-              color: effectiveColor.withValues(alpha: 0.8),
-            ),
+            Icon(icon, size: 11, color: effectiveColor.withValues(alpha: 0.8)),
             const SizedBox(width: 3),
           ],
           Flexible(
@@ -1188,11 +1172,7 @@ class _SummaryChip extends StatelessWidget {
 }
 
 class _MutedInlineInfo extends StatelessWidget {
-  const _MutedInlineInfo({
-    required this.icon,
-    required this.label,
-    this.color,
-  });
+  const _MutedInlineInfo({required this.icon, required this.label, this.color});
 
   final IconData icon;
   final String label;
@@ -1210,9 +1190,7 @@ class _MutedInlineInfo extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: theme.typography.xSmall.copyWith(
-            color: resolvedColor,
-          ),
+          style: theme.typography.xSmall.copyWith(color: resolvedColor),
         ),
       ],
     );
@@ -1220,10 +1198,7 @@ class _MutedInlineInfo extends StatelessWidget {
 }
 
 class _DetailSectionCard extends StatelessWidget {
-  const _DetailSectionCard({
-    required this.title,
-    required this.child,
-  });
+  const _DetailSectionCard({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -1237,9 +1212,9 @@ class _DetailSectionCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: shad.Theme.of(context).typography.small.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: shad.Theme.of(
+              context,
+            ).typography.small.copyWith(fontWeight: FontWeight.w800),
           ),
           const shad.Gap(14),
           child,
@@ -1289,11 +1264,7 @@ class _QuickActionTile extends StatelessWidget {
                   color: theme.colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  size: 16,
-                  color: theme.colorScheme.primary,
-                ),
+                child: Icon(icon, size: 16, color: theme.colorScheme.primary),
               ),
               const shad.Gap(12),
               Expanded(
@@ -1404,10 +1375,7 @@ class _QuickActionToggleTile extends StatelessWidget {
             ),
           ),
           const shad.Gap(12),
-          shad.Switch(
-            value: value,
-            onChanged: enabled ? onChanged : null,
-          ),
+          shad.Switch(value: value, onChanged: enabled ? onChanged : null),
         ],
       ),
     );

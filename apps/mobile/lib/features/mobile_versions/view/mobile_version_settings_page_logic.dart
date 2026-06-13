@@ -187,9 +187,7 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
         _isSaving = false;
         _applyPolicies(updatedPolicies);
       });
-      _showToast(
-        message: context.l10n.settingsMobileVersionsSaveSuccess,
-      );
+      _showToast(message: context.l10n.settingsMobileVersionsSaveSuccess);
     } on Exception catch (error) {
       if (!mounted) {
         return;

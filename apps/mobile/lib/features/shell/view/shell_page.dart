@@ -293,9 +293,7 @@ class _ShellPageState extends State<ShellPage>
                     state,
                     activeModule: activeModule,
                     injectedMiniNavRegistration: miniNavState
-                        .resolveForLocation(
-                          widget.matchedLocation,
-                        ),
+                        .resolveForLocation(widget.matchedLocation),
                   ),
                 );
               },

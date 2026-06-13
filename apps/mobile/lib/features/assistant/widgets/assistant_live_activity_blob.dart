@@ -71,9 +71,7 @@ class AssistantLiveActivityBlob extends StatelessWidget {
                         color.withValues(alpha: 0.14),
                       ],
                     ),
-                    border: Border.all(
-                      color: color.withValues(alpha: 0.34),
-                    ),
+                    border: Border.all(color: color.withValues(alpha: 0.34)),
                   ),
                 ),
               ),
@@ -136,10 +134,7 @@ class AssistantLiveActivityBlob extends StatelessWidget {
 }
 
 class _BlobSparkPainter extends CustomPainter {
-  const _BlobSparkPainter({
-    required this.color,
-    required this.level,
-  });
+  const _BlobSparkPainter({required this.color, required this.level});
 
   final Color color;
   final double level;

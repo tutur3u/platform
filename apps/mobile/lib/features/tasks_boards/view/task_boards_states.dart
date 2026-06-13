@@ -32,10 +32,7 @@ class _EmptyView extends StatelessWidget {
 }
 
 class _AccessDeniedView extends StatelessWidget {
-  const _AccessDeniedView({
-    required this.title,
-    required this.description,
-  });
+  const _AccessDeniedView({required this.title, required this.description});
 
   final String title;
   final String description;

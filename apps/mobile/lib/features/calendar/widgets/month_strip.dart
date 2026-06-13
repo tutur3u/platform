@@ -160,9 +160,7 @@ class _MonthStripState extends State<MonthStrip> {
     final textTheme = Theme.of(context).textTheme;
     const allDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     final fdow = widget.firstDayOfWeek;
-    final weekDays = [
-      for (var i = 0; i < 7; i++) allDays[(fdow + i) % 7],
-    ];
+    final weekDays = [for (var i = 0; i < 7; i++) allDays[(fdow + i) % 7]];
 
     return Column(
       mainAxisSize: MainAxisSize.min,

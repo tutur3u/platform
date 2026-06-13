@@ -105,12 +105,7 @@ class ShellProfileCubit extends Cubit<ShellProfileState> {
       return;
     }
 
-    emit(
-      state.copyWith(
-        isRefreshing: false,
-        error: result.error,
-      ),
-    );
+    emit(state.copyWith(isRefreshing: false, error: result.error));
   }
 
   Future<void> refreshIfStale(User? user) async {

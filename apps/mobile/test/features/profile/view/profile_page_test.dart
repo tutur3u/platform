@@ -77,10 +77,7 @@ void main() {
       ).thenAnswer((_) => currentUserId);
       when(() => profileRepository.getCachedProfile()).thenAnswer((_) async {
         return switch (currentUserId) {
-          'user-1' => (
-            profile: user1Profile,
-            fetchedAt: DateTime.now(),
-          ),
+          'user-1' => (profile: user1Profile, fetchedAt: DateTime.now()),
           'user-2' => (profile: null, fetchedAt: null),
           _ => (profile: null, fetchedAt: null),
         };
@@ -113,9 +110,8 @@ void main() {
           providers: [
             BlocProvider<AuthCubit>.value(value: authCubit),
             BlocProvider(
-              create: (_) => ShellProfileCubit(
-                profileRepository: profileRepository,
-              ),
+              create: (_) =>
+                  ShellProfileCubit(profileRepository: profileRepository),
             ),
           ],
           child: ProfilePage(profileRepository: profileRepository),

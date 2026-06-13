@@ -119,9 +119,7 @@ class TaskBoardDetail extends Equatable {
     'members': members.map((member) => member.toJson()).toList(growable: false),
     'projects': projects
         .map((project) => project.toJson())
-        .toList(
-          growable: false,
-        ),
+        .toList(growable: false),
   };
 
   TaskBoardDetail copyWith({

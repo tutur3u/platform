@@ -49,28 +49,18 @@ extension on _TaskBoardDetailPageViewState {
                           dismissAdaptiveDrawerOverlay(drawerContext),
                       onCreateListForStatus: (status) =>
                           _openCreateListDialogForStatus(context, status),
-                      onMoveListUp: (list) => _moveListWithinStatus(
-                        context,
-                        list: list,
-                        delta: -1,
-                      ),
-                      onMoveListDown: (list) => _moveListWithinStatus(
-                        context,
-                        list: list,
-                        delta: 1,
-                      ),
-                      onListActions: (list) => _showListLayoutActionsMenu(
-                        context,
-                        list,
-                      ),
+                      onMoveListUp: (list) =>
+                          _moveListWithinStatus(context, list: list, delta: -1),
+                      onMoveListDown: (list) =>
+                          _moveListWithinStatus(context, list: list, delta: 1),
+                      onListActions: (list) =>
+                          _showListLayoutActionsMenu(context, list),
                     ),
                     if (state.isMutating)
                       Positioned.fill(
                         child: ColoredBox(
                           color: Colors.black.withValues(alpha: 0.3),
-                          child: const Center(
-                            child: NovaLoadingIndicator(),
-                          ),
+                          child: const Center(child: NovaLoadingIndicator()),
                         ),
                       ),
                   ],
@@ -115,43 +105,32 @@ extension on _TaskBoardDetailPageViewState {
         successMessage: context.l10n.taskBoardDetailListCreated,
         initialStatus: normalizedStatus,
         existingLists: board.lists,
-        onSubmit:
-            ({
-              required name,
-              required status,
-              required color,
-            }) async {
-              final currentBoard = context
-                  .read<TaskBoardDetailCubit>()
-                  .state
-                  .board;
-              if (currentBoard == null) return false;
-              if (!_taskBoardCanCreateListInStatus(
-                currentBoard.lists,
-                status,
-              )) {
-                final toastContext = Navigator.of(
-                  context,
-                  rootNavigator: true,
-                ).context;
-                if (!toastContext.mounted) return false;
-                shad.showToast(
-                  context: toastContext,
-                  builder: (context, overlay) => shad.Alert.destructive(
-                    content: Text(
-                      context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
-                    ),
-                  ),
-                );
-                return false;
-              }
-              await context.read<TaskBoardDetailCubit>().createList(
-                name: name,
-                status: status,
-                color: color,
-              );
-              return true;
-            },
+        onSubmit: ({required name, required status, required color}) async {
+          final currentBoard = context.read<TaskBoardDetailCubit>().state.board;
+          if (currentBoard == null) return false;
+          if (!_taskBoardCanCreateListInStatus(currentBoard.lists, status)) {
+            final toastContext = Navigator.of(
+              context,
+              rootNavigator: true,
+            ).context;
+            if (!toastContext.mounted) return false;
+            shad.showToast(
+              context: toastContext,
+              builder: (context, overlay) => shad.Alert.destructive(
+                content: Text(
+                  context.l10n.taskBoardDetailCannotCreateMoreClosedLists,
+                ),
+              ),
+            );
+            return false;
+          }
+          await context.read<TaskBoardDetailCubit>().createList(
+            name: name,
+            status: status,
+            color: color,
+          );
+          return true;
+        },
       ),
     );
   }
@@ -164,15 +143,12 @@ extension on _TaskBoardDetailPageViewState {
       context: context,
       backgroundColor: shad.Theme.of(context).colorScheme.background,
       builder: (dialogContext) => _TaskBoardListActionsDialog(
-        onEdit: () => Navigator.of(dialogContext).pop(
-          _TaskBoardLayoutListAction.edit,
-        ),
-        onMove: () => Navigator.of(dialogContext).pop(
-          _TaskBoardLayoutListAction.move,
-        ),
-        onDelete: () => Navigator.of(dialogContext).pop(
-          _TaskBoardLayoutListAction.delete,
-        ),
+        onEdit: () =>
+            Navigator.of(dialogContext).pop(_TaskBoardLayoutListAction.edit),
+        onMove: () =>
+            Navigator.of(dialogContext).pop(_TaskBoardLayoutListAction.move),
+        onDelete: () =>
+            Navigator.of(dialogContext).pop(_TaskBoardLayoutListAction.delete),
         onCancel: () => Navigator.of(dialogContext).pop(),
       ),
     );
@@ -239,9 +215,8 @@ extension on _TaskBoardDetailPageViewState {
     final selectedStatus = await showAdaptiveSheet<String>(
       context: context,
       backgroundColor: shad.Theme.of(context).colorScheme.background,
-      builder: (_) => _TaskBoardMoveListStatusDialog(
-        currentStatus: currentStatus,
-      ),
+      builder: (_) =>
+          _TaskBoardMoveListStatusDialog(currentStatus: currentStatus),
     );
     if (selectedStatus == null || !context.mounted) return;
 

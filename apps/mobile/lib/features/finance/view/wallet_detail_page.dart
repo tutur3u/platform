@@ -105,9 +105,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                   child: RefreshIndicator(
                     onRefresh: _onRefresh,
                     child: _isLoadingInitial && wallet == null
-                        ? const Center(
-                            child: shad.CircularProgressIndicator(),
-                          )
+                        ? const Center(child: shad.CircularProgressIndicator())
                         : _error != null
                         ? ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -131,11 +129,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: [
                               const SizedBox(height: 120),
-                              Center(
-                                child: Text(
-                                  l10n.financeWalletNotFound,
-                                ),
-                              ),
+                              Center(child: Text(l10n.financeWalletNotFound)),
                             ],
                           )
                         : GroupedTransactionAccordion(
@@ -384,9 +378,8 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     if (toastContext.mounted) {
       shad.showToast(
         context: toastContext,
-        builder: (ctx, _) => shad.Alert(
-          content: Text(ctx.l10n.financeTransactionCreated),
-        ),
+        builder: (ctx, _) =>
+            shad.Alert(content: Text(ctx.l10n.financeTransactionCreated)),
       );
     }
   }

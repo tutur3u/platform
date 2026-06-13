@@ -333,9 +333,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
                     ],
                   ),
                 ),
-                Expanded(
-                  child: _buildTaskList(context),
-                ),
+                Expanded(child: _buildTaskList(context)),
                 const shad.Divider(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),

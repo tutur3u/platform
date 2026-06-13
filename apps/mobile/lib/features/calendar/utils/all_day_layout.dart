@@ -34,10 +34,7 @@ class AllDaySpan {
 
 /// Result of computing all-day layout.
 class AllDayLayoutResult {
-  const AllDayLayoutResult({
-    required this.spans,
-    required this.maxRow,
-  });
+  const AllDayLayoutResult({required this.spans, required this.maxRow});
 
   final List<AllDaySpan> spans;
 
@@ -73,18 +70,10 @@ AllDayLayoutResult calculateAllDayLayout({
     final eventEnd = event.endAt ?? eventStart;
     if (eventStart == null) continue;
 
-    final eStart = DateTime(
-      eventStart.year,
-      eventStart.month,
-      eventStart.day,
-    );
+    final eStart = DateTime(eventStart.year, eventStart.month, eventStart.day);
     // endAt is exclusive (midnight after last day), so subtract 1 day
     // to get the last inclusive calendar day.
-    final exclusiveEnd = DateTime(
-      eventEnd!.year,
-      eventEnd.month,
-      eventEnd.day,
-    );
+    final exclusiveEnd = DateTime(eventEnd!.year, eventEnd.month, eventEnd.day);
     final eEnd = exclusiveEnd.subtract(const Duration(days: 1));
 
     // Find column range overlap with visible dates.

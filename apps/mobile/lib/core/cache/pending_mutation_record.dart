@@ -45,10 +45,7 @@ class PendingMutationRecord {
   final int attemptCount;
   final String? lastError;
 
-  PendingMutationRecord copyWith({
-    int? attemptCount,
-    String? lastError,
-  }) {
+  PendingMutationRecord copyWith({int? attemptCount, String? lastError}) {
     return PendingMutationRecord(
       id: id,
       feature: feature,

@@ -413,9 +413,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                     }
 
                     setState(() {
-                      _request = _requestWithStatus(
-                        ApprovalStatus.approved,
-                      );
+                      _request = _requestWithStatus(ApprovalStatus.approved);
                     });
                     _scheduleGracePeriodExpiryRebuild();
                   },
@@ -460,9 +458,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                     }
 
                     setState(() {
-                      _request = _requestWithStatus(
-                        ApprovalStatus.approved,
-                      );
+                      _request = _requestWithStatus(ApprovalStatus.approved);
                     });
                     _scheduleGracePeriodExpiryRebuild();
                   },
@@ -745,10 +741,7 @@ class _ExpandableSection extends StatelessWidget {
             ),
           ),
         ),
-        if (isExpanded) ...[
-          const shad.Gap(16),
-          child,
-        ],
+        if (isExpanded) ...[const shad.Gap(16), child],
       ],
     );
   }

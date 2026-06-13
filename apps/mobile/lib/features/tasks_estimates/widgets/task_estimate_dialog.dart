@@ -137,9 +137,7 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
                           Text(
                             l10n.taskEstimatesDialogSelectedConfiguration,
                             style: shad.Theme.of(context).typography.small
-                                .copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                .copyWith(fontWeight: FontWeight.w600),
                           ),
                           const shad.Gap(6),
                           Text(
@@ -270,9 +268,8 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
       navigator.pop();
       shad.showToast(
         context: rootNavigator.context,
-        builder: (_, overlay) => shad.Alert(
-          content: Text(l10n.taskEstimatesUpdateSuccess),
-        ),
+        builder: (_, overlay) =>
+            shad.Alert(content: Text(l10n.taskEstimatesUpdateSuccess)),
       );
     } on ApiException catch (error) {
       if (!mounted || !rootNavigator.mounted) {
@@ -383,9 +380,9 @@ class _SwitchTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: shad.Theme.of(context).typography.small.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: shad.Theme.of(
+                      context,
+                    ).typography.small.copyWith(fontWeight: FontWeight.w600),
                   ),
                   const shad.Gap(4),
                   Text(

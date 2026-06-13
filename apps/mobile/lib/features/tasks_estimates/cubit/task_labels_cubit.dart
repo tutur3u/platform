@@ -192,10 +192,7 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
         return;
       }
       emit(
-        state.copyWith(
-          status: TaskLabelsStatus.error,
-          error: error.toString(),
-        ),
+        state.copyWith(status: TaskLabelsStatus.error, error: error.toString()),
       );
       rethrow;
     }
@@ -224,10 +221,7 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
         return;
       }
       emit(
-        state.copyWith(
-          status: TaskLabelsStatus.error,
-          error: error.toString(),
-        ),
+        state.copyWith(status: TaskLabelsStatus.error, error: error.toString()),
       );
       rethrow;
     }
@@ -249,10 +243,7 @@ class TaskLabelsCubit extends Cubit<TaskLabelsState> {
         return;
       }
       emit(
-        state.copyWith(
-          status: TaskLabelsStatus.error,
-          error: error.toString(),
-        ),
+        state.copyWith(status: TaskLabelsStatus.error, error: error.toString()),
       );
       rethrow;
     }

@@ -1,9 +1,4 @@
-enum AuthActionStatus {
-  success,
-  externalFlowStarted,
-  cancelled,
-  failure,
-}
+enum AuthActionStatus { success, externalFlowStarted, cancelled, failure }
 
 enum AuthErrorCode {
   googleSignInFailed,

@@ -441,11 +441,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     _destinationWalletId = widget.transaction?.transfer?.linkedWalletId;
     _categoryId = widget.transaction?.categoryId;
     _tagIds =
-        widget.transaction?.tags
-            .map((tag) => tag.id)
-            .toList(
-              growable: false,
-            ) ??
+        widget.transaction?.tags.map((tag) => tag.id).toList(growable: false) ??
         const [];
     _isTransfer = widget.transaction?.isTransfer ?? false;
     _reportOptIn =

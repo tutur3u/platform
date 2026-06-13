@@ -119,12 +119,8 @@ class _TimerTabState extends State<TimerTab> {
                   categories: state.categories,
                   selectedCategoryId: state.selectedCategoryId,
                   onSelected: cubit.selectCategory,
-                  onCreateCategory:
-                      ({
-                        required name,
-                        color,
-                        description,
-                      }) => cubit.createCategory(
+                  onCreateCategory: ({required name, color, description}) =>
+                      cubit.createCategory(
                         wsId,
                         name,
                         color: color,
@@ -327,11 +323,8 @@ class _TimerTabState extends State<TimerTab> {
         cubit: cubit,
         wsId: wsId,
         userId: userId,
-        onAfterSave: () => cubit.discardRunningSession(
-          wsId,
-          userId,
-          throwOnError: true,
-        ),
+        onAfterSave: () =>
+            cubit.discardRunningSession(wsId, userId, throwOnError: true),
         hasBypassPermission: hasBypassPermission,
         initialStartTime: runningSession.startTime,
         initialEndTime: DateTime.now(),
@@ -372,15 +365,14 @@ class _TimerTabState extends State<TimerTab> {
                 child: Text(context.l10n.commonCancel),
               ),
               shad.DestructiveButton(
-                onPressed: () => Navigator.of(dialogCtx).pop(
-                  _ExceededSessionAction.discard,
-                ),
+                onPressed: () =>
+                    Navigator.of(dialogCtx).pop(_ExceededSessionAction.discard),
                 child: Text(l10n.timerDiscardSession),
               ),
               shad.PrimaryButton(
-                onPressed: () => Navigator.of(dialogCtx).pop(
-                  _ExceededSessionAction.submitRequest,
-                ),
+                onPressed: () => Navigator.of(
+                  dialogCtx,
+                ).pop(_ExceededSessionAction.submitRequest),
                 child: Text(l10n.timerSubmitAsRequest),
               ),
             ],

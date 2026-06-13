@@ -47,10 +47,7 @@ class TaskListCubit extends Cubit<TaskListState> {
     return Map<String, dynamic>.from(json);
   }
 
-  static CacheKey _cacheKey({
-    required String wsId,
-    required bool isPersonal,
-  }) {
+  static CacheKey _cacheKey({required String wsId, required bool isPersonal}) {
     return CacheKey(
       namespace: 'tasks.list',
       userId: currentCacheUserId(),
@@ -234,12 +231,7 @@ class TaskListCubit extends Cubit<TaskListState> {
         );
         return;
       }
-      emit(
-        state.copyWith(
-          status: TaskListStatus.error,
-          error: e.toString(),
-        ),
-      );
+      emit(state.copyWith(status: TaskListStatus.error, error: e.toString()));
     }
   }
 
@@ -426,22 +418,20 @@ class TaskListCubit extends Cubit<TaskListState> {
   }
 
   void toggleSection(TaskListSection section) {
-    emit(
-      switch (section) {
-        TaskListSection.overdue => state.copyWith(
-          isOverdueCollapsed: !state.isOverdueCollapsed,
-        ),
-        TaskListSection.today => state.copyWith(
-          isTodayCollapsed: !state.isTodayCollapsed,
-        ),
-        TaskListSection.upcoming => state.copyWith(
-          isUpcomingCollapsed: !state.isUpcomingCollapsed,
-        ),
-        TaskListSection.completed => state.copyWith(
-          isCompletedCollapsed: !state.isCompletedCollapsed,
-        ),
-      },
-    );
+    emit(switch (section) {
+      TaskListSection.overdue => state.copyWith(
+        isOverdueCollapsed: !state.isOverdueCollapsed,
+      ),
+      TaskListSection.today => state.copyWith(
+        isTodayCollapsed: !state.isTodayCollapsed,
+      ),
+      TaskListSection.upcoming => state.copyWith(
+        isUpcomingCollapsed: !state.isUpcomingCollapsed,
+      ),
+      TaskListSection.completed => state.copyWith(
+        isCompletedCollapsed: !state.isCompletedCollapsed,
+      ),
+    });
   }
 
   @override

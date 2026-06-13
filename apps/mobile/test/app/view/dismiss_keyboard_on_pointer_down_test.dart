@@ -11,9 +11,7 @@ void main() {
 
       await tester.pumpWidget(
         MediaQuery(
-          data: const MediaQueryData(
-            viewInsets: EdgeInsets.only(bottom: 320),
-          ),
+          data: const MediaQueryData(viewInsets: EdgeInsets.only(bottom: 320)),
           child: MaterialApp(
             home: DismissKeyboardOnPointerDown(
               child: Scaffold(
@@ -46,14 +44,10 @@ void main() {
 
       await tester.pumpWidget(
         MediaQuery(
-          data: const MediaQueryData(
-            viewInsets: EdgeInsets.only(bottom: 320),
-          ),
+          data: const MediaQueryData(viewInsets: EdgeInsets.only(bottom: 320)),
           child: MaterialApp(
             home: DismissKeyboardOnPointerDown(
-              child: Scaffold(
-                body: TextField(focusNode: focusNode),
-              ),
+              child: Scaffold(body: TextField(focusNode: focusNode)),
             ),
           ),
         ),

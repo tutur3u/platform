@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class NovaLoadingIndicator extends StatefulWidget {
-  const NovaLoadingIndicator({
-    this.size = 56,
-    super.key,
-  });
+  const NovaLoadingIndicator({this.size = 56, super.key});
 
   final double size;
 
@@ -20,16 +17,12 @@ class _NovaLoadingIndicatorState extends State<NovaLoadingIndicator>
     vsync: this,
     duration: NovaLoadingIndicator._spinDuration,
   )..repeat();
-  late final Animation<double> _turns =
-      Tween<double>(
-        begin: 0,
-        end: 1,
-      ).animate(
-        CurvedAnimation(
-          parent: _controller,
-          curve: Curves.easeInOutCubicEmphasized,
-        ),
-      );
+  late final Animation<double> _turns = Tween<double>(begin: 0, end: 1).animate(
+    CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubicEmphasized,
+    ),
+  );
 
   @override
   void dispose() {

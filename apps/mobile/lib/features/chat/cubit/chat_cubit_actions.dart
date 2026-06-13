@@ -114,10 +114,7 @@ extension ChatCubitActions on ChatCubit {
           onDone: () {
             if (isClosed) return;
             _emitState(
-              state.copyWith(
-                isSending: false,
-                streamingAssistantText: '',
-              ),
+              state.copyWith(isSending: false, streamingAssistantText: ''),
             );
           },
         );
@@ -145,10 +142,7 @@ extension ChatCubitActions on ChatCubit {
     } on ApiException catch (error) {
       if (!isClosed) {
         _emitState(
-          state.copyWith(
-            isUploadingAttachment: false,
-            error: error.message,
-          ),
+          state.copyWith(isUploadingAttachment: false, error: error.message),
         );
       }
     }
@@ -263,11 +257,7 @@ extension ChatCubitActions on ChatCubit {
     final wsId = state.wsId;
     if (wsId == null) return;
     try {
-      await _repository.respondFriendRequest(
-        wsId,
-        request.id,
-        status: status,
-      );
+      await _repository.respondFriendRequest(wsId, request.id, status: status);
       await loadFriendRequests();
     } on ApiException catch (error) {
       _emitState(state.copyWith(error: error.message));

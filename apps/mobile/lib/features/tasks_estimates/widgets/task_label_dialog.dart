@@ -8,10 +8,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskLabelFormValue {
-  const TaskLabelFormValue({
-    required this.name,
-    required this.color,
-  });
+  const TaskLabelFormValue({required this.name, required this.color});
 
   final String name;
   final String color;
@@ -78,20 +75,12 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
         child: SafeArea(
           top: false,
           child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              24,
-              24,
-              24,
-              24 + keyboardBottomInset,
-            ),
+            padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + keyboardBottomInset),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  widget.title,
-                  style: theme.typography.h3,
-                ),
+                Text(widget.title, style: theme.typography.h3),
                 const shad.Gap(24),
                 Text(context.l10n.taskLabelsName),
                 const shad.Gap(4),
@@ -336,10 +325,7 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
     _setSubmitting(true);
     try {
       final shouldClose = await widget.onSubmit(
-        TaskLabelFormValue(
-          name: name,
-          color: normalizedColor,
-        ),
+        TaskLabelFormValue(name: name, color: normalizedColor),
       );
       if (!mounted) {
         return;

@@ -8,12 +8,8 @@ void main() {
     return MediaQuery(
       data: MediaQueryData(size: size),
       child: shad.ShadcnApp(
-        theme: const shad.ThemeData(
-          colorScheme: shad.ColorSchemes.lightZinc,
-        ),
-        localizationsDelegates: const [
-          shad.ShadcnLocalizations.delegate,
-        ],
+        theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
+        localizationsDelegates: const [shad.ShadcnLocalizations.delegate],
         home: Builder(builder: (context) => child),
       ),
     );
@@ -111,10 +107,7 @@ void main() {
         buildTestApp(
           Builder(
             builder: (context) {
-              result = responsiveValue(
-                context,
-                compact: 'small',
-              );
+              result = responsiveValue(context, compact: 'small');
               return const SizedBox();
             },
           ),

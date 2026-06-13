@@ -74,17 +74,12 @@ class FinanceCubit extends Cubit<FinanceState> {
       fetch: () async {
         final wallets = await financeRepository.getWallets(wsId);
         final recentTransactions = await financeRepository
-            .getTransactionsInfinite(
-              wsId: wsId,
-              limit: 10,
-            );
+            .getTransactionsInfinite(wsId: wsId, limit: 10);
         final workspaceCurrency = await financeRepository
             .getWorkspaceDefaultCurrency(wsId);
         final exchangeRates = await financeRepository
             .getExchangeRates()
-            .catchError(
-              (_) => <ExchangeRate>[],
-            );
+            .catchError((_) => <ExchangeRate>[]);
         final sortedWallets = sortWalletsForDisplay(
           wallets: wallets,
           workspaceCurrency: workspaceCurrency,
@@ -211,9 +206,7 @@ class FinanceCubit extends Cubit<FinanceState> {
         );
         return;
       }
-      emit(
-        state.copyWith(status: FinanceStatus.error, error: e.toString()),
-      );
+      emit(state.copyWith(status: FinanceStatus.error, error: e.toString()));
     }
   }
 
@@ -268,10 +261,7 @@ class FinanceCubit extends Cubit<FinanceState> {
 }
 
 class _FinanceCacheEntry {
-  const _FinanceCacheEntry({
-    required this.state,
-    required this.fetchedAt,
-  });
+  const _FinanceCacheEntry({required this.state, required this.fetchedAt});
 
   final FinanceState state;
   final DateTime fetchedAt;

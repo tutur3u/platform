@@ -159,9 +159,9 @@ class HabitTrackerCard extends StatelessWidget {
               '${unit?.isNotEmpty == true ? ' $unit' : ''}'
         : context.l10n.habitsLogEntryAction;
     if (latestOccurredAt != null) {
-      final timeLabel = MaterialLocalizations.of(context).formatTimeOfDay(
-        TimeOfDay.fromDateTime(latestOccurredAt.toLocal()),
-      );
+      final timeLabel = MaterialLocalizations.of(
+        context,
+      ).formatTimeOfDay(TimeOfDay.fromDateTime(latestOccurredAt.toLocal()));
       return '$prefix • $timeLabel';
     }
     return '$prefix • ${context.l10n.habitsCurrentStreak} $streak';
@@ -225,9 +225,9 @@ class _MetaPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }

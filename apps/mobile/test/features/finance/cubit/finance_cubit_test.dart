@@ -20,18 +20,13 @@ void main() {
     blocTest<FinanceCubit, FinanceState>(
       'loads recent transactions through the API-backed infinite endpoint',
       build: () {
-        when(
-          () => repository.getWallets('ws_1'),
-        ).thenAnswer(
+        when(() => repository.getWallets('ws_1')).thenAnswer(
           (_) async => const [
             Wallet(id: 'wallet_1', name: 'Main wallet', currency: 'USD'),
           ],
         );
         when(
-          () => repository.getTransactionsInfinite(
-            wsId: 'ws_1',
-            limit: 10,
-          ),
+          () => repository.getTransactionsInfinite(wsId: 'ws_1', limit: 10),
         ).thenAnswer(
           (_) async => const InfiniteTransactionResponse(
             data: [
@@ -48,9 +43,7 @@ void main() {
         when(
           () => repository.getWorkspaceDefaultCurrency('ws_1'),
         ).thenAnswer((_) async => 'USD');
-        when(
-          () => repository.getExchangeRates(),
-        ).thenAnswer(
+        when(() => repository.getExchangeRates()).thenAnswer(
           (_) async => const [
             ExchangeRate(
               baseCurrency: 'USD',
@@ -94,10 +87,7 @@ void main() {
         verify(() => repository.getWallets('ws_1')).called(1);
         verify(() => repository.getWorkspaceDefaultCurrency('ws_1')).called(1);
         verify(
-          () => repository.getTransactionsInfinite(
-            wsId: 'ws_1',
-            limit: 10,
-          ),
+          () => repository.getTransactionsInfinite(wsId: 'ws_1', limit: 10),
         ).called(1);
         verifyNever(
           () => repository.getTransactions(

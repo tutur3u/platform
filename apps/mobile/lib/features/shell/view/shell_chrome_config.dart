@@ -6,10 +6,7 @@ import 'package:mobile/l10n/l10n.dart';
 enum ShellNavMode { global, miniApp, hidden }
 
 class ShellChromeConfig {
-  const ShellChromeConfig({
-    required this.title,
-    required this.navMode,
-  });
+  const ShellChromeConfig({required this.title, required this.navMode});
 
   factory ShellChromeConfig.forLocation(
     BuildContext context,
@@ -74,10 +71,7 @@ class ShellChromeConfig {
       );
     }
 
-    return ShellChromeConfig(
-      title: l10n.navApps,
-      navMode: ShellNavMode.global,
-    );
+    return ShellChromeConfig(title: l10n.navApps, navMode: ShellNavMode.global);
   }
 
   final String title;

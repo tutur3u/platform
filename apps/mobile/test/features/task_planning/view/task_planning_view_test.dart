@@ -91,11 +91,7 @@ void main() {
       final portfolioCubit = _MockTaskPortfolioCubit();
       final permissionsRepository = _MockWorkspacePermissionsRepository();
 
-      const workspace = Workspace(
-        id: 'ws-1',
-        name: 'Personal',
-        personal: true,
-      );
+      const workspace = Workspace(id: 'ws-1', name: 'Personal', personal: true);
       const workspaceState = WorkspaceState(
         status: WorkspaceStatus.loaded,
         currentWorkspace: workspace,
@@ -175,10 +171,13 @@ void main() {
       var miniNav = miniNavCubit.state.resolveForLocation(Routes.taskPlanning);
 
       expect(miniNav, isNotNull);
-      expect(
-        miniNav!.items.map((item) => item.id),
-        ['back', 'estimates', 'labels', 'projects', 'initiatives'],
-      );
+      expect(miniNav!.items.map((item) => item.id), [
+        'back',
+        'estimates',
+        'labels',
+        'projects',
+        'initiatives',
+      ]);
       expect(
         miniNav.items.firstWhere((item) => item.id == 'estimates').selected,
         isTrue,
@@ -208,9 +207,7 @@ void main() {
       });
       SharedPreferences.setMockInitialValues(<String, Object>{});
 
-      final appTabCubit = AppTabCubit(
-        settingsRepository: SettingsRepository(),
-      );
+      final appTabCubit = AppTabCubit(settingsRepository: SettingsRepository());
       final authCubit = _MockAuthCubit();
       final workspaceCubit = _MockWorkspaceCubit();
       final estimatesCubit = _MockTaskEstimatesCubit();
@@ -221,11 +218,7 @@ void main() {
       final shellTitleOverrideCubit = ShellTitleOverrideCubit();
       final shellProfileCubit = _FallbackShellProfileCubit();
 
-      const workspace = Workspace(
-        id: 'ws-1',
-        name: 'Personal',
-        personal: true,
-      );
+      const workspace = Workspace(id: 'ws-1', name: 'Personal', personal: true);
       const workspaceState = WorkspaceState(
         status: WorkspaceStatus.loaded,
         currentWorkspace: workspace,
@@ -296,9 +289,8 @@ void main() {
             routes: [
               GoRoute(
                 path: Routes.tasks,
-                builder: (context, state) => const Center(
-                  child: Text('tasks-root'),
-                ),
+                builder: (context, state) =>
+                    const Center(child: Text('tasks-root')),
               ),
               GoRoute(
                 path: Routes.taskPlanning,

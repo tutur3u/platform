@@ -17,10 +17,7 @@ void main() {
 
     await tester.pumpApp(
       Scaffold(
-        body: WalletDialog(
-          wsId: 'ws_1',
-          repository: _FakeFinanceRepository(),
-        ),
+        body: WalletDialog(wsId: 'ws_1', repository: _FakeFinanceRepository()),
       ),
     );
     await tester.pumpAndSettle();

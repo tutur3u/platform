@@ -120,10 +120,7 @@ class _FinanceView extends StatelessWidget {
                         28 + MediaQuery.paddingOf(context).bottom,
                       ),
                       children: [
-                        _OverviewHero(
-                          state: state,
-                          showAmounts: showAmounts,
-                        ),
+                        _OverviewHero(state: state, showAmounts: showAmounts),
                         const shad.Gap(24),
                         _WalletHighlights(
                           state: state,
@@ -243,10 +240,7 @@ class _OverviewHero extends StatelessWidget {
           Text(
             maskFinanceValue(
               '${state.hasCrossCurrencyWallets ? '≈ ' : ''}'
-              '${formatCurrency(
-                state.totalBalance,
-                state.workspaceCurrency,
-              )}',
+              '${formatCurrency(state.totalBalance, state.workspaceCurrency)}',
               showAmounts: showAmounts,
             ),
             style: theme.typography.h2.copyWith(
@@ -261,10 +255,7 @@ class _OverviewHero extends StatelessWidget {
 }
 
 class _WalletHighlights extends StatelessWidget {
-  const _WalletHighlights({
-    required this.state,
-    required this.showAmounts,
-  });
+  const _WalletHighlights({required this.state, required this.showAmounts});
 
   final FinanceState state;
   final bool showAmounts;
@@ -446,10 +437,7 @@ class _WalletHighlightCard extends StatelessWidget {
 }
 
 class _ActivityPreview extends StatelessWidget {
-  const _ActivityPreview({
-    required this.state,
-    required this.showAmounts,
-  });
+  const _ActivityPreview({required this.state, required this.showAmounts});
 
   final FinanceState state;
   final bool showAmounts;

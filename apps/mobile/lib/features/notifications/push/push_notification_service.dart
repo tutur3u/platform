@@ -9,10 +9,7 @@ import 'package:mobile/core/utils/device_info.dart';
 import 'package:mobile/data/repositories/notification_push_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 
-enum PushNotificationEventType {
-  received,
-  opened,
-}
+enum PushNotificationEventType { received, opened }
 
 const _pushNotificationChannelId = 'tuturuuu_notifications';
 const _pushNotificationChannelName = 'Notifications';
@@ -61,19 +58,14 @@ class PushNavigationRequest {
 }
 
 class PushNotificationEvent {
-  const PushNotificationEvent({
-    required this.type,
-    required this.request,
-  });
+  const PushNotificationEvent({required this.type, required this.request});
 
   final PushNotificationEventType type;
   final PushNavigationRequest request;
 }
 
 typedef PushNavigationHandler =
-    Future<void> Function(
-      PushNavigationRequest request,
-    );
+    Future<void> Function(PushNavigationRequest request);
 
 PushNavigationRequest requestFromPushData(Map<String, dynamic> data) {
   return PushNavigationRequest(

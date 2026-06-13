@@ -7,12 +7,7 @@ class _CenteredButtonText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-      ),
-    );
+    return Center(child: Text(label, textAlign: TextAlign.center));
   }
 }
 
@@ -133,10 +128,7 @@ class _TaskDatePickerSheet extends StatelessWidget {
 }
 
 class _EditorSectionCard extends StatelessWidget {
-  const _EditorSectionCard({
-    required this.child,
-    this.title,
-  });
+  const _EditorSectionCard({required this.child, this.title});
 
   final String? title;
   final Widget child;
@@ -172,10 +164,7 @@ class _EditorSectionCard extends StatelessWidget {
 }
 
 class _EditFieldButton extends StatelessWidget {
-  const _EditFieldButton({
-    required this.label,
-    required this.onPressed,
-  });
+  const _EditFieldButton({required this.label, required this.onPressed});
 
   final String label;
   final VoidCallback? onPressed;
@@ -239,10 +228,7 @@ class _SelectionFieldButton extends StatelessWidget {
 }
 
 class _TaskEditorTabLabel extends StatelessWidget {
-  const _TaskEditorTabLabel({
-    required this.label,
-    required this.count,
-  });
+  const _TaskEditorTabLabel({required this.label, required this.count});
 
   final String label;
   final int count;
@@ -328,10 +314,7 @@ class _SelectedAssigneeRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _SelectedAssigneeAvatar(
-            name: name,
-            avatarUrl: assignee.avatarUrl,
-          ),
+          _SelectedAssigneeAvatar(name: name, avatarUrl: assignee.avatarUrl),
           const shad.Gap(10),
           Expanded(
             child: Column(
@@ -364,10 +347,7 @@ class _SelectedAssigneeRow extends StatelessWidget {
 }
 
 class _SelectedAssigneeAvatar extends StatelessWidget {
-  const _SelectedAssigneeAvatar({
-    required this.name,
-    required this.avatarUrl,
-  });
+  const _SelectedAssigneeAvatar({required this.name, required this.avatarUrl});
 
   final String name;
   final String? avatarUrl;

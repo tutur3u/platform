@@ -232,9 +232,7 @@ class TaskBoardDetailState extends Equatable {
       for (final list in board?.lists ?? const <TaskBoardList>[]) list.id: list,
     };
     return tasks
-        .where(
-          (task) => !_isHiddenByDefaultInListView(listsById[task.listId]),
-        )
+        .where((task) => !_isHiddenByDefaultInListView(listsById[task.listId]))
         .toList(growable: false);
   }
 

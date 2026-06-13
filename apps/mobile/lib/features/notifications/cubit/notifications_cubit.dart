@@ -109,10 +109,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         return;
       }
       emit(
-        state.copyWith(
-          unreadCount: unreadCount,
-          isUnreadCountLoading: false,
-        ),
+        state.copyWith(unreadCount: unreadCount, isUnreadCountLoading: false),
       );
       await _persistCurrentState();
     } on Exception {
@@ -123,10 +120,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
-  Future<void> loadTab(
-    NotificationsTab tab, {
-    bool refresh = false,
-  }) async {
+  Future<void> loadTab(NotificationsTab tab, {bool refresh = false}) async {
     if (isClosed) {
       return;
     }
@@ -143,10 +137,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       state.copyWith(
         feed: state
             .feedFor(tab)
-            .copyWith(
-              status: NotificationFeedStatus.loading,
-              clearError: true,
-            ),
+            .copyWith(status: NotificationFeedStatus.loading, clearError: true),
         targetTab: tab,
       ),
     );
@@ -337,10 +328,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
     emit(
       state.copyWith(
-        pendingIds: _sortedPendingIds({
-          ...state.pendingIds,
-          notificationId,
-        }),
+        pendingIds: _sortedPendingIds({...state.pendingIds, notificationId}),
       ),
     );
 
@@ -354,9 +342,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
-  Future<void> _refreshLoadedTabs({
-    NotificationsTab? preferredTab,
-  }) async {
+  Future<void> _refreshLoadedTabs({NotificationsTab? preferredTab}) async {
     await refreshUnreadCount();
     if (isClosed) {
       return;

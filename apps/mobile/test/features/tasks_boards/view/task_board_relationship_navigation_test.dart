@@ -343,9 +343,7 @@ void main() {
 
     testWidgets(
       'keeps the in-view kanban list after opening and closing task',
-      (
-        tester,
-      ) async {
+      (tester) async {
         setTestViewport(tester, const Size(900, 1200));
 
         await tester.pumpWidget(

@@ -214,10 +214,8 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
                             SettingsPanel(
                               child: Text(
                                 context.l10n.authManageAccountsEmpty,
-                                style:
-                                    shad.Theme.of(
-                                      context,
-                                    ).typography.small.copyWith(
+                                style: shad.Theme.of(context).typography.small
+                                    .copyWith(
                                       color: shad.Theme.of(
                                         context,
                                       ).colorScheme.mutedForeground,
@@ -269,16 +267,8 @@ class _ManageAccountsHeroCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? const [
-                  Color(0xFF182434),
-                  Color(0xFF221B39),
-                  Color(0xFF12313A),
-                ]
-              : const [
-                  Color(0xFFE9F2FF),
-                  Color(0xFFF4ECFF),
-                  Color(0xFFE9FBF5),
-                ],
+              ? const [Color(0xFF182434), Color(0xFF221B39), Color(0xFF12313A)]
+              : const [Color(0xFFE9F2FF), Color(0xFFF4ECFF), Color(0xFFE9FBF5)],
         ),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
@@ -408,10 +398,7 @@ class _ManageAccountCard extends StatelessWidget {
             runSpacing: 10,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              _AccountBadge(
-                label: badgeLabel,
-                icon: badgeIcon,
-              ),
+              _AccountBadge(label: badgeLabel, icon: badgeIcon),
               if (isBusy)
                 const SizedBox(
                   width: 18,
@@ -434,10 +421,7 @@ class _ManageAccountCard extends StatelessWidget {
 }
 
 class _AccountBadge extends StatelessWidget {
-  const _AccountBadge({
-    required this.label,
-    required this.icon,
-  });
+  const _AccountBadge({required this.label, required this.icon});
 
   final String label;
   final IconData icon;
@@ -503,9 +487,7 @@ class _AccountActionButton extends StatelessWidget {
         ),
       ),
       style: OutlinedButton.styleFrom(
-        side: BorderSide(
-          color: foreground.withValues(alpha: 0.22),
-        ),
+        side: BorderSide(color: foreground.withValues(alpha: 0.22)),
         foregroundColor: foreground,
       ),
     );

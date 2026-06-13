@@ -228,9 +228,7 @@ void main() {
   group('AppRegistry education module visibility', () {
     testWidgets(
       'shows education module when experiment and access are enabled',
-      (
-        tester,
-      ) async {
+      (tester) async {
         final educationAccessCubit = _MockEducationAccessCubit();
         final experimentalAppsCubit = ExperimentalAppsCubit(
           settingsRepository: SettingsRepository(),

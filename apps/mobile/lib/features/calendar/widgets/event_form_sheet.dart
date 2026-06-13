@@ -17,10 +17,8 @@ Future<Map<String, dynamic>?> showEventFormSheet(
 }) {
   return showAdaptiveSheet<Map<String, dynamic>>(
     context: context,
-    builder: (context) => _EventFormContent(
-      event: event,
-      initialStartTime: initialStartTime,
-    ),
+    builder: (context) =>
+        _EventFormContent(event: event, initialStartTime: initialStartTime),
   );
 }
 
@@ -138,10 +136,7 @@ class _EventFormContentState extends State<_EventFormContent> {
 
   Future<void> _pickTime(bool isStart) async {
     final initial = isStart ? _startTime : _endTime;
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: initial,
-    );
+    final picked = await showTimePicker(context: context, initialTime: initial);
     if (picked == null) return;
     setState(() {
       if (isStart) {

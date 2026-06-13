@@ -83,9 +83,7 @@ void main() {
       await tester.pumpApp(
         BlocProvider(
           create: (_) => ShellChromeActionsCubit(),
-          child: const Material(
-            child: _ShellChromeActionsHarness(),
-          ),
+          child: const Material(child: _ShellChromeActionsHarness()),
         ),
       );
       await tester.pump();
@@ -112,9 +110,7 @@ void main() {
       await tester.pumpApp(
         BlocProvider(
           create: (_) => ShellChromeActionsCubit(),
-          child: const Material(
-            child: _ShellChromeActionsHarness(),
-          ),
+          child: const Material(child: _ShellChromeActionsHarness()),
         ),
       );
       await tester.pump();
@@ -133,9 +129,7 @@ void main() {
         await tester.pumpApp(
           BlocProvider(
             create: (_) => ShellChromeActionsCubit(),
-            child: const Material(
-              child: _ShellChromeActionsHarness(),
-            ),
+            child: const Material(child: _ShellChromeActionsHarness()),
           ),
         );
         await tester.pump();

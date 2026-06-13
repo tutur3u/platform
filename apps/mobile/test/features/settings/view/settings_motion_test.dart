@@ -106,17 +106,11 @@ void main() {
       when(() => profileRepository.dispose()).thenReturn(null);
       when(() => profileRepository.getCurrentUserIdSync()).thenReturn('user-1');
       when(() => profileRepository.getCachedProfile()).thenAnswer(
-        (_) async => (
-          profile: _cachedProfile,
-          fetchedAt: DateTime.now(),
-        ),
+        (_) async => (profile: _cachedProfile, fetchedAt: DateTime.now()),
       );
-      when(() => profileRepository.getProfile()).thenAnswer(
-        (_) async => (
-          profile: _cachedProfile,
-          error: null,
-        ),
-      );
+      when(
+        () => profileRepository.getProfile(),
+      ).thenAnswer((_) async => (profile: _cachedProfile, error: null));
       when(
         () => profileRepository.saveCachedProfile(any()),
       ).thenAnswer((_) async {});
@@ -141,20 +135,17 @@ void main() {
           providers: [
             BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
             BlocProvider(
-              create: (_) => ThemeCubit(
-                settingsRepository: SettingsRepository(),
-              ),
+              create: (_) =>
+                  ThemeCubit(settingsRepository: SettingsRepository()),
             ),
             BlocProvider(
-              create: (_) => LocaleCubit(
-                settingsRepository: SettingsRepository(),
-              ),
+              create: (_) =>
+                  LocaleCubit(settingsRepository: SettingsRepository()),
             ),
             BlocProvider(create: (_) => CalendarSettingsCubit()),
             BlocProvider(
-              create: (_) => ShellProfileCubit(
-                profileRepository: ProfileRepository(),
-              ),
+              create: (_) =>
+                  ShellProfileCubit(profileRepository: ProfileRepository()),
             ),
           ],
           child: const SettingsPage(),
@@ -197,20 +188,17 @@ void main() {
           providers: [
             BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
             BlocProvider(
-              create: (_) => ThemeCubit(
-                settingsRepository: SettingsRepository(),
-              ),
+              create: (_) =>
+                  ThemeCubit(settingsRepository: SettingsRepository()),
             ),
             BlocProvider(
-              create: (_) => LocaleCubit(
-                settingsRepository: SettingsRepository(),
-              ),
+              create: (_) =>
+                  LocaleCubit(settingsRepository: SettingsRepository()),
             ),
             BlocProvider(create: (_) => CalendarSettingsCubit()),
             BlocProvider(
-              create: (_) => ShellProfileCubit(
-                profileRepository: ProfileRepository(),
-              ),
+              create: (_) =>
+                  ShellProfileCubit(profileRepository: ProfileRepository()),
             ),
           ],
           child: const SettingsPage(
@@ -231,9 +219,7 @@ void main() {
 
     testWidgets(
       'workspace settings keeps personal workspace tiles in one section',
-      (
-        tester,
-      ) async {
+      (tester) async {
         const workspace = Workspace(
           id: 'personal-ws',
           name: 'Alex Nguyen',
@@ -277,9 +263,8 @@ void main() {
           providers: [
             BlocProvider<AuthCubit>.value(value: authCubit),
             BlocProvider(
-              create: (_) => ShellProfileCubit(
-                profileRepository: profileRepository,
-              ),
+              create: (_) =>
+                  ShellProfileCubit(profileRepository: profileRepository),
             ),
           ],
           child: ProfilePage(profileRepository: profileRepository),

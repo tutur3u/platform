@@ -45,9 +45,7 @@ class OnboardingSlide extends StatelessWidget {
           const shad.Gap(40),
           Text(
             title,
-            style: theme.typography.h2.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: theme.typography.h2.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const shad.Gap(16),

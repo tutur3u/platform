@@ -81,9 +81,7 @@ void main() {
       name: 'Documents task',
     );
 
-    TaskBoardDetail buildBoard({
-      List<TaskBoardTask>? tasks,
-    }) {
+    TaskBoardDetail buildBoard({List<TaskBoardTask>? tasks}) {
       return const TaskBoardDetail(
         id: 'board-1',
         wsId: 'ws-1',
@@ -127,13 +125,7 @@ void main() {
     setUp(() async {
       repository = _MockTaskRepository();
       cubit = TaskBoardDetailCubit(taskRepository: repository);
-      repositoryTasks = [
-        taskOne,
-        taskTwo,
-        taskDone,
-        taskClosed,
-        taskDocuments,
-      ];
+      repositoryTasks = [taskOne, taskTwo, taskDone, taskClosed, taskDocuments];
 
       when(
         () => repository.getTaskBoardDetail('ws-1', 'board-1'),
@@ -310,34 +302,30 @@ void main() {
     });
 
     test('list view hides documents tasks by default', () {
-      expect(
-        cubit.state.filteredTasksForListView.map((task) => task.id),
-        ['task-1', 'task-2', 'task-done', 'task-closed'],
-      );
+      expect(cubit.state.filteredTasksForListView.map((task) => task.id), [
+        'task-1',
+        'task-2',
+        'task-done',
+        'task-closed',
+      ]);
 
       cubit.setFilters(
-        const TaskBoardDetailFilters(
-          statuses: {
-            'documents',
-            'done',
-            'closed',
-          },
-        ),
+        const TaskBoardDetailFilters(statuses: {'documents', 'done', 'closed'}),
       );
 
-      expect(
-        cubit.state.filteredTasksForListView.map((task) => task.id),
-        ['task-done', 'task-closed', 'task-documents'],
-      );
+      expect(cubit.state.filteredTasksForListView.map((task) => task.id), [
+        'task-done',
+        'task-closed',
+        'task-documents',
+      ]);
 
       cubit.setFilters(
         const TaskBoardDetailFilters(listIds: {'list-documents'}),
       );
 
-      expect(
-        cubit.state.filteredTasksForListView.map((task) => task.id),
-        ['task-documents'],
-      );
+      expect(cubit.state.filteredTasksForListView.map((task) => task.id), [
+        'task-documents',
+      ]);
     });
 
     test('moveTask refreshes source and target lists', () async {
@@ -808,9 +796,7 @@ void main() {
         ).thenAnswer(
           (_) async => buildBulkResult(
             succeeded: const ['task-1'],
-            failures: const [
-              TaskBulkFailure(taskId: 'task-2', error: 'boom'),
-            ],
+            failures: const [TaskBulkFailure(taskId: 'task-2', error: 'boom')],
           ),
         );
 

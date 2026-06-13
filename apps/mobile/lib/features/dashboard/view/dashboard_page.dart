@@ -30,10 +30,7 @@ import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class DashboardPage extends StatelessWidget {
-  const DashboardPage({
-    this.replayToken = 0,
-    super.key,
-  });
+  const DashboardPage({this.replayToken = 0, super.key});
 
   final int replayToken;
 
@@ -565,9 +562,7 @@ class _TodaySummaryCard extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: summaryPalette.border.withValues(alpha: 0.9),
-        ),
+        border: Border.all(color: summaryPalette.border.withValues(alpha: 0.9)),
         boxShadow: [
           BoxShadow(
             color: summaryPalette.shadow.withValues(alpha: 0.78),
@@ -685,9 +680,7 @@ class _MetricTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: palette.iconBackground.withValues(alpha: fullWidth ? 0.86 : 0.9),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: palette.border.withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: palette.border.withValues(alpha: 0.5)),
       ),
       child: fullWidth
           ? Row(
@@ -700,11 +693,7 @@ class _MetricTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
-                  child: Icon(
-                    icon,
-                    size: 18,
-                    color: palette.iconColor,
-                  ),
+                  child: Icon(icon, size: 18, color: palette.iconColor),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -731,11 +720,7 @@ class _MetricTile extends StatelessWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  icon,
-                  size: 16,
-                  color: palette.iconColor,
-                ),
+                Icon(icon, size: 16, color: palette.iconColor),
                 const SizedBox(height: 6),
                 Text(
                   value,
@@ -796,9 +781,7 @@ class _DashboardQuickLaunchCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: palette.background,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: palette.border.withValues(alpha: 0.9),
-        ),
+        border: Border.all(color: palette.border.withValues(alpha: 0.9)),
         boxShadow: [
           BoxShadow(
             color: palette.shadow.withValues(alpha: 0.72),
@@ -851,10 +834,7 @@ class _DashboardQuickLaunchCard extends StatelessWidget {
                   for (final action in actions)
                     SizedBox(
                       width: tileWidth,
-                      child: _QuickLaunchTile(
-                        action: action,
-                        palette: palette,
-                      ),
+                      child: _QuickLaunchTile(action: action, palette: palette),
                     ),
                 ],
               );
@@ -879,10 +859,7 @@ class _QuickLaunchAction {
 }
 
 class _QuickLaunchTile extends StatelessWidget {
-  const _QuickLaunchTile({
-    required this.action,
-    required this.palette,
-  });
+  const _QuickLaunchTile({required this.action, required this.palette});
 
   final _QuickLaunchAction action;
   final AppCardPalette palette;
@@ -902,9 +879,7 @@ class _QuickLaunchTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: palette.iconBackground.withValues(alpha: 0.86),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: palette.border.withValues(alpha: 0.46),
-            ),
+            border: Border.all(color: palette.border.withValues(alpha: 0.46)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -959,9 +934,7 @@ class _SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: palette.background,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: palette.border.withValues(alpha: 0.9),
-        ),
+        border: Border.all(color: palette.border.withValues(alpha: 0.9)),
         boxShadow: [
           BoxShadow(
             color: palette.shadow.withValues(alpha: 0.72),
@@ -985,11 +958,7 @@ class _SectionCard extends StatelessWidget {
                     color: palette.border.withValues(alpha: 0.42),
                   ),
                 ),
-                child: Icon(
-                  icon,
-                  size: 22,
-                  color: palette.iconColor,
-                ),
+                child: Icon(icon, size: 22, color: palette.iconColor),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1084,9 +1053,9 @@ class _AssignedTasksBlock extends StatelessWidget {
         description: context.l10n.commonSomethingWentWrong,
         icon: Icons.cloud_off_outlined,
         tone: _Tone(
-          background: Theme.of(context).colorScheme.errorContainer.withValues(
-            alpha: 0.38,
-          ),
+          background: Theme.of(
+            context,
+          ).colorScheme.errorContainer.withValues(alpha: 0.38),
           border: Theme.of(context).colorScheme.error.withValues(alpha: 0.16),
           foreground: Theme.of(context).colorScheme.error,
         ),
@@ -1154,9 +1123,9 @@ class _UpcomingEventsBlock extends StatelessWidget {
             : context.l10n.commonSomethingWentWrong,
         icon: Icons.cloud_off_outlined,
         tone: _Tone(
-          background: Theme.of(context).colorScheme.errorContainer.withValues(
-            alpha: 0.38,
-          ),
+          background: Theme.of(
+            context,
+          ).colorScheme.errorContainer.withValues(alpha: 0.38),
           border: Theme.of(context).colorScheme.error.withValues(alpha: 0.16),
           foreground: Theme.of(context).colorScheme.error,
         ),
@@ -1193,10 +1162,7 @@ class _UpcomingEventsBlock extends StatelessWidget {
 }
 
 class _TaskRow extends StatelessWidget {
-  const _TaskRow({
-    required this.task,
-    required this.paletteModuleId,
-  });
+  const _TaskRow({required this.task, required this.paletteModuleId});
 
   final UserTask task;
   final String paletteModuleId;
@@ -1236,9 +1202,7 @@ class _TaskRow extends StatelessWidget {
               palette.background,
             ),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: palette.border.withValues(alpha: 0.46),
-            ),
+            border: Border.all(color: palette.border.withValues(alpha: 0.46)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1326,9 +1290,7 @@ class _DashboardTaskPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: palette.iconBackground.withValues(alpha: 0.78),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: palette.border.withValues(alpha: 0.46),
-        ),
+        border: Border.all(color: palette.border.withValues(alpha: 0.46)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1349,10 +1311,7 @@ class _DashboardTaskPill extends StatelessWidget {
 }
 
 class _EventRow extends StatelessWidget {
-  const _EventRow({
-    required this.event,
-    required this.paletteModuleId,
-  });
+  const _EventRow({required this.event, required this.paletteModuleId});
 
   final CalendarEvent event;
   final String paletteModuleId;
@@ -1384,9 +1343,7 @@ class _EventRow extends StatelessWidget {
           palette.background,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: palette.border.withValues(alpha: 0.46),
-        ),
+        border: Border.all(color: palette.border.withValues(alpha: 0.46)),
       ),
       child: Row(
         children: [
@@ -1396,9 +1353,7 @@ class _EventRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: palette.background.withValues(alpha: 0.84),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: palette.border.withValues(alpha: 0.44),
-              ),
+              border: Border.all(color: palette.border.withValues(alpha: 0.44)),
             ),
             child: Column(
               children: [
@@ -1513,9 +1468,9 @@ class _EmptyHint extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
                 Text(description, style: Theme.of(context).textTheme.bodySmall),

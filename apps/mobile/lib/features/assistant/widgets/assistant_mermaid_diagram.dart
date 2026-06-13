@@ -57,11 +57,7 @@ class _AssistantMermaidDiagramCardState
             padding: const EdgeInsets.fromLTRB(14, 12, 10, 8),
             child: Row(
               children: [
-                Icon(
-                  Icons.account_tree_outlined,
-                  size: 18,
-                  color: mutedColor,
-                ),
+                Icon(Icons.account_tree_outlined, size: 18, color: mutedColor),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -146,9 +142,8 @@ class _AssistantMermaidDiagramCardState
   Future<void> _openFullscreen() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => AssistantMermaidViewerPage(
-          definition: widget.definition,
-        ),
+        builder: (_) =>
+            AssistantMermaidViewerPage(definition: widget.definition),
         fullscreenDialog: true,
       ),
     );
@@ -156,10 +151,7 @@ class _AssistantMermaidDiagramCardState
 }
 
 class AssistantMermaidViewerPage extends StatefulWidget {
-  const AssistantMermaidViewerPage({
-    required this.definition,
-    super.key,
-  });
+  const AssistantMermaidViewerPage({required this.definition, super.key});
 
   final String definition;
 

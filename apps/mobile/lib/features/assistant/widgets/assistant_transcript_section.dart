@@ -22,36 +22,33 @@ class AssistantTranscriptSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ...chatState.messages.map(
-          (message) {
-            final toolParts = _messageToolParts(message);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: AssistantTranscriptBubble(
-                label: message.role == 'user'
-                    ? context.l10n.assistantYouLabel
-                    : assistantName,
-                alignEnd: message.role == 'user',
-                text: _messageText(message),
-                transcript: _messageTranscript(message),
-                attachments:
-                    chatState.attachmentsByMessageId[message.id] ?? const [],
-                timestamp: message.createdAt,
-                toolParts: toolParts,
-                toolNames: toolParts.isEmpty
-                    ? message.parts
-                          .where((part) => part.type == 'dynamic-tool')
-                          .map(
-                            (part) =>
-                                part.toolName ??
-                                context.l10n.assistantToolLabel,
-                          )
-                          .toList(growable: false)
-                    : const [],
-              ),
-            );
-          },
-        ),
+        ...chatState.messages.map((message) {
+          final toolParts = _messageToolParts(message);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: AssistantTranscriptBubble(
+              label: message.role == 'user'
+                  ? context.l10n.assistantYouLabel
+                  : assistantName,
+              alignEnd: message.role == 'user',
+              text: _messageText(message),
+              transcript: _messageTranscript(message),
+              attachments:
+                  chatState.attachmentsByMessageId[message.id] ?? const [],
+              timestamp: message.createdAt,
+              toolParts: toolParts,
+              toolNames: toolParts.isEmpty
+                  ? message.parts
+                        .where((part) => part.type == 'dynamic-tool')
+                        .map(
+                          (part) =>
+                              part.toolName ?? context.l10n.assistantToolLabel,
+                        )
+                        .toList(growable: false)
+                  : const [],
+            ),
+          );
+        }),
         if (liveState.userDraft.isNotEmpty ||
             liveState.userTranscript.isNotEmpty)
           Padding(

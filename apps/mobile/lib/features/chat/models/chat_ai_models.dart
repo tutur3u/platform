@@ -166,10 +166,7 @@ class ChatAiMessageUsage extends Equatable {
 }
 
 class ChatAiObservability extends Equatable {
-  const ChatAiObservability({
-    required this.totals,
-    this.messages = const [],
-  });
+  const ChatAiObservability({required this.totals, this.messages = const []});
 
   factory ChatAiObservability.fromJson(Map<String, dynamic> json) {
     final payload = _mapFromJson(json['observability'] ?? json);

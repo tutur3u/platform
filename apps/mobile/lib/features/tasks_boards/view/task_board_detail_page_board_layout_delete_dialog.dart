@@ -25,9 +25,7 @@ class _TaskBoardDeleteListDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _TaskBoardPickerHandle(
-              color: theme.colorScheme.mutedForeground,
-            ),
+            _TaskBoardPickerHandle(color: theme.colorScheme.mutedForeground),
             const shad.Gap(16),
             Text(title, style: theme.typography.h4),
             const shad.Gap(12),

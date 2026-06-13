@@ -1,8 +1,5 @@
 class WorkspaceRolePermissionState {
-  const WorkspaceRolePermissionState({
-    required this.id,
-    required this.enabled,
-  });
+  const WorkspaceRolePermissionState({required this.id, required this.enabled});
 
   factory WorkspaceRolePermissionState.fromJson(Map<String, dynamic> json) {
     return WorkspaceRolePermissionState(
@@ -102,10 +99,7 @@ class WorkspaceRoleMember {
 }
 
 class WorkspaceMemberRoleSummary {
-  const WorkspaceMemberRoleSummary({
-    required this.id,
-    required this.name,
-  });
+  const WorkspaceMemberRoleSummary({required this.id, required this.name});
 
   factory WorkspaceMemberRoleSummary.fromJson(Map<String, dynamic> json) {
     return WorkspaceMemberRoleSummary(

@@ -301,19 +301,17 @@ class _FilterSelectionSheetState extends State<_FilterSelectionSheet> {
                         title: Text(context.l10n.taskBoardDetailNone),
                         onTap: () => _select(const <String>{}),
                       ),
-                      ...widget.options.map(
-                        (option) {
-                          final checked = _draftSelectedIds.contains(option.id);
-                          return ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: checked
-                                ? const Icon(Icons.check, size: 16)
-                                : const SizedBox(width: 16, height: 16),
-                            title: _FilterOptionContent(option: option),
-                            onTap: () => _toggleOption(option.id, checked),
-                          );
-                        },
-                      ),
+                      ...widget.options.map((option) {
+                        final checked = _draftSelectedIds.contains(option.id);
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: checked
+                              ? const Icon(Icons.check, size: 16)
+                              : const SizedBox(width: 16, height: 16),
+                          title: _FilterOptionContent(option: option),
+                          onTap: () => _toggleOption(option.id, checked),
+                        );
+                      }),
                     ],
                   ),
                 ),

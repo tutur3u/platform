@@ -142,10 +142,7 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
           onDelete: _deleteLabel,
         ),
       ],
-      _TaskPlanningTab.projects => _buildProjectsItems(
-        context,
-        portfolioState,
-      ),
+      _TaskPlanningTab.projects => _buildProjectsItems(context, portfolioState),
       _TaskPlanningTab.initiatives => _buildInitiativesItems(
         context,
         portfolioState,
@@ -176,9 +173,8 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
             ),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => context.push(
-                Routes.taskPortfolioProjectPath(project.id),
-              ),
+              onTap: () =>
+                  context.push(Routes.taskPortfolioProjectPath(project.id)),
               child: TaskProjectCard(
                 project: project,
                 onEdit: () => _openEditProject(project),
