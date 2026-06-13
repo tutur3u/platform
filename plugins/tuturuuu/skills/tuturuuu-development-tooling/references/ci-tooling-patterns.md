@@ -138,15 +138,18 @@ formatting behavior, or repo-wide verification.
   needs them, but `prepare-npm-package-manifest.js` must rewrite them to a
   public HTTPS tarball before `npm pack`.
 - Platform Vercel production build validation should run
-  `node scripts/ci/package-release-readiness.js wait-changed-package-versions`
-  before dependency installation when release-please package manifests changed,
-  inspect only the checked-out latest commit instead of the whole push event
-  batch, tolerate shallow checkout by fetching a missing base SHA before
-  `git diff`,
-  dispatch missing package release workflows for the same SHA, and fail fast if
-  a related package release workflow failed. The deploy job therefore needs
-  `actions: write` for workflow dispatch recovery; keep npm publish authority
-  isolated to package `publish-npm` jobs.
+  `node scripts/ci/package-release-readiness.js gate-changed-package-versions`
+  before dependency installation when release-please package manifests changed.
+  The gate inspects only the checked-out latest commit instead of the whole push
+  event batch, tolerates shallow checkout by fetching a missing base SHA before
+  `git diff`, dispatches missing package release workflows for the same SHA,
+  fails fast if a related package release workflow failed, and exits
+  successfully with `packages_ready=false` while package releases are still
+  queued or running. Downstream install/build steps must be skipped when
+  packages are pending so the Vercel workflow does not occupy a runner while
+  waiting for npm. The deploy job therefore needs `actions: write` for workflow
+  dispatch recovery; keep npm publish authority isolated to package
+  `publish-npm` jobs.
   Platform Vercel workflows must build local `@tuturuuu/devbox` artifacts before
   `vercel build` because `apps/web` imports that workspace package. The
   platform preview and production workflows are build-only signals for

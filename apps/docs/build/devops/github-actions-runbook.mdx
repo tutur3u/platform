@@ -295,7 +295,7 @@ needs its own
 `release-*-package.yaml` workflow and matching `tuturuuu.ts` entry.
 
 The platform production Vercel workflow also runs
-`node scripts/ci/package-release-readiness.js wait-changed-package-versions`
+`node scripts/ci/package-release-readiness.js gate-changed-package-versions`
 before installing dependencies. Release-please package bumps therefore publish
 and become visible on npm before the normal production platform build validation
 continues. The helper intentionally checks only the checked-out latest commit,
@@ -303,8 +303,10 @@ not the whole push event payload, so package changes from earlier commits in a
 multi-commit push are not bound to an unrelated newer SHA. If the latest commit
 does change package manifests, the deploy job grants `actions: write` because
 the helper may dispatch missing package release workflows for that same
-production SHA; npm publish authority remains isolated to package `publish-npm`
-jobs.
+production SHA. When related package releases are queued or running, the helper
+sets `packages_ready=false`; the platform build skips successfully instead of
+polling npm until the runner times out. npm publish authority remains isolated to
+package `publish-npm` jobs.
 
 Filtered production Docker installs only include the selected app and the
 dependencies that app needs. Workspace packages with direct `tsgo` build scripts

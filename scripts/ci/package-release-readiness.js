@@ -674,6 +674,130 @@ async function dispatchDependentWorkflows({
   return dispatched;
 }
 
+async function gateChangedPackageVersions({
+  dispatchWorkflow = dispatchRelatedWorkflow,
+  env = process.env,
+  getRelatedWorkflowStatus = getRelatedWorkflowRunStatus,
+  logger = console,
+  registry = DEFAULT_REGISTRY,
+  repoRoot,
+  versionExists = packageVersionExists,
+}) {
+  const changedFiles = getLatestCommitChangedFiles({
+    headRef: env.GITHUB_SHA || 'HEAD',
+    repoRoot,
+  });
+  const changedPackages = getChangedPublishablePackages({
+    changedFiles,
+    repoRoot,
+  });
+  const pendingPackages = [];
+  const checkedPackages = changedPackages.map((packageInfo) => ({
+    packageName: packageInfo.packageJson.name,
+    packageVersion: packageInfo.version,
+    workflowName: packageInfo.workflowName,
+  }));
+
+  if (changedPackages.length === 0) {
+    logger.log('No changed publishable package versions detected.');
+    return {
+      checked_packages: JSON.stringify([]),
+      packages_ready: 'true',
+      pending_packages: JSON.stringify([]),
+    };
+  }
+
+  for (const packageInfo of changedPackages) {
+    const packageName = packageInfo.packageJson.name;
+    const packageVersion = packageInfo.version;
+
+    if (
+      versionExists({
+        packageName,
+        packageVersion,
+        registry,
+      })
+    ) {
+      logger.log(`${packageName}@${packageVersion} is visible on npm.`);
+      continue;
+    }
+
+    const workflowStatus = await getRelatedWorkflowStatus({
+      env,
+      workflowName: packageInfo.workflowName,
+    });
+
+    if (workflowStatus.state === 'failed') {
+      throw new Error(
+        `${packageName}@${packageVersion} is blocked because ` +
+          `${packageInfo.workflowName} failed for ${env.GITHUB_SHA}. ` +
+          `Conclusion: ${workflowStatus.conclusion}. ` +
+          `Run: ${workflowStatus.url ?? '(unavailable)'}`
+      );
+    }
+
+    if (workflowStatus.state === 'success') {
+      throw new Error(
+        `${packageName}@${packageVersion} is missing from npm even though ` +
+          `${packageInfo.workflowName} completed successfully for ` +
+          `${env.GITHUB_SHA}.`
+      );
+    }
+
+    if (workflowStatus.state === 'missing') {
+      await dispatchWorkflow({
+        env,
+        logger,
+        workflowName: packageInfo.workflowName,
+      });
+      pendingPackages.push({
+        packageName,
+        packageVersion,
+        state: 'dispatched',
+        workflowName: packageInfo.workflowName,
+      });
+      logger.log(
+        `Platform package gate deferred until ${packageName}@${packageVersion} ` +
+          `is published.`
+      );
+      continue;
+    }
+
+    if (workflowStatus.state === 'pending') {
+      pendingPackages.push({
+        packageName,
+        packageVersion,
+        state: workflowStatus.status ?? 'pending',
+        workflowName: packageInfo.workflowName,
+      });
+      logger.log(
+        `Platform package gate deferred while ${packageInfo.workflowName} ` +
+          `is ${workflowStatus.status ?? 'pending'}.`
+      );
+      continue;
+    }
+
+    throw new Error(
+      `${packageName}@${packageVersion} readiness cannot be confirmed because ` +
+        `${packageInfo.workflowName} status is unreadable.`
+    );
+  }
+
+  if (pendingPackages.length === 0) {
+    logger.log('Changed package versions are visible on npm.');
+  } else {
+    logger.log(
+      'Changed package release gate deferred without occupying the platform build runner.'
+    );
+  }
+
+  return {
+    checked_packages: JSON.stringify(checkedPackages),
+    packages_ready: pendingPackages.length === 0 ? 'true' : 'false',
+    pending_packages: JSON.stringify(pendingPackages),
+  };
+}
+
 function appendGithubOutput(outputs, env = process.env) {
   if (!env.GITHUB_OUTPUT) return;
 
@@ -960,6 +1084,16 @@ async function runCli(argv = process.argv.slice(2), env = process.env) {
     return;
   }
 
+  if (command === 'gate-changed-package-versions') {
+    const outputs = await gateChangedPackageVersions({
+      ...waitOptions,
+      env,
+      repoRoot,
+    });
+    appendGithubOutput(outputs, env);
+    return;
+  }
+
   if (command === 'wait-changed-package-versions') {
     const changedFiles = getLatestCommitChangedFiles({
       headRef: env.GITHUB_SHA || 'HEAD',
@@ -992,7 +1126,7 @@ async function runCli(argv = process.argv.slice(2), env = process.env) {
 
   throw new Error(
     'Usage: node scripts/ci/package-release-readiness.js ' +
-      '<check-version|wait-version|gate-package-release|dispatch-dependent-workflows|wait-workspace-dependencies|wait-changed-package-versions>'
+      '<check-version|wait-version|gate-package-release|dispatch-dependent-workflows|wait-workspace-dependencies|gate-changed-package-versions|wait-changed-package-versions>'
   );
 }
 
@@ -1013,6 +1147,7 @@ module.exports = {
   buildWorkflowDispatchUrl,
   dispatchDependentWorkflows,
   dispatchRelatedWorkflow,
+  gateChangedPackageVersions,
   gatePackageRelease,
   getBeforeRefFromEventPayload,
   getChangedFiles,

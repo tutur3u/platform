@@ -9,6 +9,7 @@ const {
   buildWorkflowRunsUrl,
   dispatchDependentWorkflows,
   dispatchRelatedWorkflow,
+  gateChangedPackageVersions,
   gatePackageRelease,
   getChangedFiles,
   getChangedPublishablePackages,
@@ -479,6 +480,143 @@ test('dependent workflow dispatch targets direct unpublished dependents only', a
       versionExists: () => false,
     }),
     /Refusing to dispatch dependent workflows before @tuturuuu\/internal-api@2\.0\.0 is visible on npm/
+  );
+});
+
+test('platform changed package gate reports ready when changed versions are visible', async () => {
+  const rootDir = createFixtureRoot();
+
+  initializeGitRepo(rootDir);
+  writeJson(path.join(rootDir, 'packages/internal-api/package.json'), {
+    dependencies: {
+      '@tuturuuu/types': 'workspace:*',
+    },
+    name: '@tuturuuu/internal-api',
+    version: '2.0.1',
+  });
+  git(rootDir, ['add', 'packages/internal-api/package.json']);
+  git(rootDir, ['commit', '-m', 'release internal api']);
+
+  const outputs = await gateChangedPackageVersions({
+    dispatchWorkflow: async () => {
+      throw new Error('ready package gate should not dispatch workflows');
+    },
+    getRelatedWorkflowStatus: async () => {
+      throw new Error('ready package gate should not inspect workflows');
+    },
+    logger: silentLogger,
+    repoRoot: rootDir,
+    versionExists: createVersionExists(
+      new Set(['@tuturuuu/internal-api@2.0.1'])
+    ),
+  });
+
+  assert.equal(outputs.packages_ready, 'true');
+  assert.deepEqual(JSON.parse(outputs.pending_packages), []);
+});
+
+test('platform changed package gate defers pending workflows without sleeping', async () => {
+  const rootDir = createFixtureRoot();
+  const dispatchedWorkflows = [];
+  const inspectedWorkflows = [];
+
+  initializeGitRepo(rootDir);
+  writeJson(path.join(rootDir, 'packages/internal-api/package.json'), {
+    dependencies: {
+      '@tuturuuu/types': 'workspace:*',
+    },
+    name: '@tuturuuu/internal-api',
+    version: '2.0.1',
+  });
+  git(rootDir, ['add', 'packages/internal-api/package.json']);
+  git(rootDir, ['commit', '-m', 'release internal api']);
+
+  const outputs = await gateChangedPackageVersions({
+    dispatchWorkflow: async ({ workflowName }) => {
+      dispatchedWorkflows.push(workflowName);
+    },
+    getRelatedWorkflowStatus: async ({ workflowName }) => {
+      inspectedWorkflows.push(workflowName);
+      return { state: 'pending', status: 'queued' };
+    },
+    logger: silentLogger,
+    repoRoot: rootDir,
+    versionExists: createVersionExists(new Set()),
+  });
+
+  assert.equal(outputs.packages_ready, 'false');
+  assert.deepEqual(inspectedWorkflows, ['release-internal-api-package.yaml']);
+  assert.deepEqual(dispatchedWorkflows, []);
+  assert.deepEqual(JSON.parse(outputs.pending_packages), [
+    {
+      packageName: '@tuturuuu/internal-api',
+      packageVersion: '2.0.1',
+      state: 'queued',
+      workflowName: 'release-internal-api-package.yaml',
+    },
+  ]);
+});
+
+test('platform changed package gate dispatches missing workflows and defers', async () => {
+  const rootDir = createFixtureRoot();
+  const dispatchedWorkflows = [];
+
+  initializeGitRepo(rootDir);
+  writeJson(path.join(rootDir, 'packages/types/package.json'), {
+    name: '@tuturuuu/types',
+    version: '1.0.1',
+  });
+  git(rootDir, ['add', 'packages/types/package.json']);
+  git(rootDir, ['commit', '-m', 'release types']);
+
+  const outputs = await gateChangedPackageVersions({
+    dispatchWorkflow: async ({ workflowName }) => {
+      dispatchedWorkflows.push(workflowName);
+    },
+    getRelatedWorkflowStatus: async () => ({ state: 'missing' }),
+    logger: silentLogger,
+    repoRoot: rootDir,
+    versionExists: createVersionExists(new Set()),
+  });
+
+  assert.equal(outputs.packages_ready, 'false');
+  assert.deepEqual(dispatchedWorkflows, ['release-types-package.yaml']);
+  assert.deepEqual(JSON.parse(outputs.pending_packages), [
+    {
+      packageName: '@tuturuuu/types',
+      packageVersion: '1.0.1',
+      state: 'dispatched',
+      workflowName: 'release-types-package.yaml',
+    },
+  ]);
+});
+
+test('platform changed package gate fails fast when a release workflow failed', async () => {
+  const rootDir = createFixtureRoot();
+
+  initializeGitRepo(rootDir);
+  writeJson(path.join(rootDir, 'packages/types/package.json'), {
+    name: '@tuturuuu/types',
+    version: '1.0.1',
+  });
+  git(rootDir, ['add', 'packages/types/package.json']);
+  git(rootDir, ['commit', '-m', 'release types']);
+
+  await assert.rejects(
+    gateChangedPackageVersions({
+      env: {
+        GITHUB_SHA: 'HEAD',
+      },
+      getRelatedWorkflowStatus: async () => ({
+        conclusion: 'failure',
+        state: 'failed',
+        url: 'https://example.test/run',
+      }),
+      logger: silentLogger,
+      repoRoot: rootDir,
+      versionExists: createVersionExists(new Set()),
+    }),
+    /@tuturuuu\/types@1\.0\.1 is blocked because release-types-package\.yaml failed/
   );
 });
 

@@ -125,7 +125,7 @@ test('Platform production build waits for release package visibility when it is 
     'vercel-production-platform.yaml',
     'Deploy-Production'
   );
-  const releaseGateIndex = deployJob.indexOf('Wait for package release gate');
+  const releaseGateIndex = deployJob.indexOf('Gate package release visibility');
   const installIndex = deployJob.indexOf('Install dependencies');
   const vercelBuildIndex = deployJob.indexOf('Build Project Artifacts');
 
@@ -142,8 +142,11 @@ test('Platform production build waits for release package visibility when it is 
   );
   assert.match(
     deployJob,
-    /node scripts\/ci\/package-release-readiness\.js wait-changed-package-versions/
+    /node scripts\/ci\/package-release-readiness\.js gate-changed-package-versions/
   );
+  assert.match(deployJob, /id:\s*package_release_gate/);
+  assert.match(deployJob, /packages_ready == 'false'/);
+  assert.match(deployJob, /packages_ready == 'true'/);
   assert.match(deployJob, /TUTURUUU_NEXT_CACHE_COMPONENTS: "0"/);
   assert.match(deployJob, /actions:\s*write/);
   assert.match(deployJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
