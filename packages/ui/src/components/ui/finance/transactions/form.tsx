@@ -123,8 +123,8 @@ function resolveInitialTakenAt({
     : initialTransaction?.taken_at;
 
   return {
-    date: startOfDayInTimezone(initialTakenAt ?? new Date(), timezone),
-    includeTime: false,
+    date: initialTakenAt ?? new Date(),
+    includeTime: true,
   };
 }
 

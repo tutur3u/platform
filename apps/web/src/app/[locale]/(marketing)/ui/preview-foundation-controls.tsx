@@ -87,9 +87,9 @@ export function DateTimePickerPreview() {
 
 export function OptionalTimePickerPreview({ s }: { s: SampleTranslator }) {
   const [date, setDate] = useState<Date | undefined>(
-    new Date(2026, 5, 3, 0, 0)
+    new Date(2026, 5, 3, 9, 30)
   );
-  const [includeTime, setIncludeTime] = useState(false);
+  const [includeTime, setIncludeTime] = useState(true);
 
   return (
     <div className="w-full max-w-sm">

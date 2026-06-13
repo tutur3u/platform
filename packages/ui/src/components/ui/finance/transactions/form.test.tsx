@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import type { ComponentProps } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateDialogFeatureSummary } from '../shared/create-dialog-feature-summary';
 import { TransactionForm } from './form';
 import { TransactionsCreateSummary } from './transactions-create-summary';
@@ -122,6 +122,10 @@ function renderTransactionForm(
 }
 
 describe('TransactionForm', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     globalThis.ResizeObserver = class ResizeObserver {
@@ -149,14 +153,18 @@ describe('TransactionForm', () => {
     expect(screen.getByText('ws-transactions.create')).toBeVisible();
   });
 
-  it('renders the optional time control off by default for new transactions', () => {
-    renderTransactionForm();
+  it('renders the optional time control on by default for new transactions', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-13T12:34:00.000Z'));
+
+    renderTransactionForm({ timezone: 'UTC' });
 
     const includeTimeSwitch = screen.getByRole('switch', {
       name: 'transaction-data-table.include_time',
     });
 
-    expect(includeTimeSwitch).toHaveAttribute('data-state', 'unchecked');
+    expect(includeTimeSwitch).toHaveAttribute('data-state', 'checked');
+    expect(screen.getByText('12:34 PM')).toBeVisible();
   });
 
   it('keeps the contextual wallet selected when wallet context is preferred', async () => {

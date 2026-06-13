@@ -65,10 +65,6 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
-import {
-  buildDateInTimezone,
-  getDatePartsInTimezone,
-} from '@tuturuuu/utils/task-date-timezone';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -155,20 +151,6 @@ interface TransactionEditDialogProps {
   timezone?: string | null;
 }
 
-function startOfDayInTimezone(date: Date, timezone?: string | null) {
-  const resolvedTimezone = timezone || 'auto';
-  const parts = getDatePartsInTimezone(date, resolvedTimezone);
-
-  return buildDateInTimezone(
-    parts.year,
-    parts.month,
-    parts.day,
-    0,
-    0,
-    resolvedTimezone
-  );
-}
-
 export function TransactionEditDialog({
   transaction,
   wsId,
@@ -230,9 +212,7 @@ export function TransactionEditDialog({
   const [walletId, setWalletId] = useState(transaction?.wallet_id || '');
   const [categoryId, setCategoryId] = useState(transaction?.category_id || '');
   const [takenAt, setTakenAt] = useState<Date | undefined>(
-    transaction?.taken_at
-      ? new Date(transaction.taken_at)
-      : startOfDayInTimezone(new Date(), timezone)
+    transaction?.taken_at ? new Date(transaction.taken_at) : new Date()
   );
   const [includeTakenAtTime, setIncludeTakenAtTime] = useState(
     !!transaction?.taken_at
@@ -315,9 +295,7 @@ export function TransactionEditDialog({
       setWalletId(transaction.wallet_id || '');
       setCategoryId(transaction.category_id || '');
       setTakenAt(
-        transaction.taken_at
-          ? new Date(transaction.taken_at)
-          : startOfDayInTimezone(new Date(), timezone)
+        transaction.taken_at ? new Date(transaction.taken_at) : new Date()
       );
       setIncludeTakenAtTime(!!transaction.taken_at);
       setReportOptIn(transaction.report_opt_in ?? true);
@@ -336,14 +314,14 @@ export function TransactionEditDialog({
       setAmount(0);
       setWalletId('');
       setCategoryId('');
-      setTakenAt(startOfDayInTimezone(new Date(), timezone));
-      setIncludeTakenAtTime(false);
+      setTakenAt(new Date());
+      setIncludeTakenAtTime(true);
       setReportOptIn(true);
       setIsAmountConfidential(false);
       setIsDescriptionConfidential(false);
       setIsCategoryConfidential(false);
     }
-  }, [isOpen, transaction, timezone]);
+  }, [isOpen, transaction]);
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const isExpense = selectedCategory?.is_expense !== false;

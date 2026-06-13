@@ -1,16 +1,12 @@
 'use client';
 
-import { Clock } from '@tuturuuu/icons';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
-import { Label } from '@tuturuuu/ui/label';
-import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import {
   buildDateInTimezone,
   getDatePartsInTimezone,
 } from '@tuturuuu/utils/task-date-timezone';
 import type { ReactNode } from 'react';
-import { useId } from 'react';
 
 export interface OptionalTimePickerProps {
   date?: Date;
@@ -65,8 +61,6 @@ export function OptionalTimePicker({
   className,
   preferences,
 }: OptionalTimePickerProps) {
-  const switchId = useId();
-
   const handleDateChange = (nextDate: Date | undefined) => {
     if (!nextDate || includeTime) {
       setDate(nextDate);
@@ -77,7 +71,7 @@ export function OptionalTimePicker({
   };
 
   return (
-    <div className={cn('grid gap-2', className)}>
+    <div className={cn('w-full', className)}>
       <DateTimePicker
         date={date}
         setDate={handleDateChange}
@@ -89,22 +83,13 @@ export function OptionalTimePicker({
         align={align}
         collisionPadding={collisionPadding}
         preferences={preferences}
+        timeToggle={{
+          checked: includeTime,
+          disabled,
+          label: includeTimeLabel,
+          onCheckedChange: setIncludeTime,
+        }}
       />
-      <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2">
-        <Label
-          htmlFor={switchId}
-          className="flex min-w-0 items-center gap-2 font-medium text-sm"
-        >
-          <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <span className="truncate">{includeTimeLabel}</span>
-        </Label>
-        <Switch
-          id={switchId}
-          checked={includeTime}
-          onCheckedChange={setIncludeTime}
-          disabled={disabled}
-        />
-      </div>
     </div>
   );
 }

@@ -302,7 +302,7 @@ export const foundationComponentEntries: ComponentEntry[] = [
     usage: usage(
       '@tuturuuu/ui/optional-time-picker',
       ['OptionalTimePicker'],
-      `<OptionalTimePicker\n  date={date}\n  setDate={setDate}\n  includeTime={includeTime}\n  setIncludeTime={setIncludeTime}\n  includeTimeLabel="Include time"\n/>`
+      `const [includeTime, setIncludeTime] = useState(true);\n\n<OptionalTimePicker\n  date={date}\n  setDate={setDate}\n  includeTime={includeTime}\n  setIncludeTime={setIncludeTime}\n  includeTimeLabel="Include time"\n/>`
     ),
   },
   {
