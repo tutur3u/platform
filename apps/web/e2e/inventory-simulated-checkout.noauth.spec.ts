@@ -45,6 +45,7 @@ test.describe('Inventory public checkout modes', () => {
     const origin = baseURL ?? 'https://tuturuuu.localhost';
     const workspaceId = randomUUID();
     const categoryId = randomUUID();
+    const ownerId = randomUUID();
     const productId = randomUUID();
     const unitId = randomUUID();
     const warehouseId = randomUUID();
@@ -101,6 +102,23 @@ test.describe('Inventory public checkout modes', () => {
       );
       expect(categoryResponse.status()).toBe(201);
 
+      const ownerResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/inventory_owners`,
+        {
+          data: {
+            id: ownerId,
+            name: 'Unassigned',
+            ws_id: workspaceId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      expect(ownerResponse.status()).toBe(201);
+
       const productResponse = await request.post(
         `${SUPABASE_URL}/rest/v1/workspace_products`,
         {
@@ -108,6 +126,7 @@ test.describe('Inventory public checkout modes', () => {
             category_id: categoryId,
             id: productId,
             name: 'E2E Poster',
+            owner_id: ownerId,
             ws_id: workspaceId,
           },
           failOnStatusCode: false,
@@ -278,6 +297,23 @@ test.describe('Inventory public checkout modes', () => {
         message: 'Checkout is disabled for this storefront',
       });
     } finally {
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/inventory_checkout_sessions?ws_id=eq.${workspaceId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/workspace_products?id=eq.${productId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
       await request.delete(
         `${SUPABASE_URL}/rest/v1/workspaces?id=eq.${workspaceId}`,
         {
