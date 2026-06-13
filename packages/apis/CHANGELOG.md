@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/tutur3u/platform/compare/apis-v0.4.0...apis-v0.4.1) (2026-06-13)
+
+
+### Bug Fixes
+
+* **ci:** make platform package gate non-blocking ([895cee0](https://github.com/tutur3u/platform/commit/895cee009fac0e5464fdb4f9c5c4c9ef0481c854))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/apis-v0.3.0...apis-v0.4.0) (2026-06-13)
 
 
