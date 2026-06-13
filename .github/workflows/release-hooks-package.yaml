@@ -87,6 +87,9 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
 
+      - name: Build workspace dependencies
+        run: bun run --filter @tuturuuu/types build
+
       - name: Run type-check
         working-directory: packages/hooks
         run: bun run type-check

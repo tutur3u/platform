@@ -10,6 +10,7 @@ const {
 } = require('./docker-web.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
+const DATABASE_DIR = path.join(ROOT_DIR, 'apps', 'database');
 const LOCAL_SUPABASE_TEST_ENV = {
   DOCKER_WEB_ALLOW_LOCAL_SUPABASE: '1',
   PATH: 'test-path',
@@ -57,7 +58,7 @@ test('runDockerWebWorkflow starts and resets Supabase before Docker when request
     ['docker', ['compose', 'version'], undefined],
     ['docker', ['info', '--format', '{{json .MemTotal}}'], undefined],
     ['bun', ['sb:start'], ROOT_DIR],
-    ['bun', ['sb:reset'], ROOT_DIR],
+    ['bun', ['sb:reset'], DATABASE_DIR],
     [
       'docker',
       [
@@ -130,7 +131,7 @@ test('runDockerWebWorkflow retries transient Supabase reset failures with backof
         ({ args, command }) => command === 'bun' && args[0] === 'sb:reset'
       )
       .map(({ cwd }) => cwd),
-    [ROOT_DIR, ROOT_DIR, ROOT_DIR]
+    [DATABASE_DIR, DATABASE_DIR, DATABASE_DIR]
   );
   assert.ok(
     calls.some(
@@ -192,7 +193,7 @@ test('runDockerWebWorkflow does not retry non-transient Supabase reset failures'
         ({ args, command }) => command === 'bun' && args[0] === 'sb:reset'
       )
       .map(({ cwd }) => cwd),
-    [ROOT_DIR]
+    [DATABASE_DIR]
   );
   assert.ok(
     !calls.some(

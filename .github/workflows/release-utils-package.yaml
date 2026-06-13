@@ -91,6 +91,7 @@ jobs:
         run: |
           bun run --filter @tuturuuu/types build
           bun run --filter @tuturuuu/supabase build
+          bun run --filter @tuturuuu/internal-api build
 
       - name: Run type-check
         working-directory: packages/utils

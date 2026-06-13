@@ -3,6 +3,7 @@ const path = require('node:path');
 const { getPositiveIntegerEnv, runChecked, sleep } = require('./compose.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
+const DATABASE_DIR = path.join(ROOT_DIR, 'apps', 'database');
 const DEFAULT_SUPABASE_RESET_RETRY_MAX_ATTEMPTS = 4;
 const DEFAULT_SUPABASE_RESET_RETRY_INITIAL_DELAY_MS = 5_000;
 const DEFAULT_SUPABASE_RESET_RETRY_MAX_DELAY_MS = 60_000;
@@ -73,7 +74,7 @@ async function runSupabaseResetWithRetry({
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       return await runChecked('bun', ['sb:reset'], {
-        cwd: ROOT_DIR,
+        cwd: DATABASE_DIR,
         env,
         fsImpl,
         runCommand: run,

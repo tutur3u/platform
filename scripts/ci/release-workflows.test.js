@@ -833,6 +833,7 @@ const packageReleaseWorkflows = [
     requiredBuildPatterns: [
       /bun run --filter @tuturuuu\/types build/,
       /bun run --filter @tuturuuu\/supabase build/,
+      /bun run --filter @tuturuuu\/internal-api build/,
       /working-directory: packages\/apis/,
       /run: bun run type-check/,
       /run: bun run test/,
@@ -877,6 +878,7 @@ const packageReleaseWorkflows = [
     rejectMessagePattern:
       /@tuturuuu\/hooks releases can only run from refs\/heads\/production/,
     requiredBuildPatterns: [
+      /bun run --filter @tuturuuu\/types build/,
       /working-directory: packages\/hooks/,
       /run: bun run type-check/,
     ],
@@ -982,6 +984,7 @@ const packageReleaseWorkflows = [
     requiredBuildPatterns: [
       /bun run --filter @tuturuuu\/types build/,
       /bun run --filter @tuturuuu\/supabase build/,
+      /bun run --filter @tuturuuu\/internal-api build/,
       /working-directory: packages\/utils/,
       /run: bun run type-check/,
       /run: bun run test/,
@@ -1007,6 +1010,47 @@ const packageReleaseWorkflows = [
     workflowName: 'release-sdk-package.yaml',
   },
 ];
+
+function parseDeclaredNeeds(jobBlock) {
+  const needsLine = jobBlock
+    .split('\n')
+    .find((line) => /^ {4}needs:/u.test(line));
+
+  if (!needsLine) return new Set();
+
+  const value = needsLine.replace(/^ {4}needs:\s*/u, '').trim();
+
+  if (value.startsWith('[') && value.endsWith(']')) {
+    return new Set(
+      value
+        .slice(1, -1)
+        .split(',')
+        .map((need) => need.trim())
+        .filter(Boolean)
+    );
+  }
+
+  return new Set([value]);
+}
+
+function assertNeedsReferencesAreDeclared({ jobBlock, jobName, workflowName }) {
+  const declaredNeeds = parseDeclaredNeeds(jobBlock);
+  const referencedNeeds = [
+    ...jobBlock.matchAll(/\bneeds\.([A-Za-z0-9_-]+)/gu),
+  ].map((match) => match[1]);
+
+  for (const referencedNeed of referencedNeeds) {
+    assert.ok(
+      declaredNeeds.has(referencedNeed),
+      `${workflowName} ${jobName} references needs.${referencedNeed} without declaring it in needs`
+    );
+    assert.notEqual(
+      referencedNeed,
+      jobName,
+      `${workflowName} ${jobName} must not reference its own needs outputs`
+    );
+  }
+}
 
 test('package publish manifests expose provenance-compatible repository metadata', () => {
   for (const {
@@ -1061,6 +1105,19 @@ test('package publish workflows release from production version bumps', () => {
       workflowName,
       'dispatch-dependent-releases'
     );
+
+    for (const [jobName, jobBlock] of Object.entries({
+      build: buildJob,
+      'check-ci': checkCiJob,
+      'check-version-bump': checkVersionBumpJob,
+      'dispatch-dependent-releases': dispatchJob,
+      'prepare-publish-npm': prepareJob,
+      'publish-npm': publishJob,
+      'reject-non-production-ref': rejectJob,
+      'release-gate': releaseGateJob,
+    })) {
+      assertNeedsReferencesAreDeclared({ jobBlock, jobName, workflowName });
+    }
 
     assert.match(workflow, /\n {2}push:\n {4}branches:\s*\[production\]/);
     assert.match(workflow, new RegExp(`"${packagePath}/package\\.json"`));
