@@ -1,5 +1,58 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/platform-v0.8.0...platform-v0.9.0) (2026-06-13)
+
+
+### Features
+
+* **ci:** add GitHub bot check auto-pickup ([9e62daa](https://github.com/tutur3u/platform/commit/9e62daa5267b29ca5e55ed85c7d560415cef3b77))
+* **ci:** publish watcher progress as GitHub checks ([778f52f](https://github.com/tutur3u/platform/commit/778f52ff09f462c0b9bce4bfa774074c1102a581))
+* **finance:** add infinite wallet loading ([76eba7a](https://github.com/tutur3u/platform/commit/76eba7a849c3a6b948e231a1e83e1e2faa10bb16))
+* **finance:** add reconciliation defaults and audited balances ([206f941](https://github.com/tutur3u/platform/commit/206f9416351ade0cfbd1ed822595d44843efbaeb))
+* **finance:** add wallet checkpoint audit history ([11139c7](https://github.com/tutur3u/platform/commit/11139c7e354a8f29e83187748711f6ae39c48e70))
+* **finance:** improve credit wallet support ([3a737fe](https://github.com/tutur3u/platform/commit/3a737fe1f1daf2294ca79a8f0f08f85c69697057))
+* **inventory:** add costing and simulated storefront checkout ([7fcdabb](https://github.com/tutur3u/platform/commit/7fcdabb145e6fa9cc899b563b117e65f7772643a))
+* **inventory:** improve operator form workflows ([aa853a6](https://github.com/tutur3u/platform/commit/aa853a69c5d0166a55d2111ac962d0676bf91a56))
+* **inventory:** revamp storefront commerce experience ([72a2bde](https://github.com/tutur3u/platform/commit/72a2bde46a1e6c2815d0b2111fc743373c7bec9b))
+* **tasks:** add compact task dialog AI suggestions ([99058e9](https://github.com/tutur3u/platform/commit/99058e90a4f81153f664eb92fdbacade1e2188c6))
+
+
+### Bug Fixes
+
+* **auth:** allow local portless e2e auth ([928da7d](https://github.com/tutur3u/platform/commit/928da7d75ff72298bd1f0d2af6872e951decae3b))
+* **auth:** preserve portless callback redirects ([4d5a0c3](https://github.com/tutur3u/platform/commit/4d5a0c3d8d329782fe0dad8b2c3cc781c07d90c7))
+* **auth:** refresh external app tokens ([df9c890](https://github.com/tutur3u/platform/commit/df9c890f40b1345a29aa084d58146445ccfaa3d7))
+* **ci:** allow mobile store deployment checks ([9d25828](https://github.com/tutur3u/platform/commit/9d258282da9bfe9f2c732a13739641a9c6ae6917))
+* **ci:** gate package release dependencies ([3501a68](https://github.com/tutur3u/platform/commit/3501a68956f7295e2e8dee73a083559ce40f9c10))
+* **ci:** isolate Supabase typegen credentials ([ab196cc](https://github.com/tutur3u/platform/commit/ab196cc5f21f30a2f8bec16b963c4b3afe908e90))
+* **ci:** preserve e2e headers and skip missing mobile token ([719c8a2](https://github.com/tutur3u/platform/commit/719c8a2c67164ca6e6c725c643b38b646c204590))
+* **ci:** prevent blue-green watcher request starvation ([fc12897](https://github.com/tutur3u/platform/commit/fc12897c1775a8ae70028ad50a7bc94ca0a8ba0c))
+* **ci:** provide Supabase token for typegen ([2e29b1d](https://github.com/tutur3u/platform/commit/2e29b1d1f274a7beb3573b30359c19a9c49236b8))
+* **ci:** restore mobile and auth callback jobs ([65f0b0a](https://github.com/tutur3u/platform/commit/65f0b0af0d054129198b894155d0feefb4a941b0))
+* **ci:** stabilize e2e and package release checks ([ae768f5](https://github.com/tutur3u/platform/commit/ae768f5b46dbfde5943a130cc2b49c15c9676ac2))
+* **e2e:** open fullscreen task editor for description sync ([9fcd3be](https://github.com/tutur3u/platform/commit/9fcd3be7df3e2a211080a8f1e01ab694df27e565))
+* **finance:** improve wallet credit limit and balance ux ([6295d5c](https://github.com/tutur3u/platform/commit/6295d5c0013b2bbe064855712a984d17225d3271))
+* **finance:** reveal wallet audit context on hover ([8b78454](https://github.com/tutur3u/platform/commit/8b784543093243cd44bacec0f0ab59cb4cac7ec7))
+* **finance:** tolerate pending checkpoint storage ([f6205a9](https://github.com/tutur3u/platform/commit/f6205a9647d21ed37eb2fa779c7edec6d3316a35))
+* **infrastructure:** clear stale blue-green promotion queues ([c752ddc](https://github.com/tutur3u/platform/commit/c752ddc6cb175e10b3fa4ae887b88b36273be522))
+* **infrastructure:** retire watcher production promotion ([df87579](https://github.com/tutur3u/platform/commit/df8757987459fd40661e988774ba0a46642376b4))
+* **inventory:** consolidate commerce setup flows ([447cc3d](https://github.com/tutur3u/platform/commit/447cc3dbd64c864bda2d6cf88c2245cf16a1eac2))
+* **inventory:** improve combobox creation and overflow ([a1e1a78](https://github.com/tutur3u/platform/commit/a1e1a78d66384d54b59460f42d04349c4e358cba))
+* **inventory:** restore operator CRUD and commerce APIs ([dd38d43](https://github.com/tutur3u/platform/commit/dd38d43bea0e812e48ccc989c7204d1212ae4649))
+* **inventory:** standardize operator form flows ([867521c](https://github.com/tutur3u/platform/commit/867521c582add46375f19cd25cbeb24cec9e1c72))
+* **mobile:** restore windows ci build ([cb4ae6d](https://github.com/tutur3u/platform/commit/cb4ae6ddd02f4a6d41cd73d7c490500a1c1757ab))
+* **sidebar:** persist collapsed state across refresh ([cb0eb6d](https://github.com/tutur3u/platform/commit/cb0eb6d0d30ecc8b3f3231255f9906e60a895f04))
+* **tasks:** hydrate external dialogs from source workspace ([95a7a23](https://github.com/tutur3u/platform/commit/95a7a23ec8957918cffc81698e8fdc8951adf400))
+* **tasks:** open external task dialogs immediately ([d1535f3](https://github.com/tutur3u/platform/commit/d1535f377cf0d39c5f73d28566322d8dbbdd8331))
+* **tasks:** open task dialogs immediately ([7980e66](https://github.com/tutur3u/platform/commit/7980e66b6a11cd62b9e04ad6d421deee915b2dea))
+* **tasks:** place task title caret at end ([27af729](https://github.com/tutur3u/platform/commit/27af729a673c2bb712819a6d2d95ba0198a558ce))
+* **tasks:** prevent external dialog hydration flash ([8aa7765](https://github.com/tutur3u/platform/commit/8aa7765dfa235c240e2156e404c6255909ec7aee))
+* **tasks:** refine compact task dialog actions ([dcf6b03](https://github.com/tutur3u/platform/commit/dcf6b033f2c134d115d74b53d4b875c16cd7070c))
+* **tasks:** sync task realtime with broadcasts ([8c56154](https://github.com/tutur3u/platform/commit/8c56154e517797dcac0ec0971d8a474b50292706))
+* **ui:** make package graph installable ([f3eb0ff](https://github.com/tutur3u/platform/commit/f3eb0ff3cbed2e43fd77dfb8164e60c5d195a36b))
+* **web:** avoid cropper css type declaration ([7539818](https://github.com/tutur3u/platform/commit/753981881bd7e7639b4b67ed6a68578158c07974))
+* **web:** seed inventory owner in checkout e2e ([2bbcd71](https://github.com/tutur3u/platform/commit/2bbcd716aced28457ba98c7033ceda9c91674694))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/platform-v0.7.0...platform-v0.8.0) (2026-06-11)
 
 

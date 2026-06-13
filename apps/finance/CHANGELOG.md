@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/finance-v0.6.0...finance-v0.7.0) (2026-06-13)
+
+
+### Features
+
+* **finance:** add infinite wallet loading ([76eba7a](https://github.com/tutur3u/platform/commit/76eba7a849c3a6b948e231a1e83e1e2faa10bb16))
+* **finance:** add reconciliation defaults and audited balances ([206f941](https://github.com/tutur3u/platform/commit/206f9416351ade0cfbd1ed822595d44843efbaeb))
+* **finance:** add wallet checkpoint audit history ([11139c7](https://github.com/tutur3u/platform/commit/11139c7e354a8f29e83187748711f6ae39c48e70))
+* **finance:** improve credit wallet support ([3a737fe](https://github.com/tutur3u/platform/commit/3a737fe1f1daf2294ca79a8f0f08f85c69697057))
+
+
+### Bug Fixes
+
+* **sidebar:** persist collapsed state across refresh ([cb0eb6d](https://github.com/tutur3u/platform/commit/cb0eb6d0d30ecc8b3f3231255f9906e60a895f04))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/finance-v0.5.1...finance-v0.6.0) (2026-06-11)
 
 

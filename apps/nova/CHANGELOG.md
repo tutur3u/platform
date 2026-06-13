@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.2](https://github.com/tutur3u/platform/compare/nova-v0.18.1...nova-v0.18.2) (2026-06-13)
+
+
+### Bug Fixes
+
+* **tasks:** sync task realtime with broadcasts ([8c56154](https://github.com/tutur3u/platform/commit/8c56154e517797dcac0ec0971d8a474b50292706))
+
 ## [0.18.1](https://github.com/tutur3u/platform/compare/nova-v0.18.0...nova-v0.18.1) (2026-06-11)
 
 

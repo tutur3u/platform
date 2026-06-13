@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/types-v0.7.0...types-v0.8.0) (2026-06-13)
+
+
+### Features
+
+* **ci:** add GitHub bot check auto-pickup ([9e62daa](https://github.com/tutur3u/platform/commit/9e62daa5267b29ca5e55ed85c7d560415cef3b77))
+* **finance:** add wallet checkpoint audit history ([11139c7](https://github.com/tutur3u/platform/commit/11139c7e354a8f29e83187748711f6ae39c48e70))
+* **inventory:** improve operator form workflows ([aa853a6](https://github.com/tutur3u/platform/commit/aa853a69c5d0166a55d2111ac962d0676bf91a56))
+
+
+### Bug Fixes
+
+* **inventory:** restore operator CRUD and commerce APIs ([dd38d43](https://github.com/tutur3u/platform/commit/dd38d43bea0e812e48ccc989c7204d1212ae4649))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/types-v0.6.1...types-v0.7.0) (2026-06-11)
 
 

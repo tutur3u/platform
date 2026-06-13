@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2](https://github.com/tutur3u/platform/compare/track-v0.5.1...track-v0.5.2) (2026-06-13)
+
+
+### Bug Fixes
+
+* **sidebar:** persist collapsed state across refresh ([cb0eb6d](https://github.com/tutur3u/platform/commit/cb0eb6d0d30ecc8b3f3231255f9906e60a895f04))
+* **tasks:** sync task realtime with broadcasts ([8c56154](https://github.com/tutur3u/platform/commit/8c56154e517797dcac0ec0971d8a474b50292706))
+
 ## [0.5.1](https://github.com/tutur3u/platform/compare/track-v0.5.0...track-v0.5.1) (2026-06-11)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/storefront-v0.3.0...storefront-v0.4.0) (2026-06-13)
+
+
+### Features
+
+* **inventory:** add costing and simulated storefront checkout ([7fcdabb](https://github.com/tutur3u/platform/commit/7fcdabb145e6fa9cc899b563b117e65f7772643a))
+* **inventory:** revamp storefront commerce experience ([72a2bde](https://github.com/tutur3u/platform/commit/72a2bde46a1e6c2815d0b2111fc743373c7bec9b))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/storefront-v0.2.0...storefront-v0.3.0) (2026-06-11)
 
 
