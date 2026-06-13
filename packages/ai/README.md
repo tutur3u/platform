@@ -61,6 +61,11 @@ yarn add @tuturuuu/ai
 bun add @tuturuuu/ai
 ```
 
+Published artifacts replace local `workspace:*` dependencies with exact
+registry versions before packing. If a public consumer cannot install this
+package, rerun the package release from the current production commit so its
+manifest points at published Tuturuuu package versions.
+
 ## Development
 
 ```bash

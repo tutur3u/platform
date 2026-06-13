@@ -12,6 +12,11 @@ yarn add @tuturuuu/ui
 bun add @tuturuuu/ui
 ```
 
+The public package depends on other published Tuturuuu packages, including
+`@tuturuuu/ai`. Release those dependencies first, then publish UI from the same
+production commit so standalone apps can install `@tuturuuu/ui` without local
+workspace links or package-manager overrides.
+
 ## Usage
 
 ```typescript
