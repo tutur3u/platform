@@ -823,6 +823,23 @@ const packageReleaseWorkflows = [
     workflowName: 'release-ai-package.yaml',
   },
   {
+    artifactDir: 'apis-package',
+    artifactName: 'tuturuuu-apis-npm-package',
+    environment: 'apis-release-production',
+    packageName: '@tuturuuu/apis',
+    packagePath: 'packages/apis',
+    rejectMessagePattern:
+      /@tuturuuu\/apis releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /bun run --filter @tuturuuu\/types build/,
+      /bun run --filter @tuturuuu\/supabase build/,
+      /working-directory: packages\/apis/,
+      /run: bun run type-check/,
+      /run: bun run test/,
+    ],
+    workflowName: 'release-apis-package.yaml',
+  },
+  {
     artifactDir: 'devbox-package',
     artifactName: 'tuturuuu-devbox-npm-package',
     environment: 'devbox-release-production',
@@ -836,6 +853,48 @@ const packageReleaseWorkflows = [
       /run: bun run test/,
     ],
     workflowName: 'release-devbox-package.yaml',
+  },
+  {
+    artifactDir: 'google-package',
+    artifactName: 'tuturuuu-google-npm-package',
+    environment: 'google-release-production',
+    packageName: '@tuturuuu/google',
+    packagePath: 'packages/google',
+    rejectMessagePattern:
+      /@tuturuuu\/google releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/google/,
+      /run: bun run type-check/,
+    ],
+    workflowName: 'release-google-package.yaml',
+  },
+  {
+    artifactDir: 'hooks-package',
+    artifactName: 'tuturuuu-hooks-npm-package',
+    environment: 'hooks-release-production',
+    packageName: '@tuturuuu/hooks',
+    packagePath: 'packages/hooks',
+    rejectMessagePattern:
+      /@tuturuuu\/hooks releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/hooks/,
+      /run: bun run type-check/,
+    ],
+    workflowName: 'release-hooks-package.yaml',
+  },
+  {
+    artifactDir: 'icons-package',
+    artifactName: 'tuturuuu-icons-npm-package',
+    environment: 'icons-release-production',
+    packageName: '@tuturuuu/icons',
+    packagePath: 'packages/icons',
+    rejectMessagePattern:
+      /@tuturuuu\/icons releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/icons/,
+      /run: bun run type-check/,
+    ],
+    workflowName: 'release-icons-package.yaml',
   },
   {
     artifactDir: 'internal-api-package',
@@ -911,6 +970,23 @@ const packageReleaseWorkflows = [
       /run: bun run test/,
     ],
     workflowName: 'release-ui-package.yaml',
+  },
+  {
+    artifactDir: 'utils-package',
+    artifactName: 'tuturuuu-utils-npm-package',
+    environment: 'utils-release-production',
+    packageName: '@tuturuuu/utils',
+    packagePath: 'packages/utils',
+    rejectMessagePattern:
+      /@tuturuuu\/utils releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /bun run --filter @tuturuuu\/types build/,
+      /bun run --filter @tuturuuu\/supabase build/,
+      /working-directory: packages\/utils/,
+      /run: bun run type-check/,
+      /run: bun run test/,
+    ],
+    workflowName: 'release-utils-package.yaml',
   },
   {
     artifactDir: 'sdk-package',

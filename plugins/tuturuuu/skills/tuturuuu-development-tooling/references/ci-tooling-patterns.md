@@ -120,7 +120,13 @@ formatting behavior, or repo-wide verification.
 - If a release-please-managed package becomes a runtime dependency of another
   published package, add a matching npm release workflow and `tuturuuu.ts`
   switchboard entry for that dependency instead of letting consumers resolve an
-  unpublished package name.
+  unpublished package name. Keep `@tuturuuu/ui`'s installed runtime
+  dependency graph fully publishable on npm; if a UI-only edge points at a
+  private package, remove it when unused or model it as an optional peer owned
+  by the narrow export that needs it. File-backed dependencies such as UI's
+  vendored SheetJS tarball must stay local in source manifests when Docker
+  needs them, but `prepare-npm-package-manifest.js` must rewrite them to a
+  public HTTPS tarball before `npm pack`.
 - Platform Vercel production build validation should run
   `node scripts/ci/package-release-readiness.js wait-changed-package-versions`
   before dependency installation when release-please package manifests changed,

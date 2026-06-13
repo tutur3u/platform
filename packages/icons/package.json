@@ -2,6 +2,11 @@
   "name": "@tuturuuu/icons",
   "version": "0.0.5",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tutur3u/platform",
+    "directory": "packages/icons"
+  },
   "publishConfig": {
     "access": "public"
   },

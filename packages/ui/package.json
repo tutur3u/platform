@@ -88,7 +88,6 @@
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/trigger": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@types/debug": "^4.1.13",
     "browser-image-compression": "^2.0.2",

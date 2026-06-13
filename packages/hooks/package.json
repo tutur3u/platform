@@ -2,6 +2,11 @@
   "name": "@tuturuuu/hooks",
   "license": "MIT",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tutur3u/platform",
+    "directory": "packages/hooks"
+  },
   "publishConfig": {
     "access": "public"
   },

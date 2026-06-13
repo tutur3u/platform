@@ -7,6 +7,13 @@ const dependencyFields = [
   'optionalDependencies',
   'peerDependencies',
 ];
+const publishDependencyOverrides = {
+  '@tuturuuu/ui': {
+    dependencies: {
+      xlsx: 'https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz',
+    },
+  },
+};
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -109,6 +116,30 @@ function preparePackageManifest({ packageDir, repoRoot }) {
     }
   }
 
+  const dependencyOverrides =
+    publishDependencyOverrides[packageJson.name] ?? {};
+
+  for (const [field, dependencies] of Object.entries(dependencyOverrides)) {
+    const packageDependencies = packageJson[field] ?? {};
+
+    for (const [dependencyName, dependencyVersion] of Object.entries(
+      dependencies
+    )) {
+      const currentVersion = packageDependencies[dependencyName];
+
+      if (!currentVersion || currentVersion === dependencyVersion) continue;
+
+      packageDependencies[dependencyName] = dependencyVersion;
+      packageJson[field] = packageDependencies;
+      rewrites.push({
+        field,
+        from: currentVersion,
+        name: dependencyName,
+        to: dependencyVersion,
+      });
+    }
+  }
+
   if (rewrites.length > 0) {
     writeJson(packageJsonPath, packageJson);
   }
@@ -152,5 +183,6 @@ module.exports = {
   dependencyFields,
   getWorkspaceVersions,
   preparePackageManifest,
+  publishDependencyOverrides,
   resolveWorkspaceDependencyVersion,
 };
