@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/tutur3u/platform/compare/platform-v0.10.0...platform-v0.10.1) (2026-06-13)
+
+
+### Bug Fixes
+
+* **inventory:** route setup references through inventory APIs ([ae465ee](https://github.com/tutur3u/platform/commit/ae465ee90b202de02176c52037fa3f20b017a758))
+* **packages:** refresh public install graph ([c303782](https://github.com/tutur3u/platform/commit/c303782aefa8554a1bd1d9e9a651962a0ab56d76))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/platform-v0.9.0...platform-v0.10.0) (2026-06-13)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/tutur3u/platform/compare/ui-v0.6.0...ui-v0.6.1) (2026-06-13)
+
+
+### Bug Fixes
+
+* **packages:** refresh public install graph ([c303782](https://github.com/tutur3u/platform/commit/c303782aefa8554a1bd1d9e9a651962a0ab56d76))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/ui-v0.5.0...ui-v0.6.0) (2026-06-13)
 
 

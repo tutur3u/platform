@@ -1,5 +1,5 @@
 {
-  ".": "0.10.0",
+  ".": "0.10.1",
   "apps/apps": "0.2.1",
   "apps/calendar": "0.5.2",
   "apps/chat": "0.3.2",
@@ -26,7 +26,7 @@
   "apps/tasks": "0.7.0",
   "apps/teach": "0.1.3",
   "apps/track": "0.5.2",
-  "packages/ai": "0.2.1",
+  "packages/ai": "0.2.2",
   "packages/apis": "0.4.0",
   "packages/auth": "0.2.2",
   "packages/devbox": "0.3.0",
@@ -36,7 +36,7 @@
   "packages/hive-ui": "0.1.1",
   "packages/hooks": "0.0.2",
   "packages/icons": "0.0.6",
-  "packages/internal-api": "0.7.0",
+  "packages/internal-api": "0.7.1",
   "packages/masonry": "0.4.3",
   "packages/microsoft": "0.0.1",
   "packages/mind-ui": "0.1.0",
@@ -51,7 +51,7 @@
   "packages/turnstile": "0.1.1",
   "packages/types": "0.8.0",
   "packages/typescript-config": "0.1.1",
-  "packages/ui": "0.6.0",
+  "packages/ui": "0.6.1",
   "packages/utils": "0.6.1",
   "packages/vercel": "0.0.1",
   "packages/workflows": "0.0.1"

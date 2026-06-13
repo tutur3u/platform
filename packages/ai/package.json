@@ -1,7 +1,7 @@
 {
   "name": "@tuturuuu/ai",
   "license": "MIT",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/tutur3u/platform",
@@ -11,7 +11,12 @@
     "access": "public"
   },
   "type": "module",
-  "files": ["src", "!src/**/*.test.ts", "!src/**/__tests__", "README.md"],
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/__tests__",
+    "README.md"
+  ],
   "scripts": {
     "test": "vitest run",
     "type-check": "tsgo --project tsconfig.typecheck.json"
