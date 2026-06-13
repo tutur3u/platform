@@ -96,8 +96,8 @@ Then verify the cached page after refresh at
   Docker-parity auth checks.
 - `$tuturuuu-commit`: scoped commit workflow guidance for explicit commit,
   commit-and-push, atomic staging, Conventional Commit subjects, shared-worktree
-  path isolation, commit-window claim/wait/release, hook failure handling, and
-  final commit reporting.
+  path isolation, commit-window claim/wait/release, proof-gated no-verify
+  commit evidence, hook failure handling, and final commit reporting.
 - `$tuturuuu-agent-coordination`: shared-worktree coordination guidance for
   dirty checkouts, active ownership notes, archived context, overlapping edits,
   stale handoffs, explicit write sets, commit-window coordination, and
@@ -170,6 +170,7 @@ The CI check currently verifies:
   release lookup
 - durable CI tooling guidance for bounded Codecov coverage test retries
 - scoped commit workflow coverage for explicit commit requests
+- proof-gated no-verify commit evidence coverage
 - commit-window claim, wait, release, and stale-lock guidance
 - repo marketplace metadata at `.agents/plugins/marketplace.json`
 - public skills.sh discovery metadata at `.claude-plugin/marketplace.json`
@@ -219,6 +220,15 @@ file set, agents should choose non-overlapping slices, write a response note, or
 ask the human partner to arbitrate. They should never format, stage, or fix
 unrelated dirty files simply because a repo-wide check or commit hook reports
 them.
+
+The normal scoped commit path still lets Git hooks run. Agents may use
+`git commit --no-verify` only when they can produce a proof packet for their
+exact staged paths: reviewed status and staged diff output, path ownership,
+separated validation mapped to the relevant `bun check` components, path-based
+rationale for skipped components, and `bun check:mobile` coverage when
+`apps/mobile` is touched. Incomplete proof, unclear ownership, or uncertain
+check mapping means the hook should run or the risk should be reported instead
+of bypassed.
 
 ## AGENTS.md Split
 

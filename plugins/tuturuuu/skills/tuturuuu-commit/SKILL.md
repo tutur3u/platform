@@ -31,6 +31,8 @@ and failure handling before creating commits.
 - Use Conventional Commit subjects that match repo rules.
 - Never include secrets, local-only scratch files, or unrelated formatting churn.
 - Do not push unless the user explicitly asks for push.
+- Let commit hooks run by default. Use `git commit --no-verify` only when the
+  current agent has proof-gated no-verify evidence for its exact staged paths.
 
 ## Commit Planning
 
@@ -58,12 +60,19 @@ For each commit:
 3. Inspect `git diff --cached --stat` and `git diff --cached --name-only`.
 4. Commit with a Conventional Commit subject.
 5. Release the commit window after the commit succeeds or aborts.
-6. Let commit hooks run unless a known unrelated blocker exists and the user has
-   enough context to accept `--no-verify`.
+6. Let commit hooks run unless proof-gated no-verify evidence is complete.
+
+`git commit --no-verify` is allowed only when the current agent can prove the
+exact staged files would pass the checks normally covered by `bun check`: it
+must own every staged path, record the separated checks it ran, explain why
+those checks cover every touched file, and list unrelated dirty files excluded
+from the claim. If ownership is unclear, proof is incomplete, or affected checks
+cannot be mapped confidently, do not use `--no-verify`.
 
 If a hook fails because of unrelated dirty files or pre-existing repo failures,
 do not widen the commit to fix them. Unstage if needed, report the blocker, and
-keep the staged scope clean.
+keep the staged scope clean. A complete proof-gated no-verify packet may justify
+using `--no-verify`; otherwise leave the hook failure unresolved for the user.
 
 ## Final Report
 

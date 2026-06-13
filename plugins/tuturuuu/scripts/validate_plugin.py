@@ -385,6 +385,75 @@ def validate_skills_sh_config(repo_root: Path, plugin_root: Path) -> None:
         fail(f"{config_path} groupings must include every Tuturuuu skill exactly once")
 
 
+def require_text(path: Path, text: str, expected: str) -> None:
+    if expected not in text:
+        fail(f"{path} is missing {expected}")
+
+
+def validate_commit_no_verify_guidance(
+    repo_root: Path, plugin_root: Path, manifest: dict
+) -> None:
+    commit_skill_path = plugin_root / "skills" / "tuturuuu-commit" / "SKILL.md"
+    commit_reference_path = (
+        plugin_root
+        / "skills"
+        / "tuturuuu-commit"
+        / "references"
+        / "commit-workflow.md"
+    )
+    plugin_docs_path = (
+        repo_root / "apps" / "docs" / "build" / "development-tools" / "codex-plugin.mdx"
+    )
+    git_docs_path = (
+        repo_root
+        / "apps"
+        / "docs"
+        / "build"
+        / "development-tools"
+        / "git-conventions.mdx"
+    )
+
+    commit_skill_text = read_text(commit_skill_path)
+    for expected in (
+        "proof-gated no-verify evidence",
+        "git commit --no-verify",
+        "exact staged files would pass the checks normally covered by `bun check`",
+        "If ownership is unclear, proof is incomplete, or affected checks",
+    ):
+        require_text(commit_skill_path, commit_skill_text, expected)
+
+    commit_reference_text = read_text(commit_reference_path)
+    for expected in (
+        "## Proof-Gated No-Verify",
+        "git status --short",
+        "git diff --cached --stat",
+        "git diff --cached --name-only",
+        "separated checks run, mapped to the affected `bun check` components",
+        "skipped `bun check` components listed with path-based rationale",
+        "`bun check:mobile` coverage included when staged or touched paths include",
+        "can justify `--no-verify` before",
+    ):
+        require_text(commit_reference_path, commit_reference_text, expected)
+
+    for docs_path in (plugin_docs_path, git_docs_path):
+        docs_text = read_text(docs_path)
+        for expected in (
+            "proof-gated no-verify",
+            "git commit --no-verify",
+            "`bun check:mobile`",
+        ):
+            require_text(docs_path, docs_text, expected)
+
+    interface = manifest.get("interface", {})
+    long_description = interface.get("longDescription", "")
+    if "proof-gated no-verify commit evidence" not in long_description:
+        fail("manifest interface.longDescription must mention proof-gated no-verify")
+
+    capabilities = interface.get("capabilities", [])
+    if "Proof-gated no-verify commits" not in capabilities:
+        fail("manifest interface.capabilities must mention proof-gated no-verify")
+
+
 def validate_docs(repo_root: Path) -> None:
     docs_json_path = repo_root / "apps" / "docs" / "docs.json"
     if not docs_json_path.exists():
@@ -513,6 +582,7 @@ def main() -> None:
     validate_manifest(plugin_root, manifest)
     validate_skills(plugin_root, manifest)
     validate_docs(repo_root)
+    validate_commit_no_verify_guidance(repo_root, plugin_root, manifest)
     validate_ci(repo_root)
     validate_marketplace(repo_root)
     validate_public_claude_manifest(repo_root, plugin_root)

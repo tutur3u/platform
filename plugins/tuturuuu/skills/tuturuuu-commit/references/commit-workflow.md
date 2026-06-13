@@ -70,6 +70,32 @@ Then pass `--allow-staged` only when the staged set is intentional and must be
 preserved. Never use the commit-window lock as permission to stage unrelated
 paths, overwrite another agent's work, or skip active coordination notes.
 
+## Proof-Gated No-Verify
+
+Let commit hooks run by default. Use `git commit --no-verify` only when the
+current agent can prove that every exact staged path it owns would pass the
+checks normally covered by `bun check`.
+
+Before choosing no-verify, collect a proof packet:
+
+- `git status --short` output reviewed, with unrelated dirty files excluded
+  from the claim.
+- `git diff --cached --stat` and `git diff --cached --name-only` reviewed, with
+  every staged path owned by the current agent.
+- touched files listed explicitly or by a narrow path group that exactly matches
+  the staged scope.
+- separated checks run, mapped to the affected `bun check` components such as
+  tests, type-check, Biome, script tests, i18n checks, migration timestamp
+  checks, server-console checks, or other path-sensitive checks.
+- skipped `bun check` components listed with path-based rationale, not generic
+  confidence.
+- `bun check:mobile` coverage included when staged or touched paths include
+  `apps/mobile`.
+
+If ownership is unclear, proof is incomplete, or the affected check mapping is
+uncertain, do not use `--no-verify`. Report the missing proof or let the hook
+run.
+
 ## Hook Failures
 
 If commit hooks fail:
@@ -80,9 +106,10 @@ If commit hooks fail:
 4. If it does not belong, do not format, stage, or repair it just to make the
    commit pass. Report the unrelated blocker.
 
-Use `--no-verify` only when the user explicitly wants the commit to proceed
-after focused validation passed and the remaining hook failure is clearly
-unrelated.
+A complete proof-gated no-verify packet can justify `--no-verify` before
+running the hook or after a hook failure caused by unrelated repo-wide state.
+Without that packet, use `--no-verify` only when the user explicitly accepts the
+remaining risk after focused validation and blocker context are reported.
 
 Always release the commit window after the commit succeeds or after you decide
 to abort the commit attempt.
