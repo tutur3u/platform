@@ -276,7 +276,7 @@ describe('inventory internal API helpers', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://internal.example.com/api/v1/workspaces/ws_1/products',
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/products',
       expect.objectContaining({
         body: JSON.stringify({
           category_id: 'category_1',

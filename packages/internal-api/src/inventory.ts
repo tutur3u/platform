@@ -1080,7 +1080,7 @@ export function createInventoryProduct(
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<{ message: string }>(
-    workspacePath(wsId, '/products'),
+    workspaceInventoryPath(wsId, '/products'),
     {
       body: JSON.stringify(payload),
       headers: jsonHeaders(options?.defaultHeaders),

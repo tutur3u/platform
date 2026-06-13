@@ -16,6 +16,10 @@ import {
   canViewInventoryCatalog,
   canViewInventoryStock,
 } from '@/lib/inventory/permissions';
+import {
+  createInventoryProductResponse,
+  InventoryProductCreateSchema,
+} from '@/lib/inventory/product-create';
 import { getInventoryCatalogProducts } from '@/lib/inventory/product-rpc';
 
 const SearchParamsSchema = z.object({
@@ -211,6 +215,39 @@ export async function GET(request: Request, { params }: Params) {
     });
   } catch (error) {
     serverLogger.error('Error in workspace products API:', error);
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request, { params }: Params) {
+  try {
+    const sbAdmin = await createAdminClient();
+    const { wsId: id } = await params;
+    const authorization = await authorizeInventoryWorkspace(request, id, {
+      appSessionTargets: ['inventory', 'finance'],
+    });
+    if (!authorization.ok) return authorization.response;
+
+    const parsed = InventoryProductCreateSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: 'Invalid request body', errors: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
+    return createInventoryProductResponse({
+      actorAuthUserId: authorization.value.userId,
+      payload: parsed.data,
+      permissions: authorization.value.permissions,
+      sbAdmin,
+      wsId: authorization.value.wsId,
+    });
+  } catch (error) {
+    serverLogger.error('Error creating inventory product:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

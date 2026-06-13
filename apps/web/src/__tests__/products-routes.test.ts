@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => {
   const relationMaybeSingle = vi.fn();
   const inventoryAuditInsert = vi.fn();
   const inventoryCatalogRpc = vi.fn();
+  const resolveAuthenticatedSessionUser = vi.fn();
 
   const sessionSupabase = {
     auth: {
@@ -246,10 +247,17 @@ const mocks = vi.hoisted(() => {
     productInsertSingle,
     productMaybeSingle,
     productAvatarIn,
+    resolveAuthenticatedSessionUser,
     sessionSupabase,
     stockChangesInsert,
   };
 });
+
+vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
+  resolveAuthenticatedSessionUser: (
+    ...args: Parameters<typeof mocks.resolveAuthenticatedSessionUser>
+  ) => mocks.resolveAuthenticatedSessionUser(...args),
+}));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
@@ -275,6 +283,10 @@ describe('product routes', () => {
     mocks.sessionSupabase.auth.getUser.mockResolvedValue({
       data: { user: { id: 'user-1' } },
       error: null,
+    });
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      authError: null,
+      user: { id: 'user-1' },
     });
     mocks.inventoryInsert.mockResolvedValue({ error: null });
     mocks.inventorySelectEq.mockResolvedValue({ data: [], error: null });
@@ -387,6 +399,56 @@ describe('product routes', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
+  });
+
+  it('creates products with unlimited opening stock', async () => {
+    mocks.productInsertSingle.mockResolvedValue({
+      data: {
+        id: 'product-1',
+        name: 'Product',
+      },
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/products/route'
+    );
+    const response = await POST(
+      new NextRequest('http://localhost/api/v1/workspaces/personal/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          category_id: '11111111-1111-4111-8111-111111111111',
+          inventory: [
+            {
+              amount: null,
+              min_amount: 0,
+              price: 0,
+              unit_id: '22222222-2222-4222-8222-222222222222',
+              warehouse_id: '33333333-3333-4333-8333-333333333333',
+            },
+          ],
+          name: 'Product',
+          owner_id: '44444444-4444-4444-8444-444444444444',
+        }),
+      }),
+      {
+        params: Promise.resolve({ wsId: 'personal' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.inventoryInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        amount: null,
+        min_amount: 0,
+        price: 0,
+        product_id: 'product-1',
+      }),
+    ]);
+    expect(mocks.stockChangesInsert).not.toHaveBeenCalled();
   });
 
   it('validates product inventory against workspace_products with the admin client', async () => {
