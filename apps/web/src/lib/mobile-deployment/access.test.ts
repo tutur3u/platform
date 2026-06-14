@@ -50,6 +50,40 @@ describe('mobile deployment access guards', () => {
     expect(validateSameOriginMutation(mutationRequest())).toBeNull();
   });
 
+  it('allows proxied production mutations from the forwarded public origin', () => {
+    const request = new Request(
+      'https://internal-web-service/api/v1/mobile-deployment',
+      {
+        headers: {
+          [MOBILE_DEPLOYMENT_CSRF_HEADER]: '1',
+          origin: 'https://tuturuuu.com',
+          'x-forwarded-host': 'tuturuuu.com',
+          'x-forwarded-proto': 'https',
+        },
+        method: 'PUT',
+      }
+    );
+
+    expect(validateSameOriginMutation(request)).toBeNull();
+  });
+
+  it('uses the first forwarded host and proto values for proxied origin checks', () => {
+    const request = new Request(
+      'http://internal-web-service/api/v1/mobile-deployment',
+      {
+        headers: {
+          [MOBILE_DEPLOYMENT_CSRF_HEADER]: '1',
+          origin: 'https://tuturuuu.com',
+          'x-forwarded-host': 'tuturuuu.com, internal-web-service',
+          'x-forwarded-proto': 'https, http',
+        },
+        method: 'PUT',
+      }
+    );
+
+    expect(validateSameOriginMutation(request)).toBeNull();
+  });
+
   it('allows admins with the mobile deployment vault permission', async () => {
     mocks.getPermissions.mockResolvedValue({
       withoutPermission: (permission: string) =>
@@ -97,6 +131,50 @@ describe('mobile deployment access guards', () => {
 
     expect(response?.status).toBe(403);
     await expect(response?.json()).resolves.toMatchObject({
+      code: 'mobile_deployment_origin_forbidden',
+    });
+  });
+
+  it('rejects cross-origin mutations even when a forwarded public origin is present', async () => {
+    const response = validateSameOriginMutation(
+      mutationRequest({
+        origin: 'https://example.com',
+        'x-forwarded-host': 'tuturuuu.com',
+        'x-forwarded-proto': 'https',
+      })
+    );
+
+    expect(response?.status).toBe(403);
+    await expect(response?.json()).resolves.toMatchObject({
+      code: 'mobile_deployment_origin_forbidden',
+    });
+  });
+
+  it('falls back to request URL origin when forwarded host is malformed', async () => {
+    const response = validateSameOriginMutation(
+      mutationRequest({
+        origin: 'https://tuturuuu.com',
+        'x-forwarded-host': 'not a host',
+        'x-forwarded-proto': 'https',
+      })
+    );
+
+    expect(response).toBeNull();
+
+    const internalResponse = validateSameOriginMutation(
+      new Request('https://internal-web-service/api/v1/mobile-deployment', {
+        headers: {
+          [MOBILE_DEPLOYMENT_CSRF_HEADER]: '1',
+          origin: 'https://tuturuuu.com',
+          'x-forwarded-host': 'not a host',
+          'x-forwarded-proto': 'https',
+        },
+        method: 'PUT',
+      })
+    );
+
+    expect(internalResponse?.status).toBe(403);
+    await expect(internalResponse?.json()).resolves.toMatchObject({
       code: 'mobile_deployment_origin_forbidden',
     });
   });

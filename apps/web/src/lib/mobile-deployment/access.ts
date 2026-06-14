@@ -28,6 +28,45 @@ function jsonMessage(message: string, status: number, code?: string) {
   return NextResponse.json({ code, message }, { status });
 }
 
+function firstForwardedHeaderValue(value: string | null) {
+  return (
+    value
+      ?.split(',')
+      .map((entry) => entry.trim())
+      .find(Boolean) ?? null
+  );
+}
+
+function resolveForwardedOrigin(request: Request) {
+  const forwardedHost = firstForwardedHeaderValue(
+    request.headers.get('x-forwarded-host')
+  );
+
+  if (!forwardedHost) {
+    return null;
+  }
+
+  const forwardedProto = firstForwardedHeaderValue(
+    request.headers.get('x-forwarded-proto')
+  )
+    ?.replace(/:$/u, '')
+    .toLowerCase();
+  const protocol =
+    forwardedProto === 'http' || forwardedProto === 'https'
+      ? forwardedProto
+      : 'https';
+
+  try {
+    return new URL(`${protocol}://${forwardedHost}`).origin;
+  } catch {
+    return null;
+  }
+}
+
+function resolveMutationRequestOrigin(request: Request) {
+  return resolveForwardedOrigin(request) ?? new URL(request.url).origin;
+}
+
 export async function authorizeMobileDeploymentAdmin(
   request: Request
 ): Promise<MobileDeploymentAdminAccess> {
@@ -72,7 +111,6 @@ export async function authorizeMobileDeploymentAdmin(
 }
 
 export function validateSameOriginMutation(request: Request) {
-  const url = new URL(request.url);
   const origin = request.headers.get('origin');
 
   if (request.headers.get(MOBILE_DEPLOYMENT_CSRF_HEADER) !== '1') {
@@ -83,7 +121,7 @@ export function validateSameOriginMutation(request: Request) {
     );
   }
 
-  if (origin && origin !== url.origin) {
+  if (origin && origin !== resolveMutationRequestOrigin(request)) {
     return jsonMessage(
       'Mobile deployment actions must be submitted from the same origin.',
       403,
