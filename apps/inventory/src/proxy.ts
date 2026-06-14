@@ -46,10 +46,12 @@ function getPathLocale(pathname: string) {
 }
 
 function getNextValue(request: NextRequest) {
+  // The root page resolves the default workspace in a single hop, so send the
+  // user straight back to `/` after login instead of routing through
+  // `/dashboard` (which would re-introduce the extra redirect).
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
-  if (unlocalizedPath === '/') return '/dashboard';
 
-  return `${request.nextUrl.pathname}${request.nextUrl.search}`;
+  return `${unlocalizedPath}${request.nextUrl.search}`;
 }
 
 function getCanonicalLocaleRedirect(request: NextRequest) {

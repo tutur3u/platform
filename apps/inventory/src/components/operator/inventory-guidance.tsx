@@ -14,17 +14,15 @@ import {
   updateUserWorkspaceConfig,
 } from '@tuturuuu/internal-api/users';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogClose } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-import { operatorDialogContentClassName } from './operator-dialog';
+import {
+  OperatorDialogBody,
+  OperatorDialogContent,
+  OperatorDialogFooter,
+  OperatorDialogHeader,
+} from './operator-dialog-shell';
 import type { InventoryOperatorView } from './operator-types';
 
 const GUIDE_CONFIG_ID = 'inventory.launch_walkthrough';
@@ -43,6 +41,7 @@ export function InventoryGuidance({
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.guidance');
+  const formsText = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const isEmptyWorkspace =
@@ -119,12 +118,12 @@ export function InventoryGuidance({
         {completed ? t('replay') : t('start')}
       </Button>
       <Dialog onOpenChange={setOpen} open={open}>
-        <DialogContent className={operatorDialogContentClassName('medium')}>
-          <DialogHeader>
-            <DialogTitle>{t('title')}</DialogTitle>
-            <DialogDescription>{t('description')}</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-3">
+        <OperatorDialogContent size="md">
+          <OperatorDialogHeader
+            description={t('description')}
+            title={t('title')}
+          />
+          <OperatorDialogBody className="grid gap-3">
             {steps.map((step) => {
               const Icon = step.icon;
 
@@ -156,8 +155,13 @@ export function InventoryGuidance({
                 {t('tipDescription')}
               </p>
             </div>
-          </div>
-          <DialogFooter>
+          </OperatorDialogBody>
+          <OperatorDialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                {formsText('cancel')}
+              </Button>
+            </DialogClose>
             <Button
               disabled={dismissMutation.isPending}
               onClick={() => dismissMutation.mutate()}
@@ -165,8 +169,8 @@ export function InventoryGuidance({
             >
               {t('done')}
             </Button>
-          </DialogFooter>
-        </DialogContent>
+          </OperatorDialogFooter>
+        </OperatorDialogContent>
       </Dialog>
     </section>
   );

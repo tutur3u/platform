@@ -1,29 +1,31 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ClipboardCheck, CreditCard, FileImage, Store } from '@tuturuuu/icons';
+import { CreditCard, FileImage, Store } from '@tuturuuu/icons';
 import { createInventoryStorefront } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { sanitizeStorefrontAccentColor } from '@tuturuuu/ui/storefront';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
-import { FormStepper, StepperDialogFooter } from './form-stepper';
-import { operatorDialogContentClassName } from './operator-dialog';
+import { type ReactNode, useMemo, useState } from 'react';
+import {
+  FormSection,
+  OperatorDialogBody,
+  OperatorDialogContent,
+  OperatorDialogFooter,
+  OperatorDialogHeader,
+} from './operator-dialog-shell';
 import {
   createSlugSuggestion,
   type SmartSuggestion,
   SmartSuggestions,
 } from './smart-suggestions';
-import { StorefrontStep } from './storefront-form-step';
+import {
+  StorefrontBrandFields,
+  StorefrontCheckoutFields,
+  StorefrontIdentityFields,
+} from './storefront-form-step';
 import type { StorefrontFormState } from './storefront-form-types';
 
 const initialForm: StorefrontFormState = {
@@ -54,33 +56,6 @@ export function StorefrontForm({
   const queryClient = useQueryClient();
   const [form, setForm] = useState(initialForm);
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState(0);
-  const steps = [
-    {
-      description: t('steps.storefrontIdentityDescription'),
-      icon: Store,
-      id: 'identity',
-      title: t('steps.storefrontIdentity'),
-    },
-    {
-      description: t('steps.storefrontBrandDescription'),
-      icon: FileImage,
-      id: 'brand',
-      title: t('steps.storefrontBrand'),
-    },
-    {
-      description: t('steps.storefrontCheckoutDescription'),
-      icon: CreditCard,
-      id: 'checkout',
-      title: t('steps.storefrontCheckout'),
-    },
-    {
-      description: t('steps.reviewDescription'),
-      icon: ClipboardCheck,
-      id: 'review',
-      title: t('steps.review'),
-    },
-  ];
   const mutation = useMutation({
     mutationFn: () =>
       createInventoryStorefront(wsId, {
@@ -102,7 +77,6 @@ export function StorefrontForm({
     onError: () => toast.error(t('createStorefrontError')),
     onSuccess: () => {
       setForm(initialForm);
-      setStep(0);
       setOpen(false);
       toast.success(t('createStorefrontSuccess'));
       queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
@@ -149,13 +123,7 @@ export function StorefrontForm({
 
   return (
     <div className="flex justify-end">
-      <Dialog
-        onOpenChange={(nextOpen) => {
-          setOpen(nextOpen);
-          if (!nextOpen) setStep(0);
-        }}
-        open={open}
-      >
+      <Dialog onOpenChange={setOpen} open={open}>
         <DialogTrigger asChild>
           {trigger ?? (
             <Button type="button">
@@ -164,51 +132,70 @@ export function StorefrontForm({
             </Button>
           )}
         </DialogTrigger>
-        <DialogContent className={operatorDialogContentClassName('workflow')}>
-          <DialogHeader>
-            <DialogTitle>{t('createStorefrontTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('createStorefrontDescription')}
-            </DialogDescription>
-          </DialogHeader>
+        <OperatorDialogContent size="lg">
+          <OperatorDialogHeader
+            description={t('createStorefrontDescription')}
+            title={t('createStorefrontTitle')}
+          />
           <form
-            className="grid gap-5"
-            onSubmit={(event: FormEvent) => {
+            className="flex min-h-0 flex-1 flex-col"
+            onSubmit={(event) => {
               event.preventDefault();
-              if (step !== steps.length - 1) return;
               if (canSubmit) mutation.mutate();
             }}
           >
-            <FormStepper activeIndex={step} steps={steps} />
-            <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
-              <StorefrontStep
-                form={form}
-                setForm={setForm}
-                step={step}
-                wsId={wsId}
-              />
+            <OperatorDialogBody className="grid gap-6">
+              <FormSection
+                description={t('steps.storefrontIdentityDescription')}
+                icon={<Store className="h-4 w-4" />}
+                title={t('steps.storefrontIdentity')}
+              >
+                <StorefrontIdentityFields
+                  form={form}
+                  setForm={setForm}
+                  wsId={wsId}
+                />
+              </FormSection>
+              <FormSection
+                description={t('steps.storefrontBrandDescription')}
+                icon={<FileImage className="h-4 w-4" />}
+                title={t('steps.storefrontBrand')}
+              >
+                <StorefrontBrandFields
+                  form={form}
+                  setForm={setForm}
+                  wsId={wsId}
+                />
+              </FormSection>
+              <FormSection
+                description={t('steps.storefrontCheckoutDescription')}
+                icon={<CreditCard className="h-4 w-4" />}
+                title={t('steps.storefrontCheckout')}
+              >
+                <StorefrontCheckoutFields
+                  form={form}
+                  setForm={setForm}
+                  wsId={wsId}
+                />
+              </FormSection>
               <SmartSuggestions
                 emptyLabel={t('suggestions.empty')}
                 suggestions={suggestions}
                 title={t('suggestions.title')}
               />
-            </div>
-            <StepperDialogFooter
-              backLabel={t('back')}
-              canContinue={step === 0 ? canSubmit : true}
-              isFirstStep={step === 0}
-              isLastStep={step === steps.length - 1}
-              nextLabel={t('next')}
-              onBack={() => setStep((current) => Math.max(0, current - 1))}
-              onNext={() =>
-                setStep((current) => Math.min(steps.length - 1, current + 1))
-              }
-              pending={mutation.isPending}
-              pendingLabel={t('creating')}
-              submitLabel={t('create')}
-            />
+            </OperatorDialogBody>
+            <OperatorDialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="ghost">
+                  {t('cancel')}
+                </Button>
+              </DialogClose>
+              <Button disabled={!canSubmit || mutation.isPending} type="submit">
+                {mutation.isPending ? t('creating') : t('create')}
+              </Button>
+            </OperatorDialogFooter>
           </form>
-        </DialogContent>
+        </OperatorDialogContent>
       </Dialog>
     </div>
   );

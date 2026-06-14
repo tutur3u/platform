@@ -1,7 +1,14 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Boxes, ImageIcon, Pencil, Save } from '@tuturuuu/icons';
+import {
+  Boxes,
+  FileImage,
+  ImageIcon,
+  Pencil,
+  Save,
+  Tags,
+} from '@tuturuuu/icons';
 import type {
   InventoryBundle,
   InventoryProductSummary,
@@ -11,17 +18,8 @@ import {
   updateInventoryBundle,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
 import {
@@ -29,7 +27,13 @@ import {
   type DraftBundleComponent,
 } from './bundle-component-picker';
 import { InventoryImageUploadField } from './inventory-image-upload';
-import { operatorDialogContentClassName } from './operator-dialog';
+import {
+  FormSection,
+  OperatorDialogBody,
+  OperatorDialogContent,
+  OperatorDialogFooter,
+  OperatorDialogHeader,
+} from './operator-dialog-shell';
 import {
   NumberField,
   SelectValueField,
@@ -128,28 +132,22 @@ export function BundleEditorDialog({
           {t('edit')}
         </Button>
       </DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('workflow')}>
-        <DialogHeader>
-          <DialogTitle>{t('editBundleTitle')}</DialogTitle>
-          <DialogDescription>{t('editBundleDescription')}</DialogDescription>
-        </DialogHeader>
-        <Tabs className="grid min-w-0 gap-4" defaultValue="details">
-          <TabsList className="h-auto w-full flex-wrap justify-start bg-muted/25">
-            <TabsTrigger value="details">{t('tabs.details')}</TabsTrigger>
-            <TabsTrigger value="components">{t('tabs.components')}</TabsTrigger>
-            <TabsTrigger value="media">{t('tabs.media')}</TabsTrigger>
-            <TabsTrigger value="availability">
-              {t('tabs.availability')}
-            </TabsTrigger>
-            <TabsTrigger value="lifecycle">{t('tabs.lifecycle')}</TabsTrigger>
-          </TabsList>
-          <TabsContent value="details">
-            <form
-              className="grid min-w-0 gap-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (canSave) saveMutation.mutate();
-              }}
+      <OperatorDialogContent size="lg">
+        <OperatorDialogHeader
+          description={t('editBundleDescription')}
+          title={t('editBundleTitle')}
+        />
+        <form
+          className="flex min-h-0 flex-1 flex-col"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (canSave) saveMutation.mutate();
+          }}
+        >
+          <OperatorDialogBody className="grid gap-6">
+            <FormSection
+              icon={<Tags className="h-4 w-4" />}
+              title={t('tabs.details')}
             >
               <div className="grid min-w-0 gap-3 lg:grid-cols-2 xl:grid-cols-4">
                 <TextField
@@ -213,38 +211,21 @@ export function BundleEditorDialog({
                   value={details.description}
                 />
               </div>
-              <DialogFooter>
-                <Button
-                  disabled={!canSave || saveMutation.isPending}
-                  type="submit"
-                >
-                  <Save className="h-4 w-4" />
-                  {saveMutation.isPending ? t('saving') : t('save')}
-                </Button>
-              </DialogFooter>
-            </form>
-          </TabsContent>
-          <TabsContent value="components">
-            <div className="grid min-w-0 gap-3">
+            </FormSection>
+            <FormSection
+              icon={<Boxes className="h-4 w-4" />}
+              title={t('tabs.components')}
+            >
               <BundleComponentPicker
                 components={components}
                 onChange={setComponents}
                 products={products}
               />
-              <DialogFooter>
-                <Button
-                  disabled={!canSave || saveMutation.isPending}
-                  onClick={() => saveMutation.mutate()}
-                  type="button"
-                >
-                  <Save className="h-4 w-4" />
-                  {saveMutation.isPending ? t('saving') : t('save')}
-                </Button>
-              </DialogFooter>
-            </div>
-          </TabsContent>
-          <TabsContent value="media">
-            <div className="grid min-w-0 gap-3">
+            </FormSection>
+            <FormSection
+              icon={<FileImage className="h-4 w-4" />}
+              title={t('tabs.media')}
+            >
               <InventoryImageUploadField
                 description={t('bundleImageDescription')}
                 label={t('bundleImage')}
@@ -255,52 +236,56 @@ export function BundleEditorDialog({
                 value={details.imageUrl}
                 wsId={wsId}
               />
-              <DialogFooter>
-                <Button
-                  disabled={!canSave || saveMutation.isPending}
-                  onClick={() => saveMutation.mutate()}
-                  type="button"
-                >
-                  <Save className="h-4 w-4" />
-                  {saveMutation.isPending ? t('saving') : t('save')}
-                </Button>
-              </DialogFooter>
-            </div>
-          </TabsContent>
-          <TabsContent value="availability">
-            <div className="grid min-w-0 gap-3 lg:grid-cols-3">
-              <AvailabilityCard
-                icon={<Boxes className="h-4 w-4" />}
-                label={t('components')}
-                value={String(components.length)}
+            </FormSection>
+            <FormSection
+              icon={<Boxes className="h-4 w-4" />}
+              title={t('tabs.availability')}
+            >
+              <div className="grid min-w-0 gap-3 lg:grid-cols-3">
+                <AvailabilityCard
+                  icon={<Boxes className="h-4 w-4" />}
+                  label={t('components')}
+                  value={String(components.length)}
+                />
+                <AvailabilityCard
+                  icon={<ImageIcon className="h-4 w-4" />}
+                  label={t('price')}
+                  value={currency(Number(details.price || estimatedPrice || 0))}
+                />
+                <AvailabilityCard
+                  icon={<Boxes className="h-4 w-4" />}
+                  label={t('availability')}
+                  value={
+                    bundle.availableQuantity === null
+                      ? t('unlimitedStock')
+                      : String(bundle.availableQuantity ?? 0)
+                  }
+                />
+              </div>
+            </FormSection>
+            <FormSection title={t('tabs.lifecycle')}>
+              <LifecyclePanel
+                archivePending={archiveMutation.isPending}
+                deletePending={deleteMutation.isPending}
+                onArchive={() => archiveMutation.mutate()}
+                onDelete={() => deleteMutation.mutate()}
+                title={t('lifecycle')}
               />
-              <AvailabilityCard
-                icon={<ImageIcon className="h-4 w-4" />}
-                label={t('price')}
-                value={currency(Number(details.price || estimatedPrice || 0))}
-              />
-              <AvailabilityCard
-                icon={<Boxes className="h-4 w-4" />}
-                label={t('availability')}
-                value={
-                  bundle.availableQuantity === null
-                    ? t('unlimitedStock')
-                    : String(bundle.availableQuantity ?? 0)
-                }
-              />
-            </div>
-          </TabsContent>
-          <TabsContent value="lifecycle">
-            <LifecyclePanel
-              archivePending={archiveMutation.isPending}
-              deletePending={deleteMutation.isPending}
-              onArchive={() => archiveMutation.mutate()}
-              onDelete={() => deleteMutation.mutate()}
-              title={t('lifecycle')}
-            />
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
+            </FormSection>
+          </OperatorDialogBody>
+          <OperatorDialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                {t('cancel')}
+              </Button>
+            </DialogClose>
+            <Button disabled={!canSave || saveMutation.isPending} type="submit">
+              <Save className="h-4 w-4" />
+              {saveMutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </OperatorDialogFooter>
+        </form>
+      </OperatorDialogContent>
     </Dialog>
   );
 }

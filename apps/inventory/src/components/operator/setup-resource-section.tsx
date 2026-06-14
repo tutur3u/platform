@@ -3,21 +3,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useState } from 'react';
-import { operatorDialogContentClassName } from './operator-dialog';
+import {
+  OperatorDialogBody,
+  OperatorDialogContent,
+  OperatorDialogFooter,
+  OperatorDialogHeader,
+} from './operator-dialog-shell';
 import { LifecyclePanel } from './operator-lifecycle';
 import {
   invalidateSetup,
@@ -70,105 +66,58 @@ export function ResourceDialog({
       open={open}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('compact')}>
-        <DialogHeader>
-          <DialogTitle>
-            {item
-              ? t('editResourceTitle')
-              : t('createResourceTitle', {
-                  resource: config.title,
-                })}
-          </DialogTitle>
-          <DialogDescription>
-            {item
+      <OperatorDialogContent size="sm">
+        <OperatorDialogHeader
+          description={
+            item
               ? t('editResourceDescription', { resource: config.title })
-              : t('createResourceDescription', { resource: config.title })}
-          </DialogDescription>
-        </DialogHeader>
-        {item ? (
-          <Tabs className="grid min-w-0 gap-4" defaultValue="details">
-            <TabsList className="h-auto w-full flex-wrap justify-start bg-muted/25">
-              <TabsTrigger value="details">{t('tabs.details')}</TabsTrigger>
-              <TabsTrigger value="lifecycle">{t('tabs.lifecycle')}</TabsTrigger>
-            </TabsList>
-            <TabsContent value="details">
-              <ResourceNameForm
-                config={config}
-                isPending={mutation.isPending}
-                name={name}
-                onNameChange={setName}
-                onSubmit={() => {
-                  if (name) mutation.mutate();
-                }}
-                submitLabel={t('save')}
+              : t('createResourceDescription', { resource: config.title })
+          }
+          title={
+            item
+              ? t('editResourceTitle')
+              : t('createResourceTitle', { resource: config.title })
+          }
+        />
+        <form
+          className="flex min-h-0 flex-1 flex-col"
+          onSubmit={(event: FormEvent) => {
+            event.preventDefault();
+            if (name) mutation.mutate();
+          }}
+        >
+          <OperatorDialogBody className="grid gap-5">
+            <label className="grid min-w-0 gap-1 text-sm">
+              <span className="font-medium">{config.title}</span>
+              <Input
+                onChange={(event) => setName(event.target.value)}
+                placeholder={t('placeholders.resourceName', {
+                  resource: config.title.toLowerCase(),
+                })}
+                value={name}
               />
-            </TabsContent>
-            <TabsContent value="lifecycle">
+            </label>
+            {item ? (
               <LifecyclePanel
                 deletePending={deleteMutation.isPending}
                 onDelete={() => deleteMutation.mutate()}
                 title={t('lifecycle')}
               />
-            </TabsContent>
-          </Tabs>
-        ) : (
-          <ResourceNameForm
-            config={config}
-            isPending={mutation.isPending}
-            name={name}
-            onNameChange={setName}
-            onSubmit={() => {
-              if (name) mutation.mutate();
-            }}
-            submitLabel={t('create')}
-          />
-        )}
-      </DialogContent>
+            ) : null}
+          </OperatorDialogBody>
+          <OperatorDialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                {t('cancel')}
+              </Button>
+            </DialogClose>
+            <Button disabled={!name || mutation.isPending} type="submit">
+              {item ? t('save') : t('create')}
+            </Button>
+          </OperatorDialogFooter>
+        </form>
+      </OperatorDialogContent>
     </Dialog>
-  );
-}
-
-function ResourceNameForm({
-  config,
-  isPending,
-  name,
-  onNameChange,
-  onSubmit,
-  submitLabel,
-}: {
-  config: ResourceConfig;
-  isPending: boolean;
-  name: string;
-  onNameChange: (value: string) => void;
-  onSubmit: () => void;
-  submitLabel: string;
-}) {
-  const t = useTranslations('inventory.operator.forms');
-
-  return (
-    <form
-      className="grid gap-3"
-      onSubmit={(event: FormEvent) => {
-        event.preventDefault();
-        onSubmit();
-      }}
-    >
-      <label className="grid min-w-0 gap-1 text-sm">
-        <span className="font-medium">{config.title}</span>
-        <Input
-          onChange={(event) => onNameChange(event.target.value)}
-          placeholder={t('placeholders.resourceName', {
-            resource: config.title.toLowerCase(),
-          })}
-          value={name}
-        />
-      </label>
-      <DialogFooter>
-        <Button disabled={!name || isPending} type="submit">
-          {submitLabel}
-        </Button>
-      </DialogFooter>
-    </form>
   );
 }
 

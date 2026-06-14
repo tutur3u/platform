@@ -24,7 +24,7 @@ describe('PolarSettingsPanel', () => {
       ),
       'utf8'
     );
-    const dialogStart = source.indexOf('<DialogContent');
+    const dialogStart = source.indexOf('OperatorDialogContent');
     const tokenStart = source.indexOf('tokenPlaceholder');
 
     expect(dialogStart).toBeGreaterThan(-1);

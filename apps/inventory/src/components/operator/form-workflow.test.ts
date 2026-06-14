@@ -103,8 +103,12 @@ describe('Inventory operator form workflows', () => {
   });
 
   it('keeps dense mutating workflows dialog-only', () => {
-    expect(source('setup-resource-section.tsx')).toContain('<DialogContent');
-    expect(source('setup-batch-section.tsx')).toContain('<DialogContent');
+    expect(source('setup-resource-section.tsx')).toContain(
+      'OperatorDialogContent'
+    );
+    expect(source('setup-batch-section.tsx')).toContain(
+      'OperatorDialogContent'
+    );
     expect(source('costing-panel.tsx')).toContain('CostingProfileDialog');
     expect(source('costing-panel.tsx')).not.toContain('CostingProfileForm');
     expect(source('bundle-components-panel.tsx')).toContain('DialogTrigger');
@@ -127,33 +131,39 @@ describe('Inventory operator form workflows', () => {
     expect(source('setup-batch-section.tsx')).toContain('LifecyclePanel');
   });
 
-  it('uses uncapped shared dialog sizing for Inventory dialogs', () => {
-    expect(source('operator-dialog.ts')).toContain('max-w-none');
-    expect(source('operator-dialog.ts')).toContain('workflow');
-    expect(source('operator-dialog.ts')).toContain('96rem');
+  it('routes Inventory dialogs through the pinned 3-zone shell', () => {
+    // The shell keeps the header and footer pinned while only the body scrolls,
+    // fixing the prior whole-dialog overflow.
+    const shell = source('operator-dialog-shell.tsx');
+    expect(shell).toContain('OperatorDialogContent');
+    expect(shell).toContain('overflow-y-auto');
+    expect(shell).toContain('flex max-h-[calc(100dvh-2rem)] flex-col');
 
-    const violations = operatorSources().flatMap(({ fileName, source }) => {
-      const dialogContentTags =
-        source.match(/<DialogContent className=\{?[^>\n]+/g) ?? [];
-
-      return dialogContentTags
-        .filter((tag) => !tag.includes('operatorDialogContentClassName'))
-        .map((tag) => `${fileName}: ${tag}`);
-    });
+    // No operator dialog may render a raw <DialogContent>; they must compose the
+    // shell so header/footer stay pinned consistently.
+    const violations = operatorSources()
+      .filter(({ fileName }) => fileName !== 'operator-dialog-shell.tsx')
+      .flatMap(({ fileName, source }) =>
+        (source.match(/<DialogContent\b/g) ?? []).map(
+          (tag) => `${fileName}: ${tag}`
+        )
+      );
 
     expect(violations).toEqual([]);
   });
 
-  it('does not submit stepper forms before the review step', () => {
+  it('uses flattened single-form create flows instead of steppers', () => {
     for (const fileName of [
       'bundle-form-dialog.tsx',
       'costing-profile-form.tsx',
       'product-create-dialog.tsx',
       'storefront-form-dialog.tsx',
     ]) {
-      expect(source(fileName)).toContain(
-        'if (step !== steps.length - 1) return;'
-      );
+      const src = source(fileName);
+      // Flattened forms group fields inside the shell body, not multi-step panels.
+      expect(src).toContain('OperatorDialogBody');
+      expect(src).not.toContain('FormStepper');
+      expect(src).not.toContain('steps.length - 1');
     }
   });
 

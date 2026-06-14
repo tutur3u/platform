@@ -1,13 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Calculator,
-  ClipboardCheck,
-  Layers3,
-  Plus,
-  Trash2,
-} from '@tuturuuu/icons';
+import { Calculator, Layers3, Plus, Trash2 } from '@tuturuuu/icons';
 import type {
   InventoryProductFormOptionsResponse,
   InventoryProductSummary,
@@ -17,21 +11,19 @@ import {
   createInventoryProductCategory,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useState } from 'react';
-import { FormStepper, StepPanel, StepperDialogFooter } from './form-stepper';
-import { operatorDialogContentClassName } from './operator-dialog';
-import { labelFor, ReviewRows, SelectField } from './operator-form-fields';
+import {
+  FormSection,
+  OperatorDialogBody,
+  OperatorDialogContent,
+  OperatorDialogFooter,
+  OperatorDialogHeader,
+} from './operator-dialog-shell';
+import { SelectField } from './operator-form-fields';
 import { numberOrZero } from './operator-stock';
 
 type ScenarioInput = {
@@ -66,7 +58,6 @@ export function CostingProfileDialog({
   const forms = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState(0);
   const [productId, setProductId] = useState('');
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -86,26 +77,6 @@ export function CostingProfileDialog({
       throw error;
     }
   };
-  const steps = [
-    {
-      description: t('steps.profileDescription'),
-      icon: Calculator,
-      id: 'profile',
-      title: t('steps.profile'),
-    },
-    {
-      description: t('steps.scenariosDescription'),
-      icon: Layers3,
-      id: 'scenarios',
-      title: t('steps.scenarios'),
-    },
-    {
-      description: forms('steps.reviewDescription'),
-      icon: ClipboardCheck,
-      id: 'review',
-      title: forms('steps.review'),
-    },
-  ];
   const createMutation = useMutation({
     mutationFn: () =>
       createInventoryCostProfile(wsId, {
@@ -145,13 +116,11 @@ export function CostingProfileDialog({
       setCategoryId('');
       setTargetRetailPrice('');
       setScenarios([defaultScenario()]);
-      setStep(0);
       setOpen(false);
       queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
     },
   });
   const canSubmit = Boolean(name && targetRetailPrice);
-  const canContinue = step === 0 ? canSubmit : true;
   const handleProductChange = (nextProductId: string) => {
     setProductId(nextProductId);
 
@@ -169,31 +138,24 @@ export function CostingProfileDialog({
   };
 
   return (
-    <Dialog
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-        if (!nextOpen) setStep(0);
-      }}
-      open={open}
-    >
+    <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('workflow')}>
-        <DialogHeader>
-          <DialogTitle>{t('newProfile')}</DialogTitle>
-          <DialogDescription>{t('summaryDescription')}</DialogDescription>
-        </DialogHeader>
+      <OperatorDialogContent size="lg">
+        <OperatorDialogHeader
+          description={t('summaryDescription')}
+          title={t('newProfile')}
+        />
         <form
-          className="grid gap-5"
+          className="flex min-h-0 flex-1 flex-col"
           onSubmit={(event: FormEvent) => {
             event.preventDefault();
-            if (step !== steps.length - 1) return;
             if (canSubmit) createMutation.mutate();
           }}
         >
-          <FormStepper activeIndex={step} steps={steps} />
-          {step === 0 ? (
-            <StepPanel
+          <OperatorDialogBody className="grid gap-6">
+            <FormSection
               description={t('steps.profileDescription')}
+              icon={<Calculator className="h-4 w-4" />}
               title={t('steps.profile')}
             >
               <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_220px_160px]">
@@ -248,11 +210,10 @@ export function CostingProfileDialog({
                   />
                 </label>
               </div>
-            </StepPanel>
-          ) : null}
-          {step === 1 ? (
-            <StepPanel
+            </FormSection>
+            <FormSection
               description={t('steps.scenariosDescription')}
+              icon={<Layers3 className="h-4 w-4" />}
               title={t('steps.scenarios')}
             >
               <div className="grid min-w-0 gap-2">
@@ -339,47 +300,23 @@ export function CostingProfileDialog({
                 <Plus className="h-4 w-4" />
                 {t('addScenario')}
               </Button>
-            </StepPanel>
-          ) : null}
-          {step === 2 ? (
-            <StepPanel
-              description={forms('steps.reviewDescription')}
-              title={forms('steps.review')}
+            </FormSection>
+          </OperatorDialogBody>
+          <OperatorDialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                {forms('cancel')}
+              </Button>
+            </DialogClose>
+            <Button
+              disabled={!canSubmit || createMutation.isPending}
+              type="submit"
             >
-              <ReviewRows
-                rows={[
-                  [t('itemName'), name],
-                  [
-                    forms('product'),
-                    products?.find((product) => product.id === productId)
-                      ?.name ?? forms('notSet'),
-                  ],
-                  [
-                    forms('category'),
-                    labelFor(options?.categories, categoryId),
-                  ],
-                  [t('retail'), targetRetailPrice],
-                  [t('scenarios'), String(scenarios.length)],
-                ]}
-              />
-            </StepPanel>
-          ) : null}
-          <StepperDialogFooter
-            backLabel={forms('back')}
-            canContinue={canContinue}
-            isFirstStep={step === 0}
-            isLastStep={step === steps.length - 1}
-            nextLabel={forms('next')}
-            onBack={() => setStep((current) => Math.max(0, current - 1))}
-            onNext={() =>
-              setStep((current) => Math.min(steps.length - 1, current + 1))
-            }
-            pending={createMutation.isPending}
-            pendingLabel={forms('creating')}
-            submitLabel={t('saveProfile')}
-          />
+              {createMutation.isPending ? forms('creating') : t('saveProfile')}
+            </Button>
+          </OperatorDialogFooter>
         </form>
-      </DialogContent>
+      </OperatorDialogContent>
     </Dialog>
   );
 }

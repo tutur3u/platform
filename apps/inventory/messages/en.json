@@ -1307,6 +1307,7 @@
           "storefrontIdentity": "Identity",
           "storefrontIdentityDescription": "Name the storefront, reserve its slug, and describe the buyer experience."
         },
+        "stockTargetHint": "Select a unit and warehouse to save the stock values you entered.",
         "stockUnavailableDescription": "This product does not have a warehouse and unit stock row yet. Add opening stock from the product create flow or setup stock from the Stock module.",
         "storefront": "Storefront",
         "storefrontStatus": {

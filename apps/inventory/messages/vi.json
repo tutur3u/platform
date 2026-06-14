@@ -1307,6 +1307,7 @@
           "storefrontIdentity": "Nhận diện",
           "storefrontIdentityDescription": "Đặt tên cửa hàng, giữ slug và mô tả trải nghiệm người mua."
         },
+        "stockTargetHint": "Chọn đơn vị và kho để lưu các giá trị tồn kho bạn đã nhập.",
         "stockUnavailableDescription": "Sản phẩm này chưa có dòng tồn kho với kho và đơn vị. Thêm tồn kho ban đầu từ luồng tạo sản phẩm hoặc thiết lập tồn kho trong module Tồn kho.",
         "storefront": "Cửa hàng",
         "storefrontStatus": {

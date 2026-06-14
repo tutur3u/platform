@@ -1,7 +1,13 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings2 } from '@tuturuuu/icons';
+import {
+  CreditCard,
+  FileImage,
+  Palette,
+  Settings2,
+  Store,
+} from '@tuturuuu/icons';
 import {
   deleteInventoryStorefront,
   type InventoryStorefront,
@@ -15,22 +21,19 @@ import {
   updateInventoryStorefront,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { sanitizeStorefrontAccentColor } from '@tuturuuu/ui/storefront';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { InventoryImageUploadField } from './inventory-image-upload';
-import { operatorDialogContentClassName } from './operator-dialog';
+import {
+  FormSection,
+  OperatorDialogBody,
+  OperatorDialogContent,
+  OperatorDialogFooter,
+  OperatorDialogHeader,
+} from './operator-dialog-shell';
 import {
   SelectValueField,
   TextAreaField,
@@ -102,6 +105,7 @@ export function StorefrontEditorDialog({
     if (!form.name || !form.slug) return;
     saveMutation.mutate();
   };
+  const canSave = Boolean(form.name && form.slug);
 
   return (
     <Dialog
@@ -117,23 +121,17 @@ export function StorefrontEditorDialog({
           {t('edit')}
         </Button>
       </DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('workflow')}>
-        <DialogHeader>
-          <DialogTitle>{t('editStorefrontTitle')}</DialogTitle>
-          <DialogDescription>
-            {t('editStorefrontDescription')}
-          </DialogDescription>
-        </DialogHeader>
-        <Tabs className="grid min-w-0 gap-4" defaultValue="identity">
-          <TabsList className="h-auto w-full flex-wrap justify-start bg-muted/25">
-            <TabsTrigger value="identity">{t('tabs.details')}</TabsTrigger>
-            <TabsTrigger value="brand">{t('tabs.brand')}</TabsTrigger>
-            <TabsTrigger value="checkout">{t('tabs.checkout')}</TabsTrigger>
-            <TabsTrigger value="theme">{t('tabs.theme')}</TabsTrigger>
-            <TabsTrigger value="lifecycle">{t('tabs.lifecycle')}</TabsTrigger>
-          </TabsList>
-          <TabsContent value="identity">
-            <form className="grid gap-3" onSubmit={submitSave}>
+      <OperatorDialogContent size="lg">
+        <OperatorDialogHeader
+          description={t('editStorefrontDescription')}
+          title={t('editStorefrontTitle')}
+        />
+        <form className="flex min-h-0 flex-1 flex-col" onSubmit={submitSave}>
+          <OperatorDialogBody className="grid gap-6">
+            <FormSection
+              icon={<Store className="h-4 w-4" />}
+              title={t('tabs.details')}
+            >
               <div className="grid min-w-0 gap-3 md:grid-cols-2">
                 <TextField
                   label={t('storeName')}
@@ -161,230 +159,205 @@ export function StorefrontEditorDialog({
                   value={form.description}
                 />
               </div>
-              <SaveFooter
-                disabled={!form.name || !form.slug || saveMutation.isPending}
-                pending={saveMutation.isPending}
-              />
-            </form>
-          </TabsContent>
-          <TabsContent value="brand">
-            <div className="grid gap-3">
-              <InventoryImageUploadField
-                description={t('heroImageDescription')}
-                label={t('heroImageUrl')}
-                onChange={(heroImageUrl) =>
-                  setForm((current) => ({ ...current, heroImageUrl }))
-                }
-                target="storefront-hero"
-                value={form.heroImageUrl}
-                wsId={wsId}
-              />
-              <div className="grid min-w-0 gap-3 md:grid-cols-2">
-                <TextField
-                  label={t('currency')}
-                  onChange={(currency) =>
-                    setForm((current) => ({ ...current, currency }))
+            </FormSection>
+            <FormSection
+              icon={<FileImage className="h-4 w-4" />}
+              title={t('tabs.brand')}
+            >
+              <div className="grid gap-3">
+                <InventoryImageUploadField
+                  description={t('heroImageDescription')}
+                  label={t('heroImageUrl')}
+                  onChange={(heroImageUrl) =>
+                    setForm((current) => ({ ...current, heroImageUrl }))
                   }
-                  placeholder={t('placeholders.currency')}
-                  value={form.currency}
+                  target="storefront-hero"
+                  value={form.heroImageUrl}
+                  wsId={wsId}
                 />
-                <TextField
-                  label={t('accentColor')}
-                  onChange={(accentColor) =>
-                    setForm((current) => ({ ...current, accentColor }))
-                  }
-                  placeholder={t('placeholders.accentColor')}
-                  value={form.accentColor}
-                />
+                <div className="grid min-w-0 gap-3 md:grid-cols-2">
+                  <TextField
+                    label={t('currency')}
+                    onChange={(currency) =>
+                      setForm((current) => ({ ...current, currency }))
+                    }
+                    placeholder={t('placeholders.currency')}
+                    value={form.currency}
+                  />
+                  <TextField
+                    label={t('accentColor')}
+                    onChange={(accentColor) =>
+                      setForm((current) => ({ ...current, accentColor }))
+                    }
+                    placeholder={t('placeholders.accentColor')}
+                    value={form.accentColor}
+                  />
+                </div>
               </div>
-              <SaveFooter
-                disabled={!form.name || !form.slug || saveMutation.isPending}
-                onClick={() => saveMutation.mutate()}
-                pending={saveMutation.isPending}
-              />
-            </div>
-          </TabsContent>
-          <TabsContent value="checkout">
-            <div className="grid min-w-0 gap-3 md:grid-cols-3">
-              <SelectValueField
-                label={t('status')}
-                onChange={(status) =>
-                  setForm((current) => ({
-                    ...current,
-                    status: status as InventoryStorefrontStatus,
-                  }))
-                }
-                options={storefrontStatuses.map((value) => ({
-                  label: t(`storefrontStatus.${value}`),
-                  value,
-                }))}
-                placeholder={t('placeholders.status')}
-                value={form.status}
-              />
-              <SelectValueField
-                label={t('visibility')}
-                onChange={(visibility) =>
-                  setForm((current) => ({
-                    ...current,
-                    visibility: visibility as InventoryStorefrontVisibility,
-                  }))
-                }
-                options={storefrontVisibilities.map((value) => ({
-                  label:
-                    value === 'public'
-                      ? t('visibilityPublic')
-                      : t('visibilityPrivate'),
-                  value,
-                }))}
-                placeholder={t('placeholders.visibility')}
-                value={form.visibility}
-              />
-              <SelectValueField
-                label={t('checkoutMode')}
-                onChange={(checkoutMode) =>
-                  setForm((current) => ({
-                    ...current,
-                    checkoutMode:
-                      checkoutMode as InventoryStorefrontCheckoutMode,
-                  }))
-                }
-                options={checkoutModes.map((value) => ({
-                  label: t(`checkoutModes.${value}`),
-                  value,
-                }))}
-                placeholder={t('placeholders.checkoutMode')}
-                value={form.checkoutMode}
-              />
-              <div className="md:col-span-3">
-                <ToggleField
-                  checked={form.showInventoryBadges}
-                  onChange={(showInventoryBadges) =>
+            </FormSection>
+            <FormSection
+              icon={<Palette className="h-4 w-4" />}
+              title={t('tabs.theme')}
+            >
+              <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <SelectValueField
+                  label={t('themePreset')}
+                  onChange={(themePreset) =>
                     setForm((current) => ({
                       ...current,
-                      showInventoryBadges,
+                      themePreset:
+                        themePreset as InventoryStorefrontThemePreset,
                     }))
                   }
-                >
-                  {t('showInventoryBadges')}
-                </ToggleField>
-              </div>
-              <div className="md:col-span-3">
-                <SaveFooter
-                  disabled={!form.name || !form.slug || saveMutation.isPending}
-                  onClick={() => saveMutation.mutate()}
-                  pending={saveMutation.isPending}
+                  options={themePresets.map((value) => ({
+                    label: t(`themePresets.${value}`),
+                    value,
+                  }))}
+                  placeholder={t('placeholders.themePreset')}
+                  value={form.themePreset}
+                />
+                <SelectValueField
+                  label={t('layoutStyle')}
+                  onChange={(layoutStyle) =>
+                    setForm((current) => ({
+                      ...current,
+                      layoutStyle:
+                        layoutStyle as InventoryStorefrontLayoutStyle,
+                    }))
+                  }
+                  options={layoutStyles.map((value) => ({
+                    label: t(`layoutStyles.${value}`),
+                    value,
+                  }))}
+                  placeholder={t('placeholders.layoutStyle')}
+                  value={form.layoutStyle}
+                />
+                <SelectValueField
+                  label={t('surfaceStyle')}
+                  onChange={(surfaceStyle) =>
+                    setForm((current) => ({
+                      ...current,
+                      surfaceStyle:
+                        surfaceStyle as InventoryStorefrontSurfaceStyle,
+                    }))
+                  }
+                  options={surfaceStyles.map((value) => ({
+                    label: t(`surfaceStyles.${value}`),
+                    value,
+                  }))}
+                  placeholder={t('placeholders.surfaceStyle')}
+                  value={form.surfaceStyle}
+                />
+                <SelectValueField
+                  label={t('cornerStyle')}
+                  onChange={(cornerStyle) =>
+                    setForm((current) => ({
+                      ...current,
+                      cornerStyle:
+                        cornerStyle as InventoryStorefrontCornerStyle,
+                    }))
+                  }
+                  options={cornerStyles.map((value) => ({
+                    label: t(`cornerStyles.${value}`),
+                    value,
+                  }))}
+                  placeholder={t('placeholders.cornerStyle')}
+                  value={form.cornerStyle}
                 />
               </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="theme">
-            <div className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <SelectValueField
-                label={t('themePreset')}
-                onChange={(themePreset) =>
-                  setForm((current) => ({
-                    ...current,
-                    themePreset: themePreset as InventoryStorefrontThemePreset,
-                  }))
-                }
-                options={themePresets.map((value) => ({
-                  label: t(`themePresets.${value}`),
-                  value,
-                }))}
-                placeholder={t('placeholders.themePreset')}
-                value={form.themePreset}
-              />
-              <SelectValueField
-                label={t('layoutStyle')}
-                onChange={(layoutStyle) =>
-                  setForm((current) => ({
-                    ...current,
-                    layoutStyle: layoutStyle as InventoryStorefrontLayoutStyle,
-                  }))
-                }
-                options={layoutStyles.map((value) => ({
-                  label: t(`layoutStyles.${value}`),
-                  value,
-                }))}
-                placeholder={t('placeholders.layoutStyle')}
-                value={form.layoutStyle}
-              />
-              <SelectValueField
-                label={t('surfaceStyle')}
-                onChange={(surfaceStyle) =>
-                  setForm((current) => ({
-                    ...current,
-                    surfaceStyle:
-                      surfaceStyle as InventoryStorefrontSurfaceStyle,
-                  }))
-                }
-                options={surfaceStyles.map((value) => ({
-                  label: t(`surfaceStyles.${value}`),
-                  value,
-                }))}
-                placeholder={t('placeholders.surfaceStyle')}
-                value={form.surfaceStyle}
-              />
-              <SelectValueField
-                label={t('cornerStyle')}
-                onChange={(cornerStyle) =>
-                  setForm((current) => ({
-                    ...current,
-                    cornerStyle: cornerStyle as InventoryStorefrontCornerStyle,
-                  }))
-                }
-                options={cornerStyles.map((value) => ({
-                  label: t(`cornerStyles.${value}`),
-                  value,
-                }))}
-                placeholder={t('placeholders.cornerStyle')}
-                value={form.cornerStyle}
-              />
-              <div className="md:col-span-2 xl:col-span-4">
-                <SaveFooter
-                  disabled={!form.name || !form.slug || saveMutation.isPending}
-                  onClick={() => saveMutation.mutate()}
-                  pending={saveMutation.isPending}
+            </FormSection>
+            <FormSection
+              icon={<CreditCard className="h-4 w-4" />}
+              title={t('tabs.checkout')}
+            >
+              <div className="grid min-w-0 gap-3 md:grid-cols-3">
+                <SelectValueField
+                  label={t('status')}
+                  onChange={(status) =>
+                    setForm((current) => ({
+                      ...current,
+                      status: status as InventoryStorefrontStatus,
+                    }))
+                  }
+                  options={storefrontStatuses.map((value) => ({
+                    label: t(`storefrontStatus.${value}`),
+                    value,
+                  }))}
+                  placeholder={t('placeholders.status')}
+                  value={form.status}
                 />
+                <SelectValueField
+                  label={t('visibility')}
+                  onChange={(visibility) =>
+                    setForm((current) => ({
+                      ...current,
+                      visibility: visibility as InventoryStorefrontVisibility,
+                    }))
+                  }
+                  options={storefrontVisibilities.map((value) => ({
+                    label:
+                      value === 'public'
+                        ? t('visibilityPublic')
+                        : t('visibilityPrivate'),
+                    value,
+                  }))}
+                  placeholder={t('placeholders.visibility')}
+                  value={form.visibility}
+                />
+                <SelectValueField
+                  label={t('checkoutMode')}
+                  onChange={(checkoutMode) =>
+                    setForm((current) => ({
+                      ...current,
+                      checkoutMode:
+                        checkoutMode as InventoryStorefrontCheckoutMode,
+                    }))
+                  }
+                  options={checkoutModes.map((value) => ({
+                    label: t(`checkoutModes.${value}`),
+                    value,
+                  }))}
+                  placeholder={t('placeholders.checkoutMode')}
+                  value={form.checkoutMode}
+                />
+                <div className="md:col-span-3">
+                  <ToggleField
+                    checked={form.showInventoryBadges}
+                    onChange={(showInventoryBadges) =>
+                      setForm((current) => ({
+                        ...current,
+                        showInventoryBadges,
+                      }))
+                    }
+                  >
+                    {t('showInventoryBadges')}
+                  </ToggleField>
+                </div>
               </div>
-            </div>
-          </TabsContent>
-          <TabsContent value="lifecycle">
-            <LifecyclePanel
-              archivePending={archiveMutation.isPending}
-              deletePending={deleteMutation.isPending}
-              onArchive={() => archiveMutation.mutate()}
-              onDelete={() => deleteMutation.mutate()}
-              title={t('lifecycle')}
-            />
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
+            </FormSection>
+            <FormSection title={t('tabs.lifecycle')}>
+              <LifecyclePanel
+                archivePending={archiveMutation.isPending}
+                deletePending={deleteMutation.isPending}
+                onArchive={() => archiveMutation.mutate()}
+                onDelete={() => deleteMutation.mutate()}
+                title={t('lifecycle')}
+              />
+            </FormSection>
+          </OperatorDialogBody>
+          <OperatorDialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                {t('cancel')}
+              </Button>
+            </DialogClose>
+            <Button disabled={!canSave || saveMutation.isPending} type="submit">
+              {saveMutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </OperatorDialogFooter>
+        </form>
+      </OperatorDialogContent>
     </Dialog>
-  );
-}
-
-function SaveFooter({
-  disabled,
-  onClick,
-  pending,
-}: {
-  disabled: boolean;
-  onClick?: () => void;
-  pending: boolean;
-}) {
-  const t = useTranslations('inventory.operator.forms');
-
-  return (
-    <DialogFooter>
-      <Button
-        disabled={disabled}
-        onClick={onClick}
-        type={onClick ? 'button' : 'submit'}
-      >
-        {pending ? t('saving') : t('save')}
-      </Button>
-    </DialogFooter>
   );
 }
 

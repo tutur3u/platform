@@ -8,27 +8,25 @@ import {
   updateInventoryPolarSettings,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
-import { operatorDialogContentClassName } from './operator-dialog';
+import {
+  OperatorDialogBody,
+  OperatorDialogContent,
+  OperatorDialogFooter,
+  OperatorDialogHeader,
+} from './operator-dialog-shell';
 import { SelectValueField } from './operator-form-fields';
 
 const environments: InventoryPolarEnvironment[] = ['sandbox', 'production'];
 
 export function PolarSettingsPanel({ wsId }: { wsId: string }) {
   const t = useTranslations('inventory.operator.polar');
+  const formsText = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [accessToken, setAccessToken] = useState('');
@@ -110,49 +108,54 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
                 {t('manage')}
               </Button>
             </DialogTrigger>
-            <DialogContent
-              className={operatorDialogContentClassName('compact')}
-            >
-              <DialogHeader>
-                <DialogTitle>{t('dialogTitle')}</DialogTitle>
-                <DialogDescription>{t('dialogDescription')}</DialogDescription>
-              </DialogHeader>
+            <OperatorDialogContent size="sm">
+              <OperatorDialogHeader
+                description={t('dialogDescription')}
+                title={t('dialogTitle')}
+              />
               <form
-                className="grid gap-3"
+                className="flex min-h-0 flex-1 flex-col"
                 onSubmit={(event: FormEvent<HTMLFormElement>) => {
                   event.preventDefault();
                   tokenMutation.mutate();
                 }}
               >
-                <SelectValueField
-                  allowEmpty={false}
-                  emptyText={t('emptyEnvironments')}
-                  label={t('environmentLabel')}
-                  onChange={(value) =>
-                    setTokenEnvironment(value as InventoryPolarEnvironment)
-                  }
-                  options={environmentOptions}
-                  placeholder={t('environmentLabel')}
-                  searchPlaceholder={t('searchEnvironments')}
-                  value={tokenEnvironment}
-                />
-                <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{t('tokenLabel')}</span>
-                  <Input
-                    className="h-10"
-                    onChange={(event) => setAccessToken(event.target.value)}
-                    placeholder={t('tokenPlaceholder')}
-                    type="password"
-                    value={accessToken}
+                <OperatorDialogBody className="grid gap-6">
+                  <SelectValueField
+                    allowEmpty={false}
+                    emptyText={t('emptyEnvironments')}
+                    label={t('environmentLabel')}
+                    onChange={(value) =>
+                      setTokenEnvironment(value as InventoryPolarEnvironment)
+                    }
+                    options={environmentOptions}
+                    placeholder={t('environmentLabel')}
+                    searchPlaceholder={t('searchEnvironments')}
+                    value={tokenEnvironment}
                   />
-                </label>
-                <DialogFooter>
+                  <label className="grid min-w-0 gap-1 text-sm">
+                    <span className="font-medium">{t('tokenLabel')}</span>
+                    <Input
+                      className="h-10"
+                      onChange={(event) => setAccessToken(event.target.value)}
+                      placeholder={t('tokenPlaceholder')}
+                      type="password"
+                      value={accessToken}
+                    />
+                  </label>
+                </OperatorDialogBody>
+                <OperatorDialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="ghost">
+                      {formsText('cancel')}
+                    </Button>
+                  </DialogClose>
                   <Button disabled={tokenMutation.isPending} type="submit">
                     {tokenMutation.isPending ? t('saving') : t('saveToken')}
                   </Button>
-                </DialogFooter>
+                </OperatorDialogFooter>
               </form>
-            </DialogContent>
+            </OperatorDialogContent>
           </Dialog>
         </div>
 

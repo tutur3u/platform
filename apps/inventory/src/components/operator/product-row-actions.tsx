@@ -13,21 +13,18 @@ import {
   updateInventoryProductInventory,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { InventoryImageUploadField } from './inventory-image-upload';
-import { operatorDialogContentClassName } from './operator-dialog';
+import {
+  FormSection,
+  OperatorDialogBody,
+  OperatorDialogContent,
+  OperatorDialogFooter,
+  OperatorDialogHeader,
+} from './operator-dialog-shell';
 import {
   SelectField,
   TextAreaField,
@@ -176,26 +173,20 @@ export function ProductRowActions({
           {t('edit')}
         </Button>
       </DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('workflow')}>
-        <DialogHeader>
-          <DialogTitle>{t('editProductTitle')}</DialogTitle>
-          <DialogDescription>{t('editProductDescription')}</DialogDescription>
-        </DialogHeader>
-        <Tabs className="grid min-w-0 gap-4" defaultValue="details">
-          <TabsList className="h-auto w-full flex-wrap justify-start bg-muted/25">
-            <TabsTrigger value="details">{t('tabs.details')}</TabsTrigger>
-            <TabsTrigger value="stock">{t('tabs.stock')}</TabsTrigger>
-            <TabsTrigger value="coverage">{t('tabs.coverage')}</TabsTrigger>
-            <TabsTrigger value="lifecycle">{t('tabs.lifecycle')}</TabsTrigger>
-          </TabsList>
-          <TabsContent className="min-w-0" value="details">
-            <form
-              className="grid min-w-0 gap-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (canSaveDetails) detailsMutation.mutate();
-              }}
-            >
+      <OperatorDialogContent size="lg">
+        <OperatorDialogHeader
+          description={t('editProductDescription')}
+          title={t('editProductTitle')}
+        />
+        <form
+          className="flex min-h-0 flex-1 flex-col"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (canSaveDetails) detailsMutation.mutate();
+          }}
+        >
+          <OperatorDialogBody className="grid gap-6">
+            <FormSection title={t('tabs.details')}>
               <div className="grid min-w-0 gap-3 lg:grid-cols-2 xl:grid-cols-3">
                 <TextField
                   label={t('productName')}
@@ -274,122 +265,114 @@ export function ProductRowActions({
                   value={details.description}
                 />
               </div>
-              <DialogFooter>
-                <Button
-                  disabled={!canSaveDetails || detailsMutation.isPending}
-                  type="submit"
-                >
-                  <Save className="h-4 w-4" />
-                  {detailsMutation.isPending ? t('saving') : t('save')}
-                </Button>
-              </DialogFooter>
-            </form>
-          </TabsContent>
-          <TabsContent className="min-w-0" value="stock">
-            {canUpdateStock ? (
-              <form
-                className="grid min-w-0 gap-4"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  stockMutation.mutate();
-                }}
-              >
-                <div className="grid min-w-0 gap-3 lg:grid-cols-3">
-                  <ToggleField
-                    checked={unlimitedStock}
-                    className="items-start lg:col-span-3"
-                    onChange={(nextUnlimitedStock) => {
-                      setUnlimitedStock(nextUnlimitedStock);
-                      if (nextUnlimitedStock) setAmount('');
-                    }}
-                  >
-                    <span className="grid gap-1">
-                      <span className="font-medium">{t('unlimitedStock')}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {t('unlimitedStockDescription')}
+            </FormSection>
+
+            <FormSection title={t('tabs.stock')}>
+              {canUpdateStock ? (
+                <div className="grid min-w-0 gap-3">
+                  <div className="grid min-w-0 gap-3 lg:grid-cols-3">
+                    <ToggleField
+                      checked={unlimitedStock}
+                      className="items-start lg:col-span-3"
+                      onChange={(nextUnlimitedStock) => {
+                        setUnlimitedStock(nextUnlimitedStock);
+                        if (nextUnlimitedStock) setAmount('');
+                      }}
+                    >
+                      <span className="grid gap-1">
+                        <span className="font-medium">
+                          {t('unlimitedStock')}
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {t('unlimitedStockDescription')}
+                        </span>
                       </span>
-                    </span>
-                  </ToggleField>
-                  <TextField
-                    disabled={unlimitedStock}
-                    inputMode="numeric"
-                    label={t('amount')}
-                    onChange={setAmount}
-                    placeholder={
-                      unlimitedStock
-                        ? t('unlimitedStock')
-                        : t('placeholders.amount')
-                    }
-                    value={amount}
-                  />
-                  <TextField
-                    inputMode="numeric"
-                    label={t('minAmount')}
-                    onChange={setMinAmount}
-                    placeholder={t('placeholders.minAmount')}
-                    value={minAmount}
-                  />
-                  <TextField
-                    inputMode="numeric"
-                    label={t('price')}
-                    onChange={setPrice}
-                    placeholder={t('placeholders.price')}
-                    value={price}
-                  />
-                </div>
-                <DialogFooter>
-                  <Button disabled={stockMutation.isPending} type="submit">
+                    </ToggleField>
+                    <TextField
+                      disabled={unlimitedStock}
+                      inputMode="numeric"
+                      label={t('amount')}
+                      onChange={setAmount}
+                      placeholder={
+                        unlimitedStock
+                          ? t('unlimitedStock')
+                          : t('placeholders.amount')
+                      }
+                      value={amount}
+                    />
+                    <TextField
+                      inputMode="numeric"
+                      label={t('minAmount')}
+                      onChange={setMinAmount}
+                      placeholder={t('placeholders.minAmount')}
+                      value={minAmount}
+                    />
+                    <TextField
+                      inputMode="numeric"
+                      label={t('price')}
+                      onChange={setPrice}
+                      placeholder={t('placeholders.price')}
+                      value={price}
+                    />
+                  </div>
+                  <Button
+                    className="w-fit"
+                    disabled={stockMutation.isPending}
+                    onClick={() => stockMutation.mutate()}
+                    type="button"
+                    variant="outline"
+                  >
                     <Save className="h-4 w-4" />
                     {stockMutation.isPending ? t('saving') : t('save')}
                   </Button>
-                </DialogFooter>
-              </form>
-            ) : (
-              <div className="rounded-lg border border-border bg-muted/20 p-4 text-muted-foreground text-sm">
-                {t('stockUnavailableDescription')}
-              </div>
-            )}
-          </TabsContent>
-          <TabsContent className="min-w-0" value="coverage">
-            <div className="grid min-w-0 gap-3 lg:grid-cols-2">
-              <section className="grid min-w-0 gap-2 rounded-lg border border-border bg-muted/15 p-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <Calculator className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="font-semibold text-sm">
-                    {operatorText('badges.costingReady')}
-                  </h3>
                 </div>
-                <p className="text-muted-foreground text-sm leading-6">
-                  {matchingCostProfiles.length
-                    ? t('costingCoverageReady', {
-                        count: matchingCostProfiles.length,
-                      })
-                    : t('costingCoverageMissing')}
-                </p>
-                {matchingCostProfiles.length ? (
-                  <div className="flex min-w-0 flex-wrap gap-2">
-                    {matchingCostProfiles.map((profile) => (
-                      <span
-                        className="inline-flex max-w-full rounded-md border border-border bg-background px-2 py-1 text-xs"
-                        key={profile.id}
-                      >
-                        <span className="truncate">{profile.name}</span>
-                      </span>
-                    ))}
+              ) : (
+                <div className="rounded-lg border border-border bg-muted/20 p-4 text-muted-foreground text-sm">
+                  {t('stockUnavailableDescription')}
+                </div>
+              )}
+            </FormSection>
+
+            <FormSection title={t('tabs.coverage')}>
+              <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+                <section className="grid min-w-0 gap-2 rounded-lg border border-border bg-muted/15 p-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Calculator className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="font-semibold text-sm">
+                      {operatorText('badges.costingReady')}
+                    </h3>
                   </div>
-                ) : null}
-              </section>
-              <section className="grid min-w-0 gap-2 rounded-lg border border-border bg-muted/15 p-3">
-                <h3 className="font-semibold text-sm">
-                  {t('listingCoverage')}
-                </h3>
-                <p className="text-muted-foreground text-sm leading-6">
-                  {t('listingCoverageDescription')}
-                </p>
-              </section>
-            </div>
-          </TabsContent>
-          <TabsContent className="min-w-0" value="lifecycle">
+                  <p className="text-muted-foreground text-sm leading-6">
+                    {matchingCostProfiles.length
+                      ? t('costingCoverageReady', {
+                          count: matchingCostProfiles.length,
+                        })
+                      : t('costingCoverageMissing')}
+                  </p>
+                  {matchingCostProfiles.length ? (
+                    <div className="flex min-w-0 flex-wrap gap-2">
+                      {matchingCostProfiles.map((profile) => (
+                        <span
+                          className="inline-flex max-w-full rounded-md border border-border bg-background px-2 py-1 text-xs"
+                          key={profile.id}
+                        >
+                          <span className="truncate">{profile.name}</span>
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </section>
+                <section className="grid min-w-0 gap-2 rounded-lg border border-border bg-muted/15 p-3">
+                  <h3 className="font-semibold text-sm">
+                    {t('listingCoverage')}
+                  </h3>
+                  <p className="text-muted-foreground text-sm leading-6">
+                    {t('listingCoverageDescription')}
+                  </p>
+                </section>
+              </div>
+            </FormSection>
+
             <LifecyclePanel
               archiveDisabled={
                 archiveMutation.isPending ||
@@ -402,9 +385,23 @@ export function ProductRowActions({
               onDelete={() => deleteMutation.mutate()}
               title={t('lifecycle')}
             />
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
+          </OperatorDialogBody>
+          <OperatorDialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                {t('cancel')}
+              </Button>
+            </DialogClose>
+            <Button
+              disabled={!canSaveDetails || detailsMutation.isPending}
+              type="submit"
+            >
+              <Save className="h-4 w-4" />
+              {detailsMutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </OperatorDialogFooter>
+        </form>
+      </OperatorDialogContent>
     </Dialog>
   );
 }

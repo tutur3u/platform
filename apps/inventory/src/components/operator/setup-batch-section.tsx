@@ -12,21 +12,18 @@ import {
 import type { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
-import { operatorDialogContentClassName } from './operator-dialog';
+import {
+  FormSection,
+  OperatorDialogBody,
+  OperatorDialogContent,
+  OperatorDialogFooter,
+  OperatorDialogHeader,
+} from './operator-dialog-shell';
 import { SelectField } from './operator-form-fields';
 import { LifecyclePanel } from './operator-lifecycle';
 import { invalidateSetup, namedRows } from './setup-helpers';
@@ -85,65 +82,80 @@ function BatchCreateDialog({
           {t('create')}
         </Button>
       </DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('medium')}>
-        <DialogHeader>
-          <DialogTitle>{t('createBatchTitle')}</DialogTitle>
-          <DialogDescription>{t('createBatchDescription')}</DialogDescription>
-        </DialogHeader>
+      <OperatorDialogContent size="md">
+        <OperatorDialogHeader
+          description={t('createBatchDescription')}
+          title={t('createBatchTitle')}
+        />
         <form
-          className="grid gap-3"
+          className="flex min-h-0 flex-1 flex-col"
           onSubmit={(event: FormEvent) => {
             event.preventDefault();
             if (warehouseId) createMutation.mutate();
           }}
         >
-          <SelectField
-            createText={createText(t('warehouse'))}
-            creatingText={creatingText(t('warehouse'))}
-            emptyText={t('emptyOptions')}
-            label={t('warehouse')}
-            onChange={setWarehouseId}
-            onCreate={(name) =>
-              createReference(() => createInventoryWarehouse(wsId, { name }))
-            }
-            options={options?.warehouses}
-            placeholder={t('placeholders.warehouse')}
-            searchPlaceholder={searchText(t('warehouse'))}
-            value={warehouseId}
-          />
-          <SelectField
-            createText={createText(t('supplier'))}
-            creatingText={creatingText(t('supplier'))}
-            emptyText={t('emptyOptions')}
-            label={t('supplier')}
-            onChange={setSupplierId}
-            onCreate={(name) =>
-              createReference(() => createInventorySupplier(wsId, { name }))
-            }
-            options={namedRows(suppliers)}
-            placeholder={t('placeholders.supplier')}
-            searchPlaceholder={searchText(t('supplier'))}
-            value={supplierId}
-          />
-          <label className="grid min-w-0 gap-1 text-sm">
-            <span className="font-medium">{t('price')}</span>
-            <Input
-              inputMode="numeric"
-              onChange={(event) => setPrice(event.target.value)}
-              placeholder={t('placeholders.price')}
-              value={price}
-            />
-          </label>
-          <DialogFooter>
+          <OperatorDialogBody className="grid gap-6">
+            <FormSection title={t('tabs.details')}>
+              <div className="grid min-w-0 gap-3">
+                <SelectField
+                  createText={createText(t('warehouse'))}
+                  creatingText={creatingText(t('warehouse'))}
+                  emptyText={t('emptyOptions')}
+                  label={t('warehouse')}
+                  onChange={setWarehouseId}
+                  onCreate={(name) =>
+                    createReference(() =>
+                      createInventoryWarehouse(wsId, { name })
+                    )
+                  }
+                  options={options?.warehouses}
+                  placeholder={t('placeholders.warehouse')}
+                  searchPlaceholder={searchText(t('warehouse'))}
+                  value={warehouseId}
+                />
+                <SelectField
+                  createText={createText(t('supplier'))}
+                  creatingText={creatingText(t('supplier'))}
+                  emptyText={t('emptyOptions')}
+                  label={t('supplier')}
+                  onChange={setSupplierId}
+                  onCreate={(name) =>
+                    createReference(() =>
+                      createInventorySupplier(wsId, { name })
+                    )
+                  }
+                  options={namedRows(suppliers)}
+                  placeholder={t('placeholders.supplier')}
+                  searchPlaceholder={searchText(t('supplier'))}
+                  value={supplierId}
+                />
+                <label className="grid min-w-0 gap-1 text-sm">
+                  <span className="font-medium">{t('price')}</span>
+                  <Input
+                    inputMode="numeric"
+                    onChange={(event) => setPrice(event.target.value)}
+                    placeholder={t('placeholders.price')}
+                    value={price}
+                  />
+                </label>
+              </div>
+            </FormSection>
+          </OperatorDialogBody>
+          <OperatorDialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                {t('cancel')}
+              </Button>
+            </DialogClose>
             <Button
               disabled={!warehouseId || createMutation.isPending}
               type="submit"
             >
               {t('create')}
             </Button>
-          </DialogFooter>
+          </OperatorDialogFooter>
         </form>
-      </DialogContent>
+      </OperatorDialogContent>
     </Dialog>
   );
 }
@@ -184,17 +196,13 @@ function BatchRow({
             {t('manage')}
           </Button>
         </DialogTrigger>
-        <DialogContent className={operatorDialogContentClassName('compact')}>
-          <DialogHeader>
-            <DialogTitle>{t('manageBatchTitle')}</DialogTitle>
-            <DialogDescription>{t('manageBatchDescription')}</DialogDescription>
-          </DialogHeader>
-          <Tabs className="grid min-w-0 gap-4" defaultValue="details">
-            <TabsList className="h-auto w-full flex-wrap justify-start bg-muted/25">
-              <TabsTrigger value="details">{t('tabs.details')}</TabsTrigger>
-              <TabsTrigger value="lifecycle">{t('tabs.lifecycle')}</TabsTrigger>
-            </TabsList>
-            <TabsContent value="details">
+        <OperatorDialogContent size="md">
+          <OperatorDialogHeader
+            description={t('manageBatchDescription')}
+            title={t('manageBatchTitle')}
+          />
+          <OperatorDialogBody className="grid gap-6">
+            <FormSection title={t('tabs.details')}>
               <dl className="grid gap-2 rounded-lg border border-border bg-muted/15 p-3 text-sm">
                 <div className="grid gap-1 sm:grid-cols-[120px_1fr]">
                   <dt className="text-muted-foreground">{t('warehouse')}</dt>
@@ -211,16 +219,21 @@ function BatchRow({
                   <dd className="font-medium">{batch.price ?? 0}</dd>
                 </div>
               </dl>
-            </TabsContent>
-            <TabsContent value="lifecycle">
-              <LifecyclePanel
-                deletePending={deleteMutation.isPending}
-                onDelete={() => deleteMutation.mutate()}
-                title={t('lifecycle')}
-              />
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
+            </FormSection>
+            <LifecyclePanel
+              deletePending={deleteMutation.isPending}
+              onDelete={() => deleteMutation.mutate()}
+              title={t('lifecycle')}
+            />
+          </OperatorDialogBody>
+          <OperatorDialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                {t('cancel')}
+              </Button>
+            </DialogClose>
+          </OperatorDialogFooter>
+        </OperatorDialogContent>
       </Dialog>
     </div>
   );

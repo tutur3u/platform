@@ -229,8 +229,18 @@ export function InventoryOperatorClient({
         ? data.sales.isPending || data.sales.isFetching
         : false;
 
+  const headerActions =
+    view === 'catalog' ? (
+      <ProductCreateForm options={data.formOptions.data} wsId={wsId} />
+    ) : view === 'storefront' ? (
+      <StorefrontForm wsId={wsId} />
+    ) : view === 'bundles' ? (
+      <BundleForm products={products} wsId={wsId} />
+    ) : null;
+
   return (
     <SectionShell
+      actions={headerActions}
       description={section[2] as string}
       icon={<Icon className="h-5 w-5" />}
       title={section[1] as string}
@@ -275,18 +285,13 @@ export function InventoryOperatorClient({
           </>
         ) : null}
         {!isLoading && !isError && (view === 'catalog' || view === 'stock') ? (
-          <>
-            {view === 'catalog' ? (
-              <ProductCreateForm options={data.formOptions.data} wsId={wsId} />
-            ) : null}
-            <ProductsTable
-              costingProfiles={data.costingProfiles.data?.data ?? []}
-              formOptions={data.formOptions.data}
-              rows={products}
-              view={view}
-              wsId={wsId}
-            />
-          </>
+          <ProductsTable
+            costingProfiles={data.costingProfiles.data?.data ?? []}
+            formOptions={data.formOptions.data}
+            rows={products}
+            view={view}
+            wsId={wsId}
+          />
         ) : null}
         {!isLoading && !isError && view === 'setup' ? (
           <SetupPanel
@@ -307,7 +312,6 @@ export function InventoryOperatorClient({
         ) : null}
         {!isLoading && !isError && view === 'storefront' ? (
           <>
-            <StorefrontForm wsId={wsId} />
             <SimpleRows rows={storefronts} type="storefronts" wsId={wsId} />
             {storefronts.length > 0 ? (
               <StorefrontListingsPanel
@@ -321,7 +325,6 @@ export function InventoryOperatorClient({
         ) : null}
         {!isLoading && !isError && view === 'bundles' ? (
           <>
-            <BundleForm products={products} wsId={wsId} />
             <SimpleRows
               products={products}
               rows={bundles}

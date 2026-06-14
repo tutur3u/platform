@@ -132,11 +132,13 @@ export function Toolbar({
 }
 
 export function SectionShell({
+  actions,
   children,
   description,
   icon,
   title,
 }: {
+  actions?: ReactNode;
   children: ReactNode;
   description: string;
   icon: ReactNode;
@@ -144,7 +146,7 @@ export function SectionShell({
 }) {
   return (
     <section className="grid gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-border border-b pb-4">
+      <div className="flex flex-wrap items-start gap-3 border-border border-b pb-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-primary/10 text-primary">
           {icon}
         </div>
@@ -154,6 +156,11 @@ export function SectionShell({
             {description}
           </p>
         </div>
+        {actions ? (
+          <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
+            {actions}
+          </div>
+        ) : null}
       </div>
       {children}
     </section>

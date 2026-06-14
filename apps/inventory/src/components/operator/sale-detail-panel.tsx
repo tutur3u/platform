@@ -9,21 +9,17 @@ import {
   updateInventorySale,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
-import { operatorDialogContentClassName } from './operator-dialog';
+import {
+  OperatorDialogBody,
+  OperatorDialogContent,
+  OperatorDialogFooter,
+  OperatorDialogHeader,
+} from './operator-dialog-shell';
 import { LifecyclePanel } from './operator-lifecycle';
 import { LoadingRows } from './operator-shell';
 
@@ -79,56 +75,52 @@ export function SaleNoteDialog({
           {t('note')}
         </Button>
       </DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('medium')}>
-        <DialogHeader>
-          <DialogTitle>{t('editSaleNoteTitle')}</DialogTitle>
-          <DialogDescription>{t('editSaleNoteDescription')}</DialogDescription>
-        </DialogHeader>
+      <OperatorDialogContent size="md">
+        <OperatorDialogHeader
+          description={t('editSaleNoteDescription')}
+          title={t('editSaleNoteTitle')}
+        />
         {detail.isPending ? (
-          <LoadingRows />
+          <OperatorDialogBody>
+            <LoadingRows />
+          </OperatorDialogBody>
         ) : (
-          <Tabs className="grid min-w-0 gap-4" defaultValue="details">
-            <TabsList className="h-auto w-full flex-wrap justify-start bg-muted/25">
-              <TabsTrigger value="details">{t('tabs.details')}</TabsTrigger>
-              <TabsTrigger value="lifecycle">{t('tabs.lifecycle')}</TabsTrigger>
-            </TabsList>
-            <TabsContent value="details">
-              <form
-                className="grid gap-3"
-                onSubmit={(event: FormEvent) => {
-                  event.preventDefault();
-                  mutation.mutate();
-                }}
-              >
-                <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{t('note')}</span>
-                  <Input
-                    onChange={(event) => setNote(event.target.value)}
-                    placeholder={t('placeholders.saleNote')}
-                    value={currentNote}
-                  />
-                </label>
-                <DialogFooter>
-                  <Button
-                    disabled={!sale.id || mutation.isPending}
-                    type="submit"
-                  >
-                    <Save className="h-4 w-4" />
-                    {mutation.isPending ? t('saving') : t('save')}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </TabsContent>
-            <TabsContent value="lifecycle">
+          <form
+            className="flex min-h-0 flex-1 flex-col"
+            onSubmit={(event: FormEvent) => {
+              event.preventDefault();
+              mutation.mutate();
+            }}
+          >
+            <OperatorDialogBody className="grid gap-5">
+              <label className="grid min-w-0 gap-1 text-sm">
+                <span className="font-medium">{t('note')}</span>
+                <Input
+                  onChange={(event) => setNote(event.target.value)}
+                  placeholder={t('placeholders.saleNote')}
+                  value={currentNote}
+                />
+              </label>
               <LifecyclePanel
                 deletePending={deleteMutation.isPending}
                 onDelete={() => deleteMutation.mutate()}
                 title={t('lifecycle')}
               />
-            </TabsContent>
-          </Tabs>
+            </OperatorDialogBody>
+            <OperatorDialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="ghost">
+                  {t('cancel')}
+                </Button>
+              </DialogClose>
+              <Button disabled={!sale.id || mutation.isPending} type="submit">
+                <Save className="h-4 w-4" />
+                {mutation.isPending ? t('saving') : t('save')}
+              </Button>
+            </OperatorDialogFooter>
+          </form>
         )}
-      </DialogContent>
+      </OperatorDialogContent>
     </Dialog>
   );
 }

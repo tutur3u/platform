@@ -1,7 +1,14 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Save } from '@tuturuuu/icons';
+import {
+  ClipboardList,
+  Layers3,
+  Pencil,
+  PieChart,
+  Save,
+  Settings2,
+} from '@tuturuuu/icons';
 import type {
   InventoryCostProfile,
   InventoryProductFormOptionsResponse,
@@ -12,20 +19,17 @@ import {
   updateInventoryCostProfile,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { operatorDialogContentClassName } from './operator-dialog';
+import {
+  FormSection,
+  OperatorDialogBody,
+  OperatorDialogContent,
+  OperatorDialogFooter,
+  OperatorDialogHeader,
+} from './operator-dialog-shell';
 import {
   NumberField,
   SelectField,
@@ -199,31 +203,23 @@ function CostingProfileEditorDialog({
           {forms('edit')}
         </Button>
       </DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('workflow')}>
-        <DialogHeader>
-          <DialogTitle>{t('editProfileTitle')}</DialogTitle>
-          <DialogDescription>{t('editProfileDescription')}</DialogDescription>
-        </DialogHeader>
-        <Tabs className="grid min-w-0 gap-4" defaultValue="profile">
-          <TabsList className="h-auto w-full flex-wrap justify-start bg-muted/25">
-            <TabsTrigger value="profile">{forms('tabs.details')}</TabsTrigger>
-            <TabsTrigger value="scenarios">
-              {forms('tabs.scenarios')}
-            </TabsTrigger>
-            <TabsTrigger value="shares">
-              {forms('tabs.profitShares')}
-            </TabsTrigger>
-            <TabsTrigger value="lifecycle">
-              {forms('tabs.lifecycle')}
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile">
-            <form
-              className="grid min-w-0 gap-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (canSave) saveMutation.mutate();
-              }}
+      <OperatorDialogContent size="lg">
+        <OperatorDialogHeader
+          description={t('editProfileDescription')}
+          title={t('editProfileTitle')}
+        />
+        <form
+          className="flex min-h-0 flex-1 flex-col"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (canSave) saveMutation.mutate();
+          }}
+        >
+          <OperatorDialogBody className="grid gap-6">
+            <FormSection
+              description={t('editProfileDescription')}
+              icon={<Settings2 className="h-4 w-4" />}
+              title={forms('tabs.details')}
             >
               <div className="grid min-w-0 gap-3 lg:grid-cols-2 xl:grid-cols-4">
                 <SelectField
@@ -308,66 +304,79 @@ function CostingProfileEditorDialog({
                   value={form.notes}
                 />
               </div>
-              <DialogFooter>
-                <Button
-                  disabled={!canSave || saveMutation.isPending}
-                  type="submit"
-                >
-                  <Save className="h-4 w-4" />
-                  {saveMutation.isPending ? forms('saving') : forms('save')}
-                </Button>
-              </DialogFooter>
-            </form>
-          </TabsContent>
-          <TabsContent value="scenarios">
-            <div className="grid min-w-0 gap-2">
-              {profile.scenarios.map((scenario) => (
-                <div
-                  className="grid min-w-0 gap-2 rounded-md border border-border bg-muted/15 p-3 text-sm md:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
-                  key={scenario.id}
-                >
-                  <span className="truncate font-medium">{scenario.name}</span>
-                  <span>
-                    {t('batchSize')}: {scenario.batchSize}
-                  </span>
-                  <span>
-                    {t('unitCost')}:{' '}
-                    {currency(scenario.manufacturingCostPerUnit)}
-                  </span>
-                  <span>
-                    {t('breakEven')}:{' '}
-                    {scenario.metrics.breakEvenQuantity ?? '-'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-          <TabsContent value="shares">
-            <div className="grid min-w-0 gap-2">
-              {profile.profitShares.map((share) => (
-                <div
-                  className="grid min-w-0 gap-2 rounded-md border border-border bg-muted/15 p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto]"
-                  key={share.id}
-                >
-                  <span className="truncate font-medium">
-                    {share.recipientLabel}
-                  </span>
-                  <span>{share.sharePercentage}%</span>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-          <TabsContent value="lifecycle">
-            <LifecyclePanel
-              archivePending={archiveMutation.isPending}
-              deletePending={deleteMutation.isPending}
-              onArchive={() => archiveMutation.mutate()}
-              onDelete={() => deleteMutation.mutate()}
-              title={forms('lifecycle')}
-            />
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
+            </FormSection>
+            <FormSection
+              icon={<Layers3 className="h-4 w-4" />}
+              title={forms('tabs.scenarios')}
+            >
+              <div className="grid min-w-0 gap-2">
+                {profile.scenarios.map((scenario) => (
+                  <div
+                    className="grid min-w-0 gap-2 rounded-md border border-border bg-muted/15 p-3 text-sm md:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
+                    key={scenario.id}
+                  >
+                    <span className="truncate font-medium">
+                      {scenario.name}
+                    </span>
+                    <span>
+                      {t('batchSize')}: {scenario.batchSize}
+                    </span>
+                    <span>
+                      {t('unitCost')}:{' '}
+                      {currency(scenario.manufacturingCostPerUnit)}
+                    </span>
+                    <span>
+                      {t('breakEven')}:{' '}
+                      {scenario.metrics.breakEvenQuantity ?? '-'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </FormSection>
+            <FormSection
+              icon={<PieChart className="h-4 w-4" />}
+              title={forms('tabs.profitShares')}
+            >
+              <div className="grid min-w-0 gap-2">
+                {profile.profitShares.map((share) => (
+                  <div
+                    className="grid min-w-0 gap-2 rounded-md border border-border bg-muted/15 p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto]"
+                    key={share.id}
+                  >
+                    <span className="truncate font-medium">
+                      {share.recipientLabel}
+                    </span>
+                    <span>{share.sharePercentage}%</span>
+                  </div>
+                ))}
+              </div>
+            </FormSection>
+            <FormSection
+              icon={<ClipboardList className="h-4 w-4" />}
+              title={forms('tabs.lifecycle')}
+            >
+              <LifecyclePanel
+                archivePending={archiveMutation.isPending}
+                deletePending={deleteMutation.isPending}
+                onArchive={() => archiveMutation.mutate()}
+                onDelete={() => deleteMutation.mutate()}
+                title={forms('lifecycle')}
+              />
+            </FormSection>
+          </OperatorDialogBody>
+          <OperatorDialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">
+                {forms('cancel')}
+              </Button>
+            </DialogClose>
+            <Button disabled={!canSave || saveMutation.isPending} type="submit">
+              <Save className="h-4 w-4" />
+              {saveMutation.isPending ? forms('saving') : forms('save')}
+            </Button>
+          </OperatorDialogFooter>
+        </form>
+      </OperatorDialogContent>
     </Dialog>
   );
 }
