@@ -58,9 +58,10 @@ bun i18n:sort
 bun i18n:check
 ```
 
-Use `bun i18n:add` for new satellite translation keys when possible so every
-detected locale file is updated and sorted together. Reserve manual message JSON
-edits for broad rewrites or value-only updates. Finish with `bun check` for
+Use `bun i18n:add` for satellite translation key add/remove/replace work when
+possible; use `--entries` or `--entries-file` for bulk updates so every detected
+locale file is updated and sorted together. Reserve manual message JSON edits
+for broad prose rewrites or value-only updates. Finish with `bun check` for
 TypeScript, JavaScript, messages, or repo config changes unless an unrelated
 pre-existing blocker prevents it. Do not run long-running dev/build commands
 unless the user explicitly asks.

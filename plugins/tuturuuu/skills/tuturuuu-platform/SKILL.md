@@ -23,7 +23,7 @@ Map the request to the smallest owning surface:
 - `apps/docs`: Mintlify docs and team-facing operational guidance.
 - `packages/*`: shared UI, types, internal API clients, auth, Supabase helpers, and utilities.
 
-Prefer existing patterns over new abstractions. Search with `rg` before introducing new APIs, types, routes, or copy. If a user-facing change adds a new translation key, use `bun i18n:add` for the relevant app or `--all` shared UI scope so every locale file is updated and sorted together. Reserve manual message JSON edits for broad rewrites or value-only updates, then run the i18n sort/check commands.
+Prefer existing patterns over new abstractions. Search with `rg` before introducing new APIs, types, routes, or copy. If a user-facing change adds, removes, or replaces translation keys, use `bun i18n:add` with the relevant app, `--all` shared UI scope, and single-key or bulk `--mode add|remove|replace` so every locale file is updated and sorted together. Reserve manual message JSON edits for broad prose rewrites or value-only updates, then run the i18n sort/check commands.
 
 ## Hard Rules
 
@@ -105,7 +105,7 @@ Scope verification to the files and risk first, then follow repo requirements:
 
 - Run formatters required for touched files before final checks.
 - If TypeScript, JavaScript, or root scripts/config changed, finish with `bun check`.
-- If messages changed, use `bun i18n:add` for new keys when possible and run `bun i18n:sort` before `bun check`.
+- If messages changed, use `bun i18n:add` for key add/remove/replace work when possible and run `bun i18n:sort` before `bun check`.
 - If Flutter localization ARB keys changed, run `flutter gen-l10n` before Flutter analysis or tests.
 - If mobile Flutter tests collide on `build/unit_test_assets`, rerun the focused tests sequentially.
 

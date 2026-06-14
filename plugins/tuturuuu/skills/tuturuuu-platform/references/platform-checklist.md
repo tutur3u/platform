@@ -37,11 +37,12 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
 
 ## Translations And Navigation
 
-- Add new user-facing translation keys with `bun i18n:add --app <app>` or
-  `bun i18n:add --all` for shared UI keys so every detected locale file is
-  updated and sorted together.
+- Add, remove, or replace translation keys with `bun i18n:add --app <app>` or
+  `bun i18n:add --all` plus `--mode add|remove|replace`; use `--entries` or
+  `--entries-file` for bulk updates so every detected locale file is updated
+  and sorted together.
 - Keep shared UI translation keys present in every app-level bundle that ships that shared UI.
-- Reserve manual message JSON edits for broad rewrites or value-only updates,
+- Reserve manual message JSON edits for broad prose rewrites or value-only updates,
   then run `bun i18n:sort`.
 - Add new dashboard routes to the relevant `navigation.tsx` aliases, children, icons, and permissions.
 

@@ -24,7 +24,8 @@ Use this checklist for `apps/web` version badge and release metadata work.
 - Keep `VersionBadge` props source-compatible.
 - If new `version-badge` translation keys are added in `packages/ui`, update
   every app message bundle that ships the shared UI with `bun i18n:add --all`
-  and run `bun i18n:sort`.
+  or bulk `bun i18n:add --all --mode add --entries ...`, then run
+  `bun i18n:sort`.
 
 ## Runtime Metadata
 

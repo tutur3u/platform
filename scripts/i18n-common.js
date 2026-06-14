@@ -176,6 +176,47 @@ function setNestedValue(obj, keyPath, value) {
   current[parts.at(-1)] = value;
 }
 
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function deleteNestedValue(obj, keyPath) {
+  const parts = Array.isArray(keyPath) ? keyPath : parseKeyPath(keyPath);
+  const ancestors = [];
+  let current = obj;
+
+  for (let index = 0; index < parts.length - 1; index += 1) {
+    const part = parts[index];
+
+    if (!isPlainObject(current) || !Object.hasOwn(current, part)) {
+      return false;
+    }
+
+    ancestors.push([current, part]);
+    current = current[part];
+  }
+
+  const leafKey = parts.at(-1);
+  if (!isPlainObject(current) || !Object.hasOwn(current, leafKey)) {
+    return false;
+  }
+
+  delete current[leafKey];
+
+  for (let index = ancestors.length - 1; index >= 0; index -= 1) {
+    const [parent, key] = ancestors[index];
+    const value = parent[key];
+
+    if (isPlainObject(value) && Object.keys(value).length === 0) {
+      delete parent[key];
+    } else {
+      break;
+    }
+  }
+
+  return true;
+}
+
 function getAllKeyPaths(obj, prefix = '') {
   const paths = [];
 
@@ -195,6 +236,7 @@ function getAllKeyPaths(obj, prefix = '') {
 
 module.exports = {
   DEFAULT_TRANSLATION_DIRS,
+  deleteNestedValue,
   discoverTranslationDirs,
   formatJson,
   getAllKeyPaths,

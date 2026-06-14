@@ -32,8 +32,9 @@ future work. Examples:
 - update a plugin skill when a new workflow becomes standard
 - document CLI, deploy, database, mobile, or CI behavior in `apps/docs`
 - add a helper script when an install or verification flow is easy to automate
-- route new translation keys through `bun i18n:add` instead of manual message
-  JSON edits when possible
+- route translation key add/remove/replace work through `bun i18n:add`,
+  including bulk modes when useful, instead of manual message JSON edits when
+  possible
 - refine prompts, checklists, or skill descriptions so future triggering is more reliable
 - route shared-worktree ownership and handoff behavior through
   `$tuturuuu-agent-coordination`

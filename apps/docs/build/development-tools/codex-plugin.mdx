@@ -164,6 +164,20 @@ unless `--overwrite` is passed, and writes sorted JSON. Manual message edits are
 reserved for broad copy rewrites or value-only updates; run `bun i18n:sort`
 after those edits.
 
+For larger translation updates, use bulk modes instead of repeatedly editing
+JSON:
+
+```bash
+bun i18n:add --app web --mode add --entries '{"common.save":{"en":"Save","vi":"Lưu"}}'
+bun i18n:add --app web --mode remove --entries '["common.old"]'
+bun i18n:add --app web --mode replace --entries-file ./translations.json
+```
+
+Bulk add and replace entries use a JSON object keyed by translation key, with
+locale values underneath each key. Bulk remove accepts an array of translation
+keys. Replace and remove fail when a key is missing unless `--ignore-missing` is
+passed.
+
 ## CI Coverage
 
 `.github/workflows/codex-plugin.yaml` runs the plugin-local validator and parses

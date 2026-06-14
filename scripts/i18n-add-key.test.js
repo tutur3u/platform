@@ -149,7 +149,7 @@ test('does not write partial changes when a key already exists without overwrite
         '--value',
         'vi=Lưu',
       ]),
-    /already exists/
+    /already exist/
   );
   assert.deepEqual(readJson(projectRoot, 'apps/web/messages/vi.json'), {});
 });
@@ -201,4 +201,201 @@ test('rejects unsafe translation key segments', (t) => {
       ]),
     /not allowed/
   );
+});
+
+test('bulk adds multiple translation keys from inline entries JSON', (t) => {
+  const projectRoot = createProject(t);
+  writeJson(projectRoot, 'apps/web/messages/en.json', {});
+  writeJson(projectRoot, 'apps/web/messages/vi.json', {});
+
+  const result = runAddKey(projectRoot, [
+    '--app',
+    'web',
+    '--mode',
+    'add',
+    '--entries',
+    JSON.stringify({
+      'common.cancel': { en: 'Cancel', vi: 'Hủy' },
+      'common.save': { en: 'Save', vi: 'Lưu' },
+    }),
+  ]);
+
+  assert.equal(result.mode, 'add');
+  assert.deepEqual(result.keys, ['common.cancel', 'common.save']);
+  assert.deepEqual(readJson(projectRoot, 'apps/web/messages/en.json'), {
+    common: {
+      cancel: 'Cancel',
+      save: 'Save',
+    },
+  });
+  assert.deepEqual(readJson(projectRoot, 'apps/web/messages/vi.json'), {
+    common: {
+      cancel: 'Hủy',
+      save: 'Lưu',
+    },
+  });
+});
+
+test('bulk removes keys and prunes empty parent objects', (t) => {
+  const projectRoot = createProject(t);
+  writeJson(projectRoot, 'apps/web/messages/en.json', {
+    common: {
+      cancel: 'Cancel',
+      save: 'Save',
+    },
+    old: {
+      nested: {
+        title: 'Old title',
+      },
+    },
+  });
+  writeJson(projectRoot, 'apps/web/messages/vi.json', {
+    common: {
+      cancel: 'Hủy',
+      save: 'Lưu',
+    },
+    old: {
+      nested: {
+        title: 'Tiêu đề cũ',
+      },
+    },
+  });
+
+  const result = runAddKey(projectRoot, [
+    '--app',
+    'web',
+    '--bulk-remove',
+    '--entries',
+    JSON.stringify(['common.cancel', 'old.nested.title']),
+  ]);
+
+  assert.equal(result.mode, 'remove');
+  assert.deepEqual(readJson(projectRoot, 'apps/web/messages/en.json'), {
+    common: {
+      save: 'Save',
+    },
+  });
+  assert.deepEqual(readJson(projectRoot, 'apps/web/messages/vi.json'), {
+    common: {
+      save: 'Lưu',
+    },
+  });
+});
+
+test('bulk replaces existing keys from an entries file', (t) => {
+  const projectRoot = createProject(t);
+  writeJson(projectRoot, 'apps/web/messages/en.json', {
+    common: {
+      save: 'Save',
+    },
+  });
+  writeJson(projectRoot, 'apps/web/messages/vi.json', {
+    common: {
+      save: 'Lưu',
+    },
+  });
+  writeJson(projectRoot, 'tmp/translations.json', {
+    'common.save': {
+      en: 'Save changes',
+      vi: 'Lưu thay đổi',
+    },
+  });
+
+  const result = runAddKey(projectRoot, [
+    '--app',
+    'web',
+    '--bulk-replace',
+    '--entries-file',
+    'tmp/translations.json',
+  ]);
+
+  assert.equal(result.mode, 'replace');
+  assert.deepEqual(readJson(projectRoot, 'apps/web/messages/en.json'), {
+    common: {
+      save: 'Save changes',
+    },
+  });
+  assert.deepEqual(readJson(projectRoot, 'apps/web/messages/vi.json'), {
+    common: {
+      save: 'Lưu thay đổi',
+    },
+  });
+});
+
+test('bulk replace fails without partial writes when a key is missing', (t) => {
+  const projectRoot = createProject(t);
+  writeJson(projectRoot, 'apps/web/messages/en.json', {
+    common: {
+      save: 'Save',
+    },
+  });
+  writeJson(projectRoot, 'apps/web/messages/vi.json', {
+    common: {
+      save: 'Lưu',
+    },
+  });
+
+  assert.throws(
+    () =>
+      runAddKey(projectRoot, [
+        '--app',
+        'web',
+        '--mode',
+        'replace',
+        '--entries',
+        JSON.stringify({
+          'common.missing': {
+            en: 'Missing',
+            vi: 'Thiếu',
+          },
+          'common.save': {
+            en: 'Save changes',
+            vi: 'Lưu thay đổi',
+          },
+        }),
+      ]),
+    /Translation key\(s\) are missing/
+  );
+
+  assert.deepEqual(readJson(projectRoot, 'apps/web/messages/en.json'), {
+    common: {
+      save: 'Save',
+    },
+  });
+  assert.deepEqual(readJson(projectRoot, 'apps/web/messages/vi.json'), {
+    common: {
+      save: 'Lưu',
+    },
+  });
+});
+
+test('bulk remove can skip missing keys when requested', (t) => {
+  const projectRoot = createProject(t);
+  writeJson(projectRoot, 'apps/web/messages/en.json', {
+    common: {
+      save: 'Save',
+    },
+  });
+  writeJson(projectRoot, 'apps/web/messages/vi.json', {
+    common: {
+      save: 'Lưu',
+    },
+  });
+
+  const result = runAddKey(projectRoot, [
+    '--app',
+    'web',
+    '--mode',
+    'remove',
+    '--ignore-missing',
+    '--entries',
+    JSON.stringify(['common.cancel']),
+  ]);
+
+  assert.equal(result.changedFiles.length, 0);
+  assert.deepEqual(readJson(projectRoot, 'apps/web/messages/en.json'), {
+    common: {
+      save: 'Save',
+    },
+  });
 });

@@ -59,9 +59,11 @@ inside each sibling site.
   details panels or internal root-console advanced controls.
 - Use explicit empty, loading, error, and review states that tell editors what to
   do next.
-- Add new CMS translation keys with `bun i18n:add --app cms` so every detected
-  locale file is updated and sorted together. Reserve manual message JSON edits
-  for broad rewrites or value-only updates, then run `bun i18n:sort`.
+- Add, remove, or replace CMS translation keys with `bun i18n:add --app cms`
+  and `--mode add|remove|replace`; use `--entries` or `--entries-file` for
+  bulk updates so every detected locale file is updated and sorted together.
+  Reserve manual message JSON edits for broad prose rewrites or value-only
+  updates, then run `bun i18n:sort`.
 - Maintain the CMS product-copy hygiene test when adding CMS-owned strings. Add
   narrow exceptions only for admin/developer-detail surfaces that genuinely need
   exact implementation values.

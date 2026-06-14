@@ -82,12 +82,13 @@ shared-package changes.
 
 ## Translations And Navigation
 
-- Add new user-facing translation keys with `bun i18n:add --app <app>` or
-  `bun i18n:add --all` for shared UI keys so every detected locale file is
-  updated and sorted together.
+- Add, remove, or replace translation keys with `bun i18n:add --app <app>` or
+  `bun i18n:add --all` plus `--mode add|remove|replace`; use `--entries` or
+  `--entries-file` for bulk updates so every detected locale file is updated
+  and sorted together.
 - Shared UI translation keys must exist in every app-level bundle that ships
   that shared UI.
-- Reserve manual message JSON edits for broad rewrites or value-only updates,
+- Reserve manual message JSON edits for broad prose rewrites or value-only updates,
   then run `bun i18n:sort`.
 - Dashboard routes require navigation aliases, children, icons, and permission
   updates in the owning app navigation file.
