@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
@@ -46,6 +46,10 @@ describe('mobile deployment access guards', () => {
     });
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('allows a mutation with the dedicated action header when Origin is absent', () => {
     expect(validateSameOriginMutation(mutationRequest())).toBeNull();
   });
@@ -76,6 +80,59 @@ describe('mobile deployment access guards', () => {
           origin: 'https://tuturuuu.com',
           'x-forwarded-host': 'tuturuuu.com, internal-web-service',
           'x-forwarded-proto': 'https, http',
+        },
+        method: 'PUT',
+      }
+    );
+
+    expect(validateSameOriginMutation(request)).toBeNull();
+  });
+
+  it('allows the request URL origin when forwarded headers resolve elsewhere', () => {
+    const request = new Request(
+      'https://tuturuuu.com/api/v1/mobile-deployment',
+      {
+        headers: {
+          [MOBILE_DEPLOYMENT_CSRF_HEADER]: '1',
+          origin: 'https://tuturuuu.com',
+          'x-forwarded-host': 'internal-web-service',
+          'x-forwarded-proto': 'https',
+        },
+        method: 'PUT',
+      }
+    );
+
+    expect(validateSameOriginMutation(request)).toBeNull();
+  });
+
+  it('allows the default public web origin when server-visible origins are internal', () => {
+    const request = new Request(
+      'https://internal-web-service/api/v1/mobile-deployment',
+      {
+        headers: {
+          [MOBILE_DEPLOYMENT_CSRF_HEADER]: '1',
+          origin: 'https://tuturuuu.com',
+          'x-forwarded-host': 'internal-web-service',
+          'x-forwarded-proto': 'https',
+        },
+        method: 'PUT',
+      }
+    );
+
+    expect(validateSameOriginMutation(request)).toBeNull();
+  });
+
+  it('allows configured public web origins when server-visible origins are internal', () => {
+    vi.stubEnv('WEB_APP_URL', 'https://ops.example.com');
+
+    const request = new Request(
+      'https://internal-web-service/api/v1/mobile-deployment',
+      {
+        headers: {
+          [MOBILE_DEPLOYMENT_CSRF_HEADER]: '1',
+          origin: 'https://ops.example.com',
+          'x-forwarded-host': 'internal-web-service',
+          'x-forwarded-proto': 'https',
         },
         method: 'PUT',
       }
@@ -150,7 +207,22 @@ describe('mobile deployment access guards', () => {
     });
   });
 
-  it('falls back to request URL origin when forwarded host is malformed', async () => {
+  it('rejects unrelated origins when forwarded headers resolve elsewhere', async () => {
+    const response = validateSameOriginMutation(
+      mutationRequest({
+        origin: 'https://example.com',
+        'x-forwarded-host': 'internal-web-service',
+        'x-forwarded-proto': 'https',
+      })
+    );
+
+    expect(response?.status).toBe(403);
+    await expect(response?.json()).resolves.toMatchObject({
+      code: 'mobile_deployment_origin_forbidden',
+    });
+  });
+
+  it('falls back to request URL and default web origins when forwarded host is malformed', () => {
     const response = validateSameOriginMutation(
       mutationRequest({
         origin: 'https://tuturuuu.com',
@@ -173,9 +245,6 @@ describe('mobile deployment access guards', () => {
       })
     );
 
-    expect(internalResponse?.status).toBe(403);
-    await expect(internalResponse?.json()).resolves.toMatchObject({
-      code: 'mobile_deployment_origin_forbidden',
-    });
+    expect(internalResponse).toBeNull();
   });
 });

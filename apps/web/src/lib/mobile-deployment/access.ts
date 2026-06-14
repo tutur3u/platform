@@ -63,8 +63,46 @@ function resolveForwardedOrigin(request: Request) {
   }
 }
 
-function resolveMutationRequestOrigin(request: Request) {
-  return resolveForwardedOrigin(request) ?? new URL(request.url).origin;
+function normalizeOrigin(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeConfiguredOrigins(value: string | undefined) {
+  return (value ?? '')
+    .split(/[,\n]/u)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) =>
+      normalizeOrigin(/^[a-z]+:\/\//iu.test(entry) ? entry : `https://${entry}`)
+    )
+    .filter((origin): origin is string => Boolean(origin));
+}
+
+function resolveConfiguredWebOrigins() {
+  return [
+    process.env.WEB_APP_URL,
+    process.env.NEXT_PUBLIC_WEB_APP_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.COOLIFY_URL,
+    process.env.COOLIFY_FQDN,
+    'https://tuturuuu.com',
+  ].flatMap(normalizeConfiguredOrigins);
+}
+
+function resolveMutationRequestOrigins(request: Request) {
+  return [
+    normalizeOrigin(request.url),
+    resolveForwardedOrigin(request),
+    ...resolveConfiguredWebOrigins(),
+  ].filter((origin): origin is string => Boolean(origin));
 }
 
 export async function authorizeMobileDeploymentAdmin(
@@ -111,7 +149,8 @@ export async function authorizeMobileDeploymentAdmin(
 }
 
 export function validateSameOriginMutation(request: Request) {
-  const origin = request.headers.get('origin');
+  const rawOrigin = request.headers.get('origin');
+  const origin = normalizeOrigin(rawOrigin);
 
   if (request.headers.get(MOBILE_DEPLOYMENT_CSRF_HEADER) !== '1') {
     return jsonMessage(
@@ -121,7 +160,10 @@ export function validateSameOriginMutation(request: Request) {
     );
   }
 
-  if (origin && origin !== resolveMutationRequestOrigin(request)) {
+  if (
+    rawOrigin &&
+    (!origin || !resolveMutationRequestOrigins(request).includes(origin))
+  ) {
     return jsonMessage(
       'Mobile deployment actions must be submitted from the same origin.',
       403,
