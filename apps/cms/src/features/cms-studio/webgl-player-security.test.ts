@@ -9,7 +9,7 @@ const repoRoot = resolve(
 );
 
 const playerFiles = [
-  'apps/cms/src/app/[locale]/(dashboard)/[wsId]/library/entries/[entryId]/webgl/[assetId]/page.tsx',
+  'apps/cms/src/app/[locale]/(dashboard)/[wsId]/content/entries/[entryId]/webgl/[assetId]/page.tsx',
   'apps/cms/src/app/[locale]/play/[wsId]/webgl/[assetId]/page.tsx',
 ];
 

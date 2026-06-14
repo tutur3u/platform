@@ -55,24 +55,26 @@ export function CmsEntriesGallery({
 
   return (
     <div className="space-y-3" data-testid="cms-edit-gallery">
-      <button
-        type="button"
-        className="grid min-h-28 w-full gap-3 rounded-lg border border-border/70 border-dashed bg-card/70 p-4 text-left transition-colors hover:bg-card disabled:cursor-not-allowed disabled:opacity-60 md:grid-cols-[104px_minmax(0,1fr)]"
-        disabled={createEntryPending}
-        onClick={onCreateEntry}
-      >
-        <span className="flex h-20 items-center justify-center rounded-md border border-border/70 bg-background/80 text-muted-foreground">
-          <Plus className="h-5 w-5" />
-        </span>
-        <span className="flex min-w-0 flex-col justify-center">
-          <span className="font-semibold">{strings.createEntryAction}</span>
-          <span className="mt-1 text-muted-foreground text-sm leading-6">
-            {createEntryHint ??
-              activeCollection?.title ??
-              strings.emptyCollection}
+      {entries.length === 0 ? (
+        <button
+          type="button"
+          className="grid min-h-28 w-full gap-3 rounded-lg border border-border/70 border-dashed bg-card/70 p-4 text-left transition-colors hover:bg-card disabled:cursor-not-allowed disabled:opacity-60 md:grid-cols-[104px_minmax(0,1fr)]"
+          disabled={createEntryPending}
+          onClick={onCreateEntry}
+        >
+          <span className="flex h-20 items-center justify-center rounded-md border border-border/70 bg-background/80 text-muted-foreground">
+            <Plus className="h-5 w-5" />
           </span>
-        </span>
-      </button>
+          <span className="flex min-w-0 flex-col justify-center">
+            <span className="font-semibold">{strings.createEntryAction}</span>
+            <span className="mt-1 text-muted-foreground text-sm leading-6">
+              {createEntryHint ??
+                activeCollection?.title ??
+                strings.emptyCollection}
+            </span>
+          </span>
+        </button>
+      ) : null}
 
       {visibleEntries.map((entry) => (
         <CmsEntryIndexCard

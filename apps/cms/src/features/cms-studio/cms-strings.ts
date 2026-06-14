@@ -84,6 +84,14 @@ export type CmsStrings = {
   editModeDescription: string;
   editModeLabel: string;
   editSettingsDescription: string;
+  editorStepContentHint: string;
+  editorStepContentLabel: string;
+  editorStepMediaHint: string;
+  editorStepMediaLabel: string;
+  editorStepOrganizeHint: string;
+  editorStepOrganizeLabel: string;
+  editorStepPublishHint: string;
+  editorStepPublishLabel: string;
   emptyCollection: string;
   emptyEntries: string;
   enabledLabel: string;
@@ -412,6 +420,14 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     editModeDescription: t('epm.edit_mode_description'),
     editModeLabel: t('epm.edit_mode_label'),
     editSettingsDescription: t('epm.edit_settings_description'),
+    editorStepContentHint: t('epm.editor_step_content_hint'),
+    editorStepContentLabel: t('epm.editor_step_content_label'),
+    editorStepMediaHint: t('epm.editor_step_media_hint'),
+    editorStepMediaLabel: t('epm.editor_step_media_label'),
+    editorStepOrganizeHint: t('epm.editor_step_organize_hint'),
+    editorStepOrganizeLabel: t('epm.editor_step_organize_label'),
+    editorStepPublishHint: t('epm.editor_step_publish_hint'),
+    editorStepPublishLabel: t('epm.editor_step_publish_label'),
     emptyCollection: t('epm.empty_collection'),
     emptyEntries: t('epm.empty_entries'),
     enabledLabel: t('epm.enabled_label'),

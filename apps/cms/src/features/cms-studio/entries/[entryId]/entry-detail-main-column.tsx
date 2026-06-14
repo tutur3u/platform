@@ -34,6 +34,7 @@ import type { CmsStrings } from '../../cms-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
 import { EntryDetailMarkdownEditor } from './entry-detail-markdown-editor';
 import { ActionButton } from './entry-detail-shared';
+import type { EntryEditorStep } from './entry-detail-steps';
 import {
   type EntryDetailUploadProgressItem,
   EntryDetailUploadProgressList,
@@ -51,6 +52,7 @@ function getAssetCaption(asset: ExternalProjectStudioAsset | null | undefined) {
 }
 
 type EntryDetailMainColumnProps = {
+  activeStep?: EntryEditorStep;
   activeEntry: ExternalProjectEntry;
   assetCaptions: Record<string, string>;
   bodyMarkdown: string;
@@ -103,6 +105,7 @@ type EntryDetailMainColumnProps = {
 };
 
 export function EntryDetailMainColumn({
+  activeStep,
   activeEntry,
   assetCaptions,
   bodyMarkdown,
@@ -188,9 +191,12 @@ export function EntryDetailMainColumn({
     onMediaDrop(Array.from(event.dataTransfer.files));
   };
 
+  const showContent = !activeStep || activeStep === 'content';
+  const showMedia = !activeStep || activeStep === 'media';
+
   return (
     <div className="space-y-6">
-      {supportsWebglPackage ? (
+      {supportsWebglPackage && showMedia ? (
         <EntryDetailWebglPanel
           onUploadWebglClick={onUploadWebglClick}
           strings={strings}
@@ -202,7 +208,7 @@ export function EntryDetailMainColumn({
         />
       ) : null}
 
-      {supportsImageAssets ? (
+      {supportsImageAssets && showMedia ? (
         <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
           <CardContent className="space-y-6 p-6">
             <div className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-background/80">
@@ -337,35 +343,37 @@ export function EntryDetailMainColumn({
         </Card>
       ) : null}
 
-      <Card className="border-border/70 bg-card/95 shadow-none">
-        <CardHeader>
-          <CardTitle>{strings.summaryLabel}</CardTitle>
-          <CardDescription>
-            {strings.descriptionEditorDescription}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="entry-subtitle">{strings.subtitleLabel}</Label>
-            <Input
-              id="entry-subtitle"
-              className="h-11"
-              value={subtitle}
-              onChange={(event) => onSubtitleChange(event.target.value)}
+      {showContent ? (
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardHeader>
+            <CardTitle>{strings.summaryLabel}</CardTitle>
+            <CardDescription>
+              {strings.descriptionEditorDescription}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="entry-subtitle">{strings.subtitleLabel}</Label>
+              <Input
+                id="entry-subtitle"
+                className="h-11"
+                value={subtitle}
+                onChange={(event) => onSubtitleChange(event.target.value)}
+              />
+            </div>
+            <RichTextEditor
+              content={descriptionContent}
+              onChange={onDescriptionChange}
+              saveButtonLabel={strings.saveAction}
+              savedButtonLabel={strings.saveAction}
+              writePlaceholder={strings.previewEmptyDescription}
+              className="min-h-[280px] bg-background/70 px-4 pb-4 sm:px-5 sm:pb-5"
             />
-          </div>
-          <RichTextEditor
-            content={descriptionContent}
-            onChange={onDescriptionChange}
-            saveButtonLabel={strings.saveAction}
-            savedButtonLabel={strings.saveAction}
-            writePlaceholder={strings.previewEmptyDescription}
-            className="min-h-[280px] bg-background/70 px-4 pb-4 sm:px-5 sm:pb-5"
-          />
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : null}
 
-      {supportsMarkdownBody ? (
+      {supportsMarkdownBody && showContent ? (
         <Card className="border-border/70 bg-card/95 shadow-none">
           <CardHeader>
             <CardTitle>{strings.bodyMarkdownLabel}</CardTitle>
@@ -387,7 +395,7 @@ export function EntryDetailMainColumn({
         </Card>
       ) : null}
 
-      {supportsMediaUploads || mediaAssets.length > 0 ? (
+      {(supportsMediaUploads || mediaAssets.length > 0) && showMedia ? (
         <Card className="border-border/70 bg-card/95 shadow-none">
           <CardHeader className="gap-4">
             <div>
@@ -493,9 +501,6 @@ export function EntryDetailMainColumn({
                     {supportsMediaUploads
                       ? uploadMediaLabel
                       : strings.noMediaAssetsTitle}
-                  </div>
-                  <div className="mt-2 text-muted-foreground text-sm">
-                    {mediaGalleryDescription}
                   </div>
                 </button>
               )

@@ -145,28 +145,18 @@ export function EntryDetailTaxonomyCard({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-[1.1rem] border border-border/70 bg-card/40 p-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1">
-            <p className="font-medium text-sm">{strings.taxonomyTitle}</p>
-            <p className="text-muted-foreground text-xs leading-5">
-              {strings.taxonomyDescription}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary">
-              {configuredCategoryOptions.length} {strings.categoryLabel}
-            </Badge>
-            <Badge variant="secondary">
-              {configuredTagOptions.length} {strings.tagsLabel}
-            </Badge>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.1rem] border border-border/70 bg-card/40 p-3">
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="secondary">
+            {configuredCategoryOptions.length} {strings.categoryLabel}
+          </Badge>
+          <Badge variant="secondary">
+            {configuredTagOptions.length} {strings.tagsLabel}
+          </Badge>
         </div>
-        <div className="mt-3">
-          <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-muted-foreground text-xs">
-            {strings.taxonomySaveHint}
-          </span>
-        </div>
+        <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-muted-foreground text-xs">
+          {strings.taxonomySaveHint}
+        </span>
       </div>
 
       <div className="space-y-3 rounded-[1.1rem] border border-border/70 bg-background/60 p-3">

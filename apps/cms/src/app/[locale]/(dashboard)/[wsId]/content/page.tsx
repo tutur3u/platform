@@ -37,6 +37,7 @@ export default async function CmsLibraryPage({ params, searchParams }: Props) {
       cmsGamesEnabled={cmsGamesEnabled}
       collectionScope="library"
       headerDescription={t('epm.library_page_description')}
+      headerTitle={t('epm.nav_content')}
       initialEditSection="entries"
       initialEditorEntryId={
         typeof resolvedSearchParams.entryId === 'string'

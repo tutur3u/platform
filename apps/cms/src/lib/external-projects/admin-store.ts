@@ -265,6 +265,23 @@ export async function updateWorkspaceExternalProjectBinding({
     }
   }
 
+  // Dual-write the first-class binding table alongside the legacy secrets.
+  const { error: bindingError } = await admin
+    .from('workspace_external_project_bindings')
+    .upsert(
+      {
+        canonical_project_id: canonicalId,
+        is_enabled: Boolean(canonicalId),
+        updated_by: actorId,
+        ws_id: workspaceId,
+      },
+      { onConflict: 'ws_id' }
+    );
+
+  if (bindingError) {
+    throw new CmsExternalProjectAdminError(bindingError.message);
+  }
+
   const { error: auditError } = await admin
     .from('workspace_external_project_binding_audits')
     .insert({

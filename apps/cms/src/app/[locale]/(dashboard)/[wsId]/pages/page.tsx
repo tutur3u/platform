@@ -32,6 +32,7 @@ export default async function CmsLandingPage({ params, searchParams }: Props) {
       binding={access.binding}
       collectionScope="landing"
       headerDescription={t('epm.landing_page_description')}
+      headerTitle={t('epm.nav_pages')}
       initialEditSection="entries"
       initialEditorEntryId={
         typeof resolvedSearchParams.entryId === 'string'

@@ -2,9 +2,13 @@ import {
   Eye,
   FileText,
   Gamepad2,
+  ImageIcon,
   LayoutDashboard,
+  Package,
   PenSquare,
   ShieldUser,
+  Store,
+  Tags,
   Users,
 } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
@@ -46,20 +50,44 @@ export async function getNavigationLinks({
       matchExact: true,
     },
     {
-      title: t('external-projects.epm.landing_page_nav_title'),
-      href: `/${personalOrWsId}/landing`,
-      icon: <PenSquare className="h-4 w-4" />,
-      aliases: [`/${personalOrWsId}/landing`],
-    },
-    {
-      title: t('common.library'),
-      href: `/${personalOrWsId}/library`,
+      title: t('external-projects.epm.nav_content'),
+      href: `/${personalOrWsId}/content`,
       icon: <FileText className="h-4 w-4" />,
       aliases: [
-        `/${personalOrWsId}/library`,
-        `/${personalOrWsId}/library/entries`,
-        `/${personalOrWsId}/library/collections`,
+        `/${personalOrWsId}/content`,
+        `/${personalOrWsId}/content/entries`,
+        `/${personalOrWsId}/content/collections`,
       ],
+    },
+    {
+      title: t('external-projects.epm.nav_pages'),
+      href: `/${personalOrWsId}/pages`,
+      icon: <PenSquare className="h-4 w-4" />,
+      aliases: [`/${personalOrWsId}/pages`],
+    },
+    {
+      title: t('external-projects.epm.nav_media'),
+      href: `/${personalOrWsId}/media`,
+      icon: <ImageIcon className="h-4 w-4" />,
+      aliases: [`/${personalOrWsId}/media`],
+    },
+    {
+      title: t('external-projects.epm.nav_products'),
+      href: `/${personalOrWsId}/products`,
+      icon: <Package className="h-4 w-4" />,
+      aliases: [`/${personalOrWsId}/products`],
+    },
+    {
+      title: t('external-projects.epm.nav_storefront'),
+      href: `/${personalOrWsId}/storefront`,
+      icon: <Store className="h-4 w-4" />,
+      aliases: [`/${personalOrWsId}/storefront`],
+    },
+    {
+      title: t('external-projects.epm.nav_taxonomy'),
+      href: `/${personalOrWsId}/taxonomy`,
+      icon: <Tags className="h-4 w-4" />,
+      aliases: [`/${personalOrWsId}/taxonomy`],
     },
     cmsGamesEnabled
       ? {
@@ -76,7 +104,7 @@ export async function getNavigationLinks({
       aliases: [`/${personalOrWsId}/preview`],
     },
     {
-      title: t('common.members'),
+      title: t('external-projects.epm.nav_people'),
       href: `/${personalOrWsId}/members`,
       icon: <Users className="h-4 w-4" />,
       aliases: [`/${personalOrWsId}/members`],

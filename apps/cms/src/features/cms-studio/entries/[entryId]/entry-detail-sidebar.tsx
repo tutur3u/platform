@@ -19,6 +19,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import type { ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -35,12 +36,13 @@ import {
   type EntryFormState,
   type FeaturedEntryEditorConfig,
   type FeaturedPlacementConfig,
-  formatDateLabel,
-  formatStatus,
+  toDateTimeLocalValue,
 } from './entry-detail-shared';
+import type { EntryEditorStep } from './entry-detail-steps';
 import { EntryDetailTaxonomyCard } from './entry-detail-taxonomy-card';
 
 type EntryDetailSidebarProps = {
+  activeStep?: EntryEditorStep;
   activeCollectionDescription: string | null | undefined;
   activeCollectionSlug: string | null | undefined;
   activeCollectionTitle: string;
@@ -95,6 +97,7 @@ type EntryDetailSidebarProps = {
 };
 
 export function EntryDetailSidebar({
+  activeStep,
   activeCollectionDescription,
   activeCollectionSlug,
   activeCollectionTitle,
@@ -147,30 +150,26 @@ export function EntryDetailSidebar({
   taxonomyConfigDirty,
   taxonomyScopeLabel,
 }: EntryDetailSidebarProps) {
+  const showContent = !activeStep || activeStep === 'content';
+  const showOrganize = !activeStep || activeStep === 'organize';
+  const showPublish = !activeStep || activeStep === 'publish';
+
   return (
-    <div className="space-y-5 xl:sticky xl:top-28 xl:self-start">
-      <Card className="border-border/70 bg-card/95 shadow-none">
-        <CardHeader>
-          <CardTitle>{strings.detailsTitle}</CardTitle>
-          <CardDescription>{strings.editEntryDescription}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="entry-title">{strings.titleLabel}</Label>
-            <Input
-              id="entry-title"
-              className="h-11"
-              value={entryForm.title}
-              onChange={(event) => onTitleChange(event.target.value)}
-            />
-          </div>
-          <div className="grid gap-4">
+    <div className="space-y-5">
+      {showContent ? (
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardHeader>
+            <CardTitle>{strings.detailsTitle}</CardTitle>
+            <CardDescription>{strings.detailsDescription}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="entry-slug">{strings.slugLabel}</Label>
+              <Label htmlFor="entry-title">{strings.titleLabel}</Label>
               <Input
-                id="entry-slug"
-                value={entryForm.slug}
-                onChange={(event) => onSlugChange(event.target.value)}
+                id="entry-title"
+                className="h-11"
+                value={entryForm.title}
+                onChange={(event) => onTitleChange(event.target.value)}
               />
             </div>
             {supportsPairedVisual ? (
@@ -211,7 +210,17 @@ export function EntryDetailSidebar({
                 strings={strings}
               />
             ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
+      {showPublish ? (
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardHeader>
+            <CardTitle>{strings.editorStepPublishLabel}</CardTitle>
+            <CardDescription>{strings.editorStepPublishHint}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="entry-status">{strings.statusLabel}</Label>
               <Select
@@ -241,116 +250,120 @@ export function EntryDetailSidebar({
               <Label htmlFor="entry-scheduled-for">
                 {strings.scheduledForLabel}
               </Label>
-              <Input
-                id="entry-scheduled-for"
-                type="datetime-local"
-                value={entryForm.scheduledFor}
-                onChange={(event) => onScheduledForChange(event.target.value)}
+              <DateTimePicker
+                allowClear
+                date={
+                  entryForm.scheduledFor
+                    ? new Date(entryForm.scheduledFor)
+                    : undefined
+                }
+                setDate={(value) =>
+                  onScheduledForChange(
+                    value ? toDateTimeLocalValue(value.toISOString()) : ''
+                  )
+                }
+                showTimeSelect
               />
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="space-y-2">
+              <Label htmlFor="entry-slug">{strings.slugLabel}</Label>
+              <Input
+                id="entry-slug"
+                value={entryForm.slug}
+                onChange={(event) => onSlugChange(event.target.value)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <Card className="border-border/70 bg-card/95 shadow-none">
-        <CardHeader className="space-y-3">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle>{strings.taxonomyTitle}</CardTitle>
-              <CardDescription>{strings.taxonomyDescription}</CardDescription>
+      {showOrganize ? (
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardHeader className="space-y-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle>{strings.taxonomyTitle}</CardTitle>
+                <CardDescription>{strings.taxonomyDescription}</CardDescription>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {taxonomyScopeLabel ? (
+                  <Badge variant="outline">{taxonomyScopeLabel}</Badge>
+                ) : null}
+                {taxonomyConfigDirty ? (
+                  <Badge variant="secondary">
+                    {strings.taxonomyPendingSave}
+                  </Badge>
+                ) : null}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {taxonomyScopeLabel ? (
-                <Badge variant="outline">{taxonomyScopeLabel}</Badge>
-              ) : null}
-              {taxonomyConfigDirty ? (
-                <Badge variant="secondary">{strings.taxonomyPendingSave}</Badge>
-              ) : null}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <EntryDetailTaxonomyCard
-            categoryCreateOpen={categoryCreateOpen}
-            categoryDraft={categoryDraft}
-            categoryOptions={categoryOptions}
-            configuredCategoryOptions={configuredCategoryOptions}
-            configuredTagOptions={configuredTagOptions}
-            isTaxonomyConfigEditor={isTaxonomyConfigEditor}
-            onAddTags={onAddTags}
-            onApplyCategory={onApplyCategory}
-            onCategoryCreateOpenChange={onCategoryCreateOpenChange}
-            onCategoryDraftChange={onCategoryDraftChange}
-            onCategorySelectionChange={onCategorySelectionChange}
-            onClearCategories={onClearCategories}
-            onClearTags={onClearTags}
-            onRemoveCategory={onRemoveCategory}
-            onRemoveTag={onRemoveTag}
-            onTagCreateOpenChange={onTagCreateOpenChange}
-            onTagDraftChange={onTagDraftChange}
-            onTagSelectionChange={onTagSelectionChange}
-            selectedCategory={entryForm.category}
-            selectedTags={entryForm.tags}
-            strings={strings}
-            tagCreateOpen={tagCreateOpen}
-            tagDraft={tagDraft}
-            tagOptions={tagOptions}
-          />
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            <EntryDetailTaxonomyCard
+              categoryCreateOpen={categoryCreateOpen}
+              categoryDraft={categoryDraft}
+              categoryOptions={categoryOptions}
+              configuredCategoryOptions={configuredCategoryOptions}
+              configuredTagOptions={configuredTagOptions}
+              isTaxonomyConfigEditor={isTaxonomyConfigEditor}
+              onAddTags={onAddTags}
+              onApplyCategory={onApplyCategory}
+              onCategoryCreateOpenChange={onCategoryCreateOpenChange}
+              onCategoryDraftChange={onCategoryDraftChange}
+              onCategorySelectionChange={onCategorySelectionChange}
+              onClearCategories={onClearCategories}
+              onClearTags={onClearTags}
+              onRemoveCategory={onRemoveCategory}
+              onRemoveTag={onRemoveTag}
+              onTagCreateOpenChange={onTagCreateOpenChange}
+              onTagDraftChange={onTagDraftChange}
+              onTagSelectionChange={onTagSelectionChange}
+              selectedCategory={entryForm.category}
+              selectedTags={entryForm.tags}
+              strings={strings}
+              tagCreateOpen={tagCreateOpen}
+              tagDraft={tagDraft}
+              tagOptions={tagOptions}
+            />
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <Card className="border-border/70 bg-card/95 shadow-none">
-        <CardHeader>
-          <CardTitle>{strings.workspaceStatusTitle}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-3">
-            <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
-              <div className="text-muted-foreground text-xs">
-                {strings.collectionsLabel}
-              </div>
-              <div className="mt-2 font-medium text-lg">
-                {activeCollectionTitle}
-              </div>
-              <div className="mt-2 text-muted-foreground text-sm">
-                {activeCollectionDescription ||
-                  (activeCollectionSlug
-                    ? `${strings.slugLabel}: ${activeCollectionSlug}`
-                    : strings.unknownCollectionLabel)}
-              </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+      {showPublish ? (
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardHeader>
+            <CardTitle>{strings.workspaceStatusTitle}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-3">
               <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
                 <div className="text-muted-foreground text-xs">
-                  {strings.statusLabel}
+                  {strings.collectionsLabel}
                 </div>
-                <div className="mt-2 font-medium">
-                  {formatStatus(activeEntry.status, strings)}
+                <div className="mt-2 font-medium text-lg">
+                  {activeCollectionTitle}
+                </div>
+                <div className="mt-2 text-muted-foreground text-sm">
+                  {activeCollectionDescription ||
+                    (activeCollectionSlug
+                      ? `${strings.slugLabel}: ${activeCollectionSlug}`
+                      : strings.unknownCollectionLabel)}
                 </div>
               </div>
               <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
                 <div className="text-muted-foreground text-xs">
-                  {strings.scheduledForLabel}
+                  {strings.workspaceBindingLabel}
                 </div>
                 <div className="mt-2 font-medium">
-                  {formatDateLabel(activeEntry.scheduled_for, strings)}
+                  {binding.canonical_project?.display_name ??
+                    strings.unboundLabel}
                 </div>
               </div>
             </div>
-            <div className="rounded-[1.1rem] border border-border/70 bg-background/75 p-4">
-              <div className="text-muted-foreground text-xs">
-                {strings.workspaceBindingLabel}
-              </div>
-              <div className="mt-2 font-medium">
-                {binding.canonical_project?.display_name ??
-                  strings.unboundLabel}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : null}
 
-      {featuredPlacementConfig ? (
+      {showOrganize && featuredPlacementConfig ? (
         <EntryDetailFeaturedPlacementCard
           config={featuredPlacementConfig}
           createPending={createFeaturedPlacementConfigPending}
@@ -365,58 +378,60 @@ export function EntryDetailSidebar({
         />
       ) : null}
 
-      <Card className="border-border/70 bg-card/95 shadow-none">
-        <CardHeader>
-          <CardTitle>{strings.advancedDetailsTitle}</CardTitle>
-          <CardDescription>
-            {strings.advancedDetailsDescription}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="multiple" className="space-y-3">
-            <AccordionItem
-              value="metadata"
-              className="rounded-[1.1rem] border border-border/70 px-4"
-            >
-              <AccordionTrigger>{strings.metadataLabel}</AccordionTrigger>
-              <AccordionContent>
-                <pre className="overflow-x-auto rounded-xl border border-border/70 bg-background/80 p-3 text-xs leading-6">
-                  {JSON.stringify(activeEntry.metadata ?? {}, null, 2)}
-                </pre>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="profile-data"
-              className="rounded-[1.1rem] border border-border/70 px-4"
-            >
-              <AccordionTrigger>{strings.profileDataLabel}</AccordionTrigger>
-              <AccordionContent>
-                <pre className="overflow-x-auto rounded-xl border border-border/70 bg-background/80 p-3 text-xs leading-6">
-                  {JSON.stringify(activeEntry.profile_data ?? {}, null, 2)}
-                </pre>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="binding"
-              className="rounded-[1.1rem] border border-border/70 px-4"
-            >
-              <AccordionTrigger>
-                {strings.workspaceBindingLabel}
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-2 text-sm">
-                  <div className="rounded-xl border border-border/70 bg-background/75 px-3 py-2">
-                    {binding.canonical_id ?? strings.noCanonicalIdLabel}
+      {showPublish ? (
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardHeader>
+            <CardTitle>{strings.advancedDetailsTitle}</CardTitle>
+            <CardDescription>
+              {strings.advancedDetailsDescription}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="multiple" className="space-y-3">
+              <AccordionItem
+                value="metadata"
+                className="rounded-[1.1rem] border border-border/70 px-4"
+              >
+                <AccordionTrigger>{strings.metadataLabel}</AccordionTrigger>
+                <AccordionContent>
+                  <pre className="overflow-x-auto rounded-xl border border-border/70 bg-background/80 p-3 text-xs leading-6">
+                    {JSON.stringify(activeEntry.metadata ?? {}, null, 2)}
+                  </pre>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem
+                value="profile-data"
+                className="rounded-[1.1rem] border border-border/70 px-4"
+              >
+                <AccordionTrigger>{strings.profileDataLabel}</AccordionTrigger>
+                <AccordionContent>
+                  <pre className="overflow-x-auto rounded-xl border border-border/70 bg-background/80 p-3 text-xs leading-6">
+                    {JSON.stringify(activeEntry.profile_data ?? {}, null, 2)}
+                  </pre>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem
+                value="binding"
+                className="rounded-[1.1rem] border border-border/70 px-4"
+              >
+                <AccordionTrigger>
+                  {strings.workspaceBindingLabel}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="rounded-xl border border-border/70 bg-background/75 px-3 py-2">
+                      {binding.canonical_id ?? strings.noCanonicalIdLabel}
+                    </div>
+                    <div className="rounded-xl border border-border/70 bg-background/75 px-3 py-2">
+                      {binding.adapter ?? strings.noAdapterLabel}
+                    </div>
                   </div>
-                  <div className="rounded-xl border border-border/70 bg-background/75 px-3 py-2">
-                    {binding.adapter ?? strings.noAdapterLabel}
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </CardContent>
-      </Card>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

@@ -26,7 +26,7 @@ export default async function CmsGamesPage({ params, searchParams }: Props) {
   }
 
   if (!(await getCmsGamesEnabled(access.normalizedWorkspaceId))) {
-    redirect(`/${wsId}/library`);
+    redirect(`/${wsId}/content`);
   }
 
   const t = await getTranslations('external-projects');
@@ -38,6 +38,7 @@ export default async function CmsGamesPage({ params, searchParams }: Props) {
       cmsGamesEnabled
       collectionScope="games"
       headerDescription={t('epm.games_page_description')}
+      headerTitle={t('settings.cms_games_nav_title')}
       initialEditSection="entries"
       initialEditorEntryId={
         typeof resolvedSearchParams.entryId === 'string'

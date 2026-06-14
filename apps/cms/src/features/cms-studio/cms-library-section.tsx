@@ -307,47 +307,6 @@ export function CmsLibrarySection({
 
   return (
     <div className="space-y-4">
-      {surface === 'library' ? (
-        <section className="rounded-lg border border-border/70 bg-card/80 p-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <h2 className="font-semibold text-xl">
-                {strings.libraryOperationsTitle}
-              </h2>
-              <p className="mt-1 text-muted-foreground text-sm leading-6">
-                {strings.libraryOperationsDescription}
-              </p>
-            </div>
-            <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
-              <div className="rounded-md border border-border/70 bg-background/70 px-3 py-2">
-                <div className="font-semibold tabular-nums">
-                  {counts.entries}
-                </div>
-                <div className="text-muted-foreground text-xs">
-                  {strings.entriesMetricLabel}
-                </div>
-              </div>
-              <div className="rounded-md border border-border/70 bg-background/70 px-3 py-2">
-                <div className="font-semibold tabular-nums">
-                  {counts.published}
-                </div>
-                <div className="text-muted-foreground text-xs">
-                  {strings.statusPublished}
-                </div>
-              </div>
-              <div className="rounded-md border border-border/70 bg-background/70 px-3 py-2">
-                <div className="font-semibold tabular-nums">
-                  {counts.drafts + counts.scheduled}
-                </div>
-                <div className="text-muted-foreground text-xs">
-                  {strings.attentionTitle}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       <CmsLibraryCommandCenter
         activeCollection={activeCollection}
         availableEditSections={availableEditSections}

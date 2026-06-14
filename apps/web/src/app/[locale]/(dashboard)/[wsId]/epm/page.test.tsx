@@ -14,7 +14,7 @@ vi.mock('@/lib/cms-url', () => ({
 describe('epm page', () => {
   it('redirects to the CMS library route', async () => {
     getCmsUrlMock.mockReturnValueOnce(
-      'https://cms.tuturuuu.com/workspace-123/library'
+      'https://cms.tuturuuu.com/workspace-123/content'
     );
 
     const Page = (await import('./page')).default;
@@ -23,9 +23,9 @@ describe('epm page', () => {
       params: Promise.resolve({ wsId: 'workspace-123' }),
     });
 
-    expect(getCmsUrlMock).toHaveBeenCalledWith('/workspace-123/library');
+    expect(getCmsUrlMock).toHaveBeenCalledWith('/workspace-123/content');
     expect(redirectMock).toHaveBeenCalledWith(
-      'https://cms.tuturuuu.com/workspace-123/library'
+      'https://cms.tuturuuu.com/workspace-123/content'
     );
   });
 });

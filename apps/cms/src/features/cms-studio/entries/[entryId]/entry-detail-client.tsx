@@ -34,7 +34,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  type CmsSupportedEntryAssetType,
   getCollectionFieldDefinitions,
   getSupportedAssetTypesFromSchema,
   supportsMarkdownBodyFromSchema,
@@ -54,6 +53,26 @@ import { useCmsLivePreview } from '../../use-cms-live-preview';
 import { getCmsStudioQueryKey, useCmsStudio } from '../../use-cms-studio';
 import { EntryDetailConfirmDialogs } from './entry-detail-confirm-dialogs';
 import { EntryDetailHeader } from './entry-detail-header';
+import {
+  areStringArraysEqual,
+  asProfileDataRecord,
+  clampUploadPercent,
+  dedupeStrings,
+  getCmsPublicWebglPlayerPath,
+  getFeaturedProfileSlugs,
+  getMediaInputAccept,
+  getUploadProgressId,
+  mergeAssetCaptionMetadata,
+  mergeFeaturedProfileData,
+  mergeSchemaFieldValues,
+  mergeTaxonomyOptions,
+  normalizeEntryCategory,
+  normalizeEntryTags,
+  normalizeTaxonomyOptions,
+  parseTaxonomyDraft,
+  resolveUploadAssetType,
+  stableStringify,
+} from './entry-detail-helpers';
 import { EntryDetailLoadingState } from './entry-detail-loading-state';
 import { EntryDetailMainColumn } from './entry-detail-main-column';
 import { EntryDetailPreviewSheet } from './entry-detail-preview-sheet';
@@ -72,262 +91,13 @@ import {
   toStudioAsset,
 } from './entry-detail-shared';
 import { EntryDetailSidebar } from './entry-detail-sidebar';
+import {
+  EntryDetailStepNav,
+  EntryDetailSteps,
+  type EntryEditorStep,
+} from './entry-detail-steps';
 import { EntryDetailUploadInputs } from './entry-detail-upload-inputs';
 import type { EntryDetailUploadProgressItem } from './entry-detail-upload-progress';
-
-function getUploadProgressId(
-  scope: EntryDetailUploadProgressItem['scope'],
-  file: File,
-  index = 0
-) {
-  return `${scope}:${file.name}:${file.size}:${file.lastModified}:${index}`;
-}
-
-function clampUploadPercent(value: number) {
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-const AUDIO_UPLOAD_MIME_TYPES = [
-  'audio/aac',
-  'audio/flac',
-  'audio/m4a',
-  'audio/mp4',
-  'audio/mpeg',
-  'audio/ogg',
-  'audio/wav',
-  'audio/webm',
-  'audio/x-m4a',
-  'audio/x-wav',
-];
-
-const AUDIO_UPLOAD_EXTENSIONS = [
-  '.aac',
-  '.flac',
-  '.m4a',
-  '.mp3',
-  '.mp4',
-  '.oga',
-  '.ogg',
-  '.wav',
-  '.webm',
-];
-
-function getFilenameExtension(filename: string) {
-  const normalized = filename.toLowerCase();
-  const index = normalized.lastIndexOf('.');
-  return index === -1 ? '' : normalized.slice(index);
-}
-
-function getMediaInputAccept(assetTypes: CmsSupportedEntryAssetType[]) {
-  const accept = new Set<string>();
-
-  if (assetTypes.includes('image')) {
-    accept.add('image/*');
-  }
-
-  if (assetTypes.includes('audio')) {
-    AUDIO_UPLOAD_MIME_TYPES.forEach((type) => {
-      accept.add(type);
-    });
-    AUDIO_UPLOAD_EXTENSIONS.forEach((extension) => {
-      accept.add(extension);
-    });
-  }
-
-  return [...accept].join(',');
-}
-
-function resolveUploadAssetType(
-  file: File,
-  supportedAssetTypes: CmsSupportedEntryAssetType[]
-): CmsSupportedEntryAssetType | null {
-  const extension = getFilenameExtension(file.name);
-
-  if (
-    supportedAssetTypes.includes('image') &&
-    (file.type.startsWith('image/') ||
-      ['.avif', '.gif', '.jpeg', '.jpg', '.png', '.svg', '.webp'].includes(
-        extension
-      ))
-  ) {
-    return 'image';
-  }
-
-  if (
-    supportedAssetTypes.includes('audio') &&
-    (file.type.startsWith('audio/') ||
-      AUDIO_UPLOAD_EXTENSIONS.includes(extension))
-  ) {
-    return 'audio';
-  }
-
-  return supportedAssetTypes.length === 1
-    ? (supportedAssetTypes[0] ?? null)
-    : null;
-}
-
-function getCmsPublicWebglPlayerPath(
-  pathname: string,
-  input: {
-    assetId: string;
-    workspaceId: string;
-  }
-) {
-  const [firstSegment] = pathname.split('/').filter(Boolean);
-  const localePrefix =
-    firstSegment === 'en' || firstSegment === 'vi' ? `/${firstSegment}` : '';
-
-  return `${localePrefix}/play/${input.workspaceId}/webgl/${input.assetId}`;
-}
-
-function mergeAssetCaptionMetadata(
-  asset: ExternalProjectStudioAsset,
-  caption: string
-): Json {
-  const nextMetadata =
-    asset.metadata &&
-    typeof asset.metadata === 'object' &&
-    !Array.isArray(asset.metadata)
-      ? { ...(asset.metadata as Record<string, unknown>) }
-      : {};
-
-  if (caption.trim()) {
-    nextMetadata.caption = caption.trim();
-  } else {
-    delete nextMetadata.caption;
-  }
-
-  return nextMetadata as Json;
-}
-
-function asProfileDataRecord(
-  value: ExternalProjectEntry['profile_data'] | null | undefined
-) {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function asStringArray(value: unknown) {
-  return Array.isArray(value)
-    ? value
-        .filter((item): item is string => typeof item === 'string')
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0)
-    : [];
-}
-
-function dedupeStrings(values: string[]) {
-  return [...new Set(values)];
-}
-
-function normalizeEntryCategory(value: unknown) {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function normalizeEntryTags(value: unknown) {
-  return dedupeStrings(asStringArray(value));
-}
-
-function normalizeTaxonomyOptions(value: unknown) {
-  return dedupeStrings(
-    asStringArray(value)
-      .map((item) => item.trim())
-      .filter(Boolean)
-  );
-}
-
-function mergeTaxonomyOptions(current: string[], additions: string[]) {
-  return dedupeStrings([
-    ...current,
-    ...additions.map((value) => value.trim()).filter(Boolean),
-  ]);
-}
-
-function parseTaxonomyDraft(value: string) {
-  return dedupeStrings(
-    value
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean)
-  );
-}
-
-function areStringArraysEqual(left: string[], right: string[]) {
-  return (
-    left.length === right.length &&
-    left.every((value, index) => value === right[index])
-  );
-}
-
-function stableStringify(value: unknown): string {
-  if (Array.isArray(value)) {
-    return `[${value.map(stableStringify).join(',')}]`;
-  }
-
-  if (value && typeof value === 'object') {
-    return `{${Object.entries(value as Record<string, unknown>)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`)
-      .join(',')}}`;
-  }
-
-  return JSON.stringify(value);
-}
-
-function mergeSchemaFieldValues(
-  base: Record<string, unknown>,
-  schemaValues: Record<string, unknown>,
-  definitions: ReturnType<typeof getCollectionFieldDefinitions>,
-  scope: 'metadata' | 'profile_data'
-) {
-  const next = { ...base };
-
-  for (const definition of definitions) {
-    if (definition.field_scope !== scope) {
-      continue;
-    }
-
-    if (Object.hasOwn(schemaValues, definition.key)) {
-      next[definition.key] = schemaValues[definition.key];
-    } else {
-      delete next[definition.key];
-    }
-  }
-
-  return next;
-}
-
-function getFeaturedProfileSlugs(
-  profileData: Record<string, unknown>,
-  keys: string[]
-) {
-  return dedupeStrings(keys.flatMap((key) => asStringArray(profileData[key])));
-}
-
-function mergeFeaturedProfileData({
-  featuredKey,
-  nextSlugs,
-  profileData,
-  resetKeys,
-}: {
-  featuredKey: string;
-  nextSlugs: string[];
-  profileData: Record<string, unknown>;
-  resetKeys: string[];
-}) {
-  const nextProfileData = { ...profileData };
-
-  for (const key of resetKeys) {
-    delete nextProfileData[key];
-  }
-
-  if (nextSlugs.length > 0) {
-    nextProfileData[featuredKey] = nextSlugs;
-  }
-
-  return nextProfileData;
-}
 
 export function EntryDetailClient({
   binding,
@@ -372,6 +142,7 @@ export function EntryDetailClient({
   const fieldDefinitions =
     studio?.fieldDefinitions ?? initialStudio?.fieldDefinitions ?? [];
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [activeStep, setActiveStep] = useState<EntryEditorStep>('content');
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
   const [deleteEntryDialogOpen, setDeleteEntryDialogOpen] = useState(false);
   const [deleteMediaDialogOpen, setDeleteMediaDialogOpen] = useState(false);
@@ -440,7 +211,7 @@ export function EntryDetailClient({
       isGameLikeCollection(activeCollection)
   );
   const webglPackagePlayerPath = webglPackageAsset
-    ? `${getCmsWorkspaceBasePath(pathname)}/library/entries/${entryId}/webgl/${webglPackageAsset.id}`
+    ? `${getCmsWorkspaceBasePath(pathname)}/content/entries/${entryId}/webgl/${webglPackageAsset.id}`
     : null;
   const webglPackagePublicPlayerPath =
     webglPackageAsset && activeEntry?.status === 'published'
@@ -2124,78 +1895,85 @@ export function EntryDetailClient({
         variant={variant}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="space-y-6">
-          <EntryDetailMainColumn
-            activeEntry={activeEntry}
-            assetCaptions={assetCaptions}
-            bodyMarkdown={bodyMarkdown}
-            bodyMarkdownLabel={strings.bodyMarkdownLabel}
-            bodyMarkdownPlaceholder={strings.previewEmptyDescription}
-            bodyMarkdownWriteLabel={strings.markdownWriteLabel}
-            coverAltText={coverAltText}
-            coverAsset={coverAsset}
-            coverDirty={coverDirty}
-            deleteAssetsPending={deleteAssetsMutation.isPending}
-            descriptionContent={descriptionContent}
-            mediaAssetTypes={supportedAssetTypes}
-            mediaAssets={mediaAssets}
-            mediaProcessing={mediaProcessing}
-            onBodyMarkdownChange={setBodyMarkdown}
-            onCaptionChange={(assetId, value) =>
-              setAssetCaptions((current) => ({
-                ...current,
-                [assetId]: value,
-              }))
-            }
-            onCoverAltTextChange={setCoverAltText}
-            onCoverInputClick={() => coverInputRef.current?.click()}
-            onDeleteSelectedMedia={() => setDeleteMediaDialogOpen(true)}
-            onDeleteSingleAsset={deleteSingleAsset}
-            onDescriptionChange={setDescriptionContent}
-            onMediaDrop={handleMediaFiles}
-            onMoveMediaAsset={(assetId, direction) =>
-              moveMediaAssetMutation.mutate({ assetId, direction })
-            }
-            onOpenPreview={() => setPreviewOpen(true)}
-            onSaveAssetCaption={(assetId) =>
-              saveAssetCaptionMutation.mutate(assetId)
-            }
-            onSaveCover={() => saveCoverMutation.mutate()}
-            onSelectAllMedia={() =>
-              setSelectedAssetIds((current) =>
-                current.length === mediaAssets.length
-                  ? []
-                  : mediaAssets.map((asset) => asset.id)
-              )
-            }
-            onSetAsCover={(assetId) => setAsCoverMutation.mutate(assetId)}
-            onSubtitleChange={(value) =>
-              setEntryForm((current) =>
-                current ? { ...current, subtitle: value } : current
-              )
-            }
-            onToggleAssetSelection={toggleAssetSelection}
-            onUploadMediaClick={() => mediaInputRef.current?.click()}
-            onUploadWebglClick={() => webglInputRef.current?.click()}
-            saveAssetCaptionPending={saveAssetCaptionMutation.isPending}
-            saveCoverPending={saveCoverMutation.isPending}
-            selectedAssetCount={selectedAssetCount}
-            selectedAssetIds={selectedAssetIds}
-            setAsCoverPending={setAsCoverMutation.isPending}
-            moveMediaPending={moveMediaAssetMutation.isPending}
-            strings={strings}
-            subtitle={entryForm.subtitle}
-            supportsMarkdownBody={supportsMarkdownBody}
-            supportsWebglPackage={supportsWebglPackage}
-            uploadCoverPending={uploadCoverMutation.isPending}
-            uploadMediaPending={uploadMediaMutation.isPending}
-            uploadProgressItems={uploadProgressItems}
-            uploadWebglPending={uploadWebglPackageMutation.isPending}
-            webglPackageAsset={webglPackageAsset}
-            webglPackagePlayerPath={webglPackagePlayerPath}
-            webglPackagePublicPlayerPath={webglPackagePublicPlayerPath}
-          />
+      <EntryDetailSteps
+        activeStep={activeStep}
+        onStepChange={setActiveStep}
+        strings={strings}
+      />
+
+      <div className="mx-auto w-full max-w-3xl space-y-6">
+        <EntryDetailMainColumn
+          activeStep={activeStep}
+          activeEntry={activeEntry}
+          assetCaptions={assetCaptions}
+          bodyMarkdown={bodyMarkdown}
+          bodyMarkdownLabel={strings.bodyMarkdownLabel}
+          bodyMarkdownPlaceholder={strings.previewEmptyDescription}
+          bodyMarkdownWriteLabel={strings.markdownWriteLabel}
+          coverAltText={coverAltText}
+          coverAsset={coverAsset}
+          coverDirty={coverDirty}
+          deleteAssetsPending={deleteAssetsMutation.isPending}
+          descriptionContent={descriptionContent}
+          mediaAssetTypes={supportedAssetTypes}
+          mediaAssets={mediaAssets}
+          mediaProcessing={mediaProcessing}
+          onBodyMarkdownChange={setBodyMarkdown}
+          onCaptionChange={(assetId, value) =>
+            setAssetCaptions((current) => ({
+              ...current,
+              [assetId]: value,
+            }))
+          }
+          onCoverAltTextChange={setCoverAltText}
+          onCoverInputClick={() => coverInputRef.current?.click()}
+          onDeleteSelectedMedia={() => setDeleteMediaDialogOpen(true)}
+          onDeleteSingleAsset={deleteSingleAsset}
+          onDescriptionChange={setDescriptionContent}
+          onMediaDrop={handleMediaFiles}
+          onMoveMediaAsset={(assetId, direction) =>
+            moveMediaAssetMutation.mutate({ assetId, direction })
+          }
+          onOpenPreview={() => setPreviewOpen(true)}
+          onSaveAssetCaption={(assetId) =>
+            saveAssetCaptionMutation.mutate(assetId)
+          }
+          onSaveCover={() => saveCoverMutation.mutate()}
+          onSelectAllMedia={() =>
+            setSelectedAssetIds((current) =>
+              current.length === mediaAssets.length
+                ? []
+                : mediaAssets.map((asset) => asset.id)
+            )
+          }
+          onSetAsCover={(assetId) => setAsCoverMutation.mutate(assetId)}
+          onSubtitleChange={(value) =>
+            setEntryForm((current) =>
+              current ? { ...current, subtitle: value } : current
+            )
+          }
+          onToggleAssetSelection={toggleAssetSelection}
+          onUploadMediaClick={() => mediaInputRef.current?.click()}
+          onUploadWebglClick={() => webglInputRef.current?.click()}
+          saveAssetCaptionPending={saveAssetCaptionMutation.isPending}
+          saveCoverPending={saveCoverMutation.isPending}
+          selectedAssetCount={selectedAssetCount}
+          selectedAssetIds={selectedAssetIds}
+          setAsCoverPending={setAsCoverMutation.isPending}
+          moveMediaPending={moveMediaAssetMutation.isPending}
+          strings={strings}
+          subtitle={entryForm.subtitle}
+          supportsMarkdownBody={supportsMarkdownBody}
+          supportsWebglPackage={supportsWebglPackage}
+          uploadCoverPending={uploadCoverMutation.isPending}
+          uploadMediaPending={uploadMediaMutation.isPending}
+          uploadProgressItems={uploadProgressItems}
+          uploadWebglPending={uploadWebglPackageMutation.isPending}
+          webglPackageAsset={webglPackageAsset}
+          webglPackagePlayerPath={webglPackagePlayerPath}
+          webglPackagePublicPlayerPath={webglPackagePublicPlayerPath}
+        />
+        {activeStep === 'content' ? (
           <EntryDetailSchemaFieldsCard
             fieldDefinitions={activeFieldDefinitions}
             metadata={schemaMetadata}
@@ -2204,9 +1982,10 @@ export function EntryDetailClient({
             profileData={schemaProfileData}
             strings={strings}
           />
-        </div>
+        ) : null}
 
         <EntryDetailSidebar
+          activeStep={activeStep}
           activeCollectionDescription={activeCollection?.description}
           activeCollectionSlug={activeCollection?.slug}
           activeCollectionTitle={collectionTitle}
@@ -2310,6 +2089,12 @@ export function EntryDetailClient({
           tagOptions={tagOptions}
           taxonomyConfigDirty={taxonomyConfigDirty}
           taxonomyScopeLabel={taxonomySectionConfig?.sectionTitle ?? null}
+        />
+
+        <EntryDetailStepNav
+          activeStep={activeStep}
+          onStepChange={setActiveStep}
+          strings={strings}
         />
       </div>
 

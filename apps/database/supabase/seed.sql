@@ -419,6 +419,10 @@ values
         '00000000-0000-0000-0000-000000000002'
     ),
     (
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000002'
+    ),
+    (
         '00000000-0000-0000-0000-000000000003',
         '00000000-0000-0000-0000-000000000003'
     ),
@@ -3426,3 +3430,302 @@ VALUES
         NULL,
         NOW() - INTERVAL '3 days' - INTERVAL '220 minutes'
     );
+
+-- ============================================================================
+-- CMS (external projects) demo content
+-- Binds "Prototype General" (ws 0002) to a canonical project and seeds a Blog
+-- Posts section with a few entries so the CMS is usable right after a reset.
+-- Sign in as local@tuturuuu.com (root admin + member of ws 0002) and open
+-- https://cms.tuturuuu.localhost/en/00000000-0000-0000-0000-000000000002/library
+-- ============================================================================
+insert into
+    public.canonical_external_projects (
+        id,
+        display_name,
+        adapter,
+        allowed_collections,
+        allowed_features,
+        delivery_profile,
+        metadata,
+        is_active,
+        created_by,
+        updated_by
+    )
+values
+    (
+        'junly-main',
+        'Junly',
+        'junly',
+        '{}',
+        '{}',
+        '{}'::jsonb,
+        '{}'::jsonb,
+        true,
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000001'
+    );
+
+-- Binding: legacy secrets (delivery reads these) + first-class binding table.
+insert into
+    public.workspace_secrets (ws_id, name, value)
+values
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'EXTERNAL_PROJECT_ENABLED',
+        'true'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'EXTERNAL_PROJECT_CANONICAL_ID',
+        'junly-main'
+    );
+
+insert into
+    public.workspace_external_project_bindings (
+        ws_id,
+        canonical_project_id,
+        is_enabled,
+        created_by,
+        updated_by
+    )
+values
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'junly-main',
+        true,
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000001'
+    );
+
+insert into
+    public.workspace_external_project_collections (
+        id,
+        ws_id,
+        slug,
+        title,
+        collection_type,
+        description,
+        config,
+        is_enabled,
+        created_by,
+        updated_by
+    )
+values
+    (
+        'b2222222-2222-4222-8222-222222222222',
+        '00000000-0000-0000-0000-000000000002',
+        'blog',
+        'Blog Posts',
+        'article',
+        'Studio notes and announcements',
+        '{}'::jsonb,
+        true,
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000001'
+    );
+
+-- Entries (the trigger backfills taxonomy assignments from profile_data).
+insert into
+    public.workspace_external_project_entries (
+        ws_id,
+        collection_id,
+        slug,
+        title,
+        subtitle,
+        summary,
+        status,
+        profile_data,
+        metadata,
+        created_by,
+        updated_by
+    )
+values
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'b2222222-2222-4222-8222-222222222222',
+        'welcome-to-the-studio',
+        'Welcome to the Studio',
+        'Our first post',
+        'A short intro to what we publish here.',
+        'published',
+        '{"category": "News", "tags": ["announcement", "welcome"]}'::jsonb,
+        '{}'::jsonb,
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000001'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'b2222222-2222-4222-8222-222222222222',
+        'behind-the-scenes',
+        'Behind the Scenes',
+        NULL,
+        'A draft work-in-progress post.',
+        'draft',
+        '{"category": "Studio", "tags": ["process"]}'::jsonb,
+        '{}'::jsonb,
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000001'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'b2222222-2222-4222-8222-222222222222',
+        'release-notes-v1',
+        'Release Notes v1',
+        NULL,
+        'What shipped this week.',
+        'published',
+        '{"category": "News", "tags": ["release", "changelog"]}'::jsonb,
+        '{}'::jsonb,
+        '00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000001'
+    );
+
+-- CMS commerce demo: finance invoices (orders) on Prototype General (ws 0002,
+-- Wallet 3) so the CMS dashboard "Revenue snapshot" finance integration lights up.
+insert into
+    public.transaction_categories (id, ws_id, name, is_expense)
+values
+    (
+        'c0ffee00-0000-4000-8000-000000000002',
+        '00000000-0000-0000-0000-000000000002',
+        'Sales',
+        false
+    )
+on conflict (id) do nothing;
+
+insert into
+    public.finance_invoices (
+        id,
+        ws_id,
+        wallet_id,
+        category_id,
+        price,
+        total_diff,
+        paid_amount,
+        completed_at,
+        created_at
+    )
+values
+    (
+        'd0d0d0d0-0000-4000-8000-000000000001',
+        '00000000-0000-0000-0000-000000000002',
+        '00000000-0000-0000-0000-000000000003',
+        'c0ffee00-0000-4000-8000-000000000002',
+        250000,
+        0,
+        250000,
+        now(),
+        now()
+    ),
+    (
+        'd0d0d0d0-0000-4000-8000-000000000002',
+        '00000000-0000-0000-0000-000000000002',
+        '00000000-0000-0000-0000-000000000003',
+        'c0ffee00-0000-4000-8000-000000000002',
+        180000,
+        0,
+        180000,
+        now(),
+        now()
+    )
+on conflict (id) do nothing;
+
+-- CMS inventory demo: a small product catalog on Prototype General (ws 0002) so
+-- the CMS "Products" surface (inventory integration) shows real stock + pricing.
+insert into private.inventory_units (id, ws_id, name)
+values
+    (
+        'a0000000-0000-4000-8000-000000000001',
+        '00000000-0000-0000-0000-000000000002',
+        'Piece'
+    )
+on conflict (id) do nothing;
+
+insert into private.inventory_warehouses (id, ws_id, name)
+values
+    (
+        'a0000000-0000-4000-8000-000000000002',
+        '00000000-0000-0000-0000-000000000002',
+        'Main warehouse'
+    )
+on conflict (id) do nothing;
+
+insert into private.inventory_owners (id, ws_id, name)
+values
+    (
+        'a0000000-0000-4000-8000-000000000004',
+        '00000000-0000-0000-0000-000000000002',
+        'Studio'
+    )
+on conflict (id) do nothing;
+
+insert into public.product_categories (id, ws_id, name)
+values
+    (
+        'a0000000-0000-4000-8000-000000000003',
+        '00000000-0000-0000-0000-000000000002',
+        'Apparel'
+    )
+on conflict (id) do nothing;
+
+insert into
+    public.workspace_products (id, ws_id, name, category_id, owner_id)
+values
+    (
+        'a1000000-0000-4000-8000-000000000001',
+        '00000000-0000-0000-0000-000000000002',
+        'Studio Hoodie',
+        'a0000000-0000-4000-8000-000000000003',
+        'a0000000-0000-4000-8000-000000000004'
+    ),
+    (
+        'a1000000-0000-4000-8000-000000000002',
+        '00000000-0000-0000-0000-000000000002',
+        'Logo Mug',
+        'a0000000-0000-4000-8000-000000000003',
+        'a0000000-0000-4000-8000-000000000004'
+    ),
+    (
+        'a1000000-0000-4000-8000-000000000003',
+        '00000000-0000-0000-0000-000000000002',
+        'Sticker Pack',
+        'a0000000-0000-4000-8000-000000000003',
+        'a0000000-0000-4000-8000-000000000004'
+    )
+on conflict (id) do nothing;
+
+insert into
+    private.inventory_products (
+        product_id,
+        unit_id,
+        warehouse_id,
+        amount,
+        price,
+        min_amount
+    )
+values
+    (
+        'a1000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000002',
+        42,
+        350000,
+        0
+    ),
+    (
+        'a1000000-0000-4000-8000-000000000002',
+        'a0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000002',
+        0,
+        90000,
+        0
+    ),
+    (
+        'a1000000-0000-4000-8000-000000000003',
+        'a0000000-0000-4000-8000-000000000001',
+        'a0000000-0000-4000-8000-000000000002',
+        120,
+        25000,
+        0
+    )
+on conflict do nothing;

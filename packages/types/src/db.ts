@@ -766,6 +766,20 @@ export type ExternalProjectPublishEvent =
   Tables<'workspace_external_project_publish_events'>;
 export type WorkspaceExternalProjectBindingAudit =
   Tables<'workspace_external_project_binding_audits'>;
+
+// --- Additive CMS tables (introduced by the CMS redesign migrations) ---------
+// Tables added by migrations 20260614160600/160700/160800, now present in the
+// generated `Database` after `bun sb:typegen`.
+export type ExternalProjectTaxonomyAssignmentKind =
+  Database['public']['Enums']['external_project_taxonomy_assignment_kind'];
+export type WorkspaceExternalProjectBindingRow =
+  Tables<'workspace_external_project_bindings'>;
+export type ExternalProjectEntryTaxonomyAssignment =
+  Tables<'workspace_external_project_entry_taxonomy_assignments'>;
+export type ExternalProjectEntryPlacement =
+  Tables<'workspace_external_project_entry_placements'>;
+// --- end additive CMS tables -------------------------------------------------
+
 export type ExternalProjectAdapterKind =
   Database['public']['Enums']['external_project_adapter_kind'];
 export type ExternalProjectEntryStatus =

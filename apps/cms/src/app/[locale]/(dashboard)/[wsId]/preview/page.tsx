@@ -28,6 +28,7 @@ export default async function CmsPreviewPage({ params }: Props) {
     <CmsStudioClient
       binding={access.binding}
       headerDescription={t('epm.preview_page_description')}
+      headerTitle={t('epm.preview_mode_label')}
       initialMode="preview"
       showModeSwitch={false}
       strings={buildCmsStrings(t)}

@@ -3340,6 +3340,157 @@ export type Database = {
           },
         ];
       };
+      inventory_cost_profiles: {
+        Row: {
+          category_id: string | null;
+          created_at: string | null;
+          currency: string;
+          id: string;
+          metadata: Json;
+          name: string;
+          notes: string | null;
+          product_id: string | null;
+          status: string;
+          target_retail_price: number;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          category_id?: string | null;
+          created_at?: string | null;
+          currency?: string;
+          id?: string;
+          metadata?: Json;
+          name: string;
+          notes?: string | null;
+          product_id?: string | null;
+          status?: string;
+          target_retail_price?: number;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          category_id?: string | null;
+          created_at?: string | null;
+          currency?: string;
+          id?: string;
+          metadata?: Json;
+          name?: string;
+          notes?: string | null;
+          product_id?: string | null;
+          status?: string;
+          target_retail_price?: number;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_cost_profit_shares: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          metadata: Json;
+          profile_id: string;
+          recipient_label: string;
+          share_percentage: number;
+          sort_order: number;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          metadata?: Json;
+          profile_id: string;
+          recipient_label: string;
+          share_percentage?: number;
+          sort_order?: number;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          metadata?: Json;
+          profile_id?: string;
+          recipient_label?: string;
+          share_percentage?: number;
+          sort_order?: number;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_cost_profit_shares_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_cost_profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_cost_scenarios: {
+        Row: {
+          art_commission_cost: number;
+          batch_size: number;
+          created_at: string | null;
+          id: string;
+          manufacturing_cost_per_unit: number;
+          metadata: Json;
+          name: string;
+          other_cost_per_unit: number;
+          packaging_cost_per_unit: number;
+          profile_id: string;
+          shipping_cost: number;
+          sort_order: number;
+          tariff_cost: number;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          art_commission_cost?: number;
+          batch_size: number;
+          created_at?: string | null;
+          id?: string;
+          manufacturing_cost_per_unit?: number;
+          metadata?: Json;
+          name: string;
+          other_cost_per_unit?: number;
+          packaging_cost_per_unit?: number;
+          profile_id: string;
+          shipping_cost?: number;
+          sort_order?: number;
+          tariff_cost?: number;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          art_commission_cost?: number;
+          batch_size?: number;
+          created_at?: string | null;
+          id?: string;
+          manufacturing_cost_per_unit?: number;
+          metadata?: Json;
+          name?: string;
+          other_cost_per_unit?: number;
+          packaging_cost_per_unit?: number;
+          profile_id?: string;
+          shipping_cost?: number;
+          sort_order?: number;
+          tariff_cost?: number;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_cost_scenarios_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_cost_profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_manufacturers: {
         Row: {
           created_at: string;
@@ -3742,45 +3893,63 @@ export type Database = {
       inventory_storefronts: {
         Row: {
           accent_color: string | null;
+          checkout_mode: string;
+          corner_style: string;
           created_at: string | null;
           currency: string;
           description: string | null;
           hero_image_url: string | null;
           id: string;
+          layout_style: string;
           metadata: Json;
           name: string;
+          show_inventory_badges: boolean;
           slug: string;
           status: string;
+          surface_style: string;
+          theme_preset: string;
           updated_at: string | null;
           visibility: string;
           ws_id: string;
         };
         Insert: {
           accent_color?: string | null;
+          checkout_mode?: string;
+          corner_style?: string;
           created_at?: string | null;
           currency?: string;
           description?: string | null;
           hero_image_url?: string | null;
           id?: string;
+          layout_style?: string;
           metadata?: Json;
           name: string;
+          show_inventory_badges?: boolean;
           slug: string;
           status?: string;
+          surface_style?: string;
+          theme_preset?: string;
           updated_at?: string | null;
           visibility?: string;
           ws_id: string;
         };
         Update: {
           accent_color?: string | null;
+          checkout_mode?: string;
+          corner_style?: string;
           created_at?: string | null;
           currency?: string;
           description?: string | null;
           hero_image_url?: string | null;
           id?: string;
+          layout_style?: string;
           metadata?: Json;
           name?: string;
+          show_inventory_badges?: boolean;
           slug?: string;
           status?: string;
+          surface_style?: string;
+          theme_preset?: string;
           updated_at?: string | null;
           visibility?: string;
           ws_id?: string;
@@ -10193,6 +10362,18 @@ export type Database = {
         Args: { p_public_token: string };
         Returns: Json;
       };
+      get_inventory_cost_profile: {
+        Args: { p_profile_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      get_inventory_costing_analytics: {
+        Args: { p_ws_id: string };
+        Returns: Json;
+      };
+      get_inventory_dashboard_snapshot: {
+        Args: { p_ws_id: string };
+        Returns: Json;
+      };
       get_inventory_low_stock_products: {
         Args: { p_ws_id: string };
         Returns: {
@@ -10621,6 +10802,23 @@ export type Database = {
           undeliverable_count: number;
         }[];
       };
+      inventory_cost_profile_payload: {
+        Args: { p_profile_id: string };
+        Returns: Json;
+      };
+      inventory_cost_scenario_metrics: {
+        Args: {
+          p_art_commission_cost: number;
+          p_batch_size: number;
+          p_manufacturing_cost_per_unit: number;
+          p_other_cost_per_unit: number;
+          p_packaging_cost_per_unit: number;
+          p_shipping_cost: number;
+          p_target_retail_price: number;
+          p_tariff_cost: number;
+        };
+        Returns: Json;
+      };
       is_nova_user_email_in_team: {
         Args: { _team_id: string; _user_email: string };
         Returns: boolean;
@@ -10652,6 +10850,19 @@ export type Database = {
         };
         Returns: {
           checkout: Json;
+          total_count: number;
+        }[];
+      };
+      list_inventory_cost_profiles: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+          p_status?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          profile: Json;
           total_count: number;
         }[];
       };
@@ -25272,6 +25483,103 @@ export type Database = {
           },
         ];
       };
+      workspace_external_project_bindings: {
+        Row: {
+          canonical_project_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          is_enabled: boolean;
+          settings: Json;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          canonical_project_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          is_enabled?: boolean;
+          settings?: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          canonical_project_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          is_enabled?: boolean;
+          settings?: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_bindings_canonical_project_id_fkey';
+            columns: ['canonical_project_id'];
+            isOneToOne: false;
+            referencedRelation: 'canonical_external_projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_bindings_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_bindings_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_bindings_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_bindings_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_bindings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_bindings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_bindings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_bindings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_external_project_blocks: {
         Row: {
           block_type: string;
@@ -25619,6 +25927,89 @@ export type Database = {
           },
         ];
       };
+      workspace_external_project_entry_placements: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          entry_id: string;
+          id: string;
+          metadata: Json;
+          placement_key: string;
+          sort_order: number;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          entry_id: string;
+          id?: string;
+          metadata?: Json;
+          placement_key: string;
+          sort_order?: number;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          entry_id?: string;
+          id?: string;
+          metadata?: Json;
+          placement_key?: string;
+          sort_order?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_entry_placements_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_placements_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_placements_entry_id_fkey';
+            columns: ['entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_entries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_placements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_placements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_placements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_placements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_external_project_entry_relations: {
         Row: {
           created_at: string;
@@ -25685,6 +26076,99 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_external_project_entry_relations_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_external_project_entry_taxonomy_assignments: {
+        Row: {
+          assignment_type: Database['public']['Enums']['external_project_taxonomy_assignment_kind'];
+          created_at: string;
+          created_by: string | null;
+          entry_id: string;
+          id: string;
+          sort_order: number;
+          taxonomy_id: string | null;
+          value: string;
+          ws_id: string;
+        };
+        Insert: {
+          assignment_type: Database['public']['Enums']['external_project_taxonomy_assignment_kind'];
+          created_at?: string;
+          created_by?: string | null;
+          entry_id: string;
+          id?: string;
+          sort_order?: number;
+          taxonomy_id?: string | null;
+          value: string;
+          ws_id: string;
+        };
+        Update: {
+          assignment_type?: Database['public']['Enums']['external_project_taxonomy_assignment_kind'];
+          created_at?: string;
+          created_by?: string | null;
+          entry_id?: string;
+          id?: string;
+          sort_order?: number;
+          taxonomy_id?: string | null;
+          value?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_entry_taxonomy_assi_taxonomy_id_fkey';
+            columns: ['taxonomy_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_taxonomies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_taxonomy_assig_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_taxonomy_assig_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_taxonomy_assignm_entry_id_fkey';
+            columns: ['entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_entries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_taxonomy_assignment_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_taxonomy_assignment_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_taxonomy_assignment_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_taxonomy_assignment_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -34594,6 +35078,7 @@ export type Database = {
         | 'completed'
         | 'failed';
       external_project_publish_event_kind: 'publish' | 'preview' | 'unpublish';
+      external_project_taxonomy_assignment_kind: 'category' | 'tag';
       feature_flag:
         | 'ENABLE_AI'
         | 'ENABLE_EDUCATION'
@@ -36531,7 +37016,8 @@ export type Database = {
         | 'create_chat'
         | 'manage_chat'
         | 'moderate_chat'
-        | 'manage_infrastructure_stress_tests';
+        | 'manage_infrastructure_stress_tests'
+        | 'manage_mobile_deployment_vault';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -37321,6 +37807,7 @@ export const Constants = {
         'failed',
       ],
       external_project_publish_event_kind: ['publish', 'preview', 'unpublish'],
+      external_project_taxonomy_assignment_kind: ['category', 'tag'],
       feature_flag: [
         'ENABLE_AI',
         'ENABLE_EDUCATION',
@@ -39273,6 +39760,7 @@ export const Constants = {
         'manage_chat',
         'moderate_chat',
         'manage_infrastructure_stress_tests',
+        'manage_mobile_deployment_vault',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

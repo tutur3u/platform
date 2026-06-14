@@ -5,10 +5,10 @@ function stripTrailingSlash(path: string) {
 export function getCmsWorkspaceBasePath(pathname: string) {
   return stripTrailingSlash(
     pathname
-      .replace(/\/library\/entries\/[^/]+$/, '')
-      .replace(/\/library\/collections\/[^/]+$/, '')
-      .replace(/\/library$/, '')
-      .replace(/\/landing$/, '')
+      .replace(/\/content\/entries\/[^/]+$/, '')
+      .replace(/\/content\/collections\/[^/]+$/, '')
+      .replace(/\/content$/, '')
+      .replace(/\/pages$/, '')
       .replace(/\/games$/, '')
       .replace(/\/members$/, '')
       .replace(/\/preview$/, '')
@@ -18,7 +18,7 @@ export function getCmsWorkspaceBasePath(pathname: string) {
 }
 
 export function getCmsLibraryPath(pathname: string) {
-  return `${getCmsWorkspaceBasePath(pathname)}/library`;
+  return `${getCmsWorkspaceBasePath(pathname)}/content`;
 }
 
 function getCmsActiveContentPath(pathname: string) {
@@ -28,15 +28,15 @@ function getCmsActiveContentPath(pathname: string) {
     return `${getCmsWorkspaceBasePath(pathname)}/games`;
   }
 
-  if (/\/landing$/u.test(strippedPathname)) {
-    return `${getCmsWorkspaceBasePath(pathname)}/landing`;
+  if (/\/pages$/u.test(strippedPathname)) {
+    return `${getCmsWorkspaceBasePath(pathname)}/pages`;
   }
 
   return getCmsLibraryPath(pathname);
 }
 
 export function getCmsCollectionPath(pathname: string, collectionId: string) {
-  return `${getCmsWorkspaceBasePath(pathname)}/library/collections/${collectionId}`;
+  return `${getCmsWorkspaceBasePath(pathname)}/content/collections/${collectionId}`;
 }
 
 export function getCmsEntryPath(pathname: string, entryId: string) {

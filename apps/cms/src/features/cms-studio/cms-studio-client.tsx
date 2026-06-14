@@ -116,6 +116,7 @@ export function CmsStudioClient({
   cmsGamesEnabled = false,
   collectionScope = 'all',
   headerDescription,
+  headerTitle,
   initialEditSection = 'entries',
   initialEditorEntryId = null,
   initialMode = 'preview',
@@ -129,6 +130,7 @@ export function CmsStudioClient({
   cmsGamesEnabled?: boolean;
   collectionScope?: string;
   headerDescription?: string;
+  headerTitle?: string;
   initialEditSection?: EditSection;
   initialEditorEntryId?: string | null;
   initialMode?: CmsStudioMode;
@@ -1111,6 +1113,7 @@ export function CmsStudioClient({
         onEditCollection={openCollectionDetails}
         onImport={() => importMutation.mutate()}
         onModeChange={setMode}
+        title={headerTitle}
         onRefresh={() => {
           setPreviewRefreshToken((value) => value + 1);
           queryClient.invalidateQueries({

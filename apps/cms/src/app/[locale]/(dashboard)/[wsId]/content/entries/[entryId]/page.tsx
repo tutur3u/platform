@@ -19,5 +19,5 @@ export default async function CmsLibraryEntryPage({ params }: Props) {
   if (!access.canAccessWorkspace) {
     redirect('/no-access');
   }
-  redirect(`/${wsId}/library?entryId=${entryId}`);
+  redirect(`/${wsId}/content?entryId=${entryId}`);
 }

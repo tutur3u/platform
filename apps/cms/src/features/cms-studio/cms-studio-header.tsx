@@ -35,6 +35,7 @@ export function CmsStudioHeader({
   onRefresh,
   showModeSwitch,
   strings,
+  title,
 }: {
   activeCollection: ExternalProjectCollection | null;
   description: string;
@@ -49,12 +50,13 @@ export function CmsStudioHeader({
   onRefresh: () => void;
   showModeSwitch: boolean;
   strings: CmsStrings;
+  title?: string;
 }) {
   return (
     <section className="flex flex-wrap items-start justify-between gap-4 rounded-[1.5rem] border border-border/70 bg-card/95 px-4 py-4 shadow-none sm:px-5">
       <div className="space-y-1">
         <h1 className="font-semibold text-2xl tracking-tight">
-          {strings.title}
+          {title ?? strings.title}
         </h1>
         <p className="text-muted-foreground text-sm">{description}</p>
       </div>
