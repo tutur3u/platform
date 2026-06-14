@@ -903,12 +903,24 @@
       },
       "columns": {
         "actions": "Thao tác",
+        "available": "Có sẵn",
         "category": "Danh mục",
+        "checkout": "Thanh toán",
+        "components": "Thành phần",
+        "coverage": "Bao phủ",
         "item": "Mặt hàng",
+        "listings": "Listing",
         "location": "Vị trí",
         "manufacturer": "Nhà sản xuất",
+        "minimum": "Tối thiểu",
         "owner": "Chủ sở hữu",
-        "stock": "Tồn kho"
+        "price": "Giá",
+        "readiness": "Mức sẵn sàng",
+        "status": "Trạng thái",
+        "stock": "Tồn kho",
+        "unitPrice": "Đơn giá",
+        "updated": "Cập nhật",
+        "visibility": "Hiển thị"
       },
       "commerce": {
         "items": "{count, plural, one {# mặt hàng} other {# mặt hàng}}",
@@ -1135,6 +1147,8 @@
           "rounded": "Bo tròn",
           "soft": "Mềm"
         },
+        "costingCoverageMissing": "Chưa liên kết hồ sơ chi phí nào. Tạo hồ sơ trong Costing để xem độ phủ biên lợi nhuận tại đây.",
+        "costingCoverageReady": "{count, plural, one {# hồ sơ chi phí đang bao phủ sản phẩm này.} other {# hồ sơ chi phí đang bao phủ sản phẩm này.}}",
         "create": "Tạo",
         "createBatchDescription": "Chọn kho, nhà cung cấp tùy chọn và giá lô.",
         "createBatchTitle": "Tạo lô hàng",

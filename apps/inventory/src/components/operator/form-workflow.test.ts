@@ -10,6 +10,7 @@ const operatorDir = join(
   'components',
   'operator'
 );
+const inventoryDir = join(process.cwd(), 'apps/inventory');
 
 function source(fileName: string) {
   return readFileSync(join(operatorDir, fileName), 'utf8');
@@ -22,6 +23,20 @@ function operatorSources() {
       fileName,
       source: source(fileName),
     }));
+}
+
+function messages(locale: 'en' | 'vi') {
+  return JSON.parse(
+    readFileSync(join(inventoryDir, 'messages', `${locale}.json`), 'utf8')
+  ) as Record<string, unknown>;
+}
+
+function valueAtPath(tree: Record<string, unknown>, path: string) {
+  return path.split('.').reduce<unknown>((current, segment) => {
+    if (!current || typeof current !== 'object') return undefined;
+
+    return (current as Record<string, unknown>)[segment];
+  }, tree);
 }
 
 describe('Inventory operator form workflows', () => {
@@ -223,6 +238,48 @@ describe('Inventory operator form workflows', () => {
     expect(costingSource).toContain('product.inventory?.[0]?.price');
     expect(tableSource).toContain('hasCostingCoverage');
     expect(tableSource).toContain("t('badges.costingReady')");
+  });
+
+  it('keeps literal operator translation keys covered in shipped bundles', () => {
+    const requiredKeys = [
+      'inventory.operator.columns.available',
+      'inventory.operator.columns.checkout',
+      'inventory.operator.columns.components',
+      'inventory.operator.columns.coverage',
+      'inventory.operator.columns.listings',
+      'inventory.operator.columns.minimum',
+      'inventory.operator.columns.price',
+      'inventory.operator.columns.readiness',
+      'inventory.operator.columns.status',
+      'inventory.operator.columns.unitPrice',
+      'inventory.operator.columns.updated',
+      'inventory.operator.columns.visibility',
+      'inventory.operator.forms.costingCoverageMissing',
+      'inventory.operator.forms.costingCoverageReady',
+    ];
+
+    for (const locale of ['en', 'vi'] as const) {
+      const bundle = messages(locale);
+
+      for (const key of requiredKeys) {
+        expect(valueAtPath(bundle, key), `${locale}: ${key}`).toEqual(
+          expect.any(String)
+        );
+      }
+    }
+  });
+
+  it('keeps operator table views differentiated by workflow', () => {
+    const productsSource = source('products-table.tsx');
+    const rowsSource = source('simple-rows.tsx');
+
+    expect(productsSource).toContain("view === 'stock'");
+    expect(productsSource).toContain("t('columns.readiness')");
+    expect(productsSource).toContain("t('columns.coverage')");
+    expect(productsSource).toContain("t('columns.available')");
+    expect(rowsSource).toContain('OperationsTable');
+    expect(rowsSource).toContain('getStorefrontColumns');
+    expect(rowsSource).toContain('getBundleColumns');
   });
 
   it('supports direct storefront hero uploads in create and edit flows', () => {

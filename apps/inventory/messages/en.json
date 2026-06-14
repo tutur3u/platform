@@ -903,12 +903,24 @@
       },
       "columns": {
         "actions": "Actions",
+        "available": "Available",
         "category": "Category",
+        "checkout": "Checkout",
+        "components": "Components",
+        "coverage": "Coverage",
         "item": "Item",
+        "listings": "Listings",
         "location": "Location",
         "manufacturer": "Manufacturer",
+        "minimum": "Minimum",
         "owner": "Owner",
-        "stock": "Stock"
+        "price": "Price",
+        "readiness": "Readiness",
+        "status": "Status",
+        "stock": "Stock",
+        "unitPrice": "Unit price",
+        "updated": "Updated",
+        "visibility": "Visibility"
       },
       "commerce": {
         "items": "{count, plural, one {# item} other {# items}}",
@@ -1135,6 +1147,8 @@
           "rounded": "Rounded",
           "soft": "Soft"
         },
+        "costingCoverageMissing": "No costing profile is linked yet. Create one from Costing to see margin coverage here.",
+        "costingCoverageReady": "{count, plural, one {# costing profile covers this product.} other {# costing profiles cover this product.}}",
         "create": "Create",
         "createBatchDescription": "Choose the warehouse, optional supplier, and batch price.",
         "createBatchTitle": "Create batch",

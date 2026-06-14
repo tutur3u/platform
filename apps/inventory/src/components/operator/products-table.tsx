@@ -15,12 +15,37 @@ import type {
 } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import {
+  OperationsTable,
+  type OperationsTableColumn,
+} from './operations-table';
 import { EmptyRow } from './operator-shell';
 import {
   getInventoryStockState,
   stockAmountFromRecords,
 } from './operator-stock';
 import { ProductRowActions } from './product-management';
+import {
+  formatNumber,
+  type ProductBadge,
+  ProductBadges,
+  ProductIdentity,
+  stringField,
+  TextStack,
+} from './product-table-cells';
+
+type OperatorTranslator = (
+  key: string,
+  values?: Record<string, unknown>
+) => string;
+
+type ProductTableRow = {
+  badges: ProductBadge[];
+  inventory: Record<string, unknown>;
+  isLowStock: boolean;
+  product: InventoryProductSummary;
+  stockState: ReturnType<typeof getInventoryStockState>;
+};
 
 export function ProductsTable({
   costingProfiles = [],
@@ -35,158 +60,249 @@ export function ProductsTable({
   view: string;
   wsId: string;
 }) {
-  const t = useTranslations('inventory.operator');
+  const t = useTranslations('inventory.operator') as OperatorTranslator;
 
   if (rows.length === 0) return <EmptyRow label={t('empty')} />;
 
+  const tableRows = rows.map((product) =>
+    toProductTableRow(product, costingProfiles, t)
+  );
+  const columns = getProductTableColumns({
+    costingProfiles,
+    formOptions,
+    t,
+    view,
+    wsId,
+  });
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[760px] text-left text-sm">
-        <thead className="bg-muted/45 text-muted-foreground text-xs">
-          <tr>
-            <th className="p-3">{t('columns.item')}</th>
-            <th className="p-3">{t('columns.manufacturer')}</th>
-            <th className="p-3">{t('columns.category')}</th>
-            <th className="p-3">{t('columns.owner')}</th>
-            <th className="p-3">{t('columns.stock')}</th>
-            <th className="p-3">{t('columns.location')}</th>
-            <th className="p-3">{t('columns.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const inventory = row.inventory?.[0] ?? {};
-            const amount = stockAmountFromRecords(inventory, row.stock?.[0]);
-            const stockState = getInventoryStockState({
-              amount,
-              minAmount: inventory.min_amount ?? row.min_amount,
-            });
-            const low = view === 'stock' && stockState.isLowStock;
-            const hasCosting = hasCostingCoverage(row, costingProfiles);
-            const badges = [
-              {
-                icon: row.avatar_url ? CheckCircle2 : ImageOff,
-                label: row.avatar_url
-                  ? t('badges.imageReady')
-                  : t('badges.imageMissing'),
-                tone: row.avatar_url ? 'ready' : 'missing',
-              },
-              {
-                icon: low ? TriangleAlert : CheckCircle2,
-                label: stockState.isUnlimited
-                  ? t('badges.stockUnlimited')
-                  : low
-                    ? t('badges.lowStock')
-                    : t('badges.stockReady'),
-                tone: low ? 'danger' : 'ready',
-              },
-              {
-                icon: Tags,
-                label: row.category
-                  ? t('badges.categoryReady')
-                  : t('badges.categoryMissing'),
-                tone: row.category ? 'ready' : 'missing',
-              },
-              {
-                icon: User,
-                label: row.owner?.name
-                  ? t('badges.ownerReady')
-                  : t('badges.ownerMissing'),
-                tone: row.owner?.name ? 'ready' : 'missing',
-              },
-              {
-                icon: Calculator,
-                label: hasCosting
-                  ? t('badges.costingReady')
-                  : t('badges.costingMissing'),
-                tone: hasCosting ? 'ready' : 'missing',
-              },
-            ];
+    <OperationsTable
+      ariaLabel={
+        view === 'stock' ? t('views.stock.title') : t('views.catalog.title')
+      }
+      columns={columns}
+      getRowClassName={(row) =>
+        view === 'stock' && row.isLowStock ? 'bg-destructive/5' : undefined
+      }
+      getRowId={(row) => row.product.id}
+      minWidth={view === 'stock' ? 'min-w-[860px]' : 'min-w-[920px]'}
+      rows={tableRows}
+    />
+  );
+}
 
-            return (
-              <tr className="border-border border-t" key={row.id}>
-                <td className="p-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-muted/40">
-                      {row.avatar_url ? (
-                        // biome-ignore lint/performance/noImgElement: thumbnails use arbitrary signed workspace media URLs.
-                        <img
-                          alt={row.name}
-                          className="h-full w-full object-cover"
-                          src={row.avatar_url}
-                        />
-                      ) : (
-                        <span className="font-semibold text-muted-foreground text-xs">
-                          {row.name.slice(0, 2).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <span className="block truncate font-medium">
-                        {row.name}
-                      </span>
-                      <span className="mt-1 flex min-w-0 flex-wrap gap-1">
-                        {badges.map((badge) => {
-                          const Icon = badge.icon;
+function getProductTableColumns({
+  costingProfiles,
+  formOptions,
+  t,
+  view,
+  wsId,
+}: {
+  costingProfiles: InventoryCostProfile[];
+  formOptions?: InventoryProductFormOptionsResponse;
+  t: OperatorTranslator;
+  view: string;
+  wsId: string;
+}): OperationsTableColumn<ProductTableRow>[] {
+  const actionColumn: OperationsTableColumn<ProductTableRow> = {
+    cellClassName: 'text-right',
+    className: 'w-[8rem] text-right',
+    header: t('columns.actions'),
+    key: 'actions',
+    render: ({ product }) => (
+      <ProductRowActions
+        costingProfiles={costingProfiles}
+        options={formOptions}
+        row={product}
+        wsId={wsId}
+      />
+    ),
+  };
 
-                          return (
-                            <span
-                              className={cn(
-                                'inline-flex h-5 min-w-0 items-center gap-1 rounded border px-1.5 text-[11px]',
-                                badge.tone === 'ready' &&
-                                  'border-primary/25 bg-primary/10 text-primary',
-                                badge.tone === 'missing' &&
-                                  'border-border bg-muted text-muted-foreground',
-                                badge.tone === 'danger' &&
-                                  'border-destructive/25 bg-destructive/10 text-destructive'
-                              )}
-                              key={badge.label}
-                            >
-                              <Icon className="h-3 w-3 shrink-0" />
-                              <span className="max-w-24 truncate">
-                                {badge.label}
-                              </span>
-                            </span>
-                          );
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className="p-3 text-muted-foreground">
-                  {row.manufacturer ?? '-'}
-                </td>
-                <td className="p-3 text-muted-foreground">
-                  {row.category ?? '-'}
-                </td>
-                <td className="p-3 text-muted-foreground">
-                  {row.owner?.name ?? '-'}
-                </td>
-                <td className={cn('p-3', low && 'text-destructive')}>
-                  {low ? (
-                    <TriangleAlert className="mr-1 inline h-4 w-4" />
-                  ) : null}
-                  <span className={stockState.isUnlimited ? 'font-bold' : ''}>
-                    {stockState.displayAmount}
-                  </span>
-                </td>
-                <td className="p-3 text-muted-foreground">
-                  {String(inventory.warehouse_name ?? row.warehouse ?? '-')}
-                </td>
-                <td className="p-3">
-                  <ProductRowActions
-                    costingProfiles={costingProfiles}
-                    options={formOptions}
-                    row={row}
-                    wsId={wsId}
-                  />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+  if (view === 'stock') {
+    return [
+      {
+        className: 'w-[26rem]',
+        header: t('columns.item'),
+        key: 'item',
+        render: ({ product }) => <ProductIdentity product={product} />,
+      },
+      {
+        className: 'w-[13rem]',
+        header: t('columns.location'),
+        key: 'location',
+        render: ({ inventory, product }) => (
+          <TextStack
+            primary={
+              stringField(inventory, 'warehouse_name') ?? product.warehouse
+            }
+            secondary={stringField(inventory, 'unit_name') ?? product.unit}
+          />
+        ),
+      },
+      {
+        className: 'w-[9rem]',
+        header: t('columns.available'),
+        key: 'available',
+        render: (row) => <StockAmount row={row} />,
+      },
+      {
+        className: 'w-[8rem]',
+        header: t('columns.minimum'),
+        key: 'minimum',
+        render: ({ stockState }) => (
+          <span className="font-medium">{stockState.minAmount}</span>
+        ),
+      },
+      {
+        className: 'w-[10rem]',
+        header: t('columns.unitPrice'),
+        key: 'unit-price',
+        render: ({ inventory }) => (
+          <span className="font-medium">{formatNumber(inventory.price)}</span>
+        ),
+      },
+      {
+        className: 'w-[12rem]',
+        header: t('columns.status'),
+        key: 'status',
+        render: ({ badges }) => (
+          <ProductBadges
+            badges={badges.filter((badge) => badge.key === 'stock')}
+          />
+        ),
+      },
+      actionColumn,
+    ];
+  }
+
+  return [
+    {
+      className: 'w-[28rem]',
+      header: t('columns.item'),
+      key: 'item',
+      render: ({ product }) => <ProductIdentity product={product} />,
+    },
+    {
+      className: 'w-[14rem]',
+      header: t('columns.category'),
+      key: 'category',
+      render: ({ product }) => (
+        <TextStack
+          primary={product.category}
+          secondary={product.manufacturer}
+        />
+      ),
+    },
+    {
+      className: 'w-[14rem]',
+      header: t('columns.owner'),
+      key: 'owner',
+      render: ({ product }) => (
+        <TextStack primary={product.owner?.name} secondary={product.usage} />
+      ),
+    },
+    {
+      className: 'w-[18rem]',
+      header: t('columns.readiness'),
+      key: 'readiness',
+      render: ({ badges }) => (
+        <ProductBadges
+          badges={badges.filter((badge) => badge.key !== 'costing')}
+        />
+      ),
+    },
+    {
+      className: 'w-[12rem]',
+      header: t('columns.coverage'),
+      key: 'coverage',
+      render: ({ badges }) => (
+        <ProductBadges
+          badges={badges.filter((badge) => badge.key === 'costing')}
+        />
+      ),
+    },
+    actionColumn,
+  ];
+}
+
+function toProductTableRow(
+  product: InventoryProductSummary,
+  costingProfiles: InventoryCostProfile[],
+  t: OperatorTranslator
+): ProductTableRow {
+  const inventory = product.inventory?.[0] ?? {};
+  const amount = stockAmountFromRecords(inventory, product.stock?.[0]);
+  const stockState = getInventoryStockState({
+    amount,
+    minAmount: inventory.min_amount ?? product.min_amount,
+  });
+  const hasCosting = hasCostingCoverage(product, costingProfiles);
+  const isLowStock = stockState.isLowStock;
+
+  return {
+    badges: [
+      {
+        icon: product.avatar_url ? CheckCircle2 : ImageOff,
+        key: 'image',
+        label: product.avatar_url
+          ? t('badges.imageReady')
+          : t('badges.imageMissing'),
+        tone: product.avatar_url ? 'ready' : 'missing',
+      },
+      {
+        icon: isLowStock ? TriangleAlert : CheckCircle2,
+        key: 'stock',
+        label: stockState.isUnlimited
+          ? t('badges.stockUnlimited')
+          : isLowStock
+            ? t('badges.lowStock')
+            : t('badges.stockReady'),
+        tone: isLowStock ? 'danger' : 'ready',
+      },
+      {
+        icon: Tags,
+        key: 'category',
+        label: product.category
+          ? t('badges.categoryReady')
+          : t('badges.categoryMissing'),
+        tone: product.category ? 'ready' : 'missing',
+      },
+      {
+        icon: User,
+        key: 'owner',
+        label: product.owner?.name
+          ? t('badges.ownerReady')
+          : t('badges.ownerMissing'),
+        tone: product.owner?.name ? 'ready' : 'missing',
+      },
+      {
+        icon: Calculator,
+        key: 'costing',
+        label: hasCosting
+          ? t('badges.costingReady')
+          : t('badges.costingMissing'),
+        tone: hasCosting ? 'ready' : 'missing',
+      },
+    ],
+    inventory,
+    isLowStock,
+    product,
+    stockState,
+  };
+}
+
+function StockAmount({ row }: { row: ProductTableRow }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 font-semibold',
+        row.isLowStock && 'text-destructive'
+      )}
+    >
+      {row.isLowStock ? <TriangleAlert className="h-4 w-4" /> : null}
+      {row.stockState.displayAmount}
+    </span>
   );
 }
 
