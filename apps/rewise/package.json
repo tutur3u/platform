@@ -59,7 +59,7 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-hook-form": "^7.77.0",
+    "react-hook-form": "^7.79.0",
     "react-intersection-observer": "^10.0.3",
     "react-textarea-autosize": "^8.5.9",
     "rehype-katex": "^7.0.1",
@@ -72,7 +72,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.2.9",
-    "@tailwindcss/postcss": "^4.3.0",
+    "@tailwindcss/postcss": "^4.3.1",
     "@tanstack/react-query-devtools": "^5.101.0",
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
