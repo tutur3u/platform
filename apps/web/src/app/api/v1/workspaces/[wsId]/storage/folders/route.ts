@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_NAME_LENGTH,
@@ -5,6 +6,7 @@ import {
 import { sanitizeFolderName, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import {
   createWorkspaceStorageFolderObject,
   deleteWorkspaceStorageFolderByPath,
@@ -66,6 +68,12 @@ export async function POST(
         { message: 'Invalid folder name' },
         { status: 400 }
       );
+    }
+    const folderPath = sanitizedPath
+      ? posix.join(sanitizedPath, sanitizedName)
+      : sanitizedName;
+    if (isReservedMobileDeploymentDrivePath(normalizedWsId, folderPath)) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const data = await createWorkspaceStorageFolderObject(
@@ -141,6 +149,12 @@ export async function DELETE(
         { message: 'Invalid folder name' },
         { status: 400 }
       );
+    }
+    const folderPath = sanitizedPath
+      ? posix.join(sanitizedPath, sanitizedName)
+      : sanitizedName;
+    if (isReservedMobileDeploymentDrivePath(normalizedWsId, folderPath)) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     await deleteWorkspaceStorageFolderByPath(

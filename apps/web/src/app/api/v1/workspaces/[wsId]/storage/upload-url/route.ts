@@ -1,9 +1,11 @@
+import { posix } from 'node:path';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
 import { validateFinanceTransactionAttachmentUploadRequest } from '@/lib/finance-transaction-storage-limits';
+import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import {
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
@@ -221,6 +223,14 @@ export async function POST(
         { message: 'Invalid filename' },
         { status: 400 }
       );
+    }
+    const requestedStoragePath = sanitizedPath
+      ? posix.join(sanitizedPath, sanitizedFilename)
+      : sanitizedFilename;
+    if (
+      isReservedMobileDeploymentDrivePath(normalizedWsId, requestedStoragePath)
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     if (isReservedExternalProjectPath(sanitizedPath)) {

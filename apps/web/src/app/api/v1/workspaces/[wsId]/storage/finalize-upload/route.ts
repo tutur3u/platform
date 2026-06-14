@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
 import { validateFinalizedFinanceTransactionAttachment } from '@/lib/finance-transaction-storage-limits';
+import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import { triggerWorkspaceStorageAutoExtract } from '@/lib/workspace-storage-auto-extract';
 import type { WorkspaceStorageRouteAuthContext } from '../route-auth';
 import {
@@ -77,6 +78,9 @@ export async function POST(
     const sanitizedPath = sanitizePath(parsed.data.path);
     if (sanitizedPath === null) {
       return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
+    }
+    if (isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const canFinalizeUpload =

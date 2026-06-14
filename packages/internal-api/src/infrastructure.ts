@@ -45,6 +45,19 @@ export type MobileDeploymentScalarName =
   | 'APP_STORE_CONNECT_API_KEY_ID'
   | 'APP_STORE_CONNECT_ISSUER_ID';
 export type MobileDeploymentEnvKeyName = string;
+export type MobileDeploymentSecretKind = 'env' | 'scalar';
+
+export interface SaveMobileDeploymentSecretPayload {
+  kind: MobileDeploymentSecretKind;
+  name: MobileDeploymentEnvKeyName | MobileDeploymentScalarName;
+  previousName?: MobileDeploymentEnvKeyName;
+  value: string;
+}
+
+export interface ClearMobileDeploymentSecretPayload {
+  kind: MobileDeploymentSecretKind;
+  name: MobileDeploymentEnvKeyName | MobileDeploymentScalarName;
+}
 
 export interface MobileDeploymentResourceStatus {
   configured: boolean;
@@ -2012,32 +2025,32 @@ export async function replaceMobileDeploymentEnvFile(
 export async function saveMobileDeploymentEnvKeyValue(
   name: MobileDeploymentEnvKeyName,
   value: string,
+  previousNameOrOptions?: MobileDeploymentEnvKeyName | InternalApiClientOptions,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
-  return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
-    body: JSON.stringify({ action: 'save_env_key', name, value }),
-    cache: 'no-store',
-    headers: mobileDeploymentMutationHeaders({
-      'Content-Type': 'application/json',
-    }),
-    method: 'PUT',
-  });
+  const previousName =
+    typeof previousNameOrOptions === 'string'
+      ? previousNameOrOptions
+      : undefined;
+  const clientOptions =
+    typeof previousNameOrOptions === 'string' ? options : previousNameOrOptions;
+
+  return saveMobileDeploymentSecret(
+    {
+      kind: 'env',
+      name,
+      previousName,
+      value,
+    },
+    clientOptions
+  );
 }
 
 export async function clearMobileDeploymentEnvKeyValue(
   name: MobileDeploymentEnvKeyName,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
-  return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
-    body: JSON.stringify({ action: 'clear_env_key', name }),
-    cache: 'no-store',
-    headers: mobileDeploymentMutationHeaders({
-      'Content-Type': 'application/json',
-    }),
-    method: 'PUT',
-  });
+  return clearMobileDeploymentSecret({ kind: 'env', name }, options);
 }
 
 export async function saveMobileDeploymentScalarValue(
@@ -2045,9 +2058,30 @@ export async function saveMobileDeploymentScalarValue(
   value: string,
   options?: InternalApiClientOptions
 ) {
+  return saveMobileDeploymentSecret(
+    {
+      kind: 'scalar',
+      name,
+      value,
+    },
+    options
+  );
+}
+
+export async function clearMobileDeploymentScalarValue(
+  name: MobileDeploymentScalarName,
+  options?: InternalApiClientOptions
+) {
+  return clearMobileDeploymentSecret({ kind: 'scalar', name }, options);
+}
+
+export async function saveMobileDeploymentSecret(
+  payload: SaveMobileDeploymentSecretPayload,
+  options?: InternalApiClientOptions
+) {
   const client = getInternalApiClient(options);
   return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
-    body: JSON.stringify({ action: 'save_scalar', name, value }),
+    body: JSON.stringify({ action: 'save_secret', ...payload }),
     cache: 'no-store',
     headers: mobileDeploymentMutationHeaders({
       'Content-Type': 'application/json',
@@ -2056,13 +2090,13 @@ export async function saveMobileDeploymentScalarValue(
   });
 }
 
-export async function clearMobileDeploymentScalarValue(
-  name: MobileDeploymentScalarName,
+export async function clearMobileDeploymentSecret(
+  payload: ClearMobileDeploymentSecretPayload,
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
   return client.json<MobileDeploymentState>('/api/v1/mobile-deployment', {
-    body: JSON.stringify({ action: 'clear_scalar', name }),
+    body: JSON.stringify({ action: 'clear_secret', ...payload }),
     cache: 'no-store',
     headers: mobileDeploymentMutationHeaders({
       'Content-Type': 'application/json',
@@ -2090,10 +2124,22 @@ export async function uploadMobileDeploymentFileResource(
   );
 
   if (!response.ok) {
-    throw new InternalApiError(
-      `Internal API request failed: ${response.status}`,
-      response.status
-    );
+    let code: string | undefined;
+    let message = `Internal API request failed: ${response.status}`;
+
+    try {
+      const data = (await response.json()) as {
+        code?: string;
+        error?: string;
+        message?: string;
+      };
+      code = data.code;
+      message = data.message || data.error || message;
+    } catch {
+      // Keep the status fallback when the response is not JSON.
+    }
+
+    throw new InternalApiError(message, response.status, code);
   }
 
   return (await response.json()) as MobileDeploymentState;

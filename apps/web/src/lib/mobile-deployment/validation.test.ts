@@ -41,6 +41,12 @@ describe('mobile deployment validation', () => {
     ).toThrow(MobileDeploymentValidationError);
   });
 
+  it('rejects env keys that collide with built-in secret names', () => {
+    expect(() => normalizeEnvEntry('ANDROID_KEYSTORE_ALIAS', 'upload')).toThrow(
+      MobileDeploymentValidationError
+    );
+  });
+
   it('renders env files in stable key order', () => {
     expect(
       renderEnvFile({

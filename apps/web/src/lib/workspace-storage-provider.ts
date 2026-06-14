@@ -25,6 +25,10 @@ import {
   sanitizePath,
 } from '@tuturuuu/utils/storage-path';
 import { getSecrets } from '@tuturuuu/utils/workspace-helper';
+import {
+  filterReservedMobileDeploymentDriveEntries,
+  isReservedMobileDeploymentDrivePath,
+} from './mobile-deployment/storage-policy';
 import { getWorkspaceStorageMetrics } from './storage-analytics';
 import {
   DRIVE_R2_ACCESS_KEY_ID_SECRET,
@@ -71,6 +75,7 @@ export interface WorkspaceStorageOverview {
 }
 
 export interface WorkspaceStorageListOptions {
+  allowReservedMobileDeploymentVault?: boolean;
   path?: string;
   search?: string;
   limit?: number;
@@ -109,8 +114,13 @@ export interface WorkspaceStorageObjectMetadata {
 }
 
 interface WorkspaceStorageRawListOptions {
+  allowReservedMobileDeploymentVault?: boolean;
   pathPrefix?: string;
   limit?: number;
+}
+
+interface WorkspaceStorageReservedAccessOptions {
+  allowReservedMobileDeploymentVault?: boolean;
 }
 
 export type ResolvedWorkspaceStorageConfig =
@@ -184,6 +194,35 @@ function buildWorkspaceStorageKey(wsId: string, path = '') {
 function buildWorkspaceStoragePrefix(wsId: string, path = '') {
   const key = buildWorkspaceStorageKey(wsId, path);
   return key.endsWith('/') ? key : `${key}/`;
+}
+
+function assertWorkspaceStoragePathAllowed(
+  wsId: string,
+  path: string,
+  options?: WorkspaceStorageReservedAccessOptions
+) {
+  if (
+    !options?.allowReservedMobileDeploymentVault &&
+    isReservedMobileDeploymentDrivePath(wsId, path)
+  ) {
+    throw new WorkspaceStorageError(
+      'Mobile deployment vault files are managed by the mobile deployment API.',
+      403
+    );
+  }
+}
+
+function filterReservedWorkspaceStorageObjects<
+  T extends { path?: string | null },
+>(wsId: string, objects: T[], options?: WorkspaceStorageReservedAccessOptions) {
+  if (options?.allowReservedMobileDeploymentVault) {
+    return objects;
+  }
+
+  return objects.filter(
+    (object) =>
+      !object.path || !isReservedMobileDeploymentDrivePath(wsId, object.path)
+  );
 }
 
 function stripWorkspaceStoragePrefix(wsId: string, fullPath: string) {
@@ -520,6 +559,10 @@ async function getR2Overview(
       const relativeKey = key.slice(prefix.length);
 
       if (!relativeKey || relativeKey.endsWith(EMPTY_FOLDER_PLACEHOLDER_NAME)) {
+        continue;
+      }
+
+      if (isReservedMobileDeploymentDrivePath(wsId, relativeKey)) {
         continue;
       }
 
@@ -895,13 +938,29 @@ export async function listWorkspaceStorageDirectory(
   options: WorkspaceStorageListOptions = {}
 ): Promise<WorkspaceStorageListResult> {
   const config = await resolveWorkspaceStorageConfig(wsId);
+  const relativePath = normalizeRelativePath(options.path);
+  assertWorkspaceStoragePathAllowed(wsId, relativePath, options);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
-    return listR2Directory(wsId, config, options);
+    const result = await listR2Directory(wsId, config, {
+      ...options,
+      path: relativePath,
+    });
+    const data = filterReservedMobileDeploymentDriveEntries(
+      wsId,
+      relativePath,
+      result.data
+    );
+
+    return {
+      ...result,
+      data,
+      total: relativePath ? result.total : data.length,
+    };
   }
 
   const supabase = await createDynamicAdminClient();
-  const storagePath = buildWorkspaceStorageKey(wsId, options.path);
+  const storagePath = buildWorkspaceStorageKey(wsId, relativePath);
   const { data, error } = await supabase.storage
     .from('workspaces')
     .list(storagePath, {
@@ -918,17 +977,23 @@ export async function listWorkspaceStorageDirectory(
     throw new WorkspaceStorageError(error.message || 'Failed to list files');
   }
 
-  const filtered = (data ?? []).filter(
-    (entry) => entry.name !== EMPTY_FOLDER_PLACEHOLDER_NAME
-  ) as StorageObject[];
+  const filtered = filterReservedMobileDeploymentDriveEntries(
+    wsId,
+    relativePath,
+    (data ?? []).filter(
+      (entry) => entry.name !== EMPTY_FOLDER_PLACEHOLDER_NAME
+    ) as StorageObject[]
+  );
 
   return {
     data: filtered,
-    total: await countSupabaseDirectoryEntries(
-      supabase,
-      storagePath,
-      options.search?.trim() || undefined
-    ),
+    total: relativePath
+      ? await countSupabaseDirectoryEntries(
+          supabase,
+          storagePath,
+          options.search?.trim() || undefined
+        )
+      : filtered.length,
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   };
 }
@@ -943,22 +1008,11 @@ export async function getWorkspaceStorageOverview(
     return getR2Overview(wsId, config);
   }
 
-  const { data: totalSize, error: totalSizeError } = await supabase.rpc(
-    'get_workspace_drive_size',
-    {
-      ws_id: wsId,
-    }
-  );
-
-  if (totalSizeError) {
-    console.error('Error fetching total size:', totalSizeError);
-  }
-
   const metrics = await getWorkspaceStorageMetrics(supabase, wsId);
 
   return {
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
-    totalSize: totalSize ?? 0,
+    totalSize: metrics.totalSize,
     fileCount: metrics.fileCount,
     largestFile: metrics.largestFile,
     smallestFile: metrics.smallestFile,
@@ -972,22 +1026,11 @@ export async function getWorkspaceStorageOverviewForProvider(
 ): Promise<WorkspaceStorageOverview> {
   if (provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
     const supabase = await createDynamicAdminClient();
-    const { data: totalSize, error: totalSizeError } = await supabase.rpc(
-      'get_workspace_drive_size',
-      {
-        ws_id: wsId,
-      }
-    );
-
-    if (totalSizeError) {
-      console.error('Error fetching total size:', totalSizeError);
-    }
-
     const metrics = await getWorkspaceStorageMetrics(supabase, wsId);
 
     return {
       provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
-      totalSize: totalSize ?? 0,
+      totalSize: metrics.totalSize,
       fileCount: metrics.fileCount,
       largestFile: metrics.largestFile,
       smallestFile: metrics.smallestFile,
@@ -1016,6 +1059,9 @@ export async function listWorkspaceStorageRawObjectsForProvider(
   if (sanitizedPrefix === null) {
     throw new WorkspaceStorageError('Invalid storage prefix.', 400);
   }
+  if (sanitizedPrefix) {
+    assertWorkspaceStoragePathAllowed(wsId, sanitizedPrefix, options);
+  }
 
   const workspacePrefix = sanitizedPrefix
     ? buildWorkspaceStoragePrefix(wsId, sanitizedPrefix)
@@ -1023,11 +1069,15 @@ export async function listWorkspaceStorageRawObjectsForProvider(
 
   if (provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
     const supabase = await createDynamicAdminClient();
-    return listSupabaseRawObjectsRecursively(
-      supabase as TypedSupabaseClient,
+    return filterReservedWorkspaceStorageObjects(
       wsId,
-      workspacePrefix.replace(/\/$/, ''),
-      options.limit
+      await listSupabaseRawObjectsRecursively(
+        supabase as TypedSupabaseClient,
+        wsId,
+        workspacePrefix.replace(/\/$/, ''),
+        options.limit
+      ),
+      options
     );
   }
 
@@ -1084,15 +1134,18 @@ export async function listWorkspaceStorageRawObjectsForProvider(
       : undefined;
   } while (continuationToken);
 
-  return objects;
+  return filterReservedWorkspaceStorageObjects(wsId, objects, options);
 }
 
 export async function getWorkspaceStorageObjectMetadataForProvider(
   wsId: string,
   provider: WorkspaceStorageProvider,
-  path: string
+  path: string,
+  options?: WorkspaceStorageReservedAccessOptions
 ): Promise<WorkspaceStorageObjectMetadata> {
-  const fullPath = buildWorkspaceStorageKey(wsId, path);
+  const relativePath = normalizeRelativePath(path);
+  assertWorkspaceStoragePathAllowed(wsId, relativePath, options);
+  const fullPath = buildWorkspaceStorageKey(wsId, relativePath);
 
   if (provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
     const supabase = await createDynamicAdminClient();
@@ -1107,7 +1160,7 @@ export async function getWorkspaceStorageObjectMetadataForProvider(
 
     return {
       provider,
-      path,
+      path: relativePath,
       fullPath,
       size: toNumber(object.metadata?.size),
       contentType: getSupabaseStorageObjectContentType(object),
@@ -1135,7 +1188,7 @@ export async function getWorkspaceStorageObjectMetadataForProvider(
 
     return {
       provider,
-      path,
+      path: relativePath,
       fullPath,
       size: Number(response.ContentLength ?? 0),
       contentType: response.ContentType ?? null,
@@ -1157,12 +1210,15 @@ export async function getWorkspaceStorageObjectMetadataForProvider(
 export async function downloadWorkspaceStorageObjectForProvider(
   wsId: string,
   provider: WorkspaceStorageProvider,
-  path: string
+  path: string,
+  options?: WorkspaceStorageReservedAccessOptions
 ): Promise<{
   buffer: Uint8Array;
   contentType?: string | null;
 }> {
-  const fullPath = buildWorkspaceStorageKey(wsId, path);
+  const relativePath = normalizeRelativePath(path);
+  assertWorkspaceStoragePathAllowed(wsId, relativePath, options);
+  const fullPath = buildWorkspaceStorageKey(wsId, relativePath);
 
   if (provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
     const supabase = await createDynamicAdminClient();
@@ -1229,12 +1285,15 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
   path: string,
   buffer: Uint8Array,
   options?: {
+    allowReservedMobileDeploymentVault?: boolean;
     contentType?: string;
     upsert?: boolean;
     skipCapacityCheck?: boolean;
   }
 ) {
-  const fullPath = buildWorkspaceStorageKey(wsId, path);
+  const relativePath = normalizeRelativePath(path);
+  assertWorkspaceStoragePathAllowed(wsId, relativePath, options);
+  const fullPath = buildWorkspaceStorageKey(wsId, relativePath);
 
   if (provider === WORKSPACE_STORAGE_PROVIDER_R2) {
     const config = await resolveWorkspaceStorageBackendConfig(wsId, provider);
@@ -1276,7 +1335,7 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
     );
 
     return {
-      path,
+      path: relativePath,
       fullPath,
       provider: WORKSPACE_STORAGE_PROVIDER_R2,
     };
@@ -1323,7 +1382,7 @@ export async function uploadWorkspaceStorageFileDirectToProvider(
   return {
     path: data.path.startsWith(prefix)
       ? data.path.substring(prefix.length)
-      : data.path,
+      : relativePath,
     fullPath: data.fullPath ?? fullPath,
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   };
@@ -1333,12 +1392,15 @@ export async function createWorkspaceStorageSignedReadUrl(
   wsId: string,
   path: string,
   options?: {
+    allowReservedMobileDeploymentVault?: boolean;
     expiresIn?: number;
     provider?: WorkspaceStorageProvider;
     requireExists?: boolean;
     transform?: unknown;
   }
 ): Promise<string> {
+  const relativePath = normalizeRelativePath(path);
+  assertWorkspaceStoragePathAllowed(wsId, relativePath, options);
   const config = options?.provider
     ? await resolveWorkspaceStorageBackendConfig(wsId, options.provider)
     : await resolveWorkspaceStorageConfig(wsId);
@@ -1352,7 +1414,7 @@ export async function createWorkspaceStorageSignedReadUrl(
     );
   }
 
-  const fullPath = buildWorkspaceStorageKey(wsId, path);
+  const fullPath = buildWorkspaceStorageKey(wsId, relativePath);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
     if (options?.transform) {
@@ -1411,6 +1473,7 @@ export async function createWorkspaceStorageUploadPayload(
   wsId: string,
   filename: string,
   options?: {
+    allowReservedMobileDeploymentVault?: boolean;
     path?: string;
     upsert?: boolean;
     contentType?: string;
@@ -1420,6 +1483,10 @@ export async function createWorkspaceStorageUploadPayload(
   const config = await resolveWorkspaceStorageConfig(wsId);
   const relativePath = normalizeRelativePath(options?.path);
   const sanitizedFilename = normalizeFilename(filename);
+  const storagePath = relativePath
+    ? posix.join(relativePath, sanitizedFilename)
+    : sanitizedFilename;
+  assertWorkspaceStoragePathAllowed(wsId, storagePath, options);
   const fullPath = relativePath
     ? posix.join(wsId, relativePath, sanitizedFilename)
     : posix.join(wsId, sanitizedFilename);
@@ -1456,9 +1523,7 @@ export async function createWorkspaceStorageUploadPayload(
 
     return {
       signedUrl,
-      path: relativePath
-        ? posix.join(relativePath, sanitizedFilename)
-        : sanitizedFilename,
+      path: storagePath,
       fullPath,
       filename: sanitizedFilename,
       contentType: options?.contentType,
@@ -1505,9 +1570,7 @@ export async function createWorkspaceStorageUploadPayload(
   return {
     signedUrl: data.signedUrl,
     token: data.token,
-    path: relativePath
-      ? posix.join(relativePath, sanitizedFilename)
-      : sanitizedFilename,
+    path: storagePath,
     fullPath,
     filename: sanitizedFilename,
     contentType: options?.contentType,
@@ -1525,6 +1588,7 @@ export async function uploadWorkspaceStorageFileDirect(
   path: string,
   buffer: Uint8Array,
   options?: {
+    allowReservedMobileDeploymentVault?: boolean;
     contentType?: string;
     upsert?: boolean;
   }
@@ -1542,11 +1606,16 @@ export async function uploadWorkspaceStorageFileDirect(
 export async function createWorkspaceStorageFolderObject(
   wsId: string,
   path: string,
-  folderName: string
+  folderName: string,
+  options?: WorkspaceStorageReservedAccessOptions
 ) {
   const config = await resolveWorkspaceStorageConfig(wsId);
   const relativePath = normalizeRelativePath(path);
   const sanitizedFolderName = normalizeEntryName(folderName);
+  const relativeFolderPath = relativePath
+    ? posix.join(relativePath, sanitizedFolderName)
+    : sanitizedFolderName;
+  assertWorkspaceStoragePathAllowed(wsId, relativeFolderPath, options);
   const folderPath = relativePath
     ? posix.join(
         wsId,
@@ -1573,9 +1642,7 @@ export async function createWorkspaceStorageFolderObject(
     );
 
     return {
-      path: relativePath
-        ? posix.join(relativePath, sanitizedFolderName)
-        : sanitizedFolderName,
+      path: relativeFolderPath,
       fullPath: folderPath,
       provider: WORKSPACE_STORAGE_PROVIDER_R2,
     };
@@ -1599,9 +1666,7 @@ export async function createWorkspaceStorageFolderObject(
   }
 
   return {
-    path: relativePath
-      ? posix.join(relativePath, sanitizedFolderName)
-      : sanitizedFolderName,
+    path: relativeFolderPath,
     fullPath: data.path,
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   };
@@ -1609,10 +1674,13 @@ export async function createWorkspaceStorageFolderObject(
 
 export async function deleteWorkspaceStorageObjectByPath(
   wsId: string,
-  path: string
+  path: string,
+  options?: WorkspaceStorageReservedAccessOptions
 ) {
   const config = await resolveWorkspaceStorageConfig(wsId);
-  const fullPath = buildWorkspaceStorageKey(wsId, path);
+  const relativePath = normalizeRelativePath(path);
+  assertWorkspaceStoragePathAllowed(wsId, relativePath, options);
+  const fullPath = buildWorkspaceStorageKey(wsId, relativePath);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
     await createR2Client(config).send(
@@ -1646,16 +1714,19 @@ export async function deleteWorkspaceStorageObjectByPath(
 export async function deleteWorkspaceStorageFolderByPath(
   wsId: string,
   path: string,
-  folderName: string
+  folderName: string,
+  options?: WorkspaceStorageReservedAccessOptions
 ) {
   const config = await resolveWorkspaceStorageConfig(wsId);
-  const folderPrefix = path
-    ? posix.join(
-        wsId,
-        normalizeRelativePath(path),
-        normalizeEntryName(folderName)
-      )
-    : posix.join(wsId, normalizeEntryName(folderName));
+  const relativePath = normalizeRelativePath(path);
+  const sanitizedFolderName = normalizeEntryName(folderName);
+  const relativeFolderPath = relativePath
+    ? posix.join(relativePath, sanitizedFolderName)
+    : sanitizedFolderName;
+  assertWorkspaceStoragePathAllowed(wsId, relativeFolderPath, options);
+  const folderPrefix = relativePath
+    ? posix.join(wsId, relativePath, sanitizedFolderName)
+    : posix.join(wsId, sanitizedFolderName);
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
     const client = createR2Client(config);
@@ -1738,6 +1809,7 @@ export async function deleteWorkspaceStorageFolderByPath(
 export async function renameWorkspaceStorageEntry(
   wsId: string,
   options: {
+    allowReservedMobileDeploymentVault?: boolean;
     path?: string;
     currentName: string;
     newName: string;
@@ -1752,6 +1824,14 @@ export async function renameWorkspaceStorageEntry(
   const newName = options.isFolder
     ? normalizeEntryName(options.newName)
     : normalizeFilename(options.newName);
+  const currentRelativePath = relativePath
+    ? posix.join(relativePath, currentName)
+    : currentName;
+  const nextRelativePath = relativePath
+    ? posix.join(relativePath, newName)
+    : newName;
+  assertWorkspaceStoragePathAllowed(wsId, currentRelativePath, options);
+  assertWorkspaceStoragePathAllowed(wsId, nextRelativePath, options);
   const currentBasePath = relativePath
     ? posix.join(wsId, relativePath, currentName)
     : posix.join(wsId, currentName);

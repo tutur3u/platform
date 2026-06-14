@@ -6,6 +6,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { MOBILE_DEPLOYMENT_VAULT_PERMISSION } from '@/lib/mobile-deployment/constants';
 import { listMobileDeploymentState } from '@/lib/mobile-deployment/store';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 import { MobileDeploymentClient } from './mobile-deployment-client';
@@ -30,7 +31,7 @@ export default async function InfrastructureMobileDeploymentPage({
   const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
   if (
     !permissions ||
-    permissions.withoutPermission('manage_workspace_secrets')
+    permissions.withoutPermission(MOBILE_DEPLOYMENT_VAULT_PERMISSION)
   ) {
     redirect(`/${wsId}/settings`);
   }

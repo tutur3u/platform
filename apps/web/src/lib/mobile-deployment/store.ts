@@ -319,7 +319,7 @@ function evaluateVersionReadiness(
   const errors: string[] = [];
   const envCount = secrets.filter((row) => row.kind === 'env').length;
   if (envCount === 0) {
-    errors.push('.env.github has no configured keys');
+    errors.push('No build secrets are configured');
   }
 
   const scalarNames = new Set(
@@ -498,40 +498,57 @@ export async function saveMobileDeploymentEnvFile({
 export async function saveMobileDeploymentEnvKey({
   db,
   name,
+  previousName,
   userId,
   value,
 }: {
   db: AdminClient;
   name: string;
+  previousName?: string;
   userId: string;
   value: string;
 }) {
   const normalized = normalizeEnvEntry(name, value);
+  const previousKey = previousName
+    ? assertMobileDeploymentEnvKey(previousName)
+    : null;
   const environment = await getProductionEnvironment(db);
   const draft = await getOrCreateDraftVersion(db, environment.id, userId);
   const dataKey = await decryptDataKey(draft.data_key_ciphertext);
+  const schema = privateDb(db);
 
-  const { error } = await privateDb(db)
-    .from('mobile_deployment_secret_values')
-    .upsert(
-      buildSecretValueRow({
-        dataKey,
-        kind: 'env',
-        name: normalized.key,
-        userId,
-        value: normalized.value,
-        versionId: draft.id,
-      }),
-      { onConflict: 'version_id,kind,name' }
-    );
+  const { error } = await schema.from('mobile_deployment_secret_values').upsert(
+    buildSecretValueRow({
+      dataKey,
+      kind: 'env',
+      name: normalized.key,
+      userId,
+      value: normalized.value,
+      versionId: draft.id,
+    }),
+    { onConflict: 'version_id,kind,name' }
+  );
   assertNoError(error, 'Failed to save mobile deployment env value');
+
+  if (previousKey && previousKey !== normalized.key) {
+    const { error: deleteError } = await schema
+      .from('mobile_deployment_secret_values')
+      .delete()
+      .eq('version_id', draft.id)
+      .eq('kind', 'env')
+      .eq('name', previousKey);
+    assertNoError(
+      deleteError,
+      'Failed to clear previous mobile deployment env value'
+    );
+  }
 
   await recordAudit(db, {
     actorType: 'user',
     actorUserId: userId,
     environmentId: environment.id,
     eventType: 'env.saved',
-    metadata: { name: normalized.key },
+    metadata: { name: normalized.key, previousName: previousKey },
     resourceKind: normalized.key,
     versionId: draft.id,
   });
@@ -680,6 +697,7 @@ export async function uploadMobileDeploymentFile({
     storagePath,
     ciphertext,
     {
+      allowReservedMobileDeploymentVault: true,
       contentType: 'application/json',
       upsert: true,
     }
@@ -1143,7 +1161,8 @@ async function buildBundle({
     const encrypted = await downloadWorkspaceStorageObjectForProvider(
       ROOT_WORKSPACE_ID,
       file.storage_provider,
-      file.storage_path
+      file.storage_path,
+      { allowReservedMobileDeploymentVault: true }
     );
     if (sha256Hex(encrypted.buffer) !== file.ciphertext_sha256) {
       throw new MobileDeploymentStoreError(

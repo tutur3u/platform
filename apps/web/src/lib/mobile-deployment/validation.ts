@@ -106,6 +106,12 @@ export function assertMobileDeploymentEnvKey(value: string) {
     );
   }
 
+  if ((MOBILE_DEPLOYMENT_SCALAR_NAMES as readonly string[]).includes(key)) {
+    throw new MobileDeploymentValidationError(
+      `${key} is a built-in secret; edit the existing row instead`
+    );
+  }
+
   return key;
 }
 

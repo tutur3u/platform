@@ -4,6 +4,7 @@ import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
+import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import {
   createWorkspaceStorageSignedReadUrl,
   WorkspaceStorageError,
@@ -68,6 +69,9 @@ async function resolveSignedUrl(
   const sanitizedPath = sanitizePath(input.path);
   if (!sanitizedPath) {
     return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
+  }
+  if (isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
   const isTaskImagesPath =

@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   uploadWorkspaceStorageFileDirect: vi.fn(),
 }));
 
+const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
+
 vi.mock('server-only', () => ({}));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -162,6 +164,40 @@ describe('storage auto-extract callback route', () => {
       }
     );
     expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+  });
+
+  it('rejects extracted files targeting the mobile deployment vault', async () => {
+    mocks.normalizeWorkspaceId.mockResolvedValue(ROOT_WORKSPACE_ID);
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/storage/auto-extract/route'
+    );
+
+    const response = await POST(
+      new Request(
+        `http://localhost/api/v1/workspaces/${ROOT_WORKSPACE_ID}/storage/auto-extract`,
+        {
+          body: '<html></html>',
+          headers: {
+            Authorization: 'Bearer token-1',
+            'Content-Type': 'text/html',
+            'x-drive-auto-extract-operation': 'file',
+            'x-drive-auto-extract-path':
+              '.tuturuuu/mobile-deployment-vault/version/index.html',
+          },
+          method: 'POST',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: ROOT_WORKSPACE_ID,
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 
   it('rejects oversized direct file callback bodies with valid tokens', async () => {

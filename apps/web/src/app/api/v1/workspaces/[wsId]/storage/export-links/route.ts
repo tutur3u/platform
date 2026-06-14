@@ -2,6 +2,7 @@ import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import {
   createWorkspaceStorageExportAssetUrl,
   createWorkspaceStorageExportToken,
@@ -62,6 +63,9 @@ export async function POST(
 
     if (!sanitizedPath) {
       return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
+    }
+    if (isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const resolvedProvider =

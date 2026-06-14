@@ -3,14 +3,11 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { MOBILE_DEPLOYMENT_DRIVE_PREFIX } from './constants';
 
 function normalizeRelativePath(path: string) {
-  return path
-    .split('/')
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join('/');
+  return sanitizePath(path);
 }
 
 export function buildMobileDeploymentVaultStoragePath(
@@ -29,6 +26,10 @@ export function isReservedMobileDeploymentDrivePath(
   }
 
   const normalizedPath = normalizeRelativePath(path);
+  if (normalizedPath === null) {
+    return false;
+  }
+
   return (
     normalizedPath === MOBILE_DEPLOYMENT_DRIVE_PREFIX ||
     normalizedPath.startsWith(`${MOBILE_DEPLOYMENT_DRIVE_PREFIX}/`) ||

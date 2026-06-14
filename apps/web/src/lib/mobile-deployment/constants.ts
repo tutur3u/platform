@@ -1,3 +1,4 @@
+import type { PermissionId } from '@tuturuuu/types';
 import { GITHUB_OWNER, GITHUB_REPO } from '@tuturuuu/utils/constants';
 
 export const MOBILE_DEPLOYMENT_ENVIRONMENT = 'production' as const;
@@ -15,6 +16,8 @@ export const MOBILE_DEPLOYMENT_WORKFLOW_REF =
 
 export const MOBILE_DEPLOYMENT_DRIVE_PREFIX =
   '.tuturuuu/mobile-deployment-vault' as const;
+export const MOBILE_DEPLOYMENT_VAULT_PERMISSION =
+  'manage_mobile_deployment_vault' as PermissionId;
 
 export const MOBILE_DEPLOYMENT_TOKEN_PREFIX = 'ttr_mobile_ci_' as const;
 export const MOBILE_DEPLOYMENT_TOKEN_LOOKUP_LENGTH = 28;

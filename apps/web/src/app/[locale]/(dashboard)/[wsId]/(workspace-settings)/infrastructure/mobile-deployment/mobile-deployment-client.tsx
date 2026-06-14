@@ -10,17 +10,15 @@ import {
 } from '@tuturuuu/icons';
 import {
   activateMobileDeploymentDraft,
-  clearMobileDeploymentEnvKeyValue,
-  clearMobileDeploymentScalarValue,
+  clearMobileDeploymentSecret,
   getMobileDeploymentState,
   issueMobileDeploymentCiToken,
   type MobileDeploymentFileKind,
-  type MobileDeploymentScalarName,
+  type MobileDeploymentSecretKind,
   type MobileDeploymentState,
   revokeMobileDeploymentCiToken,
   rollbackMobileDeploymentVersion,
-  saveMobileDeploymentEnvKeyValue,
-  saveMobileDeploymentScalarValue,
+  saveMobileDeploymentSecret,
   uploadMobileDeploymentFileResource,
 } from '@tuturuuu/internal-api/infrastructure';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
@@ -33,13 +31,12 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { MOBILE_DEPLOYMENT_FILE_KINDS } from './mobile-deployment-config';
-import { MobileDeploymentEnvPanel } from './mobile-deployment-env-panel';
 import {
   ResourceBadge,
   ResourceMetadata,
   VersionSummary,
 } from './mobile-deployment-resource-status';
-import { MobileDeploymentScalarPanel } from './mobile-deployment-scalar-panel';
+import { MobileDeploymentSecretsPanel } from './mobile-deployment-secrets-panel';
 
 const QUERY_KEY = ['mobile-deployment-state'];
 
@@ -67,28 +64,18 @@ export function MobileDeploymentClient({
     queryClient.invalidateQueries({ queryKey: QUERY_KEY });
   };
 
-  const envSaveMutation = useMutation({
-    mutationFn: async ({
+  const secretSaveMutation = useMutation({
+    mutationFn: ({
+      kind,
       name,
       previousName,
       value,
     }: {
+      kind: MobileDeploymentSecretKind;
       name: string;
       previousName?: string;
       value: string;
-    }) => {
-      const normalizedName = name.trim();
-      const state = await saveMobileDeploymentEnvKeyValue(
-        normalizedName,
-        value
-      );
-
-      if (previousName && previousName !== normalizedName) {
-        return clearMobileDeploymentEnvKeyValue(previousName);
-      }
-
-      return state;
-    },
+    }) => saveMobileDeploymentSecret({ kind, name, previousName, value }),
     onError: (error) => toast({ title: error.message, variant: 'destructive' }),
     onSuccess: (state) => {
       refresh(state);
@@ -96,33 +83,14 @@ export function MobileDeploymentClient({
     },
   });
 
-  const envClearMutation = useMutation({
-    mutationFn: (name: string) => clearMobileDeploymentEnvKeyValue(name),
-    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
-    onSuccess: (state) => {
-      refresh(state);
-      toast({ title: t('cleared') });
-    },
-  });
-
-  const scalarSaveMutation = useMutation({
+  const secretClearMutation = useMutation({
     mutationFn: ({
+      kind,
       name,
-      value,
     }: {
-      name: MobileDeploymentScalarName;
-      value: string;
-    }) => saveMobileDeploymentScalarValue(name, value),
-    onError: (error) => toast({ title: error.message, variant: 'destructive' }),
-    onSuccess: (state) => {
-      refresh(state);
-      toast({ title: t('saved') });
-    },
-  });
-
-  const scalarClearMutation = useMutation({
-    mutationFn: (name: MobileDeploymentScalarName) =>
-      clearMobileDeploymentScalarValue(name),
+      kind: MobileDeploymentSecretKind;
+      name: string;
+    }) => clearMobileDeploymentSecret({ kind, name }),
     onError: (error) => toast({ title: error.message, variant: 'destructive' }),
     onSuccess: (state) => {
       refresh(state);
@@ -191,6 +159,18 @@ export function MobileDeploymentClient({
     () => new Map(data.fileArtifacts.map((entry) => [entry.name, entry])),
     [data.fileArtifacts]
   );
+  const readinessIssues = useMemo(
+    () =>
+      [
+        ...(data.draftVersion?.readinessErrors ?? []).map(
+          (error) => `${t('draftVersion')}: ${error}`
+        ),
+        ...(data.activeVersion?.readinessErrors ?? []).map(
+          (error) => `${t('activeVersion')}: ${error}`
+        ),
+      ].slice(0, 12),
+    [data.activeVersion, data.draftVersion, t]
+  );
 
   const verify = async () => {
     const result = await refetch();
@@ -226,27 +206,41 @@ export function MobileDeploymentClient({
         </Button>
       </div>
 
-      <MobileDeploymentEnvPanel
-        clearPending={envClearMutation.isPending}
+      {readinessIssues.length > 0 && (
+        <Alert>
+          <AlertTitle>{t('readinessIssues')}</AlertTitle>
+          <AlertDescription>
+            <div className="mb-2">{t('readinessIssuesDescription')}</div>
+            <ul className="list-disc space-y-1 pl-5">
+              {readinessIssues.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <MobileDeploymentSecretsPanel
+        clearPending={secretClearMutation.isPending}
         envKeys={data.envKeys}
-        onClear={(name) => envClearMutation.mutate(name)}
-        onSave={async (payload) => {
-          await envSaveMutation.mutateAsync(payload);
+        onClearEnv={(name) => secretClearMutation.mutate({ kind: 'env', name })}
+        onClearScalar={(name) =>
+          secretClearMutation.mutate({ kind: 'scalar', name })
+        }
+        onSaveEnv={async (payload) => {
+          await secretSaveMutation.mutateAsync({ kind: 'env', ...payload });
         }}
-        savePending={envSaveMutation.isPending}
+        onSaveScalar={async (payload) => {
+          await secretSaveMutation.mutateAsync({
+            kind: 'scalar',
+            ...payload,
+          });
+        }}
+        savePending={secretSaveMutation.isPending}
+        scalarValues={data.scalarValues}
       />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <MobileDeploymentScalarPanel
-          clearPending={scalarClearMutation.isPending}
-          onClear={(name) => scalarClearMutation.mutate(name)}
-          onSave={async (payload) => {
-            await scalarSaveMutation.mutateAsync(payload);
-          }}
-          savePending={scalarSaveMutation.isPending}
-          scalarValues={data.scalarValues}
-        />
-
+      <div className="grid gap-4">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">{t('filesTitle')}</CardTitle>

@@ -8,6 +8,7 @@ import { DEV_MODE } from '@/constants/env';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/constants';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
+import { MOBILE_DEPLOYMENT_VAULT_PERMISSION } from '@/lib/mobile-deployment/constants';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 import {
@@ -1410,7 +1411,7 @@ export async function WorkspaceNavigationLinks({
               title: t('infrastructure-tabs.mobile_deployment'),
               href: `/${personalOrWsId}/infrastructure/mobile-deployment`,
               icon: createDashboardNavigationIcon('Upload', 'h-5 w-5'),
-              disabled: withoutPermission('manage_workspace_secrets'),
+              disabled: withoutPermission(MOBILE_DEPLOYMENT_VAULT_PERMISSION),
             },
             {
               title: t('infrastructure-tabs.github_bot'),

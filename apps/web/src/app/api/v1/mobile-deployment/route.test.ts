@@ -107,8 +107,62 @@ describe('mobile deployment route', () => {
     expect(saveMobileDeploymentEnvKeyMock).toHaveBeenCalledWith({
       db,
       name: 'API_BASE_URL',
+      previousName: undefined,
       userId: 'user-1',
       value: 'https://tuturuuu.com',
+    });
+  });
+
+  it('saves a unified custom env secret rename', async () => {
+    const response = await PUT(
+      request({
+        action: 'save_secret',
+        kind: 'env',
+        name: 'NEW_API_BASE_URL',
+        previousName: 'API_BASE_URL',
+        value: 'https://tuturuuu.com',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(saveMobileDeploymentEnvKeyMock).toHaveBeenCalledWith({
+      db,
+      name: 'NEW_API_BASE_URL',
+      previousName: 'API_BASE_URL',
+      userId: 'user-1',
+      value: 'https://tuturuuu.com',
+    });
+  });
+
+  it('saves and clears unified scalar secrets', async () => {
+    const saveResponse = await PUT(
+      request({
+        action: 'save_secret',
+        kind: 'scalar',
+        name: 'ANDROID_KEYSTORE_ALIAS',
+        value: 'upload',
+      })
+    );
+    const clearResponse = await PUT(
+      request({
+        action: 'clear_secret',
+        kind: 'scalar',
+        name: 'ANDROID_KEYSTORE_ALIAS',
+      })
+    );
+
+    expect(saveResponse.status).toBe(200);
+    expect(clearResponse.status).toBe(200);
+    expect(saveMobileDeploymentScalarMock).toHaveBeenCalledWith({
+      db,
+      name: 'ANDROID_KEYSTORE_ALIAS',
+      userId: 'user-1',
+      value: 'upload',
+    });
+    expect(clearMobileDeploymentScalarMock).toHaveBeenCalledWith({
+      db,
+      name: 'ANDROID_KEYSTORE_ALIAS',
+      userId: 'user-1',
     });
   });
 

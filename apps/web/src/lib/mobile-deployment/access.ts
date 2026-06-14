@@ -8,6 +8,7 @@ import {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { MOBILE_DEPLOYMENT_VAULT_PERMISSION } from './constants';
 
 export const MOBILE_DEPLOYMENT_CSRF_HEADER =
   'x-tuturuuu-mobile-deployment-action';
@@ -23,8 +24,8 @@ export type MobileDeploymentAdminAccess =
       response: NextResponse;
     };
 
-function jsonMessage(message: string, status: number) {
-  return NextResponse.json({ message }, { status });
+function jsonMessage(message: string, status: number, code?: string) {
+  return NextResponse.json({ code, message }, { status });
 }
 
 export async function authorizeMobileDeploymentAdmin(
@@ -36,7 +37,11 @@ export async function authorizeMobileDeploymentAdmin(
   if (!user) {
     return {
       ok: false,
-      response: jsonMessage('Unauthorized', 401),
+      response: jsonMessage(
+        'Unauthorized',
+        401,
+        'mobile_deployment_unauthorized'
+      ),
     };
   }
 
@@ -47,11 +52,15 @@ export async function authorizeMobileDeploymentAdmin(
 
   if (
     !permissions ||
-    permissions.withoutPermission('manage_workspace_secrets')
+    permissions.withoutPermission(MOBILE_DEPLOYMENT_VAULT_PERMISSION)
   ) {
     return {
       ok: false,
-      response: jsonMessage('Forbidden', 403),
+      response: jsonMessage(
+        'You need root mobile deployment vault permission to edit mobile deployment resources.',
+        403,
+        'mobile_deployment_forbidden'
+      ),
     };
   }
 
@@ -66,12 +75,20 @@ export function validateSameOriginMutation(request: Request) {
   const url = new URL(request.url);
   const origin = request.headers.get('origin');
 
-  if (!origin || origin !== url.origin) {
-    return jsonMessage('Forbidden', 403);
+  if (request.headers.get(MOBILE_DEPLOYMENT_CSRF_HEADER) !== '1') {
+    return jsonMessage(
+      'Mobile deployment action header is required.',
+      403,
+      'mobile_deployment_csrf_required'
+    );
   }
 
-  if (request.headers.get(MOBILE_DEPLOYMENT_CSRF_HEADER) !== '1') {
-    return jsonMessage('Forbidden', 403);
+  if (origin && origin !== url.origin) {
+    return jsonMessage(
+      'Mobile deployment actions must be submitted from the same origin.',
+      403,
+      'mobile_deployment_origin_forbidden'
+    );
   }
 
   return null;
@@ -85,7 +102,7 @@ export function validateJsonMutation(request: Request) {
 
   const contentType = request.headers.get('content-type') || '';
   if (!contentType.toLowerCase().startsWith('application/json')) {
-    return jsonMessage('Unsupported media type', 415);
+    return jsonMessage('Unsupported media type', 415, 'unsupported_media_type');
   }
 
   return null;
@@ -99,7 +116,7 @@ export function validateMultipartMutation(request: Request) {
 
   const contentType = request.headers.get('content-type') || '';
   if (!contentType.toLowerCase().startsWith('multipart/form-data')) {
-    return jsonMessage('Unsupported media type', 415);
+    return jsonMessage('Unsupported media type', 415, 'unsupported_media_type');
   }
 
   return null;

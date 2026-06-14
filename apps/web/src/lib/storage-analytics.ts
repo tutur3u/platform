@@ -1,5 +1,6 @@
 import { posix } from 'node:path';
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
+import { isReservedMobileDeploymentDrivePath } from './mobile-deployment/storage-policy';
 
 const STORAGE_ANALYTICS_PAGE_SIZE = 1000;
 
@@ -24,6 +25,7 @@ export interface WorkspaceStorageMetrics {
     size: number;
     createdAt?: string | null;
   } | null;
+  totalSize: number;
 }
 
 function normalizeRelativePath(path?: string) {
@@ -48,7 +50,8 @@ async function walkWorkspaceStorage(
   supabase: any,
   workspacePath: string,
   onFile: (
-    file: Required<Pick<StorageListEntry, 'name'>> & StorageListEntry
+    file: Required<Pick<StorageListEntry, 'name'>> & StorageListEntry,
+    fullPath: string
   ) => void
 ) {
   const pendingPaths = [workspacePath];
@@ -84,12 +87,14 @@ async function walkWorkspaceStorage(
           continue;
         }
 
+        const entryPath = posix.join(currentPath, entry.name);
+
         if (entry.id) {
-          onFile({ ...entry, name: entry.name });
+          onFile({ ...entry, name: entry.name }, entryPath);
           continue;
         }
 
-        pendingPaths.push(posix.join(currentPath, entry.name));
+        pendingPaths.push(entryPath);
       }
 
       if (entries.length < STORAGE_ANALYTICS_PAGE_SIZE) {
@@ -108,11 +113,20 @@ export async function getWorkspaceStorageMetrics(
   let fileCount = 0;
   let largestFile: WorkspaceStorageMetrics['largestFile'] = null;
   let smallestFile: WorkspaceStorageMetrics['smallestFile'] = null;
+  let totalSize = 0;
 
   await walkWorkspaceStorage(
     supabase,
     buildWorkspaceStoragePath(wsId),
-    (file) => {
+    (file, fullPath) => {
+      const relativePath = fullPath.startsWith(`${wsId}/`)
+        ? fullPath.slice(wsId.length + 1)
+        : fullPath;
+
+      if (isReservedMobileDeploymentDrivePath(wsId, relativePath)) {
+        return;
+      }
+
       const size = Number(file.metadata?.size ?? 0);
       const record = {
         name: file.name,
@@ -121,6 +135,7 @@ export async function getWorkspaceStorageMetrics(
       };
 
       fileCount += 1;
+      totalSize += size;
 
       if (!largestFile || size > largestFile.size) {
         largestFile = record;
@@ -136,6 +151,7 @@ export async function getWorkspaceStorageMetrics(
     fileCount,
     largestFile,
     smallestFile,
+    totalSize,
   };
 }
 
@@ -150,7 +166,15 @@ export async function countWorkspaceStorageObjects(
   let fileCount = 0;
   const workspacePath = buildWorkspaceStoragePath(wsId, options?.path);
 
-  await walkWorkspaceStorage(supabase, workspacePath, (file) => {
+  await walkWorkspaceStorage(supabase, workspacePath, (file, fullPath) => {
+    const relativePath = fullPath.startsWith(`${wsId}/`)
+      ? fullPath.slice(wsId.length + 1)
+      : fullPath;
+
+    if (isReservedMobileDeploymentDrivePath(wsId, relativePath)) {
+      return;
+    }
+
     if (matchesSearch(file.name, options?.search)) {
       fileCount += 1;
     }

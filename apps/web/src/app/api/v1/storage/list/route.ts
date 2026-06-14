@@ -12,6 +12,7 @@ import {
   MAX_SEARCH_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -19,6 +20,10 @@ import {
   validateQueryParams,
   withApiAuth,
 } from '@/lib/api-middleware';
+import {
+  filterReservedMobileDeploymentDriveEntries,
+  isReservedMobileDeploymentDrivePath,
+} from '@/lib/mobile-deployment/storage-policy';
 import { countWorkspaceStorageObjects } from '@/lib/storage-analytics';
 
 // Query parameters schema
@@ -59,7 +64,25 @@ export const GET = withApiAuth(
 
       // List files from Supabase Storage
       // Path format matches Drive page: [wsId]/[path]
-      const trimmedPath = path.replace(/^\/+|\/+$/g, '');
+      const trimmedPath = sanitizePath(path);
+      if (trimmedPath === null) {
+        return createErrorResponse(
+          'Bad Request',
+          'Invalid path',
+          400,
+          'INVALID_PATH'
+        );
+      }
+
+      if (isReservedMobileDeploymentDrivePath(wsId, trimmedPath)) {
+        return createErrorResponse(
+          'Forbidden',
+          'Mobile deployment vault files are managed by the mobile deployment API.',
+          403,
+          'STORAGE_RESERVED_PATH'
+        );
+      }
+
       const storagePath = trimmedPath ? posix.join(wsId, trimmedPath) : wsId;
 
       const { data: files, error } = await supabase.storage
@@ -85,8 +108,10 @@ export const GET = withApiAuth(
       }
 
       // Filter out .emptyFolderPlaceholder files
-      const filteredFiles = files?.filter(
-        (file) => file.name !== '.emptyFolderPlaceholder'
+      const filteredFiles = filterReservedMobileDeploymentDriveEntries(
+        wsId,
+        trimmedPath,
+        (files ?? []).filter((file) => file.name !== '.emptyFolderPlaceholder')
       );
 
       // Compute total count through the Storage API so this route
@@ -94,13 +119,13 @@ export const GET = withApiAuth(
       let totalCount = 0;
       try {
         totalCount = await countWorkspaceStorageObjects(supabase, wsId, {
-          path,
+          path: trimmedPath,
           search,
         });
       } catch (countErr) {
         console.error('Unexpected error counting files:', countErr);
         // Fallback to current page count
-        totalCount = filteredFiles?.length || 0;
+        totalCount = filteredFiles.length;
       }
 
       return NextResponse.json({

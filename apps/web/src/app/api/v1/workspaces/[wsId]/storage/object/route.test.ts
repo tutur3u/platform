@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   resolveWorkspaceStorageRouteAuth: vi.fn(),
 }));
 
+const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
+
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
   resolveAuthenticatedSessionUser: (
     ...args: Parameters<typeof mocks.resolveAuthenticatedSessionUser>
@@ -196,6 +198,26 @@ describe('workspace storage object route', () => {
     await expect(response.json()).resolves.toEqual({
       message: 'Insufficient permissions',
     });
+    expect(mocks.deleteWorkspaceStorageObjectByPath).not.toHaveBeenCalled();
+  });
+
+  it('rejects deletes against the reserved mobile deployment vault path', async () => {
+    mocks.normalizeWorkspaceId.mockResolvedValue(ROOT_WORKSPACE_ID);
+
+    const { DELETE } = await import(
+      '@/app/api/v1/workspaces/[wsId]/storage/object/route'
+    );
+
+    const response = await DELETE(
+      createRequest('.tuturuuu/mobile-deployment-vault/version/file.json'),
+      {
+        params: Promise.resolve({ wsId: 'root' }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
+    expect(mocks.canAccessFinanceTransactionStoragePath).not.toHaveBeenCalled();
     expect(mocks.deleteWorkspaceStorageObjectByPath).not.toHaveBeenCalled();
   });
 });

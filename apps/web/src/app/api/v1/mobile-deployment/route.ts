@@ -30,6 +30,7 @@ const SavePayloadSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('save_env_key'),
     name: z.string().max(80),
+    previousName: z.string().max(80).optional(),
     value: z.string().max(16 * 1024),
   }),
   z.object({
@@ -44,6 +45,18 @@ const SavePayloadSchema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('clear_scalar'),
     name: z.enum(MOBILE_DEPLOYMENT_SCALAR_NAMES),
+  }),
+  z.object({
+    action: z.literal('save_secret'),
+    kind: z.enum(['env', 'scalar']),
+    name: z.string().max(80),
+    previousName: z.string().max(80).optional(),
+    value: z.string().max(32 * 1024),
+  }),
+  z.object({
+    action: z.literal('clear_secret'),
+    kind: z.enum(['env', 'scalar']),
+    name: z.string().max(80),
   }),
 ]);
 
@@ -130,6 +143,7 @@ export async function PUT(request: Request) {
         await saveMobileDeploymentEnvKey({
           db: access.db,
           name: parsed.data.name,
+          previousName: parsed.data.previousName,
           userId: access.userId,
           value: parsed.data.value,
         })
@@ -155,6 +169,53 @@ export async function PUT(request: Request) {
           ) as MobileDeploymentScalarName,
           userId: access.userId,
           value: parsed.data.value,
+        })
+      );
+    }
+
+    if (parsed.data.action === 'save_secret') {
+      if (parsed.data.kind === 'env') {
+        return NextResponse.json(
+          await saveMobileDeploymentEnvKey({
+            db: access.db,
+            name: parsed.data.name,
+            previousName: parsed.data.previousName,
+            userId: access.userId,
+            value: parsed.data.value,
+          })
+        );
+      }
+
+      return NextResponse.json(
+        await saveMobileDeploymentScalar({
+          db: access.db,
+          name: assertMobileDeploymentScalarName(
+            parsed.data.name
+          ) as MobileDeploymentScalarName,
+          userId: access.userId,
+          value: parsed.data.value,
+        })
+      );
+    }
+
+    if (parsed.data.action === 'clear_secret') {
+      if (parsed.data.kind === 'env') {
+        return NextResponse.json(
+          await clearMobileDeploymentEnvKey({
+            db: access.db,
+            name: parsed.data.name,
+            userId: access.userId,
+          })
+        );
+      }
+
+      return NextResponse.json(
+        await clearMobileDeploymentScalar({
+          db: access.db,
+          name: assertMobileDeploymentScalarName(
+            parsed.data.name
+          ) as MobileDeploymentScalarName,
+          userId: access.userId,
         })
       );
     }

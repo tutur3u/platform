@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-06-12"
+updatedAt: "2026-06-14"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -381,7 +381,7 @@ beta-store workflow only:
   `mobile-store-beta` environment before returning any plaintext.
 - CI hydrates ignored Firebase, signing, store, and `.env.github` files into
   fixed paths under `apps/mobile` and `$RUNNER_TEMP` with `umask 077`, validates
-  plaintext SHA-256 hashes, masks scalar values, and deletes generated files in
+  plaintext SHA-256 hashes, masks secret values, and deletes generated files in
   `always()` cleanup steps.
 - The workflow rejects any Google Play track other than `internal`, uploads only
   the AAB/IPA build artifacts, and uses TestFlight-only iOS upload.
@@ -391,10 +391,10 @@ beta-store workflow only:
 The workflow is bound to the `mobile-store-beta` GitHub Environment. Keep that
 environment restricted to the `production` branch and store only
 `MOBILE_DEPLOYMENT_CI_TOKEN` there. Mobile signing, Firebase, store API, and
-`.env.github` resources live in the root workspace mobile deployment vault at
+build-time secrets live in the root workspace mobile deployment vault at
 `/internal/infrastructure/mobile-deployment` and require
-`manage_workspace_secrets`. Manage `.env.github` as row-level env keys in that
-vault, then use the vault's Verify action before activating the draft. Legacy
+`manage_mobile_deployment_vault`. Manage non-file values in the vault's
+**Secrets** panel, then use the vault's Verify action before activating the draft. Legacy
 base64 file payload env keys are intentionally blocked; Firebase, signing, and
 store credential payloads must be uploaded as file resources.
 

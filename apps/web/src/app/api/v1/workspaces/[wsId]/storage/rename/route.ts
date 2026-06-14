@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import {
   sanitizeFilename,
   sanitizeFolderName,
@@ -5,6 +6,7 @@ import {
 } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import {
   renameWorkspaceStorageEntry,
   WorkspaceStorageError,
@@ -63,6 +65,18 @@ export async function POST(
 
     if (!currentName || !newName) {
       return NextResponse.json({ message: 'Invalid name' }, { status: 400 });
+    }
+    const currentPath = sanitizedPath
+      ? posix.join(sanitizedPath, currentName)
+      : currentName;
+    const nextPath = sanitizedPath
+      ? posix.join(sanitizedPath, newName)
+      : newName;
+    if (
+      isReservedMobileDeploymentDrivePath(normalizedWsId, currentPath) ||
+      isReservedMobileDeploymentDrivePath(normalizedWsId, nextPath)
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     if (currentName === newName) {

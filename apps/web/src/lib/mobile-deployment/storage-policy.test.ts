@@ -10,12 +10,36 @@ describe('mobile deployment storage policy', () => {
     expect(
       isReservedMobileDeploymentDrivePath(
         ROOT_WORKSPACE_ID,
+        '.tuturuuu/mobile-deployment-vault'
+      )
+    ).toBe(true);
+    expect(
+      isReservedMobileDeploymentDrivePath(
+        ROOT_WORKSPACE_ID,
         '.tuturuuu/mobile-deployment-vault/version/file'
       )
     ).toBe(true);
     expect(
       isReservedMobileDeploymentDrivePath(ROOT_WORKSPACE_ID, '.tuturuuu')
     ).toBe(true);
+    expect(
+      isReservedMobileDeploymentDrivePath(
+        ROOT_WORKSPACE_ID,
+        '.tuturuuu\\mobile-deployment-vault\\version\\file'
+      )
+    ).toBe(true);
+  });
+
+  it('does not reserve sibling internal paths in root Drive', () => {
+    expect(
+      isReservedMobileDeploymentDrivePath(
+        ROOT_WORKSPACE_ID,
+        '.tuturuuu/other-vault/file'
+      )
+    ).toBe(false);
+    expect(
+      isReservedMobileDeploymentDrivePath(ROOT_WORKSPACE_ID, 'public/file')
+    ).toBe(false);
   });
 
   it('does not reserve paths in non-root workspaces', () => {

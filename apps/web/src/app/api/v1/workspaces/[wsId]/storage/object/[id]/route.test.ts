@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const VALID_OBJECT_ID = '00000000-0000-0000-0000-000000000111';
+const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 
 type RouteMocks = ReturnType<typeof createRouteMocks>;
 
@@ -190,6 +191,30 @@ describe('workspace storage object by id route', () => {
     await expect(response.json()).resolves.toEqual({
       message: 'Insufficient permissions',
     });
+  });
+
+  it('rejects root vault object metadata before generic access checks', async () => {
+    mocks.storageObjectResult.data.name = `${ROOT_WORKSPACE_ID}/.tuturuuu/mobile-deployment-vault/version/file.json`;
+    mocks.resolveWorkspaceStorageRouteAuth.mockResolvedValue({
+      ok: true,
+      context: {
+        normalizedWsId: ROOT_WORKSPACE_ID,
+        permissions: {
+          withoutPermission: vi.fn(() => false),
+        },
+        userId: 'user-1',
+      },
+    });
+
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/storage/object/[id]/route'
+    );
+
+    const response = await GET(createRequest(), createParams());
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
+    expect(mocks.canAccessFinanceTransactionStoragePath).not.toHaveBeenCalled();
   });
 
   it('forwards auth failures before querying storage metadata', async () => {

@@ -1,3 +1,4 @@
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -137,11 +138,11 @@ describe('workspace storage provider', () => {
     const rpcMock = vi
       .fn()
       .mockResolvedValueOnce({
-        data: 0,
+        data: 104857600,
         error: null,
       })
       .mockResolvedValueOnce({
-        data: 1024,
+        data: 104857600,
         error: null,
       });
 
@@ -334,5 +335,128 @@ describe('workspace storage provider', () => {
       }
     );
     expect(schemaMock).not.toHaveBeenCalled();
+  });
+
+  it('blocks generic writes to the mobile deployment vault', async () => {
+    const { uploadWorkspaceStorageFileDirectToProvider } = await import(
+      './workspace-storage-provider'
+    );
+
+    await expect(
+      uploadWorkspaceStorageFileDirectToProvider(
+        ROOT_WORKSPACE_ID,
+        'supabase',
+        '.tuturuuu/mobile-deployment-vault/version/file.ciphertext.json',
+        new Uint8Array([1]),
+        { contentType: 'application/json', upsert: true }
+      )
+    ).rejects.toMatchObject({
+      message:
+        'Mobile deployment vault files are managed by the mobile deployment API.',
+      status: 403,
+    });
+    expect(mocks.createDynamicAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('allows explicit internal writes to the mobile deployment vault', async () => {
+    const uploadMock = vi.fn().mockResolvedValue({
+      data: {
+        fullPath:
+          '00000000-0000-0000-0000-000000000000/.tuturuuu/mobile-deployment-vault/version/file.ciphertext.json',
+        path: '00000000-0000-0000-0000-000000000000/.tuturuuu/mobile-deployment-vault/version/file.ciphertext.json',
+      },
+      error: null,
+    });
+
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      storage: {
+        from: vi.fn(() => ({
+          upload: uploadMock,
+        })),
+      },
+    });
+
+    const { uploadWorkspaceStorageFileDirectToProvider } = await import(
+      './workspace-storage-provider'
+    );
+
+    await expect(
+      uploadWorkspaceStorageFileDirectToProvider(
+        ROOT_WORKSPACE_ID,
+        'supabase',
+        '.tuturuuu/mobile-deployment-vault/version/file.ciphertext.json',
+        new Uint8Array([1]),
+        {
+          allowReservedMobileDeploymentVault: true,
+          contentType: 'application/json',
+          skipCapacityCheck: true,
+          upsert: true,
+        }
+      )
+    ).resolves.toMatchObject({
+      path: '.tuturuuu/mobile-deployment-vault/version/file.ciphertext.json',
+      provider: 'supabase',
+    });
+  });
+
+  it('filters mobile deployment vault objects from raw listings', async () => {
+    const listMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: [
+          { name: '.tuturuuu' },
+          {
+            id: 'public',
+            metadata: { mimetype: 'text/plain', size: 1 },
+            name: 'public.txt',
+            updated_at: '2026-06-14T00:00:00.000Z',
+          },
+        ],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [{ name: 'mobile-deployment-vault' }],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [{ name: 'version' }],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            id: 'secret',
+            metadata: { mimetype: 'application/json', size: 32 },
+            name: 'file.ciphertext.json',
+            updated_at: '2026-06-14T00:00:01.000Z',
+          },
+        ],
+        error: null,
+      });
+
+    mocks.createDynamicAdminClient.mockResolvedValue({
+      storage: {
+        from: vi.fn(() => ({
+          list: listMock,
+        })),
+      },
+    });
+
+    const { listWorkspaceStorageRawObjectsForProvider } = await import(
+      './workspace-storage-provider'
+    );
+
+    await expect(
+      listWorkspaceStorageRawObjectsForProvider(ROOT_WORKSPACE_ID, 'supabase')
+    ).resolves.toEqual([
+      {
+        contentType: 'text/plain',
+        fullPath: `${ROOT_WORKSPACE_ID}/public.txt`,
+        isFolderPlaceholder: false,
+        path: 'public.txt',
+        size: 1,
+        updatedAt: '2026-06-14T00:00:00.000Z',
+      },
+    ]);
   });
 });

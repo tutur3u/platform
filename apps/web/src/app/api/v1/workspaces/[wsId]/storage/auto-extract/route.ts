@@ -5,6 +5,7 @@ import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import { resolveWorkspaceStorageAutoExtractConfig } from '@/lib/workspace-storage-auto-extract';
 import {
   createWorkspaceStorageFolderObject,
@@ -76,6 +77,9 @@ export async function POST(
 
     if (!sanitizedPath) {
       return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
+    }
+    if (isReservedMobileDeploymentDrivePath(normalizedWsId, sanitizedPath)) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     if (operation === 'folder') {

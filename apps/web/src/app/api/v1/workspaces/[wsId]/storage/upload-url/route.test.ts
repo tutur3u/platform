@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   validateFinanceTransactionAttachmentUploadRequest: vi.fn(),
 }));
 
+const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
+
 vi.mock('@tuturuuu/utils/uuid-helper', () => ({
   generateRandomUUID: mocks.generateRandomUUID,
 }));
@@ -328,6 +330,30 @@ describe('workspace storage upload-url route', () => {
         upsert: false,
       }
     );
+  });
+
+  it('rejects signed upload URLs into the reserved mobile deployment vault', async () => {
+    setupAuth({ manageDrive: true });
+    mocks.resolveWorkspaceStorageRouteAuth.mockResolvedValue({
+      ok: true,
+      context: {
+        normalizedWsId: ROOT_WORKSPACE_ID,
+        permissions: permissions({ manageDrive: true }),
+        user: { id: 'user-1' },
+        userId: 'user-1',
+      },
+    });
+
+    const response = await postUploadUrl({
+      contentType: 'application/json',
+      filename: 'google-services.json',
+      path: '.tuturuuu/mobile-deployment-vault/production/android',
+      size: 128,
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
   });
 
   it('rejects generic Drive signed upload URLs for empty, oversized, or disallowed files', async () => {

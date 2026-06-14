@@ -121,6 +121,16 @@ export const permissionGroups = ({
                   disabled: false,
                 },
                 {
+                  id: 'manage_mobile_deployment_vault' as PermissionId,
+                  icon: <FileKey2 />,
+                  title: t('ws-roles.manage_mobile_deployment_vault'),
+                  description: t(
+                    'ws-roles.manage_mobile_deployment_vault_description'
+                  ),
+                  disableOnProduction: false,
+                  disabled: false,
+                },
+                {
                   id: 'manage_external_migrations',
                   icon: <DatabaseZap />,
                   title: t('ws-roles.manage_external_migrations'),

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import {
   resolveWorkspaceStorageExportAssetPath,
   verifyWorkspaceStorageExportToken,
@@ -36,6 +37,9 @@ export async function GET(
       folderPath: verified.folderPath,
       assetPathSegments: assetPath,
     });
+    if (isReservedMobileDeploymentDrivePath(wsId, path)) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
     const signedUrl = await createWorkspaceStorageSignedReadUrl(wsId, path, {
       expiresIn: 900,
       provider: verified.provider,

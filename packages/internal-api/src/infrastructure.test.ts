@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   clearMobileDeploymentEnvKeyValue,
   clearMobileDeploymentScalarValue,
+  clearMobileDeploymentSecret,
   createAIWhitelistDomain,
   createAIWhitelistEmail,
   createChatIntegration,
@@ -25,6 +26,7 @@ import {
   saveGitHubBotConfiguration,
   saveMobileDeploymentEnvKeyValue,
   saveMobileDeploymentScalarValue,
+  saveMobileDeploymentSecret,
   testAiAgentChannel,
   testGitHubBotConfiguration,
   updateAIWhitelistDomain,
@@ -314,7 +316,8 @@ describe('mobile deployment internal API helpers', () => {
       'https://internal.example.com/api/v1/mobile-deployment',
       expect.objectContaining({
         body: JSON.stringify({
-          action: 'save_env_key',
+          action: 'save_secret',
+          kind: 'env',
           name: 'API_BASE_URL',
           value: 'https://tuturuuu.com',
         }),
@@ -327,7 +330,8 @@ describe('mobile deployment internal API helpers', () => {
       'https://internal.example.com/api/v1/mobile-deployment',
       expect.objectContaining({
         body: JSON.stringify({
-          action: 'clear_env_key',
+          action: 'clear_secret',
+          kind: 'env',
           name: 'API_BASE_URL',
         }),
         cache: 'no-store',
@@ -359,7 +363,8 @@ describe('mobile deployment internal API helpers', () => {
       'https://internal.example.com/api/v1/mobile-deployment',
       expect.objectContaining({
         body: JSON.stringify({
-          action: 'save_scalar',
+          action: 'save_secret',
+          kind: 'scalar',
           name: 'ANDROID_KEYSTORE_ALIAS',
           value: 'upload',
         }),
@@ -372,7 +377,8 @@ describe('mobile deployment internal API helpers', () => {
       'https://internal.example.com/api/v1/mobile-deployment',
       expect.objectContaining({
         body: JSON.stringify({
-          action: 'clear_scalar',
+          action: 'clear_secret',
+          kind: 'scalar',
           name: 'ANDROID_KEYSTORE_ALIAS',
         }),
         cache: 'no-store',
@@ -386,6 +392,59 @@ describe('mobile deployment internal API helpers', () => {
     expect(
       getCalledHeaders(fetchMock, 1).get('x-tuturuuu-mobile-deployment-action')
     ).toBe('1');
+  });
+
+  it('saves custom env key renames through the unified secret helper', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await saveMobileDeploymentSecret(
+      {
+        kind: 'env',
+        name: 'NEW_API_BASE_URL',
+        previousName: 'API_BASE_URL',
+        value: 'https://tuturuuu.com',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await clearMobileDeploymentSecret(
+      { kind: 'env', name: 'NEW_API_BASE_URL' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/mobile-deployment',
+      expect.objectContaining({
+        body: JSON.stringify({
+          action: 'save_secret',
+          kind: 'env',
+          name: 'NEW_API_BASE_URL',
+          previousName: 'API_BASE_URL',
+          value: 'https://tuturuuu.com',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/mobile-deployment',
+      expect.objectContaining({
+        body: JSON.stringify({
+          action: 'clear_secret',
+          kind: 'env',
+          name: 'NEW_API_BASE_URL',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
   });
 });
 
