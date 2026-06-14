@@ -50,8 +50,8 @@ export async function GET(request: NextRequest) {
       'https://www.googleapis.com/auth/userinfo.email', // Get user email
       'https://www.googleapis.com/auth/userinfo.profile', // Get user profile/name
     ],
-    prompt: 'consent',
     access_type: 'offline',
+    include_granted_scopes: true,
   });
 
   return NextResponse.json({ authUrl }, { status: 200 });

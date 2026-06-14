@@ -71,7 +71,6 @@ export async function GET(request: Request) {
       );
     }
 
-    const refreshToken = tokens.refresh_token ?? '';
     const expiresAt = tokens.expiry_date
       ? new Date(tokens.expiry_date).toISOString()
       : null;
@@ -174,6 +173,32 @@ export async function GET(request: Request) {
         { status: 500 }
       );
     }
+
+    const receivedRefreshToken =
+      typeof tokens.refresh_token === 'string' && tokens.refresh_token.trim()
+        ? tokens.refresh_token
+        : null;
+    const refreshToken =
+      receivedRefreshToken ||
+      (typeof existingToken?.refresh_token === 'string' &&
+      existingToken.refresh_token.trim()
+        ? existingToken.refresh_token
+        : null);
+
+    if (!refreshToken) {
+      calendarOAuthError(
+        '❌ [DEBUG] No refresh token available for Google Calendar OAuth'
+      );
+      return NextResponse.json(
+        { error: 'No refresh token received' },
+        { status: 500 }
+      );
+    }
+
+    const oauthCredentials = {
+      ...tokens,
+      refresh_token: refreshToken,
+    };
 
     if (existingToken) {
       calendarOAuthDebug('🔍 [DEBUG] Updating existing token...');
@@ -304,7 +329,7 @@ export async function GET(request: Request) {
 
       if (tokenRecord?.id) {
         // Create calendar client with the new tokens
-        auth.setCredentials(tokens);
+        auth.setCredentials(oauthCredentials);
         const calendar = google.calendar({ version: 'v3', auth });
 
         // Fetch all calendars for this account

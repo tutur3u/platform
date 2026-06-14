@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type CalendarSourceOption,
+  getGoogleCalendarAuthUrl,
   getWorkspaceCalendarDefaultSource,
   updateWorkspaceCalendarDefaultSource,
 } from '@tuturuuu/internal-api';
@@ -392,11 +393,7 @@ export function useCalendarConnectionsManager(wsId: string) {
   // Google auth mutation
   const googleAuthMutation = useMutation<AuthResponse, Error, void>({
     mutationKey: ['calendar', 'google-auth', wsId],
-    mutationFn: async () => {
-      const response = await fetch(`/api/v1/calendar/auth?wsId=${wsId}`);
-      if (!response.ok) throw new Error('Failed to get auth URL');
-      return response.json();
-    },
+    mutationFn: () => getGoogleCalendarAuthUrl(wsId),
     onSuccess: (data) => {
       if (data.authUrl) window.location.href = data.authUrl;
       else toast.error(t('auth_url_invalid'));

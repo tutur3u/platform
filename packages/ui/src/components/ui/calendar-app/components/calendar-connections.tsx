@@ -15,6 +15,10 @@ import {
   Trash2,
   Upload,
 } from '@tuturuuu/icons';
+import {
+  getGoogleCalendarAuthUrl,
+  InternalApiError,
+} from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
@@ -292,21 +296,21 @@ export default function CalendarConnections({
   const googleAuthMutation = useMutation<AuthResponse, Error, void>({
     mutationKey: ['calendar', 'google-auth', wsId],
     mutationFn: async () => {
-      const response = await fetch(`/api/v1/calendar/auth?wsId=${wsId}`, {
-        method: 'GET',
-      });
+      try {
+        return await getGoogleCalendarAuthUrl(wsId);
+      } catch (error) {
+        if (error instanceof InternalApiError) {
+          throw new Error(
+            error.status === 401
+              ? 'unauthorized'
+              : error.status === 403
+                ? 'forbidden'
+                : 'unknown_error'
+          );
+        }
 
-      if (!response.ok) {
-        throw new Error(
-          response.status === 401
-            ? 'unauthorized'
-            : response.status === 403
-              ? 'forbidden'
-              : 'unknown_error'
-        );
+        throw error;
       }
-
-      return (await response.json()) as AuthResponse;
     },
     onSuccess: (data) => {
       const { authUrl } = data;

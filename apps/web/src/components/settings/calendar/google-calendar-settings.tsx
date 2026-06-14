@@ -10,6 +10,7 @@ import {
   Loader2,
   RefreshCw,
 } from '@tuturuuu/icons';
+import { getGoogleCalendarAuthUrl } from '@tuturuuu/internal-api';
 import type {
   CalendarConnection,
   WorkspaceCalendarGoogleTokenClient,
@@ -142,18 +143,7 @@ export function GoogleCalendarSettings({
 
     setIsGoogleAuthenticating(true);
     try {
-      const response = await fetch(
-        `/api/v1/calendar/auth?wsId=${workspace.id}`,
-        {
-          method: 'GET',
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const { authUrl } = await response.json();
+      const { authUrl } = await getGoogleCalendarAuthUrl(workspace.id);
       window.location.href = authUrl;
     } catch (error) {
       console.error('Error initiating Google auth:', error);

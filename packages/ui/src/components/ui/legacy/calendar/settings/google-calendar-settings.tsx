@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, ExternalLink, Link, Loader2, RefreshCw } from '@tuturuuu/icons';
+import { getGoogleCalendarAuthUrl } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCalendarGoogleTokenClient } from '@tuturuuu/types';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
@@ -119,15 +120,7 @@ export function GoogleCalendarSettings({
 
     setIsGoogleAuthenticating(true);
     try {
-      const response = await fetch(`/api/v1/calendar/auth?wsId=${wsId}`, {
-        method: 'GET',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const { authUrl } = await response.json();
+      const { authUrl } = await getGoogleCalendarAuthUrl(wsId);
       window.location.href = authUrl;
     } catch (error) {
       console.error('Error initiating Google auth:', error);

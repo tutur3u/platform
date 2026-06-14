@@ -1,7 +1,7 @@
 ---
 title: "Calendar"
 description: "Shared Calendar product surface across apps/web and apps/calendar."
-updatedAt: "2026-06-08"
+updatedAt: "2026-06-14"
 ---
 
 ## Overview
@@ -91,6 +91,15 @@ local development callback URLs such as
 `http://localhost:7803/api/v1/calendar/auth/callback` may still be configured
 through `GOOGLE_REDIRECT_URI`, but wildcard listener URLs must never be emitted
 as Google `redirect_uri` values or browser redirects.
+
+Normal Google Calendar connect and reconnect URLs request
+`access_type=offline` and `include_granted_scopes=true`, but they must not force
+`prompt=consent` by default. Google may return a refresh token only during the
+first authorization, so the callback must preserve an existing stored
+`refresh_token` when a reconnect returns only a new access token. If neither the
+callback nor the existing token row has a refresh token, the flow must fail
+before saving an active Google connection because provider sync cannot refresh
+offline.
 
 Standalone `apps/calendar` also exposes the shared Calendar connections manager
 inside its settings dialog under Calendar -> Integrations. It should fetch the

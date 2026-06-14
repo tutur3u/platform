@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Loader2, Plus, Trash2, User } from '@tuturuuu/icons';
+import { getGoogleCalendarAuthUrl } from '@tuturuuu/internal-api';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
@@ -137,11 +138,7 @@ export function ConnectedAccountsDialog({
   // Google auth mutation
   const googleAuthMutation = useMutation<AuthResponse, Error, void>({
     mutationKey: ['calendar', 'google-auth', wsId],
-    mutationFn: async () => {
-      const response = await fetch(`/api/v1/calendar/auth?wsId=${wsId}`);
-      if (!response.ok) throw new Error('Failed to get auth URL');
-      return response.json();
-    },
+    mutationFn: () => getGoogleCalendarAuthUrl(wsId),
     onSuccess: (data) => {
       if (data.authUrl) {
         window.location.href = data.authUrl;
