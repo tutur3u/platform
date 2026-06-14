@@ -5,6 +5,10 @@ import { siteConfig } from '@/constants/configs';
 import { componentDocs, getComponentDoc } from '../../component-docs';
 import { ComponentDetail } from './component-detail';
 
+// Rendered dynamically: shiki highlighting calls `Date.now()` internally, which
+// Next disallows during static prerendering (next-prerender-current-time).
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: Promise<{
     componentId: string;
