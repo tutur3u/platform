@@ -20,8 +20,57 @@ type InventoryCheckoutRpcData = {
   public_token?: string;
 };
 
+type CheckoutAuthContext = Extract<
+  Awaited<ReturnType<typeof resolveSessionAuthContext>>,
+  { ok: true }
+>;
+
+function getUserMetadataValue(user: unknown, keys: string[]) {
+  if (!user || typeof user !== 'object') return null;
+  const metadata = (user as { user_metadata?: unknown }).user_metadata;
+  if (!metadata || typeof metadata !== 'object') return null;
+
+  for (const key of keys) {
+    const value = (metadata as Record<string, unknown>)[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+
+  return null;
+}
+
+function getCheckoutBuyerPayload(auth: CheckoutAuthContext) {
+  const userWithEmail = auth.user as typeof auth.user & {
+    email?: string | null;
+    phone?: string | null;
+  };
+  const email = userWithEmail.email?.trim();
+  const name =
+    getUserMetadataValue(auth.user, [
+      'full_name',
+      'name',
+      'display_name',
+      'preferred_name',
+    ]) ??
+    email ??
+    'Tuturuuu buyer';
+
+  return {
+    customerAuthUid: auth.user.id,
+    customerEmail: email ?? `${auth.user.id}@users.tuturuuu.local`,
+    customerName: name,
+    customerPhone:
+      userWithEmail.phone ??
+      getUserMetadataValue(auth.user, ['phone', 'phone_number']),
+  };
+}
+
 type RpcClient = {
   schema: (schema: 'private') => {
+    from: (table: 'inventory_storefront_events') => {
+      insert: (payload: Record<string, unknown>) => Promise<{
+        error: { message?: string } | null;
+      }>;
+    };
     rpc: (
       fn:
         | 'create_inventory_checkout_session'
@@ -33,6 +82,8 @@ type RpcClient = {
     }>;
   };
 };
+
+type PrivateInventoryClient = ReturnType<RpcClient['schema']>;
 
 function getStorefrontUrl(request: Request) {
   const configured =
@@ -47,6 +98,55 @@ function getStorefrontUrl(request: Request) {
   return process.env.NODE_ENV === 'production'
     ? 'https://storefront.tuturuuu.com'
     : 'http://localhost:7822';
+}
+
+async function recordCheckoutAnalyticsEvent(
+  privateInventory: PrivateInventoryClient,
+  {
+    checkoutId,
+    customerAuthUid,
+    eventType,
+    metadata,
+    storefront,
+  }: {
+    checkoutId?: string | null;
+    customerAuthUid: string | null;
+    eventType: 'checkout_created' | 'checkout_failed';
+    metadata?: Record<string, unknown>;
+    storefront: {
+      analyticsEnabled?: boolean;
+      id: string;
+      wsId: string;
+    };
+  }
+) {
+  if (!storefront.analyticsEnabled) return;
+
+  const { error } = await privateInventory
+    .from('inventory_storefront_events')
+    .insert({
+      checkout_session_id: checkoutId ?? null,
+      customer_auth_uid: customerAuthUid,
+      event_type: eventType,
+      metadata: metadata ?? {},
+      storefront_id: storefront.id,
+      ws_id: storefront.wsId,
+    });
+
+  if (error) {
+    serverLogger.error('Failed to record checkout analytics event', error);
+  }
+}
+
+async function recordCheckoutAnalyticsEventWithAdmin(
+  args: Parameters<typeof recordCheckoutAnalyticsEvent>[1]
+) {
+  try {
+    const sbAdmin = (await createAdminClient()) as unknown as RpcClient;
+    await recordCheckoutAnalyticsEvent(sbAdmin.schema('private'), args);
+  } catch (error) {
+    serverLogger.error('Failed to record checkout analytics event', error);
+  }
 }
 
 async function loadAuthorizedStorefront(request: Request, slug: string) {
@@ -103,6 +203,18 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     const payload = checkoutCreatePayloadSchema.parse(await request.json());
+    const checkoutAuth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: {
+        targetApp: ['storefront', 'inventory'],
+      },
+    });
+
+    if (!checkoutAuth.ok) return checkoutAuth.response;
+
+    const checkoutPayload = {
+      ...payload,
+      ...getCheckoutBuyerPayload(checkoutAuth),
+    };
 
     if (storefrontPayload.storefront.checkoutMode === 'disabled') {
       return NextResponse.json(
@@ -112,9 +224,16 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     if (storefrontPayload.storefront.checkoutMode === 'simulated') {
+      await recordCheckoutAnalyticsEventWithAdmin({
+        customerAuthUid: checkoutPayload.customerAuthUid,
+        eventType: 'checkout_created',
+        metadata: { checkoutMode: 'simulated' },
+        storefront: storefrontPayload.storefront,
+      });
+
       return NextResponse.json(
         createSimulatedCheckoutResponse({
-          payload,
+          payload: checkoutPayload,
           storeSlug: slug,
           storefrontPayload,
         }),
@@ -127,7 +246,7 @@ export async function POST(request: Request, { params }: Params) {
     const { data, error } = await privateRpc.rpc(
       'create_inventory_checkout_session',
       {
-        p_payload: payload,
+        p_payload: checkoutPayload,
         p_storefront_slug: slug,
       }
     );
@@ -167,6 +286,13 @@ export async function POST(request: Request, { params }: Params) {
       });
       const refreshedCheckout =
         (await getCheckoutByPublicToken(publicToken)) ?? checkout;
+      await recordCheckoutAnalyticsEvent(privateRpc, {
+        checkoutId: checkout.id,
+        customerAuthUid: checkoutPayload.customerAuthUid,
+        eventType: 'checkout_created',
+        metadata: { checkoutMode: 'polar' },
+        storefront: storefrontPayload.storefront,
+      });
 
       return NextResponse.json(
         {
@@ -189,6 +315,13 @@ export async function POST(request: Request, { params }: Params) {
           releaseError
         );
       }
+      await recordCheckoutAnalyticsEvent(privateRpc, {
+        checkoutId: checkout.id,
+        customerAuthUid: checkoutPayload.customerAuthUid,
+        eventType: 'checkout_failed',
+        metadata: { checkoutMode: 'polar' },
+        storefront: storefrontPayload.storefront,
+      });
 
       serverLogger.error('Failed to create Polar inventory checkout', error);
       return NextResponse.json(

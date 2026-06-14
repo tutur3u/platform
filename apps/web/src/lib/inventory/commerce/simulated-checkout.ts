@@ -6,7 +6,9 @@ import type {
 import type { z } from 'zod';
 import type { checkoutCreatePayloadSchema } from './schemas';
 
-type CheckoutPayload = z.infer<typeof checkoutCreatePayloadSchema>;
+type CheckoutPayload = z.infer<typeof checkoutCreatePayloadSchema> & {
+  customerAuthUid?: string | null;
+};
 
 type SimulatedCheckoutOptions = {
   payload: CheckoutPayload;
@@ -73,8 +75,9 @@ export function createSimulatedCheckoutResponse({
     completedAt: now.toISOString(),
     conversionFeeEstimateAmount: 0,
     currency: storefrontPayload.storefront.currency,
-    customerEmail: payload.customerEmail,
-    customerName: payload.customerName,
+    customerAuthUid: payload.customerAuthUid ?? null,
+    customerEmail: payload.customerEmail ?? 'simulated@example.com',
+    customerName: payload.customerName ?? 'Simulated buyer',
     customerPhone: payload.customerPhone ?? null,
     expiresAt: null,
     financeInvoiceId: null,
@@ -98,7 +101,7 @@ export function createSimulatedCheckoutResponse({
 
   return {
     checkout,
-    checkoutUrl: `/store/${storeSlug}/orders/${publicToken}`,
+    checkoutUrl: `/${storeSlug}/orders/${publicToken}`,
   };
 }
 
@@ -110,6 +113,7 @@ export function getSimulatedOrderResponse(publicToken: string): {
       completedAt: new Date().toISOString(),
       conversionFeeEstimateAmount: 0,
       currency: 'USD',
+      customerAuthUid: null,
       customerEmail: 'simulated@example.com',
       customerName: 'Simulated buyer',
       customerPhone: null,

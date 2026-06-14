@@ -7,5 +7,5 @@ export default async function IndexPage({
 }) {
   const { locale } = await params;
 
-  redirect({ href: '/store/demo', locale });
+  redirect({ href: '/demo', locale });
 }

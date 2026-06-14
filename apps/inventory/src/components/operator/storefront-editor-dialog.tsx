@@ -14,6 +14,7 @@ import {
   type InventoryStorefrontCheckoutMode,
   type InventoryStorefrontCornerStyle,
   type InventoryStorefrontLayoutStyle,
+  type InventoryStorefrontSectionPayload,
   type InventoryStorefrontStatus,
   type InventoryStorefrontSurfaceStyle,
   type InventoryStorefrontThemePreset,
@@ -45,11 +46,14 @@ import {
   checkoutModes,
   cornerStyles,
   layoutStyles,
+  polarCurrencyOptions,
   storefrontStatuses,
   storefrontVisibilities,
   surfaceStyles,
   themePresets,
 } from './storefront-form-options';
+import { StorefrontBuilderFields } from './storefront-form-step';
+import type { StorefrontFormState } from './storefront-form-types';
 
 export function StorefrontEditorDialog({
   storefront,
@@ -67,7 +71,8 @@ export function StorefrontEditorDialog({
       updateInventoryStorefront(wsId, storefront.id, {
         ...form,
         accentColor: sanitizeStorefrontAccentColor(form.accentColor),
-        currency: form.currency.trim().toUpperCase() || 'USD',
+        coverImageUrl: form.coverImageUrl || null,
+        currency: form.currency,
         description: form.description || null,
         heroImageUrl: form.heroImageUrl || null,
       }),
@@ -175,12 +180,24 @@ export function StorefrontEditorDialog({
                   value={form.heroImageUrl}
                   wsId={wsId}
                 />
+                <InventoryImageUploadField
+                  description={t('coverImageDescription')}
+                  label={t('coverImage')}
+                  onChange={(coverImageUrl) =>
+                    setForm((current) => ({ ...current, coverImageUrl }))
+                  }
+                  target="storefront-cover"
+                  value={form.coverImageUrl}
+                  wsId={wsId}
+                />
                 <div className="grid min-w-0 gap-3 md:grid-cols-2">
-                  <TextField
+                  <SelectValueField
+                    allowEmpty={false}
                     label={t('currency')}
                     onChange={(currency) =>
                       setForm((current) => ({ ...current, currency }))
                     }
+                    options={polarCurrencyOptions}
                     placeholder={t('placeholders.currency')}
                     value={form.currency}
                   />
@@ -194,6 +211,16 @@ export function StorefrontEditorDialog({
                   />
                 </div>
               </div>
+            </FormSection>
+            <FormSection
+              icon={<FileImage className="h-4 w-4" />}
+              title={t('tabs.builder')}
+            >
+              <StorefrontBuilderFields
+                form={form}
+                setForm={setForm}
+                wsId={wsId}
+              />
             </FormSection>
             <FormSection
               icon={<Palette className="h-4 w-4" />}
@@ -332,6 +359,17 @@ export function StorefrontEditorDialog({
                   >
                     {t('showInventoryBadges')}
                   </ToggleField>
+                  <ToggleField
+                    checked={form.analyticsEnabled}
+                    onChange={(analyticsEnabled) =>
+                      setForm((current) => ({
+                        ...current,
+                        analyticsEnabled,
+                      }))
+                    }
+                  >
+                    {t('analyticsEnabled')}
+                  </ToggleField>
                 </div>
               </div>
             </FormSection>
@@ -361,16 +399,19 @@ export function StorefrontEditorDialog({
   );
 }
 
-function getInitialForm(storefront: InventoryStorefront) {
+function getInitialForm(storefront: InventoryStorefront): StorefrontFormState {
   return {
     accentColor: storefront.accentColor ?? '',
+    analyticsEnabled: storefront.analyticsEnabled,
     cornerStyle: storefront.cornerStyle,
+    coverImageUrl: storefront.coverImageUrl ?? '',
     currency: storefront.currency,
     description: storefront.description ?? '',
     heroImageUrl: storefront.heroImageUrl ?? '',
     layoutStyle: storefront.layoutStyle,
     name: storefront.name,
     checkoutMode: storefront.checkoutMode,
+    sections: sanitizeSections(storefront.sections),
     showInventoryBadges: storefront.showInventoryBadges,
     slug: storefront.slug,
     status: storefront.status,
@@ -378,4 +419,29 @@ function getInitialForm(storefront: InventoryStorefront) {
     themePreset: storefront.themePreset,
     visibility: storefront.visibility,
   };
+}
+
+function sanitizeSections(
+  sections: InventoryStorefront['sections']
+): InventoryStorefrontSectionPayload[] {
+  return sections.map((section) => ({
+    description: section.description ?? '',
+    href: section.href,
+    imageUrl: section.imageUrl,
+    items: section.items.map((item) => ({
+      bundleId: item.bundleId,
+      description: item.description,
+      href: item.href,
+      imageUrl: item.imageUrl,
+      listingId: item.listingId,
+      metadata: item.metadata,
+      sortOrder: item.sortOrder,
+      title: item.title,
+    })),
+    metadata: section.metadata,
+    sectionType: section.sectionType,
+    sortOrder: section.sortOrder,
+    status: section.status,
+    title: section.title ?? '',
+  }));
 }

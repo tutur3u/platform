@@ -19,10 +19,12 @@ export function StorefrontHeroPanel({
   radius: string;
   storefront: InventoryStorefront;
 }) {
+  const heroImage = storefront.coverImageUrl ?? storefront.heroImageUrl;
+
   return (
     <section
       className={cn(
-        'grid min-h-44 overflow-hidden',
+        'grid min-h-52 overflow-hidden',
         storefrontSurfaceClasses[storefront.surfaceStyle],
         radius,
         storefront.themePreset === 'editorial'
@@ -61,8 +63,8 @@ export function StorefrontHeroPanel({
       </div>
 
       <StorefrontImagePanel
-        className="min-h-44 md:min-h-full"
-        imageUrl={storefront.heroImageUrl}
+        className="min-h-52 md:min-h-full"
+        imageUrl={heroImage}
         label={storefront.name}
       />
     </section>

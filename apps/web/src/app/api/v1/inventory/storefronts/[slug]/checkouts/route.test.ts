@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   createInventoryPolarCheckout: vi.fn(),
   getCheckoutByPublicToken: vi.fn(),
   getPublicStorefront: vi.fn(),
+  insert: vi.fn(),
   isInventoryEnabled: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
   rpc: vi.fn(),
@@ -53,11 +54,20 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 describe('inventory storefront checkout route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.schema.mockReturnValue({ rpc: mocks.rpc });
+    mocks.schema.mockReturnValue({
+      from: () => ({ insert: mocks.insert }),
+      rpc: mocks.rpc,
+    });
     mocks.createAdminClient.mockResolvedValue({ schema: mocks.schema });
     mocks.getPublicStorefront.mockResolvedValue({
       listings: [],
-      storefront: { checkoutMode: 'polar', visibility: 'public', wsId: 'ws-1' },
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'polar',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
     });
     mocks.isInventoryEnabled.mockResolvedValue(true);
     mocks.resolveSessionAuthContext.mockResolvedValue({
@@ -70,6 +80,7 @@ describe('inventory storefront checkout route', () => {
       data: { publicToken: 'public-token' },
       error: null,
     });
+    mocks.insert.mockResolvedValue({ error: null });
     mocks.getCheckoutByPublicToken.mockResolvedValue({
       customerEmail: 'buyer@example.com',
       customerName: 'Buyer',
@@ -89,8 +100,6 @@ describe('inventory storefront checkout route', () => {
     const response = await POST(
       new Request('http://test.local/api', {
         body: JSON.stringify({
-          customerEmail: 'buyer@example.com',
-          customerName: 'Buyer',
           lines: [
             {
               listingId: '00000000-0000-4000-8000-000000000001',
@@ -107,7 +116,10 @@ describe('inventory storefront checkout route', () => {
     expect(mocks.rpc).toHaveBeenCalledWith(
       'create_inventory_checkout_session',
       {
-        p_payload: expect.any(Object),
+        p_payload: expect.objectContaining({
+          customerAuthUid: 'user-1',
+          customerName: 'Tuturuuu buyer',
+        }),
         p_storefront_slug: 'shop',
       }
     );
@@ -132,8 +144,6 @@ describe('inventory storefront checkout route', () => {
     const response = await POST(
       new Request('http://test.local/api', {
         body: JSON.stringify({
-          customerEmail: 'buyer@example.com',
-          customerName: 'Buyer',
           lines: [
             {
               listingId: '00000000-0000-4000-8000-000000000001',
@@ -157,7 +167,9 @@ describe('inventory storefront checkout route', () => {
     mocks.getPublicStorefront.mockResolvedValue({
       listings: [],
       storefront: {
+        analyticsEnabled: true,
         checkoutMode: 'disabled',
+        id: 'storefront-1',
         visibility: 'public',
         wsId: 'ws-1',
       },
@@ -166,8 +178,6 @@ describe('inventory storefront checkout route', () => {
     const response = await POST(
       new Request('http://test.local/api', {
         body: JSON.stringify({
-          customerEmail: 'buyer@example.com',
-          customerName: 'Buyer',
           lines: [
             {
               listingId: '00000000-0000-4000-8000-000000000001',
@@ -199,8 +209,10 @@ describe('inventory storefront checkout route', () => {
         },
       ],
       storefront: {
+        analyticsEnabled: true,
         checkoutMode: 'simulated',
         currency: 'USD',
+        id: 'storefront-1',
         visibility: 'public',
         wsId: 'ws-1',
       },
@@ -209,8 +221,6 @@ describe('inventory storefront checkout route', () => {
     const response = await POST(
       new Request('http://test.local/api', {
         body: JSON.stringify({
-          customerEmail: 'buyer@example.com',
-          customerName: 'Buyer',
           lines: [
             {
               listingId: '00000000-0000-4000-8000-000000000001',
@@ -227,7 +237,7 @@ describe('inventory storefront checkout route', () => {
     expect(response.status).toBe(201);
     expect(body.checkout.publicToken).toMatch(/^simulated-order-/);
     expect(body.checkout.totalAmount).toBe(50);
-    expect(body.checkoutUrl).toContain('/store/shop/orders/simulated-order-');
+    expect(body.checkoutUrl).toContain('/shop/orders/simulated-order-');
     expect(mocks.rpc).not.toHaveBeenCalled();
     expect(mocks.createInventoryPolarCheckout).not.toHaveBeenCalled();
   });

@@ -2,6 +2,7 @@ import type {
   InventoryStorefrontCheckoutMode,
   InventoryStorefrontCornerStyle,
   InventoryStorefrontLayoutStyle,
+  InventoryStorefrontSectionPayload,
   InventoryStorefrontStatus,
   InventoryStorefrontSurfaceStyle,
   InventoryStorefrontThemePreset,
@@ -11,13 +12,16 @@ import type { Dispatch, SetStateAction } from 'react';
 
 export type StorefrontFormState = {
   accentColor: string;
+  analyticsEnabled: boolean;
   checkoutMode: InventoryStorefrontCheckoutMode;
   cornerStyle: InventoryStorefrontCornerStyle;
+  coverImageUrl: string;
   currency: string;
   description: string;
   heroImageUrl: string;
   layoutStyle: InventoryStorefrontLayoutStyle;
   name: string;
+  sections: InventoryStorefrontSectionPayload[];
   showInventoryBadges: boolean;
   slug: string;
   status: InventoryStorefrontStatus;

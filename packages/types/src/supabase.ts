@@ -3245,6 +3245,7 @@ export type Database = {
           conversion_fee_estimate_amount: number;
           created_at: string | null;
           currency: string;
+          customer_auth_uid: string | null;
           customer_email: string;
           customer_name: string;
           customer_phone: string | null;
@@ -3275,6 +3276,7 @@ export type Database = {
           conversion_fee_estimate_amount?: number;
           created_at?: string | null;
           currency?: string;
+          customer_auth_uid?: string | null;
           customer_email: string;
           customer_name: string;
           customer_phone?: string | null;
@@ -3305,6 +3307,7 @@ export type Database = {
           conversion_fee_estimate_amount?: number;
           created_at?: string | null;
           currency?: string;
+          customer_auth_uid?: string | null;
           customer_email?: string;
           customer_name?: string;
           customer_phone?: string | null;
@@ -3795,6 +3798,77 @@ export type Database = {
           },
         ];
       };
+      inventory_storefront_events: {
+        Row: {
+          checkout_session_id: string | null;
+          customer_auth_uid: string | null;
+          event_type: string;
+          id: string;
+          listing_id: string | null;
+          metadata: Json;
+          occurred_at: string;
+          quantity: number | null;
+          section_id: string | null;
+          storefront_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          checkout_session_id?: string | null;
+          customer_auth_uid?: string | null;
+          event_type: string;
+          id?: string;
+          listing_id?: string | null;
+          metadata?: Json;
+          occurred_at?: string;
+          quantity?: number | null;
+          section_id?: string | null;
+          storefront_id: string;
+          ws_id: string;
+        };
+        Update: {
+          checkout_session_id?: string | null;
+          customer_auth_uid?: string | null;
+          event_type?: string;
+          id?: string;
+          listing_id?: string | null;
+          metadata?: Json;
+          occurred_at?: string;
+          quantity?: number | null;
+          section_id?: string | null;
+          storefront_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_storefront_events_checkout_session_id_fkey';
+            columns: ['checkout_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_checkout_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_events_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_events_section_id_fkey';
+            columns: ['section_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_sections';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_events_storefront_id_fkey';
+            columns: ['storefront_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefronts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_storefront_listings: {
         Row: {
           bundle_id: string | null;
@@ -3890,11 +3964,149 @@ export type Database = {
           },
         ];
       };
+      inventory_storefront_section_items: {
+        Row: {
+          bundle_id: string | null;
+          created_at: string | null;
+          description: string | null;
+          href: string | null;
+          id: string;
+          image_url: string | null;
+          listing_id: string | null;
+          metadata: Json;
+          section_id: string;
+          sort_order: number;
+          storefront_id: string;
+          title: string | null;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          bundle_id?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          href?: string | null;
+          id?: string;
+          image_url?: string | null;
+          listing_id?: string | null;
+          metadata?: Json;
+          section_id: string;
+          sort_order?: number;
+          storefront_id: string;
+          title?: string | null;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          bundle_id?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          href?: string | null;
+          id?: string;
+          image_url?: string | null;
+          listing_id?: string | null;
+          metadata?: Json;
+          section_id?: string;
+          sort_order?: number;
+          storefront_id?: string;
+          title?: string | null;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_storefront_section_items_bundle_id_fkey';
+            columns: ['bundle_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_bundles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_section_items_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_section_items_section_id_fkey';
+            columns: ['section_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_sections';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_section_items_storefront_id_fkey';
+            columns: ['storefront_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefronts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_storefront_sections: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          href: string | null;
+          id: string;
+          image_url: string | null;
+          metadata: Json;
+          section_type: string;
+          sort_order: number;
+          status: string;
+          storefront_id: string;
+          title: string | null;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          href?: string | null;
+          id?: string;
+          image_url?: string | null;
+          metadata?: Json;
+          section_type: string;
+          sort_order?: number;
+          status?: string;
+          storefront_id: string;
+          title?: string | null;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          href?: string | null;
+          id?: string;
+          image_url?: string | null;
+          metadata?: Json;
+          section_type?: string;
+          sort_order?: number;
+          status?: string;
+          storefront_id?: string;
+          title?: string | null;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_storefront_sections_storefront_id_fkey';
+            columns: ['storefront_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefronts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_storefronts: {
         Row: {
           accent_color: string | null;
+          analytics_enabled: boolean;
           checkout_mode: string;
           corner_style: string;
+          cover_image_url: string | null;
           created_at: string | null;
           currency: string;
           description: string | null;
@@ -3914,8 +4126,10 @@ export type Database = {
         };
         Insert: {
           accent_color?: string | null;
+          analytics_enabled?: boolean;
           checkout_mode?: string;
           corner_style?: string;
+          cover_image_url?: string | null;
           created_at?: string | null;
           currency?: string;
           description?: string | null;
@@ -3935,8 +4149,10 @@ export type Database = {
         };
         Update: {
           accent_color?: string | null;
+          analytics_enabled?: boolean;
           checkout_mode?: string;
           corner_style?: string;
+          cover_image_url?: string | null;
           created_at?: string | null;
           currency?: string;
           description?: string | null;

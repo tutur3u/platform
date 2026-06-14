@@ -98,7 +98,7 @@ describe('inventory media upload-url route', () => {
     );
   });
 
-  it('creates upload and read URLs for inventory images', async () => {
+  it('creates upload URLs for inventory images', async () => {
     const response = await postUploadUrl({
       contentType: 'image/webp',
       filename: 'poster.webp',
@@ -109,7 +109,6 @@ describe('inventory media upload-url route', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       path: 'inventory/media/product-featured-image/upload-id-poster.webp',
-      readUrl: 'https://storage.example.com/read',
       signedUrl: 'https://storage.example.com/upload',
       target: 'product-featured-image',
     });
@@ -127,14 +126,7 @@ describe('inventory media upload-url route', () => {
         upsert: false,
       }
     );
-    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
-      'workspace-1',
-      'inventory/media/product-featured-image/upload-id-poster.webp',
-      {
-        expiresIn: 31_536_000,
-        provider: 'r2',
-      }
-    );
+    expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
   });
 
   it('rejects callers without catalog management access', async () => {

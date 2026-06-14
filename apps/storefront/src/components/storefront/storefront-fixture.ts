@@ -16,7 +16,9 @@ const DEMO_CREATED_AT = '2026-06-11T00:00:00.000Z';
 
 export const demoStorefront: InventoryStorefront = {
   accentColor: null,
+  analyticsEnabled: true,
   cornerStyle: 'rounded',
+  coverImageUrl: null,
   createdAt: DEMO_CREATED_AT,
   currency: 'USD',
   checkoutMode: 'simulated',
@@ -27,6 +29,24 @@ export const demoStorefront: InventoryStorefront = {
   layoutStyle: 'grid',
   listingsCount: 4,
   name: 'Tuturuuu Demo Store',
+  sections: [
+    {
+      createdAt: DEMO_CREATED_AT,
+      description: 'A polished sample storefront for testing carts and orders.',
+      href: null,
+      id: 'fixture-section-demo-banner',
+      imageUrl: null,
+      items: [],
+      metadata: {},
+      sectionType: 'promo',
+      sortOrder: 0,
+      status: 'published',
+      storefrontId: DEMO_STOREFRONT_ID,
+      title: 'Demo launch essentials',
+      updatedAt: DEMO_CREATED_AT,
+      wsId: DEMO_WORKSPACE_ID,
+    },
+  ],
   showInventoryBadges: true,
   slug: DEMO_STOREFRONT_SLUG,
   status: 'published',
@@ -182,6 +202,7 @@ export const demoCheckoutSession: InventoryCheckoutSession = {
   completedAt: null,
   conversionFeeEstimateAmount: 0,
   currency: 'USD',
+  customerAuthUid: null,
   customerEmail: 'buyer@example.com',
   customerName: 'Demo Buyer',
   customerPhone: null,
@@ -229,7 +250,7 @@ export function createDemoCheckoutResponse(
 ): InventoryCheckoutResponse {
   return {
     checkout: demoCheckoutSession,
-    checkoutUrl: `/store/${storeSlug}/orders/${DEMO_ORDER_PUBLIC_TOKEN}`,
+    checkoutUrl: `/${storeSlug}/orders/${DEMO_ORDER_PUBLIC_TOKEN}`,
   };
 }
 

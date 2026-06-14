@@ -82,7 +82,7 @@ describe('Storefront proxy', () => {
 
   it('keeps storefront pages publicly reachable', async () => {
     const request = new NextRequest(
-      'https://storefront.tuturuuu.com/store/studio-store'
+      'https://storefront.tuturuuu.com/studio-store'
     );
 
     const response = await proxy(request);
@@ -90,6 +90,30 @@ describe('Storefront proxy', () => {
     expect(response.headers.get('x-middleware-next')).toBe('1');
     expect(response.headers.get('location')).toBeNull();
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it('redirects storefront checkout pages to login when unauthenticated', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      error: 'Missing app session',
+      ok: false,
+    });
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+    const request = new NextRequest(
+      'https://storefront.tuturuuu.com/studio-store/checkout'
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://storefront.tuturuuu.com/login?next=%2Fstudio-store%2Fcheckout'
+    );
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
+      requireWebAppSession: true,
+      sessionMode: 'supabase-first',
+      targetApp: 'storefront',
+    });
   });
 
   it('refreshes API app sessions for the storefront target app', async () => {
@@ -125,7 +149,7 @@ describe('Storefront proxy', () => {
     ],
     [
       'POST',
-      'https://storefront.tuturuuu.com/api/v1/inventory/storefronts/shop/checkouts',
+      'https://storefront.tuturuuu.com/api/v1/inventory/storefronts/shop/analytics/events',
     ],
     [
       'GET',
@@ -141,6 +165,22 @@ describe('Storefront proxy', () => {
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
       prefixBase: 'proxy:storefront:api',
     });
+  });
+
+  it('gates checkout API requests when app-session refresh fails', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      error: 'Missing app session',
+      ok: false,
+    });
+    const request = new NextRequest(
+      'https://storefront.tuturuuu.com/api/v1/inventory/storefronts/shop/checkouts',
+      { method: 'POST' }
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(401);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
 
   it('keeps unrelated API routes gated when app-session refresh fails', async () => {

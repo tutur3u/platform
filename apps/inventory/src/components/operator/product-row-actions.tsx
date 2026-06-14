@@ -92,9 +92,9 @@ export function ProductRowActions({
     setUnlimitedStock(stockAmount === null);
   };
 
-  const detailsMutation = useMutation({
-    mutationFn: () =>
-      updateInventoryProduct(wsId, row.id, {
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      await updateInventoryProduct(wsId, row.id, {
         avatar_url: details.avatarUrl || null,
         category_id: details.categoryId,
         description: details.description || undefined,
@@ -103,10 +103,26 @@ export function ProductRowActions({
         name: details.name.trim(),
         owner_id: details.ownerId,
         usage: details.usage || undefined,
-      }),
+      });
+
+      if (!canUpdateStock) return;
+
+      await updateInventoryProductInventory(wsId, row.id, {
+        inventory: [
+          {
+            amount: unlimitedStock ? null : Number(amount || 0),
+            min_amount: Number(minAmount || 0),
+            price: Number(price || 0),
+            unit_id: String(inventory.unit_id ?? ''),
+            warehouse_id: String(inventory.warehouse_id ?? ''),
+          },
+        ],
+      });
+    },
     onError: () => toast.error(t('saveError')),
     onSuccess: () => {
       toast.success(t('saveSuccess'));
+      setOpen(false);
       invalidateProducts(queryClient, wsId);
     },
   });
@@ -127,25 +143,6 @@ export function ProductRowActions({
     onSuccess: () => {
       toast.success(t('saveSuccess'));
       setOpen(false);
-      invalidateProducts(queryClient, wsId);
-    },
-  });
-  const stockMutation = useMutation({
-    mutationFn: () =>
-      updateInventoryProductInventory(wsId, row.id, {
-        inventory: [
-          {
-            amount: unlimitedStock ? null : Number(amount || 0),
-            min_amount: Number(minAmount || 0),
-            price: Number(price || 0),
-            unit_id: String(inventory.unit_id ?? ''),
-            warehouse_id: String(inventory.warehouse_id ?? ''),
-          },
-        ],
-      }),
-    onError: () => toast.error(t('saveError')),
-    onSuccess: () => {
-      toast.success(t('saveSuccess'));
       invalidateProducts(queryClient, wsId);
     },
   });
@@ -182,7 +179,7 @@ export function ProductRowActions({
           className="flex min-h-0 flex-1 flex-col"
           onSubmit={(event) => {
             event.preventDefault();
-            if (canSaveDetails) detailsMutation.mutate();
+            if (canSaveDetails) saveMutation.mutate();
           }}
         >
           <OperatorDialogBody className="grid gap-6">
@@ -315,16 +312,6 @@ export function ProductRowActions({
                       value={price}
                     />
                   </div>
-                  <Button
-                    className="w-fit"
-                    disabled={stockMutation.isPending}
-                    onClick={() => stockMutation.mutate()}
-                    type="button"
-                    variant="outline"
-                  >
-                    <Save className="h-4 w-4" />
-                    {stockMutation.isPending ? t('saving') : t('save')}
-                  </Button>
                 </div>
               ) : (
                 <div className="rounded-lg border border-border bg-muted/20 p-4 text-muted-foreground text-sm">
@@ -393,11 +380,11 @@ export function ProductRowActions({
               </Button>
             </DialogClose>
             <Button
-              disabled={!canSaveDetails || detailsMutation.isPending}
+              disabled={!canSaveDetails || saveMutation.isPending}
               type="submit"
             >
               <Save className="h-4 w-4" />
-              {detailsMutation.isPending ? t('saving') : t('save')}
+              {saveMutation.isPending ? t('saving') : t('save')}
             </Button>
           </OperatorDialogFooter>
         </form>

@@ -394,8 +394,8 @@ export async function createInventoryPolarCheckout({
       wsId: checkout.wsId,
     },
     products: [productId],
-    returnUrl: `${normalizedStorefrontUrl}/store/${storefrontSlug}/cart`,
-    successUrl: `${normalizedStorefrontUrl}/store/${storefrontSlug}/orders/${checkout.publicToken}?checkout_id={CHECKOUT_ID}`,
+    returnUrl: `${normalizedStorefrontUrl}/${storefrontSlug}/cart`,
+    successUrl: `${normalizedStorefrontUrl}/${storefrontSlug}/orders/${checkout.publicToken}?checkout_id={CHECKOUT_ID}`,
   });
   const checkoutUrl = checkoutSession.url;
 

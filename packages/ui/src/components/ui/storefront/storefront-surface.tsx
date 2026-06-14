@@ -4,13 +4,14 @@ import { ShoppingCart } from '@tuturuuu/icons';
 import type {
   InventoryStorefront,
   InventoryStorefrontListing,
+  InventoryStorefrontSection,
 } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
-import { Badge } from '../badge';
 import { StorefrontCartSummary } from './cart-summary';
 import { StorefrontEmptyListings } from './empty-listings';
 import { StorefrontHeroPanel } from './hero-panel';
+import { StorefrontImagePanel } from './image-panel';
 import { StorefrontListingCard } from './listing-card';
 import type {
   StorefrontCartLine,
@@ -30,9 +31,10 @@ export function StorefrontSurface({
   cartLines = [],
   checkoutHref,
   className,
+  compactLayout = false,
   emptyAction,
   headerActions,
-  isDemo = false,
+  isDemo: _isDemo = false,
   isSubmitting = false,
   labels: labelOverrides,
   listings,
@@ -47,6 +49,7 @@ export function StorefrontSurface({
   cartLines?: StorefrontCartLine[];
   checkoutHref?: string;
   className?: string;
+  compactLayout?: boolean;
   emptyAction?: ReactNode;
   headerActions?: ReactNode;
   isDemo?: boolean;
@@ -109,43 +112,14 @@ export function StorefrontSurface({
       <header className="border-border border-b bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-              <span>
-                {storefront.visibility === 'private'
-                  ? labels.privateStore
-                  : labels.publicStore}
-              </span>
-              {isDemo ? (
-                <Badge variant="secondary">{labels.demoBadge}</Badge>
-              ) : null}
-              {isPreview ? (
-                <Badge
-                  className="border-border bg-background"
-                  variant="outline"
-                >
-                  {labels.previewBadge}
-                </Badge>
-              ) : null}
-              {storefront.checkoutMode === 'simulated' ? (
-                <Badge
-                  className="border-border bg-background"
-                  variant="outline"
-                >
-                  {labels.simulatedBadge}
-                </Badge>
-              ) : null}
-              {storefront.checkoutMode === 'disabled' ? (
-                <Badge
-                  className="border-border bg-background"
-                  variant="outline"
-                >
-                  {labels.checkoutDisabledBadge}
-                </Badge>
-              ) : null}
-            </div>
-            <h1 className="mt-0.5 truncate font-semibold text-xl">
+            <h1 className="truncate font-semibold text-xl">
               {storefront.name}
             </h1>
+            {storefront.description ? (
+              <p className="mt-0.5 line-clamp-1 text-muted-foreground text-sm">
+                {storefront.description}
+              </p>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             {headerActions}
@@ -162,7 +136,12 @@ export function StorefrontSurface({
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <section
+        className={cn(
+          'mx-auto grid max-w-7xl gap-4 px-4 py-5',
+          compactLayout ? 'grid-cols-1' : 'lg:grid-cols-[minmax(0,1fr)_340px]'
+        )}
+      >
         <div className="min-w-0">
           <StorefrontHeroPanel
             currency={currency}
@@ -172,13 +151,19 @@ export function StorefrontSurface({
             storefront={storefront}
           />
 
+          <StorefrontMerchSections
+            radius={radius}
+            sections={storefront.sections ?? []}
+          />
+
           <div
             className={cn(
               'mt-4',
-              storefront.layoutStyle === 'list'
+              compactLayout || storefront.layoutStyle === 'list'
                 ? 'grid gap-3'
                 : 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3',
-              storefront.layoutStyle === 'feature' &&
+              !compactLayout &&
+                storefront.layoutStyle === 'feature' &&
                 '[&>article:first-child]:sm:col-span-2'
             )}
           >
@@ -231,5 +216,58 @@ export function StorefrontSurface({
         />
       </section>
     </main>
+  );
+}
+
+function StorefrontMerchSections({
+  radius,
+  sections,
+}: {
+  radius: string;
+  sections: InventoryStorefrontSection[];
+}) {
+  const visibleSections = sections
+    .filter((section) => section.status === 'published')
+    .filter((section) => section.sectionType !== 'cover')
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  if (visibleSections.length === 0) return null;
+
+  return (
+    <div className="mt-4 grid gap-3">
+      {visibleSections.map((section) => (
+        <section
+          className={cn(
+            'grid overflow-hidden border border-border bg-card md:grid-cols-[minmax(0,1fr)_280px]',
+            radius
+          )}
+          key={section.id}
+        >
+          <div className="flex min-w-0 flex-col justify-center gap-2 p-4">
+            {section.title ? (
+              <h2 className="font-semibold text-lg">{section.title}</h2>
+            ) : null}
+            {section.description ? (
+              <p className="text-muted-foreground text-sm leading-6">
+                {section.description}
+              </p>
+            ) : null}
+            {section.href ? (
+              <a
+                className="mt-1 w-fit font-medium text-sm underline-offset-4 hover:underline"
+                href={section.href}
+              >
+                {section.href.replace(/^https?:\/\//u, '')}
+              </a>
+            ) : null}
+          </div>
+          <StorefrontImagePanel
+            className="min-h-36 md:min-h-full"
+            imageUrl={section.imageUrl}
+            label={section.title ?? 'Storefront section'}
+          />
+        </section>
+      ))}
+    </div>
   );
 }

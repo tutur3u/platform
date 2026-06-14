@@ -24,8 +24,8 @@ const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 const PUBLIC_STOREFRONT_API_PATTERN =
   /^\/api\/v1\/inventory\/storefronts\/[^/]+\/?$/u;
-const PUBLIC_STOREFRONT_CHECKOUT_API_PATTERN =
-  /^\/api\/v1\/inventory\/storefronts\/[^/]+\/checkouts\/?$/u;
+const PUBLIC_STOREFRONT_ANALYTICS_API_PATTERN =
+  /^\/api\/v1\/inventory\/storefronts\/[^/]+\/analytics\/events\/?$/u;
 const PUBLIC_ORDER_API_PATTERN = /^\/api\/v1\/inventory\/orders\/[^/]+\/?$/u;
 
 function stripLocale(pathname: string) {
@@ -91,7 +91,7 @@ function isPublicStorefrontApiRequest(request: NextRequest) {
 
   if (
     method === 'POST' &&
-    PUBLIC_STOREFRONT_CHECKOUT_API_PATTERN.test(pathname)
+    PUBLIC_STOREFRONT_ANALYTICS_API_PATTERN.test(pathname)
   ) {
     return true;
   }

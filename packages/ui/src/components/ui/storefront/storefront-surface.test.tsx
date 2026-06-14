@@ -6,7 +6,9 @@ import { sanitizeStorefrontAccentColor } from './utils';
 
 const storefront: InventoryStorefront = {
   accentColor: '#abc',
+  analyticsEnabled: true,
   cornerStyle: 'rounded',
+  coverImageUrl: null,
   createdAt: '2026-06-12T00:00:00.000Z',
   currency: 'USD',
   checkoutMode: 'polar',
@@ -16,6 +18,7 @@ const storefront: InventoryStorefront = {
   layoutStyle: 'grid',
   listingsCount: 0,
   name: 'Preview Store',
+  sections: [],
   showInventoryBadges: true,
   slug: 'preview-store',
   status: 'published',
@@ -53,7 +56,7 @@ describe('StorefrontSurface', () => {
     expect(screen.getByText('Preview checkout disabled')).toBeDisabled();
   });
 
-  it('shows simulated checkout mode badges', () => {
+  it('keeps simulated storefront chrome customer-facing', () => {
     render(
       <StorefrontSurface
         labels={{ simulatedBadge: 'Simulated checkout' }}
@@ -63,10 +66,11 @@ describe('StorefrontSurface', () => {
       />
     );
 
-    expect(screen.getByText('Simulated checkout')).toBeInTheDocument();
+    expect(screen.queryByText('Simulated checkout')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Preview Store')).toHaveLength(2);
   });
 
-  it('shows disabled checkout mode badges and blocks checkout', () => {
+  it('blocks disabled checkout without showing checkout mode badges', () => {
     render(
       <StorefrontSurface
         labels={{
@@ -79,7 +83,7 @@ describe('StorefrontSurface', () => {
       />
     );
 
-    expect(screen.getByText('Checkout disabled')).toBeInTheDocument();
+    expect(screen.queryByText('Checkout disabled')).not.toBeInTheDocument();
     expect(screen.getByText('Checkout unavailable')).toBeDisabled();
   });
 });

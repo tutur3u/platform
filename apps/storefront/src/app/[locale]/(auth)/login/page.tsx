@@ -10,7 +10,7 @@ import { BASE_URL, WEB_APP_URL } from '@/constants/common';
 function normalizeNextPath(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
   if (!rawValue?.startsWith('/') || rawValue.startsWith('//')) {
-    return '/store/demo';
+    return '/demo';
   }
 
   return rawValue;

@@ -98,9 +98,20 @@ describe('inventory commerce repository RPC reads', () => {
       select: vi.fn(),
     };
     countBuilder.select.mockReturnValue(countBuilder);
+    const sectionsBuilder = {
+      eq: vi.fn(),
+      order: vi.fn(),
+      select: vi.fn(),
+    };
+    sectionsBuilder.select.mockReturnValue(sectionsBuilder);
+    sectionsBuilder.eq.mockReturnValue(sectionsBuilder);
+    sectionsBuilder.order
+      .mockReturnValueOnce(sectionsBuilder)
+      .mockResolvedValueOnce({ data: [], error: null });
     mocks.from
       .mockReturnValueOnce(storefrontBuilder)
-      .mockReturnValueOnce(countBuilder);
+      .mockReturnValueOnce(countBuilder)
+      .mockReturnValueOnce(sectionsBuilder);
 
     await expect(getStorefront('ws-1', 'storefront-1')).resolves.toMatchObject({
       accentColor: '#123abc',
@@ -110,6 +121,7 @@ describe('inventory commerce repository RPC reads', () => {
       id: 'storefront-1',
       layoutStyle: 'feature',
       listingsCount: 3,
+      sections: [],
       showInventoryBadges: false,
       slug: 'preview-shop',
       surfaceStyle: 'glass',
@@ -122,6 +134,10 @@ describe('inventory commerce repository RPC reads', () => {
     expect(mocks.from).toHaveBeenNthCalledWith(
       2,
       'inventory_storefront_listings'
+    );
+    expect(mocks.from).toHaveBeenNthCalledWith(
+      3,
+      'inventory_storefront_sections'
     );
     expect(countBuilder.select).toHaveBeenCalledWith('id', {
       count: 'exact',

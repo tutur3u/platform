@@ -5,7 +5,6 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import { canManageInventoryCatalog } from '@/lib/inventory/permissions';
 import {
-  createWorkspaceStorageSignedReadUrl,
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
@@ -21,6 +20,8 @@ const INVENTORY_MEDIA_TARGETS = [
   'bundle-image',
   'listing-image',
   'product-featured-image',
+  'storefront-banner',
+  'storefront-cover',
   'storefront-hero',
 ] as const;
 
@@ -77,14 +78,6 @@ export async function POST(request: Request, { params }: Params) {
         upsert: false,
       }
     );
-    const readUrl = await createWorkspaceStorageSignedReadUrl(
-      authorization.value.wsId,
-      uploadPayload.path,
-      {
-        expiresIn: 31_536_000,
-        provider: uploadPayload.provider,
-      }
-    );
 
     return NextResponse.json({
       contentType: uploadPayload.contentType,
@@ -93,7 +86,6 @@ export async function POST(request: Request, { params }: Params) {
       headers: uploadPayload.headers,
       path: uploadPayload.path,
       provider: uploadPayload.provider,
-      readUrl,
       signedUrl: uploadPayload.signedUrl,
       target: parsed.data.target,
       token: uploadPayload.token,

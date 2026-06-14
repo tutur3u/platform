@@ -5,6 +5,7 @@ import { RefreshCw } from '@tuturuuu/icons';
 import {
   createInventoryCheckoutSession,
   getInventoryPublicOrder,
+  recordInventoryStorefrontAnalyticsEvent,
 } from '@tuturuuu/internal-api/inventory';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
@@ -85,9 +86,6 @@ export function StorefrontClient({
       if (isDemoStorefront) return createDemoCheckoutResponse(storeSlug);
 
       return createInventoryCheckoutSession(storeSlug, {
-        customerEmail: String(formData.get('email') ?? ''),
-        customerName: String(formData.get('name') ?? ''),
-        customerPhone: String(formData.get('phone') ?? '') || null,
         lines: checkoutListings
           .map(({ line, listing }) => ({
             listingId: line.listingId,
@@ -207,20 +205,44 @@ export function StorefrontClient({
     soldOut: t('soldOut'),
     total: t('total'),
   };
+  const recordAnalyticsEvent = (
+    payload: Parameters<typeof recordInventoryStorefrontAnalyticsEvent>[1]
+  ) => {
+    if (isDemoStorefront) return;
+    recordInventoryStorefrontAnalyticsEvent(storeSlug, payload).catch(
+      () => undefined
+    );
+  };
 
   return (
     <StorefrontSurface
       cartLines={cart.cart}
-      checkoutHref={`/store/${storeSlug}/checkout`}
+      checkoutHref={`/${storeSlug}/checkout`}
       isDemo={isDemoStorefront}
       isSubmitting={checkoutMutation.isPending}
       labels={surfaceLabels}
       listings={listings}
       mode={resolvedMode}
-      onCheckoutSubmit={(formData) => checkoutMutation.mutate(formData)}
-      onDecrement={cart.decrement}
+      onCheckoutSubmit={(formData) => {
+        recordAnalyticsEvent({
+          eventType: 'checkout_started',
+          metadata: { lines: checkoutListings.length },
+        });
+        checkoutMutation.mutate(formData);
+      }}
+      onDecrement={(selectedListingId) => {
+        cart.decrement(selectedListingId);
+        recordAnalyticsEvent({
+          eventType: 'remove_from_cart',
+          listingId: selectedListingId,
+        });
+      }}
       onIncrement={(selectedListingId, maxQuantity) => {
         cart.increment(selectedListingId, maxQuantity);
+        recordAnalyticsEvent({
+          eventType: 'add_to_cart',
+          listingId: selectedListingId,
+        });
       }}
       selectedListingId={listingId}
       storefront={storefront}

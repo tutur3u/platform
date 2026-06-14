@@ -1,11 +1,13 @@
-import type {
-  InventoryStorefrontCheckoutMode,
-  InventoryStorefrontCornerStyle,
-  InventoryStorefrontLayoutStyle,
-  InventoryStorefrontStatus,
-  InventoryStorefrontSurfaceStyle,
-  InventoryStorefrontThemePreset,
-  InventoryStorefrontVisibility,
+import {
+  type InventoryStorefrontCheckoutMode,
+  type InventoryStorefrontCornerStyle,
+  type InventoryStorefrontLayoutStyle,
+  type InventoryStorefrontSectionPayload,
+  type InventoryStorefrontStatus,
+  type InventoryStorefrontSurfaceStyle,
+  type InventoryStorefrontThemePreset,
+  type InventoryStorefrontVisibility,
+  SUPPORTED_POLAR_CURRENCIES,
 } from '@tuturuuu/internal-api/inventory';
 
 export const storefrontStatuses: InventoryStorefrontStatus[] = [
@@ -49,3 +51,33 @@ export const cornerStyles: InventoryStorefrontCornerStyle[] = [
   'rounded',
   'soft',
 ];
+
+export const polarCurrencyOptions = SUPPORTED_POLAR_CURRENCIES.map(
+  (currency) => ({
+    label: currency,
+    value: currency,
+  })
+);
+
+export function createDefaultStorefrontSections(): InventoryStorefrontSectionPayload[] {
+  return [
+    {
+      description: '',
+      imageUrl: null,
+      items: [],
+      sectionType: 'featured_banners',
+      sortOrder: 0,
+      status: 'published',
+      title: '',
+    },
+    {
+      description: '',
+      imageUrl: null,
+      items: [],
+      sectionType: 'product_grid',
+      sortOrder: 1,
+      status: 'published',
+      title: '',
+    },
+  ];
+}

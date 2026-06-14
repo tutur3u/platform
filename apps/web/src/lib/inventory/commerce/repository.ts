@@ -6,10 +6,19 @@ import type {
   InventoryStorefrontListing,
   InventoryStorefrontListingPayload,
   InventoryStorefrontPayload,
+  InventoryStorefrontSectionItem,
   InventoryStorefrontStatus,
 } from '@tuturuuu/internal-api/inventory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { type ListQuery, mapStorefront, type StorefrontRow } from './mappers';
+import {
+  type ListQuery,
+  mapStorefront,
+  mapStorefrontSection,
+  mapStorefrontSectionItem,
+  type StorefrontRow,
+  type StorefrontSectionItemRow,
+  type StorefrontSectionRow,
+} from './mappers';
 
 type SupabaseErrorLike = { code?: string; message?: string } | null;
 
@@ -18,7 +27,13 @@ type ListRpcRow<TKey extends string, TValue> = {
 } & Record<TKey, TValue | null>;
 
 const storefrontSelect =
-  'id, ws_id, slug, name, description, status, visibility, hero_image_url, accent_color, currency, checkout_mode, theme_preset, layout_style, surface_style, corner_style, show_inventory_badges, created_at, updated_at';
+  'id, ws_id, slug, name, description, status, visibility, cover_image_url, hero_image_url, accent_color, currency, checkout_mode, theme_preset, layout_style, surface_style, corner_style, show_inventory_badges, analytics_enabled, created_at, updated_at';
+
+const storefrontSectionSelect =
+  'id, ws_id, storefront_id, section_type, status, title, description, image_url, href, sort_order, metadata, created_at, updated_at';
+
+const storefrontSectionItemSelect =
+  'id, ws_id, storefront_id, section_id, listing_id, bundle_id, title, description, image_url, href, sort_order, metadata, created_at, updated_at';
 
 function normalizePagination(page?: number, pageSize?: number) {
   const limit = Math.max(1, Math.min(pageSize ?? 25, 100));
@@ -74,10 +89,127 @@ async function mapStorefrontWithCount(
     ReturnType<typeof createPrivateInventoryClient>
   >['inventory']
 ) {
-  return mapStorefront({
-    ...row,
-    listings_count: await getStorefrontListingsCount(row.id, inventory),
-  });
+  const [listingsCount, sections] = await Promise.all([
+    getStorefrontListingsCount(row.id, inventory),
+    listStorefrontSections(inventory, row.ws_id, row.id),
+  ]);
+
+  return mapStorefront(
+    {
+      ...row,
+      listings_count: listingsCount,
+    },
+    sections
+  );
+}
+
+async function listStorefrontSections(
+  inventory: Awaited<
+    ReturnType<typeof createPrivateInventoryClient>
+  >['inventory'],
+  wsId: string,
+  storefrontId: string
+) {
+  const { data: sectionRows, error: sectionError } = await inventory
+    .from('inventory_storefront_sections' as never)
+    .select(storefrontSectionSelect as never)
+    .eq('ws_id', wsId)
+    .eq('storefront_id', storefrontId)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (sectionError) throw sectionError;
+
+  const sections = (sectionRows ?? []) as unknown as StorefrontSectionRow[];
+  if (sections.length === 0) return [];
+
+  const { data: itemRows, error: itemError } = await inventory
+    .from('inventory_storefront_section_items' as never)
+    .select(storefrontSectionItemSelect as never)
+    .eq('ws_id', wsId)
+    .eq('storefront_id', storefrontId)
+    .in(
+      'section_id',
+      sections.map((section) => section.id)
+    )
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (itemError) throw itemError;
+
+  const itemsBySection = new Map<string, InventoryStorefrontSectionItem[]>();
+  for (const row of (itemRows ?? []) as unknown as StorefrontSectionItemRow[]) {
+    const item = mapStorefrontSectionItem(row);
+    const items = itemsBySection.get(item.sectionId) ?? [];
+    items.push(item);
+    itemsBySection.set(item.sectionId, items);
+  }
+
+  return sections.map((section) =>
+    mapStorefrontSection(section, itemsBySection.get(section.id) ?? [])
+  );
+}
+
+async function replaceStorefrontSections(
+  inventory: Awaited<
+    ReturnType<typeof createPrivateInventoryClient>
+  >['inventory'],
+  wsId: string,
+  storefrontId: string,
+  sections: NonNullable<InventoryStorefrontPayload['sections']>
+) {
+  const { error: deleteError } = await inventory
+    .from('inventory_storefront_sections' as never)
+    .delete()
+    .eq('ws_id', wsId)
+    .eq('storefront_id', storefrontId);
+
+  if (deleteError) throw deleteError;
+  if (sections.length === 0) return;
+
+  for (const [index, section] of sections.entries()) {
+    const { data: insertedSection, error: sectionError } = await inventory
+      .from('inventory_storefront_sections' as never)
+      .insert({
+        description: section.description ?? null,
+        href: section.href ?? null,
+        image_url: section.imageUrl ?? null,
+        metadata: section.metadata ?? {},
+        section_type: section.sectionType,
+        sort_order: section.sortOrder ?? index,
+        status: section.status ?? 'published',
+        storefront_id: storefrontId,
+        title: section.title ?? null,
+        ws_id: wsId,
+      } as never)
+      .select('id')
+      .single();
+
+    if (sectionError) throw sectionError;
+    const sectionId = String((insertedSection as { id: string }).id);
+    const items = section.items ?? [];
+    if (items.length === 0) continue;
+
+    const { error: itemsError } = await inventory
+      .from('inventory_storefront_section_items' as never)
+      .insert(
+        items.map((item, itemIndex) => ({
+          bundle_id: item.bundleId ?? null,
+          description: item.description ?? null,
+          href: item.href ?? null,
+          image_url: item.imageUrl ?? null,
+          listing_id: item.listingId ?? null,
+          metadata: item.metadata ?? {},
+          section_id: sectionId,
+          sort_order: item.sortOrder ?? itemIndex,
+          storefront_id: storefrontId,
+          title: item.title ?? null,
+          ws_id: wsId,
+        })) as never
+      );
+
+    if (itemsError) throw itemsError;
+  }
 }
 
 export async function listStorefronts(
@@ -132,8 +264,10 @@ export async function createStorefront(
     .from('inventory_storefronts')
     .insert({
       accent_color: payload.accentColor ?? null,
+      analytics_enabled: payload.analyticsEnabled ?? true,
       checkout_mode: payload.checkoutMode ?? 'polar',
       corner_style: payload.cornerStyle ?? 'rounded',
+      cover_image_url: payload.coverImageUrl ?? null,
       currency: payload.currency ?? 'USD',
       description: payload.description ?? null,
       hero_image_url: payload.heroImageUrl ?? null,
@@ -152,11 +286,23 @@ export async function createStorefront(
 
   if (error) throw error;
   if (!data) throw new Error('Failed to create inventory storefront');
+  const storefrontId = String((data as unknown as { id: string }).id);
+  if (payload.sections) {
+    await replaceStorefrontSections(
+      inventory,
+      wsId,
+      storefrontId,
+      payload.sections
+    );
+  }
 
-  return mapStorefront({
-    ...(data as unknown as Omit<StorefrontRow, 'listings_count'>),
-    listings_count: 0,
-  });
+  return mapStorefront(
+    {
+      ...(data as unknown as Omit<StorefrontRow, 'listings_count'>),
+      listings_count: 0,
+    },
+    await listStorefrontSections(inventory, wsId, storefrontId)
+  );
 }
 
 export async function updateStorefront(
@@ -192,8 +338,14 @@ export async function updateStorefront(
   if (payload.showInventoryBadges !== undefined) {
     update.show_inventory_badges = payload.showInventoryBadges;
   }
+  if (payload.analyticsEnabled !== undefined) {
+    update.analytics_enabled = payload.analyticsEnabled;
+  }
   if (hasPayloadKey(payload, 'description')) {
     update.description = payload.description ?? null;
+  }
+  if (hasPayloadKey(payload, 'coverImageUrl')) {
+    update.cover_image_url = payload.coverImageUrl ?? null;
   }
   if (hasPayloadKey(payload, 'heroImageUrl')) {
     update.hero_image_url = payload.heroImageUrl ?? null;
@@ -212,6 +364,14 @@ export async function updateStorefront(
 
   if (error) throw error;
   if (!data) return null;
+  if (payload.sections) {
+    await replaceStorefrontSections(
+      inventory,
+      wsId,
+      storefrontId,
+      payload.sections
+    );
+  }
 
   return mapStorefrontWithCount(
     data as unknown as Omit<StorefrontRow, 'listings_count'>,

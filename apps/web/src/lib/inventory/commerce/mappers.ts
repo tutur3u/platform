@@ -10,12 +10,18 @@ import type {
   InventoryStorefront,
   InventoryStorefrontCheckoutMode,
   InventoryStorefrontListing,
+  InventoryStorefrontSection,
+  InventoryStorefrontSectionItem,
+  InventoryStorefrontSectionStatus,
+  InventoryStorefrontSectionType,
   InventoryStorefrontStatus,
   InventoryStorefrontVisibility,
 } from '@tuturuuu/internal-api/inventory';
 
 export type StorefrontRow = {
   accent_color: string | null;
+  analytics_enabled?: boolean | null;
+  cover_image_url?: string | null;
   created_at: string | null;
   currency: string;
   checkout_mode: InventoryStorefrontCheckoutMode | null;
@@ -33,6 +39,39 @@ export type StorefrontRow = {
   status: InventoryStorefrontStatus;
   updated_at: string | null;
   visibility: InventoryStorefrontVisibility;
+  ws_id: string;
+};
+
+export type StorefrontSectionRow = {
+  created_at: string | null;
+  description: string | null;
+  href: string | null;
+  id: string;
+  image_url: string | null;
+  metadata: Record<string, unknown> | null;
+  section_type: InventoryStorefrontSectionType;
+  sort_order: number;
+  status: InventoryStorefrontSectionStatus;
+  storefront_id: string;
+  title: string | null;
+  updated_at: string | null;
+  ws_id: string;
+};
+
+export type StorefrontSectionItemRow = {
+  bundle_id: string | null;
+  created_at: string | null;
+  description: string | null;
+  href: string | null;
+  id: string;
+  image_url: string | null;
+  listing_id: string | null;
+  metadata: Record<string, unknown> | null;
+  section_id: string;
+  sort_order: number;
+  storefront_id: string;
+  title: string | null;
+  updated_at: string | null;
   ws_id: string;
 };
 
@@ -92,6 +131,7 @@ export type CheckoutRow = {
   completed_at: string | null;
   conversion_fee_estimate_amount: number;
   currency: string;
+  customer_auth_uid?: string | null;
   customer_email: string;
   customer_name: string;
   customer_phone: string | null;
@@ -135,9 +175,14 @@ export type ListQuery<TStatus extends string> = {
   status?: TStatus | 'all';
 };
 
-export function mapStorefront(row: StorefrontRow): InventoryStorefront {
+export function mapStorefront(
+  row: StorefrontRow,
+  sections: InventoryStorefrontSection[] = []
+): InventoryStorefront {
   return {
     accentColor: row.accent_color,
+    analyticsEnabled: row.analytics_enabled ?? true,
+    coverImageUrl: row.cover_image_url ?? null,
     createdAt: row.created_at,
     currency: row.currency,
     checkoutMode: row.checkout_mode ?? 'polar',
@@ -147,6 +192,7 @@ export function mapStorefront(row: StorefrontRow): InventoryStorefront {
     layoutStyle: row.layout_style ?? 'grid',
     surfaceStyle: row.surface_style ?? 'solid',
     cornerStyle: row.corner_style ?? 'rounded',
+    sections,
     showInventoryBadges: row.show_inventory_badges ?? true,
     id: row.id,
     listingsCount: row.listings_count,
@@ -155,6 +201,49 @@ export function mapStorefront(row: StorefrontRow): InventoryStorefront {
     status: row.status,
     updatedAt: row.updated_at,
     visibility: row.visibility,
+    wsId: row.ws_id,
+  };
+}
+
+export function mapStorefrontSectionItem(
+  row: StorefrontSectionItemRow
+): InventoryStorefrontSectionItem {
+  return {
+    bundleId: row.bundle_id,
+    createdAt: row.created_at,
+    description: row.description,
+    href: row.href,
+    id: row.id,
+    imageUrl: row.image_url,
+    listingId: row.listing_id,
+    metadata: row.metadata ?? {},
+    sectionId: row.section_id,
+    sortOrder: row.sort_order,
+    storefrontId: row.storefront_id,
+    title: row.title,
+    updatedAt: row.updated_at,
+    wsId: row.ws_id,
+  };
+}
+
+export function mapStorefrontSection(
+  row: StorefrontSectionRow,
+  items: InventoryStorefrontSectionItem[] = []
+): InventoryStorefrontSection {
+  return {
+    createdAt: row.created_at,
+    description: row.description,
+    href: row.href,
+    id: row.id,
+    imageUrl: row.image_url,
+    items,
+    metadata: row.metadata ?? {},
+    sectionType: row.section_type,
+    sortOrder: row.sort_order,
+    status: row.status,
+    storefrontId: row.storefront_id,
+    title: row.title,
+    updatedAt: row.updated_at,
     wsId: row.ws_id,
   };
 }
@@ -231,6 +320,7 @@ export function mapCheckout(
     completedAt: row.completed_at,
     conversionFeeEstimateAmount: row.conversion_fee_estimate_amount,
     currency: row.currency,
+    customerAuthUid: row.customer_auth_uid ?? null,
     customerEmail: row.customer_email,
     customerName: row.customer_name,
     customerPhone: row.customer_phone,

@@ -20,6 +20,138 @@ import {
   type WorkspaceUploadUrlResponse,
 } from './storage';
 
+export const SUPPORTED_POLAR_CURRENCIES = [
+  'AED',
+  'ALL',
+  'AMD',
+  'AOA',
+  'ARS',
+  'AUD',
+  'AWG',
+  'AZN',
+  'BAM',
+  'BBD',
+  'BDT',
+  'BIF',
+  'BMD',
+  'BND',
+  'BOB',
+  'BRL',
+  'BSD',
+  'BWP',
+  'BZD',
+  'CAD',
+  'CDF',
+  'CHF',
+  'CLP',
+  'CNY',
+  'COP',
+  'CRC',
+  'CVE',
+  'CZK',
+  'DJF',
+  'DKK',
+  'DOP',
+  'DZD',
+  'EGP',
+  'ETB',
+  'EUR',
+  'FJD',
+  'FKP',
+  'GBP',
+  'GEL',
+  'GIP',
+  'GMD',
+  'GNF',
+  'GTQ',
+  'GYD',
+  'HKD',
+  'HNL',
+  'HTG',
+  'HUF',
+  'IDR',
+  'ILS',
+  'INR',
+  'ISK',
+  'JMD',
+  'JPY',
+  'KES',
+  'KGS',
+  'KHR',
+  'KMF',
+  'KRW',
+  'KYD',
+  'KZT',
+  'LAK',
+  'LKR',
+  'LRD',
+  'LSL',
+  'MAD',
+  'MDL',
+  'MGA',
+  'MKD',
+  'MNT',
+  'MOP',
+  'MUR',
+  'MVR',
+  'MWK',
+  'MXN',
+  'MYR',
+  'MZN',
+  'NAD',
+  'NGN',
+  'NIO',
+  'NOK',
+  'NPR',
+  'NZD',
+  'PAB',
+  'PEN',
+  'PGK',
+  'PHP',
+  'PKR',
+  'PLN',
+  'PYG',
+  'QAR',
+  'RON',
+  'RSD',
+  'RWF',
+  'SAR',
+  'SBD',
+  'SCR',
+  'SEK',
+  'SGD',
+  'SHP',
+  'SOS',
+  'SRD',
+  'SZL',
+  'THB',
+  'TJS',
+  'TOP',
+  'TRY',
+  'TTD',
+  'TWD',
+  'TZS',
+  'UAH',
+  'UGX',
+  'USD',
+  'UYU',
+  'UZS',
+  'VND',
+  'VUV',
+  'WST',
+  'XAF',
+  'XCD',
+  'XCG',
+  'XOF',
+  'XPF',
+  'YER',
+  'ZAR',
+  'ZMW',
+] as const;
+
+export type SupportedPolarCurrency =
+  (typeof SUPPORTED_POLAR_CURRENCIES)[number];
+
 export type InventoryStorefrontStatus =
   | 'draft'
   | 'published'
@@ -45,6 +177,27 @@ export type InventoryStorefrontCheckoutMode =
   | 'polar'
   | 'simulated';
 
+export type InventoryStorefrontSectionType =
+  | 'cover'
+  | 'featured_banners'
+  | 'featured_listings'
+  | 'product_grid'
+  | 'promo'
+  | 'text';
+
+export type InventoryStorefrontSectionStatus = 'draft' | 'hidden' | 'published';
+
+export type InventoryStorefrontAnalyticsEventType =
+  | 'add_to_cart'
+  | 'banner_click'
+  | 'checkout_completed'
+  | 'checkout_created'
+  | 'checkout_failed'
+  | 'checkout_started'
+  | 'product_view'
+  | 'remove_from_cart'
+  | 'view';
+
 export type InventoryListingStatus =
   | 'draft'
   | 'published'
@@ -67,6 +220,7 @@ export type InventoryStorefront = {
   description: string | null;
   status: InventoryStorefrontStatus;
   visibility: InventoryStorefrontVisibility;
+  coverImageUrl: string | null;
   heroImageUrl: string | null;
   accentColor: string | null;
   currency: string;
@@ -76,7 +230,43 @@ export type InventoryStorefront = {
   surfaceStyle: InventoryStorefrontSurfaceStyle;
   cornerStyle: InventoryStorefrontCornerStyle;
   showInventoryBadges: boolean;
+  analyticsEnabled: boolean;
+  sections: InventoryStorefrontSection[];
   listingsCount?: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type InventoryStorefrontSectionItem = {
+  id: string;
+  sectionId: string;
+  storefrontId: string;
+  wsId: string;
+  listingId: string | null;
+  bundleId: string | null;
+  title: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  href: string | null;
+  sortOrder: number;
+  metadata: Record<string, unknown>;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type InventoryStorefrontSection = {
+  id: string;
+  storefrontId: string;
+  wsId: string;
+  sectionType: InventoryStorefrontSectionType;
+  status: InventoryStorefrontSectionStatus;
+  title: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  href: string | null;
+  sortOrder: number;
+  metadata: Record<string, unknown>;
+  items: InventoryStorefrontSectionItem[];
   createdAt: string | null;
   updatedAt: string | null;
 };
@@ -152,6 +342,7 @@ export type InventoryCheckoutSession = {
   wsId: string;
   publicToken: string;
   status: InventoryCheckoutStatus;
+  customerAuthUid: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
@@ -396,11 +587,17 @@ export type InventoryMediaUploadTarget =
   | 'bundle-image'
   | 'listing-image'
   | 'product-featured-image'
+  | 'storefront-banner'
+  | 'storefront-cover'
   | 'storefront-hero';
 
 export type InventoryMediaUploadUrlResponse = WorkspaceUploadUrlResponse & {
-  readUrl: string;
+  readUrl?: string;
   target: InventoryMediaUploadTarget;
+};
+
+export type InventoryMediaReadUrlResponse = {
+  readUrl: string;
 };
 
 export type InventoryMediaUploadResult = {
@@ -587,6 +784,7 @@ export type InventoryStorefrontPayload = {
   description?: string | null;
   status?: InventoryStorefrontStatus;
   visibility?: InventoryStorefrontVisibility;
+  coverImageUrl?: string | null;
   heroImageUrl?: string | null;
   accentColor?: string | null;
   currency?: string;
@@ -596,6 +794,42 @@ export type InventoryStorefrontPayload = {
   surfaceStyle?: InventoryStorefrontSurfaceStyle;
   cornerStyle?: InventoryStorefrontCornerStyle;
   showInventoryBadges?: boolean;
+  analyticsEnabled?: boolean;
+  sections?: InventoryStorefrontSectionPayload[];
+};
+
+export type InventoryStorefrontSectionItemPayload = {
+  id?: string;
+  listingId?: string | null;
+  bundleId?: string | null;
+  title?: string | null;
+  description?: string | null;
+  imageUrl?: string | null;
+  href?: string | null;
+  sortOrder?: number;
+  metadata?: Record<string, unknown>;
+};
+
+export type InventoryStorefrontSectionPayload = {
+  id?: string;
+  sectionType: InventoryStorefrontSectionType;
+  status?: InventoryStorefrontSectionStatus;
+  title?: string | null;
+  description?: string | null;
+  imageUrl?: string | null;
+  href?: string | null;
+  sortOrder?: number;
+  metadata?: Record<string, unknown>;
+  items?: InventoryStorefrontSectionItemPayload[];
+};
+
+export type InventoryStorefrontAnalyticsEventPayload = {
+  eventType: InventoryStorefrontAnalyticsEventType;
+  listingId?: string | null;
+  sectionId?: string | null;
+  checkoutSessionId?: string | null;
+  quantity?: number | null;
+  metadata?: Record<string, unknown>;
 };
 
 export type InventoryStorefrontListingPayload = {
@@ -632,8 +866,8 @@ export type InventoryBundlePayload = {
 };
 
 export type InventoryCheckoutCreatePayload = {
-  customerName: string;
-  customerEmail: string;
+  customerName?: string;
+  customerEmail?: string;
   customerPhone?: string | null;
   note?: string | null;
   lines: Array<{
@@ -871,6 +1105,25 @@ export async function createInventoryMediaUploadUrl(
   );
 }
 
+export async function createInventoryMediaReadUrl(
+  wsId: string,
+  payload: {
+    path: string;
+    provider?: 'r2' | 'supabase';
+  },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryMediaReadUrlResponse>(
+    workspaceInventoryPath(wsId, '/media/read-url'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
 export async function uploadInventoryMedia(
   wsId: string,
   file: File,
@@ -897,12 +1150,26 @@ export async function uploadInventoryMedia(
     options?.fetch ?? globalThis.fetch,
     options?.onUploadProgress
   );
+  const readUrl =
+    uploadTarget.readUrl ??
+    (
+      await createInventoryMediaReadUrl(
+        wsId,
+        {
+          path: uploadPayload.path,
+          provider: uploadPayload.provider,
+        },
+        options
+      )
+    ).readUrl;
+
+  if (!readUrl) throw new Error('Inventory media read URL is missing');
 
   return {
     fullPath: uploadPayload.fullPath,
     path: uploadPayload.path,
     target: uploadTarget.target,
-    url: uploadTarget.readUrl,
+    url: readUrl,
   };
 }
 
@@ -1941,6 +2208,22 @@ export function createInventoryCheckoutSession(
     publicStorefrontPath(slug, '/checkouts'),
     {
       body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function recordInventoryStorefrontAnalyticsEvent(
+  slug: string,
+  payload: InventoryStorefrontAnalyticsEventPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ ok: true }>(
+    publicStorefrontPath(slug, '/analytics/events'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
       headers: jsonHeaders(options?.defaultHeaders),
       method: 'POST',
     }

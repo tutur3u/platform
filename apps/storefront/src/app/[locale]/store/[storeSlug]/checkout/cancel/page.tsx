@@ -1,4 +1,4 @@
-import { StorefrontClient } from '@/components/storefront/storefront-client';
+import { redirect } from 'next/navigation';
 
 export default async function StorefrontCheckoutCancelPage({
   params,
@@ -6,5 +6,5 @@ export default async function StorefrontCheckoutCancelPage({
   params: Promise<{ storeSlug: string }>;
 }) {
   const { storeSlug } = await params;
-  return <StorefrontClient mode="cart" storeSlug={storeSlug} />;
+  redirect(`/${storeSlug}/cart`);
 }

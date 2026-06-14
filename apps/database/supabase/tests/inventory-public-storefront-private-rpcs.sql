@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(13);
+select plan(15);
 
 select ok(
   to_regprocedure(
@@ -195,6 +195,32 @@ set
   corner_style = excluded.corner_style,
   show_inventory_badges = excluded.show_inventory_badges;
 
+insert into private.inventory_storefront_sections (
+  id,
+  ws_id,
+  storefront_id,
+  section_type,
+  status,
+  title,
+  description,
+  sort_order
+)
+values (
+  '00000000-0000-4000-8000-000000001751',
+  '00000000-0000-4000-8000-000000001201',
+  '00000000-0000-4000-8000-000000001701',
+  'promo',
+  'published',
+  'Inventory public RPC promo',
+  'Published merch section',
+  0
+)
+on conflict (id) do update
+set
+  status = excluded.status,
+  title = excluded.title,
+  description = excluded.description;
+
 insert into private.inventory_storefront_listings (
   id,
   storefront_id,
@@ -225,6 +251,90 @@ on conflict (id) do update
 set
   status = excluded.status,
   price = excluded.price;
+
+insert into public.workspace_products (
+  id,
+  category_id,
+  name,
+  usage,
+  description,
+  ws_id,
+  avatar_url,
+  creator_id,
+  archived,
+  owner_id,
+  finance_category_id,
+  manufacturer_id
+)
+select
+  '00000000-0000-4000-8000-000000001402',
+  '00000000-0000-4000-8000-000000001301',
+  'Inventory storefront unlimited product',
+  null,
+  null,
+  '00000000-0000-4000-8000-000000001201',
+  null,
+  null,
+  false,
+  owner.id,
+  null,
+  null
+from private.inventory_owners owner
+where owner.id = '00000000-0000-4000-8000-000000001351'
+on conflict (id) do nothing;
+
+insert into private.inventory_products (
+  product_id,
+  unit_id,
+  warehouse_id,
+  amount,
+  price
+)
+values (
+  '00000000-0000-4000-8000-000000001402',
+  '00000000-0000-4000-8000-000000001501',
+  '00000000-0000-4000-8000-000000001601',
+  null,
+  1500
+)
+on conflict (product_id, unit_id, warehouse_id) do update
+set
+  amount = excluded.amount,
+  price = excluded.price;
+
+insert into private.inventory_storefront_listings (
+  id,
+  storefront_id,
+  ws_id,
+  listing_type,
+  product_id,
+  unit_id,
+  warehouse_id,
+  title,
+  price,
+  status,
+  sort_order,
+  max_per_order
+)
+values (
+  '00000000-0000-4000-8000-000000001802',
+  '00000000-0000-4000-8000-000000001701',
+  '00000000-0000-4000-8000-000000001201',
+  'product',
+  '00000000-0000-4000-8000-000000001402',
+  '00000000-0000-4000-8000-000000001501',
+  '00000000-0000-4000-8000-000000001601',
+  'Inventory storefront unlimited listing',
+  1500,
+  'published',
+  2,
+  5
+)
+on conflict (id) do update
+set
+  status = excluded.status,
+  price = excluded.price,
+  sort_order = excluded.sort_order;
 
 insert into private.inventory_bundles (
   id,
@@ -352,7 +462,7 @@ select is(
     private.get_public_inventory_storefront('inventory-public-rpc-test')
       -> 'listings'
   ),
-  1,
+  2,
   'public storefront RPC returns published listings'
 );
 
@@ -365,6 +475,29 @@ select is(
   )::int,
   7,
   'public storefront RPC returns listing availability'
+);
+
+select ok(
+  exists (
+    select 1
+    from jsonb_array_elements(
+      private.get_public_inventory_storefront('inventory-public-rpc-test')
+        -> 'listings'
+    ) listing
+    where listing ->> 'id' = '00000000-0000-4000-8000-000000001802'
+      and listing ->> 'availableQuantity' is null
+  ),
+  'public storefront RPC returns null availability for unlimited stock'
+);
+
+select is(
+  jsonb_array_length(
+    private.get_public_inventory_storefront('inventory-public-rpc-test')
+      -> 'storefront'
+      -> 'sections'
+  ),
+  1,
+  'public storefront RPC returns published storefront sections'
 );
 
 select is(

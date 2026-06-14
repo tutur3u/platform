@@ -207,7 +207,7 @@ describe('Inventory proxy storefront access', () => {
     ['GET', 'https://inventory.tuturuuu.com/api/v1/inventory/storefronts/shop'],
     [
       'POST',
-      'https://inventory.tuturuuu.com/api/v1/inventory/storefronts/shop/checkouts',
+      'https://inventory.tuturuuu.com/api/v1/inventory/storefronts/shop/analytics/events',
     ],
     [
       'GET',
@@ -223,6 +223,22 @@ describe('Inventory proxy storefront access', () => {
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
       prefixBase: 'proxy:inventory:api',
     });
+  });
+
+  it('gates checkout API requests when app-session refresh fails', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      error: 'Missing app session',
+      ok: false,
+    });
+    const request = new NextRequest(
+      'https://inventory.tuturuuu.com/api/v1/inventory/storefronts/shop/checkouts',
+      { method: 'POST' }
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(401);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
 
   it('refreshes credentialed public storefront API requests', async () => {

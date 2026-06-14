@@ -1,3 +1,4 @@
+import { SUPPORTED_POLAR_CURRENCIES } from '@tuturuuu/internal-api/inventory';
 import { z } from 'zod';
 
 export const StorefrontStatusSchema = z.enum([
@@ -32,6 +33,21 @@ export const StorefrontCheckoutModeSchema = z.enum([
   'disabled',
 ]);
 
+export const StorefrontSectionTypeSchema = z.enum([
+  'cover',
+  'featured_banners',
+  'featured_listings',
+  'product_grid',
+  'promo',
+  'text',
+]);
+
+export const StorefrontSectionStatusSchema = z.enum([
+  'draft',
+  'hidden',
+  'published',
+]);
+
 export const ListingStatusSchema = z.enum([
   'draft',
   'published',
@@ -55,6 +71,37 @@ export const CheckoutStatusSchema = z.enum([
 
 export const PolarEnvironmentSchema = z.enum(['sandbox', 'production']);
 
+export const PolarCurrencySchema = z
+  .string()
+  .trim()
+  .transform((value) => value.toUpperCase())
+  .pipe(z.enum(SUPPORTED_POLAR_CURRENCIES));
+
+const storefrontSectionItemPayloadSchema = z.object({
+  bundleId: z.guid().nullable().optional(),
+  description: z.string().trim().max(1000).nullable().optional(),
+  href: z.url().nullable().optional(),
+  id: z.guid().optional(),
+  imageUrl: z.url().nullable().optional(),
+  listingId: z.guid().nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  sortOrder: z.number().int().optional(),
+  title: z.string().trim().max(160).nullable().optional(),
+});
+
+const storefrontSectionPayloadSchema = z.object({
+  description: z.string().trim().max(1200).nullable().optional(),
+  href: z.url().nullable().optional(),
+  id: z.guid().optional(),
+  imageUrl: z.url().nullable().optional(),
+  items: z.array(storefrontSectionItemPayloadSchema).max(24).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  sectionType: StorefrontSectionTypeSchema,
+  sortOrder: z.number().int().optional(),
+  status: StorefrontSectionStatusSchema.optional(),
+  title: z.string().trim().max(180).nullable().optional(),
+});
+
 export const listQuerySchema = <T extends z.ZodEnum>(statusSchema: T) =>
   z.object({
     page: z.coerce.number().int().min(1).optional(),
@@ -65,7 +112,9 @@ export const listQuerySchema = <T extends z.ZodEnum>(statusSchema: T) =>
 
 export const storefrontPayloadSchema = z.object({
   accentColor: z.string().trim().max(64).nullable().optional(),
-  currency: z.string().trim().length(3).optional(),
+  analyticsEnabled: z.boolean().optional(),
+  coverImageUrl: z.url().nullable().optional(),
+  currency: PolarCurrencySchema.optional(),
   description: z.string().trim().max(2000).nullable().optional(),
   heroImageUrl: z.url().nullable().optional(),
   checkoutMode: StorefrontCheckoutModeSchema.optional(),
@@ -74,6 +123,7 @@ export const storefrontPayloadSchema = z.object({
   surfaceStyle: StorefrontSurfaceStyleSchema.optional(),
   cornerStyle: StorefrontCornerStyleSchema.optional(),
   showInventoryBadges: z.boolean().optional(),
+  sections: z.array(storefrontSectionPayloadSchema).max(24).optional(),
   name: z.string().trim().min(1).max(160),
   slug: z
     .string()
@@ -132,8 +182,8 @@ export const bundlePayloadSchema = z.object({
 export const bundlePatchSchema = bundlePayloadSchema.partial();
 
 export const checkoutCreatePayloadSchema = z.object({
-  customerEmail: z.email(),
-  customerName: z.string().trim().min(1).max(160),
+  customerEmail: z.email().optional(),
+  customerName: z.string().trim().min(1).max(160).optional(),
   customerPhone: z.string().trim().max(64).nullable().optional(),
   lines: z
     .array(

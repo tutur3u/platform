@@ -33,6 +33,7 @@ import {
   listInventoryCostProfiles,
   listInventoryStorefronts,
   listInventoryUnits,
+  recordInventoryStorefrontAnalyticsEvent,
   releaseInventoryCheckout,
   updateInventoryBatch,
   updateInventoryCostProfile,
@@ -574,8 +575,6 @@ describe('inventory internal API helpers', () => {
     await createInventoryCheckoutSession(
       'shop',
       {
-        customerEmail: 'buyer@example.com',
-        customerName: 'Buyer',
         lines: [{ listingId: 'listing_1', quantity: 2 }],
       },
       {
@@ -598,8 +597,6 @@ describe('inventory internal API helpers', () => {
       'https://internal.example.com/api/v1/inventory/storefronts/shop/checkouts',
       expect.objectContaining({
         body: JSON.stringify({
-          customerEmail: 'buyer@example.com',
-          customerName: 'Buyer',
           lines: [{ listingId: 'listing_1', quantity: 2 }],
         }),
         method: 'POST',
@@ -692,7 +689,6 @@ describe('inventory internal API helpers', () => {
           headers: { 'Content-Type': 'image/webp' },
           path: 'inventory/media/product-featured-image/upload-id-poster.webp',
           provider: 'r2',
-          readUrl: 'https://storage.example.com/read',
           signedUrl: 'https://storage.example.com/upload',
           target: 'product-featured-image',
         })
@@ -705,7 +701,6 @@ describe('inventory internal API helpers', () => {
           headers: { 'Content-Type': 'image/webp' },
           path: 'inventory/media/product-featured-image/upload-id-poster.webp',
           provider: 'r2',
-          readUrl: 'https://storage.example.com/read',
           signedUrl: 'https://storage.example.com/upload',
           target: 'product-featured-image',
         })
@@ -714,7 +709,12 @@ describe('inventory internal API helpers', () => {
         ok: true,
         status: 200,
         text: async () => '',
-      });
+      })
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          readUrl: 'https://storage.example.com/read',
+        })
+      );
 
     await createInventoryMediaUploadUrl(
       'ws 1',
@@ -767,6 +767,18 @@ describe('inventory internal API helpers', () => {
         method: 'PUT',
       })
     );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/media/read-url',
+      expect.objectContaining({
+        body: JSON.stringify({
+          path: 'inventory/media/product-featured-image/upload-id-poster.webp',
+          provider: 'r2',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
     expect(result).toEqual({
       fullPath:
         'ws-1/inventory/media/product-featured-image/upload-id-poster.webp',
@@ -774,5 +786,36 @@ describe('inventory internal API helpers', () => {
       target: 'product-featured-image',
       url: 'https://storage.example.com/read',
     });
+  });
+
+  it('records storefront analytics events through the public storefront API', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ ok: true }));
+
+    await recordInventoryStorefrontAnalyticsEvent(
+      'shop',
+      {
+        eventType: 'add_to_cart',
+        listingId: 'listing_1',
+        quantity: 1,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/inventory/storefronts/shop/analytics/events',
+      expect.objectContaining({
+        body: JSON.stringify({
+          eventType: 'add_to_cart',
+          listingId: 'listing_1',
+          quantity: 1,
+        }),
+        method: 'POST',
+      })
+    );
   });
 });

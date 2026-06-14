@@ -7,5 +7,5 @@ export default async function PublicStorefrontProductPage({
   params: Promise<{ listingId: string; storeSlug: string }>;
 }) {
   const { listingId, storeSlug } = await params;
-  redirect(`${STOREFRONT_APP_URL}/store/${storeSlug}/products/${listingId}`);
+  redirect(`${STOREFRONT_APP_URL}/${storeSlug}/products/${listingId}`);
 }

@@ -21,8 +21,10 @@ import {
   type SmartSuggestion,
   SmartSuggestions,
 } from './smart-suggestions';
+import { createDefaultStorefrontSections } from './storefront-form-options';
 import {
   StorefrontBrandFields,
+  StorefrontBuilderFields,
   StorefrontCheckoutFields,
   StorefrontIdentityFields,
 } from './storefront-form-step';
@@ -30,13 +32,16 @@ import type { StorefrontFormState } from './storefront-form-types';
 
 const initialForm: StorefrontFormState = {
   accentColor: '',
+  analyticsEnabled: true,
   checkoutMode: 'simulated',
   cornerStyle: 'rounded',
+  coverImageUrl: '',
   currency: 'USD',
   description: '',
   heroImageUrl: '',
   layoutStyle: 'grid',
   name: '',
+  sections: createDefaultStorefrontSections(),
   showInventoryBadges: true,
   slug: '',
   status: 'draft',
@@ -60,13 +65,16 @@ export function StorefrontForm({
     mutationFn: () =>
       createInventoryStorefront(wsId, {
         accentColor: sanitizeStorefrontAccentColor(form.accentColor),
+        analyticsEnabled: form.analyticsEnabled,
         checkoutMode: form.checkoutMode,
         cornerStyle: form.cornerStyle,
-        currency: form.currency.trim().toUpperCase() || 'USD',
+        coverImageUrl: form.coverImageUrl || null,
+        currency: form.currency,
         description: form.description || null,
         heroImageUrl: form.heroImageUrl || null,
         layoutStyle: form.layoutStyle,
         name: form.name,
+        sections: form.sections,
         showInventoryBadges: form.showInventoryBadges,
         slug: form.slug,
         status: form.status,
@@ -162,6 +170,17 @@ export function StorefrontForm({
                 title={t('steps.storefrontBrand')}
               >
                 <StorefrontBrandFields
+                  form={form}
+                  setForm={setForm}
+                  wsId={wsId}
+                />
+              </FormSection>
+              <FormSection
+                description={t('steps.storefrontBuilderDescription')}
+                icon={<FileImage className="h-4 w-4" />}
+                title={t('steps.storefrontBuilder')}
+              >
+                <StorefrontBuilderFields
                   form={form}
                   setForm={setForm}
                   wsId={wsId}

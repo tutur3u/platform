@@ -7,5 +7,5 @@ export default async function PublicStorefrontCheckoutPage({
   params: Promise<{ storeSlug: string }>;
 }) {
   const { storeSlug } = await params;
-  redirect(`${STOREFRONT_APP_URL}/store/${storeSlug}/checkout`);
+  redirect(`${STOREFRONT_APP_URL}/${storeSlug}/checkout`);
 }

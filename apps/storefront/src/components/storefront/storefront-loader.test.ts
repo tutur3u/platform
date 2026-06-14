@@ -75,7 +75,7 @@ describe('getOptionalInventoryPublicStorefront', () => {
       checkout: {
         publicToken: DEMO_ORDER_PUBLIC_TOKEN,
       },
-      checkoutUrl: `/store/demo/orders/${DEMO_ORDER_PUBLIC_TOKEN}`,
+      checkoutUrl: `/demo/orders/${DEMO_ORDER_PUBLIC_TOKEN}`,
     });
 
     expect(getDemoOrderResponse(DEMO_ORDER_PUBLIC_TOKEN)).toMatchObject({

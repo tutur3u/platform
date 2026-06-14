@@ -37,7 +37,9 @@ export function StorefrontCartSummary({
 }) {
   const hasCart = cartEntries.length > 0;
   const isCheckoutDisabled = storefront.checkoutMode === 'disabled';
-  const submitDisabled = !hasCart || isSubmitting || isCheckoutDisabled;
+  const submitDisabled =
+    !hasCart || isSubmitting || isCheckoutDisabled || !onCheckoutSubmit;
+  const canOpenCheckout = hasCart && Boolean(checkoutHref);
 
   return (
     <aside
@@ -91,24 +93,6 @@ export function StorefrontCartSummary({
             onCheckoutSubmit?.(new FormData(event.currentTarget));
           }}
         >
-          <input
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-            name="name"
-            placeholder={labels.form.name}
-            required
-          />
-          <input
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-            name="email"
-            placeholder={labels.form.email}
-            required
-            type="email"
-          />
-          <input
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-            name="phone"
-            placeholder={labels.form.phone}
-          />
           <textarea
             className="min-h-20 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
             name="note"
@@ -123,16 +107,17 @@ export function StorefrontCartSummary({
         <Button className={cn('mt-4 w-full', radius)} disabled type="button">
           {labels.checkoutDisabled}
         </Button>
-      ) : (
-        <Button
-          asChild
-          className={cn('mt-4 w-full', radius)}
-          disabled={!hasCart}
-        >
-          <a aria-disabled={!hasCart} href={hasCart ? checkoutHref : undefined}>
+      ) : canOpenCheckout ? (
+        <Button asChild className={cn('mt-4 w-full', radius)}>
+          <a href={checkoutHref}>
             {labels.checkout}
             <ArrowRight className="h-4 w-4" />
           </a>
+        </Button>
+      ) : (
+        <Button className={cn('mt-4 w-full', radius)} disabled type="button">
+          {labels.checkout}
+          <ArrowRight className="h-4 w-4" />
         </Button>
       )}
     </aside>

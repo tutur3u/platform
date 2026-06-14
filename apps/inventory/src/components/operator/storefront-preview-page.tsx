@@ -113,7 +113,7 @@ export function StorefrontPreviewPage({
           {storefront ? (
             <Button asChild>
               <a
-                href={`${STOREFRONT_APP_URL}/store/${storefront.slug}`}
+                href={`${STOREFRONT_APP_URL}/${storefront.slug}`}
                 rel="noreferrer"
                 target="_blank"
               >
@@ -180,7 +180,8 @@ export function StorefrontPreviewPage({
           <div className={deviceClasses[device]}>
             <StorefrontSurface
               cartLines={cartLines}
-              className="min-h-[720px] overflow-hidden rounded-md border border-border"
+              className="max-h-[760px] min-h-[720px] overflow-y-auto overflow-x-hidden rounded-md border border-border"
+              compactLayout={device !== 'desktop'}
               labels={labels}
               listings={listings}
               mode="preview"

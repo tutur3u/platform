@@ -24,8 +24,8 @@ const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 const PUBLIC_STOREFRONT_API_PATTERN =
   /^\/api\/v1\/inventory\/storefronts\/[^/]+\/?$/u;
-const PUBLIC_STOREFRONT_CHECKOUT_API_PATTERN =
-  /^\/api\/v1\/inventory\/storefronts\/[^/]+\/checkouts\/?$/u;
+const PUBLIC_STOREFRONT_ANALYTICS_API_PATTERN =
+  /^\/api\/v1\/inventory\/storefronts\/[^/]+\/analytics\/events\/?$/u;
 const PUBLIC_ORDER_API_PATTERN = /^\/api\/v1\/inventory\/orders\/[^/]+\/?$/u;
 
 function stripLocale(pathname: string) {
@@ -47,9 +47,23 @@ function getPathLocale(pathname: string) {
 
 function getNextValue(request: NextRequest) {
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
-  if (unlocalizedPath === '/') return '/store/demo';
+  if (unlocalizedPath === '/') return '/demo';
 
   return `${request.nextUrl.pathname}${request.nextUrl.search}`;
+}
+
+function isPublicStorefrontPath(unlocalizedPath: string) {
+  if (unlocalizedPath === '/') return true;
+  if (
+    unlocalizedPath.startsWith('/login') ||
+    unlocalizedPath.startsWith('/verify-token') ||
+    unlocalizedPath.startsWith('/store')
+  ) {
+    return true;
+  }
+
+  const [, , childPath] = unlocalizedPath.split('/');
+  return childPath !== 'checkout';
 }
 
 function getCanonicalLocaleRedirect(request: NextRequest) {
@@ -89,7 +103,7 @@ function isPublicStorefrontApiRequest(request: NextRequest) {
 
   if (
     method === 'POST' &&
-    PUBLIC_STOREFRONT_CHECKOUT_API_PATTERN.test(pathname)
+    PUBLIC_STOREFRONT_ANALYTICS_API_PATTERN.test(pathname)
   ) {
     return true;
   }
@@ -149,10 +163,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (verifyTokenResponse) return verifyTokenResponse;
 
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
-  const isPublicPath =
-    unlocalizedPath.startsWith('/login') ||
-    unlocalizedPath.startsWith('/store') ||
-    unlocalizedPath.startsWith('/verify-token');
+  const isPublicPath = isPublicStorefrontPath(unlocalizedPath);
 
   if (!isPublicPath) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {

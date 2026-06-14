@@ -291,7 +291,7 @@ function StorefrontActions({
       {row.slug ? (
         <a
           className="inline-flex h-8 items-center gap-2 rounded-md border border-border px-2 font-medium text-xs"
-          href={`${STOREFRONT_APP_URL}/store/${row.slug}`}
+          href={`${STOREFRONT_APP_URL}/${row.slug}`}
           rel="noreferrer"
           target="_blank"
         >
