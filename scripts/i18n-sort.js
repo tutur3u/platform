@@ -7,53 +7,20 @@
  * It can either check if files are sorted (--check mode) or fix them (default mode).
  *
  * Usage:
- *   node scripts/i18n-sort.js          # Sort all translation files
+ *   node scripts/i18n-sort.js          # Sort default translation files
+ *   node scripts/i18n-sort.js --all    # Sort every discovered app messages setup
  *   node scripts/i18n-sort.js --check  # Check if files are sorted (for CI)
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
-
-// Translation directories to process
-const TRANSLATION_DIRS = [
-  'apps/web/messages',
-  'apps/apps/messages',
-  'apps/calendar/messages',
-  'apps/chat/messages',
-  'apps/cms/messages',
-  'apps/drive/messages',
-  'apps/finance/messages',
-  'apps/hive/messages',
-  'apps/inventory/messages',
-  'apps/mind/messages',
-  'apps/nova/messages',
-  'apps/qr/messages',
-  'apps/rewise/messages',
-  'apps/shortener/messages',
-  'apps/tasks/messages',
-  'apps/meet/messages',
-  'apps/track/messages',
-];
-
-/**
- * Recursively sort an object's keys alphabetically
- */
-function sortObjectKeysDeep(obj) {
-  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
-    return obj;
-  }
-
-  const sortedKeys = Object.keys(obj).sort((a, b) =>
-    a.localeCompare(b, undefined, { sensitivity: 'base' })
-  );
-
-  const sortedObj = {};
-  for (const key of sortedKeys) {
-    sortedObj[key] = sortObjectKeysDeep(obj[key]);
-  }
-
-  return sortedObj;
-}
+const {
+  discoverTranslationDirs,
+  getDefaultTranslationDirs,
+  getProjectRoot,
+  listJsonFiles,
+  sortObjectKeysDeep,
+} = require('./i18n-common');
 
 /**
  * Check if two objects are deeply equal
@@ -94,11 +61,15 @@ function processFile(filePath, checkOnly) {
 /**
  * Find all JSON files in translation directories
  */
-function findTranslationFiles() {
+function findTranslationFiles({ includeAll = false } = {}) {
   const files = [];
-  const rootDir = process.cwd();
+  const rootDir = getProjectRoot();
 
-  for (const dir of TRANSLATION_DIRS) {
+  const translationDirs = includeAll
+    ? discoverTranslationDirs(rootDir)
+    : getDefaultTranslationDirs(rootDir);
+
+  for (const dir of translationDirs) {
     const fullDir = path.join(rootDir, dir);
 
     if (!fs.existsSync(fullDir)) {
@@ -106,12 +77,7 @@ function findTranslationFiles() {
       continue;
     }
 
-    const entries = fs.readdirSync(fullDir);
-    for (const entry of entries) {
-      if (entry.endsWith('.json')) {
-        files.push(path.join(fullDir, entry));
-      }
-    }
+    files.push(...listJsonFiles(fullDir));
   }
 
   return files;
@@ -123,14 +89,15 @@ function findTranslationFiles() {
 function main() {
   const args = process.argv.slice(2);
   const checkOnly = args.includes('--check');
+  const includeAll = args.includes('--all');
 
   console.log(
     checkOnly
-      ? '🔍 Checking if translation files are sorted...\n'
-      : '🔧 Sorting translation files...\n'
+      ? `🔍 Checking if translation files are sorted${includeAll ? ' across all discovered apps' : ''}...\n`
+      : `🔧 Sorting translation files${includeAll ? ' across all discovered apps' : ''}...\n`
   );
 
-  const files = findTranslationFiles();
+  const files = findTranslationFiles({ includeAll });
 
   if (files.length === 0) {
     console.error('❌ No translation files found!');
@@ -139,7 +106,7 @@ function main() {
 
   const results = files.map((file) => processFile(file, checkOnly));
   const errors = results.filter((r) => r.error);
-  const rootDir = process.cwd();
+  const rootDir = getProjectRoot();
 
   if (errors.length > 0) {
     console.error('❌ Errors processing files:');
@@ -160,7 +127,9 @@ function main() {
         console.error(`   • ${relativePath}`);
       }
       console.error(
-        '\n💡 Run `bun i18n:sort` to fix the sorting automatically.'
+        includeAll
+          ? '\n💡 Run `bun i18n:sort --all` to fix the sorting automatically.'
+          : '\n💡 Run `bun i18n:sort` to fix the sorting automatically.'
       );
       process.exit(1);
     }

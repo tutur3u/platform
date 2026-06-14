@@ -12,51 +12,11 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-
-// Translation directories to process
-const TRANSLATION_DIRS = [
-  'apps/web/messages',
-  'apps/apps/messages',
-  'apps/calendar/messages',
-  'apps/cms/messages',
-  'apps/drive/messages',
-  'apps/finance/messages',
-  'apps/inventory/messages',
-  'apps/mind/messages',
-  'apps/nova/messages',
-  'apps/qr/messages',
-  'apps/rewise/messages',
-  'apps/shortener/messages',
-  'apps/tasks/messages',
-  'apps/meet/messages',
-  'apps/track/messages',
-];
-
-/**
- * Recursively extract all key paths from an object
- * @param {object} obj - The object to extract keys from
- * @param {string} prefix - Current key path prefix
- * @returns {string[]} - Array of dot-separated key paths
- */
-function extractKeyPaths(obj, prefix = '') {
-  const keys = [];
-
-  for (const key of Object.keys(obj)) {
-    const fullKey = prefix ? `${prefix}.${key}` : key;
-
-    if (
-      obj[key] !== null &&
-      typeof obj[key] === 'object' &&
-      !Array.isArray(obj[key])
-    ) {
-      keys.push(...extractKeyPaths(obj[key], fullKey));
-    } else {
-      keys.push(fullKey);
-    }
-  }
-
-  return keys;
-}
+const {
+  discoverTranslationDirs,
+  getAllKeyPaths,
+  getProjectRoot,
+} = require('./i18n-common');
 
 function extractInvalidLeafPaths(obj, prefix = '') {
   const keys = [];
@@ -99,8 +59,8 @@ function checkKeyParity(dir) {
     const enContent = JSON.parse(fs.readFileSync(enPath, 'utf-8'));
     const viContent = JSON.parse(fs.readFileSync(viPath, 'utf-8'));
 
-    const enKeys = new Set(extractKeyPaths(enContent));
-    const viKeys = new Set(extractKeyPaths(viContent));
+    const enKeys = new Set(getAllKeyPaths(enContent));
+    const viKeys = new Set(getAllKeyPaths(viContent));
     const invalidInEn = extractInvalidLeafPaths(enContent);
     const invalidInVi = extractInvalidLeafPaths(viContent);
 
@@ -150,12 +110,12 @@ function formatMissingKeys(keys, maxDisplay = 20) {
 function main() {
   console.log('🔍 Checking i18n key parity between en.json and vi.json...\n');
 
-  const rootDir = process.cwd();
+  const rootDir = getProjectRoot();
   let hasErrors = false;
   let totalMissingInVi = 0;
   let totalMissingInEn = 0;
 
-  for (const dir of TRANSLATION_DIRS) {
+  for (const dir of discoverTranslationDirs(rootDir)) {
     const fullDir = path.join(rootDir, dir);
 
     if (!fs.existsSync(fullDir)) {

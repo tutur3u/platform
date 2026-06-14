@@ -147,6 +147,23 @@ Then verify the cached page after refresh at
   `fetch_review_threads.py` helper supports `--active-only --summary` and emits
   review-thread counts for final re-check reports.
 
+## Translation Key Workflow
+
+When a platform change introduces a new translation key, prefer the root helper
+instead of editing message JSON by hand:
+
+```bash
+bun i18n:add --app web --key common.save --value en=Save --value vi=Lưu
+```
+
+Use `--dir apps/<app>/messages` for non-standard message directories and
+`--all` only for shared UI keys that must exist in every detected app message
+setup. The helper detects locale JSON files in the target setup, requires a
+value for each locale, blocks unsafe key paths, prevents accidental overwrites
+unless `--overwrite` is passed, and writes sorted JSON. Manual message edits are
+reserved for broad copy rewrites or value-only updates; run `bun i18n:sort`
+after those edits.
+
 ## CI Coverage
 
 `.github/workflows/codex-plugin.yaml` runs the plugin-local validator and parses

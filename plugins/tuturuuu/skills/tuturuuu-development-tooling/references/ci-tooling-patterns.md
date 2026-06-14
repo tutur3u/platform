@@ -23,6 +23,11 @@ formatting behavior, or repo-wide verification.
 
 - Root script tests belong in `node --test scripts/*.test.js` and should be
   wired into `scripts/check.js` when a new utility needs CI coverage.
+- Translation automation should use `scripts/i18n-common.js` for app message
+  discovery, nested key assignment, and stable JSON sorting. Do not add new
+  hard-coded `apps/*/messages` lists to i18n scripts; use `bun i18n:add` for
+  new keys and reserve manual JSON edits for broad rewrites or value-only
+  updates.
 - Agent workflow helpers such as `bun git-commit-window` should use ignored
   runtime state under `tmp/agent-coordination/`, expose focused subcommands,
   enforce a short 5-10-minute claim TTL, and include `node:test` coverage for

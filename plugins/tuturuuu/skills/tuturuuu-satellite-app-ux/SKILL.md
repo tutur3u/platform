@@ -52,11 +52,15 @@ counterpart already owns the behavior before duplicating logic in the app.
 Run focused tests for the target app first, then required repo checks:
 
 ```bash
-bun type-check:<app>
+bun i18n:add --app chat --key common.save --value en="Save" --value vi="Lưu"
+bun type-check:chat
 bun i18n:sort
 bun i18n:check
 ```
 
-Finish with `bun check` for TypeScript, JavaScript, messages, or repo config
-changes unless an unrelated pre-existing blocker prevents it. Do not run
-long-running dev/build commands unless the user explicitly asks.
+Use `bun i18n:add` for new satellite translation keys when possible so every
+detected locale file is updated and sorted together. Reserve manual message JSON
+edits for broad rewrites or value-only updates. Finish with `bun check` for
+TypeScript, JavaScript, messages, or repo config changes unless an unrelated
+pre-existing blocker prevents it. Do not run long-running dev/build commands
+unless the user explicitly asks.

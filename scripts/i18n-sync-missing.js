@@ -12,126 +12,20 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-
-// Translation directories to process
-const TRANSLATION_DIRS = [
-  'apps/web/messages',
-  'apps/apps/messages',
-  'apps/calendar/messages',
-  'apps/cms/messages',
-  'apps/drive/messages',
-  'apps/finance/messages',
-  'apps/inventory/messages',
-  'apps/nova/messages',
-  'apps/qr/messages',
-  'apps/rewise/messages',
-  'apps/shortener/messages',
-  'apps/tasks/messages',
-  'apps/meet/messages',
-  'apps/track/messages',
-];
-
-/**
- * Get a nested value from an object using a dot-separated path
- */
-function getNestedValue(obj, keyPath) {
-  const keys = keyPath.split('.');
-  let current = obj;
-
-  for (const key of keys) {
-    if (current === undefined || current === null) {
-      return undefined;
-    }
-    current = current[key];
-  }
-
-  return current;
-}
-
-/**
- * Check if a key is unsafe for object assignment preventing prototype pollution
- */
-function isUnsafeKey(key) {
-  return key === '__proto__' || key === 'constructor' || key === 'prototype';
-}
-
-/**
- * Set a nested value in an object using a dot-separated path
- */
-function setNestedValue(obj, keyPath, value) {
-  const keys = keyPath.split('.');
-  let current = obj;
-
-  for (let i = 0; i < keys.length - 1; i++) {
-    const key = keys[i];
-
-    if (isUnsafeKey(key)) {
-      return;
-    }
-
-    if (
-      !(key in current) ||
-      typeof current[key] !== 'object' ||
-      current[key] === null
-    ) {
-      current[key] = {};
-    }
-    current = current[key];
-  }
-
-  const lastKey = keys[keys.length - 1];
-  if (isUnsafeKey(lastKey)) {
-    return;
-  }
-
-  current[lastKey] = value;
-}
-
-/**
- * Get all leaf key paths from an object
- */
-function getAllKeyPaths(obj, prefix = '') {
-  const paths = [];
-
-  for (const key in obj) {
-    const fullPath = prefix ? `${prefix}.${key}` : key;
-    const value = obj[key];
-
-    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-      paths.push(...getAllKeyPaths(value, fullPath));
-    } else {
-      paths.push(fullPath);
-    }
-  }
-
-  return paths;
-}
-
-/**
- * Recursively sort an object's keys alphabetically
- */
-function sortObjectKeysDeep(obj) {
-  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
-    return obj;
-  }
-
-  const sortedKeys = Object.keys(obj).sort((a, b) =>
-    a.localeCompare(b, undefined, { sensitivity: 'base' })
-  );
-
-  const sortedObj = {};
-  for (const key of sortedKeys) {
-    sortedObj[key] = sortObjectKeysDeep(obj[key]);
-  }
-
-  return sortedObj;
-}
+const {
+  discoverTranslationDirs,
+  getAllKeyPaths,
+  getNestedValue,
+  getProjectRoot,
+  setNestedValue,
+  sortObjectKeysDeep,
+} = require('./i18n-common');
 
 /**
  * Process a translation directory
  */
 function processDirectory(dir) {
-  const rootDir = process.cwd();
+  const rootDir = getProjectRoot();
   const fullDir = path.join(rootDir, dir);
 
   const enPath = path.join(fullDir, 'en.json');
@@ -186,7 +80,9 @@ function main() {
 
   let totalAdded = 0;
 
-  for (const dir of TRANSLATION_DIRS) {
+  const translationDirs = discoverTranslationDirs();
+
+  for (const dir of translationDirs) {
     const result = processDirectory(dir);
 
     if (result.added > 0) {
