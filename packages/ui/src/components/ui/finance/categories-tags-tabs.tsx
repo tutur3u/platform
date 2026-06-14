@@ -11,6 +11,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
+import { useEffect } from 'react';
 
 interface Props {
   currency: string;
@@ -30,8 +31,22 @@ export default function CategoriesTagsTabs({
       shallow: true,
     })
   );
+  const [create, setCreate] = useQueryState(
+    'create',
+    parseAsString.withDefault('').withOptions({
+      shallow: true,
+    })
+  );
 
   const activeTab = tab === 'tags' ? 'tags' : 'categories';
+  const categoryCreateOpen = create === 'category';
+  const tagCreateOpen = create === 'tag';
+
+  useEffect(() => {
+    if (tagCreateOpen && activeTab !== 'tags') {
+      setTab('tags');
+    }
+  }, [activeTab, setTab, tagCreateOpen]);
 
   return (
     <Tabs
@@ -58,6 +73,8 @@ export default function CategoriesTagsTabs({
           createTitle={t('ws-transaction-categories.create')}
           createDescription={t('ws-transaction-categories.create_description')}
           form={<TransactionCategoryForm wsId={wsId} />}
+          open={categoryCreateOpen}
+          setOpen={(open) => setCreate(open ? 'category' : null)}
         />
         <Separator className="my-4" />
         <CategoryBreakdownChart wsId={wsId} currency={currency} />
@@ -73,7 +90,14 @@ export default function CategoriesTagsTabs({
       </TabsContent>
 
       <TabsContent value="tags">
-        <TagManager wsId={wsId} currency={currency} />
+        <TagManager
+          wsId={wsId}
+          currency={currency}
+          openCreateDialog={tagCreateOpen}
+          onOpenCreateDialogChange={(open) =>
+            setCreate(open ? 'tag' : null)
+          }
+        />
       </TabsContent>
     </Tabs>
   );

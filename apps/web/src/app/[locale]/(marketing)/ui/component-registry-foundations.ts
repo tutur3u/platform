@@ -249,6 +249,19 @@ export const foundationComponentEntries: ComponentEntry[] = [
     ),
   },
   {
+    id: 'quick-command-center',
+    name: 'Quick Command Center',
+    category: 'navigation',
+    importPath: '@tuturuuu/ui/quick-command-center',
+    exports: ['QuickCommandCenter'],
+    customizationKeys: ['groups', 'digitShortcuts', 'searchValue'],
+    usage: usage(
+      '@tuturuuu/ui/quick-command-center',
+      ['QuickCommandCenter'],
+      `<QuickCommandCenter\n  open={open}\n  onOpenChange={setOpen}\n  title="Quick actions"\n  placeholder="Search..."\n  emptyLabel="No commands found"\n  digitShortcuts\n  groups={groups}\n/>`
+    ),
+  },
+  {
     id: 'context-menu',
     name: 'Context Menu',
     category: 'overlays',

@@ -82,6 +82,14 @@ export function TransactionsInfinitePage({
       shallow: true,
     })
   );
+  const [tool, setTool] = useQueryState(
+    'tool',
+    parseAsString.withDefault('').withOptions({
+      shallow: true,
+    })
+  );
+  const importOpen = tool === 'import';
+  const exportOpen = tool === 'export';
 
   const handleSearch = async (query: string) => {
     await setQ(query || '');
@@ -143,7 +151,12 @@ export function TransactionsInfinitePage({
 
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           {/* Import button */}
-          <Dialog>
+          <Dialog
+            open={importOpen}
+            onOpenChange={(nextOpen) =>
+              setTool(nextOpen ? 'import' : tool === 'import' ? null : tool)
+            }
+          >
             <DialogTrigger asChild>
               <Button
                 variant="outline"
@@ -161,7 +174,12 @@ export function TransactionsInfinitePage({
 
           {/* Export button */}
           {canExport && exportContent && (
-            <Dialog>
+            <Dialog
+              open={exportOpen}
+              onOpenChange={(nextOpen) =>
+                setTool(nextOpen ? 'export' : tool === 'export' ? null : tool)
+              }
+            >
               <DialogTrigger asChild>
                 <Button
                   variant="outline"

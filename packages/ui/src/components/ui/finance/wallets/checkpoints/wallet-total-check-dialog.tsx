@@ -29,7 +29,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useFinanceBalanceMode } from '../../shared/use-finance-balance-mode';
 import {
   getWalletBalanceTone,
@@ -51,22 +51,27 @@ type WalletInput = {
 export function WalletTotalCheckDialog({
   canUpdateWallets,
   currency,
+  defaultOpen = false,
   wsId,
 }: {
   canUpdateWallets: boolean;
   currency: string;
+  defaultOpen?: boolean;
   wsId: string;
 }) {
   const t = useTranslations('wallet-checkpoints');
   const queryClient = useQueryClient();
   const { isAuditedMode } = useFinanceBalanceMode();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [values, setValues] = useState<Record<string, string>>({});
   const walletsQuery = useQuery({
     enabled: open && canUpdateWallets,
     queryFn: () => listWallets(wsId),
     queryKey: ['wallets', wsId, 'all-wallet-check'],
   });
+  useEffect(() => {
+    if (defaultOpen) setOpen(true);
+  }, [defaultOpen]);
   const wallets = useMemo<WalletInput[]>(
     () =>
       (walletsQuery.data ?? []).flatMap((wallet) => {

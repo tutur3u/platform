@@ -1,6 +1,7 @@
 'use client';
 
 import { Circle } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import {
   ChartContainer,
   ChartTooltip,
@@ -19,6 +20,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
 import { OptionalTimePicker } from '@tuturuuu/ui/optional-time-picker';
+import { QuickCommandCenter } from '@tuturuuu/ui/quick-command-center';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Bar, BarChart, XAxis } from 'recharts';
@@ -105,6 +107,46 @@ export function OptionalTimePickerPreview({ s }: { s: SampleTranslator }) {
           timeFormat: '24h',
           weekStartsOn: 1,
         }}
+      />
+    </div>
+  );
+}
+
+export function QuickCommandCenterPreview({ s }: { s: SampleTranslator }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="flex w-full justify-center">
+      <Button onClick={() => setOpen(true)} variant="outline">
+        {s('quickActions')}
+      </Button>
+      <QuickCommandCenter
+        digitShortcuts
+        emptyLabel={s('emptySearch')}
+        groups={[
+          {
+            heading: s('quickActions'),
+            id: 'quick-actions',
+            items: [
+              {
+                description: s('readyDescription'),
+                id: 'open-dashboard',
+                onSelect: () => setOpen(false),
+                title: s('openDashboard'),
+              },
+              {
+                description: s('formDescription'),
+                id: 'create-task',
+                onSelect: () => setOpen(false),
+                title: s('createTask'),
+              },
+            ],
+          },
+        ]}
+        onOpenChange={setOpen}
+        open={open}
+        placeholder={s('searchPlaceholder')}
+        title={s('quickActions')}
       />
     </div>
   );

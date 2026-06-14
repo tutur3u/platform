@@ -5,11 +5,16 @@ import {
 } from '@tuturuuu/satellite/workspace-invitation';
 import { getSidebarBehaviorUpdatedAt } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
+import { FinanceCommandProvider } from '@tuturuuu/ui/finance/command/finance-command-provider';
 import { FinanceRouteProvider } from '@tuturuuu/ui/finance/finance-route-context';
 import { FinanceLayoutControls } from '@tuturuuu/ui/finance/shared/finance-layout-controls';
 import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspace,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
@@ -60,7 +65,10 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,
   });
-  const permissions = await getPermissions({ user, wsId });
+  const [permissions, currency] = await Promise.all([
+    getPermissions({ user, wsId }),
+    getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+  ]);
 
   const cookieStore = await cookies();
   const collapsed = cookieStore.get(SIDEBAR_COLLAPSED_COOKIE_NAME);
@@ -130,6 +138,35 @@ export default async function Layout({ children, params }: LayoutProps) {
           <RealtimeLogProvider wsId={wsId}>
             <FinanceLayoutControls financePrefix="" />
             {children}
+            <FinanceCommandProvider
+              wsId={wsId}
+              workspaceSlug={workspaceSlug}
+              currency={currency ?? 'USD'}
+              canCreateDebts={
+                permissions?.containsPermission('manage_finance') ?? false
+              }
+              canCreateInvoices={
+                permissions?.containsPermission('create_invoices') ?? false
+              }
+              canCreateRecurringTransactions={
+                permissions?.containsPermission('create_transactions') ?? false
+              }
+              canCreateTransactions={
+                permissions?.containsPermission('create_transactions') ?? false
+              }
+              canCreateWallets={
+                permissions?.containsPermission('create_wallets') ?? false
+              }
+              canExportFinanceData={
+                permissions?.containsPermission('export_finance_data') ?? false
+              }
+              canManageFinance={
+                permissions?.containsPermission('manage_finance') ?? false
+              }
+              canUpdateWallets={
+                permissions?.containsPermission('update_wallets') ?? false
+              }
+            />
             <QuickActions
               wsId={workspaceSlug}
               canCreateDebts={

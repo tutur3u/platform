@@ -82,6 +82,7 @@ import {
   DateTimePickerPreview,
   FormPreview,
   OptionalTimePickerPreview,
+  QuickCommandCenterPreview,
 } from './preview-foundation-controls';
 import { renderFoundationLayoutPreview } from './preview-foundation-layouts';
 
@@ -181,6 +182,8 @@ export function renderFoundationPreview(
           </CommandList>
         </Command>
       );
+    case 'quick-command-center':
+      return <QuickCommandCenterPreview s={s} />;
     case 'context-menu':
       return (
         <ContextMenu>

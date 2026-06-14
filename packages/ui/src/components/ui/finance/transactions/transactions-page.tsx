@@ -26,6 +26,7 @@ interface Props {
   };
   permissionRequestUser?: FinancePermissionRequestUser | null;
   openCreateDialog?: boolean;
+  initialCreateMode?: 'transaction' | 'transfer';
   showTransactionTypeFilter?: boolean;
 }
 
@@ -36,6 +37,7 @@ export default async function TransactionsPage({
   workspace,
   permissionRequestUser,
   openCreateDialog = false,
+  initialCreateMode = 'transaction',
   showTransactionTypeFilter = false,
 }: Props) {
   const [t, resolvedWorkspace, resolvedPermissions, resolvedCurrency] =
@@ -102,6 +104,7 @@ export default async function TransactionsPage({
         createTitle={t('ws-transactions.create')}
         createDescription={t('ws-transactions.create_description')}
         defaultOpen={openCreateDialog}
+        initialMode={initialCreateMode}
         wsId={wsId}
         canCreateTransactions={canCreateTransactions}
         canChangeFinanceWallets={canChangeFinanceWallets}

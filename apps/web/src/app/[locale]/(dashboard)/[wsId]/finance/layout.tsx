@@ -1,4 +1,5 @@
 import { FinanceRouteProvider } from '@tuturuuu/ui/finance/finance-route-context';
+import { FinanceCommandProvider } from '@tuturuuu/ui/finance/command/finance-command-provider';
 import { FinanceLayoutControls } from '@tuturuuu/ui/finance/shared/finance-layout-controls';
 import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
@@ -29,27 +30,58 @@ export default async function WebFinanceLayout({
       {context && <FinanceLayoutControls financePrefix="/finance" />}
       {children}
       {context && (
-        <QuickActions
-          wsId={workspaceSlug}
-          canCreateDebts={context.permissions.containsPermission(
-            'manage_finance'
-          )}
-          canCreateInvoices={context.permissions.containsPermission(
-            'create_invoices'
-          )}
-          canCreateRecurringTransactions={context.permissions.containsPermission(
-            'create_transactions'
-          )}
-          canCreateTransactions={context.permissions.containsPermission(
-            'create_transactions'
-          )}
-          canCreateWallets={context.permissions.containsPermission(
-            'create_wallets'
-          )}
-          canManageFinance={context.permissions.containsPermission(
-            'manage_finance'
-          )}
-        />
+        <>
+          <FinanceCommandProvider
+            wsId={context.wsId}
+            workspaceSlug={workspaceSlug}
+            currency={context.currency}
+            canCreateDebts={context.permissions.containsPermission(
+              'manage_finance'
+            )}
+            canCreateInvoices={context.permissions.containsPermission(
+              'create_invoices'
+            )}
+            canCreateRecurringTransactions={context.permissions.containsPermission(
+              'create_transactions'
+            )}
+            canCreateTransactions={context.permissions.containsPermission(
+              'create_transactions'
+            )}
+            canCreateWallets={context.permissions.containsPermission(
+              'create_wallets'
+            )}
+            canExportFinanceData={context.permissions.containsPermission(
+              'export_finance_data'
+            )}
+            canManageFinance={context.permissions.containsPermission(
+              'manage_finance'
+            )}
+            canUpdateWallets={context.permissions.containsPermission(
+              'update_wallets'
+            )}
+          />
+          <QuickActions
+            wsId={workspaceSlug}
+            canCreateDebts={context.permissions.containsPermission(
+              'manage_finance'
+            )}
+            canCreateInvoices={context.permissions.containsPermission(
+              'create_invoices'
+            )}
+            canCreateRecurringTransactions={context.permissions.containsPermission(
+              'create_transactions'
+            )}
+            canCreateTransactions={context.permissions.containsPermission(
+              'create_transactions'
+            )}
+            canCreateWallets={context.permissions.containsPermission(
+              'create_wallets'
+            )}
+            canManageFinance={context.permissions.containsPermission(
+              'manage_finance'
+            )}
+          />
+        </>
       )}
     </FinanceRouteProvider>
   );

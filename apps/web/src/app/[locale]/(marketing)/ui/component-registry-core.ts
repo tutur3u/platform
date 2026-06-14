@@ -52,6 +52,7 @@ export type PreviewKind =
   | 'pagination'
   | 'popover'
   | 'progress'
+  | 'quick-command-center'
   | 'radio-group'
   | 'report-problem-dialog'
   | 'resizable'

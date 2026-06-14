@@ -311,6 +311,7 @@ function Calendar({
           onMonthChange={setMonth}
           defaultMonth={initialMonth}
           showOutsideDays={true}
+          fixedWeeks={true}
           weekStartsOn={props.weekStartsOn ?? preferences.weekStartsOn}
           className={cn('', className)}
           classNames={normalizeClassNames({

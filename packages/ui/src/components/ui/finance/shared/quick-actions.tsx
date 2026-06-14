@@ -1,15 +1,7 @@
 'use client';
 
 import {
-  CreditCard,
-  DollarSign,
-  FileText,
   Plus,
-  Repeat,
-  Target,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -22,6 +14,11 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { Fragment } from 'react';
+import {
+  buildFinanceCommandActionGroups,
+  renderFinanceCommandActionIcon,
+} from '../command/finance-command-actions';
 import { useFinanceHref } from '../finance-route-context';
 
 interface QuickActionsProps {
@@ -45,14 +42,21 @@ export function QuickActions({
 }: QuickActionsProps) {
   const router = useRouter();
   const t = useTranslations('finance');
+  const commandT = useTranslations('finance-command-center');
   const financeHref = useFinanceHref();
-  const hasVisibleActions =
-    canCreateDebts ||
-    canCreateRecurringTransactions ||
-    canCreateTransactions ||
-    canCreateWallets ||
-    canManageFinance ||
-    canCreateInvoices;
+  const groups = buildFinanceCommandActionGroups({
+    permissions: {
+      canCreateDebts,
+      canCreateInvoices,
+      canCreateRecurringTransactions,
+      canCreateTransactions,
+      canCreateWallets,
+      canManageFinance,
+    },
+    tCommand: commandT,
+    tFinance: t,
+  });
+  const hasVisibleActions = groups.some((group) => group.items.length > 0);
 
   if (!hasVisibleActions) return null;
 
@@ -73,78 +77,25 @@ export function QuickActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>{t('quick_actions')}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {canCreateTransactions && (
-          <DropdownMenuItem
-            onClick={() => pushFinanceHref('/transactions?create=transaction')}
-          >
-            <DollarSign className="mr-2 h-4 w-4" />
-            <span>{t('new_transaction')}</span>
-          </DropdownMenuItem>
-        )}
-        {canCreateRecurringTransactions && (
-          <DropdownMenuItem
-            onClick={() => pushFinanceHref('/recurring?create=recurring')}
-          >
-            <Repeat className="mr-2 h-4 w-4" />
-            <span>{t('new_recurring_transaction')}</span>
-          </DropdownMenuItem>
-        )}
-        {canCreateWallets && (
-          <>
-            <DropdownMenuItem
-              onClick={() => pushFinanceHref('/wallets?create=wallet')}
-            >
-              <Wallet className="mr-2 h-4 w-4" />
-              <span>{t('new_wallet')}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => pushFinanceHref('/wallets?create=credit-card')}
-            >
-              <CreditCard className="mr-2 h-4 w-4" />
-              <span>{t('new_credit_card')}</span>
-            </DropdownMenuItem>
-          </>
-        )}
-        {canManageFinance && (
-          <DropdownMenuItem
-            onClick={() => pushFinanceHref('/budgets?create=budget')}
-          >
-            <Target className="mr-2 h-4 w-4" />
-            <span>{t('new_budget')}</span>
-          </DropdownMenuItem>
-        )}
-        {(canCreateInvoices || canCreateDebts || canManageFinance) && (
-          <DropdownMenuSeparator />
-        )}
-        {canCreateInvoices && (
-          <DropdownMenuItem onClick={() => pushFinanceHref('/invoices/new')}>
-            <FileText className="mr-2 h-4 w-4" />
-            <span>{t('new_invoice')}</span>
-          </DropdownMenuItem>
-        )}
-        {canCreateDebts && (
-          <DropdownMenuItem
-            onClick={() => pushFinanceHref('/debts?create=debt')}
-          >
-            <TrendingDown className="mr-2 h-4 w-4" />
-            <span>{t('new_debt')}</span>
-          </DropdownMenuItem>
-        )}
-        {canCreateDebts && (
-          <DropdownMenuItem
-            onClick={() => pushFinanceHref('/debts?create=loan')}
-          >
-            <TrendingUp className="mr-2 h-4 w-4" />
-            <span>{t('new_loan')}</span>
-          </DropdownMenuItem>
-        )}
-        {canManageFinance && (
-          <DropdownMenuItem onClick={() => pushFinanceHref('/categories')}>
-            <CreditCard className="mr-2 h-4 w-4" />
-            <span>{t('manage_categories')}</span>
-          </DropdownMenuItem>
-        )}
+        {groups.map((group, groupIndex) => (
+          <Fragment key={group.id}>
+            <DropdownMenuSeparator />
+            {groupIndex > 0 && (
+              <DropdownMenuLabel>{group.heading}</DropdownMenuLabel>
+            )}
+            {group.items.map((action) => (
+              <DropdownMenuItem
+                key={action.id}
+                onClick={() => pushFinanceHref(action.href)}
+              >
+                <span className="mr-2">
+                  {renderFinanceCommandActionIcon(action)}
+                </span>
+                <span>{action.title}</span>
+              </DropdownMenuItem>
+            ))}
+          </Fragment>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -28,7 +28,7 @@ const requiredTranslationPaths = [
 
 describe('ui component docs registry', () => {
   it('covers every current UI registry component once', () => {
-    expect(componentEntries).toHaveLength(61);
+    expect(componentEntries).toHaveLength(62);
     expect(componentDocs).toHaveLength(componentEntries.length);
 
     const ids = new Set(componentDocs.map((doc) => doc.id));

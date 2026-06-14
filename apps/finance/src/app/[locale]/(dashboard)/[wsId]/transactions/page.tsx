@@ -8,6 +8,7 @@ interface Props {
   }>;
   searchParams: Promise<{
     create?: string;
+    mode?: string;
   }>;
 }
 
@@ -26,7 +27,12 @@ export default async function WorkspaceTransactionsPage({
       currency={context.currency}
       permissions={context.permissions}
       permissionRequestUser={context.user}
-      openCreateDialog={sp.create === 'transaction'}
+      openCreateDialog={sp.create === 'transaction' || sp.create === 'transfer'}
+      initialCreateMode={
+        sp.create === 'transfer' || sp.mode === 'transfer'
+          ? 'transfer'
+          : 'transaction'
+      }
       showTransactionTypeFilter
       workspace={context.workspace}
     />

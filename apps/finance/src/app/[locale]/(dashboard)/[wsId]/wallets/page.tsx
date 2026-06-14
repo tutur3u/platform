@@ -9,6 +9,7 @@ interface Props {
   searchParams: Promise<{
     create?: string;
     q?: string;
+    tool?: string;
   }>;
 }
 

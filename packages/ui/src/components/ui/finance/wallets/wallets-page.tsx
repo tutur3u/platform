@@ -20,6 +20,7 @@ interface Props {
   searchParams: {
     create?: string;
     q?: string;
+    tool?: string;
   };
   currency?: string;
   financePrefix?: string;
@@ -90,11 +91,13 @@ export default async function WalletsPage({
             wsId={wsId}
             financePrefix={financePrefix}
             canCreateTransactions={canCreateTransactions}
+            defaultOpen={searchParams.tool === 'checkpoint-history'}
           />
           <WalletTotalCheckDialog
             wsId={wsId}
             currency={resolvedCurrency ?? 'USD'}
             canUpdateWallets={canUpdateWallets}
+            defaultOpen={searchParams.tool === 'all-wallet-check'}
           />
         </div>
       </div>

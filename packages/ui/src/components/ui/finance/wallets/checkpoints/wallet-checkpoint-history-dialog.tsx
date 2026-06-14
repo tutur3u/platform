@@ -30,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { invalidateWalletMutationQueries } from '../query-invalidation';
 import { WalletCheckpointAdjustmentDialog } from './wallet-checkpoint-adjustment-dialog';
 import { WalletCheckpointAmount } from './wallet-checkpoint-amount';
@@ -63,17 +63,19 @@ type WindowRow =
 
 export function WalletCheckpointHistoryDialog({
   canCreateTransactions,
+  defaultOpen = false,
   financePrefix = '/finance',
   wsId,
 }: {
   canCreateTransactions: boolean;
+  defaultOpen?: boolean;
   financePrefix?: string;
   wsId: string;
 }) {
   const t = useTranslations('wallet-checkpoints');
   const locale = useLocale();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [search, setSearch] = useState('');
   const [currency, setCurrency] = useState(ALL);
   const [status, setStatus] = useState<typeof ALL | CheckpointStatus>(ALL);
@@ -84,6 +86,9 @@ export function WalletCheckpointHistoryDialog({
     queryFn: () => getWalletCheckpointHistory(wsId, { limit: 100 }),
     enabled: open,
   });
+  useEffect(() => {
+    if (defaultOpen) setOpen(true);
+  }, [defaultOpen]);
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat(locale, {
       dateStyle: 'medium',

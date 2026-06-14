@@ -62,7 +62,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useFinanceHref } from '../finance-route-context';
@@ -73,6 +73,8 @@ import {
 
 interface TagManagerProps {
   currency: string;
+  onOpenCreateDialogChange?: (open: boolean) => void;
+  openCreateDialog?: boolean;
   wsId: string;
 }
 
@@ -99,7 +101,12 @@ const PRESET_COLORS = [
   '#ec4899', // pink
 ];
 
-export function TagManager({ currency, wsId }: TagManagerProps) {
+export function TagManager({
+  currency,
+  onOpenCreateDialogChange,
+  openCreateDialog,
+  wsId,
+}: TagManagerProps) {
   const t = useTranslations();
   const locale = useLocale();
   const { isConfidential: areNumbersHidden } =
@@ -221,7 +228,7 @@ export function TagManager({ currency, wsId }: TagManagerProps) {
     router.push(`/${wsId}${financeHref('/transactions')}?tagIds=${tagId}`);
   };
 
-  const handleOpenCreate = () => {
+  const handleOpenCreate = useCallback(() => {
     setEditingTag(null);
     form.reset({
       name: '',
@@ -229,7 +236,11 @@ export function TagManager({ currency, wsId }: TagManagerProps) {
       description: '',
     });
     setIsDialogOpen(true);
-  };
+  }, [form]);
+
+  useEffect(() => {
+    if (openCreateDialog) handleOpenCreate();
+  }, [handleOpenCreate, openCreateDialog]);
 
   const handleOpenEdit = (tag: TransactionTag) => {
     setEditingTag(tag);
@@ -475,7 +486,15 @@ export function TagManager({ currency, wsId }: TagManagerProps) {
       )}
 
       {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open && openCreateDialog) {
+            onOpenCreateDialogChange?.(false);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
