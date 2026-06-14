@@ -47,6 +47,7 @@ import {
   getRowClassName,
   getStatusBadgeVariant,
   getTeacherLabel,
+  isAnnouncementProcessing,
   tableCellClassName,
   tableHeadClassName,
 } from './announcement-table-utils';
@@ -158,6 +159,7 @@ export function AnnouncementTable({
                 schedulingTimezone ?? 'UTC'
               );
               const removable = canRemoveAnnouncement(announcement);
+              const processing = isAnnouncementProcessing(announcement);
               const teacherLabel = getTeacherLabel(announcement);
 
               return (
@@ -264,6 +266,7 @@ export function AnnouncementTable({
                           disabled={
                             !canSend ||
                             isSending ||
+                            processing ||
                             announcement.status === 'sent' ||
                             !sendReady
                           }
@@ -276,6 +279,7 @@ export function AnnouncementTable({
                           disabled={
                             !canSend ||
                             isScheduling ||
+                            processing ||
                             ['sent', 'cancelled'].includes(announcement.status)
                           }
                           onClick={() => {

@@ -20072,6 +20072,7 @@
     "status_cancelled": "Cancelled",
     "status_draft": "Draft",
     "status_failed": "Failed",
+    "status_processing": "Processing",
     "status_queued": "Queued",
     "status_sent": "Sent",
     "status_skipped": "Skipped",

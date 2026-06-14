@@ -4,6 +4,7 @@ export const ANNOUNCEMENT_STATUS_LABEL_KEYS = {
   cancelled: 'status_cancelled',
   draft: 'status_draft',
   failed: 'status_failed',
+  processing: 'status_processing',
   queued: 'status_queued',
   sent: 'status_sent',
   skipped: 'status_skipped',
@@ -32,6 +33,12 @@ export function countUnverifiedRecipients(
 
 export function canRemoveAnnouncement(announcement: TopicAnnouncementRecord) {
   return ['draft', 'queued', 'failed', 'skipped'].includes(announcement.status);
+}
+
+export function isAnnouncementProcessing(
+  announcement: TopicAnnouncementRecord
+) {
+  return announcement.status === 'processing';
 }
 
 function formatTimeValue(value: string | null) {
@@ -80,6 +87,7 @@ export function getTeacherLabel(announcement: TopicAnnouncementRecord) {
 }
 
 export function getRowClassName(status: TopicAnnouncementRecord['status']) {
+  if (status === 'processing') return 'bg-muted/40';
   if (status === 'queued') return 'bg-dynamic-blue/5';
   if (status === 'sent') return 'bg-dynamic-green/5';
   if (status === 'failed') return 'bg-dynamic-red/5';
@@ -92,6 +100,7 @@ export function getStatusBadgeVariant(
   status: TopicAnnouncementRecord['status']
 ) {
   if (status === 'sent') return 'success';
+  if (status === 'processing') return 'secondary';
   if (status === 'queued') return 'warning';
   if (status === 'failed' || status === 'skipped') return 'error';
   return 'outline';

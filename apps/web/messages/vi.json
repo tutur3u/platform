@@ -20072,6 +20072,7 @@
     "status_cancelled": "Đã hủy",
     "status_draft": "Bản nháp",
     "status_failed": "Thất bại",
+    "status_processing": "Đang xử lý",
     "status_queued": "Đang chờ",
     "status_sent": "Đã gửi",
     "status_skipped": "Đã bỏ qua",

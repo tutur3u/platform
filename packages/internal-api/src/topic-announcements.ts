@@ -19,6 +19,7 @@ export type TopicAnnouncementStatus =
   | 'cancelled'
   | 'draft'
   | 'failed'
+  | 'processing'
   | 'queued'
   | 'sent'
   | 'skipped';

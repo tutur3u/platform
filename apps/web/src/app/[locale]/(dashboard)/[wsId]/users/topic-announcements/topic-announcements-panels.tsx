@@ -32,6 +32,7 @@ const STATUS_LABEL_KEYS = {
   cancelled: 'status_cancelled',
   draft: 'status_draft',
   failed: 'status_failed',
+  processing: 'status_processing',
   queued: 'status_queued',
   sent: 'status_sent',
   skipped: 'status_skipped',

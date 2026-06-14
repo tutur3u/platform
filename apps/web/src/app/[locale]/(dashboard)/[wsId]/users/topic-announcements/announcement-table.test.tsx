@@ -182,6 +182,27 @@ describe('AnnouncementTable', () => {
     expect(props.onPreview).toHaveBeenCalledWith(sentAnnouncement);
   });
 
+  it('renders processing announcements as locked in-flight rows', async () => {
+    renderTable([
+      createAnnouncement({
+        id: 'processing-1',
+        status: 'processing' as TopicAnnouncementRecord['status'],
+      }),
+    ]);
+
+    expect(screen.getByText('status_processing')).toBeInTheDocument();
+
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'announcement_actions' })
+    );
+
+    expect(await screen.findByText('send_now')).toHaveAttribute(
+      'data-disabled'
+    );
+    expect(screen.getByText('schedule_send')).toHaveAttribute('data-disabled');
+    expect(screen.queryByText('remove_announcement')).not.toBeInTheDocument();
+  });
+
   it('requires rendered email preview confirmation before direct sends', async () => {
     const draftAnnouncement = createAnnouncement({ id: 'draft-1' });
     const props = renderTable([draftAnnouncement]);
