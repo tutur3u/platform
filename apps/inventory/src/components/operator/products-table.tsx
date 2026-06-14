@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/icons';
 import type {
   InventoryCostProfile,
+  InventoryProductFormOptionsResponse,
   InventoryProductSummary,
 } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
@@ -23,11 +24,13 @@ import { ProductRowActions } from './product-management';
 
 export function ProductsTable({
   costingProfiles = [],
+  formOptions,
   rows,
   view,
   wsId,
 }: {
   costingProfiles?: InventoryCostProfile[];
+  formOptions?: InventoryProductFormOptionsResponse;
   rows: InventoryProductSummary[];
   view: string;
   wsId: string;
@@ -171,7 +174,12 @@ export function ProductsTable({
                   {String(inventory.warehouse_name ?? row.warehouse ?? '-')}
                 </td>
                 <td className="p-3">
-                  <ProductRowActions row={row} wsId={wsId} />
+                  <ProductRowActions
+                    costingProfiles={costingProfiles}
+                    options={formOptions}
+                    row={row}
+                    wsId={wsId}
+                  />
                 </td>
               </tr>
             );

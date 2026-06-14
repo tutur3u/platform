@@ -184,7 +184,7 @@ export function ProductCreateForm({
             </Button>
           )}
         </DialogTrigger>
-        <DialogContent className={operatorDialogContentClassName('xlarge')}>
+        <DialogContent className={operatorDialogContentClassName('workflow')}>
           <DialogHeader>
             <DialogTitle>{t('createProductTitle')}</DialogTitle>
             <DialogDescription>

@@ -177,7 +177,7 @@ export function CostingProfileDialog({
       open={open}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('large')}>
+      <DialogContent className={operatorDialogContentClassName('workflow')}>
         <DialogHeader>
           <DialogTitle>{t('newProfile')}</DialogTitle>
           <DialogDescription>{t('summaryDescription')}</DialogDescription>

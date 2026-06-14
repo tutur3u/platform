@@ -130,7 +130,12 @@ export function CostingPanel({
           label={t('emptyTitle')}
         />
       ) : null}
-      <CostingProfileList profiles={profiles} wsId={wsId} />
+      <CostingProfileList
+        options={options}
+        products={products}
+        profiles={profiles}
+        wsId={wsId}
+      />
     </div>
   );
 }

@@ -1,6 +1,9 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { getInventoryActorContext } from '@/lib/inventory/actor';
+import { createInventoryAuditLog } from '@/lib/inventory/audit';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import {
   deleteBundle,
@@ -34,6 +37,22 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!data) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
+
+    const sbAdmin = await createAdminClient();
+    await createInventoryAuditLog(sbAdmin, {
+      actor: await getInventoryActorContext(request, authorization.value.wsId),
+      after: data as unknown as Record<string, unknown>,
+      changedFields: Object.keys(payload),
+      entityId: bundleId,
+      entityKind: 'bundle',
+      entityLabel: data.name,
+      eventKind: payload.status === 'archived' ? 'archived' : 'updated',
+      summary:
+        payload.status === 'archived'
+          ? `Archived bundle ${data.name}`
+          : `Updated bundle ${data.name}`,
+      wsId: authorization.value.wsId,
+    });
 
     return NextResponse.json({ data });
   } catch (error) {
@@ -74,6 +93,16 @@ export async function DELETE(request: Request, { params }: Params) {
     if (!deleted) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
+
+    const sbAdmin = await createAdminClient();
+    await createInventoryAuditLog(sbAdmin, {
+      actor: await getInventoryActorContext(request, authorization.value.wsId),
+      entityId: bundleId,
+      entityKind: 'bundle',
+      eventKind: 'deleted',
+      summary: `Deleted bundle ${bundleId}`,
+      wsId: authorization.value.wsId,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

@@ -1,5 +1,11 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { getInventoryActorContext } from '@/lib/inventory/actor';
+import {
+  createInventoryAuditLog,
+  diffInventoryAuditFields,
+} from '@/lib/inventory/audit';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import {
   deleteCostProfile,
@@ -59,6 +65,7 @@ export async function PATCH(request: Request, { params }: Params) {
     );
     if (!payload.ok) return payload.response;
 
+    const before = await getCostProfile(authorization.value.wsId, profileId);
     const data = await updateCostProfile(
       authorization.value.wsId,
       profileId,
@@ -67,6 +74,29 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!data) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
+
+    const sbAdmin = await createAdminClient();
+    const changedFields = before
+      ? diffInventoryAuditFields(
+          before as unknown as Record<string, unknown>,
+          data as unknown as Record<string, unknown>
+        )
+      : Object.keys(payload.data);
+    await createInventoryAuditLog(sbAdmin, {
+      actor: await getInventoryActorContext(request, authorization.value.wsId),
+      after: data as unknown as Record<string, unknown>,
+      before: before as unknown as Record<string, unknown>,
+      changedFields,
+      entityId: profileId,
+      entityKind: 'cost_profile',
+      entityLabel: data.name,
+      eventKind: payload.data.status === 'archived' ? 'archived' : 'updated',
+      summary:
+        payload.data.status === 'archived'
+          ? `Archived costing profile ${data.name}`
+          : `Updated costing profile ${data.name}`,
+      wsId: authorization.value.wsId,
+    });
 
     return NextResponse.json({ data });
   } catch (error) {
@@ -88,6 +118,7 @@ export async function DELETE(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
+    const before = await getCostProfile(authorization.value.wsId, profileId);
     const deleted = await deleteCostProfile(
       authorization.value.wsId,
       profileId
@@ -95,6 +126,18 @@ export async function DELETE(request: Request, { params }: Params) {
     if (!deleted) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
+
+    const sbAdmin = await createAdminClient();
+    await createInventoryAuditLog(sbAdmin, {
+      actor: await getInventoryActorContext(request, authorization.value.wsId),
+      before: before as unknown as Record<string, unknown>,
+      entityId: profileId,
+      entityKind: 'cost_profile',
+      entityLabel: before?.name ?? null,
+      eventKind: 'deleted',
+      summary: `Deleted costing profile ${before?.name ?? profileId}`,
+      wsId: authorization.value.wsId,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

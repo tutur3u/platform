@@ -17,6 +17,9 @@ export interface InventoryAuditLogInput {
     | 'deleted'
     | 'sale_created';
   entityKind:
+    | 'bundle'
+    | 'checkout'
+    | 'cost_profile'
     | 'owner'
     | 'product'
     | 'stock'
@@ -25,7 +28,9 @@ export interface InventoryAuditLogInput {
     | 'manufacturer'
     | 'supplier'
     | 'warehouse'
-    | 'sale';
+    | 'sale'
+    | 'storefront'
+    | 'storefront_listing';
   entityId?: string | null;
   entityLabel?: string | null;
   summary: string;

@@ -128,7 +128,7 @@ function BundleComponentsDialog({
           {t('manageComponents')}
         </Button>
       </DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('large')}>
+      <DialogContent className={operatorDialogContentClassName('workflow')}>
         <DialogHeader>
           <DialogTitle>{t('manageComponentsTitle')}</DialogTitle>
           <DialogDescription>

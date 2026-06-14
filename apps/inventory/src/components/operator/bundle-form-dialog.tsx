@@ -190,7 +190,7 @@ export function BundleForm({
             </Button>
           )}
         </DialogTrigger>
-        <DialogContent className={operatorDialogContentClassName('xlarge')}>
+        <DialogContent className={operatorDialogContentClassName('workflow')}>
           <DialogHeader>
             <DialogTitle>{t('createBundleTitle')}</DialogTitle>
             <DialogDescription>

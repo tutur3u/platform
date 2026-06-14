@@ -25,7 +25,7 @@ export function FormStepper({
   steps: OperatorFormStep[];
 }) {
   return (
-    <ol className="grid min-w-0 gap-2 [grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))]">
+    <ol className="grid min-w-0 gap-2 [grid-template-columns:repeat(auto-fit,minmax(min(100%,9.5rem),1fr))]">
       {steps.map((step, index) => {
         const Icon = step.icon;
         const isActive = index === activeIndex;
@@ -34,7 +34,7 @@ export function FormStepper({
         return (
           <li
             className={cn(
-              'min-w-0 rounded-lg border p-3 transition',
+              'min-w-0 rounded-lg border p-2.5 transition',
               isActive
                 ? 'border-primary/50 bg-primary/10 text-primary'
                 : 'border-border bg-muted/20 text-muted-foreground',
@@ -59,7 +59,7 @@ export function FormStepper({
               </span>
               <span className="truncate font-medium text-sm">{step.title}</span>
             </div>
-            <p className="mt-2 hidden text-xs leading-5 md:line-clamp-2 md:block">
+            <p className="mt-2 hidden text-xs leading-5 lg:line-clamp-2 lg:block">
               {step.description}
             </p>
           </li>

@@ -108,12 +108,29 @@ describe('Inventory operator form workflows', () => {
     expect(source('costing-panel.tsx')).toContain('CostingProfileDialog');
     expect(source('costing-panel.tsx')).not.toContain('CostingProfileForm');
     expect(source('bundle-components-panel.tsx')).toContain('DialogTrigger');
-    expect(source('product-row-actions.tsx')).toContain('editStockTitle');
+    expect(source('product-row-actions.tsx')).toContain("t('tabs.stock')");
+    expect(source('product-row-actions.tsx')).toContain('LifecyclePanel');
     expect(source('sale-detail-panel.tsx')).toContain('SaleNoteDialog');
+  });
+
+  it('moves row-level destructive actions into lifecycle dialogs', () => {
+    expect(source('simple-rows.tsx')).not.toContain('deleteInventoryBundle');
+    expect(source('simple-rows.tsx')).not.toContain(
+      'deleteInventoryStorefront'
+    );
+    expect(source('commerce-panel.tsx')).not.toContain('deleteInventorySale');
+    expect(source('storefront-listings-panel.tsx')).toContain('LifecyclePanel');
+    expect(source('product-row-actions.tsx')).toContain('LifecyclePanel');
+    expect(source('bundle-editor-dialog.tsx')).toContain('LifecyclePanel');
+    expect(source('costing-profile-list.tsx')).toContain('LifecyclePanel');
+    expect(source('setup-resource-section.tsx')).toContain('LifecyclePanel');
+    expect(source('setup-batch-section.tsx')).toContain('LifecyclePanel');
   });
 
   it('uses uncapped shared dialog sizing for Inventory dialogs', () => {
     expect(source('operator-dialog.ts')).toContain('max-w-none');
+    expect(source('operator-dialog.ts')).toContain('workflow');
+    expect(source('operator-dialog.ts')).toContain('96rem');
 
     const violations = operatorSources().flatMap(({ fileName, source }) => {
       const dialogContentTags =

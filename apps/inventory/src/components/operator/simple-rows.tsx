@@ -1,21 +1,14 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Archive, ExternalLink, Eye, Trash2 } from '@tuturuuu/icons';
+import { ExternalLink, Eye } from '@tuturuuu/icons';
 import type {
   InventoryBundle,
+  InventoryProductSummary,
   InventoryStorefront,
 } from '@tuturuuu/internal-api/inventory';
-import {
-  deleteInventoryBundle,
-  deleteInventoryStorefront,
-  updateInventoryBundle,
-  updateInventoryStorefront,
-} from '@tuturuuu/internal-api/inventory';
-import { Button } from '@tuturuuu/ui/button';
-import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { STOREFRONT_APP_URL } from '@/constants/common';
+import { BundleEditorDialog } from './bundle-editor-dialog';
 import { EmptyRow } from './operator-shell';
 import { StorefrontEditorDialog } from './storefront-editor-dialog';
 
@@ -28,57 +21,18 @@ function StatusBadge({ value }: { value: string }) {
 }
 
 export function SimpleRows({
+  products = [],
   rows,
   type,
   wsId,
 }: {
+  products?: InventoryProductSummary[];
   rows: Array<InventoryBundle | InventoryStorefront>;
   type: 'bundles' | 'storefronts';
   wsId?: string;
 }) {
   const t = useTranslations('inventory.operator');
-  const queryClient = useQueryClient();
   const actionText = useTranslations('inventory.operator.forms');
-  const invalidate = () => {
-    if (!wsId) return;
-    queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
-  };
-  const archiveStorefront = useMutation({
-    mutationFn: (row: InventoryStorefront) =>
-      updateInventoryStorefront(wsId ?? '', row.id, { status: 'archived' }),
-    onError: () => toast.error(actionText('saveError')),
-    onSuccess: () => {
-      toast.success(actionText('saveSuccess'));
-      invalidate();
-    },
-  });
-  const deleteStorefront = useMutation({
-    mutationFn: (row: InventoryStorefront) =>
-      deleteInventoryStorefront(wsId ?? '', row.id),
-    onError: () => toast.error(actionText('deleteError')),
-    onSuccess: () => {
-      toast.success(actionText('deleteSuccess'));
-      invalidate();
-    },
-  });
-  const archiveBundle = useMutation({
-    mutationFn: (row: InventoryBundle) =>
-      updateInventoryBundle(wsId ?? '', row.id, { status: 'archived' }),
-    onError: () => toast.error(actionText('saveError')),
-    onSuccess: () => {
-      toast.success(actionText('saveSuccess'));
-      invalidate();
-    },
-  });
-  const deleteBundle = useMutation({
-    mutationFn: (row: InventoryBundle) =>
-      deleteInventoryBundle(wsId ?? '', row.id),
-    onError: () => toast.error(actionText('deleteError')),
-    onSuccess: () => {
-      toast.success(actionText('deleteSuccess'));
-      invalidate();
-    },
-  });
   if (rows.length === 0) {
     return (
       <EmptyRow
@@ -182,52 +136,17 @@ export function SimpleRows({
                 </a>
               ) : null}
               {wsId && type === 'storefronts' ? (
-                <>
-                  <StorefrontEditorDialog
-                    storefront={row as InventoryStorefront}
-                    wsId={wsId}
-                  />
-                  <Button
-                    onClick={() =>
-                      archiveStorefront.mutate(row as InventoryStorefront)
-                    }
-                    size="icon"
-                    type="button"
-                    variant="outline"
-                  >
-                    <Archive className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() =>
-                      deleteStorefront.mutate(row as InventoryStorefront)
-                    }
-                    size="icon"
-                    type="button"
-                    variant="destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </>
+                <StorefrontEditorDialog
+                  storefront={row as InventoryStorefront}
+                  wsId={wsId}
+                />
               ) : null}
               {wsId && type === 'bundles' ? (
-                <>
-                  <Button
-                    onClick={() => archiveBundle.mutate(row as InventoryBundle)}
-                    size="icon"
-                    type="button"
-                    variant="outline"
-                  >
-                    <Archive className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => deleteBundle.mutate(row as InventoryBundle)}
-                    size="icon"
-                    type="button"
-                    variant="destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </>
+                <BundleEditorDialog
+                  bundle={row as InventoryBundle}
+                  products={products}
+                  wsId={wsId}
+                />
               ) : null}
             </div>
           </article>

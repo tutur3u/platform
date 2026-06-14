@@ -518,6 +518,14 @@ export type InventoryAuditLogSummary = {
   source: string | null;
 };
 
+export type InventoryAuditLogListQuery = InventoryOffsetListQuery & {
+  dateFrom?: string;
+  dateTo?: string;
+  entityKind?: string;
+  eventKind?: string;
+  source?: string;
+};
+
 export type InventoryStorefrontListQuery = {
   q?: string;
   status?: InventoryStorefrontStatus | 'all';
@@ -1560,7 +1568,7 @@ export function deleteInventorySale(
 
 export function listInventoryAuditLogs(
   wsId: string,
-  query?: InventoryOffsetListQuery,
+  query?: InventoryAuditLogListQuery,
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<

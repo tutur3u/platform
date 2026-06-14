@@ -164,7 +164,7 @@ export function StorefrontForm({
             </Button>
           )}
         </DialogTrigger>
-        <DialogContent className={operatorDialogContentClassName('xlarge')}>
+        <DialogContent className={operatorDialogContentClassName('workflow')}>
           <DialogHeader>
             <DialogTitle>{t('createStorefrontTitle')}</DialogTitle>
             <DialogDescription>

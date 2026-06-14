@@ -54,7 +54,7 @@ export function CostingImportDialog({ wsId }: { wsId: string }) {
           {t('importCsv')}
         </Button>
       </DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('medium')}>
+      <DialogContent className={operatorDialogContentClassName('workflow')}>
         <DialogHeader>
           <DialogTitle>{t('importTitle')}</DialogTitle>
           <DialogDescription>{t('importDescription')}</DialogDescription>

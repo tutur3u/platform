@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Save } from '@tuturuuu/icons';
 import type { InventorySaleSummary } from '@tuturuuu/internal-api/inventory';
 import {
+  deleteInventorySale,
   getInventorySale,
   updateInventorySale,
 } from '@tuturuuu/internal-api/inventory';
@@ -19,9 +20,11 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { operatorDialogContentClassName } from './operator-dialog';
+import { LifecyclePanel } from './operator-lifecycle';
 import { LoadingRows } from './operator-shell';
 
 export function SaleNoteDialog({
@@ -51,6 +54,16 @@ export function SaleNoteDialog({
       queryClient.invalidateQueries({ queryKey: ['inventory', wsId, 'sale'] });
     },
   });
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteInventorySale(wsId, sale.id),
+    onError: () => toast.error(t('deleteError')),
+    onSuccess: () => {
+      toast.success(t('deleteSuccess'));
+      setOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
+      queryClient.invalidateQueries({ queryKey: ['inventory', wsId, 'sales'] });
+    },
+  });
 
   return (
     <Dialog
@@ -66,7 +79,7 @@ export function SaleNoteDialog({
           {t('note')}
         </Button>
       </DialogTrigger>
-      <DialogContent className={operatorDialogContentClassName('compact')}>
+      <DialogContent className={operatorDialogContentClassName('medium')}>
         <DialogHeader>
           <DialogTitle>{t('editSaleNoteTitle')}</DialogTitle>
           <DialogDescription>{t('editSaleNoteDescription')}</DialogDescription>
@@ -74,28 +87,46 @@ export function SaleNoteDialog({
         {detail.isPending ? (
           <LoadingRows />
         ) : (
-          <form
-            className="grid gap-3"
-            onSubmit={(event: FormEvent) => {
-              event.preventDefault();
-              mutation.mutate();
-            }}
-          >
-            <label className="grid min-w-0 gap-1 text-sm">
-              <span className="font-medium">{t('note')}</span>
-              <Input
-                onChange={(event) => setNote(event.target.value)}
-                placeholder={t('placeholders.saleNote')}
-                value={currentNote}
+          <Tabs className="grid min-w-0 gap-4" defaultValue="details">
+            <TabsList className="h-auto w-full flex-wrap justify-start bg-muted/25">
+              <TabsTrigger value="details">{t('tabs.details')}</TabsTrigger>
+              <TabsTrigger value="lifecycle">{t('tabs.lifecycle')}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="details">
+              <form
+                className="grid gap-3"
+                onSubmit={(event: FormEvent) => {
+                  event.preventDefault();
+                  mutation.mutate();
+                }}
+              >
+                <label className="grid min-w-0 gap-1 text-sm">
+                  <span className="font-medium">{t('note')}</span>
+                  <Input
+                    onChange={(event) => setNote(event.target.value)}
+                    placeholder={t('placeholders.saleNote')}
+                    value={currentNote}
+                  />
+                </label>
+                <DialogFooter>
+                  <Button
+                    disabled={!sale.id || mutation.isPending}
+                    type="submit"
+                  >
+                    <Save className="h-4 w-4" />
+                    {mutation.isPending ? t('saving') : t('save')}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </TabsContent>
+            <TabsContent value="lifecycle">
+              <LifecyclePanel
+                deletePending={deleteMutation.isPending}
+                onDelete={() => deleteMutation.mutate()}
+                title={t('lifecycle')}
               />
-            </label>
-            <DialogFooter>
-              <Button disabled={!sale.id || mutation.isPending} type="submit">
-                <Save className="h-4 w-4" />
-                {t('save')}
-              </Button>
-            </DialogFooter>
-          </form>
+            </TabsContent>
+          </Tabs>
         )}
       </DialogContent>
     </Dialog>

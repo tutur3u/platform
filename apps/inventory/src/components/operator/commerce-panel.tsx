@@ -7,7 +7,6 @@ import {
   CreditCard,
   RotateCcw,
   ShieldCheck,
-  Trash2,
   User,
 } from '@tuturuuu/icons';
 import type {
@@ -15,7 +14,6 @@ import type {
   InventorySaleSummary,
 } from '@tuturuuu/internal-api/inventory';
 import {
-  deleteInventorySale,
   releaseInventoryCheckout,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
@@ -188,18 +186,7 @@ function SaleRows({
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator');
-  const actionText = useTranslations('inventory.operator.forms');
   const locale = useLocale();
-  const queryClient = useQueryClient();
-  const deleteSale = useMutation({
-    mutationFn: (row: InventorySaleSummary) =>
-      deleteInventorySale(wsId, row.id),
-    onError: () => toast.error(actionText('deleteError')),
-    onSuccess: () => {
-      toast.success(actionText('deleteSuccess'));
-      queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
-    },
-  });
   const filteredRows = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return rows;
@@ -253,16 +240,6 @@ function SaleRows({
             <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
               <StatusBadge value={currency(row.paid_amount)} />
               <SaleNoteDialog sale={row} wsId={wsId} />
-              <Button
-                disabled={deleteSale.isPending}
-                onClick={() => deleteSale.mutate(row)}
-                size="sm"
-                type="button"
-                variant="destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-                {actionText('delete')}
-              </Button>
             </div>
           </article>
         );

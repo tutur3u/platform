@@ -281,6 +281,7 @@ export function InventoryOperatorClient({
             ) : null}
             <ProductsTable
               costingProfiles={data.costingProfiles.data?.data ?? []}
+              formOptions={data.formOptions.data}
               rows={products}
               view={view}
               wsId={wsId}
@@ -321,7 +322,12 @@ export function InventoryOperatorClient({
         {!isLoading && !isError && view === 'bundles' ? (
           <>
             <BundleForm products={products} wsId={wsId} />
-            <SimpleRows rows={bundles} type="bundles" wsId={wsId} />
+            <SimpleRows
+              products={products}
+              rows={bundles}
+              type="bundles"
+              wsId={wsId}
+            />
             {bundles.length > 0 ? (
               <BundleComponentsPanel
                 bundles={bundles}
@@ -346,7 +352,7 @@ export function InventoryOperatorClient({
           />
         ) : null}
         {!isLoading && !isError && view === 'audits' ? (
-          <AuditRows rows={data.audits.data?.data ?? []} />
+          <AuditRows rows={data.audits.data?.data ?? []} wsId={wsId} />
         ) : null}
       </div>
     </SectionShell>

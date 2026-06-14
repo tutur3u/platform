@@ -6,10 +6,13 @@ import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import { canViewInventoryAuditLogs } from '@/lib/inventory/permissions';
 
 const SearchParamsSchema = z.object({
-  limit: z.coerce.number().int().min(1).max(500).default(100),
-  offset: z.coerce.number().int().min(0).default(0),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
   entityKind: z.string().optional(),
   eventKind: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
+  source: z.string().optional(),
 });
 
 interface Params {
@@ -103,7 +106,8 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const { limit, offset, entityKind, eventKind } = parsed.data;
+  const { dateFrom, dateTo, entityKind, eventKind, limit, offset, source } =
+    parsed.data;
   let query = inventory
     .from('inventory_audit_logs')
     .select('*', { count: 'exact' })
@@ -116,6 +120,15 @@ export async function GET(req: Request, { params }: Params) {
   }
   if (eventKind) {
     query = query.eq('event_kind', eventKind);
+  }
+  if (source) {
+    query = query.eq('source', source);
+  }
+  if (dateFrom) {
+    query = query.gte('occurred_at', dateFrom);
+  }
+  if (dateTo) {
+    query = query.lte('occurred_at', dateTo);
   }
 
   const { data, error, count } = await query;

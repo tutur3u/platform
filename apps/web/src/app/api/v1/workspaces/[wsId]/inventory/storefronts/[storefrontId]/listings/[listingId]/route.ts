@@ -1,6 +1,9 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { getInventoryActorContext } from '@/lib/inventory/actor';
+import { createInventoryAuditLog } from '@/lib/inventory/audit';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import {
   deleteStorefrontListing,
@@ -36,6 +39,22 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!data) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
+
+    const sbAdmin = await createAdminClient();
+    await createInventoryAuditLog(sbAdmin, {
+      actor: await getInventoryActorContext(request, authorization.value.wsId),
+      after: data as unknown as Record<string, unknown>,
+      changedFields: Object.keys(payload),
+      entityId: listingId,
+      entityKind: 'storefront_listing',
+      entityLabel: data.title,
+      eventKind: payload.status === 'archived' ? 'archived' : 'updated',
+      summary:
+        payload.status === 'archived'
+          ? `Archived storefront listing ${data.title}`
+          : `Updated storefront listing ${data.title}`,
+      wsId: authorization.value.wsId,
+    });
 
     return NextResponse.json({ data });
   } catch (error) {
@@ -73,6 +92,16 @@ export async function DELETE(request: Request, { params }: Params) {
     if (!deleted) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
+
+    const sbAdmin = await createAdminClient();
+    await createInventoryAuditLog(sbAdmin, {
+      actor: await getInventoryActorContext(request, authorization.value.wsId),
+      entityId: listingId,
+      entityKind: 'storefront_listing',
+      eventKind: 'deleted',
+      summary: `Deleted storefront listing ${listingId}`,
+      wsId: authorization.value.wsId,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

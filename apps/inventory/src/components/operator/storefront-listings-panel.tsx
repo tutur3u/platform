@@ -1,9 +1,10 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Archive, Plus, Trash2 } from '@tuturuuu/icons';
+import { Pencil, Plus, Save } from '@tuturuuu/icons';
 import type {
   InventoryBundle,
+  InventoryListingStatus,
   InventoryProductSummary,
   InventoryStorefront,
 } from '@tuturuuu/internal-api/inventory';
@@ -25,11 +26,13 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { operatorDialogContentClassName } from './operator-dialog';
 import { SelectField, SelectValueField } from './operator-form-fields';
 import { currency } from './operator-format';
+import { LifecyclePanel } from './operator-lifecycle';
 import { EmptyRow, LoadingRows } from './operator-shell';
 
 export function StorefrontListingsPanel({
@@ -233,8 +236,58 @@ function ListingRow({
   storefrontId: string;
   wsId: string;
 }) {
+  return (
+    <div className="grid min-w-0 gap-2 rounded-md border border-border bg-background p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+      <div className="min-w-0">
+        <p className="truncate font-medium">{listing.title}</p>
+        <p className="truncate text-muted-foreground text-xs">
+          {listing.status}
+        </p>
+      </div>
+      <span>{currency(listing.price)}</span>
+      <ListingEditorDialog
+        listing={listing}
+        storefrontId={storefrontId}
+        wsId={wsId}
+      />
+    </div>
+  );
+}
+
+function ListingEditorDialog({
+  listing,
+  storefrontId,
+  wsId,
+}: {
+  listing: { id: string; price: number; status: string; title: string };
+  storefrontId: string;
+  wsId: string;
+}) {
   const t = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState(listing.title);
+  const [price, setPrice] = useState(String(listing.price));
+  const [status, setStatus] = useState(listing.status);
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
+    queryClient.invalidateQueries({
+      queryKey: ['inventory', wsId, 'storefront-listings', storefrontId],
+    });
+  };
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      updateInventoryStorefrontListing(wsId, storefrontId, listing.id, {
+        price: Number(price || 0),
+        status: status as InventoryListingStatus,
+        title,
+      }),
+    onError: () => toast.error(t('saveError')),
+    onSuccess: () => {
+      toast.success(t('saveSuccess'));
+      invalidate();
+    },
+  });
   const archiveMutation = useMutation({
     mutationFn: () =>
       updateInventoryStorefrontListing(wsId, storefrontId, listing.id, {
@@ -243,7 +296,8 @@ function ListingRow({
     onError: () => toast.error(t('saveError')),
     onSuccess: () => {
       toast.success(t('saveSuccess'));
-      queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
+      setOpen(false);
+      invalidate();
     },
   });
   const deleteMutation = useMutation({
@@ -252,35 +306,99 @@ function ListingRow({
     onError: () => toast.error(t('deleteError')),
     onSuccess: () => {
       toast.success(t('deleteSuccess'));
-      queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
+      setOpen(false);
+      invalidate();
     },
   });
 
   return (
-    <div className="grid min-w-0 gap-2 rounded-md border border-border bg-background p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-center">
-      <div className="min-w-0">
-        <p className="truncate font-medium">{listing.title}</p>
-        <p className="truncate text-muted-foreground text-xs">
-          {listing.status}
-        </p>
-      </div>
-      <span>{currency(listing.price)}</span>
-      <Button
-        onClick={() => archiveMutation.mutate()}
-        size="icon"
-        type="button"
-        variant="outline"
-      >
-        <Archive className="h-4 w-4" />
-      </Button>
-      <Button
-        onClick={() => deleteMutation.mutate()}
-        size="icon"
-        type="button"
-        variant="destructive"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </div>
+    <Dialog
+      onOpenChange={(nextOpen) => {
+        if (nextOpen) {
+          setTitle(listing.title);
+          setPrice(String(listing.price));
+          setStatus(listing.status);
+        }
+        setOpen(nextOpen);
+      }}
+      open={open}
+    >
+      <DialogTrigger asChild>
+        <Button size="sm" type="button" variant="outline">
+          <Pencil className="h-4 w-4" />
+          {t('edit')}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className={operatorDialogContentClassName('medium')}>
+        <DialogHeader>
+          <DialogTitle>{t('editListingTitle')}</DialogTitle>
+          <DialogDescription>{t('editListingDescription')}</DialogDescription>
+        </DialogHeader>
+        <Tabs className="grid min-w-0 gap-4" defaultValue="details">
+          <TabsList className="h-auto w-full flex-wrap justify-start bg-muted/25">
+            <TabsTrigger value="details">{t('tabs.details')}</TabsTrigger>
+            <TabsTrigger value="lifecycle">{t('tabs.lifecycle')}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="details">
+            <form
+              className="grid min-w-0 gap-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (title) saveMutation.mutate();
+              }}
+            >
+              <label className="grid min-w-0 gap-1 text-sm">
+                <span className="font-medium">{t('listingTitle')}</span>
+                <Input
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder={t('placeholders.listingTitle')}
+                  value={title}
+                />
+              </label>
+              <label className="grid min-w-0 gap-1 text-sm">
+                <span className="font-medium">{t('price')}</span>
+                <Input
+                  inputMode="decimal"
+                  onChange={(event) => setPrice(event.target.value)}
+                  placeholder={t('placeholders.price')}
+                  value={price}
+                />
+              </label>
+              <SelectValueField
+                allowEmpty={false}
+                label={t('status')}
+                onChange={setStatus}
+                options={[
+                  { label: t('listingStatus.draft'), value: 'draft' },
+                  { label: t('listingStatus.published'), value: 'published' },
+                  { label: t('listingStatus.paused'), value: 'paused' },
+                  { label: t('listingStatus.archived'), value: 'archived' },
+                ]}
+                placeholder={t('placeholders.status')}
+                value={status}
+              />
+              <DialogFooter>
+                <Button
+                  disabled={!title || saveMutation.isPending}
+                  type="submit"
+                >
+                  <Save className="h-4 w-4" />
+                  {saveMutation.isPending ? t('saving') : t('save')}
+                </Button>
+              </DialogFooter>
+            </form>
+          </TabsContent>
+          <TabsContent value="lifecycle">
+            <LifecyclePanel
+              archivePending={archiveMutation.isPending}
+              deletePending={deleteMutation.isPending}
+              onArchive={() => archiveMutation.mutate()}
+              onDelete={() => deleteMutation.mutate()}
+              title={t('lifecycle')}
+            />
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   );
 }

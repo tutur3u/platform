@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Layers3, Plus, Trash2 } from '@tuturuuu/icons';
+import { Layers3, Plus, Settings2 } from '@tuturuuu/icons';
 import type { InventoryProductFormOptionsResponse } from '@tuturuuu/internal-api/inventory';
 import {
   createInventoryBatch,
@@ -23,10 +23,12 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { operatorDialogContentClassName } from './operator-dialog';
 import { SelectField } from './operator-form-fields';
+import { LifecyclePanel } from './operator-lifecycle';
 import { invalidateSetup, namedRows } from './setup-helpers';
 
 function BatchCreateDialog({
@@ -175,15 +177,51 @@ function BatchRow({
         </p>
       </div>
       <span>{batch.price ?? 0}</span>
-      <Button
-        disabled={deleteMutation.isPending}
-        onClick={() => deleteMutation.mutate()}
-        size="icon"
-        type="button"
-        variant="destructive"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button size="sm" type="button" variant="outline">
+            <Settings2 className="h-4 w-4" />
+            {t('manage')}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className={operatorDialogContentClassName('compact')}>
+          <DialogHeader>
+            <DialogTitle>{t('manageBatchTitle')}</DialogTitle>
+            <DialogDescription>{t('manageBatchDescription')}</DialogDescription>
+          </DialogHeader>
+          <Tabs className="grid min-w-0 gap-4" defaultValue="details">
+            <TabsList className="h-auto w-full flex-wrap justify-start bg-muted/25">
+              <TabsTrigger value="details">{t('tabs.details')}</TabsTrigger>
+              <TabsTrigger value="lifecycle">{t('tabs.lifecycle')}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="details">
+              <dl className="grid gap-2 rounded-lg border border-border bg-muted/15 p-3 text-sm">
+                <div className="grid gap-1 sm:grid-cols-[120px_1fr]">
+                  <dt className="text-muted-foreground">{t('warehouse')}</dt>
+                  <dd className="font-medium">
+                    {batch.warehouse ?? batch.warehouse_id}
+                  </dd>
+                </div>
+                <div className="grid gap-1 sm:grid-cols-[120px_1fr]">
+                  <dt className="text-muted-foreground">{t('supplier')}</dt>
+                  <dd className="font-medium">{batch.supplier ?? '-'}</dd>
+                </div>
+                <div className="grid gap-1 sm:grid-cols-[120px_1fr]">
+                  <dt className="text-muted-foreground">{t('price')}</dt>
+                  <dd className="font-medium">{batch.price ?? 0}</dd>
+                </div>
+              </dl>
+            </TabsContent>
+            <TabsContent value="lifecycle">
+              <LifecyclePanel
+                deletePending={deleteMutation.isPending}
+                onDelete={() => deleteMutation.mutate()}
+                title={t('lifecycle')}
+              />
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
