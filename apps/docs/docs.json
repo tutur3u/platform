@@ -79,7 +79,120 @@
                     "pages": [
                       "platform/components/overview",
                       "platform/components/workspace-wrapper",
-                      "platform/components/workspace-wrapper-quick-reference"
+                      "platform/components/workspace-wrapper-quick-reference",
+                      {
+                        "group": "UI Components",
+                        "pages": [
+                          "platform/components/ui/overview",
+                          {
+                            "group": "Actions",
+                            "pages": [
+                              "platform/components/ui/button",
+                              "platform/components/ui/toggle",
+                              "platform/components/ui/toggle-group"
+                            ]
+                          },
+                          {
+                            "group": "Inputs",
+                            "pages": [
+                              "platform/components/ui/calendar",
+                              "platform/components/ui/checkbox",
+                              "platform/components/ui/color-picker",
+                              "platform/components/ui/currency-input",
+                              "platform/components/ui/date-time-picker",
+                              "platform/components/ui/optional-time-picker",
+                              "platform/components/ui/form",
+                              "platform/components/ui/form-required-indicator",
+                              "platform/components/ui/input",
+                              "platform/components/ui/input-otp",
+                              "platform/components/ui/label",
+                              "platform/components/ui/radio-group",
+                              "platform/components/ui/select",
+                              "platform/components/ui/slider",
+                              "platform/components/ui/switch",
+                              "platform/components/ui/textarea",
+                              "platform/components/ui/time-picker-input"
+                            ]
+                          },
+                          {
+                            "group": "Overlays",
+                            "pages": [
+                              "platform/components/ui/alert-dialog",
+                              "platform/components/ui/context-menu",
+                              "platform/components/ui/dialog",
+                              "platform/components/ui/drawer",
+                              "platform/components/ui/dropdown-menu",
+                              "platform/components/ui/hover-card",
+                              "platform/components/ui/popover",
+                              "platform/components/ui/sheet",
+                              "platform/components/ui/tooltip"
+                            ]
+                          },
+                          {
+                            "group": "Navigation",
+                            "pages": [
+                              "platform/components/ui/breadcrumb",
+                              "platform/components/ui/command",
+                              "platform/components/ui/quick-command-center",
+                              "platform/components/ui/menubar",
+                              "platform/components/ui/navbar",
+                              "platform/components/ui/navigation-menu",
+                              "platform/components/ui/pagination",
+                              "platform/components/ui/sidebar",
+                              "platform/components/ui/tabs"
+                            ]
+                          },
+                          {
+                            "group": "Feedback",
+                            "pages": [
+                              "platform/components/ui/alert",
+                              "platform/components/ui/avatar",
+                              "platform/components/ui/badge",
+                              "platform/components/ui/progress",
+                              "platform/components/ui/skeleton",
+                              "platform/components/ui/sonner",
+                              "platform/components/ui/sticky-bottom-bar",
+                              "platform/components/ui/toast",
+                              "platform/components/ui/toaster"
+                            ]
+                          },
+                          {
+                            "group": "Data",
+                            "pages": [
+                              "platform/components/ui/chart",
+                              "platform/components/ui/diff-viewer",
+                              "platform/components/ui/table"
+                            ]
+                          },
+                          {
+                            "group": "Layout",
+                            "pages": [
+                              "platform/components/ui/accordion",
+                              "platform/components/ui/aspect-ratio",
+                              "platform/components/ui/card",
+                              "platform/components/ui/carousel",
+                              "platform/components/ui/collapsible",
+                              "platform/components/ui/resizable",
+                              "platform/components/ui/scroll-area",
+                              "platform/components/ui/separator"
+                            ]
+                          },
+                          {
+                            "group": "Typography",
+                            "pages": [
+                              "platform/components/ui/codeblock",
+                              "platform/components/ui/kbd",
+                              "platform/components/ui/markdown"
+                            ]
+                          },
+                          {
+                            "group": "Advanced",
+                            "pages": [
+                              "platform/components/ui/report-problem-dialog"
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   }
                 ]

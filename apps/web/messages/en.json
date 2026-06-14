@@ -14870,7 +14870,8 @@
           "usage": "Usage"
         },
         "usageDescription": "Copy the default usage snippet and adapt labels, state, and event handlers to the product surface.",
-        "usageTitle": "Usage"
+        "usageTitle": "Usage",
+        "viewInDocs": "View in docs"
       },
       "metadata": {
         "componentDescription": "Preview {name}, copy usage examples, and review API exports for {importPath}.",
@@ -14890,6 +14891,7 @@
         "description": "Setup, discovery, and component reference.",
         "empty": "No components found",
         "emptyHint": "Clear the search to browse every documented component.",
+        "fullDocs": "Full documentation",
         "menu": "Menu",
         "overview": "Overview",
         "search": "Search components",

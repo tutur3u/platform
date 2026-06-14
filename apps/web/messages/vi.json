@@ -14870,7 +14870,8 @@
           "usage": "Cách dùng"
         },
         "usageDescription": "Sao chép snippet mặc định và điều chỉnh nhãn, trạng thái, handler theo bề mặt sản phẩm.",
-        "usageTitle": "Cách dùng"
+        "usageTitle": "Cách dùng",
+        "viewInDocs": "Xem tài liệu"
       },
       "metadata": {
         "componentDescription": "Xem trước {name}, sao chép ví dụ cách dùng và xem export API cho {importPath}.",
@@ -14890,6 +14891,7 @@
         "description": "Setup, khám phá và tham chiếu thành phần.",
         "empty": "Không tìm thấy thành phần",
         "emptyHint": "Xóa tìm kiếm để duyệt mọi thành phần được ghi tài liệu.",
+        "fullDocs": "Tài liệu đầy đủ",
         "menu": "Menu",
         "overview": "Tổng quan",
         "search": "Tìm thành phần",
