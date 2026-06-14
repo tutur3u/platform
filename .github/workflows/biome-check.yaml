@@ -43,7 +43,7 @@ jobs:
         run: |
           # Capture biome format output and exit code
           set +e
-          biome_output=$(npx --yes @biomejs/biome@2.4.16 format . 2>&1)
+          biome_output=$(npx --yes @biomejs/biome@2.5.0 format . 2>&1)
           biome_exit_code=$?
           set -e
 
@@ -129,7 +129,7 @@ jobs:
         run: |
           # Capture biome lint output and exit code
           set +e
-          biome_output=$(npx --yes @biomejs/biome@2.4.16 lint . 2>&1)
+          biome_output=$(npx --yes @biomejs/biome@2.5.0 lint . 2>&1)
           biome_exit_code=$?
           set -e
 
@@ -203,7 +203,7 @@ jobs:
           node-version: 24
 
       - name: Apply Biome format
-        run: npx --yes @biomejs/biome@2.4.16 format --write .
+        run: npx --yes @biomejs/biome@2.5.0 format --write .
 
       - name: Check for changes
         id: git-check
@@ -345,7 +345,7 @@ jobs:
                   head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`,
                   state: 'open'
                 });
-                
+
                 if (prs.length > 0) {
                   prNumber = prs[0].number;
                 }
@@ -461,8 +461,8 @@ jobs:
               });
 
               // Look for existing Biome Check comment with more specific markers
-              const existingComment = comments.find(comment => 
-                comment.user.login === 'github-actions[bot]' && 
+              const existingComment = comments.find(comment =>
+                comment.user.login === 'github-actions[bot]' &&
                 comment.body.includes('<!-- biome-check-comment -->')
               );
 

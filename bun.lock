@@ -5,7 +5,7 @@
     "": {
       "name": "tutur3u",
       "devDependencies": {
-        "@biomejs/biome": "^2.4.16",
+        "@biomejs/biome": "^2.5.0",
         "@lingual/i18n-check": "0.9.5",
         "@tuturuuu/typescript-config": "workspace:*",
         "@typescript/native-preview": "^7.0.0-dev.20260610.1",
@@ -45,7 +45,7 @@
     },
     "apps/calendar": {
       "name": "@tuturuuu/calendar",
-      "version": "0.5.1",
+      "version": "0.5.2",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@hookform/resolvers": "^5.4.0",
@@ -99,7 +99,7 @@
     },
     "apps/chat": {
       "name": "@tuturuuu/chat",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@tanstack/react-query": "^5.101.0",
@@ -141,7 +141,7 @@
     },
     "apps/cms": {
       "name": "@tuturuuu/cms",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@hookform/resolvers": "^5.4.0",
@@ -195,7 +195,7 @@
     },
     "apps/database": {
       "name": "@tuturuuu/database",
-      "version": "1.5.0",
+      "version": "1.7.0",
       "devDependencies": {
         "supabase": "2.105.0",
         "typescript": "^6.0.3",
@@ -203,7 +203,7 @@
     },
     "apps/drive": {
       "name": "@tuturuuu/drive",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@hookform/resolvers": "^5.4.0",
@@ -281,7 +281,7 @@
     },
     "apps/finance": {
       "name": "@tuturuuu/finance",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@hookform/resolvers": "^5.4.0",
@@ -395,7 +395,7 @@
     },
     "apps/inventory": {
       "name": "@tuturuuu/inventory",
-      "version": "0.3.2",
+      "version": "0.5.0",
       "dependencies": {
         "@tanstack/react-query": "^5.101.0",
         "@tuturuuu/auth": "workspace:*",
@@ -473,7 +473,7 @@
     },
     "apps/mail": {
       "name": "@tuturuuu/mail",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@tanstack/react-query": "5.101.0",
@@ -517,7 +517,7 @@
     },
     "apps/meet": {
       "name": "@tuturuuu/meet",
-      "version": "0.5.1",
+      "version": "0.5.2",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@hookform/resolvers": "^5.4.0",
@@ -559,7 +559,7 @@
     },
     "apps/mind": {
       "name": "@tuturuuu/mind",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@json-render/core": "^0.19.0",
@@ -614,7 +614,7 @@
     },
     "apps/nova": {
       "name": "@tuturuuu/nova",
-      "version": "0.18.1",
+      "version": "0.18.2",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -741,7 +741,7 @@
     },
     "apps/rewise": {
       "name": "@tuturuuu/rewise",
-      "version": "0.18.1",
+      "version": "0.18.2",
       "dependencies": {
         "@deepgram/sdk": "^5.4.0",
         "@emotion/react": "^11.14.0",
@@ -851,7 +851,7 @@
     },
     "apps/storefront": {
       "name": "@tuturuuu/storefront",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "dependencies": {
         "@tanstack/react-query": "^5.101.0",
         "@tuturuuu/auth": "workspace:*",
@@ -889,7 +889,7 @@
     },
     "apps/tasks": {
       "name": "@tuturuuu/tasks",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@hookform/resolvers": "^5.4.0",
@@ -972,7 +972,7 @@
     },
     "apps/track": {
       "name": "@tuturuuu/track",
-      "version": "0.5.1",
+      "version": "0.5.2",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.10",
         "@hookform/resolvers": "^5.4.0",
@@ -1199,7 +1199,7 @@
     },
     "packages/ai": {
       "name": "@tuturuuu/ai",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "dependencies": {
         "@ai-sdk/amazon-bedrock": "^4.0.114",
         "@ai-sdk/anthropic": "^3.0.82",
@@ -1292,7 +1292,7 @@
     },
     "packages/apis": {
       "name": "@tuturuuu/apis",
-      "version": "0.3.0",
+      "version": "0.4.1",
       "dependencies": {
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
@@ -1319,7 +1319,7 @@
     },
     "packages/auth": {
       "name": "@tuturuuu/auth",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -1394,7 +1394,7 @@
     },
     "packages/google": {
       "name": "@tuturuuu/google",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "dependencies": {
         "google-auth-library": "10.7.0",
         "googleapis": "^173.0.0",
@@ -1447,7 +1447,7 @@
     },
     "packages/hooks": {
       "name": "@tuturuuu/hooks",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "dependencies": {
         "@tuturuuu/types": "workspace:*",
         "browser-image-compression": "^2.0.2",
@@ -1468,7 +1468,7 @@
     },
     "packages/icons": {
       "name": "@tuturuuu/icons",
-      "version": "0.0.5",
+      "version": "0.0.6",
       "dependencies": {
         "@lucide/lab": "^0.1.2",
         "lucide-react": "^1.17.0",
@@ -1479,7 +1479,7 @@
     },
     "packages/internal-api": {
       "name": "@tuturuuu/internal-api",
-      "version": "0.5.0",
+      "version": "0.7.1",
       "dependencies": {
         "@tuturuuu/types": "workspace:*",
       },
@@ -1618,7 +1618,7 @@
     },
     "packages/satellite": {
       "name": "@tuturuuu/satellite",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@radix-ui/react-dialog": "^1.1.16",
         "@radix-ui/react-tooltip": "^1.2.9",
@@ -1746,7 +1746,7 @@
     },
     "packages/types": {
       "name": "@tuturuuu/types",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "dependencies": {
         "@tiptap/react": "3.26.1",
         "react": "^19.2.7",
@@ -1767,7 +1767,7 @@
     },
     "packages/ui": {
       "name": "@tuturuuu/ui",
-      "version": "0.5.0",
+      "version": "0.6.2",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -1926,7 +1926,7 @@
     },
     "packages/utils": {
       "name": "@tuturuuu/utils",
-      "version": "0.6.0",
+      "version": "0.6.1",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@noble/ciphers": "^2.2.0",
@@ -2174,23 +2174,23 @@
 
     "@beeper/chat-adapter-matrix": ["@beeper/chat-adapter-matrix@0.2.0", "", { "dependencies": { "@chat-adapter/state-memory": "^4.17.0", "@chat-adapter/state-redis": "^4.17.0", "chat": "^4.17.0", "marked": "^15.0.12", "matrix-js-sdk": "^41.0.0", "node-html-parser": "^7.1.0" } }, "sha512-eqKbU0iosIUkBn2dkRqyg+72a9c+v4vi85U81ZM8ETgjqHuZ34xWWntG2UL4ly6sHE/LiO4WL/k2Q+vlzLh8hw=="],
 
-    "@biomejs/biome": ["@biomejs/biome@2.4.16", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "2.4.16", "@biomejs/cli-darwin-x64": "2.4.16", "@biomejs/cli-linux-arm64": "2.4.16", "@biomejs/cli-linux-arm64-musl": "2.4.16", "@biomejs/cli-linux-x64": "2.4.16", "@biomejs/cli-linux-x64-musl": "2.4.16", "@biomejs/cli-win32-arm64": "2.4.16", "@biomejs/cli-win32-x64": "2.4.16" }, "bin": { "biome": "bin/biome" } }, "sha512-x9ajFh1zChVybCiM3TN6OD4phAqLgtPZjFrZF+aTMYCPjwBO+k529TX7PPsAqtGNLeV4UgzwQnowEgS7bGmzcA=="],
+    "@biomejs/biome": ["@biomejs/biome@2.5.0", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "2.5.0", "@biomejs/cli-darwin-x64": "2.5.0", "@biomejs/cli-linux-arm64": "2.5.0", "@biomejs/cli-linux-arm64-musl": "2.5.0", "@biomejs/cli-linux-x64": "2.5.0", "@biomejs/cli-linux-x64-musl": "2.5.0", "@biomejs/cli-win32-arm64": "2.5.0", "@biomejs/cli-win32-x64": "2.5.0" }, "bin": { "biome": "bin/biome" } }, "sha512-4kURkd9hAPrdDM3C9n82ycYgx8hvQcW6MjKTEejruj8rK0N8P3OPpdy8BvI8kt3KWY4ycF5XtDOrktetEfhfuw=="],
 
-    "@biomejs/cli-darwin-arm64": ["@biomejs/cli-darwin-arm64@2.4.16", "", { "os": "darwin", "cpu": "arm64" }, "sha512-wxPvu4XOA85YJk9ixSWUmq/QBHbid85BISbOAqqBM/5xQpPk9ayjk5375tOlSC0BeCwNSbPFafQBm+vBumXq0A=="],
+    "@biomejs/cli-darwin-arm64": ["@biomejs/cli-darwin-arm64@2.5.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-Mn3Fwi3SA5fgmfCPqmzpWF2DLZnms3BVAhM088nTnGrTZmHS3wwIjcoZPqpXeNgd3DrrLH6xp8vTLIBuJoZiXw=="],
 
-    "@biomejs/cli-darwin-x64": ["@biomejs/cli-darwin-x64@2.4.16", "", { "os": "darwin", "cpu": "x64" }, "sha512-xFCqGPwYusQJp4N4NJLi1XJiZqjwFdjhT+KqtNy+Ug3qgfczqnTa6MSDvxJF6TkuDLoYJItMapz6tAf7kCekFw=="],
+    "@biomejs/cli-darwin-x64": ["@biomejs/cli-darwin-x64@2.5.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-rg3VPL5P8mYro6pqlXYXuJWph21slVp3SZtAqWSrkZs40d2gTzYmHF8E/X1iTID25btmNKltNDJ926sqVBp7DQ=="],
 
-    "@biomejs/cli-linux-arm64": ["@biomejs/cli-linux-arm64@2.4.16", "", { "os": "linux", "cpu": "arm64" }, "sha512-2kFb4//jxfZaP6D+Rj5VkHkxgyD9EoRAVBEQb8PKRv+s4NO2zYNJKXFaJmK1CmhufJOWEfpHKaRbOja7qjmdhQ=="],
+    "@biomejs/cli-linux-arm64": ["@biomejs/cli-linux-arm64@2.5.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-tl+LW8fdD96/xdeWtWwc82LIOc5CoY7N2AsogLTp5R4ECErYt+8Jl/N68ezN9vzSiqPTxw6vjcihoLPYKZHrlw=="],
 
-    "@biomejs/cli-linux-arm64-musl": ["@biomejs/cli-linux-arm64-musl@2.4.16", "", { "os": "linux", "cpu": "arm64" }, "sha512-oYxnW0ARfJkr72ezzF2OR8N/rtkgLUQeYtF8cFhVswbknHxtTcmzSsanVJP8yQKnGpGpc2ck6c5zLvHahL6Cbg=="],
+    "@biomejs/cli-linux-arm64-musl": ["@biomejs/cli-linux-arm64-musl@2.5.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-vQdM4oSGaf7ZNeGO9w5+Y8SBtyser9M6znxYbm7Ec8wInxJu1WiKxFYZW5Auj2d80bcVvefuGGRxoFOE0eee8g=="],
 
-    "@biomejs/cli-linux-x64": ["@biomejs/cli-linux-x64@2.4.16", "", { "os": "linux", "cpu": "x64" }, "sha512-NbcBbi/nJqn5baae6wqRXdS7Gadf2uRpehSh6vMSYpG8OhkXl/Xg8aorWrJ+9VWqAT5ml90alLvorkpMW0nBwQ=="],
+    "@biomejs/cli-linux-x64": ["@biomejs/cli-linux-x64@2.5.0", "", { "os": "linux", "cpu": "x64" }, "sha512-zpEGf4RQbFEh8Vt7OmavLyyOzRbtcE9osCqrS1kfvt8jDvxwhKXLSf7n0ebr/ov0RJ9ssP+lhs6C8a9WwFvrQA=="],
 
-    "@biomejs/cli-linux-x64-musl": ["@biomejs/cli-linux-x64-musl@2.4.16", "", { "os": "linux", "cpu": "x64" }, "sha512-iHDS+MCM65DPqWGu+ECC3uoALyj2H7F4nVUPxIPjz/PIl94EUu+EDfGZDzFP+NY1EOPVt9NQvwFqq7HdMmowdg=="],
+    "@biomejs/cli-linux-x64-musl": ["@biomejs/cli-linux-x64-musl@2.5.0", "", { "os": "linux", "cpu": "x64" }, "sha512-+9hIcMngJ+yGUahXqZuZ8CoWKJE9SAZsFsM3QDvXpNsLbXZ9lqVzgBhOk/jTSYkOA0GLP9eu3teukqpLUojHMg=="],
 
-    "@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@2.4.16", "", { "os": "win32", "cpu": "arm64" }, "sha512-0rgImMsNb5v/chhkIFe3wu7PEFClS6RBAYUijGL9UsYN3PanSaoK24HSSuSJb1pYbYYVjzAyZTl3gtjJ84BM8A=="],
+    "@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@2.5.0", "", { "os": "win32", "cpu": "arm64" }, "sha512-jB0wAvTLI4itx5VidqVUejPQFhRUxiZ9l9FvZ26D5fl6t3qme+ZB4PD3bTSeL1vZ8NI2Rx/zj6H9zcESuGHKGw=="],
 
-    "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.4.16", "", { "os": "win32", "cpu": "x64" }, "sha512-Kp85jgoBHa05gix6UIRjfCDiUV3w/8VIdZ247VyyO2gEjaw12WEVhdIjlxp/AMzXxqxQwbxNTDVZ3Mwd2RG5rw=="],
+    "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.5.0", "", { "os": "win32", "cpu": "x64" }, "sha512-VT/lF+GId+67j8aDfLkxdxNoVApsPSTbyAtB3jJq0IWTrY77WXfbPfpngxq0bA6JCEv/7k8C9qWjDRKRznDlyw=="],
 
     "@bitbasti/chat-adapter-webex": ["@bitbasti/chat-adapter-webex@0.1.0", "", { "dependencies": { "@chat-adapter/shared": "^4.15.0" }, "peerDependencies": { "chat": "^4.15.0" } }, "sha512-Cl/gy3ifh18y0fs4f/qVNmHXfn+3v40x6QUjOUGZ5mEds2zYiqeVAalRkL+feBdjEz1tE8aQtzf1OUhRGPQeFw=="],
 
