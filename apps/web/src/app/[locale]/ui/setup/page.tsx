@@ -5,10 +5,6 @@ import { siteConfig } from '@/constants/configs';
 import { CodeBlock, DocsPageHeader, DocsSection } from '../docs-primitives';
 import { getAccent } from '../ui-docs-theme';
 
-// Rendered dynamically: shiki highlighting calls `Date.now()` internally, which
-// Next disallows during static prerendering (next-prerender-current-time).
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: Promise<{
     locale: string;

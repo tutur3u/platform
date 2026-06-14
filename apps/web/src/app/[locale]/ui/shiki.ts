@@ -10,6 +10,8 @@ import { createHighlighter, type Highlighter } from 'shiki';
 const themes = { light: 'github-light', dark: 'github-dark' } as const;
 const langs = ['tsx', 'ts', 'bash', 'json'] as const;
 
+const pinnedClock = () => 0;
+
 let highlighterPromise: Promise<Highlighter> | null = null;
 
 function getHighlighter() {
@@ -32,9 +34,25 @@ export async function highlightCode(code: string, lang = 'tsx') {
     ? lang
     : 'tsx';
 
-  return highlighter.codeToHtml(code, {
-    lang: resolvedLang,
-    themes,
-    defaultColor: false,
-  });
+  // shiki's tokenizer reads the wall clock (Date.now / performance.now) only to
+  // enforce a tokenization time limit. Next's static-prerender guard forbids
+  // reading the current time inside a Server Component, so pin the clock to a
+  // constant for the duration of the synchronous codeToHtml call. This keeps the
+  // docs pages statically renderable (no force-dynamic) and is safe: codeToHtml
+  // runs synchronously, so the globals are restored before any other code runs.
+  const realDateNow = Date.now;
+  const perf = globalThis.performance as { now: () => number } | undefined;
+  const realPerfNow = perf?.now;
+  Date.now = pinnedClock;
+  if (perf) perf.now = pinnedClock;
+  try {
+    return highlighter.codeToHtml(code, {
+      lang: resolvedLang,
+      themes,
+      defaultColor: false,
+    });
+  } finally {
+    Date.now = realDateNow;
+    if (perf && realPerfNow) perf.now = realPerfNow;
+  }
 }
