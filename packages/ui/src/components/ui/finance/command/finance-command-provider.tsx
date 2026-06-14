@@ -10,8 +10,8 @@ import {
   listTransactionCategories,
   listTransactionTags,
 } from '@tuturuuu/internal-api/finance';
-import { QuickCommandCenter } from '@tuturuuu/ui/quick-command-center';
 import type { QuickCommandCenterGroup } from '@tuturuuu/ui/quick-command-center';
+import { QuickCommandCenter } from '@tuturuuu/ui/quick-command-center';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -58,11 +58,14 @@ export function FinanceCommandProvider({
   const trimmedSearch = search.trim();
   const searchEnabled = open && mode === 'search';
 
-  const pushFinanceHref = useCallback((path: string) => {
-    setOpen(false);
-    setSearch('');
-    router.push(`/${workspaceSlug}${financeHref(path)}`);
-  }, [financeHref, router, workspaceSlug]);
+  const pushFinanceHref = useCallback(
+    (path: string) => {
+      setOpen(false);
+      setSearch('');
+      router.push(`/${workspaceSlug}${financeHref(path)}`);
+    },
+    [financeHref, router, workspaceSlug]
+  );
 
   useEffect(() => {
     const handleFinanceShortcut = (event: KeyboardEvent) => {
@@ -175,6 +178,7 @@ export function FinanceCommandProvider({
           title: action.title,
         })),
       })),
+    // biome-ignore lint/correctness/useExhaustiveDependencies: `permissions` is the rest-spread of stable boolean props; its identity churns each render but the memo body is a cheap synchronous mapping.
     [permissions, pushFinanceHref, tCommand, tFinance]
   );
 

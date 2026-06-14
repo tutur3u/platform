@@ -263,11 +263,11 @@ test('Biome workflow runs pinned npm Biome CLI and prints captured output when c
   }
 
   assert.doesNotMatch(workflow, /biomejs\/setup-biome@v2/u);
-  assert.match(formatJob, /npx --yes @biomejs\/biome@2\.4\.16 format \. 2>&1/u);
-  assert.match(lintJob, /npx --yes @biomejs\/biome@2\.4\.16 lint \. 2>&1/u);
+  assert.match(formatJob, /npx --yes @biomejs\/biome@2\.5\.0 format \. 2>&1/u);
+  assert.match(lintJob, /npx --yes @biomejs\/biome@2\.5\.0 lint \. 2>&1/u);
   assert.match(
     applyFormatJob,
-    /npx --yes @biomejs\/biome@2\.4\.16 format --write \./u
+    /npx --yes @biomejs\/biome@2\.5\.0 format --write \./u
   );
 });
 

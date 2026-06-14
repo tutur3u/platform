@@ -13,9 +13,7 @@ import type {
   InventoryCheckoutSession,
   InventorySaleSummary,
 } from '@tuturuuu/internal-api/inventory';
-import {
-  releaseInventoryCheckout,
-} from '@tuturuuu/internal-api/inventory';
+import { releaseInventoryCheckout } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useLocale, useTranslations } from 'next-intl';

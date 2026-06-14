@@ -1,8 +1,6 @@
 'use client';
 
-import {
-  Plus,
-} from '@tuturuuu/icons';
+import { Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,

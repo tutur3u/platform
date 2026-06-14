@@ -94,9 +94,7 @@ export default function CategoriesTagsTabs({
           wsId={wsId}
           currency={currency}
           openCreateDialog={tagCreateOpen}
-          onOpenCreateDialogChange={(open) =>
-            setCreate(open ? 'tag' : null)
-          }
+          onOpenCreateDialogChange={(open) => setCreate(open ? 'tag' : null)}
         />
       </TabsContent>
     </Tabs>

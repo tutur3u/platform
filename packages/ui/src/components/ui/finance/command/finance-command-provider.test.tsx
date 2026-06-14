@@ -47,10 +47,12 @@ vi.mock('@tuturuuu/internal-api/finance', () => ({
     mocks.listBudgets(...args),
   listDebtLoans: (...args: Parameters<typeof mocks.listDebtLoans>) =>
     mocks.listDebtLoans(...args),
-  listFinanceInvoices: (...args: Parameters<typeof mocks.listFinanceInvoices>) =>
-    mocks.listFinanceInvoices(...args),
-  listInfiniteWallets: (...args: Parameters<typeof mocks.listInfiniteWallets>) =>
-    mocks.listInfiniteWallets(...args),
+  listFinanceInvoices: (
+    ...args: Parameters<typeof mocks.listFinanceInvoices>
+  ) => mocks.listFinanceInvoices(...args),
+  listInfiniteWallets: (
+    ...args: Parameters<typeof mocks.listInfiniteWallets>
+  ) => mocks.listInfiniteWallets(...args),
   listRecurringTransactions: (
     ...args: Parameters<typeof mocks.listRecurringTransactions>
   ) => mocks.listRecurringTransactions(...args),
