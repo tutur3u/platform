@@ -1,4 +1,6 @@
+import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { buildSidebarData } from './ui-docs-nav-data';
 import { UiDocsShell } from './ui-docs-shell';
 
 interface Props {
@@ -11,6 +13,13 @@ interface Props {
 export default async function UiDocsLayout({ children, params }: Props) {
   const { locale } = await params;
   const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
+  setRequestLocale(normalizedLocale);
 
-  return <UiDocsShell locale={normalizedLocale}>{children}</UiDocsShell>;
+  const data = await buildSidebarData(normalizedLocale);
+
+  return (
+    <UiDocsShell data={data} locale={normalizedLocale}>
+      {children}
+    </UiDocsShell>
+  );
 }

@@ -14639,15 +14639,6 @@
     "wallet": "Ví"
   },
   "ui-showcase": {
-    "card": {
-      "customizationHint": "Dung cac dieu khien ben trai de xem cung mot thanh phan voi mat do, bo goc va be mat khac nhau.",
-      "customizations": "Diem tuy bien",
-      "usage": "Cach su dung"
-    },
-    "catalog": {
-      "description": "{count} thanh phan phu hop",
-      "title": "Catalog thanh phan"
-    },
     "categories": {
       "actions": "Hanh dong",
       "advanced": "Nang cao",
@@ -14658,36 +14649,6 @@
       "navigation": "Dieu huong",
       "overlays": "Lop phu",
       "typography": "Chu viet"
-    },
-    "components": {
-      "description": "Xem truoc {name}, sao chep duong dan import va quet cac diem tuy bien pho bien cho {importPath}."
-    },
-    "controls": {
-      "all": "Tat ca",
-      "categories": "Danh muc",
-      "density": "Mat do",
-      "densityOptions": {
-        "comfortable": "Vua",
-        "compact": "Gon",
-        "spacious": "Rong"
-      },
-      "radius": "Bo goc",
-      "radiusOptions": {
-        "rounded": "Bo goc",
-        "soft": "Mem",
-        "square": "Vuong"
-      },
-      "reset": "Dat lai showcase",
-      "search": "Tim thanh phan",
-      "searchPlaceholder": "Button, dialog, table, input...",
-      "showCode": "Hien vi du su dung",
-      "showCustomizations": "Hien ghi chu tuy bien",
-      "surface": "Be mat",
-      "surfaceOptions": {
-        "elevated": "Noi",
-        "muted": "Diu",
-        "plain": "Phang"
-      }
     },
     "customizations": {
       "a11y": "Accessibility",
@@ -14804,6 +14765,12 @@
       "code": {
         "copied": "Đã sao chép",
         "copy": "Sao chép mã"
+      },
+      "command": {
+        "empty": "Không tìm thấy thành phần",
+        "hint": "Chuyển nhanh đến bất kỳ thành phần nào.",
+        "placeholder": "Tìm mọi thành phần...",
+        "trigger": "Tìm kiếm thành phần"
       },
       "components": {
         "badge": "Thành phần",
@@ -15006,23 +14973,6 @@
         "pattern": "Pattern preview"
       }
     },
-    "empty": {
-      "description": "Xoa tim kiem hoac chon danh muc khac de tiep tuc duyet thu vien.",
-      "title": "Khong tim thay thanh phan"
-    },
-    "hero": {
-      "count": "{count} thanh phan",
-      "description": "Mot catalog thuc dung cho cac primitive dung chung trong san pham Tuturuuu: xem trang thai, sao chep duong dan import, doc vi du su dung va thu mat do, bo goc, be mat hien thi tai mot noi.",
-      "eyebrow": "Thu vien UI",
-      "metrics": {
-        "categories": "Danh muc",
-        "components": "Thanh phan",
-        "live": "Xem truc tiep"
-      },
-      "primaryAction": "Duyet thanh phan",
-      "secondaryAction": "Tai nguyen thuong hieu",
-      "title": "Thanh phan UI Tuturuuu"
-    },
     "metadata": {
       "description": "Xem cac primitive UI cua Tuturuuu voi ban xem truoc, vi du import, cach dung va dieu khien tuy bien.",
       "title": "Thu vien thanh phan UI Tuturuuu"
@@ -15124,10 +15074,6 @@
       "webProduct": "San pham Web",
       "workspaceName": "Ten workspace",
       "workspacePlaceholder": "Design Systems"
-    },
-    "status": {
-      "live": "Xem truc tiep",
-      "pattern": "Mau an toan"
     }
   },
   "usage": {

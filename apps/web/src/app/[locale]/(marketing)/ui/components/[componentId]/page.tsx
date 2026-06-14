@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { siteConfig } from '@/constants/configs';
 import { componentDocs, getComponentDoc } from '../../component-docs';
 import { ComponentDetail } from './component-detail';
@@ -47,6 +47,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function UiComponentPage({ params }: Props) {
   const { componentId, locale } = await params;
   const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
+  setRequestLocale(normalizedLocale);
+
   const doc = getComponentDoc(componentId);
 
   if (!doc) notFound();

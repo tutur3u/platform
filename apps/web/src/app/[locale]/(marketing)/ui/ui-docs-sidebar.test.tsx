@@ -1,33 +1,52 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { UiDocsSidebar } from './ui-docs-sidebar';
+import type { SidebarGroup, SidebarLabels } from './ui-docs-nav-data';
+import { UiDocsSidebarNav } from './ui-docs-sidebar';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/en/ui/components/button',
 }));
 
-vi.mock('next-intl', () => ({
-  useTranslations:
-    (namespace?: string) =>
-    (key: string, values?: Record<string, string | number>) => {
-      if (key === 'components' && namespace?.endsWith('.nav')) {
-        return 'Components';
-      }
-      if (key === 'search' && namespace?.endsWith('.nav')) {
-        return 'Search components';
-      }
-      if (key === 'searchPlaceholder') return 'Button, dialog, table...';
-      if (key === 'empty') return 'No components found';
-      if (key === 'emptyHint')
-        return 'Clear the search to browse every component.';
-      if (values?.count) return `${key} ${values.count}`;
-      return key;
-    },
-}));
+const labels: SidebarLabels = {
+  overview: 'Overview',
+  setup: 'Setup',
+  components: 'Components',
+  contributing: 'Contributing',
+  search: 'Search components',
+  searchPlaceholder: 'Button, dialog, table...',
+  empty: 'No components found',
+  emptyHint: 'Clear the search to browse every component.',
+  menu: 'Menu',
+  title: 'Tuturuuu UI',
+  description: 'Setup, discovery, and component reference.',
+  commandTrigger: 'Search components',
+  commandPlaceholder: 'Search every component...',
+  commandEmpty: 'No components found',
+  commandHint: 'Jump to any component.',
+};
 
-describe('UiDocsSidebar', () => {
+const groups: SidebarGroup[] = [
+  {
+    category: 'actions',
+    label: 'Actions',
+    items: [{ slug: 'button', name: 'Button' }],
+  },
+  {
+    category: 'overlays',
+    label: 'Overlays',
+    items: [{ slug: 'drawer', name: 'Drawer' }],
+  },
+];
+
+function renderSidebar() {
+  return render(
+    <UiDocsSidebarNav groups={groups} labels={labels} locale="en" total={2} />
+  );
+}
+
+describe('UiDocsSidebarNav', () => {
   it('renders primary docs links and component links', () => {
-    render(<UiDocsSidebar locale="en" />);
+    renderSidebar();
 
     const primaryNav = screen.getByTestId('ui-docs-primary-nav');
     expect(
@@ -43,7 +62,7 @@ describe('UiDocsSidebar', () => {
   });
 
   it('filters component discovery and shows an empty state', () => {
-    render(<UiDocsSidebar locale="en" />);
+    renderSidebar();
 
     fireEvent.change(screen.getByLabelText('Search components'), {
       target: { value: 'drawer' },

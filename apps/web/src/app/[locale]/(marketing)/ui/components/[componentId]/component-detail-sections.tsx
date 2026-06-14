@@ -90,6 +90,7 @@ export function RelatedComponents({
         if (!related) return null;
         return (
           <LinkPanel
+            accent={related.category}
             description={t('detail.relatedItemDescription', {
               category: tCategories(related.category),
               importPath: related.importPath,

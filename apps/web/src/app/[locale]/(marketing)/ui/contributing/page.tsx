@@ -1,7 +1,9 @@
+import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { siteConfig } from '@/constants/configs';
 import { CodeBlock, DocsPageHeader, DocsSection } from '../docs-primitives';
+import { getAccent } from '../ui-docs-theme';
 
 interface Props {
   params: Promise<{
@@ -38,39 +40,61 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function UiContributingPage({ params }: Props) {
   const { locale } = await params;
   const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
+  setRequestLocale(normalizedLocale);
+
   const t = await getTranslations({
     locale: normalizedLocale,
     namespace: 'ui-showcase.docs',
   });
+  const a = getAccent('advanced');
 
   return (
     <div className="grid gap-4">
       <DocsPageHeader
+        accent="advanced"
         badge={t('contributing.badge')}
         description={t('contributing.description')}
+        pattern
         title={t('contributing.title')}
       />
 
       <DocsSection
+        accent="advanced"
         description={t('contributing.workflowDescription')}
         id="workflow"
         title={t('contributing.workflowTitle')}
       >
         <div className="grid gap-3">
-          {checklist.map((item) => (
-            <div className="rounded-lg border bg-background p-4" key={item}>
-              <h3 className="font-semibold">
-                {t(`contributing.items.${item}.title`)}
-              </h3>
-              <p className="mt-2 text-muted-foreground text-sm leading-6">
-                {t(`contributing.items.${item}.description`)}
-              </p>
+          {checklist.map((item, index) => (
+            <div
+              className="flex items-start gap-3 rounded-xl border bg-card p-4 transition-colors hover:border-foreground/20"
+              key={item}
+            >
+              <span
+                className={cn(
+                  'grid size-7 shrink-0 place-items-center rounded-md border font-medium text-sm tabular-nums',
+                  a.bg,
+                  a.text,
+                  a.border
+                )}
+              >
+                {index + 1}
+              </span>
+              <div className="grid gap-1">
+                <h3 className="font-semibold">
+                  {t(`contributing.items.${item}.title`)}
+                </h3>
+                <p className="text-muted-foreground text-sm leading-6">
+                  {t(`contributing.items.${item}.description`)}
+                </p>
+              </div>
             </div>
           ))}
         </div>
       </DocsSection>
 
       <DocsSection
+        accent="inputs"
         description={t('contributing.validationDescription')}
         id="validation"
         title={t('contributing.validationTitle')}

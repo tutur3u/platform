@@ -1,10 +1,12 @@
 import { Badge } from '@tuturuuu/ui/badge';
+import { cn } from '@tuturuuu/utils/format';
 import type { ComponentDoc } from '../../component-docs';
 import { getAdjacentComponentDocs } from '../../component-docs';
 import { getComponentById } from '../../component-docs-core';
 import { ComponentPreview } from '../../component-preview';
 import { OnThisPage, PrevNextPager, type TocItem } from '../../docs-navigation';
 import { CodeBlock, DocsPageHeader, DocsSection } from '../../docs-primitives';
+import { getAccent } from '../../ui-docs-theme';
 import {
   ApiReferenceTable,
   CustomizationBadges,
@@ -41,6 +43,7 @@ export function ComponentDetail({
 }) {
   const entry = getComponentById(doc.id);
   const adjacent = getAdjacentComponentDocs(doc);
+  const a = getAccent(doc.category);
   const tocItems: TocItem[] = tocIds.map((id) => ({
     id,
     label: t(`detail.toc.${id}`),
@@ -51,11 +54,13 @@ export function ComponentDetail({
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_12rem] xl:gap-10">
       <article className="min-w-0">
         <DocsPageHeader
+          accent={doc.category}
           badge={tCategories(doc.category)}
           description={t('detail.description', {
             importPath: doc.importPath,
             name: doc.name,
           })}
+          pattern
           title={doc.name}
         >
           <div className="flex flex-wrap items-center gap-2">
@@ -67,16 +72,26 @@ export function ComponentDetail({
         </DocsPageHeader>
 
         <DocsSection
+          accent={doc.category}
           description={t('detail.previewDescription')}
           id="preview"
           title={t('detail.previewTitle')}
         >
-          <div className="grid min-h-72 place-items-center rounded-lg border bg-background p-6">
-            {entry ? <ComponentPreview entry={entry} /> : null}
+          <div
+            className={cn(
+              'relative grid min-h-72 place-items-center overflow-hidden rounded-2xl border bg-card p-6',
+              a.border
+            )}
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(color-mix(in_oklab,var(--foreground)_8%,transparent)_1px,transparent_1px)] bg-[size:1.25rem_1.25rem] opacity-50" />
+            <div className="relative">
+              {entry ? <ComponentPreview entry={entry} /> : null}
+            </div>
           </div>
         </DocsSection>
 
         <DocsSection
+          accent={doc.category}
           description={t('detail.installationDescription')}
           id="installation"
           title={t('detail.installationTitle')}
@@ -94,6 +109,7 @@ export function ComponentDetail({
         </DocsSection>
 
         <DocsSection
+          accent={doc.category}
           description={t('detail.usageDescription')}
           id="usage"
           title={t('detail.usageTitle')}
@@ -102,6 +118,7 @@ export function ComponentDetail({
         </DocsSection>
 
         <DocsSection
+          accent={doc.category}
           description={t('detail.examplesDescription')}
           id="examples"
           title={t('detail.examplesTitle')}
@@ -118,8 +135,11 @@ export function ComponentDetail({
                   </p>
                 </div>
                 {example.showPreview && entry ? (
-                  <div className="grid min-h-48 place-items-center rounded-lg border bg-background p-6">
-                    <ComponentPreview entry={entry} />
+                  <div className="relative grid min-h-48 place-items-center overflow-hidden rounded-xl border bg-card p-6">
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(color-mix(in_oklab,var(--foreground)_8%,transparent)_1px,transparent_1px)] bg-[size:1.25rem_1.25rem] opacity-50" />
+                    <div className="relative">
+                      <ComponentPreview entry={entry} />
+                    </div>
                   </div>
                 ) : null}
                 <CodeBlock code={example.code} label={`${doc.slug}.tsx`} />
@@ -129,6 +149,7 @@ export function ComponentDetail({
         </DocsSection>
 
         <DocsSection
+          accent={doc.category}
           description={t('detail.apiDescription')}
           id="api"
           title={t('detail.apiTitle')}
@@ -137,6 +158,7 @@ export function ComponentDetail({
         </DocsSection>
 
         <DocsSection
+          accent={doc.category}
           description={t('detail.customizationDescription')}
           id="customization"
           title={t('detail.customizationTitle')}
@@ -145,6 +167,7 @@ export function ComponentDetail({
         </DocsSection>
 
         <DocsSection
+          accent={doc.category}
           description={t('detail.relatedDescription')}
           id="related"
           title={t('detail.relatedTitle')}
