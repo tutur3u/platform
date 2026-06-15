@@ -8,7 +8,7 @@ const {
   getAppSessionTokenFromRequestMock,
   getPermissionsMock,
   resolveAuthenticatedSessionUserMock,
-  verifyAppSessionRequestMock,
+  verifyCliAccessTokenMock,
 } = vi.hoisted(() => ({
   createAppSessionUserMock: vi.fn(),
   createAdminClientMock: vi.fn(),
@@ -16,17 +16,16 @@ const {
   getAppSessionTokenFromRequestMock: vi.fn(),
   getPermissionsMock: vi.fn(),
   resolveAuthenticatedSessionUserMock: vi.fn(),
-  verifyAppSessionRequestMock: vi.fn(),
+  verifyCliAccessTokenMock: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
   createAppSessionUser: createAppSessionUserMock,
   getAppSessionTokenFromRequest: getAppSessionTokenFromRequestMock,
-  verifyAppSessionRequest: verifyAppSessionRequestMock,
 }));
 
 vi.mock('@tuturuuu/auth/cli-session', () => ({
-  CLI_APP_TARGET_APP: 'platform',
+  verifyCliAccessToken: verifyCliAccessTokenMock,
 }));
 
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
@@ -112,7 +111,7 @@ describe('devbox runs route', () => {
 
   it('accepts CLI app-session tokens for root workspace members', async () => {
     getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_access');
-    verifyAppSessionRequestMock.mockReturnValue({
+    verifyCliAccessTokenMock.mockReturnValue({
       claims: {
         email: 'agent@example.com',
         sub: 'user-1',
@@ -127,9 +126,7 @@ describe('devbox runs route', () => {
     expect(response.status).toBe(201);
     expect(createClientMock).not.toHaveBeenCalled();
     expect(resolveAuthenticatedSessionUserMock).not.toHaveBeenCalled();
-    expect(verifyAppSessionRequestMock).toHaveBeenCalledWith(request, {
-      targetApp: 'platform',
-    });
+    expect(verifyCliAccessTokenMock).toHaveBeenCalledWith('ttr_app_access');
     expect(getPermissionsMock).toHaveBeenCalledWith(
       expect.objectContaining({
         user: expect.objectContaining({ id: 'user-1' }),
@@ -137,9 +134,30 @@ describe('devbox runs route', () => {
     );
   });
 
+  it('rejects non-CLI platform app-session tokens without Supabase fallback', async () => {
+    getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_generic');
+    verifyCliAccessTokenMock.mockReturnValue({
+      error: 'App session missing required scope',
+      ok: false,
+    });
+    resolveAuthenticatedSessionUserMock.mockResolvedValue({
+      user: { id: 'fallback-user' },
+    });
+
+    const response = await POST(
+      createRunRequest({ command: ['bun', 'check'] })
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ message: 'Unauthorized' });
+    expect(createClientMock).not.toHaveBeenCalled();
+    expect(resolveAuthenticatedSessionUserMock).not.toHaveBeenCalled();
+    expect(getPermissionsMock).not.toHaveBeenCalled();
+  });
+
   it('rejects invalid CLI app-session tokens without Supabase fallback', async () => {
     getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_invalid');
-    verifyAppSessionRequestMock.mockReturnValue({
+    verifyCliAccessTokenMock.mockReturnValue({
       error: 'Invalid app session',
       ok: false,
     });

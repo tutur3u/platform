@@ -1,9 +1,8 @@
 import {
   createAppSessionUser,
   getAppSessionTokenFromRequest,
-  verifyAppSessionRequest,
 } from '@tuturuuu/auth/app-session';
-import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -27,9 +26,7 @@ async function resolveDevboxRequestUser(
   const appSessionToken = getAppSessionTokenFromRequest(request);
 
   if (appSessionToken) {
-    const appSessionVerification = verifyAppSessionRequest(request, {
-      targetApp: CLI_APP_TARGET_APP,
-    });
+    const appSessionVerification = verifyCliAccessToken(appSessionToken);
 
     if (!appSessionVerification.ok) {
       return {
