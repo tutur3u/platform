@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { FinanceRouteAuthContext } from '../../../request-access';
 import { getWalletRouteContext } from '../../wallet-access';
-import { listAccessibleCheckpointWallets } from '../access';
+import {
+  filterCheckpointIntervalsByWindow,
+  filterCheckpointRowsByWindow,
+  getOldestCheckpointWindowStart,
+  listAccessibleCheckpointWallets,
+  sanitizeAuditStatusesByWindow,
+} from '../access';
 import {
   getCheckpointLimit,
   getLedgerBalanceForCheckpointRead,
@@ -42,7 +48,8 @@ export async function GET(
 
   try {
     const limit = getCheckpointLimit(req);
-    const wallets = await listAccessibleCheckpointWallets(access.context);
+    const { wallets, windowStartsByWalletId } =
+      await listAccessibleCheckpointWallets(access.context);
     const walletIds = wallets.map((wallet) => wallet.id);
 
     if (walletIds.length === 0) {
@@ -56,11 +63,20 @@ export async function GET(
       });
     }
 
-    const { data, error } = await access.context.sbAdmin
+    let checkpointQuery = access.context.sbAdmin
       .schema('private')
       .from('workspace_wallet_checkpoints')
       .select(WALLET_CHECKPOINT_SELECT)
-      .in('wallet_id', walletIds)
+      .in('wallet_id', walletIds);
+
+    const oldestWindowStart = getOldestCheckpointWindowStart(
+      windowStartsByWalletId
+    );
+    if (oldestWindowStart) {
+      checkpointQuery = checkpointQuery.gte('checked_at', oldestWindowStart);
+    }
+
+    const { data, error } = await checkpointQuery
       .order('checked_at', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(limit * walletIds.length);
@@ -83,7 +99,10 @@ export async function GET(
       );
     }
 
-    const checkpointRows = (data ?? []) as WalletCheckpointRow[];
+    const checkpointRows = filterCheckpointRowsByWindow(
+      (data ?? []) as WalletCheckpointRow[],
+      windowStartsByWalletId
+    );
     const checkpoints = await Promise.all(
       checkpointRows.map(async (row) =>
         normalizeCheckpoint(
@@ -123,11 +142,15 @@ export async function GET(
     const intervalGroups = await Promise.all(
       walletIds.map(async (walletId) => {
         const wallet = walletById.get(walletId);
-        const intervals = await listCheckpointIntervals({
-          limit,
-          sbAdmin: access.context.sbAdmin,
+        const intervals = filterCheckpointIntervalsByWindow(
+          await listCheckpointIntervals({
+            limit,
+            sbAdmin: access.context.sbAdmin,
+            walletId,
+          }),
           walletId,
-        });
+          windowStartsByWalletId
+        );
 
         return intervals.map(
           (interval) =>
@@ -141,10 +164,13 @@ export async function GET(
       })
     );
 
-    const auditStatuses = await listWalletAuditStatuses({
-      sbAdmin: access.context.sbAdmin,
-      walletIds,
-    });
+    const auditStatuses = sanitizeAuditStatusesByWindow(
+      await listWalletAuditStatuses({
+        sbAdmin: access.context.sbAdmin,
+        walletIds,
+      }),
+      windowStartsByWalletId
+    );
 
     return NextResponse.json({
       audit_statuses: auditStatuses,

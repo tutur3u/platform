@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { FinanceRouteAuthContext } from '../../../request-access';
 import {
+  filterCheckpointIntervalsByWindow,
+  filterCheckpointRowsByWindow,
+  getAccessibleCheckpointWindowStart,
+} from '../../checkpoints/access';
+import {
   checkpointDatabaseErrorResponse,
   getCheckpointLimit,
   getLedgerBalanceAt,
@@ -52,11 +57,34 @@ export async function GET(
   }
 
   const limit = getCheckpointLimit(req);
-  const { data, error } = await access.context.sbAdmin
+  let checkpointWindowStart: string | undefined;
+  try {
+    checkpointWindowStart = await getAccessibleCheckpointWindowStart(
+      access.context,
+      walletId
+    );
+  } catch {
+    return NextResponse.json(
+      { message: 'Error fetching wallet checkpoints' },
+      { status: 500 }
+    );
+  }
+
+  const windowStartsByWalletId = checkpointWindowStart
+    ? new Map([[walletId, checkpointWindowStart]])
+    : new Map<string, string>();
+
+  let checkpointQuery = access.context.sbAdmin
     .schema('private')
     .from('workspace_wallet_checkpoints')
     .select(WALLET_CHECKPOINT_SELECT)
-    .eq('wallet_id', walletId)
+    .eq('wallet_id', walletId);
+
+  if (checkpointWindowStart) {
+    checkpointQuery = checkpointQuery.gte('checked_at', checkpointWindowStart);
+  }
+
+  const { data, error } = await checkpointQuery
     .order('checked_at', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -77,8 +105,12 @@ export async function GET(
   }
 
   try {
+    const checkpointRows = filterCheckpointRowsByWindow(
+      (data ?? []) as WalletCheckpointRow[],
+      windowStartsByWalletId
+    );
     const checkpoints = await Promise.all(
-      ((data ?? []) as WalletCheckpointRow[]).map(async (row) =>
+      checkpointRows.map(async (row) =>
         normalizeCheckpoint(
           row,
           await getLedgerBalanceForCheckpointRead({
@@ -90,11 +122,15 @@ export async function GET(
         )
       )
     );
-    const intervals = await listCheckpointIntervals({
-      limit,
-      sbAdmin: access.context.sbAdmin,
+    const intervals = filterCheckpointIntervalsByWindow(
+      await listCheckpointIntervals({
+        limit,
+        sbAdmin: access.context.sbAdmin,
+        walletId,
+      }),
       walletId,
-    });
+      windowStartsByWalletId
+    );
 
     return NextResponse.json({
       data: checkpoints,

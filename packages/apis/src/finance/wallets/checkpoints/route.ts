@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { FinanceRouteAuthContext } from '../../request-access';
 import { getAccessibleWallets, getWalletRouteContext } from '../wallet-access';
-import { listAccessibleCheckpointWallets } from './access';
+import {
+  filterCheckpointRowsByWindow,
+  getOldestCheckpointWindowStart,
+  listAccessibleCheckpointWallets,
+} from './access';
 import {
   checkpointDatabaseErrorResponse,
   getLedgerBalanceForCheckpointRead,
@@ -39,7 +43,8 @@ export async function GET(
   }
 
   try {
-    const wallets = await listAccessibleCheckpointWallets(access.context);
+    const { wallets, windowStartsByWalletId } =
+      await listAccessibleCheckpointWallets(access.context);
     const walletIds = wallets.map((wallet) => wallet.id);
 
     if (walletIds.length === 0) {
@@ -50,11 +55,20 @@ export async function GET(
       });
     }
 
-    const { data, error } = await access.context.sbAdmin
+    let checkpointQuery = access.context.sbAdmin
       .schema('private')
       .from('workspace_wallet_checkpoints')
       .select(WALLET_CHECKPOINT_SELECT)
-      .in('wallet_id', walletIds)
+      .in('wallet_id', walletIds);
+
+    const oldestWindowStart = getOldestCheckpointWindowStart(
+      windowStartsByWalletId
+    );
+    if (oldestWindowStart) {
+      checkpointQuery = checkpointQuery.gte('checked_at', oldestWindowStart);
+    }
+
+    const { data, error } = await checkpointQuery
       .order('checked_at', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -73,8 +87,12 @@ export async function GET(
       );
     }
 
+    const checkpointRows = filterCheckpointRowsByWindow(
+      (data ?? []) as WalletCheckpointRow[],
+      windowStartsByWalletId
+    );
     const latestRows = new Map<string, WalletCheckpointRow>();
-    for (const row of (data ?? []) as WalletCheckpointRow[]) {
+    for (const row of checkpointRows) {
       if (!latestRows.has(row.wallet_id)) {
         latestRows.set(row.wallet_id, row);
       }

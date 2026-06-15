@@ -278,6 +278,185 @@ describe('wallet checkpoint route', () => {
     });
   });
 
+  it('limits non-manager wallet checkpoints to the wallet viewing window', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-15T00:00:00.000Z'));
+
+    try {
+      const walletId = '00000000-0000-0000-0000-000000000001';
+      const checkpointRows = [
+        {
+          actual_balance: '120',
+          checked_at: '2026-06-10T10:00:00.000Z',
+          created_at: '2026-06-10T10:01:00.000Z',
+          created_by: 'user-1',
+          currency: 'VND',
+          id: 'checkpoint-visible',
+          ledger_balance: '110',
+          note: null,
+          updated_at: '2026-06-10T10:01:00.000Z',
+          wallet_id: walletId,
+        },
+        {
+          actual_balance: '95',
+          checked_at: '2026-06-01T10:00:00.000Z',
+          created_at: '2026-06-01T10:01:00.000Z',
+          created_by: 'user-1',
+          currency: 'VND',
+          id: 'checkpoint-old',
+          ledger_balance: '90',
+          note: null,
+          updated_at: '2026-06-01T10:01:00.000Z',
+          wallet_id: walletId,
+        },
+      ];
+      const checkpointOrder = vi.fn().mockReturnValue({
+        order: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValue({
+            data: checkpointRows,
+            error: null,
+          }),
+        }),
+      });
+      const checkpointGte = vi.fn().mockReturnValue({
+        order: checkpointOrder,
+      });
+      const privateClient = {
+        from: vi.fn((table: string) => {
+          if (table !== 'workspace_wallet_checkpoints') {
+            throw new Error(`Unexpected private table: ${table}`);
+          }
+
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                gte: checkpointGte,
+                order: checkpointOrder,
+              }),
+            }),
+          };
+        }),
+        rpc: vi.fn((name: string) => {
+          if (name === 'get_wallet_ledger_balance_at') {
+            return Promise.resolve({ data: 125, error: null });
+          }
+
+          if (name === 'list_wallet_checkpoint_intervals') {
+            return Promise.resolve({
+              data: [
+                {
+                  actual_delta: 5,
+                  end_actual_balance: 95,
+                  end_checked_at: '2026-06-01T10:00:00.000Z',
+                  end_checkpoint_id: 'checkpoint-old',
+                  interval_variance: 1,
+                  ledger_delta: 4,
+                  start_actual_balance: 90,
+                  start_checked_at: '2026-05-31T10:00:00.000Z',
+                  start_checkpoint_id: 'checkpoint-older',
+                  transaction_count: 2,
+                },
+                {
+                  actual_delta: 20,
+                  end_actual_balance: 120,
+                  end_checked_at: '2026-06-10T10:00:00.000Z',
+                  end_checkpoint_id: 'checkpoint-visible',
+                  interval_variance: 5,
+                  ledger_delta: 15,
+                  start_actual_balance: 100,
+                  start_checked_at: '2026-06-09T10:00:00.000Z',
+                  start_checkpoint_id: 'checkpoint-window-start',
+                  transaction_count: 3,
+                },
+              ],
+              error: null,
+            });
+          }
+
+          throw new Error(`Unexpected RPC: ${name}`);
+        }),
+      };
+      const publicFrom = vi.fn((table: string) => {
+        if (table === 'workspace_role_members') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockResolvedValue({
+                  data: [{ role_id: 'role-1' }],
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+
+        if (table === 'workspace_role_wallet_whitelist') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                in: vi.fn().mockResolvedValue({
+                  data: [
+                    {
+                      custom_days: null,
+                      viewing_window: '7_days',
+                      wallet_id: walletId,
+                    },
+                  ],
+                  error: null,
+                }),
+              }),
+            }),
+          };
+        }
+
+        throw new Error(`Unexpected public table: ${table}`);
+      });
+      const sbAdmin = {
+        from: publicFrom,
+        schema: vi.fn(() => privateClient),
+      };
+      mocks.getAccessibleWallet.mockResolvedValue({
+        context: {
+          normalizedWsId: 'workspace-1',
+          permissions: {
+            withoutPermission: vi.fn(
+              (permission: string) => permission === 'manage_finance'
+            ),
+          },
+          sbAdmin,
+          userId: 'user-1',
+        },
+        wallet: {
+          currency: 'VND',
+        },
+      });
+
+      const { GET } = await import('./route.js');
+      const response = await GET(createRequest(), params(walletId));
+
+      expect(response.status).toBe(200);
+      expect(checkpointGte).toHaveBeenCalledWith(
+        'checked_at',
+        '2026-06-08T00:00:00.000Z'
+      );
+      const payload = await response.json();
+      expect(payload.data).toHaveLength(1);
+      expect(payload.data[0]).toMatchObject({
+        id: 'checkpoint-visible',
+        wallet_id: walletId,
+      });
+      expect(payload.intervals).toHaveLength(1);
+      expect(payload.intervals[0]).toMatchObject({
+        end_checkpoint_id: 'checkpoint-visible',
+      });
+      expect(payload.latest).toMatchObject({
+        id: 'checkpoint-visible',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('returns an empty checkpoint list while checkpoint storage is not migrated', async () => {
     const privateClient = {
       from: vi.fn(() => ({
