@@ -1,4 +1,5 @@
 import { StorefrontClient } from '@/components/storefront/storefront-client';
+import { StorefrontHeaderActions } from '../../../storefront-header-actions';
 
 export default async function StorefrontOrderPage({
   params,
@@ -8,6 +9,7 @@ export default async function StorefrontOrderPage({
   const { publicToken, storeSlug } = await params;
   return (
     <StorefrontClient
+      headerActions={<StorefrontHeaderActions />}
       mode="order"
       publicToken={publicToken}
       storeSlug={storeSlug}

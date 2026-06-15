@@ -14,7 +14,7 @@ import {
   type StorefrontSurfaceLabels,
 } from '@tuturuuu/ui/storefront';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { useCart } from './storefront-cart';
 import {
   createDemoCheckoutResponse,
@@ -27,6 +27,7 @@ import { getOptionalInventoryPublicStorefront } from './storefront-loader';
 type StorefrontMode = 'cart' | 'checkout' | 'order' | 'product' | 'store';
 
 type StorefrontClientProps = {
+  headerActions?: ReactNode;
   listingId?: string;
   mode: StorefrontMode;
   publicToken?: string;
@@ -34,6 +35,7 @@ type StorefrontClientProps = {
 };
 
 export function StorefrontClient({
+  headerActions,
   listingId,
   mode,
   publicToken,
@@ -223,6 +225,7 @@ export function StorefrontClient({
     <StorefrontSurface
       cartLines={cart.cart}
       checkoutHref={`/${storeSlug}/checkout`}
+      headerActions={headerActions}
       isDemo={isDemoStorefront}
       isSubmitting={checkoutMutation.isPending}
       labels={surfaceLabels}

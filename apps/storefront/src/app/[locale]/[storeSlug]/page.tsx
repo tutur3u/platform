@@ -1,4 +1,5 @@
 import { StorefrontClient } from '@/components/storefront/storefront-client';
+import { StorefrontHeaderActions } from '../storefront-header-actions';
 
 export default async function StorefrontPage({
   params,
@@ -6,5 +7,11 @@ export default async function StorefrontPage({
   params: Promise<{ storeSlug: string }>;
 }) {
   const { storeSlug } = await params;
-  return <StorefrontClient mode="store" storeSlug={storeSlug} />;
+  return (
+    <StorefrontClient
+      headerActions={<StorefrontHeaderActions />}
+      mode="store"
+      storeSlug={storeSlug}
+    />
+  );
 }

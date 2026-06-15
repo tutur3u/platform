@@ -36,6 +36,7 @@
     "reserve": "Continue to Polar",
     "reserving": "Preparing checkout...",
     "retry": "Retry",
+    "signIn": "Sign in",
     "simulatedBadge": "Simulated checkout",
     "simulatedReserve": "Simulate checkout",
     "simulatedReservedCopy": "This storefront simulates checkout without changing inventory or opening Polar.",
