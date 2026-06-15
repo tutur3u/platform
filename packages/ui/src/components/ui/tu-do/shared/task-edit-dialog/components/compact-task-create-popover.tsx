@@ -253,10 +253,10 @@ export function CompactTaskDialogPanel({
             descriptionPreviewLabel ??
             t('ws-task-boards.dialog.open_fullscreen')
           }
-          className="absolute top-full left-1/2 mt-2 w-full max-w-[30rem] -translate-x-1/2 rounded-lg border bg-background/95 px-4 py-3 text-left shadow-xl ring-1 ring-border/60 backdrop-blur transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="absolute top-full left-1/2 mt-2 w-full max-w-[30rem] -translate-x-1/2 rounded-lg border bg-background/95 px-4 py-3 text-left opacity-70 shadow-xl ring-1 ring-border/60 backdrop-blur transition hover:bg-muted/70 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={onDescriptionPreviewClick}
         >
-          <span className="line-clamp-3 text-muted-foreground text-sm leading-relaxed">
+          <span className="line-clamp-3 whitespace-pre-line text-muted-foreground text-sm leading-relaxed">
             {descriptionPreview}
           </span>
         </button>
