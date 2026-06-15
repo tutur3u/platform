@@ -141,7 +141,7 @@ export function StorefrontClient({
       orderQuery.isError || (shouldResolveDemoOrder && storefrontQuery.isError);
     return (
       <main className="mx-auto grid min-h-dvh w-full max-w-lg place-items-center px-4 py-10">
-        <section className="w-full rounded-lg border border-border bg-card p-6 text-center shadow-sm">
+        <section className="w-full overflow-hidden rounded-2xl border border-border bg-card p-6 text-center shadow-foreground/5 shadow-sm">
           {isOrderUnavailable ? (
             <>
               <p className="text-muted-foreground text-sm">{t('order')}</p>
@@ -159,35 +159,42 @@ export function StorefrontClient({
             </>
           ) : (
             <>
-              <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
-                <CheckCircle2 className="h-6 w-6" />
+              <div
+                className="-mx-6 -mt-6 mb-6 h-1.5"
+                style={{
+                  backgroundColor: 'var(--storefront-accent, var(--primary))',
+                }}
+              />
+              <span className="mx-auto grid size-16 place-items-center rounded-full bg-primary/10 text-primary ring-8 ring-primary/5">
+                <CheckCircle2 className="size-8" />
               </span>
-              <h1 className="mt-4 font-semibold text-2xl">
+              <h1 className="mt-5 font-semibold text-2xl tracking-tight">
                 {t('orderPlaced')}
               </h1>
               <p className="mt-2 text-muted-foreground text-sm leading-6">
                 {t('orderPlacedDescription')}
               </p>
               {order ? (
-                <p className="mt-4 inline-flex rounded-md border border-border bg-muted/40 px-2.5 py-1 font-medium text-xs">
+                <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-xs">
+                  <span className="size-1.5 rounded-full bg-primary" />
                   {t('orderStatus', {
                     status: order.polarStatus ?? order.status,
                   })}
-                </p>
+                </span>
               ) : (
                 <p className="mt-4 text-muted-foreground text-sm">
                   {t('loading')}
                 </p>
               )}
-              <div className="mt-4 rounded-md border border-border border-dashed bg-background p-3 text-left">
-                <p className="text-muted-foreground text-xs">
+              <div className="mt-5 rounded-xl border border-border border-dashed bg-muted/20 p-4 text-left">
+                <p className="text-muted-foreground text-xs uppercase tracking-wide">
                   {t('orderReference')}
                 </p>
-                <p className="mt-0.5 break-all font-mono text-sm">
+                <p className="mt-1 break-all font-mono text-sm">
                   {publicToken}
                 </p>
               </div>
-              <Button asChild className="mt-5 w-full" variant="outline">
+              <Button asChild className="mt-6 w-full" variant="outline">
                 <Link href={`/${storeSlug}`}>{t('backToStore')}</Link>
               </Button>
             </>

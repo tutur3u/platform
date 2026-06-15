@@ -213,6 +213,18 @@ export function StorefrontSurface({
 
       {isCheckout ? (
         <section className="mx-auto w-full max-w-xl px-4 py-8">
+          {cartHref ? (
+            <a
+              className="mb-4 inline-flex items-center gap-1.5 text-muted-foreground text-sm transition hover:text-foreground"
+              href={cartHref}
+            >
+              <ArrowLeft aria-hidden className="size-4" />
+              {labels.cart}
+            </a>
+          ) : null}
+          <h2 className="mb-4 font-semibold text-2xl tracking-tight">
+            {labels.checkout}
+          </h2>
           {cartSummary}
         </section>
       ) : (
