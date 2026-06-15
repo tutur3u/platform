@@ -6,11 +6,38 @@ import {
   timingSafeEqual,
 } from 'node:crypto';
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
-import { WEB_ACCOUNT_DEVICE_COOKIE_NAME } from './types';
+import {
+  LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+  WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+} from './types';
 
 const COOKIE_VERSION = 'v1';
 const SESSION_CIPHER_VERSION = 'v1';
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
+const PARENT_DOMAIN_COOKIE_HOSTS = [
+  {
+    domain: '.tuturuuu.com',
+    matches: (hostname: string) =>
+      hostname === 'tuturuuu.com' || hostname.endsWith('.tuturuuu.com'),
+    secure: true,
+  },
+  {
+    domain: '.tuturuuu.localhost',
+    matches: (hostname: string) =>
+      hostname === 'tuturuuu.localhost' ||
+      hostname.endsWith('.tuturuuu.localhost'),
+    secure: false,
+  },
+];
+
+type DeviceCookieOptions = {
+  domain?: string;
+  httpOnly: true;
+  maxAge: number;
+  path: string;
+  sameSite: 'lax';
+  secure: boolean;
+};
 
 export function resolveMultiAccountSecret(
   env: Partial<NodeJS.ProcessEnv> = process.env
@@ -188,36 +215,22 @@ export function getDeviceCookieOptions(
   request: Pick<Request, 'headers' | 'url'>
 ) {
   const requestUrl = resolveCookieUrl(request);
-  const options: {
-    domain?: string;
-    httpOnly: true;
-    maxAge: number;
-    path: string;
-    sameSite: 'lax';
-    secure: boolean;
-  } = {
+
+  return {
     httpOnly: true,
     maxAge: COOKIE_MAX_AGE_SECONDS,
     path: '/',
     sameSite: 'lax',
     secure: requestUrl.protocol === 'https:',
-  };
+  } satisfies DeviceCookieOptions;
+}
 
-  if (
-    requestUrl.hostname === 'tuturuuu.com' ||
-    requestUrl.hostname.endsWith('.tuturuuu.com')
-  ) {
-    options.domain = '.tuturuuu.com';
-    options.secure = true;
-  } else if (
-    requestUrl.hostname === 'tuturuuu.localhost' ||
-    requestUrl.hostname.endsWith('.tuturuuu.localhost')
-  ) {
-    options.domain = '.tuturuuu.localhost';
-    options.secure = false;
-  }
+export function getDeviceCookieName(request: Pick<Request, 'headers' | 'url'>) {
+  const requestUrl = resolveCookieUrl(request);
 
-  return options;
+  return requestUrl.protocol === 'https:'
+    ? WEB_ACCOUNT_DEVICE_COOKIE_NAME
+    : LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME;
 }
 
 export function getExpiredDeviceCookieOptions(
@@ -229,4 +242,32 @@ export function getExpiredDeviceCookieOptions(
   };
 }
 
-export { WEB_ACCOUNT_DEVICE_COOKIE_NAME };
+export function getLegacyDeviceCookieClearOptions(
+  request: Pick<Request, 'headers' | 'url'>
+) {
+  const requestUrl = resolveCookieUrl(request);
+  const hostOnlyOptions = {
+    ...getExpiredDeviceCookieOptions(request),
+  } satisfies DeviceCookieOptions;
+  const parentDomain = PARENT_DOMAIN_COOKIE_HOSTS.find((entry) =>
+    entry.matches(requestUrl.hostname)
+  );
+
+  if (!parentDomain) {
+    return [hostOnlyOptions];
+  }
+
+  return [
+    hostOnlyOptions,
+    {
+      ...hostOnlyOptions,
+      domain: parentDomain.domain,
+      secure: parentDomain.secure,
+    },
+  ];
+}
+
+export {
+  LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+  WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+};

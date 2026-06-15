@@ -1,6 +1,9 @@
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 
-export const WEB_ACCOUNT_DEVICE_COOKIE_NAME = 'tuturuuu_web_account_device';
+export const WEB_ACCOUNT_DEVICE_COOKIE_NAME =
+  '__Host-tuturuuu_web_account_device';
+export const LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME =
+  'tuturuuu_web_account_device';
 export const LEGACY_MULTI_SESSION_STORAGE_KEY = 'tuturuuu_multi_session_store';
 export const MAX_WEB_ACCOUNT_SESSIONS = 5;
 

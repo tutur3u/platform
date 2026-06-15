@@ -11,11 +11,13 @@ import {
   createDeviceSecret,
   decryptSession,
   encryptSession,
+  getDeviceCookieName,
   getDeviceCookieOptions,
   getExpiredDeviceCookieOptions,
+  getLegacyDeviceCookieClearOptions,
   hashDeviceSecret,
+  LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
   parseDeviceCookieValue,
-  WEB_ACCOUNT_DEVICE_COOKIE_NAME,
 } from './crypto';
 import {
   getWorkspaceIdFromMultiAccountRoute,
@@ -137,20 +139,40 @@ async function setDeviceCookie(
   device: WebAccountDevice
 ) {
   const cookieStore = await cookies();
+  const cookieName = getDeviceCookieName(request);
   cookieStore.set(
-    WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+    cookieName,
     createDeviceCookieValue(device.deviceId, device.secret),
     getDeviceCookieOptions(request)
   );
+
+  for (const options of getLegacyDeviceCookieClearOptions(request)) {
+    if (
+      cookieName === LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME &&
+      !('domain' in options)
+    ) {
+      continue;
+    }
+
+    cookieStore.set(LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME, '', options);
+  }
 }
 
 async function clearDeviceCookie(request: Pick<Request, 'headers' | 'url'>) {
   const cookieStore = await cookies();
-  cookieStore.set(
-    WEB_ACCOUNT_DEVICE_COOKIE_NAME,
-    '',
-    getExpiredDeviceCookieOptions(request)
-  );
+  const cookieName = getDeviceCookieName(request);
+  cookieStore.set(cookieName, '', getExpiredDeviceCookieOptions(request));
+
+  for (const options of getLegacyDeviceCookieClearOptions(request)) {
+    if (
+      cookieName === LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME &&
+      !('domain' in options)
+    ) {
+      continue;
+    }
+
+    cookieStore.set(LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME, '', options);
+  }
 }
 
 async function resolveDevice(
@@ -159,7 +181,7 @@ async function resolveDevice(
 ): Promise<WebAccountDevice | null> {
   const cookieStore = await cookies();
   const credential = parseDeviceCookieValue(
-    cookieStore.get(WEB_ACCOUNT_DEVICE_COOKIE_NAME)?.value
+    cookieStore.get(getDeviceCookieName(request))?.value
   );
   const db = await getPrivateDb();
 

@@ -4,8 +4,13 @@ import {
   createDeviceCookieValue,
   decryptSession,
   encryptSession,
+  getDeviceCookieName,
+  getDeviceCookieOptions,
+  getLegacyDeviceCookieClearOptions,
+  LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
   parseDeviceCookieValue,
   resolveMultiAccountSecret,
+  WEB_ACCOUNT_DEVICE_COOKIE_NAME,
 } from './crypto';
 
 const ORIGINAL_ENV = { ...process.env };
@@ -100,5 +105,59 @@ describe('web multi-account crypto', () => {
     expect(
       parseDeviceCookieValue(value.replace('device-secret', 'other'))
     ).toBe(null);
+  });
+
+  it('uses a host-prefixed device cookie on HTTPS requests', () => {
+    const request = new Request('http://internal.localhost/login', {
+      headers: {
+        'x-forwarded-host': 'app.tuturuuu.com',
+        'x-forwarded-proto': 'https',
+      },
+    });
+
+    expect(getDeviceCookieName(request)).toBe(WEB_ACCOUNT_DEVICE_COOKIE_NAME);
+    expect(getDeviceCookieOptions(request)).toMatchObject({
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      secure: true,
+    });
+    expect(getDeviceCookieOptions(request)).not.toHaveProperty('domain');
+  });
+
+  it('keeps HTTP development cookies host-only without the host prefix', () => {
+    const request = new Request('http://tuturuuu.localhost/login');
+
+    expect(getDeviceCookieName(request)).toBe(
+      LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME
+    );
+    expect(getDeviceCookieOptions(request)).toMatchObject({
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      secure: false,
+    });
+    expect(getDeviceCookieOptions(request)).not.toHaveProperty('domain');
+  });
+
+  it('expires legacy parent-domain cookies without reusing that scope', () => {
+    const request = new Request('https://app.tuturuuu.com/login');
+
+    expect(getLegacyDeviceCookieClearOptions(request)).toEqual([
+      expect.objectContaining({
+        maxAge: 0,
+        path: '/',
+        secure: true,
+      }),
+      expect.objectContaining({
+        domain: '.tuturuuu.com',
+        maxAge: 0,
+        path: '/',
+        secure: true,
+      }),
+    ]);
+    expect(getLegacyDeviceCookieClearOptions(request)[0]).not.toHaveProperty(
+      'domain'
+    );
   });
 });
