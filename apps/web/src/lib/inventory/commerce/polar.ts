@@ -17,6 +17,7 @@ import {
   getOrCreateWorkspaceKey,
   getWorkspaceKey,
 } from '@/lib/workspace-encryption';
+import { recordInventorySaleFinanceTransaction } from './finance';
 
 type SupabaseErrorLike = { message?: string } | null;
 
@@ -540,6 +541,12 @@ export async function syncInventoryPolarOrder(order: Order) {
     if (error) {
       throw new Error(error.message ?? 'Failed to complete inventory checkout');
     }
+
+    // Book the sale revenue into the workspace finance ledger. Idempotent and
+    // non-throwing, so a booking hiccup can never fail the payment webhook.
+    await recordInventorySaleFinanceTransaction({
+      checkoutId: metadata.checkoutId,
+    });
   }
 
   return true;
