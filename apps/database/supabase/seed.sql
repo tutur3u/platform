@@ -3729,3 +3729,70 @@ values
         0
     )
 on conflict do nothing;
+
+-- Inventory storefront (AUD) + listings + a storefront analytics funnel.
+-- Seeds a published, Polar-checkout storefront for the Prototype General
+-- workspace so the storefront app and the inventory operator dashboard
+-- (commerce, Polar sync status, storefront analytics) have realistic data out
+-- of the box. The listings deliberately carry varied Polar sync states
+-- (synced / error / pending) to exercise the sync-status surfaces, and the
+-- events form a view -> add-to-cart -> checkout funnel. Idempotent: skipped if
+-- the storefront already exists.
+do $$
+declare
+    v_ws uuid := '00000000-0000-0000-0000-000000000002';
+    v_store uuid := 'a2000000-0000-4000-8000-000000000001';
+    v_unit uuid := 'a0000000-0000-4000-8000-000000000001';
+    v_wh uuid := 'a0000000-0000-4000-8000-000000000002';
+begin
+    if exists (
+        select 1 from private.inventory_storefronts where id = v_store
+    ) then
+        return;
+    end if;
+
+    insert into private.inventory_storefronts (
+        id, ws_id, slug, name, description, currency, status, visibility,
+        checkout_mode, analytics_enabled, polar_environment
+    ) values (
+        v_store, v_ws, 'sokora-local', 'Sokora Local Shop',
+        'Available from this workspace storefront.', 'AUD', 'published',
+        'public', 'polar', true, 'sandbox'
+    );
+
+    insert into private.inventory_storefront_listings (
+        id, storefront_id, ws_id, listing_type, product_id, unit_id,
+        warehouse_id, title, price, status, polar_sync_status,
+        polar_synced_at, polar_last_error
+    ) values
+        (
+            'a3000000-0000-4000-8000-000000000001', v_store, v_ws, 'product',
+            'a1000000-0000-4000-8000-000000000001', v_unit, v_wh,
+            '1:1 Mentoring', 10000, 'published', 'synced', now(), null
+        ),
+        (
+            'a3000000-0000-4000-8000-000000000002', v_store, v_ws, 'product',
+            'a1000000-0000-4000-8000-000000000002', v_unit, v_wh,
+            'Workshop Pass', 20000, 'published', 'error', null,
+            'Product is not available in the specified currency.'
+        ),
+        (
+            'a3000000-0000-4000-8000-000000000003', v_store, v_ws, 'product',
+            'a1000000-0000-4000-8000-000000000003', v_unit, v_wh,
+            'Sticker Pack', 5000, 'published', 'pending', null, null
+        );
+
+    insert into private.inventory_storefront_events (
+        ws_id, storefront_id, event_type, occurred_at
+    )
+    select v_ws, v_store, e.event_type,
+        now() - (random() * 7 || ' days')::interval
+    from (
+        select 'view' as event_type, generate_series(1, 100)
+        union all select 'product_view', generate_series(1, 60)
+        union all select 'add_to_cart', generate_series(1, 25)
+        union all select 'checkout_started', generate_series(1, 12)
+        union all select 'checkout_created', generate_series(1, 8)
+        union all select 'checkout_completed', generate_series(1, 3)
+    ) e;
+end $$;
