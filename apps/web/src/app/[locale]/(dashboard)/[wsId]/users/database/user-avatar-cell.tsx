@@ -1,5 +1,6 @@
 'use client';
 
+import { User } from '@tuturuuu/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useState } from 'react';
 
@@ -25,6 +26,7 @@ export function UserAvatarCell({ avatarUrl, name }: UserAvatarCellProps) {
   }
 
   const showImage = !!avatarUrl && !errored;
+  const initials = getInitials(name);
 
   return (
     <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-foreground/5 font-semibold text-foreground/60 text-xs">
@@ -39,8 +41,10 @@ export function UserAvatarCell({ avatarUrl, name }: UserAvatarCellProps) {
           loading="lazy"
           onError={() => setErrored(true)}
         />
+      ) : initials ? (
+        initials
       ) : (
-        getInitials(name)
+        <User className="h-4 w-4" />
       )}
     </span>
   );
