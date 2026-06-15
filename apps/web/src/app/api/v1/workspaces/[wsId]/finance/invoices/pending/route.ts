@@ -170,7 +170,26 @@ export async function GET(request: Request, { params }: Params) {
       count: totalCount || 0,
     });
   } catch (error) {
-    serverLogger.error('Error in pending invoices API:', error);
+    // Postgres cancels a statement that exceeds statement_timeout with SQLSTATE
+    // 57014 (query_canceled). Surface that as a 504 so the client can show a
+    // retryable "timed out" state instead of an ambiguous empty list, and log
+    // enough detail to tell timeouts apart from genuine failures.
+    const pgError = error as { code?: string; message?: string } | null;
+    const isTimeout = pgError?.code === '57014';
+
+    serverLogger.error('Error in pending invoices API:', {
+      code: pgError?.code,
+      message: pgError?.message,
+      isTimeout,
+    });
+
+    if (isTimeout) {
+      return NextResponse.json(
+        { message: 'Timed out loading pending invoices. Please try again.' },
+        { status: 504 }
+      );
+    }
+
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

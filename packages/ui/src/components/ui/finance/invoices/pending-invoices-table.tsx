@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
@@ -86,14 +87,17 @@ export function PendingInvoicesTable({
     setPageSize(null);
   }, [setQ, setUserIds, setPage, setPageSize]);
 
-  const { data, isLoading, isFetching, error } = usePendingInvoices(wsId, {
-    page,
-    pageSize,
-    q,
-    userIds,
-    groupByUser,
-    enabled: !isConfigLoading,
-  });
+  const { data, isLoading, isFetching, error, refetch } = usePendingInvoices(
+    wsId,
+    {
+      page,
+      pageSize,
+      q,
+      userIds,
+      groupByUser,
+      enabled: !isConfigLoading,
+    }
+  );
 
   const columns = useMemo(
     () =>
@@ -170,10 +174,19 @@ export function PendingInvoicesTable({
 
   if (error) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex flex-col items-center justify-center gap-3 py-8">
         <p className="text-destructive text-sm">
           {t('ws-invoices.error_loading')}
         </p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isFetching}
+        >
+          {isFetching && <Loader2 className="h-4 w-4 animate-spin" />}
+          {t('common.retry')}
+        </Button>
       </div>
     );
   }
