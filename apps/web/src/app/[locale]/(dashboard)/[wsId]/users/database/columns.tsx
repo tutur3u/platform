@@ -12,7 +12,6 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import moment from 'moment';
@@ -20,6 +19,7 @@ import Link from 'next/link';
 import { Fragment } from 'react';
 import { RequireAttentionName } from '@/components/users/require-attention-name';
 import { UserRowActions } from './row-actions';
+import { UserAvatarCell } from './user-avatar-cell';
 
 interface UserColumnsExtraData {
   hasPrivateInfo?: boolean;
@@ -212,21 +212,7 @@ export const getUserColumns = ({
             href={row.original.href || '#'}
             className="flex min-w-48 items-center gap-3"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-foreground/5 font-semibold text-foreground/60 text-xs">
-              {avatarUrl ? (
-                // biome-ignore lint/performance/noImgElement: Supabase public avatars are served directly to avoid Next image proxy failures.
-                <img
-                  src={avatarUrl}
-                  alt=""
-                  width={36}
-                  height={36}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                getInitials(primaryName)
-              )}
-            </span>
+            <UserAvatarCell avatarUrl={avatarUrl} name={primaryName} />
             <span className="flex min-w-0 flex-col">
               <span className="flex items-center gap-1.5">
                 {isLinked ? (
