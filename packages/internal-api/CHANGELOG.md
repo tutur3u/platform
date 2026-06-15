@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/internal-api-v0.8.0...internal-api-v0.9.0) (2026-06-15)
+
+
+### Features
+
+* **inventory:** per-storefront Polar environment + clearer checkout errors ([b30c2ed](https://github.com/tutur3u/platform/commit/b30c2eddced0d63ce47c857e8da4578fcf6151d1))
+
+
+### Bug Fixes
+
+* **auth:** consume external app refresh tokens ([7f5a4ab](https://github.com/tutur3u/platform/commit/7f5a4ab250214018ca34e61b7084fd55865c17bc))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/internal-api-v0.7.1...internal-api-v0.8.0) (2026-06-15)
 
 

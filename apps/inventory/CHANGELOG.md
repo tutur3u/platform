@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/inventory-v0.6.0...inventory-v0.7.0) (2026-06-15)
+
+
+### Features
+
+* **inventory:** add a central Polar hub operator view ([95d7c18](https://github.com/tutur3u/platform/commit/95d7c18c5dbf7e0e04d241ab31203430e4a72c66))
+* **inventory:** per-storefront Polar environment + clearer checkout errors ([b30c2ed](https://github.com/tutur3u/platform/commit/b30c2eddced0d63ce47c857e8da4578fcf6151d1))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/inventory-v0.5.0...inventory-v0.6.0) (2026-06-15)
 
 

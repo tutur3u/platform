@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/ui-v0.7.0...ui-v0.8.0) (2026-06-15)
+
+
+### Features
+
+* **storefront:** dedicated checkout page with buyer details + order-placed success ([258014d](https://github.com/tutur3u/platform/commit/258014d642e7cf99164e92fec44cd32114ecf68d))
+* **storefront:** make the storefront accent color visibly prominent ([f2b5289](https://github.com/tutur3u/platform/commit/f2b5289506fd8e289f4bfb2bb6755cbc10ea2430))
+* **storefront:** polish checkout cart experience ([cfdccfa](https://github.com/tutur3u/platform/commit/cfdccfa089703d9dde4357eeef8e52c00ccf6d4b))
+* **web:** consolidate workspace roles into members and redesign access UI ([4a16407](https://github.com/tutur3u/platform/commit/4a164070e1fe020a834ce4fe77ff4ae371e4e366))
+
+
+### Bug Fixes
+
+* **inventory:** block unsafe storefront section links ([870ce76](https://github.com/tutur3u/platform/commit/870ce760237f43ca2a3d1221359c4a06d1bc7653))
+* **tasks:** secure realtime task channels ([6d98d16](https://github.com/tutur3u/platform/commit/6d98d16baa9ecf68bdd47ce3ce6dc1ff2e2bca84))
+* **tasks:** secure realtime task channels ([03dc6d6](https://github.com/tutur3u/platform/commit/03dc6d66666d1d3ae422f91cb94285367a8c1071))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/ui-v0.6.2...ui-v0.7.0) (2026-06-15)
 
 

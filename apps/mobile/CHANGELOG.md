@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.2](https://github.com/tutur3u/platform/compare/mobile-v0.6.1...mobile-v0.6.2) (2026-06-15)
+
+
+### Bug Fixes
+
+* **tasks:** secure realtime task channels ([6d98d16](https://github.com/tutur3u/platform/commit/6d98d16baa9ecf68bdd47ce3ce6dc1ff2e2bca84))
+* **tasks:** secure realtime task channels ([03dc6d6](https://github.com/tutur3u/platform/commit/03dc6d66666d1d3ae422f91cb94285367a8c1071))
+
 ## [0.6.1](https://github.com/tutur3u/platform/compare/mobile-v0.6.0...mobile-v0.6.1) (2026-06-13)
 
 

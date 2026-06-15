@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.3](https://github.com/tutur3u/platform/compare/apis-v0.4.2...apis-v0.4.3) (2026-06-15)
+
+
+### Bug Fixes
+
+* **tasks:** persist description yjs state separately ([07a5e80](https://github.com/tutur3u/platform/commit/07a5e80b96ea509c24ba0570ef22f5300fc36040))
+* **tasks:** secure realtime task channels ([6d98d16](https://github.com/tutur3u/platform/commit/6d98d16baa9ecf68bdd47ce3ce6dc1ff2e2bca84))
+* **tasks:** secure realtime task channels ([03dc6d6](https://github.com/tutur3u/platform/commit/03dc6d66666d1d3ae422f91cb94285367a8c1071))
+
 ## [0.4.2](https://github.com/tutur3u/platform/compare/apis-v0.4.1...apis-v0.4.2) (2026-06-15)
 
 
