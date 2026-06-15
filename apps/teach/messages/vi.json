@@ -1,10 +1,19 @@
 {
   "common": {
+    "add_option": "Thêm lựa chọn",
     "back": "Quay lại",
     "cancel": "Hủy",
     "completed": "Hoàn thành",
+    "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này không? Hành động này không thể hoàn tác.",
+    "confirm_delete_title": "Xác nhận xóa",
+    "continue": "Tiếp tục",
+    "delete": "Xóa",
+    "edit": "Chỉnh sửa",
     "loading": "Đang tải…",
+    "option": "Lựa chọn",
     "retry": "Thử lại",
+    "saving": "Đang lưu...",
+    "success": "Thành công",
     "untitled": "Chưa đặt tên"
   },
   "teach": {
