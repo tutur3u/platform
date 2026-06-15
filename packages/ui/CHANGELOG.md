@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/ui-v0.6.2...ui-v0.7.0) (2026-06-15)
+
+
+### Features
+
+* **finance:** add command center shortcuts ([d0197f7](https://github.com/tutur3u/platform/commit/d0197f705227cdf8171704b40119b66b1140be80))
+* **inventory:** field tooltips, tabbed dialogs, row-click edit, storefront polish ([e27d7bb](https://github.com/tutur3u/platform/commit/e27d7bbd75a76b8e6d9395faaa48ad6b465dca4b))
+* **inventory:** upgrade storefront commerce ([ac43942](https://github.com/tutur3u/platform/commit/ac439426ec6d7abc25efbf7ef88468e32be3a46e))
+* **ui:** add optional time picker ([d4cf439](https://github.com/tutur3u/platform/commit/d4cf4398c8efd8ca5267b770e07f1015a59d43fd))
+* **ui:** redesign optional time picker ([cadbf12](https://github.com/tutur3u/platform/commit/cadbf124a9048d85164082eec2b857feb78b1070))
+
+
+### Bug Fixes
+
+* **calendar:** preserve Google OAuth refresh tokens ([4358623](https://github.com/tutur3u/platform/commit/4358623a2dbde76fd84af59bb18e540994a5d091))
+* **finance:** stop pending invoices from intermittently failing to load ([c4a51b8](https://github.com/tutur3u/platform/commit/c4a51b89e3cad8130b8016864cf25f4da6db6fc1))
+* **tasks:** persist large task descriptions in chunks ([457744a](https://github.com/tutur3u/platform/commit/457744aa051d06baccc5df5aa4d4cb509534ea8b))
+
 ## [0.6.2](https://github.com/tutur3u/platform/compare/ui-v0.6.1...ui-v0.6.2) (2026-06-13)
 
 

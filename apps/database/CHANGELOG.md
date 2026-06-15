@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.8.0](https://github.com/tutur3u/platform/compare/database-v1.7.0...database-v1.8.0) (2026-06-15)
+
+
+### Features
+
+* **cms:** redesign for non-technical users with finance/inventory/storefront integrations ([3558bd5](https://github.com/tutur3u/platform/commit/3558bd588d3428f38370a95f58a8d0389d5bca0e))
+* **infrastructure:** protect mobile deployment vault ([bea31f2](https://github.com/tutur3u/platform/commit/bea31f2f71de509c5bc5e1b154ba62928ecea9c6))
+* **inventory:** book finance transaction when a storefront sale is paid ([d239274](https://github.com/tutur3u/platform/commit/d239274b764e92916ada5ec70ea15d511e17ba06))
+* **inventory:** mirror coupons to Polar discounts + Polar setup runbook ([5e44968](https://github.com/tutur3u/platform/commit/5e4496841b283c3bfb5e15b1a86d401bcde26d34))
+* **inventory:** upgrade storefront commerce ([ac43942](https://github.com/tutur3u/platform/commit/ac439426ec6d7abc25efbf7ef88468e32be3a46e))
+* **web:** add external user profile-completion links ([0effeb8](https://github.com/tutur3u/platform/commit/0effeb860f999227f673a55212d2cfd0c822105a))
+
+
+### Bug Fixes
+
+* **finance:** stop pending invoices from intermittently failing to load ([c4a51b8](https://github.com/tutur3u/platform/commit/c4a51b89e3cad8130b8016864cf25f4da6db6fc1))
+* **tasks:** persist large task descriptions in chunks ([457744a](https://github.com/tutur3u/platform/commit/457744aa051d06baccc5df5aa4d4cb509534ea8b))
+
 ## [1.7.0](https://github.com/tutur3u/platform/compare/database-v1.6.0...database-v1.7.0) (2026-06-13)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/utils-v0.6.1...utils-v0.7.0) (2026-06-15)
+
+
+### Features
+
+* **infrastructure:** protect mobile deployment vault ([bea31f2](https://github.com/tutur3u/platform/commit/bea31f2f71de509c5bc5e1b154ba62928ecea9c6))
+* **web:** add external user profile-completion links ([0effeb8](https://github.com/tutur3u/platform/commit/0effeb860f999227f673a55212d2cfd0c822105a))
+
+
+### Bug Fixes
+
+* **users:** keep database search recoverable ([46066aa](https://github.com/tutur3u/platform/commit/46066aac9b281fb8365038193e420a90bb522e88))
+
 ## [0.6.1](https://github.com/tutur3u/platform/compare/utils-v0.6.0...utils-v0.6.1) (2026-06-13)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/storefront-v0.4.0...storefront-v0.5.0) (2026-06-15)
+
+
+### Features
+
+* **inventory:** upgrade storefront commerce ([ac43942](https://github.com/tutur3u/platform/commit/ac439426ec6d7abc25efbf7ef88468e32be3a46e))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/storefront-v0.3.0...storefront-v0.4.0) (2026-06-13)
 
 

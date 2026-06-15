@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/types-v0.8.0...types-v0.9.0) (2026-06-15)
+
+
+### Features
+
+* **cms:** redesign for non-technical users with finance/inventory/storefront integrations ([3558bd5](https://github.com/tutur3u/platform/commit/3558bd588d3428f38370a95f58a8d0389d5bca0e))
+* **inventory:** mirror coupons to Polar discounts + Polar setup runbook ([5e44968](https://github.com/tutur3u/platform/commit/5e4496841b283c3bfb5e15b1a86d401bcde26d34))
+* **inventory:** upgrade storefront commerce ([ac43942](https://github.com/tutur3u/platform/commit/ac439426ec6d7abc25efbf7ef88468e32be3a46e))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/types-v0.7.0...types-v0.8.0) (2026-06-13)
 
 

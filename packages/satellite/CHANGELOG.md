@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/tutur3u/platform/compare/satellite-v0.1.3...satellite-v0.2.0) (2026-06-15)
+
+
+### Features
+
+* **inventory:** field tooltips, tabbed dialogs, row-click edit, storefront polish ([e27d7bb](https://github.com/tutur3u/platform/commit/e27d7bbd75a76b8e6d9395faaa48ad6b465dca4b))
+
 ## [0.1.3](https://github.com/tutur3u/platform/compare/satellite-v0.1.2...satellite-v0.1.3) (2026-06-13)
 
 

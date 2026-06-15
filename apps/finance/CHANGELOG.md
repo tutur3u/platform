@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/finance-v0.7.0...finance-v0.8.0) (2026-06-15)
+
+
+### Features
+
+* **finance:** add command center shortcuts ([d0197f7](https://github.com/tutur3u/platform/commit/d0197f705227cdf8171704b40119b66b1140be80))
+* **ui:** add optional time picker ([d4cf439](https://github.com/tutur3u/platform/commit/d4cf4398c8efd8ca5267b770e07f1015a59d43fd))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/finance-v0.6.0...finance-v0.7.0) (2026-06-13)
 
 

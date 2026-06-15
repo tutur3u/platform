@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/internal-api-v0.7.1...internal-api-v0.8.0) (2026-06-15)
+
+
+### Features
+
+* **infrastructure:** edit mobile deployment env keys ([d3ad001](https://github.com/tutur3u/platform/commit/d3ad001bc503d21b3e495b47de6b277e8dc93c4f))
+* **infrastructure:** protect mobile deployment vault ([bea31f2](https://github.com/tutur3u/platform/commit/bea31f2f71de509c5bc5e1b154ba62928ecea9c6))
+* **internal-api:** add inventory promotion create/update/delete helpers ([27ea765](https://github.com/tutur3u/platform/commit/27ea76577712fcc958185a6fd2652a6fae918e52))
+* **inventory:** add per-product actual P&L to the sales tab ([4dcdb29](https://github.com/tutur3u/platform/commit/4dcdb297e5dcce3adacdd2531e698068eecf4e6b))
+* **inventory:** improve dialog lifecycle audit ux ([6d7814c](https://github.com/tutur3u/platform/commit/6d7814c80415bb14680746613e96d03387708df1))
+* **inventory:** upgrade storefront commerce ([ac43942](https://github.com/tutur3u/platform/commit/ac439426ec6d7abc25efbf7ef88468e32be3a46e))
+* **web:** add external user profile-completion links ([0effeb8](https://github.com/tutur3u/platform/commit/0effeb860f999227f673a55212d2cfd0c822105a))
+
+
+### Bug Fixes
+
+* **inventory:** route catalog product creation ([5887ef5](https://github.com/tutur3u/platform/commit/5887ef5bdf361b0c664063cbccb85cd51b437d4b))
+* **tasks:** persist large task descriptions in chunks ([457744a](https://github.com/tutur3u/platform/commit/457744aa051d06baccc5df5aa4d4cb509534ea8b))
+* **web:** handle processing topic announcements ([7462fb4](https://github.com/tutur3u/platform/commit/7462fb4a0d86ae26e54564c18281bc97407b31c4))
+
 ## [0.7.1](https://github.com/tutur3u/platform/compare/internal-api-v0.7.0...internal-api-v0.7.1) (2026-06-13)
 
 
