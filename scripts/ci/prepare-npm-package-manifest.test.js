@@ -119,7 +119,7 @@ test('preparePackageManifest rewrites workspace protocol dependencies', () => {
   assert.equal(packageJson.dependencies.zod, '^4.0.0');
 });
 
-test('preparePackageManifest rewrites UI vendored xlsx dependency for npm installs', () => {
+test('preparePackageManifest preserves UI vendored xlsx dependency for npm installs', () => {
   const repoRoot = createFixture();
 
   writeJson(repoRoot, 'packages/ui/package.json', {
@@ -136,26 +136,8 @@ test('preparePackageManifest rewrites UI vendored xlsx dependency for npm instal
   });
   const packageJson = readJson(repoRoot, 'packages/ui/package.json');
 
-  assert.deepEqual(
-    result.rewrites.map((rewrite) => [
-      rewrite.field,
-      rewrite.name,
-      rewrite.from,
-      rewrite.to,
-    ]),
-    [
-      [
-        'dependencies',
-        'xlsx',
-        'file:vendor/xlsx-0.20.3.tgz',
-        'https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz',
-      ],
-    ]
-  );
-  assert.equal(
-    packageJson.dependencies.xlsx,
-    'https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz'
-  );
+  assert.deepEqual(result.rewrites, []);
+  assert.equal(packageJson.dependencies.xlsx, 'file:vendor/xlsx-0.20.3.tgz');
 });
 
 test('preparePackageManifest rejects unknown workspace protocol dependencies', () => {

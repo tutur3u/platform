@@ -132,7 +132,9 @@ formatting behavior, or repo-wide verification.
   package releases. Before `npm pack`, run
   `node scripts/ci/prepare-npm-package-manifest.js packages/<name>` so packed
   artifacts contain concrete npm-compatible versions instead of `workspace:`
-  protocol ranges.
+  protocol ranges. Package-included `file:` tarball dependencies, such as
+  `@tuturuuu/ui`'s vendored SheetJS tarball, must stay local in the packed
+  manifest and must not be rewritten to mutable external HTTPS tarball URLs.
 - After `npm publish`, package workflows must poll `npm view` for the exact
   published version before reporting success. First-publish `E404`, permission,
   or trusted-publisher errors should fail clearly and be fixed in npm package
@@ -145,9 +147,9 @@ formatting behavior, or repo-wide verification.
   dependency graph fully publishable on npm; if a UI-only edge points at a
   private package, remove it when unused or model it as an optional peer owned
   by the narrow export that needs it. File-backed dependencies such as UI's
-  vendored SheetJS tarball must stay local in source manifests when Docker
-  needs them, but `prepare-npm-package-manifest.js` must rewrite them to a
-  public HTTPS tarball before `npm pack`.
+  vendored SheetJS tarball must stay local in source manifests and packed npm
+  manifests when the tarball is included in the package artifact; do not rewrite
+  them to mutable external HTTPS tarballs before `npm pack`.
 - Platform Vercel production build validation should run
   `node scripts/ci/package-release-readiness.js gate-changed-package-versions`
   before dependency installation when release-please package manifests changed.
