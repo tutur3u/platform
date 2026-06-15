@@ -262,6 +262,44 @@ describe('course API app-session access', () => {
     expect(requestSupabase.from).not.toHaveBeenCalled();
   });
 
+  it('does not treat workspace membership as course detail access', async () => {
+    const courseId = '00000000-0000-4000-8000-000000000006';
+    admin = createSupabaseMock({
+      workspace_user_groups: [
+        {
+          data: {
+            description: 'Private course',
+            id: courseId,
+            name: 'Chemistry',
+            ws_id: 'ws-1',
+          },
+          error: null,
+        },
+      ],
+    });
+    requestSupabase = createSupabaseMock({
+      workspace_guests: [{ data: null, error: null }],
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.resolveSessionAuthContext.mockResolvedValueOnce({
+      ok: true,
+      supabase: requestSupabase,
+      user,
+    });
+    mocks.resolveStudentForPlatformUser.mockResolvedValueOnce(null);
+
+    const request = new Request(
+      `http://localhost/api/v1/course?courseId=${courseId}`
+    );
+    const response = await GET(request);
+
+    await expect(response.json()).resolves.toEqual({ error: 'Forbidden' });
+    expect(response.status).toBe(403);
+    expect(mocks.getLearnerCourseDetail).not.toHaveBeenCalled();
+    expect(requestSupabase.from).toHaveBeenCalledTimes(1);
+    expect(requestSupabase.from).toHaveBeenCalledWith('workspace_guests');
+  });
+
   it('does not expose locked module content to learner course details', async () => {
     const courseId = '00000000-0000-4000-8000-000000000003';
     const unlockedModuleId = '00000000-0000-4000-8000-000000000004';

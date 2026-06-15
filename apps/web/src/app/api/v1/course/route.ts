@@ -262,27 +262,7 @@ async function handleCourseDetail({
     }
   }
 
-  // Check workspace membership
-  if (!hasAccess) {
-    const { data: membership, error: membershipError } = await sessionSupabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', group.ws_id)
-      .eq('user_id', user.id)
-      .eq('type', 'MEMBER')
-      .maybeSingle();
-
-    if (membershipError) {
-      throw courseRouteError(
-        'workspace_membership_lookup_failed',
-        membershipError
-      );
-    }
-
-    hasAccess = Boolean(membership);
-  }
-
-  // Fallback: check guest permissions
+  // Fallback: check explicit guest course permissions.
   if (!hasAccess) {
     const { data: guest, error: guestError } = await sessionSupabase
       .from('workspace_guests')
