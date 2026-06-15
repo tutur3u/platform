@@ -190,6 +190,32 @@ describe('devbox runs route', () => {
     expect(createAdminClientMock).not.toHaveBeenCalled();
   });
 
+  it('rejects Docker host-mount escape commands before storage writes', async () => {
+    resolveAuthenticatedSessionUserMock.mockResolvedValue({
+      user: { id: 'user-1' },
+    });
+    getPermissionsMock.mockResolvedValue(createPermissionsResult('MEMBER'));
+
+    const response = await POST(
+      createRunRequest({
+        command: [
+          'docker',
+          'run',
+          '--mount',
+          'type=bind,source=/,target=/host',
+          'ubuntu',
+        ],
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'Docker host mounts outside the devbox workspace are not allowed.',
+    });
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+  });
+
   it('creates an auto-lease run for root workspace members', async () => {
     resolveAuthenticatedSessionUserMock.mockResolvedValue({
       user: { id: 'user-1' },

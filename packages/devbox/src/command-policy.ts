@@ -42,6 +42,13 @@ function isCloudflaredCommand(command: string[]) {
   );
 }
 
+function isDockerPrivilegedFlag(value: string) {
+  const normalized = normalizeCommandPart(value);
+  return (
+    normalized === '--privileged' || normalized.startsWith('--privileged=')
+  );
+}
+
 function hasInlineCloudflaredToken(command: string[]) {
   for (let index = 0; index < command.length; index++) {
     const part = command[index] ?? '';
@@ -69,27 +76,59 @@ function hasInlineCloudflaredToken(command: string[]) {
   return false;
 }
 
-function isAbsoluteHostMount(value: string) {
-  const [, mountTarget = value] = value.includes(':')
-    ? value.split(':', 1)
-    : [undefined, value];
+function isAbsoluteHostPath(value: string) {
+  const stripped = stripShellQuotes(value).trim();
 
   return (
-    mountTarget.startsWith('/') ||
-    /^[a-z]:[\\/]/iu.test(mountTarget) ||
-    mountTarget.startsWith('~')
+    stripped.startsWith('/') ||
+    /^[a-z]:[\\/]/iu.test(stripped) ||
+    stripped.startsWith('~')
   );
+}
+
+function getDockerVolumeSource(value: string) {
+  const stripped = stripShellQuotes(value).trim();
+  const windowsDriveSource = stripped.match(/^[a-z]:[\\/][^:]*/iu)?.[0];
+
+  return windowsDriveSource ?? stripped.split(':')[0] ?? stripped;
+}
+
+function isAbsoluteHostMount(value: string) {
+  return isAbsoluteHostPath(getDockerVolumeSource(value));
+}
+
+function isDockerMountSpecWithHostSource(value: string) {
+  const fields = stripShellQuotes(value).split(',');
+
+  return fields.some((field) => {
+    const [rawKey, ...rawValueParts] = field.split('=');
+    const key = normalizeCommandPart(rawKey ?? '');
+
+    if (key !== 'source' && key !== 'src') {
+      return false;
+    }
+
+    return isAbsoluteHostPath(rawValueParts.join('='));
+  });
+}
+
+function isMountValueFlag(value: string) {
+  return value === '-v' || value === '--volume' || value === '--mount';
 }
 
 function hasHostMount(command: string[]) {
   return command.some((part, index) => {
-    if (part === '-v' || part === '--volume' || part === '--mount') {
+    if (isMountValueFlag(part)) {
       const next = command[index + 1];
-      return next ? isAbsoluteHostMount(next) : false;
+      if (!next) return false;
+
+      return part === '--mount'
+        ? isDockerMountSpecWithHostSource(next)
+        : isAbsoluteHostMount(next);
     }
 
     if (part.startsWith('-v') && part.length > 2) {
-      return isAbsoluteHostMount(part.slice(2));
+      return isAbsoluteHostMount(part.slice(part.startsWith('-v=') ? 3 : 2));
     }
 
     if (part.startsWith('--volume=')) {
@@ -97,9 +136,7 @@ function hasHostMount(command: string[]) {
     }
 
     if (part.startsWith('--mount=')) {
-      return /(?:^|,)source=\/|(?:^|,)src=\/|(?:^|,)source=~|(?:^|,)src=~/iu.test(
-        part.slice('--mount='.length)
-      );
+      return isDockerMountSpecWithHostSource(part.slice('--mount='.length));
     }
 
     return false;
@@ -107,7 +144,7 @@ function hasHostMount(command: string[]) {
 }
 
 function evaluateDockerCommand(command: string[]): DevboxCommandPolicy {
-  if (command.includes('--privileged')) {
+  if (command.some(isDockerPrivilegedFlag)) {
     return {
       allowed: false,
       category: 'blocked',
