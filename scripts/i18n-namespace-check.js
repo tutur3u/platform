@@ -16,6 +16,13 @@
  * - A shared component calling t('feedback') inside a useTranslations('common')
  *   context when the app has the 'common' namespace but lacks the 'feedback' key.
  *
+ * Apps are registered in APPS (checked) or UNCHECKED_APPS (knowingly skipped);
+ * a drift guard fails the run if any app ships shared UI + a message bundle but
+ * is in neither list, so no app is ever silently skipped (the gap that let
+ * apps/storefront ship without its `common` namespace). Minimal apps can use
+ * APP_NAMESPACE_ALLOWLIST to restrict the check to just the shared namespaces
+ * they actually render.
+ *
  * 3. Namespace parity (NAMESPACE_PARITY_GROUPS): for namespaces consumed by a
  *    shared component that calls useTranslations() with NO namespace argument
  *    (a "bare" call), the key-level scan above cannot attribute its t('ns.key')
@@ -56,7 +63,34 @@ const APPS = [
   { name: 'apps/track', dir: 'apps/track' },
   { name: 'apps/nova', dir: 'apps/nova' },
   { name: 'apps/rewise', dir: 'apps/rewise' },
+  { name: 'apps/storefront', dir: 'apps/storefront' },
+  { name: 'apps/shortener', dir: 'apps/shortener' },
 ];
+
+// Minimal apps that render only a small slice of the shared UI. Instead of the
+// default "every shared namespace is required minus a long exception list",
+// restrict the cross-app check for these apps to ONLY the listed namespaces —
+// the shared UI they actually render (the account menu / dialogs use `common`).
+// All other shared namespaces are implicitly ignored for the app.
+const APP_NAMESPACE_ALLOWLIST = new Map([
+  ['apps/storefront', new Set(['common'])],
+  ['apps/shortener', new Set(['common'])],
+]);
+
+// Apps that ship message bundles and depend on shared UI but are intentionally
+// NOT wired into the cross-app namespace check yet. Listed explicitly so the
+// drift guard below does not silently skip them — adding a new app forces a
+// conscious choice (wire it into APPS, or record it here). Remove an entry when
+// you move the app into APPS.
+const UNCHECKED_APPS = new Set([
+  'apps/apps',
+  'apps/chat',
+  'apps/inventory',
+  'apps/learn',
+  'apps/mail',
+  'apps/qr',
+  'apps/teach',
+]);
 
 // Some satellite apps consume broad shared UI packages directly but only ship a
 // narrow product namespace bundle. Keep their parity checks scoped to the
@@ -306,6 +340,50 @@ function checkNamespaceParity(loadTranslations) {
 }
 
 /**
+ * Find apps that ship a messages/en.json AND depend on a shared UI package but
+ * are registered in neither APPS (checked) nor UNCHECKED_APPS (knowingly
+ * skipped). These would otherwise be validated by nothing — the exact gap that
+ * let apps/storefront ship without its `common` namespace. Returns app names.
+ */
+function findUnregisteredApps() {
+  const appsDir = path.join(ROOT_DIR, 'apps');
+  if (!fs.existsSync(appsDir)) return [];
+
+  const registered = new Set([
+    ...APPS.map((app) => app.name),
+    ...UNCHECKED_APPS,
+  ]);
+  const sharedDepNames = [
+    '@tuturuuu/ui',
+    '@tuturuuu/satellite',
+    '@tuturuuu/mind-ui',
+    '@tuturuuu/hive-ui',
+  ];
+  const unregistered = [];
+
+  for (const entry of fs.readdirSync(appsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const appName = `apps/${entry.name}`;
+    if (registered.has(appName)) continue;
+
+    const enJsonPath = path.join(appsDir, entry.name, 'messages', 'en.json');
+    const pkgJsonPath = path.join(appsDir, entry.name, 'package.json');
+    if (!fs.existsSync(enJsonPath) || !fs.existsSync(pkgJsonPath)) continue;
+
+    const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
+    const allDeps = {
+      ...pkgJson.dependencies,
+      ...pkgJson.devDependencies,
+    };
+    if (sharedDepNames.some((dep) => allDeps[dep])) {
+      unregistered.push(appName);
+    }
+  }
+
+  return unregistered.sort();
+}
+
+/**
  * Check which shared packages an app depends on
  */
 function getAppDependencies(appDir) {
@@ -447,13 +525,16 @@ function main() {
       continue;
     }
 
-    // --- Namespace-level check (unchanged) ---
+    // --- Namespace-level check ---
+    const allowlist = APP_NAMESPACE_ALLOWLIST.get(app.name) ?? null;
     const requiredNamespaces = new Map();
     for (const dep of appDeps) {
       const pkgNs = packageNamespaces.get(dep);
       if (!pkgNs) continue;
 
       for (const [namespace] of pkgNs) {
+        // For minimal apps, only validate the allowlisted shared namespaces.
+        if (allowlist && !allowlist.has(namespace)) continue;
         if (!requiredNamespaces.has(namespace)) {
           requiredNamespaces.set(namespace, new Set());
         }
@@ -493,6 +574,9 @@ function main() {
 
         for (const { namespace, key, file } of keys) {
           const topLevel = getTopLevelNamespace(namespace);
+
+          // For minimal apps, only validate keys in allowlisted namespaces.
+          if (allowlist && !allowlist.has(topLevel)) continue;
 
           // Skip if namespace is in the ignore list
           if (ignoredNamespaces.has(topLevel)) continue;
@@ -566,7 +650,22 @@ function main() {
     }
   }
 
-  // Step 4: Namespace parity check across apps that render the same shared
+  // Step 4: App registry drift guard — fail if an app ships shared UI + a
+  // message bundle but is registered in neither APPS nor UNCHECKED_APPS.
+  const unregisteredApps = findUnregisteredApps();
+  if (unregisteredApps.length > 0) {
+    hasFailures = true;
+    console.log('App registry drift detected...\n');
+    console.log(
+      `  ${unregisteredApps.length} app${unregisteredApps.length > 1 ? 's' : ''} ship shared UI + message bundles but are neither checked (APPS) nor explicitly skipped (UNCHECKED_APPS):`
+    );
+    for (const appName of unregisteredApps) {
+      console.log(`    - ${appName}`);
+    }
+    console.log('');
+  }
+
+  // Step 5: Namespace parity check across apps that render the same shared
   // (bare-useTranslations) component.
   const parityFailures = checkNamespaceParity(getAppTranslations);
   if (parityFailures.length > 0) {

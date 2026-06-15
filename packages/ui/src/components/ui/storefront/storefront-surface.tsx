@@ -14,6 +14,7 @@ import { StorefrontHeroPanel } from './hero-panel';
 import { StorefrontImagePanel } from './image-panel';
 import { StorefrontListingCard } from './listing-card';
 import type {
+  StorefrontBuyerDefaults,
   StorefrontCartLine,
   StorefrontSurfaceLabels,
   StorefrontSurfaceMode,
@@ -30,7 +31,9 @@ import {
 } from './utils';
 
 export function StorefrontSurface({
+  buyerDefaults,
   cartLines = [],
+  cartHref,
   checkoutHref,
   className,
   compactLayout = false,
@@ -47,8 +50,11 @@ export function StorefrontSurface({
   onIncrement,
   selectedListingId,
   storefront,
+  storefrontHref,
 }: {
+  buyerDefaults?: StorefrontBuyerDefaults;
   cartLines?: StorefrontCartLine[];
+  cartHref?: string;
   checkoutHref?: string;
   className?: string;
   compactLayout?: boolean;
@@ -65,6 +71,7 @@ export function StorefrontSurface({
   onIncrement?: (listingId: string, maxQuantity: number) => void;
   selectedListingId?: string;
   storefront: InventoryStorefront;
+  storefrontHref?: string;
 }) {
   const labels = mergeStorefrontSurfaceLabels(labelOverrides);
   const accentColor = sanitizeStorefrontAccentColor(storefront.accentColor);
@@ -102,6 +109,7 @@ export function StorefrontSurface({
 
   const cartSummary = (
     <StorefrontCartSummary
+      buyerDefaults={buyerDefaults}
       cartEntries={checkoutEntries}
       checkoutHref={checkoutHref}
       currency={currency}
@@ -114,6 +122,24 @@ export function StorefrontSurface({
       storefront={storefront}
       total={total}
     />
+  );
+  const cartControlClassName = cn(
+    'inline-flex h-11 min-w-14 shrink-0 items-center justify-center gap-2 border bg-card px-3 font-semibold text-sm tabular-nums transition hover:bg-muted/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+    radius
+  );
+  const cartControlStyle =
+    cartQuantity > 0
+      ? {
+          borderColor: 'var(--storefront-accent, var(--primary))',
+          color: 'var(--storefront-accent, var(--primary))',
+        }
+      : undefined;
+  const cartControlContent = (
+    <>
+      <ShoppingCart aria-hidden className="size-5 shrink-0" />
+      <span className="sr-only">{labels.cart}: </span>
+      <span className="min-w-4 text-center">{cartQuantity}</span>
+    </>
   );
 
   return (
@@ -142,7 +168,17 @@ export function StorefrontSurface({
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
             <h1 className="truncate font-semibold text-xl">
-              {storefront.name}
+              {storefrontHref ? (
+                <a
+                  className="block truncate rounded-sm transition hover:text-[var(--storefront-accent,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                  href={storefrontHref}
+                  title={storefront.name}
+                >
+                  {storefront.name}
+                </a>
+              ) : (
+                storefront.name
+              )}
             </h1>
             {storefront.description ? (
               <p className="mt-0.5 line-clamp-1 text-muted-foreground text-sm">
@@ -152,23 +188,20 @@ export function StorefrontSurface({
           </div>
           <div className="flex items-center gap-2">
             {headerActions}
-            <span
-              className={cn(
-                'inline-flex h-9 min-w-12 items-center justify-center gap-2 border bg-card px-3 font-medium text-sm',
-                radius
-              )}
-              style={
-                cartQuantity > 0
-                  ? {
-                      borderColor: 'var(--storefront-accent, var(--primary))',
-                      color: 'var(--storefront-accent, var(--primary))',
-                    }
-                  : undefined
-              }
-            >
-              <ShoppingCart className="h-4 w-4" />
-              {cartQuantity}
-            </span>
+            {cartHref ? (
+              <a
+                aria-label={`${labels.cart}: ${cartQuantity}`}
+                className={cartControlClassName}
+                href={cartHref}
+                style={cartControlStyle}
+              >
+                {cartControlContent}
+              </a>
+            ) : (
+              <span className={cartControlClassName} style={cartControlStyle}>
+                {cartControlContent}
+              </span>
+            )}
           </div>
         </div>
       </header>

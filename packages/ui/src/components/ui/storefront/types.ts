@@ -10,6 +10,11 @@ export type StorefrontCartEntry = {
   listing: InventoryStorefrontListing;
 };
 
+export type StorefrontBuyerDefaults = {
+  email?: string | null;
+  name?: string | null;
+};
+
 export type StorefrontSurfaceMode =
   | 'cart'
   | 'checkout'

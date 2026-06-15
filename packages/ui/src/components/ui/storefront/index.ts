@@ -1,5 +1,6 @@
 export { StorefrontSurface } from './storefront-surface';
 export type {
+  StorefrontBuyerDefaults,
   StorefrontCartEntry,
   StorefrontCartLine,
   StorefrontSurfaceLabels,

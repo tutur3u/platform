@@ -11,6 +11,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   getStorefrontListingLimit,
+  type StorefrontBuyerDefaults,
   StorefrontSurface,
   type StorefrontSurfaceLabels,
 } from '@tuturuuu/ui/storefront';
@@ -29,6 +30,7 @@ import { getOptionalInventoryPublicStorefront } from './storefront-loader';
 type StorefrontMode = 'cart' | 'checkout' | 'order' | 'product' | 'store';
 
 type StorefrontClientProps = {
+  buyerDefaults?: StorefrontBuyerDefaults;
   headerActions?: ReactNode;
   listingId?: string;
   mode: StorefrontMode;
@@ -37,6 +39,7 @@ type StorefrontClientProps = {
 };
 
 export function StorefrontClient({
+  buyerDefaults,
   headerActions,
   listingId,
   mode,
@@ -262,7 +265,9 @@ export function StorefrontClient({
 
   return (
     <StorefrontSurface
+      buyerDefaults={buyerDefaults}
       cartLines={cart.cart}
+      cartHref={`/${storeSlug}/cart`}
       checkoutHref={`/${storeSlug}/checkout`}
       headerActions={headerActions}
       isDemo={isDemoStorefront}
@@ -293,6 +298,7 @@ export function StorefrontClient({
       }}
       selectedListingId={listingId}
       storefront={storefront}
+      storefrontHref={`/${storeSlug}`}
     />
   );
 }
