@@ -1,5 +1,6 @@
 'use client';
 
+import { History, Link2, Users } from '@tuturuuu/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -72,8 +73,9 @@ export function DatabaseTabs({
           <TabsTrigger
             value="users"
             disabled={isPending}
-            className="rounded-xl px-4 py-2.5"
+            className="gap-2 rounded-xl px-4 py-2.5"
           >
+            <Users className="h-4 w-4" />
             {t('ws-users.plural')}
           </TabsTrigger>
         ) : null}
@@ -81,8 +83,9 @@ export function DatabaseTabs({
           <TabsTrigger
             value="audit-log"
             disabled={isPending}
-            className="rounded-xl px-4 py-2.5"
+            className="gap-2 rounded-xl px-4 py-2.5"
           >
+            <History className="h-4 w-4" />
             {t('ws-users.audit_log')}
           </TabsTrigger>
         ) : null}
@@ -90,8 +93,9 @@ export function DatabaseTabs({
           <TabsTrigger
             value="profile-links"
             disabled={isPending}
-            className="rounded-xl px-4 py-2.5"
+            className="gap-2 rounded-xl px-4 py-2.5"
           >
+            <Link2 className="h-4 w-4" />
             {t('ws-user-profile-links.tab_label')}
           </TabsTrigger>
         ) : null}

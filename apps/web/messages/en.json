@@ -21115,6 +21115,8 @@
     "status_archived_until": "Temporary Archive",
     "status_filter": "Status",
     "suggested_target": "Suggested",
+    "total_users": "Total users",
+    "total_users_description": "People in this workspace",
     "user_id": "User ID",
     "user_id_tooltip": "The identification number of this user in your workspace. This is automatically managed by Tuturuuu, and cannot be changed.",
     "virtual_badge": "Virtual"

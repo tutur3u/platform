@@ -11,6 +11,8 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
+import { cn } from '@tuturuuu/utils/format';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import moment from 'moment';
@@ -184,64 +186,99 @@ export const getUserColumns = ({
           title={t(`${namespace}.full_name`)}
         />
       ),
-      cell: ({ row }) => (
-        <Link href={row.original.href || '#'} className="min-w-32">
-          {Array.isArray(row.getValue('linked_users')) &&
-          row.getValue<WorkspaceUser[]>('linked_users').length !== 0 ? (
-            <TooltipProvider>
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger className="font-semibold underline">
-                  <RequireAttentionName
-                    name={
-                      row.getValue('full_name') ||
-                      row.getValue('display_name') ||
-                      '-'
-                    }
-                    requireAttention={
-                      !!row.original.has_require_attention_feedback
-                    }
-                  />
-                </TooltipTrigger>
-                <TooltipContent className="text-center">
-                  {t(`${namespace}.linked_to`)}{' '}
-                  <div>
-                    {row
-                      .getValue<WorkspaceUser[]>('linked_users')
-                      .map((u, idx) => (
-                        <Fragment key={`${u.id}-combo`}>
-                          <span
-                            key={`${u.id}-name`}
-                            className="font-semibold hover:underline"
-                          >
-                            {u.display_name}
-                          </span>
-                          {idx !==
-                            row.getValue<WorkspaceUser[]>('linked_users')
-                              .length -
-                              1 && <span key={`${u.id}-separator`}>, </span>}
-                        </Fragment>
-                      ))}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <span
-              key={`${row.id}-name`}
-              className="font-semibold hover:underline"
-            >
-              <RequireAttentionName
-                name={
-                  row.getValue('full_name') ||
-                  row.getValue('display_name') ||
-                  '-'
-                }
-                requireAttention={!!row.original.has_require_attention_feedback}
-              />
+      cell: ({ row }) => {
+        const linkedUsers = Array.isArray(row.getValue('linked_users'))
+          ? row.getValue<WorkspaceUser[]>('linked_users')
+          : [];
+        const isLinked = linkedUsers.length !== 0;
+        const fullName = row.getValue<string>('full_name');
+        const displayName = row.getValue<string>('display_name');
+        const primaryName = fullName || displayName || '-';
+        const secondaryName =
+          displayName && displayName !== primaryName ? displayName : null;
+        const avatarUrl = normalizeAvatarImageSrc(
+          row.original.avatar_url as string | undefined
+        );
+
+        const nameNode = (
+          <RequireAttentionName
+            name={primaryName}
+            requireAttention={!!row.original.has_require_attention_feedback}
+          />
+        );
+
+        return (
+          <Link
+            href={row.original.href || '#'}
+            className="flex min-w-48 items-center gap-3"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-foreground/5 font-semibold text-foreground/60 text-xs">
+              {avatarUrl ? (
+                // biome-ignore lint/performance/noImgElement: Supabase public avatars are served directly to avoid Next image proxy failures.
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                getInitials(primaryName)
+              )}
             </span>
-          )}
-        </Link>
-      ),
+            <span className="flex min-w-0 flex-col">
+              <span className="flex items-center gap-1.5">
+                {isLinked ? (
+                  <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger className="truncate font-semibold underline">
+                        {nameNode}
+                      </TooltipTrigger>
+                      <TooltipContent className="text-center">
+                        {t(`${namespace}.linked_to`)}{' '}
+                        <div>
+                          {linkedUsers.map((u, idx) => (
+                            <Fragment key={`${u.id}-combo`}>
+                              <span className="font-semibold hover:underline">
+                                {u.display_name}
+                              </span>
+                              {idx !== linkedUsers.length - 1 && (
+                                <span>, </span>
+                              )}
+                            </Fragment>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <span className="truncate font-semibold hover:underline">
+                    {nameNode}
+                  </span>
+                )}
+                <span
+                  className={cn(
+                    'shrink-0 rounded-full border px-1.5 py-0.5 font-medium text-[10px]',
+                    isLinked
+                      ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
+                      : 'border-border bg-foreground/5 text-muted-foreground'
+                  )}
+                >
+                  {isLinked
+                    ? t('ws-users.linked_badge')
+                    : t('ws-users.virtual_badge')}
+                </span>
+              </span>
+              {secondaryName ? (
+                <span className="truncate text-muted-foreground text-xs">
+                  {secondaryName}
+                </span>
+              ) : null}
+            </span>
+          </Link>
+        );
+      },
     },
     {
       accessorKey: 'display_name',
