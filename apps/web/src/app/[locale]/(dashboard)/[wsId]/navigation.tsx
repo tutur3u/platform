@@ -1293,19 +1293,14 @@ export async function WorkspaceNavigationLinks({
         ...(!isPersonal
           ? [
               {
+                // Members & roles are consolidated into the tabbed members page;
+                // the old /roles route redirects to /members?tab=roles.
                 title: t('workspace-settings-layout.members'),
                 href: `/${personalOrWsId}/members`,
                 icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
                 disabled:
                   ENABLE_AI_ONLY ||
                   withoutPermission('manage_workspace_members'),
-              },
-              {
-                title: t('workspace-settings-layout.workspace_roles'),
-                href: `/${personalOrWsId}/roles`,
-                icon: createDashboardNavigationIcon('UserLock', 'h-5 w-5'),
-                disabled:
-                  ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
               },
             ]
           : []),

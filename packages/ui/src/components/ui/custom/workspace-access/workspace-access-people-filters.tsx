@@ -52,7 +52,7 @@ export function WorkspaceAccessPeopleFilters({
     filters.permissionIds.length + filters.roleIds.length;
 
   return (
-    <div className="mb-5 flex flex-col gap-3 rounded-lg border border-border bg-foreground/[0.02] p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-foreground/[0.02] p-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-wrap items-center gap-2">
         <div className="mr-1 flex items-center gap-2 text-muted-foreground text-sm">
           <ListFilter className="h-4 w-4" />

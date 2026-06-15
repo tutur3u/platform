@@ -1,3 +1,4 @@
+import type { WorkspaceAccessTab } from '@tuturuuu/ui/custom/workspace-access';
 import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
@@ -14,13 +15,34 @@ export const metadata: Metadata = {
     'Manage Members in the Workspace Settings area of your Tuturuuu workspace.',
 };
 
+const WORKSPACE_ACCESS_TABS: WorkspaceAccessTab[] = [
+  'people',
+  'roles',
+  'defaults-member',
+  'defaults-guest',
+];
+
+function resolveInitialTab(tab: string | undefined): WorkspaceAccessTab {
+  return WORKSPACE_ACCESS_TABS.includes(tab as WorkspaceAccessTab)
+    ? (tab as WorkspaceAccessTab)
+    : 'people';
+}
+
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  searchParams: Promise<{
+    tab?: string;
+  }>;
 }
 
-export default async function WorkspaceMembersPage({ params }: Props) {
+export default async function WorkspaceMembersPage({
+  params,
+  searchParams,
+}: Props) {
+  const { tab } = await searchParams;
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ workspace, wsId }) => {
@@ -50,7 +72,7 @@ export default async function WorkspaceMembersPage({ params }: Props) {
               currentUserEmail: user?.email ?? null,
               workspaceId: wsId,
             }}
-            initialTab="people"
+            initialTab={resolveInitialTab(tab)}
           />
         );
       }}

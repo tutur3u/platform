@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Settings } from '@tuturuuu/icons';
+import { TriangleAlert } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { WorkspaceDefaultPermissionMemberType } from '@tuturuuu/types';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
@@ -222,10 +222,10 @@ export function WorkspaceAccessPage({
 
   if (contextQuery.isPending) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-28 rounded-lg" />
-        <Skeleton className="h-12 rounded-lg" />
-        <Skeleton className="h-96 rounded-lg" />
+      <div className="space-y-6">
+        <Skeleton className="h-32 rounded-xl" />
+        <Skeleton className="h-10 rounded-xl" />
+        <Skeleton className="h-96 rounded-xl" />
       </div>
     );
   }
@@ -255,42 +255,39 @@ export function WorkspaceAccessPage({
           search={search}
         />
 
-        <TabsContent value="people" className="mt-4">
-          <div className="rounded-xl border border-border bg-background p-6 shadow-sm">
-            <WorkspaceAccessPeopleFilters
-              filterOptions={filterOptions}
-              filters={filters}
-              labels={labels}
-              onFiltersChange={setFilters}
-              onStatusChange={setStatus}
-              status={status}
-            />
+        <TabsContent value="people" className="mt-6 space-y-4">
+          <WorkspaceAccessPeopleFilters
+            filterOptions={filterOptions}
+            filters={filters}
+            labels={labels}
+            onFiltersChange={setFilters}
+            onStatusChange={setStatus}
+            status={status}
+          />
 
-            <WorkspaceAccessMembers
-              canManageMembers={canManageMembers}
-              canManageRoles={canManageRoles}
-              isLoading={membersQuery.isPending}
-              isMutating={
-                removeMemberMutation.isPending ||
-                roleMembershipMutation.isPending
-              }
-              labels={labels}
-              members={visibleMembers}
-              onAssignRole={(payload) =>
-                roleMembershipMutation.mutate({ ...payload, action: 'add' })
-              }
-              onRemoveMember={(payload) => removeMemberMutation.mutate(payload)}
-              onRemoveRole={(payload) =>
-                roleMembershipMutation.mutate({ ...payload, action: 'remove' })
-              }
-              roles={roles}
-              searchTerm={search}
-              status={status}
-            />
-          </div>
+          <WorkspaceAccessMembers
+            canManageMembers={canManageMembers}
+            canManageRoles={canManageRoles}
+            isLoading={membersQuery.isPending}
+            isMutating={
+              removeMemberMutation.isPending || roleMembershipMutation.isPending
+            }
+            labels={labels}
+            members={visibleMembers}
+            onAssignRole={(payload) =>
+              roleMembershipMutation.mutate({ ...payload, action: 'add' })
+            }
+            onRemoveMember={(payload) => removeMemberMutation.mutate(payload)}
+            onRemoveRole={(payload) =>
+              roleMembershipMutation.mutate({ ...payload, action: 'remove' })
+            }
+            roles={roles}
+            searchTerm={search}
+            status={status}
+          />
         </TabsContent>
 
-        <TabsContent value="roles" className="mt-4">
+        <TabsContent value="roles" className="mt-6">
           <WorkspaceAccessRoles
             canManageRoles={canManageRoles}
             isLoading={rolesQuery.isPending}
@@ -309,7 +306,7 @@ export function WorkspaceAccessPage({
           />
         </TabsContent>
 
-        <TabsContent value="defaults-member" className="mt-4">
+        <TabsContent value="defaults-member" className="mt-6">
           <WorkspaceAccessDefaultRoleCard
             canManageRoles={canManageRoles}
             isLoading={memberDefaultQuery.isPending}
@@ -327,7 +324,7 @@ export function WorkspaceAccessPage({
           />
         </TabsContent>
 
-        <TabsContent value="defaults-guest" className="mt-4">
+        <TabsContent value="defaults-guest" className="mt-6">
           <WorkspaceAccessDefaultRoleCard
             canManageRoles={canManageRoles}
             isLoading={guestDefaultQuery.isPending}
@@ -378,8 +375,8 @@ export function WorkspaceAccessPage({
       ) : null}
 
       {contextQuery.isError ? (
-        <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4 text-dynamic-red text-sm">
-          <Settings className="mr-2 inline h-4 w-4" />
+        <div className="flex items-center gap-2 rounded-xl border border-dynamic-red/20 bg-dynamic-red/5 p-4 text-dynamic-red text-sm">
+          <TriangleAlert className="h-4 w-4 shrink-0" />
           {t('common.error')}
         </div>
       ) : null}

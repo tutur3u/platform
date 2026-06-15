@@ -1,13 +1,6 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
-import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-
-const REQUIRED_PERMISSION = 'manage_workspace_roles';
 
 export const metadata: Metadata = {
   title: 'Roles',
@@ -21,72 +14,14 @@ interface Props {
   }>;
 }
 
-async function getRolesPageContext(wsId: string) {
-  const supabase = await createClient();
-
-  const [workspacePermissions, { user }] = await Promise.all([
-    getPermissions({ wsId }),
-    resolveAuthenticatedSessionUser(supabase),
-  ]);
-
-  if (!workspacePermissions) {
-    notFound();
-  }
-
-  if (workspacePermissions.withoutPermission(REQUIRED_PERMISSION)) {
-    redirect(`/${wsId}/settings`);
-  }
-
-  return {
-    canManageMembers: !workspacePermissions.withoutPermission(
-      'manage_workspace_members'
-    ),
-    user,
-  };
-}
-
+// Roles have been consolidated into the tabbed members page. This route is kept
+// as a redirect so existing bookmarks and deep links land on the roles tab.
 export default async function WorkspaceRolesPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ workspace, wsId }) => {
-        if (workspace.personal) {
-          redirect(`/${wsId}/settings`);
-        }
-
-        const { canManageMembers, user } = await getRolesPageContext(wsId);
-
-        return (
-          <Suspense fallback={<RolesPageFallback />}>
-            <StandardWorkspaceAccessPage
-              initialContext={{
-                canManageMembers,
-                canManageRoles: true,
-                currentUserEmail: user?.email ?? null,
-                workspaceId: wsId,
-              }}
-              initialTab="roles"
-            />
-          </Suspense>
-        );
+      {async ({ wsId }) => {
+        return redirect(`/${wsId}/members?tab=roles`);
       }}
     </WorkspaceWrapper>
-  );
-}
-
-function RolesPageFallback() {
-  return (
-    <div className="space-y-4">
-      <div className="grid h-10 w-full grid-cols-1 gap-2 rounded-lg bg-muted p-1 md:grid-cols-4">
-        <div className="animate-pulse rounded-md bg-background" />
-        <div className="animate-pulse rounded-md bg-background" />
-        <div className="animate-pulse rounded-md bg-background" />
-        <div className="animate-pulse rounded-md bg-background" />
-      </div>
-      <div className="space-y-4 rounded-lg border bg-background p-4">
-        <div className="h-7 w-48 animate-pulse rounded bg-muted" />
-        <div className="h-4 w-full max-w-2xl animate-pulse rounded bg-muted" />
-        <div className="h-64 w-full animate-pulse rounded bg-muted" />
-      </div>
-    </div>
   );
 }

@@ -52,7 +52,7 @@ export default function PermissionSetupBanner({
           {t('dashboard.permission_setup_description')}
         </p>
         <Button variant="outline" size="sm" asChild className="shrink-0">
-          <Link href={`/${wsId}/roles`}>
+          <Link href={`/${wsId}/members?tab=roles`}>
             <Settings className="mr-2 size-4" />
             {t('dashboard.configure_permissions')}
           </Link>

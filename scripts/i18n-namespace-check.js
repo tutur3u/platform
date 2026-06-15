@@ -16,6 +16,15 @@
  * - A shared component calling t('feedback') inside a useTranslations('common')
  *   context when the app has the 'common' namespace but lacks the 'feedback' key.
  *
+ * 3. Namespace parity (NAMESPACE_PARITY_GROUPS): for namespaces consumed by a
+ *    shared component that calls useTranslations() with NO namespace argument
+ *    (a "bare" call), the key-level scan above cannot attribute its t('ns.key')
+ *    calls, so missing keys slip through. For those, the apps that render the
+ *    component must keep the namespace in parity with each other — every listed
+ *    app must contain every key any peer has. This is what catches e.g. the CMS
+ *    members page rendering raw "ws-roles.guest_defaults" text because its
+ *    bundle lacked keys that apps/web already had.
+ *
  * Usage:
  *   node scripts/i18n-namespace-check.js
  */
@@ -56,6 +65,27 @@ const APP_SHARED_PACKAGE_SCOPES = new Map([
   ['apps/hive', new Set(['packages/hive-ui'])],
   ['apps/mind', new Set(['packages/mind-ui'])],
 ]);
+
+// Namespaces that must stay in parity across the apps that render the shared
+// component using them.
+//
+// The workspace-access component (packages/ui .../custom/workspace-access)
+// renders members/roles/defaults in both apps/web and apps/cms and reads its
+// strings via a bare `useTranslations()` (no namespace argument), plus the
+// permission catalog in packages/utils which receives `t` as a parameter.
+// Neither is visible to the namespace/key scans above, so an app can ship the
+// component while missing keys and render raw text (e.g. "ws-roles.guest_defaults").
+//
+// Only apps that actually render the component are listed — most apps carry a
+// (historically duplicated) ws-roles/ws-members namespace but never render it,
+// so requiring these keys everywhere would be pure noise. Each group requires
+// every listed app to contain every key any peer app has, per namespace.
+const NAMESPACE_PARITY_GROUPS = [
+  {
+    apps: ['apps/web', 'apps/cms'],
+    namespaces: ['ws-roles', 'ws-members'],
+  },
+];
 
 // Regex to match useTranslations('namespace') and getTranslations('namespace')
 const NAMESPACE_REGEX =
@@ -215,6 +245,64 @@ function resolveKeyPath(json, namespace, key) {
   }
 
   return current !== null && current !== undefined;
+}
+
+/**
+ * Collect every leaf key path under a translation subtree into `out`.
+ * e.g. { a: 'x', b: { c: 'y' } } with prefix '' yields 'a' and 'b.c'.
+ * Non-object inputs (or undefined namespaces) contribute nothing.
+ */
+function collectLeafKeyPaths(value, prefix, out) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    if (prefix) out.add(prefix);
+    return;
+  }
+  for (const key of Object.keys(value)) {
+    collectLeafKeyPaths(value[key], prefix ? `${prefix}.${key}` : key, out);
+  }
+}
+
+/**
+ * Check that every namespace in each parity group is in sync across the group's
+ * apps. Returns an array of { appDir, namespace, missing } failures, where
+ * `missing` lists keys present in a peer app but absent from this app.
+ */
+function checkNamespaceParity(loadTranslations) {
+  const failures = [];
+
+  for (const group of NAMESPACE_PARITY_GROUPS) {
+    const apps = group.apps.map((appDir) => ({
+      appDir,
+      json: loadTranslations(appDir),
+    }));
+
+    for (const namespace of group.namespaces) {
+      // Union of all leaf keys any app has under this namespace.
+      const union = new Set();
+      for (const { json } of apps) {
+        if (json) collectLeafKeyPaths(json[namespace], '', union);
+      }
+
+      for (const { appDir, json } of apps) {
+        if (!json) {
+          failures.push({
+            appDir,
+            namespace,
+            missing: ['(no messages/en.json)'],
+          });
+          continue;
+        }
+        const missing = [...union]
+          .filter((keyPath) => !resolveKeyPath(json, namespace, keyPath))
+          .sort();
+        if (missing.length > 0) {
+          failures.push({ appDir, namespace, missing });
+        }
+      }
+    }
+  }
+
+  return failures;
 }
 
 /**
@@ -478,7 +566,22 @@ function main() {
     }
   }
 
-  console.log('');
+  // Step 4: Namespace parity check across apps that render the same shared
+  // (bare-useTranslations) component.
+  const parityFailures = checkNamespaceParity(getAppTranslations);
+  if (parityFailures.length > 0) {
+    hasFailures = true;
+    console.log('Checking namespace parity...\n');
+    for (const { appDir, namespace, missing } of parityFailures) {
+      console.log(
+        `  ${appDir}: out of parity in "${namespace}" — MISSING ${missing.length} key${missing.length > 1 ? 's' : ''}`
+      );
+      for (const key of missing) {
+        console.log(`    - ${namespace}.${key}`);
+      }
+    }
+    console.log('');
+  }
 
   if (hasFailures) {
     console.log(
@@ -488,7 +591,10 @@ function main() {
       'If a namespace is intentionally unused, add it to the namespace list in scripts/i18n-namespace-check.config.json'
     );
     console.log(
-      'If specific keys are unused, add patterns (e.g. "namespace.*") to the keyExceptions section\n'
+      'If specific keys are unused, add patterns (e.g. "namespace.*") to the keyExceptions section'
+    );
+    console.log(
+      'For parity failures, sync the namespace across the apps in NAMESPACE_PARITY_GROUPS (apps that render the same shared component)\n'
     );
     process.exit(1);
   }

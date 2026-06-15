@@ -1,5 +1,6 @@
 'use client';
 
+import { UsersRound } from '@tuturuuu/icons';
 import type { InternalApiEnhancedWorkspaceMember } from '@tuturuuu/types';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
@@ -43,22 +44,27 @@ export function WorkspaceAccessMembers({
   if (isLoading) {
     return (
       <div className="grid gap-4 lg:grid-cols-2">
-        <Skeleton className="h-52 rounded-lg" />
-        <Skeleton className="h-52 rounded-lg" />
-        <Skeleton className="h-52 rounded-lg" />
-        <Skeleton className="h-52 rounded-lg" />
+        <Skeleton className="h-48 rounded-xl" />
+        <Skeleton className="h-48 rounded-xl" />
+        <Skeleton className="h-48 rounded-xl" />
+        <Skeleton className="h-48 rounded-xl" />
       </div>
     );
   }
 
   if (members.length === 0) {
     return (
-      <div className="flex min-h-56 items-center justify-center rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
-        {searchTerm.trim()
-          ? t('ws-members.no_members_match')
-          : status === 'invited'
-            ? t('ws-members.no_invited_members_found')
-            : t('ws-members.no_members_found')}
+      <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-xl border border-border border-dashed p-8 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-foreground/5 text-muted-foreground">
+          <UsersRound className="h-6 w-6" />
+        </div>
+        <p className="text-muted-foreground text-sm">
+          {searchTerm.trim()
+            ? t('ws-members.no_members_match')
+            : status === 'invited'
+              ? t('ws-members.no_invited_members_found')
+              : t('ws-members.no_members_found')}
+        </p>
       </div>
     );
   }

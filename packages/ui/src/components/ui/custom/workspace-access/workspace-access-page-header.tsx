@@ -1,8 +1,8 @@
 'use client';
 
-import { ShieldCheck, Users } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
+import { ShieldCheck, UserCheck, UserPlus, Users } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import type { WorkspaceAccessContext, WorkspaceAccessMode } from './types';
 
 type Props = {
@@ -11,6 +11,13 @@ type Props = {
   joinedCount: number;
   mode: WorkspaceAccessMode;
   totalCount: number;
+};
+
+type Stat = {
+  accent: string;
+  icon: ReactNode;
+  label: string;
+  value: number;
 };
 
 export function WorkspaceAccessPageHeader({
@@ -22,49 +29,81 @@ export function WorkspaceAccessPageHeader({
 }: Props) {
   const t = useTranslations() as (key: string) => string;
 
+  const stats: Stat[] = [
+    {
+      accent: 'text-dynamic-blue',
+      icon: <Users className="h-4 w-4" />,
+      label: t('common.total'),
+      value: totalCount,
+    },
+    {
+      accent: 'text-dynamic-green',
+      icon: <UserCheck className="h-4 w-4" />,
+      label: t('ws-members.active_members'),
+      value: joinedCount,
+    },
+    {
+      accent: 'text-dynamic-orange',
+      icon: <UserPlus className="h-4 w-4" />,
+      label: t('ws-members.pending_invitations'),
+      value: invitedCount,
+    },
+  ];
+
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-linear-to-br from-background via-background to-foreground/[0.02] p-6 shadow-sm">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-dynamic-blue to-dynamic-purple shadow-lg">
-              <Users className="h-6 w-6 text-background" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="bg-linear-to-br from-foreground to-foreground/70 bg-clip-text font-bold text-3xl text-transparent tracking-tight">
+    <section className="rounded-xl border border-border bg-background">
+      <div className="flex flex-col gap-6 p-6 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue">
+            <Users className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="truncate font-bold text-2xl tracking-tight">
                 {mode === 'cms'
                   ? t('external-projects.settings.members_title')
                   : t('workspace-settings-layout.members')}
               </h1>
-              {context.boundProjectName ? (
-                <p className="mt-1 text-muted-foreground text-sm">
-                  {t('external-projects.settings.bound_project_label')}:{' '}
-                  {context.boundProjectName}
-                </p>
-              ) : null}
+              <span className="inline-flex items-center gap-1 rounded-full border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 py-0.5 font-medium text-dynamic-purple text-xs">
+                <ShieldCheck className="h-3 w-3" />
+                {t('ws-roles.plural')}
+              </span>
             </div>
+            <p className="mt-1.5 max-w-2xl text-muted-foreground text-sm leading-6">
+              {mode === 'cms'
+                ? t('external-projects.settings.members_description')
+                : t('ws-members.description')}
+            </p>
+            {context.boundProjectName ? (
+              <p className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-border bg-foreground/[0.03] px-2 py-1 text-muted-foreground text-xs">
+                {t('external-projects.settings.bound_project_label')}:
+                <span className="font-semibold text-foreground">
+                  {context.boundProjectName}
+                </span>
+              </p>
+            ) : null}
           </div>
-          <p className="mt-4 max-w-3xl text-muted-foreground text-sm leading-6">
-            {mode === 'cms'
-              ? t('external-projects.settings.members_description')
-              : t('ws-members.description')}
-          </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 lg:justify-end">
-          <Badge variant="outline" className="rounded-full">
-            {t('common.total')}: {totalCount}
-          </Badge>
-          <Badge variant="outline" className="rounded-full">
-            {t('ws-members.active_members')}: {joinedCount}
-          </Badge>
-          <Badge variant="outline" className="rounded-full">
-            {t('ws-members.pending_invitations')}: {invitedCount}
-          </Badge>
-          <Badge variant="secondary" className="gap-1 rounded-full">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            {t('ws-roles.plural')}
-          </Badge>
+        <div className="grid shrink-0 grid-cols-3 divide-x divide-border overflow-hidden rounded-lg border border-border bg-foreground/[0.02]">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="flex flex-col gap-1 px-4 py-3 text-center"
+            >
+              <span
+                className={`inline-flex items-center justify-center gap-1.5 ${stat.accent}`}
+              >
+                {stat.icon}
+                <span className="font-bold text-foreground text-xl tabular-nums">
+                  {stat.value}
+                </span>
+              </span>
+              <span className="text-muted-foreground text-xs">
+                {stat.label}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </section>
