@@ -279,6 +279,46 @@ describe('task description route chunked PATCH', () => {
     ).toBe(false);
   });
 
+  it('rejects append chunks that exceed the declared field length', async () => {
+    queueTaskAccess();
+    queueResult(mocks.privateQueues, 'task_description_chunk_sessions', {
+      data: {
+        fields: {
+          description: {
+            chunk_count: 2,
+            total_length: 5,
+          },
+        },
+        id: '00000000-0000-4000-8000-000000000abc',
+        task_id: TASK_ID,
+        user_id: USER_ID,
+      },
+      error: null,
+    });
+    queueResult(mocks.privateQueues, 'task_description_chunks', {
+      data: [{ chunk: 'hello', chunk_index: 0 }],
+      error: null,
+    });
+
+    const response = await callPatch(
+      patchRequest({
+        action: 'append',
+        chunk: '!',
+        chunk_index: 1,
+        field: 'description',
+        session_id: '00000000-0000-4000-8000-000000000abc',
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Task description chunk exceeds declared field length',
+    });
+    expect(
+      mocks.privateMutations.some((mutation) => mutation.operation === 'upsert')
+    ).toBe(false);
+  });
+
   it('assembles committed chunks while keeping Yjs state out of the actor RPC', async () => {
     const description = JSON.stringify({
       type: 'doc',

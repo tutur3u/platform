@@ -46,6 +46,7 @@ type ChunkRow = {
   chunk_index: number;
   field: ChunkField;
 };
+type StoredChunkLengthRow = Pick<ChunkRow, 'chunk' | 'chunk_index'>;
 type PrivateChunkClient = {
   from: (table: string) => any;
 };
@@ -174,6 +175,46 @@ async function loadChunkSession({
   }
 
   return { session: data as ChunkSessionRow };
+}
+
+async function verifyAppendChunkLength({
+  body,
+  fieldPlan,
+  privateDb,
+}: {
+  body: Extract<TaskDescriptionChunkRequest, { action: 'append' }>;
+  fieldPlan: ChunkFieldPlan;
+  privateDb: PrivateChunkClient;
+}) {
+  const { data, error } = await privateDb
+    .from('task_description_chunks')
+    .select('chunk_index, chunk')
+    .eq('session_id', body.session_id)
+    .eq('field', body.field);
+
+  if (error) {
+    return NextResponse.json(
+      { error: 'Failed to load task description chunks' },
+      { status: 500 }
+    );
+  }
+
+  const existingLength = ((data ?? []) as StoredChunkLengthRow[]).reduce(
+    (total, chunk) =>
+      chunk.chunk_index === body.chunk_index
+        ? total
+        : total + chunk.chunk.length,
+    0
+  );
+
+  if (existingLength + body.chunk.length > fieldPlan.total_length) {
+    return NextResponse.json(
+      { error: 'Task description chunk exceeds declared field length' },
+      { status: 400 }
+    );
+  }
+
+  return null;
 }
 
 async function persistTaskDescriptionUpdate({
@@ -357,6 +398,13 @@ async function handleAppendChunk({
       { status: 400 }
     );
   }
+
+  const chunkLengthError = await verifyAppendChunkLength({
+    body,
+    fieldPlan,
+    privateDb,
+  });
+  if (chunkLengthError) return chunkLengthError;
 
   const { error } = await privateDb.from('task_description_chunks').upsert(
     {
