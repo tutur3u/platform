@@ -1,29 +1,25 @@
-import { MessageSquarePlus } from '@tuturuuu/icons';
-import {
-  DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
-  DATABASE_FEATURED_GROUPS_CONFIG_ID,
-  parseWorkspaceConfigIdList,
-} from '@tuturuuu/internal-api/workspace-configs';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { MessageSquarePlus, UserPlus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
+import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { fetchRequireAttentionUserIds } from '@/lib/require-attention-users';
-import { listWorkspaceDefaultIncludedGroupIds } from '@/lib/workspace-default-included-groups';
+import { Suspense } from 'react';
 import { AuditLogTable } from './audit-log-table';
 import { DuplicateUsersDialog } from './components/duplicate-users-dialog';
 import { ProfileLinksManager } from './components/profile-links-manager';
 import { DatabaseTabs } from './database-tabs';
 import UserForm from './form';
-import ImportDialogContent from './import-dialog-content';
 import { PlatformLinkRepairDialog } from './platform-link-repair-dialog';
-import { UsersAttentionSupportPanel } from './users-attention-support-panel';
-import { WorkspaceUsersTable } from './workspace-users-table';
+import { UsersDatabaseHero } from './users-database-hero';
+import {
+  UsersDatabaseHeroStats,
+  UsersDatabaseHeroStatsSkeleton,
+} from './users-database-hero-stats';
+import { UsersTabContent } from './users-tab-content';
+import { UsersTableSkeleton } from './users-table-skeleton';
 
 export const metadata: Metadata = {
   title: 'Database',
@@ -135,89 +131,21 @@ export default async function WorkspaceUsersPage({
     canManageUserProfileLinks: canManageProfileLinks,
   };
 
-  const sbAdmin = await createAdminClient();
-  const [
-    { data: defaultIncludedGroupIds },
-    { data: workspaceConfigs },
-    feedbackCountResult,
-    attentionUserIds,
-  ] = await Promise.all([
-    listWorkspaceDefaultIncludedGroupIds(sbAdmin, wsId),
-    sbAdmin
-      .from('workspace_configs')
-      .select('id, value')
-      .eq('ws_id', wsId)
-      .in('id', [
-        DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
-        DATABASE_FEATURED_GROUPS_CONFIG_ID,
-      ]),
-    canViewFeedbacks
-      ? sbAdmin
-          .from('user_feedbacks')
-          .select(
-            'id, user:workspace_users!user_feedbacks_user_id_fkey!inner(ws_id)',
-            {
-              count: 'exact',
-              head: true,
-            }
-          )
-          .eq('user.ws_id', wsId)
-      : Promise.resolve({ count: 0, error: null }),
-    canViewFeedbacks
-      ? fetchRequireAttentionUserIds(sbAdmin, {
-          wsId,
-        })
-      : Promise.resolve(new Set<string>()),
-  ]);
-
-  const workspaceConfigMap = new Map(
-    (workspaceConfigs ?? []).map((config) => [config.id, config.value])
-  );
-  const initialDefaultExcludedGroups = parseWorkspaceConfigIdList(
-    workspaceConfigMap.get(DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID)
-  );
-  const initialFeaturedGroupIds = parseWorkspaceConfigIdList(
-    workspaceConfigMap.get(DATABASE_FEATURED_GROUPS_CONFIG_ID)
-  );
-  const feedbackCount = feedbackCountResult.count ?? 0;
-  const attentionCount = attentionUserIds.size;
+  const hasQuickActions =
+    canViewFeedbacks || (canUpdateUsers && hasPrivateInfo);
 
   const usersContent =
     activeTab === 'users' ? (
-      <WorkspaceUsersTable
-        wsId={wsId}
-        locale={locale}
-        permissions={permissions}
-        canViewFeedbacks={canViewFeedbacks}
-        canManageFeedbacks={canManageFeedbacks}
-        initialDefaultIncludedGroups={defaultIncludedGroupIds}
-        initialDefaultExcludedGroups={initialDefaultExcludedGroups}
-        initialFeaturedGroupIds={initialFeaturedGroupIds}
-        toolbarActions={
-          canViewFeedbacks || (canUpdateUsers && hasPrivateInfo) ? (
-            <>
-              {canViewFeedbacks ? (
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/${wsId}/users/feedbacks`}>
-                    <MessageSquarePlus className="mr-2 h-4 w-4" />
-                    {t('ws-users.feedback_center_open')}
-                  </Link>
-                </Button>
-              ) : null}
-              {canUpdateUsers && hasPrivateInfo ? (
-                <PlatformLinkRepairDialog wsId={wsId} />
-              ) : null}
-              {canDeleteUsers && canUpdateUsers && hasPrivateInfo ? (
-                <DuplicateUsersDialog wsId={wsId} />
-              ) : null}
-            </>
-          ) : undefined
-        }
-        toolbarImportContent={
-          canExportUsers ? <ImportDialogContent wsId={wsId} /> : undefined
-        }
-        canExport={canExportUsers}
-      />
+      <Suspense fallback={<UsersTableSkeleton />}>
+        <UsersTabContent
+          wsId={wsId}
+          locale={locale}
+          permissions={permissions}
+          canViewFeedbacks={canViewFeedbacks}
+          canManageFeedbacks={canManageFeedbacks}
+          canExportUsers={canExportUsers}
+        />
+      </Suspense>
     ) : undefined;
 
   const auditLogContent =
@@ -243,32 +171,65 @@ export default async function WorkspaceUsersPage({
   return (
     <>
       {canViewUsers ? (
-        <>
-          <FeatureSummary
-            pluralTitle={t('ws-users.plural')}
-            singularTitle={t('ws-users.singular')}
-            description={t('ws-users.description')}
-            createTitle={t('ws-users.create')}
-            createDescription={t('ws-users.create_description')}
-            form={
-              canCreateUsers ? (
-                <UserForm
-                  wsId={wsId}
-                  canCreateUsers={canCreateUsers}
-                  canUpdateUsers={canUpdateUsers}
+        <UsersDatabaseHero
+          title={t('ws-users.plural')}
+          description={t('ws-users.description')}
+          primaryAction={
+            canCreateUsers ? (
+              <ModifiableDialogTrigger
+                title={t('ws-users.singular')}
+                createDescription={t('ws-users.create_description')}
+                trigger={
+                  <Button size="sm">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    {t('ws-users.create')}
+                  </Button>
+                }
+                form={
+                  <UserForm
+                    wsId={wsId}
+                    canCreateUsers={canCreateUsers}
+                    canUpdateUsers={canUpdateUsers}
+                  />
+                }
+              />
+            ) : undefined
+          }
+          quickActions={
+            hasQuickActions ? (
+              <>
+                {canViewFeedbacks ? (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/${wsId}/users/feedbacks`}>
+                      <MessageSquarePlus className="mr-2 h-4 w-4" />
+                      {t('ws-users.feedback_center_open')}
+                    </Link>
+                  </Button>
+                ) : null}
+                {canUpdateUsers && hasPrivateInfo ? (
+                  <PlatformLinkRepairDialog wsId={wsId} />
+                ) : null}
+                {canDeleteUsers && canUpdateUsers && hasPrivateInfo ? (
+                  <DuplicateUsersDialog wsId={wsId} />
+                ) : null}
+              </>
+            ) : undefined
+          }
+          stats={
+            <Suspense
+              fallback={
+                <UsersDatabaseHeroStatsSkeleton
+                  canViewFeedbacks={canViewFeedbacks}
                 />
-              ) : undefined
-            }
-          />
-          <Separator className="my-4" />
-          {activeTab === 'users' && canViewFeedbacks ? (
-            <UsersAttentionSupportPanel
-              wsId={wsId}
-              attentionCount={attentionCount}
-              feedbackCount={feedbackCount}
-            />
-          ) : null}
-        </>
+              }
+            >
+              <UsersDatabaseHeroStats
+                wsId={wsId}
+                canViewFeedbacks={canViewFeedbacks}
+              />
+            </Suspense>
+          }
+        />
       ) : null}
       <DatabaseTabs
         activeTab={activeTab}

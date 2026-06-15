@@ -32,6 +32,7 @@ import {
 } from './hooks';
 import { resolveUsersDatabaseFilters } from './resolved-filters';
 import { UsersFilterPanel } from './users-filter-panel';
+import { UsersTableSkeleton } from './users-table-skeleton';
 
 interface Props {
   wsId: string;
@@ -345,21 +346,19 @@ export function WorkspaceUsersTable({
     });
   }, [queryClient, wsId]);
 
-  // Show loading overlay when fetching new data (but not on initial load)
-  const showLoadingOverlay =
-    (isFetching && !isLoading) || !isInitialized || isLoadingFields;
+  // Skeleton replaces the table on the first load / before defaults resolve.
+  // Subsequent fetches keep previous data (keepPreviousData) and show only a
+  // lightweight inline indicator so the table never blocks or flashes empty.
+  const showSkeleton = !isInitialized || isLoadingFields || isLoading;
+  const isBackgroundRefetching = isFetching && !showSkeleton;
 
   return (
     <div className="relative">
-      {/* Loading overlay on table when fetching */}
-      {showLoadingOverlay && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/50 backdrop-blur-[1px]">
-          <div className="flex items-center gap-2 rounded-md border bg-background/90 px-4 py-2 shadow-lg">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-muted-foreground text-sm">
-              {!isInitialized ? t('common.initializing') : t('common.loading')}
-            </span>
-          </div>
+      {/* Lightweight background-refetch indicator */}
+      {isBackgroundRefetching && (
+        <div className="pointer-events-none absolute top-2 right-2 z-10 flex items-center gap-2 rounded-md border bg-background/90 px-3 py-1.5 text-muted-foreground text-xs shadow-sm">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+          {t('common.loading')}
         </div>
       )}
 
@@ -400,102 +399,108 @@ export function WorkspaceUsersTable({
         </div>
       ) : null}
 
-      <DataTable
-        t={t}
-        data={users}
-        namespace="user-data-table"
-        columnGenerator={getUserColumns}
-        extraColumns={extraFields}
-        extraData={extraData}
-        count={data?.count ?? 0}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        defaultQuery={q}
-        filters={
-          <UsersFilterPanel
-            wsId={wsId}
-            status={resolvedFilters.status}
-            linkStatus={effectiveLinkStatus}
-            requireAttention={resolvedFilters.requireAttention}
-            groupMembership={effectiveGroupMembership}
-            defaultLinkStatus={defaultLinkStatus}
-            defaultGroupMembership={defaultGroupMembership}
-            includedGroups={includedGroups}
-            excludedGroups={excludedGroups}
-            effectiveIncludedGroups={resolvedFilters.includedGroups}
-            effectiveExcludedGroups={resolvedFilters.excludedGroups}
-            initialFeaturedGroupIds={initialFeaturedGroupIds}
-            onStatusChange={(val) => {
-              setStatus(val);
-              setPage(1);
-            }}
-            onLinkStatusChange={(val) => {
-              setLinkStatus(val === defaultLinkStatus ? null : val);
-              setPage(1);
-            }}
-            onRequireAttentionChange={(val) => {
-              setRequireAttention(val);
-              setPage(1);
-            }}
-            onGroupMembershipChange={(val) => {
-              setGroupMembership(val === defaultGroupMembership ? null : val);
-              setPage(1);
-            }}
-            onIncludedGroupsChange={handleIncludedGroupsChange}
-            onExcludedGroupsChange={handleExcludedGroupsChange}
-          />
-        }
-        toolbarImportContent={toolbarImportContent}
-        toolbarExportContent={
-          canExport ? (
-            <ExportDialogContent
+      {showSkeleton ? (
+        <UsersTableSkeleton rows={pageSize} />
+      ) : (
+        <DataTable
+          t={t}
+          data={users}
+          namespace="user-data-table"
+          columnGenerator={getUserColumns}
+          extraColumns={extraFields}
+          extraData={extraData}
+          count={data?.count ?? 0}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          defaultQuery={q}
+          filters={
+            <UsersFilterPanel
               wsId={wsId}
-              exportType="users"
-              showDataTypeSelector
-              filters={resolvedFilters}
+              status={resolvedFilters.status}
+              linkStatus={effectiveLinkStatus}
+              requireAttention={resolvedFilters.requireAttention}
+              groupMembership={effectiveGroupMembership}
+              defaultLinkStatus={defaultLinkStatus}
+              defaultGroupMembership={defaultGroupMembership}
+              includedGroups={includedGroups}
+              excludedGroups={excludedGroups}
+              effectiveIncludedGroups={resolvedFilters.includedGroups}
+              effectiveExcludedGroups={resolvedFilters.excludedGroups}
+              initialFeaturedGroupIds={initialFeaturedGroupIds}
+              onStatusChange={(val) => {
+                setStatus(val);
+                setPage(1);
+              }}
+              onLinkStatusChange={(val) => {
+                setLinkStatus(val === defaultLinkStatus ? null : val);
+                setPage(1);
+              }}
+              onRequireAttentionChange={(val) => {
+                setRequireAttention(val);
+                setPage(1);
+              }}
+              onGroupMembershipChange={(val) => {
+                setGroupMembership(val === defaultGroupMembership ? null : val);
+                setPage(1);
+              }}
+              onIncludedGroupsChange={handleIncludedGroupsChange}
+              onExcludedGroupsChange={handleExcludedGroupsChange}
             />
-          ) : undefined
-        }
-        toolbarActions={toolbarActions}
-        onSearch={handleSearch}
-        setParams={handleSetParams}
-        resetParams={handleResetParams}
-        isFiltered={
-          !!resolvedFilters.q ||
-          resolvedFilters.status !== 'active' ||
-          resolvedFilters.linkStatus !== defaultLinkStatus ||
-          resolvedFilters.requireAttention !== 'all' ||
-          resolvedFilters.groupMembership !== defaultGroupMembership ||
-          resolvedFilters.includedGroups.length > 0 ||
-          resolvedFilters.excludedGroups.length > 0
-        }
-        onRefresh={() => {
-          queryClient.invalidateQueries({
-            queryKey: ['workspace-users', wsId],
-          });
-          queryClient.invalidateQueries({
-            queryKey: ['workspace-user-fields', wsId],
-          });
-        }}
-        defaultVisibility={{
-          id: false,
-          gender: false,
-          display_name: false,
-          ethnicity: false,
-          guardian: false,
-          address: false,
-          national_id: false,
-          note: false,
-          archival_note: false,
-          linked_users: false,
-          group_count: false,
-          created_at: false,
-          updated_at: false,
-          avatar_url: false,
-          // Extra columns
-          ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
-        }}
-      />
+          }
+          toolbarImportContent={toolbarImportContent}
+          toolbarExportContent={
+            canExport ? (
+              <ExportDialogContent
+                wsId={wsId}
+                exportType="users"
+                showDataTypeSelector
+                filters={resolvedFilters}
+              />
+            ) : undefined
+          }
+          toolbarActions={toolbarActions}
+          onSearch={handleSearch}
+          setParams={handleSetParams}
+          resetParams={handleResetParams}
+          isFiltered={
+            !!resolvedFilters.q ||
+            resolvedFilters.status !== 'active' ||
+            resolvedFilters.linkStatus !== defaultLinkStatus ||
+            resolvedFilters.requireAttention !== 'all' ||
+            resolvedFilters.groupMembership !== defaultGroupMembership ||
+            resolvedFilters.includedGroups.length > 0 ||
+            resolvedFilters.excludedGroups.length > 0
+          }
+          onRefresh={() => {
+            queryClient.invalidateQueries({
+              queryKey: ['workspace-users', wsId],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ['workspace-user-fields', wsId],
+            });
+          }}
+          defaultVisibility={{
+            id: false,
+            gender: false,
+            display_name: false,
+            ethnicity: false,
+            guardian: false,
+            address: false,
+            national_id: false,
+            note: false,
+            archival_note: false,
+            linked_users: false,
+            group_count: false,
+            created_at: false,
+            updated_at: false,
+            avatar_url: false,
+            // Extra columns
+            ...Object.fromEntries(
+              extraFields.map((field) => [field.id, false])
+            ),
+          }}
+        />
+      )}
     </div>
   );
 }

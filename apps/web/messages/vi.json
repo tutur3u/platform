@@ -21115,6 +21115,8 @@
     "status_archived_until": "Lưu trữ tạm thời",
     "status_filter": "Trạng thái",
     "suggested_target": "Đề xuất",
+    "total_users": "Tổng số người dùng",
+    "total_users_description": "Số người trong không gian làm việc này",
     "user_id": "Mã người dùng",
     "user_id_tooltip": "Mã định danh của người dùng này trong không gian làm việc của bạn. Hệ thống Tuturuuu tự động quản lý và không thể thay đổi.",
     "virtual_badge": "Ảo"
