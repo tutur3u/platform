@@ -159,6 +159,20 @@ describe('cross-app return route', () => {
     });
   });
 
+  it('rejects Portless return URLs on arbitrary localhost ports', async () => {
+    const response = await POST(
+      createRequest(
+        'https://attacker.tasks.tuturuuu.localhost:4444/personal/tasks'
+      )
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Invalid returnUrl',
+    });
+    expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
   it('still resolves configured external app returns through the API', async () => {
     const originalPublicExternalDomains =
       process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS;

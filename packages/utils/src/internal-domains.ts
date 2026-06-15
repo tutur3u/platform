@@ -370,12 +370,53 @@ function canUpgradeToRegisteredHttpsOrigin(value: URL, registeredUrl: URL) {
 }
 
 const PORTLESS_APP_HOSTS = new Set(Object.values(TUTURUUU_PORTLESS_APP_HOSTS));
+const DEFAULT_PORTLESS_PROXY_PORT = '1355';
+
+function normalizePortlessProxyPort(value: string | undefined) {
+  const trimmed = value?.trim();
+
+  if (!trimmed || !/^\d+$/u.test(trimmed)) {
+    return null;
+  }
+
+  const port = Number(trimmed);
+  return Number.isInteger(port) && port > 0 && port <= 65535
+    ? String(port)
+    : null;
+}
+
+function getPortFromUrl(value: string | undefined) {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  try {
+    return normalizePortlessProxyPort(new URL(value).port);
+  } catch {
+    return null;
+  }
+}
+
+function getAllowedPortlessProxyPorts() {
+  return new Set(
+    [
+      DEFAULT_PORTLESS_PROXY_PORT,
+      normalizePortlessProxyPort(process.env.PORTLESS_PORT),
+      getPortFromUrl(process.env.PORTLESS_URL),
+    ].filter((port): port is string => Boolean(port))
+  );
+}
+
+function isAllowedPortlessProxyPort(port: string) {
+  return getAllowedPortlessProxyPorts().has(port);
+}
 
 function canUseLocalPortlessProxyPort(value: URL, registeredUrl: URL) {
   return (
     value.protocol === registeredUrl.protocol &&
     !registeredUrl.port &&
     Boolean(value.port) &&
+    isAllowedPortlessProxyPort(value.port) &&
     PORTLESS_APP_HOSTS.has(registeredUrl.hostname)
   );
 }
@@ -447,16 +488,27 @@ function matchesAppDomainUrl(value: URL, domain: AppDomain) {
 
 function canonicalizeAppDomainUrl(value: URL, domain: AppDomain) {
   const registeredUrl = parseHttpUrl(domain.url);
+  const matchesDirectPortlessProxy =
+    registeredUrl &&
+    domain.kind === 'internal' &&
+    matchesPortlessProxyOrigin(value, registeredUrl);
+  const matchesPrefixedPortlessProxy =
+    registeredUrl &&
+    domain.kind === 'internal' &&
+    matchesPrefixedPortlessOrigin(value, registeredUrl);
 
   if (
     registeredUrl &&
     domain.kind === 'internal' &&
     (canUpgradeToRegisteredHttpsOrigin(value, registeredUrl) ||
-      matchesPortlessProxyOrigin(value, registeredUrl))
+      matchesDirectPortlessProxy ||
+      matchesPrefixedPortlessProxy)
   ) {
     const canonicalUrl = new URL(value.toString());
     canonicalUrl.protocol = registeredUrl.protocol;
-    canonicalUrl.hostname = registeredUrl.hostname;
+    canonicalUrl.hostname = matchesPrefixedPortlessProxy
+      ? value.hostname
+      : registeredUrl.hostname;
     canonicalUrl.port = registeredUrl.port;
     return serializeUrl(canonicalUrl);
   }

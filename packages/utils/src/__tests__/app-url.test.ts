@@ -112,7 +112,27 @@ describe('resolveInternalAppUrl', () => {
     });
     expect(
       getAppDomainByUrl(
+        'https://zalo-qr-chat-setup.tasks.tuturuuu.localhost:1355/verify-token?nextUrl=%2Fpersonal'
+      )
+    ).toMatchObject({
+      canonicalUrl:
+        'https://zalo-qr-chat-setup.tasks.tuturuuu.localhost/verify-token?nextUrl=%2Fpersonal',
+      kind: 'internal',
+      name: 'tasks',
+    });
+    expect(
+      getAppDomainByUrl(
         'https://tuturuuu.localhost.evil.test:1355/verify-token?nextUrl=%2F'
+      )
+    ).toBeNull();
+    expect(
+      getAppDomainByUrl(
+        'https://tasks.tuturuuu.localhost:4444/verify-token?nextUrl=%2Fpersonal'
+      )
+    ).toBeNull();
+    expect(
+      getAppDomainByUrl(
+        'https://attacker.tasks.tuturuuu.localhost:4444/verify-token?nextUrl=%2Fpersonal'
       )
     ).toBeNull();
   });

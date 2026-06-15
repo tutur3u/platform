@@ -161,6 +161,19 @@ describe('mapUrlToApp', () => {
     ).toBe('tasks');
   });
 
+  it('rejects Portless return URLs on unconfigured localhost ports', () => {
+    expect(
+      mapUrlToApp(
+        'https://tasks.tuturuuu.localhost:4444/verify-token?nextUrl=%2Fpersonal'
+      )
+    ).toBeNull();
+    expect(
+      mapUrlToApp(
+        'https://attacker.tasks.tuturuuu.localhost:4444/verify-token?nextUrl=%2Fpersonal'
+      )
+    ).toBeNull();
+  });
+
   it('rejects hostname prefix lookalikes', () => {
     expect(mapUrlToApp('https://learn.tuturuuu.com.evil.test')).toBeNull();
     expect(mapUrlToApp('https://tuturuuu.localhost.evil.test:1355')).toBeNull();
