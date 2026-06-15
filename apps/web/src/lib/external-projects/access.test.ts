@@ -367,6 +367,48 @@ describe('external project access auth dispatch', () => {
     ).toHaveBeenCalledWith('ttr_app_external');
   });
 
+  it('rejects scoped external app-token auth for a different linked adapter', async () => {
+    const fixture = createAdminFixture({
+      adapter: 'theguyser',
+      id: 'theguyser-main',
+      is_active: true,
+    });
+    const request = createAccessRequest('ttr_app_external');
+
+    supabaseMocks.createAdminClient.mockResolvedValue(fixture.admin);
+    appCoordinationMocks.getBearerAppCoordinationToken.mockReturnValue(
+      'ttr_app_external'
+    );
+    appSessionMocks.getAppSessionTokenFromRequest.mockReturnValue(
+      'ttr_app_external'
+    );
+    appSessionMocks.verifyAppSessionRequest.mockReturnValue({
+      error: 'App session missing required scope',
+      ok: false,
+    });
+    appCoordinationMocks.verifyAppCoordinationToken.mockReturnValue({
+      claims: {
+        ...externalAppTokenClaims,
+        scopes: ['external-projects:*'],
+      },
+      ok: true,
+    });
+
+    const access = await requireWorkspaceExternalProjectAccess({
+      mode: 'manage',
+      request,
+      wsId: workspaceId,
+    });
+
+    expect(access.ok).toBe(false);
+    if (!access.ok) {
+      expect(access.response.status).toBe(403);
+      await expect(access.response.json()).resolves.toEqual({
+        error: 'App is not linked to this workspace',
+      });
+    }
+  });
+
   it('rejects scoped external app-token auth for root admins without linked workspace membership', async () => {
     const fixture = createAdminFixture({
       adapter: 'yoola',

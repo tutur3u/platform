@@ -603,6 +603,16 @@ export function getExternalProjectModeForScopes(
   return 'manage';
 }
 
+function appTokenTargetMatchesExternalProjectBinding({
+  binding,
+  targetApp,
+}: {
+  binding: WorkspaceExternalProjectBinding;
+  targetApp: string;
+}) {
+  return binding.canonical_project?.adapter === targetApp;
+}
+
 async function authorizeLinkedWorkspaceMember({
   admin,
   authEmail,
@@ -743,7 +753,12 @@ export async function authorizeExternalProjectAppTokenExchange({
     };
   }
 
-  if (binding.canonical_project.adapter !== appId) {
+  if (
+    !appTokenTargetMatchesExternalProjectBinding({
+      binding,
+      targetApp: appId,
+    })
+  ) {
     return {
       error: 'App is not linked to this workspace',
       ok: false,
@@ -1038,6 +1053,21 @@ async function requireWorkspaceExternalProjectAccessWithAppToken({
       response: NextResponse.json(
         { error: 'External project studio unavailable for this workspace' },
         { status: 404 }
+      ),
+    };
+  }
+
+  if (
+    !appTokenTargetMatchesExternalProjectBinding({
+      binding,
+      targetApp: verification.claims.target_app,
+    })
+  ) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: 'App is not linked to this workspace' },
+        { status: 403 }
       ),
     };
   }
