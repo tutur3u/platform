@@ -954,6 +954,7 @@
           "units": "Units sold"
         },
         "release": "Release",
+        "releaseHint": "Frees the inventory this reservation is holding back into available stock and cancels the checkout. Use it for abandoned or stuck reservations.",
         "tabs": {
           "checkouts": "Checkouts",
           "label": "Commerce view",

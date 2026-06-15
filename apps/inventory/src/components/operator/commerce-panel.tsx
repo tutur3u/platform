@@ -18,6 +18,12 @@ import { releaseInventoryCheckout } from '@tuturuuu/internal-api/inventory';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
@@ -162,18 +168,27 @@ function CheckoutRows({
               <StatusBadge value={row.status} />
               {row.polarStatus ? <StatusBadge value={row.polarStatus} /> : null}
               <StatusBadge value={currency(row.totalAmount, row.currency)} />
-              <Button
-                disabled={
-                  row.status === 'completed' || releaseCheckout.isPending
-                }
-                onClick={() => releaseCheckout.mutate(row)}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                <RotateCcw className="h-4 w-4" />
-                {t('commerce.release')}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      disabled={
+                        row.status === 'completed' || releaseCheckout.isPending
+                      }
+                      onClick={() => releaseCheckout.mutate(row)}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      {t('commerce.release')}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    {t('commerce.releaseHint')}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </article>
         );
