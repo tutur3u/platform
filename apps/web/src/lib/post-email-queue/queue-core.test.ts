@@ -211,6 +211,31 @@ describe('enqueueApprovedPostEmails', () => {
     expect(rows.at(-1)).toBe(1000);
   });
 
+  it('stops fetching when a maximum row budget is reached', async () => {
+    const requestedRanges: Array<[number, number]> = [];
+
+    const rows = await fetchAllPaginatedRows<number>(
+      async (from, to) => {
+        requestedRanges.push([from, to]);
+        return {
+          data: Array.from(
+            { length: to - from + 1 },
+            (_, index) => from + index
+          ),
+          error: null,
+        };
+      },
+      { maxRows: 1500 }
+    );
+
+    expect(rows).toHaveLength(1500);
+    expect(rows.at(-1)).toBe(1499);
+    expect(requestedRanges).toEqual([
+      [0, 999],
+      [1000, 1499],
+    ]);
+  });
+
   it('chunks large user cohorts before querying checks and sent email coverage', async () => {
     const userIds = Array.from(
       { length: POST_EMAIL_QUERY_CHUNK_SIZE + 7 },

@@ -49,6 +49,7 @@ import type {
 import { chunkArray, isValidEmailAddress } from './utils';
 
 const POST_EMAIL_SELECT_PAGE_SIZE = 1000;
+const POST_EMAIL_MAINTENANCE_MAX_SCAN_ROWS = 10_000;
 const POST_EMAIL_QUEUE_DEBUG = process.env.POST_EMAIL_QUEUE_DEBUG === '1';
 
 type RpcCapableSupabaseClient = TypedSupabaseClient & {
@@ -78,13 +79,20 @@ export async function fetchAllPaginatedRows<T>(
   fetchPage: (
     from: number,
     to: number
-  ) => PromiseLike<{ data: T[] | null; error: unknown | null }>
+  ) => PromiseLike<{ data: T[] | null; error: unknown | null }>,
+  { maxRows = Number.POSITIVE_INFINITY }: { maxRows?: number } = {}
 ): Promise<T[]> {
   const rows: T[] = [];
   let from = 0;
+  const boundedMaxRows =
+    Number.isFinite(maxRows) && maxRows > 0
+      ? Math.floor(maxRows)
+      : Number.POSITIVE_INFINITY;
 
-  while (true) {
-    const to = from + POST_EMAIL_SELECT_PAGE_SIZE - 1;
+  while (rows.length < boundedMaxRows) {
+    const remainingRows = boundedMaxRows - rows.length;
+    const pageSize = Math.min(POST_EMAIL_SELECT_PAGE_SIZE, remainingRows);
+    const to = from + pageSize - 1;
     const { data, error } = await fetchPage(from, to);
 
     if (error) throw error;
@@ -92,11 +100,11 @@ export async function fetchAllPaginatedRows<T>(
     const pageRows = data ?? [];
     rows.push(...pageRows);
 
-    if (pageRows.length < POST_EMAIL_SELECT_PAGE_SIZE) {
+    if (pageRows.length < pageSize) {
       break;
     }
 
-    from += POST_EMAIL_SELECT_PAGE_SIZE;
+    from += pageSize;
   }
 
   return rows;
@@ -975,7 +983,8 @@ export async function autoSkipOldApprovedPostChecks(
         data: (data ?? []) as unknown as OldApprovedCheckRow[],
         error,
       };
-    }
+    },
+    { maxRows: POST_EMAIL_MAINTENANCE_MAX_SCAN_ROWS }
   );
   if (oldChecks.length === 0) return 0;
 
@@ -1114,15 +1123,17 @@ export async function autoSkipRejectedPosts(
 ): Promise<number> {
   const rejectedChecks = await fetchAllPaginatedRows<
     Pick<GroupPostCheck, 'post_id' | 'user_id'>
-  >((from, to) =>
-    sbAdmin
-      .schema('private')
-      .from('user_group_post_checks')
-      .select('post_id, user_id')
-      .eq('approval_status', 'REJECTED')
-      .order('post_id', { ascending: true })
-      .order('user_id', { ascending: true })
-      .range(from, to)
+  >(
+    (from, to) =>
+      sbAdmin
+        .schema('private')
+        .from('user_group_post_checks')
+        .select('post_id, user_id')
+        .eq('approval_status', 'REJECTED')
+        .order('post_id', { ascending: true })
+        .order('user_id', { ascending: true })
+        .range(from, to),
+    { maxRows: POST_EMAIL_MAINTENANCE_MAX_SCAN_ROWS }
   );
   if (rejectedChecks.length === 0) return 0;
 
@@ -1188,7 +1199,8 @@ async function reconcileOrphanedApprovedPostsInApp(
         data: (data ?? []) as unknown as OrphanedApprovedCheckRow[],
         error,
       };
-    }
+    },
+    { maxRows: POST_EMAIL_MAINTENANCE_MAX_SCAN_ROWS }
   );
 
   debugLog('[reconcileOrphanedApprovedPosts] Found checks', {
@@ -1533,18 +1545,21 @@ export async function reEnqueueSkippedPostEmails(
   const cutoff = getPostEmailMaxAgeCutoff();
   const skippedRowsData = await fetchAllPaginatedRows<
     QueueIdPostUserRow & { last_error: string | null }
-  >((from, to) => {
-    let query = getQueueTable(sbAdmin)
-      .select('id, post_id, user_id, last_error')
-      .eq('status', 'skipped')
-      .not('last_error', 'is', null);
+  >(
+    (from, to) => {
+      let query = getQueueTable(sbAdmin)
+        .select('id, post_id, user_id, last_error')
+        .eq('status', 'skipped')
+        .not('last_error', 'is', null);
 
-    if (wsId) {
-      query = query.eq('ws_id', wsId);
-    }
+      if (wsId) {
+        query = query.eq('ws_id', wsId);
+      }
 
-    return query.order('id', { ascending: true }).range(from, to);
-  });
+      return query.order('id', { ascending: true }).range(from, to);
+    },
+    { maxRows: POST_EMAIL_MAINTENANCE_MAX_SCAN_ROWS }
+  );
   const skippedRows = filterAgeSkippedRows(
     skippedRowsData,
     isPostEmailAgeSkipReason
