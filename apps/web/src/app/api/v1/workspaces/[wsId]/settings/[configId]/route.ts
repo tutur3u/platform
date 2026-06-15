@@ -20,6 +20,9 @@ interface Params {
   }>;
 }
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
 export async function PUT(req: Request, { params }: Params) {
   const { wsId: rawWsId, configId: id } = await params;
 
@@ -104,6 +107,11 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  const configValue =
+    id === 'default_wallet_id' && typeof value === 'string'
+      ? value.trim()
+      : value;
+
   if (id === DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID) {
     const { errorMessage } = await replaceWorkspaceDefaultIncludedGroupIds(
       sbAdmin,
@@ -118,12 +126,44 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'success' });
   }
 
+  if (id === 'default_wallet_id' && configValue) {
+    if (!UUID_PATTERN.test(configValue)) {
+      return NextResponse.json(
+        { message: 'Invalid default wallet' },
+        { status: 400 }
+      );
+    }
+
+    const { data: wallet, error: walletError } = await sbAdmin
+      .schema('private')
+      .from('workspace_wallets')
+      .select('id')
+      .eq('id', configValue)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (walletError) {
+      serverLogger.error('Error validating default wallet:', walletError);
+      return NextResponse.json(
+        { message: 'Failed to validate default wallet' },
+        { status: 500 }
+      );
+    }
+
+    if (!wallet) {
+      return NextResponse.json(
+        { message: 'Invalid default wallet' },
+        { status: 400 }
+      );
+    }
+  }
+
   const { error } = await sbAdmin
     .from('workspace_configs')
     .upsert({
       id,
       ws_id: wsId,
-      value: value ?? '',
+      value: configValue ?? '',
       updated_at: new Date().toISOString(),
     })
     .eq('ws_id', wsId)

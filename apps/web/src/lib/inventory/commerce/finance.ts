@@ -51,6 +51,9 @@ export type RecordSaleResult = {
   transactionId?: string;
 };
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
 /**
  * Books revenue from a completed (real, Polar-paid) storefront sale into the
  * workspace finance ledger. Idempotent: the sale's `finance_transaction_id`
@@ -97,6 +100,30 @@ export async function recordInventorySaleFinanceTransaction({
       'default_wallet_id'
     );
     if (!walletId) return { booked: false, reason: 'no-default-wallet' };
+    if (!UUID_PATTERN.test(walletId)) {
+      return { booked: false, reason: 'invalid-default-wallet' };
+    }
+
+    const { data: wallet, error: walletError } = (await privateDb
+      .from('workspace_wallets')
+      .select('id')
+      .eq('id', walletId)
+      .eq('ws_id', session.ws_id)
+      .maybeSingle()) as {
+      data: { id: string } | null;
+      error: { message?: string } | null;
+    };
+
+    if (walletError) {
+      return {
+        booked: false,
+        reason: walletError.message ?? 'wallet-validation-failed',
+      };
+    }
+
+    if (!wallet) {
+      return { booked: false, reason: 'invalid-default-wallet' };
+    }
 
     const { data: lines } = await privateDb
       .from('inventory_checkout_lines')
@@ -130,7 +157,7 @@ export async function recordInventorySaleFinanceTransaction({
         description: `Storefront sale ${session.polar_order_id ?? session.id}`,
         report_opt_in: true,
         taken_at: session.completed_at ?? new Date().toISOString(),
-        wallet_id: walletId,
+        wallet_id: wallet.id,
       })
       .select('id')
       .single();

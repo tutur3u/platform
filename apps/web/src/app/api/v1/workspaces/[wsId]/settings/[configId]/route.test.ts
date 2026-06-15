@@ -53,6 +53,60 @@ function createAdmin() {
   };
 }
 
+function chain(result: unknown) {
+  const query: Record<string, unknown> = {};
+  for (const method of ['select', 'eq']) {
+    query[method] = vi.fn(() => query);
+  }
+  query.maybeSingle = vi.fn(async () => result);
+  return query;
+}
+
+function createSettingsAdmin({
+  walletResult = {
+    data: { id: '11111111-1111-4111-8111-111111111111' },
+    error: null,
+  },
+}: {
+  walletResult?: unknown;
+} = {}) {
+  const eqId = vi.fn(async () => ({ error: null }));
+  const eqWsId = vi.fn(() => ({ eq: eqId }));
+  const upsert = vi.fn(() => ({ eq: eqWsId }));
+  const walletQuery = chain(walletResult);
+  const from = vi.fn((table: string) => {
+    if (table === 'workspace_configs') return { upsert };
+    return chain({ data: null, error: null });
+  });
+  const privateFrom = vi.fn((table: string) => {
+    if (table === 'workspace_wallets') return walletQuery;
+    return chain({ data: null, error: null });
+  });
+
+  return {
+    admin: { from, schema: vi.fn(() => ({ from: privateFrom })) },
+    eqId,
+    eqWsId,
+    from,
+    privateFrom,
+    upsert,
+    walletQuery,
+  };
+}
+
+function mockFinanceAccess(sbAdmin: unknown) {
+  mocks.getFinanceRouteContext.mockResolvedValue({
+    context: {
+      normalizedWsId: 'normalized-ws',
+      permissions: {
+        withoutPermission: vi.fn(() => false),
+      },
+      sbAdmin,
+    },
+    response: null,
+  });
+}
+
 describe('workspace settings route CMS config access', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -143,5 +197,88 @@ describe('workspace settings route CMS config access', () => {
     expect(admin.eqWsId).toHaveBeenCalledWith('ws_id', 'normalized-ws');
     expect(admin.eqId).toHaveBeenCalledWith('id', ENABLE_CMS_GAMES_CONFIG_ID);
     expect(mocks.getFinanceRouteContext).not.toHaveBeenCalled();
+  });
+});
+
+describe('workspace settings route default wallet access', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  it('rejects default wallet values outside the workspace', async () => {
+    const admin = createSettingsAdmin({
+      walletResult: { data: null, error: null },
+    });
+    mockFinanceAccess(admin.admin);
+
+    const { PUT } = await import(
+      '@/app/api/v1/workspaces/[wsId]/settings/[configId]/route'
+    );
+
+    const response = await PUT(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/settings/default_wallet_id',
+        {
+          body: JSON.stringify({
+            value: '22222222-2222-4222-8222-222222222222',
+          }),
+          method: 'PUT',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          configId: 'default_wallet_id',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Invalid default wallet',
+    });
+    expect(admin.privateFrom).toHaveBeenCalledWith('workspace_wallets');
+    expect(admin.walletQuery.eq).toHaveBeenCalledWith(
+      'id',
+      '22222222-2222-4222-8222-222222222222'
+    );
+    expect(admin.walletQuery.eq).toHaveBeenCalledWith('ws_id', 'normalized-ws');
+    expect(admin.upsert).not.toHaveBeenCalled();
+  });
+
+  it('saves default wallet values only after workspace ownership validation', async () => {
+    const admin = createSettingsAdmin();
+    mockFinanceAccess(admin.admin);
+
+    const { PUT } = await import(
+      '@/app/api/v1/workspaces/[wsId]/settings/[configId]/route'
+    );
+
+    const response = await PUT(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/settings/default_wallet_id',
+        {
+          body: JSON.stringify({
+            value: ' 11111111-1111-4111-8111-111111111111 ',
+          }),
+          method: 'PUT',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          configId: 'default_wallet_id',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(admin.upsert).toHaveBeenCalledWith({
+      id: 'default_wallet_id',
+      updated_at: expect.any(String),
+      value: '11111111-1111-4111-8111-111111111111',
+      ws_id: 'normalized-ws',
+    });
   });
 });

@@ -82,7 +82,9 @@ function chain(result: unknown) {
 
 describe('recordInventorySaleFinanceTransaction', () => {
   it('books revenue with the sale total, shared category, and default wallet', async () => {
-    mocks.getWorkspaceConfig.mockResolvedValue('wallet-1');
+    mocks.getWorkspaceConfig.mockResolvedValue(
+      '11111111-1111-4111-8111-111111111111'
+    );
     const insertChain = chain({ data: { id: 'tx-99' }, error: null });
 
     const privateFrom = vi.fn((table: string) => {
@@ -98,6 +100,12 @@ describe('recordInventorySaleFinanceTransaction', () => {
             total_amount: 250,
             ws_id: 'ws-1',
           },
+        });
+      }
+      if (table === 'workspace_wallets') {
+        return chain({
+          data: { id: '11111111-1111-4111-8111-111111111111' },
+          error: null,
         });
       }
       return chain({ data: [{ product_id: 'p1' }, { product_id: 'p1' }] });
@@ -122,7 +130,7 @@ describe('recordInventorySaleFinanceTransaction', () => {
         amount: 250,
         category_id: 'cat-1',
         report_opt_in: true,
-        wallet_id: 'wallet-1',
+        wallet_id: '11111111-1111-4111-8111-111111111111',
       })
     );
   });
@@ -154,6 +162,48 @@ describe('recordInventorySaleFinanceTransaction', () => {
     });
 
     expect(result).toEqual({ booked: false, reason: 'no-default-wallet' });
+    expect(insertChain.insert).not.toHaveBeenCalled();
+  });
+
+  it('does not book when the default wallet is outside the sale workspace', async () => {
+    mocks.getWorkspaceConfig.mockResolvedValue(
+      '22222222-2222-4222-8222-222222222222'
+    );
+    const insertChain = chain({ data: { id: 'tx' }, error: null });
+
+    const privateFrom = vi.fn((table: string) => {
+      if (table === 'inventory_checkout_sessions') {
+        return chain({
+          data: {
+            completed_at: null,
+            finance_transaction_id: null,
+            id: 'sess-1',
+            polar_order_id: null,
+            status: 'completed',
+            total_amount: 100,
+            ws_id: 'ws-1',
+          },
+        });
+      }
+      if (table === 'workspace_wallets') {
+        return chain({ data: null, error: null });
+      }
+      return chain({ data: [] });
+    });
+
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn(() => insertChain),
+      schema: vi.fn(() => ({ from: privateFrom })),
+    });
+
+    const result = await recordInventorySaleFinanceTransaction({
+      checkoutId: 'sess-1',
+    });
+
+    expect(result).toEqual({
+      booked: false,
+      reason: 'invalid-default-wallet',
+    });
     expect(insertChain.insert).not.toHaveBeenCalled();
   });
 });
