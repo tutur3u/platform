@@ -53,7 +53,13 @@ describe('inventory overview route', () => {
   });
 
   const dashboard = {
-    actions: [],
+    actions: [
+      {
+        kind: 'resolve_low_stock',
+        priority: 5,
+        view: 'stock',
+      },
+    ],
     analytics: {
       categoryMix: [{ label: 'Prints', quantity: 2, revenue: 40 }],
       ownerMix: [{ label: 'Owner', quantity: 2, revenue: 40 }],
@@ -92,8 +98,25 @@ describe('inventory overview route', () => {
       units: 1,
       warehouses: 1,
     },
-    readiness: [],
+    readiness: [
+      {
+        completed: 2,
+        key: 'products',
+        score: 67,
+        total: 3,
+        view: 'catalog',
+      },
+    ],
     risks: [
+      {
+        detail: 'Warehouse · 1/5 pcs',
+        entityId: 'product-1',
+        kind: 'low_stock',
+        label: 'Acrylic Keychain',
+        metric: 1,
+        severity: 'high',
+        view: 'stock',
+      },
       {
         detail: '2026-06-13T00:00:00.000Z',
         entityId: 'checkout-1',
@@ -176,6 +199,57 @@ describe('inventory overview route', () => {
       sbAdmin: {},
       wsId: 'ws-1',
     });
+  });
+
+  it('hides stock dashboard details when stock access is missing', async () => {
+    mocks.authorizeInventoryWorkspace.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: withPermissions([
+          'view_inventory_dashboard',
+          'view_inventory_sales',
+        ]),
+        wsId: 'ws-1',
+      },
+    });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request('http://localhost/api/v1/workspaces/ws-1/inventory/overview'),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      dashboard: {
+        actions: [],
+        counts: {
+          lowStock: 0,
+          products: 1,
+          sales: 1,
+          stockRows: 0,
+        },
+        readiness: [
+          {
+            completed: 1,
+            key: 'products',
+            score: 100,
+            total: 1,
+          },
+        ],
+        risks: [
+          {
+            kind: 'stale_checkout',
+            view: 'commerce',
+          },
+        ],
+      },
+      low_stock_products: [],
+    });
+    expect(mocks.getInventoryLowStockProducts).not.toHaveBeenCalled();
   });
 
   it('hides sales-only dashboard risks when sales access is missing', async () => {

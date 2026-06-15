@@ -25,10 +25,12 @@ interface Params {
 function dashboardForPermissions({
   canViewAnalytics,
   canViewSales,
+  canViewStock,
   dashboard,
 }: {
   canViewAnalytics: boolean;
   canViewSales: boolean;
+  canViewStock: boolean;
   dashboard: InventoryDashboardSnapshot | null;
 }) {
   if (!dashboard) return null;
@@ -53,11 +55,39 @@ function dashboardForPermissions({
         },
     counts: {
       ...dashboard.counts,
+      lowStock: canViewStock ? dashboard.counts.lowStock : 0,
       sales: canViewSales ? dashboard.counts.sales : 0,
+      stockRows: canViewStock ? dashboard.counts.stockRows : 0,
     },
-    risks: canViewSales
-      ? dashboard.risks
-      : dashboard.risks.filter((risk) => risk.kind !== 'stale_checkout'),
+    actions: canViewStock
+      ? dashboard.actions
+      : dashboard.actions.filter(
+          (action) =>
+            action.view !== 'stock' && action.kind !== 'resolve_low_stock'
+        ),
+    readiness: canViewStock
+      ? dashboard.readiness
+      : dashboard.readiness.map((item) =>
+          item.key === 'products'
+            ? {
+                ...item,
+                completed: dashboard.counts.products > 0 ? 1 : 0,
+                score: dashboard.counts.products > 0 ? 100 : 0,
+                total: 1,
+              }
+            : item
+        ),
+    risks: dashboard.risks.filter((risk) => {
+      if (!canViewSales && risk.kind === 'stale_checkout') return false;
+      if (
+        !canViewStock &&
+        (risk.view === 'stock' || risk.kind === 'low_stock')
+      ) {
+        return false;
+      }
+
+      return true;
+    }),
   };
 }
 
@@ -140,6 +170,7 @@ export async function GET(req: Request, { params }: Params) {
     dashboard: dashboardForPermissions({
       canViewAnalytics,
       canViewSales,
+      canViewStock,
       dashboard: dashboardResult.data,
     }),
   });
