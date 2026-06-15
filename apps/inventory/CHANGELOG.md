@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/inventory-v0.5.0...inventory-v0.6.0) (2026-06-15)
+
+
+### Features
+
+* **inventory:** add per-product actual P&L to the sales tab ([4dcdb29](https://github.com/tutur3u/platform/commit/4dcdb297e5dcce3adacdd2531e698068eecf4e6b))
+* **inventory:** add profit summary to the commerce sales tab ([8cc0513](https://github.com/tutur3u/platform/commit/8cc0513b45fa9a238980c020c1dc33f3dd9fb2f2))
+* **inventory:** add promotions/coupons management tab to commerce view ([94af859](https://github.com/tutur3u/platform/commit/94af8595ab01f5225566dee27cf2fa1175415a82))
+* **inventory:** field tooltips, tabbed dialogs, row-click edit, storefront polish ([e27d7bb](https://github.com/tutur3u/platform/commit/e27d7bbd75a76b8e6d9395faaa48ad6b465dca4b))
+* **inventory:** improve dialog lifecycle audit ux ([6d7814c](https://github.com/tutur3u/platform/commit/6d7814c80415bb14680746613e96d03387708df1))
+* **inventory:** improve operator table workflows ([c0ffdfc](https://github.com/tutur3u/platform/commit/c0ffdfcc4d004b5da6d7f758307b0fa4d0a8d8dc))
+* **inventory:** redesign operator UI and fix root workspace redirect ([8304a52](https://github.com/tutur3u/platform/commit/8304a52a443b242034c2bd547ff033caca0022d0))
+* **inventory:** show per-product estimated margin in product coverage tab ([c89a17b](https://github.com/tutur3u/platform/commit/c89a17b83ebb662d32fc08572e1854a20fa981ef))
+* **inventory:** upgrade storefront commerce ([ac43942](https://github.com/tutur3u/platform/commit/ac439426ec6d7abc25efbf7ef88468e32be3a46e))
+
+
+### Bug Fixes
+
+* **inventory:** repair stock semantics and dialogs ([f70688f](https://github.com/tutur3u/platform/commit/f70688f437ee1e9d21ac12e8fca780dbb2264e4a))
+* **inventory:** support explicit unlimited product stock ([65829ec](https://github.com/tutur3u/platform/commit/65829ece9ce005a5a72ea5a339c63b4fbb186267))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/inventory-v0.4.0...inventory-v0.5.0) (2026-06-13)
 
 

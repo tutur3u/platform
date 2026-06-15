@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/platform-v0.10.2...platform-v0.11.0) (2026-06-15)
+
+
+### Features
+
+* **cms:** redesign for non-technical users with finance/inventory/storefront integrations ([3558bd5](https://github.com/tutur3u/platform/commit/3558bd588d3428f38370a95f58a8d0389d5bca0e))
+* **finance:** add command center shortcuts ([d0197f7](https://github.com/tutur3u/platform/commit/d0197f705227cdf8171704b40119b66b1140be80))
+* **i18n:** add translation key helper ([c074a17](https://github.com/tutur3u/platform/commit/c074a17181b20f0b058e6e0f6bf87260624a1ba2))
+* **i18n:** support bulk translation key operations ([ad80dc1](https://github.com/tutur3u/platform/commit/ad80dc1a0f73aa36bc3e446e631d52842d21fd24))
+* **infrastructure:** edit mobile deployment env keys ([d3ad001](https://github.com/tutur3u/platform/commit/d3ad001bc503d21b3e495b47de6b277e8dc93c4f))
+* **infrastructure:** protect mobile deployment vault ([bea31f2](https://github.com/tutur3u/platform/commit/bea31f2f71de509c5bc5e1b154ba62928ecea9c6))
+* **internal-api:** add inventory promotion create/update/delete helpers ([27ea765](https://github.com/tutur3u/platform/commit/27ea76577712fcc958185a6fd2652a6fae918e52))
+* **inventory:** add per-product actual P&L to the sales tab ([4dcdb29](https://github.com/tutur3u/platform/commit/4dcdb297e5dcce3adacdd2531e698068eecf4e6b))
+* **inventory:** add profit summary to the commerce sales tab ([8cc0513](https://github.com/tutur3u/platform/commit/8cc0513b45fa9a238980c020c1dc33f3dd9fb2f2))
+* **inventory:** add promotions/coupons management tab to commerce view ([94af859](https://github.com/tutur3u/platform/commit/94af8595ab01f5225566dee27cf2fa1175415a82))
+* **inventory:** book finance transaction when a storefront sale is paid ([d239274](https://github.com/tutur3u/platform/commit/d239274b764e92916ada5ec70ea15d511e17ba06))
+* **inventory:** field tooltips, tabbed dialogs, row-click edit, storefront polish ([e27d7bb](https://github.com/tutur3u/platform/commit/e27d7bbd75a76b8e6d9395faaa48ad6b465dca4b))
+* **inventory:** improve dialog lifecycle audit ux ([6d7814c](https://github.com/tutur3u/platform/commit/6d7814c80415bb14680746613e96d03387708df1))
+* **inventory:** improve operator table workflows ([c0ffdfc](https://github.com/tutur3u/platform/commit/c0ffdfcc4d004b5da6d7f758307b0fa4d0a8d8dc))
+* **inventory:** mirror coupons to Polar discounts + Polar setup runbook ([5e44968](https://github.com/tutur3u/platform/commit/5e4496841b283c3bfb5e15b1a86d401bcde26d34))
+* **inventory:** redesign operator UI and fix root workspace redirect ([8304a52](https://github.com/tutur3u/platform/commit/8304a52a443b242034c2bd547ff033caca0022d0))
+* **inventory:** show per-product estimated margin in product coverage tab ([c89a17b](https://github.com/tutur3u/platform/commit/c89a17b83ebb662d32fc08572e1854a20fa981ef))
+* **inventory:** upgrade storefront commerce ([ac43942](https://github.com/tutur3u/platform/commit/ac439426ec6d7abc25efbf7ef88468e32be3a46e))
+* **tooling:** sync release branches from current branch ([1560cb1](https://github.com/tutur3u/platform/commit/1560cb14da77609e2e587055ee94f70513a3ec8a))
+* **ui:** add optional time picker ([d4cf439](https://github.com/tutur3u/platform/commit/d4cf4398c8efd8ca5267b770e07f1015a59d43fd))
+* **ui:** full-height docs rail, shiki highlighting, apps/docs sync ([dfaa122](https://github.com/tutur3u/platform/commit/dfaa1220f6d1338a32f19561441f5073c7c14430))
+* **ui:** redesign optional time picker ([cadbf12](https://github.com/tutur3u/platform/commit/cadbf124a9048d85164082eec2b857feb78b1070))
+* **ui:** redesign UI docs with caching and lazy previews ([34a5e9b](https://github.com/tutur3u/platform/commit/34a5e9b4cfb7bbb90fd4acef17d7c687f040f684))
+* **web:** add external user profile-completion links ([0effeb8](https://github.com/tutur3u/platform/commit/0effeb860f999227f673a55212d2cfd0c822105a))
+
+
+### Bug Fixes
+
+* **calendar:** preserve Google OAuth refresh tokens ([4358623](https://github.com/tutur3u/platform/commit/4358623a2dbde76fd84af59bb18e540994a5d091))
+* **finance:** stop pending invoices from intermittently failing to load ([c4a51b8](https://github.com/tutur3u/platform/commit/c4a51b89e3cad8130b8016864cf25f4da6db6fc1))
+* **infrastructure:** honor forwarded mobile deployment origins ([d506deb](https://github.com/tutur3u/platform/commit/d506debcf84154d8f7a7490ee461298a1fae47e7))
+* **infrastructure:** trust web origins for mobile deployment actions ([ada3cf7](https://github.com/tutur3u/platform/commit/ada3cf704f1626345693f960af611fec50a10ca6))
+* **inventory:** repair stock semantics and dialogs ([f70688f](https://github.com/tutur3u/platform/commit/f70688f437ee1e9d21ac12e8fca780dbb2264e4a))
+* **inventory:** route catalog product creation ([5887ef5](https://github.com/tutur3u/platform/commit/5887ef5bdf361b0c664063cbccb85cd51b437d4b))
+* **inventory:** support explicit unlimited product stock ([65829ec](https://github.com/tutur3u/platform/commit/65829ece9ce005a5a72ea5a339c63b4fbb186267))
+* **tasks:** persist large task descriptions in chunks ([457744a](https://github.com/tutur3u/platform/commit/457744aa051d06baccc5df5aa4d4cb509534ea8b))
+* **ui:** add missing quick-command-center customization translations ([cd59659](https://github.com/tutur3u/platform/commit/cd59659ec9acf30022562717600fe4003513b02c))
+* **ui:** keep docs pages static by pinning the clock during shiki tokenization ([643ec39](https://github.com/tutur3u/platform/commit/643ec39b48eb6bfdcb0726246b6a486acc383468))
+* **ui:** render docs pages dynamically for shiki highlighting ([c504d4c](https://github.com/tutur3u/platform/commit/c504d4ce01b8c1b5607e109096686bdd354eb887))
+* **users:** keep database search recoverable ([46066aa](https://github.com/tutur3u/platform/commit/46066aac9b281fb8365038193e420a90bb522e88))
+* **web:** align checkout no-auth e2e ([5d18cf6](https://github.com/tutur3u/platform/commit/5d18cf6c4adc7b9ccc5c477b9f2fe173bf42ecb4))
+* **web:** handle processing topic announcements ([7462fb4](https://github.com/tutur3u/platform/commit/7462fb4a0d86ae26e54564c18281bc97407b31c4))
+
 ## [0.10.2](https://github.com/tutur3u/platform/compare/platform-v0.10.1...platform-v0.10.2) (2026-06-13)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/tutur3u/platform/compare/calendar-v0.5.2...calendar-v0.5.3) (2026-06-15)
+
+
+### Bug Fixes
+
+* **calendar:** preserve Google OAuth refresh tokens ([4358623](https://github.com/tutur3u/platform/commit/4358623a2dbde76fd84af59bb18e540994a5d091))
+
 ## [0.5.2](https://github.com/tutur3u/platform/compare/calendar-v0.5.1...calendar-v0.5.2) (2026-06-13)
 
 

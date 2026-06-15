@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/cms-v0.7.0...cms-v0.8.0) (2026-06-15)
+
+
+### Features
+
+* **cms:** redesign for non-technical users with finance/inventory/storefront integrations ([3558bd5](https://github.com/tutur3u/platform/commit/3558bd588d3428f38370a95f58a8d0389d5bca0e))
+* **web:** add external user profile-completion links ([0effeb8](https://github.com/tutur3u/platform/commit/0effeb860f999227f673a55212d2cfd0c822105a))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/cms-v0.6.0...cms-v0.7.0) (2026-06-13)
 
 

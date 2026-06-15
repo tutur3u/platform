@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/tutur3u/platform/compare/apis-v0.4.1...apis-v0.4.2) (2026-06-15)
+
+
+### Bug Fixes
+
+* **tasks:** persist large task descriptions in chunks ([457744a](https://github.com/tutur3u/platform/commit/457744aa051d06baccc5df5aa4d4cb509534ea8b))
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/apis-v0.4.0...apis-v0.4.1) (2026-06-13)
 
 
