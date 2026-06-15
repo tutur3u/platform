@@ -7,10 +7,15 @@ import type { FormEvent } from 'react';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import { AccentButton } from './accent-button';
-import type { StorefrontCartEntry, StorefrontSurfaceLabels } from './types';
+import type {
+  StorefrontBuyerDefaults,
+  StorefrontCartEntry,
+  StorefrontSurfaceLabels,
+} from './types';
 import { formatStorefrontPrice, storefrontSurfaceClasses } from './utils';
 
 export function StorefrontCartSummary({
+  buyerDefaults,
   cartEntries,
   checkoutHref,
   currency,
@@ -23,6 +28,7 @@ export function StorefrontCartSummary({
   storefront,
   total,
 }: {
+  buyerDefaults?: StorefrontBuyerDefaults;
   cartEntries: StorefrontCartEntry[];
   checkoutHref?: string;
   currency: string;
@@ -40,11 +46,17 @@ export function StorefrontCartSummary({
   const submitDisabled =
     !hasCart || isSubmitting || isCheckoutDisabled || !onCheckoutSubmit;
   const canOpenCheckout = hasCart && Boolean(checkoutHref);
+  const buyerEmail = buyerDefaults?.email?.trim() || undefined;
+  const buyerName = buyerDefaults?.name?.trim() || undefined;
+  const inputClassName =
+    'h-11 rounded-md border border-input bg-background px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring/40';
+  const labelClassName = 'grid gap-1.5 text-sm';
 
   return (
     <aside
       className={cn(
         'h-fit p-4 lg:sticky lg:top-4',
+        isCheckout ? 'p-5 sm:p-6' : null,
         storefrontSurfaceClasses[storefront.surfaceStyle],
         radius
       )}
@@ -58,7 +70,7 @@ export function StorefrontCartSummary({
       <p className="mt-2 text-muted-foreground text-sm leading-6">
         {labels.reservedCopy}
       </p>
-      <div className="mt-4 grid gap-2">
+      <div className="mt-4 grid gap-2.5">
         {cartEntries.map(({ line, listing }) => (
           <div
             className="flex items-center justify-between gap-3 text-sm"
@@ -67,7 +79,7 @@ export function StorefrontCartSummary({
             <span className="min-w-0 truncate">
               {line.quantity} x {listing.title}
             </span>
-            <span className="font-medium">
+            <span className="font-medium tabular-nums">
               {formatStorefrontPrice(listing.price * line.quantity, currency)}
             </span>
           </div>
@@ -75,7 +87,7 @@ export function StorefrontCartSummary({
       </div>
       <div className="mt-4 flex items-center justify-between border-border border-t pt-4">
         <span className="text-muted-foreground text-sm">{labels.total}</span>
-        <span className="font-semibold">
+        <span className="font-semibold tabular-nums">
           {formatStorefrontPrice(total, currency)}
         </span>
       </div>
@@ -93,51 +105,53 @@ export function StorefrontCartSummary({
       ) : null}
       {isCheckout ? (
         <form
-          className="mt-4 grid gap-2"
+          className="mt-5 grid gap-3"
           onSubmit={(event: FormEvent<HTMLFormElement>) => {
             event.preventDefault();
             onCheckoutSubmit?.(new FormData(event.currentTarget));
           }}
         >
-          <label className="grid gap-1 text-sm">
+          <label className={labelClassName}>
             <span className="font-medium text-xs">{labels.form.name}</span>
             <input
               autoComplete="name"
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              className={inputClassName}
+              defaultValue={buyerName}
               name="customerName"
               placeholder={labels.form.name}
               required
             />
           </label>
-          <label className="grid gap-1 text-sm">
+          <label className={labelClassName}>
             <span className="font-medium text-xs">{labels.form.email}</span>
             <input
               autoComplete="email"
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              className={inputClassName}
+              defaultValue={buyerEmail}
               name="customerEmail"
               placeholder={labels.form.email}
               required
               type="email"
             />
           </label>
-          <label className="grid gap-1 text-sm">
+          <label className={labelClassName}>
             <span className="font-medium text-xs">{labels.form.phone}</span>
             <input
               autoComplete="tel"
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              className={inputClassName}
               name="customerPhone"
               placeholder={labels.form.phone}
               type="tel"
             />
           </label>
           <textarea
-            className="min-h-20 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            className="min-h-24 rounded-md border border-input bg-background px-3 py-2.5 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring/40"
             name="note"
             placeholder={labels.form.note}
           />
           <AccentButton disabled={submitDisabled} radius={radius}>
             {isSubmitting ? labels.reserving : labels.reserve}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="size-4 shrink-0" />
           </AccentButton>
         </form>
       ) : isPreview || isCheckoutDisabled ? (
@@ -148,13 +162,13 @@ export function StorefrontCartSummary({
         <Button asChild className={cn('mt-4 w-full', radius)}>
           <a href={checkoutHref}>
             {labels.checkout}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="size-4 shrink-0" />
           </a>
         </Button>
       ) : (
         <Button className={cn('mt-4 w-full', radius)} disabled type="button">
           {labels.checkout}
-          <ArrowRight className="h-4 w-4" />
+          <ArrowRight className="size-4 shrink-0" />
         </Button>
       )}
     </aside>
