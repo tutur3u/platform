@@ -130,8 +130,20 @@ export async function PATCH(req: Request, { params }: Params) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
 
+    if (
+      !(await assertWorkspaceRelation({
+        id: currentWarehouseId,
+        inventory,
+        table: 'inventory_warehouses',
+        wsId: authorization.value.wsId,
+      }))
+    ) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
     const warehouseId = parsed.data.warehouse_id ?? currentWarehouseId;
     if (
+      warehouseId !== currentWarehouseId &&
       !(await assertWorkspaceRelation({
         id: warehouseId,
         inventory,
