@@ -13,6 +13,8 @@ export type TransactionListEnrichment = {
         linked_wallet_name: string;
         linked_wallet_currency?: string;
         linked_amount?: number;
+        linked_amount_redacted?: boolean;
+        linked_is_amount_confidential?: boolean;
         is_origin: boolean;
       }
     | undefined;
@@ -123,6 +125,14 @@ function normalizeTransfer(
     linked_amount:
       typeof transferRecord.linked_amount === 'number'
         ? transferRecord.linked_amount
+        : undefined,
+    linked_amount_redacted:
+      typeof transferRecord.linked_amount_redacted === 'boolean'
+        ? transferRecord.linked_amount_redacted
+        : undefined,
+    linked_is_amount_confidential:
+      typeof transferRecord.linked_is_amount_confidential === 'boolean'
+        ? transferRecord.linked_is_amount_confidential
         : undefined,
     is_origin: Boolean(transferRecord.is_origin),
   };

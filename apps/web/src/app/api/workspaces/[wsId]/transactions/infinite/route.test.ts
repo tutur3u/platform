@@ -110,6 +110,8 @@ describe('workspace transactions infinite route', () => {
               transfer: {
                 is_origin: true,
                 linked_amount: -125000,
+                linked_amount_redacted: false,
+                linked_is_amount_confidential: false,
                 linked_transaction_id: 'tx-2',
                 linked_wallet_currency: 'VND',
                 linked_wallet_id: 'wallet-2',
@@ -155,6 +157,9 @@ describe('workspace transactions infinite route', () => {
           ],
           transfer: {
             is_origin: true,
+            linked_amount: -125000,
+            linked_amount_redacted: false,
+            linked_is_amount_confidential: false,
             linked_transaction_id: 'tx-2',
             linked_wallet_id: 'wallet-2',
             linked_wallet_name: 'Savings',

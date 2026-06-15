@@ -85,12 +85,6 @@ export function TransactionCard({
     useFinanceConfidentialVisibility();
   const isTransfer = !!transaction.transfer;
 
-  // Check if transaction is confidential
-  const isConfidential =
-    transaction.is_amount_confidential ||
-    transaction.is_description_confidential ||
-    transaction.is_category_confidential;
-
   // Get custom icon if available
   const CategoryIcon = useMemo(() => {
     if (transaction.category_icon) {
@@ -127,10 +121,17 @@ export function TransactionCard({
     return wallets.find((w) => w.id === transaction.transfer?.linked_wallet_id);
   }, [transaction.transfer?.linked_wallet_id, wallets]);
 
+  const linkedAmount = transaction.transfer?.linked_amount_redacted
+    ? undefined
+    : transaction.transfer?.linked_amount;
+  const linkedAmountIsConfidential = Boolean(
+    transaction.transfer?.linked_is_amount_confidential
+  );
   const transferDisplay = transaction.transfer
     ? transaction.transfer.is_origin
       ? {
           amount: transaction.amount,
+          amountIsConfidential: Boolean(transaction.is_amount_confidential),
           amountCurrency: transaction.wallet_currency,
           destinationIcon: linkedWallet?.icon,
           destinationImageSrc: linkedWallet?.image_src,
@@ -140,11 +141,15 @@ export function TransactionCard({
           originImageSrc: wallet?.image_src,
           originWalletId: transaction.wallet_id,
           originWalletName: transaction.wallet,
-          secondaryAmount: transaction.transfer.linked_amount,
+          secondaryAmount: linkedAmount,
           secondaryCurrency: transaction.transfer.linked_wallet_currency,
         }
       : {
-          amount: transaction.transfer.linked_amount ?? transaction.amount,
+          amount: linkedAmount ?? transaction.amount,
+          amountIsConfidential:
+            linkedAmount != null
+              ? linkedAmountIsConfidential
+              : Boolean(transaction.is_amount_confidential),
           amountCurrency:
             transaction.transfer.linked_wallet_currency ||
             transaction.wallet_currency,
@@ -161,9 +166,16 @@ export function TransactionCard({
         }
     : null;
   const displayAmount = transferDisplay?.amount ?? transaction.amount;
+  const displayAmountIsConfidential =
+    transferDisplay?.amountIsConfidential ??
+    Boolean(transaction.is_amount_confidential);
   const effectiveCurrency =
     transferDisplay?.amountCurrency || transaction.wallet_currency || currency;
   const isExpense = (displayAmount || 0) < 0;
+  const isConfidential =
+    displayAmountIsConfidential ||
+    transaction.is_description_confidential ||
+    transaction.is_category_confidential;
 
   // Currency conversion for foreign-currency transactions
   const isForeignCurrency =
@@ -434,7 +446,7 @@ export function TransactionCard({
               <div className="flex flex-col items-end">
                 <ConfidentialAmount
                   amount={displayAmount ?? null}
-                  isConfidential={transaction.is_amount_confidential || false}
+                  isConfidential={displayAmountIsConfidential}
                   currency={effectiveCurrency}
                   className={cn(
                     'font-bold text-sm tabular-nums transition-all duration-200 sm:text-xl',

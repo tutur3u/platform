@@ -15,6 +15,8 @@ export type Transaction = DbTransaction & {
     linked_wallet_name: string;
     linked_wallet_currency?: string;
     linked_amount?: number;
+    linked_amount_redacted?: boolean;
+    linked_is_amount_confidential?: boolean;
     is_origin: boolean;
   };
 };
