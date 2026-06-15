@@ -484,7 +484,7 @@ describe('auth proxy redirect helpers', () => {
       userId: 'user-1',
     });
     const authProxy = createCentralizedAuthProxy({
-      appSession: { targetApp: 'learn' },
+      appSession: { sessionMode: 'supabase-first', targetApp: 'learn' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
     });
@@ -521,7 +521,7 @@ describe('auth proxy redirect helpers', () => {
       res: NextResponse.next(),
     });
     const authProxy = createCentralizedAuthProxy({
-      appSession: { targetApp: 'learn' },
+      appSession: { sessionMode: 'supabase-first', targetApp: 'learn' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
     });
@@ -562,7 +562,7 @@ describe('auth proxy redirect helpers', () => {
       res: NextResponse.next(),
     });
     const authProxy = createCentralizedAuthProxy({
-      appSession: { targetApp: 'learn' },
+      appSession: { sessionMode: 'supabase-first', targetApp: 'learn' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
     });
@@ -767,14 +767,57 @@ describe('auth proxy redirect helpers', () => {
     expect(result.ok && result.refreshed).toBe(false);
     expect(result.ok && result.claims.sub).toBe('user-1');
     expect(result.ok && result.claims.target_app).toBe('mail');
-    expect(result.ok && result.response.headers.get('set-cookie')).toContain(
-      `${APP_SESSION_COOKIE_NAME}=;`
-    );
+    expect(
+      result.ok && result.response.cookies.get(APP_SESSION_COOKIE_NAME)?.value
+    ).toBe('');
     expect(result.ok && result.requestHeaders?.get('authorization')).toMatch(
       /^Bearer /
     );
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mocks.updateSession).toHaveBeenCalledWith(request);
+  });
+
+  it('rejects Supabase-first refresh when an aal1 session still requires MFA', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    vi.stubGlobal('fetch', vi.fn());
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        mfa: {
+          listFactors: vi.fn().mockResolvedValue({
+            data: { totp: [{ status: 'verified' }] },
+          }),
+        },
+      },
+    });
+    mocks.updateSession.mockResolvedValueOnce({
+      claims: {
+        aal: 'aal1',
+        email: 'user@tuturuuu.com',
+        exp: 1_767_225_600,
+        iat: 1_767_222_000,
+        session_id: 'session-1',
+        sub: 'user-1',
+      },
+      res: NextResponse.next(),
+    });
+    const request = new NextRequest('https://mail.tuturuuu.com/api/messages', {
+      headers: {
+        cookie: 'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session',
+      },
+    });
+
+    const result = await refreshAppSessionForRequest(request, {
+      sessionMode: 'supabase-first',
+      targetApp: 'mail',
+    });
+
+    expect(result).toEqual({
+      error: 'MFA required',
+      ok: false,
+    });
   });
 
   it('uses the local HTTP app port for Portless app-session refresh self-fetches', async () => {
@@ -985,6 +1028,77 @@ describe('auth proxy redirect helpers', () => {
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
+  });
+
+  it('does not accept shared Supabase cookies for app-session proxies unless Supabase-first is enabled', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard', {
+      headers: {
+        cookie: 'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session',
+      },
+    });
+
+    const response = await authProxy(request);
+
+    expect(response.headers.get('location')).toContain(
+      'https://tuturuuu.com/login?returnUrl='
+    );
+    expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
+
+  it('enforces MFA for Supabase-first app proxies even when app-session MFA is disabled', async () => {
+    vi.stubEnv(
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'https://nzamlzqfdwaaxdefwraj.supabase.co'
+    );
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        mfa: {
+          listFactors: vi.fn().mockResolvedValue({
+            data: { totp: [{ status: 'verified' }] },
+          }),
+        },
+      },
+    });
+    mocks.updateSession.mockResolvedValueOnce({
+      claims: {
+        aal: 'aal1',
+        email: 'user@tuturuuu.com',
+        exp: 1_767_225_600,
+        iat: 1_767_222_000,
+        session_id: 'session-1',
+        sub: 'user-1',
+      },
+      res: NextResponse.next(),
+    });
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { sessionMode: 'supabase-first', targetApp: 'mail' },
+      mfa: { enabled: false },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://mail.tuturuuu.com/inbox', {
+      headers: {
+        cookie: 'sb-nzamlzqfdwaaxdefwraj-auth-token.0=shared-session',
+      },
+    });
+
+    const response = await authProxy(request);
+    const location = response.headers.get('location') ?? '';
+
+    expect(location).toContain('https://tuturuuu.com/login?returnUrl=');
+    expect(location).toContain('mfa=required');
+    expect(response.headers.get('set-cookie')).toContain(
+      `${APP_SESSION_COOKIE_NAME}=;`
+    );
   });
 
   it('expires stale Supabase auth cookies on registered app responses', async () => {

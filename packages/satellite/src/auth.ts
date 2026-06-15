@@ -40,35 +40,39 @@ export async function getSatelliteSupabaseSessionUser() {
 }
 
 export async function getSatelliteAppSession(targetApp?: AppSessionTargetApp) {
-  const supabaseUser = await getSatelliteSupabaseSessionUser();
-
-  if (supabaseUser?.id) {
-    return createSupabaseBackedAppSession(supabaseUser, targetApp);
-  }
-
   const requestHeaders = await headers();
-
-  return getAppSessionClaimsFromRequest(
+  const appSession = getAppSessionClaimsFromRequest(
     { headers: requestHeaders },
     targetApp ? { targetApp } : {}
   );
+
+  if (appSession) {
+    return appSession;
+  }
+
+  const supabaseUser = await getSatelliteSupabaseSessionUser();
+
+  return supabaseUser?.id
+    ? createSupabaseBackedAppSession(supabaseUser, targetApp)
+    : null;
 }
 
 export async function getSatelliteAppSessionUser(
   targetApp?: AppSessionTargetApp
 ) {
-  const supabaseUser = await getSatelliteSupabaseSessionUser();
-
-  if (supabaseUser?.id) {
-    return supabaseUser;
-  }
-
   const requestHeaders = await headers();
-
-  return getAppSessionUserFromRequest(
+  const appSessionUser = getAppSessionUserFromRequest(
     { headers: requestHeaders },
     targetApp ? { targetApp } : {}
   );
+
+  if (appSessionUser) {
+    return appSessionUser;
+  }
+
+  const supabaseUser = await getSatelliteSupabaseSessionUser();
+
+  return supabaseUser?.id ? supabaseUser : null;
 }
 
 export async function getSatelliteCurrentUser(

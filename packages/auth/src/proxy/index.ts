@@ -606,6 +606,20 @@ export async function refreshAppSessionForRequest(
     });
 
     if (appSessionClaims) {
+      if (
+        await requiresMfaVerification(
+          req,
+          aalFromClaims(claims),
+          appSessionClaims.sub,
+          sessionIdFromClaims(claims)
+        )
+      ) {
+        return {
+          error: 'MFA required',
+          ok: false,
+        };
+      }
+
       const { requestHeaders, response } =
         createSupabaseBackedAppSessionResponse(req, res, appSessionClaims, {
           now,
@@ -763,6 +777,12 @@ function sessionIdFromClaims(claims: unknown) {
   return typeof sessionId === 'string' && sessionId ? sessionId : null;
 }
 
+function aalFromClaims(claims: unknown): AuthenticatorAssuranceLevels | null {
+  const aal = asRecord(claims).aal;
+
+  return aal === 'aal1' || aal === 'aal2' ? aal : null;
+}
+
 async function hasValidMobileMfaApproval(
   req: NextRequest,
   userId: string | null | undefined,
@@ -817,6 +837,25 @@ async function hasValidMobileMfaApproval(
   }
 }
 
+async function requiresMfaVerification(
+  req: NextRequest,
+  aal: AuthenticatorAssuranceLevels | null,
+  userId: string | null | undefined,
+  sessionId: string | null | undefined
+) {
+  const supabase = await createClient();
+
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const hasVerifiedMFA =
+    factors?.totp?.some((factor) => factor.status === 'verified') || false;
+
+  if (!(hasVerifiedMFA && aal === 'aal1')) {
+    return false;
+  }
+
+  return !(await hasValidMobileMfaApproval(req, userId, sessionId));
+}
+
 /**
  * Handles MFA verification checks for authenticated users
  */
@@ -846,24 +885,7 @@ async function handleMFACheck(
   }
 
   try {
-    const supabase = await createClient();
-
-    // Check if user has verified MFA factors
-    const { data: factors } = await supabase.auth.mfa.listFactors();
-
-    const hasVerifiedMFA =
-      factors?.totp?.some((factor) => factor.status === 'verified') || false;
-
-    // User needs MFA verification if:
-    // 1. They have verified MFA factors set up
-    // 2. Current AAL is aal1 (basic auth only, MFA not verified in this session)
-    const requiresMFAVerification = hasVerifiedMFA && aal === 'aal1';
-
-    if (requiresMFAVerification) {
-      if (await hasValidMobileMfaApproval(req, userId, sessionId)) {
-        return null;
-      }
-
+    if (await requiresMfaVerification(req, aal, userId, sessionId)) {
       const publicOrigin = resolveCanonicalRequestOrigin(req, webAppUrl);
       const centralOrigin = new URL(webAppUrl).origin;
 
@@ -1038,27 +1060,31 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
         isPublicPath?.(req.nextUrl.pathname);
 
       if (appSession) {
-        if (hasSupportedSupabaseAuthCookie(req)) {
+        if (
+          appSession.sessionMode === 'supabase-first' &&
+          hasSupportedSupabaseAuthCookie(req)
+        ) {
           const { res, claims } = await updateSession(req);
 
           if (claims) {
-            if (mfaEnabled) {
-              const mfaRedirect = await handleMFACheck(
-                req,
-                claims.aal,
-                claims.sub,
-                sessionIdFromClaims(claims),
-                webAppUrl,
-                mfaProtectedPaths,
-                mfaExcludedPaths,
-                mfaEnforceForAll
-              );
+            const claimsRecord = asRecord(claims);
+            const userId =
+              typeof claimsRecord.sub === 'string' ? claimsRecord.sub : null;
+            const mfaRedirect = await handleMFACheck(
+              req,
+              aalFromClaims(claims),
+              userId,
+              sessionIdFromClaims(claims),
+              webAppUrl,
+              mfaProtectedPaths,
+              mfaExcludedPaths,
+              mfaEnforceForAll
+            );
 
-              if (mfaRedirect) {
-                propagateAuthCookies(res, mfaRedirect);
-                clearAppSessionCookie(mfaRedirect);
-                return mfaRedirect;
-              }
+            if (mfaRedirect) {
+              propagateAuthCookies(res, mfaRedirect);
+              clearAppSessionCookie(mfaRedirect);
+              return mfaRedirect;
             }
 
             const now = appSession.now ?? new Date();
