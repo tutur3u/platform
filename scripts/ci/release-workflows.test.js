@@ -221,6 +221,14 @@ test('CI workflows use main instead of retired staging branch filters', () => {
     supabaseProductionWorkflow,
     /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/
   );
+  assert.match(
+    supabaseProductionWorkflow,
+    /BUILD_MARKER_HAS_SUCCESS=.*select\(\.state == "success"\).*length > 0/
+  );
+  assert.match(
+    supabaseProductionWorkflow,
+    /does not include a success status\. Latest state is/
+  );
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });
 
@@ -622,9 +630,10 @@ test('Supabase production migration requires production platform build and succe
   );
   assert.match(
     evaluateJob,
-    /no successful production platform build marker deployment was found for \$TARGET_SHA/
+    /no production platform build marker deployment was found for \$TARGET_SHA/
   );
-  assert.match(evaluateJob, /BUILD_MARKER_STATE" != "success"/);
+  assert.match(evaluateJob, /BUILD_MARKER_HAS_SUCCESS" != "true"/);
+  assert.match(evaluateJob, /does not include a success status/);
   assert.match(
     evaluateJob,
     /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/

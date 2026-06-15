@@ -135,16 +135,18 @@ jobs:
               echo "Production platform build marker SHA: $BUILD_MARKER_SHA"
 
               if [ -z "$BUILD_MARKER_DEPLOYMENT_ID" ]; then
-                echo "::notice::Skipping production migration because no successful production platform build marker deployment was found for $TARGET_SHA."
+                echo "::notice::Skipping production migration because no production platform build marker deployment was found for $TARGET_SHA."
               else
-                BUILD_MARKER_STATE=$(gh api \
-                  "repos/${{ github.repository }}/deployments/$BUILD_MARKER_DEPLOYMENT_ID/statuses" \
-                  | jq -r '.[0].state // "missing"')
+                BUILD_MARKER_STATUSES=$(gh api \
+                  "repos/${{ github.repository }}/deployments/$BUILD_MARKER_DEPLOYMENT_ID/statuses")
+                BUILD_MARKER_STATE=$(echo "$BUILD_MARKER_STATUSES" | jq -r '.[0].state // "missing"')
+                BUILD_MARKER_HAS_SUCCESS=$(echo "$BUILD_MARKER_STATUSES" | jq -r '[.[]? | select(.state == "success")] | length > 0')
 
-                echo "Production platform build marker state: $BUILD_MARKER_STATE"
+                echo "Production platform build marker latest state: $BUILD_MARKER_STATE"
+                echo "Production platform build marker has success status: $BUILD_MARKER_HAS_SUCCESS"
 
-                if [ "$BUILD_MARKER_STATE" != "success" ]; then
-                  echo "::notice::Skipping production migration because the production platform build marker for $TARGET_SHA has state '$BUILD_MARKER_STATE'."
+                if [ "$BUILD_MARKER_HAS_SUCCESS" != "true" ]; then
+                  echo "::notice::Skipping production migration because the production platform build marker for $TARGET_SHA does not include a success status. Latest state is '$BUILD_MARKER_STATE'."
                 else
                   echo "Checking staging migration status..."
                   STAGING_RUN=$(gh api \

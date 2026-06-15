@@ -100,6 +100,10 @@ function isSuccessfulStatus(status?: GithubDeploymentStatus): boolean {
   return status?.state === 'success';
 }
 
+function hasSuccessfulStatus(statuses?: GithubDeploymentStatus[] | null) {
+  return statuses?.some(isSuccessfulStatus) ?? false;
+}
+
 async function getDeploymentsForWorkflow({
   workflowName,
 }: {
@@ -171,7 +175,7 @@ export async function hasSuccessfulDeploymentMarker({
       url: deployment.statuses_url,
     });
 
-    if (isSuccessfulStatus(statuses?.[0])) {
+    if (hasSuccessfulStatus(statuses)) {
       return true;
     }
   }
@@ -224,9 +228,7 @@ export async function findLastSuccessfulDeploymentSha({
       token,
       url: deployment.statuses_url,
     });
-    const latestStatus = statuses?.[0];
-
-    if (isSuccessfulStatus(latestStatus)) {
+    if (hasSuccessfulStatus(statuses)) {
       return deployment.sha;
     }
   }
