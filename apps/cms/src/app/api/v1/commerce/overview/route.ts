@@ -1,7 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
-import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
+import {
+  getCmsWorkspaceAccess,
+  hasCmsCommerceFinanceOverviewPermission,
+} from '@/lib/external-projects/access';
 
 export interface CmsCommerceOverview {
   collected: number;
@@ -26,7 +29,10 @@ export async function GET(request: Request) {
   }
 
   const access = await getCmsWorkspaceAccess(wsId);
-  if (!access.canAccessWorkspace) {
+  if (
+    !access.canAccessWorkspace ||
+    !hasCmsCommerceFinanceOverviewPermission(access.workspacePermissions)
+  ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

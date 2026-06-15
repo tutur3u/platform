@@ -3,6 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   CanonicalExternalProject,
+  PermissionId,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
 import {
@@ -20,6 +21,15 @@ import {
 } from './constants';
 
 type AdminDb = TypedSupabaseClient;
+
+function hasAnyPermission(
+  permissions: PermissionsResult | null,
+  values: readonly PermissionId[]
+) {
+  if (!permissions) return false;
+
+  return values.some((value) => permissions.containsPermission(value));
+}
 
 export function hasRootExternalProjectsAdminPermission(
   permissions: PermissionsResult | null
@@ -40,6 +50,69 @@ function hasWorkspaceExternalProjectPermission(
   return (
     permissions.containsPermission('manage_external_projects') ||
     permissions.containsPermission('publish_external_projects')
+  );
+}
+
+export function hasCmsCommerceFinanceOverviewPermission(
+  permissions: PermissionsResult | null
+) {
+  return hasAnyPermission(permissions, ['view_finance_stats']);
+}
+
+export function hasCmsCommerceProductReadPermission(
+  permissions: PermissionsResult | null
+) {
+  return (
+    hasAnyPermission(permissions, [
+      'manage_inventory',
+      'view_inventory_catalog',
+      'manage_inventory_catalog',
+      'view_inventory',
+      'create_inventory',
+      'update_inventory',
+      'delete_inventory',
+    ]) &&
+    hasAnyPermission(permissions, [
+      'manage_inventory',
+      'view_inventory_stock',
+      'view_stock_quantity',
+      'adjust_inventory_stock',
+      'update_stock_quantity',
+    ])
+  );
+}
+
+export function hasCmsCommerceStorefrontReadPermission(
+  permissions: PermissionsResult | null
+) {
+  return hasAnyPermission(permissions, [
+    'manage_inventory',
+    'view_inventory_catalog',
+    'manage_inventory_catalog',
+    'view_inventory',
+    'create_inventory',
+    'update_inventory',
+    'delete_inventory',
+  ]);
+}
+
+export function hasCmsCommerceStorefrontPublishPermission(
+  permissions: PermissionsResult | null
+) {
+  return hasAnyPermission(permissions, [
+    'manage_inventory',
+    'manage_inventory_catalog',
+  ]);
+}
+
+export function hasCmsCommerceInsightsPermission(
+  permissions: PermissionsResult | null
+) {
+  return (
+    hasAnyPermission(permissions, [
+      'view_inventory_analytics',
+      'view_inventory_dashboard',
+    ]) || hasCmsCommerceProductReadPermission(permissions)
   );
 }
 

@@ -1,7 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
-import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
+import {
+  getCmsWorkspaceAccess,
+  hasCmsCommerceStorefrontPublishPermission,
+  hasCmsCommerceStorefrontReadPermission,
+} from '@/lib/external-projects/access';
 
 export interface CmsStorefrontListing {
   id: string;
@@ -51,7 +55,10 @@ export async function GET(request: Request) {
   }
 
   const access = await getCmsWorkspaceAccess(wsId);
-  if (!access.canAccessWorkspace) {
+  if (
+    !access.canAccessWorkspace ||
+    !hasCmsCommerceStorefrontReadPermission(access.workspacePermissions)
+  ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -119,7 +126,10 @@ export async function POST(request: Request) {
   }
 
   const access = await getCmsWorkspaceAccess(wsId);
-  if (!access.canAccessWorkspace) {
+  if (
+    !access.canAccessWorkspace ||
+    !hasCmsCommerceStorefrontPublishPermission(access.workspacePermissions)
+  ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
