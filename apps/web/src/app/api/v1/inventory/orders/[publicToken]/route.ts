@@ -14,7 +14,12 @@ export async function GET(_request: Request, { params }: Params) {
   try {
     const { publicToken } = await params;
     if (isSimulatedOrderToken(publicToken)) {
-      return NextResponse.json(getSimulatedOrderResponse(publicToken));
+      const simulatedOrder = getSimulatedOrderResponse(publicToken);
+      if (simulatedOrder) {
+        return NextResponse.json(simulatedOrder);
+      }
+
+      return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
 
     const order = await getCheckoutByPublicToken(publicToken);
