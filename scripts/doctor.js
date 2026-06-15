@@ -8,6 +8,7 @@
 // attempt the safe automatic repairs.
 
 const { spawnSync } = require('node:child_process');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const net = require('node:net');
 const os = require('node:os');
@@ -21,9 +22,20 @@ const {
 
 const ROUTES_PATH = path.join(os.homedir(), '.portless', 'routes.json');
 const CA_PATH = path.join(os.homedir(), '.portless', 'ca.pem');
+const ROOT_DIR = path.resolve(__dirname, '..');
 const MIN_NODE_MAJOR = 22;
 const SUPABASE_PORTS = { api: 8001, db: 8002, studio: 8003 };
 const REDIS_PORTS = { redis: 6379, httpBridge: 8079 };
+const SUPABASE_ENV_KEYS = Object.freeze([
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+  'SUPABASE_SECRET_KEY',
+]);
+const WEB_REDIS_ENV_KEYS = Object.freeze([
+  'UPSTASH_REDIS_REST_URL',
+  'UPSTASH_REDIS_REST_TOKEN',
+]);
+const WEB_ENV_FILE = path.join(ROOT_DIR, 'apps', 'web', '.env.local');
 const ANSI_CODES = {
   reset: '\x1b[0m',
   bold: '\x1b[1m',
@@ -200,6 +212,253 @@ function getPortlessAliasRemoveCommand(hostname) {
   return `bunx portless alias --remove ${getPortlessAliasName(hostname)}`;
 }
 
+function stripUnquotedInlineComment(value) {
+  const quote = value[0];
+
+  if (quote === '"' || quote === "'") {
+    const closingQuoteIndex = value.lastIndexOf(quote);
+    return closingQuoteIndex > 0
+      ? value.slice(0, closingQuoteIndex + 1)
+      : value;
+  }
+
+  return value.replace(/\s+#.*$/u, '').trimEnd();
+}
+
+function parseEnvContent(content) {
+  const values = {};
+
+  for (const rawLine of String(content ?? '').split(/\r?\n/u)) {
+    const line = rawLine.trim();
+
+    if (!line || line.startsWith('#')) {
+      continue;
+    }
+
+    const exported = line.startsWith('export ') ? line.slice(7).trim() : line;
+    const separatorIndex = exported.indexOf('=');
+
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = exported.slice(0, separatorIndex).trim();
+    const rawValue = stripUnquotedInlineComment(
+      exported.slice(separatorIndex + 1).trim()
+    );
+    values[key] = rawValue.replace(/^(['"])(.*)\1$/u, '$2');
+  }
+
+  return values;
+}
+
+function readEnvFile(envFilePath, { fsImpl = fs, rootDir = ROOT_DIR } = {}) {
+  const relativePath = path.relative(rootDir, envFilePath) || '.env.local';
+
+  if (!fsImpl.existsSync(envFilePath)) {
+    return { exists: false, path: envFilePath, relativePath, values: {} };
+  }
+
+  return {
+    exists: true,
+    path: envFilePath,
+    relativePath,
+    values: parseEnvContent(fsImpl.readFileSync(envFilePath, 'utf8')),
+  };
+}
+
+function getAppEnvFiles({ fsImpl = fs, rootDir = ROOT_DIR } = {}) {
+  const files = [];
+  const appsDir = path.join(rootDir, 'apps');
+
+  if (!fsImpl.existsSync(appsDir)) {
+    return files;
+  }
+
+  for (const entry of fsImpl.readdirSync(appsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+
+    const envFile = path.join(appsDir, entry.name, '.env.local');
+    if (fsImpl.existsSync(envFile)) {
+      files.push(readEnvFile(envFile, { fsImpl, rootDir }));
+    }
+  }
+
+  return files;
+}
+
+function hashEnvValue(value) {
+  return crypto
+    .createHash('sha256')
+    .update(String(value ?? ''))
+    .digest('hex')
+    .slice(0, 10);
+}
+
+function redactUrlValue(value) {
+  const raw = String(value ?? '').trim();
+
+  if (!raw) {
+    return '<empty>';
+  }
+
+  try {
+    const url = new URL(raw);
+    const host =
+      url.hostname.endsWith('.supabase.co') && url.hostname !== 'supabase.co'
+        ? '<project-ref>.supabase.co'
+        : url.hostname;
+    return `${url.protocol}//${host}${url.port ? `:${url.port}` : ''}`;
+  } catch {
+    return `<invalid-url sha256:${hashEnvValue(raw)}>`;
+  }
+}
+
+function redactEnvValue(key, value) {
+  const raw = String(value ?? '').trim();
+
+  if (!raw) {
+    return '<empty>';
+  }
+
+  if (key.endsWith('_URL')) {
+    return `${redactUrlValue(raw)} (sha256:${hashEnvValue(raw)})`;
+  }
+
+  return `<redacted sha256:${hashEnvValue(raw)} len:${raw.length}>`;
+}
+
+function getDefinedEnvRecords(envFiles, key) {
+  return envFiles
+    .filter((file) => Object.hasOwn(file.values, key))
+    .map((file) => ({
+      file: file.relativePath,
+      value: String(file.values[key] ?? '').trim(),
+    }));
+}
+
+function hasAnyEnvKey(file, keys) {
+  return keys.some((key) => Object.hasOwn(file.values, key));
+}
+
+function checkSupabaseEnvConsistency({ envFiles = getAppEnvFiles() } = {}) {
+  const relevantFiles = envFiles.filter((file) =>
+    hasAnyEnvKey(file, SUPABASE_ENV_KEYS)
+  );
+  const items = [];
+  const details = [];
+
+  for (const key of SUPABASE_ENV_KEYS) {
+    const records = getDefinedEnvRecords(relevantFiles, key);
+    const uniqueValues = [...new Set(records.map((record) => record.value))];
+
+    if (uniqueValues.length <= 1) {
+      continue;
+    }
+
+    items.push(
+      `${key}: ${uniqueValues.length} values across ${records.length} file(s)`
+    );
+    details.push(`${key}:`);
+    for (const record of records) {
+      details.push(`${record.file}: ${redactEnvValue(key, record.value)}`);
+    }
+  }
+
+  const base = {
+    id: 'supabase-env',
+    title: 'Supabase app env consistency',
+  };
+
+  if (items.length === 0) {
+    return {
+      ...base,
+      status: 'ok',
+      detail:
+        relevantFiles.length > 0
+          ? `${relevantFiles.length} env file(s) define matching Supabase keys`
+          : 'no .env.local files define Supabase keys',
+    };
+  }
+
+  return {
+    ...base,
+    status: 'warn',
+    detail: `${items.length} Supabase key mismatch(es) found`,
+    details,
+    items,
+    hint: 'Pick one Supabase project and copy all three values together. For quick local development, run `bun dev:sync:apps` to copy `apps/web/.env.local` to app env files, then restart dev servers. Run `bun doctor --verbose` for redacted per-file fingerprints.',
+  };
+}
+
+function getRedisUrlProblem(value) {
+  const raw = String(value ?? '').trim();
+
+  if (!raw) {
+    return 'missing';
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return 'invalid URL';
+  }
+
+  if (parsed.hostname === 'serverless-redis-http') {
+    return 'uses Docker-only host `serverless-redis-http` from native apps/web env';
+  }
+
+  return null;
+}
+
+function checkWebRedisEnv({
+  envFile = readEnvFile(WEB_ENV_FILE),
+  redisPorts = REDIS_PORTS,
+} = {}) {
+  const base = { id: 'web-redis-env', title: 'apps/web Redis env' };
+
+  if (!envFile.exists) {
+    return {
+      ...base,
+      status: 'warn',
+      detail: `${envFile.relativePath} is missing`,
+      hint: 'Run `bun redis:setup` to create `apps/web/.env.local` with the local Redis bridge URL and token.',
+    };
+  }
+
+  const missing = WEB_REDIS_ENV_KEYS.filter(
+    (key) => !String(envFile.values[key] ?? '').trim()
+  );
+  const urlProblem = getRedisUrlProblem(envFile.values.UPSTASH_REDIS_REST_URL);
+  const items = WEB_REDIS_ENV_KEYS.map(
+    (key) => `${key}: ${redactEnvValue(key, envFile.values[key])}`
+  );
+
+  if (missing.length > 0 || urlProblem) {
+    return {
+      ...base,
+      status: 'warn',
+      detail: `${envFile.relativePath} is not ready for Redis-backed web features`,
+      items: [
+        ...items,
+        ...(missing.length > 0 ? [`missing: ${missing.join(', ')}`] : []),
+        ...(urlProblem ? [`URL problem: ${urlProblem}`] : []),
+      ],
+      hint: `Run \`bun redis:setup\` to start Redis and set \`UPSTASH_REDIS_REST_URL=http://localhost:${redisPorts.httpBridge}\` plus a matching token in \`apps/web/.env.local\`, then restart \`bun dev:web\`.`,
+    };
+  }
+
+  return {
+    ...base,
+    status: 'ok',
+    detail: `${envFile.relativePath} defines Redis REST URL and token`,
+    items,
+  };
+}
+
 async function checkSupabaseStatus({
   dockerOk,
   ports = SUPABASE_PORTS,
@@ -342,9 +601,8 @@ function checkPortlessRoutes({
   if (annotated.length === 0) {
     return {
       ...base,
-      status: 'warn',
-      detail: 'routes.json is present but empty',
-      hint: 'Start a dev server (e.g. `bun dev:inventory`) to register routes.',
+      status: 'ok',
+      detail: 'routes.json is present and no apps are registered yet',
     };
   }
 
@@ -432,7 +690,10 @@ async function collectDoctorChecks(deps = {}) {
     readProxyStatus = () => defaultReadProxyStatus(runner, portlessBin),
     readDockerInfo = () => defaultReadDockerInfo(runner),
     readRoutesFile = () => defaultReadRoutesFile(),
+    readSupabaseEnvFiles = () => getAppEnvFiles(),
+    readWebEnvFile = () => readEnvFile(WEB_ENV_FILE),
     caExists = () => fs.existsSync(CA_PATH),
+    includeEnvChecks = true,
     includeLocalServiceChecks = true,
     probePort = createPortProbe(),
     redisPorts = REDIS_PORTS,
@@ -456,6 +717,13 @@ async function collectDoctorChecks(deps = {}) {
     checks.push(
       await checkRedisStatus({ dockerOk, ports: redisPorts, probePort })
     );
+  }
+
+  if (includeEnvChecks) {
+    checks.push(
+      checkSupabaseEnvConsistency({ envFiles: readSupabaseEnvFiles() })
+    );
+    checks.push(checkWebRedisEnv({ envFile: readWebEnvFile(), redisPorts }));
   }
 
   checks.push(checkPortlessProxy(readProxyStatus()));
@@ -518,6 +786,7 @@ function colorizeStatusWords(line, colors) {
 
 function formatDoctorReport(checks, options = {}) {
   const colors = createColorizer(Boolean(options.colorsEnabled));
+  const verbose = Boolean(options.verbose);
   const lines = [colors.header('Tuturuuu dev environment doctor'), ''];
 
   for (const check of checks) {
@@ -527,8 +796,17 @@ function formatDoctorReport(checks, options = {}) {
         `       ${colors.dim(colorizeStatusWords(check.detail, colors))}`
       );
     }
-    for (const route of check.routes ?? []) {
-      lines.push(`         - ${colorizeStatusWords(route, colors)}`);
+    for (const item of check.items ?? check.routes ?? []) {
+      lines.push(`         - ${colorizeStatusWords(item, colors)}`);
+    }
+    if (verbose) {
+      for (const detail of check.details ?? []) {
+        lines.push(`         - ${colorizeStatusWords(detail, colors)}`);
+      }
+    } else if (check.details?.length) {
+      lines.push(
+        `         - ${colors.dim('Run `bun doctor --verbose` for redacted per-file details.')}`
+      );
     }
     if (check.hint && check.status !== 'ok') {
       lines.push(`       ${colors.dim(`-> ${check.hint}`)}`);
@@ -589,8 +867,10 @@ async function runDoctor({
   log = console.log,
   deps = {},
 } = {}) {
+  const verbose = argv.includes('--verbose');
+
   if (argv.includes('--help') || argv.includes('-h')) {
-    log(`Usage: bun doctor [--fix]
+    log(`Usage: bun doctor [--fix] [--verbose]
 
 Diagnose the local dev environment (Node runtime, Docker, local services,
 and Portless proxy/routing).
@@ -598,6 +878,8 @@ and Portless proxy/routing).
 Options:
   --fix    Attempt safe automatic repairs (start or reset the Portless proxy)
            and re-run the checks.
+  --verbose
+           Show expanded redacted env mismatch details.
 `);
     return 0;
   }
@@ -609,7 +891,7 @@ Options:
   });
 
   const checks = await collectDoctorChecks(deps);
-  log(formatDoctorReport(checks, { colorsEnabled }));
+  log(formatDoctorReport(checks, { colorsEnabled, verbose }));
 
   const fixActions = getFixActions(checks);
 
@@ -636,7 +918,7 @@ Options:
   log('');
   log('Re-running checks...');
   const after = await collectDoctorChecks(deps);
-  log(formatDoctorReport(after, { colorsEnabled }));
+  log(formatDoctorReport(after, { colorsEnabled, verbose }));
 
   return summarizeChecks(after).exitCode;
 }
@@ -656,6 +938,8 @@ module.exports = {
   checkPortlessRoutes,
   checkRedisStatus,
   checkSupabaseStatus,
+  checkSupabaseEnvConsistency,
+  checkWebRedisEnv,
   collectDoctorChecks,
   createPortProbe,
   formatDoctorReport,
@@ -663,7 +947,9 @@ module.exports = {
   getPortlessAliasRemoveCommand,
   getFixActions,
   getFixSteps,
+  parseEnvContent,
   parsePortlessRoutes,
+  redactEnvValue,
   runDoctor,
   shouldUseColor,
   summarizeChecks,
