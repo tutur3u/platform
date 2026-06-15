@@ -127,6 +127,7 @@ export async function handleBoardRoutePUT(
     name?: string;
     icon?: Database['public']['Enums']['platform_icon'] | null;
     ticket_prefix?: string | null;
+    default_list_id?: string | null;
     archived?: boolean;
     deleted?: boolean;
     restore?: boolean;
@@ -151,6 +152,32 @@ export async function handleBoardRoutePUT(
 
   const sbAdmin =
     auth.sbAdmin ?? ((await createAdminClient()) as TypedSupabaseClient);
+
+  // When setting a default list for new tasks, ensure it belongs to this board
+  // and is not deleted. A null value clears the default (revert to first list).
+  if (typeof data.default_list_id === 'string') {
+    const { data: list, error: listError } = await sbAdmin
+      .from('task_lists')
+      .select('id')
+      .eq('id', data.default_list_id)
+      .eq('board_id', parsedBoardId)
+      .eq('deleted', false)
+      .maybeSingle();
+
+    if (listError) {
+      return NextResponse.json(
+        { message: 'Failed to validate default list' },
+        { status: 500 }
+      );
+    }
+
+    if (!list) {
+      return NextResponse.json(
+        { message: 'Default list does not belong to this board' },
+        { status: 400 }
+      );
+    }
+  }
 
   const { error } = await sbAdmin
     .from('workspace_boards')

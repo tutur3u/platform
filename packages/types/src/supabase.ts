@@ -23977,6 +23977,7 @@ export type Database = {
           count_unestimated_issues: boolean;
           created_at: string | null;
           creator_id: string | null;
+          default_list_id: string | null;
           deleted_at: string | null;
           estimation_type:
             | Database['public']['Enums']['estimation_type']
@@ -23996,6 +23997,7 @@ export type Database = {
           count_unestimated_issues?: boolean;
           created_at?: string | null;
           creator_id?: string | null;
+          default_list_id?: string | null;
           deleted_at?: string | null;
           estimation_type?:
             | Database['public']['Enums']['estimation_type']
@@ -24015,6 +24017,7 @@ export type Database = {
           count_unestimated_issues?: boolean;
           created_at?: string | null;
           creator_id?: string | null;
+          default_list_id?: string | null;
           deleted_at?: string | null;
           estimation_type?:
             | Database['public']['Enums']['estimation_type']

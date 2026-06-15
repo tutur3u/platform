@@ -104,6 +104,7 @@ interface Props {
   > & {
     ws_id?: WorkspaceTaskBoard['ws_id'] | null;
     icon?: WorkspaceTaskBoard['icon'];
+    default_list_id?: WorkspaceTaskBoard['default_list_id'] | null;
   };
   currentUserId?: string;
   currentView: ViewType;
@@ -158,6 +159,9 @@ export function BoardHeader({
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false);
   const [ticketPrefix, setTicketPrefix] = useState(board.ticket_prefix || '');
+  const [defaultListId, setDefaultListId] = useState<string | null>(
+    board.default_list_id ?? null
+  );
   const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
   );
@@ -247,6 +251,7 @@ export function BoardHeader({
 
       await updateWorkspaceTaskBoard(workspaceId, board.id, {
         ticket_prefix: nextTicketPrefix,
+        default_list_id: defaultListId,
       });
 
       syncBoardTicketPrefixCaches({
@@ -911,6 +916,7 @@ export function BoardHeader({
                 <DropdownMenuItem
                   onClick={() => {
                     setTicketPrefix(board.ticket_prefix || '');
+                    setDefaultListId(board.default_list_id ?? null);
                     setBoardSettingsOpen(true);
                     setBoardMenuOpen(false);
                   }}
@@ -1161,6 +1167,39 @@ export function BoardHeader({
               />
               <p className="text-muted-foreground text-xs">
                 {t('ws-task-boards.settings.ticket_prefix_description')}
+              </p>
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="defaultList" className="font-medium text-sm">
+                {t('ws-task-boards.settings.default_list')}
+              </label>
+              <Select
+                value={defaultListId ?? '__none__'}
+                onValueChange={(value) =>
+                  setDefaultListId(value === '__none__' ? null : value)
+                }
+              >
+                <SelectTrigger id="defaultList">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">
+                    {t('ws-task-boards.settings.default_list_none')}
+                  </SelectItem>
+                  {lists
+                    .filter(
+                      (list) => !list.deleted && !list.is_external_staging
+                    )
+                    .map((list) => (
+                      <SelectItem key={list.id} value={list.id}>
+                        {list.name ||
+                          t('ws-task-boards.settings.untitled_list')}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-muted-foreground text-xs">
+                {t('ws-task-boards.settings.default_list_description')}
               </p>
             </div>
           </div>
