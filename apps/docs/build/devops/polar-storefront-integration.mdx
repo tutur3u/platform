@@ -1,0 +1,92 @@
+---
+title: Polar storefront integration
+description: Connect a workspace storefront to Polar, wire the payment webhook, and book sales into finance.
+---
+
+This runbook covers connecting an Inventory storefront to [Polar](https://polar.sh)
+for real checkout, pointing Polar's webhook at Tuturuuu, and how a paid sale
+flows into the workspace finance ledger.
+
+<Warning>
+  Never paste Polar tokens, client secrets, or webhook secrets into source,
+  docs, or chat. They are supplied only through environment variables and the
+  per-workspace integration panel, which stores them encrypted.
+</Warning>
+
+## How the flow works
+
+1. A shopper checks out on a `checkoutMode: 'polar'` storefront. Tuturuuu creates
+   a Polar checkout and stores `polar_checkout_id` on the
+   `private.inventory_checkout_sessions` row (status `reserved`).
+2. The shopper pays on Polar. Polar sends an `order.updated` webhook to Tuturuuu.
+3. `syncInventoryPolarOrder` marks the checkout `completed` and, when the order
+   is `paid`, books the revenue into the workspace finance ledger
+   (`wallet_transactions`) using the product's finance category and the
+   workspace default wallet. This is idempotent — a sale books at most one
+   transaction.
+
+## Environment variables
+
+Set these on the web app (reference by name only):
+
+| Variable | Purpose |
+| --- | --- |
+| `POLAR_SANDBOX` | `true` to use Polar's sandbox; unset/`false` for production. |
+| `POLAR_ACCESS_TOKEN` | Platform-level Polar organization access token. |
+| `POLAR_WEBHOOK_SECRET` | Secret used to verify incoming Polar webhook signatures. Must match the value Polar shows when you create the webhook. |
+| `POLAR_CURRENCIES` | Optional allowlist of supported storefront currencies. |
+
+For sandbox testing, create the credentials at
+`https://sandbox.polar.sh/dashboard/<org>/settings` and the OAuth app /
+organization token under **User Settings → Developer**.
+
+## Connect a workspace to Polar
+
+1. Open **Inventory → Overview → Polar settings** in the workspace.
+2. Choose the environment (sandbox or production) and paste the Polar
+   **organization access token**. It is encrypted per workspace before storage;
+   only the last 4 characters are ever shown again.
+3. Save. Tuturuuu validates the token and provisions a private
+   `inventory_checkout` product in your Polar org.
+
+## Configure the Polar webhook
+
+In the Polar dashboard for your org → **Settings → Webhooks → Add Endpoint**:
+
+1. **URL** — your Tuturuuu web origin plus the payment webhook path:
+
+   ```
+   https://<your-tuturuuu-domain>/api/payment/webhooks
+   ```
+
+   For local development, expose `localhost` with a tunnel (e.g. `cloudflared`
+   or `ngrok`) and use the tunnel's HTTPS URL with the same path.
+
+2. **Format** — `Raw`.
+
+3. **Events** — subscribe at minimum to:
+
+   - `checkout.created`
+   - `checkout.updated`
+   - `order.created`
+   - `order.updated`
+
+4. Copy the webhook **secret** Polar generates and set it as
+   `POLAR_WEBHOOK_SECRET` on the web app. Signature verification fails closed if
+   it does not match.
+
+<Tip>
+  Sandbox changes never touch your live Polar account and never move real money
+  — the dashboard shows a "Payments are not processed" banner.
+</Tip>
+
+## Verify a paid sale books finance
+
+1. Place a sandbox checkout on a `polar` storefront and complete payment.
+2. Confirm Polar delivered the `order.updated` event (Webhooks → Deliveries).
+3. The checkout session flips to `completed` with `polar_status = paid`.
+4. A `wallet_transactions` row appears in the workspace finance ledger for the
+   sale total, linked back via `inventory_checkout_sessions.finance_transaction_id`.
+
+If no transaction appears, check that the workspace has a **default wallet** set
+(finance config `default_wallet_id`) — booking is skipped without one.

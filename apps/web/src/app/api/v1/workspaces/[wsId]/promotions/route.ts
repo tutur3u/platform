@@ -12,6 +12,7 @@ import {
   parseInventoryApiListQuery,
   shouldReturnPaginatedInventoryList,
 } from '@/lib/inventory/api-list-query';
+import { syncInventoryPromotionDiscount } from '@/lib/inventory/commerce/polar';
 
 const PromotionSchema = z
   .object({
@@ -172,6 +173,30 @@ export async function POST(req: Request, { params }: Params) {
       { message: 'Error creating promotion' },
       { status: 500 }
     );
+  }
+
+  // Best-effort: mirror the coupon to Polar so it applies at Polar checkout.
+  // Non-throwing — a Polar hiccup must not fail promotion creation.
+  try {
+    const { discountId } = await syncInventoryPromotionDiscount({
+      promotion: {
+        code: data.code,
+        max_uses: data.max_uses ?? null,
+        name: data.name,
+        use_ratio: data.unit === 'percentage',
+        value: data.value,
+      },
+      wsId,
+    });
+
+    if (discountId && created?.id) {
+      await privateDb
+        .from('workspace_promotions')
+        .update({ polar_discount_id: discountId })
+        .eq('id', created.id);
+    }
+  } catch (polarError) {
+    serverLogger.warn('Polar promotion mirror failed', polarError);
   }
 
   return NextResponse.json({ message: 'success', data: created });

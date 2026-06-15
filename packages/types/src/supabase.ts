@@ -7223,6 +7223,65 @@ export type Database = {
         };
         Relationships: [];
       };
+      task_description_chunk_sessions: {
+        Row: {
+          created_at: string;
+          fields: Json;
+          id: string;
+          task_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          fields: Json;
+          id?: string;
+          task_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          fields?: Json;
+          id?: string;
+          task_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      task_description_chunks: {
+        Row: {
+          chunk: string;
+          chunk_index: number;
+          created_at: string;
+          field: string;
+          session_id: string;
+        };
+        Insert: {
+          chunk: string;
+          chunk_index: number;
+          created_at?: string;
+          field: string;
+          session_id: string;
+        };
+        Update: {
+          chunk?: string;
+          chunk_index?: number;
+          created_at?: string;
+          field?: string;
+          session_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_description_chunks_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_description_chunk_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_reminder_sent: {
         Row: {
           id: string;
@@ -8806,6 +8865,7 @@ export type Database = {
           max_uses: number | null;
           name: string | null;
           owner_id: string | null;
+          polar_discount_id: string | null;
           promo_type: Database['public']['Enums']['promotion_type'];
           use_ratio: boolean;
           value: number;
@@ -8821,6 +8881,7 @@ export type Database = {
           max_uses?: number | null;
           name?: string | null;
           owner_id?: string | null;
+          polar_discount_id?: string | null;
           promo_type?: Database['public']['Enums']['promotion_type'];
           use_ratio?: boolean;
           value: number;
@@ -8836,6 +8897,7 @@ export type Database = {
           max_uses?: number | null;
           name?: string | null;
           owner_id?: string | null;
+          polar_discount_id?: string | null;
           promo_type?: Database['public']['Enums']['promotion_type'];
           use_ratio?: boolean;
           value?: number;
