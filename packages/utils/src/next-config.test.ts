@@ -23,6 +23,19 @@ describe('createTuturuuuNextConfig', () => {
     expect(config.typescript?.ignoreBuildErrors).toBe(true);
   });
 
+  it('does not expose loopback hosts to the shared image optimizer allowlist', () => {
+    const config = createTuturuuuNextConfig();
+
+    expect(config.images?.remotePatterns).not.toContainEqual({
+      protocol: 'http',
+      hostname: 'localhost',
+    });
+    expect(config.images?.remotePatterns).not.toContainEqual({
+      protocol: 'http',
+      hostname: '127.0.0.1',
+    });
+  });
+
   it('allows the exact worktree-prefixed Portless host for Next dev assets', () => {
     const originalPortlessUrl = process.env.PORTLESS_URL;
 
