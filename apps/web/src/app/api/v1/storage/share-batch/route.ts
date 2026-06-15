@@ -7,6 +7,7 @@
 
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SignedUrlData } from '@tuturuuu/types';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -14,6 +15,7 @@ import {
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
+import { rejectReservedStoragePath } from '../reserved-path';
 
 // Request body schema
 const batchShareSchema = z.object({
@@ -37,13 +39,40 @@ export const POST = withApiAuth(
     const { paths, expiresIn } = bodyResult.data;
 
     try {
+      const pathRequests: Array<{
+        originalPath: string;
+        sanitizedPath: string;
+      }> = [];
+
+      for (const path of paths) {
+        const sanitizedPath = sanitizePath(path);
+        if (sanitizedPath === null || !sanitizedPath) {
+          return createErrorResponse(
+            'Bad Request',
+            `Invalid path: ${path}`,
+            400,
+            'INVALID_PATH'
+          );
+        }
+
+        const reservedPathResponse = rejectReservedStoragePath(
+          wsId,
+          sanitizedPath
+        );
+        if (reservedPathResponse) {
+          return reservedPathResponse;
+        }
+
+        pathRequests.push({ originalPath: path, sanitizedPath });
+      }
+
       const supabase = await createDynamicAdminClient();
 
       // Process all paths in parallel
       const results = await Promise.allSettled(
-        paths.map(async (path) => {
+        pathRequests.map(async ({ originalPath, sanitizedPath }) => {
           // Construct the full storage path with workspace ID
-          const storagePath = `${wsId}/${path}`;
+          const storagePath = `${wsId}/${sanitizedPath}`;
 
           try {
             // Generate signed URL
@@ -53,21 +82,21 @@ export const POST = withApiAuth(
 
             if (error) {
               return {
-                path,
+                path: originalPath,
                 signedUrl: '',
                 error: error.message || 'Failed to generate signed URL',
               };
             }
 
             return {
-              path,
+              path: originalPath,
               signedUrl: data.signedUrl,
               expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
               expiresIn,
             };
           } catch (err) {
             return {
-              path,
+              path: originalPath,
               signedUrl: '',
               error:
                 err instanceof Error ? err.message : 'Failed to generate URL',
@@ -103,7 +132,8 @@ export const POST = withApiAuth(
           }
         } else {
           // Promise rejected
-          const path = paths[results.indexOf(result)] || 'unknown';
+          const path =
+            pathRequests[results.indexOf(result)]?.originalPath || 'unknown';
           data.push({
             path,
             signedUrl: '',

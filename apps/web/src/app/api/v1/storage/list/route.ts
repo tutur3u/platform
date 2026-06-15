@@ -59,9 +59,6 @@ export const GET = withApiAuth(
       paramsResult.data;
 
     try {
-      // Use admin client to bypass RLS policies when using API key authentication
-      const supabase = await createDynamicAdminClient();
-
       // List files from Supabase Storage
       // Path format matches Drive page: [wsId]/[path]
       const trimmedPath = sanitizePath(path);
@@ -82,6 +79,9 @@ export const GET = withApiAuth(
           'STORAGE_RESERVED_PATH'
         );
       }
+
+      // Use admin client to bypass RLS policies when using API key authentication
+      const supabase = await createDynamicAdminClient();
 
       const storagePath = trimmedPath ? posix.join(wsId, trimmedPath) : wsId;
 

@@ -19,6 +19,7 @@ import {
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
+import { rejectReservedStoragePath } from '../reserved-path';
 
 // Request body schema
 const createFolderSchema = z.object({
@@ -70,6 +71,18 @@ export const POST = withApiAuth(
         );
       }
 
+      // Build the relative path for the response (without workspace ID)
+      const relativePath = sanitizedPath
+        ? posix.join(sanitizedPath, sanitizedName)
+        : sanitizedName;
+
+      const reservedPathResponse =
+        rejectReservedStoragePath(wsId, sanitizedPath) ??
+        rejectReservedStoragePath(wsId, relativePath);
+      if (reservedPathResponse) {
+        return reservedPathResponse;
+      }
+
       const supabase = await createDynamicAdminClient();
 
       // Construct the full folder path using posix.join to prevent traversal
@@ -81,11 +94,6 @@ export const POST = withApiAuth(
             EMPTY_FOLDER_PLACEHOLDER
           )
         : posix.join(wsId, sanitizedName, EMPTY_FOLDER_PLACEHOLDER);
-
-      // Build the relative path for the response (without workspace ID)
-      const relativePath = sanitizedPath
-        ? posix.join(sanitizedPath, sanitizedName)
-        : sanitizedName;
 
       // Create an empty placeholder file to represent the folder
       // Supabase Storage doesn't support empty folders, so we use a placeholder

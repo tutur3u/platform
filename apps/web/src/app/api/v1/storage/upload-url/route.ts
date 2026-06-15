@@ -19,6 +19,7 @@ import {
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
+import { rejectReservedStoragePath } from '../reserved-path';
 
 // Request body schema
 const uploadUrlRequestSchema = z.object({
@@ -65,14 +66,22 @@ export const POST = withApiAuth(
         );
       }
 
+      const requestedStoragePath = sanitizedPath
+        ? posix.join(sanitizedPath, sanitizedFilename)
+        : sanitizedFilename;
+      const reservedPathResponse =
+        rejectReservedStoragePath(wsId, sanitizedPath) ??
+        rejectReservedStoragePath(wsId, requestedStoragePath);
+      if (reservedPathResponse) {
+        return reservedPathResponse;
+      }
+
       const supabase = await createDynamicAdminClient();
 
       // Construct the storage path relative to bucket
       // Path format matches Drive page: [wsId]/[path]/[filename]
       // The storage.objects.name field will automatically include bucket prefix
-      const storagePath = sanitizedPath
-        ? posix.join(wsId, sanitizedPath, sanitizedFilename)
-        : posix.join(wsId, sanitizedFilename);
+      const storagePath = posix.join(wsId, requestedStoragePath);
 
       // Generate signed upload URL
       const { data, error } = await supabase.storage

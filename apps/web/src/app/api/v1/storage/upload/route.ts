@@ -3,6 +3,7 @@ import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
+import { rejectReservedStoragePath } from '../reserved-path';
 
 const ALLOWED_MIME_TYPES = new Set([
   // Images
@@ -144,13 +145,21 @@ export const POST = withApiAuth(
         );
       }
 
+      const requestedStoragePath = sanitizedPath
+        ? posix.join(sanitizedPath, sanitizedFilename)
+        : sanitizedFilename;
+      const reservedPathResponse =
+        rejectReservedStoragePath(wsId, sanitizedPath) ??
+        rejectReservedStoragePath(wsId, requestedStoragePath);
+      if (reservedPathResponse) {
+        return reservedPathResponse;
+      }
+
       const supabase = await createDynamicAdminClient();
 
       // Construct the storage path relative to bucket
       // Path format matches Drive page: [wsId]/[path]/[filename]
-      const storagePath = sanitizedPath
-        ? posix.join(wsId, sanitizedPath, sanitizedFilename)
-        : posix.join(wsId, sanitizedFilename);
+      const storagePath = posix.join(wsId, requestedStoragePath);
 
       // Convert File to ArrayBuffer for upload
       const arrayBuffer = await file.arrayBuffer();

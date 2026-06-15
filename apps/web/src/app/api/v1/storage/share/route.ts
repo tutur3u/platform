@@ -8,6 +8,7 @@
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { imageTransformOptionsSchema } from '@tuturuuu/types';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -15,6 +16,7 @@ import {
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
+import { rejectReservedStoragePath } from '../reserved-path';
 
 // Request body schema
 const shareSchema = z.object({
@@ -36,10 +38,28 @@ export const POST = withApiAuth(
     const { path, expiresIn } = bodyResult.data;
 
     try {
+      const sanitizedPath = sanitizePath(path);
+      if (sanitizedPath === null || !sanitizedPath) {
+        return createErrorResponse(
+          'Bad Request',
+          'Invalid path',
+          400,
+          'INVALID_PATH'
+        );
+      }
+
+      const reservedPathResponse = rejectReservedStoragePath(
+        wsId,
+        sanitizedPath
+      );
+      if (reservedPathResponse) {
+        return reservedPathResponse;
+      }
+
       const supabase = await createDynamicAdminClient();
 
       // Construct the full storage path
-      const storagePath = `${wsId}/${path}`;
+      const storagePath = `${wsId}/${sanitizedPath}`;
 
       // Generate signed URL
       const { data, error } = await supabase.storage

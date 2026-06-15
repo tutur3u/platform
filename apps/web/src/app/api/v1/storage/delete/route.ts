@@ -15,6 +15,7 @@ import {
   validateRequestBody,
   withApiAuth,
 } from '@/lib/api-middleware';
+import { rejectReservedStoragePath } from '../reserved-path';
 
 // Request body schema
 const deleteBodySchema = z.object({
@@ -67,8 +68,6 @@ export const DELETE = withApiAuth(
     const { paths } = bodyResult.data;
 
     try {
-      const supabase = await createDynamicAdminClient();
-
       // Sanitize and validate all paths
       const sanitizedPaths: string[] = [];
       for (const path of paths) {
@@ -81,8 +80,16 @@ export const DELETE = withApiAuth(
             'INVALID_PATH'
           );
         }
+
+        const reservedPathResponse = rejectReservedStoragePath(wsId, sanitized);
+        if (reservedPathResponse) {
+          return reservedPathResponse;
+        }
+
         sanitizedPaths.push(sanitized);
       }
+
+      const supabase = await createDynamicAdminClient();
 
       // Construct full storage paths with sanitized paths
       const storagePaths = sanitizedPaths.map((path) => `${wsId}/${path}`);

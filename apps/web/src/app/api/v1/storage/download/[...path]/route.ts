@@ -7,9 +7,11 @@
 
 import { posix } from 'node:path';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
+import { rejectReservedStoragePath } from '../../reserved-path';
 
 const transformQuerySchema = z
   .object({
@@ -38,7 +40,6 @@ export const GET = withApiAuth(
     }
 
     try {
-      const supabase = await createDynamicAdminClient();
       const { searchParams } = new URL(request.url);
       const transformInput = {
         width: searchParams.get('width') ?? undefined,
@@ -56,8 +57,24 @@ export const GET = withApiAuth(
 
       // Construct the storage path relative to bucket
       // Path format matches Drive page: [wsId]/[path]
-      const filePath = path.join('/');
+      const filePath = sanitizePath(path.join('/'));
+      if (filePath === null || !filePath) {
+        return createErrorResponse(
+          'Bad Request',
+          'Invalid file path',
+          400,
+          'INVALID_PATH'
+        );
+      }
+
+      const reservedPathResponse = rejectReservedStoragePath(wsId, filePath);
+      if (reservedPathResponse) {
+        return reservedPathResponse;
+      }
+
+      const supabase = await createDynamicAdminClient();
       const storagePath = posix.join(wsId, filePath);
+      const fileName = posix.basename(filePath);
 
       // Download file from Supabase Storage
       const { data, error } = await supabase.storage
@@ -88,12 +105,10 @@ export const GET = withApiAuth(
       const { data: fileList } = await supabase.storage
         .from('workspaces')
         .list(storagePath.substring(0, storagePath.lastIndexOf('/')), {
-          search: path[path.length - 1],
+          search: fileName,
         });
 
-      const fileMetadata = fileList?.find(
-        (f) => f.name === path[path.length - 1]
-      );
+      const fileMetadata = fileList?.find((f) => f.name === fileName);
       const contentType =
         fileMetadata?.metadata?.mimetype || 'application/octet-stream';
 
@@ -101,7 +116,7 @@ export const GET = withApiAuth(
       return new NextResponse(data, {
         headers: {
           'Content-Type': contentType,
-          'Content-Disposition': `attachment; filename="${path[path.length - 1]}"`,
+          'Content-Disposition': `attachment; filename="${fileName}"`,
         },
       });
     } catch (error) {
