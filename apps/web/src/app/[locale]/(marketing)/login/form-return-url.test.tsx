@@ -377,6 +377,21 @@ describe('LoginForm returnUrl navigation', () => {
     queryClient.clear();
   });
 
+  it('falls back for platform verify-token nextUrl values with control characters', async () => {
+    const queryClient = renderLoginForm(
+      'http://tuturuuu.com/verify-token?nextUrl=%2F%09%2Fevil.test%2Fphish'
+    );
+
+    await screen.findByText('account_switcher.redirecting');
+
+    await waitFor(() => {
+      expect(mocks.replace).toHaveBeenCalledWith('/onboarding');
+    });
+    expect(mocks.replace).not.toHaveBeenCalledWith('//evil.test/phish');
+    expect(mocks.assign).not.toHaveBeenCalled();
+    queryClient.clear();
+  });
+
   it('hard redirects authenticated bootstrap for local Portless platform verify-token returnUrls', async () => {
     const queryClient = renderLoginForm(
       localPortlessPlatformVerifyTokenReturnUrl

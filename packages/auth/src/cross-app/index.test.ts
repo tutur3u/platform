@@ -224,6 +224,11 @@ describe('normalizeClientRedirectPath', () => {
     'https://evil.test/dashboard',
     '//evil.test/dashboard',
     '/\\evil.test/dashboard',
+    '/dashboard\\evil',
+    '/\t//evil.test/dashboard',
+    '/\n/evil.test/dashboard',
+    '/\u0000/dashboard',
+    '/\u007F/dashboard',
   ])('falls back for unsafe redirect path %s', (nextUrl) => {
     expect(normalizeClientRedirectPath(nextUrl, '/onboarding')).toBe(
       '/onboarding'
@@ -236,6 +241,7 @@ describe('verifyRouteToken', () => {
     'javascript:globalThis.__xss_marker=1',
     'https://evil.test/dashboard',
     '//evil.test/dashboard',
+    '/\t//evil.test/dashboard',
   ])('falls back when no token is supplied with unsafe nextUrl %s', async (nextUrl) => {
     const router = createMockRouter();
 

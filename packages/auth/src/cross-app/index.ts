@@ -261,12 +261,25 @@ export function normalizeClientRedirectPath(
   if (
     !nextUrl?.startsWith('/') ||
     nextUrl.startsWith('//') ||
-    nextUrl.startsWith('/\\')
+    nextUrl.includes('\\') ||
+    hasAsciiControlCharacter(nextUrl)
   ) {
     return fallbackPath;
   }
 
   return nextUrl;
+}
+
+function hasAsciiControlCharacter(value: string) {
+  for (let index = 0; index < value.length; index += 1) {
+    const charCode = value.charCodeAt(index);
+
+    if (charCode <= 0x1f || charCode === 0x7f) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export const verifyRouteToken = async ({
