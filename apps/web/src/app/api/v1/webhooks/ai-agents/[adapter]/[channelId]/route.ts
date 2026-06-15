@@ -5,6 +5,7 @@ import {
   assertWebhookAdapter,
   createAiAgentChatRuntime,
 } from '@/lib/ai-agents/runtime';
+import type { AiAgentChannelConfig } from '@/lib/ai-agents/types';
 import {
   serverLogger,
   withRequestLogDrain,
@@ -15,6 +16,71 @@ interface Params {
     adapter: string;
     channelId: string;
   }>;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function readString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function readGatewayChannelIds(data: Record<string, unknown>) {
+  const channelIds = new Set<string>();
+  const directChannelId = readString(data.channel_id);
+  const thread = asRecord(data.thread);
+  const parentChannelId = readString(thread?.parent_id);
+
+  if (directChannelId) channelIds.add(directChannelId);
+  if (parentChannelId) channelIds.add(parentChannelId);
+
+  return channelIds;
+}
+
+async function validateDiscordGatewayBinding(
+  request: Request,
+  channel: AiAgentChannelConfig
+) {
+  const expectedGuildId = channel.discordGuildId?.trim() || null;
+  const expectedChannelId = channel.externalChannelId?.trim() || null;
+
+  if (!expectedGuildId || !expectedChannelId) {
+    return NextResponse.json(
+      {
+        error:
+          'Discord Gateway forwarding requires a configured guild and channel binding',
+      },
+      { status: 403 }
+    );
+  }
+
+  const payload = asRecord(await request.json().catch(() => null));
+  const data = asRecord(payload?.data);
+
+  if (!data) {
+    return NextResponse.json(
+      { error: 'Invalid Discord Gateway event payload' },
+      { status: 400 }
+    );
+  }
+
+  const guildId = readString(data.guild_id);
+  const channelIds = readGatewayChannelIds(data);
+
+  if (guildId !== expectedGuildId || !channelIds.has(expectedChannelId)) {
+    return NextResponse.json(
+      {
+        error:
+          'Discord Gateway event does not match the configured AI agent channel',
+      },
+      { status: 403 }
+    );
+  }
+
+  return null;
 }
 
 async function handleWebhook(request: NextRequest, { params }: Params) {
@@ -61,16 +127,23 @@ async function handleWebhook(request: NextRequest, { params }: Params) {
 
     if (
       adapter === 'discord' &&
-      request.headers.has('x-discord-gateway-token') &&
-      channel.workspaceId !== ROOT_WORKSPACE_ID
+      request.headers.has('x-discord-gateway-token')
     ) {
-      return NextResponse.json(
-        {
-          error:
-            'Discord Gateway forwarding is restricted to the internal workspace',
-        },
-        { status: 403 }
+      if (channel.workspaceId !== ROOT_WORKSPACE_ID) {
+        return NextResponse.json(
+          {
+            error:
+              'Discord Gateway forwarding is restricted to the internal workspace',
+          },
+          { status: 403 }
+        );
+      }
+
+      const bindingError = await validateDiscordGatewayBinding(
+        request.clone(),
+        channel
       );
+      if (bindingError) return bindingError;
     }
 
     const chat = await createAiAgentChatRuntime({ agent, channel });

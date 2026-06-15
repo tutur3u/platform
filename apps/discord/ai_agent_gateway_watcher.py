@@ -113,6 +113,15 @@ class WatcherConfig:
         return url
 
 
+@dataclass(frozen=True)
+class WatcherTarget:
+    """apps/web AI-agent webhook target with optional Discord scope metadata."""
+
+    webhook_url: str
+    discord_guild_id: str | None = None
+    external_channel_id: str | None = None
+
+
 def build_forwarded_gateway_event(
     packet: Mapping[str, Any], timestamp_ms: int | None = None
 ) -> dict[str, Any] | None:
@@ -127,6 +136,43 @@ def build_forwarded_gateway_event(
         "timestamp": timestamp_ms if timestamp_ms is not None else int(time.time() * 1000),
         "type": f"GATEWAY_{event_type}",
     }
+
+
+def _string_value(value: Any) -> str | None:
+    return value.strip() if isinstance(value, str) and value.strip() else None
+
+
+def _packet_channel_ids(data: Mapping[str, Any]) -> set[str]:
+    channel_ids = set()
+    direct_channel_id = _string_value(data.get("channel_id"))
+    thread = data.get("thread")
+    parent_channel_id = (
+        _string_value(thread.get("parent_id")) if isinstance(thread, Mapping) else None
+    )
+
+    if direct_channel_id:
+        channel_ids.add(direct_channel_id)
+    if parent_channel_id:
+        channel_ids.add(parent_channel_id)
+
+    return channel_ids
+
+
+def gateway_packet_matches_target(packet: Mapping[str, Any], target: WatcherTarget) -> bool:
+    data = packet.get("d")
+
+    if not target.discord_guild_id and not target.external_channel_id:
+        return True
+
+    if not isinstance(data, Mapping):
+        return False
+
+    if target.discord_guild_id and _string_value(data.get("guild_id")) != target.discord_guild_id:
+        return False
+
+    return not (
+        target.external_channel_id and target.external_channel_id not in _packet_channel_ids(data)
+    )
 
 
 async def forward_gateway_packet(
@@ -172,8 +218,19 @@ async def resolve_watcher_webhook_urls(
 ) -> tuple[str, ...]:
     """Resolve apps/web webhook URLs for root-internal deployed Discord targets."""
 
+    targets = await resolve_watcher_targets(config=config, session=session)
+    return tuple(target.webhook_url for target in targets)
+
+
+async def resolve_watcher_targets(
+    *,
+    config: WatcherConfig,
+    session: Any,
+) -> tuple[WatcherTarget, ...]:
+    """Resolve apps/web webhook targets for root-internal deployed Discord channels."""
+
     if config.webhook_urls:
-        return config.webhook_urls
+        return tuple(WatcherTarget(webhook_url=url) for url in config.webhook_urls)
 
     if not config.watcher_secret:
         raise ValueError("DISCORD_AI_AGENT_GATEWAY_WATCHER_SECRET is required")
@@ -191,16 +248,23 @@ async def resolve_watcher_webhook_urls(
         payload = await response.json()
 
     targets = payload.get("targets") if isinstance(payload, dict) else None
-    webhook_urls = tuple(
-        target.get("webhookUrl")
+    watcher_targets = tuple(
+        WatcherTarget(
+            discord_guild_id=target.get("discordGuildId"),
+            external_channel_id=target.get("externalChannelId"),
+            webhook_url=target["webhookUrl"],
+        )
         for target in targets or []
-        if isinstance(target, dict) and isinstance(target.get("webhookUrl"), str)
+        if isinstance(target, dict)
+        and isinstance(target.get("webhookUrl"), str)
+        and isinstance(target.get("discordGuildId"), str)
+        and isinstance(target.get("externalChannelId"), str)
     )
 
-    if not webhook_urls:
+    if not watcher_targets:
         raise RuntimeError("Discord Gateway watcher configuration did not return webhook targets")
 
-    return webhook_urls
+    return watcher_targets
 
 
 async def forward_gateway_packet_to_targets(
@@ -208,20 +272,27 @@ async def forward_gateway_packet_to_targets(
     bot_token: str,
     packet: Mapping[str, Any],
     session: Any,
-    webhook_urls: Sequence[str],
+    targets: Sequence[WatcherTarget] | None = None,
+    webhook_urls: Sequence[str] | None = None,
     timestamp_ms: int | None = None,
 ) -> bool:
     """Forward one Gateway packet to every configured apps/web webhook target."""
 
     forwarded = False
+    resolved_targets = tuple(targets or ()) or tuple(
+        WatcherTarget(webhook_url=url) for url in webhook_urls or ()
+    )
 
-    for webhook_url in webhook_urls:
+    for target in resolved_targets:
+        if not gateway_packet_matches_target(packet, target):
+            continue
+
         forwarded = (
             await forward_gateway_packet(
                 bot_token=bot_token,
                 packet=packet,
                 session=session,
-                webhook_url=webhook_url,
+                webhook_url=target.webhook_url,
                 timestamp_ms=timestamp_ms,
             )
             or forwarded
@@ -253,7 +324,7 @@ class DiscordAiAgentGatewayWatcher:
             aiohttp.ClientSession() as session,
             session.ws_connect(self.config.gateway_url) as ws,
         ):
-            webhook_urls = await resolve_watcher_webhook_urls(
+            targets = await resolve_watcher_targets(
                 config=self.config,
                 session=session,
             )
@@ -288,7 +359,7 @@ class DiscordAiAgentGatewayWatcher:
                             bot_token=self.config.bot_token,
                             packet=packet,
                             session=session,
-                            webhook_urls=webhook_urls,
+                            targets=targets,
                         )
                     elif message.type in {
                         aiohttp.WSMsgType.CLOSED,

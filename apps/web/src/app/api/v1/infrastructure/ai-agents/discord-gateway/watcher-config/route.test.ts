@@ -139,6 +139,13 @@ describe('Discord Gateway watcher config route', () => {
             webhookUrl:
               'https://tuturuuu.com/api/v1/webhooks/ai-agents/zalo/root-zalo',
           }),
+          channel({
+            discordGuildId: null,
+            externalChannelId: null,
+            id: 'unscoped-root-discord',
+            webhookUrl:
+              'https://tuturuuu.com/api/v1/webhooks/ai-agents/discord/unscoped-root-discord',
+          }),
         ],
       }),
       agent({

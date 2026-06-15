@@ -85,6 +85,8 @@ async function handleGet(request: NextRequest) {
           channel.enabled &&
           channel.status === 'deployed' &&
           channel.workspaceId === ROOT_WORKSPACE_ID &&
+          Boolean(channel.discordGuildId?.trim()) &&
+          Boolean(channel.externalChannelId?.trim()) &&
           Boolean(channel.webhookUrl)
         );
       })

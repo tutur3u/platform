@@ -2,9 +2,12 @@ import pytest
 
 from ai_agent_gateway_watcher import (
     WatcherConfig,
+    WatcherTarget,
     build_forwarded_gateway_event,
     forward_gateway_packet,
     forward_gateway_packet_to_targets,
+    gateway_packet_matches_target,
+    resolve_watcher_targets,
     resolve_watcher_webhook_urls,
 )
 
@@ -93,9 +96,16 @@ class _GetResponse:
             "targets": [
                 {
                     "channelId": "root-discord",
+                    "discordGuildId": "guild-1",
+                    "externalChannelId": "discord-channel-1",
                     "webhookUrl": "https://example.com/webhook/root-discord",
                     "workspaceId": "00000000-0000-0000-0000-000000000000",
-                }
+                },
+                {
+                    "channelId": "unscoped-root-discord",
+                    "webhookUrl": "https://example.com/webhook/unscoped-root-discord",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                },
             ]
         }
 
@@ -184,6 +194,61 @@ async def test_resolve_watcher_webhook_urls_uses_apps_web_config_endpoint():
 
 
 @pytest.mark.asyncio
+async def test_resolve_watcher_targets_preserves_apps_web_discord_scope():
+    session = _Session()
+    credential = "bot-token"
+    watcher_credential = "watcher-secret"
+    config = WatcherConfig(
+        bot_token=credential,
+        platform_url="https://tuturuuu.com",
+        target_channel_id="root-discord",
+        watcher_secret=watcher_credential,
+    )
+
+    targets = await resolve_watcher_targets(
+        config=config,
+        session=session,
+    )
+
+    assert targets == (
+        WatcherTarget(
+            discord_guild_id="guild-1",
+            external_channel_id="discord-channel-1",
+            webhook_url="https://example.com/webhook/root-discord",
+        ),
+    )
+
+
+def test_gateway_packet_matches_configured_target_scope():
+    target = WatcherTarget(
+        discord_guild_id="guild-1",
+        external_channel_id="discord-channel-1",
+        webhook_url="https://example.com/webhook/root-discord",
+    )
+
+    assert gateway_packet_matches_target(
+        {
+            "d": {
+                "channel_id": "thread-1",
+                "guild_id": "guild-1",
+                "thread": {"parent_id": "discord-channel-1"},
+            },
+            "op": 0,
+            "t": "MESSAGE_CREATE",
+        },
+        target,
+    )
+    assert not gateway_packet_matches_target(
+        {
+            "d": {"channel_id": "other-channel", "guild_id": "guild-1"},
+            "op": 0,
+            "t": "MESSAGE_CREATE",
+        },
+        target,
+    )
+
+
+@pytest.mark.asyncio
 async def test_forward_gateway_packet_to_targets_posts_each_webhook_url():
     session = _Session()
     credential = "bot-token"
@@ -204,3 +269,30 @@ async def test_forward_gateway_packet_to_targets_posts_each_webhook_url():
         ("https://example.com/webhook/root-discord",),
         ("https://example.com/webhook/secondary-root-discord",),
     ]
+
+
+@pytest.mark.asyncio
+async def test_forward_gateway_packet_to_targets_skips_unmatched_discord_scope():
+    session = _Session()
+    credential = "bot-token"
+
+    forwarded = await forward_gateway_packet_to_targets(
+        bot_token=credential,
+        packet={
+            "d": {"channel_id": "other-channel", "guild_id": "guild-1"},
+            "op": 0,
+            "t": "MESSAGE_CREATE",
+        },
+        session=session,
+        targets=(
+            WatcherTarget(
+                discord_guild_id="guild-1",
+                external_channel_id="discord-channel-1",
+                webhook_url="https://example.com/webhook/root-discord",
+            ),
+        ),
+        timestamp_ms=1_718_000_000_000,
+    )
+
+    assert forwarded is False
+    assert session.calls == []

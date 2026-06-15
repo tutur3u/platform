@@ -33,8 +33,10 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 function channel(overrides: Record<string, unknown> = {}) {
   return {
     adapter: 'discord',
+    discordGuildId: 'guild-1',
     displayName: 'Discord',
     enabled: true,
+    externalChannelId: 'discord-channel-1',
     id: 'discord-channel',
     lastDeployedAt: '2026-06-03T00:00:00.000Z',
     lastError: null,
@@ -66,8 +68,18 @@ function agent(overrides: Record<string, unknown> = {}) {
 }
 
 async function callRoute({
+  body = {
+    data: {
+      channel_id: 'discord-channel-1',
+      guild_id: 'guild-1',
+      id: 'message-1',
+    },
+    timestamp: 1_718_000_000_000,
+    type: 'GATEWAY_MESSAGE_CREATE',
+  },
   gatewayToken = 'gateway-token',
 }: {
+  body?: unknown;
   gatewayToken?: string | null;
 } = {}) {
   const { POST } = await import('./route');
@@ -80,11 +92,7 @@ async function callRoute({
   const request = new Request(
     'https://tuturuuu.com/api/v1/webhooks/ai-agents/discord/discord-channel',
     {
-      body: JSON.stringify({
-        data: { id: 'message-1' },
-        timestamp: 1_718_000_000_000,
-        type: 'GATEWAY_MESSAGE_CREATE',
-      }),
+      body: JSON.stringify(body),
       headers,
       method: 'POST',
     }
@@ -136,6 +144,64 @@ describe('AI agent webhook route', () => {
       channel: channel(),
     });
     expect(mocks.webhookHandler).toHaveBeenCalledOnce();
+  });
+
+  it('rejects Discord Gateway events from a different guild or channel', async () => {
+    const response = await callRoute({
+      body: {
+        data: {
+          channel_id: 'other-channel',
+          guild_id: 'guild-1',
+          id: 'message-1',
+        },
+        timestamp: 1_718_000_000_000,
+        type: 'GATEWAY_MESSAGE_CREATE',
+      },
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error:
+        'Discord Gateway event does not match the configured AI agent channel',
+    });
+    expect(mocks.createAiAgentChatRuntime).not.toHaveBeenCalled();
+  });
+
+  it('allows Discord Gateway thread events under the configured channel', async () => {
+    const response = await callRoute({
+      body: {
+        data: {
+          channel_id: 'thread-1',
+          guild_id: 'guild-1',
+          id: 'message-1',
+          thread: {
+            id: 'thread-1',
+            parent_id: 'discord-channel-1',
+          },
+        },
+        timestamp: 1_718_000_000_000,
+        type: 'GATEWAY_MESSAGE_CREATE',
+      },
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.webhookHandler).toHaveBeenCalledOnce();
+  });
+
+  it('rejects Discord Gateway events when the channel has no Discord binding', async () => {
+    mocks.getAiAgentChannelById.mockResolvedValue({
+      agent: agent(),
+      channel: channel({ discordGuildId: null }),
+    });
+
+    const response = await callRoute();
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error:
+        'Discord Gateway forwarding requires a configured guild and channel binding',
+    });
+    expect(mocks.createAiAgentChatRuntime).not.toHaveBeenCalled();
   });
 
   it('keeps normal non-Gateway Discord webhooks available for configured channels', async () => {
