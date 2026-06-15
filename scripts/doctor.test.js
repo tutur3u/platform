@@ -12,6 +12,8 @@ const {
   checkSupabaseStatus,
   collectDoctorChecks,
   formatDoctorReport,
+  getPortlessAliasName,
+  getPortlessAliasRemoveCommand,
   getFixActions,
   getFixSteps,
   parsePortlessRoutes,
@@ -108,7 +110,13 @@ test('checkPortlessRoutes fails (and offers a reset) when a live route is dead',
 
 test('checkPortlessRoutes only warns for a dead static alias', () => {
   const { annotated, staleAlias, staleDynamic } = analyzePortlessRoutes(
-    [{ hostname: 'zalo.tuturuuu.localhost', port: 7821, pid: 0 }],
+    [
+      {
+        hostname: 'zalo-qr-chat-setup.chat.tuturuuu.localhost',
+        port: 7821,
+        pid: 0,
+      },
+    ],
     new Map([[7821, false]])
   );
 
@@ -120,6 +128,12 @@ test('checkPortlessRoutes only warns for a dead static alias', () => {
   });
   assert.equal(check.status, 'warn');
   assert.equal(check.fix, undefined);
+  assert.match(check.detail, /inactive static alias/u);
+  assert.match(
+    check.routes.join('\n'),
+    /inactive alias \(remove: bunx portless alias --remove zalo-qr-chat-setup\.chat\.tuturuuu\)/u
+  );
+  assert.match(check.hint, /does not delete static aliases/u);
 });
 
 test('checkPortlessRoutes warns when no routes are registered', () => {
@@ -234,6 +248,21 @@ test('getFixSteps maps actions to portless command sequences', () => {
   assert.deepEqual(getFixSteps('unknown'), []);
 });
 
+test('getPortlessAliasRemoveCommand removes only the .localhost suffix', () => {
+  assert.equal(
+    getPortlessAliasName('zalo-qr-chat-setup.chat.tuturuuu.localhost'),
+    'zalo-qr-chat-setup.chat.tuturuuu'
+  );
+  assert.equal(
+    getPortlessAliasRemoveCommand('zalo-qr-chat-setup.chat.tuturuuu.localhost'),
+    'bunx portless alias --remove zalo-qr-chat-setup.chat.tuturuuu'
+  );
+  assert.equal(
+    getPortlessAliasRemoveCommand('custom.internal.test'),
+    'bunx portless alias --remove custom.internal.test'
+  );
+});
+
 test('summarizeChecks computes a non-zero exit code on failure', () => {
   assert.deepEqual(summarizeChecks([{ status: 'ok' }, { status: 'warn' }]), {
     exitCode: 0,
@@ -330,6 +359,25 @@ test('formatDoctorReport renders a status tag per check', () => {
   assert.match(report, /\[FAIL\] Portless route health/u);
   assert.match(report, /-> reset it/u);
   assert.match(report, /Run `bun doctor --fix`/u);
+});
+
+test('formatDoctorReport frames warning-only reports as optional cleanup', () => {
+  const report = formatDoctorReport([
+    {
+      id: 'portless-routes',
+      title: 'Portless route health',
+      status: 'warn',
+      detail: '1 inactive static alias',
+      routes: [
+        'x.localhost -> :7815 inactive alias (remove: bunx portless alias --remove x)',
+      ],
+      hint: 'remove it',
+    },
+  ]);
+
+  assert.match(report, /No blocking issues/u);
+  assert.match(report, /optional cleanup/u);
+  assert.match(report, /bunx portless alias --remove x/u);
 });
 
 test('formatDoctorReport can color status tags and route health', () => {

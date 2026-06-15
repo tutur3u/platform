@@ -235,7 +235,7 @@ overlapping or crashed dev sessions is a **stale routing table**: the proxy
 still points a live app route at a dead dev-server port, so cross-app internal
 API calls return `404`. The doctor flags those routes as `DEAD` and exits
 non-zero. Static aliases for apps you simply are not running are reported as
-warnings, not failures.
+warnings, not failures, and include an exact cleanup command.
 
 Apply the safe automatic Portless repair (start the proxy, or reset it when
 routes are stale) and re-run the checks:
@@ -255,6 +255,15 @@ bun portless:reset
 
 After a reset, restart your dev servers (for example `bun dev:inventory`) so
 each app re-registers its route with the new proxy.
+
+If `bun doctor` still warns about an inactive static alias after a reset, that
+alias was created with `portless alias` and is not deleted by proxy resets.
+Start the app if you still use the alias, or remove the alias shown in the
+doctor output:
+
+```bash
+bunx portless alias --remove <alias-name>
+```
 
 ### Start Local Supabase Instance
 

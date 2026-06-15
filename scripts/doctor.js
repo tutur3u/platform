@@ -190,6 +190,16 @@ function formatPortStatus(name, port, reachable) {
   return `${name} :${port} ${reachable ? 'ok' : 'down'}`;
 }
 
+function getPortlessAliasName(hostname) {
+  return hostname.endsWith('.localhost')
+    ? hostname.slice(0, -'.localhost'.length)
+    : hostname;
+}
+
+function getPortlessAliasRemoveCommand(hostname) {
+  return `bunx portless alias --remove ${getPortlessAliasName(hostname)}`;
+}
+
 async function checkSupabaseStatus({
   dockerOk,
   ports = SUPABASE_PORTS,
@@ -338,12 +348,15 @@ function checkPortlessRoutes({
     };
   }
 
-  const routeLines = annotated.map(
-    (route) =>
-      `${route.hostname} -> :${route.port} ${
-        route.reachable ? 'ok' : 'DEAD'
-      }${route.isAlias ? ' (alias)' : ''}`
-  );
+  const routeLines = annotated.map((route) => {
+    if (route.isAlias && !route.reachable) {
+      return `${route.hostname} -> :${route.port} inactive alias (remove: ${getPortlessAliasRemoveCommand(route.hostname)})`;
+    }
+
+    return `${route.hostname} -> :${route.port} ${
+      route.reachable ? 'ok' : 'DEAD'
+    }${route.isAlias ? ' (alias)' : ''}`;
+  });
 
   if (staleDynamic.length > 0) {
     return {
@@ -360,9 +373,9 @@ function checkPortlessRoutes({
     return {
       ...base,
       status: 'warn',
-      detail: `${staleAlias.length} alias(es) point to a port with no running server`,
+      detail: `${staleAlias.length} inactive static alias(es) point to a port with no running server`,
       routes: routeLines,
-      hint: 'Start that app, or remove the alias with `portless alias --remove <name>`.',
+      hint: 'Start that app if you still use the alias, or run the remove command shown above. `bun portless:reset` does not delete static aliases.',
     };
   }
 
@@ -498,6 +511,7 @@ function formatStatusTag(status, colors) {
 function colorizeStatusWords(line, colors) {
   return line
     .replace(/\bDEAD\b/gu, colors.failStrong('DEAD'))
+    .replace(/\binactive alias\b/gu, colors.warn('inactive alias'))
     .replace(/\bdown\b/gu, colors.warn('down'))
     .replace(/\bok\b/gu, colors.ok('ok'));
 }
@@ -531,7 +545,9 @@ function formatDoctorReport(checks, options = {}) {
     );
   } else if (summary.warn > 0) {
     lines.push(
-      colors.warnStrong(`No blocking issues. ${summary.warn} warning(s) above.`)
+      colors.warnStrong(
+        `No blocking issues. ${summary.warn} warning(s) above; follow the hints for optional cleanup.`
+      )
     );
   } else {
     lines.push(colors.okStrong('All checks passed.'));
@@ -643,6 +659,8 @@ module.exports = {
   collectDoctorChecks,
   createPortProbe,
   formatDoctorReport,
+  getPortlessAliasName,
+  getPortlessAliasRemoveCommand,
   getFixActions,
   getFixSteps,
   parsePortlessRoutes,
