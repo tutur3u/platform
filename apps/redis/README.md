@@ -11,6 +11,25 @@ bun redis:start
 
 The `redis:start` script runs `docker compose up -d`, which launches Redis on port 6379 and SRH on port 8079.
 
+From the repository root, prefer the setup helper when apps/web should use this
+local stack:
+
+```bash
+bun redis:setup
+```
+
+It writes the local SRH URL and token to `apps/web/.env.local`, starts the Redis
+stack, and keeps the token redacted in command output.
+
+To clear the local Redis database, run this from the repository root:
+
+```bash
+bun redis:reset
+```
+
+The reset helper keeps the apps/web env wiring in place, starts the local stack
+if needed, then runs `FLUSHALL` inside the Redis container.
+
 ## Configure your app
 
 1. **Point your environment at SRH**

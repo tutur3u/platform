@@ -10,11 +10,17 @@ const {
   checkPortlessRoutes,
   checkRedisStatus,
   checkSupabaseStatus,
+  checkSupabaseEnvConsistency,
+  checkWebRedisEnv,
   collectDoctorChecks,
   formatDoctorReport,
+  getPortlessAliasName,
+  getPortlessAliasRemoveCommand,
   getFixActions,
   getFixSteps,
+  parseEnvContent,
   parsePortlessRoutes,
+  redactEnvValue,
   runDoctor,
   shouldUseColor,
   summarizeChecks,
@@ -108,7 +114,13 @@ test('checkPortlessRoutes fails (and offers a reset) when a live route is dead',
 
 test('checkPortlessRoutes only warns for a dead static alias', () => {
   const { annotated, staleAlias, staleDynamic } = analyzePortlessRoutes(
-    [{ hostname: 'zalo.tuturuuu.localhost', port: 7821, pid: 0 }],
+    [
+      {
+        hostname: 'zalo-qr-chat-setup.chat.tuturuuu.localhost',
+        port: 7821,
+        pid: 0,
+      },
+    ],
     new Map([[7821, false]])
   );
 
@@ -120,9 +132,15 @@ test('checkPortlessRoutes only warns for a dead static alias', () => {
   });
   assert.equal(check.status, 'warn');
   assert.equal(check.fix, undefined);
+  assert.match(check.detail, /inactive static alias/u);
+  assert.match(
+    check.routes.join('\n'),
+    /inactive alias \(remove: bunx portless alias --remove zalo-qr-chat-setup\.chat\.tuturuuu\)/u
+  );
+  assert.match(check.hint, /does not delete static aliases/u);
 });
 
-test('checkPortlessRoutes warns when no routes are registered', () => {
+test('checkPortlessRoutes warns only when route state is missing', () => {
   assert.equal(
     checkPortlessRoutes({
       annotated: [],
@@ -139,7 +157,7 @@ test('checkPortlessRoutes warns when no routes are registered', () => {
       staleAlias: [],
       staleDynamic: [],
     }).status,
-    'warn'
+    'ok'
   );
 });
 
@@ -210,6 +228,167 @@ test('checkRedisStatus requires Redis and the HTTP bridge', async () => {
   assert.match(partial.detail, /HTTP bridge :8079 down/u);
 });
 
+test('parseEnvContent handles comments, quotes, and export prefixes', () => {
+  assert.deepEqual(
+    parseEnvContent(`
+# comment
+export NEXT_PUBLIC_SUPABASE_URL="http://localhost:8001"
+SUPABASE_SECRET_KEY='secret value'
+PLAIN=value # comment
+`),
+    {
+      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+      PLAIN: 'value',
+      SUPABASE_SECRET_KEY: 'secret value',
+    }
+  );
+});
+
+test('checkSupabaseEnvConsistency warns compactly by default and expands redacted values in verbose reports', () => {
+  const secretA = 'sb_secret_alpha_should_not_leak';
+  const secretB = 'sb_secret_beta_should_not_leak';
+  const check = checkSupabaseEnvConsistency({
+    envFiles: [
+      {
+        relativePath: 'apps/web/.env.local',
+        values: {
+          NEXT_PUBLIC_SUPABASE_URL: 'https://alpha.supabase.co',
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+            'sb_publishable_alpha_should_not_leak',
+          SUPABASE_SECRET_KEY: secretA,
+        },
+      },
+      {
+        relativePath: 'apps/chat/.env.local',
+        values: {
+          NEXT_PUBLIC_SUPABASE_URL: 'https://beta.supabase.co',
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+            'sb_publishable_beta_should_not_leak',
+          SUPABASE_SECRET_KEY: secretB,
+        },
+      },
+    ],
+  });
+  const report = formatDoctorReport([check]);
+  const verboseReport = formatDoctorReport([check], { verbose: true });
+
+  assert.equal(check.status, 'warn');
+  assert.match(report, /NEXT_PUBLIC_SUPABASE_URL: 2 values across 2 file/u);
+  assert.match(report, /bun doctor --verbose/u);
+  assert.doesNotMatch(report, /https:\/\/<project-ref>\.supabase\.co/u);
+  assert.match(verboseReport, /https:\/\/<project-ref>\.supabase\.co/u);
+  assert.match(verboseReport, /<redacted sha256:/u);
+  assert.doesNotMatch(report, /alpha_should_not_leak/u);
+  assert.doesNotMatch(report, /beta_should_not_leak/u);
+  assert.doesNotMatch(verboseReport, /alpha_should_not_leak/u);
+  assert.doesNotMatch(verboseReport, /beta_should_not_leak/u);
+});
+
+test('checkSupabaseEnvConsistency scopes mismatches to app env files supplied by the caller', () => {
+  const check = checkSupabaseEnvConsistency({
+    envFiles: [
+      {
+        relativePath: 'apps/web/.env.local',
+        values: {
+          NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'publishable',
+          SUPABASE_SECRET_KEY: 'secret',
+        },
+      },
+      {
+        relativePath: 'apps/chat/.env.local',
+        values: {
+          NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'publishable',
+          SUPABASE_SECRET_KEY: 'secret',
+        },
+      },
+    ],
+  });
+
+  assert.equal(check.status, 'ok');
+});
+
+test('checkSupabaseEnvConsistency passes when app env keys match', () => {
+  const check = checkSupabaseEnvConsistency({
+    envFiles: [
+      {
+        relativePath: 'apps/web/.env.local',
+        values: {
+          NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'publishable',
+          SUPABASE_SECRET_KEY: 'secret',
+        },
+      },
+      {
+        relativePath: 'apps/tasks/.env.local',
+        values: {
+          NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'publishable',
+          SUPABASE_SECRET_KEY: 'secret',
+        },
+      },
+    ],
+  });
+
+  assert.equal(check.status, 'ok');
+  assert.match(check.detail, /matching Supabase keys/u);
+});
+
+test('checkWebRedisEnv reports missing or Docker-only Redis env without leaking token', () => {
+  const missing = checkWebRedisEnv({
+    envFile: {
+      exists: true,
+      relativePath: 'apps/web/.env.local',
+      values: { UPSTASH_REDIS_REST_URL: '' },
+    },
+  });
+  assert.equal(missing.status, 'warn');
+  assert.match(missing.items.join('\n'), /UPSTASH_REDIS_REST_TOKEN/u);
+
+  const token = 'redis-token-that-should-not-leak';
+  const dockerOnly = checkWebRedisEnv({
+    envFile: {
+      exists: true,
+      relativePath: 'apps/web/.env.local',
+      values: {
+        UPSTASH_REDIS_REST_TOKEN: token,
+        UPSTASH_REDIS_REST_URL: 'http://serverless-redis-http:80',
+      },
+    },
+  });
+  const report = formatDoctorReport([dockerOnly]);
+
+  assert.equal(dockerOnly.status, 'warn');
+  assert.match(report, /serverless-redis-http/u);
+  assert.doesNotMatch(report, new RegExp(token, 'u'));
+});
+
+test('checkWebRedisEnv passes with a native local Redis bridge URL', () => {
+  const check = checkWebRedisEnv({
+    envFile: {
+      exists: true,
+      relativePath: 'apps/web/.env.local',
+      values: {
+        UPSTASH_REDIS_REST_TOKEN: 'token',
+        UPSTASH_REDIS_REST_URL: 'http://localhost:8079',
+      },
+    },
+  });
+
+  assert.equal(check.status, 'ok');
+  assert.match(check.items.join('\n'), /<redacted sha256:/u);
+});
+
+test('redactEnvValue does not expose secret prefixes or suffixes', () => {
+  const value = 'sb_secret_super_sensitive_value';
+  const redacted = redactEnvValue('SUPABASE_SECRET_KEY', value);
+
+  assert.match(redacted, /<redacted sha256:/u);
+  assert.doesNotMatch(redacted, /sb_secret/u);
+  assert.doesNotMatch(redacted, /value/u);
+});
+
 test('getFixActions collapses to the strongest recovery', () => {
   assert.deepEqual(
     getFixActions([
@@ -232,6 +411,21 @@ test('getFixSteps maps actions to portless command sequences', () => {
     ['proxy', 'start'],
   ]);
   assert.deepEqual(getFixSteps('unknown'), []);
+});
+
+test('getPortlessAliasRemoveCommand removes only the .localhost suffix', () => {
+  assert.equal(
+    getPortlessAliasName('zalo-qr-chat-setup.chat.tuturuuu.localhost'),
+    'zalo-qr-chat-setup.chat.tuturuuu'
+  );
+  assert.equal(
+    getPortlessAliasRemoveCommand('zalo-qr-chat-setup.chat.tuturuuu.localhost'),
+    'bunx portless alias --remove zalo-qr-chat-setup.chat.tuturuuu'
+  );
+  assert.equal(
+    getPortlessAliasRemoveCommand('custom.internal.test'),
+    'bunx portless alias --remove custom.internal.test'
+  );
 });
 
 test('summarizeChecks computes a non-zero exit code on failure', () => {
@@ -258,6 +452,7 @@ test('collectDoctorChecks probes each registered route port once', async () => {
         { hostname: 'web.tuturuuu.localhost', port: 4294, pid: 7 },
       ]),
     caExists: () => true,
+    includeEnvChecks: false,
     includeLocalServiceChecks: false,
     probePort: (port) => {
       probedPorts.push(port);
@@ -282,6 +477,7 @@ test('collectDoctorChecks includes Docker, Supabase, and Redis statuses', async 
     readProxyStatus: () => READY_STATUS,
     readRoutesFile: () => null,
     caExists: () => true,
+    includeEnvChecks: false,
     probePort: (port) =>
       Promise.resolve([8001, 8002, 6379, 8079].includes(port)),
   });
@@ -289,6 +485,45 @@ test('collectDoctorChecks includes Docker, Supabase, and Redis statuses', async 
   assert.equal(checks.find((check) => check.id === 'docker').status, 'ok');
   assert.equal(checks.find((check) => check.id === 'supabase').status, 'ok');
   assert.equal(checks.find((check) => check.id === 'redis').status, 'ok');
+});
+
+test('collectDoctorChecks includes Supabase and web Redis env checks', async () => {
+  const checks = await collectDoctorChecks({
+    nodeVersion: 'v22.0.0',
+    portlessBin: 'portless',
+    readProxyStatus: () => READY_STATUS,
+    readRoutesFile: () => null,
+    readSupabaseEnvFiles: () => [
+      {
+        relativePath: 'apps/web/.env.local',
+        values: {
+          NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:8001',
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'publishable',
+          SUPABASE_SECRET_KEY: 'secret',
+        },
+      },
+    ],
+    readWebEnvFile: () => ({
+      exists: true,
+      relativePath: 'apps/web/.env.local',
+      values: {
+        UPSTASH_REDIS_REST_TOKEN: 'token',
+        UPSTASH_REDIS_REST_URL: 'http://localhost:8079',
+      },
+    }),
+    caExists: () => true,
+    includeLocalServiceChecks: false,
+    probePort: () => Promise.resolve(true),
+  });
+
+  assert.equal(
+    checks.find((check) => check.id === 'supabase-env').status,
+    'ok'
+  );
+  assert.equal(
+    checks.find((check) => check.id === 'web-redis-env').status,
+    'ok'
+  );
 });
 
 test('collectDoctorChecks makes Docker a failure and dependent services warnings', async () => {
@@ -302,6 +537,7 @@ test('collectDoctorChecks makes Docker a failure and dependent services warnings
     readProxyStatus: () => READY_STATUS,
     readRoutesFile: () => null,
     caExists: () => true,
+    includeEnvChecks: false,
     probePort: (port) => {
       throw new Error(`unexpected probe for ${port}`);
     },
@@ -330,6 +566,25 @@ test('formatDoctorReport renders a status tag per check', () => {
   assert.match(report, /\[FAIL\] Portless route health/u);
   assert.match(report, /-> reset it/u);
   assert.match(report, /Run `bun doctor --fix`/u);
+});
+
+test('formatDoctorReport frames warning-only reports as optional cleanup', () => {
+  const report = formatDoctorReport([
+    {
+      id: 'portless-routes',
+      title: 'Portless route health',
+      status: 'warn',
+      detail: '1 inactive static alias',
+      routes: [
+        'x.localhost -> :7815 inactive alias (remove: bunx portless alias --remove x)',
+      ],
+      hint: 'remove it',
+    },
+  ]);
+
+  assert.match(report, /No blocking issues/u);
+  assert.match(report, /optional cleanup/u);
+  assert.match(report, /bunx portless alias --remove x/u);
 });
 
 test('formatDoctorReport can color status tags and route health', () => {
@@ -401,6 +656,7 @@ test('runDoctor --fix runs the reset sequence and re-checks', async () => {
         { hostname: 'inventory.tuturuuu.localhost', port: 4881, pid: 1 },
       ]),
     caExists: () => true,
+    includeEnvChecks: false,
     includeLocalServiceChecks: false,
     probePort: (port) => Promise.resolve(Boolean(probeReady[port])),
   };
@@ -431,6 +687,7 @@ test('runDoctor --help short-circuits without running checks', async () => {
       },
       readRoutesFile: () => null,
       caExists: () => true,
+      includeEnvChecks: false,
       probePort: () => Promise.resolve(true),
     },
   });

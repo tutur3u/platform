@@ -228,14 +228,24 @@ bun doctor
 ```
 
 It checks the Node runtime, Docker daemon, local Supabase ports, local Redis
-ports, whether the Portless proxy is responding on port `443`, and the health of
-every registered Portless route. The report uses colored `OK`, `WARN`, and
-`FAIL` statuses in interactive terminals. The most common failure after
-overlapping or crashed dev sessions is a **stale routing table**: the proxy
-still points a live app route at a dead dev-server port, so cross-app internal
-API calls return `404`. The doctor flags those routes as `DEAD` and exits
-non-zero. Static aliases for apps you simply are not running are reported as
-warnings, not failures.
+ports, apps/web Redis env wiring, app-local Supabase env consistency, whether
+the Portless proxy is responding on port `443`, and the health of every
+registered Portless route. The report uses colored `OK`, `WARN`, and `FAIL`
+statuses in interactive terminals. Supabase env mismatch warnings are compact
+by default so secret-like values stay out of the normal output; use the verbose
+view when you need redacted per-file fingerprints:
+
+```bash
+bun doctor --verbose
+```
+
+The most common failure after overlapping or crashed dev sessions is a
+**stale routing table**: the proxy still points a live app route at a dead
+dev-server port, so cross-app internal API calls return `404`. The doctor flags
+those routes as `DEAD` and exits non-zero. Static aliases for apps you simply
+are not running are reported as warnings, not failures, and include an exact
+cleanup command. An initialized but empty Portless route table is treated as
+healthy because no apps may be running yet.
 
 Apply the safe automatic Portless repair (start the proxy, or reset it when
 routes are stale) and re-run the checks:
@@ -255,6 +265,69 @@ bun portless:reset
 
 After a reset, restart your dev servers (for example `bun dev:inventory`) so
 each app re-registers its route with the new proxy.
+
+If `bun doctor` still warns about an inactive static alias after a reset, that
+alias was created with `portless alias` and is not deleted by proxy resets.
+Start the app if you still use the alias, or remove the alias shown in the
+doctor output:
+
+```bash
+bunx portless alias --remove <alias-name>
+```
+
+If the doctor warns that app env files use mismatched Supabase values, choose
+the intended source app and keep these three keys together:
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and
+`SUPABASE_SECRET_KEY`. For quick local development, copy `apps/web/.env.local`
+to app-local `.env.local` files:
+
+```bash
+bun dev:sync:apps
+```
+
+Preview the target files first with:
+
+```bash
+bun dev:sync:apps:dry-run
+```
+
+This sync compares app env files only. The root `.env.local` can intentionally
+target a different Docker or deployment workflow without keeping the app
+mismatch warning alive.
+
+If the doctor warns that apps/web is missing Redis env, configure the local SRH
+bridge and start the Redis stack in one step:
+
+```bash
+bun redis:setup
+```
+
+`bun redis:setup` writes `UPSTASH_REDIS_REST_URL=http://localhost:8079` and the
+matching local token into `apps/web/.env.local`, then runs `bun redis:start`.
+Restart `bun dev:web` after setup so the app picks up the new env values.
+
+To clear local Redis data while keeping the same local env wiring, run:
+
+```bash
+bun redis:reset
+```
+
+This starts the local Redis stack if needed, then runs `FLUSHALL` inside the
+Redis container.
+
+To stop the local dev environment, run:
+
+```bash
+bun stop
+```
+
+This stops this repo's Portless-registered Next.js dev servers, prunes Portless
+routes, removes stale static aliases for this project, stops local Supabase,
+and finishes by running `bun doctor`. Preview the cleanup first with:
+
+```bash
+bun stop --dry-run
+```
 
 ### Start Local Supabase Instance
 
@@ -279,17 +352,13 @@ bun sb:start
 
 To stop the local supabase instance, run the following command:
 
-<CodeGroup>
-
 ```bash standard
 bun sb:stop
 ```
 
-```bash short-hand
-bun stop
-```
-
-</CodeGroup>
+`bun stop` is broader than Supabase. It stops this repo's local dev servers,
+cleans stale Portless aliases, stops Supabase, and verifies the result with
+`bun doctor`.
 
 ### Better Development Experience
 
