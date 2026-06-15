@@ -3252,6 +3252,7 @@ export type Database = {
           discount_amount: number;
           expires_at: string;
           finance_invoice_id: string | null;
+          finance_transaction_id: string | null;
           id: string;
           metadata: Json;
           note: string | null;
@@ -3283,6 +3284,7 @@ export type Database = {
           discount_amount?: number;
           expires_at: string;
           finance_invoice_id?: string | null;
+          finance_transaction_id?: string | null;
           id?: string;
           metadata?: Json;
           note?: string | null;
@@ -3314,6 +3316,7 @@ export type Database = {
           discount_amount?: number;
           expires_at?: string;
           finance_invoice_id?: string | null;
+          finance_transaction_id?: string | null;
           id?: string;
           metadata?: Json;
           note?: string | null;
@@ -29391,6 +29394,251 @@ export type Database = {
           },
         ];
       };
+      workspace_user_profile_link_submissions: {
+        Row: {
+          actor_auth_uid: string | null;
+          created_at: string;
+          id: string;
+          profile_link_id: string;
+          submitted_fields: string[];
+          workspace_user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_auth_uid?: string | null;
+          created_at?: string;
+          id?: string;
+          profile_link_id: string;
+          submitted_fields: string[];
+          workspace_user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_auth_uid?: string | null;
+          created_at?: string;
+          id?: string;
+          profile_link_id?: string;
+          submitted_fields?: string[];
+          workspace_user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_actor_auth_uid_fkey';
+            columns: ['actor_auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_actor_auth_uid_fkey';
+            columns: ['actor_auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_profile_link_id_fkey';
+            columns: ['profile_link_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_profile_links';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_profile_link_id_fkey';
+            columns: ['profile_link_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_profile_links_with_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_workspace_user_id_fkey';
+            columns: ['workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_workspace_user_id_fkey';
+            columns: ['workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_workspace_user_id_fkey';
+            columns: ['workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_workspace_user_id_fkey';
+            columns: ['workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_workspace_user_id_fkey';
+            columns: ['workspace_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_link_submissions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_user_profile_links: {
+        Row: {
+          allowed_fields: string[];
+          code: string;
+          created_at: string;
+          creator_id: string;
+          expires_at: string | null;
+          id: string;
+          max_uses: number | null;
+          mode: string;
+          revoked_at: string | null;
+          target_user_id: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          allowed_fields?: string[];
+          code: string;
+          created_at?: string;
+          creator_id: string;
+          expires_at?: string | null;
+          id?: string;
+          max_uses?: number | null;
+          mode?: string;
+          revoked_at?: string | null;
+          target_user_id?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          allowed_fields?: string[];
+          code?: string;
+          created_at?: string;
+          creator_id?: string;
+          expires_at?: string | null;
+          id?: string;
+          max_uses?: number | null;
+          mode?: string;
+          revoked_at?: string | null;
+          target_user_id?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_profile_links_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_target_user_id_fkey';
+            columns: ['target_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_target_user_id_fkey';
+            columns: ['target_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_target_user_id_fkey';
+            columns: ['target_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_target_user_id_fkey';
+            columns: ['target_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_target_user_id_fkey';
+            columns: ['target_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_user_status_changes: {
         Row: {
           actor_auth_uid: string | null;
@@ -31092,6 +31340,105 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_user_roles_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_user_profile_links_with_stats: {
+        Row: {
+          allowed_fields: string[] | null;
+          code: string | null;
+          created_at: string | null;
+          creator_id: string | null;
+          current_uses: number | null;
+          expires_at: string | null;
+          id: string | null;
+          is_expired: boolean | null;
+          is_full: boolean | null;
+          is_revoked: boolean | null;
+          max_uses: number | null;
+          mode: string | null;
+          revoked_at: string | null;
+          target_user_id: string | null;
+          updated_at: string | null;
+          ws_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_profile_links_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_target_user_id_fkey';
+            columns: ['target_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_target_user_id_fkey';
+            columns: ['target_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_target_user_id_fkey';
+            columns: ['target_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_target_user_id_fkey';
+            columns: ['target_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_target_user_id_fkey';
+            columns: ['target_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_profile_links_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -37233,7 +37580,8 @@ export type Database = {
         | 'manage_chat'
         | 'moderate_chat'
         | 'manage_infrastructure_stress_tests'
-        | 'manage_mobile_deployment_vault';
+        | 'manage_mobile_deployment_vault'
+        | 'manage_user_profile_links';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -39977,6 +40325,7 @@ export const Constants = {
         'moderate_chat',
         'manage_infrastructure_stress_tests',
         'manage_mobile_deployment_vault',
+        'manage_user_profile_links',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },
