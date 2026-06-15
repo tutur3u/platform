@@ -12,6 +12,7 @@ import {
   createRealtimeClientId,
   isBoardRealtimeEnvelope,
   LOCAL_BROADCAST_CHANNEL_PREFIX,
+  PRIVATE_TASK_REALTIME_CHANNEL_CONFIG,
   type RealtimeChannel,
   SEEN_REALTIME_EVENT_LIMIT,
 } from './useBoardRealtime.types';
@@ -205,9 +206,10 @@ export function useBoardRealtime(
       channelRef.current = null;
     }
 
-    const channel = supabase.channel(`board-realtime-${boardId}`, {
-      config: { broadcast: { self: false } },
-    });
+    const channel = supabase.channel(
+      `board-realtime-${boardId}`,
+      PRIVATE_TASK_REALTIME_CHANNEL_CONFIG
+    );
     channelRef.current = channel;
 
     channel

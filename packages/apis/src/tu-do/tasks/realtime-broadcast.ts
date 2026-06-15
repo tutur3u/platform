@@ -3,6 +3,13 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 export const BOARD_TASK_REALTIME_CHANNEL_PREFIX = 'board-realtime';
 export const TASK_USER_REALTIME_CHANNEL_PREFIX = 'task-user-realtime';
 
+const PRIVATE_TASK_REALTIME_CHANNEL_CONFIG = {
+  config: {
+    broadcast: { self: false },
+    private: true,
+  },
+} as const;
+
 export type TaskRealtimeEvent =
   | 'task:upsert'
   | 'task:delete'
@@ -133,7 +140,10 @@ async function sendTaskBroadcast({
 
   await Promise.all(
     channelNames.map(async (channelName) => {
-      const channel = sbAdmin.channel(channelName);
+      const channel = sbAdmin.channel(
+        channelName,
+        PRIVATE_TASK_REALTIME_CHANNEL_CONFIG
+      );
       try {
         await channel.send({
           type: 'broadcast',

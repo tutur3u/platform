@@ -16,6 +16,12 @@ type BoardRealtimeEnvelope = {
 
 export const LOCAL_BROADCAST_CHANNEL_PREFIX = 'tuturuuu:board-realtime';
 export const SEEN_REALTIME_EVENT_LIMIT = 500;
+export const PRIVATE_TASK_REALTIME_CHANNEL_CONFIG = {
+  config: {
+    broadcast: { self: false },
+    private: true,
+  },
+} as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

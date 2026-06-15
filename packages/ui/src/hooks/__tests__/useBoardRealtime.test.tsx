@@ -248,7 +248,7 @@ describe('useBoardRealtime', () => {
       expect(mockChannel.subscribe).toHaveBeenCalledTimes(1);
     });
 
-    it('should create channel with self: false config', () => {
+    it('should create a private channel with self: false config', () => {
       renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
         wrapper,
       });
@@ -258,7 +258,7 @@ describe('useBoardRealtime', () => {
       )();
       expect(supabaseInstance.channel).toHaveBeenCalledWith(
         'board-realtime-board-1',
-        { config: { broadcast: { self: false } } }
+        { config: { broadcast: { self: false }, private: true } }
       );
     });
 
