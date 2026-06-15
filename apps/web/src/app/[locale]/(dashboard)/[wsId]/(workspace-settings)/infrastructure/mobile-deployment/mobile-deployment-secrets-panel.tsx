@@ -13,6 +13,8 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
   MOBILE_DEPLOYMENT_ENV_KEYS,
+  MOBILE_DEPLOYMENT_FIELD_OPTIONS,
+  MOBILE_DEPLOYMENT_NON_SECRET_NAMES,
   MOBILE_DEPLOYMENT_SCALAR_NAMES,
 } from './mobile-deployment-config';
 import {
@@ -113,13 +115,21 @@ export function MobileDeploymentSecretsPanel({
   const configuredCount = rows.filter((row) => row.status?.configured).length;
 
   const openDialog = (row?: MobileDeploymentSecretRowModel) => {
+    const fieldName = row?.name ?? '';
     setDialogState({
+      currentValue: row?.status?.value ?? undefined,
       description: row ? t('editSecretDescription') : t('addSecretDescription'),
       kind: row?.kind ?? 'env',
-      name: row?.name ?? '',
+      name: fieldName,
       nameEditable: row?.nameEditable ?? true,
+      options: fieldName
+        ? MOBILE_DEPLOYMENT_FIELD_OPTIONS[fieldName]
+        : undefined,
       previousName:
         row?.kind === 'env' && row.nameEditable ? row.name : undefined,
+      secret: fieldName
+        ? !MOBILE_DEPLOYMENT_NON_SECRET_NAMES.has(fieldName)
+        : true,
       title: row ? t('editSecret') : t('addSecret'),
     });
     setDialogOpen(true);

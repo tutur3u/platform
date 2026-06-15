@@ -20,6 +20,7 @@ import {
   IOS_REQUIRED_FILE_KINDS,
   IOS_REQUIRED_SCALARS,
   MOBILE_DEPLOYMENT_ENVIRONMENT,
+  MOBILE_DEPLOYMENT_NON_SECRET_NAMES,
   MOBILE_DEPLOYMENT_SCALAR_NAMES,
   MOBILE_DEPLOYMENT_TOKEN_LOOKUP_LENGTH,
   MOBILE_DEPLOYMENT_TOKEN_PREFIX,
@@ -125,8 +126,21 @@ function mapVersionStatus(
 }
 
 function mapSecretStatus(
-  row: MobileDeploymentSecretValueRow
+  row: MobileDeploymentSecretValueRow,
+  dataKey: Buffer | null
 ): MobileDeploymentResourceStatus {
+  // Non-secret fields (public URLs, fixed identifiers, feature flags, the Play
+  // track) expose their plaintext value so an authorized vault admin can verify
+  // what was saved. A decryption failure must never break the whole page.
+  let value: string | null = null;
+  if (dataKey && MOBILE_DEPLOYMENT_NON_SECRET_NAMES.has(row.name)) {
+    try {
+      value = decryptSecretValue(row.encrypted_value, dataKey);
+    } catch {
+      value = null;
+    }
+  }
+
   return {
     configured: true,
     lastFour: row.plaintext_last_four,
@@ -135,6 +149,7 @@ function mapSecretStatus(
     size: row.value_size,
     updatedAt: row.updated_at,
     validationErrors: [],
+    value,
   };
 }
 
@@ -149,6 +164,7 @@ function mapFileStatus(
     size: row.plaintext_size,
     updatedAt: row.updated_at,
     validationErrors: row.validation_errors ?? [],
+    value: null,
   };
 }
 
@@ -397,6 +413,12 @@ export async function listMobileDeploymentState(db: AdminClient) {
     draftVersion ? listFilesForVersion(db, draftVersion.id) : [],
   ]);
 
+  // Decrypt the display version data key once so non-secret values can be
+  // surfaced to authorized admins (see mapSecretStatus).
+  const displayDataKey = displayVersion
+    ? await decryptDataKey(displayVersion.data_key_ciphertext)
+    : null;
+
   return {
     activeVersion: mapVersionStatus(
       activeVersion,
@@ -419,14 +441,14 @@ export async function listMobileDeploymentState(db: AdminClient) {
     envKeys: displaySecrets
       .filter((row) => row.kind === 'env')
       .sort((left, right) => left.name.localeCompare(right.name))
-      .map(mapSecretStatus),
+      .map((row) => mapSecretStatus(row, displayDataKey)),
     fileArtifacts: displayFiles
       .sort((left, right) => left.kind.localeCompare(right.kind))
       .map(mapFileStatus),
     scalarValues: displaySecrets
       .filter((row) => row.kind === 'scalar')
       .sort((left, right) => left.name.localeCompare(right.name))
-      .map(mapSecretStatus),
+      .map((row) => mapSecretStatus(row, displayDataKey)),
     tokens: ((tokens.data ?? []) as MobileDeploymentCiTokenRow[]).map(
       (token) => ({
         createdAt: token.created_at,
@@ -1194,7 +1216,8 @@ async function buildBundle({
 
   if (platform === 'android') {
     scalarValues.GOOGLE_PLAY_PACKAGE_NAME = EXPECTED_ANDROID_PACKAGE_NAME;
-    scalarValues.GOOGLE_PLAY_TRACK = GOOGLE_PLAY_TRACK;
+    // Use the operator-selected track; fall back to the default if unset.
+    scalarValues.GOOGLE_PLAY_TRACK ??= GOOGLE_PLAY_TRACK;
   } else {
     scalarValues.APPLE_BUNDLE_ID = EXPECTED_IOS_BUNDLE_ID;
   }

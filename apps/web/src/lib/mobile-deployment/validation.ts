@@ -2,11 +2,11 @@ import {
   BLOCKED_ENV_FILE_KEYS,
   EXPECTED_ANDROID_PACKAGE_NAME,
   EXPECTED_IOS_BUNDLE_ID,
-  GOOGLE_PLAY_TRACK,
   MAX_ENV_VALUE_BYTES,
   MAX_MOBILE_DEPLOYMENT_FILE_BYTES,
   MAX_SCALAR_VALUE_BYTES,
   MOBILE_DEPLOYMENT_FILE_KINDS,
+  MOBILE_DEPLOYMENT_GOOGLE_PLAY_TRACKS,
   MOBILE_DEPLOYMENT_SCALAR_NAMES,
   type MobileDeploymentFileKind,
   type MobileDeploymentScalarName,
@@ -206,9 +206,12 @@ export function validateScalarValue(
     );
   }
 
-  if (name === 'GOOGLE_PLAY_TRACK' && value !== GOOGLE_PLAY_TRACK) {
+  if (
+    name === 'GOOGLE_PLAY_TRACK' &&
+    !(MOBILE_DEPLOYMENT_GOOGLE_PLAY_TRACKS as readonly string[]).includes(value)
+  ) {
     throw new MobileDeploymentValidationError(
-      `GOOGLE_PLAY_TRACK must be ${GOOGLE_PLAY_TRACK}`
+      `GOOGLE_PLAY_TRACK must be one of ${MOBILE_DEPLOYMENT_GOOGLE_PLAY_TRACKS.join(', ')}`
     );
   }
 

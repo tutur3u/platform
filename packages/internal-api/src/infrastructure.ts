@@ -67,6 +67,11 @@ export interface MobileDeploymentResourceStatus {
   size: number | null;
   updatedAt: string | null;
   validationErrors: string[];
+  /**
+   * Plaintext value for non-secret fields (public URLs, fixed identifiers,
+   * feature flags, the Play track); `null` for secrets and files.
+   */
+  value: string | null;
 }
 
 export interface MobileDeploymentVersionStatus {

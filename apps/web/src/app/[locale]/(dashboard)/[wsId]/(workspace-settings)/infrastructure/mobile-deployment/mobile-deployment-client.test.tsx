@@ -71,6 +71,7 @@ const baseState = {
       size: 20,
       updatedAt: '2026-06-14T00:00:00.000Z',
       validationErrors: [],
+      value: 'https://api.tuturuuu.com',
     },
     {
       configured: true,
@@ -80,6 +81,7 @@ const baseState = {
       size: 12,
       updatedAt: '2026-06-14T00:00:00.000Z',
       validationErrors: [],
+      value: null,
     },
   ],
   fileArtifacts: [
@@ -91,6 +93,7 @@ const baseState = {
       size: 42,
       updatedAt: '2026-06-14T00:00:00.000Z',
       validationErrors: [],
+      value: null,
     },
   ],
   scalarValues: [
@@ -102,6 +105,17 @@ const baseState = {
       size: 6,
       updatedAt: '2026-06-14T00:00:00.000Z',
       validationErrors: [],
+      value: null,
+    },
+    {
+      configured: true,
+      lastFour: 'beta',
+      name: 'GOOGLE_PLAY_TRACK',
+      plaintextSha256: 'aaaabbbbcccc0000',
+      size: 4,
+      updatedAt: '2026-06-14T00:00:00.000Z',
+      validationErrors: [],
+      value: 'beta',
     },
   ],
   tokens: [],
@@ -233,6 +247,50 @@ describe('MobileDeploymentClient', () => {
       within(dialog).getByRole('button', { name: 'hideSecretValue' })
     );
     expect(valueInput).toHaveAttribute('type', 'password');
+  });
+
+  it('renders a dropdown for fields with known values', () => {
+    renderClient();
+    openTab('secretsTitle');
+
+    const trackRow = screen.getByTestId(
+      'mobile-deployment-secret-row-GOOGLE_PLAY_TRACK'
+    );
+    fireEvent.click(within(trackRow).getByRole('button', { name: 'edit' }));
+    const dialog = screen.getByRole('dialog');
+
+    // The value control is a select preselected to the stored track, not a
+    // masked text input.
+    const combobox = within(dialog).getByRole('combobox');
+    expect(combobox).toBeInTheDocument();
+    expect(within(combobox).getByText('beta')).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole('button', { name: 'showSecretValue' })
+    ).toBeNull();
+  });
+
+  it('prefills and reveals non-secret values in the edit dialog', () => {
+    renderClient();
+    openTab('secretsTitle');
+
+    const urlRow = screen.getByTestId(
+      'mobile-deployment-secret-row-API_BASE_URL'
+    );
+    fireEvent.click(within(urlRow).getByRole('button', { name: 'edit' }));
+    const dialog = screen.getByRole('dialog');
+    const valueInput = within(dialog).getByLabelText('value');
+
+    expect(valueInput).toHaveAttribute('type', 'text');
+    expect(valueInput).toHaveValue('https://api.tuturuuu.com');
+  });
+
+  it('shows stored values for non-secret fields in the row', () => {
+    renderClient();
+    openTab('secretsTitle');
+
+    expect(
+      screen.getByText('storedValue https://api.tuturuuu.com')
+    ).toBeInTheDocument();
   });
 
   it('edits and clears built-in secrets through row actions', async () => {

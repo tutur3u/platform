@@ -3,6 +3,12 @@ import type {
   MobileDeploymentScalarName,
 } from '@tuturuuu/internal-api/infrastructure';
 
+export {
+  MOBILE_DEPLOYMENT_FIELD_OPTIONS,
+  MOBILE_DEPLOYMENT_GOOGLE_PLAY_TRACKS,
+  MOBILE_DEPLOYMENT_NON_SECRET_NAMES,
+} from '@/lib/mobile-deployment/constants';
+
 export const MOBILE_DEPLOYMENT_ENV_KEYS = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',

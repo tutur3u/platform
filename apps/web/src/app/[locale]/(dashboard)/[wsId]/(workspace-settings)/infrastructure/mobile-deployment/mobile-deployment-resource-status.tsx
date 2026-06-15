@@ -88,16 +88,27 @@ export function ResourceMetadata({
   }
 
   const fingerprint = status.plaintextSha256?.slice(0, 12);
+  const hasValue = status.value != null && status.value !== '';
 
   return (
     <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground text-xs">
       {status.size != null && (
         <span>{t('sizeBytes', { count: status.size })}</span>
       )}
-      {status.lastFour && (
-        <span>{t('lastFour', { value: status.lastFour })}</span>
+      {hasValue ? (
+        <span className="break-all font-mono text-foreground/80">
+          {t('storedValue', { value: status.value ?? '' })}
+        </span>
+      ) : (
+        <>
+          {status.lastFour && (
+            <span>{t('lastFour', { value: status.lastFour })}</span>
+          )}
+          {fingerprint && (
+            <span>{t('fingerprint', { value: fingerprint })}</span>
+          )}
+        </>
       )}
-      {fingerprint && <span>{t('fingerprint', { value: fingerprint })}</span>}
       {status.updatedAt && (
         <span>
           {t('updatedAt', {

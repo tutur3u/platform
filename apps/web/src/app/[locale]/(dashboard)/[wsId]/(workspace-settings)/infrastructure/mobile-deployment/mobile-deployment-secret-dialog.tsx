@@ -12,6 +12,13 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useEffect, useState } from 'react';
 import { MobileDeploymentFieldHelp } from './mobile-deployment-field-help';
@@ -22,6 +29,12 @@ export interface SecretDialogState {
   nameEditable: boolean;
   previousName?: string;
   title: string;
+  /** Fixed-option set; when present the value is chosen from a dropdown. */
+  options?: readonly string[];
+  /** Stored plaintext value for non-secret fields, used to prefill. */
+  currentValue?: string;
+  /** Whether the value is sensitive (masked, never prefilled). Defaults true. */
+  secret?: boolean;
 }
 
 export function MobileDeploymentSecretDialog({
@@ -47,8 +60,11 @@ export function MobileDeploymentSecretDialog({
   const [error, setError] = useState<string | null>(null);
   const [showValue, setShowValue] = useState(false);
 
+  const options = state?.options;
+  const isSecret = state?.secret ?? true;
+
   useEffect(() => {
-    if (!open) {
+    if (!open || !state) {
       setName('');
       setValue('');
       setError(null);
@@ -56,10 +72,18 @@ export function MobileDeploymentSecretDialog({
       return;
     }
 
-    setName(state?.name ?? '');
-    setValue('');
+    setName(state.name ?? '');
+    // Dropdowns default to the stored value or the first option; non-secret
+    // text fields prefill the stored value; secrets always start empty.
+    if (state.options?.length) {
+      setValue(state.currentValue ?? state.options[0] ?? '');
+    } else if (state.secret === false) {
+      setValue(state.currentValue ?? '');
+    } else {
+      setValue('');
+    }
     setError(null);
-    setShowValue(false);
+    setShowValue(state.secret === false);
   }, [open, state]);
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -131,39 +155,61 @@ export function MobileDeploymentSecretDialog({
               <Label htmlFor="mobile-deployment-secret-value">
                 {t('value')}
               </Label>
-              <div className="relative">
-                <Input
-                  autoComplete="off"
-                  className="pr-10"
+              {options?.length ? (
+                <Select
                   disabled={pending}
-                  id="mobile-deployment-secret-value"
-                  onChange={(event) => {
+                  onValueChange={(next) => {
                     setError(null);
-                    setValue(event.target.value);
+                    setValue(next);
                   }}
-                  placeholder={t('secretValuePlaceholder')}
-                  type={showValue ? 'text' : 'password'}
                   value={value}
-                />
-                <Button
-                  aria-label={
-                    showValue ? t('hideSecretValue') : t('showSecretValue')
-                  }
-                  aria-pressed={showValue}
-                  className="absolute top-0 right-0 h-full px-3"
-                  disabled={pending}
-                  onClick={() => setShowValue((current) => !current)}
-                  size="icon"
-                  type="button"
-                  variant="ghost"
                 >
-                  {showValue ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </Button>
-              </div>
+                  <SelectTrigger id="mobile-deployment-secret-value">
+                    <SelectValue placeholder={t('selectValue')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {options.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="relative">
+                  <Input
+                    autoComplete="off"
+                    className="pr-10"
+                    disabled={pending}
+                    id="mobile-deployment-secret-value"
+                    onChange={(event) => {
+                      setError(null);
+                      setValue(event.target.value);
+                    }}
+                    placeholder={t('secretValuePlaceholder')}
+                    type={showValue || !isSecret ? 'text' : 'password'}
+                    value={value}
+                  />
+                  <Button
+                    aria-label={
+                      showValue ? t('hideSecretValue') : t('showSecretValue')
+                    }
+                    aria-pressed={showValue}
+                    className="absolute top-0 right-0 h-full px-3"
+                    disabled={pending}
+                    onClick={() => setShowValue((current) => !current)}
+                    size="icon"
+                    type="button"
+                    variant="ghost"
+                  >
+                    {showValue ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
             {error && (
               <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">

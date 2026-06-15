@@ -46,8 +46,16 @@ export function MobileDeploymentFieldHelp({ field }: { field: string }) {
           <p className="font-medium text-sm">{t(whatKey)}</p>
           <p className="text-muted-foreground text-xs">{t(whereKey)}</p>
           {doc.url && (
-            <p className="break-all text-muted-foreground text-xs">
-              {t('guidance.label')}: {doc.url}
+            <p className="text-muted-foreground text-xs">
+              {t('guidance.label')}:{' '}
+              <a
+                className="break-all text-primary hover:underline"
+                href={doc.url}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                {doc.url}
+              </a>
             </p>
           )}
         </TooltipContent>
