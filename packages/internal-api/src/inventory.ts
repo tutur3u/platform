@@ -1846,6 +1846,24 @@ export function listInventorySales(
   });
 }
 
+export type InventoryProductSalesRow = {
+  productId: string;
+  productName: string;
+  revenue: number;
+  unitsSold: number;
+};
+
+export function listInventorySalesByProduct(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryProductSalesRow[];
+  }>(workspaceInventoryPath(wsId, '/sales/by-product'), {
+    cache: 'no-store',
+  });
+}
+
 export function getInventorySale(
   wsId: string,
   saleId: string,

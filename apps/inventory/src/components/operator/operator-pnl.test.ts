@@ -1,6 +1,10 @@
-import type { InventorySaleSummary } from '@tuturuuu/internal-api/inventory';
+import type {
+  InventoryCostProfile,
+  InventoryProductSalesRow,
+  InventorySaleSummary,
+} from '@tuturuuu/internal-api/inventory';
 import { describe, expect, it } from 'vitest';
-import { computeProfitSummary } from './operator-pnl';
+import { buildProductPnl, computeProfitSummary } from './operator-pnl';
 
 function sale(paid: number, qty: number): InventorySaleSummary {
   return {
@@ -47,6 +51,95 @@ describe('computeProfitSummary', () => {
       revenue: 0,
       salesCount: 0,
       unitsSold: 0,
+    });
+  });
+});
+
+function productSales(
+  productId: string,
+  productName: string,
+  revenue: number,
+  unitsSold: number
+): InventoryProductSalesRow {
+  return { productId, productName, revenue, unitsSold };
+}
+
+function profileWithCost(
+  productId: string,
+  totalCostPerUnit: number,
+  grossMarginPercentage = 50
+): InventoryCostProfile {
+  return {
+    categoryId: null,
+    categoryName: null,
+    createdAt: null,
+    currency: 'USD',
+    id: `prof-${productId}`,
+    name: 'Profile',
+    notes: null,
+    productId,
+    productName: null,
+    profitShares: [],
+    scenarios: [
+      {
+        artCommissionCost: 0,
+        batchSize: 30,
+        createdAt: null,
+        id: 's1',
+        manufacturingCostPerUnit: 0,
+        metrics: {
+          batchCost: 0,
+          breakEvenQuantity: null,
+          grossMarginPercentage,
+          grossProfitPerUnit: 0,
+          totalCostPerUnit,
+        },
+        name: 'bulk',
+        otherCostPerUnit: 0,
+        packagingCostPerUnit: 0,
+        profileId: `prof-${productId}`,
+        shippingCost: 0,
+        sortOrder: 0,
+        tariffCost: 0,
+        updatedAt: null,
+        wsId: 'ws1',
+      },
+    ],
+    status: 'active',
+    targetRetailPrice: 100,
+    updatedAt: null,
+    wsId: 'ws1',
+  };
+}
+
+describe('buildProductPnl', () => {
+  it('computes COGS, profit, and margin from matched costing', () => {
+    const [row] = buildProductPnl(
+      [productSales('p1', 'Mentoring', 300, 3)],
+      [profileWithCost('p1', 40)]
+    );
+
+    expect(row).toMatchObject({
+      estCogs: 120, // 40 * 3 units
+      estProfit: 180, // 300 - 120
+      marginPercentage: 60, // 180 / 300
+      revenue: 300,
+      unitCost: 40,
+      unitsSold: 3,
+    });
+  });
+
+  it('leaves cost/margin null when no costing profile matches', () => {
+    const [row] = buildProductPnl(
+      [productSales('p2', 'Sticker', 50, 10)],
+      [profileWithCost('p1', 40)]
+    );
+
+    expect(row).toMatchObject({
+      estCogs: null,
+      estProfit: null,
+      marginPercentage: null,
+      revenue: 50,
     });
   });
 });

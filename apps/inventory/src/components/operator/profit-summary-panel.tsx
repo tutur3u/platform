@@ -5,11 +5,13 @@ import { CircleDollarSign, Coins, Package, Percent } from '@tuturuuu/icons';
 import {
   getInventoryCostingAnalytics,
   type InventorySaleSummary,
+  listInventoryCostProfiles,
+  listInventorySalesByProduct,
 } from '@tuturuuu/internal-api/inventory';
 import { useTranslations } from 'next-intl';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { currency } from './operator-format';
-import { computeProfitSummary } from './operator-pnl';
+import { buildProductPnl, computeProfitSummary } from './operator-pnl';
 
 export function ProfitSummaryPanel({
   sales,
@@ -24,9 +26,22 @@ export function ProfitSummaryPanel({
     queryKey: ['inventory', wsId, 'costing-analytics'],
   });
 
+  const salesByProduct = useQuery({
+    queryFn: () => listInventorySalesByProduct(wsId),
+    queryKey: ['inventory', wsId, 'sales-by-product'],
+  });
+  const costProfiles = useQuery({
+    queryFn: () => listInventoryCostProfiles(wsId, { pageSize: 100 }),
+    queryKey: ['inventory', wsId, 'costing', 'pnl'],
+  });
+
   const summary = computeProfitSummary(
     sales,
     analytics.data?.averageMarginPercentage
+  );
+  const productRows = buildProductPnl(
+    salesByProduct.data?.data ?? [],
+    costProfiles.data?.data ?? []
   );
 
   return (
@@ -62,6 +77,65 @@ export function ProfitSummaryPanel({
           value={summary.unitsSold}
         />
       </div>
+      {productRows.length > 0 ? (
+        <div className="grid gap-2">
+          <p className="font-medium text-sm">{t('byProduct')}</p>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full min-w-[34rem] text-left text-sm">
+              <thead className="border-border border-b bg-muted/40 text-muted-foreground text-xs">
+                <tr>
+                  <th className="px-3 py-2 font-semibold">{t('product')}</th>
+                  <th className="px-3 py-2 text-right font-semibold">
+                    {t('units')}
+                  </th>
+                  <th className="px-3 py-2 text-right font-semibold">
+                    {t('revenue')}
+                  </th>
+                  <th className="px-3 py-2 text-right font-semibold">
+                    {t('cost')}
+                  </th>
+                  <th className="px-3 py-2 text-right font-semibold">
+                    {t('profit')}
+                  </th>
+                  <th className="px-3 py-2 text-right font-semibold">
+                    {t('margin')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {productRows.map((row) => (
+                  <tr className="border-border/70 border-t" key={row.productId}>
+                    <td className="px-3 py-2">
+                      <span className="block max-w-[16rem] truncate font-medium">
+                        {row.productName}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-right">{row.unitsSold}</td>
+                    <td className="px-3 py-2 text-right">
+                      {currency(row.revenue)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-muted-foreground">
+                      {row.estCogs === null ? '—' : currency(row.estCogs)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {row.estProfit === null ? '—' : currency(row.estProfit)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {row.marginPercentage === null ? (
+                        <span className="text-muted-foreground text-xs">
+                          {t('uncosted')}
+                        </span>
+                      ) : (
+                        `${row.marginPercentage}%`
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -935,13 +935,19 @@
           "salesDescription": "Finalized sale records"
         },
         "pnl": {
+          "byProduct": "By product",
           "cogs": "Est. cost of goods",
+          "cost": "Est. cost",
           "description": "Revenue is actual; profit and cost are estimated from your costing margins.",
           "estimated": "Estimated",
           "grossProfit": "Est. gross profit",
           "margin": "Est. gross margin",
+          "noProductData": "No completed product sales yet.",
+          "product": "Product",
+          "profit": "Est. profit",
           "revenue": "Revenue",
           "title": "Profit summary",
+          "uncosted": "No costing",
           "units": "Units sold"
         },
         "release": "Release",

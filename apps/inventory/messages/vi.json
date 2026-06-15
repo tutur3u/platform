@@ -935,13 +935,19 @@
           "salesDescription": "Bản ghi doanh số đã hoàn tất"
         },
         "pnl": {
+          "byProduct": "Theo sản phẩm",
           "cogs": "Giá vốn ước tính",
+          "cost": "Chi phí ước tính",
           "description": "Doanh thu là thực tế; lợi nhuận và chi phí được ước tính từ biên chi phí của bạn.",
           "estimated": "Ước tính",
           "grossProfit": "Lợi nhuận gộp ước tính",
           "margin": "Biên lợi nhuận gộp ước tính",
+          "noProductData": "Chưa có sản phẩm nào được bán.",
+          "product": "Sản phẩm",
+          "profit": "Lợi nhuận ước tính",
           "revenue": "Doanh thu",
           "title": "Tóm tắt lợi nhuận",
+          "uncosted": "Chưa có chi phí",
           "units": "Số lượng đã bán"
         },
         "release": "Giải phóng",
