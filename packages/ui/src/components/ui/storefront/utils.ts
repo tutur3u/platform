@@ -65,6 +65,19 @@ export function sanitizeStorefrontAccentColor(value?: string | null) {
   return null;
 }
 
+export function getSafeStorefrontHttpUrl(value?: string | null) {
+  const normalized = value?.trim();
+  if (!normalized) return null;
+
+  try {
+    const url = new URL(normalized);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 export function getStorefrontListingLimit(listing: InventoryStorefrontListing) {
   const available =
     typeof listing.availableQuantity === 'number'

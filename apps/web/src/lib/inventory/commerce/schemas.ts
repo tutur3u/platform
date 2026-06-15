@@ -77,10 +77,18 @@ export const PolarCurrencySchema = z
   .transform((value) => value.toUpperCase())
   .pipe(z.enum(SUPPORTED_POLAR_CURRENCIES));
 
+const httpUrlSchema = z.url().refine(
+  (value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === 'http:' || protocol === 'https:';
+  },
+  { message: 'URL must use http or https' }
+);
+
 const storefrontSectionItemPayloadSchema = z.object({
   bundleId: z.guid().nullable().optional(),
   description: z.string().trim().max(1000).nullable().optional(),
-  href: z.url().nullable().optional(),
+  href: httpUrlSchema.nullable().optional(),
   id: z.guid().optional(),
   imageUrl: z.url().nullable().optional(),
   listingId: z.guid().nullable().optional(),
@@ -91,7 +99,7 @@ const storefrontSectionItemPayloadSchema = z.object({
 
 const storefrontSectionPayloadSchema = z.object({
   description: z.string().trim().max(1200).nullable().optional(),
-  href: z.url().nullable().optional(),
+  href: httpUrlSchema.nullable().optional(),
   id: z.guid().optional(),
   imageUrl: z.url().nullable().optional(),
   items: z.array(storefrontSectionItemPayloadSchema).max(24).optional(),

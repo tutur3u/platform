@@ -21,6 +21,7 @@ import type {
 import { mergeStorefrontSurfaceLabels } from './types';
 import {
   getAccentStyle,
+  getSafeStorefrontHttpUrl,
   getStorefrontListingLimit,
   sanitizeStorefrontAccentColor,
   storefrontRadiusClasses,
@@ -265,39 +266,43 @@ function StorefrontMerchSections({
 
   return (
     <div className="mt-4 grid gap-3">
-      {visibleSections.map((section) => (
-        <section
-          className={cn(
-            'grid overflow-hidden border border-border bg-card md:grid-cols-[minmax(0,1fr)_280px]',
-            radius
-          )}
-          key={section.id}
-        >
-          <div className="flex min-w-0 flex-col justify-center gap-2 p-4">
-            {section.title ? (
-              <h2 className="font-semibold text-lg">{section.title}</h2>
-            ) : null}
-            {section.description ? (
-              <p className="text-muted-foreground text-sm leading-6">
-                {section.description}
-              </p>
-            ) : null}
-            {section.href ? (
-              <a
-                className="mt-1 w-fit font-medium text-sm underline-offset-4 hover:underline"
-                href={section.href}
-              >
-                {section.href.replace(/^https?:\/\//u, '')}
-              </a>
-            ) : null}
-          </div>
-          <StorefrontImagePanel
-            className="min-h-36 md:min-h-full"
-            imageUrl={section.imageUrl}
-            label={section.title ?? 'Storefront section'}
-          />
-        </section>
-      ))}
+      {visibleSections.map((section) => {
+        const sectionHref = getSafeStorefrontHttpUrl(section.href);
+
+        return (
+          <section
+            className={cn(
+              'grid overflow-hidden border border-border bg-card md:grid-cols-[minmax(0,1fr)_280px]',
+              radius
+            )}
+            key={section.id}
+          >
+            <div className="flex min-w-0 flex-col justify-center gap-2 p-4">
+              {section.title ? (
+                <h2 className="font-semibold text-lg">{section.title}</h2>
+              ) : null}
+              {section.description ? (
+                <p className="text-muted-foreground text-sm leading-6">
+                  {section.description}
+                </p>
+              ) : null}
+              {sectionHref ? (
+                <a
+                  className="mt-1 w-fit font-medium text-sm underline-offset-4 hover:underline"
+                  href={sectionHref}
+                >
+                  {sectionHref.replace(/^https?:\/\//u, '')}
+                </a>
+              ) : null}
+            </div>
+            <StorefrontImagePanel
+              className="min-h-36 md:min-h-full"
+              imageUrl={section.imageUrl}
+              label={section.title ?? 'Storefront section'}
+            />
+          </section>
+        );
+      })}
     </div>
   );
 }

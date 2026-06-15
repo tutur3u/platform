@@ -86,4 +86,56 @@ describe('StorefrontSurface', () => {
     expect(screen.queryByText('Checkout disabled')).not.toBeInTheDocument();
     expect(screen.getByText('Checkout unavailable')).toBeDisabled();
   });
+
+  it('renders only http storefront section links', () => {
+    render(
+      <StorefrontSurface
+        listings={[]}
+        mode="store"
+        storefront={{
+          ...storefront,
+          sections: [
+            {
+              createdAt: null,
+              description: null,
+              href: 'javascript:alert(document.domain)',
+              id: 'section-unsafe',
+              imageUrl: null,
+              items: [],
+              metadata: {},
+              sectionType: 'promo',
+              sortOrder: 0,
+              status: 'published',
+              storefrontId: storefront.id,
+              title: 'Unsafe section',
+              updatedAt: null,
+              wsId: storefront.wsId,
+            },
+            {
+              createdAt: null,
+              description: null,
+              href: 'https://example.com/promo',
+              id: 'section-safe',
+              imageUrl: null,
+              items: [],
+              metadata: {},
+              sectionType: 'promo',
+              sortOrder: 1,
+              status: 'published',
+              storefrontId: storefront.id,
+              title: 'Safe section',
+              updatedAt: null,
+              wsId: storefront.wsId,
+            },
+          ],
+        }}
+      />
+    );
+
+    expect(screen.getByText('Safe section')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'example.com/promo' })
+    ).toHaveAttribute('href', 'https://example.com/promo');
+    expect(screen.queryByText('javascript:alert(document.domain)')).toBeNull();
+  });
 });
