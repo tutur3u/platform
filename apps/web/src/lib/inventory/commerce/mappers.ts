@@ -97,6 +97,9 @@ export type ListingRow = {
   updated_at: string | null;
   warehouse_id: string | null;
   warehouse_name: string | null;
+  polar_sync_status: string | null;
+  polar_synced_at: string | null;
+  polar_last_error: string | null;
   ws_id: string;
 };
 
@@ -272,6 +275,11 @@ export function mapListing(row: ListingRow): InventoryStorefrontListing {
     updatedAt: row.updated_at,
     warehouseId: row.warehouse_id,
     warehouseName: row.warehouse_name,
+    polarSyncStatus:
+      (row.polar_sync_status as InventoryStorefrontListing['polarSyncStatus']) ??
+      undefined,
+    polarSyncedAt: row.polar_synced_at,
+    polarLastError: row.polar_last_error,
     wsId: row.ws_id,
   };
 }

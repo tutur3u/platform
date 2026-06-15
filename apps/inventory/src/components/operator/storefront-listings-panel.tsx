@@ -1,7 +1,16 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ListTree, Pencil, Plus, Save } from '@tuturuuu/icons';
+import {
+  Ban,
+  Clock,
+  ListTree,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Save,
+  TriangleAlert,
+} from '@tuturuuu/icons';
 import type {
   InventoryBundle,
   InventoryListingStatus,
@@ -18,7 +27,14 @@ import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
+import { useLocale, useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import {
   FormSection,
@@ -230,23 +246,85 @@ export function StorefrontListingsPanel({
   );
 }
 
+const SYNC_BADGE_META: Record<string, { Icon: typeof Clock; tone: string }> = {
+  disabled: { Icon: Ban, tone: 'text-muted-foreground' },
+  error: { Icon: TriangleAlert, tone: 'text-destructive' },
+  pending: { Icon: Clock, tone: 'text-dynamic-orange' },
+  synced: { Icon: RefreshCw, tone: 'text-dynamic-green' },
+};
+
+function ListingSyncBadge({
+  error,
+  status,
+  syncedAt,
+}: {
+  error?: string | null;
+  status?: string | null;
+  syncedAt?: string | null;
+}) {
+  const t = useTranslations('inventory.operator.polar.sync');
+  const locale = useLocale();
+  const meta = status ? SYNC_BADGE_META[status] : undefined;
+  if (!status || !meta) return null;
+  const Icon = meta.Icon;
+  const formattedSyncedAt =
+    syncedAt &&
+    new Intl.DateTimeFormat(locale, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(syncedAt));
+  const tip =
+    status === 'error' && error
+      ? error
+      : formattedSyncedAt
+        ? `${t('lastSynced')}: ${formattedSyncedAt}`
+        : t(`status.${status}`);
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex h-6 w-fit items-center gap-1 rounded-md border border-border px-2 text-xs">
+            <Icon className={cn('h-3 w-3', meta.tone)} />
+            {t(`status.${status}`)}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">{tip}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 function ListingRow({
   listing,
   storefrontId,
   wsId,
 }: {
-  listing: { id: string; price: number; status: string; title: string };
+  listing: {
+    id: string;
+    polarLastError?: string | null;
+    polarSyncStatus?: string | null;
+    polarSyncedAt?: string | null;
+    price: number;
+    status: string;
+    title: string;
+  };
   storefrontId: string;
   wsId: string;
 }) {
   return (
-    <div className="grid min-w-0 gap-2 rounded-md border border-border bg-background p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+    <div className="grid min-w-0 gap-2 rounded-md border border-border bg-background p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-center">
       <div className="min-w-0">
         <p className="truncate font-medium">{listing.title}</p>
         <p className="truncate text-muted-foreground text-xs">
           {listing.status}
         </p>
       </div>
+      <ListingSyncBadge
+        error={listing.polarLastError}
+        status={listing.polarSyncStatus}
+        syncedAt={listing.polarSyncedAt}
+      />
       <span>{currency(listing.price)}</span>
       <ListingEditorDialog
         listing={listing}
