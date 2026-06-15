@@ -2,6 +2,7 @@ import { posix } from 'node:path';
 import { NextResponse } from 'next/server';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { checkRateLimit } from '@/lib/rate-limit';
 import {
   getWorkspaceStorageOverview,
   listWorkspaceStorageRawObjectsForProvider,
@@ -9,6 +10,12 @@ import {
   type WorkspaceStorageOverview,
   type WorkspaceStorageRawObject,
 } from '@/lib/workspace-storage-provider';
+
+const EXTERNAL_PROJECT_STORAGE_ANALYTICS_OBJECT_LIMIT = 1000;
+const EXTERNAL_PROJECT_STORAGE_ANALYTICS_RATE_LIMIT = {
+  windowMs: 60_000,
+  maxRequests: 10,
+};
 
 function getFileName(path: string) {
   return posix.basename(path) || path;
@@ -54,7 +61,7 @@ export async function GET(
 ) {
   const { wsId } = await params;
   const access = await requireWorkspaceExternalProjectAccess({
-    mode: 'read',
+    mode: 'manage',
     request,
     wsId,
   });
@@ -68,14 +75,30 @@ export async function GET(
       access.normalizedWorkspaceId
     );
     const adapter = access.binding.adapter ?? 'shared';
+    const rateLimit = await checkRateLimit(
+      `external-projects:storage-analytics:${access.normalizedWorkspaceId}:${adapter}`,
+      EXTERNAL_PROJECT_STORAGE_ANALYTICS_RATE_LIMIT,
+      access.normalizedWorkspaceId
+    );
+
+    if (!('allowed' in rateLimit)) {
+      return rateLimit;
+    }
+
     const prefix = posix.join('external-projects', adapter);
-    const objects = await listWorkspaceStorageRawObjectsForProvider(
+    const rawObjects = await listWorkspaceStorageRawObjectsForProvider(
       access.normalizedWorkspaceId,
       overview.provider,
       {
+        limit: EXTERNAL_PROJECT_STORAGE_ANALYTICS_OBJECT_LIMIT + 1,
         pathPrefix: prefix,
       }
     );
+    const truncated =
+      rawObjects.length > EXTERNAL_PROJECT_STORAGE_ANALYTICS_OBJECT_LIMIT;
+    const objects = truncated
+      ? rawObjects.slice(0, EXTERNAL_PROJECT_STORAGE_ANALYTICS_OBJECT_LIMIT)
+      : rawObjects;
     const highlights: Pick<
       WorkspaceStorageOverview,
       'largestFile' | 'smallestFile'
@@ -96,19 +119,26 @@ export async function GET(
       updateFileHighlights(highlights, object);
     }
 
-    return NextResponse.json({
-      data: {
-        totalSize,
-        fileCount,
-        storageLimit: overview.storageLimit,
-        usagePercentage: calculateUsagePercentage(
+    return NextResponse.json(
+      {
+        data: {
           totalSize,
-          overview.storageLimit
-        ),
-        largestFile: highlights.largestFile,
-        smallestFile: highlights.smallestFile,
+          fileCount,
+          storageLimit: overview.storageLimit,
+          usagePercentage: calculateUsagePercentage(
+            totalSize,
+            overview.storageLimit
+          ),
+          scannedObjectLimit: EXTERNAL_PROJECT_STORAGE_ANALYTICS_OBJECT_LIMIT,
+          truncated,
+          largestFile: highlights.largestFile,
+          smallestFile: highlights.smallestFile,
+        },
       },
-    });
+      {
+        headers: rateLimit.headers,
+      }
+    );
   } catch (error) {
     if (error instanceof WorkspaceStorageError) {
       return NextResponse.json(

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  checkRateLimit: vi.fn(),
   getWorkspaceStorageOverview: vi.fn(),
   listWorkspaceStorageRawObjectsForProvider: vi.fn(),
   requireWorkspaceExternalProjectAccess: vi.fn(),
@@ -18,6 +19,11 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
     error: (...args: Parameters<typeof mocks.serverLoggerError>) =>
       mocks.serverLoggerError(...args),
   },
+}));
+
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: (...args: Parameters<typeof mocks.checkRateLimit>) =>
+    mocks.checkRateLimit(...args),
 }));
 
 vi.mock('@/lib/workspace-storage-provider', () => ({
@@ -55,6 +61,7 @@ describe('external project storage analytics route', () => {
   beforeEach(() => {
     vi.resetModules();
     mocks.requireWorkspaceExternalProjectAccess.mockReset();
+    mocks.checkRateLimit.mockReset();
     mocks.getWorkspaceStorageOverview.mockReset();
     mocks.listWorkspaceStorageRawObjectsForProvider.mockReset();
     mocks.serverLoggerError.mockReset();
@@ -64,6 +71,14 @@ describe('external project storage analytics route', () => {
       },
       normalizedWorkspaceId: 'workspace-1',
       ok: true,
+    });
+    mocks.checkRateLimit.mockResolvedValue({
+      allowed: true,
+      headers: {
+        'X-RateLimit-Limit': '10',
+        'X-RateLimit-Remaining': '9',
+        'X-RateLimit-Reset': '1900000000',
+      },
     });
     mocks.getWorkspaceStorageOverview.mockResolvedValue({
       fileCount: 100,
@@ -117,19 +132,28 @@ describe('external project storage analytics route', () => {
           name: 'session-note.txt',
           size: 24,
         },
+        scannedObjectLimit: 1000,
         storageLimit: 10_240,
         totalSize: 4120,
+        truncated: false,
         usagePercentage: 40.23,
       },
     });
+    expect(response.headers.get('X-RateLimit-Limit')).toBe('10');
     expect(mocks.requireWorkspaceExternalProjectAccess).toHaveBeenCalledWith({
-      mode: 'read',
+      mode: 'manage',
       request: expect.any(Request),
       wsId: 'workspace-1',
     });
+    expect(mocks.checkRateLimit).toHaveBeenCalledWith(
+      'external-projects:storage-analytics:workspace-1:kendra',
+      { maxRequests: 10, windowMs: 60_000 },
+      'workspace-1'
+    );
     expect(
       mocks.listWorkspaceStorageRawObjectsForProvider
     ).toHaveBeenCalledWith('workspace-1', 'supabase', {
+      limit: 1001,
       pathPrefix: 'external-projects/kendra',
     });
   });
@@ -156,10 +180,60 @@ describe('external project storage analytics route', () => {
       data: {
         fileCount: 0,
         largestFile: null,
+        scannedObjectLimit: 1000,
         smallestFile: null,
         storageLimit: 10_240,
         totalSize: 0,
+        truncated: false,
         usagePercentage: 0,
+      },
+    });
+  });
+
+  it('returns a rate limit response before expensive object listing', async () => {
+    mocks.checkRateLimit.mockResolvedValueOnce(
+      Response.json(
+        {
+          code: 'RATE_LIMIT_EXCEEDED',
+          error: 'Too Many Requests',
+          message: 'Rate limit exceeded',
+        },
+        { status: 429 }
+      )
+    );
+
+    const response = await getStorageAnalytics();
+
+    expect(response.status).toBe(429);
+    expect(
+      mocks.listWorkspaceStorageRawObjectsForProvider
+    ).not.toHaveBeenCalled();
+  });
+
+  it('caps expensive analytics scans and marks truncated results', async () => {
+    mocks.listWorkspaceStorageRawObjectsForProvider.mockResolvedValueOnce(
+      Array.from({ length: 1001 }, (_, index) => ({
+        fullPath: `workspace-1/external-projects/kendra/file-${index}.txt`,
+        isFolderPlaceholder: false,
+        path: `external-projects/kendra/file-${index}.txt`,
+        size: index + 1,
+        updatedAt: `2026-04-19T00:00:00.000Z`,
+      }))
+    );
+
+    const response = await getStorageAnalytics();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      data: {
+        fileCount: 1000,
+        largestFile: {
+          name: 'file-999.txt',
+          size: 1000,
+        },
+        scannedObjectLimit: 1000,
+        totalSize: 500_500,
+        truncated: true,
       },
     });
   });
