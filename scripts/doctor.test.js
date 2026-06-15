@@ -3,16 +3,20 @@ const assert = require('node:assert/strict');
 
 const {
   analyzePortlessRoutes,
+  checkDockerStatus,
   checkNodeVersion,
   checkPortlessCa,
   checkPortlessProxy,
   checkPortlessRoutes,
+  checkRedisStatus,
+  checkSupabaseStatus,
   collectDoctorChecks,
   formatDoctorReport,
   getFixActions,
   getFixSteps,
   parsePortlessRoutes,
   runDoctor,
+  shouldUseColor,
   summarizeChecks,
 } = require('./doctor');
 
@@ -144,6 +148,68 @@ test('checkPortlessCa warns only when the CA is missing', () => {
   assert.equal(checkPortlessCa(false).status, 'warn');
 });
 
+test('checkDockerStatus reports daemon reachability', () => {
+  assert.equal(
+    checkDockerStatus({ status: 0, stdout: 'Server Version: 27', stderr: '' })
+      .status,
+    'ok'
+  );
+
+  const down = checkDockerStatus({
+    status: 1,
+    stdout: '',
+    stderr: 'Cannot connect to the Docker daemon',
+  });
+  assert.equal(down.status, 'fail');
+  assert.match(down.detail, /Cannot connect/u);
+  assert.match(down.hint, /Docker/u);
+});
+
+test('checkSupabaseStatus reports local API and DB ports as the required stack', async () => {
+  const checks = [];
+  const check = await checkSupabaseStatus({
+    dockerOk: true,
+    probePort: (port) => {
+      checks.push(port);
+      return Promise.resolve(port === 8001 || port === 8002);
+    },
+  });
+
+  assert.equal(check.status, 'ok');
+  assert.deepEqual(checks.sort(), [8001, 8002, 8003]);
+  assert.match(check.detail, /API :8001 ok/u);
+  assert.match(check.detail, /Studio :8003 down/u);
+});
+
+test('checkSupabaseStatus warns without probing when Docker is unavailable', async () => {
+  const check = await checkSupabaseStatus({
+    dockerOk: false,
+    probePort: () => {
+      throw new Error('should not probe without Docker');
+    },
+  });
+
+  assert.equal(check.status, 'warn');
+  assert.match(check.detail, /Docker/u);
+});
+
+test('checkRedisStatus requires Redis and the HTTP bridge', async () => {
+  const ok = await checkRedisStatus({
+    dockerOk: true,
+    probePort: (port) => Promise.resolve(port === 6379 || port === 8079),
+  });
+  assert.equal(ok.status, 'ok');
+  assert.match(ok.detail, /Redis :6379 ok/u);
+  assert.match(ok.detail, /HTTP bridge :8079 ok/u);
+
+  const partial = await checkRedisStatus({
+    dockerOk: true,
+    probePort: (port) => Promise.resolve(port === 6379),
+  });
+  assert.equal(partial.status, 'warn');
+  assert.match(partial.detail, /HTTP bridge :8079 down/u);
+});
+
 test('getFixActions collapses to the strongest recovery', () => {
   assert.deepEqual(
     getFixActions([
@@ -192,6 +258,7 @@ test('collectDoctorChecks probes each registered route port once', async () => {
         { hostname: 'web.tuturuuu.localhost', port: 4294, pid: 7 },
       ]),
     caExists: () => true,
+    includeLocalServiceChecks: false,
     probePort: (port) => {
       probedPorts.push(port);
       return Promise.resolve(port === 4881);
@@ -201,6 +268,48 @@ test('collectDoctorChecks probes each registered route port once', async () => {
   assert.deepEqual(probedPorts.sort(), [4294, 4881]);
   const routeCheck = checks.find((check) => check.id === 'portless-routes');
   assert.equal(routeCheck.status, 'fail');
+  assert.equal(summarizeChecks(checks).exitCode, 1);
+});
+
+test('collectDoctorChecks includes Docker, Supabase, and Redis statuses', async () => {
+  const checks = await collectDoctorChecks({
+    nodeVersion: 'v22.0.0',
+    portlessBin: 'portless',
+    runner: (command) =>
+      command === 'docker'
+        ? { status: 0, stdout: 'Docker is running', stderr: '' }
+        : { status: 0, stdout: '', stderr: '' },
+    readProxyStatus: () => READY_STATUS,
+    readRoutesFile: () => null,
+    caExists: () => true,
+    probePort: (port) =>
+      Promise.resolve([8001, 8002, 6379, 8079].includes(port)),
+  });
+
+  assert.equal(checks.find((check) => check.id === 'docker').status, 'ok');
+  assert.equal(checks.find((check) => check.id === 'supabase').status, 'ok');
+  assert.equal(checks.find((check) => check.id === 'redis').status, 'ok');
+});
+
+test('collectDoctorChecks makes Docker a failure and dependent services warnings', async () => {
+  const checks = await collectDoctorChecks({
+    nodeVersion: 'v22.0.0',
+    portlessBin: 'portless',
+    runner: (command) =>
+      command === 'docker'
+        ? { status: 1, stdout: '', stderr: 'daemon unavailable' }
+        : { status: 0, stdout: '', stderr: '' },
+    readProxyStatus: () => READY_STATUS,
+    readRoutesFile: () => null,
+    caExists: () => true,
+    probePort: (port) => {
+      throw new Error(`unexpected probe for ${port}`);
+    },
+  });
+
+  assert.equal(checks.find((check) => check.id === 'docker').status, 'fail');
+  assert.equal(checks.find((check) => check.id === 'supabase').status, 'warn');
+  assert.equal(checks.find((check) => check.id === 'redis').status, 'warn');
   assert.equal(summarizeChecks(checks).exitCode, 1);
 });
 
@@ -221,6 +330,52 @@ test('formatDoctorReport renders a status tag per check', () => {
   assert.match(report, /\[FAIL\] Portless route health/u);
   assert.match(report, /-> reset it/u);
   assert.match(report, /Run `bun doctor --fix`/u);
+});
+
+test('formatDoctorReport can color status tags and route health', () => {
+  const report = formatDoctorReport(
+    [
+      { id: 'node', title: 'Node.js runtime', status: 'ok', detail: 'v22' },
+      {
+        id: 'portless-routes',
+        title: 'Portless route health',
+        status: 'fail',
+        detail: '1 dead route',
+        routes: ['x.localhost -> :7815 DEAD'],
+        hint: 'reset it',
+      },
+    ],
+    { colorsEnabled: true }
+  );
+
+  const esc = String.fromCharCode(27);
+  assert.ok(report.includes(`${esc}[32m[OK]${esc}[0m`));
+  assert.ok(report.includes(`${esc}[31m[FAIL]${esc}[0m`));
+  assert.ok(report.includes(`${esc}[31m${esc}[1mDEAD${esc}[0m`));
+});
+
+test('shouldUseColor respects NO_COLOR, FORCE_COLOR, and TTY output', () => {
+  assert.equal(
+    shouldUseColor({
+      env: { FORCE_COLOR: '1', NO_COLOR: '' },
+      stdout: { isTTY: true },
+    }),
+    false
+  );
+  assert.equal(
+    shouldUseColor({ env: { FORCE_COLOR: '1' }, stdout: { isTTY: false } }),
+    true
+  );
+  assert.equal(shouldUseColor({ env: {}, stdout: { isTTY: true } }), true);
+  assert.equal(shouldUseColor({ env: {}, stdout: { isTTY: false } }), false);
+  assert.equal(
+    shouldUseColor({
+      colorsEnabled: true,
+      env: { NO_COLOR: '' },
+      stdout: { isTTY: false },
+    }),
+    true
+  );
 });
 
 test('runDoctor --fix runs the reset sequence and re-checks', async () => {
@@ -246,6 +401,7 @@ test('runDoctor --fix runs the reset sequence and re-checks', async () => {
         { hostname: 'inventory.tuturuuu.localhost', port: 4881, pid: 1 },
       ]),
     caExists: () => true,
+    includeLocalServiceChecks: false,
     probePort: (port) => Promise.resolve(Boolean(probeReady[port])),
   };
 

@@ -227,16 +227,18 @@ landing page throws `InternalApiError: 404` because its server-side call to
 bun doctor
 ```
 
-It checks the Node runtime, whether the Portless proxy is responding on port
-`443`, and the health of every registered Portless route. The most common
-failure after overlapping or crashed dev sessions is a **stale routing table**:
-the proxy still points a live app route at a dead dev-server port, so cross-app
-internal API calls return `404`. The doctor flags those routes as `DEAD` and
-exits non-zero. Static aliases for apps you simply are not running are reported
-as warnings, not failures.
+It checks the Node runtime, Docker daemon, local Supabase ports, local Redis
+ports, whether the Portless proxy is responding on port `443`, and the health of
+every registered Portless route. The report uses colored `OK`, `WARN`, and
+`FAIL` statuses in interactive terminals. The most common failure after
+overlapping or crashed dev sessions is a **stale routing table**: the proxy
+still points a live app route at a dead dev-server port, so cross-app internal
+API calls return `404`. The doctor flags those routes as `DEAD` and exits
+non-zero. Static aliases for apps you simply are not running are reported as
+warnings, not failures.
 
-Apply the safe automatic repair (start the proxy, or reset it when routes are
-stale) and re-run the checks:
+Apply the safe automatic Portless repair (start the proxy, or reset it when
+routes are stale) and re-run the checks:
 
 ```bash
 bun doctor --fix

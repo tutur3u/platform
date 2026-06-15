@@ -22,6 +22,17 @@ const {
 const ROUTES_PATH = path.join(os.homedir(), '.portless', 'routes.json');
 const CA_PATH = path.join(os.homedir(), '.portless', 'ca.pem');
 const MIN_NODE_MAJOR = 22;
+const SUPABASE_PORTS = { api: 8001, db: 8002, studio: 8003 };
+const REDIS_PORTS = { redis: 6379, httpBridge: 8079 };
+const ANSI_CODES = {
+  reset: '\x1b[0m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m',
+  green: '\x1b[32m',
+  red: '\x1b[31m',
+  yellow: '\x1b[33m',
+  cyan: '\x1b[36m',
+};
 
 function createRunner() {
   return (command, args, { capture = false } = {}) =>
@@ -29,6 +40,45 @@ function createRunner() {
       encoding: 'utf8',
       stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
     });
+}
+
+function hasEnv(env, name) {
+  return Object.hasOwn(env, name);
+}
+
+function shouldUseColor({
+  colorsEnabled,
+  env = process.env,
+  stdout = process.stdout,
+} = {}) {
+  if (typeof colorsEnabled === 'boolean') {
+    return colorsEnabled;
+  }
+  if (hasEnv(env, 'NO_COLOR')) {
+    return false;
+  }
+  if (hasEnv(env, 'FORCE_COLOR')) {
+    const force = String(env.FORCE_COLOR).toLowerCase();
+    return force !== '0' && force !== 'false';
+  }
+  return Boolean(stdout?.isTTY);
+}
+
+function createColorizer(enabled = false) {
+  const wrap = (codes, value) =>
+    enabled ? `${codes.join('')}${value}${ANSI_CODES.reset}` : String(value);
+
+  return {
+    bold: (value) => wrap([ANSI_CODES.bold], value),
+    dim: (value) => wrap([ANSI_CODES.dim], value),
+    fail: (value) => wrap([ANSI_CODES.red], value),
+    failStrong: (value) => wrap([ANSI_CODES.red, ANSI_CODES.bold], value),
+    header: (value) => wrap([ANSI_CODES.cyan, ANSI_CODES.bold], value),
+    ok: (value) => wrap([ANSI_CODES.green], value),
+    okStrong: (value) => wrap([ANSI_CODES.green, ANSI_CODES.bold], value),
+    warn: (value) => wrap([ANSI_CODES.yellow], value),
+    warnStrong: (value) => wrap([ANSI_CODES.yellow, ANSI_CODES.bold], value),
+  };
 }
 
 // Returns a probe(port) -> Promise<boolean> that resolves true when something
@@ -96,6 +146,127 @@ function checkNodeVersion(version, { minMajor = MIN_NODE_MAJOR } = {}) {
       : {
           hint: `Install Node ${minMajor}+ (package.json engines require it).`,
         }),
+  };
+}
+
+function firstOutputLine(result) {
+  const output = `${result?.stderr ?? ''}\n${result?.stdout ?? ''}`
+    .split('\n')
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (output) {
+    return output;
+  }
+  if (result?.error) {
+    return result.error.message;
+  }
+  if (Number.isFinite(result?.status)) {
+    return `exit code ${result.status}`;
+  }
+  return 'command did not complete';
+}
+
+function checkDockerStatus(result) {
+  if (result && result.status === 0 && !result.error) {
+    return {
+      id: 'docker',
+      title: 'Docker daemon',
+      status: 'ok',
+      detail: 'docker info succeeded',
+    };
+  }
+
+  return {
+    id: 'docker',
+    title: 'Docker daemon',
+    status: 'fail',
+    detail: `docker info failed (${firstOutputLine(result)})`,
+    hint: 'Start Docker Desktop or the local Docker daemon.',
+  };
+}
+
+function formatPortStatus(name, port, reachable) {
+  return `${name} :${port} ${reachable ? 'ok' : 'down'}`;
+}
+
+async function checkSupabaseStatus({
+  dockerOk,
+  ports = SUPABASE_PORTS,
+  probePort,
+}) {
+  const base = { id: 'supabase', title: 'Local Supabase stack' };
+
+  if (!dockerOk) {
+    return {
+      ...base,
+      status: 'warn',
+      detail: 'skipped because Docker is not reachable',
+      hint: 'Start Docker, then run `bun sb:start` if local Supabase is needed.',
+    };
+  }
+
+  const [apiReachable, dbReachable, studioReachable] = await Promise.all([
+    probePort(ports.api),
+    probePort(ports.db),
+    probePort(ports.studio),
+  ]);
+  const detail = [
+    formatPortStatus('API', ports.api, apiReachable),
+    formatPortStatus('DB', ports.db, dbReachable),
+    formatPortStatus('Studio', ports.studio, studioReachable),
+  ].join(', ');
+
+  if (apiReachable && dbReachable) {
+    return {
+      ...base,
+      status: 'ok',
+      detail,
+    };
+  }
+
+  return {
+    ...base,
+    status: 'warn',
+    detail,
+    hint: 'Start it with `bun sb:start`.',
+  };
+}
+
+async function checkRedisStatus({ dockerOk, ports = REDIS_PORTS, probePort }) {
+  const base = { id: 'redis', title: 'Local Redis stack' };
+
+  if (!dockerOk) {
+    return {
+      ...base,
+      status: 'warn',
+      detail: 'skipped because Docker is not reachable',
+      hint: 'Start Docker, then run `bun redis:start` if local Redis is needed.',
+    };
+  }
+
+  const [redisReachable, bridgeReachable] = await Promise.all([
+    probePort(ports.redis),
+    probePort(ports.httpBridge),
+  ]);
+  const detail = [
+    formatPortStatus('Redis', ports.redis, redisReachable),
+    formatPortStatus('HTTP bridge', ports.httpBridge, bridgeReachable),
+  ].join(', ');
+
+  if (redisReachable && bridgeReachable) {
+    return {
+      ...base,
+      status: 'ok',
+      detail,
+    };
+  }
+
+  return {
+    ...base,
+    status: 'warn',
+    detail,
+    hint: 'Start it with `bun redis:start`.',
   };
 }
 
@@ -227,6 +398,10 @@ function defaultReadProxyStatus(runner, portlessBin) {
   return `${status.stdout ?? ''}${status.stderr ?? ''}`;
 }
 
+function defaultReadDockerInfo(runner) {
+  return runner('docker', ['info'], { capture: true });
+}
+
 function defaultReadRoutesFile(fsImpl = fs, routesPath = ROUTES_PATH) {
   try {
     return fsImpl.readFileSync(routesPath, 'utf8');
@@ -242,12 +417,33 @@ async function collectDoctorChecks(deps = {}) {
     portlessBin = resolvePortlessBin(),
     runner = createRunner(),
     readProxyStatus = () => defaultReadProxyStatus(runner, portlessBin),
+    readDockerInfo = () => defaultReadDockerInfo(runner),
     readRoutesFile = () => defaultReadRoutesFile(),
     caExists = () => fs.existsSync(CA_PATH),
+    includeLocalServiceChecks = true,
     probePort = createPortProbe(),
+    redisPorts = REDIS_PORTS,
+    supabasePorts = SUPABASE_PORTS,
   } = deps;
 
   const checks = [checkNodeVersion(nodeVersion, { minMajor: minNodeMajor })];
+
+  let dockerOk = true;
+  if (includeLocalServiceChecks) {
+    const dockerCheck = checkDockerStatus(readDockerInfo());
+    dockerOk = dockerCheck.status === 'ok';
+    checks.push(dockerCheck);
+    checks.push(
+      await checkSupabaseStatus({
+        dockerOk,
+        ports: supabasePorts,
+        probePort,
+      })
+    );
+    checks.push(
+      await checkRedisStatus({ dockerOk, ports: redisPorts, probePort })
+    );
+  }
 
   checks.push(checkPortlessProxy(readProxyStatus()));
 
@@ -285,19 +481,43 @@ function summarizeChecks(checks) {
 
 const STATUS_TAG = { fail: 'FAIL', ok: 'OK', skip: 'SKIP', warn: 'WARN' };
 
-function formatDoctorReport(checks) {
-  const lines = ['Tuturuuu dev environment doctor', ''];
+function formatStatusTag(status, colors) {
+  const tag = `[${STATUS_TAG[status] ?? '????'}]`;
+  if (status === 'ok') {
+    return colors.ok(tag);
+  }
+  if (status === 'warn') {
+    return colors.warn(tag);
+  }
+  if (status === 'fail') {
+    return colors.fail(tag);
+  }
+  return colors.dim(tag);
+}
+
+function colorizeStatusWords(line, colors) {
+  return line
+    .replace(/\bDEAD\b/gu, colors.failStrong('DEAD'))
+    .replace(/\bdown\b/gu, colors.warn('down'))
+    .replace(/\bok\b/gu, colors.ok('ok'));
+}
+
+function formatDoctorReport(checks, options = {}) {
+  const colors = createColorizer(Boolean(options.colorsEnabled));
+  const lines = [colors.header('Tuturuuu dev environment doctor'), ''];
 
   for (const check of checks) {
-    lines.push(`[${STATUS_TAG[check.status] ?? '????'}] ${check.title}`);
+    lines.push(`${formatStatusTag(check.status, colors)} ${check.title}`);
     if (check.detail) {
-      lines.push(`       ${check.detail}`);
+      lines.push(
+        `       ${colors.dim(colorizeStatusWords(check.detail, colors))}`
+      );
     }
     for (const route of check.routes ?? []) {
-      lines.push(`         - ${route}`);
+      lines.push(`         - ${colorizeStatusWords(route, colors)}`);
     }
     if (check.hint && check.status !== 'ok') {
-      lines.push(`       -> ${check.hint}`);
+      lines.push(`       ${colors.dim(`-> ${check.hint}`)}`);
     }
   }
 
@@ -305,12 +525,16 @@ function formatDoctorReport(checks) {
   lines.push('');
   if (summary.fail > 0) {
     lines.push(
-      `${summary.fail} issue(s) need attention. Run \`bun doctor --fix\` to attempt automatic repair.`
+      colors.failStrong(
+        `${summary.fail} issue(s) need attention. Run \`bun doctor --fix\` to attempt automatic repair.`
+      )
     );
   } else if (summary.warn > 0) {
-    lines.push(`No blocking issues. ${summary.warn} warning(s) above.`);
+    lines.push(
+      colors.warnStrong(`No blocking issues. ${summary.warn} warning(s) above.`)
+    );
   } else {
-    lines.push('All checks passed.');
+    lines.push(colors.okStrong('All checks passed.'));
   }
 
   return `${lines.join('\n')}\n`;
@@ -352,7 +576,8 @@ async function runDoctor({
   if (argv.includes('--help') || argv.includes('-h')) {
     log(`Usage: bun doctor [--fix]
 
-Diagnose the local dev environment (Node runtime + Portless proxy/routing).
+Diagnose the local dev environment (Node runtime, Docker, local services,
+and Portless proxy/routing).
 
 Options:
   --fix    Attempt safe automatic repairs (start or reset the Portless proxy)
@@ -361,8 +586,14 @@ Options:
     return 0;
   }
 
+  const colorsEnabled = shouldUseColor({
+    colorsEnabled: deps.colorsEnabled,
+    env: deps.env,
+    stdout: deps.stdout,
+  });
+
   const checks = await collectDoctorChecks(deps);
-  log(formatDoctorReport(checks));
+  log(formatDoctorReport(checks, { colorsEnabled }));
 
   const fixActions = getFixActions(checks);
 
@@ -389,7 +620,7 @@ Options:
   log('');
   log('Re-running checks...');
   const after = await collectDoctorChecks(deps);
-  log(formatDoctorReport(after));
+  log(formatDoctorReport(after, { colorsEnabled }));
 
   return summarizeChecks(after).exitCode;
 }
@@ -402,10 +633,13 @@ if (require.main === module) {
 
 module.exports = {
   analyzePortlessRoutes,
+  checkDockerStatus,
   checkNodeVersion,
   checkPortlessCa,
   checkPortlessProxy,
   checkPortlessRoutes,
+  checkRedisStatus,
+  checkSupabaseStatus,
   collectDoctorChecks,
   createPortProbe,
   formatDoctorReport,
@@ -413,5 +647,6 @@ module.exports = {
   getFixSteps,
   parsePortlessRoutes,
   runDoctor,
+  shouldUseColor,
   summarizeChecks,
 };
