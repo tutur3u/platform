@@ -34,6 +34,7 @@ import {
   updateTaskDescriptionCaches,
 } from '../utils';
 import {
+  shouldChunkTaskDescriptionPayload,
   updateWorkspaceTask,
   updateWorkspaceTaskDescription,
 } from './task-api';
@@ -945,9 +946,17 @@ export async function handleCreateTask({
       ];
     }
 
+    const createDescriptionPayload = {
+      description: descriptionString || '',
+      description_yjs_state: descriptionYjsState ?? undefined,
+    };
+    const shouldDeferDescription = shouldChunkTaskDescriptionPayload(
+      createDescriptionPayload
+    );
+
     const taskData: Partial<Task> = {
       name: name.trim(),
-      description: descriptionString || '',
+      description: shouldDeferDescription ? '' : descriptionString || '',
       priority: priority,
       start_date: startDate ? startDate.toISOString() : undefined,
       end_date: endDate ? endDate.toISOString() : undefined,
@@ -957,13 +966,23 @@ export async function handleCreateTask({
     };
     const newTask = await createTask(wsId, selectedListId, {
       ...taskData,
-      description_yjs_state: descriptionYjsState ?? undefined,
+      description_yjs_state: shouldDeferDescription
+        ? undefined
+        : (descriptionYjsState ?? undefined),
       label_ids: selectedLabels.map((label) => label.id),
       assignee_ids: desiredAssignees
         .map((assignee) => assignee.user_id || assignee.id)
         .filter((assigneeId): assigneeId is string => !!assigneeId),
       project_ids: selectedProjects.map((project) => project.id),
     });
+
+    if (shouldDeferDescription) {
+      await updateWorkspaceTaskDescription(wsId, newTask.id, {
+        description: descriptionString,
+        description_yjs_state: descriptionYjsState,
+      });
+      newTask.description = descriptionString ?? undefined;
+    }
 
     // Save per-user scheduling settings for the creator (if any were provided)
     const hasAnySchedulingValue =

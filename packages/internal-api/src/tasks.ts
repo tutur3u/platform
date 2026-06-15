@@ -130,6 +130,33 @@ export interface WorkspaceTaskApiTask extends Task {
   is_personal_external_default?: boolean;
 }
 
+export interface WorkspaceTaskDescriptionResponse {
+  description: string | null;
+  description_yjs_state: number[] | null;
+}
+
+export interface WorkspaceTaskDescriptionUpdatePayload {
+  description?: string | null;
+  description_yjs_state?: number[] | null;
+}
+
+export type WorkspaceTaskDescriptionChunkField =
+  | 'description'
+  | 'description_yjs_state';
+
+export interface WorkspaceTaskDescriptionChunkFieldPlan {
+  chunk_count: number;
+  total_length: number;
+  is_null?: boolean;
+}
+
+export type WorkspaceTaskDescriptionChunkFields = Partial<
+  Record<
+    WorkspaceTaskDescriptionChunkField,
+    WorkspaceTaskDescriptionChunkFieldPlan
+  >
+>;
+
 export interface CurrentUserTaskPersonalPlacementPayload {
   personal_board_id: string;
   personal_list_id?: string | null;
@@ -1206,6 +1233,129 @@ export async function getWorkspaceTask(
   return client.json<WorkspaceTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}`,
     {
+      cache: 'no-store',
+    }
+  );
+}
+
+function workspaceTaskDescriptionPath(workspaceId: string, taskId: string) {
+  return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/description`;
+}
+
+export async function getWorkspaceTaskDescription(
+  workspaceId: string,
+  taskId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskDescriptionResponse>(
+    workspaceTaskDescriptionPath(workspaceId, taskId),
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceTaskDescription(
+  workspaceId: string,
+  taskId: string,
+  payload: WorkspaceTaskDescriptionUpdatePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskDescriptionResponse>(
+    workspaceTaskDescriptionPath(workspaceId, taskId),
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function beginWorkspaceTaskDescriptionChunks(
+  workspaceId: string,
+  taskId: string,
+  fields: WorkspaceTaskDescriptionChunkFields,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ session_id: string }>(
+    workspaceTaskDescriptionPath(workspaceId, taskId),
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'begin', fields }),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function appendWorkspaceTaskDescriptionChunk(
+  workspaceId: string,
+  taskId: string,
+  payload: {
+    chunk: string;
+    chunk_index: number;
+    field: WorkspaceTaskDescriptionChunkField;
+    session_id: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    workspaceTaskDescriptionPath(workspaceId, taskId),
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'append', ...payload }),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function commitWorkspaceTaskDescriptionChunks(
+  workspaceId: string,
+  taskId: string,
+  sessionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskDescriptionResponse>(
+    workspaceTaskDescriptionPath(workspaceId, taskId),
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'commit', session_id: sessionId }),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function abortWorkspaceTaskDescriptionChunks(
+  workspaceId: string,
+  taskId: string,
+  sessionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    workspaceTaskDescriptionPath(workspaceId, taskId),
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'abort', session_id: sessionId }),
       cache: 'no-store',
     }
   );

@@ -175,6 +175,84 @@ async function typeTwoParagraphDescription(
   await expect(editor.locator('p').nth(1)).toContainText(secondLine);
 }
 
+function splitStringIntoChunks(value: string, chunkLength = 45_000) {
+  const chunks: string[] = [];
+
+  for (let index = 0; index < value.length; index += chunkLength) {
+    chunks.push(value.slice(index, index + chunkLength));
+  }
+
+  return chunks;
+}
+
+async function persistDescriptionWithChunks({
+  description,
+  headers,
+  request,
+  taskId,
+}: {
+  description: string;
+  headers: Record<string, string>;
+  request: APIRequestContext;
+  taskId: string;
+}) {
+  const chunks = splitStringIntoChunks(description);
+  const beginResponse = await request.patch(
+    `/api/v1/workspaces/personal/tasks/${taskId}/description`,
+    {
+      data: {
+        action: 'begin',
+        fields: {
+          description: {
+            chunk_count: chunks.length,
+            total_length: description.length,
+          },
+        },
+      },
+      headers,
+    }
+  );
+
+  expect(beginResponse.ok()).toBeTruthy();
+  const { session_id: sessionId } = (await beginResponse.json()) as {
+    session_id: string;
+  };
+
+  for (let index = 0; index < chunks.length; index += 1) {
+    const appendResponse = await request.patch(
+      `/api/v1/workspaces/personal/tasks/${taskId}/description`,
+      {
+        data: {
+          action: 'append',
+          chunk: chunks[index],
+          chunk_index: index,
+          field: 'description',
+          session_id: sessionId,
+        },
+        headers,
+      }
+    );
+
+    expect(appendResponse.ok()).toBeTruthy();
+  }
+
+  const commitResponse = await request.patch(
+    `/api/v1/workspaces/personal/tasks/${taskId}/description`,
+    {
+      data: {
+        action: 'commit',
+        session_id: sessionId,
+      },
+      headers,
+    }
+  );
+
+  expect(commitResponse.ok()).toBeTruthy();
+  await expect(commitResponse.json()).resolves.toMatchObject({
+    description,
+  });
+}
+
 test.describe('Task board realtime and task mutations', () => {
   test('created task appears in another open board tab without losing board state', async ({
     context,
@@ -380,6 +458,78 @@ test.describe('Task board realtime and task mutations', () => {
     } finally {
       await secondPage.close();
 
+      await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
+        failOnStatusCode: false,
+        headers,
+      });
+
+      if (createdList) {
+        await request.patch(
+          `/api/v1/workspaces/personal/task-boards/${board.id}/lists/${list.id}`,
+          {
+            data: { deleted: true },
+            failOnStatusCode: false,
+            headers,
+          }
+        );
+      }
+    }
+  });
+
+  test('chunked task description update persists large pasted content', async ({
+    context,
+    page,
+    request,
+  }, testInfo) => {
+    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 214));
+
+    await resetDbRateLimits();
+    await resetAppRateLimitStateForTests(request, {
+      completeOnboarding: true,
+      email: TEST_USER.email,
+      headers,
+      locale: DEFAULT_LOCALE,
+    });
+    await context.setExtraHTTPHeaders(headers);
+
+    const board = await getPersonalBoard(request);
+    const { created: createdList, list } = await getOrCreatePersonalBoardList(
+      request,
+      board.id,
+      headers
+    );
+    const marker = `Chunked paste marker ${Date.now()}`;
+    const taskName = `E2E chunked description ${Date.now()}`;
+    const taskId = await createPersonalTask(
+      request,
+      list.id,
+      taskName,
+      headers
+    );
+    const taskPath = `/${DEFAULT_LOCALE}/personal/tasks/${taskId}`;
+    const largeText = `${marker}\n${'Large pasted content '.repeat(4_000)}`;
+    const description = JSON.stringify({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: largeText }],
+        },
+      ],
+    });
+
+    try {
+      await persistDescriptionWithChunks({
+        description,
+        headers,
+        request,
+        taskId,
+      });
+
+      await page.goto(taskPath, { waitUntil: 'domcontentloaded' });
+      const editor = await waitForTaskDescriptionEditor(page, taskName);
+      await expect(editor).toContainText(marker, { timeout: 30_000 });
+    } finally {
       await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
         failOnStatusCode: false,
         headers,
