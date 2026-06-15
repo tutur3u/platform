@@ -289,11 +289,39 @@ export function StorefrontSurface({
                   )}
                 >
                   {listingRows.length === 0 ? (
-                    <StorefrontEmptyListings
-                      action={emptyAction}
-                      labels={labels}
-                      radius={radius}
-                    />
+                    showCartListings ? (
+                      <div
+                        className={cn(
+                          'col-span-full grid min-h-56 place-items-center border border-dashed bg-muted/25 p-6 text-center',
+                          radius
+                        )}
+                      >
+                        <div className="max-w-sm">
+                          <ShoppingCart
+                            aria-hidden
+                            className="mx-auto size-8 text-muted-foreground"
+                          />
+                          <p className="mt-3 font-semibold">
+                            {labels.emptyCart}
+                          </p>
+                          {storefrontHref ? (
+                            <a
+                              className="mt-4 inline-flex items-center gap-1.5 font-medium text-[var(--storefront-accent,var(--primary))] text-sm hover:underline"
+                              href={storefrontHref}
+                            >
+                              <ArrowLeft aria-hidden className="size-4" />
+                              {labels.browse}
+                            </a>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : (
+                      <StorefrontEmptyListings
+                        action={emptyAction}
+                        labels={labels}
+                        radius={radius}
+                      />
+                    )
                   ) : (
                     listingRows.map((listing) => {
                       const line = cartLines.find(
