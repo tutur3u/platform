@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import { fetchWorkspaceProducts, type ProductStatusFilter } from './hooks';
+import { neutralizeSpreadsheetFormulaCells } from './products-export-sanitize';
 
 interface ProductsExportDialogContentProps {
   categoryId?: string;
@@ -116,22 +117,24 @@ export function ProductsExportDialogContent({
         nextPage += 1;
       }
 
-      const exportRows = products.map((product) => ({
-        [t('product-data-table.name')]: product.name || '',
-        [t('product-data-table.category')]: product.category || '',
-        [t('product-data-table.status')]: product.archived
-          ? t('common.archived')
-          : t('common.active'),
-        [t('product-data-table.manufacturer')]: product.manufacturer || '',
-        [t('product-data-table.description')]: product.description || '',
-        [t('product-data-table.usage')]: product.usage || '',
-        [t('product-data-table.stock')]: getStockSummary(
-          product,
-          t('product-data-table.unlimited_stock')
-        ),
-        [t('product-data-table.price')]: getPriceSummary(product, currency),
-        [t('product-data-table.created_at')]: product.created_at || '',
-      }));
+      const exportRows = products.map((product) =>
+        neutralizeSpreadsheetFormulaCells({
+          [t('product-data-table.name')]: product.name || '',
+          [t('product-data-table.category')]: product.category || '',
+          [t('product-data-table.status')]: product.archived
+            ? t('common.archived')
+            : t('common.active'),
+          [t('product-data-table.manufacturer')]: product.manufacturer || '',
+          [t('product-data-table.description')]: product.description || '',
+          [t('product-data-table.usage')]: product.usage || '',
+          [t('product-data-table.stock')]: getStockSummary(
+            product,
+            t('product-data-table.unlimited_stock')
+          ),
+          [t('product-data-table.price')]: getPriceSummary(product, currency),
+          [t('product-data-table.created_at')]: product.created_at || '',
+        })
+      );
 
       const fileStem = `products-${new Date().toISOString().slice(0, 10)}`;
 
