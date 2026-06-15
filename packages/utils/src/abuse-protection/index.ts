@@ -1404,9 +1404,16 @@ export async function clearReauthVerifyFailures(
  */
 export async function checkPasswordLoginLimit(
   ipAddress: string,
+  emailOrContext?: string | AbuseProtectionLogContext,
   context?: AbuseProtectionLogContext
 ): Promise<AbuseCheckResult> {
-  const blockInfo = await isIPBlocked(ipAddress, context);
+  const email =
+    typeof emailOrContext === 'string'
+      ? normalizeAbuseEventEmail(emailOrContext)
+      : null;
+  const logContext =
+    typeof emailOrContext === 'string' ? context : emailOrContext;
+  const blockInfo = await isIPBlocked(ipAddress, logContext);
   if (blockInfo) {
     return {
       allowed: false,
@@ -1418,10 +1425,16 @@ export async function checkPasswordLoginLimit(
     };
   }
 
-  const key = REDIS_KEYS.PASSWORD_LOGIN_FAILED(ipAddress);
-  const count = await getCounter(key);
+  const ipKey = REDIS_KEYS.PASSWORD_LOGIN_FAILED(ipAddress);
+  const emailKey = email
+    ? REDIS_KEYS.PASSWORD_LOGIN_FAILED_EMAIL(hashEmail(email))
+    : null;
+  const [ipCount, emailCount] = await Promise.all([
+    getCounter(ipKey),
+    emailKey ? getCounter(emailKey) : Promise.resolve(0),
+  ]);
 
-  if (count >= ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX) {
+  if (ipCount >= ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX) {
     return {
       allowed: false,
       reason: 'Too many failed login attempts',
@@ -1432,9 +1445,25 @@ export async function checkPasswordLoginLimit(
     };
   }
 
+  if (email && emailCount >= ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_EMAIL_MAX) {
+    return {
+      allowed: false,
+      reason: 'Too many failed login attempts for this email',
+      retryAfter: Math.ceil(
+        ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_EMAIL_WINDOW_MS / 1000
+      ),
+      remainingAttempts: 0,
+    };
+  }
+
   return {
     allowed: true,
-    remainingAttempts: ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX - count,
+    remainingAttempts: Math.min(
+      ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX - ipCount,
+      email
+        ? ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_EMAIL_MAX - emailCount
+        : ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX - ipCount
+    ),
   };
 }
 
@@ -1445,14 +1474,23 @@ export async function recordPasswordLoginFailure(
   ipAddress: string,
   email?: string
 ): Promise<void> {
-  const key = REDIS_KEYS.PASSWORD_LOGIN_FAILED(ipAddress);
-  const { count } = await incrementCounter(
-    key,
-    ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_WINDOW_MS
-  );
+  const normalizedEmail = normalizeAbuseEventEmail(email);
+  const ipKey = REDIS_KEYS.PASSWORD_LOGIN_FAILED(ipAddress);
+  const emailKey = normalizedEmail
+    ? REDIS_KEYS.PASSWORD_LOGIN_FAILED_EMAIL(hashEmail(normalizedEmail))
+    : null;
+  const [{ count }] = await Promise.all([
+    incrementCounter(ipKey, ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_WINDOW_MS),
+    emailKey
+      ? incrementCounter(
+          emailKey,
+          ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_EMAIL_WINDOW_MS
+        )
+      : Promise.resolve({ count: 0, ttl: 0 }),
+  ]);
 
   void logAbuseEvent(ipAddress, 'password_login_failed', {
-    email,
+    email: normalizedEmail ?? undefined,
     success: false,
   });
 
@@ -1465,12 +1503,22 @@ export async function recordPasswordLoginFailure(
 }
 
 /**
- * Clear password login failures on success
+ * Clear password login failures for the successful account only.
+ * The IP-wide failure counter intentionally remains in place so a successful
+ * login for another account cannot reset brute-force pressure from the IP.
  */
 export async function clearPasswordLoginFailures(
-  ipAddress: string
+  _ipAddress: string,
+  email?: string
 ): Promise<void> {
-  await deleteKeys(REDIS_KEYS.PASSWORD_LOGIN_FAILED(ipAddress));
+  const normalizedEmail = normalizeAbuseEventEmail(email);
+  if (!normalizedEmail) {
+    return;
+  }
+
+  await deleteKeys(
+    REDIS_KEYS.PASSWORD_LOGIN_FAILED_EMAIL(hashEmail(normalizedEmail))
+  );
 }
 
 /**

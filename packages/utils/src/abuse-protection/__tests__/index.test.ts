@@ -7,12 +7,15 @@ import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
   checkOTPSendAllowed,
+  checkPasswordLoginLimit,
   classifyPotentialSpamUserAgent,
+  clearPasswordLoginFailures,
   extractIPFromHeaders,
   hashEmail,
   MAX_BLOCK_LEVEL,
   REDIS_KEYS,
   recordOTPSendSuccess,
+  recordPasswordLoginFailure,
   resetOtpLimitsForEmail,
   WINDOW_MS,
 } from '../index';
@@ -241,6 +244,54 @@ describe('abuse-protection', () => {
         5 * 60 * 1000
       );
       expect(ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX).toBe(10);
+      expect(ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_EMAIL_WINDOW_MS).toBe(
+        15 * 60 * 1000
+      );
+      expect(ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_EMAIL_MAX).toBe(10);
+    });
+  });
+
+  describe('password login failure limits', () => {
+    it('keeps the IP-wide failure counter after another account succeeds', async () => {
+      const ipAddress = '203.0.113.41';
+
+      for (let attempt = 0; attempt < 9; attempt += 1) {
+        await recordPasswordLoginFailure(ipAddress, 'victim@example.com');
+      }
+
+      await clearPasswordLoginFailures(ipAddress, 'attacker@example.com');
+
+      await expect(
+        checkPasswordLoginLimit(ipAddress, 'victim@example.com')
+      ).resolves.toMatchObject({
+        allowed: true,
+        remainingAttempts: 1,
+      });
+    });
+
+    it('clears only the successful account email failure counter', async () => {
+      const email = 'targeted-user@example.com';
+
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        await recordPasswordLoginFailure(`198.51.100.${attempt + 1}`, email);
+      }
+
+      await expect(
+        checkPasswordLoginLimit('198.51.100.200', email)
+      ).resolves.toMatchObject({
+        allowed: false,
+        reason: 'Too many failed login attempts for this email',
+        remainingAttempts: 0,
+      });
+
+      await clearPasswordLoginFailures('198.51.100.200', email);
+
+      await expect(
+        checkPasswordLoginLimit('198.51.100.200', email)
+      ).resolves.toMatchObject({
+        allowed: true,
+        remainingAttempts: 10,
+      });
     });
   });
 

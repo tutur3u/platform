@@ -137,20 +137,20 @@ export async function passwordLogin(
     return suspiciousAgentCheck.failure;
   }
 
-  const abuseCheck = await checkPasswordLoginLimit(
+  const ipAbuseCheck = await checkPasswordLoginLimit(
     suspiciousAgentCheck.ipAddress,
     {
       route: context.endpoint,
       source: 'password-login',
     }
   );
-  if (!abuseCheck.allowed) {
+  if (!ipAbuseCheck.allowed) {
     return {
       body: {
         error:
-          abuseCheck.reason ||
+          ipAbuseCheck.reason ||
           'Too many failed attempts. Please try again later.',
-        retryAfter: abuseCheck.retryAfter,
+        retryAfter: ipAbuseCheck.retryAfter,
       },
       status: 429,
     };
@@ -165,6 +165,26 @@ export async function passwordLogin(
         error: error instanceof Error ? error.message : 'Invalid email address',
       },
       status: 400,
+    };
+  }
+
+  const abuseCheck = await checkPasswordLoginLimit(
+    suspiciousAgentCheck.ipAddress,
+    validatedEmail,
+    {
+      route: context.endpoint,
+      source: 'password-login',
+    }
+  );
+  if (!abuseCheck.allowed) {
+    return {
+      body: {
+        error:
+          abuseCheck.reason ||
+          'Too many failed attempts. Please try again later.',
+        retryAfter: abuseCheck.retryAfter,
+      },
+      status: 429,
     };
   }
 
@@ -207,7 +227,10 @@ export async function passwordLogin(
     };
   }
 
-  await clearPasswordLoginFailures(suspiciousAgentCheck.ipAddress);
+  await clearPasswordLoginFailures(
+    suspiciousAgentCheck.ipAddress,
+    validatedEmail
+  );
 
   const session =
     data.session ||

@@ -165,6 +165,27 @@ describe('passwordLogin', () => {
       body: { success: true },
       status: 200,
     });
+    expect(mocks.checkPasswordLoginLimit).toHaveBeenNthCalledWith(
+      1,
+      '1.2.3.4',
+      {
+        route: '/api/v1/auth/password-login',
+        source: 'password-login',
+      }
+    );
+    expect(mocks.checkPasswordLoginLimit).toHaveBeenNthCalledWith(
+      2,
+      '1.2.3.4',
+      'person@example.com',
+      {
+        route: '/api/v1/auth/password-login',
+        source: 'password-login',
+      }
+    );
+    expect(mocks.clearPasswordLoginFailures).toHaveBeenCalledWith(
+      '1.2.3.4',
+      'person@example.com'
+    );
   });
 
   it('requires a Turnstile token for hosted Supabase password login in development', async () => {

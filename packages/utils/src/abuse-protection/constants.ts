@@ -35,6 +35,8 @@ export const ABUSE_THRESHOLDS = {
   // Password login limits
   PASSWORD_LOGIN_FAILED_WINDOW_MS: 5 * 60 * 1000, // 5 minutes
   PASSWORD_LOGIN_FAILED_MAX: 10,
+  PASSWORD_LOGIN_FAILED_EMAIL_WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  PASSWORD_LOGIN_FAILED_EMAIL_MAX: 10,
 
   // API auth failure limits (session-auth routes)
   API_AUTH_FAILED_WINDOW_MS: 5 * 60 * 1000, // 5 minutes
@@ -95,6 +97,8 @@ export const REDIS_KEYS = {
 
   // Password login attempts
   PASSWORD_LOGIN_FAILED: (ip: string) => `password:login:failed:${ip}`,
+  PASSWORD_LOGIN_FAILED_EMAIL: (emailHash: string) =>
+    `password:login:failed:email:${emailHash}`,
 
   // API auth failure attempts (session-auth routes)
   API_AUTH_FAILED: (ip: string) => `api:auth:failed:${ip}`,
