@@ -76,7 +76,11 @@ export const GET = withSessionAuth<Params>(
 );
 
 export const POST = withSessionAuth<Params>(
-  async (request, { supabase, user }, { courseId, moduleId, wsId }) => {
+  async (
+    request,
+    { supabase, user },
+    { courseId: _courseId, moduleId, wsId }
+  ) => {
     try {
       const subject = await resolveTulearnSubject({
         requestSupabase: supabase,
@@ -133,12 +137,18 @@ export const POST = withSessionAuth<Params>(
       if (!quiz.type || quiz.type === 'multiple_choice') {
         if (!selectedOptionId) {
           return NextResponse.json(
-            { message: 'selectedOptionId is required for multiple choice quizzes' },
+            {
+              message:
+                'selectedOptionId is required for multiple choice quizzes',
+            },
             { status: 400 }
           );
         }
 
-        const isOptionUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(selectedOptionId);
+        const isOptionUuid =
+          /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
+            selectedOptionId
+          );
 
         if (isOptionUuid) {
           const { data: option, error: optionErr } = await sbAdmin
@@ -171,8 +181,13 @@ export const POST = withSessionAuth<Params>(
           }
 
           const correctIndex = (correctAnswer as any)?.correctIndex;
-          const selectedIndex = (answer as any)?.selectedIndex ?? (typeof answer === 'number' ? answer : null);
-          isCorrect = correctIndex !== undefined && selectedIndex !== null && Number(correctIndex) === Number(selectedIndex);
+          const selectedIndex =
+            (answer as any)?.selectedIndex ??
+            (typeof answer === 'number' ? answer : null);
+          isCorrect =
+            correctIndex !== undefined &&
+            selectedIndex !== null &&
+            Number(correctIndex) === Number(selectedIndex);
         }
       } else if (quiz.type === 'true_false') {
         let correctAnswer = quiz.answer;
@@ -188,7 +203,8 @@ export const POST = withSessionAuth<Params>(
           }
         }
 
-        const clientCorrect = typeof answer === 'boolean' ? answer : (answer as any)?.correct;
+        const clientCorrect =
+          typeof answer === 'boolean' ? answer : (answer as any)?.correct;
         const correctKey = (correctAnswer as any)?.correct;
         isCorrect = clientCorrect === correctKey;
       } else if (quiz.type === 'ordering') {
@@ -223,7 +239,12 @@ export const POST = withSessionAuth<Params>(
         isCorrect = true;
       }
 
-      const isOptionUuid = !!(selectedOptionId && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(selectedOptionId));
+      const isOptionUuid = !!(
+        selectedOptionId &&
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
+          selectedOptionId
+        )
+      );
 
       const { data: submission, error: insertErr } = await sbAdmin
         .from('course_module_quiz_submissions')
@@ -259,7 +280,11 @@ export const POST = withSessionAuth<Params>(
 );
 
 export const DELETE = withSessionAuth<Params>(
-  async (request, { supabase, user }, { courseId, moduleId, wsId }) => {
+  async (
+    request,
+    { supabase, user },
+    { courseId: _courseId, moduleId, wsId }
+  ) => {
     try {
       const subject = await resolveTulearnSubject({
         requestSupabase: supabase,
