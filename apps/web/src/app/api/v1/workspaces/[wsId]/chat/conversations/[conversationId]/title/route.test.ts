@@ -7,7 +7,11 @@ const mocks = {
     supabase: { from: vi.fn() },
     user: { id: 'user-1' },
   },
+  capMaxOutputTokensByCredits: vi.fn(),
   callPrivateChatRpc: vi.fn(),
+  checkAiCredits: vi.fn(),
+  createAdminClient: vi.fn(),
+  deductAiCredits: vi.fn(),
   generateText: vi.fn(),
   google: vi.fn((model: string) => ({ model })),
   isAiChatConversationId: vi.fn(),
@@ -16,12 +20,27 @@ const mocks = {
   resolveAiMemoryWorkspaceIdForUser: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   serverError: vi.fn(),
+  serverWarn: vi.fn(),
+  sbAdmin: { from: vi.fn() },
   updateAiChatConversationTitle: vi.fn(),
   withAiMemory: vi.fn(async ({ model }) => model),
 };
 
 vi.mock('@ai-sdk/google', () => ({
   google: (...args: Parameters<typeof mocks.google>) => mocks.google(...args),
+}));
+
+vi.mock('@tuturuuu/ai/credits/cap-output-tokens', () => ({
+  capMaxOutputTokensByCredits: (
+    ...args: Parameters<typeof mocks.capMaxOutputTokensByCredits>
+  ) => mocks.capMaxOutputTokensByCredits(...args),
+}));
+
+vi.mock('@tuturuuu/ai/credits/check-credits', () => ({
+  checkAiCredits: (...args: Parameters<typeof mocks.checkAiCredits>) =>
+    mocks.checkAiCredits(...args),
+  deductAiCredits: (...args: Parameters<typeof mocks.deductAiCredits>) =>
+    mocks.deductAiCredits(...args),
 }));
 
 vi.mock('@tuturuuu/ai/memory', () => ({
@@ -35,6 +54,11 @@ vi.mock('@tuturuuu/ai/memory', () => ({
 vi.mock('ai', () => ({
   generateText: (...args: Parameters<typeof mocks.generateText>) =>
     mocks.generateText(...args),
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
+    mocks.createAdminClient(...args),
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -79,6 +103,8 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: {
     error: (...args: Parameters<typeof mocks.serverError>) =>
       mocks.serverError(...args),
+    warn: (...args: Parameters<typeof mocks.serverWarn>) =>
+      mocks.serverWarn(...args),
   },
 }));
 
@@ -141,9 +167,30 @@ describe('chat conversation generated title route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRouteContext();
+    mocks.checkAiCredits.mockResolvedValue({
+      allowed: true,
+      errorCode: null,
+      errorMessage: null,
+      maxOutputTokens: 32,
+      remainingCredits: 20,
+      tier: 'PRO',
+    });
+    mocks.capMaxOutputTokensByCredits.mockResolvedValue(24);
+    mocks.createAdminClient.mockResolvedValue(mocks.sbAdmin);
+    mocks.deductAiCredits.mockResolvedValue({
+      creditsDeducted: 1,
+      errorCode: null,
+      remainingCredits: 19,
+      success: true,
+    });
     mocks.resolveAiMemoryWorkspaceIdForUser.mockResolvedValue('workspace-1');
     mocks.generateText.mockResolvedValue({
       text: 'Recent Planning Decisions',
+      usage: {
+        inputTokens: 80,
+        outputTokenDetails: { reasoningTokens: 3 },
+        outputTokens: 12,
+      },
     });
     mocks.isAiChatConversationId.mockImplementation((conversationId: string) =>
       conversationId.startsWith('ai-chat-')
@@ -186,6 +233,7 @@ describe('chat conversation generated title route', () => {
     );
     expect(mocks.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
+        maxOutputTokens: 24,
         prompt: expect.stringContaining('message 2'),
         system: expect.stringContaining('conversation title'),
       })
@@ -203,6 +251,33 @@ describe('chat conversation generated title route', () => {
         p_input: { title: 'Recent Planning Decisions' },
         p_ws_id: 'workspace-1',
       }
+    );
+    expect(mocks.checkAiCredits).toHaveBeenCalledWith(
+      'workspace-1',
+      'google/gemini-3.1-flash-lite',
+      'chat',
+      { userId: 'user-1' }
+    );
+    expect(mocks.capMaxOutputTokensByCredits).toHaveBeenCalledWith(
+      mocks.sbAdmin,
+      'google/gemini-3.1-flash-lite',
+      32,
+      20
+    );
+    expect(mocks.deductAiCredits).toHaveBeenCalledWith(
+      expect.objectContaining({
+        feature: 'chat',
+        inputTokens: 80,
+        metadata: {
+          conversationId: 'conversation-1',
+          source: 'native_chat_title',
+        },
+        modelId: 'google/gemini-3.1-flash-lite',
+        outputTokens: 12,
+        reasoningTokens: 3,
+        userId: 'user-1',
+        wsId: 'workspace-1',
+      })
     );
     expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -228,6 +303,33 @@ describe('chat conversation generated title route', () => {
       message: 'No messages found',
     });
     expect(mocks.generateText).not.toHaveBeenCalled();
+    expect(mocks.checkAiCredits).not.toHaveBeenCalled();
+  });
+
+  it('rejects title generation when AI credits are unavailable', async () => {
+    mocks.checkAiCredits.mockResolvedValueOnce({
+      allowed: false,
+      errorCode: 'NO_BALANCE',
+      errorMessage: 'AI credits unavailable',
+      maxOutputTokens: null,
+      remainingCredits: 0,
+      tier: 'FREE',
+    });
+
+    const response = await callRoute();
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      code: 'NO_BALANCE',
+      message: 'AI credits unavailable',
+    });
+    expect(mocks.generateText).not.toHaveBeenCalled();
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalledWith(
+      'chat_update_conversation',
+      expect.anything()
+    );
+    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+    expect(mocks.deductAiCredits).not.toHaveBeenCalled();
   });
 
   it('generates and saves a title for synthetic AI chat conversations', async () => {
