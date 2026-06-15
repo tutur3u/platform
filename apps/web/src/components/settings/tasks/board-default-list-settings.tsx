@@ -12,7 +12,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { apiFetch } from '@/lib/api-fetch';
+import { apiFetch, HttpError } from '@/lib/api-fetch';
 
 const NONE_VALUE = '__none__';
 
@@ -71,8 +71,12 @@ export function BoardDefaultListSettings({ wsId }: { wsId: string }) {
       });
       toast.success(t('board_default_list_update_success'));
     },
-    onError: () => {
-      toast.error(t('board_default_list_update_error'));
+    onError: (error) => {
+      toast.error(
+        error instanceof HttpError
+          ? error.message
+          : t('board_default_list_update_error')
+      );
     },
   });
 

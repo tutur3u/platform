@@ -5,6 +5,7 @@ const createAdminClientMock = vi.fn();
 const createClientMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const resolveAuthenticatedSessionUserMock = vi.fn();
+const taskListMaybeSingleMock = vi.fn();
 const updateEqBoardMock = vi.fn();
 const updateEqWorkspaceMock = vi.fn();
 const updateMock = vi.fn();
@@ -49,20 +50,147 @@ describe('task board boardId route PUT', () => {
       error: null,
     });
 
+    taskListMaybeSingleMock.mockResolvedValue({
+      data: { id: 'list-2' },
+      error: null,
+    });
     updateEqWorkspaceMock.mockResolvedValue({ error: null });
     updateEqBoardMock.mockReturnValue({ eq: updateEqWorkspaceMock });
     updateMock.mockReturnValue({ eq: updateEqBoardMock });
     createAdminClientMock.mockResolvedValue({
       from: vi.fn((table: string) => {
-        if (table !== 'workspace_boards') {
-          throw new Error(`Unexpected table: ${table}`);
+        if (table === 'workspace_boards') {
+          return {
+            update: updateMock,
+          };
         }
 
-        return {
-          update: updateMock,
-        };
+        if (table === 'task_lists') {
+          const taskListQuery = {
+            eq: vi.fn(),
+            maybeSingle: taskListMaybeSingleMock,
+            select: vi.fn(),
+          };
+          taskListQuery.select.mockReturnValue(taskListQuery);
+          taskListQuery.eq.mockReturnValue(taskListQuery);
+          return taskListQuery;
+        }
+
+        throw new Error(`Unexpected table: ${table}`);
       }),
     });
+  });
+
+  it('fails visibly when a default-list-only update cannot be persisted', async () => {
+    updateEqWorkspaceMock.mockResolvedValueOnce({
+      error: {
+        code: '42703',
+        message: 'column workspace_boards.default_list_id does not exist',
+      },
+    });
+
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            default_list_id: 'list-2',
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: '00000000-0000-4000-8000-000000000456',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'Default task list settings are not available until the database migration is applied',
+    });
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(updateMock).toHaveBeenCalledWith({ default_list_id: 'list-2' });
+  });
+
+  it('keeps rollout fallback for mixed board updates when default_list_id is unavailable', async () => {
+    updateEqWorkspaceMock
+      .mockResolvedValueOnce({
+        error: {
+          code: '42703',
+          message: 'column workspace_boards.default_list_id does not exist',
+        },
+      })
+      .mockResolvedValueOnce({ error: null });
+
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            default_list_id: 'list-2',
+            name: 'Roadmap',
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: '00000000-0000-4000-8000-000000000456',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateMock).toHaveBeenNthCalledWith(1, {
+      default_list_id: 'list-2',
+      name: 'Roadmap',
+    });
+    expect(updateMock).toHaveBeenNthCalledWith(2, { name: 'Roadmap' });
+  });
+
+  it('rejects a default list that does not belong to the board', async () => {
+    taskListMaybeSingleMock.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            default_list_id: 'list-from-another-board',
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: '00000000-0000-4000-8000-000000000456',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Default list does not belong to this board',
+    });
+    expect(updateMock).not.toHaveBeenCalled();
   });
 
   it('returns a stable duplicate-name error when renaming to an existing board name', async () => {

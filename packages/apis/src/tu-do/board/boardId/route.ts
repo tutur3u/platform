@@ -42,6 +42,8 @@ const paramsSchema = z.object({
 const TASK_BOARD_NAME_EXISTS_CODE = 'TASK_BOARD_NAME_EXISTS';
 const TASK_BOARD_NAME_EXISTS_ERROR =
   'A task board with this name already exists';
+const DEFAULT_LIST_COLUMN_UNAVAILABLE_ERROR =
+  'Default task list settings are not available until the database migration is applied';
 
 function isUniqueViolation(error: unknown) {
   return (
@@ -50,6 +52,20 @@ function isUniqueViolation(error: unknown) {
     typeof error === 'object' &&
     'code' in error &&
     error.code === '23505'
+  );
+}
+
+function isDefaultListColumnUnavailable(error: unknown) {
+  if (error === null || error === undefined || typeof error !== 'object') {
+    return false;
+  }
+
+  const code = 'code' in error ? error.code : undefined;
+  const message = 'message' in error ? error.message : undefined;
+
+  return (
+    code === '42703' ||
+    (typeof message === 'string' && message.includes('default_list_id'))
   );
 }
 
@@ -133,6 +149,7 @@ export async function handleBoardRoutePUT(
     restore?: boolean;
     group_ids?: string[];
   };
+  const hasDefaultListUpdate = Object.hasOwn(data, 'default_list_id');
 
   const { group_ids: _, archived, deleted, restore, ...coreData } = data;
 
@@ -186,13 +203,18 @@ export async function handleBoardRoutePUT(
     .eq('ws_id', wsId);
 
   // Rollout safety: if `default_list_id` has not been migrated yet in this
-  // environment, retry the update without it so other board edits still save.
-  if (
-    error &&
-    'default_list_id' in updateData &&
-    (error.code === '42703' || error.message?.includes('default_list_id'))
-  ) {
+  // environment, retry without it only when other board edits still need to
+  // save. A default-list-only update must fail visibly instead of reporting a
+  // false success.
+  if (error && hasDefaultListUpdate && isDefaultListColumnUnavailable(error)) {
     const { default_list_id: _droppedDefaultListId, ...rest } = updateData;
+    if (Object.keys(rest).length === 0) {
+      return NextResponse.json(
+        { message: DEFAULT_LIST_COLUMN_UNAVAILABLE_ERROR },
+        { status: 503 }
+      );
+    }
+
     ({ error } = await sbAdmin
       .from('workspace_boards')
       .update(rest)

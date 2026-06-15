@@ -6,11 +6,23 @@ import { BoardDefaultListSettings } from './board-default-list-settings';
 
 const mocks = vi.hoisted(() => ({
   apiFetch: vi.fn(),
+  HttpError: class HttpError extends Error {
+    constructor(
+      public readonly status: number,
+      message: string
+    ) {
+      super(message);
+      this.name = 'HttpError';
+    }
+  },
+  toastError: vi.fn(),
+  toastSuccess: vi.fn(),
 }));
 
 vi.mock('@/lib/api-fetch', () => ({
   apiFetch: (...args: Parameters<typeof mocks.apiFetch>) =>
     mocks.apiFetch(...args),
+  HttpError: mocks.HttpError,
 }));
 
 vi.mock('@tuturuuu/ui/custom/settings-item-tab', () => ({
@@ -59,7 +71,7 @@ vi.mock('@tuturuuu/ui/select', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
+  toast: { error: mocks.toastError, success: mocks.toastSuccess },
 }));
 
 vi.mock('next-intl', () => ({
@@ -93,7 +105,7 @@ const boardsResponse = {
 
 describe('BoardDefaultListSettings', () => {
   beforeEach(() => {
-    mocks.apiFetch.mockReset();
+    vi.clearAllMocks();
   });
 
   it('lists boards and persists a chosen default list via PUT', async () => {
@@ -119,6 +131,9 @@ describe('BoardDefaultListSettings', () => {
           body: JSON.stringify({ default_list_id: 'list-2' }),
         })
       )
+    );
+    expect(mocks.toastSuccess).toHaveBeenCalledWith(
+      'board_default_list_update_success'
     );
   });
 
@@ -148,5 +163,36 @@ describe('BoardDefaultListSettings', () => {
         })
       )
     );
+  });
+
+  it('shows the server error when a default list update is not persisted', async () => {
+    mocks.apiFetch.mockImplementation((_url: string, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        return Promise.reject(
+          new mocks.HttpError(
+            503,
+            'Default task list settings are not available until the database migration is applied'
+          )
+        );
+      }
+
+      return Promise.resolve(boardsResponse);
+    });
+
+    renderSettings();
+
+    await waitFor(() =>
+      expect(screen.getByText('Roadmap')).toBeInTheDocument()
+    );
+
+    const select = screen.getByRole('combobox');
+    fireEvent.change(select, { target: { value: 'list-2' } });
+
+    await waitFor(() =>
+      expect(mocks.toastError).toHaveBeenCalledWith(
+        'Default task list settings are not available until the database migration is applied'
+      )
+    );
+    expect(mocks.toastSuccess).not.toHaveBeenCalled();
   });
 });
