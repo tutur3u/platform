@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import {
   type BoardRealtimePayload,
   createRealtimeClientId,
+  PRIVATE_TASK_REALTIME_CHANNEL_CONFIG,
   type RealtimeChannel,
   SEEN_REALTIME_EVENT_LIMIT,
 } from './useBoardRealtime.types';
@@ -255,9 +256,10 @@ export function useTaskUserRealtime(userId: string | null | undefined) {
       return;
     }
 
-    const channel = supabase.channel(getTaskUserRealtimeChannelName(userId), {
-      config: { broadcast: { self: false } },
-    });
+    const channel = supabase.channel(
+      getTaskUserRealtimeChannelName(userId),
+      PRIVATE_TASK_REALTIME_CHANNEL_CONFIG
+    );
     channelRef.current = channel;
 
     channel

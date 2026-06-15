@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 const taskBoardRealtimeChannelPrefix = 'board-realtime';
 const taskUserRealtimeChannelPrefix = 'task-user-realtime';
+const privateTaskRealtimeChannelConfig = RealtimeChannelConfig(private: true);
 
 typedef TaskBroadcastHandler = void Function(TaskBroadcastEvent event);
 
@@ -176,7 +177,10 @@ class SupabaseTaskBroadcastClient implements TaskBroadcastClient {
       return;
     }
 
-    final channel = supabase.channel(channelName);
+    final channel = supabase.channel(
+      channelName,
+      opts: privateTaskRealtimeChannelConfig,
+    );
     try {
       await channel.sendBroadcastMessage(event: event, payload: payload);
     } finally {
@@ -193,7 +197,10 @@ class SupabaseTaskBroadcastClient implements TaskBroadcastClient {
       return TaskBroadcastSubscription(() async {});
     }
 
-    final channel = supabase.channel(channelName);
+    final channel = supabase.channel(
+      channelName,
+      opts: privateTaskRealtimeChannelConfig,
+    );
 
     for (final eventName in _taskBroadcastEvents) {
       channel.onBroadcast(
