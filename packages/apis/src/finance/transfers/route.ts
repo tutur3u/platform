@@ -736,6 +736,11 @@ export async function POST(
       permissions,
       defaultWalletId,
       requestedWalletId: data.origin_wallet_id,
+    }) ||
+    !canUseRequestedFinanceWalletOnCreate({
+      permissions,
+      defaultWalletId,
+      requestedWalletId: data.destination_wallet_id,
     })
   ) {
     return NextResponse.json(
