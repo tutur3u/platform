@@ -2,15 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET } from './route';
 
 const mocks = vi.hoisted(() => ({
-  getPublicStorefront: vi.fn(),
+  getCachedPublicStorefront: vi.fn(),
   isInventoryEnabled: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
 }));
 
 vi.mock('@/lib/inventory/commerce/public-storefront', () => ({
-  getPublicStorefront: (...args: unknown[]) =>
-    mocks.getPublicStorefront(...args),
+  getCachedPublicStorefront: (...args: unknown[]) =>
+    mocks.getCachedPublicStorefront(...args),
 }));
 
 vi.mock('@/lib/inventory/access', () => ({
@@ -35,7 +35,7 @@ describe('inventory public storefront route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.isInventoryEnabled.mockResolvedValue(true);
-    mocks.getPublicStorefront.mockResolvedValue({
+    mocks.getCachedPublicStorefront.mockResolvedValue({
       bundles: [],
       listings: [],
       storefront: {
@@ -52,12 +52,12 @@ describe('inventory public storefront route', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(mocks.getPublicStorefront).toHaveBeenCalledWith('shop');
+    expect(mocks.getCachedPublicStorefront).toHaveBeenCalledWith('shop');
     expect(mocks.resolveSessionAuthContext).not.toHaveBeenCalled();
   });
 
   it('returns not found when the public storefront helper returns null', async () => {
-    mocks.getPublicStorefront.mockResolvedValue(null);
+    mocks.getCachedPublicStorefront.mockResolvedValue(null);
 
     const response = await GET(new Request('http://test.local'), {
       params: Promise.resolve({ slug: 'missing-shop' }),
@@ -68,7 +68,7 @@ describe('inventory public storefront route', () => {
   });
 
   it('requires workspace membership for private storefronts', async () => {
-    mocks.getPublicStorefront.mockResolvedValue({
+    mocks.getCachedPublicStorefront.mockResolvedValue({
       bundles: [],
       listings: [],
       storefront: {

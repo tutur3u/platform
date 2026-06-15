@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getCheckoutByPublicToken,
+  getCheckoutStorefrontAccessByPublicToken,
   listCheckouts,
   releaseCheckout,
 } from './checkouts';
@@ -63,6 +64,46 @@ describe('getCheckoutByPublicToken', () => {
     mocks.rpc.mockResolvedValue({ data: null, error });
 
     await expect(getCheckoutByPublicToken('public-token')).rejects.toBe(error);
+  });
+
+  it('loads checkout storefront access metadata from private tables', async () => {
+    const checkoutMaybeSingle = vi.fn().mockResolvedValue({
+      data: { storefront_id: 'storefront-1' },
+      error: null,
+    });
+    const checkoutEq = vi.fn(() => ({ maybeSingle: checkoutMaybeSingle }));
+    const checkoutSelect = vi.fn(() => ({ eq: checkoutEq }));
+    const storefrontMaybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: 'storefront-1',
+        slug: 'shop',
+        visibility: 'private',
+        ws_id: 'ws-1',
+      },
+      error: null,
+    });
+    const storefrontEq = vi.fn(() => ({ maybeSingle: storefrontMaybeSingle }));
+    const storefrontSelect = vi.fn(() => ({ eq: storefrontEq }));
+    mocks.from
+      .mockReturnValueOnce({ select: checkoutSelect })
+      .mockReturnValueOnce({ select: storefrontSelect });
+
+    await expect(
+      getCheckoutStorefrontAccessByPublicToken('public-token')
+    ).resolves.toEqual({
+      storefrontId: 'storefront-1',
+      storefrontSlug: 'shop',
+      visibility: 'private',
+      wsId: 'ws-1',
+    });
+
+    expect(mocks.from).toHaveBeenNthCalledWith(
+      1,
+      'inventory_checkout_sessions'
+    );
+    expect(mocks.from).toHaveBeenNthCalledWith(2, 'inventory_storefronts');
+    expect(checkoutEq).toHaveBeenCalledWith('public_token', 'public-token');
+    expect(storefrontEq).toHaveBeenCalledWith('id', 'storefront-1');
   });
 
   it('lists checkouts through the private checkout RPC', async () => {

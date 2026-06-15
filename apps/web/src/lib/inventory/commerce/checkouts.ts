@@ -3,6 +3,7 @@ import 'server-only';
 import type {
   InventoryCheckoutSession,
   InventoryCheckoutStatus,
+  InventoryStorefrontVisibility,
 } from '@tuturuuu/internal-api/inventory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { ListQuery } from './mappers';
@@ -12,6 +13,13 @@ type SupabaseErrorLike = { code?: string; message?: string } | null;
 type ListRpcRow<TKey extends string, TValue> = {
   total_count: number | null;
 } & Record<TKey, TValue | null>;
+
+type CheckoutStorefrontAccess = {
+  storefrontId: string;
+  storefrontSlug: string;
+  visibility: InventoryStorefrontVisibility;
+  wsId: string;
+};
 
 function normalizePagination(page?: number, pageSize?: number) {
   const limit = Math.max(1, Math.min(pageSize ?? 25, 100));
@@ -79,6 +87,36 @@ export async function getCheckoutByPublicToken(publicToken: string) {
   if (error) throw error;
 
   return data ?? null;
+}
+
+export async function getCheckoutStorefrontAccessByPublicToken(
+  publicToken: string
+): Promise<CheckoutStorefrontAccess | null> {
+  const { inventory } = await createPrivateInventoryClient();
+  const { data: checkout, error: checkoutError } = await inventory
+    .from('inventory_checkout_sessions')
+    .select('storefront_id')
+    .eq('public_token', publicToken)
+    .maybeSingle();
+
+  if (checkoutError) throw checkoutError;
+  if (!checkout?.storefront_id) return null;
+
+  const { data: storefront, error: storefrontError } = await inventory
+    .from('inventory_storefronts')
+    .select('id, slug, visibility, ws_id')
+    .eq('id', checkout.storefront_id)
+    .maybeSingle();
+
+  if (storefrontError) throw storefrontError;
+  if (!storefront) return null;
+
+  return {
+    storefrontId: storefront.id,
+    storefrontSlug: storefront.slug,
+    visibility: storefront.visibility as InventoryStorefrontVisibility,
+    wsId: storefront.ws_id,
+  };
 }
 
 export async function releaseCheckout(wsId: string, checkoutId: string) {
