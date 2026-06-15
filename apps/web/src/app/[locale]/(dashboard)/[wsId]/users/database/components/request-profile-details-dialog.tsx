@@ -20,6 +20,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -53,6 +54,11 @@ interface Props {
   mode: 'per_user' | 'generic';
   targetUserId?: string;
   targetUserLabel?: string | null;
+  /** Current value of each requestable field, shown to the admin so they can
+   * decide which details still need to be collected (per-user mode only). */
+  currentValues?: Partial<
+    Record<WorkspaceUserProfileLinkField, string | null | undefined>
+  >;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -62,6 +68,7 @@ export function RequestProfileDetailsDialog({
   mode,
   targetUserId,
   targetUserLabel,
+  currentValues,
   open,
   onOpenChange,
 }: Props) {
@@ -73,7 +80,7 @@ export function RequestProfileDetailsDialog({
   ]);
   const [prefillExistingValues, setPrefillExistingValues] = useState(true);
   const [expiresAt, setExpiresAt] = useState('');
-  const [maxUses, setMaxUses] = useState('');
+  const [maxUses, setMaxUses] = useState('1');
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -89,7 +96,7 @@ export function RequestProfileDetailsDialog({
     setSelected(['display_name', 'full_name']);
     setPrefillExistingValues(true);
     setExpiresAt('');
-    setMaxUses('');
+    setMaxUses('1');
     setShareUrl(null);
     setCopied(false);
   };
@@ -113,6 +120,18 @@ export function RequestProfileDetailsDialog({
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('create_error')),
   });
+
+  const showCurrentValues = mode === 'per_user' && !!currentValues;
+
+  const formatCurrentValue = (
+    field: WorkspaceUserProfileLinkField,
+    value: string | null | undefined
+  ): string | null => {
+    if (value == null || value === '') return null;
+    // Avatar values are long URLs; show a presence indicator instead.
+    if (field === 'avatar_url') return t('current_value_image_set');
+    return String(value);
+  };
 
   const copyLink = async () => {
     if (!shareUrl) return;
@@ -171,20 +190,46 @@ export function RequestProfileDetailsDialog({
                 <HelpTooltip label={t('create_fields_tooltip')} />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {FIELD_OPTIONS.map((field) => (
-                  <label
-                    key={field}
-                    className="flex items-center gap-2 text-sm"
-                  >
-                    <Checkbox
-                      checked={selected.includes(field)}
-                      onCheckedChange={(checked) =>
-                        toggleField(field, checked === true)
-                      }
-                    />
-                    {t(`field_${field}` as never)}
-                  </label>
-                ))}
+                {FIELD_OPTIONS.map((field) => {
+                  const currentValue = showCurrentValues
+                    ? formatCurrentValue(field, currentValues?.[field])
+                    : null;
+                  return (
+                    <label
+                      key={field}
+                      className={cn(
+                        'flex gap-2 text-sm',
+                        showCurrentValues
+                          ? 'items-start rounded-md border p-2'
+                          : 'items-center'
+                      )}
+                    >
+                      <Checkbox
+                        className={showCurrentValues ? 'mt-0.5' : undefined}
+                        checked={selected.includes(field)}
+                        onCheckedChange={(checked) =>
+                          toggleField(field, checked === true)
+                        }
+                      />
+                      <span className="flex min-w-0 flex-col">
+                        <span>{t(`field_${field}` as never)}</span>
+                        {showCurrentValues ? (
+                          <span
+                            className={cn(
+                              'truncate text-xs',
+                              currentValue
+                                ? 'text-muted-foreground'
+                                : 'text-dynamic-orange/80'
+                            )}
+                            title={currentValue ?? undefined}
+                          >
+                            {currentValue ?? t('target_empty_value')}
+                          </span>
+                        ) : null}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
               {selected.includes('email') ? (
                 <p className="text-muted-foreground text-xs">

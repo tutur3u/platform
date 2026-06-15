@@ -20874,6 +20874,7 @@
     "create_success_hint": "Share this link with the recipient. They must log in before completing their details.",
     "create_target_user_label": "Specific user",
     "create_title": "Request profile details",
+    "current_value_image_set": "Photo uploaded",
     "details_toggle": "Details",
     "empty": "No profile links yet.",
     "field_avatar_hint": "Uploading a new photo replaces the current profile photo.",

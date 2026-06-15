@@ -249,6 +249,15 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
           mode="per_user"
           targetUserId={user.id}
           targetUserLabel={user.display_name || user.full_name || user.email}
+          currentValues={{
+            display_name: user.display_name,
+            full_name: user.full_name,
+            birthday: user.birthday,
+            gender: user.gender,
+            avatar_url: user.avatar_url,
+            email: user.email,
+            phone: user.phone,
+          }}
           open={showProfileLinkDialog}
           onOpenChange={setShowProfileLinkDialog}
         />
