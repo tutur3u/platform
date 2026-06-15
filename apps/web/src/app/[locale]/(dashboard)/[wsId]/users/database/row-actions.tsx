@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
-import { Ellipsis, Eye, Link2, Loader2 } from '@tuturuuu/icons';
+import { Ellipsis, Eye, Link2, Loader2, UserPen } from '@tuturuuu/icons';
 import {
   repairWorkspaceUserPlatformLinks,
   type WorkspaceUserPlatformLinkRepairSkipReason,
@@ -37,6 +37,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { RequestProfileDetailsDialog } from './components/request-profile-details-dialog';
 import UserForm from './form';
 import { canShowPlatformLinkRepairAction } from './platform-link-repair-visibility';
 import { UserFeedbackDialog } from './user-feedback-dialog';
@@ -80,7 +81,10 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
   const [open, setOpen] = useState(false);
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showProfileLinkDialog, setShowProfileLinkDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const canManageProfileLinks =
+    !!extraData?.canManageUserProfileLinks && !!user.ws_id;
 
   const handleFormSuccess = () => {
     toast.success(t('ws-members.member-updated'), {
@@ -239,9 +243,20 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         />
       )}
 
+      {canManageProfileLinks && (
+        <RequestProfileDetailsDialog
+          wsId={user.ws_id!}
+          mode="per_user"
+          targetUserId={user.id}
+          open={showProfileLinkDialog}
+          onOpenChange={setShowProfileLinkDialog}
+        />
+      )}
+
       {!extraData?.canUpdateUsers &&
       !extraData?.canDeleteUsers &&
-      !extraData?.canViewFeedbacks ? null : (
+      !extraData?.canViewFeedbacks &&
+      !canManageProfileLinks ? null : (
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
@@ -262,6 +277,13 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
             {!!extraData?.canViewFeedbacks && (
               <DropdownMenuItem onClick={() => setShowFeedbackDialog(true)}>
                 {t('ws-users.feedback_support_action')}
+              </DropdownMenuItem>
+            )}
+
+            {canManageProfileLinks && (
+              <DropdownMenuItem onClick={() => setShowProfileLinkDialog(true)}>
+                <UserPen className="mr-2 h-4 w-4" />
+                {t('ws-user-profile-links.row_action')}
               </DropdownMenuItem>
             )}
 

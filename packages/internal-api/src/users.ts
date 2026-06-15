@@ -681,3 +681,194 @@ export async function repairWorkspaceUserPlatformLinks(
     }
   );
 }
+
+// ---------------------------------------------------------------------------
+// External profile-completion links
+// ---------------------------------------------------------------------------
+
+export type WorkspaceUserProfileLinkField =
+  | 'display_name'
+  | 'full_name'
+  | 'birthday'
+  | 'gender'
+  | 'avatar_url'
+  | 'email';
+
+export type WorkspaceUserProfileLinkMode = 'per_user' | 'generic';
+
+export interface WorkspaceUserProfileLinkSummary {
+  id: string;
+  code: string;
+  mode: WorkspaceUserProfileLinkMode;
+  allowed_fields: WorkspaceUserProfileLinkField[];
+  max_uses: number | null;
+  expires_at: string | null;
+  current_uses: number;
+  is_expired: boolean;
+  is_full: boolean;
+  is_revoked: boolean;
+  created_at: string;
+}
+
+export interface CreateWorkspaceUserProfileLinkPayload {
+  mode: WorkspaceUserProfileLinkMode;
+  target_user_id?: string | null;
+  allowed_fields: WorkspaceUserProfileLinkField[];
+  expires_at?: string | null;
+  max_uses?: number | null;
+}
+
+export interface UpdateWorkspaceUserProfileLinkPayload {
+  revoked?: boolean;
+  expires_at?: string | null;
+  max_uses?: number | null;
+  allowed_fields?: WorkspaceUserProfileLinkField[];
+}
+
+export interface SubmitUserProfileLinkPayload {
+  fields: Record<string, string | null>;
+}
+
+export interface UserProfileLinkAvatarUploadUrl {
+  signedUrl: string;
+  token: string;
+  path: string;
+  publicUrl: string;
+}
+
+export async function listWorkspaceUserProfileLinks(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ links: WorkspaceUserProfileLinkSummary[] }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-profile-links`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceUserProfileLink(
+  workspaceId: string,
+  payload: CreateWorkspaceUserProfileLinkPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string; code: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-profile-links`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceUserProfileLink(
+  workspaceId: string,
+  linkId: string,
+  payload: UpdateWorkspaceUserProfileLinkPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-profile-links/${encodePathSegment(
+      linkId
+    )}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceUserProfileLink(
+  workspaceId: string,
+  linkId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-profile-links/${encodePathSegment(
+      linkId
+    )}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function submitUserProfileLink(
+  code: string,
+  payload: SubmitUserProfileLinkPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/public/user-profile-links/${encodePathSegment(code)}/submit`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createUserProfileLinkAvatarUploadUrl(
+  code: string,
+  contentType: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<UserProfileLinkAvatarUploadUrl>(
+    `/api/v1/public/user-profile-links/${encodePathSegment(code)}/avatar`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ contentType }),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function uploadUserProfileLinkAvatar(
+  code: string,
+  file: File,
+  options?: InternalApiClientOptions
+): Promise<{ publicUrl: string }> {
+  const client = getInternalApiClient(options);
+  const { signedUrl, publicUrl } = await createUserProfileLinkAvatarUploadUrl(
+    code,
+    file.type,
+    options
+  );
+
+  const uploadResponse = await client.fetch(signedUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.type,
+    },
+    body: file,
+    cache: 'no-store',
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error('Failed to upload file');
+  }
+
+  return { publicUrl };
+}

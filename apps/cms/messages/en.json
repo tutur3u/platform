@@ -15178,6 +15178,8 @@
     "manage_subscription_description": "Allows members to view, manage, and update workspace subscription and billing information.",
     "manage_time_tracking_requests": "Manage Time Tracking Requests",
     "manage_time_tracking_requests_description": "Allows the user to view & approve/reject time tracking missed entries",
+    "manage_user_profile_links": "Manage Profile Links",
+    "manage_user_profile_links_description": "Allows members to create and revoke links that let external users complete their own profile details.",
     "manage_user_report_templates": "Manage user report templates",
     "manage_user_report_templates_description": "Allows members to edit user report templates.",
     "manage_users": "Manage Users",

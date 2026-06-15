@@ -17,6 +17,7 @@ import { fetchRequireAttentionUserIds } from '@/lib/require-attention-users';
 import { listWorkspaceDefaultIncludedGroupIds } from '@/lib/workspace-default-included-groups';
 import { AuditLogTable } from './audit-log-table';
 import { DuplicateUsersDialog } from './components/duplicate-users-dialog';
+import { ProfileLinksManager } from './components/profile-links-manager';
 import { DatabaseTabs } from './database-tabs';
 import UserForm from './form';
 import ImportDialogContent from './import-dialog-content';
@@ -42,8 +43,12 @@ function clampPageSize(value?: string, fallback = 10) {
   return Math.min(Math.max(parsed, 1), 100);
 }
 
-function resolveDatabaseTab(tab?: string): 'users' | 'audit-log' {
-  return tab === 'audit-log' ? 'audit-log' : 'users';
+function resolveDatabaseTab(
+  tab?: string
+): 'users' | 'audit-log' | 'profile-links' {
+  if (tab === 'audit-log') return 'audit-log';
+  if (tab === 'profile-links') return 'profile-links';
+  return 'users';
 }
 
 interface Props {
@@ -101,9 +106,10 @@ export default async function WorkspaceUsersPage({
   const canViewAuditLog = containsPermission('manage_workspace_audit_logs');
   const canViewFeedbacks = containsPermission('view_user_groups');
   const canManageFeedbacks = containsPermission('update_user_groups_scores');
+  const canManageProfileLinks = containsPermission('manage_user_profile_links');
   const canViewUsers = hasPrivateInfo || hasPublicInfo;
 
-  if (!canViewUsers && !canViewAuditLog) {
+  if (!canViewUsers && !canViewAuditLog && !canManageProfileLinks) {
     notFound();
   }
 
@@ -115,6 +121,10 @@ export default async function WorkspaceUsersPage({
     notFound();
   }
 
+  if (activeTab === 'profile-links' && !canManageProfileLinks) {
+    notFound();
+  }
+
   const permissions = {
     hasPrivateInfo,
     hasPublicInfo,
@@ -122,6 +132,7 @@ export default async function WorkspaceUsersPage({
     canUpdateUsers,
     canDeleteUsers,
     canCheckUserAttendance,
+    canManageUserProfileLinks: canManageProfileLinks,
   };
 
   const sbAdmin = await createAdminClient();
@@ -263,8 +274,14 @@ export default async function WorkspaceUsersPage({
         activeTab={activeTab}
         canViewUsers={canViewUsers}
         canViewAuditLog={canViewAuditLog}
+        canManageProfileLinks={canManageProfileLinks}
         usersContent={usersContent}
         auditLogContent={auditLogContent}
+        profileLinksContent={
+          activeTab === 'profile-links' ? (
+            <ProfileLinksManager wsId={wsId} />
+          ) : undefined
+        }
       />
     </>
   );

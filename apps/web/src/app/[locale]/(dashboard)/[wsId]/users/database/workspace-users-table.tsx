@@ -43,6 +43,7 @@ interface Props {
     canUpdateUsers: boolean;
     canDeleteUsers: boolean;
     canCheckUserAttendance: boolean;
+    canManageUserProfileLinks?: boolean;
   };
   canViewFeedbacks?: boolean;
   canManageFeedbacks?: boolean;
@@ -264,6 +265,7 @@ export function WorkspaceUsersTable({
     canUpdateUsers: permissions.canUpdateUsers,
     canDeleteUsers: permissions.canDeleteUsers,
     canCheckUserAttendance: permissions.canCheckUserAttendance,
+    canManageUserProfileLinks: permissions.canManageUserProfileLinks,
     canViewFeedbacks,
     canManageFeedbacks,
   };
