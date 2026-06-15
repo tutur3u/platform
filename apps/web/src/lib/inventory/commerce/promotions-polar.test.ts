@@ -12,7 +12,8 @@ describe('buildPolarDiscountInput', () => {
           use_ratio: true,
           value: 10,
         },
-        'usd'
+        'usd',
+        'product-1'
       )
     ).toEqual({
       basisPoints: 1000,
@@ -20,6 +21,7 @@ describe('buildPolarDiscountInput', () => {
       duration: 'once',
       maxRedemptions: 100,
       name: 'Launch',
+      products: ['product-1'],
       type: 'percentage',
     });
   });
@@ -28,7 +30,8 @@ describe('buildPolarDiscountInput', () => {
     expect(
       buildPolarDiscountInput(
         { code: 'FIVEOFF', name: 'Five off', use_ratio: false, value: 5 },
-        'usd'
+        'usd',
+        'product-1'
       )
     ).toEqual({
       amount: 500,
@@ -37,6 +40,7 @@ describe('buildPolarDiscountInput', () => {
       duration: 'once',
       maxRedemptions: null,
       name: 'Five off',
+      products: ['product-1'],
       type: 'fixed',
     });
   });
@@ -51,7 +55,8 @@ describe('buildPolarDiscountInput', () => {
           use_ratio: true,
           value: '12.345',
         },
-        'usd'
+        'usd',
+        'product-2'
       )
     ).toEqual({
       basisPoints: 1235,
@@ -59,6 +64,7 @@ describe('buildPolarDiscountInput', () => {
       duration: 'once',
       maxRedemptions: null,
       name: 'Decimal percent',
+      products: ['product-2'],
       type: 'percentage',
     });
   });
@@ -73,7 +79,8 @@ describe('buildPolarDiscountInput', () => {
           use_ratio: false,
           value: '19.995',
         },
-        'eur'
+        'eur',
+        'product-3'
       )
     ).toEqual({
       amount: 2000,
@@ -82,6 +89,7 @@ describe('buildPolarDiscountInput', () => {
       duration: 'once',
       maxRedemptions: 1,
       name: 'Rounding',
+      products: ['product-3'],
       type: 'fixed',
     });
   });
@@ -90,8 +98,19 @@ describe('buildPolarDiscountInput', () => {
     expect(
       buildPolarDiscountInput(
         { code: 'X', name: 'X', use_ratio: true, value: 25 },
-        'eur'
+        'eur',
+        'product-4'
       ).maxRedemptions
     ).toBeNull();
+  });
+
+  it('always scopes discounts to the inventory checkout product', () => {
+    expect(
+      buildPolarDiscountInput(
+        { code: 'SCOPE', name: 'Scoped', use_ratio: true, value: 25 },
+        'usd',
+        'polar-product-id'
+      ).products
+    ).toEqual(['polar-product-id']);
   });
 });

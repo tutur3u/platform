@@ -610,11 +610,15 @@ export async function syncInventoryPromotionDiscount({
     if (!integration?.access_token_encrypted) continue;
 
     try {
+      const productId = await ensureInventoryPolarProduct({
+        environment,
+        wsId,
+      });
       const accessToken = await decryptIntegrationToken(integration);
       const polar = createPolarClient({ accessToken, environment });
       // Fixed discounts need a currency; promotions are workspace-level, so we
       // default to USD (percentage discounts ignore it).
-      const input = buildPolarDiscountInput(promotion, 'USD');
+      const input = buildPolarDiscountInput(promotion, 'USD', productId);
       const discount = await polar.discounts.create(input as never);
       return { discountId: discount.id, environment };
     } catch (error) {

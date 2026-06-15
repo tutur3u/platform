@@ -25,6 +25,7 @@ export type PolarDiscountInput =
       duration: 'once';
       maxRedemptions: number | null;
       name: string;
+      products: string[];
       type: 'percentage';
     }
   | {
@@ -34,12 +35,14 @@ export type PolarDiscountInput =
       duration: 'once';
       maxRedemptions: number | null;
       name: string;
+      products: string[];
       type: 'fixed';
     };
 
 export function buildPolarDiscountInput(
   promotion: PromotionForPolar,
-  currency: string
+  currency: string,
+  productId: string
 ): PolarDiscountInput {
   const maxRedemptions = promotion.max_uses ?? null;
   const value = Number(promotion.value) || 0;
@@ -51,6 +54,7 @@ export function buildPolarDiscountInput(
       duration: 'once',
       maxRedemptions,
       name: promotion.name,
+      products: [productId],
       type: 'percentage',
     };
   }
@@ -62,6 +66,7 @@ export function buildPolarDiscountInput(
     duration: 'once',
     maxRedemptions,
     name: promotion.name,
+    products: [productId],
     type: 'fixed',
   };
 }
