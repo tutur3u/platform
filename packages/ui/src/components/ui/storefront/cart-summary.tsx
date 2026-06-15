@@ -7,6 +7,7 @@ import type { FormEvent } from 'react';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import { AccentButton } from './accent-button';
+import { StorefrontImagePanel } from './image-panel';
 import type {
   StorefrontBuyerDefaults,
   StorefrontCartEntry,
@@ -72,13 +73,19 @@ export function StorefrontCartSummary({
       </p>
       <div className="mt-4 grid gap-2.5">
         {cartEntries.map(({ line, listing }) => (
-          <div
-            className="flex items-center justify-between gap-3 text-sm"
-            key={line.listingId}
-          >
-            <span className="min-w-0 truncate">
-              {line.quantity} x {listing.title}
-            </span>
+          <div className="flex items-center gap-3 text-sm" key={line.listingId}>
+            <StorefrontImagePanel
+              className={cn('size-10 shrink-0 rounded-md', radius)}
+              imageUrl={listing.imageUrl}
+              label={listing.title}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium">{listing.title}</p>
+              <p className="text-muted-foreground text-xs tabular-nums">
+                {line.quantity} ×{' '}
+                {formatStorefrontPrice(listing.price, currency)}
+              </p>
+            </div>
             <span className="font-medium tabular-nums">
               {formatStorefrontPrice(listing.price * line.quantity, currency)}
             </span>

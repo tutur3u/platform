@@ -198,11 +198,7 @@ export function StorefrontClient({
   }
 
   if (storefrontQuery.isLoading) {
-    return (
-      <main className="grid min-h-dvh place-items-center px-4 text-muted-foreground">
-        {t('loading')}
-      </main>
-    );
+    return <StorefrontSkeleton label={t('loading')} />;
   }
 
   if (storefrontQuery.isError) {
@@ -306,6 +302,41 @@ export function StorefrontClient({
       storefront={storefront}
       storefrontHref={`/${storeSlug}`}
     />
+  );
+}
+
+const SKELETON_CARD_KEYS = ['a', 'b', 'c', 'd', 'e', 'f'];
+
+function StorefrontSkeleton({ label }: { label: string }) {
+  return (
+    <main className="min-h-dvh bg-background" aria-busy="true">
+      <span className="sr-only">{label}</span>
+      <div className="h-1 w-full bg-muted" />
+      <header className="border-border border-b">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+          <div className="h-6 w-40 animate-pulse rounded-md bg-muted" />
+          <div className="h-11 w-16 animate-pulse rounded-2xl bg-muted" />
+        </div>
+      </header>
+      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0">
+          <div className="h-52 w-full animate-pulse rounded-2xl bg-muted" />
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {SKELETON_CARD_KEYS.map((key) => (
+              <div
+                className="animate-pulse rounded-2xl border border-border/60 bg-card p-3"
+                key={key}
+              >
+                <div className="aspect-[4/3] w-full rounded-2xl bg-muted" />
+                <div className="mt-3 h-4 w-3/4 rounded bg-muted" />
+                <div className="mt-2 h-3 w-1/2 rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="hidden h-72 animate-pulse rounded-2xl bg-muted lg:block" />
+      </section>
+    </main>
   );
 }
 

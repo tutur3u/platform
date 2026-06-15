@@ -1,6 +1,6 @@
 'use client';
 
-import { ShoppingCart } from '@tuturuuu/icons';
+import { ArrowLeft, ShoppingCart } from '@tuturuuu/icons';
 import type {
   InventoryStorefront,
   InventoryStorefrontListing,
@@ -13,6 +13,7 @@ import { StorefrontEmptyListings } from './empty-listings';
 import { StorefrontHeroPanel } from './hero-panel';
 import { StorefrontImagePanel } from './image-panel';
 import { StorefrontListingCard } from './listing-card';
+import { StorefrontProductDetail } from './product-detail';
 import type {
   StorefrontBuyerDefaults,
   StorefrontCartLine,
@@ -95,6 +96,10 @@ export function StorefrontSurface({
     return sum + listing.price * quantity;
   }, 0);
   const cartQuantity = cartLines.reduce((sum, line) => sum + line.quantity, 0);
+  const selectedListing = selectedListingId
+    ? listings.find((listing) => listing.id === selectedListingId)
+    : undefined;
+  const isProductDetail = mode === 'product' && Boolean(selectedListing);
   const visibleListings =
     mode === 'product' && selectedListingId
       ? listings.filter((listing) => listing.id === selectedListingId)
@@ -218,59 +223,93 @@ export function StorefrontSurface({
           )}
         >
           <div className="min-w-0">
-            <StorefrontHeroPanel
-              currency={currency}
-              labels={labels}
-              listingsCount={listings.length}
-              radius={radius}
-              storefront={storefront}
-            />
-
-            <StorefrontMerchSections
-              radius={radius}
-              sections={storefront.sections ?? []}
-            />
-
-            <div
-              className={cn(
-                'mt-4 grid gap-4',
-                compactLayout
-                  ? 'sm:grid-cols-2'
-                  : 'sm:grid-cols-2 xl:grid-cols-3'
-              )}
-            >
-              {listingRows.length === 0 ? (
-                <StorefrontEmptyListings
-                  action={emptyAction}
+            {isProductDetail && selectedListing ? (
+              <>
+                {storefrontHref ? (
+                  <a
+                    className="mb-4 inline-flex items-center gap-1.5 text-muted-foreground text-sm transition hover:text-foreground"
+                    href={storefrontHref}
+                  >
+                    <ArrowLeft aria-hidden className="size-4" />
+                    {labels.browse}
+                  </a>
+                ) : null}
+                <StorefrontProductDetail
+                  cartHref={cartHref}
+                  currency={currency}
                   labels={labels}
+                  listing={selectedListing}
+                  onDecrement={onDecrement}
+                  onIncrement={onIncrement}
+                  quantity={
+                    cartLines.find(
+                      (item) => item.listingId === selectedListing.id
+                    )?.quantity ?? 0
+                  }
                   radius={radius}
+                  showInventoryBadges={storefront.showInventoryBadges}
+                  surfaceClassName={
+                    storefrontSurfaceClasses[storefront.surfaceStyle]
+                  }
                 />
-              ) : (
-                listingRows.map((listing) => {
-                  const line = cartLines.find(
-                    (item) => item.listingId === listing.id
-                  );
+              </>
+            ) : (
+              <>
+                <StorefrontHeroPanel
+                  currency={currency}
+                  labels={labels}
+                  listingsCount={listings.length}
+                  radius={radius}
+                  storefront={storefront}
+                />
 
-                  return (
-                    <StorefrontListingCard
-                      currency={currency}
-                      isList={false}
-                      key={listing.id}
+                <StorefrontMerchSections
+                  radius={radius}
+                  sections={storefront.sections ?? []}
+                />
+
+                <div
+                  className={cn(
+                    'mt-4 grid gap-4',
+                    compactLayout
+                      ? 'sm:grid-cols-2'
+                      : 'sm:grid-cols-2 xl:grid-cols-3'
+                  )}
+                >
+                  {listingRows.length === 0 ? (
+                    <StorefrontEmptyListings
+                      action={emptyAction}
                       labels={labels}
-                      listing={listing}
-                      onDecrement={onDecrement}
-                      onIncrement={onIncrement}
-                      quantity={line?.quantity ?? 0}
                       radius={radius}
-                      showInventoryBadges={storefront.showInventoryBadges}
-                      surfaceClassName={
-                        storefrontSurfaceClasses[storefront.surfaceStyle]
-                      }
                     />
-                  );
-                })
-              )}
-            </div>
+                  ) : (
+                    listingRows.map((listing) => {
+                      const line = cartLines.find(
+                        (item) => item.listingId === listing.id
+                      );
+
+                      return (
+                        <StorefrontListingCard
+                          currency={currency}
+                          isList={false}
+                          key={listing.id}
+                          labels={labels}
+                          listing={listing}
+                          onDecrement={onDecrement}
+                          onIncrement={onIncrement}
+                          quantity={line?.quantity ?? 0}
+                          radius={radius}
+                          showInventoryBadges={storefront.showInventoryBadges}
+                          surfaceClassName={
+                            storefrontSurfaceClasses[storefront.surfaceStyle]
+                          }
+                        />
+                      );
+                    })
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {cartSummary}
