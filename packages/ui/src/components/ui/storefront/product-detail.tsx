@@ -77,7 +77,7 @@ export function StorefrontProductDetail({
           {listing.title}
         </h2>
 
-        <div className="flex items-baseline gap-3">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="font-semibold text-2xl tabular-nums">
             {formatStorefrontPrice(listing.price, currency)}
           </span>

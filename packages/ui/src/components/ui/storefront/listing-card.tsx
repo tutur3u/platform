@@ -88,12 +88,12 @@ export function StorefrontListingCard({
       </div>
 
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="font-semibold">
+        <div className="min-w-0">
+          <p className="truncate font-semibold tabular-nums">
             {formatStorefrontPrice(listing.price, currency)}
           </p>
           {listing.compareAtPrice ? (
-            <p className="text-muted-foreground text-xs line-through">
+            <p className="truncate text-muted-foreground text-xs line-through">
               {formatStorefrontPrice(listing.compareAtPrice, currency)}
             </p>
           ) : null}

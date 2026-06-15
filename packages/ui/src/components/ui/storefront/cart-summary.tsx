@@ -71,7 +71,7 @@ export function StorefrontCartSummary({
       <p className="mt-2 text-muted-foreground text-sm leading-6">
         {labels.reservedCopy}
       </p>
-      <div className="mt-4 grid gap-2.5">
+      <div className="mt-4 -mr-1 grid max-h-72 gap-2.5 overflow-y-auto pr-1">
         {cartEntries.map(({ line, listing }) => (
           <div className="flex items-center gap-3 text-sm" key={line.listingId}>
             <StorefrontImagePanel
@@ -81,20 +81,20 @@ export function StorefrontCartSummary({
             />
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{listing.title}</p>
-              <p className="text-muted-foreground text-xs tabular-nums">
+              <p className="truncate text-muted-foreground text-xs tabular-nums">
                 {line.quantity} ×{' '}
                 {formatStorefrontPrice(listing.price, currency)}
               </p>
             </div>
-            <span className="font-medium tabular-nums">
+            <span className="shrink-0 whitespace-nowrap font-medium tabular-nums">
               {formatStorefrontPrice(listing.price * line.quantity, currency)}
             </span>
           </div>
         ))}
       </div>
-      <div className="mt-4 flex items-center justify-between border-border border-t pt-4">
+      <div className="mt-4 flex items-center justify-between gap-2 border-border border-t pt-4">
         <span className="text-muted-foreground text-sm">{labels.total}</span>
-        <span className="font-semibold tabular-nums">
+        <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums">
           {formatStorefrontPrice(total, currency)}
         </span>
       </div>
