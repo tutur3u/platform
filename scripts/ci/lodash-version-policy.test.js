@@ -4,7 +4,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
-const reviewedLodashVersion = '4.17.23';
+const reviewedLodashVersion = '4.18.1';
 const directLodashConsumers = [
   'apps/nova/package.json',
   'apps/rewise/package.json',
@@ -39,12 +39,12 @@ test('direct lodash consumers and the lockfile stay on the reviewed artifact', (
 
   assert.match(
     lockfile,
-    /"lodash": \["lodash@4\.17\.23"/,
+    /"lodash": \["lodash@4\.18\.1"/,
     'bun.lock must resolve lodash to the reviewed artifact'
   );
   assert.doesNotMatch(
     lockfile,
-    /"[^"]*lodash": \["lodash@4\.18\./,
-    'bun.lock must not resolve lodash to unexpected 4.18.x artifacts'
+    /^\s*"lodash": \["lodash@(?!4\.18\.1\b)[^"]+"/m,
+    'bun.lock must not resolve lodash to unreviewed artifacts'
   );
 });
