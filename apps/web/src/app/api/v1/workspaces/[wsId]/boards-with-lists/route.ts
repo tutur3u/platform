@@ -62,8 +62,10 @@ export const GET = withSessionAuth<WorkspaceParams>(
         );
       }
 
-      // Fetch boards with their lists
-      let query = sbAdmin
+      // Fetch boards with their lists. `default_list_id` is selected when
+      // available but we fall back to a select without it so boards still load
+      // if the column has not been migrated yet in this environment.
+      const withDefaultListQuery = sbAdmin
         .from('workspace_boards')
         .select(
           `
@@ -85,11 +87,46 @@ export const GET = withSessionAuth<WorkspaceParams>(
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
-      if (!memberCheck.ok) {
-        query = query.in('id', guestSummary.boardIds);
-      }
+      const primary = await (memberCheck.ok
+        ? withDefaultListQuery
+        : withDefaultListQuery.in('id', guestSummary.boardIds));
 
-      const { data, error } = await query;
+      let boards: Array<Record<string, unknown>> | null = primary.data;
+      let error = primary.error;
+
+      if (
+        error &&
+        (error.code === '42703' || error.message?.includes('default_list_id'))
+      ) {
+        const fallbackQuery = sbAdmin
+          .from('workspace_boards')
+          .select(
+            `
+        id,
+        name,
+        created_at,
+        task_lists (
+          id,
+          name,
+          status,
+          color,
+          position,
+          deleted
+        )
+      `
+          )
+          .eq('ws_id', wsId)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false });
+
+        const fallback = await (memberCheck.ok
+          ? fallbackQuery
+          : fallbackQuery.in('id', guestSummary.boardIds));
+        error = fallback.error;
+        boards = fallback.data
+          ? fallback.data.map((board) => ({ ...board, default_list_id: null }))
+          : null;
+      }
 
       if (error) {
         serverLogger.error('Supabase error:', error);
@@ -99,7 +136,7 @@ export const GET = withSessionAuth<WorkspaceParams>(
         );
       }
 
-      return NextResponse.json({ boards: data });
+      return NextResponse.json({ boards });
     } catch (error) {
       serverLogger.error('Error fetching boards with lists:', error);
       return NextResponse.json(

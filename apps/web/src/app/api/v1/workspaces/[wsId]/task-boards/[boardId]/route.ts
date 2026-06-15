@@ -21,6 +21,29 @@ const TASK_BOARD_ROUTE_APP_SESSION_AUTH = {
   targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
 } as const;
 
+// Board columns selected for the board detail view. `default_list_id` is split
+// into a separate (literal) select so we can degrade gracefully when the column
+// has not been migrated yet (rollout-safe: code may deploy before the migration
+// runs in an environment). Both must stay string literals for Supabase type
+// inference.
+const BOARD_SELECT_WITH_DEFAULT_LIST =
+  'id, ws_id, name, icon, ticket_prefix, default_list_id, created_at, archived_at, deleted_at, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, task_lists(id, board_id, name, status, color, position, archived, deleted, created_at, creator_id)';
+const BOARD_SELECT_WITHOUT_DEFAULT_LIST =
+  'id, ws_id, name, icon, ticket_prefix, created_at, archived_at, deleted_at, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, task_lists(id, board_id, name, status, color, position, archived, deleted, created_at, creator_id)';
+
+/**
+ * True when a Postgres/PostgREST error indicates a referenced column does not
+ * exist (undefined_column, code 42703), e.g. when `default_list_id` has not
+ * been migrated in the target database yet.
+ */
+function isUndefinedColumnError(error: { code?: string; message?: string }) {
+  return (
+    error.code === '42703' ||
+    (typeof error.message === 'string' &&
+      error.message.includes('default_list_id'))
+  );
+}
+
 function createTaskBoardRouteContext(params: Params) {
   return { params: Promise.resolve(params) };
 }
@@ -38,13 +61,31 @@ export const GET = withSessionAuth<Params>(
 
       const { boardId, sbAdmin } = access;
 
-      const { data: board, error } = await sbAdmin
+      const primary = await sbAdmin
         .from('workspace_boards')
-        .select(
-          'id, ws_id, name, icon, ticket_prefix, default_list_id, created_at, archived_at, deleted_at, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, task_lists(id, board_id, name, status, color, position, archived, deleted, created_at, creator_id)'
-        )
+        .select(BOARD_SELECT_WITH_DEFAULT_LIST)
         .eq('id', boardId)
         .maybeSingle();
+
+      let board:
+        | (typeof primary.data & { default_list_id?: string | null })
+        | null = primary.data;
+      let error = primary.error;
+
+      // Rollout safety: if the new `default_list_id` column is not present yet
+      // (migration not applied in this environment), fall back to the base
+      // select so boards still load. The value is treated as unset.
+      if (error && isUndefinedColumnError(error)) {
+        const fallback = await sbAdmin
+          .from('workspace_boards')
+          .select(BOARD_SELECT_WITHOUT_DEFAULT_LIST)
+          .eq('id', boardId)
+          .maybeSingle();
+        error = fallback.error;
+        board = fallback.data
+          ? { ...fallback.data, default_list_id: null }
+          : null;
+      }
 
       if (error) {
         return NextResponse.json(
@@ -59,6 +100,7 @@ export const GET = withSessionAuth<Params>(
 
       const normalizedBoard = {
         ...board,
+        default_list_id: board.default_list_id ?? null,
         access_type: access.access.mode,
         guest_permission:
           access.access.mode === 'guest' ? access.access.permission : null,
