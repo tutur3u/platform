@@ -209,7 +209,8 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
                               ),
                             ),
                           ),
-                          if (scheduledTasks.isNotEmpty)
+                          if (scheduledTasks.isNotEmpty &&
+                              _timelineContainsToday(todayIndex, dayCount))
                             shad.OutlineButton(
                               onPressed: () => _jumpToToday(todayIndex),
                               child: Text(context.l10n.taskBoardDetailToday),
@@ -388,8 +389,19 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
       }
     }
 
-    final bounds = _resolveTimelineBounds(scheduledTasks, now);
-    final layoutsByListId = _buildTaskLayoutsByList(scheduledTasks);
+    final timelineWindow = resolveTaskBoardTimelineWindow(
+      schedules: scheduledTasks.map(
+        (task) => TaskBoardTimelineSchedule(
+          startDate: task.startDate,
+          endDate: task.endDate,
+        ),
+      ),
+      now: now,
+    );
+    final layoutsByListId = _buildTaskLayoutsByList(
+      scheduledTasks,
+      timelineWindow,
+    );
     final listsWithScheduledTasks = visibleLists
         .where((list) => layoutsByListId[list.id]?.isNotEmpty ?? false)
         .toList(growable: false);
@@ -399,14 +411,13 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
       scheduledTasks: scheduledTasks,
       unscheduledTasks: unscheduledTasks,
       layoutsByListId: layoutsByListId,
-      startDate: bounds.$1,
-      endDate: bounds.$2,
+      startDate: timelineWindow.startDate,
+      endDate: timelineWindow.endDate,
     );
   }
 
   void _jumpToToday(int todayIndex) {
-    if (!_timelineContainsToday(todayIndex) ||
-        !widget.horizontalScrollController.hasClients) {
+    if (!widget.horizontalScrollController.hasClients) {
       return;
     }
     final position = widget.horizontalScrollController.position;
@@ -423,12 +434,13 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
     );
   }
 
-  bool _timelineContainsToday(int todayIndex) {
-    return todayIndex >= 0;
+  bool _timelineContainsToday(int todayIndex, int dayCount) {
+    return todayIndex >= 0 && todayIndex < dayCount;
   }
 
   Map<String, List<_TimelineTaskLayout>> _buildTaskLayoutsByList(
     List<_TimelineScheduledTask> scheduledTasks,
+    TaskBoardTimelineWindow timelineWindow,
   ) {
     final grouped = <String, List<_TimelineScheduledTask>>{};
     for (final task in scheduledTasks) {
@@ -439,19 +451,30 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
 
     return {
       for (final entry in grouped.entries)
-        entry.key: _layoutScheduled(entry.value),
+        entry.key: _layoutScheduled(entry.value, timelineWindow),
     };
   }
 
   List<_TimelineTaskLayout> _layoutScheduled(
     List<_TimelineScheduledTask> scheduledTasks,
+    TaskBoardTimelineWindow timelineWindow,
   ) {
-    final scheduled = List<_TimelineScheduledTask>.from(scheduledTasks)
-      ..sort((a, b) {
-        final byStart = a.startDate.compareTo(b.startDate);
-        if (byStart != 0) return byStart;
-        return a.endDate.compareTo(b.endDate);
-      });
+    final scheduled =
+        scheduledTasks
+            .map(
+              (entry) => _TimelineScheduledTask(
+                task: entry.task,
+                listId: entry.listId,
+                startDate: timelineWindow.clampDate(entry.startDate),
+                endDate: timelineWindow.clampDate(entry.endDate),
+              ),
+            )
+            .toList()
+          ..sort((a, b) {
+            final byStart = a.startDate.compareTo(b.startDate);
+            if (byStart != 0) return byStart;
+            return a.endDate.compareTo(b.endDate);
+          });
 
     final laneEnds = <DateTime>[];
     final layouts = <_TimelineTaskLayout>[];
@@ -630,28 +653,6 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
     return normalizedStart.isBefore(normalizedEnd)
         ? (normalizedStart, normalizedEnd)
         : (normalizedEnd, normalizedStart);
-  }
-
-  (DateTime, DateTime) _resolveTimelineBounds(
-    List<_TimelineScheduledTask> tasks,
-    DateTime now,
-  ) {
-    DateTime? earliest;
-    DateTime? latest;
-
-    for (final task in tasks) {
-      earliest = earliest == null || task.startDate.isBefore(earliest)
-          ? task.startDate
-          : earliest;
-      latest = latest == null || task.endDate.isAfter(latest)
-          ? task.endDate
-          : latest;
-    }
-
-    final today = _normalizeDay(now);
-    final start = (earliest ?? today).subtract(const Duration(days: 3));
-    final end = (latest ?? today).add(const Duration(days: 7));
-    return (start, end);
   }
 
   DateTime _normalizeDay(DateTime value) =>
