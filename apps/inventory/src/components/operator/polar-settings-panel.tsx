@@ -1,7 +1,13 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { KeyRound, Settings2, ShieldCheck } from '@tuturuuu/icons';
+import {
+  Copy,
+  KeyRound,
+  Settings2,
+  ShieldCheck,
+  Webhook,
+} from '@tuturuuu/icons';
 import {
   getInventoryPolarSettings,
   type InventoryPolarEnvironment,
@@ -11,9 +17,15 @@ import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   OperatorDialogBody,
   OperatorDialogContent,
@@ -30,8 +42,19 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [accessToken, setAccessToken] = useState('');
+  const [webhookSecret, setWebhookSecret] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [tokenEnvironment, setTokenEnvironment] =
     useState<InventoryPolarEnvironment>('sandbox');
+
+  // The inventory app proxies /api to the platform, so the current origin is the
+  // correct public webhook host. Resolved on the client to avoid a hydration
+  // mismatch.
+  useEffect(() => {
+    setWebhookUrl(
+      `${window.location.origin}/api/v1/inventory/polar/webhook/${wsId}`
+    );
+  }, [wsId]);
   const [testingEnvironment, setTestingEnvironment] = useState<
     InventoryPolarEnvironment | ''
   >('');
@@ -47,18 +70,30 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
       updateInventoryPolarSettings(wsId, {
         accessToken: accessToken || undefined,
         environment: tokenEnvironment,
+        webhookSecret: webhookSecret || undefined,
       }),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('saveError')),
     onSuccess: () => {
       setOpen(false);
       setAccessToken('');
+      setWebhookSecret('');
       toast.success(t('saveSuccess'));
       queryClient.invalidateQueries({
         queryKey: ['inventory', wsId, 'polar-settings'],
       });
     },
   });
+
+  const copyWebhookUrl = async () => {
+    if (!webhookUrl) return;
+    try {
+      await navigator.clipboard.writeText(webhookUrl);
+      toast.success(t('webhookCopied'));
+    } catch {
+      toast.error(t('saveError'));
+    }
+  };
   const defaultsMutation = useMutation({
     mutationFn: () =>
       updateInventoryPolarSettings(wsId, {
@@ -143,6 +178,21 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
                       value={accessToken}
                     />
                   </label>
+                  <label className="grid min-w-0 gap-1 text-sm">
+                    <span className="font-medium">
+                      {t('webhookSecretLabel')}
+                    </span>
+                    <Input
+                      className="h-10"
+                      onChange={(event) => setWebhookSecret(event.target.value)}
+                      placeholder={t('webhookSecretPlaceholder')}
+                      type="password"
+                      value={webhookSecret}
+                    />
+                    <span className="text-muted-foreground text-xs">
+                      {t('webhookHint')}
+                    </span>
+                  </label>
                 </OperatorDialogBody>
                 <OperatorDialogFooter>
                   <DialogClose asChild>
@@ -196,6 +246,49 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
         </form>
       </div>
 
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-primary/10 text-primary">
+            <Webhook className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="font-semibold">{t('webhookTitle')}</p>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-border text-[10px] text-muted-foreground">
+                      ?
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    {t('webhookGuidance')}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <p className="mt-1 text-muted-foreground text-sm">
+              {t('webhookDescription')}
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <code className="min-w-0 flex-1 truncate rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-xs">
+            {webhookUrl || `…/api/v1/inventory/polar/webhook/${wsId}`}
+          </code>
+          <Button
+            disabled={!webhookUrl}
+            onClick={copyWebhookUrl}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <Copy className="h-4 w-4" />
+            {t('webhookCopy')}
+          </Button>
+        </div>
+      </div>
+
       <div className="grid gap-3 lg:grid-cols-2">
         {environments.map((environment) => {
           const integration = (data?.integrations ?? []).find(
@@ -232,6 +325,14 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
                       productId: integration.polarProductId,
                     })
                   : t('productMissing')}
+              </p>
+              <p className="mt-2 inline-flex items-center gap-1.5 text-muted-foreground text-xs">
+                <Webhook className="h-3.5 w-3.5" />
+                {integration?.webhookSecretLast4
+                  ? t('webhookSecretEnding', {
+                      last4: integration.webhookSecretLast4,
+                    })
+                  : t('webhookNotConfigured')}
               </p>
               {integration?.lastError ? (
                 <p className="mt-3 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-xs">

@@ -425,6 +425,7 @@ export type InventoryPolarIntegration = {
   lastValidatedAt: string | null;
   lastError: string | null;
   updatedAt: string | null;
+  webhookSecretLast4: string | null;
 };
 
 export type InventoryPolarSettings = {
@@ -436,6 +437,7 @@ export type InventoryPolarSettings = {
 export type InventoryPolarSettingsPayload = {
   environment?: InventoryPolarEnvironment;
   accessToken?: string;
+  webhookSecret?: string;
   testingEnvironment?: InventoryPolarEnvironment;
   productionEnvironment?: InventoryPolarEnvironment;
 };

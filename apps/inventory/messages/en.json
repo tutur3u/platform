@@ -1573,7 +1573,17 @@
         "title": "Polar checkout",
         "tokenEnding": "Token ending in {last4}",
         "tokenLabel": "Access token",
-        "tokenPlaceholder": "Polar organization access token"
+        "tokenPlaceholder": "Polar organization access token",
+        "webhookCopied": "Webhook URL copied",
+        "webhookCopy": "Copy URL",
+        "webhookDescription": "Point a Polar webhook at this URL so paid orders, checkouts, and product changes flow back into Tuturuuu.",
+        "webhookGuidance": "In your Polar dashboard, create a webhook with this endpoint URL, then paste its signing secret here so Tuturuuu can verify and ingest events.",
+        "webhookHint": "From your Polar webhook settings; used to verify incoming events.",
+        "webhookNotConfigured": "Webhook secret not set",
+        "webhookSecretEnding": "Webhook secret ending in {last4}",
+        "webhookSecretLabel": "Webhook signing secret",
+        "webhookSecretPlaceholder": "Polar webhook signing secret",
+        "webhookTitle": "Webhook ingestion"
       },
       "preview": {
         "back": "Back to storefronts",

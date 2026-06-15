@@ -1573,7 +1573,17 @@
         "title": "Thanh toán Polar",
         "tokenEnding": "Token kết thúc bằng {last4}",
         "tokenLabel": "Access token",
-        "tokenPlaceholder": "Polar organization access token"
+        "tokenPlaceholder": "Polar organization access token",
+        "webhookCopied": "Đã sao chép URL webhook",
+        "webhookCopy": "Sao chép URL",
+        "webhookDescription": "Trỏ một webhook Polar tới URL này để đơn đã thanh toán, phiên thanh toán và thay đổi sản phẩm được đẩy ngược về Tuturuuu.",
+        "webhookGuidance": "Trong bảng điều khiển Polar, tạo một webhook với URL endpoint này, rồi dán khóa ký (signing secret) của nó vào đây để Tuturuuu xác minh và tiếp nhận sự kiện.",
+        "webhookHint": "Lấy từ cài đặt webhook Polar của bạn; dùng để xác minh sự kiện đến.",
+        "webhookNotConfigured": "Chưa đặt khóa webhook",
+        "webhookSecretEnding": "Khóa webhook kết thúc bằng {last4}",
+        "webhookSecretLabel": "Khóa ký webhook",
+        "webhookSecretPlaceholder": "Khóa ký webhook Polar",
+        "webhookTitle": "Tiếp nhận webhook"
       },
       "preview": {
         "back": "Quay lại cửa hàng",

@@ -37,6 +37,8 @@ type PolarIntegrationRow = {
   polar_product_name: string | null;
   status: 'error' | 'pending' | 'ready';
   updated_at: string | null;
+  webhook_secret_encrypted: string | null;
+  webhook_secret_last4: string | null;
   ws_id: string;
 };
 
@@ -73,6 +75,7 @@ function mapIntegration(row: PolarIntegrationRow): InventoryPolarIntegration {
     polarProductName: row.polar_product_name ?? 'Tuturuuu Inventory Checkout',
     status: row.status,
     updatedAt: row.updated_at,
+    webhookSecretLast4: row.webhook_secret_last4 ?? null,
   };
 }
 
@@ -137,7 +140,7 @@ export async function getInventoryPolarSettings(
   const integrationsResult = (await privateAdmin
     .from('inventory_polar_integrations' as never)
     .select(
-      'ws_id, environment, access_token_fingerprint, access_token_last4, polar_product_id, polar_product_name, status, last_validated_at, last_error, updated_at, access_token_encrypted'
+      'ws_id, environment, access_token_fingerprint, access_token_last4, polar_product_id, polar_product_name, status, last_validated_at, last_error, updated_at, access_token_encrypted, webhook_secret_encrypted, webhook_secret_last4'
     )
     .eq('ws_id', wsId)
     .order('environment', { ascending: true })) as {
@@ -201,7 +204,7 @@ async function getIntegration({
   const result = (await privateAdmin
     .from('inventory_polar_integrations' as never)
     .select(
-      'ws_id, environment, access_token_encrypted, access_token_fingerprint, access_token_last4, polar_product_id, polar_product_name, status, last_validated_at, last_error, updated_at'
+      'ws_id, environment, access_token_encrypted, access_token_fingerprint, access_token_last4, polar_product_id, polar_product_name, status, last_validated_at, last_error, updated_at, webhook_secret_encrypted, webhook_secret_last4'
     )
     .eq('ws_id', wsId)
     .eq('environment', environment)
@@ -284,6 +287,63 @@ async function upsertIntegrationToken({
     )) as { error: SupabaseErrorLike };
 
   if (error) throw new Error(error.message ?? 'Failed to save Polar token');
+}
+
+async function upsertWebhookSecret({
+  environment,
+  userId,
+  webhookSecret,
+  wsId,
+}: {
+  environment: InventoryPolarEnvironment;
+  userId: string;
+  webhookSecret: string;
+  wsId: string;
+}) {
+  const workspaceKey = await getOrCreateWorkspaceKey(wsId);
+  if (!workspaceKey) {
+    throw new Error(
+      'Workspace encryption is required before saving the webhook secret'
+    );
+  }
+
+  // The webhook secret lives on the integration row, which is created when the
+  // access token is saved — so the token must be connected first.
+  const privateAdmin = await getPrivateAdmin();
+  const { data, error } = (await privateAdmin
+    .from('inventory_polar_integrations' as never)
+    .update({
+      updated_at: new Date().toISOString(),
+      updated_by: userId,
+      webhook_secret_encrypted: encryptField(webhookSecret, workspaceKey),
+      webhook_secret_last4: tokenLast4(webhookSecret),
+    } as never)
+    .eq('ws_id', wsId)
+    .eq('environment', environment)
+    .select('environment')
+    .maybeSingle()) as { data: unknown; error: SupabaseErrorLike };
+
+  if (error) throw new Error(error.message ?? 'Failed to save webhook secret');
+  if (!data) {
+    throw new Error(
+      `Connect a Polar ${environment} access token before saving its webhook secret`
+    );
+  }
+}
+
+/**
+ * Decrypts the workspace's Polar webhook signing secret for an environment, used
+ * to verify incoming webhook signatures. Returns null when not configured.
+ */
+export async function getInventoryPolarWebhookSecret(
+  wsId: string,
+  environment: InventoryPolarEnvironment
+): Promise<string | null> {
+  const integration = await getIntegration({ environment, wsId });
+  if (!integration?.webhook_secret_encrypted) return null;
+  const workspaceKey = await getWorkspaceKey(wsId);
+  if (!workspaceKey) return null;
+  return decryptField(integration.webhook_secret_encrypted, workspaceKey);
 }
 
 export async function ensureInventoryPolarProduct({
@@ -511,6 +571,21 @@ export async function saveInventoryPolarSettings({
     });
     await ensureInventoryPolarProduct({
       environment: payload.environment,
+      wsId,
+    });
+  }
+
+  if (payload.webhookSecret?.trim()) {
+    if (!payload.environment) {
+      throw new Error(
+        'Polar environment is required when saving a webhook secret'
+      );
+    }
+
+    await upsertWebhookSecret({
+      environment: payload.environment,
+      userId,
+      webhookSecret: payload.webhookSecret.trim(),
       wsId,
     });
   }

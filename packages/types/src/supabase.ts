@@ -3621,6 +3621,8 @@ export type Database = {
           status: string;
           updated_at: string;
           updated_by: string | null;
+          webhook_secret_encrypted: string | null;
+          webhook_secret_last4: string | null;
           ws_id: string;
         };
         Insert: {
@@ -3638,6 +3640,8 @@ export type Database = {
           status?: string;
           updated_at?: string;
           updated_by?: string | null;
+          webhook_secret_encrypted?: string | null;
+          webhook_secret_last4?: string | null;
           ws_id: string;
         };
         Update: {
@@ -3655,6 +3659,8 @@ export type Database = {
           status?: string;
           updated_at?: string;
           updated_by?: string | null;
+          webhook_secret_encrypted?: string | null;
+          webhook_secret_last4?: string | null;
           ws_id?: string;
         };
         Relationships: [];
@@ -29668,6 +29674,7 @@ export type Database = {
           max_uses: number | null;
           mode: string;
           prefill_existing_values: boolean;
+          requires_auth: boolean;
           revoked_at: string | null;
           target_user_id: string | null;
           updated_at: string;
@@ -29683,6 +29690,7 @@ export type Database = {
           max_uses?: number | null;
           mode?: string;
           prefill_existing_values?: boolean;
+          requires_auth?: boolean;
           revoked_at?: string | null;
           target_user_id?: string | null;
           updated_at?: string;
@@ -29698,6 +29706,7 @@ export type Database = {
           max_uses?: number | null;
           mode?: string;
           prefill_existing_values?: boolean;
+          requires_auth?: boolean;
           revoked_at?: string | null;
           target_user_id?: string | null;
           updated_at?: string;
@@ -31506,6 +31515,7 @@ export type Database = {
           max_uses: number | null;
           mode: string | null;
           prefill_existing_values: boolean | null;
+          requires_auth: boolean | null;
           revoked_at: string | null;
           target_user_id: string | null;
           updated_at: string | null;
