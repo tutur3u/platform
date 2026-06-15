@@ -5,8 +5,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { WORKSPACE_STORAGE_PROVIDER_SUPABASE } from '@/lib/workspace-storage-config';
 import {
   createWorkspaceStorageUploadPayload,
+  resolveWorkspaceStorageProvider,
+  uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
 import { validateWorkspaceStorageUploadMetadata } from '@/lib/workspace-storage-upload-policy';
@@ -19,6 +22,129 @@ const uploadUrlSchema = z.object({
   size: z.number().int().finite().optional(),
   upsert: z.boolean().optional(),
 });
+
+type ExternalProjectUploadAccess = Extract<
+  Awaited<ReturnType<typeof requireWorkspaceExternalProjectAccess>>,
+  { ok: true }
+>;
+
+function getFormString(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return typeof value === 'string' ? value : '';
+}
+
+function getFormBoolean(formData: FormData, key: string) {
+  return getFormString(formData, key).toLowerCase() === 'true';
+}
+
+function buildExternalProjectAssetUploadTarget({
+  access,
+  collectionType,
+  contentType,
+  entrySlug,
+  filename,
+  size,
+  upsert,
+}: {
+  access: ExternalProjectUploadAccess;
+  collectionType: string;
+  contentType?: string;
+  entrySlug: string;
+  filename: string;
+  size?: number;
+  upsert: boolean;
+}) {
+  const sanitizedCollectionType = sanitizePath(collectionType);
+  const sanitizedEntrySlug = sanitizePath(entrySlug);
+  const sanitizedFilename = sanitizeFilename(filename);
+
+  if (!sanitizedCollectionType || !sanitizedEntrySlug || !sanitizedFilename) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: 'Invalid upload path' },
+        { status: 400 }
+      ),
+    };
+  }
+
+  const uploadValidation = validateWorkspaceStorageUploadMetadata({
+    allowExternalProjectAssets: true,
+    contentType,
+    filename: sanitizedFilename,
+    size,
+  });
+  if (!uploadValidation.ok) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: uploadValidation.message },
+        { status: uploadValidation.status }
+      ),
+    };
+  }
+
+  const filenameWithSuffix = upsert
+    ? sanitizedFilename
+    : `${generateRandomUUID()}-${sanitizedFilename}`;
+  const storageDirectory = posix.join(
+    'external-projects',
+    access.binding.adapter ?? 'shared',
+    sanitizedCollectionType,
+    sanitizedEntrySlug
+  );
+
+  return {
+    ok: true as const,
+    contentType: uploadValidation.contentType,
+    filename: filenameWithSuffix,
+    storageDirectory,
+    storagePath: posix.join(storageDirectory, filenameWithSuffix),
+    upsert,
+  };
+}
+
+async function uploadExternalProjectAssetDirect(
+  request: Request,
+  access: ExternalProjectUploadAccess
+) {
+  const formData = await request.formData();
+  const file = formData.get('file');
+
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: 'A file is required' }, { status: 400 });
+  }
+
+  const target = buildExternalProjectAssetUploadTarget({
+    access,
+    collectionType: getFormString(formData, 'collectionType'),
+    contentType: file.type || getFormString(formData, 'contentType'),
+    entrySlug: getFormString(formData, 'entrySlug'),
+    filename: file.name,
+    size: file.size,
+    upsert: getFormBoolean(formData, 'upsert'),
+  });
+
+  if (!target.ok) return target.response;
+
+  const uploaded = await uploadWorkspaceStorageFileDirect(
+    access.normalizedWorkspaceId,
+    target.storagePath,
+    new Uint8Array(await file.arrayBuffer()),
+    {
+      contentType: target.contentType,
+      upsert: target.upsert,
+    }
+  );
+
+  return NextResponse.json({
+    contentType: target.contentType,
+    filename: target.filename,
+    fullPath: uploaded.fullPath,
+    path: uploaded.path,
+    provider: uploaded.provider,
+  });
+}
 
 export async function POST(
   request: Request,
@@ -33,6 +159,11 @@ export async function POST(
   if (!access.ok) return access.response;
 
   try {
+    const requestContentType = request.headers.get('content-type') ?? '';
+    if (requestContentType.toLowerCase().includes('multipart/form-data')) {
+      return uploadExternalProjectAssetDirect(request, access);
+    }
+
     let body: unknown;
     try {
       body = await request.json();
@@ -44,46 +175,37 @@ export async function POST(
     }
 
     const payload = uploadUrlSchema.parse(body);
-    const collectionType = sanitizePath(payload.collectionType);
-    const entrySlug = sanitizePath(payload.entrySlug);
-    const filename = sanitizeFilename(payload.filename);
-
-    if (!collectionType || !entrySlug || !filename) {
-      return NextResponse.json(
-        { error: 'Invalid upload path' },
-        { status: 400 }
-      );
-    }
-
-    const uploadValidation = validateWorkspaceStorageUploadMetadata({
-      allowExternalProjectAssets: true,
+    const target = buildExternalProjectAssetUploadTarget({
+      access,
+      collectionType: payload.collectionType,
       contentType: payload.contentType,
-      filename,
+      entrySlug: payload.entrySlug,
+      filename: payload.filename,
       size: payload.size,
+      upsert: payload.upsert ?? false,
     });
-    if (!uploadValidation.ok) {
+
+    if (!target.ok) return target.response;
+
+    const storageProvider = await resolveWorkspaceStorageProvider(
+      access.normalizedWorkspaceId
+    );
+    if (storageProvider.provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
       return NextResponse.json(
-        { error: uploadValidation.message },
-        { status: uploadValidation.status }
+        {
+          error:
+            'Direct upload is required for Supabase-backed external assets.',
+        },
+        { status: 409 }
       );
     }
 
-    const filenameWithSuffix =
-      payload.upsert === true
-        ? filename
-        : `${generateRandomUUID()}-${filename}`;
-    const storagePath = posix.join(
-      'external-projects',
-      access.binding.adapter ?? 'shared',
-      collectionType,
-      entrySlug
-    );
     const uploadPayload = await createWorkspaceStorageUploadPayload(
       access.normalizedWorkspaceId,
-      filenameWithSuffix,
+      target.filename,
       {
-        path: storagePath,
-        contentType: uploadValidation.contentType,
+        path: target.storageDirectory,
+        contentType: target.contentType,
         size: payload.size,
         upsert: payload.upsert ?? false,
       }

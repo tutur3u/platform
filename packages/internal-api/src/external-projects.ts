@@ -26,7 +26,6 @@ import {
 } from './client';
 import {
   parseSignedUploadPayload,
-  uploadFileWithSignedUrl,
   type WorkspaceStorageUploadProgress,
 } from './storage';
 
@@ -724,29 +723,36 @@ export async function uploadWorkspaceExternalProjectAssetFile(
   },
   options?: ExternalProjectUploadOptions
 ) {
-  const fetchImpl = options?.fetch ?? globalThis.fetch;
-  const uploadUrlResult = await createWorkspaceExternalProjectAssetUploadUrl(
-    workspaceId,
-    {
-      collectionType: payload.collectionType,
-      contentType: file.type || 'application/octet-stream',
-      entrySlug: payload.entrySlug,
-      filename: file.name,
-      size: file.size,
-      upsert: payload.upsert,
-    },
-    options
-  );
+  const client = getInternalApiClient(options);
+  const formData = new FormData();
+  formData.set('collectionType', payload.collectionType);
+  formData.set('contentType', file.type || 'application/octet-stream');
+  formData.set('entrySlug', payload.entrySlug);
+  formData.set('file', file, file.name);
 
-  return uploadFileWithSignedUrl(
-    file,
-    uploadUrlResult,
-    fetchImpl,
-    options?.onUploadProgress
-  ) as Promise<{
+  if (payload.upsert !== undefined) {
+    formData.set('upsert', String(payload.upsert));
+  }
+
+  const result = await client.json<{
     fullPath: string | null;
     path: string;
-  }>;
+  }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/assets/upload-url`,
+    {
+      body: formData,
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+
+  options?.onUploadProgress?.({
+    loaded: file.size,
+    percent: 100,
+    total: file.size,
+  });
+
+  return result;
 }
 
 export async function createWorkspaceExternalProjectWebglPackageUploadUrl(
