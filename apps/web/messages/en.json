@@ -9945,6 +9945,7 @@
     "name": "Name",
     "none": "None",
     "notConfigured": "Not configured",
+    "overviewTitle": "Overview",
     "preset": "Preset",
     "readinessIssues": "Readiness issues",
     "readinessIssuesDescription": "Fix these checks before activating the draft or relying on the active bundle.",

@@ -9945,6 +9945,7 @@
     "name": "Tên",
     "none": "Không có",
     "notConfigured": "Chưa cấu hình",
+    "overviewTitle": "Tổng quan",
     "preset": "Có sẵn",
     "readinessIssues": "Vấn đề sẵn sàng",
     "readinessIssuesDescription": "Khắc phục các kiểm tra này trước khi kích hoạt bản nháp hoặc dùng bundle đang hoạt động.",

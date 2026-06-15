@@ -119,6 +119,13 @@ function renderClient() {
   );
 }
 
+function openTab(name: string) {
+  const tab = screen.getByRole('tab', { name });
+  fireEvent.mouseDown(tab, { button: 0, ctrlKey: false });
+  fireEvent.mouseUp(tab);
+  fireEvent.click(tab);
+}
+
 describe('MobileDeploymentClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -127,20 +134,37 @@ describe('MobileDeploymentClient', () => {
     mocks.clearMobileDeploymentSecret.mockResolvedValue(baseState);
   });
 
-  it('renders preset, custom, and built-in secret rows together', () => {
+  it('organizes deployment resources across tabs', () => {
     renderClient();
 
+    expect(screen.getByRole('tab', { name: 'overviewTitle' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    expect(
+      screen.getByRole('tab', { name: 'secretsTitle' })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'filesTitle' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('tab', { name: 'tokensTitle' })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'auditTitle' })).toBeInTheDocument();
+    expect(screen.getByText('readinessIssues')).toBeInTheDocument();
+
+    openTab('secretsTitle');
     expect(screen.getByText('NEXT_PUBLIC_SUPABASE_URL')).toBeInTheDocument();
     expect(screen.getByText('CUSTOM_API_KEY')).toBeInTheDocument();
     expect(screen.getByText('ANDROID_KEYSTORE_ALIAS')).toBeInTheDocument();
+
+    openTab('filesTitle');
     expect(
       screen.getByText('android_google_services_json')
     ).toBeInTheDocument();
-    expect(screen.getByText('readinessIssues')).toBeInTheDocument();
   });
 
   it('adds custom secrets through the dialog', async () => {
     renderClient();
+    openTab('secretsTitle');
 
     fireEvent.click(screen.getByRole('button', { name: 'addSecret' }));
     const dialog = screen.getByRole('dialog');
@@ -164,6 +188,7 @@ describe('MobileDeploymentClient', () => {
 
   it('submits custom secrets through the dialog form', async () => {
     renderClient();
+    openTab('secretsTitle');
 
     fireEvent.click(screen.getByRole('button', { name: 'addSecret' }));
     const dialog = screen.getByRole('dialog');
@@ -191,6 +216,7 @@ describe('MobileDeploymentClient', () => {
 
   it('toggles the secret value visibility in the dialog', () => {
     renderClient();
+    openTab('secretsTitle');
 
     fireEvent.click(screen.getByRole('button', { name: 'addSecret' }));
     const dialog = screen.getByRole('dialog');
@@ -211,6 +237,7 @@ describe('MobileDeploymentClient', () => {
 
   it('edits and clears built-in secrets through row actions', async () => {
     renderClient();
+    openTab('secretsTitle');
 
     const scalarRow = screen.getByTestId(
       'mobile-deployment-secret-row-ANDROID_KEYSTORE_ALIAS'
@@ -241,6 +268,7 @@ describe('MobileDeploymentClient', () => {
 
   it('clears custom env keys and verifies readiness', async () => {
     renderClient();
+    openTab('secretsTitle');
 
     const envRow = screen.getByTestId(
       'mobile-deployment-secret-row-CUSTOM_API_KEY'
@@ -253,6 +281,7 @@ describe('MobileDeploymentClient', () => {
       })
     );
 
+    openTab('overviewTitle');
     const callsBeforeVerify = mocks.getMobileDeploymentState.mock.calls.length;
     fireEvent.click(screen.getByRole('button', { name: 'verify' }));
     await waitFor(() =>
@@ -267,6 +296,7 @@ describe('MobileDeploymentClient', () => {
       new Error('Forbidden')
     );
     renderClient();
+    openTab('secretsTitle');
 
     fireEvent.click(screen.getByRole('button', { name: 'addSecret' }));
     const dialog = screen.getByRole('dialog');
