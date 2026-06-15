@@ -270,44 +270,36 @@ test('renderManagedProjectCompose keeps project services under platform compose 
   assert.match(compose, /project-docs-app:/);
   assert.match(compose, /PLATFORM_PROJECT_ID=docs-app/);
   assert.match(compose, /PLATFORM_SELECTED_BRANCH=main/);
-  assert.match(compose, /UPSTASH_REDIS_REST_TOKEN/);
+  assert.doesNotMatch(compose, /UPSTASH_REDIS_REST_TOKEN/);
 });
 
-test('managed project deployment env uses integrated Docker Redis by default', () => {
-  const tempDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'managed-project-redis-default-')
+test('renderManagedProjectCompose exposes Redis only for project-scoped credentials', () => {
+  const compose = renderManagedProjectCompose(
+    {
+      app_root: 'apps/web',
+      id: 'Docs App',
+      log_drain_enabled: true,
+      port: 3000,
+      redis_enabled: true,
+      selected_branch: 'main',
+    },
+    {
+      env: {
+        MANAGED_PROJECT_DOCS_APP_UPSTASH_REDIS_REST_TOKEN: 'project-token',
+        MANAGED_PROJECT_DOCS_APP_UPSTASH_REDIS_REST_URL:
+          'https://redis.example.com',
+      },
+      rootDir: '/workspace',
+    }
   );
 
-  try {
-    const env = getManagedProjectDeploymentEnv(
-      {
-        id: 'docs-app',
-        redis_enabled: true,
-      },
-      {
-        env: {
-          UPSTASH_REDIS_REST_TOKEN: 'stale-upstash-token',
-          UPSTASH_REDIS_REST_URL: 'https://stale-upstash.example.com',
-        },
-        fsImpl: fs,
-        rootDir: tempDir,
-      }
-    );
-    const tokenPath = path.join(tempDir, 'tmp', 'docker-web', 'redis-token');
-    const persistedToken = fs.readFileSync(tokenPath, 'utf8').trim();
-
-    assert.notEqual(env.UPSTASH_REDIS_REST_TOKEN, 'stale-upstash-token');
-    assert.equal(env.UPSTASH_REDIS_REST_TOKEN, persistedToken);
-    assert.equal(env.SRH_TOKEN, persistedToken);
-    assert.equal(env.UPSTASH_REDIS_REST_URL, 'http://serverless-redis-http:80');
-  } finally {
-    fs.rmSync(tempDir, { force: true, recursive: true });
-  }
+  assert.match(compose, /UPSTASH_REDIS_REST_TOKEN/);
+  assert.match(compose, /UPSTASH_REDIS_REST_URL/);
 });
 
-test('managed project deployment env preserves Docker Redis overrides', () => {
+test('managed project deployment env strips shared platform Redis by default', () => {
   const tempDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'managed-project-redis-override-')
+    path.join(os.tmpdir(), 'managed-project-redis-stripped-')
   );
 
   try {
@@ -322,15 +314,54 @@ test('managed project deployment env preserves Docker Redis overrides', () => {
           DOCKER_UPSTASH_REDIS_REST_URL: 'http://redis-override:80',
           UPSTASH_REDIS_REST_TOKEN: 'stale-upstash-token',
           UPSTASH_REDIS_REST_URL: 'https://stale-upstash.example.com',
+          SRH_TOKEN: 'stale-srh-token',
         },
         fsImpl: fs,
         rootDir: tempDir,
       }
     );
 
-    assert.equal(env.UPSTASH_REDIS_REST_TOKEN, 'docker-token');
-    assert.equal(env.SRH_TOKEN, 'docker-token');
-    assert.equal(env.UPSTASH_REDIS_REST_URL, 'http://redis-override:80');
+    assert.equal(env.UPSTASH_REDIS_REST_TOKEN, undefined);
+    assert.equal(env.UPSTASH_REDIS_REST_URL, undefined);
+    assert.equal(env.SRH_TOKEN, undefined);
+    assert.equal(env.DOCKER_UPSTASH_REDIS_REST_TOKEN, undefined);
+    assert.equal(env.DOCKER_UPSTASH_REDIS_REST_URL, undefined);
+    assert.equal(
+      fs.existsSync(path.join(tempDir, 'tmp', 'docker-web', 'redis-token')),
+      false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('managed project deployment env uses project-scoped Redis credentials', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'managed-project-redis-scoped-')
+  );
+
+  try {
+    const env = getManagedProjectDeploymentEnv(
+      {
+        id: 'docs-app',
+        redis_enabled: true,
+      },
+      {
+        env: {
+          MANAGED_PROJECT_DOCS_APP_UPSTASH_REDIS_REST_TOKEN: 'project-token',
+          MANAGED_PROJECT_DOCS_APP_UPSTASH_REDIS_REST_URL:
+            'https://redis.example.com',
+          UPSTASH_REDIS_REST_TOKEN: 'stale-upstash-token',
+          UPSTASH_REDIS_REST_URL: 'https://stale-upstash.example.com',
+        },
+        fsImpl: fs,
+        rootDir: tempDir,
+      }
+    );
+
+    assert.equal(env.UPSTASH_REDIS_REST_TOKEN, 'project-token');
+    assert.equal(env.SRH_TOKEN, 'project-token');
+    assert.equal(env.UPSTASH_REDIS_REST_URL, 'https://redis.example.com');
     assert.equal(
       fs.existsSync(path.join(tempDir, 'tmp', 'docker-web', 'redis-token')),
       false

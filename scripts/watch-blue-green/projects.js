@@ -43,10 +43,7 @@ const {
   getComposeFile,
   runChecked,
 } = require('../docker-web/compose.js');
-const {
-  getDockerRedisRuntime,
-  getDockerWebComposeProjectName,
-} = require('../docker-web/env.js');
+const { getDockerWebComposeProjectName } = require('../docker-web/env.js');
 const {
   DeploymentBuildLockConflictError,
   acquireDeploymentBuildLock,
@@ -63,6 +60,33 @@ function normalizeProjectId(value) {
     .replace(/[^a-z0-9-]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-{2,}/g, '-');
+}
+
+function getManagedProjectRedisEnvKeys(projectId) {
+  const envProjectId = normalizeProjectId(projectId)
+    .toUpperCase()
+    .replaceAll('-', '_');
+
+  return {
+    token: `MANAGED_PROJECT_${envProjectId}_UPSTASH_REDIS_REST_TOKEN`,
+    url: `MANAGED_PROJECT_${envProjectId}_UPSTASH_REDIS_REST_URL`,
+  };
+}
+
+function getManagedProjectScopedRedisRuntime(project, env) {
+  if (project.redis_enabled !== true) {
+    return null;
+  }
+
+  const keys = getManagedProjectRedisEnvKeys(project.id);
+  const token = String(env[keys.token] ?? '').trim();
+  const url = String(env[keys.url] ?? '').trim();
+
+  if (!token || !url) {
+    return null;
+  }
+
+  return { token, url };
 }
 
 function shellQuote(value) {
@@ -143,7 +167,7 @@ function renderManagedProjectDockerfile({ appRoot = '' } = {}) {
 
 function renderManagedProjectCompose(
   project,
-  { rootDir = process.cwd() } = {}
+  { env = process.env, rootDir = process.cwd() } = {}
 ) {
   const safeProjectId = normalizeProjectId(project.id);
   const serviceName = getProjectServiceName(project.id);
@@ -159,7 +183,7 @@ function renderManagedProjectCompose(
     `PLATFORM_LOG_DRAIN_ENABLED=${project.log_drain_enabled !== false ? 'true' : 'false'}`,
   ];
 
-  if (project.redis_enabled !== false) {
+  if (getManagedProjectScopedRedisRuntime(project, env)) {
     environment.push('UPSTASH_REDIS_REST_TOKEN', 'UPSTASH_REDIS_REST_URL');
   }
 
@@ -663,24 +687,21 @@ async function syncManagedProjectCheckout(
 
 function getManagedProjectDeploymentEnv(
   project,
-  { env = process.env, fsImpl = fs, rootDir = process.cwd() } = {}
+  { env = process.env, rootDir = process.cwd() } = {}
 ) {
   const deploymentEnv = { ...env };
+  const redisRuntime = getManagedProjectScopedRedisRuntime(project, env);
 
-  if (project.redis_enabled !== false) {
-    const redisRuntime = getDockerRedisRuntime({
-      baseEnv: env,
-      fsImpl,
-      rootDir,
-    });
+  delete deploymentEnv.DOCKER_UPSTASH_REDIS_REST_TOKEN;
+  delete deploymentEnv.DOCKER_UPSTASH_REDIS_REST_URL;
+  delete deploymentEnv.UPSTASH_REDIS_REST_TOKEN;
+  delete deploymentEnv.UPSTASH_REDIS_REST_URL;
+  delete deploymentEnv.SRH_TOKEN;
 
+  if (redisRuntime) {
     deploymentEnv.UPSTASH_REDIS_REST_TOKEN = redisRuntime.token;
     deploymentEnv.UPSTASH_REDIS_REST_URL = redisRuntime.url;
     deploymentEnv.SRH_TOKEN = redisRuntime.token;
-  } else {
-    delete deploymentEnv.UPSTASH_REDIS_REST_TOKEN;
-    delete deploymentEnv.UPSTASH_REDIS_REST_URL;
-    delete deploymentEnv.SRH_TOKEN;
   }
 
   deploymentEnv.COMPOSE_PROJECT_NAME = getDockerWebComposeProjectName({
@@ -707,7 +728,7 @@ async function deployManagedProject(
   );
   fs.writeFileSync(
     paths.composeFile,
-    renderManagedProjectCompose(project, { rootDir }),
+    renderManagedProjectCompose(project, { env, rootDir }),
     'utf8'
   );
 

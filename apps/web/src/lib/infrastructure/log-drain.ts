@@ -132,7 +132,7 @@ export async function ensureLogDrainSchema() {
         auto_deploy_enabled BOOLEAN NOT NULL DEFAULT true,
         nginx_enabled BOOLEAN NOT NULL DEFAULT true,
         log_drain_enabled BOOLEAN NOT NULL DEFAULT true,
-        redis_enabled BOOLEAN NOT NULL DEFAULT true,
+        redis_enabled BOOLEAN NOT NULL DEFAULT false,
         cron_enabled BOOLEAN NOT NULL DEFAULT false,
         is_builtin BOOLEAN NOT NULL DEFAULT false,
         latest_commit_hash TEXT,
@@ -274,6 +274,7 @@ export async function ensureLogDrainSchema() {
     await sql`ALTER TABLE log_events ADD COLUMN IF NOT EXISTS project_id TEXT NOT NULL DEFAULT 'platform'`;
     await sql`ALTER TABLE cron_runs ADD COLUMN IF NOT EXISTS project_id TEXT NOT NULL DEFAULT 'platform'`;
     await sql`ALTER TABLE usage_events ADD COLUMN IF NOT EXISTS project_id TEXT NOT NULL DEFAULT 'platform'`;
+    await sql`ALTER TABLE infrastructure_projects ALTER COLUMN redis_enabled SET DEFAULT false`;
     await sql`
       INSERT INTO infrastructure_projects (
         id,

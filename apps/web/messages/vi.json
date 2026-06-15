@@ -1187,6 +1187,10 @@
         "description": "Thời hạn bearer token cấp cho ứng dụng bên ngoài đã đăng ký.",
         "label": "TTL bearer của ứng dụng bên ngoài"
       },
+      "externalAppRefreshReplayGraceSeconds": {
+        "description": "Khoảng gia hạn ngắn cho các lần gửi refresh trùng lặp của ứng dụng bên ngoài trong lúc xoay vòng token.",
+        "label": "Thời gian cho phép lặp refresh ứng dụng bên ngoài"
+      },
       "internalAppAccessTtlSeconds": {
         "description": "Thời hạn cookie access dùng bởi các ứng dụng nội bộ đã đăng ký.",
         "label": "TTL access của ứng dụng nội bộ"

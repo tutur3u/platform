@@ -328,6 +328,7 @@ export interface AppCoordinationSessionPolicy {
   cliAccessTtlSeconds: number;
   cliRefreshTtlSeconds: number;
   externalAppBearerTtlSeconds: number;
+  externalAppRefreshReplayGraceSeconds: number;
   internalAppAccessTtlSeconds: number;
   internalAppOverrides: Record<string, InternalAppSessionPolicyOverride>;
   internalAppRefreshEarlySeconds: number;

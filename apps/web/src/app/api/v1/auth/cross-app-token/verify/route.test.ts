@@ -18,6 +18,7 @@ vi.mock('@/lib/app-coordination/session-policy', () => ({
       cliAccessTtlSeconds: 28_800,
       cliRefreshTtlSeconds: 7_776_000,
       externalAppBearerTtlSeconds: 28_800,
+      externalAppRefreshReplayGraceSeconds: 30,
       internalAppAccessTtlSeconds: 28_800,
       internalAppOverrides: {},
       internalAppRefreshEarlySeconds: 900,

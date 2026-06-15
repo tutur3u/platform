@@ -1187,6 +1187,10 @@
         "description": "Lifetime for bearer tokens issued to registered external apps.",
         "label": "External app bearer TTL"
       },
+      "externalAppRefreshReplayGraceSeconds": {
+        "description": "Short grace period for duplicate external app refresh submissions during token rotation.",
+        "label": "External app refresh replay grace"
+      },
       "internalAppAccessTtlSeconds": {
         "description": "Lifetime for browser access cookies used by registered internal apps.",
         "label": "Internal app access TTL"
