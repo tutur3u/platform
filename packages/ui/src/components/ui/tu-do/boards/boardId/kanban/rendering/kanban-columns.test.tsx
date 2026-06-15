@@ -7,7 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_KANBAN_COLUMN_WIDTH } from './kanban-column-width';
 import { KanbanColumns } from './kanban-columns';
 
-const { taskCardMock } = vi.hoisted(() => ({
+const { cursorOverlayMock, taskCardMock } = vi.hoisted(() => ({
+  cursorOverlayMock: vi.fn(),
   taskCardMock: vi.fn(),
 }));
 
@@ -41,7 +42,10 @@ vi.mock('../../task', () => ({
 }));
 
 vi.mock('../../../../shared/cursor-overlay-multi-wrapper', () => ({
-  default: () => <div data-testid="cursor-overlay" />,
+  default: (props: Record<string, unknown>) => {
+    cursorOverlayMock(props);
+    return <div data-testid="cursor-overlay" />;
+  },
 }));
 
 const lists: TaskList[] = [
@@ -112,6 +116,7 @@ function task(overrides: Partial<Task>): Task {
 
 describe('KanbanColumns', () => {
   beforeEach(() => {
+    cursorOverlayMock.mockClear();
     taskCardMock.mockClear();
   });
 
@@ -263,6 +268,12 @@ describe('KanbanColumns', () => {
     );
 
     expect(screen.getByTestId('cursor-overlay')).toBeInTheDocument();
+    expect(cursorOverlayMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channelName: 'board-realtime-board-1',
+        cursorScope: { boardId: 'board-1', type: 'board' },
+      })
+    );
   });
 
   it('renders populated deadline panels before the regular kanban columns', () => {

@@ -6,6 +6,7 @@ import {
 } from '@dnd-kit/sortable';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { getBoardRealtimeChannelName } from '@tuturuuu/ui/hooks/useBoardRealtime.types';
 import type { ListStatusFilter } from '../../../../shared/board-header';
 import CursorOverlayMultiWrapper from '../../../../shared/cursor-overlay-multi-wrapper';
 import { BoardColumn } from '../../board-column';
@@ -219,8 +220,9 @@ export function KanbanColumns({
       {/* Overlay for collaborator cursors (gated on tier — free workspaces don't get board cursors) */}
       {!isPersonalWorkspace && boardId && cursorsEnabled && (
         <CursorOverlayMultiWrapper
-          channelName={`board-cursor-${boardId}`}
+          channelName={getBoardRealtimeChannelName(boardId)}
           containerRef={boardRef}
+          cursorScope={{ boardId, type: 'board' }}
           listStatusFilter={listStatusFilter}
           filters={filters}
         />

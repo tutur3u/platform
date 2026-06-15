@@ -11,6 +11,14 @@ import type { ListStatusFilter } from './board-header';
 import CursorOverlay from './cursor-overlay';
 import type { BoardFiltersMetadata, TaskFilters } from './task-filter.types';
 
+type CursorScopeMetadata =
+  | { type: 'board'; boardId: string }
+  | { type: 'task-description'; taskId: string };
+
+type CursorOverlayMetadata = Partial<BoardFiltersMetadata> & {
+  cursorScope: CursorScopeMetadata;
+};
+
 /**
  * Efficiently compares two sorted arrays of primitive values
  */
@@ -26,10 +34,16 @@ function arraysEqual<T extends string | number>(arr1: T[], arr2: T[]): boolean {
  * Checks if two cursor metadata objects represent the same view configuration
  */
 function isMatchingFilters(
-  metadata1?: BoardFiltersMetadata,
-  metadata2?: BoardFiltersMetadata
+  metadata1?: CursorOverlayMetadata,
+  metadata2?: CursorOverlayMetadata
 ): boolean {
   if (!metadata1 || !metadata2) return true; // Show all cursors if no metadata
+  if (!isMatchingCursorScope(metadata1.cursorScope, metadata2.cursorScope)) {
+    return false;
+  }
+
+  if (!metadata1.filters || !metadata2.filters) return true;
+  if (!metadata1.listStatusFilter || !metadata2.listStatusFilter) return true;
 
   // Check list status filter
   if (metadata1.listStatusFilter !== metadata2.listStatusFilter) return false;
@@ -81,14 +95,33 @@ function isMatchingFilters(
   return true;
 }
 
+function isMatchingCursorScope(
+  scope1: CursorScopeMetadata,
+  scope2: CursorScopeMetadata
+) {
+  if (scope1.type !== scope2.type) return false;
+  if (scope1.type === 'board' && scope2.type === 'board') {
+    return scope1.boardId === scope2.boardId;
+  }
+  if (
+    scope1.type === 'task-description' &&
+    scope2.type === 'task-description'
+  ) {
+    return scope1.taskId === scope2.taskId;
+  }
+  return false;
+}
+
 export default function CursorOverlayMultiWrapper({
   channelName,
   containerRef,
+  cursorScope,
   listStatusFilter,
   filters,
 }: {
   channelName: string;
   containerRef: React.RefObject<HTMLDivElement | null>;
+  cursorScope: CursorScopeMetadata;
   listStatusFilter?: ListStatusFilter;
   filters?: TaskFilters;
 }) {
@@ -97,6 +130,9 @@ export default function CursorOverlayMultiWrapper({
     height: number;
   }>({ width: 0, height: 0 });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const cursorScopeType = cursorScope.type;
+  const cursorScopeId =
+    cursorScope.type === 'board' ? cursorScope.boardId : cursorScope.taskId;
 
   // Fetch current user
   useEffect(() => {
@@ -105,10 +141,9 @@ export default function CursorOverlayMultiWrapper({
         const userData = await getCurrentUserProfile();
         if (!userData?.id) return;
         setCurrentUser({
-          id: userData.id,
-          display_name: userData.display_name,
-          email: userData.email,
           avatar_url: userData.avatar_url,
+          display_name: userData.display_name,
+          id: userData.id,
         });
       } catch (err) {
         console.warn('Error fetching user:', err);
@@ -118,14 +153,22 @@ export default function CursorOverlayMultiWrapper({
     fetchUser();
   }, []);
 
-  // Create metadata object from view options (only if both are provided)
-  const metadata: BoardFiltersMetadata | undefined = useMemo(() => {
-    if (!listStatusFilter || !filters) return undefined;
+  const metadata: CursorOverlayMetadata = useMemo(() => {
+    const resolvedCursorScope =
+      cursorScopeType === 'board'
+        ? ({ boardId: cursorScopeId, type: 'board' } as const)
+        : ({ taskId: cursorScopeId, type: 'task-description' } as const);
+
+    if (!listStatusFilter || !filters) {
+      return { cursorScope: resolvedCursorScope };
+    }
+
     return {
+      cursorScope: resolvedCursorScope,
       listStatusFilter,
       filters,
     };
-  }, [listStatusFilter, filters]);
+  }, [cursorScopeId, cursorScopeType, listStatusFilter, filters]);
 
   const { cursors, error } = useCursorTracking(
     channelName,
@@ -139,15 +182,13 @@ export default function CursorOverlayMultiWrapper({
     const filtered = new Map<string, CursorPosition>();
 
     for (const [userId, cursor] of cursors.entries()) {
-      // Always show cursors without metadata (backward compatibility)
       if (!cursor.metadata) {
-        filtered.set(userId, cursor);
         continue;
       }
 
       // Filter based on view matching
       if (
-        isMatchingFilters(metadata, cursor.metadata as BoardFiltersMetadata)
+        isMatchingFilters(metadata, cursor.metadata as CursorOverlayMetadata)
       ) {
         filtered.set(userId, cursor);
       }

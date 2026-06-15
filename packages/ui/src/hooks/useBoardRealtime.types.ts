@@ -14,6 +14,7 @@ type BoardRealtimeEnvelope = {
   payload: BoardRealtimePayload;
 };
 
+export const BOARD_REALTIME_CHANNEL_PREFIX = 'board-realtime';
 export const LOCAL_BROADCAST_CHANNEL_PREFIX = 'tuturuuu:board-realtime';
 export const SEEN_REALTIME_EVENT_LIMIT = 500;
 export const PRIVATE_TASK_REALTIME_CHANNEL_CONFIG = {
@@ -22,6 +23,10 @@ export const PRIVATE_TASK_REALTIME_CHANNEL_CONFIG = {
     private: true,
   },
 } as const;
+
+export function getBoardRealtimeChannelName(boardId: string) {
+  return `${BOARD_REALTIME_CHANNEL_PREFIX}-${boardId}`;
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

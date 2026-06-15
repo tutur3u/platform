@@ -10,6 +10,7 @@ import { toast } from './use-toast';
 import {
   type BoardRealtimePayload,
   createRealtimeClientId,
+  getBoardRealtimeChannelName,
   isBoardRealtimeEnvelope,
   LOCAL_BROADCAST_CHANNEL_PREFIX,
   PRIVATE_TASK_REALTIME_CHANNEL_CONFIG,
@@ -207,7 +208,7 @@ export function useBoardRealtime(
     }
 
     const channel = supabase.channel(
-      `board-realtime-${boardId}`,
+      getBoardRealtimeChannelName(boardId),
       PRIVATE_TASK_REALTIME_CHANNEL_CONFIG
     );
     channelRef.current = channel;

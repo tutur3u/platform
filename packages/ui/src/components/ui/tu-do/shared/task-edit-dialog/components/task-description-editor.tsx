@@ -4,6 +4,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import { Loader2 } from '@tuturuuu/icons';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { getBoardRealtimeChannelName } from '@tuturuuu/ui/hooks/useBoardRealtime.types';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -352,8 +353,9 @@ export function TaskDescriptionEditor({
 
         {showCollaborationCursors && taskId && (
           <CursorOverlayMultiWrapper
-            channelName={`task-cursor-${taskId}`}
+            channelName={getBoardRealtimeChannelName(boardId)}
             containerRef={richTextEditorRef}
+            cursorScope={{ taskId, type: 'task-description' }}
           />
         )}
 

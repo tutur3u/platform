@@ -5,13 +5,77 @@ import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePageVisibility } from './use-page-visibility';
+import { PRIVATE_TASK_REALTIME_CHANNEL_CONFIG } from './useBoardRealtime.types';
+
+type CursorUser = Pick<User, 'avatar_url' | 'display_name' | 'id'> & {
+  id: string;
+};
 
 export interface CursorPosition {
   x: number;
   y: number;
-  user?: User;
+  user?: CursorUser;
   metadata?: { [key: string]: any };
   lastUpdatedAt: number;
+}
+
+type ParsedCursorPosition = CursorPosition & { user: CursorUser };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function sanitizeCursorUser(user: User | undefined): CursorUser | null {
+  if (!user?.id) return null;
+
+  return {
+    avatar_url:
+      typeof user.avatar_url === 'string' && user.avatar_url.length > 0
+        ? user.avatar_url
+        : null,
+    display_name:
+      typeof user.display_name === 'string' && user.display_name.length > 0
+        ? user.display_name
+        : null,
+    id: user.id,
+  };
+}
+
+function sanitizeCursorMetadata(metadata: { [key: string]: any } | undefined) {
+  if (metadata == null || !isRecord(metadata) || Array.isArray(metadata)) {
+    return undefined;
+  }
+
+  return metadata;
+}
+
+function parseCursorMovePayload(payload: unknown): ParsedCursorPosition | null {
+  if (!isRecord(payload)) return null;
+
+  const { metadata, user, x, y } = payload;
+  if (typeof x !== 'number' || !Number.isFinite(x)) return null;
+  if (typeof y !== 'number' || !Number.isFinite(y)) return null;
+  if (!isRecord(user) || typeof user.id !== 'string' || user.id.length === 0) {
+    return null;
+  }
+
+  return {
+    lastUpdatedAt: Date.now(),
+    metadata: sanitizeCursorMetadata(metadata as { [key: string]: any }),
+    user: {
+      avatar_url:
+        typeof user.avatar_url === 'string' && user.avatar_url.length > 0
+          ? user.avatar_url
+          : null,
+      display_name:
+        typeof user.display_name === 'string' && user.display_name.length > 0
+          ? user.display_name
+          : null,
+      id: user.id,
+    },
+    x,
+    y,
+  };
 }
 
 export function useCursorTracking(
@@ -59,6 +123,8 @@ export function useCursorTracking(
       metadata?: { [key: string]: any }
     ) => {
       if (!channelRef.current) return;
+      const cursorUser = sanitizeCursorUser(user);
+      if (cursorUser == null) return;
       // Check error count instead of state to avoid dependency
       if (errorCountRef.current >= MAX_ERROR_COUNT) return;
 
@@ -73,7 +139,12 @@ export function useCursorTracking(
                 await channelRef.current?.send({
                   type: 'broadcast',
                   event: 'cursor-move',
-                  payload: { x, y, user, metadata },
+                  payload: {
+                    metadata: sanitizeCursorMetadata(metadata),
+                    user: cursorUser,
+                    x,
+                    y,
+                  },
                 });
 
                 lastBroadcastTimeRef.current = Date.now();
@@ -90,7 +161,12 @@ export function useCursorTracking(
           await channelRef.current.send({
             type: 'broadcast',
             event: 'cursor-move',
-            payload: { x, y, user, metadata },
+            payload: {
+              metadata: sanitizeCursorMetadata(metadata),
+              user: cursorUser,
+              x,
+              y,
+            },
           });
 
           lastBroadcastTimeRef.current = now;
@@ -207,38 +283,25 @@ export function useCursorTracking(
           channelRef.current = null;
         }
 
-        const channel = supabase.channel(channelName, {
-          config: {
-            broadcast: {
-              self: false, // Don't receive own broadcasts
-            },
-          },
-        });
+        const channel = supabase.channel(
+          channelName,
+          PRIVATE_TASK_REALTIME_CHANNEL_CONFIG
+        );
 
         channelRef.current = channel;
         // Listen for cursor movements from other users
         channel
           .on('broadcast', { event: 'cursor-move' }, (payload) => {
             try {
-              const {
-                x,
-                y,
-                user: broadcastUser,
-                metadata: broadcastMetadata,
-              } = payload.payload;
+              const cursor = parseCursorMovePayload(payload.payload);
+              if (cursor == null) return;
 
               // Ignore own broadcasts (extra safety)
-              if (broadcastUser.id === user?.id) return;
+              if (cursor.user?.id === user?.id) return;
 
               setCursors((prev) => {
                 const updated = new Map(prev);
-                updated.set(broadcastUser.id || '', {
-                  x,
-                  y,
-                  user: broadcastUser,
-                  metadata: broadcastMetadata,
-                  lastUpdatedAt: Date.now(),
-                });
+                updated.set(cursor.user.id, cursor);
                 return updated;
               });
             } catch (err) {
@@ -289,16 +352,17 @@ export function useCursorTracking(
 
       // Broadcast cursor removal before unsubscribing (best effort)
       // This helps other users see the cursor disappear immediately
-      if (channelRef.current && user?.id) {
+      const cursorUser = sanitizeCursorUser(user);
+      if (channelRef.current && cursorUser != null) {
         try {
           channelRef.current.send({
             type: 'broadcast',
             event: 'cursor-move',
             payload: {
+              metadata: sanitizeCursorMetadata(metadata),
+              user: cursorUser,
               x: -1000,
               y: -1000,
-              user,
-              metadata,
             },
           });
         } catch (err) {

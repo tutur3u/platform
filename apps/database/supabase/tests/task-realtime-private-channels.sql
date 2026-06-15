@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(14);
 
 select has_function(
   'private',
@@ -186,6 +186,22 @@ select ok(
     '00000000-0000-4000-8000-00000000a004'
   ),
   'unshared non-member cannot join board realtime channel'
+);
+
+select ok(
+  not private.can_join_task_realtime_topic(
+    'board-cursor-00000000-0000-4000-8000-00000000c001',
+    '00000000-0000-4000-8000-00000000a001'
+  ),
+  'legacy board cursor channel is not an authorized realtime topic'
+);
+
+select ok(
+  not private.can_join_task_realtime_topic(
+    'task-cursor-00000000-0000-4000-8000-00000000e001',
+    '00000000-0000-4000-8000-00000000a001'
+  ),
+  'legacy task cursor channel is not an authorized realtime topic'
 );
 
 set local role authenticated;
