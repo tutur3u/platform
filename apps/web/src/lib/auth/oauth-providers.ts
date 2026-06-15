@@ -1,9 +1,6 @@
-export const AUTH_OAUTH_PROVIDERS = [
-  'apple',
-  'google',
-  'azure',
-  'github',
-] as const;
+// Generic Azure/Microsoft OAuth stays out of account auth until the issuer or
+// mailbox is independently verified beyond email-like claims.
+export const AUTH_OAUTH_PROVIDERS = ['apple', 'google', 'github'] as const;
 
 export type AuthOAuthProvider = (typeof AUTH_OAUTH_PROVIDERS)[number];
 
@@ -26,10 +23,6 @@ export const AUTH_OAUTH_PROVIDER_OPTIONS: Record<
       access_type: 'offline',
       prompt: 'consent',
     },
-  },
-  azure: {
-    name: 'Microsoft',
-    scopes: 'email',
   },
   github: {
     name: 'GitHub',

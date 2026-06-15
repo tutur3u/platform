@@ -445,6 +445,25 @@ describe('LoginForm returnUrl navigation', () => {
     queryClient.clear();
   });
 
+  it('does not expose generic Microsoft OAuth on the login form', async () => {
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockReturnValue(new Promise(() => undefined));
+
+    const queryClient = renderLoginFormSearch('?provider=azure');
+
+    await screen.findByRole('button', {
+      name: /login\.continue_with_google/u,
+    });
+
+    expect(
+      screen.queryByRole('button', {
+        name: /login\.continue_with_microsoft/u,
+      })
+    ).not.toBeInTheDocument();
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+    queryClient.clear();
+  });
+
   it('navigates home after password login without a returnUrl', async () => {
     mocks.currentUserProfile = null;
     mocks.getUser.mockResolvedValue({
