@@ -31,9 +31,59 @@ const BUCKETS_TO_DELETE = [
   'time_tracking_requests',
 ];
 
-function readProjectRef() {
+export const SUPABASE_PROJECT_REF_PATTERN = /^[a-z0-9]{20}$/u;
+
+export function parseProjectRef(rawProjectRef) {
+  const projectRef = rawProjectRef.trim();
+
+  if (!projectRef) {
+    return {
+      message: 'Supabase project ref must not be empty.',
+      ok: false,
+    };
+  }
+
+  if (!SUPABASE_PROJECT_REF_PATTERN.test(projectRef)) {
+    return {
+      message:
+        'Supabase project ref must be exactly 20 lowercase letters or digits.',
+      ok: false,
+    };
+  }
+
+  return {
+    ok: true,
+    projectRef,
+  };
+}
+
+export function buildSupabaseStorageAdminUrl(projectRef, storagePath) {
+  const parsedProjectRef = parseProjectRef(projectRef);
+
+  if (!parsedProjectRef.ok) {
+    throw new Error(parsedProjectRef.message);
+  }
+
+  return new URL(
+    `/storage/v1/${storagePath.replace(/^\/+/u, '')}`,
+    `https://${parsedProjectRef.projectRef}.supabase.co`
+  ).toString();
+}
+
+export function readProjectRef() {
   try {
-    return readFileSync(PROJECT_REF_PATH, 'utf-8').trim();
+    const parsedProjectRef = parseProjectRef(
+      readFileSync(PROJECT_REF_PATH, 'utf-8')
+    );
+
+    if (!parsedProjectRef.ok) {
+      console.error('\n❌ Error: Invalid Supabase project-ref file');
+      console.error(`   Path: ${PROJECT_REF_PATH}`);
+      console.error(`   ${parsedProjectRef.message}\n`);
+      process.exit(1);
+    }
+
+    return parsedProjectRef.projectRef;
   } catch (error) {
     console.error('\n❌ Error: Could not read project-ref file');
     console.error(`   Path: ${PROJECT_REF_PATH}`);
@@ -124,8 +174,11 @@ function getServiceRoleKey(projectRef) {
   }
 }
 
-async function emptyBucket(projectRef, serviceRoleKey, bucketId) {
-  const url = `https://${projectRef}.supabase.co/storage/v1/bucket/${bucketId}/empty`;
+export async function emptyBucket(projectRef, serviceRoleKey, bucketId) {
+  const url = buildSupabaseStorageAdminUrl(
+    projectRef,
+    `bucket/${encodeURIComponent(bucketId)}/empty`
+  );
   return fetch(url, {
     method: 'POST',
     headers: {
@@ -137,8 +190,11 @@ async function emptyBucket(projectRef, serviceRoleKey, bucketId) {
   });
 }
 
-async function deleteBucket(projectRef, serviceRoleKey, bucketId) {
-  const url = `https://${projectRef}.supabase.co/storage/v1/bucket/${bucketId}`;
+export async function deleteBucket(projectRef, serviceRoleKey, bucketId) {
+  const url = buildSupabaseStorageAdminUrl(
+    projectRef,
+    `bucket/${encodeURIComponent(bucketId)}`
+  );
   return fetch(url, {
     method: 'DELETE',
     headers: {
@@ -150,7 +206,7 @@ async function deleteBucket(projectRef, serviceRoleKey, bucketId) {
   });
 }
 
-async function main() {
+export async function main() {
   const projectRef = readProjectRef();
 
   console.log('\n🗑️  Deleting storage buckets before reset...\n');
@@ -190,4 +246,6 @@ async function main() {
   console.log('\n✅ Storage bucket cleanup complete.\n');
 }
 
-main();
+if (process.argv[1] && resolve(process.argv[1]) === __filename) {
+  await main();
+}
