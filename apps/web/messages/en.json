@@ -9942,6 +9942,121 @@
     "error": "Error",
     "filesTitle": "File resources",
     "fingerprint": "SHA-256 {value}",
+    "guidance": {
+      "ariaLabel": "Guidance for {field}",
+      "fields": {
+        "android_google_services_json": {
+          "what": "Firebase configuration file (google-services.json) bundled into the Android build.",
+          "where": "Firebase Console → Project settings → your Android app → download google-services.json."
+        },
+        "ANDROID_KEYSTORE_ALIAS": {
+          "what": "Alias of the signing key inside your Android upload keystore. The deploy workflow uses it to select the key when signing the release.",
+          "where": "Chosen by you when generating the keystore with `keytool -genkeypair -alias <alias>`."
+        },
+        "ANDROID_KEYSTORE_PASSWORD": {
+          "what": "Password that protects the Android upload keystore file as a whole.",
+          "where": "Set by you when generating the keystore with `keytool`."
+        },
+        "ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD": {
+          "what": "Password that protects the private key entry inside the keystore (often the same as the keystore password).",
+          "where": "Set by you when generating the keystore with `keytool`."
+        },
+        "android_upload_keystore": {
+          "what": "Java keystore (.jks/.keystore) used to sign Android release builds.",
+          "where": "Generate with `keytool -genkeypair -v -keystore upload-keystore.jks ...`."
+        },
+        "API_BASE_URL": {
+          "what": "Base URL of the Tuturuuu platform API the mobile app calls.",
+          "where": "Your production web deployment URL (internal value)."
+        },
+        "APP_STORE_CONNECT_API_KEY_ID": {
+          "what": "Key ID of the App Store Connect API key used to upload builds without an Apple ID password.",
+          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API."
+        },
+        "APP_STORE_CONNECT_ISSUER_ID": {
+          "what": "Issuer ID that pairs with the App Store Connect API key for authentication.",
+          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API (shown above the keys list)."
+        },
+        "app_store_connect_private_key_p8": {
+          "what": "App Store Connect API private key (.p8) used to authenticate uploads. Downloadable only once.",
+          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API → generate key."
+        },
+        "apple_app_store_provisioning_profile": {
+          "what": "App Store provisioning profile (.mobileprovision) tying the bundle ID to the distribution certificate.",
+          "where": "Apple Developer → Profiles → create an App Store distribution profile."
+        },
+        "APPLE_BUNDLE_ID": {
+          "what": "The iOS bundle identifier of the app (for example com.tuturuuu.app.mobile).",
+          "where": "Apple Developer → Certificates, Identifiers & Profiles → Identifiers."
+        },
+        "apple_distribution_certificate_p12": {
+          "what": "Apple distribution certificate exported as a .p12 (includes its private key) for signing iOS builds.",
+          "where": "Apple Developer → Certificates (Apple Distribution); export from Keychain Access as .p12."
+        },
+        "APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD": {
+          "what": "Password used to encrypt the exported Apple distribution certificate (.p12) so the workflow can import it.",
+          "where": "Chosen by you when exporting the certificate from Keychain Access as a .p12."
+        },
+        "APPLE_TEAM_ID": {
+          "what": "Your 10-character Apple Developer Team ID, used to scope signing and provisioning.",
+          "where": "Apple Developer → Membership details."
+        },
+        "CI_TOKEN_NAME": {
+          "what": "A human-readable label for a CI token the GitHub Actions mobile-deploy workflow uses to authenticate to this vault.",
+          "where": "Chosen by you; the token value is shown only once when issued (internal value)."
+        },
+        "GOOGLE_IOS_CLIENT_ID": {
+          "what": "Google OAuth 2.0 iOS client ID used for Google sign-in on iOS.",
+          "where": "Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs (iOS)."
+        },
+        "GOOGLE_PLAY_PACKAGE_NAME": {
+          "what": "The application ID the app is published under on Google Play (for example com.tuturuuu.app.mobile). Must match `applicationId` in the Android build.",
+          "where": "Google Play Console → your app → App information."
+        },
+        "google_play_service_account_json": {
+          "what": "Google Cloud service-account key (JSON) with Play Developer API access for automated publishing.",
+          "where": "Google Cloud Console → IAM & Admin → Service Accounts → create a JSON key, then grant access in Play Console → Users and permissions."
+        },
+        "GOOGLE_PLAY_TRACK": {
+          "what": "The Google Play release track the build is published to (internal, alpha, beta, or production).",
+          "where": "Google Play Console → Release → choose the track name."
+        },
+        "GOOGLE_WEB_CLIENT_ID": {
+          "what": "Google OAuth 2.0 web client ID used for Google sign-in.",
+          "where": "Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs (Web)."
+        },
+        "ios_google_service_info_plist": {
+          "what": "Firebase configuration file (GoogleService-Info.plist) bundled into the iOS build.",
+          "where": "Firebase Console → Project settings → your iOS app → download GoogleService-Info.plist."
+        },
+        "MOBILE_CALENDAR_INTEGRATIONS_ENABLED": {
+          "what": "Feature flag ('true' or 'false') that toggles calendar integrations in the mobile app.",
+          "where": "Set manually as a product feature flag (internal value)."
+        },
+        "MOBILE_TASK_DESCRIPTION_EDITING_ENABLED": {
+          "what": "Feature flag ('true' or 'false') that toggles rich task-description editing in the mobile app.",
+          "where": "Set manually as a product feature flag (internal value)."
+        },
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": {
+          "what": "Supabase publishable (anon) API key the mobile app uses for client requests.",
+          "where": "Supabase dashboard → Project Settings → API Keys."
+        },
+        "NEXT_PUBLIC_SUPABASE_URL": {
+          "what": "Public URL of the Supabase project the mobile app talks to.",
+          "where": "Supabase dashboard → Project Settings → Data API → Project URL."
+        },
+        "TURNSTILE_BASE_URL": {
+          "what": "Base URL the app loads to render the Turnstile challenge.",
+          "where": "Your production web app URL that hosts the Turnstile widget page (internal value)."
+        },
+        "TURNSTILE_SITE_KEY": {
+          "what": "Cloudflare Turnstile site key used for bot protection on auth flows.",
+          "where": "Cloudflare dashboard → Turnstile → your widget."
+        }
+      },
+      "label": "Where to get it",
+      "setupGuide": "Setup guide"
+    },
     "hideSecretValue": "Hide secret value",
     "issueToken": "Issue token",
     "lastFour": "Last 4: {value}",

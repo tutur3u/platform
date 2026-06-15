@@ -14,6 +14,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useEffect, useState } from 'react';
+import { MobileDeploymentFieldHelp } from './mobile-deployment-field-help';
 
 export interface SecretDialogState {
   description: string;
@@ -108,7 +109,12 @@ export function MobileDeploymentSecretDialog({
 
           <div className="grid gap-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="mobile-deployment-secret-name">{t('name')}</Label>
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="mobile-deployment-secret-name">
+                  {t('name')}
+                </Label>
+                <MobileDeploymentFieldHelp field={currentName} />
+              </div>
               <Input
                 className="font-mono"
                 disabled={!state.nameEditable || pending}

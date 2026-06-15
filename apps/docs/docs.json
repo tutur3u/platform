@@ -255,6 +255,7 @@
                   "build/devops/log-drain-observability",
                   "build/devops/adaptive-abuse-rate-limits",
                   "build/devops/github-actions-runbook",
+                  "build/devops/mobile-store-deployment",
                   "build/devops/secrets-and-configuration",
                   "build/devops/sepay-testing-guide",
                   "build/devops/polar-storefront-integration"

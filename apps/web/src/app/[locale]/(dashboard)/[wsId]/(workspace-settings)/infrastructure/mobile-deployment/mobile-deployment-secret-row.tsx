@@ -5,6 +5,7 @@ import type { MobileDeploymentResourceStatus } from '@tuturuuu/internal-api/infr
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { MobileDeploymentFieldHelp } from './mobile-deployment-field-help';
 import {
   ResourceBadge,
   ResourceMetadata,
@@ -42,6 +43,7 @@ export function MobileDeploymentSecretRow({
       <div className="min-w-0 space-y-1.5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="min-w-0 truncate font-mono text-sm">{row.name}</span>
+          <MobileDeploymentFieldHelp field={row.name} />
           <ResourceBadge
             missingLabel={t('missing')}
             ok={configured}

@@ -9942,6 +9942,121 @@
     "error": "Lỗi",
     "filesTitle": "Tài nguyên tệp",
     "fingerprint": "SHA-256 {value}",
+    "guidance": {
+      "ariaLabel": "Hướng dẫn cho {field}",
+      "fields": {
+        "android_google_services_json": {
+          "what": "Tệp cấu hình Firebase (google-services.json) được đóng gói vào bản build Android.",
+          "where": "Firebase Console → Project settings → ứng dụng Android của bạn → tải xuống google-services.json."
+        },
+        "ANDROID_KEYSTORE_ALIAS": {
+          "what": "Bí danh (alias) của khóa ký nằm trong keystore tải lên Android. Quy trình triển khai dùng nó để chọn khóa khi ký bản phát hành.",
+          "where": "Do bạn đặt khi tạo keystore bằng `keytool -genkeypair -alias <alias>`."
+        },
+        "ANDROID_KEYSTORE_PASSWORD": {
+          "what": "Mật khẩu bảo vệ toàn bộ tệp keystore tải lên Android.",
+          "where": "Do bạn đặt khi tạo keystore bằng `keytool`."
+        },
+        "ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD": {
+          "what": "Mật khẩu bảo vệ mục khóa riêng (private key) bên trong keystore (thường giống mật khẩu keystore).",
+          "where": "Do bạn đặt khi tạo keystore bằng `keytool`."
+        },
+        "android_upload_keystore": {
+          "what": "Keystore Java (.jks/.keystore) dùng để ký các bản phát hành Android.",
+          "where": "Tạo bằng `keytool -genkeypair -v -keystore upload-keystore.jks ...`."
+        },
+        "API_BASE_URL": {
+          "what": "URL gốc của API nền tảng Tuturuuu mà ứng dụng di động gọi tới.",
+          "where": "URL triển khai web production của bạn (giá trị nội bộ)."
+        },
+        "APP_STORE_CONNECT_API_KEY_ID": {
+          "what": "Key ID của khóa App Store Connect API dùng để tải bản build lên mà không cần mật khẩu Apple ID.",
+          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API."
+        },
+        "APP_STORE_CONNECT_ISSUER_ID": {
+          "what": "Issuer ID đi kèm với khóa App Store Connect API để xác thực.",
+          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API (hiển thị phía trên danh sách khóa)."
+        },
+        "app_store_connect_private_key_p8": {
+          "what": "Khóa riêng App Store Connect API (.p8) dùng để xác thực khi tải lên. Chỉ tải xuống được một lần.",
+          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API → tạo khóa."
+        },
+        "apple_app_store_provisioning_profile": {
+          "what": "Provisioning profile App Store (.mobileprovision) liên kết bundle ID với chứng chỉ phân phối.",
+          "where": "Apple Developer → Profiles → tạo profile phân phối App Store."
+        },
+        "APPLE_BUNDLE_ID": {
+          "what": "Bundle identifier iOS của ứng dụng (ví dụ com.tuturuuu.app.mobile).",
+          "where": "Apple Developer → Certificates, Identifiers & Profiles → Identifiers."
+        },
+        "apple_distribution_certificate_p12": {
+          "what": "Chứng chỉ phân phối Apple xuất ra dưới dạng .p12 (bao gồm khóa riêng) để ký bản build iOS.",
+          "where": "Apple Developer → Certificates (Apple Distribution); xuất từ Keychain Access dưới dạng .p12."
+        },
+        "APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD": {
+          "what": "Mật khẩu dùng để mã hóa chứng chỉ phân phối Apple đã xuất (.p12) để quy trình có thể nhập nó.",
+          "where": "Do bạn đặt khi xuất chứng chỉ từ Keychain Access dưới dạng .p12."
+        },
+        "APPLE_TEAM_ID": {
+          "what": "Team ID Apple Developer gồm 10 ký tự, dùng để giới hạn việc ký và cấp profile.",
+          "where": "Apple Developer → thông tin Membership."
+        },
+        "CI_TOKEN_NAME": {
+          "what": "Nhãn dễ đọc cho token CI mà quy trình GitHub Actions triển khai di động dùng để xác thực với kho bí mật này.",
+          "where": "Do bạn đặt; giá trị token chỉ hiển thị một lần khi được cấp (giá trị nội bộ)."
+        },
+        "GOOGLE_IOS_CLIENT_ID": {
+          "what": "Google OAuth 2.0 iOS client ID dùng cho đăng nhập bằng Google trên iOS.",
+          "where": "Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs (iOS)."
+        },
+        "GOOGLE_PLAY_PACKAGE_NAME": {
+          "what": "Application ID mà ứng dụng được phát hành trên Google Play (ví dụ com.tuturuuu.app.mobile). Phải khớp với `applicationId` trong cấu hình build Android.",
+          "where": "Google Play Console → ứng dụng của bạn → App information."
+        },
+        "google_play_service_account_json": {
+          "what": "Khóa tài khoản dịch vụ Google Cloud (JSON) có quyền Play Developer API để phát hành tự động.",
+          "where": "Google Cloud Console → IAM & Admin → Service Accounts → tạo khóa JSON, sau đó cấp quyền trong Play Console → Users and permissions."
+        },
+        "GOOGLE_PLAY_TRACK": {
+          "what": "Kênh phát hành trên Google Play mà bản build được đẩy lên (internal, alpha, beta hoặc production).",
+          "where": "Google Play Console → Release → chọn tên kênh."
+        },
+        "GOOGLE_WEB_CLIENT_ID": {
+          "what": "Google OAuth 2.0 web client ID dùng cho đăng nhập bằng Google.",
+          "where": "Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs (Web)."
+        },
+        "ios_google_service_info_plist": {
+          "what": "Tệp cấu hình Firebase (GoogleService-Info.plist) được đóng gói vào bản build iOS.",
+          "where": "Firebase Console → Project settings → ứng dụng iOS của bạn → tải xuống GoogleService-Info.plist."
+        },
+        "MOBILE_CALENDAR_INTEGRATIONS_ENABLED": {
+          "what": "Cờ tính năng ('true' hoặc 'false') bật/tắt tích hợp lịch trong ứng dụng di động.",
+          "where": "Đặt thủ công như một cờ tính năng sản phẩm (giá trị nội bộ)."
+        },
+        "MOBILE_TASK_DESCRIPTION_EDITING_ENABLED": {
+          "what": "Cờ tính năng ('true' hoặc 'false') bật/tắt chỉnh sửa mô tả công việc nâng cao trong ứng dụng di động.",
+          "where": "Đặt thủ công như một cờ tính năng sản phẩm (giá trị nội bộ)."
+        },
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": {
+          "what": "Khóa Supabase publishable (anon) mà ứng dụng di động dùng cho các yêu cầu phía client.",
+          "where": "Bảng điều khiển Supabase → Project Settings → API Keys."
+        },
+        "NEXT_PUBLIC_SUPABASE_URL": {
+          "what": "URL công khai của dự án Supabase mà ứng dụng di động kết nối tới.",
+          "where": "Bảng điều khiển Supabase → Project Settings → Data API → Project URL."
+        },
+        "TURNSTILE_BASE_URL": {
+          "what": "URL gốc mà ứng dụng tải để hiển thị thử thách Turnstile.",
+          "where": "URL ứng dụng web production lưu trữ trang widget Turnstile (giá trị nội bộ)."
+        },
+        "TURNSTILE_SITE_KEY": {
+          "what": "Site key Cloudflare Turnstile dùng để chống bot trong các luồng xác thực.",
+          "where": "Bảng điều khiển Cloudflare → Turnstile → widget của bạn."
+        }
+      },
+      "label": "Lấy ở đâu",
+      "setupGuide": "Hướng dẫn thiết lập"
+    },
     "hideSecretValue": "Ẩn giá trị bí mật",
     "issueToken": "Cấp token",
     "lastFour": "4 ký tự cuối: {value}",

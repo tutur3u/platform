@@ -19,6 +19,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { MOBILE_DEPLOYMENT_FILE_KINDS } from './mobile-deployment-config';
+import { MobileDeploymentFieldHelp } from './mobile-deployment-field-help';
 import {
   ResourceBadge,
   ResourceMetadata,
@@ -148,6 +149,7 @@ export function MobileDeploymentFilesPanel({
                   <span className="min-w-0 truncate font-mono text-sm">
                     {kind}
                   </span>
+                  <MobileDeploymentFieldHelp field={kind} />
                   <ResourceBadge
                     missingLabel={t('missing')}
                     ok={configured}
@@ -218,7 +220,10 @@ export function MobileDeploymentTokensPanel({
         )}
         <div className="flex flex-col gap-2 md:flex-row md:items-end">
           <div className="flex-1 space-y-1">
-            <Label htmlFor="mobile-deployment-token-name">{t('name')}</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="mobile-deployment-token-name">{t('name')}</Label>
+              <MobileDeploymentFieldHelp field="CI_TOKEN_NAME" />
+            </div>
             <Input
               id="mobile-deployment-token-name"
               onChange={(event) => onTokenNameChange(event.target.value)}

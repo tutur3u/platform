@@ -1,0 +1,95 @@
+---
+title: "Mobile Store Deployment Vault"
+description: "What every Mobile Deployment vault field is, what it does in the store release workflow, and where to obtain its value."
+updatedAt: "2026-06-15"
+---
+
+This runbook explains each field on the **Infrastructure → Mobile Deployment**
+settings page (root workspace, `manage_mobile_deployment_vault` permission). The
+vault holds the secrets, signing files, and CI tokens consumed by the
+`.github/workflows/mobile-deploy-stores.yaml` workflow that builds and publishes
+the Flutter mobile app to the Google Play and Apple App stores.
+
+Each field on the settings page has an inline help tooltip with a short summary
+and the console URL; this page is the full reference with clickable links.
+
+## How The Vault Is Organized
+
+- **Secrets** — short scalar values (passwords, IDs, names) and preset
+  environment variables baked into the build.
+- **Files** — signing certificates, keystores, and Firebase/Play config files.
+- **CI tokens** — bearer tokens the GitHub Actions workflow uses to read the
+  vault. Each token value is shown only once, at issue time.
+- **Overview** — readiness checks plus draft activation and rollback.
+
+## Android Signing
+
+| Field | What it is | Where to get it |
+| --- | --- | --- |
+| `ANDROID_KEYSTORE_ALIAS` | Alias of the signing key inside the upload keystore. | Chosen when you run [`keytool -genkeypair -alias <alias>`](https://developer.android.com/studio/publish/app-signing). |
+| `ANDROID_KEYSTORE_PASSWORD` | Password protecting the keystore file. | Set when generating the keystore with `keytool`. |
+| `ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD` | Password protecting the private key entry (often the same as the keystore password). | Set when generating the keystore with `keytool`. |
+| `android_upload_keystore` (file) | The Java keystore (`.jks`) used to sign Android release builds. | Generate with [`keytool -genkeypair -v -keystore upload-keystore.jks ...`](https://developer.android.com/studio/publish/app-signing#generate-key). |
+
+## Google Play
+
+| Field | What it is | Where to get it |
+| --- | --- | --- |
+| `GOOGLE_PLAY_PACKAGE_NAME` | Play application ID (e.g. `com.tuturuuu.app.mobile`); must match the Android `applicationId`. | [Google Play Console](https://play.google.com/console) → App information. |
+| `GOOGLE_PLAY_TRACK` | Release track (`internal`, `alpha`, `beta`, `production`). | [Play release tracks](https://support.google.com/googleplay/android-developer/answer/9859348). |
+| `google_play_service_account_json` (file) | Service-account JSON with Play Developer API access for automated publishing. | [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts) → create JSON key, then grant access in Play Console → Users and permissions. See the [publisher API setup](https://developers.google.com/android-publisher/getting_started). |
+
+## Apple Signing
+
+| Field | What it is | Where to get it |
+| --- | --- | --- |
+| `APPLE_BUNDLE_ID` | iOS bundle identifier (e.g. `com.tuturuuu.app.mobile`). | [Apple Developer → Identifiers](https://developer.apple.com/account/resources/identifiers/list). |
+| `APPLE_TEAM_ID` | 10-character Apple Developer Team ID. | [Apple Developer → Membership](https://developer.apple.com/account). |
+| `APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD` | Password used when exporting the distribution certificate `.p12`. | Chosen by you during Keychain Access export. |
+| `apple_distribution_certificate_p12` (file) | Apple distribution certificate (with private key) exported as `.p12`. | [Apple Developer → Certificates](https://developer.apple.com/account/resources/certificates/list); export from Keychain Access. |
+| `apple_app_store_provisioning_profile` (file) | App Store provisioning profile (`.mobileprovision`) tying the bundle ID to the certificate. | [Apple Developer → Profiles](https://developer.apple.com/account/resources/profiles/list). |
+
+## App Store Connect API
+
+| Field | What it is | Where to get it |
+| --- | --- | --- |
+| `APP_STORE_CONNECT_API_KEY_ID` | Key ID of the App Store Connect API key. | [App Store Connect → Integrations](https://appstoreconnect.apple.com/access/integrations/api). |
+| `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID that pairs with the API key. | Same Integrations page (shown above the keys list). |
+| `app_store_connect_private_key_p8` (file) | API private key (`.p8`); downloadable only once. | Same Integrations page → generate key. |
+
+## Firebase
+
+| Field | What it is | Where to get it |
+| --- | --- | --- |
+| `android_google_services_json` (file) | Firebase Android config (`google-services.json`). | [Firebase Console](https://console.firebase.google.com) → Project settings → Android app. |
+| `ios_google_service_info_plist` (file) | Firebase iOS config (`GoogleService-Info.plist`). | Firebase Console → Project settings → iOS app. |
+
+## App Environment Variables
+
+These preset env vars are baked into the build. Custom env vars can be added but
+have no built-in guidance.
+
+| Field | What it is | Where to get it |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL. | [Supabase dashboard](https://supabase.com/dashboard) → Project Settings → Data API. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable (anon) key. | Supabase dashboard → Project Settings → API Keys. |
+| `API_BASE_URL` | Base URL of the Tuturuuu platform API. | Your production web deployment URL (internal). |
+| `TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key for bot protection. | [Cloudflare → Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile). |
+| `TURNSTILE_BASE_URL` | URL hosting the Turnstile challenge page. | Your production web app URL (internal). |
+| `GOOGLE_WEB_CLIENT_ID` | Google OAuth 2.0 web client ID. | [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials). |
+| `GOOGLE_IOS_CLIENT_ID` | Google OAuth 2.0 iOS client ID. | Same Credentials page (iOS client). |
+| `MOBILE_TASK_DESCRIPTION_EDITING_ENABLED` | Feature flag for rich task-description editing (`true`/`false`). | Set manually (internal). |
+| `MOBILE_CALENDAR_INTEGRATIONS_ENABLED` | Feature flag for calendar integrations (`true`/`false`). | Set manually (internal). |
+
+## CI Tokens
+
+| Field | What it is | Where to get it |
+| --- | --- | --- |
+| Token name | A human-readable label for a CI token the deploy workflow uses to authenticate to the vault. | Chosen by you; the token value is shown once at issue time. |
+
+## Activating Changes
+
+Edits land in a **draft** version. Use **Verify** to re-run readiness checks,
+**Activate draft** to promote it to the active bundle the workflow reads, and
+**Roll back** to return to the previous active version. Fix any readiness issues
+listed on the Overview tab before activating.

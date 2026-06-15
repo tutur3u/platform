@@ -1,4 +1,4 @@
-import { Rocket } from '@tuturuuu/icons';
+import { ExternalLink, Rocket } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -10,6 +10,7 @@ import { MOBILE_DEPLOYMENT_VAULT_PERMISSION } from '@/lib/mobile-deployment/cons
 import { listMobileDeploymentState } from '@/lib/mobile-deployment/store';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 import { MobileDeploymentClient } from './mobile-deployment-client';
+import { MOBILE_DEPLOYMENT_SETUP_GUIDE_URL } from './mobile-deployment-field-guidance';
 
 export const metadata: Metadata = {
   title: 'Mobile Deployment',
@@ -50,6 +51,15 @@ export default async function InfrastructureMobileDeploymentPage({
             <h1 className="font-bold text-2xl">{t('title')}</h1>
           </div>
           <p className="text-foreground/80">{t('description')}</p>
+          <a
+            className="inline-flex items-center gap-1.5 text-primary text-sm hover:underline"
+            href={MOBILE_DEPLOYMENT_SETUP_GUIDE_URL}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <ExternalLink className="h-4 w-4" />
+            {t('guidance.setupGuide')}
+          </a>
         </div>
       </div>
 
