@@ -43,7 +43,10 @@ function createCookieHandler(
         authCookieUrls,
         (name, options) => {
           try {
-            cookieStore.set(name, '', options);
+            cookieStore.set(name, '', {
+              ...mirrorCookieOptions,
+              ...options,
+            });
           } catch {
             // Ignore cookie clearing failures in read-only contexts.
           }

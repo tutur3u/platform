@@ -190,11 +190,11 @@ describe('Supabase Server Client', () => {
       expect(mockCookieStore.set).toHaveBeenCalledWith(
         'sb-test-auth-token',
         '',
-        {
+        expect.objectContaining({
           expires: expect.any(Date),
           maxAge: 0,
           path: '/',
-        }
+        })
       );
     });
 
@@ -258,11 +258,50 @@ describe('Supabase Server Client', () => {
       expect(mockCookieStore.set).toHaveBeenCalledWith(
         'sb-host-auth-token',
         '',
-        {
+        expect.objectContaining({
           expires: expect.any(Date),
           maxAge: 0,
           path: '/',
-        }
+        })
+      );
+    });
+
+    it('expires mirrored noncanonical auth cookies with shared-domain attributes', async () => {
+      const common = await import('../common');
+      vi.mocked(common.getSupabaseAuthCookieUrls).mockReturnValueOnce([
+        'http://127.0.0.1:8001',
+        'http://host.docker.internal:8001',
+      ]);
+      (headers as any).mockReturnValue(
+        new Headers({
+          'x-forwarded-host': 'tasks.tuturuuu.com',
+          'x-forwarded-proto': 'https',
+        })
+      );
+      mockCookieStore.getAll.mockReturnValueOnce([
+        {
+          name: 'sb-host-auth-token',
+          value: '{"access_token":"jwt.with.dots","refresh_token":"refresh"}',
+        },
+      ]);
+
+      await createClient();
+
+      const cookieHandler = (createServerClient as any).mock.calls[0][2]
+        .cookies;
+      cookieHandler.getAll();
+
+      expect(mockCookieStore.set).toHaveBeenCalledWith(
+        'sb-host-auth-token',
+        '',
+        expect.objectContaining({
+          domain: '.tuturuuu.com',
+          expires: expect.any(Date),
+          maxAge: 0,
+          path: '/',
+          sameSite: 'lax',
+          secure: true,
+        })
       );
     });
 
@@ -282,11 +321,11 @@ describe('Supabase Server Client', () => {
       expect(mockCookieStore.set).toHaveBeenCalledWith(
         'sb-test-auth-token',
         '',
-        {
+        expect.objectContaining({
           expires: expect.any(Date),
           maxAge: 0,
           path: '/',
-        }
+        })
       );
     });
 
@@ -310,20 +349,20 @@ describe('Supabase Server Client', () => {
       expect(mockCookieStore.set).toHaveBeenCalledWith(
         'sb-test-auth-token',
         '',
-        {
+        expect.objectContaining({
           expires: expect.any(Date),
           maxAge: 0,
           path: '/',
-        }
+        })
       );
       expect(mockCookieStore.set).toHaveBeenCalledWith(
         'sb-test-auth-token.0',
         '',
-        {
+        expect.objectContaining({
           expires: expect.any(Date),
           maxAge: 0,
           path: '/',
-        }
+        })
       );
     });
 

@@ -304,6 +304,7 @@ describe('Supabase Proxy', () => {
       access_token: 'jwt.with.dots',
       refresh_token: 'refresh',
     });
+    mockRequest.url = 'https://tasks.tuturuuu.com';
     vi.mocked(common.getSupabaseAuthCookieUrls).mockReturnValueOnce([
       'http://127.0.0.1:8001',
       'http://host.docker.internal:8001',
@@ -332,6 +333,18 @@ describe('Supabase Proxy', () => {
         maxAge: 34_560_000,
         path: '/',
         sameSite: 'lax',
+      })
+    );
+    expect(nextResponseMocks.cookieSet).toHaveBeenCalledWith(
+      'sb-host-auth-token',
+      '',
+      expect.objectContaining({
+        domain: '.tuturuuu.com',
+        expires: expect.any(Date),
+        maxAge: 0,
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
       })
     );
   });

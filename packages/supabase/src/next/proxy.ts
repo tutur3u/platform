@@ -98,7 +98,10 @@ export async function updateSession(request: NextRequest): Promise<{
             authCookieUrls,
             (name, options) => {
               request.cookies.set(name, '');
-              supabaseResponse.cookies.set(name, '', options);
+              supabaseResponse.cookies.set(name, '', {
+                ...mirrorCookieOptions,
+                ...options,
+              });
             },
             (name, value) => {
               request.cookies.set(name, value);
