@@ -17,10 +17,11 @@ const SYNC_BRANCHES = [MAIN_BRANCH, ...TARGET_BRANCHES];
 const SYNC_BRANCH_SET = new Set(SYNC_BRANCHES);
 const USAGE = `Usage: bun git-sync [options]
 
-Fast-forward release branches to the current main commit through a temporary worktree.
+Fast-forward release branches through a temporary worktree.
 
 Options:
   --only-branch <branch>  Sync only main or production. Can be repeated or comma-separated.
+  -c, --current-branch    Sync selected branches to the current checkout's HEAD.
   --no-push               Update local branches only and skip all pushes.
   -h, --help              Show this help message.
 `;
@@ -73,6 +74,7 @@ function parseOnlyBranchValue(value) {
 
 function parseArgs(argv = process.argv.slice(2)) {
   const onlyBranches = [];
+  let currentBranch = false;
   let push = true;
   let help = false;
 
@@ -81,6 +83,11 @@ function parseArgs(argv = process.argv.slice(2)) {
 
     if (arg === '-h' || arg === '--help') {
       help = true;
+      continue;
+    }
+
+    if (arg === '-c' || arg === '--current-branch') {
+      currentBranch = true;
       continue;
     }
 
@@ -106,6 +113,7 @@ function parseArgs(argv = process.argv.slice(2)) {
   }
 
   return {
+    currentBranch,
     help,
     push,
     selectedBranches: normalizeBranchSelection(onlyBranches),
@@ -116,9 +124,10 @@ function writeLine(stdout, message = '') {
   stdout.write(`${message}\n`);
 }
 
-function writePlan(stdout, { push, remote, selectedBranches }) {
+function writePlan(stdout, { push, remote, selectedBranches, source }) {
   writeLine(stdout, 'Git sync');
   writeLine(stdout, `  Remote: ${remote}`);
+  writeLine(stdout, `  Source: ${source}`);
   writeLine(stdout, `  Branches: ${selectedBranches.join(', ')}`);
   writeLine(stdout, '  Worktree: temporary detached worktree');
   writeLine(stdout, `  Push: ${push ? 'enabled' : 'disabled (--no-push)'}`);
@@ -132,7 +141,7 @@ function writeStep(stdout, message) {
 function writeSuccess(stdout, result) {
   writeLine(stdout);
   writeLine(stdout, 'Done');
-  writeLine(stdout, `  Commit: ${shortSha(result.mainSha)}`);
+  writeLine(stdout, `  Commit: ${shortSha(result.sourceSha)}`);
   writeLine(stdout, `  Local: ${result.selectedBranches.join(', ')}`);
   writeLine(
     stdout,
@@ -164,15 +173,21 @@ function isAncestor(git, baseRef, tipRef) {
   return git.test(['merge-base', '--is-ancestor', baseRef, tipRef]);
 }
 
-function assertCanFastForwardToMain(git, branch, branchSha, mainSha) {
-  if (isAncestor(git, branchSha, mainSha)) {
+function assertCanFastForwardToSource(
+  git,
+  branch,
+  branchSha,
+  sourceSha,
+  source
+) {
+  if (isAncestor(git, branchSha, sourceSha)) {
     return;
   }
 
   throw new Error(
-    `${branch} cannot fast-forward to ${MAIN_BRANCH} (${shortSha(
-      mainSha
-    )}) because it contains commits that are not in ${MAIN_BRANCH}. Reconcile it manually, then rerun bun git-sync.`
+    `${branch} cannot fast-forward to ${source} (${shortSha(
+      sourceSha
+    )}) because it contains commits that are not in ${source}. Reconcile it manually, then rerun bun git-sync.`
   );
 }
 
@@ -232,8 +247,44 @@ function refreshLocalBranchFromRemote(git, remote, branch) {
   );
 }
 
+function getCurrentBranchSource(git, originalBranch) {
+  if (originalBranch === 'detached HEAD') {
+    throw new Error(
+      'Cannot use --current-branch from detached HEAD. Check out a branch, then rerun bun git-sync --current-branch.'
+    );
+  }
+
+  const sourceSha = git.read(['rev-parse', 'HEAD']);
+
+  return {
+    baseRef: sourceSha,
+    source: originalBranch,
+    sourceSha,
+    sourceSummary: `${originalBranch}@${shortSha(sourceSha)}`,
+  };
+}
+
+function getMainSource(remote) {
+  return {
+    baseRef: `${remote}/${MAIN_BRANCH}`,
+    source: MAIN_BRANCH,
+    sourceSha: null,
+    sourceSummary: `latest ${remote}/${MAIN_BRANCH}`,
+  };
+}
+
+function refreshTargetBranch(git, remote, branch, source) {
+  if (branch === source.source) {
+    assertBranchAtSha(git, branch, source.sourceSha);
+    return source.sourceSha;
+  }
+
+  return refreshLocalBranchFromRemote(git, remote, branch);
+}
+
 function runGitSync({
   cwd = process.cwd(),
+  currentBranch = false,
   execFile = execFileSync,
   makeTempDir = defaultMakeTempDir,
   removeDir = defaultRemoveDir,
@@ -246,11 +297,22 @@ function runGitSync({
 } = {}) {
   const git = createGit(execFile, cwd);
   const branches = normalizeBranchSelection(selectedBranches);
-  const targetBranches = branches.filter((branch) => branch !== MAIN_BRANCH);
   const originalBranch =
     git.read(['branch', '--show-current']) || 'detached HEAD';
+  const source = currentBranch
+    ? getCurrentBranchSource(git, originalBranch)
+    : getMainSource(remote);
+  const targetBranches = currentBranch
+    ? branches
+    : branches.filter((branch) => branch !== MAIN_BRANCH);
+  const syncTargets = currentBranch ? SYNC_BRANCHES : TARGET_BRANCHES;
 
-  writePlan(stdout, { push, remote, selectedBranches: branches });
+  writePlan(stdout, {
+    push,
+    remote,
+    selectedBranches: branches,
+    source: source.sourceSummary,
+  });
 
   let result;
   let worktree;
@@ -259,7 +321,7 @@ function runGitSync({
     git.run(['fetch', '--prune', remote]);
 
     worktree = createTemporaryWorktree({
-      baseRef: `${remote}/${MAIN_BRANCH}`,
+      baseRef: source.baseRef,
       git,
       makeTempDir,
       removeDir,
@@ -267,31 +329,43 @@ function runGitSync({
     });
     const worktreeGit = createGit(execFile, worktree.path);
 
-    writeStep(stdout, `Refresh ${MAIN_BRANCH}`);
-    const mainSha = refreshLocalBranchFromRemote(
-      worktreeGit,
-      remote,
-      MAIN_BRANCH
-    );
+    if (!source.sourceSha) {
+      writeStep(stdout, `Refresh ${MAIN_BRANCH}`);
+      source.sourceSha = refreshLocalBranchFromRemote(
+        worktreeGit,
+        remote,
+        MAIN_BRANCH
+      );
+    }
 
-    if (branches.includes(MAIN_BRANCH) && push) {
+    if (!currentBranch && branches.includes(MAIN_BRANCH) && push) {
       writeStep(stdout, `Push ${MAIN_BRANCH}`);
       worktreeGit.run(['push', remote, MAIN_BRANCH]);
     }
 
-    for (const branch of TARGET_BRANCHES) {
+    for (const branch of syncTargets) {
       if (!targetBranches.includes(branch)) {
         continue;
       }
 
-      writeStep(stdout, `Fast-forward ${branch} to ${shortSha(mainSha)}`);
-      const branchSha = refreshLocalBranchFromRemote(
+      writeStep(
+        stdout,
+        `Fast-forward ${branch} to ${shortSha(source.sourceSha)}`
+      );
+      const branchSha = refreshTargetBranch(
         worktreeGit,
         remote,
-        branch
+        branch,
+        source
       );
-      assertCanFastForwardToMain(worktreeGit, branch, branchSha, mainSha);
-      updateLocalBranch(worktreeGit, branch, mainSha);
+      assertCanFastForwardToSource(
+        worktreeGit,
+        branch,
+        branchSha,
+        source.sourceSha,
+        source.source
+      );
+      updateLocalBranch(worktreeGit, branch, source.sourceSha);
 
       if (push) {
         writeStep(stdout, `Push ${branch}`);
@@ -307,18 +381,20 @@ function runGitSync({
     }
 
     for (const branch of branches) {
-      assertBranchAtSha(worktreeGit, branch, mainSha);
+      assertBranchAtSha(worktreeGit, branch, source.sourceSha);
       if (push) {
-        assertBranchAtSha(worktreeGit, `${remote}/${branch}`, mainSha);
+        assertBranchAtSha(worktreeGit, `${remote}/${branch}`, source.sourceSha);
       }
     }
 
     result = {
-      mainSha,
+      mainSha: source.sourceSha,
       originalBranch,
       pushedBranches: push ? branches : [],
       remote,
       selectedBranches: branches,
+      sourceBranch: source.source,
+      sourceSha: source.sourceSha,
     };
   } finally {
     if (worktree) {

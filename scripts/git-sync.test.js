@@ -91,13 +91,15 @@ function createFakeGit({
     }
 
     if (args[0] === 'worktree' && args[1] === 'add') {
-      assert.deepEqual(args, [
+      assert.deepEqual(args.slice(0, 4), [
         'worktree',
         'add',
         '--detach',
         TEST_WORKTREE_PATH,
-        'origin/main',
       ]);
+      if (!resolveRef(args[4])) {
+        throw new Error(`missing worktree base ${args[4]}`);
+      }
       return '';
     }
 
@@ -221,6 +223,7 @@ test('parseArgs supports branch scoping and local-only mode', () => {
       '--no-push',
     ]),
     {
+      currentBranch: false,
       help: false,
       push: false,
       selectedBranches: ['main', 'production'],
@@ -230,8 +233,18 @@ test('parseArgs supports branch scoping and local-only mode', () => {
 
 test('parseArgs accepts comma-separated branch scopes', () => {
   assert.deepEqual(parseArgs(['--only-branch=main,production']), {
+    currentBranch: false,
     help: false,
     push: true,
+    selectedBranches: ['main', 'production'],
+  });
+});
+
+test('parseArgs supports current branch source mode', () => {
+  assert.deepEqual(parseArgs(['--current-branch', '-c', '--no-push']), {
+    currentBranch: true,
+    help: false,
+    push: false,
     selectedBranches: ['main', 'production'],
   });
 });
@@ -354,6 +367,103 @@ test('runGitSync leaves a dirty current worktree alone', () => {
     false
   );
   assert.equal(git.currentBranch, 'feature/work');
+});
+
+test('runGitSync can fast-forward sync branches to the current branch head', () => {
+  const git = createFakeGit({
+    ancestors: [
+      [MAIN_SHA, FEATURE_SHA],
+      [PRODUCTION_SHA, FEATURE_SHA],
+    ],
+  });
+
+  const result = runFakeGitSync(git, {
+    currentBranch: true,
+  });
+
+  assert.equal(result.mainSha, FEATURE_SHA);
+  assert.equal(result.sourceBranch, 'feature/work');
+  assert.equal(result.sourceSha, FEATURE_SHA);
+  assert.deepEqual(result.selectedBranches, ['main', 'production']);
+  assert.deepEqual(result.pushedBranches, ['main', 'production']);
+  assert.equal(git.currentBranch, 'feature/work');
+  assert.equal(git.refs['refs/heads/main'], FEATURE_SHA);
+  assert.equal(git.refs['refs/heads/production'], FEATURE_SHA);
+  assert.equal(git.refs['refs/remotes/origin/main'], FEATURE_SHA);
+  assert.equal(git.refs['refs/remotes/origin/production'], FEATURE_SHA);
+  assert.deepEqual(
+    git.calls.filter((args) => args[0] === 'push'),
+    [
+      ['push', 'origin', 'main'],
+      ['push', 'origin', 'production'],
+    ]
+  );
+  assert.deepEqual(
+    git.calls.filter((args) => args[0] === 'worktree'),
+    [
+      ['worktree', 'add', '--detach', TEST_WORKTREE_PATH, FEATURE_SHA],
+      ['worktree', 'remove', '--force', TEST_WORKTREE_PATH],
+    ]
+  );
+});
+
+test('runGitSync can sync only production to the current branch head', () => {
+  const git = createFakeGit({
+    ancestors: [[PRODUCTION_SHA, FEATURE_SHA]],
+  });
+
+  const result = runFakeGitSync(git, {
+    currentBranch: true,
+    selectedBranches: ['production'],
+  });
+
+  assert.deepEqual(result.selectedBranches, ['production']);
+  assert.deepEqual(result.pushedBranches, ['production']);
+  assert.equal(git.refs['refs/heads/main'], MAIN_SHA);
+  assert.equal(git.refs['refs/remotes/origin/main'], MAIN_SHA);
+  assert.equal(git.refs['refs/heads/production'], FEATURE_SHA);
+  assert.equal(git.refs['refs/remotes/origin/production'], FEATURE_SHA);
+  assert.deepEqual(
+    git.calls.filter((args) => args[0] === 'push'),
+    [['push', 'origin', 'production']]
+  );
+});
+
+test('runGitSync can sync current branch head locally without pushing', () => {
+  const git = createFakeGit({
+    ancestors: [
+      [MAIN_SHA, FEATURE_SHA],
+      [PRODUCTION_SHA, FEATURE_SHA],
+    ],
+  });
+
+  const result = runFakeGitSync(git, {
+    currentBranch: true,
+    push: false,
+  });
+
+  assert.deepEqual(result.pushedBranches, []);
+  assert.equal(git.refs['refs/heads/main'], FEATURE_SHA);
+  assert.equal(git.refs['refs/heads/production'], FEATURE_SHA);
+  assert.equal(git.refs['refs/remotes/origin/main'], MAIN_SHA);
+  assert.equal(git.refs['refs/remotes/origin/production'], PRODUCTION_SHA);
+  assert.equal(
+    git.calls.some((args) => args[0] === 'push'),
+    false
+  );
+});
+
+test('runGitSync rejects current branch mode from detached HEAD', () => {
+  const git = createFakeGit({ currentBranch: '' });
+
+  assert.throws(
+    () => runFakeGitSync(git, { currentBranch: true }),
+    /Cannot use --current-branch from detached HEAD/
+  );
+  assert.equal(
+    git.calls.some((args) => args[0] === 'worktree'),
+    false
+  );
 });
 
 test('runGitSync refuses target branches that cannot fast-forward to main', () => {

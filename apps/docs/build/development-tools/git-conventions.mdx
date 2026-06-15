@@ -1,7 +1,7 @@
 ---
-title: 'Git Conventions'
-description: 'Learn how Tuturuuu uses Conventional Commits and Branch naming to improve development workflow.'
-updatedAt: '2026-06-12'
+title: "Git Conventions"
+description: "Learn how Tuturuuu uses Conventional Commits and Branch naming to improve development workflow."
+updatedAt: "2026-06-12"
 ---
 
 <Info>
@@ -405,11 +405,33 @@ The retired `staging` branch is no longer a supported `--only-branch` target.
 The Supabase staging environment still exists, but its workflow is driven from
 `main`.
 
+Use `--current-branch` or `-c` when `main` and `production` should move to the
+latest commit on the branch you currently have checked out instead of latest
+`origin/main`:
+
+```bash
+bun git-sync --current-branch
+bun git-sync -c
+```
+
+Current-branch mode still uses a temporary detached worktree, leaves the checkout
+you started from untouched, and only moves the selected sync branches. It does
+not push the source branch unless the source branch is itself one of the selected
+sync branches, such as running from `main`.
+
+Combine `-c` with `--only-branch` when only one long-lived branch should move to
+the current checkout's commit:
+
+```bash
+bun git-sync -c --only-branch production
+```
+
 Use `--no-push` for local-only synchronization:
 
 ```bash
 bun git-sync --no-push
 bun git-sync --only-branch production --no-push
+bun git-sync -c --no-push
 ```
 
 With `--no-push`, the command fetches, pulls with `--ff-only`, and fast-forwards
