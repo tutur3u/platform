@@ -14,6 +14,9 @@ alter table "public"."course_module_quiz_submissions" enable row level security;
 CREATE UNIQUE INDEX course_module_quiz_submissions_pkey ON public.course_module_quiz_submissions USING btree (id);
 alter table "public"."course_module_quiz_submissions" add constraint "course_module_quiz_submissions_pkey" PRIMARY KEY using index "course_module_quiz_submissions_pkey";
 
+CREATE UNIQUE INDEX course_module_quiz_submissions_module_quiz_user_unique ON public.course_module_quiz_submissions USING btree (module_id, quiz_id, user_id);
+alter table "public"."course_module_quiz_submissions" add constraint "course_module_quiz_submissions_module_quiz_user_unique" UNIQUE using index "course_module_quiz_submissions_module_quiz_user_unique";
+
 alter table "public"."course_module_quiz_submissions" add constraint "course_module_quiz_submissions_module_id_fkey" FOREIGN KEY (module_id) REFERENCES workspace_course_modules(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
 alter table "public"."course_module_quiz_submissions" validate constraint "course_module_quiz_submissions_module_id_fkey";
 
@@ -26,20 +29,11 @@ alter table "public"."course_module_quiz_submissions" validate constraint "cours
 alter table "public"."course_module_quiz_submissions" add constraint "course_module_quiz_submissions_option_id_fkey" FOREIGN KEY (selected_option_id) REFERENCES quiz_options(id) ON UPDATE CASCADE ON DELETE SET NULL not valid;
 alter table "public"."course_module_quiz_submissions" validate constraint "course_module_quiz_submissions_option_id_fkey";
 
-grant delete on table "public"."course_module_quiz_submissions" to "anon";
-grant insert on table "public"."course_module_quiz_submissions" to "anon";
-grant references on table "public"."course_module_quiz_submissions" to "anon";
-grant select on table "public"."course_module_quiz_submissions" to "anon";
-grant trigger on table "public"."course_module_quiz_submissions" to "anon";
-grant truncate on table "public"."course_module_quiz_submissions" to "anon";
-grant update on table "public"."course_module_quiz_submissions" to "anon";
-
 grant delete on table "public"."course_module_quiz_submissions" to "authenticated";
 grant insert on table "public"."course_module_quiz_submissions" to "authenticated";
 grant references on table "public"."course_module_quiz_submissions" to "authenticated";
 grant select on table "public"."course_module_quiz_submissions" to "authenticated";
 grant trigger on table "public"."course_module_quiz_submissions" to "authenticated";
-grant truncate on table "public"."course_module_quiz_submissions" to "authenticated";
 grant update on table "public"."course_module_quiz_submissions" to "authenticated";
 
 grant delete on table "public"."course_module_quiz_submissions" to "service_role";
@@ -50,14 +44,17 @@ grant trigger on table "public"."course_module_quiz_submissions" to "service_rol
 grant truncate on table "public"."course_module_quiz_submissions" to "service_role";
 grant update on table "public"."course_module_quiz_submissions" to "service_role";
 
-create policy "Enable users to view their own submissions only"
+create index course_module_quiz_submissions_user_module_idx
+on public.course_module_quiz_submissions using btree (user_id, module_id);
+
+create policy enable_users_to_view_own_submissions
 on "public"."course_module_quiz_submissions"
 as permissive
 for select
 to authenticated
 using ((auth.uid() = user_id));
 
-create policy "Enable insert for users based on user_id"
+create policy enable_users_to_insert_own_submissions
 on "public"."course_module_quiz_submissions"
 as permissive
 for insert

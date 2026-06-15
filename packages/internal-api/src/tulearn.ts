@@ -132,7 +132,6 @@ export interface TulearnCourseDetail extends TulearnCourseSummary {
 export interface TulearnQuizOption {
   id: string;
   value: string;
-  is_correct?: boolean;
   explanation?: string | null;
 }
 
@@ -141,7 +140,6 @@ export interface TulearnQuiz {
   question: string;
   type: string | null;
   content: Json | null;
-  answer?: Json | null;
   score: number;
   quiz_options?: TulearnQuizOption[];
 }

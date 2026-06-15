@@ -1,6 +1,5 @@
-import type { Tables } from '@tuturuuu/types/supabase';
+import type { Json, Tables } from '@tuturuuu/types/supabase';
 
-import { attachPrivateWorkspaceQuizAnswers } from '../education/private-quiz-answers';
 import { getAdmin } from './db';
 import { firstOf } from './helpers';
 import type { Db } from './types';
@@ -45,23 +44,21 @@ type QuizJoinRow = {
   workspace_quizzes:
     | (Pick<
         Tables<'workspace_quizzes'>,
-        'id' | 'question' | 'type' | 'content' | 'answer' | 'score'
+        'id' | 'question' | 'type' | 'content' | 'score'
       > & {
         quiz_options?: Array<{
           id: string;
           value: string;
-          is_correct: boolean;
           explanation: string | null;
         }>;
       })
     | (Pick<
         Tables<'workspace_quizzes'>,
-        'id' | 'question' | 'type' | 'content' | 'answer' | 'score'
+        'id' | 'question' | 'type' | 'content' | 'score'
       > & {
         quiz_options?: Array<{
           id: string;
           value: string;
-          is_correct: boolean;
           explanation: string | null;
         }>;
       })[]
@@ -74,6 +71,90 @@ type QuizSetJoinRow = {
     | Pick<Tables<'workspace_quiz_sets'>, 'id' | 'name'>[]
     | null;
 };
+
+type LearnerQuiz = Pick<
+  Tables<'workspace_quizzes'>,
+  'id' | 'question' | 'type' | 'content' | 'score'
+> & {
+  quiz_options?: Array<{
+    explanation: string | null;
+    id: string;
+    value: string;
+  }>;
+};
+
+type MatchingPair = {
+  left: string;
+  right: string;
+};
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function displayText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return '';
+}
+
+function getMatchingPairs(content: unknown): MatchingPair[] {
+  const pairs = asRecord(content)?.pairs;
+  if (!Array.isArray(pairs)) return [];
+
+  return pairs
+    .map((pair) => {
+      const record = asRecord(pair);
+      return {
+        left: displayText(record?.left),
+        right: displayText(record?.right),
+      };
+    })
+    .filter((pair) => pair.left && pair.right);
+}
+
+function stableChoiceRank(quizId: string, value: string, index: number) {
+  const input = `${quizId}:${value}:${index}`;
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+function matchingPromptContent(quizId: string, content: Json | null): Json {
+  const pairs = getMatchingPairs(content);
+  const choices = pairs
+    .map((pair, index) => ({
+      rank: stableChoiceRank(quizId, pair.right, index),
+      value: pair.right,
+    }))
+    .sort((a, b) => a.rank - b.rank)
+    .map((choice) => choice.value);
+
+  return {
+    choices,
+    pairs: pairs.map((pair) => ({ left: pair.left })),
+  };
+}
+
+function sanitizeLearnerQuiz(quiz: LearnerQuiz): LearnerQuiz {
+  return {
+    ...quiz,
+    content:
+      quiz.type === 'matching'
+        ? matchingPromptContent(quiz.id, quiz.content)
+        : quiz.content,
+    quiz_options: quiz.quiz_options?.map((option) => ({
+      explanation: option.explanation,
+      id: option.id,
+      value: option.value,
+    })),
+  };
+}
 
 export async function getAssignedCourseIds({
   db,
@@ -351,7 +432,7 @@ export async function getLearnerModuleDetail({
       sbAdmin
         .from('course_module_quizzes')
         .select(
-          'workspace_quizzes(id, question, type, content, answer, score, quiz_options(id, value, is_correct, explanation))'
+          'workspace_quizzes(id, question, type, content, score, quiz_options(id, value, explanation))'
         )
         .eq('module_id', moduleId),
       sbAdmin
@@ -374,11 +455,6 @@ export async function getLearnerModuleDetail({
     .map((row) => firstOf(row.workspace_quizzes))
     .filter((value): value is NonNullable<typeof value> => Boolean(value));
 
-  const quizzesWithAnswers = await attachPrivateWorkspaceQuizAnswers(
-    sbAdmin,
-    rawQuizzes
-  );
-
   return {
     ...summary,
     content: moduleResult.data.content,
@@ -387,7 +463,7 @@ export async function getLearnerModuleDetail({
     flashcards: flashcardRows
       .map((row) => firstOf(row.workspace_flashcards))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),
-    quizzes: quizzesWithAnswers,
+    quizzes: rawQuizzes.map(sanitizeLearnerQuiz),
     quizSets: quizSetRows
       .map((row) => firstOf(row.workspace_quiz_sets))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),

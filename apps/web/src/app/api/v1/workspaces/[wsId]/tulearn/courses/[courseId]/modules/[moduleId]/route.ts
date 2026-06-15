@@ -1,4 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -15,11 +17,113 @@ type Params = {
   wsId: string;
 };
 
+type SupabaseAdmin = TypedSupabaseClient;
+
+type MatchingPair = {
+  left: string;
+  right: string;
+};
+
+const UUID_REGEX =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
 const QuizSubmissionPayloadSchema = z.object({
   quizId: z.string().uuid(),
   selectedOptionId: z.string().nullable().optional(),
-  answer: z.any().optional(),
+  answer: z.unknown().optional(),
 });
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function displayText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return '';
+}
+
+function getArrayProperty(value: unknown, key: string): unknown[] {
+  const property = asRecord(value)?.[key];
+  return Array.isArray(property) ? property : [];
+}
+
+function getStringItems(value: unknown, key: string): string[] {
+  return getArrayProperty(value, key).map(displayText);
+}
+
+function getMatchingPairs(value: unknown): MatchingPair[] {
+  const pairs = Array.isArray(value) ? value : getArrayProperty(value, 'pairs');
+
+  return pairs
+    .map((pair) => {
+      const record = asRecord(pair);
+      return {
+        left: displayText(record?.left),
+        right: displayText(record?.right),
+      };
+    })
+    .filter((pair) => pair.left && pair.right);
+}
+
+function stringArraysMatch(left: string[], right: string[]) {
+  return (
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
+  );
+}
+
+function matchingPairsMatch(left: MatchingPair[], right: MatchingPair[]) {
+  if (left.length !== right.length) return false;
+
+  const remaining = new Map<string, number>();
+  for (const pair of right) {
+    const key = `${pair.left}\u0000${pair.right}`;
+    remaining.set(key, (remaining.get(key) ?? 0) + 1);
+  }
+
+  for (const pair of left) {
+    const key = `${pair.left}\u0000${pair.right}`;
+    const count = remaining.get(key) ?? 0;
+    if (count === 0) return false;
+    if (count === 1) remaining.delete(key);
+    else remaining.set(key, count - 1);
+  }
+
+  return remaining.size === 0;
+}
+
+async function loadCorrectAnswer({
+  fallbackAnswer,
+  quizId,
+  sbAdmin,
+}: {
+  fallbackAnswer: unknown;
+  quizId: string;
+  sbAdmin: SupabaseAdmin;
+}) {
+  const { data: privateAnswer, error } = await sbAdmin
+    .schema('private')
+    .from('workspace_quiz_answers')
+    .select('answer')
+    .eq('quiz_id', quizId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return privateAnswer?.answer ?? fallbackAnswer ?? null;
+}
+
+function firstJoined<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
+function submissionAnswer(value: unknown): Json | null {
+  return value === undefined ? null : (value as Json);
+}
 
 export const GET = withSessionAuth<Params>(
   async (request, { supabase, user }, { courseId, moduleId, wsId }) => {
@@ -51,9 +155,10 @@ export const GET = withSessionAuth<Params>(
       const sbAdmin = await createAdminClient();
       const { data: submissions, error: subError } = await sbAdmin
         .from('course_module_quiz_submissions')
-        .select('quiz_id, selected_option_id, answer, is_correct')
+        .select('quiz_id, selected_option_id, answer, is_correct, created_at')
         .eq('module_id', moduleId)
-        .eq('user_id', subject.studentPlatformUserId);
+        .eq('user_id', subject.studentPlatformUserId)
+        .order('created_at', { ascending: true });
 
       if (subError) throw subError;
 
@@ -76,11 +181,7 @@ export const GET = withSessionAuth<Params>(
 );
 
 export const POST = withSessionAuth<Params>(
-  async (
-    request,
-    { supabase, user },
-    { courseId: _courseId, moduleId, wsId }
-  ) => {
+  async (request, { supabase, user }, { courseId, moduleId, wsId }) => {
     try {
       const subject = await resolveTulearnSubject({
         requestSupabase: supabase,
@@ -107,9 +208,7 @@ export const POST = withSessionAuth<Params>(
       }
 
       const parsedBody = QuizSubmissionPayloadSchema.safeParse(body);
-      console.log('--- tulearn quiz submission body:', body);
       if (!parsedBody.success) {
-        console.log('--- schema validation failed:', parsedBody.error.issues);
         return NextResponse.json(
           { message: 'Invalid request body', errors: parsedBody.error.issues },
           { status: 400 }
@@ -119,11 +218,30 @@ export const POST = withSessionAuth<Params>(
       const { quizId, selectedOptionId, answer } = parsedBody.data;
       const sbAdmin = await createAdminClient();
 
-      const { data: quiz, error: quizErr } = await sbAdmin
-        .from('workspace_quizzes')
-        .select('type, answer')
-        .eq('id', quizId)
+      const module = await getLearnerModuleDetail({
+        courseId,
+        db: sbAdmin,
+        moduleId,
+        studentPlatformUserId: subject.studentPlatformUserId,
+        studentWorkspaceUserId: subject.studentWorkspaceUserId,
+        wsId: subject.wsId,
+      });
+
+      if (!module) {
+        return NextResponse.json(
+          { message: 'Module not found' },
+          { status: 404 }
+        );
+      }
+
+      const { data: moduleQuiz, error: quizErr } = await sbAdmin
+        .from('course_module_quizzes')
+        .select('workspace_quizzes!inner(id, type, content, answer)')
+        .eq('module_id', moduleId)
+        .eq('quiz_id', quizId)
         .maybeSingle();
+
+      const quiz = firstJoined(moduleQuiz?.workspace_quizzes);
 
       if (quizErr || !quiz) {
         return NextResponse.json(
@@ -145,10 +263,7 @@ export const POST = withSessionAuth<Params>(
           );
         }
 
-        const isOptionUuid =
-          /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
-            selectedOptionId
-          );
+        const isOptionUuid = UUID_REGEX.test(selectedOptionId);
 
         if (isOptionUuid) {
           const { data: option, error: optionErr } = await sbAdmin
@@ -167,22 +282,15 @@ export const POST = withSessionAuth<Params>(
 
           isCorrect = option.is_correct;
         } else {
-          let correctAnswer = quiz.answer;
-          if (!correctAnswer) {
-            const { data: privateAnswer } = await sbAdmin
-              .schema('private')
-              .from('workspace_quiz_answers')
-              .select('answer')
-              .eq('quiz_id', quizId)
-              .maybeSingle();
-            if (privateAnswer) {
-              correctAnswer = privateAnswer.answer;
-            }
-          }
+          const correctAnswer = await loadCorrectAnswer({
+            fallbackAnswer: quiz.answer,
+            quizId,
+            sbAdmin,
+          });
 
-          const correctIndex = (correctAnswer as any)?.correctIndex;
+          const correctIndex = asRecord(correctAnswer)?.correctIndex;
           const selectedIndex =
-            (answer as any)?.selectedIndex ??
+            asRecord(answer)?.selectedIndex ??
             (typeof answer === 'number' ? answer : null);
           isCorrect =
             correctIndex !== undefined &&
@@ -190,72 +298,69 @@ export const POST = withSessionAuth<Params>(
             Number(correctIndex) === Number(selectedIndex);
         }
       } else if (quiz.type === 'true_false') {
-        let correctAnswer = quiz.answer;
-        if (!correctAnswer) {
-          const { data: privateAnswer } = await sbAdmin
-            .schema('private')
-            .from('workspace_quiz_answers')
-            .select('answer')
-            .eq('quiz_id', quizId)
-            .maybeSingle();
-          if (privateAnswer) {
-            correctAnswer = privateAnswer.answer;
-          }
-        }
+        const correctAnswer = await loadCorrectAnswer({
+          fallbackAnswer: quiz.answer,
+          quizId,
+          sbAdmin,
+        });
 
         const clientCorrect =
-          typeof answer === 'boolean' ? answer : (answer as any)?.correct;
-        const correctKey = (correctAnswer as any)?.correct;
+          typeof answer === 'boolean' ? answer : asRecord(answer)?.correct;
+        const correctKey = asRecord(correctAnswer)?.correct;
         isCorrect = clientCorrect === correctKey;
       } else if (quiz.type === 'ordering') {
-        let correctAnswer = quiz.answer;
-        if (!correctAnswer) {
-          const { data: privateAnswer } = await sbAdmin
-            .schema('private')
-            .from('workspace_quiz_answers')
-            .select('answer')
-            .eq('quiz_id', quizId)
-            .maybeSingle();
-          if (privateAnswer) {
-            correctAnswer = privateAnswer.answer;
-          }
-        }
-
-        const correctOrder = Array.isArray(correctAnswer)
-          ? correctAnswer
-          : (correctAnswer as any)?.order;
+        const correctAnswer = await loadCorrectAnswer({
+          fallbackAnswer: quiz.answer,
+          quizId,
+          sbAdmin,
+        });
+        const correctOrder = getStringItems(correctAnswer, 'order');
         const submittedOrder = Array.isArray(answer)
-          ? answer
-          : (answer as any)?.order;
+          ? answer.map(displayText)
+          : getStringItems(answer, 'order');
+        const fallbackOrder =
+          correctOrder.length > 0
+            ? correctOrder
+            : getStringItems(quiz.content, 'items');
 
-        if (Array.isArray(correctOrder) && Array.isArray(submittedOrder)) {
-          isCorrect =
-            correctOrder.length === submittedOrder.length &&
-            correctOrder.every((val, idx) => val === submittedOrder[idx]);
-        } else {
-          isCorrect = false;
-        }
+        isCorrect =
+          fallbackOrder.length > 0 &&
+          stringArraysMatch(submittedOrder, fallbackOrder);
       } else if (quiz.type === 'matching') {
-        isCorrect = true;
+        const correctAnswer = await loadCorrectAnswer({
+          fallbackAnswer: quiz.answer,
+          quizId,
+          sbAdmin,
+        });
+        const correctPairs = getMatchingPairs(correctAnswer);
+        const submittedPairs = getMatchingPairs(answer);
+        const fallbackPairs =
+          correctPairs.length > 0
+            ? correctPairs
+            : getMatchingPairs(quiz.content);
+
+        isCorrect =
+          fallbackPairs.length > 0 &&
+          matchingPairsMatch(submittedPairs, fallbackPairs);
       }
 
       const isOptionUuid = !!(
-        selectedOptionId &&
-        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
-          selectedOptionId
-        )
+        selectedOptionId && UUID_REGEX.test(selectedOptionId)
       );
 
       const { data: submission, error: insertErr } = await sbAdmin
         .from('course_module_quiz_submissions')
-        .insert({
-          module_id: moduleId,
-          quiz_id: quizId,
-          user_id: subject.studentPlatformUserId,
-          selected_option_id: isOptionUuid ? selectedOptionId : null,
-          answer: answer !== undefined ? answer : null,
-          is_correct: isCorrect,
-        })
+        .upsert(
+          {
+            module_id: moduleId,
+            quiz_id: quizId,
+            user_id: subject.studentPlatformUserId,
+            selected_option_id: isOptionUuid ? selectedOptionId : null,
+            answer: submissionAnswer(answer),
+            is_correct: isCorrect,
+          },
+          { onConflict: 'module_id,quiz_id,user_id' }
+        )
         .select('id')
         .single();
 

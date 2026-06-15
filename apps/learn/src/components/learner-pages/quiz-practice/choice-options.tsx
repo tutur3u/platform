@@ -6,6 +6,7 @@ type MultipleChoiceProps = {
   options: DisplayOption[];
   selectedAnswer: SelectedAnswer;
   isSubmitted: boolean;
+  submittedCorrect: boolean | null;
   onSelect: (answer: SelectedAnswer) => void;
 };
 
@@ -17,7 +18,7 @@ type TrueFalseProps = {
   };
   selectedAnswer: SelectedAnswer;
   isSubmitted: boolean;
-  correctAnswer?: boolean;
+  submittedCorrect: boolean | null;
   onSelect: (answer: SelectedAnswer) => void;
 };
 
@@ -54,8 +55,8 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
         {[true, false].map((value) => {
           const isSelected = props.selectedAnswer === value;
           const isCorrect =
-            props.correctAnswer !== undefined
-              ? value === props.correctAnswer
+            props.isSubmitted && isSelected && props.submittedCorrect === true
+              ? true
               : undefined;
 
           return (
@@ -88,7 +89,10 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
     <div className="mt-6 grid gap-3">
       {props.options.map((option, index) => {
         const isSelected = props.selectedAnswer === index;
-        const isCorrect = option.is_correct;
+        const isCorrect =
+          props.isSubmitted && isSelected && props.submittedCorrect === true
+            ? true
+            : undefined;
 
         return (
           <button

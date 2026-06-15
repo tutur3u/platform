@@ -14,56 +14,37 @@ import { ChoiceOptions } from './quiz-practice/choice-options';
 import { QuizCompletionCard } from './quiz-practice/completion-card';
 import { StructuredQuizPreview } from './quiz-practice/structured-preview';
 import {
-  type DisplayOption,
+  getMatchingChoices,
   getMatchingPairs,
   getMultipleChoiceOptions,
   getQuizScore,
   getStringItems,
+  isCompleteMatchingAnswer,
+  isMatchingAnswer,
   type Quiz,
   type SelectedAnswer,
 } from './quiz-practice/types';
 import { BrutalCard, useStudentId } from './shared';
+
+type QuizSubmission = {
+  answer: unknown;
+  created_at?: string | null;
+  is_correct: boolean;
+  quiz_id: string;
+  selected_option_id: string | null;
+};
 
 function getExplanation(
   quiz: Quiz,
   selectedAnswer: SelectedAnswer
 ): string | null {
   if (!quiz.type || quiz.type === 'multiple_choice') {
-    const correctOption = quiz.quiz_options?.find((o) => o.is_correct);
-    if (correctOption?.explanation) return correctOption.explanation;
     if (typeof selectedAnswer === 'number') {
       const selectedOption = quiz.quiz_options?.[selectedAnswer];
       if (selectedOption?.explanation) return selectedOption.explanation;
     }
   }
   return null;
-}
-
-function getCorrectAnswerString(
-  quiz: Quiz,
-  options: DisplayOption[],
-  t: (key: string) => string
-): string {
-  if (!quiz.type || quiz.type === 'multiple_choice') {
-    const correctOption = options.find((o) => o.is_correct);
-    if (correctOption) return correctOption.value;
-
-    // Fallback for legacy multiple choice quizzes
-    const correctIndex = (quiz.answer as any)?.correctIndex;
-    if (correctIndex !== undefined && options[correctIndex]) {
-      return options[correctIndex].value;
-    }
-    return '';
-  }
-  if (quiz.type === 'true_false') {
-    const tfCorrect = (quiz.answer as any)?.correct ?? true;
-    return tfCorrect ? t('courses.quizTrue') : t('courses.quizFalse');
-  }
-  if (quiz.type === 'ordering') {
-    const correctOrder = getStringItems(quiz.content, 'items');
-    return correctOrder.join(' ➔ ');
-  }
-  return '';
 }
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -87,26 +68,29 @@ export function LearnerQuizzes({
 }: {
   quizzes: Quiz[];
   moduleId: string;
-  submissions?: Array<{
-    quiz_id: string;
-    selected_option_id: string | null;
-    answer: unknown;
-    is_correct: boolean;
-  }>;
+  submissions?: QuizSubmission[];
 }) {
   const t = useTranslations();
   const params = useParams();
   const studentId = useStudentId();
   const queryClient = useQueryClient();
 
+  const normalizedSubmissions = useMemo(() => {
+    const byQuiz = new Map<string, QuizSubmission>();
+    for (const submission of submissions ?? []) {
+      byQuiz.set(submission.quiz_id, submission);
+    }
+    return Array.from(byQuiz.values());
+  }, [submissions]);
+
   // Find first unanswered quiz index based on historical submissions
   const initialIdx = useMemo(() => {
-    if (!submissions || submissions.length === 0) return 0;
+    if (normalizedSubmissions.length === 0) return 0;
     const firstUnanswered = quizzes.findIndex(
-      (quiz) => !submissions.some((sub) => sub.quiz_id === quiz.id)
+      (quiz) => !normalizedSubmissions.some((sub) => sub.quiz_id === quiz.id)
     );
     return firstUnanswered === -1 ? quizzes.length : firstUnanswered;
-  }, [quizzes, submissions]);
+  }, [quizzes, normalizedSubmissions]);
 
   const [currentIdx, setCurrentIdx] = useState(() => {
     return initialIdx >= quizzes.length ? 0 : initialIdx;
@@ -117,14 +101,12 @@ export function LearnerQuizzes({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [correctCount, setCorrectCount] = useState(() => {
-    if (!submissions) return 0;
-    return submissions.filter((sub) => sub.is_correct).length;
+    return normalizedSubmissions.filter((sub) => sub.is_correct).length;
   });
 
   const [earnedScore, setEarnedScore] = useState(() => {
-    if (!submissions) return 0;
     return quizzes.reduce((sum, quiz) => {
-      const sub = submissions.find((s) => s.quiz_id === quiz.id);
+      const sub = normalizedSubmissions.find((s) => s.quiz_id === quiz.id);
       return sum + (sub?.is_correct ? getQuizScore(quiz) : 0);
     }, 0);
   });
@@ -168,47 +150,38 @@ export function LearnerQuizzes({
 
   const options = getMultipleChoiceOptions(currentQuiz);
   const matchingPairs = getMatchingPairs(currentQuiz.content);
+  const matchingChoices = getMatchingChoices(currentQuiz.content);
   const orderingItems = getStringItems(currentQuiz.content, 'items');
   const currentScore = getQuizScore(currentQuiz);
+  const canSubmit =
+    currentQuiz.type === 'matching'
+      ? isCompleteMatchingAnswer(selectedAnswer, matchingPairs.length)
+      : selectedAnswer !== null;
 
   const handleSubmit = async () => {
-    if (selectedAnswer === null || isSubmitted || isSubmitting) return;
+    if (!canSubmit || isSubmitted || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
-      let calculatedCorrect = false;
       let selectedOptionId: string | null = null;
-      let answerPayload: any = null;
+      let answerPayload: unknown = null;
 
       if (!currentQuiz.type || currentQuiz.type === 'multiple_choice') {
         const optionIdx = selectedAnswer as number;
         const targetOption = options[optionIdx];
         if (targetOption) {
           selectedOptionId = targetOption.id;
-          if (targetOption.is_correct !== undefined) {
-            calculatedCorrect = !!targetOption.is_correct;
-          } else {
-            const correctIndex = (currentQuiz.answer as any)?.correctIndex;
-            calculatedCorrect =
-              correctIndex !== undefined && Number(correctIndex) === optionIdx;
-          }
-          answerPayload = optionIdx;
+          answerPayload = { selectedIndex: optionIdx };
         }
       } else if (currentQuiz.type === 'true_false') {
-        const tfVal = selectedAnswer as boolean;
-        const tfCorrect = (currentQuiz.answer as any)?.correct ?? true;
-        calculatedCorrect = tfVal === tfCorrect;
-        answerPayload = tfVal;
+        answerPayload = selectedAnswer as boolean;
       } else if (currentQuiz.type === 'ordering') {
-        const submittedOrder = selectedAnswer as string[];
-        const correctOrder = orderingItems;
-        calculatedCorrect =
-          submittedOrder.length === correctOrder.length &&
-          submittedOrder.every((val, idx) => val === correctOrder[idx]);
-        answerPayload = submittedOrder;
-      } else if (currentQuiz.type === 'matching') {
-        calculatedCorrect = true;
-        answerPayload = true;
+        answerPayload = selectedAnswer as string[];
+      } else if (
+        currentQuiz.type === 'matching' &&
+        isMatchingAnswer(selectedAnswer)
+      ) {
+        answerPayload = selectedAnswer;
       }
 
       const response = await submitTulearnQuizAnswer(
@@ -226,7 +199,7 @@ export function LearnerQuizzes({
       const correct =
         response && typeof response.is_correct === 'boolean'
           ? response.is_correct
-          : calculatedCorrect;
+          : false;
 
       setIsCorrect(correct);
 
@@ -330,6 +303,7 @@ export function LearnerQuizzes({
             options={options}
             selectedAnswer={selectedAnswer}
             isSubmitted={isSubmitted}
+            submittedCorrect={isCorrect}
             onSelect={setSelectedAnswer}
           />
         )}
@@ -339,7 +313,7 @@ export function LearnerQuizzes({
             kind="true_false"
             selectedAnswer={selectedAnswer}
             isSubmitted={isSubmitted}
-            correctAnswer={(currentQuiz.answer as any)?.correct}
+            submittedCorrect={isCorrect}
             labels={{
               false: t('courses.quizFalse'),
               true: t('courses.quizTrue'),
@@ -352,12 +326,13 @@ export function LearnerQuizzes({
           currentQuiz.type === 'ordering') && (
           <StructuredQuizPreview
             type={currentQuiz.type}
+            matchingChoices={matchingChoices}
             matchingPairs={matchingPairs}
+            matchingPlaceholder={t('courses.quizSelectMatch')}
             orderingItems={orderingItems}
             selectedAnswer={selectedAnswer}
             isSubmitted={isSubmitted}
             notice={t('courses.quizMatchingOrderingNotice')}
-            confirmLabel={t('courses.quizConfirmSolved')}
             onConfirm={(val) => setSelectedAnswer(val)}
           />
         )}
@@ -387,16 +362,8 @@ export function LearnerQuizzes({
               <X className="h-5 w-5" />
               <span>{t('courses.quizIncorrect')}</span>
             </div>
-            <div className="mt-2 space-y-2 text-foreground/85 text-sm leading-relaxed">
-              <p>
-                <span className="mb-1 block font-bold text-xs uppercase tracking-wider opacity-70">
-                  {t('courses.quizCorrectAnswer')}
-                </span>
-                <span className="font-black text-foreground">
-                  {getCorrectAnswerString(currentQuiz, options, t)}
-                </span>
-              </p>
-              {getExplanation(currentQuiz, selectedAnswer) && (
+            {getExplanation(currentQuiz, selectedAnswer) && (
+              <div className="mt-2 text-foreground/85 text-sm leading-relaxed">
                 <div className="border-dynamic-red/20 border-t pt-2">
                   <span className="mb-1 block font-bold text-xs uppercase tracking-wider opacity-70">
                     {t('courses.quizExplanation')}
@@ -405,8 +372,8 @@ export function LearnerQuizzes({
                     {getExplanation(currentQuiz, selectedAnswer)}
                   </p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -414,7 +381,7 @@ export function LearnerQuizzes({
           {!isSubmitted ? (
             <Button
               onClick={handleSubmit}
-              disabled={selectedAnswer === null || isSubmitting}
+              disabled={!canSubmit || isSubmitting}
               className="h-12 border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
             >
               {isSubmitting
