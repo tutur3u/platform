@@ -5,14 +5,20 @@ export type Quiz = {
   quiz_options?: Array<{
     id: string;
     value: string;
+    is_correct?: boolean;
+    explanation?: string | null;
   }>;
+  answer?: any;
   score: number;
   type?: string | null;
 };
-export type SelectedAnswer = boolean | number | null;
+export type SelectedAnswer = boolean | number | string[] | null;
 
 export type DisplayOption = {
+  id: string;
   value: string;
+  is_correct?: boolean;
+  explanation?: string | null;
 };
 
 export type MatchingPair = {
@@ -58,11 +64,19 @@ export function getStringItems(content: unknown, key: string): string[] {
 export function getMultipleChoiceOptions(quiz: Quiz): DisplayOption[] {
   const contentOptions = getStringItems(quiz.content, 'options');
   if (contentOptions.length > 0) {
-    return contentOptions.map((value) => ({ value }));
+    return contentOptions.map((value) => ({
+      id: value,
+      value,
+    }));
   }
 
   return (quiz.quiz_options ?? [])
-    .map((option) => ({ value: option.value }))
+    .map((option) => ({
+      id: option.id,
+      value: option.value,
+      is_correct: option.is_correct,
+      explanation: option.explanation,
+    }))
     .filter((option) => option.value.trim().length > 0);
 }
 

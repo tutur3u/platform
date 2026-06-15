@@ -114,7 +114,7 @@ export function ModuleDetailView({
           )}
 
           {activeTab === 'quizzes' && courseModule.quizzes?.length > 0 ? (
-            <LearnerQuizzes quizzes={courseModule.quizzes} />
+            <LearnerQuizzes quizzes={courseModule.quizzes} moduleId={courseModule.id} />
           ) : (
             <>
               {hasContent(courseModule.content) && (

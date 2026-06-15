@@ -17,25 +17,30 @@ type TrueFalseProps = {
   };
   selectedAnswer: SelectedAnswer;
   isSubmitted: boolean;
+  correctAnswer?: boolean;
   onSelect: (answer: SelectedAnswer) => void;
 };
 
 type ChoiceOptionsProps = MultipleChoiceProps | TrueFalseProps;
 
-function submittedStyle(isSelected: boolean) {
-  return isSelected
-    ? 'border-primary bg-primary/10 text-primary shadow-[4px_4px_0_var(--border)]'
-    : 'opacity-60';
-}
-
 function choiceStyle({
   isSelected,
   isSubmitted,
+  isCorrect,
 }: {
   isSelected: boolean;
   isSubmitted: boolean;
+  isCorrect?: boolean;
 }) {
-  if (isSubmitted) return submittedStyle(isSelected);
+  if (isSubmitted) {
+    if (isCorrect) {
+      return 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green shadow-[4px_4px_0_var(--border)]';
+    }
+    if (isSelected) {
+      return 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red shadow-[4px_4px_0_var(--border)]';
+    }
+    return 'opacity-40 border-border bg-background';
+  }
 
   return isSelected
     ? 'border-primary bg-primary/5 text-primary shadow-[4px_4px_0_var(--border)]'
@@ -48,6 +53,7 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
       <div className="mt-6 grid grid-cols-2 gap-4">
         {[true, false].map((value) => {
           const isSelected = props.selectedAnswer === value;
+          const isCorrect = props.correctAnswer !== undefined ? value === props.correctAnswer : undefined;
 
           return (
             <button
@@ -57,7 +63,7 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
               disabled={props.isSubmitted}
               className={cn(
                 'flex flex-col items-center justify-center border-2 border-border p-6 font-bold shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0_var(--border)]',
-                choiceStyle({ isSelected, isSubmitted: props.isSubmitted })
+                choiceStyle({ isSelected, isSubmitted: props.isSubmitted, isCorrect })
               )}
               type="button"
             >
@@ -75,6 +81,7 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
     <div className="mt-6 grid gap-3">
       {props.options.map((option, index) => {
         const isSelected = props.selectedAnswer === index;
+        const isCorrect = option.is_correct;
 
         return (
           <button
@@ -84,7 +91,7 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
             disabled={props.isSubmitted}
             className={cn(
               'w-full border-2 border-border p-4 text-left font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0_var(--border)]',
-              choiceStyle({ isSelected, isSubmitted: props.isSubmitted })
+              choiceStyle({ isSelected, isSubmitted: props.isSubmitted, isCorrect })
             )}
             type="button"
           >

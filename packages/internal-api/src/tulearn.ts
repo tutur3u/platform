@@ -132,6 +132,8 @@ export interface TulearnCourseDetail extends TulearnCourseSummary {
 export interface TulearnQuizOption {
   id: string;
   value: string;
+  is_correct?: boolean;
+  explanation?: string | null;
 }
 
 export interface TulearnQuiz {
@@ -139,6 +141,7 @@ export interface TulearnQuiz {
   question: string;
   type: string | null;
   content: Json | null;
+  answer?: Json | null;
   score: number;
   quiz_options?: TulearnQuizOption[];
 }
@@ -401,4 +404,36 @@ export async function listSharedCourses(
   options?: InternalApiClientOptions
 ) {
   return listTulearnCourses(wsId, studentId, options);
+}
+
+export interface SubmitTulearnQuizAnswerPayload {
+  quizId: string;
+  selectedOptionId?: string | null;
+  answer?: unknown;
+}
+
+export interface SubmitTulearnQuizAnswerResult {
+  id: string;
+  is_correct: boolean;
+}
+
+export async function submitTulearnQuizAnswer(
+  workspaceId: string,
+  courseId: string,
+  moduleId: string,
+  payload: SubmitTulearnQuizAnswerPayload,
+  studentId?: string | null,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<SubmitTulearnQuizAnswerResult>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      query: studentQuery(studentId),
+    }
+  );
 }
