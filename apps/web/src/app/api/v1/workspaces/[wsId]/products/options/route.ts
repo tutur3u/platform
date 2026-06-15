@@ -10,7 +10,11 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { canViewInventoryCatalog } from '@/lib/inventory/permissions';
+import {
+  canCreateInventorySales,
+  canViewInventoryCatalog,
+  canViewInventoryStock,
+} from '@/lib/inventory/permissions';
 import { getInventoryCatalogProducts } from '@/lib/inventory/product-rpc';
 
 interface Params {
@@ -54,9 +58,12 @@ export async function GET(request: Request, { params }: Params) {
     if (!permissions || !canViewInventoryCatalog(permissions)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
+    const includeStock =
+      canViewInventoryStock(permissions) ||
+      canCreateInventorySales(permissions);
 
     const { data } = await getInventoryCatalogProducts({
-      includeStock: true,
+      includeStock,
       limit: 10_000,
       sbAdmin,
       sortBy: 'name',
@@ -67,11 +74,15 @@ export async function GET(request: Request, { params }: Params) {
 
     const products = (data ?? []).map((product) => {
       const normalizedProduct = product as typeof product & {
+        inventory_products?: unknown[] | null;
         inventory_manufacturers?: { id: string; name: string | null } | null;
       };
+      const { inventory_products: inventoryProducts, ...productFields } =
+        normalizedProduct;
 
       return {
-        ...product,
+        ...productFields,
+        inventory_products: includeStock ? (inventoryProducts ?? []) : [],
         manufacturer: normalizedProduct.inventory_manufacturers?.name ?? null,
       };
     });
