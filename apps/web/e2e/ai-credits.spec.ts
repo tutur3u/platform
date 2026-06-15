@@ -1,3 +1,4 @@
+import type { TestInfo } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 import { DEFAULT_LOCALE } from './helpers/constants';
 import {
@@ -8,6 +9,18 @@ import {
 } from './helpers/rate-limits';
 
 const BASE_URL = process.env.BASE_URL || 'https://tuturuuu.localhost';
+const ADMIN_AI_CREDITS_E2E_NAMESPACE = 215;
+const E2E_BROWSER_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36';
+
+function adminAiCreditsHeaders(testInfo: TestInfo) {
+  return {
+    ...e2eClientHeaders(
+      e2eClientIpForTest(testInfo, ADMIN_AI_CREDITS_E2E_NAMESPACE)
+    ),
+    'user-agent': E2E_BROWSER_USER_AGENT,
+  };
+}
 
 // Test user: local@tuturuuu.com (ID: 00000000-0000-0000-0000-000000000001)
 // Auth state loaded from storageState
@@ -228,9 +241,11 @@ test.describe('AI Credit Indicator UI', () => {
 test.describe('Gateway Model Sync', () => {
   test('POST /api/v1/admin/ai-credits/sync-models requires authentication', async ({
     playwright,
-  }) => {
+  }, testInfo) => {
     const unauthCtx = await playwright.request.newContext({
       baseURL: BASE_URL,
+      extraHTTPHeaders: adminAiCreditsHeaders(testInfo),
+      ignoreHTTPSErrors: true,
       storageState: { cookies: [], origins: [] },
     });
 
@@ -250,8 +265,10 @@ test.describe('Gateway Model Sync', () => {
 test.describe('Admin API - Allocations', () => {
   test('GET /api/v1/admin/ai-credits/allocations lists tier allocations', async ({
     request,
-  }) => {
-    const response = await request.get('/api/v1/admin/ai-credits/allocations');
+  }, testInfo) => {
+    const response = await request.get('/api/v1/admin/ai-credits/allocations', {
+      headers: adminAiCreditsHeaders(testInfo),
+    });
     // If root admin, should get array; otherwise 403
     if (response.ok()) {
       const data = await response.json();
@@ -274,8 +291,10 @@ test.describe('Admin API - Allocations', () => {
 
   test('GET /api/v1/admin/ai-credits/allocations includes all 4 tiers', async ({
     request,
-  }) => {
-    const response = await request.get('/api/v1/admin/ai-credits/allocations');
+  }, testInfo) => {
+    const response = await request.get('/api/v1/admin/ai-credits/allocations', {
+      headers: adminAiCreditsHeaders(testInfo),
+    });
     if (response.ok()) {
       const data = await response.json();
       const tiers = data.map((a: { tier: string }) => a.tier);
@@ -288,9 +307,10 @@ test.describe('Admin API - Allocations', () => {
 
   test('PUT /api/v1/admin/ai-credits/allocations validates payload', async ({
     request,
-  }) => {
+  }, testInfo) => {
     const response = await request.put('/api/v1/admin/ai-credits/allocations', {
       data: { invalid: true },
+      headers: adminAiCreditsHeaders(testInfo),
     });
     // Should get 400 (invalid payload) or 401/403 (not admin)
     expect([400, 401, 403]).toContain(response.status());
@@ -298,9 +318,10 @@ test.describe('Admin API - Allocations', () => {
 
   test('PUT /api/v1/admin/ai-credits/allocations requires UUID id', async ({
     request,
-  }) => {
+  }, testInfo) => {
     const response = await request.put('/api/v1/admin/ai-credits/allocations', {
       data: { id: 'not-a-uuid', monthly_credits: 5000 },
+      headers: adminAiCreditsHeaders(testInfo),
     });
     expect([400, 401, 403]).toContain(response.status());
   });
@@ -309,8 +330,10 @@ test.describe('Admin API - Allocations', () => {
 test.describe('Admin API - Models', () => {
   test('GET /api/v1/admin/ai-credits/models lists gateway models', async ({
     request,
-  }) => {
-    const response = await request.get('/api/v1/admin/ai-credits/models');
+  }, testInfo) => {
+    const response = await request.get('/api/v1/admin/ai-credits/models', {
+      headers: adminAiCreditsHeaders(testInfo),
+    });
     if (response.ok()) {
       const result = await response.json();
       expect(result).toHaveProperty('data');
@@ -326,9 +349,12 @@ test.describe('Admin API - Models', () => {
 
   test('GET /api/v1/admin/ai-credits/models supports pagination', async ({
     request,
-  }) => {
+  }, testInfo) => {
     const response = await request.get(
-      '/api/v1/admin/ai-credits/models?page=1&limit=5'
+      '/api/v1/admin/ai-credits/models?page=1&limit=5',
+      {
+        headers: adminAiCreditsHeaders(testInfo),
+      }
     );
     if (response.ok()) {
       const result = await response.json();
@@ -340,9 +366,12 @@ test.describe('Admin API - Models', () => {
 
   test('GET /api/v1/admin/ai-credits/models supports provider filter', async ({
     request,
-  }) => {
+  }, testInfo) => {
     const response = await request.get(
-      '/api/v1/admin/ai-credits/models?provider=google'
+      '/api/v1/admin/ai-credits/models?provider=google',
+      {
+        headers: adminAiCreditsHeaders(testInfo),
+      }
     );
     if (response.ok()) {
       const result = await response.json();
@@ -354,8 +383,10 @@ test.describe('Admin API - Models', () => {
 
   test('GET /api/v1/admin/ai-credits/models returns model structure', async ({
     request,
-  }) => {
-    const response = await request.get('/api/v1/admin/ai-credits/models');
+  }, testInfo) => {
+    const response = await request.get('/api/v1/admin/ai-credits/models', {
+      headers: adminAiCreditsHeaders(testInfo),
+    });
     if (response.ok()) {
       const result = await response.json();
       if (result.data.length > 0) {
@@ -372,9 +403,10 @@ test.describe('Admin API - Models', () => {
 
   test('PATCH /api/v1/admin/ai-credits/models validates payload', async ({
     request,
-  }) => {
+  }, testInfo) => {
     const response = await request.patch('/api/v1/admin/ai-credits/models', {
       data: { invalid: true },
+      headers: adminAiCreditsHeaders(testInfo),
     });
     expect([400, 401, 403]).toContain(response.status());
   });
@@ -383,8 +415,10 @@ test.describe('Admin API - Models', () => {
 test.describe('Admin API - Balances', () => {
   test('GET /api/v1/admin/ai-credits/balances lists credit balances', async ({
     request,
-  }) => {
-    const response = await request.get('/api/v1/admin/ai-credits/balances');
+  }, testInfo) => {
+    const response = await request.get('/api/v1/admin/ai-credits/balances', {
+      headers: adminAiCreditsHeaders(testInfo),
+    });
     if (response.ok()) {
       const result = await response.json();
       expect(result).toHaveProperty('data');
@@ -397,9 +431,12 @@ test.describe('Admin API - Balances', () => {
 
   test('GET /api/v1/admin/ai-credits/balances supports pagination', async ({
     request,
-  }) => {
+  }, testInfo) => {
     const response = await request.get(
-      '/api/v1/admin/ai-credits/balances?page=1&limit=5'
+      '/api/v1/admin/ai-credits/balances?page=1&limit=5',
+      {
+        headers: adminAiCreditsHeaders(testInfo),
+      }
     );
     if (response.ok()) {
       const result = await response.json();
@@ -410,9 +447,11 @@ test.describe('Admin API - Balances', () => {
 
   test('GET /api/v1/admin/ai-credits/balances supports scope filter', async ({
     request,
-  }) => {
+  }, testInfo) => {
+    const headers = adminAiCreditsHeaders(testInfo);
     const userResponse = await request.get(
-      '/api/v1/admin/ai-credits/balances?scope=user'
+      '/api/v1/admin/ai-credits/balances?scope=user',
+      { headers }
     );
     if (userResponse.ok()) {
       const result = await userResponse.json();
@@ -423,7 +462,8 @@ test.describe('Admin API - Balances', () => {
     }
 
     const wsResponse = await request.get(
-      '/api/v1/admin/ai-credits/balances?scope=workspace'
+      '/api/v1/admin/ai-credits/balances?scope=workspace',
+      { headers }
     );
     if (wsResponse.ok()) {
       const result = await wsResponse.json();
@@ -436,8 +476,10 @@ test.describe('Admin API - Balances', () => {
 
   test('GET /api/v1/admin/ai-credits/balances enriches with workspace/user data', async ({
     request,
-  }) => {
-    const response = await request.get('/api/v1/admin/ai-credits/balances');
+  }, testInfo) => {
+    const response = await request.get('/api/v1/admin/ai-credits/balances', {
+      headers: adminAiCreditsHeaders(testInfo),
+    });
     if (response.ok()) {
       const result = await response.json();
       for (const balance of result.data) {
@@ -460,33 +502,36 @@ test.describe('Admin API - Balances', () => {
 
   test('POST /api/v1/admin/ai-credits/balances validates bonus payload', async ({
     request,
-  }) => {
+  }, testInfo) => {
     const response = await request.post('/api/v1/admin/ai-credits/balances', {
       data: { invalid: true },
+      headers: adminAiCreditsHeaders(testInfo),
     });
     expect([400, 401, 403]).toContain(response.status());
   });
 
   test('POST /api/v1/admin/ai-credits/balances rejects negative bonus amount', async ({
     request,
-  }) => {
+  }, testInfo) => {
     const response = await request.post('/api/v1/admin/ai-credits/balances', {
       data: {
         balance_id: '00000000-0000-0000-0000-000000000000',
         amount: -100,
       },
+      headers: adminAiCreditsHeaders(testInfo),
     });
     expect([400, 401, 403]).toContain(response.status());
   });
 
   test('POST /api/v1/admin/ai-credits/balances rejects zero bonus amount', async ({
     request,
-  }) => {
+  }, testInfo) => {
     const response = await request.post('/api/v1/admin/ai-credits/balances', {
       data: {
         balance_id: '00000000-0000-0000-0000-000000000000',
         amount: 0,
       },
+      headers: adminAiCreditsHeaders(testInfo),
     });
     expect([400, 401, 403]).toContain(response.status());
   });
@@ -495,9 +540,11 @@ test.describe('Admin API - Balances', () => {
 test.describe('Admin API - Overview', () => {
   test('GET /api/v1/admin/ai-credits/overview returns 403 for non-root user', async ({
     request,
-  }) => {
+  }, testInfo) => {
     // Standard test user may or may not be root admin
-    const response = await request.get('/api/v1/admin/ai-credits/overview');
+    const response = await request.get('/api/v1/admin/ai-credits/overview', {
+      headers: adminAiCreditsHeaders(testInfo),
+    });
     // If not root admin, should get 403
     if (!response.ok()) {
       expect([401, 403]).toContain(response.status());
@@ -506,8 +553,10 @@ test.describe('Admin API - Overview', () => {
 
   test('GET /api/v1/admin/ai-credits/overview returns platform stats', async ({
     request,
-  }) => {
-    const response = await request.get('/api/v1/admin/ai-credits/overview');
+  }, testInfo) => {
+    const response = await request.get('/api/v1/admin/ai-credits/overview', {
+      headers: adminAiCreditsHeaders(testInfo),
+    });
     if (response.ok()) {
       const data = await response.json();
       expect(data).toHaveProperty('total_workspaces_with_balance');
@@ -524,8 +573,10 @@ test.describe('Admin API - Overview', () => {
 test.describe('Admin API - Features', () => {
   test('GET /api/v1/admin/ai-credits/features lists feature access rules', async ({
     request,
-  }) => {
-    const response = await request.get('/api/v1/admin/ai-credits/features');
+  }, testInfo) => {
+    const response = await request.get('/api/v1/admin/ai-credits/features', {
+      headers: adminAiCreditsHeaders(testInfo),
+    });
     if (response.ok()) {
       const data = await response.json();
       expect(Array.isArray(data)).toBe(true);
