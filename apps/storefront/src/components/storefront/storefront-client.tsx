@@ -98,7 +98,12 @@ export function StorefrontClient({
         note: String(formData.get('note') ?? '') || null,
       });
     },
-    onError: () => toast.error(t('checkoutError')),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : t('checkoutError')
+      ),
     onSuccess: ({ checkoutUrl }) => {
       if (!checkoutUrl) {
         toast.error(t('checkoutError'));

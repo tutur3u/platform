@@ -1242,6 +1242,7 @@
           "maxPerOrder": "Số đơn vị tối đa một khách mua mỗi đơn. Để trống nếu không giới hạn.",
           "minAmount": "Chúng tôi sẽ đánh dấu sản phẩm sắp hết khi tồn kho chạm mức này.",
           "owner": "Người hoặc thương hiệu chịu trách nhiệm cho sản phẩm này.",
+          "polarEnvironment": "Cửa hàng thanh toán qua tài khoản Polar nào. Dùng Sandbox để thử nghiệm (không tính phí thật) và Production cho bán hàng thực tế. Kết nối token tương ứng trong trung tâm Polar.",
           "price": "Số tiền khách trả cho một đơn vị.",
           "retail": "Giá bạn dự định bán một đơn vị. Dùng để ước tính lợi nhuận.",
           "sectionHref": "Liên kết tùy chọn khối này mở khi khách nhấp vào.",
@@ -1350,6 +1351,11 @@
           "usage": "Nhãn kệ, gói sự kiện hoặc ghi chú chiến dịch",
           "visibility": "Chọn hiển thị",
           "warehouse": "Chọn kho"
+        },
+        "polarEnvironment": "Môi trường Polar",
+        "polarEnvironments": {
+          "production": "Production (trực tiếp)",
+          "sandbox": "Sandbox (thử nghiệm)"
         },
         "price": "Giá",
         "product": "Sản phẩm",

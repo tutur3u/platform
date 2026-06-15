@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/icons';
 import {
   deleteInventoryStorefront,
+  type InventoryPolarEnvironment,
   type InventoryStorefront,
   type InventoryStorefrontCheckoutMode,
   type InventoryStorefrontCornerStyle,
@@ -47,6 +48,7 @@ import {
   cornerStyles,
   layoutStyles,
   polarCurrencyOptions,
+  polarEnvironments,
   storefrontStatuses,
   storefrontVisibilities,
   surfaceStyles,
@@ -376,6 +378,26 @@ export function StorefrontEditorDialog({
                       placeholder={t('placeholders.checkoutMode')}
                       value={form.checkoutMode}
                     />
+                    {form.checkoutMode === 'polar' ? (
+                      <SelectValueField
+                        allowEmpty={false}
+                        hint={t('hints.polarEnvironment')}
+                        label={t('polarEnvironment')}
+                        onChange={(value) =>
+                          setForm((current) => ({
+                            ...current,
+                            polarEnvironment:
+                              value as InventoryPolarEnvironment,
+                          }))
+                        }
+                        options={polarEnvironments.map((value) => ({
+                          label: t(`polarEnvironments.${value}`),
+                          value,
+                        }))}
+                        placeholder={t('polarEnvironment')}
+                        value={form.polarEnvironment}
+                      />
+                    ) : null}
                     <div className="md:col-span-3">
                       <ToggleField
                         checked={form.showInventoryBadges}
@@ -452,6 +474,7 @@ function getInitialForm(storefront: InventoryStorefront): StorefrontFormState {
     layoutStyle: storefront.layoutStyle,
     name: storefront.name,
     checkoutMode: storefront.checkoutMode,
+    polarEnvironment: storefront.polarEnvironment ?? 'production',
     sections: sanitizeSections(storefront.sections),
     showInventoryBadges: storefront.showInventoryBadges,
     slug: storefront.slug,

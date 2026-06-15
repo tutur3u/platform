@@ -123,6 +123,7 @@ export const storefrontPayloadSchema = z.object({
   surfaceStyle: StorefrontSurfaceStyleSchema.optional(),
   cornerStyle: StorefrontCornerStyleSchema.optional(),
   showInventoryBadges: z.boolean().optional(),
+  polarEnvironment: PolarEnvironmentSchema.optional(),
   sections: z.array(storefrontSectionPayloadSchema).max(24).optional(),
   name: z.string().trim().min(1).max(160),
   slug: z

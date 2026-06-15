@@ -1242,6 +1242,7 @@
           "maxPerOrder": "The most units one customer can buy per order. Leave blank for no limit.",
           "minAmount": "We’ll flag this product as low when stock reaches this number.",
           "owner": "The person or brand accountable for this product.",
+          "polarEnvironment": "Which Polar account this storefront checks out against. Use Sandbox for testing (no real charges) and Production for live sales. Connect the matching token in the Polar hub.",
           "price": "What a customer pays for one unit.",
           "retail": "The price you intend to sell one unit for. Drives the profit estimate.",
           "sectionHref": "Optional link this block opens when a shopper clicks it.",
@@ -1350,6 +1351,11 @@
           "usage": "Shelf label, event pack, or campaign note",
           "visibility": "Choose visibility",
           "warehouse": "Choose a warehouse"
+        },
+        "polarEnvironment": "Polar environment",
+        "polarEnvironments": {
+          "production": "Production (live)",
+          "sandbox": "Sandbox (testing)"
         },
         "price": "Price",
         "product": "Product",

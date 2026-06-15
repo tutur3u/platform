@@ -4118,6 +4118,7 @@ export type Database = {
           layout_style: string;
           metadata: Json;
           name: string;
+          polar_environment: string;
           show_inventory_badges: boolean;
           slug: string;
           status: string;
@@ -4141,6 +4142,7 @@ export type Database = {
           layout_style?: string;
           metadata?: Json;
           name: string;
+          polar_environment?: string;
           show_inventory_badges?: boolean;
           slug: string;
           status?: string;
@@ -4164,6 +4166,7 @@ export type Database = {
           layout_style?: string;
           metadata?: Json;
           name?: string;
+          polar_environment?: string;
           show_inventory_badges?: boolean;
           slug?: string;
           status?: string;

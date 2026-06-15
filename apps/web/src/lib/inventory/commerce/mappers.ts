@@ -32,6 +32,7 @@ export type StorefrontRow = {
   surface_style: InventoryStorefront['surfaceStyle'];
   corner_style: InventoryStorefront['cornerStyle'];
   show_inventory_badges: boolean | null;
+  polar_environment?: InventoryStorefront['polarEnvironment'] | null;
   id: string;
   listings_count: number;
   name: string;
@@ -192,6 +193,7 @@ export function mapStorefront(
     layoutStyle: row.layout_style ?? 'grid',
     surfaceStyle: row.surface_style ?? 'solid',
     cornerStyle: row.corner_style ?? 'rounded',
+    polarEnvironment: row.polar_environment ?? 'production',
     sections,
     showInventoryBadges: row.show_inventory_badges ?? true,
     id: row.id,

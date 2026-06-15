@@ -1,4 +1,5 @@
 import type {
+  InventoryPolarEnvironment,
   InventoryStorefrontCheckoutMode,
   InventoryStorefrontCornerStyle,
   InventoryStorefrontLayoutStyle,
@@ -21,6 +22,7 @@ export type StorefrontFormState = {
   heroImageUrl: string;
   layoutStyle: InventoryStorefrontLayoutStyle;
   name: string;
+  polarEnvironment: InventoryPolarEnvironment;
   sections: InventoryStorefrontSectionPayload[];
   showInventoryBadges: boolean;
   slug: string;

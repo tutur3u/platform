@@ -1,4 +1,5 @@
 import {
+  type InventoryPolarEnvironment,
   type InventoryStorefrontCheckoutMode,
   type InventoryStorefrontCornerStyle,
   type InventoryStorefrontLayoutStyle,
@@ -14,6 +15,11 @@ export const storefrontStatuses: InventoryStorefrontStatus[] = [
   'draft',
   'published',
   'paused',
+];
+
+export const polarEnvironments: InventoryPolarEnvironment[] = [
+  'sandbox',
+  'production',
 ];
 
 export const storefrontVisibilities: InventoryStorefrontVisibility[] = [

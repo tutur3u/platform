@@ -325,7 +325,12 @@ export async function POST(request: Request, { params }: Params) {
 
       serverLogger.error('Failed to create Polar inventory checkout', error);
       return NextResponse.json(
-        { message: 'Failed to create Polar checkout' },
+        {
+          message:
+            error instanceof Error && error.message
+              ? error.message
+              : 'Failed to create Polar checkout',
+        },
         { status: 409 }
       );
     }

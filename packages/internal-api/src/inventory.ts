@@ -231,6 +231,7 @@ export type InventoryStorefront = {
   cornerStyle: InventoryStorefrontCornerStyle;
   showInventoryBadges: boolean;
   analyticsEnabled: boolean;
+  polarEnvironment?: InventoryPolarEnvironment;
   sections: InventoryStorefrontSection[];
   listingsCount?: number;
   createdAt: string | null;
@@ -795,6 +796,7 @@ export type InventoryStorefrontPayload = {
   cornerStyle?: InventoryStorefrontCornerStyle;
   showInventoryBadges?: boolean;
   analyticsEnabled?: boolean;
+  polarEnvironment?: InventoryPolarEnvironment;
   sections?: InventoryStorefrontSectionPayload[];
 };
 

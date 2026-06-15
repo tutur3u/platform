@@ -2,6 +2,7 @@
 
 import { Plus, Trash2 } from '@tuturuuu/icons';
 import type {
+  InventoryPolarEnvironment,
   InventoryStorefrontCheckoutMode,
   InventoryStorefrontCornerStyle,
   InventoryStorefrontLayoutStyle,
@@ -28,6 +29,7 @@ import {
   cornerStyles,
   layoutStyles,
   polarCurrencyOptions,
+  polarEnvironments,
   storefrontStatuses,
   storefrontVisibilities,
   surfaceStyles,
@@ -407,6 +409,25 @@ export function StorefrontCheckoutFields({ form, setForm }: StepFieldsProps) {
         placeholder={t('placeholders.checkoutMode')}
         value={form.checkoutMode}
       />
+      {form.checkoutMode === 'polar' ? (
+        <SelectValueField
+          allowEmpty={false}
+          hint={t('hints.polarEnvironment')}
+          label={t('polarEnvironment')}
+          onChange={(value) =>
+            setForm((current) => ({
+              ...current,
+              polarEnvironment: value as InventoryPolarEnvironment,
+            }))
+          }
+          options={polarEnvironments.map((value) => ({
+            label: t(`polarEnvironments.${value}`),
+            value,
+          }))}
+          placeholder={t('polarEnvironment')}
+          value={form.polarEnvironment}
+        />
+      ) : null}
       <SelectValueField
         label={t('status')}
         onChange={(value) =>

@@ -92,6 +92,30 @@ async function getPrivateAdmin() {
   return (await createAdminClient()).schema('private');
 }
 
+/**
+ * Reads a storefront's chosen Polar environment (sandbox/production) so checkout
+ * targets the right Polar account. Returns null when unset so callers can fall
+ * back to the deployment default.
+ */
+async function getStorefrontPolarEnvironment(
+  wsId: string,
+  slug: string
+): Promise<InventoryPolarEnvironment | null> {
+  const privateAdmin = await getPrivateAdmin();
+  const { data } = (await privateAdmin
+    .from('inventory_storefronts' as never)
+    .select('polar_environment')
+    .eq('ws_id', wsId)
+    .eq('slug', slug)
+    .maybeSingle()) as {
+    data: { polar_environment?: string | null } | null;
+  };
+  const environment = data?.polar_environment;
+  return environment === 'sandbox' || environment === 'production'
+    ? environment
+    : null;
+}
+
 export async function getInventoryPolarSettings(
   wsId: string
 ): Promise<InventoryPolarSettings> {
@@ -368,19 +392,25 @@ export async function createInventoryPolarCheckout({
   storefrontUrl: string;
 }) {
   const settings = await getInventoryPolarSettings(checkout.wsId);
-  const environment = environmentFromDeployment(settings);
-  const productId = await ensureInventoryPolarProduct({
-    environment,
-    wsId: checkout.wsId,
-  });
+  // Prefer the storefront's explicit environment; fall back to the deployment.
+  const environment =
+    (await getStorefrontPolarEnvironment(checkout.wsId, storefrontSlug)) ??
+    environmentFromDeployment(settings);
   const integration = await getIntegration({
     environment,
     wsId: checkout.wsId,
   });
 
-  if (!integration) {
-    throw new Error(`Polar ${environment} token is not configured`);
+  if (!integration?.access_token_encrypted) {
+    throw new Error(
+      `Polar is not connected for the ${environment} environment. Connect a ${environment} token in the Polar hub, or switch this storefront's environment.`
+    );
   }
+
+  const productId = await ensureInventoryPolarProduct({
+    environment,
+    wsId: checkout.wsId,
+  });
 
   const accessToken = await decryptIntegrationToken(integration);
   const polar = createPolarClient({ accessToken, environment });

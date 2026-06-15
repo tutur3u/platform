@@ -27,7 +27,7 @@ type ListRpcRow<TKey extends string, TValue> = {
 } & Record<TKey, TValue | null>;
 
 const storefrontSelect =
-  'id, ws_id, slug, name, description, status, visibility, cover_image_url, hero_image_url, accent_color, currency, checkout_mode, theme_preset, layout_style, surface_style, corner_style, show_inventory_badges, analytics_enabled, created_at, updated_at';
+  'id, ws_id, slug, name, description, status, visibility, cover_image_url, hero_image_url, accent_color, currency, checkout_mode, theme_preset, layout_style, surface_style, corner_style, show_inventory_badges, analytics_enabled, polar_environment, created_at, updated_at';
 
 const storefrontSectionSelect =
   'id, ws_id, storefront_id, section_type, status, title, description, image_url, href, sort_order, metadata, created_at, updated_at';
@@ -273,6 +273,7 @@ export async function createStorefront(
       hero_image_url: payload.heroImageUrl ?? null,
       layout_style: payload.layoutStyle ?? 'grid',
       name: payload.name,
+      polar_environment: payload.polarEnvironment ?? 'production',
       show_inventory_badges: payload.showInventoryBadges ?? true,
       slug: payload.slug,
       status: payload.status ?? 'draft',
@@ -340,6 +341,9 @@ export async function updateStorefront(
   }
   if (payload.analyticsEnabled !== undefined) {
     update.analytics_enabled = payload.analyticsEnabled;
+  }
+  if (payload.polarEnvironment !== undefined) {
+    update.polar_environment = payload.polarEnvironment;
   }
   if (hasPayloadKey(payload, 'description')) {
     update.description = payload.description ?? null;
