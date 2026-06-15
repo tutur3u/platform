@@ -1,7 +1,12 @@
-import { AlertCircle, ChevronDown, ChevronUp, GripVertical } from '@tuturuuu/icons';
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { MatchingPair, SelectedAnswer } from './types';
 
 // Standard Fisher-Yates shuffle algorithm
@@ -25,7 +30,10 @@ export function StructuredQuizPreview({
   type: 'matching' | 'ordering';
 }) {
   const hasConfirmedAnswer = selectedAnswer !== null;
-  const items = type === 'ordering' && Array.isArray(selectedAnswer) ? selectedAnswer : orderingItems;
+  const items =
+    type === 'ordering' && Array.isArray(selectedAnswer)
+      ? selectedAnswer
+      : orderingItems;
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -41,6 +49,7 @@ export function StructuredQuizPreview({
 
     const newItems = [...items];
     const draggedItem = newItems[draggedIndex];
+    if (draggedItem === undefined) return;
     newItems.splice(draggedIndex, 1);
     newItems.splice(index, 0, draggedItem);
     setDraggedIndex(index);
@@ -58,7 +67,9 @@ export function StructuredQuizPreview({
 
     const newItems = [...items];
     const temp = newItems[index];
-    newItems[index] = newItems[targetIndex];
+    const targetItem = newItems[targetIndex];
+    if (temp === undefined || targetItem === undefined) return;
+    newItems[index] = targetItem;
     newItems[targetIndex] = temp;
 
     onConfirm(newItems);
@@ -96,18 +107,18 @@ export function StructuredQuizPreview({
               onDragOver={(e) => handleDragOver(e, index)}
               onDragEnd={handleDragEnd}
               className={cn(
-                'flex items-center justify-between border-2 border-border p-3 text-sm shadow-[2px_2px_0_var(--border)] transition-all select-none',
+                'flex select-none items-center justify-between border-2 border-border p-3 text-sm shadow-[2px_2px_0_var(--border)] transition-all',
                 isSubmitted
                   ? 'bg-muted/20'
-                  : 'bg-background cursor-grab active:cursor-grabbing hover:bg-muted/10',
-                draggedIndex === index && 'opacity-50 border-dashed bg-muted/40'
+                  : 'cursor-grab bg-background hover:bg-muted/10 active:cursor-grabbing',
+                draggedIndex === index && 'border-dashed bg-muted/40 opacity-50'
               )}
             >
               <div className="flex items-center gap-3">
                 {!isSubmitted && (
-                  <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
+                  <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground" />
                 )}
-                <span className="flex h-5 w-5 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground shrink-0">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
                   {index + 1}
                 </span>
                 <span className="font-bold">{item}</span>
@@ -162,4 +173,3 @@ export function StructuredQuizPreview({
     </div>
   );
 }
-

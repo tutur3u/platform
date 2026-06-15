@@ -64,9 +64,12 @@ export function getStringItems(content: unknown, key: string): string[] {
 export function getMultipleChoiceOptions(quiz: Quiz): DisplayOption[] {
   const contentOptions = getStringItems(quiz.content, 'options');
   if (contentOptions.length > 0) {
-    return contentOptions.map((value) => ({
+    const correctIndex = (quiz.answer as any)?.correctIndex;
+    return contentOptions.map((value, index) => ({
       id: value,
       value,
+      is_correct:
+        correctIndex !== undefined ? index === Number(correctIndex) : undefined,
     }));
   }
 

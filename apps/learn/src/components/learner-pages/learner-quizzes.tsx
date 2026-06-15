@@ -10,17 +10,20 @@ import { ChoiceOptions } from './quiz-practice/choice-options';
 import { QuizCompletionCard } from './quiz-practice/completion-card';
 import { StructuredQuizPreview } from './quiz-practice/structured-preview';
 import {
+  type DisplayOption,
   getMatchingPairs,
   getMultipleChoiceOptions,
   getQuizScore,
   getStringItems,
-  type DisplayOption,
   type Quiz,
   type SelectedAnswer,
 } from './quiz-practice/types';
 import { BrutalCard, useStudentId } from './shared';
 
-function getExplanation(quiz: Quiz, selectedAnswer: SelectedAnswer): string | null {
+function getExplanation(
+  quiz: Quiz,
+  selectedAnswer: SelectedAnswer
+): string | null {
   if (!quiz.type || quiz.type === 'multiple_choice') {
     const correctOption = quiz.quiz_options?.find((o) => o.is_correct);
     if (correctOption?.explanation) return correctOption.explanation;
@@ -39,7 +42,14 @@ function getCorrectAnswerString(
 ): string {
   if (!quiz.type || quiz.type === 'multiple_choice') {
     const correctOption = options.find((o) => o.is_correct);
-    return correctOption ? correctOption.value : '';
+    if (correctOption) return correctOption.value;
+
+    // Fallback for legacy multiple choice quizzes
+    const correctIndex = (quiz.answer as any)?.correctIndex;
+    if (correctIndex !== undefined && options[correctIndex]) {
+      return options[correctIndex].value;
+    }
+    return '';
   }
   if (quiz.type === 'true_false') {
     const tfCorrect = (quiz.answer as any)?.correct ?? true;
@@ -56,7 +66,12 @@ function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    const temp = arr[i];
+    const target = arr[j];
+    if (temp !== undefined && target !== undefined) {
+      arr[i] = target;
+      arr[j] = temp;
+    }
   }
   return arr;
 }
@@ -132,7 +147,14 @@ export function LearnerQuizzes({
         const targetOption = options[optionIdx];
         if (targetOption) {
           selectedOptionId = targetOption.id;
-          calculatedCorrect = !!targetOption.is_correct;
+          if (targetOption.is_correct !== undefined) {
+            calculatedCorrect = !!targetOption.is_correct;
+          } else {
+            const correctIndex = (currentQuiz.answer as any)?.correctIndex;
+            calculatedCorrect =
+              correctIndex !== undefined && Number(correctIndex) === optionIdx;
+          }
+          answerPayload = optionIdx;
         }
       } else if (currentQuiz.type === 'true_false') {
         const tfVal = selectedAnswer as boolean;
@@ -151,9 +173,7 @@ export function LearnerQuizzes({
         answerPayload = true;
       }
 
-      setIsCorrect(calculatedCorrect);
-
-      await submitTulearnQuizAnswer(
+      const response = await submitTulearnQuizAnswer(
         params.wsId as string,
         params.courseId as string,
         moduleId,
@@ -164,6 +184,12 @@ export function LearnerQuizzes({
         },
         studentId
       );
+
+      if (response && typeof response.is_correct === 'boolean') {
+        setIsCorrect(response.is_correct);
+      } else {
+        setIsCorrect(calculatedCorrect);
+      }
 
       setCompletedCount((prev) => Math.max(prev, currentIdx + 1));
       setIsSubmitted(true);
@@ -275,8 +301,8 @@ export function LearnerQuizzes({
               <span>{t('courses.quizCorrect')}</span>
             </div>
             {getExplanation(currentQuiz, selectedAnswer) && (
-              <div className="mt-2 pt-2 border-t border-dynamic-green/20">
-                <span className="font-bold text-xs uppercase tracking-wider block mb-1 opacity-70">
+              <div className="mt-2 border-dynamic-green/20 border-t pt-2">
+                <span className="mb-1 block font-bold text-xs uppercase tracking-wider opacity-70">
                   {t('courses.quizExplanation')}
                 </span>
                 <p className="text-foreground/85 text-sm leading-relaxed">
@@ -295,7 +321,7 @@ export function LearnerQuizzes({
             </div>
             <div className="mt-2 space-y-2 text-foreground/85 text-sm leading-relaxed">
               <p>
-                <span className="font-bold text-xs uppercase tracking-wider opacity-70 block mb-1">
+                <span className="mb-1 block font-bold text-xs uppercase tracking-wider opacity-70">
                   {t('courses.quizCorrectAnswer')}
                 </span>
                 <span className="font-black text-foreground">
@@ -303,8 +329,8 @@ export function LearnerQuizzes({
                 </span>
               </p>
               {getExplanation(currentQuiz, selectedAnswer) && (
-                <div className="pt-2 border-t border-dynamic-red/20">
-                  <span className="font-bold text-xs uppercase tracking-wider block mb-1 opacity-70">
+                <div className="border-dynamic-red/20 border-t pt-2">
+                  <span className="mb-1 block font-bold text-xs uppercase tracking-wider opacity-70">
                     {t('courses.quizExplanation')}
                   </span>
                   <p className="text-foreground/85 text-sm leading-relaxed">
@@ -323,7 +349,9 @@ export function LearnerQuizzes({
               disabled={selectedAnswer === null || isSubmitting}
               className="h-12 border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
             >
-              {isSubmitting ? t('common.loading') : t('courses.quizSubmitAnswer')}
+              {isSubmitting
+                ? t('common.loading')
+                : t('courses.quizSubmitAnswer')}
             </Button>
           ) : (
             <Button
