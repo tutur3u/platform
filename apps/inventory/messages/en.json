@@ -934,6 +934,16 @@
           "sales": "Sales",
           "salesDescription": "Finalized sale records"
         },
+        "pnl": {
+          "cogs": "Est. cost of goods",
+          "description": "Revenue is actual; profit and cost are estimated from your costing margins.",
+          "estimated": "Estimated",
+          "grossProfit": "Est. gross profit",
+          "margin": "Est. gross margin",
+          "revenue": "Revenue",
+          "title": "Profit summary",
+          "units": "Units sold"
+        },
         "release": "Release",
         "tabs": {
           "checkouts": "Checkouts",

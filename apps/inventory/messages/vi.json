@@ -934,6 +934,16 @@
           "sales": "Doanh số",
           "salesDescription": "Bản ghi doanh số đã hoàn tất"
         },
+        "pnl": {
+          "cogs": "Giá vốn ước tính",
+          "description": "Doanh thu là thực tế; lợi nhuận và chi phí được ước tính từ biên chi phí của bạn.",
+          "estimated": "Ước tính",
+          "grossProfit": "Lợi nhuận gộp ước tính",
+          "margin": "Biên lợi nhuận gộp ước tính",
+          "revenue": "Doanh thu",
+          "title": "Tóm tắt lợi nhuận",
+          "units": "Số lượng đã bán"
+        },
         "release": "Giải phóng",
         "tabs": {
           "checkouts": "Checkout",

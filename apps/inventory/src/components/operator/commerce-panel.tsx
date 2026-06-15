@@ -24,6 +24,7 @@ import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { currency } from './operator-format';
 import { EmptyRow, LoadingRows } from './operator-shell';
 import type { InventoryCommerceTab } from './operator-types';
+import { ProfitSummaryPanel } from './profit-summary-panel';
 import {
   PromotionEditButton,
   PromotionFormDialog,
@@ -375,7 +376,10 @@ export function CommercePanel({
       ) : tab === 'promotions' ? (
         <PromotionRows rows={promotions} wsId={wsId} />
       ) : (
-        <SaleRows query={query} rows={sales} wsId={wsId} />
+        <div className="grid gap-3">
+          <ProfitSummaryPanel sales={sales} wsId={wsId} />
+          <SaleRows query={query} rows={sales} wsId={wsId} />
+        </div>
       )}
     </div>
   );
