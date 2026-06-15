@@ -955,6 +955,13 @@
         },
         "release": "Giải phóng",
         "releaseHint": "Giải phóng lượng tồn kho mà phiên giữ chỗ này đang giữ trở lại kho khả dụng và hủy phiên thanh toán. Dùng cho các phiên giữ chỗ bị bỏ dở hoặc treo.",
+        "releaseUnavailable": "Chỉ có thể giải phóng các phiên giữ chỗ đang hoạt động. Phiên thanh toán này đã hoàn tất hoặc đã được giải phóng.",
+        "status": {
+          "completed": "Hoàn tất",
+          "expired": "Hết hạn",
+          "released": "Đã giải phóng",
+          "reserved": "Đang giữ chỗ"
+        },
         "tabs": {
           "checkouts": "Checkout",
           "label": "Chế độ thương mại",

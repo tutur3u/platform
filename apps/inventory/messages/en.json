@@ -955,6 +955,13 @@
         },
         "release": "Release",
         "releaseHint": "Frees the inventory this reservation is holding back into available stock and cancels the checkout. Use it for abandoned or stuck reservations.",
+        "releaseUnavailable": "Only live reserved holds can be released. This checkout has already been finalized or released.",
+        "status": {
+          "completed": "Completed",
+          "expired": "Expired",
+          "released": "Released",
+          "reserved": "Reserved"
+        },
         "tabs": {
           "checkouts": "Checkouts",
           "label": "Commerce view",
