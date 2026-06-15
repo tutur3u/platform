@@ -194,6 +194,31 @@ function extractForwardedValue(value: string | null) {
     .find(Boolean);
 }
 
+function isSecureCookieScheme(requestUrl: URL) {
+  if (requestUrl.protocol !== 'https:') {
+    return false;
+  }
+
+  // Local dev and E2E are served over HTTPS by portless using an untrusted
+  // local certificate. Chromium accepts the navigation but refuses to persist
+  // or resend Secure/__Host- cookies from a cert-errored connection, which
+  // breaks the multi-account device cookie. Treat localhost-style hosts as
+  // insecure so they fall back to the legacy (non-Secure) device cookie while
+  // genuine public HTTPS hosts keep the hardened __Host- cookie.
+  const hostname = requestUrl.hostname;
+  if (
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname === '127.0.0.1' ||
+    hostname === '::1' ||
+    hostname === '[::1]'
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 function resolveCookieUrl(request: Pick<Request, 'headers' | 'url'>) {
   const forwardedHost =
     extractForwardedValue(request.headers.get('x-forwarded-host')) ??
@@ -221,14 +246,14 @@ export function getDeviceCookieOptions(
     maxAge: COOKIE_MAX_AGE_SECONDS,
     path: '/',
     sameSite: 'lax',
-    secure: requestUrl.protocol === 'https:',
+    secure: isSecureCookieScheme(requestUrl),
   } satisfies DeviceCookieOptions;
 }
 
 export function getDeviceCookieName(request: Pick<Request, 'headers' | 'url'>) {
   const requestUrl = resolveCookieUrl(request);
 
-  return requestUrl.protocol === 'https:'
+  return isSecureCookieScheme(requestUrl)
     ? WEB_ACCOUNT_DEVICE_COOKIE_NAME
     : LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME;
 }

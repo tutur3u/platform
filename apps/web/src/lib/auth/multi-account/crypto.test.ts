@@ -140,6 +140,29 @@ describe('web multi-account crypto', () => {
     expect(getDeviceCookieOptions(request)).not.toHaveProperty('domain');
   });
 
+  it('falls back to a non-secure cookie for HTTPS localhost dev/E2E hosts', () => {
+    // portless serves local dev and E2E over HTTPS with an untrusted cert, so
+    // Chromium drops Secure/__Host- cookies. Localhost-style hosts must use the
+    // legacy non-secure device cookie even when the resolved protocol is HTTPS.
+    const request = new Request('http://internal.localhost/login', {
+      headers: {
+        'x-forwarded-host': 'tuturuuu.localhost:1355',
+        'x-forwarded-proto': 'https',
+      },
+    });
+
+    expect(getDeviceCookieName(request)).toBe(
+      LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME
+    );
+    expect(getDeviceCookieOptions(request)).toMatchObject({
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      secure: false,
+    });
+    expect(getDeviceCookieOptions(request)).not.toHaveProperty('domain');
+  });
+
   it('expires legacy parent-domain cookies without reusing that scope', () => {
     const request = new Request('https://app.tuturuuu.com/login');
 
