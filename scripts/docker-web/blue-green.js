@@ -216,6 +216,7 @@ const BLUE_GREEN_PROXY_REQUIRED_HOST_PORTS = Object.freeze([
     envKey: 'DOCKER_MEET_REALTIME_PROXY_HOST_PORT',
   },
 ]);
+const BLUE_GREEN_PROXY_HOST_IP = '127.0.0.1';
 
 function isExplicitFalseEnvValue(value) {
   return /^(0|false|no|off)$/iu.test(String(value ?? '').trim());
@@ -1795,17 +1796,24 @@ function getExpectedBlueGreenProxyHostPortBindings(env = {}) {
           ? env[envKey].trim()
           : defaultHostPort;
 
-      return { containerPort, hostPort };
+      return { containerPort, hostIp: BLUE_GREEN_PROXY_HOST_IP, hostPort };
     }
   );
 }
 
-function hasExpectedHostPortBinding(ports, { containerPort, hostPort }) {
+function hasExpectedHostPortBinding(
+  ports,
+  { containerPort, hostIp, hostPort }
+) {
   const bindings = ports?.[`${containerPort}/tcp`];
 
   return (
     Array.isArray(bindings) &&
-    bindings.some((binding) => String(binding?.HostPort ?? '') === hostPort)
+    bindings.some(
+      (binding) =>
+        String(binding?.HostIp ?? '') === hostIp &&
+        String(binding?.HostPort ?? '') === hostPort
+    )
   );
 }
 

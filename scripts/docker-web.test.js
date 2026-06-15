@@ -88,9 +88,9 @@ const {
 const { WATCHER_CONTAINER_ENV } = require('./watch-blue-green-deploy.js');
 
 const BLUE_GREEN_PROXY_PORTS_JSON = JSON.stringify({
-  '7803/tcp': [{ HostIp: '0.0.0.0', HostPort: '7803' }],
-  '7814/tcp': [{ HostIp: '0.0.0.0', HostPort: '7814' }],
-  '7816/tcp': [{ HostIp: '0.0.0.0', HostPort: '7816' }],
+  '7803/tcp': [{ HostIp: '127.0.0.1', HostPort: '7803' }],
+  '7814/tcp': [{ HostIp: '127.0.0.1', HostPort: '7814' }],
+  '7816/tcp': [{ HostIp: '127.0.0.1', HostPort: '7816' }],
 });
 const LOCAL_SUPABASE_TEST_ENV = {
   [DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV]: '1',
@@ -4378,7 +4378,7 @@ test('getBlueGreenComposeMigration stages target ports while the legacy project 
 
 test('hasBlueGreenProxyHostPortBindings requires support host ports on web-proxy', async () => {
   let inspectPorts = {
-    '7803/tcp': [{ HostIp: '0.0.0.0', HostPort: '7803' }],
+    '7803/tcp': [{ HostIp: '127.0.0.1', HostPort: '7803' }],
   };
 
   const runCommand = async (command, args) => {
@@ -4414,7 +4414,7 @@ test('hasBlueGreenProxyHostPortBindings requires support host ports on web-proxy
 
   inspectPorts = {
     ...inspectPorts,
-    '7814/tcp': [{ HostIp: '0.0.0.0', HostPort: '7814' }],
+    '7814/tcp': [{ HostIp: '127.0.0.1', HostPort: '7814' }],
   };
 
   assert.equal(
@@ -4428,7 +4428,7 @@ test('hasBlueGreenProxyHostPortBindings requires support host ports on web-proxy
 
   inspectPorts = {
     ...inspectPorts,
-    '7816/tcp': [{ HostIp: '0.0.0.0', HostPort: '7816' }],
+    '7816/tcp': [{ HostIp: '127.0.0.1', HostPort: '7816' }],
   };
 
   assert.equal(
@@ -4438,6 +4438,21 @@ test('hasBlueGreenProxyHostPortBindings requires support host ports on web-proxy
       runCommand,
     }),
     true
+  );
+
+  inspectPorts = {
+    '7803/tcp': [{ HostIp: '0.0.0.0', HostPort: '7803' }],
+    '7814/tcp': [{ HostIp: '0.0.0.0', HostPort: '7814' }],
+    '7816/tcp': [{ HostIp: '0.0.0.0', HostPort: '7816' }],
+  };
+
+  assert.equal(
+    await hasBlueGreenProxyHostPortBindings({
+      composeFile: PROD_COMPOSE_FILE,
+      env: LOCAL_SUPABASE_TEST_ENV,
+      runCommand,
+    }),
+    false
   );
 });
 
@@ -4569,7 +4584,7 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
     ) {
       return resultFor(
         `${JSON.stringify({
-          '7803/tcp': [{ HostIp: '0.0.0.0', HostPort: '7803' }],
+          '7803/tcp': [{ HostIp: '127.0.0.1', HostPort: '7803' }],
         })}\n`
       );
     }
@@ -4705,6 +4720,192 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
     assert.ok(
       supermemoryMigrationCleanupIndex > hiveUpIndex,
       'expected dependency-started Supermemory migration cleanup after Hive starts'
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runBlueGreenProdWorkflow recreates web-proxy when host ports are public', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-public-port-refresh-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getBlueGreenPaths(tempDir);
+  const calls = [];
+  let targetStarted = false;
+  let hiveStarted = false;
+  let forcedProxyRefresh = false;
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+  writeBlueGreenActiveColor('blue', paths);
+
+  const resultFor = (stdout = '') => ({
+    code: 0,
+    signal: null,
+    stderr: '',
+    stdout,
+  });
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    const cleanupResult = migrationCleanupResult(command, args);
+    if (cleanupResult) return cleanupResult;
+
+    if (command === 'docker' && args[0] === 'ps') {
+      return resultFor('');
+    }
+
+    if (args.includes('ps') && args.includes('-q')) {
+      const serviceName = args.at(-1);
+
+      if (serviceName === 'web-blue') return resultFor('blue-123\n');
+      if (serviceName === BLUE_GREEN_PROXY_SERVICE) {
+        return resultFor('proxy-123\n');
+      }
+      if (serviceName === 'web') return resultFor('');
+      if (serviceName === 'web-green') {
+        return resultFor(targetStarted ? 'green-123\n' : '');
+      }
+      if (serviceName === 'buildkit') {
+        return resultFor('buildkit-123\n');
+      }
+      if (serviceName === 'hive-db-migrate') {
+        return resultFor(
+          args.includes('-a') && hiveStarted ? 'hive-db-migrate-123\n' : ''
+        );
+      }
+      if (BLUE_GREEN_SUPPORT_SERVICES.includes(serviceName)) {
+        return resultFor(targetStarted ? `${serviceName}-123\n` : '');
+      }
+
+      return resultFor('');
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{json .NetworkSettings.Ports}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor(
+        `${JSON.stringify({
+          '7803/tcp': [{ HostIp: '0.0.0.0', HostPort: '7803' }],
+          '7814/tcp': [{ HostIp: '0.0.0.0', HostPort: '7814' }],
+          '7816/tcp': [{ HostIp: '0.0.0.0', HostPort: '7816' }],
+        })}\n`
+      );
+    }
+
+    if (args[0] === 'inspect') {
+      return resultFor('healthy\n');
+    }
+
+    if (args.includes('build')) {
+      return resultFor('');
+    }
+
+    if (args[0] === 'buildx' && args[1] === 'prune') {
+      return resultFor('');
+    }
+
+    if (isHiveDbMigrateRun(command, args)) {
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes('web-green')) {
+      targetStarted = true;
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes('hive-green')) {
+      hiveStarted = true;
+      return resultFor('');
+    }
+
+    if (
+      args.includes('up') &&
+      BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.some((service) =>
+        args.includes(service)
+      )
+    ) {
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
+      forcedProxyRefresh =
+        forcedProxyRefresh || args.includes('--force-recreate');
+      return resultFor('');
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes('web-blue') &&
+      args.includes('node')
+    ) {
+      return resultFor(JSON.stringify({ inflightRequests: 0 }));
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+      (args.includes('wget') || args.includes('nginx'))
+    ) {
+      return resultFor('');
+    }
+
+    if (args.includes('stop') || args.includes('rm')) {
+      return resultFor('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    await runBlueGreenProdWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: [],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        drainPollMs: 0,
+        drainTimeoutMs: 5_000,
+        env: {
+          ...LOCAL_SUPABASE_TEST_ENV,
+          BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+        },
+        envFilePath,
+        proxyDrainMs: 0,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(readBlueGreenActiveColor(paths), 'green');
+    assert.equal(forcedProxyRefresh, true);
+    assert.ok(
+      calls.some(
+        (call) =>
+          call.includes(' up --detach --no-build --force-recreate') &&
+          (call.includes(` ${BLUE_GREEN_PROXY_SERVICE} `) ||
+            call.endsWith(` ${BLUE_GREEN_PROXY_SERVICE}`))
+      )
+    );
+    assert.ok(
+      calls.findIndex(
+        (call) =>
+          call.includes(' up --detach --no-build --force-recreate') &&
+          (call.includes(` ${BLUE_GREEN_PROXY_SERVICE} `) ||
+            call.endsWith(` ${BLUE_GREEN_PROXY_SERVICE}`))
+      ) > calls.findIndex((call) => call.includes(' hive-green'))
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
