@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyRound } from '@tuturuuu/icons';
+import { Eye, EyeOff, KeyRound } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -44,18 +44,21 @@ export function MobileDeploymentSecretDialog({
   const [name, setName] = useState('');
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showValue, setShowValue] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setName('');
       setValue('');
       setError(null);
+      setShowValue(false);
       return;
     }
 
     setName(state?.name ?? '');
     setValue('');
     setError(null);
+    setShowValue(false);
   }, [open, state]);
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -63,6 +66,7 @@ export function MobileDeploymentSecretDialog({
       setName('');
       setValue('');
       setError(null);
+      setShowValue(false);
     }
     onOpenChange(nextOpen);
   };
@@ -121,18 +125,39 @@ export function MobileDeploymentSecretDialog({
               <Label htmlFor="mobile-deployment-secret-value">
                 {t('value')}
               </Label>
-              <Input
-                autoComplete="off"
-                disabled={pending}
-                id="mobile-deployment-secret-value"
-                onChange={(event) => {
-                  setError(null);
-                  setValue(event.target.value);
-                }}
-                placeholder={t('secretValuePlaceholder')}
-                type="password"
-                value={value}
-              />
+              <div className="relative">
+                <Input
+                  autoComplete="off"
+                  className="pr-10"
+                  disabled={pending}
+                  id="mobile-deployment-secret-value"
+                  onChange={(event) => {
+                    setError(null);
+                    setValue(event.target.value);
+                  }}
+                  placeholder={t('secretValuePlaceholder')}
+                  type={showValue ? 'text' : 'password'}
+                  value={value}
+                />
+                <Button
+                  aria-label={
+                    showValue ? t('hideSecretValue') : t('showSecretValue')
+                  }
+                  aria-pressed={showValue}
+                  className="absolute top-0 right-0 h-full px-3"
+                  disabled={pending}
+                  onClick={() => setShowValue((current) => !current)}
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                >
+                  {showValue ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
             </div>
             {error && (
               <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">

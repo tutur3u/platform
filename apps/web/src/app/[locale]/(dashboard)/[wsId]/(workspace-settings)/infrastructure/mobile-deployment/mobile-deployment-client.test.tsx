@@ -189,6 +189,26 @@ describe('MobileDeploymentClient', () => {
     );
   });
 
+  it('toggles the secret value visibility in the dialog', () => {
+    renderClient();
+
+    fireEvent.click(screen.getByRole('button', { name: 'addSecret' }));
+    const dialog = screen.getByRole('dialog');
+    const valueInput = within(dialog).getByLabelText('value');
+
+    expect(valueInput).toHaveAttribute('type', 'password');
+
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'showSecretValue' })
+    );
+    expect(valueInput).toHaveAttribute('type', 'text');
+
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'hideSecretValue' })
+    );
+    expect(valueInput).toHaveAttribute('type', 'password');
+  });
+
   it('edits and clears built-in secrets through row actions', async () => {
     renderClient();
 
