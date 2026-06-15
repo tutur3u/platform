@@ -196,9 +196,14 @@ function resolveRunTarget(
   target: InfrastructureStressTestTarget,
   requestedPath: string | undefined
 ) {
+  const baseUrl = new URL(target.baseUrl);
   const pathname = requestedPath?.trim() || target.defaultPath || '/';
-  const normalizedPath = pathname.startsWith('/') ? pathname : `/${pathname}`;
-  const url = new URL(normalizedPath, target.baseUrl);
+  const candidatePath = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  const url = new URL(candidatePath, baseUrl);
+  if (url.origin !== baseUrl.origin) {
+    throw new Error('Stress test target is not allowlisted.');
+  }
+  const normalizedPath = `${url.pathname}${url.search}${url.hash}`;
 
   return {
     ...target,
@@ -208,10 +213,15 @@ function resolveRunTarget(
 }
 
 export function getRunTargetUrl(target: InfrastructureStressTestTarget) {
-  return (
+  const baseUrl = new URL(target.baseUrl);
+  const resolvedUrl =
     (target as InfrastructureStressTestTarget & { resolvedUrl?: string })
-      .resolvedUrl ?? new URL(target.defaultPath, target.baseUrl).toString()
-  );
+      .resolvedUrl ?? new URL(target.defaultPath, baseUrl).toString();
+  const url = new URL(resolvedUrl, baseUrl);
+  if (url.origin !== baseUrl.origin) {
+    throw new Error('Stress test target is not allowlisted.');
+  }
+  return url.toString();
 }
 
 function getRunDir(runId: string, paths = getStressTestingPaths()) {

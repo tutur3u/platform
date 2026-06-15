@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import type { InfrastructureStressTestTarget } from '@tuturuuu/internal-api/infrastructure';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { createAdminClientMock, serverLoggerWarnMock } = vi.hoisted(() => ({
@@ -26,6 +27,7 @@ import {
   queueStressTestRunFile,
   readStressTestSnapshot,
 } from './stress-testing';
+import { getRunTargetUrl } from './stress-testing-runtime';
 
 describe('infrastructure stress testing helpers', () => {
   let tempDir: string;
@@ -137,5 +139,34 @@ describe('infrastructure stress testing helpers', () => {
         requestedByEmail: null,
       })
     ).toThrow('Stress test target is not allowlisted.');
+  });
+
+  it('rejects scheme-relative paths that would replace the allowlisted origin', () => {
+    expect(() =>
+      createQueuedStressTestRun({
+        payload: {
+          path: '//169.254.169.254/latest/meta-data/',
+          profileId: 'smoke',
+          targetId: 'staging',
+        },
+        requestedBy: 'user-1',
+        requestedByEmail: null,
+      })
+    ).toThrow('Stress test target is not allowlisted.');
+  });
+
+  it('rejects resolved target URLs outside the allowlisted origin', () => {
+    const unsafeTarget = {
+      baseUrl: 'https://staging.tuturuuu.localhost',
+      defaultPath: '/',
+      description: 'Staging',
+      id: 'staging',
+      label: 'Staging',
+      resolvedUrl: 'http://169.254.169.254/latest/meta-data/',
+    } as InfrastructureStressTestTarget & { resolvedUrl: string };
+
+    expect(() => getRunTargetUrl(unsafeTarget)).toThrow(
+      'Stress test target is not allowlisted.'
+    );
   });
 });
