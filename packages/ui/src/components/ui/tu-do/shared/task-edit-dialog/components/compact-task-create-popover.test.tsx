@@ -178,6 +178,63 @@ describe('CompactTaskCreatePopover', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('renders compact description preview without affecting panel layout', () => {
+    const onDescriptionPreviewClick = vi.fn();
+
+    render(
+      <Dialog open={true}>
+        <CompactTaskCreatePopover
+          title="Edit task"
+          titleInput={<input aria-label="Task title" defaultValue="Existing" />}
+          propertyControls={
+            <button type="button" aria-label="List: Inbox">
+              List
+            </button>
+          }
+          descriptionPreview="Confirm the plan and publish the final notes."
+          descriptionPreviewLabel="Open full task"
+          onDescriptionPreviewClick={onDescriptionPreviewClick}
+          onClose={vi.fn()}
+          onFullscreen={vi.fn()}
+        />
+      </Dialog>
+    );
+
+    const preview = screen.getByTestId('compact-task-description-preview');
+
+    expect(preview).toHaveTextContent(
+      'Confirm the plan and publish the final notes.'
+    );
+    expect(preview).toHaveAttribute('aria-label', 'Open full task');
+    expect(preview).toHaveClass('absolute', 'top-full');
+
+    fireEvent.click(preview);
+
+    expect(onDescriptionPreviewClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('omits compact description preview when the caller does not provide one', () => {
+    render(
+      <Dialog open={true}>
+        <CompactTaskCreatePopover
+          title="Create task"
+          titleInput={<input aria-label="Task title" defaultValue="New" />}
+          propertyControls={
+            <button type="button" aria-label="List: Inbox">
+              List
+            </button>
+          }
+          onClose={vi.fn()}
+          onFullscreen={vi.fn()}
+        />
+      </Dialog>
+    );
+
+    expect(
+      screen.queryByTestId('compact-task-description-preview')
+    ).not.toBeInTheDocument();
+  });
+
   it('renders compact edit actions when provided', () => {
     const onDelete = vi.fn();
     const onDone = vi.fn();

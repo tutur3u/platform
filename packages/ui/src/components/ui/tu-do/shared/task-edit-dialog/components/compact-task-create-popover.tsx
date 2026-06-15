@@ -25,6 +25,8 @@ interface CompactTaskDialogPanelProps {
   iconRingClass?: string;
   titleInput: ReactNode;
   showHeaderTitle?: boolean;
+  descriptionPreview?: string | null;
+  descriptionPreviewLabel?: string;
   taskStatus?: ReactNode;
   propertyControls: ReactNode;
   editActions?: ReactNode;
@@ -39,6 +41,7 @@ interface CompactTaskDialogPanelProps {
   onCreateMultipleChange?: (value: boolean) => void;
   onClose: () => void;
   onFullscreen: () => void;
+  onDescriptionPreviewClick?: () => void;
   onSave?: () => void;
 }
 
@@ -84,6 +87,8 @@ export function CompactTaskDialogPanel({
   iconRingClass = 'ring-dynamic-orange/20',
   titleInput,
   showHeaderTitle = true,
+  descriptionPreview,
+  descriptionPreviewLabel,
   taskStatus,
   propertyControls,
   editActions,
@@ -98,6 +103,7 @@ export function CompactTaskDialogPanel({
   onCreateMultipleChange,
   onClose,
   onFullscreen,
+  onDescriptionPreviewClick,
   onSave,
 }: CompactTaskDialogPanelProps) {
   const t = useTranslations();
@@ -114,127 +120,146 @@ export function CompactTaskDialogPanel({
   const hasHeaderTitle = showHeaderTitle;
 
   return (
-    <div
-      data-testid="compact-task-dialog-panel"
-      className="flex max-h-[calc(100vh-2rem)] min-h-0 flex-col overflow-hidden rounded-lg bg-background"
-    >
+    <div className="relative">
       <div
-        className={cn(
-          'flex items-start gap-3 border-b px-4 py-3',
-          hasHeaderTitle ? 'justify-between' : 'justify-end'
-        )}
+        data-testid="compact-task-dialog-panel"
+        className="flex max-h-[calc(100vh-2rem)] min-h-0 flex-col overflow-hidden rounded-lg bg-background"
       >
-        {hasHeaderTitle ? (
-          <div className="flex min-w-0 items-start gap-2.5">
-            <div
-              className={cn(
-                'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1',
-                iconBgClass,
-                iconRingClass
-              )}
-            >
-              {icon ?? <ListTodo className="h-4 w-4 text-dynamic-orange" />}
+        <div
+          className={cn(
+            'flex items-start gap-3 border-b px-4 py-3',
+            hasHeaderTitle ? 'justify-between' : 'justify-end'
+          )}
+        >
+          {hasHeaderTitle ? (
+            <div className="flex min-w-0 items-start gap-2.5">
+              <div
+                className={cn(
+                  'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1',
+                  iconBgClass,
+                  iconRingClass
+                )}
+              >
+                {icon ?? <ListTodo className="h-4 w-4 text-dynamic-orange" />}
+              </div>
+              <div className="min-w-0 space-y-0.5">
+                <DialogTitle className="truncate font-semibold text-base">
+                  {title}
+                </DialogTitle>
+                {description && (
+                  <DialogDescription className="truncate text-muted-foreground text-xs">
+                    {description}
+                  </DialogDescription>
+                )}
+              </div>
             </div>
-            <div className="min-w-0 space-y-0.5">
-              <DialogTitle className="truncate font-semibold text-base">
-                {title}
-              </DialogTitle>
-              {description && (
-                <DialogDescription className="truncate text-muted-foreground text-xs">
-                  {description}
-                </DialogDescription>
-              )}
-            </div>
+          ) : (
+            <DialogTitle className="sr-only">{title}</DialogTitle>
+          )}
+          <div className="flex shrink-0 items-center gap-1">
+            {smartAction}
+            {editActions}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t('ws-task-boards.dialog.open_fullscreen')}
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={onFullscreen}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {t('ws-task-boards.dialog.open_fullscreen')}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t('common.close')}
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={onClose}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{t('common.close')}</TooltipContent>
+            </Tooltip>
           </div>
-        ) : (
-          <DialogTitle className="sr-only">{title}</DialogTitle>
+        </div>
+
+        <div className="min-h-0 space-y-3 overflow-y-auto px-4 py-3">
+          {titleInput}
+          {taskStatus}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {propertyControls}
+          </div>
+          {smartPanel}
+        </div>
+
+        {hasCreateActions && (
+          <div className="flex items-center justify-between gap-2 border-t bg-muted/20 px-4 py-3">
+            <div className="flex items-center gap-1">
+              <CompactIconButton
+                active={!!saveAsDraft}
+                label={t('task-drafts.save_as_draft')}
+                onClick={() => onSaveAsDraftChange?.(!saveAsDraft)}
+              >
+                <FileEdit className="h-4 w-4" />
+              </CompactIconButton>
+              <CompactIconButton
+                active={!!createMultiple}
+                label={t('ws-task-boards.dialog.create_multiple')}
+                onClick={() => onCreateMultipleChange?.(!createMultiple)}
+              >
+                <Copy className="h-4 w-4" />
+              </CompactIconButton>
+              <QuickSettingsPopover isPersonalWorkspace={isPersonalWorkspace} />
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!canSave}
+              onClick={() => onSave?.()}
+              className="min-w-28"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('ws-task-boards.dialog.saving')}
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  {saveLabel}
+                </>
+              )}
+            </Button>
+          </div>
         )}
-        <div className="flex shrink-0 items-center gap-1">
-          {smartAction}
-          {editActions}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={t('ws-task-boards.dialog.open_fullscreen')}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                onClick={onFullscreen}
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {t('ws-task-boards.dialog.open_fullscreen')}
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={t('common.close')}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                onClick={onClose}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">{t('common.close')}</TooltipContent>
-          </Tooltip>
-        </div>
       </div>
 
-      <div className="min-h-0 space-y-3 overflow-y-auto px-4 py-3">
-        {titleInput}
-        {taskStatus}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {propertyControls}
-        </div>
-        {smartPanel}
-      </div>
-
-      {hasCreateActions && (
-        <div className="flex items-center justify-between gap-2 border-t bg-muted/20 px-4 py-3">
-          <div className="flex items-center gap-1">
-            <CompactIconButton
-              active={!!saveAsDraft}
-              label={t('task-drafts.save_as_draft')}
-              onClick={() => onSaveAsDraftChange?.(!saveAsDraft)}
-            >
-              <FileEdit className="h-4 w-4" />
-            </CompactIconButton>
-            <CompactIconButton
-              active={!!createMultiple}
-              label={t('ws-task-boards.dialog.create_multiple')}
-              onClick={() => onCreateMultipleChange?.(!createMultiple)}
-            >
-              <Copy className="h-4 w-4" />
-            </CompactIconButton>
-            <QuickSettingsPopover isPersonalWorkspace={isPersonalWorkspace} />
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            disabled={!canSave}
-            onClick={() => onSave?.()}
-            className="min-w-28"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {t('ws-task-boards.dialog.saving')}
-              </>
-            ) : (
-              <>
-                <Check className="h-4 w-4" />
-                {saveLabel}
-              </>
-            )}
-          </Button>
-        </div>
+      {descriptionPreview && onDescriptionPreviewClick && (
+        <button
+          type="button"
+          data-testid="compact-task-description-preview"
+          aria-label={
+            descriptionPreviewLabel ??
+            t('ws-task-boards.dialog.open_fullscreen')
+          }
+          className="absolute top-full left-1/2 mt-2 w-full max-w-[30rem] -translate-x-1/2 rounded-lg border bg-background/95 px-4 py-3 text-left shadow-xl ring-1 ring-border/60 backdrop-blur transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={onDescriptionPreviewClick}
+        >
+          <span className="line-clamp-3 text-muted-foreground text-sm leading-relaxed">
+            {descriptionPreview}
+          </span>
+        </button>
       )}
     </div>
   );
