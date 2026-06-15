@@ -262,9 +262,24 @@ const TASK_BOARD_READ_RATE_LIMITS: RateLimitProfile = {
 const USERS_DATABASE_READ_OVER_POST_RATE_LIMITS: RateLimitProfile = {
   get: NO_READ_RATE_LIMITS,
   mutate: [
-    { window: 'minute', limit: 300, duration: '1 m' },
-    { window: 'hour', limit: 3000, duration: '1 h' },
-    { window: 'day', limit: 20_000, duration: '1 d' },
+    createConfig(
+      'minute',
+      '1 m',
+      30,
+      'API_PROXY_USERS_DATABASE_READ_POST_LIMIT_MINUTE'
+    ),
+    createConfig(
+      'hour',
+      '1 h',
+      120,
+      'API_PROXY_USERS_DATABASE_READ_POST_LIMIT_HOUR'
+    ),
+    createConfig(
+      'day',
+      '1 d',
+      600,
+      'API_PROXY_USERS_DATABASE_READ_POST_LIMIT_DAY'
+    ),
   ],
 };
 
