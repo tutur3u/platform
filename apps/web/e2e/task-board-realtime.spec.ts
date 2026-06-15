@@ -124,15 +124,30 @@ async function waitForTaskDescriptionEditor(
     .catch(() => false);
 
   if (!editorAlreadyVisible) {
-    const fullscreenButton = targetPage.getByRole('button', {
-      name: 'Open fullscreen',
-    });
-    const canOpenFullscreen = await fullscreenButton
-      .isVisible({ timeout: 5_000 })
+    const compactPanel = targetPage.getByTestId('compact-task-dialog-panel');
+    const compactPanelVisible = await compactPanel
+      .isVisible({ timeout: 1_000 })
       .catch(() => false);
 
-    if (canOpenFullscreen) {
-      await fullscreenButton.click();
+    if (compactPanelVisible) {
+      const descriptionPreview = targetPage.getByTestId(
+        'compact-task-description-preview'
+      );
+      const canOpenFromPreview = await descriptionPreview
+        .isVisible({ timeout: 1_000 })
+        .catch(() => false);
+
+      if (canOpenFromPreview) {
+        await descriptionPreview.click();
+      } else {
+        await compactPanel
+          .getByRole('button', {
+            name: 'Open fullscreen',
+          })
+          .click();
+      }
+
+      await expect(compactPanel).toBeHidden({ timeout: 10_000 });
     }
   }
 
