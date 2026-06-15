@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import {
+  isInventoryMediaPath,
+  validateFinalizedInventoryMediaUpload,
+} from '@/lib/inventory/media-storage-policy';
 import { canManageInventoryCatalog } from '@/lib/inventory/permissions';
 import { WORKSPACE_STORAGE_PROVIDER_OPTIONS } from '@/lib/workspace-storage-config';
 import {
@@ -15,7 +19,7 @@ const inventoryMediaReadUrlSchema = z.object({
     .trim()
     .min(1)
     .refine(
-      (path) => path.startsWith('inventory/media/'),
+      (path) => isInventoryMediaPath(path),
       'path must point to inventory media'
     ),
   provider: z.enum(WORKSPACE_STORAGE_PROVIDER_OPTIONS).optional(),
@@ -53,6 +57,19 @@ export async function POST(request: Request, { params }: Params) {
           errors: parsed.error.issues,
         },
         { status: 400 }
+      );
+    }
+
+    const validation = await validateFinalizedInventoryMediaUpload({
+      path: parsed.data.path,
+      provider: parsed.data.provider,
+      wsId: authorization.value.wsId,
+    });
+
+    if (!validation.ok) {
+      return NextResponse.json(
+        { message: validation.message },
+        { status: validation.status }
       );
     }
 

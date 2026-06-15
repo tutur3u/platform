@@ -3,27 +3,16 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import {
+  INVENTORY_IMAGE_CONTENT_TYPES,
+  INVENTORY_MEDIA_TARGETS,
+  MAX_INVENTORY_IMAGE_BYTES,
+} from '@/lib/inventory/media-storage-policy';
 import { canManageInventoryCatalog } from '@/lib/inventory/permissions';
 import {
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
-
-const MAX_INVENTORY_IMAGE_BYTES = 8 * 1024 * 1024;
-const INVENTORY_IMAGE_CONTENT_TYPES = [
-  'image/gif',
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-] as const;
-const INVENTORY_MEDIA_TARGETS = [
-  'bundle-image',
-  'listing-image',
-  'product-featured-image',
-  'storefront-banner',
-  'storefront-cover',
-  'storefront-hero',
-] as const;
 
 const uploadUrlSchema = z.object({
   contentType: z.enum(INVENTORY_IMAGE_CONTENT_TYPES),

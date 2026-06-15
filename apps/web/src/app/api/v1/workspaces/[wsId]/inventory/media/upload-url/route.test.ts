@@ -4,7 +4,11 @@ const mocks = vi.hoisted(() => ({
   authorizeInventoryWorkspace: vi.fn(),
   createWorkspaceStorageSignedReadUrl: vi.fn(),
   createWorkspaceStorageUploadPayload: vi.fn(),
+  deleteWorkspaceStorageObjectByPath: vi.fn(),
+  downloadWorkspaceStorageObjectForProvider: vi.fn(),
   generateRandomUUID: vi.fn(() => 'upload-id'),
+  getWorkspaceStorageObjectMetadataForProvider: vi.fn(),
+  resolveWorkspaceStorageProvider: vi.fn(),
   serverLogger: {
     error: vi.fn(),
   },
@@ -37,6 +41,20 @@ vi.mock('@/lib/workspace-storage-provider', () => ({
   createWorkspaceStorageUploadPayload: (
     ...args: Parameters<typeof mocks.createWorkspaceStorageUploadPayload>
   ) => mocks.createWorkspaceStorageUploadPayload(...args),
+  deleteWorkspaceStorageObjectByPath: (
+    ...args: Parameters<typeof mocks.deleteWorkspaceStorageObjectByPath>
+  ) => mocks.deleteWorkspaceStorageObjectByPath(...args),
+  downloadWorkspaceStorageObjectForProvider: (
+    ...args: Parameters<typeof mocks.downloadWorkspaceStorageObjectForProvider>
+  ) => mocks.downloadWorkspaceStorageObjectForProvider(...args),
+  getWorkspaceStorageObjectMetadataForProvider: (
+    ...args: Parameters<
+      typeof mocks.getWorkspaceStorageObjectMetadataForProvider
+    >
+  ) => mocks.getWorkspaceStorageObjectMetadataForProvider(...args),
+  resolveWorkspaceStorageProvider: (
+    ...args: Parameters<typeof mocks.resolveWorkspaceStorageProvider>
+  ) => mocks.resolveWorkspaceStorageProvider(...args),
   WorkspaceStorageError: class WorkspaceStorageError extends Error {
     constructor(
       message: string,
