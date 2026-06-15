@@ -381,7 +381,7 @@ export type CreateWorkspaceTaskBoardPayload = Pick<
 
 export type UpdateWorkspaceTaskBoardPayload = Pick<
   Database['public']['Tables']['workspace_boards']['Update'],
-  'name' | 'icon' | 'ticket_prefix'
+  'name' | 'icon' | 'ticket_prefix' | 'default_list_id'
 > & {
   archived?: boolean;
   group_ids?: string[];

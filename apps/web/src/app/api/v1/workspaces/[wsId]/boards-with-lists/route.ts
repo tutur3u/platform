@@ -70,6 +70,7 @@ export const GET = withSessionAuth<WorkspaceParams>(
         id,
         name,
         created_at,
+        default_list_id,
         task_lists (
           id,
           name,

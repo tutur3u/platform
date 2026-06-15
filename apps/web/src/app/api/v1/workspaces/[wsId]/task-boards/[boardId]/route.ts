@@ -41,7 +41,7 @@ export const GET = withSessionAuth<Params>(
       const { data: board, error } = await sbAdmin
         .from('workspace_boards')
         .select(
-          'id, ws_id, name, icon, ticket_prefix, created_at, archived_at, deleted_at, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, task_lists(id, board_id, name, status, color, position, archived, deleted, created_at, creator_id)'
+          'id, ws_id, name, icon, ticket_prefix, default_list_id, created_at, archived_at, deleted_at, estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, task_lists(id, board_id, name, status, color, position, archived, deleted, created_at, creator_id)'
         )
         .eq('id', boardId)
         .maybeSingle();

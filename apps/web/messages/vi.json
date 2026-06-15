@@ -11476,6 +11476,14 @@
       "always_enabled_personal": "Tính năng này luôn được bật cho không gian làm việc cá nhân",
       "auto_assign_to_self": "Tự động gán cho bản thân",
       "auto_assign_to_self_description": "Tự động gán bạn vào các nhiệm vụ bạn tạo khi không có người được gán nào khác được chọn",
+      "board_default_list": "Danh sách mặc định cho nhiệm vụ mới",
+      "board_default_list_description": "Chọn danh sách mà nhiệm vụ mới sẽ vào cho từng bảng. Áp dụng cho phím tắt tạo nhiệm vụ và nút thêm nhanh ở cấp bảng; các nút theo cột vẫn dùng danh sách của riêng chúng.",
+      "board_default_list_empty": "Chưa có bảng nào trong không gian làm việc này.",
+      "board_default_list_none": "Danh sách đầu tiên (mặc định)",
+      "board_default_list_untitled_board": "Bảng chưa đặt tên",
+      "board_default_list_untitled_list": "Danh sách chưa đặt tên",
+      "board_default_list_update_error": "Không thể cập nhật danh sách mặc định của bảng",
+      "board_default_list_update_success": "Đã cập nhật danh sách mặc định",
       "dialog_presentation": "Mở công việc bằng",
       "dialog_presentation_compact": "Gọn",
       "dialog_presentation_description": "Chọn bố cục hộp thoại mặc định cho thẻ công việc, liên kết và thao tác tạo công việc",
@@ -19681,9 +19689,13 @@
     "select_or_create_list": "Chọn hoặc tạo danh sách",
     "settings": {
       "configure_description": "Cấu hình các cài đặt riêng của bảng.",
+      "default_list": "Danh sách mặc định cho nhiệm vụ mới",
+      "default_list_description": "Nhiệm vụ mới tạo bằng phím tắt tạo nhiệm vụ hoặc nút thêm nhanh ở cấp bảng sẽ vào danh sách này. Các nút theo cột vẫn dùng danh sách của riêng chúng.",
+      "default_list_none": "Danh sách đầu tiên (mặc định)",
       "ticket_prefix": "Tiền tố Phiếu",
       "ticket_prefix_description": "Tiền tố ngắn cho ID công việc (VD: PROJ-123). Để trống nếu không cần tiền tố.",
-      "ticket_prefix_placeholder": "VD: PROJ"
+      "ticket_prefix_placeholder": "VD: PROJ",
+      "untitled_list": "Danh sách chưa đặt tên"
     },
     "share": {
       "action": "Chia sẻ bảng",

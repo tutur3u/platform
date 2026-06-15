@@ -83,6 +83,7 @@ import EmailInput from './settings-email-input';
 import FullNameInput from './settings-full-name-input';
 import UserIdInput from './settings-user-id-input';
 import NavigationSidebarSettings from './sidebar-settings';
+import { BoardDefaultListSettings } from './tasks/board-default-list-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
 import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
@@ -750,8 +751,9 @@ export function SettingsDialog({
         )}
 
         {activeTab === 'tasks_general' && (
-          <div className="h-full">
+          <div className="h-full space-y-8">
             <TaskSettings workspace={workspace} />
+            {wsId && <BoardDefaultListSettings wsId={wsId} />}
           </div>
         )}
 

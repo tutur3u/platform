@@ -167,6 +167,7 @@ const mockTasks: Task[] = [
 const mockWorkspaceLabels: WorkspaceLabel[] = [];
 
 function renderBoardViews(overrides?: {
+  board?: Record<string, unknown>;
   idleBottomIsland?: React.ReactNode;
   lists?: TaskList[];
   tasks?: Task[];
@@ -184,7 +185,7 @@ function renderBoardViews(overrides?: {
     <QueryClientProvider client={queryClient}>
       <HotkeysProvider>
         <BoardViews
-          board={mockBoard as any}
+          board={(overrides?.board ?? mockBoard) as any}
           currentUserId="user-1"
           lists={overrides?.lists ?? mockLists}
           tasks={overrides?.tasks ?? mockTasks}
@@ -320,6 +321,38 @@ describe('BoardViews', () => {
         sourceScope: 'all_visible',
         sourceWorkspaceIds: [],
       }
+    );
+  });
+
+  it('creates a task in the board default list when configured', () => {
+    renderBoardViews({
+      board: { ...mockBoard, default_list_id: 'list-2' },
+    });
+
+    fireEvent.keyDown(document, { key: 'c' });
+
+    expect(createTaskMock).toHaveBeenCalledTimes(1);
+    expect(createTaskMock).toHaveBeenCalledWith(
+      'board-1',
+      'list-2',
+      mockLists,
+      expect.objectContaining({ labels: [] })
+    );
+  });
+
+  it('falls back to the first list when the default list is unavailable', () => {
+    renderBoardViews({
+      board: { ...mockBoard, default_list_id: 'list-does-not-exist' },
+    });
+
+    fireEvent.keyDown(document, { key: 'c' });
+
+    expect(createTaskMock).toHaveBeenCalledTimes(1);
+    expect(createTaskMock).toHaveBeenCalledWith(
+      'board-1',
+      'list-1',
+      mockLists,
+      expect.objectContaining({ labels: [] })
     );
   });
 

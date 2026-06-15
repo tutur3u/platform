@@ -519,14 +519,16 @@ export function BoardViews({
   useHotkey(
     HOTKEY_CREATE_TASK,
     () => {
-      const firstList = filteredLists.find((list) => !list.is_external_staging);
-      if (!firstList) return;
-      createTask(
-        board.id,
-        firstList.id,
-        filteredLists.filter((list) => !list.is_external_staging),
-        filters
+      const selectableLists = filteredLists.filter(
+        (list) => !list.is_external_staging
       );
+      // Prefer the board's configured default list for new tasks, falling back
+      // to the first selectable list when unset or the list is unavailable.
+      const targetList =
+        selectableLists.find((list) => list.id === board.default_list_id) ??
+        selectableLists[0];
+      if (!targetList) return;
+      createTask(board.id, targetList.id, selectableLists, filters);
     },
     {
       enabled: filteredLists.some((list) => !list.is_external_staging),
