@@ -34,6 +34,7 @@ import {
 import { AnnouncementRecipientsPicker } from './announcement-recipients-picker';
 import { AnnouncementSaveTemplateDialog } from './announcement-save-template-dialog';
 import type { TemplateFormValues } from './template-form-dialog';
+import { TopicAnnouncementsHelpTip } from './topic-announcements-help-tip';
 
 interface Props {
   canSend: boolean;
@@ -193,7 +194,12 @@ export function AnnouncementForm({
         {step === 'recipients' ? (
           <div className="space-y-3 rounded-md border bg-background p-4">
             <div>
-              <h3 className="font-medium text-base">{t('recipients')}</h3>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-medium text-base">{t('recipients')}</h3>
+                <TopicAnnouncementsHelpTip
+                  label={t('announcement_step_recipients_help')}
+                />
+              </div>
               <p className="text-muted-foreground text-sm">
                 {t('recipients_section_helper')}
               </p>
@@ -228,6 +234,7 @@ export function AnnouncementForm({
         <AnnouncementWizardFooter
           canContinue={validSteps[step]}
           canSubmit={canSubmit}
+          currentStepNumber={currentStepIndex + 1}
           isFirstStep={step === 'details'}
           isLastStep={isLastStep}
           isSubmitting={isSubmitting}
@@ -245,6 +252,7 @@ export function AnnouncementForm({
           }
           onSubmit={submit}
           submitLabel={submitLabel}
+          totalSteps={ANNOUNCEMENT_STEPS.length}
         />
       </CardContent>
 

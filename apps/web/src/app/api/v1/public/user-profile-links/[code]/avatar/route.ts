@@ -20,13 +20,6 @@ const bodySchema = z.object({
 export async function POST(req: Request, { params }: Params) {
   const { code } = await params;
 
-  // Require login — the external user must be authenticated.
-  const supabase = await createClient(req);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user?.id) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
@@ -38,13 +31,26 @@ export async function POST(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const { data: link } = await sbAdmin
     .from('workspace_user_profile_links_with_stats')
-    .select('ws_id, allowed_fields, is_expired, is_full, is_revoked')
+    .select(
+      'ws_id, allowed_fields, requires_auth, is_expired, is_full, is_revoked'
+    )
     .eq('code', code)
     .maybeSingle();
 
   if (!link) {
     return NextResponse.json({ message: 'Link not found' }, { status: 404 });
   }
+
+  // Require login only when the link requires it (no-auth links allow anonymous
+  // uploads; the signed path is link-code-scoped, not user-scoped).
+  if (link.requires_auth ?? true) {
+    const supabase = await createClient(req);
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    if (!user?.id) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
   if (getLinkUnavailableReason(link)) {
     return NextResponse.json(
       { message: 'Link is no longer available' },

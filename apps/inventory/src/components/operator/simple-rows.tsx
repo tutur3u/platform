@@ -1,12 +1,27 @@
 'use client';
 
-import { ExternalLink, Eye, Pencil } from '@tuturuuu/icons';
+import {
+  Ban,
+  Clock,
+  ExternalLink,
+  Eye,
+  Pencil,
+  RefreshCw,
+  TriangleAlert,
+} from '@tuturuuu/icons';
 import type {
   InventoryBundle,
   InventoryProductSummary,
   InventoryStorefront,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { STOREFRONT_APP_URL } from '@/constants/common';
@@ -29,6 +44,43 @@ function StatusBadge({ value }: { value: string }) {
     <span className="inline-flex h-6 items-center rounded-md border border-border bg-primary/10 px-2 font-medium text-primary text-xs">
       {value}
     </span>
+  );
+}
+
+const SYNC_BADGE_META: Record<string, { Icon: typeof Clock; tone: string }> = {
+  disabled: { Icon: Ban, tone: 'text-muted-foreground' },
+  error: { Icon: TriangleAlert, tone: 'text-destructive' },
+  pending: { Icon: Clock, tone: 'text-dynamic-orange' },
+  synced: { Icon: RefreshCw, tone: 'text-dynamic-green' },
+};
+
+function PolarSyncBadge({
+  error,
+  status,
+}: {
+  error?: string | null;
+  status?: string | null;
+}) {
+  const t = useTranslations('inventory.operator.polar.sync');
+  const meta = status ? SYNC_BADGE_META[status] : undefined;
+  if (!status || !meta) {
+    return <span className="text-muted-foreground text-xs">—</span>;
+  }
+  const Icon = meta.Icon;
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex h-6 w-fit items-center gap-1 rounded-md border border-border px-2 text-xs">
+            <Icon className={cn('h-3 w-3', meta.tone)} />
+            {t(`status.${status}`)}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          {status === 'error' && error ? error : t(`status.${status}`)}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
@@ -267,6 +319,17 @@ function getBundleColumns({
       key: 'price',
       render: (row) => (
         <span className="font-medium">{formatNumber(row.price)}</span>
+      ),
+    },
+    {
+      className: 'w-[9rem]',
+      header: t('columns.sync'),
+      key: 'sync',
+      render: (row) => (
+        <PolarSyncBadge
+          error={row.polarLastError}
+          status={row.polarSyncStatus}
+        />
       ),
     },
     {

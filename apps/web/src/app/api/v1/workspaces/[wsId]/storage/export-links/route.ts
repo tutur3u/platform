@@ -21,6 +21,35 @@ const exportLinksSchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
 });
 
+const EXPORT_LINKS_MAX_FILES = 500;
+const EXPORT_LINKS_RAW_OBJECT_SCAN_LIMIT = EXPORT_LINKS_MAX_FILES * 4;
+const EXPORT_LINKS_RAW_OBJECT_QUERY_LIMIT =
+  EXPORT_LINKS_RAW_OBJECT_SCAN_LIMIT + 1;
+
+function toExportableFiles(
+  objects: Awaited<
+    ReturnType<typeof listWorkspaceStorageRawObjectsForProvider>
+  >,
+  prefix: string
+) {
+  return objects
+    .filter(
+      (object) => !object.isFolderPlaceholder && object.path.startsWith(prefix)
+    )
+    .map((object) => ({
+      path: object.path,
+      relativePath: object.path.slice(prefix.length),
+      size: object.size,
+      contentType: object.contentType ?? null,
+    }))
+    .filter((object) => object.relativePath.length > 0)
+    .sort((left, right) => {
+      if (left.relativePath === 'index.html') return -1;
+      if (right.relativePath === 'index.html') return 1;
+      return left.relativePath.localeCompare(right.relativePath);
+    });
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
@@ -75,55 +104,23 @@ export async function POST(
       resolvedProvider.provider,
       {
         pathPrefix: sanitizedPath,
-        limit: 501,
+        limit: EXPORT_LINKS_RAW_OBJECT_QUERY_LIMIT,
       }
     );
     const prefix = `${sanitizedPath}/`;
-    let files = objects
-      .filter(
-        (object) =>
-          !object.isFolderPlaceholder && object.path.startsWith(prefix)
-      )
-      .map((object) => ({
-        path: object.path,
-        relativePath: object.path.slice(prefix.length),
-        size: object.size,
-        contentType: object.contentType ?? null,
-      }))
-      .filter((object) => object.relativePath.length > 0)
-      .sort((left, right) => {
-        if (left.relativePath === 'index.html') return -1;
-        if (right.relativePath === 'index.html') return 1;
-        return left.relativePath.localeCompare(right.relativePath);
-      });
 
-    if (objects.length === 501 && files.length <= 500) {
-      objects = await listWorkspaceStorageRawObjectsForProvider(
-        normalizedWsId,
-        resolvedProvider.provider,
+    if (objects.length > EXPORT_LINKS_RAW_OBJECT_SCAN_LIMIT) {
+      return NextResponse.json(
         {
-          pathPrefix: sanitizedPath,
-        }
+          message:
+            'This folder contains too many storage entries to export at once.',
+        },
+        { status: 400 }
       );
-
-      files = objects
-        .filter(
-          (object) =>
-            !object.isFolderPlaceholder && object.path.startsWith(prefix)
-        )
-        .map((object) => ({
-          path: object.path,
-          relativePath: object.path.slice(prefix.length),
-          size: object.size,
-          contentType: object.contentType ?? null,
-        }))
-        .filter((object) => object.relativePath.length > 0)
-        .sort((left, right) => {
-          if (left.relativePath === 'index.html') return -1;
-          if (right.relativePath === 'index.html') return 1;
-          return left.relativePath.localeCompare(right.relativePath);
-        });
     }
+
+    objects = objects.slice(0, EXPORT_LINKS_RAW_OBJECT_SCAN_LIMIT);
+    const files = toExportableFiles(objects, prefix);
 
     if (files.length === 0) {
       return NextResponse.json(
@@ -132,7 +129,7 @@ export async function POST(
       );
     }
 
-    if (files.length > 500) {
+    if (files.length > EXPORT_LINKS_MAX_FILES) {
       return NextResponse.json(
         { message: 'This folder is too large to export at once.' },
         { status: 400 }

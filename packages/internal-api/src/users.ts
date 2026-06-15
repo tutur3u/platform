@@ -705,6 +705,8 @@ export interface WorkspaceUserProfileLinkSummary {
   target_user: WorkspaceUserProfileLinkTargetUser | null;
   allowed_fields: WorkspaceUserProfileLinkField[];
   prefill_existing_values: boolean;
+  /** When false, the link can be completed without an account. */
+  requires_auth: boolean;
   max_uses: number | null;
   expires_at: string | null;
   current_uses: number;
@@ -736,6 +738,7 @@ export interface CreateWorkspaceUserProfileLinkPayload {
   target_user_id?: string | null;
   allowed_fields: WorkspaceUserProfileLinkField[];
   prefill_existing_values?: boolean;
+  requires_auth?: boolean;
   expires_at?: string | null;
   max_uses?: number | null;
 }
@@ -746,6 +749,7 @@ export interface UpdateWorkspaceUserProfileLinkPayload {
   max_uses?: number | null;
   allowed_fields?: WorkspaceUserProfileLinkField[];
   prefill_existing_values?: boolean;
+  requires_auth?: boolean;
 }
 
 export interface SubmitUserProfileLinkPayload {

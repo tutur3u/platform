@@ -47,6 +47,7 @@ import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import {
   normalizeTaskDialogPresentation,
+  resolveTaskDialogOpeningPresentation,
   type TaskDialogPresentation,
 } from './task-dialog-presentation';
 import { CompactTaskDialogPanel } from './task-edit-dialog/components/compact-task-create-popover';
@@ -107,6 +108,7 @@ import {
   getDescriptionContent,
   getDraftStorageKey,
   getTaskDescriptionPercentLeft,
+  getTaskDescriptionPreviewText,
   getTaskDescriptionStorageLength,
   saveAndVerifyYjsDescriptionToDatabase,
   saveYjsDescriptionToDatabase,
@@ -494,6 +496,23 @@ export function TaskEditDialog({
     taskSearchQuery,
     sharedContext,
   });
+  const currentList = availableLists?.find(
+    (list) => list.id === formState.selectedListId
+  );
+  const normalizedDefaultPresentation = useMemo(
+    () => normalizeTaskDialogPresentation(defaultPresentation),
+    [defaultPresentation]
+  );
+  const openingPresentation = useMemo(
+    () =>
+      resolveTaskDialogOpeningPresentation({
+        defaultPresentation: normalizedDefaultPresentation,
+        draftId,
+        mode,
+        selectedListStatus: currentList?.status,
+      }),
+    [currentList?.status, draftId, mode, normalizedDefaultPresentation]
+  );
 
   // Update browser tab title
   useEffect(() => {
@@ -552,13 +571,8 @@ export function TaskEditDialog({
     useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [saveAsDraft, setSaveAsDraft] = useState(draftModeEnabled);
-  const normalizedDefaultPresentation = useMemo(
-    () => normalizeTaskDialogPresentation(defaultPresentation),
-    [defaultPresentation]
-  );
-  const [presentation, setPresentation] = useState<TaskDialogPresentation>(
-    normalizedDefaultPresentation
-  );
+  const [presentation, setPresentation] =
+    useState<TaskDialogPresentation>(openingPresentation);
   const [smartSuggestions, setSmartSuggestions] = useState<
     WorkspaceTaskSuggestionTask[]
   >([]);
@@ -849,9 +863,6 @@ export function TaskEditDialog({
     onUpdate,
   });
 
-  const currentList = availableLists?.find(
-    (list) => list.id === formState.selectedListId
-  );
   const doneList = availableLists?.find(
     (list) => list.status === 'done' && !list.deleted
   );
@@ -1946,7 +1957,7 @@ export function TaskEditDialog({
     previousOpenRef.current = isOpen;
 
     if (!isOpen) {
-      setPresentation(normalizedDefaultPresentation);
+      setPresentation(openingPresentation);
       setSmartSuggestions([]);
       setSelectedSmartSuggestionIds([]);
       setSmartSuggestionError(null);
@@ -1957,9 +1968,14 @@ export function TaskEditDialog({
     }
 
     if (justOpened) {
-      setPresentation(draftId ? 'fullscreen' : normalizedDefaultPresentation);
+      setPresentation(openingPresentation);
+      return;
     }
-  }, [isOpen, draftId, normalizedDefaultPresentation]);
+
+    if (!isCreateMode && currentList?.status === 'documents') {
+      setPresentation('fullscreen');
+    }
+  }, [currentList?.status, isCreateMode, isOpen, openingPresentation]);
 
   // Track whether the title input is scrolled out of view
   useEffect(() => {
@@ -2023,6 +2039,15 @@ export function TaskEditDialog({
   ]);
 
   const showCompactDialog = presentation === 'compact' && !draftId;
+  const compactDescriptionPreview = useMemo(() => {
+    if (isCreateMode) return null;
+
+    const previewText = getTaskDescriptionPreviewText(
+      formState.description
+    ).trim();
+
+    return previewText || null;
+  }, [formState.description, isCreateMode]);
   const taskHydrationNotice = taskLoadError ? (
     <div
       className="mx-4 mb-2 flex items-center justify-between gap-3 rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-sm md:mx-8"
@@ -2235,7 +2260,7 @@ export function TaskEditDialog({
           showCloseButton={false}
           className={
             showCompactDialog
-              ? 'w-[min(calc(100vw-2rem),30rem)] max-w-[30rem] gap-0 overflow-hidden rounded-lg border p-0 shadow-xl'
+              ? 'relative w-[min(calc(100vw-2rem),30rem)] max-w-[30rem] gap-0 overflow-visible rounded-lg border p-0 shadow-xl'
               : 'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 inset-0! top-0! left-0! flex h-screen max-h-screen w-screen max-w-none! translate-x-0! translate-y-0! gap-0 rounded-none! border-0 p-0'
           }
           onContextMenu={(e) => {
@@ -2271,6 +2296,8 @@ export function TaskEditDialog({
               iconBgClass={compactHeaderInfo.iconBgClass}
               iconRingClass={compactHeaderInfo.iconRingClass}
               showHeaderTitle={isCreateMode}
+              descriptionPreview={compactDescriptionPreview}
+              descriptionPreviewLabel={dialogT('open_fullscreen')}
               titleInput={
                 <TaskNameInput
                   name={formState.name}
@@ -2311,6 +2338,7 @@ export function TaskEditDialog({
               }
               onClose={handleAttemptClose}
               onFullscreen={() => setPresentation('fullscreen')}
+              onDescriptionPreviewClick={() => setPresentation('fullscreen')}
               onSave={
                 isCreateMode && !taskControlsDisabled ? handleSave : undefined
               }

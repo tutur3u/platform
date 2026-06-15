@@ -9,3 +9,7 @@ export * from '@polar-sh/sdk/models/components/order';
 export * from '@polar-sh/sdk/models/components/paymentmethodcard';
 export * from '@polar-sh/sdk/models/components/product';
 export * from '@polar-sh/sdk/models/components/subscription';
+export {
+  validateEvent,
+  WebhookVerificationError,
+} from '@polar-sh/sdk/webhooks';

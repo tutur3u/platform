@@ -1,6 +1,6 @@
 'use client';
 
-import { MailCheck, ShieldCheck, Trash2 } from '@tuturuuu/icons';
+import { MailCheck, Plus, ShieldCheck, Trash2 } from '@tuturuuu/icons';
 import type {
   TopicAnnouncementContact,
   WorkspaceBasicUserRecord,
@@ -28,6 +28,8 @@ import {
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { LinkedWorkspaceUserChip } from './linked-workspace-user-chip';
+import { TopicAnnouncementsEmptyState } from './topic-announcements-empty-state';
+import { TopicAnnouncementsHelpTip } from './topic-announcements-help-tip';
 
 function verificationVariant(
   status: TopicAnnouncementContact['verificationStatus']
@@ -64,6 +66,7 @@ interface Props {
   isDeleting: boolean;
   isLoading: boolean;
   isVerifying: boolean;
+  onAddContact: () => void;
   onDelete: (contactId: string) => void;
   onVerify: (contactId: string) => void;
   workspaceUsersById: Map<string, WorkspaceBasicUserRecord>;
@@ -74,6 +77,7 @@ export function ContactTable({
   isDeleting,
   isLoading,
   isVerifying,
+  onAddContact,
   onDelete,
   onVerify,
   workspaceUsersById,
@@ -159,18 +163,33 @@ export function ContactTable({
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      <Badge
-                        variant={verificationVariant(
-                          contact.verificationStatus
+                      <div className="flex items-center gap-1.5">
+                        <Badge
+                          variant={verificationVariant(
+                            contact.verificationStatus
+                          )}
+                        >
+                          {t(
+                            VERIFICATION_LABEL_KEYS[contact.verificationStatus]
+                          )}
+                        </Badge>
+                        {canVerify ? null : (
+                          <TopicAnnouncementsHelpTip
+                            label={t(
+                              VERIFICATION_HELPER_KEYS[
+                                contact.verificationStatus
+                              ]
+                            )}
+                          />
                         )}
-                      >
-                        {t(VERIFICATION_LABEL_KEYS[contact.verificationStatus])}
-                      </Badge>
-                      <p className="max-w-72 text-muted-foreground text-xs">
-                        {t(
-                          VERIFICATION_HELPER_KEYS[contact.verificationStatus]
-                        )}
-                      </p>
+                      </div>
+                      {canVerify ? (
+                        <p className="max-w-72 text-muted-foreground text-xs">
+                          {t(
+                            VERIFICATION_HELPER_KEYS[contact.verificationStatus]
+                          )}
+                        </p>
+                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -203,12 +222,25 @@ export function ContactTable({
               );
             })}
             {!isLoading && contacts.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  className="text-center text-muted-foreground"
-                  colSpan={4}
-                >
-                  {t('no_contacts')}
+              <TableRow className="hover:bg-transparent">
+                <TableCell className="p-0" colSpan={4}>
+                  <TopicAnnouncementsEmptyState
+                    action={
+                      <Button
+                        className="gap-2"
+                        onClick={onAddContact}
+                        size="sm"
+                        type="button"
+                      >
+                        <Plus className="h-4 w-4" />
+                        {t('add_contact')}
+                      </Button>
+                    }
+                    className="border-0"
+                    description={t('contacts_empty_desc')}
+                    icon={<MailCheck />}
+                    title={t('contacts_empty_title')}
+                  />
                 </TableCell>
               </TableRow>
             ) : null}

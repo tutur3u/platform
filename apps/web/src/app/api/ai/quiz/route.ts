@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { google } from '@ai-sdk/google';
+import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
+import {
+  checkAiCredits,
+  deductAiCredits,
+} from '@tuturuuu/ai/credits/check-credits';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json } from '@tuturuuu/types';
@@ -17,6 +22,10 @@ import {
 } from './schema';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const QUIZ_GENERATION_MODEL_ID = 'google/gemini-2.5-flash';
+const QUIZ_GENERATION_MODEL_NAME = 'gemini-2.5-flash';
+const QUIZ_GENERATION_CREDIT_FEATURE = 'generate';
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -137,11 +146,42 @@ ${teacherContext?.trim() ? `Additional context/instructions: ${teacherContext.tr
 Lesson Information:
 ${lessonInfo}`;
 
+      const creditCheck = await checkAiCredits(
+        normalizedWsId,
+        QUIZ_GENERATION_MODEL_ID,
+        QUIZ_GENERATION_CREDIT_FEATURE,
+        { userId: context.user.id }
+      );
+
+      if (!creditCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: creditCheck.errorMessage || 'AI credits insufficient',
+            code: creditCheck.errorCode,
+          },
+          { status: 403 }
+        );
+      }
+
+      const cappedMaxOutput = await capMaxOutputTokensByCredits(
+        sbAdmin,
+        QUIZ_GENERATION_MODEL_ID,
+        creditCheck.maxOutputTokens ?? null,
+        creditCheck.remainingCredits
+      );
+
+      if (cappedMaxOutput === null && creditCheck.remainingCredits <= 0) {
+        return NextResponse.json(
+          { error: 'AI credits insufficient', code: 'CREDITS_EXHAUSTED' },
+          { status: 403 }
+        );
+      }
+
       // Generate structured quizzes via AI SDK
-      const { object } = await generateObject({
+      const { object, usage } = await generateObject({
         model: await withAiMemory({
           customId: `quiz-generation-${Date.now()}`,
-          model: google('gemini-2.5-flash'),
+          model: google(QUIZ_GENERATION_MODEL_NAME),
           product: 'teach',
           source: 'quiz_generation',
           surface: 'quiz_generation',
@@ -151,7 +191,34 @@ ${lessonInfo}`;
         schema: QuizGenerationSchema,
         system: QUIZ_GENERATION_PROMPT,
         prompt: promptText,
+        ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
       });
+
+      deductAiCredits({
+        wsId: normalizedWsId,
+        userId: context.user.id,
+        modelId: QUIZ_GENERATION_MODEL_ID,
+        inputTokens: usage.inputTokens ?? 0,
+        outputTokens: usage.outputTokens ?? 0,
+        reasoningTokens:
+          usage.outputTokenDetails?.reasoningTokens ??
+          usage.reasoningTokens ??
+          0,
+        feature: QUIZ_GENERATION_CREDIT_FEATURE,
+        metadata: {
+          count,
+          lessonId,
+          questionType,
+          source: 'quiz_generation',
+        },
+      }).catch((error: unknown) =>
+        serverLogger.warn('Failed to deduct quiz generation AI credits', {
+          error,
+          lessonId,
+          userId: context.user.id,
+          wsId: normalizedWsId,
+        })
+      );
 
       if (!object.quizzes || object.quizzes.length === 0) {
         return NextResponse.json(

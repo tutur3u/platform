@@ -209,6 +209,7 @@ export const checkoutCreatePayloadSchema = z.object({
 export const polarSettingsPayloadSchema = z
   .object({
     accessToken: z.string().trim().min(1).max(4096).optional(),
+    webhookSecret: z.string().trim().min(1).max(4096).optional(),
     environment: PolarEnvironmentSchema.optional(),
     productionEnvironment: PolarEnvironmentSchema.optional(),
     testingEnvironment: PolarEnvironmentSchema.optional(),
@@ -216,4 +217,8 @@ export const polarSettingsPayloadSchema = z
   .refine(
     (value) => !value.accessToken || value.environment,
     'environment is required when accessToken is provided'
+  )
+  .refine(
+    (value) => !value.webhookSecret || value.environment,
+    'environment is required when webhookSecret is provided'
   );

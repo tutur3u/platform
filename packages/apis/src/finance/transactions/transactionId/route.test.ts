@@ -5,6 +5,11 @@ const mocks = vi.hoisted(() => {
   const confidentialSingle = vi.fn();
   const linkedTransactionMaybeSingle = vi.fn();
   const walletMaybeSingle = vi.fn();
+  const tagValidationEq = vi.fn();
+  const tagValidationIn = vi.fn(() => ({
+    eq: tagValidationEq,
+  }));
+  const transactionTagsEq = vi.fn();
   const transactionTagsIn = vi.fn();
   const walletTransactionsSelect = vi.fn((_query: string) => ({
     eq: vi.fn(() => ({
@@ -71,6 +76,14 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'transaction_tags') {
+        return {
+          select: vi.fn(() => ({
+            in: tagValidationIn,
+          })),
+        };
+      }
+
       if (table !== 'wallet_transactions') {
         throw new Error(`Unexpected admin table: ${table}`);
       }
@@ -98,6 +111,10 @@ const mocks = vi.hoisted(() => {
     }),
   };
 
+  transactionTagsIn.mockImplementation(() => ({
+    eq: transactionTagsEq,
+  }));
+
   return {
     adminSupabase,
     confidentialSingle,
@@ -108,7 +125,10 @@ const mocks = vi.hoisted(() => {
     sessionSupabase,
     tagDeleteEq,
     tagInsert,
+    tagValidationEq,
+    tagValidationIn,
     transactionRpc,
+    transactionTagsEq,
     transactionTagsIn,
     updateEq,
     verifyWorkspaceSingle,
@@ -205,7 +225,7 @@ describe('transaction detail route', () => {
       data: [],
       error: null,
     });
-    mocks.transactionTagsIn.mockResolvedValue({
+    mocks.transactionTagsEq.mockResolvedValue({
       data: [],
       error: null,
     });
@@ -219,6 +239,10 @@ describe('transaction detail route', () => {
       error: null,
     });
     mocks.tagInsert.mockResolvedValue({
+      error: null,
+    });
+    mocks.tagValidationEq.mockResolvedValue({
+      data: [{ id: firstTagId }, { id: secondTagId }],
       error: null,
     });
   });
@@ -237,7 +261,7 @@ describe('transaction detail route', () => {
       ],
       error: null,
     });
-    mocks.transactionTagsIn.mockResolvedValue({
+    mocks.transactionTagsEq.mockResolvedValue({
       data: [
         {
           transaction_id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
@@ -262,6 +286,13 @@ describe('transaction detail route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.transactionTagsIn).toHaveBeenCalledWith('transaction_id', [
+      '8206f54b-4cae-4373-9a89-d09f80dd017d',
+    ]);
+    expect(mocks.transactionTagsEq).toHaveBeenCalledWith(
+      'transaction_tags.ws_id',
+      normalizedWsId
+    );
     await expect(response.json()).resolves.toEqual(
       expect.objectContaining({
         id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
@@ -389,6 +420,11 @@ describe('transaction detail route', () => {
       'transaction_id',
       '8206f54b-4cae-4373-9a89-d09f80dd017d'
     );
+    expect(mocks.tagValidationIn).toHaveBeenCalledWith('id', [
+      firstTagId,
+      secondTagId,
+    ]);
+    expect(mocks.tagValidationEq).toHaveBeenCalledWith('ws_id', normalizedWsId);
     expect(mocks.tagInsert).toHaveBeenCalledWith([
       {
         transaction_id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
@@ -400,6 +436,42 @@ describe('transaction detail route', () => {
       },
     ]);
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalled();
+  });
+
+  it('rejects transaction tag updates when a tag is outside the workspace', async () => {
+    const { PUT } = await import('./route.js');
+
+    mocks.tagValidationEq.mockResolvedValue({
+      data: [{ id: firstTagId }],
+      error: null,
+    });
+
+    const response = await PUT(
+      new Request('http://localhost/api/workspaces/ws-1/transactions/tx-1', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: -45,
+          tag_ids: [firstTagId, secondTagId],
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          transactionId: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+          wsId: normalizedWsId,
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Invalid transaction tags',
+    });
+    expect(mocks.updateEq).not.toHaveBeenCalled();
+    expect(mocks.tagDeleteEq).not.toHaveBeenCalled();
+    expect(mocks.tagInsert).not.toHaveBeenCalled();
   });
 
   it('does not allow create-only wallet permission to reassign an existing transaction wallet', async () => {

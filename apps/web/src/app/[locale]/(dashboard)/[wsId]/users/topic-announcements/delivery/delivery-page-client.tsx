@@ -14,7 +14,6 @@ export function TopicAnnouncementsDeliveryPageClient() {
     <div className="space-y-4">
       <TopicAnnouncementsPageHeader
         description={t('delivery_page_description')}
-        title={t('nav_delivery')}
       />
 
       <DeliveryPanel

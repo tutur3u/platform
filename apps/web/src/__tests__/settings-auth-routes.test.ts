@@ -123,7 +123,7 @@ describe('settings auth routes', () => {
     );
   });
 
-  it('allows microsoft as a supported identity linking provider', async () => {
+  it('rejects generic microsoft as an identity linking provider', async () => {
     mocks.linkIdentity.mockResolvedValue({
       data: { url: 'https://oauth.example/microsoft' },
       error: null,
@@ -140,18 +140,11 @@ describe('settings auth routes', () => {
       { provider: 'azure' }
     );
 
-    expect(mocks.linkIdentity).toHaveBeenCalledWith({
-      provider: 'azure',
-      options: {
-        redirectTo:
-          'http://localhost/en/settings?settingsDialog=open&settingsTab=security&settingsLinkedProvider=azure',
-        scopes: 'email',
-      },
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Unsupported provider',
     });
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      'https://oauth.example/microsoft'
-    );
+    expect(mocks.linkIdentity).not.toHaveBeenCalled();
   });
 
   it('surfaces password reauthentication as a 409 backend response', async () => {

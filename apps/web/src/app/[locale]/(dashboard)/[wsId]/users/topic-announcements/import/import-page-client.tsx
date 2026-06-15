@@ -18,7 +18,6 @@ export function TopicAnnouncementsImportPageClient() {
     <div className="space-y-4">
       <TopicAnnouncementsPageHeader
         description={t('import_page_description')}
-        title={t('nav_import')}
         actions={
           <Button
             className="gap-2"

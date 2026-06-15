@@ -38,9 +38,7 @@ describe('ImportPanel', () => {
 
     expect(screen.getByText('import_ready')).toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole('button', { name: /bulk_create_drafts/u })
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'bulk_create_drafts' }));
 
     expect(onImport).toHaveBeenCalledWith({
       rows: [
@@ -78,7 +76,7 @@ describe('ImportPanel', () => {
     expect(screen.getByText('import_error_missing_email')).toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByRole('button', { name: /bulk_create_and_send/u })
+      screen.getByRole('button', { name: 'bulk_create_and_send' })
     );
 
     expect(onImportAndSend).toHaveBeenCalledWith({

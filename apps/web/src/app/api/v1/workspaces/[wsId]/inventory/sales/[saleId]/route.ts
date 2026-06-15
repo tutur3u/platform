@@ -78,6 +78,13 @@ interface SaleInvoiceRow {
   finance_invoice_products: SaleInvoiceProductRow[] | null;
 }
 
+interface InventoryStockRow {
+  product_id: string;
+  unit_id: string;
+  warehouse_id: string;
+  price: number | null;
+}
+
 const UpdateSaleProductSchema = z.object({
   product_id: z.guid(),
   unit_id: z.guid(),
@@ -289,7 +296,11 @@ async function buildUpdatedInvoiceProducts(
   const productMap = new Map<string, z.infer<typeof UpdateSaleProductSchema>>();
 
   for (const product of products) {
-    const key = `${product.product_id}-${product.unit_id}-${product.warehouse_id}-${product.price}`;
+    const key = makeSaleLineKey({
+      productId: product.product_id,
+      unitId: product.unit_id,
+      warehouseId: product.warehouse_id,
+    });
     const existing = productMap.get(key);
     if (existing) {
       existing.quantity += product.quantity;
@@ -364,6 +375,48 @@ async function buildUpdatedInvoiceProducts(
     };
   }
 
+  const { data: inventoryRows, error: inventoryError } = await inventory
+    .from('inventory_products')
+    .select('product_id, unit_id, warehouse_id, price')
+    .in('product_id', productIds)
+    .in('unit_id', unitIds)
+    .in('warehouse_id', warehouseIds);
+
+  if (inventoryError) {
+    throw new Error('Failed to validate inventory products');
+  }
+
+  const inventoryByKey = new Map(
+    ((inventoryRows ?? []) as InventoryStockRow[]).map((row) => [
+      makeSaleLineKey({
+        productId: row.product_id,
+        unitId: row.unit_id,
+        warehouseId: row.warehouse_id,
+      }),
+      row,
+    ])
+  );
+
+  if (
+    productValues.some(
+      (product) =>
+        !inventoryByKey.has(
+          makeSaleLineKey({
+            productId: product.product_id,
+            unitId: product.unit_id,
+            warehouseId: product.warehouse_id,
+          })
+        )
+    )
+  ) {
+    return {
+      errorResponse: NextResponse.json(
+        { message: 'One or more sold product inventory records are invalid' },
+        { status: 400 }
+      ),
+    };
+  }
+
   const ownerIds = [
     ...new Set(
       (productsResult.data ?? [])
@@ -404,6 +457,13 @@ async function buildUpdatedInvoiceProducts(
 
   const invoiceProducts = productValues.map((product) => {
     const productInfo = productInfoById.get(product.product_id);
+    const inventoryProduct = inventoryByKey.get(
+      makeSaleLineKey({
+        productId: product.product_id,
+        unitId: product.unit_id,
+        warehouseId: product.warehouse_id,
+      })
+    );
     return {
       invoice_id: invoiceId,
       product_name: productInfo?.name ?? '',
@@ -413,7 +473,7 @@ async function buildUpdatedInvoiceProducts(
       warehouse_id: product.warehouse_id,
       warehouse: warehouseNameById.get(product.warehouse_id) ?? '',
       amount: product.quantity,
-      price: Math.round(product.price),
+      price: Math.round(Number(inventoryProduct?.price ?? 0)),
       owner_id: productInfo?.ownerId ?? null,
       owner_name: productInfo?.ownerName ?? '',
     };

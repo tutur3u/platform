@@ -1,11 +1,44 @@
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { reconcileWorkspacePolarProducts } from '@/lib/inventory/commerce/polar-product-sync';
-import { canManageInventorySetup } from '@/lib/inventory/permissions';
+import {
+  getInventoryPolarProductSyncSummary,
+  reconcileWorkspacePolarProducts,
+} from '@/lib/inventory/commerce/polar-product-sync';
+import {
+  canManageInventorySetup,
+  canViewInventoryDashboard,
+} from '@/lib/inventory/permissions';
 
 interface Params {
   params: Promise<{ wsId: string }>;
+}
+
+/**
+ * Returns the workspace's Polar product sync health (counts by status + recent
+ * errors) for the Polar hub sync-health card.
+ */
+export async function GET(request: Request, { params }: Params) {
+  try {
+    const { wsId: rawWsId } = await params;
+    const authorization = await authorizeInventoryWorkspace(request, rawWsId);
+    if (!authorization.ok) return authorization.response;
+
+    if (!canViewInventoryDashboard(authorization.value.permissions)) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    const summary = await getInventoryPolarProductSyncSummary(
+      authorization.value.wsId
+    );
+    return NextResponse.json(summary);
+  } catch (error) {
+    serverLogger.error('Failed to load inventory Polar sync summary', error);
+    return NextResponse.json(
+      { message: 'Failed to load Polar sync summary' },
+      { status: 500 }
+    );
+  }
 }
 
 /**

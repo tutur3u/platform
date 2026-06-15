@@ -1,12 +1,10 @@
 'use client';
 
-import { Plus } from '@tuturuuu/icons';
 import type {
   TopicAnnouncementContact,
   TopicAnnouncementContactPayload,
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
-import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -15,16 +13,18 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ContactForm } from './contact-form';
 import { ContactTable } from './contact-table';
 
 interface Props {
   contacts: TopicAnnouncementContact[];
+  isAddDialogOpen: boolean;
   isCreating: boolean;
   isDeleting: boolean;
   isLoading: boolean;
   isVerifying: boolean;
+  onAddDialogOpenChange: (open: boolean) => void;
   onCreate: (payload: TopicAnnouncementContactPayload) => void;
   onDelete: (contactId: string) => void;
   onVerify: (contactId: string) => void;
@@ -34,10 +34,12 @@ interface Props {
 
 export function ContactsPanel({
   contacts,
+  isAddDialogOpen,
   isCreating,
   isDeleting,
   isLoading,
   isVerifying,
+  onAddDialogOpenChange,
   onCreate,
   onDelete,
   onVerify,
@@ -45,7 +47,6 @@ export function ContactsPanel({
   wsId,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const workspaceUsersById = useMemo(
     () => new Map(workspaceUsers.map((user) => [user.id, user])),
     [workspaceUsers]
@@ -53,18 +54,7 @@ export function ContactsPanel({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <Button
-          className="gap-2"
-          onClick={() => setIsAddDialogOpen(true)}
-          type="button"
-        >
-          <Plus className="h-4 w-4" />
-          {t('add_contact')}
-        </Button>
-      </div>
-
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog open={isAddDialogOpen} onOpenChange={onAddDialogOpenChange}>
         <DialogContent className="max-h-[90vh] overflow-y-auto bg-background sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{t('contact_dialog_title')}</DialogTitle>
@@ -84,6 +74,7 @@ export function ContactsPanel({
         isDeleting={isDeleting}
         isLoading={isLoading}
         isVerifying={isVerifying}
+        onAddContact={() => onAddDialogOpenChange(true)}
         onDelete={onDelete}
         onVerify={onVerify}
         workspaceUsersById={workspaceUsersById}

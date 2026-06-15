@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   authProxy: vi.fn(),
   verifyCliAccessToken: vi.fn(),
   guardApiProxyRequest: vi.fn(),
-  hasAuthenticatedApiSession: vi.fn(),
+  hasSupabaseSessionCookie: vi.fn(),
   isTrustedProxyBypassRequest: vi.fn(),
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
@@ -41,9 +41,9 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
-  hasAuthenticatedApiSession: (
-    ...args: Parameters<typeof mocks.hasAuthenticatedApiSession>
-  ) => mocks.hasAuthenticatedApiSession(...args),
+  hasSupabaseSessionCookie: (
+    ...args: Parameters<typeof mocks.hasSupabaseSessionCookie>
+  ) => mocks.hasSupabaseSessionCookie(...args),
   isTrustedProxyBypassRequest: (
     ...args: Parameters<typeof mocks.isTrustedProxyBypassRequest>
   ) => mocks.isTrustedProxyBypassRequest(...args),
@@ -144,16 +144,7 @@ describe('web proxy api handling', () => {
     vi.clearAllMocks();
     mocks.authProxy.mockResolvedValue(NextResponse.next());
     mocks.guardApiProxyRequest.mockResolvedValue(null);
-    mocks.hasAuthenticatedApiSession.mockImplementation((req: NextRequest) => {
-      const authHeader = req.headers.get('authorization')?.trim() ?? '';
-      if (
-        authHeader === 'ttr_test_key' ||
-        authHeader.startsWith('Bearer ') ||
-        authHeader.startsWith('bearer ')
-      ) {
-        return true;
-      }
-
+    mocks.hasSupabaseSessionCookie.mockImplementation((req: NextRequest) => {
       return req.cookies
         .getAll()
         .some(
@@ -431,6 +422,7 @@ describe('web proxy api handling', () => {
         headers: {
           Authorization:
             'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature',
+          'user-agent': 'Mozilla/5.0',
         },
       })
     );
@@ -495,6 +487,27 @@ describe('web proxy api handling', () => {
     expect(response.status).toBe(401);
     expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
       'malformed-auth-header'
+    );
+    expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
+      '203.0.113.10'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+  });
+
+  it('keeps forged bearer tokens inside suspicious anonymous API checks', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer aaa.bbb.ccc',
+        },
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+      'suspicious-anonymous-request'
     );
     expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
       '203.0.113.10'
@@ -608,6 +621,48 @@ describe('web proxy api handling', () => {
       new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
         method: 'GET',
         headers: {
+          'user-agent': 'Mozilla/5.0',
+        },
+      })
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+      'ip-already-blocked'
+    );
+    expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
+      '203.0.113.10'
+    );
+  });
+
+  it('escalates forged bearer proxy guard rate-limit hits into an IP block', async () => {
+    const now = new Date(Date.now());
+
+    mocks.guardApiProxyRequest.mockResolvedValue(
+      NextResponse.json(
+        { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+        {
+          status: 429,
+          headers: {
+            'X-Proxy-Block-Reason': 'route-rate-limit',
+          },
+        }
+      )
+    );
+    mocks.recordSuspiciousApiRequestEdge.mockResolvedValue({
+      id: 'block-4',
+      blockLevel: 1,
+      reason: 'api_abuse',
+      blockedAt: now,
+      expiresAt: new Date(Date.now() + 300_000),
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer aaa.bbb.ccc',
           'user-agent': 'Mozilla/5.0',
         },
       })

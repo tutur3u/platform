@@ -876,6 +876,19 @@
       }
     },
     "operator": {
+      "analytics": {
+        "conversion": "Chuyển đổi",
+        "description": "Phễu chuyển đổi cửa hàng trong {days} ngày qua.",
+        "empty": "Chưa ghi nhận hoạt động cửa hàng nào.",
+        "stage": {
+          "addToCart": "Thêm vào giỏ",
+          "checkoutCreated": "Tạo thanh toán",
+          "checkoutStarted": "Bắt đầu thanh toán",
+          "completed": "Hoàn tất",
+          "views": "Lượt xem"
+        },
+        "title": "Phân tích cửa hàng"
+      },
       "audit": {
         "actorFilter": "Người thực hiện",
         "changedFields": "{count, plural, one {# trường thay đổi} other {# trường thay đổi}}",
@@ -921,6 +934,7 @@
         "readiness": "Mức sẵn sàng",
         "status": "Trạng thái",
         "stock": "Tồn kho",
+        "sync": "Đồng bộ Polar",
         "unitPrice": "Đơn giá",
         "updated": "Cập nhật",
         "visibility": "Hiển thị"
@@ -954,6 +968,14 @@
           "units": "Số lượng đã bán"
         },
         "release": "Giải phóng",
+        "releaseHint": "Giải phóng lượng tồn kho mà phiên giữ chỗ này đang giữ trở lại kho khả dụng và hủy phiên thanh toán. Dùng cho các phiên giữ chỗ bị bỏ dở hoặc treo.",
+        "releaseUnavailable": "Chỉ có thể giải phóng các phiên giữ chỗ đang hoạt động. Phiên thanh toán này đã hoàn tất hoặc đã được giải phóng.",
+        "status": {
+          "completed": "Hoàn tất",
+          "expired": "Hết hạn",
+          "released": "Đã giải phóng",
+          "reserved": "Đang giữ chỗ"
+        },
         "tabs": {
           "checkouts": "Checkout",
           "label": "Chế độ thương mại",
@@ -1568,11 +1590,39 @@
         "saveToken": "Lưu token",
         "saving": "Đang lưu...",
         "searchEnvironments": "Tìm môi trường",
+        "sync": {
+          "bundles": "Gói",
+          "description": "Mỗi mục niêm yết và gói được đồng bộ sang một sản phẩm Polar. Đồng bộ lại để hợp nhất các mục tạo trước khi kết nối Polar hoặc bị lỗi.",
+          "errorsTitle": "Lỗi đồng bộ gần đây",
+          "lastSynced": "Đồng bộ lần cuối",
+          "listings": "Niêm yết",
+          "never": "Chưa bao giờ",
+          "resync": "Đồng bộ lại",
+          "resyncDone": "Đã đồng bộ lại {count} sản phẩm",
+          "resyncing": "Đang đồng bộ…",
+          "status": {
+            "disabled": "vô hiệu",
+            "error": "lỗi",
+            "pending": "đang chờ",
+            "synced": "đã đồng bộ"
+          },
+          "title": "Tình trạng đồng bộ sản phẩm"
+        },
         "testingDefault": "Mặc định testing",
         "title": "Thanh toán Polar",
         "tokenEnding": "Token kết thúc bằng {last4}",
         "tokenLabel": "Access token",
-        "tokenPlaceholder": "Polar organization access token"
+        "tokenPlaceholder": "Polar organization access token",
+        "webhookCopied": "Đã sao chép URL webhook",
+        "webhookCopy": "Sao chép URL",
+        "webhookDescription": "Trỏ một webhook Polar tới URL này để đơn đã thanh toán, phiên thanh toán và thay đổi sản phẩm được đẩy ngược về Tuturuuu.",
+        "webhookGuidance": "Trong bảng điều khiển Polar, tạo một webhook với URL endpoint này, rồi dán khóa ký (signing secret) của nó vào đây để Tuturuuu xác minh và tiếp nhận sự kiện.",
+        "webhookHint": "Lấy từ cài đặt webhook Polar của bạn; dùng để xác minh sự kiện đến.",
+        "webhookNotConfigured": "Chưa đặt khóa webhook",
+        "webhookSecretEnding": "Khóa webhook kết thúc bằng {last4}",
+        "webhookSecretLabel": "Khóa ký webhook",
+        "webhookSecretPlaceholder": "Khóa ký webhook Polar",
+        "webhookTitle": "Tiếp nhận webhook"
       },
       "preview": {
         "back": "Quay lại cửa hàng",

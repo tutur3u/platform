@@ -55,7 +55,10 @@ export async function GET(req: Request, { params }: Params) {
   const access = await getFinanceRouteContext(
     req,
     rawWsId,
-    await resolveFinanceRouteAuthContext(req)
+    await resolveFinanceRouteAuthContext(req, {
+      // The inventory operator dashboard manages storefront promotions too.
+      targetApp: ['finance', 'platform', 'inventory'],
+    })
   );
 
   if (access.response) {
@@ -107,7 +110,10 @@ export async function POST(req: Request, { params }: Params) {
   const access = await getFinanceRouteContext(
     req,
     rawWsId,
-    await resolveFinanceRouteAuthContext(req)
+    await resolveFinanceRouteAuthContext(req, {
+      // The inventory operator dashboard manages storefront promotions too.
+      targetApp: ['finance', 'platform', 'inventory'],
+    })
   );
 
   if (access.response) {

@@ -425,6 +425,7 @@ export type InventoryPolarIntegration = {
   lastValidatedAt: string | null;
   lastError: string | null;
   updatedAt: string | null;
+  webhookSecretLast4: string | null;
 };
 
 export type InventoryPolarSettings = {
@@ -436,8 +437,35 @@ export type InventoryPolarSettings = {
 export type InventoryPolarSettingsPayload = {
   environment?: InventoryPolarEnvironment;
   accessToken?: string;
+  webhookSecret?: string;
   testingEnvironment?: InventoryPolarEnvironment;
   productionEnvironment?: InventoryPolarEnvironment;
+};
+
+export type InventoryPolarSyncStatusCounts = {
+  synced: number;
+  pending: number;
+  error: number;
+  disabled: number;
+  total: number;
+};
+
+export type InventoryStorefrontAnalytics = {
+  days: number;
+  funnel: Array<{ key: string; count: number }>;
+  conversionRate: number;
+};
+
+export type InventoryPolarProductSyncSummary = {
+  listings: InventoryPolarSyncStatusCounts;
+  bundles: InventoryPolarSyncStatusCounts;
+  errors: Array<{
+    kind: 'listing' | 'bundle';
+    name: string;
+    error: string;
+    syncedAt: string | null;
+  }>;
+  lastSyncedAt: string | null;
 };
 
 export type InventoryOverviewResponse = {
@@ -2298,6 +2326,41 @@ export function updateInventoryPolarSettings(
       method: 'PUT',
     }
   );
+}
+
+export function getInventoryStorefrontAnalytics(
+  wsId: string,
+  query?: { days?: number },
+  options?: InternalApiClientOptions
+) {
+  const suffix = query?.days ? `?days=${query.days}` : '';
+  return getInternalApiClient(options).json<InventoryStorefrontAnalytics>(
+    workspaceInventoryPath(wsId, `/analytics${suffix}`),
+    { cache: 'no-store' }
+  );
+}
+
+export function getInventoryPolarSyncSummary(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryPolarProductSyncSummary>(
+    workspaceInventoryPath(wsId, '/polar-product-sync'),
+    { cache: 'no-store' }
+  );
+}
+
+export function syncInventoryPolarProducts(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    ok: boolean;
+    synced: { bundles: number; listings: number };
+  }>(workspaceInventoryPath(wsId, '/polar-product-sync'), {
+    headers: jsonHeaders(options?.defaultHeaders),
+    method: 'POST',
+  });
 }
 
 export function getInventoryPublicStorefront(

@@ -1243,22 +1243,6 @@ export default function LoginForm({
 
       <SocialLoginButton
         disabled={loading}
-        onClick={() => void handleOAuthLogin('azure')}
-        icon={
-          <Image
-            src="/media/logos/microsoft.svg"
-            alt="Microsoft"
-            width={20}
-            height={20}
-            className="object-contain transition-transform duration-200 group-hover:scale-110"
-          />
-        }
-      >
-        {t('login.continue_with_microsoft')}
-      </SocialLoginButton>
-
-      <SocialLoginButton
-        disabled={loading}
         onClick={() => void handleOAuthLogin('apple')}
         icon={<SocialLogoMask src="/media/logos/apple.svg" alt="Apple" />}
       >

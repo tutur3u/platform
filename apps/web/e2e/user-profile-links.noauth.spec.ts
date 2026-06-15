@@ -100,9 +100,54 @@ test.describe('External profile-completion links — public surface', () => {
     assertLocalSupabase();
   });
 
-  test('public submit and avatar endpoints require authentication', async ({
+  test('auth-required links reject unauthenticated submit and avatar', async ({
     request,
   }) => {
+    const workspaceId = randomUUID();
+    const workspaceUserId = randomUUID();
+    const code = `authreq-${workspaceId.slice(0, 8)}`;
+    try {
+      await createWorkspace(request, workspaceId);
+      await createWorkspaceUser(request, workspaceId, workspaceUserId);
+
+      // requires_auth defaults to true.
+      const created = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspace_user_profile_links`,
+        {
+          data: {
+            ws_id: workspaceId,
+            creator_id: TEST_USER.id,
+            code,
+            mode: 'per_user',
+            target_user_id: workspaceUserId,
+            allowed_fields: ['display_name', 'avatar_url'],
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders('return=minimal'),
+        }
+      );
+      expect(created.status()).toBe(201);
+
+      const submit = await request.post(
+        `/api/v1/public/user-profile-links/${code}/submit`,
+        {
+          data: { fields: { display_name: 'Anon' } },
+          failOnStatusCode: false,
+        }
+      );
+      expect(submit.status()).toBe(401);
+
+      const avatar = await request.post(
+        `/api/v1/public/user-profile-links/${code}/avatar`,
+        { data: { contentType: 'image/jpeg' }, failOnStatusCode: false }
+      );
+      expect(avatar.status()).toBe(401);
+    } finally {
+      await cleanup(request, workspaceId);
+    }
+  });
+
+  test('unknown link codes return 404, not 401', async ({ request }) => {
     const submit = await request.post(
       '/api/v1/public/user-profile-links/nonexistent-code/submit',
       {
@@ -110,7 +155,7 @@ test.describe('External profile-completion links — public surface', () => {
         failOnStatusCode: false,
       }
     );
-    expect(submit.status()).toBe(401);
+    expect(submit.status()).toBe(404);
 
     const avatar = await request.post(
       '/api/v1/public/user-profile-links/nonexistent-code/avatar',
@@ -119,7 +164,59 @@ test.describe('External profile-completion links — public surface', () => {
         failOnStatusCode: false,
       }
     );
-    expect(avatar.status()).toBe(401);
+    expect(avatar.status()).toBe(404);
+  });
+
+  test('no-auth links accept anonymous submissions with a null actor', async ({
+    request,
+  }) => {
+    const workspaceId = randomUUID();
+    const workspaceUserId = randomUUID();
+    const code = `noauth-${workspaceId.slice(0, 8)}`;
+    try {
+      await createWorkspace(request, workspaceId);
+      await createWorkspaceUser(request, workspaceId, workspaceUserId);
+
+      const created = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspace_user_profile_links`,
+        {
+          data: {
+            ws_id: workspaceId,
+            creator_id: TEST_USER.id,
+            code,
+            mode: 'per_user',
+            target_user_id: workspaceUserId,
+            allowed_fields: ['display_name'],
+            requires_auth: false,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders('return=minimal'),
+        }
+      );
+      expect(created.status()).toBe(201);
+
+      const submit = await request.post(
+        `/api/v1/public/user-profile-links/${code}/submit`,
+        {
+          data: { fields: { display_name: 'Anon Filled' } },
+          failOnStatusCode: false,
+        }
+      );
+      expect(submit.status()).toBe(200);
+
+      const subs = await request.get(
+        `${SUPABASE_URL}/rest/v1/workspace_user_profile_link_submissions?ws_id=eq.${workspaceId}`,
+        { failOnStatusCode: false, headers: serviceHeaders() }
+      );
+      expect(subs.ok()).toBe(true);
+      const rows = (await subs.json()) as Array<{
+        actor_auth_uid: string | null;
+      }>;
+      expect(rows.length).toBe(1);
+      expect(rows[0]?.actor_auth_uid).toBeNull();
+    } finally {
+      await cleanup(request, workspaceId);
+    }
   });
 
   test('workspace profile-link management requires authentication', async ({

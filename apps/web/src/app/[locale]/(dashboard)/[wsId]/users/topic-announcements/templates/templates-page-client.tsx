@@ -14,7 +14,6 @@ export function TopicAnnouncementsTemplatesPageClient() {
     <div className="space-y-4">
       <TopicAnnouncementsPageHeader
         description={t('templates_page_description')}
-        title={t('nav_templates')}
       />
 
       <TopicAnnouncementsTemplates

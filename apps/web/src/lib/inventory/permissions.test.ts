@@ -3,6 +3,7 @@ import {
   canCreateInventorySetup,
   canDeleteInventorySetup,
   canUpdateInventorySetup,
+  canViewInventoryAuditLogs,
 } from './permissions';
 
 function permissionsWith(granted: string[]) {
@@ -38,5 +39,32 @@ describe('inventory setup permissions', () => {
     expect(canCreateInventorySetup(setupManager)).toBe(true);
     expect(canUpdateInventorySetup(setupManager)).toBe(true);
     expect(canDeleteInventorySetup(setupManager)).toBe(true);
+  });
+});
+
+describe('inventory audit log permissions', () => {
+  it('requires dedicated audit-log permissions', () => {
+    for (const broadPermission of [
+      'view_inventory',
+      'create_inventory',
+      'update_inventory',
+      'delete_inventory',
+      'manage_inventory_setup',
+      'manage_inventory_catalog',
+    ]) {
+      expect(
+        canViewInventoryAuditLogs(permissionsWith([broadPermission]))
+      ).toBe(false);
+    }
+
+    expect(
+      canViewInventoryAuditLogs(permissionsWith(['view_inventory_audit_logs']))
+    ).toBe(true);
+    expect(
+      canViewInventoryAuditLogs(
+        permissionsWith(['manage_workspace_audit_logs'])
+      )
+    ).toBe(true);
+    expect(canViewInventoryAuditLogs(permissionsWith(['admin']))).toBe(true);
   });
 });

@@ -63,6 +63,10 @@ function toRichTextContent(value: unknown): JSONContent | null {
   return value as JSONContent;
 }
 
+type LearnerCourseDetail = NonNullable<
+  Awaited<ReturnType<typeof getLearnerCourseDetail>>
+>;
+
 export async function GET(request: Request) {
   await connection();
 
@@ -209,6 +213,7 @@ async function handleCourseDetail({
   }
 
   let hasAccess = false;
+  let learnerCourseDetail: LearnerCourseDetail | null = null;
 
   if (parsed.data.studentId) {
     const subject = await resolveTulearnSubject({
@@ -227,6 +232,7 @@ async function handleCourseDetail({
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
+    learnerCourseDetail = course;
     hasAccess = true;
   }
 
@@ -251,31 +257,12 @@ async function handleCourseDetail({
           { status: 404 }
         );
       }
+      learnerCourseDetail = course;
       hasAccess = true;
     }
   }
 
-  // Check workspace membership
-  if (!hasAccess) {
-    const { data: membership, error: membershipError } = await sessionSupabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', group.ws_id)
-      .eq('user_id', user.id)
-      .eq('type', 'MEMBER')
-      .maybeSingle();
-
-    if (membershipError) {
-      throw courseRouteError(
-        'workspace_membership_lookup_failed',
-        membershipError
-      );
-    }
-
-    hasAccess = Boolean(membership);
-  }
-
-  // Fallback: check guest permissions
+  // Fallback: check explicit guest course permissions.
   if (!hasAccess) {
     const { data: guest, error: guestError } = await sessionSupabase
       .from('workspace_guests')
@@ -384,17 +371,34 @@ async function handleCourseDetail({
     quizSetCount.set(row.module_id, (quizSetCount.get(row.module_id) ?? 0) + 1);
   }
 
+  const learnerModuleAccess = new Map(
+    learnerCourseDetail?.modules.map((module) => [module.id, module]) ?? []
+  );
+
   return NextResponse.json({
     group: {
       description: group.description,
       name: group.name,
     },
-    modules: publishedModules.map((module) => ({
-      ...module,
-      content: toRichTextContent(module.content),
-      flashcards: flashcardCount.get(module.id) ?? 0,
-      quizzes: quizCount.get(module.id) ?? 0,
-      quizSets: quizSetCount.get(module.id) ?? 0,
-    })),
+    modules: publishedModules.map((module) => {
+      const learnerModule = learnerModuleAccess.get(module.id);
+      const locked = learnerModule?.locked === true;
+
+      return {
+        ...module,
+        completed: learnerModule?.completed,
+        content: locked ? null : toRichTextContent(module.content),
+        extra_content: locked ? null : module.extra_content,
+        flashcards:
+          learnerModule?.counts.flashcards ??
+          flashcardCount.get(module.id) ??
+          0,
+        locked: learnerModule?.locked,
+        quizzes: learnerModule?.counts.quizzes ?? quizCount.get(module.id) ?? 0,
+        quizSets:
+          learnerModule?.counts.quizSets ?? quizSetCount.get(module.id) ?? 0,
+        youtube_links: locked ? null : module.youtube_links,
+      };
+    }),
   });
 }

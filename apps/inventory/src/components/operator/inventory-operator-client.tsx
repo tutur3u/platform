@@ -37,6 +37,7 @@ import { ProductCreateForm } from './product-management';
 import { ProductsTable } from './products-table';
 import { SetupPanel } from './setup-panel';
 import { SimpleRows } from './simple-rows';
+import { StorefrontAnalyticsPanel } from './storefront-analytics-panel';
 import { StorefrontListingsPanel } from './storefront-listings-panel';
 import { useInventoryData } from './use-inventory-data';
 
@@ -325,12 +326,15 @@ export function InventoryOperatorClient({
           <>
             <SimpleRows rows={storefronts} type="storefronts" wsId={wsId} />
             {storefronts.length > 0 ? (
-              <StorefrontListingsPanel
-                bundles={bundles}
-                products={products}
-                storefronts={storefronts}
-                wsId={wsId}
-              />
+              <>
+                <StorefrontAnalyticsPanel wsId={wsId} />
+                <StorefrontListingsPanel
+                  bundles={bundles}
+                  products={products}
+                  storefronts={storefronts}
+                  wsId={wsId}
+                />
+              </>
             ) : null}
           </>
         ) : null}

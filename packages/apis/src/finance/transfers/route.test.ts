@@ -379,6 +379,45 @@ describe('transfers route', () => {
     });
   });
 
+  it('rejects non-default destination wallets on create without wallet override permissions', async () => {
+    const { POST } = await import('./route.js');
+
+    mocks.getWorkspaceConfig.mockResolvedValue(
+      '11111111-1111-1111-1111-111111111111'
+    );
+    mocks.getPermissions.mockResolvedValue(
+      withPermissions(['create_transactions'])
+    );
+
+    const response = await POST(
+      new Request('http://localhost/api/workspaces/ws-1/transfers', {
+        method: 'POST',
+        body: JSON.stringify({
+          origin_wallet_id: '11111111-1111-1111-1111-111111111111',
+          destination_wallet_id: '22222222-2222-2222-2222-222222222222',
+          amount: 25,
+          taken_at: '2026-03-30T08:00:00.000Z',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'Insufficient permissions to override the default wallet for new transactions',
+    });
+    expect(mocks.transactionInsertSingle).not.toHaveBeenCalled();
+    expect(mocks.transferInsert).not.toHaveBeenCalled();
+  });
+
   it('allows create-only wallet override permission for new transfers', async () => {
     const { POST } = await import('./route.js');
 

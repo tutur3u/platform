@@ -43,16 +43,27 @@ export interface SanitizedPayloadResult {
   submittedFields: ProfileLinkField[];
 }
 
+/** Loose email shape guard for submitter-entered emails on no-auth links. */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
  * Builds the workspace_users update payload from a raw submission body, keeping
- * only fields the link explicitly allows. The `email` field is special: when it
- * is allowed and submitted, the value is forced to the logged-in user's account
- * email — an external user can never set the profile email to anything else.
+ * only fields the link explicitly allows.
+ *
+ * The `email` field is special:
+ * - On links that require login (`lockEmail: true`), it is forced to the
+ *   authenticated account email — an external user can never set it to anything
+ *   else.
+ * - On no-auth links (`lockEmail: false`), there is no account email, so the
+ *   submitter-entered value is accepted (after a light format guard).
  */
 export function buildSanitizedPayload(
   allowedFields: readonly string[],
   body: Record<string, unknown>,
-  { actorEmail }: { actorEmail: string | null | undefined }
+  {
+    actorEmail,
+    lockEmail = true,
+  }: { actorEmail: string | null | undefined; lockEmail?: boolean }
 ): SanitizedPayloadResult {
   const allowed = new Set(allowedFields.filter(isProfileLinkField));
   const payload: Record<string, string | null> = {};
@@ -63,9 +74,22 @@ export function buildSanitizedPayload(
     if (!(field in body)) continue;
 
     if (field === 'email') {
-      // Email is locked to the authenticated account email regardless of input.
-      if (!actorEmail) continue;
-      payload.email = actorEmail;
+      if (lockEmail) {
+        // Locked to the authenticated account email regardless of input.
+        if (!actorEmail) continue;
+        payload.email = actorEmail;
+        submittedFields.push('email');
+        continue;
+      }
+
+      // No-auth link: accept the submitter's email when it looks valid.
+      const rawEmail = body.email;
+      const email =
+        rawEmail === null || rawEmail === ''
+          ? null
+          : String(rawEmail).trim() || null;
+      if (email !== null && !EMAIL_PATTERN.test(email)) continue;
+      payload.email = email;
       submittedFields.push('email');
       continue;
     }

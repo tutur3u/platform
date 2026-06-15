@@ -2,8 +2,11 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  Ban,
   CalendarDays,
+  CheckCircle2,
   CircleDollarSign,
+  Clock,
   CreditCard,
   RotateCcw,
   ShieldCheck,
@@ -18,6 +21,13 @@ import { releaseInventoryCheckout } from '@tuturuuu/internal-api/inventory';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
@@ -35,6 +45,51 @@ function StatusBadge({ value }: { value: string }) {
   return (
     <span className="inline-flex h-6 items-center rounded-md border border-border bg-primary/10 px-2 font-medium text-primary text-xs">
       {value.replaceAll('_', ' ')}
+    </span>
+  );
+}
+
+// A reservation that has been released ends up in the `cancelled` state; surface
+// that as "Released" with a distinct icon/tone so terminal holds read clearly.
+const CHECKOUT_STATUS_META: Record<
+  string,
+  { Icon: typeof Clock; key: string; tone: string }
+> = {
+  cancelled: {
+    Icon: RotateCcw,
+    key: 'released',
+    tone: 'border-border bg-muted text-muted-foreground',
+  },
+  completed: {
+    Icon: CheckCircle2,
+    key: 'completed',
+    tone: 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
+  },
+  expired: {
+    Icon: Ban,
+    key: 'expired',
+    tone: 'border-destructive/20 bg-destructive/10 text-destructive',
+  },
+  reserved: {
+    Icon: Clock,
+    key: 'reserved',
+    tone: 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
+  },
+};
+
+function CheckoutStatusBadge({ status }: { status: string }) {
+  const t = useTranslations('inventory.operator.commerce');
+  const meta = CHECKOUT_STATUS_META[status];
+  const Icon = meta?.Icon;
+  return (
+    <span
+      className={cn(
+        'inline-flex h-6 items-center gap-1 rounded-md border px-2 font-medium text-xs',
+        meta?.tone ?? 'border-border bg-primary/10 text-primary'
+      )}
+    >
+      {Icon ? <Icon className="h-3 w-3" /> : null}
+      {meta ? t(`status.${meta.key}`) : status.replaceAll('_', ' ')}
     </span>
   );
 }
@@ -159,21 +214,39 @@ function CheckoutRows({
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
-              <StatusBadge value={row.status} />
+              <CheckoutStatusBadge status={row.status} />
               {row.polarStatus ? <StatusBadge value={row.polarStatus} /> : null}
               <StatusBadge value={currency(row.totalAmount, row.currency)} />
-              <Button
-                disabled={
-                  row.status === 'completed' || releaseCheckout.isPending
-                }
-                onClick={() => releaseCheckout.mutate(row)}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                <RotateCcw className="h-4 w-4" />
-                {t('commerce.release')}
-              </Button>
+              {(() => {
+                const releasable =
+                  row.status === 'reserved' && !releaseCheckout.isPending;
+                return (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        {/* span wrapper so the tooltip still shows on a disabled button */}
+                        <span tabIndex={releasable ? undefined : 0}>
+                          <Button
+                            disabled={!releasable}
+                            onClick={() => releaseCheckout.mutate(row)}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            {t('commerce.release')}
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        {row.status === 'reserved'
+                          ? t('commerce.releaseHint')
+                          : t('commerce.releaseUnavailable')}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })()}
             </div>
           </article>
         );

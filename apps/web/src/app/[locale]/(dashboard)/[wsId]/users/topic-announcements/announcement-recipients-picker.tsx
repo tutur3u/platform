@@ -1,5 +1,6 @@
 'use client';
 
+import { MailWarning, UserPlus } from '@tuturuuu/icons';
 import type {
   TopicAnnouncementContact,
   WorkspaceBasicUserRecord,
@@ -9,8 +10,12 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+import { TopicAnnouncementsEmptyState } from './topic-announcements-empty-state';
+import { TopicAnnouncementsHelpTip } from './topic-announcements-help-tip';
 import {
   getWorkspaceUserDisplayName,
   getWorkspaceUserInitials,
@@ -88,6 +93,7 @@ function RecipientRow({
 function RecipientSection({
   contacts,
   disabled,
+  helpLabel,
   selectedIds,
   t,
   title,
@@ -96,6 +102,7 @@ function RecipientSection({
 }: {
   contacts: TopicAnnouncementContact[];
   disabled?: boolean;
+  helpLabel?: string;
   selectedIds: string[];
   t: ReturnType<typeof useTranslations<'ws-topic-announcements'>>;
   title: string;
@@ -106,9 +113,12 @@ function RecipientSection({
 
   return (
     <div className="space-y-1">
-      <p className="px-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-        {title}
-      </p>
+      <div className="flex items-center gap-1.5 px-2">
+        <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+          {title}
+        </p>
+        {helpLabel ? <TopicAnnouncementsHelpTip label={helpLabel} /> : null}
+      </div>
       {contacts.map((contact) => (
         <RecipientRow
           contact={contact}
@@ -135,6 +145,8 @@ export function AnnouncementRecipientsPicker({
   workspaceUsers,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
+  const params = useParams<{ wsId: string }>();
+  const contactsHref = `/${params?.wsId}/users/topic-announcements/contacts`;
   const workspaceUsersById = useMemo(
     () => new Map(workspaceUsers.map((user) => [user.id, user])),
     [workspaceUsers]
@@ -165,13 +177,29 @@ export function AnnouncementRecipientsPicker({
       />
 
       {contacts.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
-          {t('no_ready_contacts')}
-        </p>
+        <TopicAnnouncementsEmptyState
+          action={
+            <Button asChild size="sm">
+              <Link href={contactsHref}>
+                {t('recipients_add_contacts_cta')}
+              </Link>
+            </Button>
+          }
+          description={t('recipients_empty_desc')}
+          icon={<UserPlus />}
+          title={t('recipients_empty_title')}
+        />
       ) : readyContacts.length === 0 && pendingContacts.length > 0 ? (
-        <p className="text-muted-foreground text-sm">
-          {t('no_ready_contacts')}
-        </p>
+        <TopicAnnouncementsEmptyState
+          action={
+            <Button asChild size="sm" variant="outline">
+              <Link href={contactsHref}>{t('recipients_verify_cta')}</Link>
+            </Button>
+          }
+          description={t('recipients_pending_desc')}
+          icon={<MailWarning />}
+          title={t('recipients_pending_title')}
+        />
       ) : (
         <ScrollArea className="h-44 pr-3">
           <div className="space-y-4">
@@ -186,6 +214,7 @@ export function AnnouncementRecipientsPicker({
             <RecipientSection
               contacts={pendingContacts}
               disabled
+              helpLabel={t('recipient_pending_tooltip')}
               selectedIds={selectedIds}
               t={t}
               title={t('pending_recipients')}

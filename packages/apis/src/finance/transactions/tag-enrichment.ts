@@ -22,6 +22,10 @@ type WalletTransactionTagRow = {
   transaction_tags: RawRelatedTag | RawRelatedTag[];
 };
 
+type TransactionTagIdRow = {
+  id: string;
+};
+
 function normalizeRelatedTags(
   rawTags: WalletTransactionTagRow['transaction_tags']
 ): EnrichedTransactionTag[] {
@@ -45,7 +49,8 @@ export async function enrichTransactionsWithTags<
   TTransaction extends TransactionRow,
 >(
   sbAdmin: TypedSupabaseClient,
-  transactions: TTransaction[]
+  transactions: TTransaction[],
+  wsId: string
 ): Promise<{
   data: Array<TTransaction & { tags: EnrichedTransactionTag[] }> | null;
   error: { message: string } | null;
@@ -66,8 +71,9 @@ export async function enrichTransactionsWithTags<
 
   const { data, error } = await sbAdmin
     .from('wallet_transaction_tags')
-    .select('transaction_id, transaction_tags(id, name, color)')
-    .in('transaction_id', transactionIds);
+    .select('transaction_id, transaction_tags!inner(id, name, color)')
+    .in('transaction_id', transactionIds)
+    .eq('transaction_tags.ws_id', wsId);
 
   if (error) {
     return {
@@ -96,5 +102,58 @@ export async function enrichTransactionsWithTags<
       tags: tagsByTransactionId.get(transaction.id) ?? [],
     })),
     error: null,
+  };
+}
+
+export async function validateTransactionTagIdsForWorkspace(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  tagIds: string[] | undefined
+): Promise<{
+  error: { message: string; status: number } | null;
+  tagIds: string[];
+}> {
+  const uniqueTagIds = [...new Set(tagIds ?? [])];
+
+  if (uniqueTagIds.length === 0) {
+    return {
+      error: null,
+      tagIds: [],
+    };
+  }
+
+  const { data, error } = await sbAdmin
+    .from('transaction_tags')
+    .select('id')
+    .in('id', uniqueTagIds)
+    .eq('ws_id', wsId);
+
+  if (error) {
+    return {
+      error: {
+        message: error.message || 'Error validating transaction tags',
+        status: 500,
+      },
+      tagIds: [],
+    };
+  }
+
+  const validTagIds = new Set(
+    ((data ?? []) as TransactionTagIdRow[]).map((tag) => tag.id)
+  );
+
+  if (validTagIds.size !== uniqueTagIds.length) {
+    return {
+      error: {
+        message: 'Invalid transaction tags',
+        status: 400,
+      },
+      tagIds: [],
+    };
+  }
+
+  return {
+    error: null,
+    tagIds: uniqueTagIds,
   };
 }

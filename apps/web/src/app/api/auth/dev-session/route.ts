@@ -6,7 +6,6 @@ import {
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { checkIfUserExists, validateEmail } from '@tuturuuu/utils/email/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { DEV_MODE } from '@/constants/common';
 import {
   getLocalE2EPublicSupabaseUrl,
   isLocalE2EAuthBypassEnabled,
@@ -181,7 +180,7 @@ function mirrorLocalE2ESupabaseBrowserCookie(
 }
 
 export async function POST(request: NextRequest) {
-  if (!DEV_MODE && !isLocalE2EAuthRequestAllowed(request)) {
+  if (!isLocalE2EAuthRequestAllowed(request)) {
     return NextResponse.json(
       { error: 'This endpoint is only available in development mode' },
       { status: 403 }

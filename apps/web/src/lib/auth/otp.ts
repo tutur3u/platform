@@ -314,9 +314,8 @@ export async function sendOtp(
     token: input.captchaToken,
     requireConfiguration: true,
   });
-  const sbAdmin = await createAdminClient();
   const supabase = turnstile.shouldBypassForDev
-    ? sbAdmin
+    ? await createAdminClient()
     : await createClient(context.request);
   const metadata = buildOtpMetadata({
     client: input.client,
@@ -327,29 +326,6 @@ export async function sendOtp(
   const userId = await checkIfUserExists({ email: validatedEmail });
 
   if (userId) {
-    const { error: updateError } = await sbAdmin.auth.admin.updateUserById(
-      userId,
-      {
-        user_metadata: metadata,
-      }
-    );
-
-    if (updateError) {
-      await logAbuseEvent(ipAddress, 'otp_send', {
-        email: validatedEmail,
-        endpoint: context.endpoint,
-        success: false,
-        userAgent: userAgent || undefined,
-        metadata: {
-          client: input.client,
-          message: updateError.message,
-          platform: input.platform,
-          stage: 'update_user',
-        },
-      });
-      return createGenericSendErrorResult(500);
-    }
-
     const { error } = await supabase.auth.signInWithOtp({
       email: validatedEmail,
       options: {

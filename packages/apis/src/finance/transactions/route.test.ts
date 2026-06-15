@@ -11,6 +11,11 @@ const mocks = vi.hoisted(() => {
   const tagInsert = vi.fn();
   const transactionRpc = vi.fn();
   const adminRpc = vi.fn();
+  const tagValidationEq = vi.fn();
+  const tagValidationIn = vi.fn(() => ({
+    eq: tagValidationEq,
+  }));
+  const transactionTagsEq = vi.fn();
   const transactionTagsIn = vi.fn();
 
   const sessionSupabase = {
@@ -89,10 +94,22 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'transaction_tags') {
+        return {
+          select: vi.fn(() => ({
+            in: tagValidationIn,
+          })),
+        };
+      }
+
       throw new Error(`Unexpected admin table: ${table}`);
     }),
     rpc: adminRpc,
   };
+
+  transactionTagsIn.mockImplementation(() => ({
+    eq: transactionTagsEq,
+  }));
 
   transactionInsert.mockImplementation(() => ({
     select: vi.fn(() => ({
@@ -108,8 +125,11 @@ const mocks = vi.hoisted(() => {
     linkedUserMaybeSingle,
     sessionSupabase,
     tagInsert,
+    tagValidationEq,
+    tagValidationIn,
     transactionInsert,
     transactionRpc,
+    transactionTagsEq,
     transactionTagsIn,
     transactionSingle,
     walletMaybeSingle,
@@ -207,6 +227,14 @@ describe('transactions route', () => {
     mocks.tagInsert.mockResolvedValue({
       error: null,
     });
+    mocks.tagValidationEq.mockResolvedValue({
+      data: [
+        {
+          id: 'd7d55de5-0ea8-4e9a-92dc-9a6e13f0a30c',
+        },
+      ],
+      error: null,
+    });
     mocks.transactionRpc.mockResolvedValue({
       data: [],
       error: null,
@@ -215,7 +243,7 @@ describe('transactions route', () => {
       data: 'virtual-user-1',
       error: null,
     });
-    mocks.transactionTagsIn.mockResolvedValue({
+    mocks.transactionTagsEq.mockResolvedValue({
       data: [],
       error: null,
     });
@@ -242,7 +270,7 @@ describe('transactions route', () => {
       ],
       error: null,
     });
-    mocks.transactionTagsIn.mockResolvedValue({
+    mocks.transactionTagsEq.mockResolvedValue({
       data: [
         {
           transaction_id: 'transaction-1',
@@ -268,6 +296,13 @@ describe('transactions route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.transactionTagsIn).toHaveBeenCalledWith('transaction_id', [
+      'transaction-1',
+    ]);
+    expect(mocks.transactionTagsEq).toHaveBeenCalledWith(
+      'transaction_tags.ws_id',
+      normalizedPersonalWsId
+    );
     await expect(response.json()).resolves.toEqual([
       expect.objectContaining({
         id: 'transaction-1',
@@ -412,12 +447,56 @@ describe('transactions route', () => {
       })
     );
     expect(mocks.transactionSingle).toHaveBeenCalled();
+    expect(mocks.tagValidationIn).toHaveBeenCalledWith('id', [
+      'd7d55de5-0ea8-4e9a-92dc-9a6e13f0a30c',
+    ]);
+    expect(mocks.tagValidationEq).toHaveBeenCalledWith(
+      'ws_id',
+      '00000000-0000-0000-0000-000000000000'
+    );
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith(
       'wallet_transactions'
     );
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalledWith(
       'wallet_transaction_tags'
     );
+  });
+
+  it('rejects transaction creation with tags outside the workspace', async () => {
+    const { POST } = await import('./route.js');
+
+    mocks.tagValidationEq.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/workspaces/ws-1/transactions', {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: 150,
+          origin_wallet_id: '3c9a5c7f-4f0d-4f15-9477-cbf1c7bc7445',
+          taken_at: '2026-03-30T08:00:00.000Z',
+          description: 'Lunch',
+          tag_ids: ['d7d55de5-0ea8-4e9a-92dc-9a6e13f0a30c'],
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Invalid transaction tags',
+    });
+    expect(mocks.transactionInsert).not.toHaveBeenCalled();
+    expect(mocks.tagInsert).not.toHaveBeenCalled();
   });
 
   it('rejects invalid transaction dates before insert', async () => {

@@ -65,14 +65,14 @@ import { ThemeProvider } from "next-themes"
 
 ```bash
 # Apply a preset code from ui.shadcn.com.
-npx shadcn@latest init --preset a2r6bw --force
+npx shadcn@4.11.0 init --preset a2r6bw --force
 
 # Switch to a named preset.
-npx shadcn@latest init --preset radix-nova --force
-npx shadcn@latest init --reinstall  # update existing components to match
+npx shadcn@4.11.0 init --preset radix-nova --force
+npx shadcn@4.11.0 init --reinstall  # update existing components to match
 
 # Use a custom theme URL.
-npx shadcn@latest init --preset "https://ui.shadcn.com/init?base=radix&style=nova&theme=blue&..." --force
+npx shadcn@4.11.0 init --preset "https://ui.shadcn.com/init?base=radix&style=nova&theme=blue&..." --force
 ```
 
 Or edit CSS variables directly in `globals.css`.
@@ -81,7 +81,7 @@ Or edit CSS variables directly in `globals.css`.
 
 ## Adding Custom Colors
 
-Add variables to the file at `tailwindCssFile` from `npx shadcn@latest info` (typically `globals.css`). Never create a new CSS file for this.
+Add variables to the file at `tailwindCssFile` from `npx shadcn@4.11.0 info` (typically `globals.css`). Never create a new CSS file for this.
 
 ```css
 /* 1. Define in the global CSS file. */
@@ -103,7 +103,7 @@ Add variables to the file at `tailwindCssFile` from `npx shadcn@latest info` (ty
 }
 ```
 
-When `tailwindVersion` is `"v3"` (check via `npx shadcn@latest info`), register in `tailwind.config.js` instead:
+When `tailwindVersion` is `"v3"` (check via `npx shadcn@4.11.0 info`), register in `tailwind.config.js` instead:
 
 ```js
 // 2b. Register with Tailwind v3 (tailwind.config.js).
@@ -189,14 +189,14 @@ export function ConfirmDialog({ title, description, onConfirm, children }) {
 ## Checking for Updates
 
 ```bash
-npx shadcn@latest add button --diff
+npx shadcn@4.11.0 add button --diff
 ```
 
 To preview exactly what would change before updating, use `--dry-run` and `--diff`:
 
 ```bash
-npx shadcn@latest add button --dry-run        # see all affected files
-npx shadcn@latest add button --diff button.tsx # see the diff for a specific file
+npx shadcn@4.11.0 add button --dry-run        # see all affected files
+npx shadcn@4.11.0 add button --diff button.tsx # see the diff for a specific file
 ```
 
 See [Updating Components in SKILL.md](./SKILL.md#updating-components) for the full smart merge workflow.

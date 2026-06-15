@@ -24,6 +24,7 @@ interface WorkspaceUserProfileLinkRow {
   target_user_id: string | null;
   allowed_fields: string[];
   prefill_existing_values?: boolean | null;
+  requires_auth?: boolean | null;
   max_uses: number | null;
   expires_at: string | null;
   current_uses: number;
@@ -56,6 +57,7 @@ const createSchema = z
         message: 'allowed_fields must not contain duplicates',
       }),
     prefill_existing_values: z.boolean().optional(),
+    requires_auth: z.boolean().optional(),
     expires_at: z.string().datetime({ offset: true }).nullable().optional(),
     max_uses: z.number().int().positive().nullable().optional(),
   })
@@ -143,6 +145,7 @@ export async function GET(req: Request, { params }: Params) {
     return {
       ...link,
       prefill_existing_values: link.prefill_existing_values ?? true,
+      requires_auth: link.requires_auth ?? true,
       target_user: targetUser
         ? {
             id: targetUser.id,
@@ -227,6 +230,7 @@ export async function POST(req: Request, { params }: Params) {
       target_user_id: parsed.data.target_user_id ?? null,
       allowed_fields: parsed.data.allowed_fields,
       prefill_existing_values: parsed.data.prefill_existing_values ?? true,
+      requires_auth: parsed.data.requires_auth ?? true,
       expires_at: parsed.data.expires_at ?? null,
       max_uses: parsed.data.max_uses ?? null,
     } as never)

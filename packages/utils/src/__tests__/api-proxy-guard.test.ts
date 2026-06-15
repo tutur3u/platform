@@ -658,7 +658,7 @@ describe('guardApiProxyRequest', () => {
     }
 
     expect(mocks.ratelimitPrefixes).toContain(
-      'proxy:test:api:default:anonymous::api:v1:workspaces:ws-1:finance:invoices:mutate:minute'
+      'proxy:test:api:default:anonymous:mutate:minute'
     );
     expect(mocks.ratelimitPrefixes).not.toContain(
       'proxy:test:api:finance-invoice-create-read:anonymous:mutate:minute'
@@ -1015,7 +1015,7 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.limit).not.toHaveBeenCalled();
   });
 
-  it('scopes anonymous read buckets by pathname to avoid cross-route collisions', async () => {
+  it('shares broad anonymous read buckets across path variants', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -1036,9 +1036,21 @@ describe('guardApiProxyRequest', () => {
     await guardApiProxyRequest(makeRequest('/api/v1/users/me/profile', 'GET'), {
       prefixBase: 'proxy:test:api',
     });
+    await guardApiProxyRequest(
+      makeRequest('/api/v1/users/me/nonexistent/random-nonce', 'GET'),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
 
     expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:users-me:anonymous:get:minute'
+    );
+    expect(mocks.ratelimitPrefixes).not.toContain(
       'proxy:test:api:users-me:anonymous::api:v1:users:me:profile:get:minute'
+    );
+    expect(mocks.ratelimitPrefixes).not.toContain(
+      'proxy:test:api:users-me:anonymous::api:v1:users:me:nonexistent:random-nonce:get:minute'
     );
   });
 

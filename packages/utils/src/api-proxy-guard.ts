@@ -788,21 +788,12 @@ function getEffectiveRateLimits(
   return routePolicy.rateLimits;
 }
 
-function shouldScopeRateLimitByPath(routePolicy: ProxyRoutePolicy): boolean {
-  return routePolicy.key === 'default' || routePolicy.key === 'users-me';
-}
-
-function getPathScopedRateLimitPrefix(
+function getRateLimitPrefix(
   prefixBase: string,
   routePolicy: ProxyRoutePolicy,
-  callerClass: CallerClass,
-  pathname: string
+  callerClass: CallerClass
 ): string {
-  const scopeSuffix = shouldScopeRateLimitByPath(routePolicy)
-    ? `:${pathname.replaceAll('/', ':') || ':root'}`
-    : '';
-
-  return `${prefixBase}:${routePolicy.key}:${callerClass}${scopeSuffix}`;
+  return `${prefixBase}:${routePolicy.key}:${callerClass}`;
 }
 
 export function isTrustedProxyBypassRequest(
@@ -903,11 +894,10 @@ export async function guardApiProxyRequest(
       const routePolicy = getRoutePolicy(req, routePolicies);
       const isRead = req.method === 'GET' || req.method === 'HEAD';
       const rateLimits = getEffectiveRateLimits(routePolicy, callerClass);
-      const limiterPrefix = getPathScopedRateLimitPrefix(
+      const limiterPrefix = getRateLimitPrefix(
         options.prefixBase,
         routePolicy,
-        callerClass,
-        req.nextUrl.pathname
+        callerClass
       );
       const limiterCacheKey = `${limiterPrefix}:${JSON.stringify(rateLimits)}`;
       const limiters = await getRateLimiters(limiterPrefix, rateLimits);

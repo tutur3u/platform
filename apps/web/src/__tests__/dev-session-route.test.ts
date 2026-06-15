@@ -137,6 +137,7 @@ describe('dev-session route', () => {
     vi.resetModules();
     vi.clearAllMocks();
     vi.unstubAllEnvs();
+    stubLocalE2EEnv();
     mocks.devMode = true;
     mocks.validateEmail.mockImplementation(async (email: string) => email);
     mocks.checkIfUserExists.mockResolvedValue('user-123');
@@ -273,6 +274,55 @@ describe('dev-session route', () => {
 
     expect(mocks.resetRateLimitMemoryStoreForTests).toHaveBeenCalledTimes(1);
     expect(response.status).toBe(200);
+  });
+
+  it('rejects development requests when the local E2E bypass flag is missing', async () => {
+    vi.stubEnv('TUTURUUU_LOCAL_E2E_AUTH_BYPASS', 'false');
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS', 'false');
+
+    const request = new NextRequest('http://localhost/api/auth/dev-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'victim@example.com',
+        locale: 'en',
+      }),
+    });
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'This endpoint is only available in development mode',
+    });
+    expect(mocks.validateEmail).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
+  it('rejects development requests when Supabase targets a non-local project', async () => {
+    vi.stubEnv('SUPABASE_SERVER_URL', 'https://prod-target.supabase.co');
+
+    const request = new NextRequest('http://localhost/api/auth/dev-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'victim@example.com',
+        locale: 'en',
+      }),
+    });
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'This endpoint is only available in development mode',
+    });
+    expect(mocks.validateEmail).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
   it('allows production-mode local E2E requests only when request and env origins are local', async () => {

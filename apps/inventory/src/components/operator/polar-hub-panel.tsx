@@ -12,6 +12,7 @@ import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { currency } from './operator-format';
 import { EmptyRow } from './operator-shell';
 import { PolarSettingsPanel } from './polar-settings-panel';
+import { PolarSyncHealthPanel } from './polar-sync-health-panel';
 
 function StatusBadge({ value }: { value: string }) {
   return (
@@ -80,8 +81,16 @@ export function PolarHubPanel({ wsId }: { wsId: string }) {
       {/* Connection + sync actions + product link status (per environment). */}
       <PolarSettingsPanel wsId={wsId} />
 
+      {/* Product catalog sync health (counts by status + recent errors). */}
+      <PolarSyncHealthPanel wsId={wsId} />
+
       <section className="grid min-w-0 gap-2 rounded-lg border border-border bg-card p-4">
-        <h3 className="font-semibold text-sm">{t('recentCheckoutsTitle')}</h3>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-primary/10 text-primary">
+            <CreditCard className="h-3.5 w-3.5" />
+          </span>
+          <h3 className="font-semibold text-sm">{t('recentCheckoutsTitle')}</h3>
+        </div>
         {polarCheckouts.length === 0 ? (
           <EmptyRow label={t('recentCheckoutsEmpty')} />
         ) : (
@@ -112,7 +121,12 @@ export function PolarHubPanel({ wsId }: { wsId: string }) {
       </section>
 
       <section className="grid min-w-0 gap-2 rounded-lg border border-border bg-card p-4">
-        <h3 className="font-semibold text-sm">{t('syncedCouponsTitle')}</h3>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-primary/10 text-primary">
+            <TicketPercent className="h-3.5 w-3.5" />
+          </span>
+          <h3 className="font-semibold text-sm">{t('syncedCouponsTitle')}</h3>
+        </div>
         <p className="text-muted-foreground text-xs leading-5">
           {t('syncedCouponsDescription')}
         </p>

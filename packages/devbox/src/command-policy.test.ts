@@ -15,6 +15,13 @@ describe('evaluateDevboxCommandPolicy', () => {
     [
       'docker',
       'run',
+      '--mount',
+      'type=bind,source=./cache,target=/cache',
+      'ubuntu',
+    ],
+    [
+      'docker',
+      'run',
       '--rm',
       '--network',
       'host',
@@ -36,7 +43,15 @@ describe('evaluateDevboxCommandPolicy', () => {
     ['sudo', 'apt', 'install', 'curl'],
     ['docker', 'system', 'prune', '--all', '--force'],
     ['docker', 'run', '--privileged', 'ubuntu'],
+    ['docker', 'run', '--privileged=true', 'ubuntu'],
     ['docker', 'run', '-v', '/:/host', 'ubuntu'],
+    ['docker', 'run', '--mount', 'type=bind,source=/,target=/host', 'ubuntu'],
+    [
+      'docker',
+      'run',
+      '--mount=type=bind,src=/var/run/docker.sock,target=/sock',
+      'ubuntu',
+    ],
     ['git', 'reset', '--hard'],
     ['cloudflared', 'tunnel', 'run', '--token', 'raw-token'],
     [
