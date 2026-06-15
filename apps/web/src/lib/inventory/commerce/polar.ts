@@ -352,6 +352,141 @@ export async function ensureInventoryPolarProduct({
   }
 }
 
+async function getCheckoutProductId(
+  wsId: string,
+  environment: InventoryPolarEnvironment,
+  currency: string
+): Promise<string | null> {
+  const privateAdmin = await getPrivateAdmin();
+  const { data } = (await privateAdmin
+    .from('inventory_polar_checkout_products' as never)
+    .select('polar_product_id')
+    .eq('ws_id', wsId)
+    .eq('environment', environment)
+    .eq('currency', currency)
+    .maybeSingle()) as { data: { polar_product_id?: string | null } | null };
+  return data?.polar_product_id ?? null;
+}
+
+async function upsertCheckoutProductId({
+  currency,
+  environment,
+  productId,
+  wsId,
+}: {
+  currency: string;
+  environment: InventoryPolarEnvironment;
+  productId: string;
+  wsId: string;
+}) {
+  const privateAdmin = await getPrivateAdmin();
+  await privateAdmin.from('inventory_polar_checkout_products' as never).upsert(
+    {
+      currency,
+      environment,
+      polar_product_id: productId,
+      updated_at: new Date().toISOString(),
+      ws_id: wsId,
+    } as never,
+    { onConflict: 'ws_id,environment,currency' }
+  );
+}
+
+function productHasCurrency(
+  product: { prices?: unknown[] | null },
+  priceCurrency: string
+) {
+  const prices = (product.prices ?? []) as Array<{
+    priceCurrency?: string | null;
+  }>;
+  // Accept when a price matches the currency, or when no currency is exposed.
+  return (
+    prices.length === 0 ||
+    prices.some((price) => {
+      const pc = price.priceCurrency;
+      return !pc || pc.toLowerCase() === priceCurrency;
+    })
+  );
+}
+
+/**
+ * Ensures a generic custom-amount Polar checkout product priced in the given
+ * currency exists for the workspace+environment, creating it on demand. Polar
+ * prices are currency-bound, so multi-currency workspaces need one product per
+ * currency; checkouts must reference the product matching the storefront's
+ * currency or Polar rejects them ("Product is not available in the specified
+ * currency"). Persisted in `inventory_polar_checkout_products`.
+ */
+export async function ensureInventoryPolarCheckoutProduct({
+  currency: rawCurrency,
+  environment,
+  wsId,
+}: {
+  currency: string | null | undefined;
+  environment: InventoryPolarEnvironment;
+  wsId: string;
+}): Promise<string> {
+  const currencyUpper = (rawCurrency ?? 'USD').trim().toUpperCase() || 'USD';
+  const priceCurrency = toPolarCurrency(currencyUpper);
+  const integration = await getIntegration({ environment, wsId });
+  if (!integration) {
+    throw new Error(`Polar ${environment} token is not configured`);
+  }
+
+  const accessToken = await decryptIntegrationToken(integration);
+  const polar = createPolarClient({ accessToken, environment });
+
+  const existingId = await getCheckoutProductId(
+    wsId,
+    environment,
+    currencyUpper
+  );
+  if (existingId) {
+    try {
+      const product = await polar.products.get({ id: existingId });
+      if (productHasCurrency(product, priceCurrency)) return existingId;
+    } catch (error) {
+      serverLogger.warn('Inventory Polar checkout product validation failed', {
+        currency: currencyUpper,
+        environment,
+        error: extractErrorMessage(error),
+        wsId,
+      });
+    }
+  }
+
+  // Polar requires the organization's default presentment currency (USD for
+  // Tuturuuu orgs) to be present in a product's prices, and selects the price
+  // matching the checkout's currency. So include a USD price plus the
+  // storefront's currency. minimumAmount 0 = "pay what you want"; safe because
+  // checkout always sets the exact reserved amount.
+  const priceCurrencies = Array.from(new Set(['usd', priceCurrency]));
+  const product = await polar.products.create({
+    description:
+      'Private checkout product used by Tuturuuu Inventory storefront orders.',
+    metadata: {
+      currency: currencyUpper,
+      environment,
+      kind: 'inventory_checkout',
+      wsId,
+    },
+    name: integration.polar_product_name ?? 'Tuturuuu Inventory Checkout',
+    prices: priceCurrencies.map((code) => ({
+      amountType: 'custom' as const,
+      minimumAmount: 0,
+      priceCurrency: code as never,
+    })),
+    visibility: 'private',
+  });
+  await upsertCheckoutProductId({
+    currency: currencyUpper,
+    environment,
+    productId: product.id,
+    wsId,
+  });
+  return product.id;
+}
+
 export async function saveInventoryPolarSettings({
   payload,
   userId,
@@ -456,14 +591,21 @@ async function resolveSingleListingPolarProduct({
     return null;
   }
 
-  // Defend against price drift: only attribute to the real product if Polar
-  // still prices it exactly at the reserved order total.
+  // Defend against drift: only attribute to the real product if Polar still
+  // prices it exactly at the reserved total AND in the checkout's currency
+  // (Polar rejects a checkout whose currency the product can't honor).
   try {
+    const wantCurrency = toPolarCurrency(checkout.currency);
     const product = await polar.products.get({ id: data.polar_product_id });
+    // Products carry one fixed price per currency; pick the one matching the
+    // checkout currency and confirm it still equals the reserved total.
     const fixedPrice = (product.prices ?? []).find(
       (price) =>
         (price as { amountType?: string }).amountType === 'fixed' &&
-        typeof (price as { priceAmount?: number }).priceAmount === 'number'
+        typeof (price as { priceAmount?: number }).priceAmount === 'number' &&
+        (
+          price as { priceCurrency?: string | null }
+        ).priceCurrency?.toLowerCase() === wantCurrency
     ) as { priceAmount?: number } | undefined;
     if (fixedPrice?.priceAmount === checkout.totalAmount) {
       return data.polar_product_id;
@@ -515,7 +657,8 @@ export async function createInventoryPolarCheckout({
   });
   const productId =
     singleListingProductId ??
-    (await ensureInventoryPolarProduct({
+    (await ensureInventoryPolarCheckoutProduct({
+      currency: checkout.currency,
       environment,
       wsId: checkout.wsId,
     }));

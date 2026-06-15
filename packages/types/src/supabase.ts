@@ -3572,6 +3572,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      inventory_polar_checkout_products: {
+        Row: {
+          created_at: string;
+          currency: string;
+          environment: string;
+          id: string;
+          polar_product_id: string;
+          polar_product_name: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          currency: string;
+          environment: string;
+          id?: string;
+          polar_product_id: string;
+          polar_product_name?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          currency?: string;
+          environment?: string;
+          id?: string;
+          polar_product_id?: string;
+          polar_product_name?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       inventory_polar_integrations: {
         Row: {
           access_token_encrypted: string;

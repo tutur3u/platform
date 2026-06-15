@@ -149,13 +149,18 @@ async function pushRowToPolar(
 
   const { environment, polar } = context;
   const currency = toPolarCurrency(row.currency);
-  // Polar fixed prices are immutable, so each update replaces the price list
-  // with a single fresh fixed price reflecting the current inventory price.
-  const price = {
+  const priceAmount = Math.max(0, Math.round(row.priceCents));
+  // Polar requires the organization's default presentment currency (USD) to be
+  // present on every product and selects the price matching the checkout
+  // currency. So price the product in USD plus the storefront's currency (same
+  // numeric amount — the storefront-currency price is the one ever charged,
+  // since our checkout always uses the storefront currency). Fixed prices are
+  // immutable, so each update replaces the whole price list.
+  const prices = Array.from(new Set(['usd', currency])).map((code) => ({
     amountType: 'fixed' as const,
-    priceAmount: Math.max(0, Math.round(row.priceCents)),
-    priceCurrency: currency,
-  };
+    priceAmount,
+    priceCurrency: code as never,
+  }));
   const metadata = {
     environment,
     kind,
@@ -169,6 +174,29 @@ async function pushRowToPolar(
       (await getCurrentPolarProductId(table, row.rowId, row.wsId));
     let priceId: string | null = null;
 
+    // A Polar product's price currency is immutable. If the storefront currency
+    // changed since the product was created (its prices no longer include the
+    // target currency), recreate the product instead of updating it.
+    if (productId) {
+      try {
+        const existing = await polar.products.get({ id: productId });
+        const existingCurrencies = (
+          (existing.prices ?? []) as Array<{ priceCurrency?: string | null }>
+        )
+          .map((p) => p.priceCurrency?.toLowerCase())
+          .filter((c): c is string => Boolean(c));
+        if (
+          existingCurrencies.length &&
+          !existingCurrencies.includes(currency)
+        ) {
+          productId = null;
+        }
+      } catch {
+        // If the product can't be fetched (deleted/invalid), recreate it.
+        productId = null;
+      }
+    }
+
     if (productId) {
       const updated = await polar.products.update({
         id: productId,
@@ -176,7 +204,7 @@ async function pushRowToPolar(
           description: row.description ?? undefined,
           metadata,
           name: row.name,
-          prices: [price],
+          prices,
         },
       });
       priceId = updated.prices?.[0]?.id ?? null;
@@ -185,7 +213,7 @@ async function pushRowToPolar(
         description: row.description ?? undefined,
         metadata,
         name: row.name,
-        prices: [price],
+        prices,
         visibility: 'public',
       });
       productId = created.id;
