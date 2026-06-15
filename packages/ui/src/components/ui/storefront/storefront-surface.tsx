@@ -25,6 +25,7 @@ import {
   sanitizeStorefrontAccentColor,
   storefrontRadiusClasses,
   storefrontSurfaceClasses,
+  storefrontThemeClasses,
 } from './utils';
 
 export function StorefrontSurface({
@@ -100,7 +101,11 @@ export function StorefrontSurface({
 
   return (
     <main
-      className={cn('min-h-dvh bg-background text-foreground', className)}
+      className={cn(
+        'min-h-dvh bg-background text-foreground',
+        storefrontThemeClasses[storefront.themePreset],
+        className
+      )}
       style={getAccentStyle(accentColor)}
     >
       {notice ? (

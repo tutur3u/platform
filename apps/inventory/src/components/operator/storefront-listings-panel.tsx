@@ -146,6 +146,7 @@ export function StorefrontListingsPanel({
                   <SelectValueField
                     allowEmpty={false}
                     emptyText={t('emptyOptions')}
+                    hint={t('hints.listingType')}
                     label={t('listingType')}
                     onChange={(value) => {
                       setListingType(value as 'product' | 'bundle');

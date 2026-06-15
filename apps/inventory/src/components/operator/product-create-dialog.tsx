@@ -18,11 +18,10 @@ import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import { InventoryImageUploadField } from './inventory-image-upload';
 import {
-  FormSection,
-  OperatorDialogBody,
   OperatorDialogContent,
   OperatorDialogFooter,
   OperatorDialogHeader,
+  OperatorDialogTabs,
 } from './operator-dialog-shell';
 import {
   NumberField,
@@ -41,6 +40,7 @@ const initialState: ProductFormState = {
   avatarUrl: '',
   categoryId: '',
   description: '',
+  financeCategoryId: '',
   manufacturerId: '',
   minAmount: '',
   name: '',
@@ -78,6 +78,7 @@ export function ProductCreateForm({
         avatar_url: form.avatarUrl || null,
         category_id: form.categoryId,
         description: form.description || undefined,
+        finance_category_id: form.financeCategoryId || null,
         inventory: shouldCreateStockRow
           ? [
               {
@@ -152,211 +153,256 @@ export function ProductCreateForm({
             if (canSubmit && stockReady) mutation.mutate();
           }}
         >
-          <OperatorDialogBody className="grid gap-6">
-            {suggestions.length ? (
-              <SmartSuggestions
-                emptyLabel={t('suggestions.empty')}
-                suggestions={suggestions}
-                title={t('suggestions.title')}
-              />
-            ) : null}
-            <FormSection
-              description={t('steps.productDetailsDescription')}
-              icon={<Tags className="h-4 w-4" />}
-              title={t('steps.productDetails')}
-            >
-              <div className="grid gap-3 md:grid-cols-2">
-                <TextField
-                  className="md:col-span-2"
-                  label={t('productName')}
-                  onChange={(name) =>
-                    setForm((current) => ({ ...current, name }))
-                  }
-                  placeholder={t('placeholders.productName')}
-                  value={form.name}
-                />
-                <SelectField
-                  createText={referenceCreateText(t('category'))}
-                  creatingText={referenceCreatingText(t('category'))}
-                  emptyText={t('emptyOptions')}
-                  label={t('category')}
-                  onChange={(categoryId) =>
-                    setForm((current) => ({ ...current, categoryId }))
-                  }
-                  onCreate={(name) =>
-                    createReference(() =>
-                      createInventoryProductCategory(wsId, { name })
-                    )
-                  }
-                  options={options?.categories}
-                  placeholder={t('placeholders.category')}
-                  searchPlaceholder={referenceSearchText(t('category'))}
-                  value={form.categoryId}
-                />
-                <SelectField
-                  createText={referenceCreateText(t('owner'))}
-                  creatingText={referenceCreatingText(t('owner'))}
-                  emptyText={t('emptyOptions')}
-                  label={t('owner')}
-                  onChange={(ownerId) =>
-                    setForm((current) => ({ ...current, ownerId }))
-                  }
-                  onCreate={(name) =>
-                    createReference(() => createInventoryOwner(wsId, { name }))
-                  }
-                  options={options?.owners}
-                  placeholder={t('placeholders.owner')}
-                  searchPlaceholder={referenceSearchText(t('owner'))}
-                  value={form.ownerId}
-                />
-                <SelectField
-                  createText={referenceCreateText(t('manufacturer'))}
-                  creatingText={referenceCreatingText(t('manufacturer'))}
-                  emptyText={t('emptyOptions')}
-                  label={t('manufacturer')}
-                  onChange={(manufacturerId) =>
-                    setForm((current) => ({ ...current, manufacturerId }))
-                  }
-                  onCreate={(name) =>
-                    createReference(() =>
-                      createInventoryManufacturer(wsId, { name })
-                    )
-                  }
-                  options={options?.manufacturers}
-                  placeholder={t('placeholders.manufacturer')}
-                  searchPlaceholder={referenceSearchText(t('manufacturer'))}
-                  value={form.manufacturerId}
-                />
-                <TextField
-                  label={t('usage')}
-                  onChange={(usage) =>
-                    setForm((current) => ({ ...current, usage }))
-                  }
-                  placeholder={t('placeholders.usage')}
-                  value={form.usage}
-                />
-                <TextAreaField
-                  className="md:col-span-2"
-                  label={t('description')}
-                  onChange={(description) =>
-                    setForm((current) => ({ ...current, description }))
-                  }
-                  placeholder={t('placeholders.productDescription')}
-                  value={form.description}
-                />
-              </div>
-            </FormSection>
-            <FormSection
-              description={t('steps.productMediaDescription')}
-              icon={<FileImage className="h-4 w-4" />}
-              title={t('steps.productMedia')}
-            >
-              <InventoryImageUploadField
-                description={t('featuredImageDescription')}
-                label={t('featuredImage')}
-                onChange={(avatarUrl) =>
-                  setForm((current) => ({ ...current, avatarUrl }))
-                }
-                target="product-featured-image"
-                value={form.avatarUrl}
-                wsId={wsId}
-              />
-            </FormSection>
-            <FormSection
-              description={t('steps.productStockDescription')}
-              icon={<Boxes className="h-4 w-4" />}
-              title={t('steps.productStock')}
-            >
-              <div className="grid gap-3 md:grid-cols-2">
-                <ToggleField
-                  checked={form.unlimitedStock}
-                  className="items-start md:col-span-2"
-                  onChange={(unlimitedStock) =>
-                    setForm((current) => ({
-                      ...current,
-                      amount: unlimitedStock ? '' : current.amount,
-                      unlimitedStock,
-                    }))
-                  }
-                >
-                  <span className="grid gap-1">
-                    <span className="font-medium">{t('unlimitedStock')}</span>
-                    <span className="text-muted-foreground text-xs">
-                      {t('unlimitedStockDescription')}
-                    </span>
-                  </span>
-                </ToggleField>
-                <SelectField
-                  createText={referenceCreateText(t('unit'))}
-                  creatingText={referenceCreatingText(t('unit'))}
-                  emptyText={t('emptyOptions')}
-                  label={t('unit')}
-                  onChange={(unitId) =>
-                    setForm((current) => ({ ...current, unitId }))
-                  }
-                  onCreate={(name) =>
-                    createReference(() => createInventoryUnit(wsId, { name }))
-                  }
-                  options={options?.units}
-                  placeholder={t('placeholders.unit')}
-                  searchPlaceholder={referenceSearchText(t('unit'))}
-                  value={form.unitId}
-                />
-                <SelectField
-                  createText={referenceCreateText(t('warehouse'))}
-                  creatingText={referenceCreatingText(t('warehouse'))}
-                  emptyText={t('emptyOptions')}
-                  label={t('warehouse')}
-                  onChange={(warehouseId) =>
-                    setForm((current) => ({ ...current, warehouseId }))
-                  }
-                  onCreate={(name) =>
-                    createReference(() =>
-                      createInventoryWarehouse(wsId, { name })
-                    )
-                  }
-                  options={options?.warehouses}
-                  placeholder={t('placeholders.warehouse')}
-                  searchPlaceholder={referenceSearchText(t('warehouse'))}
-                  value={form.warehouseId}
-                />
-                <NumberField
-                  disabled={form.unlimitedStock}
-                  label={t('amount')}
-                  onChange={(amount) =>
-                    setForm((current) => ({ ...current, amount }))
-                  }
-                  placeholder={
-                    form.unlimitedStock
-                      ? t('unlimitedStock')
-                      : t('placeholders.amount')
-                  }
-                  value={form.amount}
-                />
-                <NumberField
-                  label={t('minAmount')}
-                  onChange={(minAmount) =>
-                    setForm((current) => ({ ...current, minAmount }))
-                  }
-                  placeholder={t('placeholders.minAmount')}
-                  value={form.minAmount}
-                />
-                <NumberField
-                  label={t('price')}
-                  onChange={(price) =>
-                    setForm((current) => ({ ...current, price }))
-                  }
-                  placeholder={t('placeholders.price')}
-                  value={form.price}
-                />
-              </div>
-              {needsStockTarget && !hasStockTarget ? (
-                <p className="text-amber-600 text-xs leading-5 dark:text-amber-500">
-                  {t('stockTargetHint')}
-                </p>
-              ) : null}
-            </FormSection>
-          </OperatorDialogBody>
+          <OperatorDialogTabs
+            tabs={[
+              {
+                content: (
+                  <div className="grid gap-5">
+                    {suggestions.length ? (
+                      <SmartSuggestions
+                        emptyLabel={t('suggestions.empty')}
+                        suggestions={suggestions}
+                        title={t('suggestions.title')}
+                      />
+                    ) : null}
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <TextField
+                        className="md:col-span-2"
+                        label={t('productName')}
+                        onChange={(name) =>
+                          setForm((current) => ({ ...current, name }))
+                        }
+                        placeholder={t('placeholders.productName')}
+                        value={form.name}
+                      />
+                      <SelectField
+                        createText={referenceCreateText(t('category'))}
+                        creatingText={referenceCreatingText(t('category'))}
+                        emptyText={t('emptyOptions')}
+                        hint={t('hints.category')}
+                        label={t('category')}
+                        onChange={(categoryId) =>
+                          setForm((current) => ({ ...current, categoryId }))
+                        }
+                        onCreate={(name) =>
+                          createReference(() =>
+                            createInventoryProductCategory(wsId, { name })
+                          )
+                        }
+                        options={options?.categories}
+                        placeholder={t('placeholders.category')}
+                        searchPlaceholder={referenceSearchText(t('category'))}
+                        value={form.categoryId}
+                      />
+                      <SelectField
+                        createText={referenceCreateText(t('owner'))}
+                        creatingText={referenceCreatingText(t('owner'))}
+                        emptyText={t('emptyOptions')}
+                        hint={t('hints.owner')}
+                        label={t('owner')}
+                        onChange={(ownerId) =>
+                          setForm((current) => ({ ...current, ownerId }))
+                        }
+                        onCreate={(name) =>
+                          createReference(() =>
+                            createInventoryOwner(wsId, { name })
+                          )
+                        }
+                        options={options?.owners}
+                        placeholder={t('placeholders.owner')}
+                        searchPlaceholder={referenceSearchText(t('owner'))}
+                        value={form.ownerId}
+                      />
+                      <SelectField
+                        createText={referenceCreateText(t('manufacturer'))}
+                        creatingText={referenceCreatingText(t('manufacturer'))}
+                        emptyText={t('emptyOptions')}
+                        hint={t('hints.manufacturer')}
+                        label={t('manufacturer')}
+                        onChange={(manufacturerId) =>
+                          setForm((current) => ({ ...current, manufacturerId }))
+                        }
+                        onCreate={(name) =>
+                          createReference(() =>
+                            createInventoryManufacturer(wsId, { name })
+                          )
+                        }
+                        options={options?.manufacturers}
+                        placeholder={t('placeholders.manufacturer')}
+                        searchPlaceholder={referenceSearchText(
+                          t('manufacturer')
+                        )}
+                        value={form.manufacturerId}
+                      />
+                      <SelectField
+                        emptyText={t('emptyOptions')}
+                        hint={t('hints.financeCategory')}
+                        label={t('financeCategory')}
+                        onChange={(financeCategoryId) =>
+                          setForm((current) => ({
+                            ...current,
+                            financeCategoryId,
+                          }))
+                        }
+                        options={options?.financeCategories?.flatMap((item) =>
+                          item.id ? [{ id: item.id, name: item.name }] : []
+                        )}
+                        placeholder={t('placeholders.financeCategory')}
+                        searchPlaceholder={referenceSearchText(
+                          t('financeCategory')
+                        )}
+                        value={form.financeCategoryId}
+                      />
+                      <TextField
+                        hint={t('hints.usage')}
+                        label={t('usage')}
+                        onChange={(usage) =>
+                          setForm((current) => ({ ...current, usage }))
+                        }
+                        placeholder={t('placeholders.usage')}
+                        value={form.usage}
+                      />
+                      <TextAreaField
+                        className="md:col-span-2"
+                        label={t('description')}
+                        onChange={(description) =>
+                          setForm((current) => ({ ...current, description }))
+                        }
+                        placeholder={t('placeholders.productDescription')}
+                        value={form.description}
+                      />
+                    </div>
+                  </div>
+                ),
+                icon: <Tags className="h-4 w-4" />,
+                label: t('steps.productDetails'),
+                value: 'details',
+              },
+              {
+                content: (
+                  <InventoryImageUploadField
+                    description={t('featuredImageDescription')}
+                    label={t('featuredImage')}
+                    onChange={(avatarUrl) =>
+                      setForm((current) => ({ ...current, avatarUrl }))
+                    }
+                    target="product-featured-image"
+                    value={form.avatarUrl}
+                    wsId={wsId}
+                  />
+                ),
+                icon: <FileImage className="h-4 w-4" />,
+                label: t('steps.productMedia'),
+                value: 'media',
+              },
+              {
+                content: (
+                  <div className="grid gap-3">
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <ToggleField
+                        checked={form.unlimitedStock}
+                        className="items-start md:col-span-2"
+                        onChange={(unlimitedStock) =>
+                          setForm((current) => ({
+                            ...current,
+                            amount: unlimitedStock ? '' : current.amount,
+                            unlimitedStock,
+                          }))
+                        }
+                      >
+                        <span className="grid gap-1">
+                          <span className="font-medium">
+                            {t('unlimitedStock')}
+                          </span>
+                          <span className="text-muted-foreground text-xs">
+                            {t('unlimitedStockDescription')}
+                          </span>
+                        </span>
+                      </ToggleField>
+                      <SelectField
+                        createText={referenceCreateText(t('unit'))}
+                        creatingText={referenceCreatingText(t('unit'))}
+                        emptyText={t('emptyOptions')}
+                        hint={t('hints.unit')}
+                        label={t('unit')}
+                        onChange={(unitId) =>
+                          setForm((current) => ({ ...current, unitId }))
+                        }
+                        onCreate={(name) =>
+                          createReference(() =>
+                            createInventoryUnit(wsId, { name })
+                          )
+                        }
+                        options={options?.units}
+                        placeholder={t('placeholders.unit')}
+                        searchPlaceholder={referenceSearchText(t('unit'))}
+                        value={form.unitId}
+                      />
+                      <SelectField
+                        createText={referenceCreateText(t('warehouse'))}
+                        creatingText={referenceCreatingText(t('warehouse'))}
+                        emptyText={t('emptyOptions')}
+                        hint={t('hints.warehouse')}
+                        label={t('warehouse')}
+                        onChange={(warehouseId) =>
+                          setForm((current) => ({ ...current, warehouseId }))
+                        }
+                        onCreate={(name) =>
+                          createReference(() =>
+                            createInventoryWarehouse(wsId, { name })
+                          )
+                        }
+                        options={options?.warehouses}
+                        placeholder={t('placeholders.warehouse')}
+                        searchPlaceholder={referenceSearchText(t('warehouse'))}
+                        value={form.warehouseId}
+                      />
+                      <NumberField
+                        disabled={form.unlimitedStock}
+                        hint={t('hints.amount')}
+                        label={t('amount')}
+                        onChange={(amount) =>
+                          setForm((current) => ({ ...current, amount }))
+                        }
+                        placeholder={
+                          form.unlimitedStock
+                            ? t('unlimitedStock')
+                            : t('placeholders.amount')
+                        }
+                        value={form.amount}
+                      />
+                      <NumberField
+                        hint={t('hints.minAmount')}
+                        label={t('minAmount')}
+                        onChange={(minAmount) =>
+                          setForm((current) => ({ ...current, minAmount }))
+                        }
+                        placeholder={t('placeholders.minAmount')}
+                        value={form.minAmount}
+                      />
+                      <NumberField
+                        hint={t('hints.price')}
+                        label={t('price')}
+                        onChange={(price) =>
+                          setForm((current) => ({ ...current, price }))
+                        }
+                        placeholder={t('placeholders.price')}
+                        value={form.price}
+                      />
+                    </div>
+                    {needsStockTarget && !hasStockTarget ? (
+                      <p className="text-amber-600 text-xs leading-5 dark:text-amber-500">
+                        {t('stockTargetHint')}
+                      </p>
+                    ) : null}
+                  </div>
+                ),
+                icon: <Boxes className="h-4 w-4" />,
+                label: t('steps.productStock'),
+                value: 'stock',
+              },
+            ]}
+          />
           <OperatorDialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="ghost">

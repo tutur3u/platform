@@ -183,6 +183,7 @@ export function BundleForm({
                     value={form.name}
                   />
                   <TextField
+                    hint={t('hints.slug')}
                     label={t('slug')}
                     onChange={(slug) =>
                       setForm((current) => ({ ...current, slug }))
@@ -191,6 +192,7 @@ export function BundleForm({
                     value={form.slug}
                   />
                   <NumberField
+                    hint={t('hints.price')}
                     label={t('price')}
                     onChange={(price) =>
                       setForm((current) => ({ ...current, price }))
@@ -199,6 +201,7 @@ export function BundleForm({
                     value={form.price}
                   />
                   <NumberField
+                    hint={t('hints.maxPerOrder')}
                     label={t('maxPerOrder')}
                     onChange={(maxPerOrder) =>
                       setForm((current) => ({ ...current, maxPerOrder }))

@@ -17,6 +17,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { InventoryImageUploadField } from './inventory-image-upload';
 import {
+  ColorField,
   SelectValueField,
   TextAreaField,
   TextField,
@@ -70,6 +71,7 @@ export function StorefrontIdentityFields({ form, setForm }: StepFieldsProps) {
         value={form.name}
       />
       <TextField
+        hint={t('hints.slug')}
         label={t('slug')}
         onChange={(slug) => setForm((current) => ({ ...current, slug }))}
         placeholder={t('placeholders.slug')}
@@ -121,7 +123,8 @@ export function StorefrontBrandFields({
           wsId={wsId}
         />
       </div>
-      <TextField
+      <ColorField
+        hint={t('hints.accentColor')}
         label={t('accentColor')}
         onChange={(accentColor) =>
           setForm((current) => ({ ...current, accentColor }))
@@ -131,6 +134,7 @@ export function StorefrontBrandFields({
       />
       <SelectValueField
         allowEmpty={false}
+        hint={t('hints.currency')}
         label={t('currency')}
         onChange={(currency) =>
           setForm((current) => ({ ...current, currency }))
@@ -140,6 +144,7 @@ export function StorefrontBrandFields({
         value={form.currency}
       />
       <SelectValueField
+        hint={t('hints.themePreset')}
         label={t('themePreset')}
         onChange={(value) =>
           setForm((current) => ({
@@ -155,6 +160,7 @@ export function StorefrontBrandFields({
         value={form.themePreset}
       />
       <SelectValueField
+        hint={t('hints.layoutStyle')}
         label={t('layoutStyle')}
         onChange={(value) =>
           setForm((current) => ({
@@ -170,6 +176,7 @@ export function StorefrontBrandFields({
         value={form.layoutStyle}
       />
       <SelectValueField
+        hint={t('hints.surfaceStyle')}
         label={t('surfaceStyle')}
         onChange={(value) =>
           setForm((current) => ({
@@ -185,6 +192,7 @@ export function StorefrontBrandFields({
         value={form.surfaceStyle}
       />
       <SelectValueField
+        hint={t('hints.cornerStyle')}
         label={t('cornerStyle')}
         onChange={(value) =>
           setForm((current) => ({
@@ -202,6 +210,7 @@ export function StorefrontBrandFields({
       <div className="md:col-span-2">
         <ToggleField
           checked={form.showInventoryBadges}
+          hint={t('hints.showInventoryBadges')}
           onChange={(showInventoryBadges) =>
             setForm((current) => ({ ...current, showInventoryBadges }))
           }
@@ -212,6 +221,7 @@ export function StorefrontBrandFields({
       <div className="md:col-span-2">
         <ToggleField
           checked={form.analyticsEnabled}
+          hint={t('hints.analyticsEnabled')}
           onChange={(analyticsEnabled) =>
             setForm((current) => ({ ...current, analyticsEnabled }))
           }
@@ -297,6 +307,7 @@ export function StorefrontBuilderFields({
           <div className="grid gap-3 md:grid-cols-2">
             <SelectValueField
               allowEmpty={false}
+              hint={t('hints.sectionType')}
               label={t('sectionType')}
               onChange={(sectionType) =>
                 updateSection(index, {
@@ -312,6 +323,7 @@ export function StorefrontBuilderFields({
             />
             <SelectValueField
               allowEmpty={false}
+              hint={t('hints.sectionStatus')}
               label={t('sectionStatus')}
               onChange={(status) =>
                 updateSection(index, {
@@ -332,6 +344,7 @@ export function StorefrontBuilderFields({
               value={section.title ?? ''}
             />
             <TextField
+              hint={t('hints.sectionHref')}
               inputMode="url"
               label={t('sectionHref')}
               onChange={(href) => updateSection(index, { href: href || null })}
@@ -379,6 +392,7 @@ export function StorefrontCheckoutFields({ form, setForm }: StepFieldsProps) {
   return (
     <div className="grid gap-3 md:grid-cols-3">
       <SelectValueField
+        hint={t('hints.checkoutMode')}
         label={t('checkoutMode')}
         onChange={(value) =>
           setForm((current) => ({
@@ -409,6 +423,7 @@ export function StorefrontCheckoutFields({ form, setForm }: StepFieldsProps) {
         value={form.status}
       />
       <SelectValueField
+        hint={t('hints.visibility')}
         label={t('visibility')}
         onChange={(value) =>
           setForm((current) => ({

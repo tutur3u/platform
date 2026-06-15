@@ -23,6 +23,27 @@ export const storefrontSurfaceClasses: Record<
   solid: 'border border-border bg-card shadow-sm shadow-foreground/5',
 };
 
+/**
+ * Theme presets change the storefront's typographic personality so the choice
+ * is actually visible to shoppers. Applied at the surface root and inherited by
+ * headings/body inside.
+ */
+export const storefrontThemeClasses: Record<
+  InventoryStorefront['themePreset'],
+  string
+> = {
+  // Spacious, headline-led magazine feel with serif headings.
+  editorial:
+    'font-sans [&_h1]:font-serif [&_h1]:tracking-tight [&_h2]:font-serif [&_h2]:tracking-tight',
+  // Refined boutique look: airy, wide-tracked uppercase headings.
+  boutique:
+    'font-sans [&_h1]:uppercase [&_h1]:tracking-[0.12em] [&_h2]:tracking-wide',
+  // Dense, scannable product-catalog density.
+  catalog: 'font-sans text-[0.95rem] [&_h1]:tracking-tight',
+  // Clean default.
+  minimal: 'font-sans',
+};
+
 export type StorefrontAccentStyle = CSSProperties & {
   '--storefront-accent'?: string;
   '--storefront-accent-foreground'?: string;

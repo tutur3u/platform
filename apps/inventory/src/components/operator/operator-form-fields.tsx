@@ -1,6 +1,9 @@
 'use client';
 
+import { Info } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import {
   Combobox,
   type ComboboxAction,
@@ -9,12 +12,54 @@ import {
 } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
+
+/**
+ * A small info icon that reveals an explanatory hint on hover/focus/tap. Built
+ * on the shared Button primitive so it stays keyboard- and touch-accessible.
+ */
+export function HintIcon({ hint }: { hint: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          aria-label={hint}
+          className="size-5 shrink-0 rounded-full p-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
+          onClick={(event) => event.preventDefault()}
+          size="icon"
+          type="button"
+          variant="ghost"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[260px] text-pretty leading-snug">
+        {hint}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+/**
+ * Renders a field label with an optional info-icon tooltip. The hint keeps
+ * forms approachable for non-technical operators without cluttering the layout
+ * with permanent helper text.
+ */
+export function FieldLabel({ hint, label }: { hint?: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5 font-medium">
+      {label}
+      {hint ? <HintIcon hint={hint} /> : null}
+    </span>
+  );
+}
 
 export function TextField({
   className,
   disabled,
+  hint,
   inputMode,
   label,
   onChange,
@@ -23,6 +68,7 @@ export function TextField({
 }: {
   className?: string;
   disabled?: boolean;
+  hint?: string;
   inputMode?:
     | 'decimal'
     | 'email'
@@ -38,7 +84,7 @@ export function TextField({
 }) {
   return (
     <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
-      <span className="font-medium">{label}</span>
+      <FieldLabel hint={hint} label={label} />
       <Input
         className="h-10"
         disabled={disabled}
@@ -57,14 +103,21 @@ export function NumberField(
   return <TextField {...props} inputMode="numeric" />;
 }
 
-export function TextAreaField({
+/**
+ * A color field that pairs a visual swatch/picker with a hex text input, so
+ * non-technical operators can pick a brand color instead of guessing hex codes,
+ * while power users can still paste an exact value.
+ */
+export function ColorField({
   className,
+  hint,
   label,
   onChange,
   placeholder,
   value,
 }: {
   className?: string;
+  hint?: string;
   label: string;
   onChange: (value: string) => void;
   placeholder: string;
@@ -72,7 +125,44 @@ export function TextAreaField({
 }) {
   return (
     <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
-      <span className="font-medium">{label}</span>
+      <FieldLabel hint={hint} label={label} />
+      <div className="flex min-w-0 items-center gap-2">
+        <ColorPicker
+          aria-label={label}
+          className="size-10 shrink-0"
+          onChange={(next) => onChange(next ?? '')}
+          value={value || '#4F46E5'}
+        />
+        <Input
+          className="h-10"
+          inputMode="text"
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          value={value}
+        />
+      </div>
+    </label>
+  );
+}
+
+export function TextAreaField({
+  className,
+  hint,
+  label,
+  onChange,
+  placeholder,
+  value,
+}: {
+  className?: string;
+  hint?: string;
+  label: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
+      <FieldLabel hint={hint} label={label} />
       <Textarea
         className="min-h-20"
         onChange={(event) => onChange(event.target.value)}
@@ -90,6 +180,7 @@ export function SelectField({
   createText,
   creatingText,
   emptyText,
+  hint,
   label,
   onChange,
   onCreate,
@@ -104,6 +195,7 @@ export function SelectField({
   createText?: string;
   creatingText?: string;
   emptyText?: string;
+  hint?: string;
   label: string;
   onChange: (value: string) => void;
   onCreate?: (value: string) => ComboboxCreateResult | Promise<unknown>;
@@ -169,7 +261,7 @@ export function SelectField({
 
   return (
     <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
-      <span className="font-medium">{label}</span>
+      <FieldLabel hint={hint} label={label} />
       <Combobox
         actions={actions}
         className="min-w-0"
@@ -194,6 +286,7 @@ export function SelectValueField({
   allowEmpty = true,
   className,
   emptyText,
+  hint,
   label,
   onChange,
   options,
@@ -205,6 +298,7 @@ export function SelectValueField({
   allowEmpty?: boolean;
   className?: string;
   emptyText?: string;
+  hint?: string;
   label: string;
   onChange: (value: string) => void;
   options: { label: string; value: string }[];
@@ -231,7 +325,7 @@ export function SelectValueField({
 
   return (
     <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
-      <span className="font-medium">{label}</span>
+      <FieldLabel hint={hint} label={label} />
       <Combobox
         actions={actions}
         className="min-w-0"
@@ -252,11 +346,13 @@ export function ToggleField({
   checked,
   children,
   className,
+  hint,
   onChange,
 }: {
   checked: boolean;
   children: ReactNode;
   className?: string;
+  hint?: string;
   onChange: (checked: boolean) => void;
 }) {
   return (
@@ -270,7 +366,8 @@ export function ToggleField({
         checked={checked}
         onCheckedChange={(nextChecked) => onChange(nextChecked === true)}
       />
-      <span>{children}</span>
+      <span className="flex-1">{children}</span>
+      {hint ? <HintIcon hint={hint} /> : null}
     </label>
   );
 }

@@ -24,15 +24,28 @@ export function StorefrontHeroPanel({
   return (
     <section
       className={cn(
-        'grid min-h-52 overflow-hidden',
+        'relative isolate overflow-hidden',
         storefrontSurfaceClasses[storefront.surfaceStyle],
-        radius,
-        storefront.themePreset === 'editorial'
-          ? 'md:grid-cols-[minmax(0,1.15fr)_360px]'
-          : 'md:grid-cols-[minmax(0,1fr)_280px]'
+        radius
       )}
     >
-      <div className="flex min-w-0 flex-col justify-between gap-6 p-5">
+      {/* Full-width featured banner backdrop. */}
+      <div className="relative h-40 w-full sm:h-52 md:h-60">
+        {heroImage ? (
+          <StorefrontImagePanel
+            className="absolute inset-0 h-full w-full"
+            imageUrl={heroImage}
+            label={storefront.name}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-muted via-muted/60 to-background" />
+        )}
+        {/* Scrim that fades the banner into the page so overlaid text stays legible. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
+      </div>
+
+      {/* Overlaid title block — pulled up onto the lower, faded part of the banner. */}
+      <div className="relative -mt-20 flex flex-col gap-4 p-5">
         <div>
           <div className="flex items-center gap-2 text-muted-foreground text-xs">
             <Store className="h-4 w-4" />
@@ -40,7 +53,7 @@ export function StorefrontHeroPanel({
           </div>
           <h2
             className={cn(
-              'mt-3 text-balance font-semibold tracking-normal',
+              'mt-2 text-balance font-semibold tracking-normal',
               storefront.themePreset === 'editorial'
                 ? 'text-3xl md:text-4xl'
                 : 'text-2xl'
@@ -61,12 +74,6 @@ export function StorefrontHeroPanel({
           </Badge>
         </div>
       </div>
-
-      <StorefrontImagePanel
-        className="min-h-52 md:min-h-full"
-        imageUrl={heroImage}
-        label={storefront.name}
-      />
     </section>
   );
 }

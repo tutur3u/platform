@@ -3,6 +3,7 @@ export type ProductFormState = {
   avatarUrl: string;
   categoryId: string;
   description: string;
+  financeCategoryId: string;
   manufacturerId: string;
   minAmount: string;
   name: string;

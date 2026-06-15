@@ -4,6 +4,7 @@ import {
   Calculator,
   CheckCircle2,
   ImageOff,
+  Pencil,
   Tags,
   TriangleAlert,
   User,
@@ -13,8 +14,10 @@ import type {
   InventoryProductFormOptionsResponse,
   InventoryProductSummary,
 } from '@tuturuuu/internal-api/inventory';
+import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import {
   OperationsTable,
   type OperationsTableColumn,
@@ -24,7 +27,7 @@ import {
   getInventoryStockState,
   stockAmountFromRecords,
 } from './operator-stock';
-import { ProductRowActions } from './product-management';
+import { ProductEditDialog } from './product-row-actions';
 import {
   formatNumber,
   type ProductBadge,
@@ -61,6 +64,10 @@ export function ProductsTable({
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator') as OperatorTranslator;
+  const formsText = useTranslations(
+    'inventory.operator.forms'
+  ) as OperatorTranslator;
+  const [editing, setEditing] = useState<InventoryProductSummary | null>(null);
 
   if (rows.length === 0) return <EmptyRow label={t('empty')} />;
 
@@ -68,41 +75,52 @@ export function ProductsTable({
     toProductTableRow(product, costingProfiles, t)
   );
   const columns = getProductTableColumns({
-    costingProfiles,
-    formOptions,
+    onEdit: setEditing,
     t,
     view,
-    wsId,
   });
 
   return (
-    <OperationsTable
-      ariaLabel={
-        view === 'stock' ? t('views.stock.title') : t('views.catalog.title')
-      }
-      columns={columns}
-      getRowClassName={(row) =>
-        view === 'stock' && row.isLowStock ? 'bg-destructive/5' : undefined
-      }
-      getRowId={(row) => row.product.id}
-      minWidth={view === 'stock' ? 'min-w-[860px]' : 'min-w-[920px]'}
-      rows={tableRows}
-    />
+    <>
+      <OperationsTable
+        ariaLabel={
+          view === 'stock' ? t('views.stock.title') : t('views.catalog.title')
+        }
+        columns={columns}
+        getRowClassName={(row) =>
+          view === 'stock' && row.isLowStock ? 'bg-destructive/5' : undefined
+        }
+        getRowId={(row) => row.product.id}
+        minWidth={view === 'stock' ? 'min-w-[860px]' : 'min-w-[920px]'}
+        onRowActivate={(row) => setEditing(row.product)}
+        rowActivateLabel={(row) => `${formsText('edit')}: ${row.product.name}`}
+        rows={tableRows}
+      />
+      {editing ? (
+        <ProductEditDialog
+          costingProfiles={costingProfiles}
+          key={editing.id}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) setEditing(null);
+          }}
+          open
+          options={formOptions}
+          row={editing}
+          wsId={wsId}
+        />
+      ) : null}
+    </>
   );
 }
 
 function getProductTableColumns({
-  costingProfiles,
-  formOptions,
+  onEdit,
   t,
   view,
-  wsId,
 }: {
-  costingProfiles: InventoryCostProfile[];
-  formOptions?: InventoryProductFormOptionsResponse;
+  onEdit: (product: InventoryProductSummary) => void;
   t: OperatorTranslator;
   view: string;
-  wsId: string;
 }): OperationsTableColumn<ProductTableRow>[] {
   const actionColumn: OperationsTableColumn<ProductTableRow> = {
     cellClassName: 'text-right',
@@ -110,12 +128,15 @@ function getProductTableColumns({
     header: t('columns.actions'),
     key: 'actions',
     render: ({ product }) => (
-      <ProductRowActions
-        costingProfiles={costingProfiles}
-        options={formOptions}
-        row={product}
-        wsId={wsId}
-      />
+      <Button
+        onClick={() => onEdit(product)}
+        size="sm"
+        type="button"
+        variant="outline"
+      >
+        <Pencil className="h-4 w-4" />
+        {t('forms.edit')}
+      </Button>
     ),
   };
 

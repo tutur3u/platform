@@ -7,6 +7,7 @@ import {
   ImageIcon,
   Pencil,
   Save,
+  Settings2,
   Tags,
 } from '@tuturuuu/icons';
 import type {
@@ -28,11 +29,10 @@ import {
 } from './bundle-component-picker';
 import { InventoryImageUploadField } from './inventory-image-upload';
 import {
-  FormSection,
-  OperatorDialogBody,
   OperatorDialogContent,
   OperatorDialogFooter,
   OperatorDialogHeader,
+  OperatorDialogTabs,
 } from './operator-dialog-shell';
 import {
   NumberField,
@@ -45,16 +45,26 @@ import { LifecyclePanel } from './operator-lifecycle';
 
 export function BundleEditorDialog({
   bundle,
+  onOpenChange: onOpenChangeProp,
+  open: openProp,
   products,
   wsId,
 }: {
   bundle: InventoryBundle;
+  onOpenChange?: (open: boolean) => void;
+  open?: boolean;
   products: InventoryProductSummary[];
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const isControlled = openProp !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? openProp : internalOpen;
+  const setOpen = (next: boolean) => {
+    if (!isControlled) setInternalOpen(next);
+    onOpenChangeProp?.(next);
+  };
   const [details, setDetails] = useState(() => getInitialDetails(bundle));
   const [components, setComponents] = useState<DraftBundleComponent[]>(() =>
     getInitialComponents(bundle)
@@ -126,12 +136,14 @@ export function BundleEditorDialog({
       }}
       open={open}
     >
-      <DialogTrigger asChild>
-        <Button size="sm" type="button" variant="outline">
-          <Pencil className="h-4 w-4" />
-          {t('edit')}
-        </Button>
-      </DialogTrigger>
+      {isControlled ? null : (
+        <DialogTrigger asChild>
+          <Button size="sm" type="button" variant="outline">
+            <Pencil className="h-4 w-4" />
+            {t('edit')}
+          </Button>
+        </DialogTrigger>
+      )}
       <OperatorDialogContent size="lg">
         <OperatorDialogHeader
           description={t('editBundleDescription')}
@@ -144,135 +156,159 @@ export function BundleEditorDialog({
             if (canSave) saveMutation.mutate();
           }}
         >
-          <OperatorDialogBody className="grid gap-6">
-            <FormSection
-              icon={<Tags className="h-4 w-4" />}
-              title={t('tabs.details')}
-            >
-              <div className="grid min-w-0 gap-3 lg:grid-cols-2 xl:grid-cols-4">
-                <TextField
-                  className="xl:col-span-2"
-                  label={t('bundleName')}
-                  onChange={(name) =>
-                    setDetails((current) => ({ ...current, name }))
-                  }
-                  placeholder={t('placeholders.bundleName')}
-                  value={details.name}
-                />
-                <TextField
-                  label={t('slug')}
-                  onChange={(slug) =>
-                    setDetails((current) => ({ ...current, slug }))
-                  }
-                  placeholder={t('placeholders.slug')}
-                  value={details.slug}
-                />
-                <SelectValueField
-                  allowEmpty={false}
-                  label={t('status')}
-                  onChange={(status) =>
-                    setDetails((current) => ({
-                      ...current,
-                      status: status as InventoryBundle['status'],
-                    }))
-                  }
-                  options={[
-                    { label: t('bundleStatus.draft'), value: 'draft' },
-                    { label: t('bundleStatus.active'), value: 'active' },
-                    { label: t('bundleStatus.paused'), value: 'paused' },
-                    { label: t('bundleStatus.archived'), value: 'archived' },
-                  ]}
-                  placeholder={t('placeholders.status')}
-                  value={details.status}
-                />
-                <NumberField
-                  label={t('price')}
-                  onChange={(price) =>
-                    setDetails((current) => ({ ...current, price }))
-                  }
-                  placeholder={t('placeholders.price')}
-                  value={details.price}
-                />
-                <NumberField
-                  label={t('maxPerOrder')}
-                  onChange={(maxPerOrder) =>
-                    setDetails((current) => ({ ...current, maxPerOrder }))
-                  }
-                  placeholder={t('placeholders.maxPerOrder')}
-                  value={details.maxPerOrder}
-                />
-                <TextAreaField
-                  className="lg:col-span-2 xl:col-span-4"
-                  label={t('description')}
-                  onChange={(description) =>
-                    setDetails((current) => ({ ...current, description }))
-                  }
-                  placeholder={t('placeholders.bundleDescription')}
-                  value={details.description}
-                />
-              </div>
-            </FormSection>
-            <FormSection
-              icon={<Boxes className="h-4 w-4" />}
-              title={t('tabs.components')}
-            >
-              <BundleComponentPicker
-                components={components}
-                onChange={setComponents}
-                products={products}
-              />
-            </FormSection>
-            <FormSection
-              icon={<FileImage className="h-4 w-4" />}
-              title={t('tabs.media')}
-            >
-              <InventoryImageUploadField
-                description={t('bundleImageDescription')}
-                label={t('bundleImage')}
-                onChange={(imageUrl) =>
-                  setDetails((current) => ({ ...current, imageUrl }))
-                }
-                target="bundle-image"
-                value={details.imageUrl}
-                wsId={wsId}
-              />
-            </FormSection>
-            <FormSection
-              icon={<Boxes className="h-4 w-4" />}
-              title={t('tabs.availability')}
-            >
-              <div className="grid min-w-0 gap-3 lg:grid-cols-3">
-                <AvailabilityCard
-                  icon={<Boxes className="h-4 w-4" />}
-                  label={t('components')}
-                  value={String(components.length)}
-                />
-                <AvailabilityCard
-                  icon={<ImageIcon className="h-4 w-4" />}
-                  label={t('price')}
-                  value={currency(Number(details.price || estimatedPrice || 0))}
-                />
-                <AvailabilityCard
-                  icon={<Boxes className="h-4 w-4" />}
-                  label={t('availability')}
-                  value={
-                    bundle.availableQuantity === null
-                      ? t('unlimitedStock')
-                      : String(bundle.availableQuantity ?? 0)
-                  }
-                />
-              </div>
-            </FormSection>
-            <FormSection title={t('tabs.lifecycle')}>
-              <LifecyclePanel
-                archivePending={archiveMutation.isPending}
-                deletePending={deleteMutation.isPending}
-                onArchive={() => archiveMutation.mutate()}
-                onDelete={() => deleteMutation.mutate()}
-                title={t('lifecycle')}
-              />
-            </FormSection>
-          </OperatorDialogBody>
+          <OperatorDialogTabs
+            tabs={[
+              {
+                content: (
+                  <div className="grid min-w-0 gap-3 lg:grid-cols-2 xl:grid-cols-4">
+                    <TextField
+                      className="xl:col-span-2"
+                      label={t('bundleName')}
+                      onChange={(name) =>
+                        setDetails((current) => ({ ...current, name }))
+                      }
+                      placeholder={t('placeholders.bundleName')}
+                      value={details.name}
+                    />
+                    <TextField
+                      hint={t('hints.slug')}
+                      label={t('slug')}
+                      onChange={(slug) =>
+                        setDetails((current) => ({ ...current, slug }))
+                      }
+                      placeholder={t('placeholders.slug')}
+                      value={details.slug}
+                    />
+                    <SelectValueField
+                      allowEmpty={false}
+                      label={t('status')}
+                      onChange={(status) =>
+                        setDetails((current) => ({
+                          ...current,
+                          status: status as InventoryBundle['status'],
+                        }))
+                      }
+                      options={[
+                        { label: t('bundleStatus.draft'), value: 'draft' },
+                        { label: t('bundleStatus.active'), value: 'active' },
+                        { label: t('bundleStatus.paused'), value: 'paused' },
+                        {
+                          label: t('bundleStatus.archived'),
+                          value: 'archived',
+                        },
+                      ]}
+                      placeholder={t('placeholders.status')}
+                      value={details.status}
+                    />
+                    <NumberField
+                      hint={t('hints.price')}
+                      label={t('price')}
+                      onChange={(price) =>
+                        setDetails((current) => ({ ...current, price }))
+                      }
+                      placeholder={t('placeholders.price')}
+                      value={details.price}
+                    />
+                    <NumberField
+                      hint={t('hints.maxPerOrder')}
+                      label={t('maxPerOrder')}
+                      onChange={(maxPerOrder) =>
+                        setDetails((current) => ({ ...current, maxPerOrder }))
+                      }
+                      placeholder={t('placeholders.maxPerOrder')}
+                      value={details.maxPerOrder}
+                    />
+                    <TextAreaField
+                      className="lg:col-span-2 xl:col-span-4"
+                      label={t('description')}
+                      onChange={(description) =>
+                        setDetails((current) => ({ ...current, description }))
+                      }
+                      placeholder={t('placeholders.bundleDescription')}
+                      value={details.description}
+                    />
+                  </div>
+                ),
+                icon: <Tags className="h-4 w-4" />,
+                label: t('tabs.details'),
+                value: 'details',
+              },
+              {
+                badge: components.length || undefined,
+                content: (
+                  <BundleComponentPicker
+                    components={components}
+                    onChange={setComponents}
+                    products={products}
+                  />
+                ),
+                icon: <Boxes className="h-4 w-4" />,
+                label: t('tabs.components'),
+                value: 'components',
+              },
+              {
+                content: (
+                  <InventoryImageUploadField
+                    description={t('bundleImageDescription')}
+                    label={t('bundleImage')}
+                    onChange={(imageUrl) =>
+                      setDetails((current) => ({ ...current, imageUrl }))
+                    }
+                    target="bundle-image"
+                    value={details.imageUrl}
+                    wsId={wsId}
+                  />
+                ),
+                icon: <FileImage className="h-4 w-4" />,
+                label: t('tabs.media'),
+                value: 'media',
+              },
+              {
+                content: (
+                  <div className="grid min-w-0 gap-3 lg:grid-cols-3">
+                    <AvailabilityCard
+                      icon={<Boxes className="h-4 w-4" />}
+                      label={t('components')}
+                      value={String(components.length)}
+                    />
+                    <AvailabilityCard
+                      icon={<ImageIcon className="h-4 w-4" />}
+                      label={t('price')}
+                      value={currency(
+                        Number(details.price || estimatedPrice || 0)
+                      )}
+                    />
+                    <AvailabilityCard
+                      icon={<Boxes className="h-4 w-4" />}
+                      label={t('availability')}
+                      value={
+                        bundle.availableQuantity === null
+                          ? t('unlimitedStock')
+                          : String(bundle.availableQuantity ?? 0)
+                      }
+                    />
+                  </div>
+                ),
+                icon: <Boxes className="h-4 w-4" />,
+                label: t('tabs.availability'),
+                value: 'availability',
+              },
+              {
+                content: (
+                  <LifecyclePanel
+                    archivePending={archiveMutation.isPending}
+                    deletePending={deleteMutation.isPending}
+                    onArchive={() => archiveMutation.mutate()}
+                    onDelete={() => deleteMutation.mutate()}
+                    title={t('lifecycle')}
+                  />
+                ),
+                icon: <Settings2 className="h-4 w-4" />,
+                label: t('tabs.lifecycle'),
+                value: 'lifecycle',
+              },
+            ]}
+          />
           <OperatorDialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="ghost">

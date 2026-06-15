@@ -23,7 +23,7 @@ import {
   OperatorDialogFooter,
   OperatorDialogHeader,
 } from './operator-dialog-shell';
-import { SelectField } from './operator-form-fields';
+import { FieldLabel, SelectField } from './operator-form-fields';
 import { numberOrZero } from './operator-stock';
 
 type ScenarioInput = {
@@ -173,7 +173,7 @@ export function CostingProfileDialog({
                   value={productId}
                 />
                 <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{t('itemName')}</span>
+                  <FieldLabel label={t('itemName')} />
                   <Input
                     onChange={(event) => setName(event.target.value)}
                     placeholder={forms('placeholders.costingProfileName')}
@@ -188,6 +188,7 @@ export function CostingProfileDialog({
                     resource: forms('category'),
                   })}
                   emptyText={forms('emptyOptions')}
+                  hint={forms('hints.category')}
                   label={forms('category')}
                   onChange={setCategoryId}
                   onCreate={createCategory}
@@ -199,7 +200,10 @@ export function CostingProfileDialog({
                   value={categoryId}
                 />
                 <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{t('retail')}</span>
+                  <FieldLabel
+                    hint={forms('hints.retail')}
+                    label={t('retail')}
+                  />
                   <Input
                     inputMode="decimal"
                     onChange={(event) =>
@@ -217,63 +221,104 @@ export function CostingProfileDialog({
               title={t('steps.scenarios')}
             >
               <div className="grid min-w-0 gap-2">
+                <div className="hidden gap-2 px-1 md:grid md:grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)_auto]">
+                  <FieldLabel
+                    hint={forms('hints.batchSize')}
+                    label={t('batchSize')}
+                  />
+                  <FieldLabel
+                    hint={forms('hints.unitCost')}
+                    label={t('unitCost')}
+                  />
+                  <FieldLabel
+                    hint={forms('hints.totalCost')}
+                    label={t('totalCost')}
+                  />
+                  <span aria-hidden="true" />
+                </div>
                 {scenarios.map((scenario, index) => (
                   <div
-                    className="grid min-w-0 gap-2 rounded-md border border-border p-2 md:grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)_auto]"
+                    className="grid min-w-0 items-end gap-2 rounded-md border border-border p-2 md:grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)_auto]"
                     key={index.toString()}
                   >
-                    <Input
-                      aria-label={t('batchSize')}
-                      inputMode="numeric"
-                      onChange={(event) =>
-                        setScenarios((current) =>
-                          current.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? { ...item, batchSize: event.target.value }
-                              : item
+                    <label className="grid min-w-0 gap-1 text-sm">
+                      <span className="md:hidden">
+                        <FieldLabel
+                          hint={forms('hints.batchSize')}
+                          label={t('batchSize')}
+                        />
+                      </span>
+                      <Input
+                        aria-label={t('batchSize')}
+                        inputMode="numeric"
+                        onChange={(event) =>
+                          setScenarios((current) =>
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, batchSize: event.target.value }
+                                : item
+                            )
                           )
-                        )
-                      }
-                      placeholder={forms('placeholders.batchSize')}
-                      value={scenario.batchSize}
-                    />
-                    <Input
-                      aria-label={t('unitCost')}
-                      inputMode="decimal"
-                      onChange={(event) =>
-                        setScenarios((current) =>
-                          current.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? {
-                                  ...item,
-                                  manufacturingCostPerUnit: event.target.value,
-                                }
-                              : item
+                        }
+                        placeholder={forms('placeholders.batchSize')}
+                        value={scenario.batchSize}
+                      />
+                    </label>
+                    <label className="grid min-w-0 gap-1 text-sm">
+                      <span className="md:hidden">
+                        <FieldLabel
+                          hint={forms('hints.unitCost')}
+                          label={t('unitCost')}
+                        />
+                      </span>
+                      <Input
+                        aria-label={t('unitCost')}
+                        inputMode="decimal"
+                        onChange={(event) =>
+                          setScenarios((current) =>
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? {
+                                    ...item,
+                                    manufacturingCostPerUnit:
+                                      event.target.value,
+                                  }
+                                : item
+                            )
                           )
-                        )
-                      }
-                      placeholder={forms('placeholders.unitCost')}
-                      value={scenario.manufacturingCostPerUnit}
-                    />
-                    <Input
-                      aria-label={t('totalCost')}
-                      inputMode="decimal"
-                      onChange={(event) =>
-                        setScenarios((current) =>
-                          current.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? {
-                                  ...item,
-                                  totalCostPerUnit: event.target.value,
-                                }
-                              : item
+                        }
+                        placeholder={forms('placeholders.unitCost')}
+                        value={scenario.manufacturingCostPerUnit}
+                      />
+                    </label>
+                    <label className="grid min-w-0 gap-1 text-sm">
+                      <span className="md:hidden">
+                        <FieldLabel
+                          hint={forms('hints.totalCost')}
+                          label={t('totalCost')}
+                        />
+                      </span>
+                      <Input
+                        aria-label={t('totalCost')}
+                        inputMode="decimal"
+                        onChange={(event) =>
+                          setScenarios((current) =>
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? {
+                                    ...item,
+                                    totalCostPerUnit: event.target.value,
+                                  }
+                                : item
+                            )
                           )
-                        )
-                      }
-                      placeholder={forms('placeholders.totalCost')}
-                      value={scenario.totalCostPerUnit}
-                    />
+                        }
+                        placeholder={forms('placeholders.totalCost')}
+                        value={scenario.totalCostPerUnit}
+                      />
+                    </label>
                     <Button
+                      aria-label={forms('delete')}
                       disabled={scenarios.length === 1}
                       onClick={() =>
                         setScenarios((current) =>

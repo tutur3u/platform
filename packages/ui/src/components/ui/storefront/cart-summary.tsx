@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, TriangleAlert } from '@tuturuuu/icons';
+import { ArrowRight, Tag, TriangleAlert } from '@tuturuuu/icons';
 import type { InventoryStorefront } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
 import type { FormEvent } from 'react';
@@ -79,6 +79,12 @@ export function StorefrontCartSummary({
           {formatStorefrontPrice(total, currency)}
         </span>
       </div>
+      {hasCart && !isCheckoutDisabled ? (
+        <p className="mt-3 flex items-center gap-2 rounded-md border border-border border-dashed bg-muted/30 px-3 py-2 text-muted-foreground text-xs leading-5">
+          <Tag className="h-3.5 w-3.5 shrink-0" />
+          {labels.couponNote}
+        </p>
+      ) : null}
       {!hasCart ? (
         <p className="mt-4 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-sm">
           <TriangleAlert className="h-4 w-4" />

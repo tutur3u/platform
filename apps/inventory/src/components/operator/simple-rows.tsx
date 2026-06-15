@@ -1,12 +1,14 @@
 'use client';
 
-import { ExternalLink, Eye } from '@tuturuuu/icons';
+import { ExternalLink, Eye, Pencil } from '@tuturuuu/icons';
 import type {
   InventoryBundle,
   InventoryProductSummary,
   InventoryStorefront,
 } from '@tuturuuu/internal-api/inventory';
+import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { STOREFRONT_APP_URL } from '@/constants/common';
 import { BundleEditorDialog } from './bundle-editor-dialog';
 import {
@@ -45,6 +47,11 @@ export function SimpleRows({
   const actionText = useTranslations(
     'inventory.operator.forms'
   ) as OperatorTranslator;
+  const [editingStorefront, setEditingStorefront] =
+    useState<InventoryStorefront | null>(null);
+  const [editingBundle, setEditingBundle] = useState<InventoryBundle | null>(
+    null
+  );
 
   if (rows.length === 0) {
     return (
@@ -59,33 +66,76 @@ export function SimpleRows({
     const storefrontRows = rows as InventoryStorefront[];
 
     return (
-      <OperationsTable
-        ariaLabel={t('views.storefront.title')}
-        columns={getStorefrontColumns({ actionText, t, wsId })}
-        getRowId={(row) => row.id}
-        minWidth="min-w-[980px]"
-        rows={storefrontRows}
-      />
+      <>
+        <OperationsTable
+          ariaLabel={t('views.storefront.title')}
+          columns={getStorefrontColumns({
+            actionText,
+            onEdit: wsId ? setEditingStorefront : undefined,
+            t,
+            wsId,
+          })}
+          getRowId={(row) => row.id}
+          minWidth="min-w-[980px]"
+          onRowActivate={wsId ? (row) => setEditingStorefront(row) : undefined}
+          rowActivateLabel={(row) => `${actionText('edit')}: ${row.name}`}
+          rows={storefrontRows}
+        />
+        {wsId && editingStorefront ? (
+          <StorefrontEditorDialog
+            key={editingStorefront.id}
+            onOpenChange={(nextOpen) => {
+              if (!nextOpen) setEditingStorefront(null);
+            }}
+            open
+            storefront={editingStorefront}
+            wsId={wsId}
+          />
+        ) : null}
+      </>
     );
   }
 
   return (
-    <OperationsTable
-      ariaLabel={t('views.bundles.title')}
-      columns={getBundleColumns({ actionText, products, t, wsId })}
-      getRowId={(row) => row.id}
-      minWidth="min-w-[900px]"
-      rows={rows as InventoryBundle[]}
-    />
+    <>
+      <OperationsTable
+        ariaLabel={t('views.bundles.title')}
+        columns={getBundleColumns({
+          actionText,
+          onEdit: wsId ? setEditingBundle : undefined,
+          t,
+          wsId,
+        })}
+        getRowId={(row) => row.id}
+        minWidth="min-w-[900px]"
+        onRowActivate={wsId ? (row) => setEditingBundle(row) : undefined}
+        rowActivateLabel={(row) => `${actionText('edit')}: ${row.name}`}
+        rows={rows as InventoryBundle[]}
+      />
+      {wsId && editingBundle ? (
+        <BundleEditorDialog
+          bundle={editingBundle}
+          key={editingBundle.id}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) setEditingBundle(null);
+          }}
+          open
+          products={products}
+          wsId={wsId}
+        />
+      ) : null}
+    </>
   );
 }
 
 function getStorefrontColumns({
   actionText,
+  onEdit,
   t,
   wsId,
 }: {
   actionText: OperatorTranslator;
+  onEdit?: (row: InventoryStorefront) => void;
   t: OperatorTranslator;
   wsId?: string;
 }): OperationsTableColumn<InventoryStorefront>[] {
@@ -158,19 +208,20 @@ function getStorefrontColumns({
       className: 'w-[16rem] text-right',
       header: t('columns.actions'),
       key: 'actions',
-      render: (row) => <StorefrontActions row={row} t={t} wsId={wsId} />,
+      render: (row) => (
+        <StorefrontActions onEdit={onEdit} row={row} t={t} wsId={wsId} />
+      ),
     },
   ];
 }
 
 function getBundleColumns({
   actionText,
-  products,
+  onEdit,
   t,
-  wsId,
 }: {
   actionText: OperatorTranslator;
-  products: InventoryProductSummary[];
+  onEdit?: (row: InventoryBundle) => void;
   t: OperatorTranslator;
   wsId?: string;
 }): OperationsTableColumn<InventoryBundle>[] {
@@ -224,8 +275,16 @@ function getBundleColumns({
       header: t('columns.actions'),
       key: 'actions',
       render: (row) =>
-        wsId ? (
-          <BundleEditorDialog bundle={row} products={products} wsId={wsId} />
+        onEdit ? (
+          <Button
+            onClick={() => onEdit(row)}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <Pencil className="h-4 w-4" />
+            {actionText('edit')}
+          </Button>
         ) : null,
     },
   ];
@@ -269,14 +328,20 @@ function EntityIdentity({
 }
 
 function StorefrontActions({
+  onEdit,
   row,
   t,
   wsId,
 }: {
+  onEdit?: (row: InventoryStorefront) => void;
   row: InventoryStorefront;
   t: OperatorTranslator;
   wsId?: string;
 }) {
+  const forms = useTranslations(
+    'inventory.operator.forms'
+  ) as OperatorTranslator;
+
   return (
     <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
       {wsId ? (
@@ -299,7 +364,17 @@ function StorefrontActions({
           {t('openStore')}
         </a>
       ) : null}
-      {wsId ? <StorefrontEditorDialog storefront={row} wsId={wsId} /> : null}
+      {onEdit ? (
+        <Button
+          onClick={() => onEdit(row)}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <Pencil className="h-4 w-4" />
+          {forms('edit')}
+        </Button>
+      ) : null}
     </div>
   );
 }

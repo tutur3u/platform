@@ -167,7 +167,7 @@ describe('Inventory operator form workflows', () => {
     expect(violations).toEqual([]);
   });
 
-  it('uses flattened single-form create flows instead of steppers', () => {
+  it('uses single-form create flows instead of sequential steppers', () => {
     for (const fileName of [
       'bundle-form-dialog.tsx',
       'costing-profile-form.tsx',
@@ -175,8 +175,11 @@ describe('Inventory operator form workflows', () => {
       'storefront-form-dialog.tsx',
     ]) {
       const src = source(fileName);
-      // Flattened forms group fields inside the shell body, not multi-step panels.
-      expect(src).toContain('OperatorDialogBody');
+      // Forms group fields inside the shell body or digestible tabs — never a
+      // sequential next/back wizard where fields submit one panel at a time.
+      expect(
+        src.includes('OperatorDialogBody') || src.includes('OperatorDialogTabs')
+      ).toBe(true);
       expect(src).not.toContain('FormStepper');
       expect(src).not.toContain('steps.length - 1');
     }
