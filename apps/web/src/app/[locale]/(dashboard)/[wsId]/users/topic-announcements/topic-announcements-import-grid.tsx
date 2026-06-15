@@ -17,6 +17,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ClipboardEvent } from 'react';
 import { validateTopicAnnouncementImportRows } from './import-utils';
+import { TopicAnnouncementsHelpTip } from './topic-announcements-help-tip';
 
 export const BULK_IMPORT_MIN_ROWS = 8;
 
@@ -40,23 +41,94 @@ const IMPORT_ERROR_LABEL_KEYS = {
   missing_topic: 'import_error_missing_topic',
 } as const;
 
+type ImportColumnHelpKey =
+  | 'import_col_day_help'
+  | 'import_col_class_help'
+  | 'import_col_room_help'
+  | 'import_col_date_help'
+  | 'import_col_start_help'
+  | 'import_col_end_help'
+  | 'import_col_name_help'
+  | 'import_col_email_help'
+  | 'import_col_place_help'
+  | 'import_col_topic_help'
+  | 'import_col_title_help';
+
 const GRID_COLUMNS: {
   className: string;
+  helpKey: ImportColumnHelpKey;
   key: ImportFieldKey;
   labelKey: ImportColumnLabelKey;
   required?: boolean;
 }[] = [
-  { className: 'w-32', key: 'dayLabel', labelKey: 'day_label' },
-  { className: 'w-36', key: 'classLabel', labelKey: 'classLabel' },
-  { className: 'w-28', key: 'room', labelKey: 'room' },
-  { className: 'w-36', key: 'sessionDate', labelKey: 'session_date' },
-  { className: 'w-32', key: 'startTime', labelKey: 'startTime' },
-  { className: 'w-32', key: 'endTime', labelKey: 'endTime' },
-  { className: 'w-44', key: 'contactName', labelKey: 'contact_name' },
-  { className: 'w-56', key: 'contactEmail', labelKey: 'email', required: true },
-  { className: 'w-44', key: 'place', labelKey: 'place' },
-  { className: 'w-64', key: 'topic', labelKey: 'topic', required: true },
-  { className: 'w-56', key: 'title', labelKey: 'announcement_title' },
+  {
+    className: 'w-32',
+    helpKey: 'import_col_day_help',
+    key: 'dayLabel',
+    labelKey: 'day_label',
+  },
+  {
+    className: 'w-36',
+    helpKey: 'import_col_class_help',
+    key: 'classLabel',
+    labelKey: 'classLabel',
+  },
+  {
+    className: 'w-28',
+    helpKey: 'import_col_room_help',
+    key: 'room',
+    labelKey: 'room',
+  },
+  {
+    className: 'w-36',
+    helpKey: 'import_col_date_help',
+    key: 'sessionDate',
+    labelKey: 'session_date',
+  },
+  {
+    className: 'w-32',
+    helpKey: 'import_col_start_help',
+    key: 'startTime',
+    labelKey: 'startTime',
+  },
+  {
+    className: 'w-32',
+    helpKey: 'import_col_end_help',
+    key: 'endTime',
+    labelKey: 'endTime',
+  },
+  {
+    className: 'w-44',
+    helpKey: 'import_col_name_help',
+    key: 'contactName',
+    labelKey: 'contact_name',
+  },
+  {
+    className: 'w-56',
+    helpKey: 'import_col_email_help',
+    key: 'contactEmail',
+    labelKey: 'email',
+    required: true,
+  },
+  {
+    className: 'w-44',
+    helpKey: 'import_col_place_help',
+    key: 'place',
+    labelKey: 'place',
+  },
+  {
+    className: 'w-64',
+    helpKey: 'import_col_topic_help',
+    key: 'topic',
+    labelKey: 'topic',
+    required: true,
+  },
+  {
+    className: 'w-56',
+    helpKey: 'import_col_title_help',
+    key: 'title',
+    labelKey: 'announcement_title',
+  },
 ];
 
 export function createEmptyImportRows(count = BULK_IMPORT_MIN_ROWS) {
@@ -201,6 +273,7 @@ export function BulkAnnouncementGrid({
                     {column.required ? (
                       <span className="text-dynamic-red">*</span>
                     ) : null}
+                    <TopicAnnouncementsHelpTip label={t(column.helpKey)} />
                   </span>
                 </TableHead>
               ))}

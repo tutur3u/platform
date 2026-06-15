@@ -16,6 +16,7 @@ import {
   parseTopicAnnouncementRowsFromMatrix,
   TOPIC_ANNOUNCEMENT_IMPORT_COLUMNS,
 } from './import-utils';
+import { TopicAnnouncementsHelpTip } from './topic-announcements-help-tip';
 import {
   BulkAnnouncementGrid,
   createEmptyImportRows,
@@ -202,29 +203,37 @@ export function ImportPanel({
         />
 
         <div className="flex flex-col justify-end gap-2 sm:flex-row lg:flex-col">
-          <Button
-            className="gap-2"
-            disabled={isBusy || validRows.length === 0}
-            onClick={() => onImport(buildImportPayload(validRows, sourceName))}
-            type="button"
-            variant="outline"
-          >
-            <Upload className="h-4 w-4" />
-            {t('bulk_create_drafts')}
-          </Button>
-          <Button
-            className="gap-2"
-            disabled={
-              !canSend || isBusy || sendTooLarge || validRows.length === 0
-            }
-            onClick={() =>
-              onImportAndSend(buildImportPayload(validRows, sourceName))
-            }
-            type="button"
-          >
-            <Send className="h-4 w-4" />
-            {t('bulk_create_and_send')}
-          </Button>
+          <div className="flex items-center justify-end gap-1.5">
+            <Button
+              className="gap-2"
+              disabled={isBusy || validRows.length === 0}
+              onClick={() =>
+                onImport(buildImportPayload(validRows, sourceName))
+              }
+              type="button"
+              variant="outline"
+            >
+              <Upload className="h-4 w-4" />
+              {t('bulk_create_drafts')}
+            </Button>
+            <TopicAnnouncementsHelpTip label={t('bulk_create_drafts_help')} />
+          </div>
+          <div className="flex items-center justify-end gap-1.5">
+            <Button
+              className="gap-2"
+              disabled={
+                !canSend || isBusy || sendTooLarge || validRows.length === 0
+              }
+              onClick={() =>
+                onImportAndSend(buildImportPayload(validRows, sourceName))
+              }
+              type="button"
+            >
+              <Send className="h-4 w-4" />
+              {t('bulk_create_and_send')}
+            </Button>
+            <TopicAnnouncementsHelpTip label={t('bulk_create_and_send_help')} />
+          </div>
           {sendTooLarge ? (
             <p className="max-w-80 text-muted-foreground text-xs">
               {t('bulk_send_limit', {

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { TopicAnnouncementContact } from '@tuturuuu/internal-api';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { ContactsPanel } from './topic-announcements-contacts';
 
@@ -28,22 +29,39 @@ const contact: TopicAnnouncementContact = {
   workspaceUserId: null,
 };
 
-describe('ContactsPanel', () => {
-  it('keeps contact creation in an explicit add-contact dialog', () => {
-    render(
+// The add-contact button now lives in the page header, which owns the dialog
+// open-state and passes it to the controlled ContactsPanel. This harness mirrors
+// that wiring so the test still exercises the "form is gated behind an explicit
+// add action" behavior.
+function ContactsPanelHarness() {
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  return (
+    <>
+      <button onClick={() => setIsAddDialogOpen(true)} type="button">
+        add_contact
+      </button>
       <ContactsPanel
         contacts={[contact]}
+        isAddDialogOpen={isAddDialogOpen}
         isCreating={false}
         isDeleting={false}
         isLoading={false}
         isVerifying={false}
+        onAddDialogOpenChange={setIsAddDialogOpen}
         onCreate={vi.fn()}
         onDelete={vi.fn()}
         onVerify={vi.fn()}
         workspaceUsers={[]}
         wsId="workspace-1"
       />
-    );
+    </>
+  );
+}
+
+describe('ContactsPanel', () => {
+  it('keeps contact creation in an explicit add-contact dialog', () => {
+    render(<ContactsPanelHarness />);
 
     expect(screen.queryByLabelText('contact_name')).not.toBeInTheDocument();
 

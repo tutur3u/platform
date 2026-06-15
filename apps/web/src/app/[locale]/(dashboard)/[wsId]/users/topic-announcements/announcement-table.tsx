@@ -4,6 +4,7 @@ import {
   CalendarClock,
   CopyPlus,
   Eye,
+  Megaphone,
   MoreHorizontal,
   Paperclip,
   Send,
@@ -51,6 +52,7 @@ import {
   tableCellClassName,
   tableHeadClassName,
 } from './announcement-table-utils';
+import { TopicAnnouncementsEmptyState } from './topic-announcements-empty-state';
 import { formatTopicAnnouncementInstant } from './topic-announcements-scheduling';
 
 interface Props {
@@ -323,12 +325,32 @@ export function AnnouncementTable({
               );
             })}
             {!isLoading && announcements.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  className="text-center text-muted-foreground"
-                  colSpan={10}
-                >
-                  {t('no_announcements')}
+              <TableRow className="hover:bg-transparent">
+                <TableCell className="p-0" colSpan={10}>
+                  <TopicAnnouncementsEmptyState
+                    action={
+                      <Button
+                        className="gap-2"
+                        onClick={() =>
+                          document
+                            .getElementById('topic-announcement-composer')
+                            ?.scrollIntoView({
+                              behavior: 'smooth',
+                              block: 'start',
+                            })
+                        }
+                        size="sm"
+                        type="button"
+                      >
+                        <Megaphone className="h-4 w-4" />
+                        {t('create_announcement')}
+                      </Button>
+                    }
+                    className="border-0"
+                    description={t('announcements_empty_desc')}
+                    icon={<Megaphone />}
+                    title={t('announcements_empty_title')}
+                  />
                 </TableCell>
               </TableRow>
             ) : null}

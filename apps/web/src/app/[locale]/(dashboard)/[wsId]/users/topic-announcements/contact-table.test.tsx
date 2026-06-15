@@ -42,6 +42,7 @@ function renderTable(
     isDeleting: false,
     isLoading: false,
     isVerifying: false,
+    onAddContact: vi.fn(),
     onDelete: vi.fn(),
     onVerify: vi.fn(),
     workspaceUsersById: new Map(),

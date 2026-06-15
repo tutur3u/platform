@@ -13,6 +13,13 @@ const STEP_LABEL_KEYS = {
   review: 'announcement_step_review',
 } as const;
 
+const STEP_DESC_KEYS = {
+  details: 'announcement_step_details_help',
+  message: 'announcement_step_message_help',
+  recipients: 'announcement_step_recipients_help',
+  review: 'announcement_step_review_help',
+} as const;
+
 interface IndicatorProps {
   currentStep: AnnouncementStep;
   onSelectStep: (step: AnnouncementStep) => void;
@@ -65,10 +72,7 @@ export function AnnouncementStepIndicator({
                 {t(STEP_LABEL_KEYS[step])}
               </span>
               <span className="block text-muted-foreground text-xs">
-                {t('announcement_step_count', {
-                  current: (index + 1).toString(),
-                  total: steps.length.toString(),
-                })}
+                {t(STEP_DESC_KEYS[step])}
               </span>
             </span>
           </button>
@@ -81,6 +85,7 @@ export function AnnouncementStepIndicator({
 interface FooterProps {
   canContinue: boolean;
   canSubmit: boolean;
+  currentStepNumber: number;
   isFirstStep: boolean;
   isLastStep: boolean;
   isSubmitting: boolean;
@@ -88,11 +93,13 @@ interface FooterProps {
   onNext: () => void;
   onSubmit: () => void;
   submitLabel: string;
+  totalSteps: number;
 }
 
 export function AnnouncementWizardFooter({
   canContinue,
   canSubmit,
+  currentStepNumber,
   isFirstStep,
   isLastStep,
   isSubmitting,
@@ -100,11 +107,12 @@ export function AnnouncementWizardFooter({
   onNext,
   onSubmit,
   submitLabel,
+  totalSteps,
 }: FooterProps) {
   const t = useTranslations('ws-topic-announcements');
 
   return (
-    <div className="flex flex-wrap justify-between gap-3 border-t pt-6">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-6">
       <Button
         disabled={isFirstStep || isSubmitting}
         onClick={onBack}
@@ -113,6 +121,12 @@ export function AnnouncementWizardFooter({
       >
         {t('previous')}
       </Button>
+      <span className="order-last w-full text-center text-muted-foreground text-xs sm:order-none sm:w-auto">
+        {t('announcement_step_count', {
+          current: currentStepNumber.toString(),
+          total: totalSteps.toString(),
+        })}
+      </span>
       {isLastStep ? (
         <Button disabled={!canSubmit || isSubmitting} onClick={onSubmit}>
           {submitLabel}

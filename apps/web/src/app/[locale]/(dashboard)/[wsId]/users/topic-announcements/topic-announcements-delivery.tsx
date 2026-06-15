@@ -1,7 +1,9 @@
 'use client';
 
+import { Send } from '@tuturuuu/icons';
 import type { TopicAnnouncementRecord } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   Table,
@@ -11,7 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { DeliveryRecipients } from './topic-announcements-delivery-recipients';
+import { TopicAnnouncementsEmptyState } from './topic-announcements-empty-state';
+import { TopicAnnouncementsHelpTip } from './topic-announcements-help-tip';
 import { formatTopicAnnouncementInstant } from './topic-announcements-scheduling';
 
 interface Props {
@@ -26,9 +33,26 @@ export function DeliveryPanel({
   schedulingTimezone,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
+  const params = useParams<{ wsId: string }>();
+  const announcementsHref = `/${params?.wsId}/users/topic-announcements/announcements`;
   const delivered = announcements.filter(
     (announcement) => announcement.status === 'sent'
   );
+
+  if (!isLoading && delivered.length === 0) {
+    return (
+      <TopicAnnouncementsEmptyState
+        action={
+          <Button asChild size="sm">
+            <Link href={announcementsHref}>{t('delivery_compose_cta')}</Link>
+          </Button>
+        }
+        description={t('delivery_empty_desc')}
+        icon={<Send />}
+        title={t('delivery_empty_title')}
+      />
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-md border bg-background">
@@ -36,7 +60,14 @@ export function DeliveryPanel({
         <TableHeader>
           <TableRow>
             <TableHead>{t('announcement_title')}</TableHead>
-            <TableHead>{t('recipients')}</TableHead>
+            <TableHead>
+              <span className="inline-flex items-center gap-1.5">
+                {t('recipients')}
+                <TopicAnnouncementsHelpTip
+                  label={t('delivery_relationship_help')}
+                />
+              </span>
+            </TableHead>
             <TableHead>{t('sent_at')}</TableHead>
             <TableHead>{t('status')}</TableHead>
           </TableRow>
@@ -62,11 +93,13 @@ export function DeliveryPanel({
             : null}
           {delivered.map((announcement) => (
             <TableRow key={announcement.id}>
-              <TableCell>{announcement.title}</TableCell>
+              <TableCell className="font-medium">
+                {announcement.title}
+              </TableCell>
               <TableCell>
-                {announcement.contacts
-                  .map((contact) => contact.email)
-                  .join(', ')}
+                <DeliveryRecipients
+                  emails={announcement.contacts.map((contact) => contact.email)}
+                />
               </TableCell>
               <TableCell>
                 {formatTopicAnnouncementInstant(
@@ -75,20 +108,13 @@ export function DeliveryPanel({
                 ) ?? t('not_sent')}
               </TableCell>
               <TableCell>
-                <Badge variant="success">{t('status_sent')}</Badge>
+                <Badge className="gap-1" variant="success">
+                  <Send className="h-3 w-3" />
+                  {t('status_sent')}
+                </Badge>
               </TableCell>
             </TableRow>
           ))}
-          {!isLoading && delivered.length === 0 ? (
-            <TableRow>
-              <TableCell
-                className="text-center text-muted-foreground"
-                colSpan={4}
-              >
-                {t('no_delivery')}
-              </TableCell>
-            </TableRow>
-          ) : null}
         </TableBody>
       </Table>
     </div>
