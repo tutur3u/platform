@@ -1,11 +1,94 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  isValidLiveSessionHandle,
+  type LiveSessionScopeValidation,
+  validateLiveSessionScopeKey,
+} from '@/lib/live/session-scope';
 
 /**
  * Normalizes workspace ID from slug to UUID for API routes
  */
+
+function invalidScopeKeyResponse() {
+  return Response.json({ error: 'Invalid scopeKey' }, { status: 400 });
+}
+
+async function verifyWorkspaceAccess({
+  normalizedWsId,
+  supabase,
+  userId,
+}: {
+  normalizedWsId: string;
+  supabase: TypedSupabaseClient;
+  userId: string;
+}) {
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: normalizedWsId,
+    userId,
+    supabase,
+  });
+
+  if (membership.error === 'membership_lookup_failed') {
+    return Response.json(
+      { error: 'Failed to verify workspace access' },
+      { status: 500 }
+    );
+  }
+
+  if (!membership.ok) {
+    return Response.json(
+      { error: 'You are not a member of this workspace' },
+      { status: 403 }
+    );
+  }
+
+  return null;
+}
+
+async function verifyLiveSessionScope({
+  scope,
+  supabase,
+  userId,
+}: {
+  scope: Extract<LiveSessionScopeValidation, { valid: true }>;
+  supabase: TypedSupabaseClient;
+  userId: string;
+}) {
+  if (scope.kind === 'fixed') {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('ai_chats')
+    .select('id')
+    .eq('id', scope.chatId)
+    .eq('creator_id', userId)
+    .maybeSingle();
+
+  if (error != null) {
+    serverLogger.error(
+      '[Session API] Error verifying assistant live chat scope',
+      error
+    );
+    return Response.json(
+      { error: 'Failed to verify live session scope' },
+      { status: 500 }
+    );
+  }
+
+  if (data == null) {
+    return Response.json({ error: 'Invalid scopeKey' }, { status: 403 });
+  }
+
+  return null;
+}
 
 /**
  * GET /api/v1/live/session?wsId=...&scopeKey=...
@@ -16,12 +99,17 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const wsId = searchParams.get('wsId');
     const scopeKey = searchParams.get('scopeKey');
+    const scope = validateLiveSessionScopeKey(scopeKey);
 
     if (!wsId || !scopeKey) {
       return Response.json(
         { error: 'Missing wsId or scopeKey parameter' },
         { status: 400 }
       );
+    }
+
+    if (!scope.valid) {
+      return invalidScopeKeyResponse();
     }
 
     const supabase = await createClient(req);
@@ -36,6 +124,24 @@ export async function GET(req: Request) {
       normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     } catch {
       return Response.json({ error: 'Workspace not found' }, { status: 404 });
+    }
+
+    const workspaceAccessError = await verifyWorkspaceAccess({
+      normalizedWsId,
+      supabase,
+      userId: user.id,
+    });
+    if (workspaceAccessError != null) {
+      return workspaceAccessError;
+    }
+
+    const scopeError = await verifyLiveSessionScope({
+      scope,
+      supabase,
+      userId: user.id,
+    });
+    if (scopeError != null) {
+      return scopeError;
     }
 
     // Note: The 'live_api_sessions' table type will be available after running
@@ -78,12 +184,21 @@ export async function POST(req: Request) {
       wsId: string;
       scopeKey: string;
     };
+    const scope = validateLiveSessionScopeKey(scopeKey);
 
     if (!sessionHandle || !wsId || !scopeKey) {
       return Response.json(
         { error: 'Missing required fields: sessionHandle, wsId, scopeKey' },
         { status: 400 }
       );
+    }
+
+    if (!isValidLiveSessionHandle(sessionHandle)) {
+      return Response.json({ error: 'Invalid sessionHandle' }, { status: 400 });
+    }
+
+    if (!scope.valid) {
+      return invalidScopeKeyResponse();
     }
 
     const supabase = await createClient(req);
@@ -98,6 +213,24 @@ export async function POST(req: Request) {
       normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     } catch {
       return Response.json({ error: 'Workspace not found' }, { status: 404 });
+    }
+
+    const workspaceAccessError = await verifyWorkspaceAccess({
+      normalizedWsId,
+      supabase,
+      userId: user.id,
+    });
+    if (workspaceAccessError != null) {
+      return workspaceAccessError;
+    }
+
+    const scopeError = await verifyLiveSessionScope({
+      scope,
+      supabase,
+      userId: user.id,
+    });
+    if (scopeError != null) {
+      return scopeError;
     }
 
     // Session handles are valid for 2 hours per Gemini API docs
@@ -148,12 +281,17 @@ export async function DELETE(req: Request) {
     const { searchParams } = new URL(req.url);
     const wsId = searchParams.get('wsId');
     const scopeKey = searchParams.get('scopeKey');
+    const scope = validateLiveSessionScopeKey(scopeKey);
 
     if (!wsId || !scopeKey) {
       return Response.json(
         { error: 'Missing wsId or scopeKey parameter' },
         { status: 400 }
       );
+    }
+
+    if (!scope.valid) {
+      return invalidScopeKeyResponse();
     }
 
     const supabase = await createClient(req);
@@ -168,6 +306,24 @@ export async function DELETE(req: Request) {
       normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     } catch {
       return Response.json({ error: 'Workspace not found' }, { status: 404 });
+    }
+
+    const workspaceAccessError = await verifyWorkspaceAccess({
+      normalizedWsId,
+      supabase,
+      userId: user.id,
+    });
+    if (workspaceAccessError != null) {
+      return workspaceAccessError;
+    }
+
+    const scopeError = await verifyLiveSessionScope({
+      scope,
+      supabase,
+      userId: user.id,
+    });
+    if (scopeError != null) {
+      return scopeError;
     }
 
     // Note: The 'live_api_sessions' table type will be available after running
