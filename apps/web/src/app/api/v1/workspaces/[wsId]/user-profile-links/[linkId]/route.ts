@@ -19,6 +19,7 @@ const patchSchema = z
       .min(1)
       .refine((fields) => new Set(fields).size === fields.length)
       .optional(),
+    prefill_existing_values: z.boolean().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'No fields to update',
@@ -58,6 +59,7 @@ export async function PATCH(req: Request, { params }: Params) {
     expires_at?: string | null;
     max_uses?: number | null;
     allowed_fields?: string[];
+    prefill_existing_values?: boolean;
   } = {};
   if (parsed.data.revoked !== undefined) {
     update.revoked_at = parsed.data.revoked ? new Date().toISOString() : null;
@@ -71,11 +73,14 @@ export async function PATCH(req: Request, { params }: Params) {
   if (parsed.data.allowed_fields !== undefined) {
     update.allowed_fields = parsed.data.allowed_fields;
   }
+  if (parsed.data.prefill_existing_values !== undefined) {
+    update.prefill_existing_values = parsed.data.prefill_existing_values;
+  }
 
   const sbAdmin = await createAdminClient();
   const { error } = await sbAdmin
     .from('workspace_user_profile_links')
-    .update(update)
+    .update(update as never)
     .eq('ws_id', wsId)
     .eq('id', linkId);
 

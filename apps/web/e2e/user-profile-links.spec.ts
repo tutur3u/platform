@@ -53,12 +53,13 @@ async function createWorkspace(
 async function createWorkspaceUser(
   request: APIRequestContext,
   workspaceId: string,
-  userId: string
+  userId: string,
+  data: Record<string, unknown> = {}
 ) {
   const response = await request.post(
     `${SUPABASE_URL}/rest/v1/workspace_users`,
     {
-      data: { id: userId, ws_id: workspaceId, display_name: '' },
+      data: { id: userId, ws_id: workspaceId, display_name: '', ...data },
       failOnStatusCode: false,
       headers: serviceHeaders('return=minimal'),
     }
@@ -88,7 +89,7 @@ async function getWorkspaceUser(
   workspaceUserId: string
 ) {
   const res = await request.get(
-    `${SUPABASE_URL}/rest/v1/workspace_users?id=eq.${workspaceUserId}&select=display_name,full_name,birthday,gender,email`,
+    `${SUPABASE_URL}/rest/v1/workspace_users?id=eq.${workspaceUserId}&select=display_name,full_name,birthday,gender,email,phone`,
     { failOnStatusCode: false, headers: serviceHeaders() }
   );
   expect(res.ok()).toBe(true);
@@ -130,7 +131,7 @@ test.describe('External profile-completion links — authenticated fill', () => 
     assertLocalSupabase();
   });
 
-  test('completes a per-user link and forces the email to the account email', async ({
+  test('completes a per-user link with phone and forces the email to the account email', async ({
     request,
   }) => {
     const workspaceId = randomUUID();
@@ -144,7 +145,7 @@ test.describe('External profile-completion links — authenticated fill', () => 
         code: `pu-${workspaceId.slice(0, 8)}`,
         mode: 'per_user',
         target_user_id: workspaceUserId,
-        allowed_fields: ['display_name', 'birthday', 'email'],
+        allowed_fields: ['display_name', 'birthday', 'email', 'phone'],
       });
 
       const submit = await request.post(
@@ -154,6 +155,7 @@ test.describe('External profile-completion links — authenticated fill', () => 
             fields: {
               display_name: 'E2E Completed Name',
               birthday: '2000-02-02',
+              phone: '+84 900 000 001',
               // Attempt to set an arbitrary email — must be ignored.
               email: 'attacker@example.com',
             },
@@ -166,6 +168,7 @@ test.describe('External profile-completion links — authenticated fill', () => 
       const profile = await getWorkspaceUser(request, workspaceUserId);
       expect(profile.display_name).toBe('E2E Completed Name');
       expect(profile.birthday).toBe('2000-02-02');
+      expect(profile.phone).toBe('+84 900 000 001');
       // Email is locked to the logged-in account email, NOT the submitted value.
       expect(profile.email).toBe(TEST_USER.email);
       expect(profile.email).not.toBe('attacker@example.com');
@@ -174,6 +177,42 @@ test.describe('External profile-completion links — authenticated fill', () => 
       expect(submissions.length).toBe(1);
       expect(submissions[0]?.workspace_user_id).toBe(workspaceUserId);
       expect(submissions[0]?.actor_auth_uid).toBe(TEST_USER.id);
+      expect(submissions[0]?.submitted_fields).toEqual(
+        expect.arrayContaining(['display_name', 'birthday', 'email', 'phone'])
+      );
+    } finally {
+      await cleanup(request, workspaceId);
+    }
+  });
+
+  test('does not expose existing field values when prefill is disabled', async ({
+    request,
+  }) => {
+    const workspaceId = randomUUID();
+    const workspaceUserId = randomUUID();
+    try {
+      await createWorkspace(request, workspaceId);
+      await createWorkspaceUser(request, workspaceId, workspaceUserId, {
+        display_name: 'Existing Hidden Name',
+        phone: '+84 900 999 999',
+      });
+      const link = await createLink(request, {
+        ws_id: workspaceId,
+        creator_id: TEST_USER.id,
+        code: `hide-${workspaceId.slice(0, 8)}`,
+        mode: 'per_user',
+        target_user_id: workspaceUserId,
+        allowed_fields: ['display_name', 'phone'],
+        prefill_existing_values: false,
+      });
+
+      const page = await request.get(`/en/shared/user-profile/${link.code}`, {
+        failOnStatusCode: false,
+      });
+      expect(page.status()).toBe(200);
+      const html = await page.text();
+      expect(html).not.toContain('Existing Hidden Name');
+      expect(html).not.toContain('+84 900 999 999');
     } finally {
       await cleanup(request, workspaceId);
     }

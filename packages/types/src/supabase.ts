@@ -29634,6 +29634,7 @@ export type Database = {
           id: string;
           max_uses: number | null;
           mode: string;
+          prefill_existing_values: boolean;
           revoked_at: string | null;
           target_user_id: string | null;
           updated_at: string;
@@ -29648,6 +29649,7 @@ export type Database = {
           id?: string;
           max_uses?: number | null;
           mode?: string;
+          prefill_existing_values?: boolean;
           revoked_at?: string | null;
           target_user_id?: string | null;
           updated_at?: string;
@@ -29662,6 +29664,7 @@ export type Database = {
           id?: string;
           max_uses?: number | null;
           mode?: string;
+          prefill_existing_values?: boolean;
           revoked_at?: string | null;
           target_user_id?: string | null;
           updated_at?: string;
@@ -31469,6 +31472,7 @@ export type Database = {
           is_revoked: boolean | null;
           max_uses: number | null;
           mode: string | null;
+          prefill_existing_values: boolean | null;
           revoked_at: string | null;
           target_user_id: string | null;
           updated_at: string | null;

@@ -248,6 +248,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
           wsId={user.ws_id!}
           mode="per_user"
           targetUserId={user.id}
+          targetUserLabel={user.display_name || user.full_name || user.email}
           open={showProfileLinkDialog}
           onOpenChange={setShowProfileLinkDialog}
         />

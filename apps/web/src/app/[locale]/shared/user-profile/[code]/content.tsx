@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { CheckCircle, Loader2, Upload } from '@tuturuuu/icons';
+import { CheckCircle, Info, Loader2, Upload } from '@tuturuuu/icons';
 import {
   submitUserProfileLink,
   uploadUserProfileLinkAvatar,
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import type { ProfileLinkField } from '@/features/user-profile-links/server';
@@ -27,19 +28,52 @@ interface Props {
   mode: 'per_user' | 'generic';
   allowedFields: ProfileLinkField[];
   prefill: Partial<Record<ProfileLinkField, string | null>>;
+  prefillExistingValues: boolean;
   actorEmail: string | null;
+}
+
+function FieldLabel({
+  htmlFor,
+  label,
+  tooltip,
+}: {
+  htmlFor?: string;
+  label: string;
+  tooltip?: string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <Label htmlFor={htmlFor}>{label}</Label>
+      {tooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex text-muted-foreground">
+              <Info className="h-3.5 w-3.5" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">
+            <p>{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      ) : null}
+    </div>
+  );
 }
 
 export default function ProfileFillContent({
   code,
   allowedFields,
   prefill,
+  prefillExistingValues,
   actorEmail,
 }: Props) {
   const t = useTranslations('ws-user-profile-links');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submitted, setSubmitted] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [touchedFields, setTouchedFields] = useState<Set<ProfileLinkField>>(
+    () => new Set()
+  );
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     for (const field of allowedFields) {
@@ -50,13 +84,26 @@ export default function ProfileFillContent({
   });
 
   const has = (field: ProfileLinkField) => allowedFields.includes(field);
-  const setValue = (field: string, value: string) =>
+  const setValue = (field: ProfileLinkField, value: string) => {
+    setTouchedFields((prev) => {
+      const next = new Set(prev);
+      next.add(field);
+      return next;
+    });
     setValues((prev) => ({ ...prev, [field]: value }));
+  };
 
   const submitMutation = useMutation({
     mutationFn: () => {
       const fields: Record<string, string | null> = {};
       for (const field of allowedFields) {
+        if (field === 'email') {
+          fields[field] = actorEmail ?? null;
+          continue;
+        }
+
+        if (!touchedFields.has(field)) continue;
+
         if (field === 'avatar_url') {
           fields[field] = values[field] || null;
           continue;
@@ -114,6 +161,11 @@ export default function ProfileFillContent({
       <p className="mt-1 text-muted-foreground text-sm">
         {t('public_description')}
       </p>
+      {!prefillExistingValues ? (
+        <p className="mt-3 rounded-lg border bg-muted/40 px-3 py-2 text-muted-foreground text-sm">
+          {t('public_existing_values_hidden')}
+        </p>
+      ) : null}
 
       <form
         className="mt-6 space-y-5"
@@ -124,7 +176,10 @@ export default function ProfileFillContent({
       >
         {has('avatar_url') && (
           <div className="space-y-2">
-            <Label>{t('field_avatar_url')}</Label>
+            <FieldLabel
+              label={t('field_avatar_url')}
+              tooltip={t('field_avatar_hint')}
+            />
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
                 <AvatarImage src={values.avatar_url || undefined} />
@@ -156,7 +211,10 @@ export default function ProfileFillContent({
 
         {has('display_name') && (
           <div className="space-y-2">
-            <Label htmlFor="display_name">{t('field_display_name')}</Label>
+            <FieldLabel
+              htmlFor="display_name"
+              label={t('field_display_name')}
+            />
             <Input
               id="display_name"
               value={values.display_name ?? ''}
@@ -167,7 +225,7 @@ export default function ProfileFillContent({
 
         {has('full_name') && (
           <div className="space-y-2">
-            <Label htmlFor="full_name">{t('field_full_name')}</Label>
+            <FieldLabel htmlFor="full_name" label={t('field_full_name')} />
             <Input
               id="full_name"
               value={values.full_name ?? ''}
@@ -178,7 +236,7 @@ export default function ProfileFillContent({
 
         {has('birthday') && (
           <div className="space-y-2">
-            <Label htmlFor="birthday">{t('field_birthday')}</Label>
+            <FieldLabel htmlFor="birthday" label={t('field_birthday')} />
             <Input
               id="birthday"
               type="date"
@@ -190,7 +248,7 @@ export default function ProfileFillContent({
 
         {has('gender') && (
           <div className="space-y-2">
-            <Label htmlFor="gender">{t('field_gender')}</Label>
+            <FieldLabel htmlFor="gender" label={t('field_gender')} />
             <Select
               value={values.gender || undefined}
               onValueChange={(value) => setValue('gender', value)}
@@ -209,11 +267,31 @@ export default function ProfileFillContent({
 
         {has('email') && (
           <div className="space-y-2">
-            <Label htmlFor="email">{t('field_email')}</Label>
+            <FieldLabel
+              htmlFor="email"
+              label={t('field_email')}
+              tooltip={t('field_email_locked_hint')}
+            />
             <Input id="email" value={actorEmail ?? ''} disabled readOnly />
             <p className="text-muted-foreground text-xs">
               {t('field_email_locked_hint')}
             </p>
+          </div>
+        )}
+
+        {has('phone') && (
+          <div className="space-y-2">
+            <FieldLabel
+              htmlFor="phone"
+              label={t('field_phone')}
+              tooltip={t('field_phone_hint')}
+            />
+            <Input
+              id="phone"
+              type="tel"
+              value={values.phone ?? ''}
+              onChange={(e) => setValue('phone', e.target.value)}
+            />
           </div>
         )}
 

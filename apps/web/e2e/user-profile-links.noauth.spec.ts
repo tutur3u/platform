@@ -251,7 +251,8 @@ test.describe('External profile-completion links — public surface', () => {
             ...base,
             code: randomUUID(),
             mode: 'generic',
-            allowed_fields: ['display_name', 'email'],
+            allowed_fields: ['display_name', 'email', 'phone'],
+            prefill_existing_values: false,
           },
           failOnStatusCode: false,
           headers: serviceHeaders('return=minimal'),
@@ -302,6 +303,7 @@ test.describe('External profile-completion links — public surface', () => {
           current_uses: number | string;
           is_full: boolean;
           is_revoked: boolean;
+          prefill_existing_values: boolean;
         }>;
         return row;
       };
@@ -310,6 +312,7 @@ test.describe('External profile-completion links — public surface', () => {
       expect(Number(stats.current_uses)).toBe(0);
       expect(stats.is_full).toBe(false);
       expect(stats.is_revoked).toBe(false);
+      expect(stats.prefill_existing_values).toBe(true);
 
       const submission = await request.post(
         `${SUPABASE_URL}/rest/v1/workspace_user_profile_link_submissions`,

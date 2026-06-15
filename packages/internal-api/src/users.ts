@@ -692,7 +692,8 @@ export type WorkspaceUserProfileLinkField =
   | 'birthday'
   | 'gender'
   | 'avatar_url'
-  | 'email';
+  | 'email'
+  | 'phone';
 
 export type WorkspaceUserProfileLinkMode = 'per_user' | 'generic';
 
@@ -700,7 +701,10 @@ export interface WorkspaceUserProfileLinkSummary {
   id: string;
   code: string;
   mode: WorkspaceUserProfileLinkMode;
+  target_user_id: string | null;
+  target_user: WorkspaceUserProfileLinkTargetUser | null;
   allowed_fields: WorkspaceUserProfileLinkField[];
+  prefill_existing_values: boolean;
   max_uses: number | null;
   expires_at: string | null;
   current_uses: number;
@@ -710,10 +714,28 @@ export interface WorkspaceUserProfileLinkSummary {
   created_at: string;
 }
 
+export interface WorkspaceUserProfileLinkTargetUser {
+  id: string;
+  display_name: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  email: string | null;
+  phone: string | null;
+  birthday: string | null;
+  gender: string | null;
+  archived: boolean | null;
+  private_fields_hidden: boolean;
+}
+
+export interface ListWorkspaceUserProfileLinkUsersResponse {
+  data: WorkspaceUserProfileLinkTargetUser[];
+}
+
 export interface CreateWorkspaceUserProfileLinkPayload {
   mode: WorkspaceUserProfileLinkMode;
   target_user_id?: string | null;
   allowed_fields: WorkspaceUserProfileLinkField[];
+  prefill_existing_values?: boolean;
   expires_at?: string | null;
   max_uses?: number | null;
 }
@@ -723,6 +745,7 @@ export interface UpdateWorkspaceUserProfileLinkPayload {
   expires_at?: string | null;
   max_uses?: number | null;
   allowed_fields?: WorkspaceUserProfileLinkField[];
+  prefill_existing_values?: boolean;
 }
 
 export interface SubmitUserProfileLinkPayload {
@@ -745,6 +768,30 @@ export async function listWorkspaceUserProfileLinks(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-profile-links`,
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceUserProfileLinkUsers(
+  workspaceId: string,
+  {
+    limit = 20,
+    q,
+  }: {
+    limit?: number;
+    q?: string;
+  } = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ListWorkspaceUserProfileLinkUsersResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-profile-links/users`,
+    {
+      cache: 'no-store',
+      query: {
+        limit,
+        q,
+      },
     }
   );
 }

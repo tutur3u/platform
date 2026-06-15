@@ -12,6 +12,7 @@ export const PROFILE_LINK_FIELDS = [
   'gender',
   'avatar_url',
   'email',
+  'phone',
 ] as const;
 
 export type ProfileLinkField = (typeof PROFILE_LINK_FIELDS)[number];

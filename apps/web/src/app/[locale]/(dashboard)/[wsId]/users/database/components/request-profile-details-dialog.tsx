@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, Copy, Loader2 } from '@tuturuuu/icons';
+import { Check, Copy, Info, Loader2 } from '@tuturuuu/icons';
 import {
   createWorkspaceUserProfileLink,
   type WorkspaceUserProfileLinkField,
@@ -18,6 +18,8 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -28,12 +30,29 @@ const FIELD_OPTIONS: WorkspaceUserProfileLinkField[] = [
   'gender',
   'avatar_url',
   'email',
+  'phone',
 ];
+
+function HelpTooltip({ label }: { label: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex text-muted-foreground">
+          <Info className="h-3.5 w-3.5" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">
+        <p>{label}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 interface Props {
   wsId: string;
   mode: 'per_user' | 'generic';
   targetUserId?: string;
+  targetUserLabel?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -42,6 +61,7 @@ export function RequestProfileDetailsDialog({
   wsId,
   mode,
   targetUserId,
+  targetUserLabel,
   open,
   onOpenChange,
 }: Props) {
@@ -51,6 +71,7 @@ export function RequestProfileDetailsDialog({
     'display_name',
     'full_name',
   ]);
+  const [prefillExistingValues, setPrefillExistingValues] = useState(true);
   const [expiresAt, setExpiresAt] = useState('');
   const [maxUses, setMaxUses] = useState('');
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -66,6 +87,7 @@ export function RequestProfileDetailsDialog({
 
   const reset = () => {
     setSelected(['display_name', 'full_name']);
+    setPrefillExistingValues(true);
     setExpiresAt('');
     setMaxUses('');
     setShareUrl(null);
@@ -78,6 +100,7 @@ export function RequestProfileDetailsDialog({
         mode,
         target_user_id: mode === 'per_user' ? targetUserId : null,
         allowed_fields: selected,
+        prefill_existing_values: prefillExistingValues,
         expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
         max_uses: maxUses ? Number.parseInt(maxUses, 10) : null,
       }),
@@ -133,8 +156,20 @@ export function RequestProfileDetailsDialog({
           </div>
         ) : (
           <div className="space-y-4">
+            {mode === 'per_user' && targetUserLabel ? (
+              <div className="rounded-lg border bg-muted/30 px-3 py-2">
+                <p className="text-muted-foreground text-xs">
+                  {t('create_target_user_label')}
+                </p>
+                <p className="font-medium text-sm">{targetUserLabel}</p>
+              </div>
+            ) : null}
+
             <div className="space-y-2">
-              <Label>{t('create_fields_label')}</Label>
+              <div className="flex items-center gap-1.5">
+                <Label>{t('create_fields_label')}</Label>
+                <HelpTooltip label={t('create_fields_tooltip')} />
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 {FIELD_OPTIONS.map((field) => (
                   <label
@@ -157,6 +192,29 @@ export function RequestProfileDetailsDialog({
                 </p>
               ) : null}
             </div>
+
+            {mode === 'per_user' ? (
+              <div className="flex items-start justify-between gap-3 rounded-lg border p-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <Label htmlFor="prefill_existing_values">
+                      {t('create_prefill_existing_values')}
+                    </Label>
+                    <HelpTooltip
+                      label={t('create_prefill_existing_values_tooltip')}
+                    />
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    {t('create_prefill_existing_values_description')}
+                  </p>
+                </div>
+                <Switch
+                  id="prefill_existing_values"
+                  checked={prefillExistingValues}
+                  onCheckedChange={setPrefillExistingValues}
+                />
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">

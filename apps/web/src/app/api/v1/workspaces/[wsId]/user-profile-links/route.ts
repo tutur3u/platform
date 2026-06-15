@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -16,6 +17,34 @@ interface Params {
   params: Promise<{ wsId: string }>;
 }
 
+interface WorkspaceUserProfileLinkRow {
+  id: string;
+  code: string;
+  mode: 'per_user' | 'generic';
+  target_user_id: string | null;
+  allowed_fields: string[];
+  prefill_existing_values?: boolean | null;
+  max_uses: number | null;
+  expires_at: string | null;
+  current_uses: number;
+  is_expired: boolean;
+  is_full: boolean;
+  is_revoked: boolean;
+  created_at: string;
+}
+
+interface TargetUserRow {
+  id: string;
+  display_name: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  email: string | null;
+  phone: string | null;
+  birthday: string | null;
+  gender: string | null;
+  archived: boolean | null;
+}
+
 const createSchema = z
   .object({
     mode: z.enum(['per_user', 'generic']),
@@ -26,6 +55,7 @@ const createSchema = z
       .refine((fields) => new Set(fields).size === fields.length, {
         message: 'allowed_fields must not contain duplicates',
       }),
+    prefill_existing_values: z.boolean().optional(),
     expires_at: z.string().datetime({ offset: true }).nullable().optional(),
     max_uses: z.number().int().positive().nullable().optional(),
   })
@@ -52,6 +82,9 @@ export async function GET(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
+  const canViewPrivateInfo = permissions.containsPermission(
+    'view_users_private_info'
+  );
 
   const sbAdmin = await createAdminClient();
   const { data, error } = await sbAdmin
@@ -68,7 +101,66 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ links: data ?? [] });
+  const rows = (data ?? []) as WorkspaceUserProfileLinkRow[];
+  const targetUserIds = Array.from(
+    new Set(
+      rows
+        .map((link) => link.target_user_id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0)
+    )
+  );
+  const targetUsersById = new Map<string, TargetUserRow>();
+
+  if (targetUserIds.length > 0) {
+    const { data: targetUsers, error: targetUsersError } = await sbAdmin
+      .from('workspace_users')
+      .select(
+        'id, display_name, full_name, avatar_url, email, phone, birthday, gender, archived'
+      )
+      .eq('ws_id', wsId)
+      .in('id', targetUserIds);
+
+    if (targetUsersError) {
+      serverLogger.error('Error loading profile link target users:', {
+        error: targetUsersError,
+      });
+      return NextResponse.json(
+        { message: 'Error listing profile links' },
+        { status: 500 }
+      );
+    }
+
+    for (const targetUser of (targetUsers ?? []) as TargetUserRow[]) {
+      targetUsersById.set(targetUser.id, targetUser);
+    }
+  }
+
+  const links = rows.map((link) => {
+    const targetUser = link.target_user_id
+      ? targetUsersById.get(link.target_user_id)
+      : null;
+
+    return {
+      ...link,
+      prefill_existing_values: link.prefill_existing_values ?? true,
+      target_user: targetUser
+        ? {
+            id: targetUser.id,
+            display_name: targetUser.display_name,
+            full_name: targetUser.full_name,
+            avatar_url: normalizeAvatarImageSrc(targetUser.avatar_url) ?? null,
+            email: canViewPrivateInfo ? targetUser.email : null,
+            phone: canViewPrivateInfo ? targetUser.phone : null,
+            birthday: canViewPrivateInfo ? targetUser.birthday : null,
+            gender: canViewPrivateInfo ? targetUser.gender : null,
+            archived: targetUser.archived,
+            private_fields_hidden: !canViewPrivateInfo,
+          }
+        : null,
+    };
+  });
+
+  return NextResponse.json({ links });
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -134,9 +226,10 @@ export async function POST(req: Request, { params }: Params) {
       mode: parsed.data.mode,
       target_user_id: parsed.data.target_user_id ?? null,
       allowed_fields: parsed.data.allowed_fields,
+      prefill_existing_values: parsed.data.prefill_existing_values ?? true,
       expires_at: parsed.data.expires_at ?? null,
       max_uses: parsed.data.max_uses ?? null,
-    })
+    } as never)
     .select('id, code')
     .single();
 

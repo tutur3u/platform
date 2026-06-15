@@ -20,6 +20,8 @@ export interface ProfileLinkPagePayload {
   allowedFields: ProfileLinkField[];
   /** Current values for the allowed fields (per_user mode only). */
   prefill: Partial<Record<ProfileLinkField, string | null>>;
+  /** Whether the link allowed existing values to be returned to the visitor. */
+  prefillExistingValues: boolean;
   /** The logged-in account email — used to lock the email field. */
   actorEmail: string | null;
 }
@@ -28,6 +30,19 @@ export interface ProfileLinkPageResult {
   /** 200 ok, 401 must-login, 404 missing, 410 unavailable. */
   status: 200 | 401 | 404 | 410;
   data: ProfileLinkPagePayload | null;
+}
+
+interface ProfileLinkPageRow {
+  id: string | null;
+  ws_id: string | null;
+  code: string | null;
+  mode: string | null;
+  target_user_id: string | null;
+  allowed_fields: string[] | null;
+  prefill_existing_values?: boolean | null;
+  is_expired: boolean | null;
+  is_full: boolean | null;
+  is_revoked: boolean | null;
 }
 
 /**
@@ -40,13 +55,12 @@ export async function loadProfileLinkForPage(
 ): Promise<ProfileLinkPageResult> {
   const sbAdmin = await createAdminClient();
 
-  const { data: link } = await sbAdmin
+  const { data: rawLink } = await sbAdmin
     .from('workspace_user_profile_links_with_stats')
-    .select(
-      'id, ws_id, code, mode, target_user_id, allowed_fields, is_expired, is_full, is_revoked'
-    )
+    .select('*')
     .eq('code', code)
     .maybeSingle();
+  const link = rawLink as ProfileLinkPageRow | null;
 
   if (!link) {
     return { status: 404, data: null };
@@ -74,13 +88,16 @@ export async function loadProfileLinkForPage(
   const allowedFields = (link.allowed_fields ?? []).filter(
     isProfileLinkField
   ) as ProfileLinkField[];
+  const prefillExistingValues = link.prefill_existing_values ?? true;
 
   const prefill: Partial<Record<ProfileLinkField, string | null>> = {};
 
-  if (linkMode === 'per_user' && link.target_user_id) {
+  if (prefillExistingValues && linkMode === 'per_user' && link.target_user_id) {
     const { data: target } = await sbAdmin
       .from('workspace_users')
-      .select('display_name, full_name, birthday, gender, avatar_url, email')
+      .select(
+        'display_name, full_name, birthday, gender, avatar_url, email, phone'
+      )
       .eq('ws_id', linkWsId)
       .eq('id', link.target_user_id)
       .maybeSingle();
@@ -104,6 +121,7 @@ export async function loadProfileLinkForPage(
       wsId: linkWsId,
       allowedFields,
       prefill,
+      prefillExistingValues,
       actorEmail: user.email ?? null,
     },
   };
