@@ -9,7 +9,7 @@ export type InventoryOperatorView =
   | 'stock'
   | 'storefront';
 
-export type InventoryCommerceTab = 'checkouts' | 'sales';
+export type InventoryCommerceTab = 'checkouts' | 'promotions' | 'sales';
 
 export type InventoryFilters = {
   q: string;

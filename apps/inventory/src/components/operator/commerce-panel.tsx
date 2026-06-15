@@ -7,6 +7,7 @@ import {
   CreditCard,
   RotateCcw,
   ShieldCheck,
+  TicketPercent,
   User,
 } from '@tuturuuu/icons';
 import type {
@@ -14,6 +15,7 @@ import type {
   InventorySaleSummary,
 } from '@tuturuuu/internal-api/inventory';
 import { releaseInventoryCheckout } from '@tuturuuu/internal-api/inventory';
+import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useLocale, useTranslations } from 'next-intl';
@@ -22,6 +24,10 @@ import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { currency } from './operator-format';
 import { EmptyRow, LoadingRows } from './operator-shell';
 import type { InventoryCommerceTab } from './operator-types';
+import {
+  PromotionEditButton,
+  PromotionFormDialog,
+} from './promotion-form-dialog';
 import { SaleNoteDialog } from './sale-detail-panel';
 
 function StatusBadge({ value }: { value: string }) {
@@ -58,12 +64,13 @@ function CommerceTabs({
   }> = [
     { icon: CreditCard, label: t('checkouts'), value: 'checkouts' },
     { icon: ShieldCheck, label: t('sales'), value: 'sales' },
+    { icon: TicketPercent, label: t('promotions'), value: 'promotions' },
   ];
 
   return (
     <div
       aria-label={t('label')}
-      className="inline-grid grid-cols-2 rounded-lg border border-border bg-muted/25 p-1"
+      className="inline-grid grid-cols-3 rounded-lg border border-border bg-muted/25 p-1"
       role="tablist"
     >
       {tabs.map((item) => {
@@ -246,9 +253,68 @@ function SaleRows({
   );
 }
 
+function PromotionRows({
+  rows,
+  wsId,
+}: {
+  rows: ProductPromotion[];
+  wsId: string;
+}) {
+  const t = useTranslations('inventory.operator.promotions');
+
+  return (
+    <div className="grid gap-2">
+      <div className="flex justify-end">
+        <PromotionFormDialog wsId={wsId} />
+      </div>
+      {rows.length === 0 ? (
+        <EmptyRow description={t('emptyDescription')} label={t('empty')} />
+      ) : (
+        rows.map((row) => {
+          const used = row.current_uses ?? 0;
+          const isPercentage = row.use_ratio;
+
+          return (
+            <article
+              className="grid gap-3 rounded-lg border border-border bg-card p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+              key={row.id}
+            >
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
+                  <TicketPercent className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <p className="truncate font-medium">{row.name}</p>
+                  <span className="rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-xs">
+                    {row.code}
+                  </span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
+                  <span>
+                    {row.max_uses
+                      ? t('usesLabel', { max: row.max_uses, used })
+                      : t('usesUnlimited', { used })}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
+                <StatusBadge
+                  value={
+                    isPercentage ? `${row.value}%` : currency(Number(row.value))
+                  }
+                />
+                <PromotionEditButton promotion={row} wsId={wsId} />
+              </div>
+            </article>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
 export function CommercePanel({
   checkouts,
   isLoading,
+  promotions,
   query,
   sales,
   setTab,
@@ -257,6 +323,7 @@ export function CommercePanel({
 }: {
   checkouts: InventoryCheckoutSession[];
   isLoading?: boolean;
+  promotions: ProductPromotion[];
   query: string;
   sales: InventorySaleSummary[];
   setTab: (tab: InventoryCommerceTab) => void;
@@ -305,6 +372,8 @@ export function CommercePanel({
         <LoadingRows />
       ) : tab === 'checkouts' ? (
         <CheckoutRows rows={checkouts} wsId={wsId} />
+      ) : tab === 'promotions' ? (
+        <PromotionRows rows={promotions} wsId={wsId} />
       ) : (
         <SaleRows query={query} rows={sales} wsId={wsId} />
       )}

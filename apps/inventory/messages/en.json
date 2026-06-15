@@ -938,6 +938,7 @@
         "tabs": {
           "checkouts": "Checkouts",
           "label": "Commerce view",
+          "promotions": "Promotions",
           "sales": "Sales"
         }
       },
@@ -1552,6 +1553,33 @@
         "title": "Buyer preview"
       },
       "previewStore": "Preview",
+      "promotions": {
+        "code": "Coupon code",
+        "createDescription": "Create a discount code for your storefronts.",
+        "description": "Discount codes shoppers can apply at checkout.",
+        "editDescription": "Update this discount code.",
+        "editPromotion": "Edit promotion",
+        "empty": "No promotions yet",
+        "emptyDescription": "Create a coupon code to offer discounts at checkout.",
+        "hints": {
+          "code": "The code shoppers type at checkout, e.g. SAVE10. Letters and numbers.",
+          "maxUses": "The most times this code can be used in total. Leave blank for unlimited.",
+          "unit": "Percentage discounts come off the subtotal; fixed amounts subtract a set value.",
+          "value": "How much is taken off — a percentage of the order or a fixed amount."
+        },
+        "maxUses": "Usage limit",
+        "newPromotion": "New promotion",
+        "title": "Promotions & coupons",
+        "unit": "Discount type",
+        "units": {
+          "currency": "Fixed amount",
+          "percentage": "Percentage (%)"
+        },
+        "unlimited": "Unlimited",
+        "usesLabel": "{used}/{max} used",
+        "usesUnlimited": "{used} used",
+        "value": "Discount value"
+      },
       "rowDetails": {
         "available": "{count, plural, one {# available} other {# available}}",
         "availableUnlimited": "∞ available",

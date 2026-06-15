@@ -53,7 +53,7 @@ type InventoryQueryState = {
   refetch: () => unknown;
 };
 
-const commerceTabs = ['checkouts', 'sales'] as const;
+const commerceTabs = ['checkouts', 'sales', 'promotions'] as const;
 
 export function InventoryOperatorClient({
   view,
@@ -111,7 +111,10 @@ export function InventoryOperatorClient({
       ];
     }
 
-    if (view === 'commerce' && commerceTab === 'sales') {
+    if (
+      view === 'commerce' &&
+      (commerceTab === 'sales' || commerceTab === 'promotions')
+    ) {
       return [all];
     }
 
@@ -188,6 +191,9 @@ export function InventoryOperatorClient({
     ['bundles', 'storefront'].includes(view) ? data.bundles : null,
     view === 'commerce' && commerceTab === 'checkouts' ? data.checkouts : null,
     view === 'commerce' && commerceTab === 'sales' ? data.sales : null,
+    view === 'commerce' && commerceTab === 'promotions'
+      ? data.promotions
+      : null,
     view === 'costing' ? data.costingProfiles : null,
     view === 'costing' ? data.costingAnalytics : null,
     ['catalog', 'stock'].includes(view) ? data.costingProfiles : null,
@@ -227,7 +233,9 @@ export function InventoryOperatorClient({
       ? data.checkouts.isPending || data.checkouts.isFetching
       : view === 'commerce' && commerceTab === 'sales'
         ? data.sales.isPending || data.sales.isFetching
-        : false;
+        : view === 'commerce' && commerceTab === 'promotions'
+          ? data.promotions.isPending || data.promotions.isFetching
+          : false;
 
   const headerActions =
     view === 'catalog' ? (
@@ -344,6 +352,7 @@ export function InventoryOperatorClient({
           <CommercePanel
             checkouts={data.checkouts.data?.data ?? []}
             isLoading={commerceLoading}
+            promotions={data.promotions.data?.data ?? []}
             query={data.filters.q}
             sales={sales}
             setTab={(tab: InventoryCommerceTab) => {

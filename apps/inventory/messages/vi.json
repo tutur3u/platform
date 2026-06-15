@@ -938,6 +938,7 @@
         "tabs": {
           "checkouts": "Checkout",
           "label": "Chế độ thương mại",
+          "promotions": "Khuyến mãi",
           "sales": "Bán hàng"
         }
       },
@@ -1552,6 +1553,33 @@
         "title": "Xem trước người mua"
       },
       "previewStore": "Xem trước",
+      "promotions": {
+        "code": "Mã giảm giá",
+        "createDescription": "Tạo mã giảm giá cho các cửa hàng của bạn.",
+        "description": "Mã giảm giá khách có thể áp dụng khi thanh toán.",
+        "editDescription": "Cập nhật mã giảm giá này.",
+        "editPromotion": "Sửa khuyến mãi",
+        "empty": "Chưa có khuyến mãi",
+        "emptyDescription": "Tạo mã giảm giá để ưu đãi khi thanh toán.",
+        "hints": {
+          "code": "Mã khách nhập khi thanh toán, ví dụ SAVE10. Chữ và số.",
+          "maxUses": "Số lần tối đa mã này được dùng. Để trống nếu không giới hạn.",
+          "unit": "Giảm theo phần trăm trừ vào tạm tính; số tiền cố định trừ một giá trị đã định.",
+          "value": "Mức giảm — theo phần trăm đơn hàng hoặc một số tiền cố định."
+        },
+        "maxUses": "Giới hạn lượt dùng",
+        "newPromotion": "Khuyến mãi mới",
+        "title": "Khuyến mãi & mã giảm giá",
+        "unit": "Loại giảm giá",
+        "units": {
+          "currency": "Số tiền cố định",
+          "percentage": "Phần trăm (%)"
+        },
+        "unlimited": "Không giới hạn",
+        "usesLabel": "Đã dùng {used}/{max}",
+        "usesUnlimited": "Đã dùng {used}",
+        "value": "Giá trị giảm"
+      },
       "rowDetails": {
         "available": "{count, plural, one {# có sẵn} other {# có sẵn}}",
         "availableUnlimited": "∞ có sẵn",

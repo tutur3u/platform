@@ -12,6 +12,7 @@ import {
   listInventoryCheckouts,
   listInventoryCostProfiles,
   listInventoryProducts,
+  listInventoryPromotions,
   listInventorySales,
   listInventoryStorefronts,
   listInventorySuppliers,
@@ -116,6 +117,12 @@ export function useInventoryData(
     queryFn: () => listInventorySales(wsId, { limit: 50 }),
     queryKey: ['inventory', wsId, 'sales'],
   });
+  const promotions = useQuery({
+    enabled: view === 'commerce' && commerceTab === 'promotions',
+    queryFn: () =>
+      listInventoryPromotions(wsId, { pageSize: 50, q: filters.q }),
+    queryKey: ['inventory', wsId, 'promotions', filters.q],
+  });
   const audits = useQuery({
     enabled: view === 'audits',
     queryFn: () => listInventoryAuditLogs(wsId, { limit: 50 }),
@@ -162,6 +169,7 @@ export function useInventoryData(
     overview,
     polarSettings,
     products,
+    promotions,
     sales,
     setFilters,
     storefronts,

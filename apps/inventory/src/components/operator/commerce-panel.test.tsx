@@ -13,6 +13,7 @@ describe('CommercePanel', () => {
       <CommercePanel
         checkouts={[]}
         isLoading
+        promotions={[]}
         query=""
         sales={[]}
         setTab={() => undefined}
@@ -23,6 +24,7 @@ describe('CommercePanel', () => {
 
     expect(html).toContain('checkouts');
     expect(html).toContain('sales');
+    expect(html).toContain('promotions');
     expect(html).toContain('animate-pulse');
     expect(html).not.toContain('emptyDescriptions.sales');
   });
