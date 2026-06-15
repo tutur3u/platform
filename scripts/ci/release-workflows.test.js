@@ -488,6 +488,9 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   const restoreIndex = e2eJob.indexOf('Restore cached Docker images');
   const loadIndex = e2eJob.indexOf('Load cached Docker images');
   const diagnosticsUploadIndex = e2eJob.indexOf('Upload E2E diagnostics');
+  const diagnosticsRedactionIndex = e2eJob.indexOf(
+    'Redact E2E diagnostics artifact'
+  );
   const uploadIndex = e2eJob.indexOf('Upload Playwright report');
 
   assert.match(
@@ -507,6 +510,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.notEqual(restoreIndex, -1);
   assert.notEqual(loadIndex, -1);
   assert.notEqual(diagnosticsUploadIndex, -1);
+  assert.notEqual(diagnosticsRedactionIndex, -1);
   assert.notEqual(uploadIndex, -1);
   assert.doesNotMatch(
     e2eJob,
@@ -543,6 +547,14 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     'E2E diagnostics must be collected before uploading the diagnostics artifact'
   );
   assert.ok(
+    diagnosticsIndex < diagnosticsRedactionIndex,
+    'E2E diagnostics must be collected before artifact redaction runs'
+  );
+  assert.ok(
+    diagnosticsRedactionIndex < diagnosticsUploadIndex,
+    'E2E diagnostics must be redacted before artifact upload'
+  );
+  assert.ok(
     diagnosticsUploadIndex < uploadIndex,
     'E2E diagnostics artifact should upload before Playwright-only artifacts'
   );
@@ -572,6 +584,9 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     /curl -k -i --max-time 10 "\$portless_login_url" > "\$diagnostics_dir\/portless-login\.txt"/u
   );
   assert.match(e2eJob, /apps\/web\/test-results\/\.last-run\.json/u);
+  assert.match(e2eJob, /sensitiveKeyValuePattern/u);
+  assert.match(e2eJob, /Authorization:\\s\*Bearer/u);
+  assert.match(e2eJob, /walkFiles\(diagnosticsDir\)/u);
   assert.match(
     e2eJob,
     /name: e2e-diagnostics-\$\{\{ matrix\.shard \}\}-of-\$\{\{ matrix\.total_shards \}\}/u

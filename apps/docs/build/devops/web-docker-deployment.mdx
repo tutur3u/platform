@@ -228,9 +228,12 @@ Hive, proxy, and support services, the Portless route list, a probe against the
 configured E2E `BASE_URL`, and `bun sb:status`. The workflow also has a
 failure-only diagnostic step after `Run Playwright shard` as a backstop, so the
 job output should show the failing service or stage even when Playwright report
-artifacts are incomplete. The workflow uploads diagnostics, Playwright reports,
-and `apps/web/test-results` for every non-cancelled shard so traces and
-screenshots stay available when the job output is too short.
+artifacts are incomplete. Before upload, the workflow rewrites the diagnostics
+directory to redact secret-shaped key/value pairs, bearer tokens, sensitive
+query parameters, JWTs, and secret-like runner environment values. The workflow
+uploads diagnostics, Playwright reports, and `apps/web/test-results` for every
+non-cancelled shard so traces and screenshots stay available when the job output
+is too short.
 
 The Playwright global setup refuses non-local web origins and refuses Supabase
 origins outside `localhost`, `127.0.0.1`, or `host.docker.internal` on port
