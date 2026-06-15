@@ -16,4 +16,6 @@ export interface ProductPromotion extends Entity {
   current_uses?: number;
   ws_id?: string;
   promo_type: 'REGULAR' | 'REFERRAL';
+  /** The Polar discount this promotion is mirrored to, when synced. */
+  polar_discount_id?: string | null;
 }

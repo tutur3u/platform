@@ -21,6 +21,7 @@ describe('Inventory navigation', () => {
       '/acme/costing',
       '/acme/commerce',
       '/acme/storefront',
+      '/acme/polar',
       '/acme/setup',
       '/acme/audits',
     ]);
@@ -37,6 +38,10 @@ describe('Inventory navigation', () => {
       aliases: ['/acme/storefront/preview', '/acme/stripe'],
     });
     expect(visibleLinks[7]).toMatchObject({
+      href: '/acme/polar',
+      titleKey: 'polar.title',
+    });
+    expect(visibleLinks[8]).toMatchObject({
       sectionKey: 'sections.controls',
     });
   });

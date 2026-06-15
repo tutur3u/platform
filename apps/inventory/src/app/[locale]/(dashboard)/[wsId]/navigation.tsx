@@ -8,6 +8,7 @@ import {
   PackageSearch,
   Settings2,
   Store,
+  Zap,
 } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -34,6 +35,8 @@ function getNavigationIcon(icon: InventoryNavigationItem['icon']) {
       return <Calculator className={className} />;
     case 'overview':
       return <LayoutDashboard className={className} />;
+    case 'polar':
+      return <Zap className={className} />;
     case 'setup':
       return <Settings2 className={className} />;
     case 'stock':

@@ -11,6 +11,7 @@ export type InventoryNavigationItem = {
     | 'commerce'
     | 'costing'
     | 'overview'
+    | 'polar'
     | 'setup'
     | 'stock'
     | 'storefront';
@@ -71,6 +72,11 @@ export function getInventoryNavigationItems({
         `/${workspaceSlug}/stripe`,
       ],
       icon: 'storefront',
+    },
+    {
+      titleKey: 'polar.title',
+      href: `/${workspaceSlug}/polar`,
+      icon: 'polar',
     },
     null,
     {

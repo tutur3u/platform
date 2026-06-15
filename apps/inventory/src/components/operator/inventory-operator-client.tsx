@@ -9,6 +9,7 @@ import {
   PackageSearch,
   Store,
   TriangleAlert,
+  Zap,
 } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
@@ -31,6 +32,7 @@ import type {
   InventoryStatusOption,
 } from './operator-types';
 import { OverviewPanel } from './overview-panel';
+import { PolarHubPanel } from './polar-hub-panel';
 import { ProductCreateForm } from './product-management';
 import { ProductsTable } from './products-table';
 import { SetupPanel } from './setup-panel';
@@ -157,6 +159,7 @@ export function InventoryOperatorClient({
           t('views.overview.title'),
           t('views.overview.description'),
         ],
+        polar: [Zap, t('views.polar.title'), t('views.polar.description')],
         setup: [Boxes, t('views.setup.title'), t('views.setup.description')],
         stock: [
           TriangleAlert,
@@ -366,6 +369,7 @@ export function InventoryOperatorClient({
         {!isLoading && !isError && view === 'audits' ? (
           <AuditRows rows={data.audits.data?.data ?? []} wsId={wsId} />
         ) : null}
+        {!isError && view === 'polar' ? <PolarHubPanel wsId={wsId} /> : null}
       </div>
     </SectionShell>
   );

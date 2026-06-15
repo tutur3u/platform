@@ -846,6 +846,9 @@
         "description": "Tồn kho, thanh toán và sức khỏe vận hành.",
         "title": "Tổng quan"
       },
+      "polar": {
+        "title": "Polar"
+      },
       "sales": {
         "description": "Rà soát đơn bán đã hoàn tất và liên kết hóa đơn tài chính.",
         "title": "Bán hàng"
@@ -1538,6 +1541,20 @@
           "sandbox": "Sandbox"
         },
         "environmentLabel": "Môi trường",
+        "hub": {
+          "connectedEnvironments": "Môi trường đã kết nối",
+          "notConnected": "Chưa kết nối",
+          "productReady": "Sản phẩm thanh toán",
+          "productStatusTitle": "Sản phẩm Polar theo môi trường",
+          "ready": "Sẵn sàng",
+          "recentCheckouts": "Thanh toán Polar gần đây",
+          "recentCheckoutsEmpty": "Chưa có thanh toán Polar nào.",
+          "recentCheckoutsTitle": "Thanh toán Polar gần đây",
+          "syncedCoupons": "Mã giảm giá đã đồng bộ",
+          "syncedCouponsDescription": "Mã giảm giá tạo ở đây được tự động đồng bộ sang Polar.",
+          "syncedCouponsEmpty": "Chưa có mã giảm giá nào được đồng bộ sang Polar.",
+          "syncedCouponsTitle": "Mã giảm giá đã đồng bộ"
+        },
         "manage": "Quản lý Polar",
         "notConfigured": "Chưa lưu token",
         "pending": "Đang chờ",
@@ -1673,6 +1690,10 @@
         "overview": {
           "description": "Quét nhanh sức khỏe sản phẩm, mức sẵn sàng cửa hàng và rủi ro sắp hết hàng.",
           "title": "Trung tâm điều phối kho"
+        },
+        "polar": {
+          "description": "Kết nối Polar, đồng bộ sản phẩm & mã giảm giá, và đối soát đơn hàng.",
+          "title": "Trung tâm Polar"
         },
         "sales": {
           "description": "Rà soát doanh số dựa trên hóa đơn từ các checkout kho đã hoàn tất.",

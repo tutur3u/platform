@@ -70,7 +70,7 @@ export async function GET(req: Request, { params }: Params) {
   const query = privateDb
     .from('workspace_promotions')
     .select(
-      'id, name, description, code, value, use_ratio, promo_type, max_uses, current_uses, ws_id, created_at',
+      'id, name, description, code, value, use_ratio, promo_type, max_uses, current_uses, ws_id, polar_discount_id, created_at',
       { count: shouldPaginate ? 'exact' : undefined }
     )
     .eq('ws_id', wsId);

@@ -5,6 +5,7 @@ export type InventoryOperatorView =
   | 'commerce'
   | 'costing'
   | 'overview'
+  | 'polar'
   | 'setup'
   | 'stock'
   | 'storefront';

@@ -846,6 +846,9 @@
         "description": "Inventory, payments, and operating health.",
         "title": "Overview"
       },
+      "polar": {
+        "title": "Polar"
+      },
       "sales": {
         "description": "Review finalized sales linked to finance invoices.",
         "title": "Sales"
@@ -1538,6 +1541,20 @@
           "sandbox": "Sandbox"
         },
         "environmentLabel": "Environment",
+        "hub": {
+          "connectedEnvironments": "Connected environments",
+          "notConnected": "Not connected",
+          "productReady": "Checkout product",
+          "productStatusTitle": "Polar product per environment",
+          "ready": "Ready",
+          "recentCheckouts": "Recent Polar checkouts",
+          "recentCheckoutsEmpty": "No Polar checkouts yet.",
+          "recentCheckoutsTitle": "Recent Polar checkouts",
+          "syncedCoupons": "Synced coupons",
+          "syncedCouponsDescription": "Coupons created here are mirrored to a Polar discount automatically.",
+          "syncedCouponsEmpty": "No coupons are mirrored to Polar yet.",
+          "syncedCouponsTitle": "Synced coupons"
+        },
         "manage": "Manage Polar",
         "notConfigured": "No token saved",
         "pending": "Pending",
@@ -1673,6 +1690,10 @@
         "overview": {
           "description": "Scan product health, storefront readiness, and low-stock risk.",
           "title": "Inventory command center"
+        },
+        "polar": {
+          "description": "Connect Polar, sync products & coupons, and reconcile checkout orders.",
+          "title": "Polar hub"
         },
         "sales": {
           "description": "Review invoice-backed sales created from finalized inventory checkouts.",
