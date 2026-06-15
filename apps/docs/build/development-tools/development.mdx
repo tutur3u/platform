@@ -217,6 +217,43 @@ instead of only starting the current proxy daemon, run:
 bun portless:setup -- --service
 ```
 
+### Diagnose a broken local environment
+
+When a local app suddenly cannot reach another app — for example the Inventory
+landing page throws `InternalApiError: 404` because its server-side call to
+`https://tuturuuu.localhost/api/...` is not routed — run the doctor:
+
+```bash
+bun doctor
+```
+
+It checks the Node runtime, whether the Portless proxy is responding on port
+`443`, and the health of every registered Portless route. The most common
+failure after overlapping or crashed dev sessions is a **stale routing table**:
+the proxy still points a live app route at a dead dev-server port, so cross-app
+internal API calls return `404`. The doctor flags those routes as `DEAD` and
+exits non-zero. Static aliases for apps you simply are not running are reported
+as warnings, not failures.
+
+Apply the safe automatic repair (start the proxy, or reset it when routes are
+stale) and re-run the checks:
+
+```bash
+bun doctor --fix
+```
+
+`bun setup` deliberately no-ops when a proxy is already responding, so it does
+**not** clear a stale routing table on its own. To force a clean restart — stop
+the proxy, prune orphaned dev servers from crashed sessions, then start a fresh
+proxy that apps re-register against — run:
+
+```bash
+bun portless:reset
+```
+
+After a reset, restart your dev servers (for example `bun dev:inventory`) so
+each app re-registers its route with the new proxy.
+
 ### Start Local Supabase Instance
 
 To start a local supabase instance (database), run the following command:

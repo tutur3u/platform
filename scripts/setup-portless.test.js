@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  getResetSteps,
   getSetupArgs,
   parsePortlessProxyReady,
   runPortlessSetup,
@@ -125,4 +126,71 @@ test('runPortlessSetup skips setup in non-interactive shells', () => {
     [['service', 'status']]
   );
   assert.match(messages.join('\n'), /Skipping Portless setup/iu);
+});
+
+test('getResetSteps recovers via stop -> prune -> start', () => {
+  assert.deepEqual(getResetSteps(), [
+    ['proxy', 'stop'],
+    ['prune'],
+    ['proxy', 'start'],
+  ]);
+});
+
+test('runPortlessSetup --reset restarts even when the proxy is already up', () => {
+  const { calls, runner } = createRunner({
+    statusOutput: 'Proxy on 443: responding',
+  });
+
+  const exitCode = runPortlessSetup({
+    args: ['--reset'],
+    isTTY: true,
+    log: () => {},
+    runner,
+  });
+
+  assert.equal(exitCode, 0);
+  // Never queries status first: --reset is unconditional and must not early-out
+  // on the "already responding" check.
+  assert.deepEqual(
+    calls.map((call) => call.args),
+    [['proxy', 'stop'], ['prune'], ['proxy', 'start']]
+  );
+});
+
+test('runPortlessSetup --reset returns the final start status, ignoring stop/prune', () => {
+  const calls = [];
+  const runner = (_command, args) => {
+    calls.push(args.join(' '));
+    if (args.join(' ') === 'proxy stop') {
+      return { status: 1, stdout: '', stderr: 'no proxy running' };
+    }
+    return { status: 0, stdout: '', stderr: '' };
+  };
+
+  const exitCode = runPortlessSetup({
+    args: ['--reset'],
+    isTTY: true,
+    log: () => {},
+    runner,
+  });
+
+  assert.equal(exitCode, 0);
+  assert.deepEqual(calls, ['proxy stop', 'prune', 'proxy start']);
+});
+
+test('runPortlessSetup --reset --dry-run prints the sequence without running it', () => {
+  const { calls, runner } = createRunner();
+  const messages = [];
+
+  const exitCode = runPortlessSetup({
+    args: ['--reset', '--dry-run'],
+    isTTY: true,
+    log: (message) => messages.push(message),
+    runner,
+  });
+
+  assert.equal(exitCode, 0);
+  assert.equal(calls.length, 0);
+  assert.match(messages.join('\n'), /proxy stop/u);
+  assert.match(messages.join('\n'), /proxy start/u);
 });
