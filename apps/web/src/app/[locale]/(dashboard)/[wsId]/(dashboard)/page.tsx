@@ -57,16 +57,17 @@ async function PermissionSetupBannerSlot({
 }
 
 async function ensureDashboardAccess({
-  isCreator,
+  user,
   wsId,
 }: {
-  isCreator: boolean;
+  user: {
+    email?: string | null;
+    id: string;
+  };
   wsId: string;
 }) {
-  if (isCreator) return;
-
   const { getPermissions } = await import('@tuturuuu/utils/workspace-helper');
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ user, wsId });
   if (!permissions) notFound();
 }
 
@@ -108,7 +109,13 @@ export default async function WorkspaceHomePage({ params }: Props) {
 
   const wsId = workspace.id;
   const isCreator = workspace.creator_id === currentUser.id;
-  await ensureDashboardAccess({ isCreator, wsId });
+  await ensureDashboardAccess({
+    user: {
+      email: currentUser.email ?? null,
+      id: currentUser.id,
+    },
+    wsId,
+  });
 
   return (
     <>
