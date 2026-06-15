@@ -162,6 +162,33 @@ describe('MobileDeploymentClient', () => {
     );
   });
 
+  it('submits custom secrets through the dialog form', async () => {
+    renderClient();
+
+    fireEvent.click(screen.getByRole('button', { name: 'addSecret' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('name'), {
+      target: { value: 'EXTRA_FLAG' },
+    });
+    const valueInput = within(dialog).getByLabelText('value');
+    fireEvent.change(valueInput, {
+      target: { value: 'enabled' },
+    });
+
+    const form = valueInput.closest('form');
+    expect(form).not.toBeNull();
+    fireEvent.submit(form!);
+
+    await waitFor(() =>
+      expect(mocks.saveMobileDeploymentSecret).toHaveBeenCalledWith({
+        kind: 'env',
+        name: 'EXTRA_FLAG',
+        previousName: undefined,
+        value: 'enabled',
+      })
+    );
+  });
+
   it('edits and clears built-in secrets through row actions', async () => {
     renderClient();
 
