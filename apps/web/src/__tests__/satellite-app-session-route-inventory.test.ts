@@ -216,6 +216,9 @@ describe('satellite app-session route inventory', () => {
     expect(productsRoute).toContain(
       "appSessionTargets: ['inventory', 'finance']"
     );
+    expect(
+      productsRoute.match(/appSessionTargets:\s*\['inventory', 'finance'\]/g)
+    ).toHaveLength(1);
     expect(broadFinanceTargets).toEqual([]);
   });
 

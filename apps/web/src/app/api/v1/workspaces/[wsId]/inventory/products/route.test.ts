@@ -175,7 +175,7 @@ describe('inventory products route', () => {
       expect.any(Request),
       'personal',
       {
-        appSessionTargets: ['inventory', 'finance'],
+        appSessionTargets: ['inventory'],
       }
     );
     expect(mocks.productCreateSafeParse).toHaveBeenCalledWith(payload);

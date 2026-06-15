@@ -227,7 +227,7 @@ export async function POST(request: Request, { params }: Params) {
     const sbAdmin = await createAdminClient();
     const { wsId: id } = await params;
     const authorization = await authorizeInventoryWorkspace(request, id, {
-      appSessionTargets: ['inventory', 'finance'],
+      appSessionTargets: ['inventory'],
     });
     if (!authorization.ok) return authorization.response;
 
