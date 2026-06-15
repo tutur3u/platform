@@ -876,6 +876,19 @@
       }
     },
     "operator": {
+      "analytics": {
+        "conversion": "Chuyển đổi",
+        "description": "Phễu chuyển đổi cửa hàng trong {days} ngày qua.",
+        "empty": "Chưa ghi nhận hoạt động cửa hàng nào.",
+        "stage": {
+          "addToCart": "Thêm vào giỏ",
+          "checkoutCreated": "Tạo thanh toán",
+          "checkoutStarted": "Bắt đầu thanh toán",
+          "completed": "Hoàn tất",
+          "views": "Lượt xem"
+        },
+        "title": "Phân tích cửa hàng"
+      },
       "audit": {
         "actorFilter": "Người thực hiện",
         "changedFields": "{count, plural, one {# trường thay đổi} other {# trường thay đổi}}",

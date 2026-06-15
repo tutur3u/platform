@@ -876,6 +876,19 @@
       }
     },
     "operator": {
+      "analytics": {
+        "conversion": "Conversion",
+        "description": "Storefront funnel over the last {days} days.",
+        "empty": "No storefront activity recorded yet.",
+        "stage": {
+          "addToCart": "Add to cart",
+          "checkoutCreated": "Checkout created",
+          "checkoutStarted": "Checkout started",
+          "completed": "Completed",
+          "views": "Views"
+        },
+        "title": "Storefront analytics"
+      },
       "audit": {
         "actorFilter": "Actor",
         "changedFields": "{count, plural, one {# field changed} other {# fields changed}}",

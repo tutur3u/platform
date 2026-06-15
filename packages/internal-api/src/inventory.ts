@@ -450,6 +450,12 @@ export type InventoryPolarSyncStatusCounts = {
   total: number;
 };
 
+export type InventoryStorefrontAnalytics = {
+  days: number;
+  funnel: Array<{ key: string; count: number }>;
+  conversionRate: number;
+};
+
 export type InventoryPolarProductSyncSummary = {
   listings: InventoryPolarSyncStatusCounts;
   bundles: InventoryPolarSyncStatusCounts;
@@ -2319,6 +2325,18 @@ export function updateInventoryPolarSettings(
       headers: jsonHeaders(options?.defaultHeaders),
       method: 'PUT',
     }
+  );
+}
+
+export function getInventoryStorefrontAnalytics(
+  wsId: string,
+  query?: { days?: number },
+  options?: InternalApiClientOptions
+) {
+  const suffix = query?.days ? `?days=${query.days}` : '';
+  return getInternalApiClient(options).json<InventoryStorefrontAnalytics>(
+    workspaceInventoryPath(wsId, `/analytics${suffix}`),
+    { cache: 'no-store' }
   );
 }
 
