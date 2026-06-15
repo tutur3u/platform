@@ -1673,6 +1673,60 @@ export function listInventoryPromotions(
   });
 }
 
+export type InventoryPromotionPayload = {
+  code: string;
+  description?: string;
+  max_uses?: number | null;
+  name: string;
+  unit?: 'currency' | 'percentage';
+  value: number;
+};
+
+export function createInventoryPromotion(
+  wsId: string,
+  payload: InventoryPromotionPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: ProductPromotion }>(
+    workspacePath(wsId, '/promotions'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventoryPromotion(
+  wsId: string,
+  promotionId: string,
+  payload: InventoryPromotionPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: ProductPromotion }>(
+    workspacePath(wsId, `/promotions/${encodePathSegment(promotionId)}`),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PUT',
+    }
+  );
+}
+
+export function deleteInventoryPromotion(
+  wsId: string,
+  promotionId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message?: string }>(
+    workspacePath(wsId, `/promotions/${encodePathSegment(promotionId)}`),
+    {
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'DELETE',
+    }
+  );
+}
+
 export function listInventoryManufacturers(
   wsId: string,
   options?: InternalApiClientOptions
