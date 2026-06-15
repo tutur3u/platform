@@ -934,6 +934,7 @@
         "readiness": "Readiness",
         "status": "Status",
         "stock": "Stock",
+        "sync": "Polar sync",
         "unitPrice": "Unit price",
         "updated": "Updated",
         "visibility": "Visibility"

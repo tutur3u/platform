@@ -116,6 +116,9 @@ export type BundleRow = {
   status: InventoryBundleStatus;
   storefront_id: string | null;
   updated_at: string | null;
+  polar_sync_status: string | null;
+  polar_synced_at: string | null;
+  polar_last_error: string | null;
   ws_id: string;
 };
 
@@ -318,6 +321,11 @@ export function mapBundle(
     status: row.status,
     storefrontId: row.storefront_id,
     updatedAt: row.updated_at,
+    polarSyncStatus:
+      (row.polar_sync_status as InventoryBundle['polarSyncStatus']) ??
+      undefined,
+    polarSyncedAt: row.polar_synced_at,
+    polarLastError: row.polar_last_error,
     wsId: row.ws_id,
   };
 }
