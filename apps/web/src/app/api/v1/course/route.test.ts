@@ -75,6 +75,7 @@ type QueryResult = {
 function createQuery(result: QueryResult) {
   const query = {
     eq: vi.fn(() => query),
+    in: vi.fn(() => query),
     maybeSingle: vi.fn(() => Promise.resolve(result)),
     order: vi.fn(() => query),
     select: vi.fn(() => query),
@@ -258,6 +259,123 @@ describe('course API app-session access', () => {
       studentWorkspaceUserId: 'virtual-user-1',
       wsId: 'ws-1',
     });
+    expect(requestSupabase.from).not.toHaveBeenCalled();
+  });
+
+  it('does not expose locked module content to learner course details', async () => {
+    const courseId = '00000000-0000-4000-8000-000000000003';
+    const unlockedModuleId = '00000000-0000-4000-8000-000000000004';
+    const lockedModuleId = '00000000-0000-4000-8000-000000000005';
+    const unlockedContent = { content: [], type: 'doc' };
+    const lockedContent = {
+      content: [{ text: 'locked lesson', type: 'text' }],
+      type: 'doc',
+    };
+
+    admin = createSupabaseMock({
+      course_module_flashcards: [{ data: [], error: null }],
+      course_module_quiz_sets: [{ data: [], error: null }],
+      course_module_quizzes: [{ data: [], error: null }],
+      workspace_course_modules: [
+        {
+          data: [
+            {
+              content: unlockedContent,
+              created_at: '2026-06-01T00:00:00.000Z',
+              extra_content: { notes: 'visible' },
+              group_id: courseId,
+              id: unlockedModuleId,
+              is_public: false,
+              is_published: true,
+              module_group_id: null,
+              name: 'Unlocked module',
+              sort_key: 1,
+              youtube_links: ['https://youtu.be/unlocked'],
+            },
+            {
+              content: lockedContent,
+              created_at: '2026-06-02T00:00:00.000Z',
+              extra_content: { notes: 'secret' },
+              group_id: courseId,
+              id: lockedModuleId,
+              is_public: false,
+              is_published: true,
+              module_group_id: null,
+              name: 'Locked module',
+              sort_key: 2,
+              youtube_links: ['https://youtu.be/locked'],
+            },
+          ],
+          error: null,
+        },
+      ],
+      workspace_user_groups: [
+        {
+          data: {
+            description: 'Sequenced course',
+            id: courseId,
+            name: 'Biology',
+            ws_id: 'ws-1',
+          },
+          error: null,
+        },
+      ],
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.getLearnerCourseDetail.mockResolvedValueOnce({
+      completedModules: 0,
+      description: 'Sequenced course',
+      id: courseId,
+      modules: [
+        {
+          completed: false,
+          counts: { flashcards: 0, quizSets: 0, quizzes: 0 },
+          id: unlockedModuleId,
+          is_published: true,
+          locked: false,
+          name: 'Unlocked module',
+          sort_key: 1,
+        },
+        {
+          completed: false,
+          counts: { flashcards: 0, quizSets: 0, quizzes: 0 },
+          id: lockedModuleId,
+          is_published: true,
+          locked: true,
+          name: 'Locked module',
+          sort_key: 2,
+        },
+      ],
+      name: 'Biology',
+      progress: 0,
+      totalModules: 2,
+    });
+
+    const request = new Request(
+      `http://localhost/api/v1/course?courseId=${courseId}`
+    );
+    const response = await GET(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.modules).toEqual([
+      expect.objectContaining({
+        content: unlockedContent,
+        extra_content: { notes: 'visible' },
+        id: unlockedModuleId,
+        locked: false,
+        youtube_links: ['https://youtu.be/unlocked'],
+      }),
+      expect.objectContaining({
+        content: null,
+        extra_content: null,
+        id: lockedModuleId,
+        locked: true,
+        youtube_links: null,
+      }),
+    ]);
+    expect(JSON.stringify(payload)).not.toContain('locked lesson');
+    expect(JSON.stringify(payload)).not.toContain('https://youtu.be/locked');
     expect(requestSupabase.from).not.toHaveBeenCalled();
   });
 });
