@@ -74,6 +74,33 @@ const UpdateTransferSchema = z
   });
 
 const MigrateTransferSchema = UpdateTransferSchema;
+const CONFIDENTIAL_TRANSACTION_SELECT =
+  'id, wallet_id, is_amount_confidential, is_description_confidential, is_category_confidential';
+
+type ExistingTransferTransaction = {
+  id: string;
+  is_amount_confidential?: boolean | null;
+  is_category_confidential?: boolean | null;
+  is_description_confidential?: boolean | null;
+  wallet_id: string;
+};
+
+function isConfidentialTransaction(transaction: ExistingTransferTransaction) {
+  return Boolean(
+    transaction.is_amount_confidential ||
+      transaction.is_description_confidential ||
+      transaction.is_category_confidential
+  );
+}
+
+function confidentialTransferUpdateResponse() {
+  return NextResponse.json(
+    {
+      message: 'Insufficient permissions to update confidential transactions',
+    },
+    { status: 403 }
+  );
+}
 
 export async function PATCH(
   req: Request,
@@ -147,7 +174,7 @@ export async function PATCH(
   const { data: existingTransactions, error: existingTransactionsError } =
     await sbAdmin
       .from('wallet_transactions')
-      .select('id, wallet_id')
+      .select(CONFIDENTIAL_TRANSACTION_SELECT)
       .in('id', pairTransactionIds);
 
   if (
@@ -173,6 +200,14 @@ export async function PATCH(
       { message: 'Transfer transactions not found' },
       { status: 404 }
     );
+  }
+
+  if (
+    (isConfidentialTransaction(existingOriginTransaction) ||
+      isConfidentialTransaction(existingDestinationTransaction)) &&
+    permissions.withoutPermission('update_confidential_transactions')
+  ) {
+    return confidentialTransferUpdateResponse();
   }
 
   if (
@@ -413,7 +448,7 @@ export async function PUT(
   const { data: existingTransferTransactions, error: existingTransferError } =
     await sbAdmin
       .from('wallet_transactions')
-      .select('id, wallet_id')
+      .select(CONFIDENTIAL_TRANSACTION_SELECT)
       .in('id', pairTransactionIds);
 
   if (
@@ -439,6 +474,14 @@ export async function PUT(
       { message: 'Transfer transactions not found' },
       { status: 404 }
     );
+  }
+
+  if (
+    (isConfidentialTransaction(existingOriginTransaction) ||
+      isConfidentialTransaction(existingDestinationTransaction)) &&
+    withoutPermission('update_confidential_transactions')
+  ) {
+    return confidentialTransferUpdateResponse();
   }
 
   if (

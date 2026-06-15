@@ -56,6 +56,16 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'workspace_wallet_transfers') {
+        return {
+          select: vi.fn(() => ({
+            in: vi.fn(() => ({
+              in: linkedTransferToIn,
+            })),
+          })),
+        };
+      }
+
       throw new Error(`Unexpected session table: ${table}`);
     }),
   };
@@ -231,10 +241,16 @@ describe('transfers route', () => {
       data: [
         {
           id: '11111111-1111-4111-8111-111111111111',
+          is_amount_confidential: false,
+          is_category_confidential: false,
+          is_description_confidential: false,
           wallet_id: '11111111-1111-1111-1111-111111111111',
         },
         {
           id: '22222222-2222-4222-8222-222222222222',
+          is_amount_confidential: false,
+          is_category_confidential: false,
+          is_description_confidential: false,
           wallet_id: '22222222-2222-2222-2222-222222222222',
         },
       ],
@@ -542,6 +558,128 @@ describe('transfers route', () => {
       ],
       { onConflict: 'id' }
     );
+  });
+
+  it('rejects confidential transfer migration without confidential update permission', async () => {
+    const { PATCH } = await import('./route.js');
+
+    mocks.getPermissions.mockResolvedValue(
+      withPermissions(['update_transactions'])
+    );
+    mocks.adminTransactionSelectIn.mockResolvedValueOnce({
+      data: [
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          is_amount_confidential: true,
+          is_category_confidential: false,
+          is_description_confidential: false,
+          wallet_id: '11111111-1111-1111-1111-111111111111',
+        },
+        {
+          id: '22222222-2222-4222-8222-222222222222',
+          is_amount_confidential: false,
+          is_category_confidential: false,
+          is_description_confidential: false,
+          wallet_id: '22222222-2222-2222-2222-222222222222',
+        },
+      ],
+      error: null,
+    });
+
+    const response = await PATCH(
+      new Request('http://localhost/api/workspaces/ws-1/transfers', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          origin_transaction_id: '11111111-1111-4111-8111-111111111111',
+          destination_transaction_id: '22222222-2222-4222-8222-222222222222',
+          origin_wallet_id: '11111111-1111-1111-1111-111111111111',
+          destination_wallet_id: '22222222-2222-2222-2222-222222222222',
+          amount: 25,
+          taken_at: '2026-03-30T08:00:00.000Z',
+          description: 'Migrated transfer',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Insufficient permissions to update confidential transactions',
+    });
+    expect(mocks.transferInsert).not.toHaveBeenCalled();
+    expect(mocks.adminTransactionUpsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects confidential transfer updates without confidential update permission', async () => {
+    const { PUT } = await import('./route.js');
+
+    mocks.getPermissions.mockResolvedValue(
+      withPermissions(['update_transactions'])
+    );
+    mocks.linkedTransferToIn.mockResolvedValueOnce({
+      data: [
+        {
+          from_transaction_id: '11111111-1111-4111-8111-111111111111',
+          to_transaction_id: '22222222-2222-4222-8222-222222222222',
+        },
+      ],
+      error: null,
+    });
+    mocks.adminTransactionSelectIn.mockResolvedValueOnce({
+      data: [
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          is_amount_confidential: false,
+          is_category_confidential: false,
+          is_description_confidential: true,
+          wallet_id: '11111111-1111-1111-1111-111111111111',
+        },
+        {
+          id: '22222222-2222-4222-8222-222222222222',
+          is_amount_confidential: false,
+          is_category_confidential: false,
+          is_description_confidential: false,
+          wallet_id: '22222222-2222-2222-2222-222222222222',
+        },
+      ],
+      error: null,
+    });
+
+    const response = await PUT(
+      new Request('http://localhost/api/workspaces/ws-1/transfers', {
+        method: 'PUT',
+        body: JSON.stringify({
+          origin_transaction_id: '11111111-1111-4111-8111-111111111111',
+          destination_transaction_id: '22222222-2222-4222-8222-222222222222',
+          origin_wallet_id: '11111111-1111-1111-1111-111111111111',
+          destination_wallet_id: '22222222-2222-2222-2222-222222222222',
+          amount: 25,
+          taken_at: '2026-03-30T08:00:00.000Z',
+          description: 'Updated transfer',
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Insufficient permissions to update confidential transactions',
+    });
+    expect(mocks.adminTransactionUpsert).not.toHaveBeenCalled();
   });
 
   it('rejects transfer migration for an already-linked pair', async () => {
