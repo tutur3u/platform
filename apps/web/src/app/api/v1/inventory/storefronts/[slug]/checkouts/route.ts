@@ -211,9 +211,17 @@ export async function POST(request: Request, { params }: Params) {
 
     if (!checkoutAuth.ok) return checkoutAuth.response;
 
+    const buyerDefaults = getCheckoutBuyerPayload(checkoutAuth);
+    // Buyer-entered details win over the session defaults (so a shopper can name
+    // a different recipient/contact), but the auth uid stays authoritative.
     const checkoutPayload = {
       ...payload,
-      ...getCheckoutBuyerPayload(checkoutAuth),
+      customerAuthUid: buyerDefaults.customerAuthUid,
+      customerEmail:
+        payload.customerEmail?.trim() || buyerDefaults.customerEmail,
+      customerName: payload.customerName?.trim() || buyerDefaults.customerName,
+      customerPhone:
+        payload.customerPhone?.trim() || buyerDefaults.customerPhone,
     };
 
     if (storefrontPayload.storefront.checkoutMode === 'disabled') {

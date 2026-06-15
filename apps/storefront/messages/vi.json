@@ -21,9 +21,13 @@
       "note": "Ghi chú đơn hàng",
       "phone": "Số điện thoại"
     },
+    "backToStore": "Về cửa hàng",
     "loading": "Đang tải cửa hàng...",
     "notFound": "Không tìm thấy cửa hàng.",
     "order": "Đơn hàng",
+    "orderPlaced": "Đã đặt hàng!",
+    "orderPlacedDescription": "Cảm ơn — đơn hàng của bạn đã được ghi nhận. Hãy lưu mã tham chiếu này.",
+    "orderReference": "Mã tham chiếu",
     "orderErrorDescription": "Không thể tải đơn hàng. Vui lòng thử lại sau.",
     "orderErrorTitle": "Đơn hàng không khả dụng",
     "orderStatus": "Trạng thái: {status}",

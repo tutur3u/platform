@@ -99,6 +99,37 @@ export function StorefrontCartSummary({
             onCheckoutSubmit?.(new FormData(event.currentTarget));
           }}
         >
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium text-xs">{labels.form.name}</span>
+            <input
+              autoComplete="name"
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              name="customerName"
+              placeholder={labels.form.name}
+              required
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium text-xs">{labels.form.email}</span>
+            <input
+              autoComplete="email"
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              name="customerEmail"
+              placeholder={labels.form.email}
+              required
+              type="email"
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium text-xs">{labels.form.phone}</span>
+            <input
+              autoComplete="tel"
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              name="customerPhone"
+              placeholder={labels.form.phone}
+              type="tel"
+            />
+          </label>
           <textarea
             className="min-h-20 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
             name="note"

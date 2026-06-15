@@ -1,12 +1,13 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { RefreshCw } from '@tuturuuu/icons';
+import { CheckCircle2, RefreshCw } from '@tuturuuu/icons';
 import {
   createInventoryCheckoutSession,
   getInventoryPublicOrder,
   recordInventoryStorefrontAnalyticsEvent,
 } from '@tuturuuu/internal-api/inventory';
+import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   getStorefrontListingLimit,
@@ -15,6 +16,7 @@ import {
 } from '@tuturuuu/ui/storefront';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo } from 'react';
+import { Link } from '@/i18n/navigation';
 import { useCart } from './storefront-cart';
 import {
   createDemoCheckoutResponse,
@@ -87,7 +89,14 @@ export function StorefrontClient({
     mutationFn: async (formData: FormData) => {
       if (isDemoStorefront) return createDemoCheckoutResponse(storeSlug);
 
+      const customerName = String(formData.get('customerName') ?? '').trim();
+      const customerEmail = String(formData.get('customerEmail') ?? '').trim();
+      const customerPhone = String(formData.get('customerPhone') ?? '').trim();
+
       return createInventoryCheckoutSession(storeSlug, {
+        customerEmail: customerEmail || undefined,
+        customerName: customerName || undefined,
+        customerPhone: customerPhone || null,
         lines: checkoutListings
           .map(({ line, listing }) => ({
             listingId: line.listingId,
@@ -122,27 +131,57 @@ export function StorefrontClient({
     const isOrderUnavailable =
       orderQuery.isError || (shouldResolveDemoOrder && storefrontQuery.isError);
     return (
-      <main className="mx-auto grid min-h-dvh w-full max-w-3xl place-items-center px-4 py-10">
-        <section className="w-full rounded-lg border border-border bg-card p-6 shadow-sm">
-          <p className="text-muted-foreground text-sm">{t('order')}</p>
-          <h1 className="mt-2 font-semibold text-3xl">{publicToken}</h1>
+      <main className="mx-auto grid min-h-dvh w-full max-w-lg place-items-center px-4 py-10">
+        <section className="w-full rounded-lg border border-border bg-card p-6 text-center shadow-sm">
           {isOrderUnavailable ? (
-            <RetryPanel
-              description={t('orderErrorDescription')}
-              onRetry={() => {
-                if (shouldResolveDemoOrder) storefrontQuery.refetch();
-                orderQuery.refetch();
-              }}
-              title={t('orderErrorTitle')}
-            />
+            <>
+              <p className="text-muted-foreground text-sm">{t('order')}</p>
+              <h1 className="mt-2 break-all font-semibold text-2xl">
+                {publicToken}
+              </h1>
+              <RetryPanel
+                description={t('orderErrorDescription')}
+                onRetry={() => {
+                  if (shouldResolveDemoOrder) storefrontQuery.refetch();
+                  orderQuery.refetch();
+                }}
+                title={t('orderErrorTitle')}
+              />
+            </>
           ) : (
-            <p className="mt-4 text-muted-foreground">
-              {order
-                ? t('orderStatus', {
+            <>
+              <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
+                <CheckCircle2 className="h-6 w-6" />
+              </span>
+              <h1 className="mt-4 font-semibold text-2xl">
+                {t('orderPlaced')}
+              </h1>
+              <p className="mt-2 text-muted-foreground text-sm leading-6">
+                {t('orderPlacedDescription')}
+              </p>
+              {order ? (
+                <p className="mt-4 inline-flex rounded-md border border-border bg-muted/40 px-2.5 py-1 font-medium text-xs">
+                  {t('orderStatus', {
                     status: order.polarStatus ?? order.status,
-                  })
-                : t('loading')}
-            </p>
+                  })}
+                </p>
+              ) : (
+                <p className="mt-4 text-muted-foreground text-sm">
+                  {t('loading')}
+                </p>
+              )}
+              <div className="mt-4 rounded-md border border-border border-dashed bg-background p-3 text-left">
+                <p className="text-muted-foreground text-xs">
+                  {t('orderReference')}
+                </p>
+                <p className="mt-0.5 break-all font-mono text-sm">
+                  {publicToken}
+                </p>
+              </div>
+              <Button asChild className="mt-5 w-full" variant="outline">
+                <Link href={`/${storeSlug}`}>{t('backToStore')}</Link>
+              </Button>
+            </>
           )}
         </section>
       </main>

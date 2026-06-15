@@ -99,6 +99,22 @@ export function StorefrontSurface({
     : visibleListings;
   const currency = storefront.currency ?? 'USD';
 
+  const cartSummary = (
+    <StorefrontCartSummary
+      cartEntries={checkoutEntries}
+      checkoutHref={checkoutHref}
+      currency={currency}
+      isCheckout={isCheckout}
+      isPreview={isPreview}
+      isSubmitting={isSubmitting}
+      labels={labels}
+      onCheckoutSubmit={onCheckoutSubmit}
+      radius={radius}
+      storefront={storefront}
+      total={total}
+    />
+  );
+
   return (
     <main
       className={cn(
@@ -156,85 +172,79 @@ export function StorefrontSurface({
         </div>
       </header>
 
-      <section
-        className={cn(
-          'mx-auto grid max-w-7xl gap-4 px-4 py-5',
-          compactLayout ? 'grid-cols-1' : 'lg:grid-cols-[minmax(0,1fr)_340px]'
-        )}
-      >
-        <div className="min-w-0">
-          <StorefrontHeroPanel
-            currency={currency}
-            labels={labels}
-            listingsCount={listings.length}
-            radius={radius}
-            storefront={storefront}
-          />
+      {isCheckout ? (
+        <section className="mx-auto w-full max-w-xl px-4 py-8">
+          {cartSummary}
+        </section>
+      ) : (
+        <section
+          className={cn(
+            'mx-auto grid max-w-7xl gap-4 px-4 py-5',
+            compactLayout ? 'grid-cols-1' : 'lg:grid-cols-[minmax(0,1fr)_340px]'
+          )}
+        >
+          <div className="min-w-0">
+            <StorefrontHeroPanel
+              currency={currency}
+              labels={labels}
+              listingsCount={listings.length}
+              radius={radius}
+              storefront={storefront}
+            />
 
-          <StorefrontMerchSections
-            radius={radius}
-            sections={storefront.sections ?? []}
-          />
+            <StorefrontMerchSections
+              radius={radius}
+              sections={storefront.sections ?? []}
+            />
 
-          <div
-            className={cn(
-              'mt-4',
-              compactLayout || storefront.layoutStyle === 'list'
-                ? 'grid gap-3'
-                : 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3',
-              !compactLayout &&
-                storefront.layoutStyle === 'feature' &&
-                '[&>article:first-child]:sm:col-span-2'
-            )}
-          >
-            {listingRows.length === 0 ? (
-              <StorefrontEmptyListings
-                action={emptyAction}
-                labels={labels}
-                radius={radius}
-              />
-            ) : (
-              listingRows.map((listing) => {
-                const line = cartLines.find(
-                  (item) => item.listingId === listing.id
-                );
+            <div
+              className={cn(
+                'mt-4',
+                compactLayout || storefront.layoutStyle === 'list'
+                  ? 'grid gap-3'
+                  : 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3',
+                !compactLayout &&
+                  storefront.layoutStyle === 'feature' &&
+                  '[&>article:first-child]:sm:col-span-2'
+              )}
+            >
+              {listingRows.length === 0 ? (
+                <StorefrontEmptyListings
+                  action={emptyAction}
+                  labels={labels}
+                  radius={radius}
+                />
+              ) : (
+                listingRows.map((listing) => {
+                  const line = cartLines.find(
+                    (item) => item.listingId === listing.id
+                  );
 
-                return (
-                  <StorefrontListingCard
-                    currency={currency}
-                    isList={storefront.layoutStyle === 'list'}
-                    key={listing.id}
-                    labels={labels}
-                    listing={listing}
-                    onDecrement={onDecrement}
-                    onIncrement={onIncrement}
-                    quantity={line?.quantity ?? 0}
-                    radius={radius}
-                    showInventoryBadges={storefront.showInventoryBadges}
-                    surfaceClassName={
-                      storefrontSurfaceClasses[storefront.surfaceStyle]
-                    }
-                  />
-                );
-              })
-            )}
+                  return (
+                    <StorefrontListingCard
+                      currency={currency}
+                      isList={storefront.layoutStyle === 'list'}
+                      key={listing.id}
+                      labels={labels}
+                      listing={listing}
+                      onDecrement={onDecrement}
+                      onIncrement={onIncrement}
+                      quantity={line?.quantity ?? 0}
+                      radius={radius}
+                      showInventoryBadges={storefront.showInventoryBadges}
+                      surfaceClassName={
+                        storefrontSurfaceClasses[storefront.surfaceStyle]
+                      }
+                    />
+                  );
+                })
+              )}
+            </div>
           </div>
-        </div>
 
-        <StorefrontCartSummary
-          cartEntries={checkoutEntries}
-          checkoutHref={checkoutHref}
-          currency={currency}
-          isCheckout={isCheckout}
-          isPreview={isPreview}
-          isSubmitting={isSubmitting}
-          labels={labels}
-          onCheckoutSubmit={onCheckoutSubmit}
-          radius={radius}
-          storefront={storefront}
-          total={total}
-        />
-      </section>
+          {cartSummary}
+        </section>
+      )}
     </main>
   );
 }
