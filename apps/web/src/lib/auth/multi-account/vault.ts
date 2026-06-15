@@ -134,6 +134,24 @@ function rowToAccountSummary(row: AccountRow): WebAccountSummary {
   };
 }
 
+function clearStaleLegacyDeviceCookies(
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+  request: Pick<Request, 'headers' | 'url'>,
+  activeCookieName: string
+) {
+  // Only migrate away from the legacy cookie when the active cookie uses the
+  // hardened __Host- name. On localhost dev/E2E the active cookie *is* the
+  // legacy cookie, and the response cookie store is keyed by name, so clearing
+  // it here would clobber the value we just set and drop the device entirely.
+  if (activeCookieName === LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME) {
+    return;
+  }
+
+  for (const options of getLegacyDeviceCookieClearOptions(request)) {
+    cookieStore.set(LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME, '', options);
+  }
+}
+
 async function setDeviceCookie(
   request: Pick<Request, 'headers' | 'url'>,
   device: WebAccountDevice
@@ -146,16 +164,7 @@ async function setDeviceCookie(
     getDeviceCookieOptions(request)
   );
 
-  for (const options of getLegacyDeviceCookieClearOptions(request)) {
-    if (
-      cookieName === LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME &&
-      !('domain' in options)
-    ) {
-      continue;
-    }
-
-    cookieStore.set(LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME, '', options);
-  }
+  clearStaleLegacyDeviceCookies(cookieStore, request, cookieName);
 }
 
 async function clearDeviceCookie(request: Pick<Request, 'headers' | 'url'>) {
@@ -163,16 +172,7 @@ async function clearDeviceCookie(request: Pick<Request, 'headers' | 'url'>) {
   const cookieName = getDeviceCookieName(request);
   cookieStore.set(cookieName, '', getExpiredDeviceCookieOptions(request));
 
-  for (const options of getLegacyDeviceCookieClearOptions(request)) {
-    if (
-      cookieName === LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME &&
-      !('domain' in options)
-    ) {
-      continue;
-    }
-
-    cookieStore.set(LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME, '', options);
-  }
+  clearStaleLegacyDeviceCookies(cookieStore, request, cookieName);
 }
 
 async function resolveDevice(
