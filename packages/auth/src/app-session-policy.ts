@@ -25,6 +25,11 @@ export const APP_COORDINATION_SESSION_POLICY_LIMITS = {
     max: 86_400,
     min: 300,
   },
+  externalAppRefreshReplayGraceSeconds: {
+    defaultValue: 30,
+    max: 300,
+    min: 0,
+  },
   internalAppAccessTtlSeconds: {
     defaultValue: 28_800,
     max: 86_400,
@@ -92,6 +97,9 @@ export const appCoordinationSessionPolicySchema = z
     cliRefreshTtlSeconds: boundedIntegerSchema('cliRefreshTtlSeconds'),
     externalAppBearerTtlSeconds: boundedIntegerSchema(
       'externalAppBearerTtlSeconds'
+    ),
+    externalAppRefreshReplayGraceSeconds: boundedIntegerSchema(
+      'externalAppRefreshReplayGraceSeconds'
     ),
     internalAppAccessTtlSeconds: boundedIntegerSchema(
       'internalAppAccessTtlSeconds'

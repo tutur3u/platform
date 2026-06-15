@@ -26,6 +26,7 @@ const POLICY_FIELDS = [
   'internalAppRefreshEarlySeconds',
   'browserRefreshReplayGraceSeconds',
   'externalAppBearerTtlSeconds',
+  'externalAppRefreshReplayGraceSeconds',
   'cliAccessTtlSeconds',
   'cliRefreshTtlSeconds',
 ] as const;

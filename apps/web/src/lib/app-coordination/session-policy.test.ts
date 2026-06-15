@@ -71,6 +71,7 @@ describe('app coordination session policy storage', () => {
 
   it('uses compatibility environment fallback when the secret is invalid', async () => {
     vi.stubEnv('TUTURUUU_APP_COORDINATION_TOKEN_TTL_SECONDS', '3600');
+    vi.stubEnv('TUTURUUU_EXTERNAL_APP_REFRESH_REPLAY_GRACE_SECONDS', '45');
     const { db } = createSecretDb('{nope');
 
     await expect(
@@ -78,6 +79,7 @@ describe('app coordination session policy storage', () => {
     ).resolves.toMatchObject({
       policy: expect.objectContaining({
         externalAppBearerTtlSeconds: 3600,
+        externalAppRefreshReplayGraceSeconds: 45,
       }),
       source: 'environment',
     });

@@ -1,13 +1,16 @@
 import {
+  type AppCoordinationTokenClaims,
   createAppCoordinationToken,
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
+import type { AppCoordinationSessionPolicy } from '@tuturuuu/auth/app-session-policy';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
+import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BASE_URL } from '@/constants/common';
@@ -23,6 +26,7 @@ import {
 } from '@/lib/infrastructure/log-drain';
 
 const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
+const APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX = 'app-token:refresh:used';
 
 const exchangeSchema = z.object({
   appId: z
@@ -50,6 +54,8 @@ type CrossAppValidationRow = {
   } | null;
   user_id?: string | null;
 };
+
+type RefreshConsumeResult = 'consumed' | 'grace' | 'replayed' | 'unavailable';
 
 function getValidationRow(value: unknown): CrossAppValidationRow | null {
   if (Array.isArray(value)) {
@@ -170,17 +176,18 @@ function buildInvitationUrl(request: NextRequest, workspaceId: string) {
 async function createExchangeTokenResponse({
   email,
   normalizedWorkspaceId,
+  policy,
   scopes,
   targetApp,
   userId,
 }: {
   email: string | null;
   normalizedWorkspaceId?: string | null;
+  policy: AppCoordinationSessionPolicy;
   scopes: string[];
   targetApp: string;
   userId: string;
 }) {
-  const { policy } = await getAppCoordinationSessionPolicy();
   const accessToken = createAppCoordinationToken({
     email,
     expiresInSeconds: policy.externalAppBearerTtlSeconds,
@@ -218,13 +225,67 @@ async function createExchangeTokenResponse({
   });
 }
 
-function verifyExchangeRefreshToken({
+async function consumeRefreshTokenWithGrace({
+  exp,
+  graceSeconds,
+  jti,
+  sub,
+}: {
+  exp: number;
+  graceSeconds: number;
+  jti: string;
+  sub: string;
+}): Promise<RefreshConsumeResult> {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const ttlSeconds = exp - nowSeconds;
+
+  if (ttlSeconds <= 0 || !jti.trim() || !sub.trim()) {
+    return 'replayed';
+  }
+
+  const redis = await getUpstashRestRedisClient().catch(() => null);
+  if (!redis) {
+    return 'unavailable';
+  }
+
+  const key = `${APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
+
+  try {
+    const firstUsedAt = await redis.get<number | string>(key);
+    const firstUsedAtSeconds =
+      typeof firstUsedAt === 'number'
+        ? firstUsedAt
+        : Number.parseInt(firstUsedAt ?? '', 10);
+
+    if (Number.isFinite(firstUsedAtSeconds)) {
+      return firstUsedAtSeconds + graceSeconds >= nowSeconds
+        ? 'grace'
+        : 'replayed';
+    }
+
+    const consumed = await redis.set(key, String(nowSeconds), {
+      ex: ttlSeconds,
+      nx: true,
+    });
+
+    return consumed === 'OK' ? 'consumed' : 'replayed';
+  } catch (error) {
+    serverLogger.warn('External app refresh replay check failed', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return 'unavailable';
+  }
+}
+
+async function verifyExchangeRefreshToken({
+  replayGraceSeconds,
   refreshToken,
   targetApp,
 }: {
+  replayGraceSeconds: number;
   refreshToken: string;
   targetApp: string;
-}) {
+}): Promise<AppCoordinationTokenClaims | null> {
   let verification: ReturnType<typeof verifyAppCoordinationToken>;
 
   try {
@@ -243,6 +304,17 @@ function verifyExchangeRefreshToken({
     claims.target_app !== targetApp ||
     !claims.scopes.includes(APP_TOKEN_REFRESH_SCOPE)
   ) {
+    return null;
+  }
+
+  const consumeResult = await consumeRefreshTokenWithGrace({
+    exp: claims.exp,
+    graceSeconds: replayGraceSeconds,
+    jti: claims.jti,
+    sub: claims.sub,
+  });
+
+  if (consumeResult === 'replayed') {
     return null;
   }
 
@@ -305,11 +377,13 @@ async function exchangeAppToken(request: NextRequest) {
   }
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const { policy } = await getAppCoordinationSessionPolicy({ db: sbAdmin });
   let email: string | null;
   let userId: string;
 
   if (refreshToken) {
-    const refreshClaims = verifyExchangeRefreshToken({
+    const refreshClaims = await verifyExchangeRefreshToken({
+      replayGraceSeconds: policy.externalAppRefreshReplayGraceSeconds,
       refreshToken,
       targetApp: resolvedTarget.targetApp,
     });
@@ -409,6 +483,7 @@ async function exchangeAppToken(request: NextRequest) {
   return createExchangeTokenResponse({
     email,
     normalizedWorkspaceId: exchangeAuthorization.normalizedWorkspaceId,
+    policy,
     scopes: resolvedTarget.scopes,
     targetApp: resolvedTarget.targetApp,
     userId,

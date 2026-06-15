@@ -58,6 +58,9 @@ function getEnvironmentFallbackPolicy() {
     externalAppBearerTtlSeconds: parseEnvInteger(
       'TUTURUUU_APP_COORDINATION_TOKEN_TTL_SECONDS'
     ),
+    externalAppRefreshReplayGraceSeconds: parseEnvInteger(
+      'TUTURUUU_EXTERNAL_APP_REFRESH_REPLAY_GRACE_SECONDS'
+    ),
     internalAppAccessTtlSeconds: parseEnvInteger(
       'TUTURUUU_INTERNAL_APP_ACCESS_TTL_SECONDS'
     ),

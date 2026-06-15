@@ -3,13 +3,16 @@ import {
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
   getAppDomainMap: vi.fn(),
+  redisGet: vi.fn(),
+  redisSet: vi.fn(),
   serverLoggerWarn: vi.fn(),
   verifyExternalAppSecret: vi.fn(),
 }));
@@ -24,6 +27,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/internal-domains', () => ({
   getAppDomainMap: () => mocks.getAppDomainMap(),
   getLocalInternalAppUrl: (_app: string, fallback: string) => fallback,
+}));
+
+vi.mock('@tuturuuu/utils/upstash-rest', () => ({
+  getUpstashRestRedisClient: vi.fn(),
 }));
 
 vi.mock('@/lib/app-coordination/external-apps', async (importOriginal) => {
@@ -294,6 +301,10 @@ function createExchangeRequest(body: Record<string, unknown>) {
 }
 
 describe('app token exchange route', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.TUTURUUU_APP_COORDINATION_SECRET = 'test-secret';
@@ -304,6 +315,17 @@ describe('app token exchange route', () => {
         url: 'https://cms.tuturuuu.com',
       },
     ]);
+    mocks.redisGet.mockResolvedValue(null);
+    mocks.redisSet.mockResolvedValue('OK');
+    vi.mocked(getUpstashRestRedisClient).mockResolvedValue({
+      del: vi.fn(),
+      decr: vi.fn(),
+      expire: vi.fn(),
+      get: mocks.redisGet,
+      incr: vi.fn(),
+      set: mocks.redisSet,
+      ttl: vi.fn(),
+    });
 
     mocks.createClient.mockResolvedValue({
       rpc: vi.fn().mockResolvedValue({
@@ -437,6 +459,50 @@ describe('app token exchange route', () => {
         'app-token:refresh',
       ]);
     }
+    expect(mocks.redisSet).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^app-token:refresh:used:11111111-1111-4111-8111-111111111111:/u
+      ),
+      expect.any(String),
+      expect.objectContaining({
+        ex: expect.any(Number),
+        nx: true,
+      })
+    );
+  });
+
+  it('rejects replayed registered app refresh tokens after the replay grace window', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-15T00:00:00.000Z'));
+    mockRegisteredApp(['external-projects:*']);
+    mocks.redisGet.mockResolvedValue(Math.floor(Date.now() / 1000) - 31);
+    const { token: refreshToken } = createAppCoordinationToken(
+      {
+        email: 'victim@example.com',
+        expiresInSeconds: 86_400,
+        originApp: 'web',
+        scopes: ['app-token:refresh'],
+        targetApp: 'yoola',
+        userId: victimUserId,
+      },
+      { secret: 'test-secret' }
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        refreshToken,
+        requestedScopes: ['external-projects:*'],
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Invalid or expired refresh token',
+    });
+    expect(mocks.redisSet).not.toHaveBeenCalled();
   });
 
   it('rejects refresh requests with non-refresh app tokens', async () => {
