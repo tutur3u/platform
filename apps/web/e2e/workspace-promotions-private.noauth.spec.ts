@@ -80,6 +80,7 @@ test.describe('Workspace promotions private schema API', () => {
         {
           data: {
             max_uses: 10,
+            polar_discount_id: `discount_${promotionId.slice(0, 8)}`,
             value: 1500,
           },
           failOnStatusCode: false,
@@ -90,7 +91,7 @@ test.describe('Workspace promotions private schema API', () => {
       expect(updateResponse.status()).toBe(204);
 
       const readResponse = await request.get(
-        `${SUPABASE_URL}/rest/v1/workspace_promotions?id=eq.${promotionId}&select=id,name,value,max_uses,current_uses,ws_id`,
+        `${SUPABASE_URL}/rest/v1/workspace_promotions?id=eq.${promotionId}&select=id,name,value,max_uses,current_uses,polar_discount_id,ws_id`,
         {
           failOnStatusCode: false,
           headers: serviceHeaders(),
@@ -104,6 +105,7 @@ test.describe('Workspace promotions private schema API', () => {
         id: string;
         max_uses: number | null;
         name: string | null;
+        polar_discount_id: string | null;
         value: number;
         ws_id: string;
       }>;
@@ -114,6 +116,7 @@ test.describe('Workspace promotions private schema API', () => {
           id: promotionId,
           max_uses: 10,
           name,
+          polar_discount_id: `discount_${promotionId.slice(0, 8)}`,
           value: 1500,
           ws_id: workspace.id,
         }),

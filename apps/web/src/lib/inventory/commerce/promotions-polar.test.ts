@@ -41,6 +41,51 @@ describe('buildPolarDiscountInput', () => {
     });
   });
 
+  it('rounds percentage strings to Polar basis points', () => {
+    expect(
+      buildPolarDiscountInput(
+        {
+          code: 'SAVE12',
+          max_uses: null,
+          name: 'Decimal percent',
+          use_ratio: true,
+          value: '12.345',
+        },
+        'usd'
+      )
+    ).toEqual({
+      basisPoints: 1235,
+      code: 'SAVE12',
+      duration: 'once',
+      maxRedemptions: null,
+      name: 'Decimal percent',
+      type: 'percentage',
+    });
+  });
+
+  it('rounds decimal fixed values to the nearest cent', () => {
+    expect(
+      buildPolarDiscountInput(
+        {
+          code: 'ROUND',
+          max_uses: 1,
+          name: 'Rounding',
+          use_ratio: false,
+          value: '19.995',
+        },
+        'eur'
+      )
+    ).toEqual({
+      amount: 2000,
+      code: 'ROUND',
+      currency: 'EUR',
+      duration: 'once',
+      maxRedemptions: 1,
+      name: 'Rounding',
+      type: 'fixed',
+    });
+  });
+
   it('treats missing max_uses as unlimited', () => {
     expect(
       buildPolarDiscountInput(
