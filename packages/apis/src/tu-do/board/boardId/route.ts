@@ -179,11 +179,26 @@ export async function handleBoardRoutePUT(
     }
   }
 
-  const { error } = await sbAdmin
+  let { error } = await sbAdmin
     .from('workspace_boards')
     .update(updateData)
     .eq('id', parsedBoardId)
     .eq('ws_id', wsId);
+
+  // Rollout safety: if `default_list_id` has not been migrated yet in this
+  // environment, retry the update without it so other board edits still save.
+  if (
+    error &&
+    'default_list_id' in updateData &&
+    (error.code === '42703' || error.message?.includes('default_list_id'))
+  ) {
+    const { default_list_id: _droppedDefaultListId, ...rest } = updateData;
+    ({ error } = await sbAdmin
+      .from('workspace_boards')
+      .update(rest)
+      .eq('id', parsedBoardId)
+      .eq('ws_id', wsId));
+  }
 
   if (error) {
     if (isUniqueViolation(error)) {
