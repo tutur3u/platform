@@ -413,6 +413,70 @@ export async function resolveInventoryPolarContext({
   };
 }
 
+/**
+ * Polar checkouts charge a single product and have no line-item/quantity
+ * concept, so we can only attribute an order to a real synced product when the
+ * cart is exactly one unit of one listing whose synced product price still
+ * equals the reserved total. Returns that product id, or null to fall back to
+ * the generic custom-amount product (which charges the exact reserved total).
+ */
+async function resolveSingleListingPolarProduct({
+  checkout,
+  environment,
+  polar,
+}: {
+  checkout: InventoryCheckoutSession;
+  environment: InventoryPolarEnvironment;
+  polar: ReturnType<typeof createPolarClient>;
+}): Promise<string | null> {
+  if (checkout.lines.length !== 1) return null;
+  const line = checkout.lines[0];
+  if (!line) return null;
+  if (line.quantity !== 1 || !line.listingId) return null;
+
+  const privateAdmin = await getPrivateAdmin();
+  const { data } = (await privateAdmin
+    .from('inventory_storefront_listings' as never)
+    .select('polar_product_id, polar_environment, polar_sync_status')
+    .eq('id', line.listingId)
+    .eq('ws_id', checkout.wsId)
+    .maybeSingle()) as {
+    data: {
+      polar_environment?: string | null;
+      polar_product_id?: string | null;
+      polar_sync_status?: string | null;
+    } | null;
+  };
+
+  if (
+    !data?.polar_product_id ||
+    data.polar_sync_status !== 'synced' ||
+    data.polar_environment !== environment
+  ) {
+    return null;
+  }
+
+  // Defend against price drift: only attribute to the real product if Polar
+  // still prices it exactly at the reserved order total.
+  try {
+    const product = await polar.products.get({ id: data.polar_product_id });
+    const fixedPrice = (product.prices ?? []).find(
+      (price) =>
+        (price as { amountType?: string }).amountType === 'fixed' &&
+        typeof (price as { priceAmount?: number }).priceAmount === 'number'
+    ) as { priceAmount?: number } | undefined;
+    if (fixedPrice?.priceAmount === checkout.totalAmount) {
+      return data.polar_product_id;
+    }
+  } catch (error) {
+    serverLogger.warn('Single-listing Polar product check failed', {
+      error: extractErrorMessage(error),
+      listingId: line.listingId,
+    });
+  }
+  return null;
+}
+
 export async function createInventoryPolarCheckout({
   checkout,
   storefrontSlug,
@@ -438,16 +502,30 @@ export async function createInventoryPolarCheckout({
     );
   }
 
-  const productId = await ensureInventoryPolarProduct({
-    environment,
-    wsId: checkout.wsId,
-  });
-
   const accessToken = await decryptIntegrationToken(integration);
   const polar = createPolarClient({ accessToken, environment });
+
+  // Use the real synced product for single-unit single-listing carts (so the
+  // order is attributed to the actual product in Polar); otherwise the generic
+  // custom-amount product backs the exact reserved total.
+  const singleListingProductId = await resolveSingleListingPolarProduct({
+    checkout,
+    environment,
+    polar,
+  });
+  const productId =
+    singleListingProductId ??
+    (await ensureInventoryPolarProduct({
+      environment,
+      wsId: checkout.wsId,
+    }));
+  const usesGenericProduct = !singleListingProductId;
+
   const normalizedStorefrontUrl = storefrontUrl.replace(/\/$/u, '');
   const checkoutSession = await polar.checkouts.create({
-    amount: checkout.totalAmount,
+    // `amount` only applies to the generic custom-amount product; a fixed-price
+    // synced product is priced by Polar itself.
+    ...(usesGenericProduct ? { amount: checkout.totalAmount } : {}),
     currency: toPolarCurrency(checkout.currency) as never,
     customerEmail: checkout.customerEmail,
     customerName: checkout.customerName,
