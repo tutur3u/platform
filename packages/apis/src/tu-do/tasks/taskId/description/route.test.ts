@@ -15,11 +15,21 @@ type QueryResult = {
   data: unknown;
   error: unknown;
 };
+type TaskRpcPayload = {
+  p_actor_user_id: string;
+  p_task_id: string;
+  p_task_updates: Record<string, unknown>;
+};
 
 const mocks = vi.hoisted(() => {
   const adminQueues = new Map<string, QueryResult[]>();
   const privateQueues = new Map<string, QueryResult[]>();
   const rpcQueues = new Map<string, QueryResult[]>();
+  const adminMutations: Array<{
+    operation: string;
+    table: string;
+    value: unknown;
+  }> = [];
   const privateMutations: Array<{
     operation: string;
     table: string;
@@ -77,9 +87,9 @@ const mocks = vi.hoisted(() => {
   };
   const adminClient = {
     from: vi.fn((table: string) =>
-      createQuery(table, dequeue(adminQueues, table), [])
+      createQuery(table, dequeue(adminQueues, table), adminMutations)
     ),
-    rpc: vi.fn((name: string) => ({
+    rpc: vi.fn((name: string, _payload: unknown) => ({
       maybeSingle: vi.fn(async () => dequeue(rpcQueues, name)),
     })),
     schema: vi.fn(() => privateClient),
@@ -88,6 +98,7 @@ const mocks = vi.hoisted(() => {
 
   return {
     adminClient,
+    adminMutations,
     adminQueues,
     privateClient,
     privateMutations,
@@ -171,6 +182,7 @@ describe('task description route chunked PATCH', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.adminQueues.clear();
+    mocks.adminMutations.length = 0;
     mocks.privateQueues.clear();
     mocks.rpcQueues.clear();
     mocks.privateMutations.length = 0;
@@ -267,7 +279,7 @@ describe('task description route chunked PATCH', () => {
     ).toBe(false);
   });
 
-  it('assembles committed chunks and persists through the actor RPC', async () => {
+  it('assembles committed chunks while keeping Yjs state out of the actor RPC', async () => {
     const description = JSON.stringify({
       type: 'doc',
       content: [
@@ -305,6 +317,14 @@ describe('task description route chunked PATCH', () => {
     queueResult(mocks.rpcQueues, 'update_task_fields_with_actor', {
       data: {
         description,
+        description_yjs_state: null,
+        id: TASK_ID,
+      },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: {
+        description,
         description_yjs_state: [1, 2, 3],
         id: TASK_ID,
       },
@@ -327,14 +347,84 @@ describe('task description route chunked PATCH', () => {
       description,
       description_yjs_state: [1, 2, 3],
     });
-    expect(mocks.adminClient.rpc).toHaveBeenCalledWith(
-      'update_task_fields_with_actor',
+    const rpcPayload = vi.mocked(mocks.adminClient.rpc).mock.calls.at(0)?.[1];
+    expect(rpcPayload).toMatchObject({
+      p_actor_user_id: USER_ID,
+      p_task_id: TASK_ID,
+      p_task_updates: {
+        description,
+      },
+    });
+    expect((rpcPayload as TaskRpcPayload).p_task_updates).not.toHaveProperty(
+      'description_yjs_state'
+    );
+    expect(mocks.adminMutations).toContainEqual({
+      operation: 'update',
+      table: 'tasks',
+      value: {
+        description_yjs_state: [1, 2, 3],
+      },
+    });
+  });
+
+  it('keeps the chunk session when Yjs state persistence fails', async () => {
+    const description = JSON.stringify({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Chunked description' }],
+        },
+      ],
+    });
+
+    queueTaskAccess();
+    queueResult(mocks.privateQueues, 'task_description_chunk_sessions', {
+      data: {
+        fields: {
+          description: {
+            chunk_count: 1,
+            total_length: description.length,
+          },
+        },
+        id: '00000000-0000-4000-8000-000000000abc',
+        task_id: TASK_ID,
+        user_id: USER_ID,
+      },
+      error: null,
+    });
+    queueResult(mocks.privateQueues, 'task_description_chunks', {
+      data: [{ chunk: description, chunk_index: 0, field: 'description' }],
+      error: null,
+    });
+    queueResult(mocks.rpcQueues, 'update_task_fields_with_actor', {
+      data: {
+        description,
+        description_yjs_state: null,
+        id: TASK_ID,
+      },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: null,
+      error: new Error('failed to persist yjs state'),
+    });
+
+    const response = await callPatch(
+      patchRequest({
+        action: 'commit',
+        session_id: '00000000-0000-4000-8000-000000000abc',
+      })
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Failed to update task description state',
+    });
+    expect(mocks.privateMutations).not.toContainEqual(
       expect.objectContaining({
-        p_actor_user_id: USER_ID,
-        p_task_id: TASK_ID,
-        p_task_updates: expect.objectContaining({
-          description,
-        }),
+        operation: 'delete',
+        table: 'task_description_chunk_sessions',
       })
     );
   });

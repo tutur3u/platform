@@ -1,5 +1,6 @@
 import {
   type APIRequestContext,
+  type APIResponse,
   expect,
   type Locator,
   type Page,
@@ -185,6 +186,19 @@ function splitStringIntoChunks(value: string, chunkLength = 45_000) {
   return chunks;
 }
 
+async function expectChunkResponseOk(response: APIResponse, context: string) {
+  if (response.ok()) return;
+
+  const body = await response
+    .text()
+    .catch((error) => `Failed to read response body: ${String(error)}`);
+
+  expect(
+    response.ok(),
+    `${context} failed with ${response.status()} ${response.statusText()}: ${body}`
+  ).toBeTruthy();
+}
+
 async function persistDescriptionWithChunks({
   description,
   headers,
@@ -213,7 +227,10 @@ async function persistDescriptionWithChunks({
     }
   );
 
-  expect(beginResponse.ok()).toBeTruthy();
+  await expectChunkResponseOk(
+    beginResponse,
+    'Begin chunked description update'
+  );
   const { session_id: sessionId } = (await beginResponse.json()) as {
     session_id: string;
   };
@@ -233,7 +250,10 @@ async function persistDescriptionWithChunks({
       }
     );
 
-    expect(appendResponse.ok()).toBeTruthy();
+    await expectChunkResponseOk(
+      appendResponse,
+      `Append description chunk ${index + 1}/${chunks.length}`
+    );
   }
 
   const commitResponse = await request.patch(
@@ -247,7 +267,10 @@ async function persistDescriptionWithChunks({
     }
   );
 
-  expect(commitResponse.ok()).toBeTruthy();
+  await expectChunkResponseOk(
+    commitResponse,
+    'Commit chunked description update'
+  );
   await expect(commitResponse.json()).resolves.toMatchObject({
     description,
   });
