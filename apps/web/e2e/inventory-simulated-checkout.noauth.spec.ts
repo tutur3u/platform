@@ -38,7 +38,7 @@ test.describe('Inventory public checkout modes', () => {
     assertSafeE2EEnvironment();
   });
 
-  test('supports simulated checkout and blocks disabled checkout without Polar', async ({
+  test('requires login before public storefront checkout attempts', async ({
     baseURL,
     request,
   }) => {
@@ -273,13 +273,10 @@ test.describe('Inventory public checkout modes', () => {
           failOnStatusCode: false,
         }
       );
-      expect(simulatedCheckout.status()).toBe(201);
-      const simulatedBody = await simulatedCheckout.json();
-      expect(simulatedBody.checkout.publicToken).toMatch(/^simulated-order-/);
-      expect(simulatedBody.checkout.totalAmount).toBe(5000);
-      expect(simulatedBody.checkoutUrl).toContain(
-        `/store/${simulatedSlug}/orders/simulated-order-`
-      );
+      expect(simulatedCheckout.status()).toBe(401);
+      await expect(simulatedCheckout.json()).resolves.toEqual({
+        error: 'Unauthorized',
+      });
 
       const disabledCheckout = await request.post(
         `${origin}/api/v1/inventory/storefronts/${disabledSlug}/checkouts`,
@@ -292,10 +289,20 @@ test.describe('Inventory public checkout modes', () => {
           failOnStatusCode: false,
         }
       );
-      expect(disabledCheckout.status()).toBe(409);
+      expect(disabledCheckout.status()).toBe(401);
       await expect(disabledCheckout.json()).resolves.toEqual({
-        message: 'Checkout is disabled for this storefront',
+        error: 'Unauthorized',
       });
+
+      const sessionsResponse = await request.get(
+        `${SUPABASE_URL}/rest/v1/inventory_checkout_sessions?ws_id=eq.${workspaceId}&select=id`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ schema: 'private' }),
+        }
+      );
+      expect(sessionsResponse.status()).toBe(200);
+      await expect(sessionsResponse.json()).resolves.toEqual([]);
     } finally {
       await request.delete(
         `${SUPABASE_URL}/rest/v1/inventory_checkout_sessions?ws_id=eq.${workspaceId}`,
