@@ -157,7 +157,7 @@ test.describe('Gateway app-session JWT auth', () => {
     expect(response.headers()['set-cookie'] ?? '').not.toContain('sb-');
   });
 
-  test('upgrades a still-valid legacy access-only app session', async ({
+  test('rejects access-only refresh requests without minting a token pair', async ({
     request,
   }) => {
     const secret =
@@ -173,6 +173,8 @@ test.describe('Gateway app-session JWT auth', () => {
       { secret }
     );
 
+    // App-session rotation now requires a refresh token; a legacy access-only
+    // request must be rejected instead of minting a new pair (fb4cb4f503).
     const response = await request.post(
       '/api/v1/auth/cross-app-session/refresh',
       {
@@ -184,13 +186,7 @@ test.describe('Gateway app-session JWT auth', () => {
       }
     );
 
-    expect(response.status()).toBe(200);
-    const body = (await response.json()) as {
-      appSessionRefreshToken: string;
-      appSessionToken: string;
-    };
-    expect(body.appSessionToken).toMatch(/^ttr_app_/u);
-    expect(body.appSessionRefreshToken).toMatch(/^ttr_app_/u);
+    expect(response.status()).toBe(401);
   });
 
   test('resolves every registered satellite return URL without cloud Supabase auth', async ({
