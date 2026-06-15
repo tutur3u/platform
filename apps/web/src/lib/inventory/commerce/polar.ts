@@ -1,12 +1,13 @@
 import 'server-only';
 
 import { createHash } from 'node:crypto';
-import type {
-  InventoryCheckoutSession,
-  InventoryPolarEnvironment,
-  InventoryPolarIntegration,
-  InventoryPolarSettings,
-  InventoryPolarSettingsPayload,
+import {
+  type InventoryCheckoutSession,
+  type InventoryPolarEnvironment,
+  type InventoryPolarIntegration,
+  type InventoryPolarSettings,
+  type InventoryPolarSettingsPayload,
+  toPolarCurrency,
 } from '@tuturuuu/internal-api/inventory';
 import type { Checkout, Order } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
@@ -382,6 +383,36 @@ export async function saveInventoryPolarSettings({
   return getInventoryPolarSettings(wsId);
 }
 
+/**
+ * Resolves a ready-to-use Polar client + environment for a workspace, reusing
+ * the storefront's chosen environment when a slug is given (else the deployment
+ * default). Returns null when the workspace has no usable Polar integration for
+ * that environment, so callers can degrade gracefully instead of throwing.
+ */
+export async function resolveInventoryPolarContext({
+  storefrontSlug,
+  wsId,
+}: {
+  storefrontSlug?: string | null;
+  wsId: string;
+}): Promise<{
+  environment: InventoryPolarEnvironment;
+  polar: ReturnType<typeof createPolarClient>;
+} | null> {
+  const settings = await getInventoryPolarSettings(wsId);
+  const environment =
+    (storefrontSlug
+      ? await getStorefrontPolarEnvironment(wsId, storefrontSlug)
+      : null) ?? environmentFromDeployment(settings);
+  const integration = await getIntegration({ environment, wsId });
+  if (!integration?.access_token_encrypted) return null;
+  const accessToken = await decryptIntegrationToken(integration);
+  return {
+    environment,
+    polar: createPolarClient({ accessToken, environment }),
+  };
+}
+
 export async function createInventoryPolarCheckout({
   checkout,
   storefrontSlug,
@@ -417,7 +448,7 @@ export async function createInventoryPolarCheckout({
   const normalizedStorefrontUrl = storefrontUrl.replace(/\/$/u, '');
   const checkoutSession = await polar.checkouts.create({
     amount: checkout.totalAmount,
-    currency: checkout.currency as never,
+    currency: toPolarCurrency(checkout.currency) as never,
     customerEmail: checkout.customerEmail,
     customerName: checkout.customerName,
     metadata: {

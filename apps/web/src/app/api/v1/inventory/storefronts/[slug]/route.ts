@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { isInventoryEnabled } from '@/lib/inventory/access';
-import { getPublicStorefront } from '@/lib/inventory/commerce/public-storefront';
+import { getCachedPublicStorefront } from '@/lib/inventory/commerce/public-storefront';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -12,7 +12,7 @@ interface Params {
 export async function GET(request: Request, { params }: Params) {
   try {
     const { slug } = await params;
-    const payload = await getPublicStorefront(slug);
+    const payload = await getCachedPublicStorefront(slug);
 
     if (!payload || !(await isInventoryEnabled(payload.storefront.wsId))) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
@@ -45,7 +45,16 @@ export async function GET(request: Request, { params }: Params) {
       }
     }
 
-    return NextResponse.json(payload);
+    // Public storefronts are CDN-cacheable for a short window; private ones
+    // depend on per-user auth and must never be shared in a cache.
+    const headers =
+      payload.storefront.visibility === 'private'
+        ? { 'Cache-Control': 'private, no-store' }
+        : {
+            'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          };
+
+    return NextResponse.json(payload, { headers });
   } catch (error) {
     serverLogger.error('Failed to load public inventory storefront', error);
     return NextResponse.json(

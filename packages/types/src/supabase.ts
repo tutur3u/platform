@@ -3111,6 +3111,12 @@ export type Database = {
           max_per_order: number;
           metadata: Json;
           name: string;
+          polar_environment: string | null;
+          polar_last_error: string | null;
+          polar_price_id: string | null;
+          polar_product_id: string | null;
+          polar_sync_status: string;
+          polar_synced_at: string | null;
           price: number;
           slug: string;
           status: string;
@@ -3126,6 +3132,12 @@ export type Database = {
           max_per_order?: number;
           metadata?: Json;
           name: string;
+          polar_environment?: string | null;
+          polar_last_error?: string | null;
+          polar_price_id?: string | null;
+          polar_product_id?: string | null;
+          polar_sync_status?: string;
+          polar_synced_at?: string | null;
           price?: number;
           slug: string;
           status?: string;
@@ -3141,6 +3153,12 @@ export type Database = {
           max_per_order?: number;
           metadata?: Json;
           name?: string;
+          polar_environment?: string | null;
+          polar_last_error?: string | null;
+          polar_price_id?: string | null;
+          polar_product_id?: string | null;
+          polar_sync_status?: string;
+          polar_synced_at?: string | null;
           price?: number;
           slug?: string;
           status?: string;
@@ -3883,6 +3901,12 @@ export type Database = {
           listing_type: string;
           max_per_order: number;
           metadata: Json;
+          polar_environment: string | null;
+          polar_last_error: string | null;
+          polar_price_id: string | null;
+          polar_product_id: string | null;
+          polar_sync_status: string;
+          polar_synced_at: string | null;
           price: number;
           product_id: string | null;
           sort_order: number;
@@ -3904,6 +3928,12 @@ export type Database = {
           listing_type?: string;
           max_per_order?: number;
           metadata?: Json;
+          polar_environment?: string | null;
+          polar_last_error?: string | null;
+          polar_price_id?: string | null;
+          polar_product_id?: string | null;
+          polar_sync_status?: string;
+          polar_synced_at?: string | null;
           price?: number;
           product_id?: string | null;
           sort_order?: number;
@@ -3925,6 +3955,12 @@ export type Database = {
           listing_type?: string;
           max_per_order?: number;
           metadata?: Json;
+          polar_environment?: string | null;
+          polar_last_error?: string | null;
+          polar_price_id?: string | null;
+          polar_product_id?: string | null;
+          polar_sync_status?: string;
+          polar_synced_at?: string | null;
           price?: number;
           product_id?: string | null;
           sort_order?: number;
@@ -9964,6 +10000,10 @@ export type Database = {
           _ws_id: string;
         };
         Returns: Json;
+      };
+      can_join_task_realtime_topic: {
+        Args: { p_topic: string; p_user_id: string };
+        Returns: boolean;
       };
       can_manage_form: { Args: { p_form_id: string }; Returns: boolean };
       can_view_form_analytics: {

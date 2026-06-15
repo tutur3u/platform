@@ -5,6 +5,7 @@ import { CheckCircle2, RefreshCw } from '@tuturuuu/icons';
 import {
   createInventoryCheckoutSession,
   getInventoryPublicOrder,
+  type InventoryPublicStorefrontResponse,
   recordInventoryStorefrontAnalyticsEvent,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
@@ -32,6 +33,7 @@ type StorefrontMode = 'cart' | 'checkout' | 'order' | 'product' | 'store';
 type StorefrontClientProps = {
   buyerDefaults?: StorefrontBuyerDefaults;
   headerActions?: ReactNode;
+  initialStorefront?: InventoryPublicStorefrontResponse | null;
   listingId?: string;
   mode: StorefrontMode;
   publicToken?: string;
@@ -41,6 +43,7 @@ type StorefrontClientProps = {
 export function StorefrontClient({
   buyerDefaults,
   headerActions,
+  initialStorefront,
   listingId,
   mode,
   publicToken,
@@ -52,6 +55,9 @@ export function StorefrontClient({
     mode === 'order' && publicToken === DEMO_ORDER_PUBLIC_TOKEN;
   const storefrontQuery = useQuery({
     enabled: mode !== 'order' || shouldResolveDemoOrder,
+    // Seed from the server-rendered payload so the first paint already has the
+    // storefront (no client-side loading flash / waterfall).
+    initialData: initialStorefront ?? undefined,
     queryFn: () => getOptionalInventoryPublicStorefront(storeSlug),
     queryKey: ['storefront', storeSlug],
   });

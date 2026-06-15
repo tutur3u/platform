@@ -7,6 +7,8 @@ import type {
 } from '@tuturuuu/internal-api/inventory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { ListQuery } from './mappers';
+import { scheduleBundlePolarSync } from './polar-product-sync';
+import { revalidatePublicStorefront } from './public-storefront';
 
 type SupabaseErrorLike = { code?: string; message?: string } | null;
 
@@ -121,11 +123,28 @@ async function upsertBundle(
   return data;
 }
 
+async function revalidateBundleStorefront(storefrontId: string | null) {
+  if (!storefrontId) return;
+  const inventory = await createPrivateInventoryClient();
+  const { data } = await inventory
+    .from('inventory_storefronts')
+    .select('slug')
+    .eq('id', storefrontId)
+    .maybeSingle();
+  const slug = (data as { slug?: string | null } | null)?.slug;
+  if (slug) revalidatePublicStorefront(slug);
+}
+
 export async function createBundle(
   wsId: string,
   payload: InventoryBundlePayload
 ) {
-  return upsertBundle(wsId, payload);
+  const bundle = await upsertBundle(wsId, payload);
+  if (bundle) {
+    scheduleBundlePolarSync(bundle);
+    await revalidateBundleStorefront(bundle.storefrontId);
+  }
+  return bundle;
 }
 
 async function getBundleBase(wsId: string, bundleId: string) {
@@ -169,7 +188,12 @@ export async function updateBundle(
       : current.storefront_id,
   };
 
-  return upsertBundle(wsId, merged, bundleId);
+  const bundle = await upsertBundle(wsId, merged, bundleId);
+  if (bundle) {
+    scheduleBundlePolarSync(bundle);
+    await revalidateBundleStorefront(bundle.storefrontId);
+  }
+  return bundle;
 }
 
 export async function deleteBundle(wsId: string, bundleId: string) {
@@ -179,9 +203,14 @@ export async function deleteBundle(wsId: string, bundleId: string) {
     .delete()
     .eq('id', bundleId)
     .eq('ws_id', wsId)
-    .select('id')
+    .select('id, storefront_id')
     .maybeSingle();
 
   if (error) throw error;
+  if (data) {
+    await revalidateBundleStorefront(
+      (data as { storefront_id?: string | null }).storefront_id ?? null
+    );
+  }
   return Boolean(data);
 }

@@ -51,14 +51,7 @@ export function StorefrontHeroPanel({
             <Store className="h-4 w-4" />
             <span>{labels.browse}</span>
           </div>
-          <h2
-            className={cn(
-              'mt-2 text-balance font-semibold tracking-normal',
-              storefront.themePreset === 'editorial'
-                ? 'text-3xl md:text-4xl'
-                : 'text-2xl'
-            )}
-          >
+          <h2 className="mt-2 text-balance font-semibold text-3xl tracking-tight md:text-4xl">
             {storefront.name}
           </h2>
           <p className="mt-2 max-w-2xl text-muted-foreground text-sm leading-6">

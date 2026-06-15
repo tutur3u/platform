@@ -1,3 +1,5 @@
+import { toPolarCurrency } from '@tuturuuu/internal-api/inventory';
+
 /**
  * Maps a Tuturuuu inventory promotion to the Polar discount create payload.
  *
@@ -62,7 +64,7 @@ export function buildPolarDiscountInput(
   return {
     amount: Math.round(value * 100),
     code: promotion.code,
-    currency: currency.toUpperCase(),
+    currency: toPolarCurrency(currency),
     duration: 'once',
     maxRedemptions,
     name: promotion.name,

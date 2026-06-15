@@ -152,6 +152,27 @@ export const SUPPORTED_POLAR_CURRENCIES = [
 export type SupportedPolarCurrency =
   (typeof SUPPORTED_POLAR_CURRENCIES)[number];
 
+/**
+ * Normalizes a currency code for the Polar API boundary.
+ *
+ * Internally we store/display currencies uppercase (`USD`), but the Polar SDK's
+ * Zod enum only accepts lowercase ISO 4217 codes (`usd`). Sending the uppercase
+ * value makes Polar reject the checkout/price/discount with an
+ * `invalid_value` error. Always pass currency through this helper right before
+ * a Polar call. Unknown/empty values fall back to `usd`.
+ */
+export function toPolarCurrency(
+  currency: string | null | undefined
+): Lowercase<SupportedPolarCurrency> {
+  const normalized = (currency ?? 'USD').trim().toUpperCase();
+  const supported = (SUPPORTED_POLAR_CURRENCIES as readonly string[]).includes(
+    normalized
+  )
+    ? (normalized as SupportedPolarCurrency)
+    : 'USD';
+  return supported.toLowerCase() as Lowercase<SupportedPolarCurrency>;
+}
+
 export type InventoryStorefrontStatus =
   | 'draft'
   | 'published'
@@ -292,9 +313,20 @@ export type InventoryStorefrontListing = {
   availableQuantity?: number;
   unitName?: string | null;
   warehouseName?: string | null;
+  polarProductId?: string | null;
+  polarPriceId?: string | null;
+  polarSyncStatus?: InventoryPolarSyncStatus;
+  polarSyncedAt?: string | null;
+  polarLastError?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 };
+
+export type InventoryPolarSyncStatus =
+  | 'pending'
+  | 'synced'
+  | 'error'
+  | 'disabled';
 
 export type InventoryBundleComponent = {
   id: string;
@@ -321,6 +353,11 @@ export type InventoryBundle = {
   maxPerOrder: number;
   availableQuantity?: number;
   components: InventoryBundleComponent[];
+  polarProductId?: string | null;
+  polarPriceId?: string | null;
+  polarSyncStatus?: InventoryPolarSyncStatus;
+  polarSyncedAt?: string | null;
+  polarLastError?: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 };

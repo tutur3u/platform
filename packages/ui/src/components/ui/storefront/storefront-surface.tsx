@@ -164,7 +164,7 @@ export function StorefrontSurface({
         </div>
       ) : null}
 
-      <header className="border-border border-b bg-background/90 backdrop-blur">
+      <header className="sticky top-0 z-30 border-border border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
             <h1 className="truncate font-semibold text-xl">
@@ -233,13 +233,10 @@ export function StorefrontSurface({
 
             <div
               className={cn(
-                'mt-4',
-                compactLayout || storefront.layoutStyle === 'list'
-                  ? 'grid gap-3'
-                  : 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3',
-                !compactLayout &&
-                  storefront.layoutStyle === 'feature' &&
-                  '[&>article:first-child]:sm:col-span-2'
+                'mt-4 grid gap-4',
+                compactLayout
+                  ? 'sm:grid-cols-2'
+                  : 'sm:grid-cols-2 xl:grid-cols-3'
               )}
             >
               {listingRows.length === 0 ? (
@@ -257,7 +254,7 @@ export function StorefrontSurface({
                   return (
                     <StorefrontListingCard
                       currency={currency}
-                      isList={storefront.layoutStyle === 'list'}
+                      isList={false}
                       key={listing.id}
                       labels={labels}
                       listing={listing}

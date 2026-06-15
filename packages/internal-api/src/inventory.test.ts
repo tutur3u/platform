@@ -35,6 +35,7 @@ import {
   listInventoryUnits,
   recordInventoryStorefrontAnalyticsEvent,
   releaseInventoryCheckout,
+  toPolarCurrency,
   updateInventoryBatch,
   updateInventoryCostProfile,
   updateInventoryOwner,
@@ -817,5 +818,24 @@ describe('inventory internal API helpers', () => {
         method: 'POST',
       })
     );
+  });
+});
+
+describe('toPolarCurrency', () => {
+  it('lowercases an uppercase stored currency for the Polar boundary', () => {
+    // Regression: the DB stores `USD`, but Polar's SDK enum only accepts `usd`.
+    expect(toPolarCurrency('USD')).toBe('usd');
+    expect(toPolarCurrency('EUR')).toBe('eur');
+  });
+
+  it('trims and normalizes mixed-case input', () => {
+    expect(toPolarCurrency('  Usd ')).toBe('usd');
+  });
+
+  it('falls back to usd for empty, null, or unsupported values', () => {
+    expect(toPolarCurrency(null)).toBe('usd');
+    expect(toPolarCurrency(undefined)).toBe('usd');
+    expect(toPolarCurrency('')).toBe('usd');
+    expect(toPolarCurrency('XYZ')).toBe('usd');
   });
 });

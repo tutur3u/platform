@@ -19,6 +19,8 @@ import {
   type StorefrontSectionItemRow,
   type StorefrontSectionRow,
 } from './mappers';
+import { scheduleListingPolarSync } from './polar-product-sync';
+import { revalidatePublicStorefront } from './public-storefront';
 
 type SupabaseErrorLike = { code?: string; message?: string } | null;
 
@@ -44,6 +46,23 @@ function normalizePagination(page?: number, pageSize?: number) {
 function normalizeSearch(q?: string) {
   const value = q?.trim();
   return value ? value : null;
+}
+
+/**
+ * Busts the cached public storefront payload after a write so shoppers see the
+ * change immediately instead of waiting out the time-based revalidation. Resolves
+ * the slug from the storefront id since listing/bundle writes only carry the id.
+ */
+async function revalidateStorefrontById(wsId: string, storefrontId: string) {
+  const { inventory } = await createPrivateInventoryClient();
+  const { data } = await inventory
+    .from('inventory_storefronts')
+    .select('slug')
+    .eq('id', storefrontId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+  const slug = (data as { slug?: string | null } | null)?.slug;
+  if (slug) revalidatePublicStorefront(slug);
 }
 
 function mapRpcList<TKey extends string, TValue>(
@@ -297,13 +316,15 @@ export async function createStorefront(
     );
   }
 
-  return mapStorefront(
+  const storefront = mapStorefront(
     {
       ...(data as unknown as Omit<StorefrontRow, 'listings_count'>),
       listings_count: 0,
     },
     await listStorefrontSections(inventory, wsId, storefrontId)
   );
+  revalidatePublicStorefront(storefront.slug);
+  return storefront;
 }
 
 export async function updateStorefront(
@@ -377,10 +398,12 @@ export async function updateStorefront(
     );
   }
 
-  return mapStorefrontWithCount(
+  const storefront = await mapStorefrontWithCount(
     data as unknown as Omit<StorefrontRow, 'listings_count'>,
     inventory
   );
+  revalidatePublicStorefront(storefront.slug);
+  return storefront;
 }
 
 export async function deleteStorefront(wsId: string, storefrontId: string) {
@@ -390,10 +413,12 @@ export async function deleteStorefront(wsId: string, storefrontId: string) {
     .delete()
     .eq('id', storefrontId)
     .eq('ws_id', wsId)
-    .select('id')
+    .select('id, slug')
     .maybeSingle();
 
   if (error) throw error;
+  const slug = (data as { slug?: string | null } | null)?.slug;
+  if (slug) revalidatePublicStorefront(slug);
   return Boolean(data);
 }
 
@@ -562,6 +587,8 @@ export async function createStorefrontListing(
 
   const listing = await findListingById(wsId, storefrontId, String(data.id));
   if (!listing) throw new Error('Failed to load inventory storefront listing');
+  scheduleListingPolarSync(listing);
+  await revalidateStorefrontById(wsId, storefrontId);
   return listing;
 }
 
@@ -633,7 +660,12 @@ export async function updateStorefrontListing(
   if (error) throw error;
   if (!data) return null;
 
-  return findListingById(wsId, storefrontId, listingId);
+  const listing = await findListingById(wsId, storefrontId, listingId);
+  if (listing) {
+    scheduleListingPolarSync(listing);
+    await revalidateStorefrontById(wsId, storefrontId);
+  }
+  return listing;
 }
 
 export async function deleteStorefrontListing(
@@ -652,5 +684,6 @@ export async function deleteStorefrontListing(
     .maybeSingle();
 
   if (error) throw error;
+  if (data) await revalidateStorefrontById(wsId, storefrontId);
   return Boolean(data);
 }

@@ -13,6 +13,7 @@ import {
   syncInventoryPolarCheckout,
   syncInventoryPolarOrder,
 } from '@/lib/inventory/commerce/polar';
+import { applyPolarProductToInventory } from '@/lib/inventory/commerce/polar-product-sync';
 import { syncOrderToDatabase } from '@/utils/polar-order-helper';
 import { syncProductToDatabase } from '@/utils/polar-product-helper';
 import { assignSeatsToAllMembers } from '@/utils/polar-seat-helper';
@@ -81,6 +82,10 @@ export const POST = Webhooks({
 
   onProductCreated: async (payload) => {
     try {
+      // Inventory listings/bundles map to their own Polar products; pull those
+      // back onto the inventory row instead of the generic product table.
+      if (await applyPolarProductToInventory(payload.data as Product)) return;
+
       const sbAdmin = await createAdminClient();
       await syncProductToDatabase(sbAdmin, payload.data as Product);
 
@@ -97,6 +102,8 @@ export const POST = Webhooks({
 
   onProductUpdated: async (payload) => {
     try {
+      if (await applyPolarProductToInventory(payload.data as Product)) return;
+
       const sbAdmin = await createAdminClient();
       await syncProductToDatabase(sbAdmin, payload.data as Product);
 

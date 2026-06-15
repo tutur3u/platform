@@ -42,16 +42,28 @@ export function StorefrontListingCard({
       className={cn(
         surfaceClassName,
         radius,
+        'group relative overflow-hidden transition duration-200 hover:-translate-y-0.5 hover:shadow-foreground/10 hover:shadow-md',
         isList
-          ? 'grid gap-3 p-3 sm:grid-cols-[112px_minmax(0,1fr)_auto] sm:items-center'
-          : 'grid min-h-full gap-4 p-3'
+          ? 'grid gap-4 p-3 sm:grid-cols-[112px_minmax(0,1fr)_auto] sm:items-center'
+          : 'flex min-h-full flex-col gap-4 p-3'
       )}
     >
-      <StorefrontImagePanel
-        className={cn(isList ? 'aspect-square' : 'aspect-[4/3]')}
-        imageUrl={listing.imageUrl}
-        label={listing.title}
-      />
+      <div className="relative">
+        <StorefrontImagePanel
+          className={cn(
+            'overflow-hidden transition duration-300 group-hover:scale-[1.02]',
+            radius,
+            isList ? 'aspect-square' : 'aspect-[4/3]'
+          )}
+          imageUrl={listing.imageUrl}
+          label={listing.title}
+        />
+        {limit === 0 ? (
+          <span className="absolute inset-x-2 top-2 inline-flex w-fit items-center rounded-full bg-foreground/85 px-2.5 py-0.5 font-medium text-background text-xs">
+            {labels.soldOut}
+          </span>
+        ) : null}
+      </div>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="min-w-0 truncate font-semibold">{listing.title}</p>

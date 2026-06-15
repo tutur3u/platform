@@ -4,43 +4,44 @@ import type {
 } from '@tuturuuu/internal-api/inventory';
 import type { CSSProperties } from 'react';
 
+// The storefront now ships a single, unified design language. The merchant
+// preset fields (cornerStyle/surfaceStyle/themePreset/layoutStyle) are retained
+// in the data model for backwards compatibility, but every value resolves to the
+// same refined look so the experience is consistent across all storefronts.
+
+/** One soft, modern corner radius for every surface. */
+export const STOREFRONT_RADIUS = 'rounded-2xl';
+
 export const storefrontRadiusClasses: Record<
   InventoryStorefront['cornerStyle'],
   string
 > = {
-  compact: 'rounded-md',
-  rounded: 'rounded-lg',
-  soft: 'rounded-2xl',
+  compact: STOREFRONT_RADIUS,
+  rounded: STOREFRONT_RADIUS,
+  soft: STOREFRONT_RADIUS,
 };
+
+/** One elevated card surface for every storefront. */
+export const STOREFRONT_SURFACE =
+  'border border-border/60 bg-card shadow-sm shadow-foreground/5';
 
 export const storefrontSurfaceClasses: Record<
   InventoryStorefront['surfaceStyle'],
   string
 > = {
-  glass:
-    'border border-border/70 bg-card/75 shadow-sm shadow-foreground/5 backdrop-blur',
-  soft: 'border border-border/70 bg-muted/35 shadow-sm shadow-foreground/5',
-  solid: 'border border-border bg-card shadow-sm shadow-foreground/5',
+  glass: STOREFRONT_SURFACE,
+  soft: STOREFRONT_SURFACE,
+  solid: STOREFRONT_SURFACE,
 };
 
-/**
- * Theme presets change the storefront's typographic personality so the choice
- * is actually visible to shoppers. Applied at the surface root and inherited by
- * headings/body inside.
- */
+/** Unified typography for the whole storefront. */
 export const storefrontThemeClasses: Record<
   InventoryStorefront['themePreset'],
   string
 > = {
-  // Spacious, headline-led magazine feel with serif headings.
-  editorial:
-    'font-sans [&_h1]:font-serif [&_h1]:tracking-tight [&_h2]:font-serif [&_h2]:tracking-tight',
-  // Refined boutique look: airy, wide-tracked uppercase headings.
-  boutique:
-    'font-sans [&_h1]:uppercase [&_h1]:tracking-[0.12em] [&_h2]:tracking-wide',
-  // Dense, scannable product-catalog density.
-  catalog: 'font-sans text-[0.95rem] [&_h1]:tracking-tight',
-  // Clean default.
+  editorial: 'font-sans',
+  boutique: 'font-sans',
+  catalog: 'font-sans',
   minimal: 'font-sans',
 };
 

@@ -36,7 +36,8 @@ describe('buildPolarDiscountInput', () => {
     ).toEqual({
       amount: 500,
       code: 'FIVEOFF',
-      currency: 'USD',
+      // Polar's SDK enum only accepts lowercase ISO codes.
+      currency: 'usd',
       duration: 'once',
       maxRedemptions: null,
       name: 'Five off',
@@ -85,7 +86,7 @@ describe('buildPolarDiscountInput', () => {
     ).toEqual({
       amount: 2000,
       code: 'ROUND',
-      currency: 'EUR',
+      currency: 'eur',
       duration: 'once',
       maxRedemptions: 1,
       name: 'Rounding',
