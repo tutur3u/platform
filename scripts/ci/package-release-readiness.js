@@ -472,7 +472,14 @@ async function waitForPackageVersion({
         );
       }
 
-      if (workflowStatus.state === 'missing' && !recoveryDispatchStarted) {
+      // 'success' here means the related workflow concluded without publishing
+      // (it deferred its own release). Nudge it the same way as a missing run so
+      // the deferred dependency does not stall until the wait times out.
+      if (
+        (workflowStatus.state === 'missing' ||
+          workflowStatus.state === 'success') &&
+        !recoveryDispatchStarted
+      ) {
         await dispatchWorkflow({
           env,
           logger,
@@ -571,16 +578,14 @@ async function gatePackageRelease({
       );
     }
 
-    if (workflowStatus.state === 'success') {
-      throw new Error(
-        `${packageName}@${packageVersion} is blocked because ` +
-          `${dependency.packageName}@${dependency.packageVersion} is missing ` +
-          `from npm even though ${dependency.workflowName} completed ` +
-          `successfully for ${env.GITHUB_SHA}.`
-      );
-    }
-
-    if (workflowStatus.state === 'missing') {
+    // A 'success' conclusion does not guarantee the dependency was published:
+    // its release workflow may have deferred its own publish because its
+    // dependencies were not ready yet. Treat success-but-missing like a missing
+    // run and re-dispatch so the deferred dependency makes progress.
+    if (
+      workflowStatus.state === 'missing' ||
+      workflowStatus.state === 'success'
+    ) {
       await dispatchWorkflow({
         env,
         logger,
@@ -589,7 +594,8 @@ async function gatePackageRelease({
       dependenciesReady = false;
       logger.log(
         `${packageName}@${packageVersion} deferred until ` +
-          `${dependency.packageName}@${dependency.packageVersion} is published.`
+          `${dependency.packageName}@${dependency.packageVersion} is published ` +
+          `(re-dispatched ${dependency.workflowName}).`
       );
       continue;
     }
@@ -736,15 +742,14 @@ async function gateChangedPackageVersions({
       );
     }
 
-    if (workflowStatus.state === 'success') {
-      throw new Error(
-        `${packageName}@${packageVersion} is missing from npm even though ` +
-          `${packageInfo.workflowName} completed successfully for ` +
-          `${env.GITHUB_SHA}.`
-      );
-    }
-
-    if (workflowStatus.state === 'missing') {
+    // A 'success' conclusion does not guarantee the package was published: the
+    // release workflow may have deferred its own publish because its
+    // dependencies were not ready. Treat success-but-missing like a missing run
+    // and re-dispatch so the deferred release makes progress.
+    if (
+      workflowStatus.state === 'missing' ||
+      workflowStatus.state === 'success'
+    ) {
       await dispatchWorkflow({
         env,
         logger,
@@ -758,7 +763,7 @@ async function gateChangedPackageVersions({
       });
       logger.log(
         `Platform package gate deferred until ${packageName}@${packageVersion} ` +
-          `is published.`
+          `is published (re-dispatched ${packageInfo.workflowName}).`
       );
       continue;
     }

@@ -386,27 +386,31 @@ test('release gate fails immediately when a dependency workflow failed', async (
   );
 });
 
-test('release gate fails when dependency workflow succeeded but npm is still missing', async () => {
+test('release gate re-dispatches and defers when a dependency workflow succeeded but npm is still missing', async () => {
   const rootDir = createFixtureRoot();
-
-  await assert.rejects(
-    gatePackageRelease({
-      env: {
-        GITHUB_SHA: 'abc123',
-      },
-      getRelatedWorkflowStatus: async () => ({
-        state: 'success',
-        url: 'https://example.test/run',
-      }),
-      logger: silentLogger,
-      packageDir: 'packages/internal-api',
-      repoRoot: rootDir,
-      versionExists: createVersionExists(
-        new Set(['@tuturuuu/typescript-config@^3.0.0'])
-      ),
+  const dispatchedWorkflows = [];
+  const outputs = await gatePackageRelease({
+    env: {
+      GITHUB_SHA: 'abc123',
+    },
+    dispatchWorkflow: async ({ workflowName }) => {
+      dispatchedWorkflows.push(workflowName);
+    },
+    getRelatedWorkflowStatus: async () => ({
+      state: 'success',
+      url: 'https://example.test/run',
     }),
-    /@tuturuuu\/types@1\.0\.0 is missing from npm even though release-types-package\.yaml completed successfully/
-  );
+    logger: silentLogger,
+    packageDir: 'packages/internal-api',
+    repoRoot: rootDir,
+    versionExists: createVersionExists(
+      new Set(['@tuturuuu/typescript-config@^3.0.0'])
+    ),
+  });
+
+  assert.equal(outputs.should_publish, 'true');
+  assert.equal(outputs.dependencies_ready, 'false');
+  assert.deepEqual(dispatchedWorkflows, ['release-types-package.yaml']);
 });
 
 test('release gate fails when dependency workflow status is unreadable', async () => {
@@ -574,6 +578,43 @@ test('platform changed package gate dispatches missing workflows and defers', as
       dispatchedWorkflows.push(workflowName);
     },
     getRelatedWorkflowStatus: async () => ({ state: 'missing' }),
+    logger: silentLogger,
+    repoRoot: rootDir,
+    versionExists: createVersionExists(new Set()),
+  });
+
+  assert.equal(outputs.packages_ready, 'false');
+  assert.deepEqual(dispatchedWorkflows, ['release-types-package.yaml']);
+  assert.deepEqual(JSON.parse(outputs.pending_packages), [
+    {
+      packageName: '@tuturuuu/types',
+      packageVersion: '1.0.1',
+      state: 'dispatched',
+      workflowName: 'release-types-package.yaml',
+    },
+  ]);
+});
+
+test('platform changed package gate re-dispatches and defers when a release workflow succeeded but npm is still missing', async () => {
+  const rootDir = createFixtureRoot();
+  const dispatchedWorkflows = [];
+
+  initializeGitRepo(rootDir);
+  writeJson(path.join(rootDir, 'packages/types/package.json'), {
+    name: '@tuturuuu/types',
+    version: '1.0.1',
+  });
+  git(rootDir, ['add', 'packages/types/package.json']);
+  git(rootDir, ['commit', '-m', 'release types']);
+
+  const outputs = await gateChangedPackageVersions({
+    dispatchWorkflow: async ({ workflowName }) => {
+      dispatchedWorkflows.push(workflowName);
+    },
+    getRelatedWorkflowStatus: async () => ({
+      state: 'success',
+      url: 'https://example.test/run',
+    }),
     logger: silentLogger,
     repoRoot: rootDir,
     versionExists: createVersionExists(new Set()),
@@ -837,6 +878,41 @@ test('auto-dispatches missing related release workflows once while waiting for n
 
   assert.deepEqual(dispatchCalls, ['release-ai-package.yaml']);
   assert.equal(statusCalls.length, 2);
+  assert.equal(versionChecks.length, 3);
+});
+
+test('auto-dispatches a deferred (succeeded but unpublished) related workflow once while waiting', async () => {
+  const statusCalls = [];
+  const dispatchCalls = [];
+  const versionChecks = [];
+
+  await waitForPackageVersion({
+    attempts: 3,
+    delayMs: 0,
+    env: {
+      GITHUB_SHA: 'abc123',
+    },
+    dispatchWorkflow: async ({ workflowName }) => {
+      dispatchCalls.push(workflowName);
+    },
+    getRelatedWorkflowStatus: async () => {
+      statusCalls.push('status');
+
+      return { state: 'success', url: 'https://example.test/run' };
+    },
+    logger: { log() {} },
+    packageName: '@tuturuuu/ai',
+    packageVersion: '0.1.0',
+    relatedWorkflow: {
+      workflowName: 'release-ai-package.yaml',
+    },
+    versionExists: () => {
+      versionChecks.push('version');
+      return versionChecks.length === 3;
+    },
+  });
+
+  assert.deepEqual(dispatchCalls, ['release-ai-package.yaml']);
   assert.equal(versionChecks.length, 3);
 });
 

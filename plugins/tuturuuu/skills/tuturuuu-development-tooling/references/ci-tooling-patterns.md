@@ -111,8 +111,14 @@ formatting behavior, or repo-wide verification.
   dependency is missing from npm, the gate inspects the dependency package
   workflow for the same SHA; it dispatches missing dependency workflows once,
   defers green without sleeping when dependencies are pending, and fails fast
-  when the dependency workflow failed, succeeded without npm visibility, or has
-  unreadable status. The gate job needs `actions: write`; build, pack, and
+  when the dependency workflow failed or has unreadable status. A `success`
+  conclusion does NOT imply the dependency was published: a deep chain triggered
+  concurrently can have an intermediate workflow conclude green while deferring
+  its own publish (the "deferred without occupying a runner" path). So when a
+  dependency workflow succeeded but its version is still absent from npm, the
+  gate treats it like a missing run — it re-dispatches that workflow and defers
+  the current package rather than failing — guaranteeing forward progress and
+  breaking potential deadlocks. The gate job needs `actions: write`; build, pack, and
   publish jobs must run only when `should_publish == true` and
   `dependencies_ready == true`.
   After the package is visible on npm, a separate non-OIDC dependent dispatch
