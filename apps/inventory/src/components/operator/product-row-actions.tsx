@@ -15,6 +15,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
 import { InventoryImageUploadField } from './inventory-image-upload';
@@ -30,7 +31,9 @@ import {
   TextField,
   ToggleField,
 } from './operator-form-fields';
+import { currency } from './operator-format';
 import { LifecyclePanel } from './operator-lifecycle';
+import { bestMarginAcrossProfiles } from './operator-margin';
 import { stockAmountFromRecords } from './operator-stock';
 
 export function invalidateProducts(
@@ -88,6 +91,10 @@ export function ProductEditDialog({
         return normalizeMatch(profile.name) === normalizeMatch(row.name);
       }),
     [costingProfiles, details.categoryId, row.id, row.name]
+  );
+  const margin = useMemo(
+    () => bestMarginAcrossProfiles(matchingCostProfiles),
+    [matchingCostProfiles]
   );
   const canSaveDetails = Boolean(
     details.name.trim() && details.categoryId && details.ownerId
@@ -388,6 +395,50 @@ export function ProductEditDialog({
                             ))}
                           </div>
                         ) : null}
+                        {margin ? (
+                          <div className="mt-1 grid gap-2 rounded-md border border-border bg-background p-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-muted-foreground text-xs">
+                                {t('estimatedMargin')}
+                              </span>
+                              <span
+                                className={cn(
+                                  'font-semibold text-sm',
+                                  margin.marginPercentage >= 0
+                                    ? 'text-emerald-600 dark:text-emerald-500'
+                                    : 'text-destructive'
+                                )}
+                              >
+                                {margin.marginPercentage}%
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-xs">
+                              <MarginStat
+                                label={t('retail')}
+                                value={currency(margin.retail, margin.currency)}
+                              />
+                              <MarginStat
+                                label={t('unitCost')}
+                                value={currency(
+                                  margin.unitCost,
+                                  margin.currency
+                                )}
+                              />
+                              <MarginStat
+                                label={t('profitPerUnit')}
+                                value={currency(
+                                  margin.profitPerUnit,
+                                  margin.currency
+                                )}
+                              />
+                            </div>
+                            <p className="text-[0.7rem] text-muted-foreground">
+                              {t('marginFrom', {
+                                count: matchingCostProfiles.length,
+                              })}
+                            </p>
+                          </div>
+                        ) : null}
                       </section>
                       <section className="grid min-w-0 gap-2 rounded-lg border border-border bg-muted/15 p-3">
                         <h3 className="font-semibold text-sm">
@@ -478,6 +529,17 @@ function getInitialDetails(row: InventoryProductSummary) {
     ownerId: row.owner_id ?? row.owner?.id ?? '',
     usage: row.usage ?? '',
   };
+}
+
+function MarginStat({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="grid gap-0.5 rounded-md border border-border bg-muted/30 p-2">
+      <span className="truncate text-[0.7rem] text-muted-foreground">
+        {label}
+      </span>
+      <span className="truncate font-medium">{value}</span>
+    </span>
+  );
 }
 
 function normalizeMatch(value: string) {
