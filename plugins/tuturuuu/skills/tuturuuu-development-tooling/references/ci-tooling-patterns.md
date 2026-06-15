@@ -162,7 +162,10 @@ formatting behavior, or repo-wide verification.
   packages are pending so the Vercel workflow does not occupy a runner while
   waiting for npm. The deploy job therefore needs `actions: write` for workflow
   dispatch recovery; keep npm publish authority isolated to package
-  `publish-npm` jobs.
+  `publish-npm` jobs. Because a package-gate skip is still a successful workflow
+  conclusion, production database migration gates must require the successful
+  `vercel-production-platform` build marker for the same SHA before running
+  `supabase db push`.
   Platform Vercel workflows must build local `@tuturuuu/devbox` artifacts before
   `vercel build` because `apps/web` imports that workspace package. The
   platform preview and production workflows are build-only signals for

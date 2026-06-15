@@ -618,6 +618,15 @@ test('Supabase production migration requires production platform build and succe
   assert.match(evaluateJob, /VERCEL_SHA" != "\$TARGET_SHA"/);
   assert.match(
     evaluateJob,
+    /deployments\?environment=vercel-production-platform&per_page=100/
+  );
+  assert.match(
+    evaluateJob,
+    /no successful production platform build marker deployment was found for \$TARGET_SHA/
+  );
+  assert.match(evaluateJob, /BUILD_MARKER_STATE" != "success"/);
+  assert.match(
+    evaluateJob,
     /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/
   );
   assert.match(evaluateJob, /STAGING_SHA" != "\$TARGET_SHA"/);
@@ -630,7 +639,7 @@ test('Supabase production migration requires production platform build and succe
   );
   assert.match(
     evaluateJob,
-    /Production platform build and staging migration are bound to \$TARGET_SHA/
+    /Production platform build marker and staging migration are bound to \$TARGET_SHA/
   );
 
   assert.match(

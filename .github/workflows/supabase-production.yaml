@@ -102,32 +102,78 @@ jobs:
             elif [ "$VERCEL_CONCLUSION" != "success" ]; then
               echo "::notice::Skipping production migration because the production platform build for $TARGET_SHA has conclusion '$VERCEL_CONCLUSION'."
             else
-              echo "Checking staging migration status..."
-              STAGING_RUN=$(gh api \
-                "repos/${{ github.repository }}/actions/workflows/supabase-staging.yaml/runs?branch=main&head_sha=$TARGET_SHA&per_page=1" \
-                --jq '.workflow_runs[0] // {} | {conclusion: .conclusion, status: .status, created_at: .created_at, head_branch: .head_branch, head_sha: .head_sha}')
+              echo "Checking successful production platform build marker..."
+              BUILD_MARKER_DEPLOYMENT=$(gh api \
+                "repos/${{ github.repository }}/deployments?environment=vercel-production-platform&per_page=100" \
+                | jq --arg sha "$TARGET_SHA" '
+                  def payload_obj:
+                    (.payload // {}) as $payload
+                    | if ($payload | type) == "object" then $payload
+                      elif ($payload | type) == "string" then ($payload | fromjson? // {})
+                      else {}
+                      end;
 
-              STAGING_CONCLUSION=$(echo "$STAGING_RUN" | jq -r '.conclusion // "missing"')
-              STAGING_STATUS=$(echo "$STAGING_RUN" | jq -r '.status // "missing"')
-              STAGING_BRANCH=$(echo "$STAGING_RUN" | jq -r '.head_branch // "missing"')
-              STAGING_SHA=$(echo "$STAGING_RUN" | jq -r '.head_sha // "missing"')
+                  [
+                    .[]
+                    | . as $deployment
+                    | (payload_obj) as $payload
+                    | select(
+                        ($deployment.sha == $sha or $payload.sha == $sha)
+                        and (($payload.markerKind // "build") == "build")
+                        and (($payload.workflowName // "vercel-production-platform.yaml") == "vercel-production-platform.yaml")
+                      )
+                  ]
+                  | sort_by(.created_at // "")
+                  | reverse
+                  | .[0] // {}
+                  | {id: .id, sha: .sha}')
 
-              echo "Staging migration status: $STAGING_STATUS"
-              echo "Staging migration conclusion: $STAGING_CONCLUSION"
-              echo "Staging migration branch: $STAGING_BRANCH"
-              echo "Staging migration SHA: $STAGING_SHA"
+              BUILD_MARKER_DEPLOYMENT_ID=$(echo "$BUILD_MARKER_DEPLOYMENT" | jq -r '.id // ""')
+              BUILD_MARKER_SHA=$(echo "$BUILD_MARKER_DEPLOYMENT" | jq -r '.sha // "missing"')
 
-              if [ "$STAGING_SHA" != "$TARGET_SHA" ]; then
-                echo "::notice::Skipping production migration because no main staging migration was found for $TARGET_SHA."
-              elif [ "$STAGING_BRANCH" != "main" ]; then
-                echo "::notice::Skipping production migration because the matching staging migration ran on '$STAGING_BRANCH'."
-              elif [ "$STAGING_STATUS" != "completed" ]; then
-                echo "::notice::Skipping production migration because the staging migration for $TARGET_SHA is '$STAGING_STATUS', not completed."
-              elif [ "$STAGING_CONCLUSION" != "success" ]; then
-                echo "::notice::Skipping production migration because the staging migration for $TARGET_SHA has conclusion '$STAGING_CONCLUSION'."
+              echo "Production platform build marker deployment ID: ${BUILD_MARKER_DEPLOYMENT_ID:-missing}"
+              echo "Production platform build marker SHA: $BUILD_MARKER_SHA"
+
+              if [ -z "$BUILD_MARKER_DEPLOYMENT_ID" ]; then
+                echo "::notice::Skipping production migration because no successful production platform build marker deployment was found for $TARGET_SHA."
               else
-                echo "Production platform build and staging migration are bound to $TARGET_SHA. Proceeding with migration."
-                SHOULD_DEPLOY=true
+                BUILD_MARKER_STATE=$(gh api \
+                  "repos/${{ github.repository }}/deployments/$BUILD_MARKER_DEPLOYMENT_ID/statuses" \
+                  | jq -r '.[0].state // "missing"')
+
+                echo "Production platform build marker state: $BUILD_MARKER_STATE"
+
+                if [ "$BUILD_MARKER_STATE" != "success" ]; then
+                  echo "::notice::Skipping production migration because the production platform build marker for $TARGET_SHA has state '$BUILD_MARKER_STATE'."
+                else
+                  echo "Checking staging migration status..."
+                  STAGING_RUN=$(gh api \
+                    "repos/${{ github.repository }}/actions/workflows/supabase-staging.yaml/runs?branch=main&head_sha=$TARGET_SHA&per_page=1" \
+                    --jq '.workflow_runs[0] // {} | {conclusion: .conclusion, status: .status, created_at: .created_at, head_branch: .head_branch, head_sha: .head_sha}')
+
+                  STAGING_CONCLUSION=$(echo "$STAGING_RUN" | jq -r '.conclusion // "missing"')
+                  STAGING_STATUS=$(echo "$STAGING_RUN" | jq -r '.status // "missing"')
+                  STAGING_BRANCH=$(echo "$STAGING_RUN" | jq -r '.head_branch // "missing"')
+                  STAGING_SHA=$(echo "$STAGING_RUN" | jq -r '.head_sha // "missing"')
+
+                  echo "Staging migration status: $STAGING_STATUS"
+                  echo "Staging migration conclusion: $STAGING_CONCLUSION"
+                  echo "Staging migration branch: $STAGING_BRANCH"
+                  echo "Staging migration SHA: $STAGING_SHA"
+
+                  if [ "$STAGING_SHA" != "$TARGET_SHA" ]; then
+                    echo "::notice::Skipping production migration because no main staging migration was found for $TARGET_SHA."
+                  elif [ "$STAGING_BRANCH" != "main" ]; then
+                    echo "::notice::Skipping production migration because the matching staging migration ran on '$STAGING_BRANCH'."
+                  elif [ "$STAGING_STATUS" != "completed" ]; then
+                    echo "::notice::Skipping production migration because the staging migration for $TARGET_SHA is '$STAGING_STATUS', not completed."
+                  elif [ "$STAGING_CONCLUSION" != "success" ]; then
+                    echo "::notice::Skipping production migration because the staging migration for $TARGET_SHA has conclusion '$STAGING_CONCLUSION'."
+                  else
+                    echo "Production platform build marker and staging migration are bound to $TARGET_SHA. Proceeding with migration."
+                    SHOULD_DEPLOY=true
+                  fi
+                fi
               fi
             fi
           fi

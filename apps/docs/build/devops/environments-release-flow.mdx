@@ -90,10 +90,12 @@ This page explains how Tuturuuu moves from code to running environments.
 `supabase-production.yaml` is stricter than staging:
 
 1. It re-evaluates automatically after either `Vercel Platform Production
-   Deployment` completes its build validation on `production` or
+Deployment` completes its build validation on `production` or
    `Supabase Staging Migration` completes on `main`.
 2. The production platform build validation for the target commit must have
-   concluded successfully on `production`.
+   concluded successfully on `production` and recorded the successful
+   `vercel-production-platform` build marker for the same SHA. A workflow run
+   that skipped because package releases were still publishing is not enough.
 3. The `main` staging migration for the same target commit must have completed
    with a `success` conclusion.
 4. A manual dispatch can still be used when an operator explicitly wants to run

@@ -309,7 +309,10 @@ the helper may dispatch missing package release workflows for that same
 production SHA. When related package releases are queued or running, the helper
 sets `packages_ready=false`; the platform build skips successfully instead of
 polling npm until the runner times out. npm publish authority remains isolated to
-package `publish-npm` jobs.
+package `publish-npm` jobs. A skipped package gate must not count as production
+build validation for database migrations: `supabase-production.yaml` requires
+the successful `vercel-production-platform` build marker for the same SHA before
+it can run production migrations.
 
 Filtered production Docker installs only include the selected app and the
 dependencies that app needs. Workspace packages with direct `tsgo` build scripts
