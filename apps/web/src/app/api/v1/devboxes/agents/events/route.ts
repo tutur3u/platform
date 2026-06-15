@@ -27,7 +27,9 @@ const AgentEventSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const authorization = await authorizeDevboxAgent(request);
+  const authorization = await authorizeDevboxAgent(request, {
+    requireOnline: true,
+  });
   if (!authorization.ok) return authorization.response;
 
   const parsed = AgentEventSchema.safeParse(

@@ -4,7 +4,9 @@ import { claimNextDevboxRun } from '@/lib/devboxes/agent-store';
 import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 export async function GET(request: Request) {
-  const authorization = await authorizeDevboxAgent(request);
+  const authorization = await authorizeDevboxAgent(request, {
+    requireOnline: true,
+  });
   if (!authorization.ok) return authorization.response;
 
   try {

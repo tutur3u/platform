@@ -118,9 +118,13 @@ describe('devbox agent routes', () => {
       runId: 'run-1',
     });
 
-    const response = await poll(createRequest());
+    const request = createRequest();
+    const response = await poll(request);
 
     expect(response.status).toBe(200);
+    expect(authorizeDevboxAgentMock).toHaveBeenCalledWith(request, {
+      requireOnline: true,
+    });
     expect(claimNextDevboxRunMock).toHaveBeenCalledWith('runner-1');
     await expect(response.json()).resolves.toEqual({
       jobs: [
@@ -144,15 +148,17 @@ describe('devbox agent routes', () => {
       },
     });
 
-    const response = await events(
-      createRequest({
-        completion: { exitCode: 0, status: 'succeeded' },
-        events: [{ message: '1.3.14' }],
-        runId: 'run-1',
-      })
-    );
+    const request = createRequest({
+      completion: { exitCode: 0, status: 'succeeded' },
+      events: [{ message: '1.3.14' }],
+      runId: 'run-1',
+    });
+    const response = await events(request);
 
     expect(response.status).toBe(200);
+    expect(authorizeDevboxAgentMock).toHaveBeenCalledWith(request, {
+      requireOnline: true,
+    });
     expect(recordDevboxRunEventsMock).toHaveBeenCalledWith({
       events: [{ message: '1.3.14' }],
       runId: 'run-1',

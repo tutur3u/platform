@@ -7,7 +7,10 @@ function getBearerToken(request: Request) {
   return authorization.slice('bearer '.length).trim();
 }
 
-export async function authorizeDevboxAgent(request: Request) {
+export async function authorizeDevboxAgent(
+  request: Request,
+  options: { requireOnline?: boolean } = {}
+) {
   const token =
     request.headers.get('x-devbox-runner-token')?.trim() ??
     getBearerToken(request);
@@ -19,7 +22,9 @@ export async function authorizeDevboxAgent(request: Request) {
     };
   }
 
-  const runner = await verifyDevboxRunnerToken(token).catch(() => null);
+  const runner = await verifyDevboxRunnerToken(token, options).catch(
+    () => null
+  );
   if (!runner) {
     return {
       ok: false as const,

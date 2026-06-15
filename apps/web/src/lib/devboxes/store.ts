@@ -1,4 +1,8 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import {
   createPrivateDevboxClient,
   type DevboxPrivateSchemaClient,
@@ -46,6 +50,8 @@ type PrivateTableClient = {
   };
 };
 
+const DEVBOX_RUNNER_AUTHORIZED_STATUSES = new Set(['online', 'registered']);
+
 export interface CreateDevboxRunInput {
   actorId: string;
   command: string[];
@@ -69,6 +75,14 @@ export interface CreateDevboxLeaseInput {
 
 function getPrivateSchemaClient(client: unknown) {
   return client as DevboxPrivateSchemaClient;
+}
+
+function getPrivateSchemaClientFromAdmin(admin: TypedSupabaseClient) {
+  return (
+    admin as unknown as {
+      schema: (schema: string) => DevboxPrivateSchemaClient;
+    }
+  ).schema('private');
 }
 
 function getPrivateTable(
@@ -329,10 +343,14 @@ export async function updateDevboxEnv(input: {
   return { revision: Date.now() };
 }
 
-export async function verifyDevboxRunnerToken(token: string) {
-  const privateClient = getPrivateSchemaClient(
-    await createPrivateDevboxClient()
-  );
+export async function verifyDevboxRunnerToken(
+  token: string,
+  options: { requireOnline?: boolean } = {}
+) {
+  const admin = (await createAdminClient({
+    noCookie: true,
+  })) as TypedSupabaseClient;
+  const privateClient = getPrivateSchemaClientFromAdmin(admin);
   const tokenHash = createHash('sha256').update(token).digest('hex');
   const { data, error } = await getPrivateTable(
     privateClient,
@@ -354,7 +372,50 @@ export async function verifyDevboxRunnerToken(token: string) {
       ? String(first.runner_id ?? '')
       : '';
 
-  return runnerId ? { id: runnerId } : null;
+  if (!runnerId) {
+    return null;
+  }
+
+  const { data: runnerData, error: runnerError } = await getPrivateTable(
+    privateClient,
+    'devbox_runners'
+  )
+    .select('id, actor_id, status')
+    .eq('id', runnerId)
+    .order('updated_at', { ascending: false })
+    .limit(1);
+
+  if (runnerError) {
+    throw getDevboxStorageError(runnerError);
+  }
+
+  const runner = runnerData?.[0];
+  const actorId =
+    runner && typeof runner === 'object' && 'actor_id' in runner
+      ? String(runner.actor_id ?? '')
+      : '';
+  const status =
+    runner && typeof runner === 'object' && 'status' in runner
+      ? String(runner.status ?? '')
+      : '';
+
+  if (
+    !actorId ||
+    (options.requireOnline
+      ? status !== 'online'
+      : !DEVBOX_RUNNER_AUTHORIZED_STATUSES.has(status))
+  ) {
+    return null;
+  }
+
+  const membership = await verifyWorkspaceMembershipType({
+    requiredType: 'MEMBER',
+    supabase: admin,
+    userId: actorId,
+    wsId: ROOT_WORKSPACE_ID,
+  });
+
+  return membership.ok ? { id: runnerId } : null;
 }
 
 export async function listDevboxRuns(actorId: string) {

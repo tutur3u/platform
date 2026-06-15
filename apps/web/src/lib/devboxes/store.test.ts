@@ -12,53 +12,177 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 import { verifyDevboxRunnerToken } from './store';
 
 describe('devbox store', () => {
-  const eqMock = vi.fn();
-  const fromMock = vi.fn();
-  const isMock = vi.fn();
-  const limitMock = vi.fn();
-  const orderMock = vi.fn();
+  const membershipEqUserMock = vi.fn();
+  const membershipEqWorkspaceMock = vi.fn();
+  const membershipMaybeSingleMock = vi.fn();
+  const membershipSelectMock = vi.fn();
+  const privateFromMock = vi.fn();
+  const publicFromMock = vi.fn();
+  const runnerEqMock = vi.fn();
+  const runnerLimitMock = vi.fn();
+  const runnerOrderMock = vi.fn();
+  const runnerSelectMock = vi.fn();
   const schemaMock = vi.fn();
-  const selectMock = vi.fn();
+  const tokenEqMock = vi.fn();
+  const tokenIsMock = vi.fn();
+  const tokenLimitMock = vi.fn();
+  const tokenOrderMock = vi.fn();
+  const tokenSelectMock = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    selectMock.mockReturnValue({ eq: eqMock });
-    eqMock.mockReturnValue({ is: isMock });
-    isMock.mockReturnValue({ order: orderMock });
-    orderMock.mockReturnValue({ limit: limitMock });
-    fromMock.mockReturnValue({ select: selectMock });
-    schemaMock.mockReturnValue({ from: fromMock });
-    createAdminClientMock.mockResolvedValue({ schema: schemaMock });
-  });
 
-  it('accepts active runner tokens', async () => {
-    limitMock.mockResolvedValue({
+    tokenLimitMock.mockResolvedValue({
       data: [{ runner_id: 'runner-1' }],
       error: null,
     });
+    tokenOrderMock.mockReturnValue({ limit: tokenLimitMock });
+    tokenIsMock.mockReturnValue({ order: tokenOrderMock });
+    tokenEqMock.mockReturnValue({ is: tokenIsMock });
+    tokenSelectMock.mockReturnValue({ eq: tokenEqMock });
 
+    runnerLimitMock.mockResolvedValue({
+      data: [
+        {
+          actor_id: 'user-1',
+          id: 'runner-1',
+          status: 'online',
+        },
+      ],
+      error: null,
+    });
+    runnerOrderMock.mockReturnValue({ limit: runnerLimitMock });
+    runnerEqMock.mockReturnValue({ order: runnerOrderMock });
+    runnerSelectMock.mockReturnValue({ eq: runnerEqMock });
+
+    membershipMaybeSingleMock.mockResolvedValue({
+      data: { type: 'MEMBER' },
+      error: null,
+    });
+    membershipEqUserMock.mockReturnValue({
+      maybeSingle: membershipMaybeSingleMock,
+    });
+    membershipEqWorkspaceMock.mockReturnValue({ eq: membershipEqUserMock });
+    membershipSelectMock.mockReturnValue({ eq: membershipEqWorkspaceMock });
+
+    privateFromMock.mockImplementation((table: string) => {
+      if (table === 'devbox_runner_tokens') {
+        return { select: tokenSelectMock };
+      }
+      if (table === 'devbox_runners') {
+        return { select: runnerSelectMock };
+      }
+      throw new Error(`Unexpected private table ${table}`);
+    });
+    publicFromMock.mockImplementation((table: string) => {
+      if (table === 'workspace_members') {
+        return { select: membershipSelectMock };
+      }
+      throw new Error(`Unexpected public table ${table}`);
+    });
+    schemaMock.mockReturnValue({ from: privateFromMock });
+    createAdminClientMock.mockResolvedValue({
+      from: publicFromMock,
+      schema: schemaMock,
+    });
+  });
+
+  it('accepts active runner tokens', async () => {
     await expect(verifyDevboxRunnerToken('tdbx_active')).resolves.toEqual({
       id: 'runner-1',
     });
 
     expect(schemaMock).toHaveBeenCalledWith('private');
-    expect(fromMock).toHaveBeenCalledWith('devbox_runner_tokens');
-    expect(selectMock).toHaveBeenCalledWith('runner_id');
-    expect(eqMock).toHaveBeenCalledWith(
+    expect(privateFromMock).toHaveBeenCalledWith('devbox_runner_tokens');
+    expect(tokenSelectMock).toHaveBeenCalledWith('runner_id');
+    expect(tokenEqMock).toHaveBeenCalledWith(
       'token_hash',
       createHash('sha256').update('tdbx_active').digest('hex')
     );
-    expect(isMock).toHaveBeenCalledWith('revoked_at', null);
+    expect(tokenIsMock).toHaveBeenCalledWith('revoked_at', null);
+    expect(privateFromMock).toHaveBeenCalledWith('devbox_runners');
+    expect(runnerSelectMock).toHaveBeenCalledWith('id, actor_id, status');
+    expect(runnerEqMock).toHaveBeenCalledWith('id', 'runner-1');
+    expect(publicFromMock).toHaveBeenCalledWith('workspace_members');
+    expect(membershipEqWorkspaceMock).toHaveBeenCalledWith(
+      'ws_id',
+      '00000000-0000-0000-0000-000000000000'
+    );
+    expect(membershipEqUserMock).toHaveBeenCalledWith('user_id', 'user-1');
   });
 
   it('rejects revoked runner tokens filtered out by the store query', async () => {
-    limitMock.mockResolvedValue({
+    tokenLimitMock.mockResolvedValue({
       data: [],
       error: null,
     });
 
     await expect(verifyDevboxRunnerToken('tdbx_revoked')).resolves.toBeNull();
 
-    expect(isMock).toHaveBeenCalledWith('revoked_at', null);
+    expect(tokenIsMock).toHaveBeenCalledWith('revoked_at', null);
+    expect(runnerSelectMock).not.toHaveBeenCalled();
+    expect(membershipSelectMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects runner tokens when the runner has been revoked', async () => {
+    runnerLimitMock.mockResolvedValue({
+      data: [
+        {
+          actor_id: 'user-1',
+          id: 'runner-1',
+          status: 'revoked',
+        },
+      ],
+      error: null,
+    });
+
+    await expect(verifyDevboxRunnerToken('tdbx_revoked')).resolves.toBeNull();
+
+    expect(membershipSelectMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects runner tokens after the owner loses root membership', async () => {
+    membershipMaybeSingleMock.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    await expect(verifyDevboxRunnerToken('tdbx_removed')).resolves.toBeNull();
+
+    expect(membershipEqUserMock).toHaveBeenCalledWith('user_id', 'user-1');
+  });
+
+  it('allows registered runners to authenticate before the first heartbeat', async () => {
+    runnerLimitMock.mockResolvedValue({
+      data: [
+        {
+          actor_id: 'user-1',
+          id: 'runner-1',
+          status: 'registered',
+        },
+      ],
+      error: null,
+    });
+
+    await expect(verifyDevboxRunnerToken('tdbx_registered')).resolves.toEqual({
+      id: 'runner-1',
+    });
+  });
+
+  it('requires online runner status for claim and event routes', async () => {
+    runnerLimitMock.mockResolvedValue({
+      data: [
+        {
+          actor_id: 'user-1',
+          id: 'runner-1',
+          status: 'registered',
+        },
+      ],
+      error: null,
+    });
+
+    await expect(
+      verifyDevboxRunnerToken('tdbx_registered', { requireOnline: true })
+    ).resolves.toBeNull();
   });
 });
