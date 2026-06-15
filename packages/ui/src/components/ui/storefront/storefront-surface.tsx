@@ -108,6 +108,13 @@ export function StorefrontSurface({
       )}
       style={getAccentStyle(accentColor)}
     >
+      {/* Accent strip — makes the storefront's accent color immediately visible. */}
+      <div
+        className="h-1 w-full"
+        style={{
+          backgroundColor: 'var(--storefront-accent, var(--primary))',
+        }}
+      />
       {notice ? (
         <div className="border-border border-b bg-muted/35 px-4 py-2 text-center text-muted-foreground text-sm">
           {notice}
@@ -133,6 +140,14 @@ export function StorefrontSurface({
                 'inline-flex h-9 min-w-12 items-center justify-center gap-2 border bg-card px-3 font-medium text-sm',
                 radius
               )}
+              style={
+                cartQuantity > 0
+                  ? {
+                      borderColor: 'var(--storefront-accent, var(--primary))',
+                      color: 'var(--storefront-accent, var(--primary))',
+                    }
+                  : undefined
+              }
             >
               <ShoppingCart className="h-4 w-4" />
               {cartQuantity}
