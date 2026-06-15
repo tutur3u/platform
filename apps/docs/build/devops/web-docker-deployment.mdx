@@ -1170,13 +1170,16 @@ instance is shut down. If a Docker host must override the bundled Redis sidecar,
 use the Docker-specific `DOCKER_UPSTASH_REDIS_REST_URL` and
 `DOCKER_UPSTASH_REDIS_REST_TOKEN` variables.
 
-Watcher-managed Infrastructure projects use the same integrated Docker Redis
-runtime by default. The watcher generates or reuses `tmp/docker-web/redis-token`
-and injects `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and
-`SRH_TOKEN` for managed project compose runs unless the project explicitly sets
-`redis_enabled=false`. Generic host `UPSTASH_REDIS_REST_*` values are ignored
-there too; use the Docker-specific override variables when a managed project
-must point somewhere else.
+Watcher-managed Infrastructure projects do not receive the integrated platform
+Docker Redis token. New managed projects start with `redis_enabled=false`, and a
+project with Redis enabled receives `UPSTASH_REDIS_REST_URL`,
+`UPSTASH_REDIS_REST_TOKEN`, and `SRH_TOKEN` only when project-scoped credentials
+are set with `MANAGED_PROJECT_<PROJECT_ID>_UPSTASH_REDIS_REST_URL` and
+`MANAGED_PROJECT_<PROJECT_ID>_UPSTASH_REDIS_REST_TOKEN`, where `<PROJECT_ID>` is
+the normalized project id uppercased with dashes converted to underscores.
+Generic host `UPSTASH_REDIS_REST_*` and Docker-specific `DOCKER_UPSTASH_*`
+values are stripped from managed project compose runs so untrusted project code
+cannot access platform Redis credentials.
 
 If you intentionally want the memory-only fallback, opt out:
 

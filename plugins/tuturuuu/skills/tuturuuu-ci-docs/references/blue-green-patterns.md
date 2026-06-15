@@ -116,11 +116,13 @@ infrastructure dashboard changes.
   support builds, starts, and health gates. This keeps local-only E2E shards from
   pulling the private enterprise image while production remains enabled by
   default.
-- Watcher-managed Infrastructure projects should use the integrated Docker
-  Redis runtime by default. Generate or reuse `tmp/docker-web/redis-token`, set
-  `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and `SRH_TOKEN` from
-  the Docker Redis helper, ignore stale generic host `UPSTASH_REDIS_REST_*`
-  values, and opt out only when the project explicitly has `redis_enabled=false`.
+- Watcher-managed Infrastructure projects must not inherit the platform Docker
+  Redis runtime. Keep new managed projects at `redis_enabled=false`, strip
+  generic `UPSTASH_REDIS_REST_*`, `SRH_TOKEN`, and Docker-specific
+  `DOCKER_UPSTASH_*` values from managed project deploy environments, and only
+  expose Redis to a project when project-scoped
+  `MANAGED_PROJECT_<PROJECT_ID>_UPSTASH_REDIS_REST_URL` and
+  `MANAGED_PROJECT_<PROJECT_ID>_UPSTASH_REDIS_REST_TOKEN` values are configured.
 - Completed migration containers such as `hive-db-migrate` and
   `supermemory-db-migrate` should be removed by Compose project and service
   labels, not only `docker compose ps` output, because one-off run containers

@@ -627,7 +627,7 @@ export async function createInfrastructureProject(
       true,
       true,
       true,
-      true,
+      false,
       false,
       false,
       'synced'
