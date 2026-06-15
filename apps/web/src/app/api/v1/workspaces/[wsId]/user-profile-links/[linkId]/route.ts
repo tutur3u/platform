@@ -20,6 +20,7 @@ const patchSchema = z
       .refine((fields) => new Set(fields).size === fields.length)
       .optional(),
     prefill_existing_values: z.boolean().optional(),
+    requires_auth: z.boolean().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'No fields to update',
@@ -60,6 +61,7 @@ export async function PATCH(req: Request, { params }: Params) {
     max_uses?: number | null;
     allowed_fields?: string[];
     prefill_existing_values?: boolean;
+    requires_auth?: boolean;
   } = {};
   if (parsed.data.revoked !== undefined) {
     update.revoked_at = parsed.data.revoked ? new Date().toISOString() : null;
@@ -75,6 +77,9 @@ export async function PATCH(req: Request, { params }: Params) {
   }
   if (parsed.data.prefill_existing_values !== undefined) {
     update.prefill_existing_values = parsed.data.prefill_existing_values;
+  }
+  if (parsed.data.requires_auth !== undefined) {
+    update.requires_auth = parsed.data.requires_auth;
   }
 
   const sbAdmin = await createAdminClient();

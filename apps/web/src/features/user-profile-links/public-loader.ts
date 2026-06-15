@@ -22,7 +22,9 @@ export interface ProfileLinkPagePayload {
   prefill: Partial<Record<ProfileLinkField, string | null>>;
   /** Whether the link allowed existing values to be returned to the visitor. */
   prefillExistingValues: boolean;
-  /** The logged-in account email — used to lock the email field. */
+  /** When false, the link can be completed without an account. */
+  requiresAuth: boolean;
+  /** The logged-in account email — used to lock the email field (auth links). */
   actorEmail: string | null;
 }
 
@@ -40,6 +42,7 @@ interface ProfileLinkPageRow {
   target_user_id: string | null;
   allowed_fields: string[] | null;
   prefill_existing_values?: boolean | null;
+  requires_auth?: boolean | null;
   is_expired: boolean | null;
   is_full: boolean | null;
   is_revoked: boolean | null;
@@ -78,11 +81,18 @@ export async function loadProfileLinkForPage(
     return { status: 404, data: null };
   }
 
-  // Auth gate — visitor must be logged in before seeing or filling anything.
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user) {
-    return { status: 401, data: null };
+  const requiresAuth = link.requires_auth ?? true;
+
+  // Auth gate — only when the link requires login. No-auth links can be opened
+  // and completed anonymously (the email field becomes a normal field).
+  let actorEmail: string | null = null;
+  if (requiresAuth) {
+    const supabase = await createClient();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    if (!user) {
+      return { status: 401, data: null };
+    }
+    actorEmail = user.email ?? null;
   }
 
   const allowedFields = (link.allowed_fields ?? []).filter(
@@ -122,7 +132,8 @@ export async function loadProfileLinkForPage(
       allowedFields,
       prefill,
       prefillExistingValues,
-      actorEmail: user.email ?? null,
+      requiresAuth,
+      actorEmail,
     },
   };
 }

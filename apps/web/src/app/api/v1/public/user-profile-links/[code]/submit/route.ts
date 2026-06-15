@@ -23,13 +23,6 @@ const bodySchema = z.object({
 export async function POST(req: Request, { params }: Params) {
   const { code } = await params;
 
-  // 1. Require login (attribution + security).
-  const supabase = await createClient(req);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user?.id) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
@@ -40,11 +33,13 @@ export async function POST(req: Request, { params }: Params) {
 
   const sbAdmin = await createAdminClient();
 
-  // 2. Resolve and re-validate the link (never trust the client).
+  // 1. Resolve and re-validate the link (never trust the client). This happens
+  // before the auth decision because whether login is required is a per-link
+  // property.
   const { data: link } = await sbAdmin
     .from('workspace_user_profile_links_with_stats')
     .select(
-      'id, ws_id, mode, target_user_id, allowed_fields, is_expired, is_full, is_revoked'
+      'id, ws_id, mode, target_user_id, allowed_fields, requires_auth, is_expired, is_full, is_revoked'
     )
     .eq('code', code)
     .maybeSingle();
@@ -72,6 +67,16 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  // 2. Auth gate — only when the link requires login. No-auth links accept
+  // anonymous submissions with a null audit actor.
+  const requiresAuth = link.requires_auth ?? true;
+  const supabase = await createClient(req);
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  if (requiresAuth && !user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+  const actorAuthUid = user?.id ?? null;
+
   const allowedFields = link.allowed_fields ?? [];
 
   // 3. Reject any field outside the link's allowlist.
@@ -89,7 +94,7 @@ export async function POST(req: Request, { params }: Params) {
   const { payload, submittedFields } = buildSanitizedPayload(
     allowedFields,
     parsed.data.fields,
-    { actorEmail: user.email }
+    { actorEmail: user?.email, lockEmail: requiresAuth }
   );
 
   if (submittedFields.length === 0) {
@@ -113,7 +118,7 @@ export async function POST(req: Request, { params }: Params) {
         p_ws_id: linkWsId,
         p_user_id: targetUserId,
         p_payload: payload,
-        p_actor_auth_uid: user.id,
+        p_actor_auth_uid: actorAuthUid ?? undefined,
       }
     );
     if (error || !updated) {
@@ -127,14 +132,18 @@ export async function POST(req: Request, { params }: Params) {
   } else {
     // Generic mode: reuse this actor's previously-created row if any
     // ("created or updated"), otherwise create a fresh workspace_user.
-    const { data: existing } = await sbAdmin
-      .from('workspace_user_profile_link_submissions')
-      .select('workspace_user_id')
-      .eq('profile_link_id', linkId)
-      .eq('actor_auth_uid', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // Anonymous (no-auth) submissions have no actor to key on, so they always
+    // create a new row.
+    const { data: existing } = actorAuthUid
+      ? await sbAdmin
+          .from('workspace_user_profile_link_submissions')
+          .select('workspace_user_id')
+          .eq('profile_link_id', linkId)
+          .eq('actor_auth_uid', actorAuthUid)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : { data: null };
 
     if (existing?.workspace_user_id) {
       const { data: updated, error } = await sbAdmin.rpc(
@@ -143,7 +152,7 @@ export async function POST(req: Request, { params }: Params) {
           p_ws_id: linkWsId,
           p_user_id: existing.workspace_user_id,
           p_payload: payload,
-          p_actor_auth_uid: user.id,
+          p_actor_auth_uid: actorAuthUid ?? undefined,
         }
       );
       if (error || !updated) {
@@ -160,7 +169,7 @@ export async function POST(req: Request, { params }: Params) {
         {
           p_ws_id: linkWsId,
           p_payload: payload,
-          p_actor_auth_uid: user.id,
+          p_actor_auth_uid: actorAuthUid ?? undefined,
         }
       );
       if (error || !created) {
@@ -188,7 +197,7 @@ export async function POST(req: Request, { params }: Params) {
       profile_link_id: linkId,
       ws_id: linkWsId,
       workspace_user_id: workspaceUserId,
-      actor_auth_uid: user.id,
+      actor_auth_uid: actorAuthUid,
       submitted_fields: submittedFields,
     });
 

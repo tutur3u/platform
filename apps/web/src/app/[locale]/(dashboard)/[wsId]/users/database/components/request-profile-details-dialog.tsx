@@ -79,6 +79,7 @@ export function RequestProfileDetailsDialog({
     'full_name',
   ]);
   const [prefillExistingValues, setPrefillExistingValues] = useState(true);
+  const [requireAuth, setRequireAuth] = useState(true);
   const [expiresAt, setExpiresAt] = useState('');
   const [maxUses, setMaxUses] = useState('1');
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -95,6 +96,7 @@ export function RequestProfileDetailsDialog({
   const reset = () => {
     setSelected(['display_name', 'full_name']);
     setPrefillExistingValues(true);
+    setRequireAuth(true);
     setExpiresAt('');
     setMaxUses('1');
     setShareUrl(null);
@@ -108,6 +110,7 @@ export function RequestProfileDetailsDialog({
         target_user_id: mode === 'per_user' ? targetUserId : null,
         allowed_fields: selected,
         prefill_existing_values: prefillExistingValues,
+        requires_auth: requireAuth,
         expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
         max_uses: maxUses ? Number.parseInt(maxUses, 10) : null,
       }),
@@ -231,11 +234,32 @@ export function RequestProfileDetailsDialog({
                   );
                 })}
               </div>
-              {selected.includes('email') ? (
+              {selected.includes('email') && requireAuth ? (
                 <p className="text-muted-foreground text-xs">
                   {t('create_email_hint')}
                 </p>
               ) : null}
+            </div>
+
+            <div className="flex items-start justify-between gap-3 rounded-lg border p-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="require_auth">
+                    {t('create_require_auth')}
+                  </Label>
+                  <HelpTooltip label={t('create_require_auth_tooltip')} />
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  {requireAuth
+                    ? t('create_require_auth_description')
+                    : t('create_require_auth_off_description')}
+                </p>
+              </div>
+              <Switch
+                id="require_auth"
+                checked={requireAuth}
+                onCheckedChange={setRequireAuth}
+              />
             </div>
 
             {mode === 'per_user' ? (

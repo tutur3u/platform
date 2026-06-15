@@ -44,6 +44,7 @@ export default async function SharedUserProfilePage({ params }: PageProps) {
       allowedFields={data.allowedFields}
       prefill={data.prefill}
       prefillExistingValues={data.prefillExistingValues}
+      requiresAuth={data.requiresAuth}
       actorEmail={data.actorEmail}
     />
   );
