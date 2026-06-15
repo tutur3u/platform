@@ -11,7 +11,14 @@ import { UserNav } from './user-nav';
  * or a theme toggle + sign-in link for anonymous shoppers.
  */
 export async function StorefrontHeaderActions() {
-  const session = await getSatelliteAppSession('storefront');
+  // Resilient: a session/auth fetch hiccup (e.g. an internal API blip) must
+  // never crash the storefront page — fall back to the signed-out controls.
+  let session: Awaited<ReturnType<typeof getSatelliteAppSession>> | null = null;
+  try {
+    session = await getSatelliteAppSession('storefront');
+  } catch {
+    session = null;
+  }
 
   if (session) {
     return <UserNav hideMetadata />;
