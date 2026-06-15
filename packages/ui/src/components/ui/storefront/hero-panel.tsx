@@ -36,6 +36,7 @@ export function StorefrontHeroPanel({
             className="absolute inset-0 h-full w-full"
             imageUrl={heroImage}
             label={storefront.name}
+            priority
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-muted via-muted/60 to-background" />

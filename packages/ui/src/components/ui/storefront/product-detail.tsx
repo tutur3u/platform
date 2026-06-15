@@ -54,6 +54,7 @@ export function StorefrontProductDetail({
           className="aspect-square"
           imageUrl={listing.imageUrl}
           label={listing.title}
+          priority
         />
       </div>
 

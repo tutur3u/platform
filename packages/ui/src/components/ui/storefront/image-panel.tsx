@@ -6,10 +6,13 @@ export function StorefrontImagePanel({
   className,
   imageUrl,
   label,
+  priority = false,
 }: {
   className?: string;
   imageUrl: string | null;
   label: string;
+  /** Eager-load above-the-fold images (e.g. the hero) to protect LCP. */
+  priority?: boolean;
 }) {
   if (imageUrl) {
     return (
@@ -17,6 +20,9 @@ export function StorefrontImagePanel({
       <img
         alt=""
         className={cn('w-full object-cover', className)}
+        decoding="async"
+        fetchPriority={priority ? 'high' : 'auto'}
+        loading={priority ? 'eager' : 'lazy'}
         src={imageUrl}
       />
     );
