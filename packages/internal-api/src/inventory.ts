@@ -442,6 +442,26 @@ export type InventoryPolarSettingsPayload = {
   productionEnvironment?: InventoryPolarEnvironment;
 };
 
+export type InventoryPolarSyncStatusCounts = {
+  synced: number;
+  pending: number;
+  error: number;
+  disabled: number;
+  total: number;
+};
+
+export type InventoryPolarProductSyncSummary = {
+  listings: InventoryPolarSyncStatusCounts;
+  bundles: InventoryPolarSyncStatusCounts;
+  errors: Array<{
+    kind: 'listing' | 'bundle';
+    name: string;
+    error: string;
+    syncedAt: string | null;
+  }>;
+  lastSyncedAt: string | null;
+};
+
 export type InventoryOverviewResponse = {
   category_breakdown?: Array<Record<string, unknown>>;
   dashboard?: InventoryDashboardSnapshot | null;
@@ -2300,6 +2320,29 @@ export function updateInventoryPolarSettings(
       method: 'PUT',
     }
   );
+}
+
+export function getInventoryPolarSyncSummary(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryPolarProductSyncSummary>(
+    workspaceInventoryPath(wsId, '/polar-product-sync'),
+    { cache: 'no-store' }
+  );
+}
+
+export function syncInventoryPolarProducts(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    ok: boolean;
+    synced: { bundles: number; listings: number };
+  }>(workspaceInventoryPath(wsId, '/polar-product-sync'), {
+    headers: jsonHeaders(options?.defaultHeaders),
+    method: 'POST',
+  });
 }
 
 export function getInventoryPublicStorefront(

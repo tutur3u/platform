@@ -1576,6 +1576,24 @@
         "saveToken": "Save token",
         "saving": "Saving...",
         "searchEnvironments": "Search environments",
+        "sync": {
+          "bundles": "Bundles",
+          "description": "Each listing and bundle is synced to a Polar product. Re-sync to converge rows created before Polar was connected or that errored.",
+          "errorsTitle": "Recent sync errors",
+          "lastSynced": "Last synced",
+          "listings": "Listings",
+          "never": "Never",
+          "resync": "Re-sync now",
+          "resyncDone": "Re-synced {count} products",
+          "resyncing": "Re-syncing…",
+          "status": {
+            "disabled": "disabled",
+            "error": "error",
+            "pending": "pending",
+            "synced": "synced"
+          },
+          "title": "Product sync health"
+        },
         "testingDefault": "Testing default",
         "title": "Polar checkout",
         "tokenEnding": "Token ending in {last4}",

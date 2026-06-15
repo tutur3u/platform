@@ -12,6 +12,7 @@ import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { currency } from './operator-format';
 import { EmptyRow } from './operator-shell';
 import { PolarSettingsPanel } from './polar-settings-panel';
+import { PolarSyncHealthPanel } from './polar-sync-health-panel';
 
 function StatusBadge({ value }: { value: string }) {
   return (
@@ -79,6 +80,9 @@ export function PolarHubPanel({ wsId }: { wsId: string }) {
 
       {/* Connection + sync actions + product link status (per environment). */}
       <PolarSettingsPanel wsId={wsId} />
+
+      {/* Product catalog sync health (counts by status + recent errors). */}
+      <PolarSyncHealthPanel wsId={wsId} />
 
       <section className="grid min-w-0 gap-2 rounded-lg border border-border bg-card p-4">
         <h3 className="font-semibold text-sm">{t('recentCheckoutsTitle')}</h3>

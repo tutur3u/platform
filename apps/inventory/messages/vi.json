@@ -1576,6 +1576,24 @@
         "saveToken": "Lưu token",
         "saving": "Đang lưu...",
         "searchEnvironments": "Tìm môi trường",
+        "sync": {
+          "bundles": "Gói",
+          "description": "Mỗi mục niêm yết và gói được đồng bộ sang một sản phẩm Polar. Đồng bộ lại để hợp nhất các mục tạo trước khi kết nối Polar hoặc bị lỗi.",
+          "errorsTitle": "Lỗi đồng bộ gần đây",
+          "lastSynced": "Đồng bộ lần cuối",
+          "listings": "Niêm yết",
+          "never": "Chưa bao giờ",
+          "resync": "Đồng bộ lại",
+          "resyncDone": "Đã đồng bộ lại {count} sản phẩm",
+          "resyncing": "Đang đồng bộ…",
+          "status": {
+            "disabled": "vô hiệu",
+            "error": "lỗi",
+            "pending": "đang chờ",
+            "synced": "đã đồng bộ"
+          },
+          "title": "Tình trạng đồng bộ sản phẩm"
+        },
         "testingDefault": "Mặc định testing",
         "title": "Thanh toán Polar",
         "tokenEnding": "Token kết thúc bằng {last4}",
