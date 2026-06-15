@@ -8,7 +8,10 @@ import {
   getFinanceRouteContext,
   hasAnyFinancePermission,
 } from '../request-access';
-import { enrichTransactionsWithTags } from './tag-enrichment';
+import {
+  enrichTransactionsWithTags,
+  validateTransactionTagIdsForWorkspace,
+} from './tag-enrichment';
 
 interface Params {
   params: Promise<{
@@ -150,7 +153,7 @@ export async function GET(
   });
 
   const { data: enrichedData, error: tagError } =
-    await enrichTransactionsWithTags(sbAdmin, sortedData);
+    await enrichTransactionsWithTags(sbAdmin, sortedData, normalizedWsId);
 
   if (tagError) {
     console.error('Error enriching transaction tags:', tagError.message);
@@ -285,6 +288,18 @@ export async function POST(
     );
   }
 
+  const tagValidation = await validateTransactionTagIdsForWorkspace(
+    sbAdmin,
+    normalizedWsId,
+    tagIds
+  );
+  if (tagValidation.error) {
+    return NextResponse.json(
+      { message: tagValidation.error.message },
+      { status: tagValidation.error.status }
+    );
+  }
+
   let { data: wsUser } = await supabase
     .from('workspace_user_linked_users')
     .select('virtual_user_id')
@@ -346,8 +361,8 @@ export async function POST(
   }
 
   // Handle tags if provided
-  if (tagIds && tagIds.length > 0 && transaction?.id) {
-    const tagInserts = tagIds.map((tagId: string) => ({
+  if (tagValidation.tagIds.length > 0 && transaction?.id) {
+    const tagInserts = tagValidation.tagIds.map((tagId: string) => ({
       transaction_id: transaction.id,
       tag_id: tagId,
     }));

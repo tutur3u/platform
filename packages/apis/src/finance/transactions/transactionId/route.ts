@@ -8,7 +8,10 @@ import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
 } from '../../request-access';
-import { enrichTransactionsWithTags } from '../tag-enrichment';
+import {
+  enrichTransactionsWithTags,
+  validateTransactionTagIdsForWorkspace,
+} from '../tag-enrichment';
 
 // Helper function to verify transaction belongs to workspace
 async function verifyTransactionWorkspace(
@@ -161,7 +164,7 @@ export async function GET(
   }
 
   const { data: enrichedTransactions, error: tagError } =
-    await enrichTransactionsWithTags(sbAdmin, [transactionRow]);
+    await enrichTransactionsWithTags(sbAdmin, [transactionRow], normalizedWsId);
 
   if (tagError) {
     console.error('Error enriching transaction tags:', {
@@ -339,6 +342,18 @@ export async function PUT(
     );
   }
 
+  const tagValidation = await validateTransactionTagIdsForWorkspace(
+    sbAdmin,
+    normalizedWsId,
+    tagIds
+  );
+  if (tagValidation.error) {
+    return NextResponse.json(
+      { message: tagValidation.error.message },
+      { status: tagValidation.error.status }
+    );
+  }
+
   // Build update payload conditionally - only include fields that are provided
   const updatePayload: any = {};
 
@@ -402,8 +417,8 @@ export async function PUT(
       .eq('transaction_id', transactionId);
 
     // Then insert new tags if any
-    if (tagIds.length > 0) {
-      const tagInserts = tagIds.map((tagId: string) => ({
+    if (tagValidation.tagIds.length > 0) {
+      const tagInserts = tagValidation.tagIds.map((tagId: string) => ({
         transaction_id: transactionId,
         tag_id: tagId,
       }));
