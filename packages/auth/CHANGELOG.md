@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/tutur3u/platform/compare/auth-v0.2.2...auth-v0.2.3) (2026-06-15)
+
+
+### Bug Fixes
+
+* **auth:** consume external app refresh tokens ([7f5a4ab](https://github.com/tutur3u/platform/commit/7f5a4ab250214018ca34e61b7084fd55865c17bc))
+
 ## [0.2.2](https://github.com/tutur3u/platform/compare/auth-v0.2.1...auth-v0.2.2) (2026-06-13)
 
 

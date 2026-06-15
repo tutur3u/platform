@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/storefront-v0.5.0...storefront-v0.6.0) (2026-06-15)
+
+
+### Features
+
+* **inventory:** per-storefront Polar environment + clearer checkout errors ([b30c2ed](https://github.com/tutur3u/platform/commit/b30c2eddced0d63ce47c857e8da4578fcf6151d1))
+* **storefront:** add logged-in user dropdown + theme/language switchers to the header ([8d75043](https://github.com/tutur3u/platform/commit/8d75043c3f4147bf5ec908728d1d15d2b44f7064))
+* **storefront:** dedicated checkout page with buyer details + order-placed success ([258014d](https://github.com/tutur3u/platform/commit/258014d642e7cf99164e92fec44cd32114ecf68d))
+* **storefront:** polish checkout cart experience ([cfdccfa](https://github.com/tutur3u/platform/commit/cfdccfa089703d9dde4357eeef8e52c00ccf6d4b))
+
+
+### Bug Fixes
+
+* **i18n:** backfill storefront/shortener common namespace and harden namespace checker ([26f3888](https://github.com/tutur3u/platform/commit/26f388876824c5aac0baa2c79fd94e91c56efcd7))
+* **storefront:** never crash the storefront when the session fetch fails ([fc5be45](https://github.com/tutur3u/platform/commit/fc5be4535e5ac933d6a0cd118d37f55f64362e1f))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/storefront-v0.4.0...storefront-v0.5.0) (2026-06-15)
 
 

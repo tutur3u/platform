@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/platform-v0.11.0...platform-v0.12.0) (2026-06-15)
+
+
+### Features
+
+* **inventory:** add a central Polar hub operator view ([95d7c18](https://github.com/tutur3u/platform/commit/95d7c18c5dbf7e0e04d241ab31203430e4a72c66))
+* **inventory:** per-storefront Polar environment + clearer checkout errors ([b30c2ed](https://github.com/tutur3u/platform/commit/b30c2eddced0d63ce47c857e8da4578fcf6151d1))
+* **storefront:** add logged-in user dropdown + theme/language switchers to the header ([8d75043](https://github.com/tutur3u/platform/commit/8d75043c3f4147bf5ec908728d1d15d2b44f7064))
+* **storefront:** dedicated checkout page with buyer details + order-placed success ([258014d](https://github.com/tutur3u/platform/commit/258014d642e7cf99164e92fec44cd32114ecf68d))
+* **storefront:** make the storefront accent color visibly prominent ([f2b5289](https://github.com/tutur3u/platform/commit/f2b5289506fd8e289f4bfb2bb6755cbc10ea2430))
+* **storefront:** polish checkout cart experience ([cfdccfa](https://github.com/tutur3u/platform/commit/cfdccfa089703d9dde4357eeef8e52c00ccf6d4b))
+* **tooling:** add `bun doctor` and `bun portless:reset` for local dev recovery ([0c05d9c](https://github.com/tutur3u/platform/commit/0c05d9c7396a31c4aa2a530d575bcd8251c4f01c))
+* **tooling:** expand doctor environment checks ([f65c775](https://github.com/tutur3u/platform/commit/f65c7753b59b69bb58a0e2a3a300e068caedff3a))
+* **tooling:** improve dev environment doctor ([11d5e84](https://github.com/tutur3u/platform/commit/11d5e846d02f48667280ddc38e1177cc06156526))
+* **web:** add mobile deployment secret visibility toggle ([c766b69](https://github.com/tutur3u/platform/commit/c766b697f77718d6deae9c87e429210331b0e1b8))
+* **web:** consolidate workspace roles into members and redesign access UI ([4a16407](https://github.com/tutur3u/platform/commit/4a164070e1fe020a834ce4fe77ff4ae371e4e366))
+* **web:** organize mobile deployment settings into tabs ([ae450e4](https://github.com/tutur3u/platform/commit/ae450e4a0feea8cfc9cf8ca8ccda4cc41a7e1dd5))
+
+
+### Bug Fixes
+
+* **auth:** consume external app refresh tokens ([1bbac9c](https://github.com/tutur3u/platform/commit/1bbac9cfb33bf93c13794a49569d54362365ead8))
+* **auth:** consume external app refresh tokens ([7f5a4ab](https://github.com/tutur3u/platform/commit/7f5a4ab250214018ca34e61b7084fd55865c17bc))
+* **ci:** treat deferred (succeeded-but-unpublished) dependency releases as not-ready ([5133ee5](https://github.com/tutur3u/platform/commit/5133ee556f57fff9045954ca204b58075edcd05f))
+* **database:** secure profile link stats view ([7f994cb](https://github.com/tutur3u/platform/commit/7f994cbf422ea04012dcf30f8419d90580925a16))
+* **i18n:** backfill storefront/shortener common namespace and harden namespace checker ([26f3888](https://github.com/tutur3u/platform/commit/26f388876824c5aac0baa2c79fd94e91c56efcd7))
+* **inventory:** block unsafe storefront section links ([870ce76](https://github.com/tutur3u/platform/commit/870ce760237f43ca2a3d1221359c4a06d1bc7653))
+* **inventory:** scope Polar promotion discounts ([2b0ec04](https://github.com/tutur3u/platform/commit/2b0ec04dc6f8d1ce0d4370a57812aa2f71209952))
+* **inventory:** validate default sale wallet ownership ([25d6737](https://github.com/tutur3u/platform/commit/25d673733db8fd76d0659f536178f25835481433))
+* **inventory:** verify batch workspace before update ([566a065](https://github.com/tutur3u/platform/commit/566a06537a7efae521fb892725b04462392724b9))
+* **release:** keep vendored UI tarballs local ([1e0c06f](https://github.com/tutur3u/platform/commit/1e0c06ff54fac35e605902dcf2c00142e8f00abc))
+* **release:** keep vendored UI tarballs local ([7cce326](https://github.com/tutur3u/platform/commit/7cce3269866ab81c318f621e2e048083beba2512))
+* **storefront:** never crash the storefront when the session fetch fails ([fc5be45](https://github.com/tutur3u/platform/commit/fc5be4535e5ac933d6a0cd118d37f55f64362e1f))
+* **tasks:** persist description yjs state separately ([07a5e80](https://github.com/tutur3u/platform/commit/07a5e80b96ea509c24ba0570ef22f5300fc36040))
+* **tasks:** secure realtime task channels ([6d98d16](https://github.com/tutur3u/platform/commit/6d98d16baa9ecf68bdd47ce3ce6dc1ff2e2bca84))
+* **tasks:** secure realtime task channels ([03dc6d6](https://github.com/tutur3u/platform/commit/03dc6d66666d1d3ae422f91cb94285367a8c1071))
+* **tooling:** clarify doctor alias warnings ([55e2677](https://github.com/tutur3u/platform/commit/55e2677f19d26393992bb2d55a0dc90cd75bd957))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/platform-v0.10.2...platform-v0.11.0) (2026-06-15)
 
 

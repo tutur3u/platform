@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.9.0](https://github.com/tutur3u/platform/compare/database-v1.8.0...database-v1.9.0) (2026-06-15)
+
+
+### Features
+
+* **inventory:** per-storefront Polar environment + clearer checkout errors ([b30c2ed](https://github.com/tutur3u/platform/commit/b30c2eddced0d63ce47c857e8da4578fcf6151d1))
+
+
+### Bug Fixes
+
+* **database:** secure profile link stats view ([7f994cb](https://github.com/tutur3u/platform/commit/7f994cbf422ea04012dcf30f8419d90580925a16))
+* **tasks:** secure realtime task channels ([6d98d16](https://github.com/tutur3u/platform/commit/6d98d16baa9ecf68bdd47ce3ce6dc1ff2e2bca84))
+* **tasks:** secure realtime task channels ([03dc6d6](https://github.com/tutur3u/platform/commit/03dc6d66666d1d3ae422f91cb94285367a8c1071))
+
 ## [1.8.0](https://github.com/tutur3u/platform/compare/database-v1.7.0...database-v1.8.0) (2026-06-15)
 
 
