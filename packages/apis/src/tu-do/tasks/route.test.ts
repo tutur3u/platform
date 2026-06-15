@@ -366,6 +366,10 @@ describe('workspace task route personal external loading', () => {
       'eq',
       ['task_lists.board_id', PERSONAL_BOARD_ID],
     ]);
+    expect(taskQuery?.calls).toContainEqual([
+      'is',
+      ['task_lists.workspace_boards.deleted_at', null],
+    ]);
     expect(taskQuery?.calls).toContainEqual(['not', ['end_date', 'is', null]]);
   });
 
@@ -432,6 +436,10 @@ describe('workspace task route personal external loading', () => {
     expect(taskQuery?.calls).toContainEqual([
       'eq',
       ['task_lists.board_id', PERSONAL_BOARD_ID],
+    ]);
+    expect(taskQuery?.calls).toContainEqual([
+      'is',
+      ['task_lists.workspace_boards.deleted_at', null],
     ]);
     expect(taskQuery?.calls).toContainEqual(['ilike', ['name', '%cms%']]);
   });

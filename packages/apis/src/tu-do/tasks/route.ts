@@ -1434,7 +1434,8 @@ export async function handleTaskRouteGET(
       let query = sbAdmin
         .from('tasks')
         .select(selectedColumns, includeCount ? { count: 'exact' } : undefined)
-        .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId);
+        .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId)
+        .is('task_lists.workspace_boards.deleted_at', null);
 
       if (includeDeletedMode === 'none') {
         query = query.is('deleted_at', null).eq('task_lists.deleted', false);
