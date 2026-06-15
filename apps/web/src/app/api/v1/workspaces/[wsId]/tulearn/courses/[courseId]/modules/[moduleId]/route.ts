@@ -47,7 +47,20 @@ export const GET = withSessionAuth<Params>(
         );
       }
 
-      return NextResponse.json(module);
+      // Fetch student submissions for this module's quizzes
+      const sbAdmin = await createAdminClient();
+      const { data: submissions, error: subError } = await sbAdmin
+        .from('course_module_quiz_submissions')
+        .select('quiz_id, selected_option_id, answer, is_correct')
+        .eq('module_id', moduleId)
+        .eq('user_id', subject.studentPlatformUserId);
+
+      if (subError) throw subError;
+
+      return NextResponse.json({
+        ...module,
+        submissions: submissions || [],
+      });
     } catch (error) {
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
@@ -238,6 +251,48 @@ export const POST = withSessionAuth<Params>(
       serverLogger.error('Failed to submit quiz response:', error);
       return NextResponse.json(
         { message: 'Failed to submit response' },
+        { status: 500 }
+      );
+    }
+  },
+  { allowAppSessionAuth: true }
+);
+
+export const DELETE = withSessionAuth<Params>(
+  async (request, { supabase, user }, { courseId, moduleId, wsId }) => {
+    try {
+      const subject = await resolveTulearnSubject({
+        requestSupabase: supabase,
+        studentId: request.nextUrl.searchParams.get('studentId'),
+        user,
+        wsId,
+      });
+
+      if (subject.readOnly) {
+        return NextResponse.json(
+          { message: 'Guest/Parent accounts are read-only' },
+          { status: 403 }
+        );
+      }
+
+      const sbAdmin = await createAdminClient();
+
+      const { error } = await sbAdmin
+        .from('course_module_quiz_submissions')
+        .delete()
+        .eq('module_id', moduleId)
+        .eq('user_id', subject.studentPlatformUserId);
+
+      if (error) throw error;
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      const accessResponse = tulearnAccessErrorResponse(error);
+      if (accessResponse) return accessResponse;
+
+      serverLogger.error('Failed to reset quiz submissions:', error);
+      return NextResponse.json(
+        { message: 'Failed to reset submissions' },
         { status: 500 }
       );
     }

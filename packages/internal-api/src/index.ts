@@ -1174,6 +1174,7 @@ export {
   type SubmitTulearnQuizAnswerResult,
   submitTulearnPractice,
   submitTulearnQuizAnswer,
+  resetTulearnQuizSubmissions,
   type TulearnAssignmentSummary,
   type TulearnBootstrapResponse,
   type TulearnCourseDetail,

@@ -6,12 +6,14 @@ import { useTranslations } from 'next-intl';
 import { BrutalCard } from '../shared';
 
 export function QuizCompletionCard({
-  completedCount,
+  correctCount,
+  earnedScore,
   onRetry,
   totalCount,
   totalMaxScore,
 }: {
-  completedCount: number;
+  correctCount: number;
+  earnedScore: number;
   onRetry: () => void;
   totalCount: number;
   totalMaxScore: number;
@@ -32,13 +34,16 @@ export function QuizCompletionCard({
 
       <div className="my-6 border-2 border-border bg-muted/20 p-5 shadow-[4px_4px_0_var(--border)]">
         <div className="font-black text-3xl text-primary">
-          {t('courses.quizReviewedCount', {
-            completed: completedCount,
+          {t('courses.quizCorrectCount', {
+            correct: correctCount,
             total: totalCount,
           })}
         </div>
         <div className="mt-2 font-bold text-muted-foreground text-sm">
-          {t('courses.quizAvailablePoints', { points: totalMaxScore })}
+          {t('courses.quizEarnedPoints', {
+            points: earnedScore,
+            total: totalMaxScore,
+          })}
         </div>
       </div>
 

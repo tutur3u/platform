@@ -153,6 +153,12 @@ export interface TulearnCourseModuleDetail extends TulearnCourseModuleSummary {
   flashcards: Array<{ id: string; front: string; back: string }>;
   quizzes: TulearnQuiz[];
   quizSets: Array<{ id: string; name: string }>;
+  submissions?: Array<{
+    quiz_id: string;
+    selected_option_id: string | null;
+    answer: unknown;
+    is_correct: boolean;
+  }>;
 }
 
 export interface TulearnPracticeItem {
@@ -432,6 +438,24 @@ export async function submitTulearnQuizAnswer(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      cache: 'no-store',
+      query: studentQuery(studentId),
+    }
+  );
+}
+
+export async function resetTulearnQuizSubmissions(
+  workspaceId: string,
+  courseId: string,
+  moduleId: string,
+  studentId?: string | null,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}`,
+    {
+      method: 'DELETE',
       cache: 'no-store',
       query: studentQuery(studentId),
     }

@@ -116,6 +116,8 @@
     "quizExplanation": "Explanation",
     "quizCorrectAnswer": "Correct answer:",
     "quizYourAnswer": "Your answer:",
+    "quizCorrectCount": "Correct {correct} / {total}",
+    "quizEarnedPoints": "Earned points: {points} / {total}",
     "quizRetryPractice": "Retry practice",
     "quizReviewedCount": "Reviewed {completed} / {total}",
     "quizSets": "Quiz sets",

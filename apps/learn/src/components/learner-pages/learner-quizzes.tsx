@@ -1,11 +1,15 @@
 'use client';
 
 import { Check, X } from '@tuturuuu/icons';
-import { submitTulearnQuizAnswer } from '@tuturuuu/internal-api';
+import {
+  submitTulearnQuizAnswer,
+  resetTulearnQuizSubmissions,
+} from '@tuturuuu/internal-api';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChoiceOptions } from './quiz-practice/choice-options';
 import { QuizCompletionCard } from './quiz-practice/completion-card';
 import { StructuredQuizPreview } from './quiz-practice/structured-preview';
@@ -79,21 +83,55 @@ function shuffleArray<T>(array: T[]): T[] {
 export function LearnerQuizzes({
   quizzes,
   moduleId,
+  submissions,
 }: {
   quizzes: Quiz[];
   moduleId: string;
+  submissions?: Array<{
+    quiz_id: string;
+    selected_option_id: string | null;
+    answer: unknown;
+    is_correct: boolean;
+  }>;
 }) {
   const t = useTranslations();
   const params = useParams();
   const studentId = useStudentId();
+  const queryClient = useQueryClient();
 
-  const [currentIdx, setCurrentIdx] = useState(0);
+  // Find first unanswered quiz index based on historical submissions
+  const initialIdx = useMemo(() => {
+    if (!submissions || submissions.length === 0) return 0;
+    const firstUnanswered = quizzes.findIndex(
+      (quiz) => !submissions.some((sub) => sub.quiz_id === quiz.id)
+    );
+    return firstUnanswered === -1 ? quizzes.length : firstUnanswered;
+  }, [quizzes, submissions]);
+
+  const [currentIdx, setCurrentIdx] = useState(() => {
+    return initialIdx >= quizzes.length ? 0 : initialIdx;
+  });
   const [selectedAnswer, setSelectedAnswer] = useState<SelectedAnswer>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [completedCount, setCompletedCount] = useState(0);
-  const [completed, setCompleted] = useState(false);
+
+  const [correctCount, setCorrectCount] = useState(() => {
+    if (!submissions) return 0;
+    return submissions.filter((sub) => sub.is_correct).length;
+  });
+
+  const [earnedScore, setEarnedScore] = useState(() => {
+    if (!submissions) return 0;
+    return quizzes.reduce((sum, quiz) => {
+      const sub = submissions.find((s) => s.quiz_id === quiz.id);
+      return sum + (sub?.is_correct ? getQuizScore(quiz) : 0);
+    }, 0);
+  });
+
+  const [completed, setCompleted] = useState(() => {
+    return initialIdx >= quizzes.length && quizzes.length > 0;
+  });
 
   const currentQuiz = quizzes[currentIdx];
 
@@ -185,13 +223,18 @@ export function LearnerQuizzes({
         studentId
       );
 
-      if (response && typeof response.is_correct === 'boolean') {
-        setIsCorrect(response.is_correct);
-      } else {
-        setIsCorrect(calculatedCorrect);
+      const correct =
+        response && typeof response.is_correct === 'boolean'
+          ? response.is_correct
+          : calculatedCorrect;
+
+      setIsCorrect(correct);
+
+      if (correct) {
+        setCorrectCount((prev) => prev + 1);
+        setEarnedScore((prev) => prev + getQuizScore(currentQuiz));
       }
 
-      setCompletedCount((prev) => Math.max(prev, currentIdx + 1));
       setIsSubmitted(true);
     } catch (err) {
       console.error('Failed to submit answer:', err);
@@ -212,13 +255,37 @@ export function LearnerQuizzes({
     }
   };
 
-  const handleRetry = () => {
-    setCurrentIdx(0);
-    setSelectedAnswer(null);
-    setIsSubmitted(false);
-    setIsCorrect(null);
-    setCompletedCount(0);
-    setCompleted(false);
+  const handleRetry = async () => {
+    try {
+      await resetTulearnQuizSubmissions(
+        params.wsId as string,
+        params.courseId as string,
+        moduleId,
+        studentId
+      );
+
+      // Invalidate query to refresh submissions list
+      queryClient.invalidateQueries({
+        queryKey: [
+          'tulearn',
+          params.wsId,
+          studentId,
+          'course-module',
+          params.courseId,
+          moduleId,
+        ],
+      });
+
+      setCurrentIdx(0);
+      setSelectedAnswer(null);
+      setIsSubmitted(false);
+      setIsCorrect(null);
+      setCorrectCount(0);
+      setEarnedScore(0);
+      setCompleted(false);
+    } catch (err) {
+      console.error('Failed to reset submissions:', err);
+    }
   };
 
   if (completed) {
@@ -229,7 +296,8 @@ export function LearnerQuizzes({
 
     return (
       <QuizCompletionCard
-        completedCount={completedCount}
+        correctCount={correctCount}
+        earnedScore={earnedScore}
         totalCount={quizzes.length}
         totalMaxScore={totalMaxScore}
         onRetry={handleRetry}

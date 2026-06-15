@@ -116,6 +116,8 @@
     "quizExplanation": "Giải thích",
     "quizCorrectAnswer": "Đáp án đúng:",
     "quizYourAnswer": "Câu trả lời của bạn:",
+    "quizCorrectCount": "Chính xác {correct} / {total}",
+    "quizEarnedPoints": "Điểm đạt được: {points} / {total}",
     "quizRetryPractice": "Luyện tập lại",
     "quizReviewedCount": "Đã xem {completed} / {total}",
     "quizSets": "Bộ câu hỏi",
