@@ -6,6 +6,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { habitsNotFoundResponse, isHabitsEnabled } from '@/lib/habits/access';
 
 const querySchema = z.object({
   start_at: z.string().datetime(),
@@ -28,6 +29,10 @@ export async function GET(
     if (!auth.ok) return auth.response;
     const { user, supabase } = auth;
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+
+    if (!(await isHabitsEnabled(wsId))) {
+      return habitsNotFoundResponse();
+    }
 
     const membership = await verifyWorkspaceMembershipType({
       wsId: wsId,
