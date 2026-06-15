@@ -144,7 +144,7 @@ describe('cross-app app-session refresh route', () => {
     vi.useRealTimers();
   });
 
-  it('rejects refresh tokens used as legacy access upgrade tokens', async () => {
+  it('rejects access tokens supplied as refresh tokens', async () => {
     const oldSession = createAppSessionTokenPair({
       targetApp: 'learn',
       userId: 'user-1',
@@ -152,7 +152,7 @@ describe('cross-app app-session refresh route', () => {
 
     const response = await POST(
       request({
-        accessToken: oldSession.refresh.token,
+        refreshToken: oldSession.access.token,
         targetApp: 'learn',
       })
     );
@@ -160,7 +160,7 @@ describe('cross-app app-session refresh route', () => {
     expect(response.status).toBe(401);
   });
 
-  it('upgrades still-valid access-only sessions into a refreshable pair', async () => {
+  it('rejects access-only refresh requests without minting a token pair', async () => {
     const access = createAppSessionToken({
       targetApp: 'learn',
       userId: 'user-1',
@@ -172,19 +172,10 @@ describe('cross-app app-session refresh route', () => {
         targetApp: 'learn',
       })
     );
-    const body = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(body).toMatchObject({
-      appSessionRefreshEarlySeconds: 900,
-      sessionData: { email: 'agent@example.com' },
-      userId: 'user-1',
-      valid: true,
-    });
-    expect(body.appSessionToken).toMatch(/^ttr_app_/u);
-    expect(body.appSessionRefreshToken).toMatch(/^ttr_app_/u);
-    expect(mocks.getAppCoordinationSessionPolicy).toHaveBeenCalledTimes(1);
-    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(response.status).toBe(401);
+    expect(mocks.getAppCoordinationSessionPolicy).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('rejects refresh when the user no longer exists', async () => {

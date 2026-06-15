@@ -1,7 +1,6 @@
 import {
   createAppSessionTokenPair,
   verifyAppSessionRefreshToken,
-  verifyAppSessionToken,
 } from '@tuturuuu/auth/app-session';
 import { resolveInternalAppSessionPolicy } from '@tuturuuu/auth/app-session-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -22,7 +21,6 @@ import {
 const REFRESH_REPLAY_KEY_PREFIX = 'app-session:refresh:used';
 
 const refreshSchema = z.object({
-  accessToken: z.string().trim().min(1).optional(),
   refreshToken: z.string().trim().min(1).optional(),
   targetApp: z.string().trim().toLowerCase().min(1).max(64),
 });
@@ -129,25 +127,6 @@ async function verifyRefreshToken({
   return verification;
 }
 
-function verifyLegacyAccessToken({
-  accessToken,
-  targetApp,
-}: {
-  accessToken?: string;
-  targetApp: AppName;
-}) {
-  if (!accessToken) {
-    return {
-      error: 'Missing app session access token',
-      ok: false as const,
-    };
-  }
-
-  return verifyAppSessionToken(accessToken, {
-    targetApp,
-  });
-}
-
 async function refreshCrossAppSession(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = refreshSchema.safeParse(body);
@@ -159,9 +138,9 @@ async function refreshCrossAppSession(request: NextRequest) {
     );
   }
 
-  const { accessToken, refreshToken, targetApp } = parsed.data;
+  const { refreshToken, targetApp } = parsed.data;
 
-  if (!accessToken && !refreshToken) {
+  if (!refreshToken) {
     return jsonNoStore(
       { error: 'Missing app session refresh credentials' },
       { status: 401 }
@@ -169,16 +148,11 @@ async function refreshCrossAppSession(request: NextRequest) {
   }
 
   const { policy } = await getAppCoordinationSessionPolicy();
-  const verification = refreshToken
-    ? await verifyRefreshToken({
-        refreshToken,
-        replayGraceSeconds: policy.browserRefreshReplayGraceSeconds,
-        targetApp,
-      })
-    : verifyLegacyAccessToken({
-        accessToken,
-        targetApp,
-      });
+  const verification = await verifyRefreshToken({
+    refreshToken,
+    replayGraceSeconds: policy.browserRefreshReplayGraceSeconds,
+    targetApp,
+  });
 
   if (!verification.ok) {
     return jsonNoStore(
