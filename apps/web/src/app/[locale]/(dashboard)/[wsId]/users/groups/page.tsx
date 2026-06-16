@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -199,6 +202,7 @@ async function getInitialData(
 ) {
   try {
     const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
     let accessibleGroupIds: string[] | null = null;
 
@@ -226,7 +230,7 @@ async function getInitialData(
     const [fetchedGroups, filteredCount] = await Promise.all([
       listUserGroupsForTable({
         accessibleGroupIds,
-        client: supabase,
+        client: sbAdmin,
         page: validPage,
         pageSize: validPageSize,
         q,
@@ -235,7 +239,7 @@ async function getInitialData(
       }),
       countUserGroupsForTable({
         accessibleGroupIds,
-        client: supabase,
+        client: sbAdmin,
         q,
         status,
         wsId,

@@ -2,7 +2,6 @@ import 'server-only';
 
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { WorkspaceUserGroupTableRow } from '@tuturuuu/types/db';
-import { removeAccents } from '@tuturuuu/utils/text-helper';
 
 export type UserGroupTableStatus = 'all' | 'active' | 'archived';
 
@@ -16,24 +15,6 @@ export interface ListUserGroupsForTableParams {
   status: UserGroupTableStatus;
   wsId: string;
 }
-
-type WorkspaceUserGroupsWithGuestRow = {
-  amount: number | null;
-  archived: boolean | null;
-  created_at: string | null;
-  ending_date: string | null;
-  id: string | null;
-  is_guest: boolean | null;
-  name: string | null;
-  notes: string | null;
-  sessions: string[] | null;
-  starting_date: string | null;
-  ws_id: string | null;
-};
-
-type WorkspaceTimezoneRow = {
-  timezone: string | null;
-};
 
 function normalizeGroupIdFilter(value: string[] | null | undefined) {
   if (value === undefined || value === null) return null;
@@ -64,155 +45,35 @@ function normalizePageSize(value: number) {
   return Math.min(Math.floor(value), 200);
 }
 
-function normalizeUserGroupSearchText(value: string) {
-  return removeAccents(value).toLowerCase().replace(/\s+/g, ' ').trim();
+function normalizeSearchParam(value: string | null | undefined) {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
 }
 
-function matchesUserGroupSearch(
-  name: string | null | undefined,
-  q: string | null | undefined
-) {
-  const normalizedQuery = normalizeUserGroupSearchText(q ?? '');
-  if (!normalizedQuery) return true;
-
-  const normalizedName = normalizeUserGroupSearchText(name ?? '');
-  if (!normalizedName) return false;
-
-  return normalizedQuery
-    .split(' ')
-    .filter(Boolean)
-    .every((term) => normalizedName.includes(term));
-}
-
-function getDateStringInTimeZone(timeZone: string) {
-  try {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      day: '2-digit',
-      month: '2-digit',
-      timeZone,
-      year: 'numeric',
-    }).formatToParts(new Date());
-    const values = Object.fromEntries(
-      parts.map((part) => [part.type, part.value])
-    );
-
-    if (values.year && values.month && values.day) {
-      return `${values.year}-${values.month}-${values.day}`;
-    }
-  } catch {
-    return new Date().toISOString().slice(0, 10);
-  }
-
-  return new Date().toISOString().slice(0, 10);
-}
-
-function toTableRow(
-  row: WorkspaceUserGroupsWithGuestRow,
-  today: string
-): WorkspaceUserGroupTableRow | null {
-  if (!row.id || !row.ws_id || !row.name) return null;
-
-  return {
-    id: row.id,
-    ws_id: row.ws_id,
-    name: row.name,
-    starting_date: row.starting_date,
-    ending_date: row.ending_date,
-    archived: row.archived ?? false,
-    notes: row.notes,
-    is_guest: row.is_guest ?? false,
-    amount: row.amount ?? 0,
-    sessions: row.sessions,
-    created_at: row.created_at,
-    has_session_today: (row.sessions ?? []).includes(today),
-  };
-}
-
-function sortTableRows(rows: WorkspaceUserGroupTableRow[]) {
-  return [...rows].sort((a, b) => {
-    if (a.has_session_today !== b.has_session_today) {
-      return a.has_session_today ? -1 : 1;
-    }
-
-    const byName = a.name.localeCompare(b.name);
-    if (byName !== 0) return byName;
-
-    return a.id.localeCompare(b.id);
-  });
-}
-
-async function resolveWorkspaceToday(
-  client: TypedSupabaseClient,
-  wsId: string
-) {
-  const { data, error } = await client
-    .from('workspaces')
-    .select('timezone')
-    .eq('id', wsId)
-    .maybeSingle();
-
-  if (error) throw error;
-
-  const timezone = (
-    (data as WorkspaceTimezoneRow | null)?.timezone ?? ''
-  ).trim();
-
-  if (!timezone || timezone.toLowerCase() === 'auto') {
-    return getDateStringInTimeZone('UTC');
-  }
-
-  return getDateStringInTimeZone(timezone);
-}
-
-async function fetchRowsForTable({
+function buildUserGroupsTableRpcArgs({
   accessibleGroupIds,
-  client,
   groupIds,
   q,
   status,
   wsId,
-}: Omit<ListUserGroupsForTableParams, 'page' | 'pageSize'>) {
+}: Omit<ListUserGroupsForTableParams, 'client' | 'page' | 'pageSize'>) {
   const effectiveGroupIds = getEffectiveGroupIds({
     accessibleGroupIds,
     groupIds,
   });
 
   if (effectiveGroupIds?.length === 0) {
-    return [];
+    return null;
   }
 
-  const today = await resolveWorkspaceToday(client, wsId);
+  const search = normalizeSearchParam(q);
 
-  const queryBuilder = client
-    .from('workspace_user_groups_with_guest')
-    .select(
-      'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest, amount, sessions, created_at'
-    )
-    .eq('ws_id', wsId)
-    .order('name');
-
-  if (status === 'active') {
-    queryBuilder.eq('archived', false);
-  } else if (status === 'archived') {
-    queryBuilder.eq('archived', true);
-  }
-
-  if (effectiveGroupIds) {
-    queryBuilder.in('id', effectiveGroupIds);
-  }
-
-  const { data, error } = await queryBuilder;
-
-  if (error) throw error;
-
-  return sortTableRows(
-    ((data ?? []) as WorkspaceUserGroupsWithGuestRow[])
-      .map((row) => toTableRow(row, today))
-      .filter((row): row is WorkspaceUserGroupTableRow => {
-        if (!row) return false;
-        return matchesUserGroupSearch(row.name, q);
-      })
-  );
+  return {
+    ...(effectiveGroupIds ? { p_group_ids: effectiveGroupIds } : {}),
+    ...(search ? { p_search: search } : {}),
+    p_status: status,
+    p_ws_id: wsId,
+  };
 }
 
 export async function listUserGroupsForTable({
@@ -229,16 +90,27 @@ export async function listUserGroupsForTable({
   const validPageSize = normalizePageSize(pageSize);
   const offset = (validPage - 1) * validPageSize;
 
-  const rows = await fetchRowsForTable({
+  const rpcArgs = buildUserGroupsTableRpcArgs({
     accessibleGroupIds,
-    client,
     groupIds,
     q,
     status,
     wsId,
   });
 
-  return rows.slice(offset, offset + validPageSize);
+  if (!rpcArgs) return [];
+
+  const { data, error } = await client
+    .schema('private')
+    .rpc('list_workspace_user_groups_for_table', {
+      ...rpcArgs,
+      p_limit: validPageSize,
+      p_offset: offset,
+    });
+
+  if (error) throw error;
+
+  return (data ?? []) as WorkspaceUserGroupTableRow[];
 }
 
 export async function countUserGroupsForTable({
@@ -249,14 +121,21 @@ export async function countUserGroupsForTable({
   status,
   wsId,
 }: Omit<ListUserGroupsForTableParams, 'page' | 'pageSize'>) {
-  const rows = await fetchRowsForTable({
+  const rpcArgs = buildUserGroupsTableRpcArgs({
     accessibleGroupIds,
-    client,
     groupIds,
     q,
     status,
     wsId,
   });
 
-  return rows.length;
+  if (!rpcArgs) return 0;
+
+  const { data, error } = await client
+    .schema('private')
+    .rpc('count_workspace_user_groups_for_table', rpcArgs);
+
+  if (error) throw error;
+
+  return data ?? 0;
 }
