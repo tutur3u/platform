@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, sortTaskResponseForCli } from './render';
+import { render, renderWhoami, sortTaskResponseForCli } from './render';
 
 describe('CLI rendering', () => {
   afterEach(() => {
@@ -81,6 +81,42 @@ describe('CLI rendering', () => {
     expect(output).toContain('Board\\x9B31m');
     expect(output).not.toContain('\x1b]52;c;payload');
     expect(output).not.toContain('\x07');
+    expect(output).not.toContain('\x9b31m');
+  });
+
+  it('escapes terminal control characters in whoami metadata', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    renderWhoami({
+      baseUrl: 'https://app.tuturuuu.com',
+      configPath: '/tmp/ttr',
+      currentWorkspace: {
+        id: 'workspace-\x1b[32m',
+        name: 'Current\x9b31m',
+      },
+      defaultWorkspace: {
+        id: 'default-\x1b]52;c;id\x07',
+        name: 'Default\x1b[34m',
+      },
+      loggedIn: true,
+      session: 'active',
+      user: {
+        display_name: 'Name\x1b]52;c;payload\x07\nNext',
+        email: 'person\x1b[31m@example.com',
+        id: 'user-\x9b31m',
+      },
+    });
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Name\\x1B]52;c;payload\\x07\\nNext');
+    expect(output).toContain('person\\x1B[31m@example.com');
+    expect(output).toContain('Current\\x9B31m');
+    expect(output).toContain('Default\\x1B[34m');
+    expect(output).toContain('default-\\x1B]52;c;id\\x07');
+    expect(output).not.toContain('\x1b]52;c;payload');
+    expect(output).not.toContain('\x1b]52;c;id');
     expect(output).not.toContain('\x9b31m');
   });
 
