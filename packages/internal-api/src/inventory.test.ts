@@ -7,6 +7,7 @@ import {
   createInventoryOwner,
   createInventoryProduct,
   createInventoryProductCategory,
+  createInventoryPromotion,
   createInventoryStorefront,
   createInventorySupplier,
   createInventoryUnit,
@@ -17,6 +18,7 @@ import {
   deleteInventoryOwner,
   deleteInventoryProduct,
   deleteInventoryProductCategory,
+  deleteInventoryPromotion,
   deleteInventorySale,
   deleteInventoryStorefront,
   deleteInventoryStorefrontListing,
@@ -31,6 +33,7 @@ import {
   importInventoryCostingCsv,
   listInventoryBundles,
   listInventoryCostProfiles,
+  listInventoryPromotions,
   listInventoryStorefronts,
   listInventoryUnits,
   recordInventoryStorefrontAnalyticsEvent,
@@ -42,6 +45,7 @@ import {
   updateInventoryProduct,
   updateInventoryProductCategory,
   updateInventoryProductInventory,
+  updateInventoryPromotion,
   updateInventorySale,
   updateInventoryStorefrontListing,
   updateInventorySupplier,
@@ -365,6 +369,59 @@ describe('inventory internal API helpers', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       5,
       'https://internal.example.com/api/v1/workspaces/ws_1/inventory/bundles/bundle%201',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
+  it('routes promotion helpers through the shared workspace promotion API', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ message: 'success' }));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+    const payload = {
+      code: 'SAVE',
+      max_uses: null,
+      name: 'Save',
+      unit: 'percentage' as const,
+      value: 10,
+    };
+
+    await listInventoryPromotions('workspace 1', { q: 'Save' }, options);
+    await createInventoryPromotion('workspace 1', payload, options);
+    await expect(
+      updateInventoryPromotion('workspace 1', 'promo/1', payload, options)
+    ).resolves.toEqual({ message: 'success' });
+    await deleteInventoryPromotion('workspace 1', 'promo/1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/promotions?q=Save&inventoryOnly=true&response=paginated',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/promotions',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/promotions/promo%2F1',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/promotions/promo%2F1',
       expect.objectContaining({ method: 'DELETE' })
     );
   });

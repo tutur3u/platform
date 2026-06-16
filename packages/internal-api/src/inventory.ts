@@ -1770,7 +1770,7 @@ export function updateInventoryPromotion(
   payload: InventoryPromotionPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ data: ProductPromotion }>(
+  return getInternalApiClient(options).json<{ message?: string }>(
     workspacePath(wsId, `/promotions/${encodePathSegment(promotionId)}`),
     {
       body: JSON.stringify(payload),
