@@ -417,6 +417,11 @@ export interface SubmitTulearnQuizAnswerPayload {
 }
 
 export interface SubmitTulearnQuizAnswerResult {
+  correct_answer?: {
+    correct?: boolean;
+    correctIndex?: number;
+    correctOptionId?: string;
+  } | null;
   id: string;
   is_correct: boolean;
 }

@@ -2,6 +2,7 @@ import { cn } from '@tuturuuu/utils/format';
 import type { DisplayOption, SelectedAnswer } from './types';
 
 type MultipleChoiceProps = {
+  correctAnswer: SubmittedChoiceFeedback;
   kind: 'multiple_choice';
   options: DisplayOption[];
   selectedAnswer: SelectedAnswer;
@@ -11,6 +12,7 @@ type MultipleChoiceProps = {
 };
 
 type TrueFalseProps = {
+  correctAnswer: SubmittedChoiceFeedback;
   kind: 'true_false';
   labels: {
     false: string;
@@ -23,6 +25,12 @@ type TrueFalseProps = {
 };
 
 type ChoiceOptionsProps = MultipleChoiceProps | TrueFalseProps;
+
+type SubmittedChoiceFeedback = {
+  correct?: boolean;
+  correctIndex?: number;
+  correctOptionId?: string;
+} | null;
 
 function choiceStyle({
   isSelected,
@@ -55,7 +63,9 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
         {[true, false].map((value) => {
           const isSelected = props.selectedAnswer === value;
           const isCorrect =
-            props.isSubmitted && isSelected && props.submittedCorrect === true
+            props.isSubmitted &&
+            (props.correctAnswer?.correct === value ||
+              (isSelected && props.submittedCorrect === true))
               ? true
               : undefined;
 
@@ -89,8 +99,12 @@ export function ChoiceOptions(props: ChoiceOptionsProps) {
     <div className="mt-6 grid gap-3">
       {props.options.map((option, index) => {
         const isSelected = props.selectedAnswer === index;
+        const isCorrectOption =
+          props.correctAnswer?.correctOptionId === option.id ||
+          props.correctAnswer?.correctIndex === index;
         const isCorrect =
-          props.isSubmitted && isSelected && props.submittedCorrect === true
+          props.isSubmitted &&
+          (isCorrectOption || (isSelected && props.submittedCorrect === true))
             ? true
             : undefined;
 

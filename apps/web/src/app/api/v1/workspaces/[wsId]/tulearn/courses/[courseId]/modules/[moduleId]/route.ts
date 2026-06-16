@@ -6,6 +6,13 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
+  asRecord,
+  displayText,
+  getMatchingPairs,
+  getStringItems,
+  type MatchingPair,
+} from '@/lib/tulearn/quiz-content';
+import {
   getLearnerModuleDetail,
   resolveTulearnSubject,
   tulearnAccessErrorResponse,
@@ -19,11 +26,6 @@ type Params = {
 
 type SupabaseAdmin = TypedSupabaseClient;
 
-type MatchingPair = {
-  left: string;
-  right: string;
-};
-
 const UUID_REGEX =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
@@ -32,42 +34,6 @@ const QuizSubmissionPayloadSchema = z.object({
   selectedOptionId: z.string().nullable().optional(),
   answer: z.unknown().optional(),
 });
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
-}
-
-function displayText(value: unknown): string {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-  return '';
-}
-
-function getArrayProperty(value: unknown, key: string): unknown[] {
-  const property = asRecord(value)?.[key];
-  return Array.isArray(property) ? property : [];
-}
-
-function getStringItems(value: unknown, key: string): string[] {
-  return getArrayProperty(value, key).map(displayText);
-}
-
-function getMatchingPairs(value: unknown): MatchingPair[] {
-  const pairs = Array.isArray(value) ? value : getArrayProperty(value, 'pairs');
-
-  return pairs
-    .map((pair) => {
-      const record = asRecord(pair);
-      return {
-        left: displayText(record?.left),
-        right: displayText(record?.right),
-      };
-    })
-    .filter((pair) => pair.left && pair.right);
-}
 
 function stringArraysMatch(left: string[], right: string[]) {
   return (
@@ -94,6 +60,56 @@ function matchingPairsMatch(left: MatchingPair[], right: MatchingPair[]) {
   }
 
   return remaining.size === 0;
+}
+
+function numberProperty(value: unknown, key: string): number | null {
+  const property = asRecord(value)?.[key];
+  if (typeof property === 'number' && Number.isFinite(property))
+    return property;
+  if (typeof property === 'string' && property.trim()) {
+    const parsed = Number(property);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function booleanProperty(value: unknown, key: string): boolean | null {
+  const property = asRecord(value)?.[key];
+  return typeof property === 'boolean' ? property : null;
+}
+
+async function loadCorrectOptionId({
+  quizId,
+  sbAdmin,
+}: {
+  quizId: string;
+  sbAdmin: SupabaseAdmin;
+}) {
+  const { data, error } = await sbAdmin
+    .from('quiz_options')
+    .select('id')
+    .eq('quiz_id', quizId)
+    .eq('is_correct', true)
+    .limit(1);
+
+  if (error) throw error;
+  return data?.[0]?.id ?? null;
+}
+
+async function multipleChoiceFeedback({
+  correctAnswer,
+  quizId,
+  sbAdmin,
+}: {
+  correctAnswer: unknown;
+  quizId: string;
+  sbAdmin: SupabaseAdmin;
+}): Promise<Json | null> {
+  const correctIndex = numberProperty(correctAnswer, 'correctIndex');
+  if (correctIndex !== null) return { correctIndex };
+
+  const correctOptionId = await loadCorrectOptionId({ quizId, sbAdmin });
+  return correctOptionId ? { correctOptionId } : null;
 }
 
 async function loadCorrectAnswer({
@@ -250,6 +266,7 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
+      let correctAnswerFeedback: Json | null = null;
       let isCorrect = false;
 
       if (!quiz.type || quiz.type === 'multiple_choice') {
@@ -281,6 +298,11 @@ export const POST = withSessionAuth<Params>(
           }
 
           isCorrect = option.is_correct;
+          correctAnswerFeedback = await multipleChoiceFeedback({
+            correctAnswer: null,
+            quizId,
+            sbAdmin,
+          });
         } else {
           const correctAnswer = await loadCorrectAnswer({
             fallbackAnswer: quiz.answer,
@@ -296,6 +318,11 @@ export const POST = withSessionAuth<Params>(
             correctIndex !== undefined &&
             selectedIndex !== null &&
             Number(correctIndex) === Number(selectedIndex);
+          correctAnswerFeedback = await multipleChoiceFeedback({
+            correctAnswer,
+            quizId,
+            sbAdmin,
+          });
         }
       } else if (quiz.type === 'true_false') {
         const correctAnswer = await loadCorrectAnswer({
@@ -306,8 +333,13 @@ export const POST = withSessionAuth<Params>(
 
         const clientCorrect =
           typeof answer === 'boolean' ? answer : asRecord(answer)?.correct;
-        const correctKey = asRecord(correctAnswer)?.correct;
+        const correctKey =
+          typeof correctAnswer === 'boolean'
+            ? correctAnswer
+            : booleanProperty(correctAnswer, 'correct');
         isCorrect = clientCorrect === correctKey;
+        correctAnswerFeedback =
+          typeof correctKey === 'boolean' ? { correct: correctKey } : null;
       } else if (quiz.type === 'ordering') {
         const correctAnswer = await loadCorrectAnswer({
           fallbackAnswer: quiz.answer,
@@ -368,6 +400,7 @@ export const POST = withSessionAuth<Params>(
 
       return NextResponse.json({
         id: submission.id,
+        correct_answer: correctAnswerFeedback,
         is_correct: isCorrect,
       });
     } catch (error) {

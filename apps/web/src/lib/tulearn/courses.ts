@@ -2,6 +2,7 @@ import type { Json, Tables } from '@tuturuuu/types/supabase';
 
 import { getAdmin } from './db';
 import { firstOf } from './helpers';
+import { getMatchingPairs } from './quiz-content';
 import type { Db } from './types';
 
 type ModuleIdOnly = { module_id: string | null };
@@ -82,39 +83,6 @@ type LearnerQuiz = Pick<
     value: string;
   }>;
 };
-
-type MatchingPair = {
-  left: string;
-  right: string;
-};
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
-}
-
-function displayText(value: unknown): string {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-  return '';
-}
-
-function getMatchingPairs(content: unknown): MatchingPair[] {
-  const pairs = asRecord(content)?.pairs;
-  if (!Array.isArray(pairs)) return [];
-
-  return pairs
-    .map((pair) => {
-      const record = asRecord(pair);
-      return {
-        left: displayText(record?.left),
-        right: displayText(record?.right),
-      };
-    })
-    .filter((pair) => pair.left && pair.right);
-}
 
 function stableChoiceRank(quizId: string, value: string, index: number) {
   const input = `${quizId}:${value}:${index}`;

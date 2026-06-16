@@ -98,6 +98,9 @@ export function LearnerQuizzes({
   const [selectedAnswer, setSelectedAnswer] = useState<SelectedAnswer>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [correctAnswer, setCorrectAnswer] = useState<NonNullable<
+    Awaited<ReturnType<typeof submitTulearnQuizAnswer>>['correct_answer']
+  > | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [correctCount, setCorrectCount] = useState(() => {
@@ -202,6 +205,7 @@ export function LearnerQuizzes({
           : false;
 
       setIsCorrect(correct);
+      setCorrectAnswer(response.correct_answer ?? null);
 
       if (correct) {
         setCorrectCount((prev) => prev + 1);
@@ -220,6 +224,7 @@ export function LearnerQuizzes({
     setSelectedAnswer(null);
     setIsSubmitted(false);
     setIsCorrect(null);
+    setCorrectAnswer(null);
 
     if (currentIdx + 1 < quizzes.length) {
       setCurrentIdx((prev) => prev + 1);
@@ -304,6 +309,7 @@ export function LearnerQuizzes({
             selectedAnswer={selectedAnswer}
             isSubmitted={isSubmitted}
             submittedCorrect={isCorrect}
+            correctAnswer={correctAnswer}
             onSelect={setSelectedAnswer}
           />
         )}
@@ -314,6 +320,7 @@ export function LearnerQuizzes({
             selectedAnswer={selectedAnswer}
             isSubmitted={isSubmitted}
             submittedCorrect={isCorrect}
+            correctAnswer={correctAnswer}
             labels={{
               false: t('courses.quizFalse'),
               true: t('courses.quizTrue'),
