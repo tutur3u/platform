@@ -1097,6 +1097,58 @@ test('ensureProductionSupabaseOrigin rejects legacy local env without an overrid
   }
 });
 
+test('ensureProductionSupabaseOrigin ignores stale legacy local override when root env is effective', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-supabase-stale-legacy-allow-')
+  );
+  const rootEnvFile = path.join(tempDir, '.env.local');
+  const legacyEnvFile = path.join(tempDir, 'apps', 'web', '.env.local');
+
+  try {
+    fs.mkdirSync(path.dirname(legacyEnvFile), { recursive: true });
+    fs.writeFileSync(
+      legacyEnvFile,
+      [
+        'NEXT_PUBLIC_SUPABASE_URL=https://legacy.supabase.co',
+        `${DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV}=1`,
+      ].join('\n')
+    );
+    fs.writeFileSync(
+      rootEnvFile,
+      [
+        'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+        'SUPABASE_SERVER_URL=http://localhost:8001',
+      ].join('\n')
+    );
+
+    const composeEnv = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath: rootEnvFile,
+      rootDir: tempDir,
+    });
+    const report = getDockerWebSupabaseOriginReport({
+      baseEnv: { PATH: 'test-path' },
+      composeEnv,
+      envFilePath: rootEnvFile,
+      rootDir: tempDir,
+    });
+
+    assert.equal(report.allowLocal, false);
+    assert.throws(
+      () =>
+        ensureProductionSupabaseOrigin({
+          baseEnv: { PATH: 'test-path' },
+          composeEnv,
+          envFilePath: rootEnvFile,
+          rootDir: tempDir,
+        }),
+      /Refusing to run production Docker web with a local Supabase origin/
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('ensureProductionSupabaseOrigin allows explicit local Supabase rehearsals', () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'docker-web-supabase-local-allow-')

@@ -332,6 +332,18 @@ function getFirstEnvCandidate(candidates) {
   return candidates.find((candidate) => candidate && candidate.value != null);
 }
 
+function getEffectiveEnvFileSource({ envFilePath, fsImpl, rootDir }) {
+  const resolvedEnvFile = resolveWebEnvFile({
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+
+  return resolvedEnvFile
+    ? path.relative(rootDir, resolvedEnvFile) || '.env.local'
+    : undefined;
+}
+
 function createSupabaseOriginEntry({ effective = true, key, source, value }) {
   return {
     classification: classifySupabaseOrigin(value),
@@ -353,6 +365,16 @@ function getDockerWebSupabaseOriginReport({
     fsImpl,
     rootDir,
   });
+  const effectiveEnvFileSource = getEffectiveEnvFileSource({
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  const envFileAllowLocal =
+    envData.sources[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV] ===
+    effectiveEnvFileSource
+      ? envData.values[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV]
+      : undefined;
   const nextPublicCandidate = getFirstEnvCandidate([
     getEnvCandidate({
       baseEnv,
@@ -403,7 +425,7 @@ function getDockerWebSupabaseOriginReport({
   return {
     allowLocal: isTruthyEnvValue(
       composeEnv?.[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV] ??
-        envData.values[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV] ??
+        envFileAllowLocal ??
         baseEnv[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV]
     ),
     entries: [
