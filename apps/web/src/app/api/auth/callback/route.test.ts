@@ -105,6 +105,21 @@ describe('auth callback route', () => {
     expect(location.toString()).not.toContain('0.0.0.0');
   });
 
+  it('ignores forwarded host headers when building callback redirects', async () => {
+    const response = await GET(
+      new NextRequest('https://tuturuuu.com/api/auth/callback?nextUrl=mail', {
+        headers: {
+          'x-forwarded-host': 'evil.test',
+          'x-forwarded-proto': 'https',
+        },
+      })
+    );
+
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.origin).toBe('https://tuturuuu.com');
+    expect(location.pathname).toBe('/mail');
+  });
+
   it('allows the root platform returnUrl when supplied over http and redirects to https', async () => {
     const returnUrl = encodeURIComponent('http://tuturuuu.com/mail?tab=inbox');
     const response = await GET(

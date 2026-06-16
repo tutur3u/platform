@@ -14,13 +14,6 @@ type AuthRedirectOriginOptions = {
   request?: HeaderCarrier | null;
 };
 
-function firstHeaderValue(value: string | null) {
-  return value
-    ?.split(',')
-    .map((entry) => entry.trim())
-    .find(Boolean);
-}
-
 function firstConfiguredValue(value: string | null | undefined) {
   return value
     ?.split(/[,\n]/u)
@@ -164,30 +157,6 @@ function resolveConfiguredWebOrigin(env: NodeJS.ProcessEnv) {
   );
 }
 
-function resolveForwardedOrigin(request: HeaderCarrier | null | undefined) {
-  if (!request) {
-    return null;
-  }
-
-  const forwardedHost = firstHeaderValue(
-    request.headers.get('x-forwarded-host')
-  );
-
-  if (!forwardedHost) {
-    return null;
-  }
-
-  const forwardedProto = firstHeaderValue(
-    request.headers.get('x-forwarded-proto')
-  );
-  const protocol =
-    forwardedProto === 'http' || forwardedProto === 'https'
-      ? forwardedProto
-      : 'https';
-
-  return normalizeHttpOrigin(`${protocol}://${forwardedHost}`);
-}
-
 function resolveLocalhostFallback(env: NodeJS.ProcessEnv) {
   const port = /^\d+$/u.test(env.PORT ?? '')
     ? env.PORT
@@ -200,13 +169,11 @@ export function resolveAuthRedirectOrigin({
   currentOrigin,
   env = process.env,
   isProduction = env.NODE_ENV === 'production',
-  request,
 }: AuthRedirectOriginOptions = {}) {
   return (
     resolveCurrentPortlessOrigin(currentOrigin) ||
     resolveConfiguredPortlessOrigin(env) ||
     resolveConfiguredWebOrigin(env) ||
-    resolveForwardedOrigin(request) ||
     normalizeHttpOrigin(currentOrigin) ||
     (isProduction
       ? DEFAULT_PRODUCTION_AUTH_ORIGIN

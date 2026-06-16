@@ -109,7 +109,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestUrl = new URL(request.url);
   const redirectOrigin = resolveAuthRedirectOrigin({
     currentOrigin: requestUrl.origin,
-    request,
   });
 
   // Parse and validate query parameters
