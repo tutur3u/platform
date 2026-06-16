@@ -15,6 +15,7 @@ import {
   type DashboardLayoutWorkspace,
   getDashboardLayoutData,
 } from './layout-data';
+import { getWorkspaceSetupAttemptCookie } from './workspace-setup-cookie';
 
 interface LayoutProps {
   params: Promise<{
@@ -129,13 +130,24 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!user?.id) redirect('/login');
   if (!workspace) notFound();
 
-  // Auto-assign free subscription if workspace has no active subscription
+  // Auto-assign free subscription if workspace has no active subscription. Skip
+  // the preparing screen when a recent setup attempt is recorded so a degraded
+  // Polar provisioning (workspace still has no resolved tier) can't trap the
+  // user on a spinner — they enter with a free/null tier and it reconciles
+  // later.
   if (isPolarWorkspaceSetupEnabled() && workspace.tier === null) {
-    const { WorkspacePreparing } = await import(
-      '@/components/workspace-preparing'
+    const [{ WorkspacePreparing }, cookieStore] = await Promise.all([
+      import('@/components/workspace-preparing'),
+      cookies(),
+    ]);
+
+    const setupAttempted = cookieStore.has(
+      getWorkspaceSetupAttemptCookie(workspace.id)
     );
 
-    return <WorkspacePreparing wsId={workspace.id} />;
+    if (!setupAttempted) {
+      return <WorkspacePreparing wsId={workspace.id} />;
+    }
   }
 
   const wsId = workspace.id;

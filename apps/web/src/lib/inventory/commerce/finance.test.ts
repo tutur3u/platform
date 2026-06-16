@@ -97,7 +97,8 @@ describe('recordInventorySaleFinanceTransaction', () => {
             id: 'sess-1',
             polar_order_id: 'polar-7',
             status: 'completed',
-            total_amount: 250,
+            // 25000 minor units (cents) == $250.00 for USD.
+            total_amount: 25000,
             ws_id: 'ws-1',
           },
         });
@@ -127,6 +128,7 @@ describe('recordInventorySaleFinanceTransaction', () => {
     expect(result).toEqual({ booked: true, transactionId: 'tx-99' });
     expect(insertChain.insert).toHaveBeenCalledWith(
       expect.objectContaining({
+        // Booked into the major-unit finance ledger: 25000 cents -> $250.
         amount: 250,
         category_id: 'cat-1',
         report_opt_in: true,

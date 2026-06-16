@@ -323,7 +323,10 @@ function CostingProfileEditorDialog({
                     </span>
                     <span>
                       {t('unitCost')}:{' '}
-                      {currency(scenario.manufacturingCostPerUnit)}
+                      {currency(
+                        scenario.manufacturingCostPerUnit,
+                        profile.currency
+                      )}
                     </span>
                     <span>
                       {t('breakEven')}:{' '}

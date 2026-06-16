@@ -203,6 +203,9 @@ async function pushRowToPolar(
         id: productId,
         productUpdate: {
           description: row.description ?? undefined,
+          // Re-publishing a previously archived row must un-archive its Polar
+          // product so it becomes buyable again.
+          isArchived: false,
           metadata,
           name: row.name,
           prices,
@@ -244,11 +247,63 @@ async function pushRowToPolar(
   }
 }
 
-export async function syncListingToPolar(listing: InventoryStorefrontListing) {
-  // Archived listings should not advertise a buyable Polar product.
-  if (listing.status === 'archived') return;
+/**
+ * Archives the Polar product a row maps to so it stops advertising a buyable
+ * product once the inventory row is archived. Best-effort and non-throwing,
+ * matching the push path. No-op when the row never synced to Polar.
+ */
+async function archiveRowInPolar(
+  table: SyncTable,
+  rowId: string,
+  wsId: string,
+  storefrontSlug: string | null
+) {
+  const productId = await getCurrentPolarProductId(table, rowId, wsId);
+  if (!productId) return;
 
+  const context = await resolveInventoryPolarContext({ storefrontSlug, wsId });
+  if (!context) return;
+
+  try {
+    await context.polar.products.update({
+      id: productId,
+      productUpdate: { isArchived: true },
+    });
+    await markRowSyncState(table, rowId, wsId, {
+      polar_last_error: null,
+      polar_sync_status: 'synced',
+      polar_synced_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    const message = extractErrorMessage(error);
+    serverLogger.warn('Inventory Polar product archive failed', {
+      error: message,
+      rowId,
+      table,
+      wsId,
+    });
+    await markRowSyncState(table, rowId, wsId, {
+      polar_last_error: message,
+      polar_sync_status: 'error',
+    });
+  }
+}
+
+export async function syncListingToPolar(listing: InventoryStorefrontListing) {
   const { currency, slug } = await getStorefrontContext(listing.storefrontId);
+
+  // Archived listings should not advertise a buyable Polar product — archive
+  // the mapped Polar product instead of leaving it public.
+  if (listing.status === 'archived') {
+    await archiveRowInPolar(
+      'inventory_storefront_listings',
+      listing.id,
+      listing.wsId,
+      slug
+    );
+    return;
+  }
+
   await pushRowToPolar('inventory_storefront_listings', 'inventory_listing', {
     currency,
     description: listing.description ?? null,
@@ -263,9 +318,15 @@ export async function syncListingToPolar(listing: InventoryStorefrontListing) {
 }
 
 export async function syncBundleToPolar(bundle: InventoryBundle) {
-  if (bundle.status === 'archived') return;
-
   const { currency, slug } = await getStorefrontContext(bundle.storefrontId);
+
+  // Archived bundles should not advertise a buyable Polar product — archive the
+  // mapped Polar product instead of leaving it public.
+  if (bundle.status === 'archived') {
+    await archiveRowInPolar('inventory_bundles', bundle.id, bundle.wsId, slug);
+    return;
+  }
+
   await pushRowToPolar('inventory_bundles', 'inventory_bundle', {
     currency,
     description: bundle.description ?? null,
@@ -367,6 +428,39 @@ export function scheduleListingPolarSync(listing: InventoryStorefrontListing) {
 
 export function scheduleBundlePolarSync(bundle: InventoryBundle) {
   schedulePush(() => syncBundleToPolar(bundle));
+}
+
+/**
+ * Archives a Polar product after the inventory row that mapped to it is hard
+ * deleted, so a removed listing/bundle can no longer be purchased on Polar.
+ * The row is already gone, so this works purely from the captured product id.
+ */
+export function scheduleInventoryPolarProductArchive(args: {
+  polarProductId: string | null;
+  storefrontId: string | null;
+  wsId: string;
+}) {
+  if (!args.polarProductId) return;
+  schedulePush(async () => {
+    const { slug } = await getStorefrontContext(args.storefrontId);
+    const context = await resolveInventoryPolarContext({
+      storefrontSlug: slug,
+      wsId: args.wsId,
+    });
+    if (!context) return;
+    try {
+      await context.polar.products.update({
+        id: args.polarProductId as string,
+        productUpdate: { isArchived: true },
+      });
+    } catch (error) {
+      serverLogger.warn('Inventory Polar product archive-on-delete failed', {
+        error: extractErrorMessage(error),
+        polarProductId: args.polarProductId,
+        wsId: args.wsId,
+      });
+    }
+  });
 }
 
 type StorefrontContextRow = { currency: string; id: string; slug: string };

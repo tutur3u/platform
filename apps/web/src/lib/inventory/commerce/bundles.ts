@@ -7,7 +7,10 @@ import type {
 } from '@tuturuuu/internal-api/inventory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { ListQuery } from './mappers';
-import { scheduleBundlePolarSync } from './polar-product-sync';
+import {
+  scheduleBundlePolarSync,
+  scheduleInventoryPolarProductArchive,
+} from './polar-product-sync';
 import { revalidatePublicStorefront } from './public-storefront';
 
 type SupabaseErrorLike = { code?: string; message?: string } | null;
@@ -203,14 +206,22 @@ export async function deleteBundle(wsId: string, bundleId: string) {
     .delete()
     .eq('id', bundleId)
     .eq('ws_id', wsId)
-    .select('id, storefront_id')
+    .select('id, storefront_id, polar_product_id')
     .maybeSingle();
 
   if (error) throw error;
   if (data) {
-    await revalidateBundleStorefront(
-      (data as { storefront_id?: string | null }).storefront_id ?? null
-    );
+    const row = data as {
+      polar_product_id?: string | null;
+      storefront_id?: string | null;
+    };
+    // A deleted bundle must not remain buyable on Polar — archive its product.
+    scheduleInventoryPolarProductArchive({
+      polarProductId: row.polar_product_id ?? null,
+      storefrontId: row.storefront_id ?? null,
+      wsId,
+    });
+    await revalidateBundleStorefront(row.storefront_id ?? null);
   }
   return Boolean(data);
 }

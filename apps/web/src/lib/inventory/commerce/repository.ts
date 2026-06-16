@@ -19,7 +19,10 @@ import {
   type StorefrontSectionItemRow,
   type StorefrontSectionRow,
 } from './mappers';
-import { scheduleListingPolarSync } from './polar-product-sync';
+import {
+  scheduleInventoryPolarProductArchive,
+  scheduleListingPolarSync,
+} from './polar-product-sync';
 import { revalidatePublicStorefront } from './public-storefront';
 
 type SupabaseErrorLike = { code?: string; message?: string } | null;
@@ -680,10 +683,19 @@ export async function deleteStorefrontListing(
     .eq('id', listingId)
     .eq('storefront_id', storefrontId)
     .eq('ws_id', wsId)
-    .select('id')
+    .select('id, polar_product_id')
     .maybeSingle();
 
   if (error) throw error;
-  if (data) await revalidateStorefrontById(wsId, storefrontId);
+  if (data) {
+    // A deleted listing must not remain buyable on Polar — archive its product.
+    scheduleInventoryPolarProductArchive({
+      polarProductId:
+        (data as { polar_product_id?: string | null }).polar_product_id ?? null,
+      storefrontId,
+      wsId,
+    });
+    await revalidateStorefrontById(wsId, storefrontId);
+  }
   return Boolean(data);
 }

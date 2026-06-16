@@ -9,7 +9,7 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { useTranslations } from 'next-intl';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
-import { currency } from './operator-format';
+import { money } from './operator-format';
 import { EmptyRow } from './operator-shell';
 import { PolarSettingsPanel } from './polar-settings-panel';
 import { PolarSyncHealthPanel } from './polar-sync-health-panel';
@@ -111,7 +111,7 @@ export function PolarHubPanel({ wsId }: { wsId: string }) {
                     <StatusBadge value={row.polarStatus} />
                   ) : null}
                   <span className="font-medium">
-                    {currency(row.totalAmount, row.currency)}
+                    {money(row.totalAmount, row.currency)}
                   </span>
                 </div>
               </div>

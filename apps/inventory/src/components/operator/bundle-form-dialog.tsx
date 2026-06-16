@@ -6,7 +6,9 @@ import type { InventoryProductSummary } from '@tuturuuu/internal-api/inventory';
 import { createInventoryBundle } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
+import { MoneyInput } from '@tuturuuu/ui/money-input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { majorToMinor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
 import {
@@ -21,7 +23,12 @@ import {
   OperatorDialogFooter,
   OperatorDialogHeader,
 } from './operator-dialog-shell';
-import { NumberField, TextAreaField, TextField } from './operator-form-fields';
+import {
+  FieldLabel,
+  NumberField,
+  TextAreaField,
+  TextField,
+} from './operator-form-fields';
 import {
   createSlugSuggestion,
   type SmartSuggestion,
@@ -33,7 +40,8 @@ const initialForm = {
   imageUrl: '',
   maxPerOrder: '99',
   name: '',
-  price: '',
+  // Price in integer minor units (cents) — the canonical storage unit.
+  price: 0,
   slug: '',
 };
 
@@ -72,7 +80,9 @@ export function BundleForm({
         imageUrl: form.imageUrl || null,
         maxPerOrder: Number(form.maxPerOrder || 99),
         name: form.name,
-        price: Number(form.price || estimatedPrice || 0),
+        // Components are priced in whole major units, so the estimate fallback
+        // is converted to minor units; an explicit price is already minor.
+        price: form.price || majorToMinor(estimatedPrice, 'USD'),
         slug: form.slug,
         status: 'draft',
       }),
@@ -108,7 +118,7 @@ export function BundleForm({
         onApply: () =>
           setForm((current) => ({
             ...current,
-            price: String(Math.round(estimatedPrice)),
+            price: majorToMinor(estimatedPrice, 'USD'),
           })),
         title: t('suggestions.bundlePriceTitle'),
       });
@@ -191,15 +201,18 @@ export function BundleForm({
                     placeholder={t('placeholders.slug')}
                     value={form.slug}
                   />
-                  <NumberField
-                    hint={t('hints.price')}
-                    label={t('price')}
-                    onChange={(price) =>
-                      setForm((current) => ({ ...current, price }))
-                    }
-                    placeholder={t('placeholders.price')}
-                    value={form.price}
-                  />
+                  <label className="grid min-w-0 gap-1 text-sm">
+                    <FieldLabel hint={t('hints.price')} label={t('price')} />
+                    <MoneyInput
+                      currency="USD"
+                      hideHelpers
+                      onChange={(price) =>
+                        setForm((current) => ({ ...current, price }))
+                      }
+                      placeholder={t('placeholders.price')}
+                      value={form.price}
+                    />
+                  </label>
                   <NumberField
                     hint={t('hints.maxPerOrder')}
                     label={t('maxPerOrder')}

@@ -31,7 +31,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
-import { currency } from './operator-format';
+import { currency, money } from './operator-format';
 import { EmptyRow, LoadingRows } from './operator-shell';
 import type { InventoryCommerceTab } from './operator-types';
 import { ProfitSummaryPanel } from './profit-summary-panel';
@@ -216,7 +216,7 @@ function CheckoutRows({
             <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
               <CheckoutStatusBadge status={row.status} />
               {row.polarStatus ? <StatusBadge value={row.polarStatus} /> : null}
-              <StatusBadge value={currency(row.totalAmount, row.currency)} />
+              <StatusBadge value={money(row.totalAmount, row.currency)} />
               {(() => {
                 const releasable =
                   row.status === 'reserved' && !releaseCheckout.isPending;
@@ -317,7 +317,7 @@ function SaleRows({
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
-              <StatusBadge value={currency(row.paid_amount)} />
+              <StatusBadge value={money(row.paid_amount)} />
               <SaleNoteDialog sale={row} wsId={wsId} />
             </div>
           </article>
@@ -438,7 +438,7 @@ export function CommercePanel({
           description={t('metrics.revenueDescription')}
           icon={CircleDollarSign}
           label={t('metrics.revenue')}
-          value={currency(salesTotal)}
+          value={money(salesTotal)}
         />
       </div>
       <CommerceTabs onChange={setTab} tab={tab} />

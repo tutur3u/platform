@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { minorToMajor } from '@tuturuuu/utils/money';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 
 type SaleBookingSession = {
@@ -81,6 +82,7 @@ export async function recordInventorySaleFinanceTransaction({
       .maybeSingle()) as {
       data: {
         completed_at: string | null;
+        currency: string | null;
         finance_transaction_id: string | null;
         id: string;
         polar_order_id: string | null;
@@ -149,10 +151,18 @@ export async function recordInventorySaleFinanceTransaction({
       );
     }
 
+    // Checkout amounts are stored in integer minor units, but the finance
+    // ledger (`wallet_transactions.amount`) is kept in major units. Convert at
+    // this boundary so revenue books at the right scale.
+    const ledgerAmount = minorToMajor(
+      session.total_amount,
+      session.currency ?? 'USD'
+    );
+
     const { data: transaction, error } = await sbAdmin
       .from('wallet_transactions')
       .insert({
-        amount: session.total_amount,
+        amount: ledgerAmount,
         category_id: categoryId,
         description: `Storefront sale ${session.polar_order_id ?? session.id}`,
         report_opt_in: true,

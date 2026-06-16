@@ -79,6 +79,10 @@ The commerce storefront extension adds:
   `/store/[storeSlug]/products/[listingId]`, cart, checkout, and order status
 - private-schema tables for storefronts, listings, bundles, checkout sessions,
   checkout lines, reservations, and settlement ledger entries
+- commerce money (listing/bundle prices, checkout amounts, settlement, and
+  costing) stored in integer minor units of the row currency (cents for USD,
+  whole units for JPY/VND); convert with `@tuturuuu/utils/money` and enter with
+  the shared `MoneyInput`. See the Polar storefront integration runbook.
 - service-role-only RPCs for creating reservations, releasing or expiring
   reservations, and linking a completed checkout to a `finance_invoice`
 

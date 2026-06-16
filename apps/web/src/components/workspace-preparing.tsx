@@ -19,11 +19,17 @@ export function WorkspacePreparing({ wsId }: { wsId: string }) {
 
     async function runSetup() {
       try {
+        // The server action records a short-lived setup-attempt cookie so the
+        // dashboard layout lets the user in even if Polar provisioning is
+        // degraded; we just refresh to re-render the dashboard afterwards.
         await setupWorkspace(wsId);
-        router.refresh();
       } catch (err) {
+        // Calling the action itself failed (e.g. network). Non-fatal: the
+        // user can still proceed and provisioning reconciles on a later load.
         console.error('Failed to setup workspace:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        router.refresh();
       }
     }
 

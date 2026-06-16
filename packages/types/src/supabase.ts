@@ -11182,6 +11182,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      inventory_currency_minor_factor: {
+        Args: { p_currency: string };
+        Returns: number;
+      };
       is_nova_user_email_in_team: {
         Args: { _team_id: string; _user_email: string };
         Returns: boolean;

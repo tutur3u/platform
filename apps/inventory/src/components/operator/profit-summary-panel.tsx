@@ -10,7 +10,7 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { useTranslations } from 'next-intl';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
-import { currency } from './operator-format';
+import { money } from './operator-format';
 import { buildProductPnl, computeProfitSummary } from './operator-pnl';
 
 export function ProfitSummaryPanel({
@@ -56,14 +56,14 @@ export function ProfitSummaryPanel({
         <OperatorMetricCard
           icon={CircleDollarSign}
           label={t('revenue')}
-          value={currency(summary.revenue)}
+          value={money(summary.revenue)}
         />
         <OperatorMetricCard
           description={t('estimated')}
           icon={Coins}
           label={t('grossProfit')}
           tone={summary.estGrossProfit > 0 ? 'success' : 'default'}
-          value={currency(summary.estGrossProfit)}
+          value={money(summary.estGrossProfit)}
         />
         <OperatorMetricCard
           description={t('estimated')}
@@ -112,13 +112,13 @@ export function ProfitSummaryPanel({
                     </td>
                     <td className="px-3 py-2 text-right">{row.unitsSold}</td>
                     <td className="px-3 py-2 text-right">
-                      {currency(row.revenue)}
+                      {money(row.revenue)}
                     </td>
                     <td className="px-3 py-2 text-right text-muted-foreground">
-                      {row.estCogs === null ? '—' : currency(row.estCogs)}
+                      {row.estCogs === null ? '—' : money(row.estCogs)}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      {row.estProfit === null ? '—' : currency(row.estProfit)}
+                      {row.estProfit === null ? '—' : money(row.estProfit)}
                     </td>
                     <td className="px-3 py-2 text-right">
                       {row.marginPercentage === null ? (

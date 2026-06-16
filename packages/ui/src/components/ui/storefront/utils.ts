@@ -2,6 +2,7 @@ import type {
   InventoryStorefront,
   InventoryStorefrontListing,
 } from '@tuturuuu/internal-api/inventory';
+import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 import type { CSSProperties } from 'react';
 
 // The storefront now ships a single, unified design language. The merchant
@@ -88,12 +89,13 @@ export function getStorefrontListingLimit(listing: InventoryStorefrontListing) {
   return Math.max(0, Math.min(listing.maxPerOrder, available));
 }
 
-export function formatStorefrontPrice(value: number, currency: string) {
-  return new Intl.NumberFormat(undefined, {
-    currency,
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(value);
+/**
+ * Format a storefront price. Listing/bundle prices and cart totals are stored
+ * in integer minor units (cents for USD), so convert through the shared money
+ * helper, which also applies the currency's correct decimal precision.
+ */
+export function formatStorefrontPrice(minorValue: number, currency: string) {
+  return formatMoneyFromMinor(minorValue, currency);
 }
 
 export function getListingInitials(title: string) {

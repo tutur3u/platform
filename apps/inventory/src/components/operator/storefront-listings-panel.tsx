@@ -26,6 +26,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
+import { MoneyInput } from '@tuturuuu/ui/money-input';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   Tooltip,
@@ -44,7 +45,7 @@ import {
   OperatorDialogHeader,
 } from './operator-dialog-shell';
 import { SelectField, SelectValueField } from './operator-form-fields';
-import { currency } from './operator-format';
+import { money } from './operator-format';
 import { LifecyclePanel } from './operator-lifecycle';
 import { EmptyRow, LoadingRows } from './operator-shell';
 
@@ -67,9 +68,13 @@ export function StorefrontListingsPanel({
   );
   const [targetId, setTargetId] = useState('');
   const [title, setTitle] = useState('');
-  const [price, setPrice] = useState('');
+  // Price is held in integer minor units (cents) — the canonical storage unit.
+  const [price, setPrice] = useState(0);
   const [open, setOpen] = useState(false);
   const activeStorefrontId = storefrontId || storefronts[0]?.id || '';
+  const activeCurrency =
+    storefronts.find((storefront) => storefront.id === activeStorefrontId)
+      ?.currency ?? 'USD';
   const activeProduct = products.find((product) => product.id === targetId);
   const activeInventory = activeProduct?.inventory?.[0] ?? {};
   const listings = useQuery({
@@ -85,7 +90,7 @@ export function StorefrontListingsPanel({
       createInventoryStorefrontListing(wsId, activeStorefrontId, {
         bundleId: listingType === 'bundle' ? targetId : null,
         listingType,
-        price: Number(price || 0),
+        price,
         productId: listingType === 'product' ? targetId : null,
         status: 'draft',
         title,
@@ -101,7 +106,7 @@ export function StorefrontListingsPanel({
     onError: () => toast.error(t('saveError')),
     onSuccess: () => {
       setTitle('');
-      setPrice('');
+      setPrice(0);
       setTargetId('');
       setOpen(false);
       toast.success(t('saveSuccess'));
@@ -200,10 +205,11 @@ export function StorefrontListingsPanel({
                   </label>
                   <label className="grid min-w-0 gap-1 text-sm">
                     <span className="font-medium">{t('price')}</span>
-                    <Input
+                    <MoneyInput
                       className="h-10"
-                      inputMode="numeric"
-                      onChange={(event) => setPrice(event.target.value)}
+                      currency={activeCurrency}
+                      hideHelpers
+                      onChange={setPrice}
                       placeholder={t('placeholders.price')}
                       value={price}
                     />
@@ -236,6 +242,7 @@ export function StorefrontListingsPanel({
         {listings.data?.data.map((listing) => (
           <ListingRow
             key={listing.id}
+            currency={activeCurrency}
             listing={listing}
             storefrontId={activeStorefrontId}
             wsId={wsId}
@@ -296,10 +303,12 @@ function ListingSyncBadge({
 }
 
 function ListingRow({
+  currency,
   listing,
   storefrontId,
   wsId,
 }: {
+  currency: string;
   listing: {
     id: string;
     polarLastError?: string | null;
@@ -325,8 +334,9 @@ function ListingRow({
         status={listing.polarSyncStatus}
         syncedAt={listing.polarSyncedAt}
       />
-      <span>{currency(listing.price)}</span>
+      <span>{money(listing.price, currency)}</span>
       <ListingEditorDialog
+        currency={currency}
         listing={listing}
         storefrontId={storefrontId}
         wsId={wsId}
@@ -336,10 +346,12 @@ function ListingRow({
 }
 
 function ListingEditorDialog({
+  currency,
   listing,
   storefrontId,
   wsId,
 }: {
+  currency: string;
   listing: { id: string; price: number; status: string; title: string };
   storefrontId: string;
   wsId: string;
@@ -348,7 +360,8 @@ function ListingEditorDialog({
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(listing.title);
-  const [price, setPrice] = useState(String(listing.price));
+  // Price held in integer minor units (matches the stored listing price).
+  const [price, setPrice] = useState(listing.price);
   const [status, setStatus] = useState(listing.status);
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
@@ -359,7 +372,7 @@ function ListingEditorDialog({
   const saveMutation = useMutation({
     mutationFn: () =>
       updateInventoryStorefrontListing(wsId, storefrontId, listing.id, {
-        price: Number(price || 0),
+        price,
         status: status as InventoryListingStatus,
         title,
       }),
@@ -397,7 +410,7 @@ function ListingEditorDialog({
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
           setTitle(listing.title);
-          setPrice(String(listing.price));
+          setPrice(listing.price);
           setStatus(listing.status);
         }
         setOpen(nextOpen);
@@ -438,9 +451,10 @@ function ListingEditorDialog({
                 </label>
                 <label className="grid min-w-0 gap-1 text-sm">
                   <span className="font-medium">{t('price')}</span>
-                  <Input
-                    inputMode="decimal"
-                    onChange={(event) => setPrice(event.target.value)}
+                  <MoneyInput
+                    currency={currency}
+                    hideHelpers
+                    onChange={setPrice}
                     placeholder={t('placeholders.price')}
                     value={price}
                   />

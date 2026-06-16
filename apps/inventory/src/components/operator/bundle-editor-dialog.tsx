@@ -20,7 +20,9 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
+import { MoneyInput } from '@tuturuuu/ui/money-input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { majorToMinor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
 import {
@@ -35,12 +37,13 @@ import {
   OperatorDialogTabs,
 } from './operator-dialog-shell';
 import {
+  FieldLabel,
   NumberField,
   SelectValueField,
   TextAreaField,
   TextField,
 } from './operator-form-fields';
-import { currency } from './operator-format';
+import { money } from './operator-format';
 import { LifecyclePanel } from './operator-lifecycle';
 
 export function BundleEditorDialog({
@@ -95,7 +98,7 @@ export function BundleEditorDialog({
         imageUrl: details.imageUrl || null,
         maxPerOrder: Number(details.maxPerOrder || 99),
         name: details.name.trim(),
-        price: Number(details.price || 0),
+        price: details.price,
         slug: details.slug.trim(),
         status: details.status as InventoryBundle['status'],
       }),
@@ -200,15 +203,18 @@ export function BundleEditorDialog({
                       placeholder={t('placeholders.status')}
                       value={details.status}
                     />
-                    <NumberField
-                      hint={t('hints.price')}
-                      label={t('price')}
-                      onChange={(price) =>
-                        setDetails((current) => ({ ...current, price }))
-                      }
-                      placeholder={t('placeholders.price')}
-                      value={details.price}
-                    />
+                    <label className="grid min-w-0 gap-1 text-sm">
+                      <FieldLabel hint={t('hints.price')} label={t('price')} />
+                      <MoneyInput
+                        currency="USD"
+                        hideHelpers
+                        onChange={(price) =>
+                          setDetails((current) => ({ ...current, price }))
+                        }
+                        placeholder={t('placeholders.price')}
+                        value={details.price}
+                      />
+                    </label>
                     <NumberField
                       hint={t('hints.maxPerOrder')}
                       label={t('maxPerOrder')}
@@ -274,8 +280,8 @@ export function BundleEditorDialog({
                     <AvailabilityCard
                       icon={<ImageIcon className="h-4 w-4" />}
                       label={t('price')}
-                      value={currency(
-                        Number(details.price || estimatedPrice || 0)
+                      value={money(
+                        details.price || majorToMinor(estimatedPrice, 'USD')
                       )}
                     />
                     <AvailabilityCard
@@ -352,7 +358,8 @@ function getInitialDetails(bundle: InventoryBundle) {
     imageUrl: bundle.imageUrl ?? '',
     maxPerOrder: String(bundle.maxPerOrder ?? 99),
     name: bundle.name,
-    price: String(bundle.price ?? 0),
+    // Price in integer minor units (cents) — matches the stored bundle price.
+    price: bundle.price ?? 0,
     slug: bundle.slug,
     status: bundle.status,
   };
