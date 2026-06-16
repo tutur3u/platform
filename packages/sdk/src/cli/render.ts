@@ -1,4 +1,5 @@
 import { inspect } from 'node:util';
+import { escapeTerminalText } from './select';
 import { getDateParts, inferUserTimeZone } from './timezone';
 
 type RenderableRecord = Record<string, unknown>;
@@ -487,7 +488,9 @@ function renderTable(
   const tableRows = rows.map((row, index) => ({
     index: String(index + 1),
     row,
-    cells: columns.map((column) => String(row[column] ?? '')),
+    cells: columns.map((column) =>
+      escapeTerminalText(String(row[column] ?? ''))
+    ),
   }));
 
   const columnNames = ['', ...columns];
