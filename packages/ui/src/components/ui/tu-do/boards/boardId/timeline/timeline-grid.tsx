@@ -6,7 +6,10 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import type { useTranslations } from 'next-intl';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { getListStatusBadgeClasses } from './timeline-display';
+import {
+  getListStatusBadgeClasses,
+  getTimelineDayGridBackground,
+} from './timeline-display';
 import { TimelineTaskRow } from './timeline-task-row';
 import type {
   TimelineInteractionMode,
@@ -197,7 +200,6 @@ export function TimelineGrid({
                 groupId={group.id}
                 localTasks={localTasks}
                 dayWidth={dayWidth}
-                timelineWidth={timelineWidth}
                 groupHeaderHeight={groupHeaderHeight}
                 isMoveTargetGroup={isMoveTargetGroup}
                 isPreviewGroup={isPreviewGroup}
@@ -257,7 +259,6 @@ export function TimelineGrid({
                   groupId={group.id}
                   localTasks={localTasks}
                   dayWidth={dayWidth}
-                  timelineWidth={timelineWidth}
                   groupHeaderHeight={rowHeight}
                   isMoveTargetGroup={isMoveTargetGroup}
                   isPreviewGroup={isPreviewGroup}
@@ -281,7 +282,6 @@ function TimelineGroupDropTarget({
   groupId,
   localTasks,
   dayWidth,
-  timelineWidth,
   groupHeaderHeight,
   isMoveTargetGroup,
   isPreviewGroup,
@@ -295,7 +295,6 @@ function TimelineGroupDropTarget({
   groupId: string;
   localTasks: Task[];
   dayWidth: number;
-  timelineWidth: number;
   groupHeaderHeight: number;
   isMoveTargetGroup: boolean;
   isPreviewGroup: boolean;
@@ -364,17 +363,10 @@ function TimelineGroupDropTarget({
             </div>
           );
         })()}
-      <div className="pointer-events-none absolute inset-0 flex">
-        {Array.from({
-          length: Math.max(1, Math.ceil(timelineWidth / dayWidth)),
-        }).map((_, index) => (
-          <div
-            key={`${groupId}-drop-${index}`}
-            className="h-full border-border/35 border-r"
-            style={{ width: dayWidth }}
-          />
-        ))}
-      </div>
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={getTimelineDayGridBackground(dayWidth, 0.35)}
+      />
     </div>
   );
 }

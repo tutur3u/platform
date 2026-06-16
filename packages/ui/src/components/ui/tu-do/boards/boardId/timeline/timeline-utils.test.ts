@@ -1,7 +1,11 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildTimelineModel, computeTimelineSpans } from './timeline-utils';
+import {
+  buildTimelineModel,
+  computeTimelineSpans,
+  MAX_TIMELINE_DAYS,
+} from './timeline-utils';
 
 const lists: TaskList[] = [
   {
@@ -105,6 +109,37 @@ describe('timeline row model', () => {
     );
     expect(model.groups.at(-1)?.items[0]?.task.source_workspace_name).toBe(
       'External workspace'
+    );
+  });
+
+  it('caps the rendered day window for extreme scheduled task ranges', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-07T12:00:00.000Z'));
+
+    const model = buildTimelineModel(
+      [
+        task({
+          id: 'old-task',
+          name: 'Very old task',
+          start_date: '2020-01-01T00:00:00.000Z',
+          end_date: '2020-01-02T23:59:59.999Z',
+        }),
+        task({
+          id: 'future-task',
+          name: 'Very future task',
+          start_date: '2035-01-01T00:00:00.000Z',
+          end_date: '2035-01-02T23:59:59.999Z',
+        }),
+      ],
+      lists
+    );
+
+    expect(model.days).toHaveLength(MAX_TIMELINE_DAYS);
+    expect(model.rangeStart.getTime()).toBeLessThanOrEqual(
+      new Date('2026-05-07T00:00:00.000Z').getTime()
+    );
+    expect(model.rangeEnd.getTime()).toBeGreaterThanOrEqual(
+      new Date('2026-05-07T00:00:00.000Z').getTime()
     );
   });
 
