@@ -234,7 +234,9 @@ export function ModuleDetailClient({
                     <div className="h-16 bg-muted animate-pulse border-2 border-border" />
                   </div>
                 ) : tests.length === 0 ? (
-                  <p className="text-sm text-muted-foreground italic py-2">No tests created yet.</p>
+                  <p className="text-sm text-muted-foreground italic py-2">
+                    No tests created yet.
+                  </p>
                 ) : (
                   <div className="space-y-3">
                     {tests.map((test) => (
@@ -243,19 +245,27 @@ export function ModuleDetailClient({
                         href={`/${wsId}/modules/${courseId}/tests/${test.id}`}
                         className="block border-2 border-border p-3 bg-muted/10 shadow-[2px_2px_0_var(--border)] hover:bg-muted/20 transition flex flex-col gap-1.5 cursor-pointer"
                       >
-                        <h3 className="font-bold text-sm leading-tight text-primary break-words">{test.name}</h3>
+                        <h3 className="font-bold text-sm leading-tight text-primary break-words">
+                          {test.name}
+                        </h3>
                         {test.start_at && (
                           <div className="text-[11px] text-muted-foreground flex flex-wrap gap-1 items-center">
-                            <span className="font-black uppercase tracking-wider text-[10px]">Start:</span>
-                            <span>{new Date(test.start_at).toLocaleString([], {
-                              dateStyle: 'short',
-                              timeStyle: 'short'
-                            })}</span>
+                            <span className="font-black uppercase tracking-wider text-[10px]">
+                              Start:
+                            </span>
+                            <span>
+                              {new Date(test.start_at).toLocaleString([], {
+                                dateStyle: 'short',
+                                timeStyle: 'short',
+                              })}
+                            </span>
                           </div>
                         )}
                         {test.duration_in_minutes && (
                           <div className="text-[11px] text-muted-foreground flex gap-1 items-center">
-                            <span className="font-black uppercase tracking-wider text-[10px]">Duration:</span>
+                            <span className="font-black uppercase tracking-wider text-[10px]">
+                              Duration:
+                            </span>
                             <span>{test.duration_in_minutes} mins</span>
                           </div>
                         )}
@@ -270,148 +280,156 @@ export function ModuleDetailClient({
             <div className="md:col-span-3 space-y-6">
               {/* Toolbar */}
               <div className="flex items-center justify-between gap-4">
-            <div>
-              <span className="font-black text-xl">
-                {displayGroups.length} section
-                {displayGroups.length !== 1 ? 's' : ''}
-              </span>
-              <span className="ml-2 text-muted-foreground text-sm">
-                · {displayGroups.reduce((s, g) => s + g.modules.length, 0)}{' '}
-                modules
-              </span>
-            </div>
-
-            {showAddSection ? (
-              <div className="flex items-center gap-2">
-                <input
-                  ref={sectionInputRef}
-                  className="border-2 border-border bg-background px-3 py-1.5 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
-                  placeholder="Section name…"
-                  value={addingSectionName}
-                  onChange={(e) => setAddingSectionName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') commitAddSection();
-                    if (e.key === 'Escape') {
-                      setAddingSectionName('');
-                      setShowAddSection(false);
-                    }
-                  }}
-                />
-                <button
-                  className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
-                  disabled={!addingSectionName.trim() || createGroup.isPending}
-                  onClick={commitAddSection}
-                  type="button"
-                >
-                  Add
-                </button>
-                <button
-                  className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
-                  onClick={() => {
-                    setAddingSectionName('');
-                    setShowAddSection(false);
-                  }}
-                  type="button"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-yellow/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-                  onClick={() => setShowAiDialog(true)}
-                  type="button"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  {t('teachModules.aiGenerate.title')}
-                </button>
-                <CourseTestDialog
-                  courseId={courseId}
-                  wsId={wsId}
-                  modules={displayGroups.flatMap((g) => g.modules)}
-                />
-                <ModuleStorageDialog courseId={courseId} wsId={wsId} />
-                <button
-                  className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-                  onClick={() => setShowAddSection(true)}
-                  type="button"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t('teachModules.addSection')}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Content */}
-          {isLoading ? (
-            <LoadingSkeleton />
-          ) : isError ? (
-            <div className="border-2 border-border border-dashed bg-muted/60 p-8 text-center shadow-[8px_8px_0_var(--border)]">
-              <p className="text-muted-foreground">Failed to load modules.</p>
-            </div>
-          ) : displayGroups.length === 0 ? (
-            <EmptyState onAdd={() => setShowAddSection(true)} />
-          ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={onDragStart}
-              onDragEnd={onDragEnd}
-              onDragCancel={clearActiveDrag}
-            >
-              <SortableContext
-                items={displayGroups.map((g) => g.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-4">
-                  {displayGroups.map((group) => (
-                    <ModuleGroupSection
-                      key={group.id}
-                      group={group}
-                      wsId={wsId}
-                      courseId={courseId}
-                      onAddModule={(moduleGroupId, name) =>
-                        createModule.mutate({ moduleGroupId, name })
-                      }
-                      onDeleteGroup={(id) => deleteGroup.mutate(id)}
-                      onRenameGroup={(id, title) =>
-                        renameGroup.mutate({ moduleGroupId: id, title })
-                      }
-                      onRenameModule={(id, name) =>
-                        renameModule.mutate({ moduleId: id, name })
-                      }
-                      onDeleteModule={(id) => deleteModule.mutate(id)}
-                      onTogglePublished={(id, val) =>
-                        togglePublished.mutate({
-                          moduleId: id,
-                          is_published: val,
-                        })
-                      }
-                      isAddingModule={createModule.isPending}
-                      isDeletingGroup={deleteGroup.isPending}
-                    />
-                  ))}
+                <div>
+                  <span className="font-black text-xl">
+                    {displayGroups.length} section
+                    {displayGroups.length !== 1 ? 's' : ''}
+                  </span>
+                  <span className="ml-2 text-muted-foreground text-sm">
+                    · {displayGroups.reduce((s, g) => s + g.modules.length, 0)}{' '}
+                    modules
+                  </span>
                 </div>
-              </SortableContext>
 
-              {/* Drag overlay — ghost while dragging */}
-              <DragOverlay>
-                {activeGroupId ? (
-                  <div className="border-2 border-primary bg-background px-4 py-3 font-bold text-sm opacity-90 shadow-[6px_6px_0_var(--border)]">
-                    {displayGroups.find((g) => g.id === activeGroupId)?.title}
+                {showAddSection ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={sectionInputRef}
+                      className="border-2 border-border bg-background px-3 py-1.5 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+                      placeholder="Section name…"
+                      value={addingSectionName}
+                      onChange={(e) => setAddingSectionName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitAddSection();
+                        if (e.key === 'Escape') {
+                          setAddingSectionName('');
+                          setShowAddSection(false);
+                        }
+                      }}
+                    />
+                    <button
+                      className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                      disabled={
+                        !addingSectionName.trim() || createGroup.isPending
+                      }
+                      onClick={commitAddSection}
+                      type="button"
+                    >
+                      Add
+                    </button>
+                    <button
+                      className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+                      onClick={() => {
+                        setAddingSectionName('');
+                        setShowAddSection(false);
+                      }}
+                      type="button"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                ) : activeModuleId ? (
-                  <div className="border-2 border-primary bg-background px-4 py-2.5 text-sm opacity-90 shadow-[4px_4px_0_var(--border)]">
-                    {displayGroups
-                      .flatMap((g) => g.modules)
-                      .find((m) => m.id === activeModuleId)?.name ?? 'Module'}
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-yellow/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                      onClick={() => setShowAiDialog(true)}
+                      type="button"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {t('teachModules.aiGenerate.title')}
+                    </button>
+                    <CourseTestDialog
+                      courseId={courseId}
+                      wsId={wsId}
+                      modules={displayGroups.flatMap((g) => g.modules)}
+                    />
+                    <ModuleStorageDialog courseId={courseId} wsId={wsId} />
+                    <button
+                      className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                      onClick={() => setShowAddSection(true)}
+                      type="button"
+                    >
+                      <Plus className="h-4 w-4" />
+                      {t('teachModules.addSection')}
+                    </button>
                   </div>
-                ) : null}
-              </DragOverlay>
-            </DndContext>
-          )}
+                )}
+              </div>
+
+              {/* Content */}
+              {isLoading ? (
+                <LoadingSkeleton />
+              ) : isError ? (
+                <div className="border-2 border-border border-dashed bg-muted/60 p-8 text-center shadow-[8px_8px_0_var(--border)]">
+                  <p className="text-muted-foreground">
+                    Failed to load modules.
+                  </p>
+                </div>
+              ) : displayGroups.length === 0 ? (
+                <EmptyState onAdd={() => setShowAddSection(true)} />
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={onDragStart}
+                  onDragEnd={onDragEnd}
+                  onDragCancel={clearActiveDrag}
+                >
+                  <SortableContext
+                    items={displayGroups.map((g) => g.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-4">
+                      {displayGroups.map((group) => (
+                        <ModuleGroupSection
+                          key={group.id}
+                          group={group}
+                          wsId={wsId}
+                          courseId={courseId}
+                          onAddModule={(moduleGroupId, name) =>
+                            createModule.mutate({ moduleGroupId, name })
+                          }
+                          onDeleteGroup={(id) => deleteGroup.mutate(id)}
+                          onRenameGroup={(id, title) =>
+                            renameGroup.mutate({ moduleGroupId: id, title })
+                          }
+                          onRenameModule={(id, name) =>
+                            renameModule.mutate({ moduleId: id, name })
+                          }
+                          onDeleteModule={(id) => deleteModule.mutate(id)}
+                          onTogglePublished={(id, val) =>
+                            togglePublished.mutate({
+                              moduleId: id,
+                              is_published: val,
+                            })
+                          }
+                          isAddingModule={createModule.isPending}
+                          isDeletingGroup={deleteGroup.isPending}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+
+                  {/* Drag overlay — ghost while dragging */}
+                  <DragOverlay>
+                    {activeGroupId ? (
+                      <div className="border-2 border-primary bg-background px-4 py-3 font-bold text-sm opacity-90 shadow-[6px_6px_0_var(--border)]">
+                        {
+                          displayGroups.find((g) => g.id === activeGroupId)
+                            ?.title
+                        }
+                      </div>
+                    ) : activeModuleId ? (
+                      <div className="border-2 border-primary bg-background px-4 py-2.5 text-sm opacity-90 shadow-[4px_4px_0_var(--border)]">
+                        {displayGroups
+                          .flatMap((g) => g.modules)
+                          .find((m) => m.id === activeModuleId)?.name ??
+                          'Module'}
+                      </div>
+                    ) : null}
+                  </DragOverlay>
+                </DndContext>
+              )}
             </div>
           </div>
         </div>
