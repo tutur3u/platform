@@ -21,14 +21,76 @@ const AbsoluteLimitsSchema = z.object({
   write: WindowLimitsSchema.optional(),
 });
 
-const UpdateRuleSchema = z.object({
-  absoluteLimits: AbsoluteLimitsSchema.nullable().optional(),
-  expiresAt: z.string().datetime().nullable().optional(),
-  limitMode: z.enum(RATE_LIMIT_MODES).optional(),
-  reason: z.string().trim().min(1).max(MAX_SEARCH_LENGTH).optional(),
-  tier: z.enum(ABUSE_RISK_TIERS).optional(),
-  trustMultiplier: z.number().positive().max(1000).optional(),
-});
+type AbsoluteLimitsInput = z.infer<typeof AbsoluteLimitsSchema>;
+
+const RATE_LIMIT_WINDOWS = ['minute', 'hour', 'day'] as const;
+
+function hasConcreteAbsoluteLimits(
+  absoluteLimits: AbsoluteLimitsInput | null | undefined
+) {
+  if (!absoluteLimits) {
+    return false;
+  }
+
+  return (['read', 'write'] as const).some((scope) => {
+    const limits = absoluteLimits[scope];
+    return RATE_LIMIT_WINDOWS.some((window) => limits?.[window] != null);
+  });
+}
+
+const UpdateRuleSchema = z
+  .object({
+    absoluteLimits: AbsoluteLimitsSchema.nullable().optional(),
+    expiresAt: z.string().datetime().nullable().optional(),
+    limitMode: z.enum(RATE_LIMIT_MODES).optional(),
+    reason: z.string().trim().min(1).max(MAX_SEARCH_LENGTH).optional(),
+    tier: z.enum(ABUSE_RISK_TIERS).optional(),
+    trustMultiplier: z.number().positive().max(1000).optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasAbsoluteLimits = hasConcreteAbsoluteLimits(data.absoluteLimits);
+
+    if (data.limitMode === 'absolute') {
+      if (!hasAbsoluteLimits) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            'absoluteLimits must include at least one read or write window when limitMode is "absolute"',
+          path: ['absoluteLimits'],
+        });
+      }
+      return;
+    }
+
+    if (data.absoluteLimits === null && data.limitMode === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          'limitMode is required when clearing absolute rate-limit windows',
+        path: ['limitMode'],
+      });
+    }
+
+    if (data.absoluteLimits !== undefined && data.absoluteLimits !== null) {
+      if (!hasAbsoluteLimits) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            'absoluteLimits must include at least one read or write window',
+          path: ['absoluteLimits'],
+        });
+      }
+
+      if (data.limitMode !== undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            'absoluteLimits can only be set when limitMode is "absolute"',
+          path: ['absoluteLimits'],
+        });
+      }
+    }
+  });
 
 const RevokeRuleSchema = z.object({
   reason: z.string().trim().min(1).max(MAX_SEARCH_LENGTH),
@@ -74,7 +136,10 @@ export async function PATCH(request: Request, context: RouteContext) {
     update.trust_multiplier = payload.trustMultiplier;
   }
   if (payload.absoluteLimits !== undefined) {
-    update.absolute_limits = payload.absoluteLimits as Json;
+    update.absolute_limits =
+      payload.limitMode === undefined || payload.limitMode === 'absolute'
+        ? (payload.absoluteLimits as Json)
+        : null;
   }
   if (payload.expiresAt !== undefined) {
     update.expires_at = payload.expiresAt;
