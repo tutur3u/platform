@@ -31,6 +31,7 @@ class ShellActionSpec extends Equatable {
     icon.fontPackage,
     icon.matchTextDirection,
     tooltip,
+    onPressed,
     callbackToken,
     enabled,
     isLoading,
