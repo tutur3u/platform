@@ -12,14 +12,31 @@ String _extractTextFromContent(Object? content) {
   if (content is! List) return '';
   final buffer = StringBuffer();
   for (final node in content) {
-    if (node is! Map<String, dynamic>) continue;
-    if (node['type'] == 'text') {
-      buffer.write(node['text'] as String? ?? '');
+    final nodeMap = _stringKeyedMap(node);
+    if (nodeMap == null) continue;
+    if (nodeMap['type'] == 'text') {
+      final text = nodeMap['text'];
+      if (text is String) buffer.write(text);
     } else {
-      buffer.write(_extractTextFromContent(node['content']));
+      buffer.write(_extractTextFromContent(nodeMap['content']));
     }
   }
   return buffer.toString();
+}
+
+List<Object?> _objectList(Object? value) => value is List ? value : const [];
+
+Map<String, dynamic>? _stringKeyedMap(Object? value) {
+  if (value is! Map) return null;
+
+  final result = <String, dynamic>{};
+  for (final entry in value.entries) {
+    final key = entry.key;
+    if (key is String) {
+      result[key] = entry.value;
+    }
+  }
+  return result;
 }
 
 class TaskDescriptionTableEmbedBuilder extends EmbedBuilder {
@@ -54,7 +71,7 @@ class TaskDescriptionTableEmbedBuilder extends EmbedBuilder {
     required EmbedContext embedContext,
     required Map<String, dynamic> tableNode,
   }) {
-    final rows = (tableNode['content'] as List?)?.cast<Object?>() ?? const [];
+    final rows = _objectList(tableNode['content']);
     final theme = shad.Theme.of(context);
     final l10n = context.l10n;
     final canEdit = !embedContext.readOnly && onTableUpdated != null;
@@ -63,17 +80,19 @@ class TaskDescriptionTableEmbedBuilder extends EmbedBuilder {
     var isFirstRow = true;
 
     for (final rowRaw in rows) {
-      if (rowRaw is! Map<String, dynamic> || rowRaw['type'] != 'tableRow') {
+      final row = _stringKeyedMap(rowRaw);
+      if (row == null || row['type'] != 'tableRow') {
         continue;
       }
 
-      final cells = (rowRaw['content'] as List?)?.cast<Object?>() ?? const [];
+      final cells = _objectList(row['content']);
       final isHeader = isFirstRow;
       final cellWidgets = <Widget>[];
 
       for (final cellRaw in cells) {
-        final text = cellRaw is Map<String, dynamic>
-            ? _extractTextFromContent(cellRaw['content'])
+        final cell = _stringKeyedMap(cellRaw);
+        final text = cell != null
+            ? _extractTextFromContent(cell['content'])
             : '';
         cellWidgets.add(
           Padding(
@@ -373,20 +392,18 @@ class TaskDescriptionTableEditorSheetState
 
   Map<String, dynamic> buildEditedTableNode() {
     final attrs =
-        (widget.initialTableNode['attrs'] as Map?)?.cast<String, dynamic>() ??
+        _stringKeyedMap(widget.initialTableNode['attrs']) ??
         const <String, dynamic>{};
-    final originalRows =
-        (widget.initialTableNode['content'] as List?)?.cast<Object?>() ??
-        const [];
+    final originalRows = _objectList(widget.initialTableNode['content']);
 
     final rows = <Map<String, dynamic>>[];
     for (var rowIndex = 0; rowIndex < _controllers.length; rowIndex++) {
       final rowControllers = _controllers[rowIndex];
       final originalRow = rowIndex < originalRows.length
-          ? originalRows[rowIndex] as Map<String, dynamic>?
+          ? _stringKeyedMap(originalRows[rowIndex])
           : null;
-      final originalCells =
-          (originalRow?['content'] as List?)?.cast<Object?>() ?? const [];
+      final originalCells = _objectList(originalRow?['content']);
+      final originalRowAttrs = _stringKeyedMap(originalRow?['attrs']);
 
       final cells = <Map<String, dynamic>>[];
       for (
@@ -395,7 +412,7 @@ class TaskDescriptionTableEditorSheetState
         columnIndex++
       ) {
         final originalCell = columnIndex < originalCells.length
-            ? originalCells[columnIndex] as Map<String, dynamic>?
+            ? _stringKeyedMap(originalCells[columnIndex])
             : null;
         final text = rowControllers[columnIndex].text;
         cells.add(
@@ -409,8 +426,8 @@ class TaskDescriptionTableEditorSheetState
 
       rows.add(<String, dynamic>{
         'type': 'tableRow',
-        if (originalRow?['attrs'] is Map)
-          'attrs': (originalRow!['attrs'] as Map).cast<String, dynamic>(),
+        if (originalRowAttrs != null && originalRowAttrs.isNotEmpty)
+          'attrs': originalRowAttrs,
         'content': cells,
       });
     }
@@ -428,57 +445,63 @@ class TaskDescriptionTableEditorSheetState
     required String text,
   }) {
     final fallbackType = rowIndex == 0 ? 'tableHeader' : 'tableCell';
-    final type = originalCell?['type'] as String?;
-    final resolvedType = type == 'tableHeader' || type == 'tableCell'
+    final type = originalCell?['type'];
+    final resolvedType =
+        type is String && (type == 'tableHeader' || type == 'tableCell')
         ? type
         : fallbackType;
 
     final originalParagraph = _firstParagraphFromCell(originalCell);
+    final originalParagraphAttrs = _stringKeyedMap(originalParagraph?['attrs']);
     final paragraph = <String, dynamic>{
       'type': 'paragraph',
-      if (originalParagraph?['attrs'] is Map)
-        'attrs': (originalParagraph!['attrs'] as Map).cast<String, dynamic>(),
+      if (originalParagraphAttrs != null && originalParagraphAttrs.isNotEmpty)
+        'attrs': originalParagraphAttrs,
       if (text.trim().isNotEmpty)
         'content': [
           <String, dynamic>{'type': 'text', 'text': text},
         ],
     };
 
+    final originalCellAttrs = _stringKeyedMap(originalCell?['attrs']);
     return <String, dynamic>{
       'type': resolvedType,
-      if (originalCell?['attrs'] is Map)
-        'attrs': (originalCell!['attrs'] as Map).cast<String, dynamic>(),
+      if (originalCellAttrs != null && originalCellAttrs.isNotEmpty)
+        'attrs': originalCellAttrs,
       'content': [paragraph],
     };
   }
 
   Map<String, dynamic>? _firstParagraphFromCell(Map<String, dynamic>? cell) {
-    final content = (cell?['content'] as List?)?.cast<Object?>() ?? const [];
+    final content = _objectList(cell?['content']);
     for (final node in content) {
-      if (node is Map<String, dynamic> && node['type'] == 'paragraph') {
-        return node;
+      final nodeMap = _stringKeyedMap(node);
+      if (nodeMap != null && nodeMap['type'] == 'paragraph') {
+        return nodeMap;
       }
     }
     return null;
   }
 
   List<List<String>> _tableTextMatrixFromNode(Map<String, dynamic> tableNode) {
-    final rows = (tableNode['content'] as List?)?.cast<Object?>() ?? const [];
+    final rows = _objectList(tableNode['content']);
     final matrix = <List<String>>[];
 
     var maxColumns = 0;
     for (final rowRaw in rows) {
-      if (rowRaw is! Map<String, dynamic> || rowRaw['type'] != 'tableRow') {
+      final row = _stringKeyedMap(rowRaw);
+      if (row == null || row['type'] != 'tableRow') {
         continue;
       }
-      final cells = (rowRaw['content'] as List?)?.cast<Object?>() ?? const [];
+      final cells = _objectList(row['content']);
       final values = <String>[];
       for (final cellRaw in cells) {
-        if (cellRaw is! Map<String, dynamic>) {
+        final cell = _stringKeyedMap(cellRaw);
+        if (cell == null) {
           values.add('');
           continue;
         }
-        values.add(_extractTextFromContent(cellRaw['content']));
+        values.add(_extractTextFromContent(cell['content']));
       }
       if (values.isNotEmpty) {
         maxColumns = math.max(maxColumns, values.length);
