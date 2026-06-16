@@ -16,10 +16,13 @@ import type {
   InventoryListingStatus,
   InventoryProductSummary,
   InventoryStorefront,
+  InventoryStorefrontListing,
 } from '@tuturuuu/internal-api/inventory';
 import {
+  createInventoryOptionTemplate,
   createInventoryStorefrontListing,
   deleteInventoryStorefrontListing,
+  listInventoryOptionTemplates,
   listInventoryStorefrontListings,
   updateInventoryStorefrontListing,
 } from '@tuturuuu/internal-api/inventory';
@@ -48,6 +51,12 @@ import { SelectField, SelectValueField } from './operator-form-fields';
 import { money } from './operator-format';
 import { LifecyclePanel } from './operator-lifecycle';
 import { EmptyRow, LoadingRows } from './operator-shell';
+import {
+  buildOptionsVariantsPayload,
+  type OptionGroupDraft,
+  StorefrontListingOptionsEditor,
+  type VariantDraft,
+} from './storefront-listing-options-editor';
 
 export function StorefrontListingsPanel({
   bundles,
@@ -244,6 +253,7 @@ export function StorefrontListingsPanel({
             key={listing.id}
             currency={activeCurrency}
             listing={listing}
+            products={products}
             storefrontId={activeStorefrontId}
             wsId={wsId}
           />
@@ -305,28 +315,29 @@ function ListingSyncBadge({
 function ListingRow({
   currency,
   listing,
+  products,
   storefrontId,
   wsId,
 }: {
   currency: string;
-  listing: {
-    id: string;
-    polarLastError?: string | null;
-    polarSyncStatus?: string | null;
-    polarSyncedAt?: string | null;
-    price: number;
-    status: string;
-    title: string;
-  };
+  listing: InventoryStorefrontListing;
+  products: InventoryProductSummary[];
   storefrontId: string;
   wsId: string;
 }) {
+  const t = useTranslations('inventory.operator.forms');
+  const variantCount = (listing.variants ?? []).filter(
+    (variant) => variant.status === 'active'
+  ).length;
   return (
     <div className="grid min-w-0 gap-2 rounded-md border border-border bg-background p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-center">
       <div className="min-w-0">
         <p className="truncate font-medium">{listing.title}</p>
         <p className="truncate text-muted-foreground text-xs">
           {listing.status}
+          {variantCount > 0
+            ? ` · ${t('variantCount', { count: variantCount })}`
+            : ''}
         </p>
       </div>
       <ListingSyncBadge
@@ -338,6 +349,7 @@ function ListingRow({
       <ListingEditorDialog
         currency={currency}
         listing={listing}
+        products={products}
         storefrontId={storefrontId}
         wsId={wsId}
       />
@@ -345,14 +357,49 @@ function ListingRow({
   );
 }
 
+function listingToOptionDrafts(
+  listing: InventoryStorefrontListing
+): OptionGroupDraft[] {
+  return (listing.options ?? []).map((group) => ({
+    name: group.name,
+    values: group.values.map((value) => value.label),
+  }));
+}
+
+function listingToVariantDrafts(
+  listing: InventoryStorefrontListing
+): VariantDraft[] {
+  const groupNameById = new Map(
+    (listing.options ?? []).map((group) => [group.id, group.name])
+  );
+  return (listing.variants ?? []).map((variant) => {
+    const optionValueLabels: Record<string, string> = {};
+    for (const optionValue of variant.optionValues) {
+      const groupName = groupNameById.get(optionValue.groupId);
+      if (groupName) optionValueLabels[groupName] = optionValue.label;
+    }
+    return {
+      id: variant.id,
+      optionValueLabels,
+      price: variant.price,
+      productId: variant.productId,
+      sku: variant.sku ?? '',
+      status: variant.status,
+      title: variant.title ?? '',
+    };
+  });
+}
+
 function ListingEditorDialog({
   currency,
   listing,
+  products,
   storefrontId,
   wsId,
 }: {
   currency: string;
-  listing: { id: string; price: number; status: string; title: string };
+  listing: InventoryStorefrontListing;
+  products: InventoryProductSummary[];
   storefrontId: string;
   wsId: string;
 }) {
@@ -362,7 +409,19 @@ function ListingEditorDialog({
   const [title, setTitle] = useState(listing.title);
   // Price held in integer minor units (matches the stored listing price).
   const [price, setPrice] = useState(listing.price);
-  const [status, setStatus] = useState(listing.status);
+  const [status, setStatus] = useState<string>(listing.status);
+  const [options, setOptions] = useState<OptionGroupDraft[]>(() =>
+    listingToOptionDrafts(listing)
+  );
+  const [variants, setVariants] = useState<VariantDraft[]>(() =>
+    listingToVariantDrafts(listing)
+  );
+  const [templateName, setTemplateName] = useState('');
+  const templates = useQuery({
+    enabled: open,
+    queryFn: () => listInventoryOptionTemplates(wsId),
+    queryKey: ['inventory', wsId, 'option-templates'],
+  });
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
     queryClient.invalidateQueries({
@@ -370,18 +429,59 @@ function ListingEditorDialog({
     });
   };
   const saveMutation = useMutation({
-    mutationFn: () =>
-      updateInventoryStorefrontListing(wsId, storefrontId, listing.id, {
+    mutationFn: () => {
+      const payload = buildOptionsVariantsPayload(products, options, variants);
+      return updateInventoryStorefrontListing(wsId, storefrontId, listing.id, {
+        options: payload.options,
         price,
         status: status as InventoryListingStatus,
         title,
-      }),
-    onError: () => toast.error(t('saveError')),
+        variants: payload.variants,
+      });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t('saveError')),
     onSuccess: () => {
       toast.success(t('saveSuccess'));
       invalidate();
     },
   });
+  const saveTemplateMutation = useMutation({
+    mutationFn: () =>
+      createInventoryOptionTemplate(wsId, {
+        groups: options
+          .map((group) => ({
+            name: group.name.trim(),
+            values: group.values
+              .map((label) => label.trim())
+              .filter(Boolean)
+              .map((label) => ({ label })),
+          }))
+          .filter((group) => group.name && group.values.length > 0),
+        name: templateName.trim(),
+      }),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t('saveError')),
+    onSuccess: () => {
+      setTemplateName('');
+      toast.success(t('saveSuccess'));
+      queryClient.invalidateQueries({
+        queryKey: ['inventory', wsId, 'option-templates'],
+      });
+    },
+  });
+  const applyTemplate = (templateId: string) => {
+    const template = templates.data?.data.find(
+      (item) => item.id === templateId
+    );
+    if (!template) return;
+    setOptions(
+      template.groups.map((group) => ({
+        name: group.name,
+        values: group.values.map((value) => value.label),
+      }))
+    );
+  };
   const archiveMutation = useMutation({
     mutationFn: () =>
       updateInventoryStorefrontListing(wsId, storefrontId, listing.id, {
@@ -412,6 +512,8 @@ function ListingEditorDialog({
           setTitle(listing.title);
           setPrice(listing.price);
           setStatus(listing.status);
+          setOptions(listingToOptionDrafts(listing));
+          setVariants(listingToVariantDrafts(listing));
         }
         setOpen(nextOpen);
       }}
@@ -474,6 +576,62 @@ function ListingEditorDialog({
                 />
               </div>
             </FormSection>
+            {listing.listingType === 'product' ? (
+              <FormSection
+                icon={<ListTree className="h-4 w-4" />}
+                title={t('variantsAndOptions')}
+              >
+                <div className="grid gap-3">
+                  <div className="flex flex-wrap items-end gap-2">
+                    <SelectValueField
+                      allowEmpty
+                      className="min-w-48"
+                      emptyText={t('noTemplates')}
+                      label={t('applyTemplate')}
+                      onChange={applyTemplate}
+                      options={(templates.data?.data ?? []).map((template) => ({
+                        label: template.name,
+                        value: template.id,
+                      }))}
+                      placeholder={t('placeholders.applyTemplate')}
+                      value=""
+                    />
+                    <label className="grid min-w-40 flex-1 gap-1 text-sm">
+                      <span className="text-xs">{t('templateName')}</span>
+                      <Input
+                        className="h-9"
+                        onChange={(event) =>
+                          setTemplateName(event.target.value)
+                        }
+                        placeholder={t('placeholders.templateName')}
+                        value={templateName}
+                      />
+                    </label>
+                    <Button
+                      disabled={
+                        !templateName.trim() ||
+                        options.length === 0 ||
+                        saveTemplateMutation.isPending
+                      }
+                      onClick={() => saveTemplateMutation.mutate()}
+                      size="sm"
+                      type="button"
+                      variant="secondary"
+                    >
+                      {t('saveAsTemplate')}
+                    </Button>
+                  </div>
+                  <StorefrontListingOptionsEditor
+                    currency={currency}
+                    onOptionsChange={setOptions}
+                    onVariantsChange={setVariants}
+                    options={options}
+                    products={products}
+                    variants={variants}
+                  />
+                </div>
+              </FormSection>
+            ) : null}
             <FormSection title={t('tabs.lifecycle')}>
               <LifecyclePanel
                 archivePending={archiveMutation.isPending}

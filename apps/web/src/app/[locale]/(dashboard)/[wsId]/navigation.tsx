@@ -945,6 +945,12 @@ export async function WorkspaceNavigationLinks({
             },
             null,
             {
+              title: t('workspace-inventory-tabs.storefronts'),
+              href: `/${personalOrWsId}/inventory/storefronts`,
+              icon: createDashboardNavigationIcon('Store', 'h-5 w-5'),
+              disabled: withoutPermission('view_inventory'),
+            },
+            {
               title: t('workspace-inventory-tabs.promotions'),
               href: `/${personalOrWsId}/inventory/promotions`,
               icon: createDashboardNavigationIcon('TicketPercent', 'h-5 w-5'),
