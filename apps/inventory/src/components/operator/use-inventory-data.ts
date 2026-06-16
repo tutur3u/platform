@@ -46,6 +46,7 @@ export function useInventoryData(
     enabled: [
       'bundles',
       'catalog',
+      'costing',
       'setup',
       'stock',
       'storefront',

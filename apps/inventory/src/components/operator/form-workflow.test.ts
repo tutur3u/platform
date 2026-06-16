@@ -235,10 +235,14 @@ describe('Inventory operator form workflows', () => {
   it('connects costing profiles back to catalog products', () => {
     const costingSource = source('costing-profile-form.tsx');
     const tableSource = source('products-table.tsx');
+    const dataHookSource = source('use-inventory-data.ts');
 
     expect(costingSource).toContain('productId: productId || null');
     expect(costingSource).toContain('handleProductChange');
     expect(costingSource).toContain('product.inventory?.[0]?.price');
+    expect(dataHookSource).toMatch(
+      /enabled:\s*\[[\s\S]*'costing'[\s\S]*\]\.includes\(view\),\s*queryFn:\s*\(\)\s*=>\s*listInventoryProducts/u
+    );
     expect(tableSource).toContain('hasCostingCoverage');
     expect(tableSource).toContain("t('badges.costingReady')");
   });
