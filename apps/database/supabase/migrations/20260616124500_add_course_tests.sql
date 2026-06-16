@@ -72,7 +72,6 @@ to authenticated
 using ((EXISTS ( SELECT 1
    FROM course_tests ct
      JOIN workspace_user_groups wug ON (wug.id = ct.course_id)
-     JOIN workspace_course_modules wcm ON ((wcm.id = course_test_modules.module_id) AND (wcm.group_id = ct.course_id))
   WHERE ((ct.id = course_test_modules.test_id) AND (is_org_member(auth.uid(), wug.ws_id))))));
 
 create or replace function "public"."create_course_test_with_modules"(
