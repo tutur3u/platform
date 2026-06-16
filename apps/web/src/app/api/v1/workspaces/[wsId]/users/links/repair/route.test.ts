@@ -33,6 +33,11 @@ const VIRTUAL_USER_ID = '00000000-0000-4000-8000-000000000101';
 const OTHER_VIRTUAL_USER_ID = '00000000-0000-4000-8000-000000000102';
 const PLATFORM_USER_ID = '00000000-0000-4000-8000-000000000201';
 const OTHER_PLATFORM_USER_ID = '00000000-0000-4000-8000-000000000202';
+const REPAIR_PERMISSIONS = [
+  'update_users',
+  'view_users_private_info',
+  'view_users_public_info',
+] as const;
 
 interface WorkspaceUserRow {
   id: string;
@@ -298,14 +303,28 @@ describe('workspace user platform link repair route', () => {
     normalizeWorkspaceIdMock.mockImplementation(async (wsId: string) => wsId);
     getPermissionsMock.mockResolvedValue({
       containsPermission: (permission: string) =>
-        permission === 'update_users' ||
-        permission === 'view_users_private_info',
+        REPAIR_PERMISSIONS.includes(
+          permission as (typeof REPAIR_PERMISSIONS)[number]
+        ),
     });
   });
 
   it('rejects callers without update and private-info permissions', async () => {
     getPermissionsMock.mockResolvedValue({
       containsPermission: () => false,
+    });
+
+    const response = await callPost();
+
+    expect(response.status).toBe(403);
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects callers without public-info permission before loading user names', async () => {
+    getPermissionsMock.mockResolvedValue({
+      containsPermission: (permission: string) =>
+        permission === 'update_users' ||
+        permission === 'view_users_private_info',
     });
 
     const response = await callPost();

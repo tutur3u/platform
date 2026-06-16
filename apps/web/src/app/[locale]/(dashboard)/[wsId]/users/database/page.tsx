@@ -131,8 +131,9 @@ export default async function WorkspaceUsersPage({
     canManageUserProfileLinks: canManageProfileLinks,
   };
 
-  const hasQuickActions =
-    canViewFeedbacks || (canUpdateUsers && hasPrivateInfo);
+  const canRepairPlatformLinks =
+    canUpdateUsers && hasPrivateInfo && hasPublicInfo;
+  const hasQuickActions = canViewFeedbacks || canRepairPlatformLinks;
 
   const usersContent =
     activeTab === 'users' ? (
@@ -206,7 +207,7 @@ export default async function WorkspaceUsersPage({
                     </Link>
                   </Button>
                 ) : null}
-                {canUpdateUsers && hasPrivateInfo ? (
+                {canRepairPlatformLinks ? (
                   <PlatformLinkRepairDialog wsId={wsId} />
                 ) : null}
                 {canDeleteUsers && canUpdateUsers && hasPrivateInfo ? (

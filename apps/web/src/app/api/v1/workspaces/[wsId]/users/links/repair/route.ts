@@ -123,7 +123,8 @@ export async function POST(request: Request, { params }: Params) {
     const { containsPermission } = permissions;
     if (
       !containsPermission('update_users') ||
-      !containsPermission('view_users_private_info')
+      !containsPermission('view_users_private_info') ||
+      !containsPermission('view_users_public_info')
     ) {
       return NextResponse.json(
         { message: 'Insufficient permissions to repair platform user links' },
