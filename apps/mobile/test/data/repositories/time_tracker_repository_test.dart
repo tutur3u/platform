@@ -225,6 +225,16 @@ void main() {
       ).called(1);
     });
 
+    test(
+      'getRequestById ignores malformed request ids before API calls',
+      () async {
+        final request = await repository.getRequestById('ws_1', 'not-a-uuid');
+
+        expect(request, isNull);
+        verifyNever(() => apiClient.getJson(any()));
+      },
+    );
+
     test('createGoal omits weeklyGoalMinutes when it is null', () async {
       Map<String, dynamic>? createBody;
 

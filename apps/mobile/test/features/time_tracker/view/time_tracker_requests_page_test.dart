@@ -106,5 +106,30 @@ void main() {
 
       verify(() => repository.getWorkspaceSettings('ws-1')).called(1);
     });
+
+    testWidgets('ignores malformed route request ids without opening detail', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>.value(value: authCubit),
+            BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+          ],
+          child: TimeTrackerRequestsPage(
+            repository: repository,
+            workspacePermissionsRepository: permissionsRepository,
+            initialRequestId: 'not-a-uuid',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      verify(
+        () =>
+            repository.getRequests('ws-1', status: 'pending', userId: 'user-1'),
+      ).called(1);
+      verifyNever(() => repository.getRequestById(any(), any()));
+    });
   });
 }

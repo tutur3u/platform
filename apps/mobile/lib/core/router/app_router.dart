@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
@@ -546,7 +547,9 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.timerRequests,
             builder: (context, state) => TimeTrackerRequestsPage(
-              initialRequestId: state.uri.queryParameters['requestId'],
+              initialRequestId: normalizeUuid(
+                state.uri.queryParameters['requestId'],
+              ),
               initialStatusOverride: state.uri.queryParameters['status'],
             ),
           ),

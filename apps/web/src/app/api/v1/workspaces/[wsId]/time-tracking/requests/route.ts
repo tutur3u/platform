@@ -255,7 +255,17 @@ export async function GET(
     const status = url.searchParams.get('status') || 'pending'; // 'pending', 'approved', 'rejected'
     const userId = url.searchParams.get('userId'); // Optional: filter by user
     const normalizedUserId = userId?.trim();
-    const requestId = url.searchParams.get('requestId')?.trim();
+    const rawRequestId = url.searchParams.get('requestId')?.trim();
+    const requestId = rawRequestId || undefined;
+    if (requestId) {
+      const requestIdValidation = z.guid().safeParse(requestId);
+      if (!requestIdValidation.success) {
+        return NextResponse.json(
+          { error: 'Invalid request ID' },
+          { status: 400 }
+        );
+      }
+    }
 
     if (
       !canManageAllRequests &&

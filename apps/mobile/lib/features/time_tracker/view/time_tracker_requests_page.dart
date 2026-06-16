@@ -11,6 +11,7 @@ import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
+import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
@@ -181,11 +182,7 @@ class _RequestsViewState extends State<_RequestsView> {
   }
 
   String? _normalizedRouteRequestId(String? requestId) {
-    final trimmed = requestId?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
-      return null;
-    }
-    return trimmed;
+    return normalizeUuid(requestId);
   }
 
   String? _requestUserFilterId() {
@@ -298,34 +295,53 @@ class _RequestsViewState extends State<_RequestsView> {
 
     _handledRouteRequestId = requestId;
 
-    final existing = state.requests
-        .where((request) => request.id == requestId)
-        .firstOrNull;
-    final request =
-        existing ??
-        await context.read<ITimeTrackerRepository>().getRequestById(
-          wsId,
-          requestId,
-        );
+    TimeTrackingRequest? request;
+    try {
+      final existing = state.requests
+          .where((request) => request.id == requestId)
+          .firstOrNull;
+      request =
+          existing ??
+          await context.read<ITimeTrackerRepository>().getRequestById(
+            wsId,
+            requestId,
+          );
+    } on Object catch (error, stackTrace) {
+      developer.log(
+        'Failed to open time tracking request from route',
+        error: error,
+        name: 'time_tracker.requests',
+        stackTrace: stackTrace,
+      );
+      if (!mounted) {
+        return;
+      }
+      _showOpenRequestFailedToast();
+      return;
+    }
 
     if (!mounted) {
       return;
     }
     if (request == null) {
-      final toastContext = Navigator.of(context, rootNavigator: true).context;
-      if (!toastContext.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) => shad.Alert.destructive(
-          title: Text(context.l10n.timerRequestsOpenFailed),
-        ),
-      );
+      _showOpenRequestFailedToast();
       return;
     }
 
     await _showRequestDetail(context, request);
+  }
+
+  void _showOpenRequestFailedToast() {
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    if (!toastContext.mounted) {
+      return;
+    }
+    shad.showToast(
+      context: toastContext,
+      builder: (context, overlay) => shad.Alert.destructive(
+        title: Text(context.l10n.timerRequestsOpenFailed),
+      ),
+    );
   }
 
   List<ShellActionSpec> _shellActions(BuildContext context, String wsId) {

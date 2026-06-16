@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
+import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/time_tracking/break_record.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
@@ -773,11 +774,16 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String wsId,
     String requestId,
   ) async {
+    final normalizedRequestId = normalizeUuid(requestId);
+    if (normalizedRequestId == null) {
+      return null;
+    }
+
     final data = await _api.getJson(
       _withQuery('/api/v1/workspaces/$wsId/time-tracking/requests', {
         'status': 'all',
         'limit': '1',
-        'requestId': requestId,
+        'requestId': normalizedRequestId,
       }),
     );
 
