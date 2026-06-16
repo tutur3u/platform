@@ -2,7 +2,10 @@ import { Ratelimit } from '@upstash/ratelimit';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { extractIPFromRequest, isIPBlockedEdge } from './abuse-protection/edge';
-import { getCachedTrustMultipliers } from './abuse-protection/edge-trust';
+import {
+  type CachedTrustEntry,
+  getCachedTrustEntries,
+} from './abuse-protection/edge-trust';
 import { DEV_MODE, MAX_PAYLOAD_SIZE } from './constants';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
 import {
@@ -16,7 +19,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 // before scaling read limits, so the limiter prefix (and therefore the Redis
 // sliding-window buckets) stays bounded and stable even as a subject's exact
 // multiplier drifts.
-const TRUST_MULTIPLIER_TIERS = [1, 1.5, 2, 3, 5] as const;
+const TRUST_MULTIPLIER_TIERS = [1, 1.5, 2, 3, 5, 10, 25, 100] as const;
 
 function isEnvFlagEnabled(name: string, defaultOn = true): boolean {
   const raw = process.env[name];
@@ -906,12 +909,23 @@ export type ProxyIdentity = {
   /** `session:<hash>` subject key for cookie sessions, or null. Matches the
    * DB-side session subject key so trusted sessions resolve from the cache. */
   sessionKey: string | null;
+  /** `workspace:<wsId>` subject key parsed from a workspace-scoped API path, or
+   * null. Lets an admin workspace rule uplift reads for the whole workspace. */
+  workspaceKey: string | null;
 };
 
+const WORKSPACE_PATH_PATTERN =
+  /^\/api(?:\/v1)?\/workspaces\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:\/|$)/u;
+
+function getWorkspaceSubjectKey(pathname: string): string | null {
+  const match = WORKSPACE_PATH_PATTERN.exec(pathname);
+  return match ? `workspace:${match[1]!.toLowerCase()}` : null;
+}
+
 /**
- * Resolves the trust/keying subject keys for a request. Intentionally limited
- * to session/cidr/ip — keys an attacker would have to actually possess (the
- * real cookie value) or physically share a network with — so trust uplift and
+ * Resolves the trust/keying subject keys for a request. Limited to
+ * session/cidr/ip (keys an attacker would have to actually possess or share a
+ * network with) plus a workspace key parsed from the path — so trust uplift and
  * per-session keying can never be granted by a forged credential.
  */
 async function resolveProxyIdentity(
@@ -928,6 +942,7 @@ async function resolveProxyIdentity(
     cidrKey: getCidrSubjectKeyEdge(normalizedIp),
     ipKey: normalizedIp ? `ip:${normalizedIp}` : null,
     sessionKey,
+    workspaceKey: getWorkspaceSubjectKey(req.nextUrl.pathname),
   };
 }
 
@@ -953,6 +968,83 @@ function scaleReadLimits(
   };
 }
 
+function entryReadFloor(abs: NonNullable<CachedTrustEntry['abs']>): number {
+  return abs.minute ?? abs.hour ?? abs.day ?? 0;
+}
+
+/**
+ * Combines all applicable cached entries (session + location/workspace) into a
+ * single effective read decision. Most-permissive wins: unlimited beats
+ * absolute beats the highest multiplier.
+ */
+function combineTrustEntries(
+  entries: Array<CachedTrustEntry | null | undefined>
+): CachedTrustEntry | null {
+  const active = entries.filter((entry): entry is CachedTrustEntry => !!entry);
+  if (active.length === 0) {
+    return null;
+  }
+
+  if (active.some((entry) => entry.mode === 'unlimited')) {
+    return { m: 1, mode: 'unlimited' };
+  }
+
+  const absolutes = active.filter(
+    (
+      entry
+    ): entry is CachedTrustEntry & {
+      abs: NonNullable<CachedTrustEntry['abs']>;
+    } => entry.mode === 'absolute' && !!entry.abs
+  );
+  if (absolutes.length > 0) {
+    const best = absolutes.reduce((winner, candidate) =>
+      entryReadFloor(candidate.abs) > entryReadFloor(winner.abs)
+        ? candidate
+        : winner
+    );
+    return { abs: best.abs, m: best.m, mode: 'absolute' };
+  }
+
+  return { m: Math.max(...active.map((entry) => entry.m)) };
+}
+
+/**
+ * Applies a combined trust entry to a route profile's READ limits and returns
+ * the scaled profile plus a bucket-prefix suffix that uniquely encodes the
+ * effective limit (so distinct limits never share a Redis sliding window).
+ */
+function applyTrustEntryToReads(
+  profile: RateLimitProfile,
+  entry: CachedTrustEntry | null
+): { profile: RateLimitProfile; suffix: string } {
+  if (!entry) {
+    return { profile, suffix: '' };
+  }
+
+  if (entry.mode === 'unlimited') {
+    // Drop the read cap entirely (no read limiter is constructed for [] get).
+    return { profile: { ...profile, get: [] }, suffix: ':unl' };
+  }
+
+  if (entry.mode === 'absolute' && entry.abs) {
+    const get = profile.get.map((config) => {
+      const absolute = entry.abs?.[config.window];
+      return absolute != null ? { ...config, limit: absolute } : config;
+    });
+    const { minute, hour, day } = entry.abs;
+    return {
+      profile: { ...profile, get },
+      suffix: `:abs-${minute ?? 'x'}-${hour ?? 'x'}-${day ?? 'x'}`,
+    };
+  }
+
+  const tier = quantizeTrustMultiplier(entry.m);
+  if (tier <= 1) {
+    return { profile, suffix: '' };
+  }
+  return { profile: scaleReadLimits(profile, tier), suffix: `:t${tier}` };
+}
+
 function getEffectiveRateLimits(
   routePolicy: ProxyRoutePolicy,
   callerClass: CallerClass
@@ -975,12 +1067,13 @@ function getRateLimitPrefix(
   prefixBase: string,
   routePolicy: ProxyRoutePolicy,
   callerClass: CallerClass,
-  trustTier = 1
+  trustSuffix = ''
 ): string {
-  const base = `${prefixBase}:${routePolicy.key}:${callerClass}`;
-  // Only trusted (uplifted) traffic gets a tier-suffixed bucket; untrusted
-  // traffic keeps the original prefix so its sliding windows are unaffected.
-  return trustTier > 1 ? `${base}:t${trustTier}` : base;
+  // Only trusted/uplifted traffic gets a suffixed bucket; untrusted traffic
+  // keeps the original prefix so its sliding windows are unaffected. The suffix
+  // must uniquely encode the effective limit (tier or absolute values) so two
+  // different effective limits never share a Redis sliding-window prefix.
+  return `${prefixBase}:${routePolicy.key}:${callerClass}${trustSuffix}`;
 }
 
 export function isTrustedProxyBypassRequest(
@@ -1096,29 +1189,30 @@ export async function guardApiProxyRequest(
     // Untrusted traffic keeps legacy per-IP keying, preserving single-IP abuse
     // caps. A forged cookie hashes to a key with no cache entry → no uplift,
     // no per-session escape.
-    let trustTier = 1;
+    let trustEntry: CachedTrustEntry | null = null;
     let sessionTrusted = false;
     if (isRead && edgeTrustEnabled()) {
       const lookupKeys = [
         identity.sessionKey,
         identity.cidrKey,
         identity.ipKey,
+        identity.workspaceKey,
       ].filter((key): key is string => key != null);
-      const multipliers = await getCachedTrustMultipliers(lookupKeys);
+      const entries = await getCachedTrustEntries(lookupKeys);
 
-      const sessionMultiplier = identity.sessionKey
-        ? (multipliers.get(identity.sessionKey) ?? 1)
-        : 1;
-      const locationMultiplier = Math.max(
-        identity.cidrKey ? (multipliers.get(identity.cidrKey) ?? 1) : 1,
-        identity.ipKey ? (multipliers.get(identity.ipKey) ?? 1) : 1
-      );
+      const sessionEntry = identity.sessionKey
+        ? entries.get(identity.sessionKey)
+        : undefined;
+      // Location/workspace trust applies to the shared per-IP bucket for the
+      // whole team; session trust applies to the per-session bucket.
+      const locationEntry = combineTrustEntries([
+        identity.cidrKey ? entries.get(identity.cidrKey) : undefined,
+        identity.ipKey ? entries.get(identity.ipKey) : undefined,
+        identity.workspaceKey ? entries.get(identity.workspaceKey) : undefined,
+      ]);
 
-      trustTier = quantizeTrustMultiplier(
-        Math.max(sessionMultiplier, locationMultiplier)
-      );
-      sessionTrusted =
-        !!identity.sessionKey && quantizeTrustMultiplier(sessionMultiplier) > 1;
+      trustEntry = combineTrustEntries([sessionEntry, locationEntry]);
+      sessionTrusted = !!identity.sessionKey && !!sessionEntry;
     }
 
     // Trusted sessions key per-session; everyone else keys per-IP.
@@ -1129,13 +1223,14 @@ export async function guardApiProxyRequest(
 
     if (limiterId) {
       const baseRateLimits = getEffectiveRateLimits(routePolicy, callerClass);
-      const rateLimits = scaleReadLimits(baseRateLimits, trustTier);
+      const { profile: rateLimits, suffix: trustSuffix } =
+        applyTrustEntryToReads(baseRateLimits, trustEntry);
 
       const limiterPrefix = getRateLimitPrefix(
         options.prefixBase,
         routePolicy,
         callerClass,
-        trustTier
+        trustSuffix
       );
       const limiterCacheKey = `${limiterPrefix}:${JSON.stringify(rateLimits)}`;
       const limiters = await getRateLimiters(limiterPrefix, rateLimits);

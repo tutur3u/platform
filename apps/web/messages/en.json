@@ -437,7 +437,8 @@
       "ip": "IP address",
       "session": "Session",
       "user": "User",
-      "user_location": "User + location"
+      "user_location": "User + location",
+      "workspace": "Workspace"
     },
     "tables": {
       "created": "Created",
@@ -7802,6 +7803,7 @@
     "overview": "Overview",
     "post_email_queue": "Post Email Queue",
     "push_notifications": "Push Notifications",
+    "rate_limits": "Rate Limits",
     "realtime": "Realtime",
     "storage": "Storage",
     "timezones": "Timezones",
@@ -10863,6 +10865,115 @@
     "is_published": "Published",
     "linked_modules": "Linked Modules",
     "name": "Name"
+  },
+  "rate-limits": {
+    "actions": {
+      "retry": "Retry"
+    },
+    "description": "Manage per-subject rate limits — raise, lower, set absolute limits, or unlimit accounts, IPs, locations, and workspaces.",
+    "edge": {
+      "pending": "Edge: pending sync",
+      "synced": "Edge: live"
+    },
+    "empty": {
+      "rules": "No active rate-limit rules. Add one to raise, restrict, or unlimit a subject."
+    },
+    "error": {
+      "description": "Something went wrong loading the rate-limit rules.",
+      "title": "Failed to load rate limits"
+    },
+    "fields": {
+      "absolute_read": "Absolute read limit (per route)",
+      "absolute_write": "Absolute write limits",
+      "mode": "Limit mode",
+      "multiplier": "Multiplier",
+      "per_day": "Per day",
+      "per_hour": "Per hour",
+      "per_minute": "Per minute",
+      "preview": "Effective limits",
+      "read_per_minute": "Reads per minute",
+      "reason": "Reason",
+      "subject_key": "Subject key",
+      "subject_type": "Subject type",
+      "tier": "Tier"
+    },
+    "filters": {
+      "all_subjects": "All subject types",
+      "search_subject": "Search subject key"
+    },
+    "live": {
+      "bucket": "Bucket",
+      "count": "Count",
+      "description": "Current write consumption (database) and active edge read buckets (Redis).",
+      "read_active": "{count} active read buckets at the edge.",
+      "read_title": "Edge read buckets",
+      "read_unavailable": "Edge Redis is not configured in this environment.",
+      "title": "Live usage",
+      "window": "Window",
+      "write_empty": "No active write counters in the current window.",
+      "write_title": "Write counters"
+    },
+    "metrics": {
+      "absolute": "Absolute",
+      "blocked": "Blocked",
+      "total": "Active rules",
+      "unlimited": "Unlimited"
+    },
+    "modes": {
+      "absolute": "Absolute",
+      "blocked": "Blocked",
+      "inherit_multiplier": "Multiplier",
+      "unlimited": "Unlimited"
+    },
+    "rules": {
+      "create": "Add rule",
+      "create_description": "Raise, lower, set absolute limits, or unlimit a subject.",
+      "revoke": "Revoke",
+      "revoke_reason": "Revoked from the rate limits admin center"
+    },
+    "sections": {
+      "rules": "Subject rules",
+      "rules_description": "Overrides applied to a user, session, API key, IP, location, or workspace."
+    },
+    "subject_types": {
+      "api_key": "API key",
+      "cidr": "CIDR / location",
+      "ip": "IP address",
+      "session": "Session",
+      "user": "User",
+      "user_location": "User + location",
+      "workspace": "Workspace"
+    },
+    "tables": {
+      "effective": "Effective limits",
+      "expires": "Expires",
+      "mode": "Mode",
+      "subject": "Subject"
+    },
+    "tiers": {
+      "challenge_required": "Challenge required",
+      "restricted": "Restricted",
+      "standard": "Standard",
+      "trusted": "Trusted",
+      "watch": "Watch"
+    },
+    "title": "Rate Limits",
+    "toasts": {
+      "rule_create_failed": "Failed to create rate-limit rule",
+      "rule_created": "Rate-limit rule created",
+      "rule_revoke_failed": "Failed to revoke rate-limit rule",
+      "rule_revoked": "Rate-limit rule revoked",
+      "workspace_save_failed": "Failed to save workspace limits",
+      "workspace_saved": "Workspace limits saved"
+    },
+    "workspace": {
+      "description": "Per-workspace app-layer rate-limit overrides (workspace_secrets). For edge read uplift, add a workspace rule above.",
+      "load": "Load",
+      "save": "Save workspace limits",
+      "title": "Workspace limits",
+      "unset": "Not set",
+      "ws_id": "Workspace ID"
+    }
   },
   "realtime-analytics": {
     "breakdown": {

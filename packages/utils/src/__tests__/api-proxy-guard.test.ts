@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   extractIp: vi.fn(),
   isBlocked: vi.fn(),
   validateEmoji: vi.fn(),
-  getTrustMultipliers: vi.fn(),
+  getTrustEntries: vi.fn(),
 }));
 
 vi.mock('@upstash/ratelimit', () => {
@@ -52,8 +52,7 @@ vi.mock('../abuse-protection/edge', () => ({
 }));
 
 vi.mock('../abuse-protection/edge-trust', () => ({
-  getCachedTrustMultipliers: (keys: string[]) =>
-    mocks.getTrustMultipliers(keys),
+  getCachedTrustEntries: (keys: string[]) => mocks.getTrustEntries(keys),
 }));
 
 vi.mock('../request-emoji-limit', () => ({
@@ -104,9 +103,11 @@ describe('guardApiProxyRequest', () => {
     mocks.extractIp.mockReset();
     mocks.isBlocked.mockReset();
     mocks.validateEmoji.mockReset();
-    mocks.getTrustMultipliers.mockReset();
+    mocks.getTrustEntries.mockReset();
     // Default: no cached trust (untrusted). Tests opt in by overriding.
-    mocks.getTrustMultipliers.mockResolvedValue(new Map<string, number>());
+    mocks.getTrustEntries.mockResolvedValue(
+      new Map<string, { m: number }>()
+    );
   });
 
   afterEach(() => {
@@ -1570,11 +1571,11 @@ describe('guardApiProxyRequest', () => {
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
     // Trust the session subject key (account trust → per-session keying).
-    mocks.getTrustMultipliers.mockImplementation((keys: string[]) => {
-      const map = new Map<string, number>();
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      const map = new Map<string, { m: number }>();
       const sessionKey = keys.find((key) => key.startsWith('session:'));
       if (sessionKey) {
-        map.set(sessionKey, 3);
+        map.set(sessionKey, { m: 3 });
       }
       return Promise.resolve(map);
     });
@@ -1621,11 +1622,11 @@ describe('guardApiProxyRequest', () => {
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
     // Trust the location (cidr) subject key only — no session cookie present.
-    mocks.getTrustMultipliers.mockImplementation((keys: string[]) => {
-      const map = new Map<string, number>();
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      const map = new Map<string, { m: number }>();
       const cidrKey = keys.find((key) => key.startsWith('cidr:'));
       if (cidrKey) {
-        map.set(cidrKey, 2);
+        map.set(cidrKey, { m: 2 });
       }
       return Promise.resolve(map);
     });
@@ -1666,11 +1667,11 @@ describe('guardApiProxyRequest', () => {
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
     // Only the cidr is trusted; the session key is absent from the cache.
-    mocks.getTrustMultipliers.mockImplementation((keys: string[]) => {
-      const map = new Map<string, number>();
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      const map = new Map<string, { m: number }>();
       const cidrKey = keys.find((key) => key.startsWith('cidr:'));
       if (cidrKey) {
-        map.set(cidrKey, 2);
+        map.set(cidrKey, { m: 2 });
       }
       return Promise.resolve(map);
     });
@@ -1735,6 +1736,120 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.limit).toHaveBeenCalledWith('ip:1.2.3.4');
   });
 
+  it('applies an absolute read limit from a location rule', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      const map = new Map<string, unknown>();
+      const cidrKey = keys.find((key) => key.startsWith('cidr:'));
+      if (cidrKey) {
+        map.set(cidrKey, { abs: { minute: 50 }, m: 1, mode: 'absolute' });
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 50,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/tasks?boardId=board-1', 'GET'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    // Absolute exactly sets the minute window (even below the base 600).
+    expect(mocks.ratelimitConfigs).toContainEqual({ limit: 50, window: '1 m' });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:task-board-read:anonymous:abs-50-x-x:get:minute'
+    );
+    expect(mocks.limit).toHaveBeenCalledWith('ip:1.2.3.4');
+  });
+
+  it('removes the read cap for an unlimited rule', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      const map = new Map<string, unknown>();
+      const cidrKey = keys.find((key) => key.startsWith('cidr:'));
+      if (cidrKey) {
+        map.set(cidrKey, { m: 1, mode: 'unlimited' });
+      }
+      return Promise.resolve(map);
+    });
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/tasks?boardId=board-1', 'GET'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    // No read limiter is constructed → request passes the rate-limit stage.
+    expect(response).toBeNull();
+    expect(mocks.limit).not.toHaveBeenCalled();
+  });
+
+  it('uplifts reads for a trusted workspace parsed from the path', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    const receivedKeys: string[] = [];
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
+      receivedKeys.push(...keys);
+      const map = new Map<string, unknown>();
+      const workspaceKey = keys.find((key) => key.startsWith('workspace:'));
+      if (workspaceKey) {
+        map.set(workspaceKey, { m: 5 });
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 3000,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const wsId = '33333333-3333-4333-8333-333333333333';
+    const response = await guardApiProxyRequest(
+      makeRequest(`/api/v1/workspaces/${wsId}/tasks?boardId=board-1`, 'GET'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(receivedKeys).toContain(`workspace:${wsId}`);
+    // Base task-board minute (600) scaled by the workspace tier (5).
+    expect(mocks.ratelimitConfigs).toContainEqual({ limit: 3000, window: '1 m' });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:task-board-read:anonymous:t5:get:minute'
+    );
+  });
+
   it('derives the session subject key the same way as server-side reputation', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
@@ -1744,9 +1859,9 @@ describe('guardApiProxyRequest', () => {
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
     const receivedKeys: string[] = [];
-    mocks.getTrustMultipliers.mockImplementation((keys: string[]) => {
+    mocks.getTrustEntries.mockImplementation((keys: string[]) => {
       receivedKeys.push(...keys);
-      return Promise.resolve(new Map<string, number>());
+      return Promise.resolve(new Map<string, { m: number }>());
     });
     mocks.limit.mockResolvedValue({
       success: true,

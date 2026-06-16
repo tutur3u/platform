@@ -2,7 +2,7 @@ import type { Redis } from '@upstash/redis';
 
 export type UpstashRestRedisClient = Pick<
   Redis,
-  'decr' | 'del' | 'expire' | 'get' | 'incr' | 'mget' | 'set' | 'ttl'
+  'decr' | 'del' | 'expire' | 'get' | 'incr' | 'mget' | 'scan' | 'set' | 'ttl'
 >;
 export type UpstashRatelimitRedisClient = Pick<
   Redis,
@@ -31,6 +31,7 @@ export async function getUpstashRestRedisClient(): Promise<UpstashRestRedisClien
     get: <T = unknown>(key: string) => client.get<T>(key),
     incr: (key) => client.incr(key),
     mget: (...args) => client.mget(...args),
+    scan: client.scan.bind(client),
     set: (key, value, options) => client.set(key, value, options),
     ttl: (key) => client.ttl(key),
   };

@@ -1477,6 +1477,11 @@ export async function WorkspaceNavigationLinks({
               icon: createDashboardNavigationIcon('ShieldUser', 'h-5 w-5'),
             },
             {
+              title: t('infrastructure-tabs.rate_limits'),
+              href: `/${personalOrWsId}/infrastructure/rate-limits`,
+              icon: createDashboardNavigationIcon('Gauge', 'h-5 w-5'),
+            },
+            {
               title: t('infrastructure-tabs.otp_limits'),
               href: `/${personalOrWsId}/infrastructure/otp-limits`,
               icon: createDashboardNavigationIcon('KeyRound', 'h-5 w-5'),

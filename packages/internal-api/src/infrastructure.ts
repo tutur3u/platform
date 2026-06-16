@@ -655,7 +655,26 @@ export type AbuseReputationSubjectType =
   | 'ip'
   | 'session'
   | 'user'
-  | 'user_location';
+  | 'user_location'
+  | 'workspace';
+
+export type RateLimitMode =
+  | 'absolute'
+  | 'blocked'
+  | 'inherit_multiplier'
+  | 'unlimited';
+
+/** Per-window absolute rate limits for limit_mode='absolute' rules. */
+export interface RateLimitWindowLimits {
+  day?: number;
+  hour?: number;
+  minute?: number;
+}
+
+export interface RateLimitAbsoluteLimits {
+  read?: RateLimitWindowLimits;
+  write?: RateLimitWindowLimits;
+}
 
 export type AbuseSignalType =
   | 'auth_failure'
@@ -745,6 +764,8 @@ export interface AbuseTrustOverride {
   subject_type: AbuseReputationSubjectType;
   tier: AbuseRiskTier;
   trust_multiplier: number;
+  limit_mode: RateLimitMode;
+  absolute_limits: RateLimitAbsoluteLimits | null;
   updated_at: string;
 }
 

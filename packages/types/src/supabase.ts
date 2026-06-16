@@ -32406,6 +32406,15 @@ export type Database = {
           ws_name: string;
         }[];
       };
+      admin_list_rate_limit_counters: {
+        Args: { p_bucket_prefix?: string; p_limit?: number };
+        Returns: {
+          bucket: string;
+          current_count: number;
+          window_seconds: number;
+          window_started_at: string;
+        }[];
+      };
       admin_reset_rate_limits: { Args: never; Returns: number };
       admin_update_workspace_user_with_audit_actor: {
         Args: {

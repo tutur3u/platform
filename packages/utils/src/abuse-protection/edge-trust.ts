@@ -22,10 +22,24 @@ import {
 
 const TRUST_CACHE_PREFIX = 'trust:mult';
 
-// Mirrors the DB CHECK constraint on trust_multiplier (> 0 AND <= 5).
+// Mirrors the DB CHECK constraint on trust_multiplier (> 0 AND <= 1000).
 const MIN_TRUST_MULTIPLIER = 0.35;
-const MAX_TRUST_MULTIPLIER = 5;
+const MAX_TRUST_MULTIPLIER = 1000;
 const NEUTRAL_TRUST_MULTIPLIER = 1;
+
+/**
+ * A cached rate-limit decision for a subject as seen by the edge proxy. Stored
+ * as a plain number for the common multiplier-only case (back-compat), or as a
+ * JSON object when an admin rule carries a richer mode.
+ */
+export interface CachedTrustEntry {
+  /** Read-limit multiplier (uplift). 1 = neutral. Ignored when mode=unlimited. */
+  m: number;
+  /** Admin rule mode. Absent = plain multiplier. */
+  mode?: 'absolute' | 'unlimited';
+  /** For mode=absolute: explicit per-window READ limits. */
+  abs?: { minute?: number; hour?: number; day?: number };
+}
 
 const DEFAULT_TRUST_CACHE_TTL_SECONDS = 3600; // 1 hour
 
@@ -91,6 +105,90 @@ function parseMultiplier(value: unknown): number | null {
   return null;
 }
 
+function parseAbsLimits(value: unknown): CachedTrustEntry['abs'] | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const source = value as Record<string, unknown>;
+  const abs: { minute?: number; hour?: number; day?: number } = {};
+  for (const window of ['minute', 'hour', 'day'] as const) {
+    const parsed = parseMultiplier(source[window]);
+    if (parsed != null && parsed > 0) {
+      abs[window] = Math.floor(parsed);
+    }
+  }
+
+  return abs.minute != null || abs.hour != null || abs.day != null
+    ? abs
+    : undefined;
+}
+
+/**
+ * Parses a cached value into a {@link CachedTrustEntry}, accepting BOTH legacy
+ * plain numbers/numeric strings (back-compat) and the richer JSON object form.
+ */
+function parseEntry(value: unknown): CachedTrustEntry | null {
+  const asNumber = parseMultiplier(value);
+  if (asNumber != null) {
+    return { m: clampMultiplier(asNumber) };
+  }
+
+  let source: unknown = value;
+  if (typeof value === 'string') {
+    try {
+      source = JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+
+  if (!source || typeof source !== 'object') {
+    return null;
+  }
+
+  const record = source as Record<string, unknown>;
+  const m = clampMultiplier(
+    parseMultiplier(record.m) ?? NEUTRAL_TRUST_MULTIPLIER
+  );
+  const mode =
+    record.mode === 'absolute' || record.mode === 'unlimited'
+      ? record.mode
+      : undefined;
+  const abs = parseAbsLimits(record.abs);
+
+  return { abs, m, mode };
+}
+
+/** Serializes an entry for storage: plain number when multiplier-only. */
+function serializeEntry(entry: CachedTrustEntry): number | CachedTrustEntry {
+  const m = clampMultiplier(entry.m);
+  if (!entry.mode && !entry.abs) {
+    return m;
+  }
+
+  const serialized: CachedTrustEntry = { m };
+  if (entry.mode) {
+    serialized.mode = entry.mode;
+  }
+  if (entry.abs) {
+    const abs: { minute?: number; hour?: number; day?: number } = {};
+    for (const window of ['minute', 'hour', 'day'] as const) {
+      if (entry.abs[window] != null) {
+        abs[window] = entry.abs[window];
+      }
+    }
+    if (abs.minute != null || abs.hour != null || abs.day != null) {
+      serialized.abs = abs;
+    }
+  }
+  return serialized;
+}
+
+function isActiveEntry(entry: CachedTrustEntry): boolean {
+  return entry.mode != null || entry.m > NEUTRAL_TRUST_MULTIPLIER;
+}
+
 /**
  * Resolves the cached trust multiplier for each provided subject key.
  *
@@ -99,10 +197,10 @@ function parseMultiplier(value: unknown): number | null {
  * map on any Redis error (fail-open). Lets callers distinguish account trust
  * (session key) from location trust (cidr/ip keys).
  */
-export async function getCachedTrustMultipliers(
+export async function getCachedTrustEntries(
   subjectKeys: string[]
-): Promise<Map<string, number>> {
-  const result = new Map<string, number>();
+): Promise<Map<string, CachedTrustEntry>> {
+  const result = new Map<string, CachedTrustEntry>();
   if (subjectKeys.length === 0) {
     return result;
   }
@@ -117,9 +215,9 @@ export async function getCachedTrustMultipliers(
     const values = await redis.mget<unknown[]>(...cacheKeys);
 
     subjectKeys.forEach((subjectKey, index) => {
-      const parsed = parseMultiplier(values[index]);
-      if (parsed != null && parsed > NEUTRAL_TRUST_MULTIPLIER) {
-        result.set(subjectKey, clampMultiplier(parsed));
+      const entry = parseEntry(values[index]);
+      if (entry && isActiveEntry(entry)) {
+        result.set(subjectKey, entry);
       }
     });
 
@@ -128,6 +226,17 @@ export async function getCachedTrustMultipliers(
     // Fail-open: trust uplift is a best-effort optimization, never a gate.
     return result;
   }
+}
+
+export async function getCachedTrustMultipliers(
+  subjectKeys: string[]
+): Promise<Map<string, number>> {
+  const entries = await getCachedTrustEntries(subjectKeys);
+  const result = new Map<string, number>();
+  for (const [subjectKey, entry] of entries) {
+    result.set(subjectKey, entry.m);
+  }
+  return result;
 }
 
 /**
@@ -150,6 +259,30 @@ export async function getCachedTrustMultiplier(
   }
 
   return clampMultiplier(best);
+}
+
+/**
+ * Write-through a single subject's full rate-limit entry (multiplier + optional
+ * absolute/unlimited mode) to the edge cache. Stored as a plain number for the
+ * multiplier-only case (back-compat), JSON otherwise.
+ */
+export async function setCachedTrustEntry(
+  subjectKey: string,
+  entry: CachedTrustEntry,
+  ttlSeconds: number = getTrustCacheTtlSeconds()
+): Promise<void> {
+  try {
+    const redis = await getTrustRedisClient();
+    if (!redis) {
+      return;
+    }
+
+    await redis.set(buildTrustCacheKey(subjectKey), serializeEntry(entry), {
+      ex: ttlSeconds,
+    });
+  } catch {
+    // Cache writes must never block the protected request path.
+  }
 }
 
 /**

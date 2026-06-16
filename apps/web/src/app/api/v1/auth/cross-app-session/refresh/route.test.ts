@@ -67,6 +67,7 @@ describe('cross-app app-session refresh route', () => {
       get: vi.fn().mockResolvedValue(null),
       incr: vi.fn(),
       mget: vi.fn(),
+      scan: vi.fn(),
       set: vi.fn().mockResolvedValue('OK'),
       ttl: vi.fn(),
     });

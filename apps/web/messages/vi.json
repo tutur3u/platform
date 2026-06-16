@@ -437,7 +437,8 @@
       "ip": "Địa chỉ IP",
       "session": "Phiên",
       "user": "Người dùng",
-      "user_location": "Người dùng + vị trí"
+      "user_location": "Người dùng + vị trí",
+      "workspace": "Không gian làm việc"
     },
     "tables": {
       "created": "Đã tạo",
@@ -7802,6 +7803,7 @@
     "overview": "Tổng quan",
     "post_email_queue": "Hàng Đợi Email Bài Viết",
     "push_notifications": "Thông báo đẩy",
+    "rate_limits": "Giới hạn tần suất",
     "realtime": "Thời gian thực",
     "storage": "Lưu trữ",
     "timezones": "Múi giờ",
@@ -10863,6 +10865,115 @@
     "is_published": "Đã xuất bản",
     "linked_modules": "Mô đun liên kết",
     "name": "Tên"
+  },
+  "rate-limits": {
+    "actions": {
+      "retry": "Thử lại"
+    },
+    "description": "Quản lý giới hạn tần suất theo từng đối tượng — tăng, giảm, đặt giới hạn tuyệt đối hoặc bỏ giới hạn cho tài khoản, IP, vị trí và không gian làm việc.",
+    "edge": {
+      "pending": "Biên: chờ đồng bộ",
+      "synced": "Biên: đang hoạt động"
+    },
+    "empty": {
+      "rules": "Chưa có quy tắc giới hạn nào. Thêm một quy tắc để tăng, hạn chế hoặc bỏ giới hạn cho đối tượng."
+    },
+    "error": {
+      "description": "Đã xảy ra lỗi khi tải các quy tắc giới hạn tần suất.",
+      "title": "Không thể tải giới hạn tần suất"
+    },
+    "fields": {
+      "absolute_read": "Giới hạn đọc tuyệt đối (mỗi route)",
+      "absolute_write": "Giới hạn ghi tuyệt đối",
+      "mode": "Chế độ giới hạn",
+      "multiplier": "Hệ số",
+      "per_day": "Mỗi ngày",
+      "per_hour": "Mỗi giờ",
+      "per_minute": "Mỗi phút",
+      "preview": "Giới hạn hiệu lực",
+      "read_per_minute": "Lượt đọc mỗi phút",
+      "reason": "Lý do",
+      "subject_key": "Khóa đối tượng",
+      "subject_type": "Loại đối tượng",
+      "tier": "Bậc"
+    },
+    "filters": {
+      "all_subjects": "Tất cả loại đối tượng",
+      "search_subject": "Tìm khóa đối tượng"
+    },
+    "live": {
+      "bucket": "Bucket",
+      "count": "Số lượng",
+      "description": "Mức tiêu thụ ghi hiện tại (cơ sở dữ liệu) và các bucket đọc đang hoạt động ở biên (Redis).",
+      "read_active": "{count} bucket đọc đang hoạt động ở biên.",
+      "read_title": "Bucket đọc ở biên",
+      "read_unavailable": "Redis biên chưa được cấu hình trong môi trường này.",
+      "title": "Mức sử dụng trực tiếp",
+      "window": "Cửa sổ",
+      "write_empty": "Không có bộ đếm ghi nào trong cửa sổ hiện tại.",
+      "write_title": "Bộ đếm ghi"
+    },
+    "metrics": {
+      "absolute": "Tuyệt đối",
+      "blocked": "Đã chặn",
+      "total": "Quy tắc đang áp dụng",
+      "unlimited": "Không giới hạn"
+    },
+    "modes": {
+      "absolute": "Tuyệt đối",
+      "blocked": "Chặn",
+      "inherit_multiplier": "Hệ số",
+      "unlimited": "Không giới hạn"
+    },
+    "rules": {
+      "create": "Thêm quy tắc",
+      "create_description": "Tăng, giảm, đặt giới hạn tuyệt đối hoặc bỏ giới hạn cho một đối tượng.",
+      "revoke": "Thu hồi",
+      "revoke_reason": "Thu hồi từ trung tâm quản lý giới hạn tần suất"
+    },
+    "sections": {
+      "rules": "Quy tắc theo đối tượng",
+      "rules_description": "Ghi đè áp dụng cho người dùng, phiên, khóa API, IP, vị trí hoặc không gian làm việc."
+    },
+    "subject_types": {
+      "api_key": "Khóa API",
+      "cidr": "CIDR / vị trí",
+      "ip": "Địa chỉ IP",
+      "session": "Phiên",
+      "user": "Người dùng",
+      "user_location": "Người dùng + vị trí",
+      "workspace": "Không gian làm việc"
+    },
+    "tables": {
+      "effective": "Giới hạn hiệu lực",
+      "expires": "Hết hạn",
+      "mode": "Chế độ",
+      "subject": "Đối tượng"
+    },
+    "tiers": {
+      "challenge_required": "Yêu cầu xác minh",
+      "restricted": "Hạn chế",
+      "standard": "Tiêu chuẩn",
+      "trusted": "Tin cậy",
+      "watch": "Theo dõi"
+    },
+    "title": "Giới hạn tần suất",
+    "toasts": {
+      "rule_create_failed": "Không thể tạo quy tắc giới hạn",
+      "rule_created": "Đã tạo quy tắc giới hạn",
+      "rule_revoke_failed": "Không thể thu hồi quy tắc giới hạn",
+      "rule_revoked": "Đã thu hồi quy tắc giới hạn",
+      "workspace_save_failed": "Không thể lưu giới hạn không gian làm việc",
+      "workspace_saved": "Đã lưu giới hạn không gian làm việc"
+    },
+    "workspace": {
+      "description": "Ghi đè giới hạn tần suất ở tầng ứng dụng theo không gian làm việc (workspace_secrets). Để tăng giới hạn đọc ở biên, hãy thêm quy tắc không gian làm việc ở trên.",
+      "load": "Tải",
+      "save": "Lưu giới hạn",
+      "title": "Giới hạn không gian làm việc",
+      "unset": "Chưa đặt",
+      "ws_id": "ID không gian làm việc"
+    }
   },
   "realtime-analytics": {
     "breakdown": {

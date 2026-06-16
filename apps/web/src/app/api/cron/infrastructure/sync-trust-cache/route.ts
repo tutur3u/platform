@@ -1,5 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { setCachedTrustMultiplier } from '@tuturuuu/utils/abuse-protection/edge-trust';
+import {
+  type CachedTrustEntry,
+  setCachedTrustEntry,
+} from '@tuturuuu/utils/abuse-protection/edge-trust';
 import { type NextRequest, NextResponse } from 'next/server';
 import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
@@ -26,6 +29,55 @@ function parseMultiplier(value: number | string | null): number | null {
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
+}
+
+function parseAbsoluteReadLimits(
+  absoluteLimits: unknown
+): CachedTrustEntry['abs'] | undefined {
+  if (!absoluteLimits || typeof absoluteLimits !== 'object') {
+    return undefined;
+  }
+  const read = (absoluteLimits as Record<string, unknown>).read;
+  if (!read || typeof read !== 'object') {
+    return undefined;
+  }
+  const source = read as Record<string, unknown>;
+  const abs: { minute?: number; hour?: number; day?: number } = {};
+  for (const window of ['minute', 'hour', 'day'] as const) {
+    const parsed = parseMultiplier(source[window] as number | string | null);
+    if (parsed != null && parsed > 0) {
+      abs[window] = Math.floor(parsed);
+    }
+  }
+  return abs.minute != null || abs.hour != null || abs.day != null
+    ? abs
+    : undefined;
+}
+
+/**
+ * Builds the edge cache entry for a row, or null when the row has no read-edge
+ * effect (a pure multiplier <= 1).
+ */
+function buildCacheEntry(row: {
+  limit_mode: string | null;
+  trust_multiplier: number | string | null;
+  absolute_limits: unknown;
+}): CachedTrustEntry | null {
+  const multiplier = parseMultiplier(row.trust_multiplier) ?? 1;
+
+  if (row.limit_mode === 'unlimited') {
+    return { m: multiplier, mode: 'unlimited' };
+  }
+
+  if (row.limit_mode === 'absolute') {
+    const abs = parseAbsoluteReadLimits(row.absolute_limits);
+    if (abs) {
+      return { abs, m: multiplier, mode: 'absolute' };
+    }
+    // Absolute rule with no READ limits has no edge effect beyond its multiplier.
+  }
+
+  return multiplier > 1 ? { m: multiplier } : null;
 }
 
 async function handleGET(request: NextRequest) {
@@ -72,17 +124,13 @@ async function handleGET(request: NextRequest) {
       await Promise.all(
         batch.map(async (row) => {
           const subjectKey = row.subject_key?.trim();
-          const multiplier = parseMultiplier(row.trust_multiplier);
-          if (!subjectKey || multiplier == null || multiplier <= 1) {
+          const entry = buildCacheEntry(row);
+          if (!subjectKey || !entry) {
             skipped += 1;
             return;
           }
 
-          await setCachedTrustMultiplier(
-            subjectKey,
-            multiplier,
-            RECONCILE_TTL_SECONDS
-          );
+          await setCachedTrustEntry(subjectKey, entry, RECONCILE_TTL_SECONDS);
           written += 1;
         })
       );
