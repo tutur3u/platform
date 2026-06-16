@@ -197,7 +197,7 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
         // Build final formatted string
         let formatted = formattedInteger;
         if (hasDecimal) {
-          formatted += `.${decimalPart}`;
+          formatted += `${localeSeparators.decimal}${decimalPart}`;
         }
 
         // Calculate new cursor position
