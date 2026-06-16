@@ -63,12 +63,24 @@ const mocks = vi.hoisted(() => {
         query.calls.push(['lte', args]);
         return query;
       }),
+      limit: vi.fn((...args: unknown[]) => {
+        query.calls.push(['limit', args]);
+        return query;
+      }),
       order: vi.fn((...args: unknown[]) => {
         query.calls.push(['order', args]);
         return query;
       }),
       range: vi.fn((...args: unknown[]) => {
         query.calls.push(['range', args]);
+        return query;
+      }),
+      insert: vi.fn((...args: unknown[]) => {
+        query.calls.push(['insert', args]);
+        return query;
+      }),
+      update: vi.fn((...args: unknown[]) => {
+        query.calls.push(['update', args]);
         return query;
       }),
       maybeSingle: vi.fn(async () => result),
@@ -138,7 +150,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 vi.mock('./generate-task-embedding', () => ({
-  generateTaskEmbedding: vi.fn(),
+  generateTaskEmbedding: vi.fn(() => Promise.resolve()),
 }));
 
 function queueResult(
@@ -1214,5 +1226,117 @@ describe('workspace task route personal external loading', () => {
       error: 'Guests cannot assign workspace-only task resources',
     });
     expect(mocks.adminClient.from).not.toHaveBeenCalledWith('tasks');
+  });
+
+  it('renormalizes exhausted list sort keys before creating a task', async () => {
+    queueResult(mocks.adminQueues, 'task_lists', {
+      data: {
+        board_id: PERSONAL_BOARD_ID,
+        deleted: false,
+        id: PERSONAL_LIST_ID,
+        status: 'active',
+        workspace_boards: {
+          ws_id: PERSONAL_WS_ID,
+        },
+      },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: { sort_key: 1 },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [
+        {
+          created_at: '2026-05-07T00:00:00.000Z',
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          sort_key: 1,
+        },
+        {
+          created_at: '2026-05-08T00:00:00.000Z',
+          id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          sort_key: 2,
+        },
+      ],
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', { data: null, error: null });
+    queueResult(mocks.adminQueues, 'tasks', { data: null, error: null });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: { sort_key: 1_000_000 },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: {
+        completed: false,
+        created_at: '2026-05-09T00:00:00.000Z',
+        description: null,
+        display_number: 45,
+        end_date: null,
+        estimation_points: null,
+        id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+        list_id: PERSONAL_LIST_ID,
+        name: 'Created task',
+        priority: null,
+        sort_key: 500_001,
+        start_date: null,
+        task_lists: {
+          name: 'To Do',
+          workspace_boards: {
+            name: 'Board',
+            ticket_prefix: 'TASK',
+          },
+        },
+      },
+      error: null,
+    });
+
+    const { handleTaskRoutePOST } = await import('./route.js');
+    const response = await handleTaskRoutePOST(
+      new NextRequest('http://localhost/api/v1/workspaces/ws-1/tasks', {
+        body: JSON.stringify({
+          listId: PERSONAL_LIST_ID,
+          name: 'Created task',
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ wsId: 'ws-1' }) },
+      {
+        supabase: mocks.memberClient as never,
+        user: {
+          email: 'member@example.com',
+          id: USER_ID,
+        } as never,
+      }
+    );
+
+    expect(response.status).toBe(201);
+
+    const taskQueries = mocks.adminQueries.filter(
+      (query) => query.table === 'tasks'
+    );
+    const updateCalls = taskQueries
+      .map((query) => query.calls.find(([method]) => method === 'update'))
+      .filter((call): call is [string, unknown[]] => Boolean(call));
+    expect(updateCalls).toEqual([
+      ['update', [{ sort_key: 1_000_000 }]],
+      ['update', [{ sort_key: 2_000_000 }]],
+    ]);
+
+    const insertCall = taskQueries
+      .flatMap((query) => query.calls)
+      .find(([method]) => method === 'insert');
+    const [insertPayload] = insertCall?.[1] ?? [];
+    expect(insertPayload).toEqual(
+      expect.objectContaining({
+        list_id: PERSONAL_LIST_ID,
+        name: 'Created task',
+        sort_key: expect.any(Number),
+      })
+    );
+    expect((insertPayload as { sort_key: number }).sort_key).toBeGreaterThan(0);
+    expect((insertPayload as { sort_key: number }).sort_key).toBeLessThan(
+      1_000_000
+    );
   });
 });

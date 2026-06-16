@@ -19,6 +19,8 @@ import {
   calculateTopSortKey,
   getPersonalExternalStagingBoardId,
   getPersonalExternalStagingListId,
+  getSortKeyConfig,
+  SortKeyGapExhaustedError,
 } from '@tuturuuu/utils/task-helper';
 import {
   isTaskBoardCompletedStatus,
@@ -118,6 +120,10 @@ const CreateTaskSchema = z.object({
   auto_schedule: z.boolean().nullable().optional(),
 });
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
+type TaskSortKeyRow = Pick<
+  Database['public']['Tables']['tasks']['Row'],
+  'created_at' | 'id' | 'sort_key'
+>;
 
 function parseTaskIdentifierQuery(identifier: string) {
   const normalized = identifier.trim().toUpperCase();
@@ -177,6 +183,156 @@ type TaskSchedulingSettingsRow = {
   calendar_hours: Task['calendar_hours'] | null;
   auto_schedule: boolean | null;
 };
+
+async function loadFirstActiveTaskSortKey(
+  sbAdmin: TypedSupabaseClient,
+  listId: string
+): Promise<{
+  error: unknown | null;
+  task: Pick<TaskSortKeyRow, 'sort_key'> | null;
+}> {
+  const { data, error } = await sbAdmin
+    .from('tasks')
+    .select('sort_key')
+    .eq('list_id', listId)
+    .is('deleted_at', null)
+    .order('sort_key', { ascending: true, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  return {
+    error,
+    task: error
+      ? null
+      : ((data as Pick<TaskSortKeyRow, 'sort_key'> | null) ?? null),
+  };
+}
+
+function sortTaskSortKeyRows(tasks: TaskSortKeyRow[]) {
+  return [...tasks].sort((a, b) => {
+    const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
+    const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
+    if (sortA !== sortB) return sortA - sortB;
+    const createdAtA = a.created_at ? Date.parse(a.created_at) : 0;
+    const createdAtB = b.created_at ? Date.parse(b.created_at) : 0;
+    return createdAtA - createdAtB;
+  });
+}
+
+async function normalizeTaskListSortKeysForCreate(
+  sbAdmin: TypedSupabaseClient,
+  listId: string
+) {
+  const { data, error } = await sbAdmin
+    .from('tasks')
+    .select('id, sort_key, created_at')
+    .eq('list_id', listId)
+    .is('deleted_at', null)
+    .order('sort_key', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    return error;
+  }
+
+  const tasks = sortTaskSortKeyRows((data ?? []) as TaskSortKeyRow[]);
+  if (tasks.length === 0) {
+    return null;
+  }
+
+  const { BASE_UNIT } = getSortKeyConfig();
+  const updates = tasks.map((task, index) => ({
+    id: task.id,
+    sort_key: (index + 1) * BASE_UNIT,
+  }));
+
+  const concurrency = 5;
+  for (let index = 0; index < updates.length; index += concurrency) {
+    const chunk = updates.slice(index, index + concurrency);
+    const results = await Promise.all(
+      chunk.map((update) =>
+        sbAdmin
+          .from('tasks')
+          .update({ sort_key: update.sort_key })
+          .eq('id', update.id)
+      )
+    );
+
+    const failedResult = results.find((result) => result.error);
+    if (failedResult?.error) {
+      return failedResult.error;
+    }
+  }
+
+  return null;
+}
+
+async function resolveCreateTaskSortKey(
+  sbAdmin: TypedSupabaseClient,
+  listId: string
+): Promise<{ error: unknown | null; sortKey: number | null }> {
+  const { MIN_GAP } = getSortKeyConfig();
+  let firstTaskResult = await loadFirstActiveTaskSortKey(sbAdmin, listId);
+
+  if (firstTaskResult.error) {
+    return { error: firstTaskResult.error, sortKey: null };
+  }
+
+  const firstSortKey = firstTaskResult.task?.sort_key ?? null;
+  const shouldNormalizeBeforeInsert =
+    typeof firstSortKey === 'number' && firstSortKey <= MIN_GAP;
+
+  if (shouldNormalizeBeforeInsert) {
+    const normalizationError = await normalizeTaskListSortKeysForCreate(
+      sbAdmin,
+      listId
+    );
+    if (normalizationError) {
+      return { error: normalizationError, sortKey: null };
+    }
+
+    firstTaskResult = await loadFirstActiveTaskSortKey(sbAdmin, listId);
+    if (firstTaskResult.error) {
+      return { error: firstTaskResult.error, sortKey: null };
+    }
+  }
+
+  try {
+    return {
+      error: null,
+      sortKey: calculateTopSortKey(firstTaskResult.task?.sort_key ?? null),
+    };
+  } catch (error) {
+    if (!(error instanceof SortKeyGapExhaustedError)) {
+      throw error;
+    }
+  }
+
+  const normalizationError = await normalizeTaskListSortKeysForCreate(
+    sbAdmin,
+    listId
+  );
+  if (normalizationError) {
+    return { error: normalizationError, sortKey: null };
+  }
+
+  firstTaskResult = await loadFirstActiveTaskSortKey(sbAdmin, listId);
+  if (firstTaskResult.error) {
+    return { error: firstTaskResult.error, sortKey: null };
+  }
+
+  try {
+    return {
+      error: null,
+      sortKey: calculateTopSortKey(firstTaskResult.task?.sort_key ?? null),
+    };
+  } catch (error) {
+    if (error instanceof SortKeyGapExhaustedError) {
+      return { error, sortKey: null };
+    }
+    throw error;
+  }
+}
 
 type ExternalTaskSortBy =
   | 'created-desc'
@@ -2204,24 +2360,15 @@ export async function handleTaskRoutePOST(
       }
     }
 
-    const { data: firstTask, error: firstTaskError } = await sbAdmin
-      .from('tasks')
-      .select('sort_key')
-      .eq('list_id', listId)
-      .is('deleted_at', null)
-      .order('sort_key', { ascending: true, nullsFirst: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (firstTaskError) {
-      console.error('Error fetching first sort key:', firstTaskError);
+    const sortKeyResult = await resolveCreateTaskSortKey(sbAdmin, listId);
+    if (sortKeyResult.error || sortKeyResult.sortKey == null) {
       return NextResponse.json(
         { error: 'Failed to create task' },
         { status: 500 }
       );
     }
 
-    const sort_key = calculateTopSortKey(firstTask?.sort_key ?? null);
+    const sort_key = sortKeyResult.sortKey;
     const now = new Date().toISOString();
     const isCompletedList = isTaskBoardCompletedStatus(listRow.status);
     const isClosedList = listRow.status === 'closed';
