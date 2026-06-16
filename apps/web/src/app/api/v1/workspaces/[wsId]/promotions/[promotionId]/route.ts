@@ -1,12 +1,12 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import type { TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const PromotionUpdateSchema = z
@@ -37,23 +37,29 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const { wsId, promotionId } = await params;
+  const { wsId: rawWsId, promotionId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req, {
+      // The inventory operator dashboard manages storefront promotions too.
+      targetApp: ['finance', 'platform', 'inventory'],
+    })
+  );
 
-  // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
+  if (access.response) {
+    return access.response;
   }
-  const { containsPermission } = permissions;
-  if (!containsPermission('update_inventory')) {
+
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
+  if (permissions.withoutPermission('update_inventory')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update promotions' },
       { status: 403 }
     );
   }
 
-  const supabase = await createClient(req);
-  const privateDb = supabase.schema('private');
+  const privateDb = sbAdmin.schema('private');
   const parsed = PromotionUpdateSchema.safeParse(await req.json());
 
   if (!parsed.success) {
@@ -86,7 +92,7 @@ export async function PUT(req: Request, { params }: Params) {
       ...updateData,
     })
     .eq('id', promotionId)
-    .eq('ws_id', permissions.wsId);
+    .eq('ws_id', wsId);
 
   if (error) {
     serverLogger.error('Error updating promotion:', error);
@@ -100,29 +106,35 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const { wsId, promotionId } = await params;
+  const { wsId: rawWsId, promotionId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req, {
+      // The inventory operator dashboard manages storefront promotions too.
+      targetApp: ['finance', 'platform', 'inventory'],
+    })
+  );
 
-  // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
+  if (access.response) {
+    return access.response;
   }
-  const { containsPermission } = permissions;
-  if (!containsPermission('delete_inventory')) {
+
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
+  if (permissions.withoutPermission('delete_inventory')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to delete promotions' },
       { status: 403 }
     );
   }
 
-  const supabase = await createClient(req);
-  const privateDb = supabase.schema('private');
+  const privateDb = sbAdmin.schema('private');
 
   const { error } = await privateDb
     .from('workspace_promotions')
     .delete()
     .eq('id', promotionId)
-    .eq('ws_id', permissions.wsId);
+    .eq('ws_id', wsId);
 
   if (error) {
     serverLogger.error('Error deleting promotion:', error);

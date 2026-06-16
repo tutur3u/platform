@@ -74,4 +74,19 @@ describe('resolveFinanceRouteAuthContext', () => {
       resolveFinanceRouteAuthContext(createRequestForTarget('inventory'))
     ).resolves.toBeUndefined();
   });
+
+  it('accepts Inventory app-session cookies when a shared route opts in', async () => {
+    const context = await resolveFinanceRouteAuthContext(
+      createRequestForTarget('inventory'),
+      { targetApp: ['finance', 'platform', 'inventory'] }
+    );
+
+    expect(context?.user).toEqual(
+      expect.objectContaining({
+        email: 'finance@example.com',
+        id: 'user-1',
+      })
+    );
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+  });
 });

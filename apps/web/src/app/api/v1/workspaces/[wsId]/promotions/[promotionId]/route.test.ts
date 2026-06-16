@@ -9,9 +9,9 @@ type MutationOperation = {
 };
 
 const mocks = vi.hoisted(() => ({
-  createClient: vi.fn(),
-  getPermissions: vi.fn(),
+  getFinanceRouteContext: vi.fn(),
   operations: [] as MutationOperation[],
+  resolveFinanceRouteAuthContext: vi.fn(),
   serverError: vi.fn(),
 }));
 
@@ -44,12 +44,12 @@ function createMutationBuilder(
   return builder;
 }
 
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createClient: mocks.createClient,
+vi.mock('@tuturuuu/apis/finance/request-access', () => ({
+  getFinanceRouteContext: mocks.getFinanceRouteContext,
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: mocks.getPermissions,
+vi.mock('@/lib/finance-route-auth', () => ({
+  resolveFinanceRouteAuthContext: mocks.resolveFinanceRouteAuthContext,
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -62,18 +62,25 @@ describe('workspace promotion item route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.operations.length = 0;
-    mocks.getPermissions.mockResolvedValue({
-      containsPermission: vi.fn(() => true),
-      wsId: 'workspace-1',
+    mocks.resolveFinanceRouteAuthContext.mockResolvedValue({
+      user: { id: 'user-1' },
     });
-    mocks.createClient.mockResolvedValue({
-      schema: (schema: 'private' | 'public') => ({
-        from: (table: string) => ({
-          delete: () => createMutationBuilder(schema, table, 'delete'),
-          update: (payload: unknown) =>
-            createMutationBuilder(schema, table, 'update', payload),
-        }),
-      }),
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'workspace-1',
+        permissions: {
+          withoutPermission: vi.fn(() => false),
+        },
+        sbAdmin: {
+          schema: (schema: 'private' | 'public') => ({
+            from: (table: string) => ({
+              delete: () => createMutationBuilder(schema, table, 'delete'),
+              update: (payload: unknown) =>
+                createMutationBuilder(schema, table, 'update', payload),
+            }),
+          }),
+        },
+      },
     });
   });
 
@@ -102,6 +109,12 @@ describe('workspace promotion item route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.resolveFinanceRouteAuthContext).toHaveBeenCalledWith(
+      expect.any(Request),
+      {
+        targetApp: ['finance', 'platform', 'inventory'],
+      }
+    );
     expect(mocks.operations).toEqual([
       expect.objectContaining({
         filters: [
@@ -131,6 +144,12 @@ describe('workspace promotion item route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.resolveFinanceRouteAuthContext).toHaveBeenCalledWith(
+      expect.any(Request),
+      {
+        targetApp: ['finance', 'platform', 'inventory'],
+      }
+    );
     expect(mocks.operations).toEqual([
       expect.objectContaining({
         filters: [
