@@ -213,7 +213,7 @@ export function getEditorExtensions({
       getOnImageUpload,
       getOnVideoUpload,
     }),
-    Video({ onVideoUpload }).configure({
+    Video({ onVideoUpload, getOnVideoUpload }).configure({
       HTMLAttributes: {
         class: 'rounded-md my-4',
       },

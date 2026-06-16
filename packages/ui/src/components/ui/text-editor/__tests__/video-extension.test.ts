@@ -53,6 +53,16 @@ describe('VideoExtension', () => {
       const extension = Video();
       expect(extension).toBeDefined();
     });
+
+    it('should accept a delegated upload getter', () => {
+      const mockUpload = vi.fn().mockResolvedValue('url');
+      const extension = Video({
+        onVideoUpload: vi.fn().mockResolvedValue('stale-url'),
+        getOnVideoUpload: () => mockUpload,
+      });
+
+      expect(extension).toBeDefined();
+    });
   });
 
   describe('node configuration', () => {
@@ -249,6 +259,43 @@ describe('VideoExtension', () => {
         mockEvent
       );
       expect(result).toBe(false);
+    });
+
+    it('should return false when delegated video upload permission is cleared', () => {
+      const staleUpload = vi.fn().mockResolvedValue('stale-url');
+      const extension = Video({
+        onVideoUpload: staleUpload,
+        getOnVideoUpload: () => undefined,
+      });
+      const plugins = (
+        extension.config as any
+      ).addProseMirrorPlugins() as any[];
+      const pastePlugin = plugins[1];
+
+      const mockView = {
+        state: { selection: { from: 0, to: 0 }, tr: {} },
+        dispatch: vi.fn(),
+      };
+      const mockEvent = {
+        clipboardData: {
+          items: [
+            {
+              type: 'video/mp4',
+              getAsFile: () => new File(['video'], 'video.mp4'),
+            },
+          ],
+        },
+        preventDefault: vi.fn(),
+      } as unknown as ClipboardEvent;
+
+      const result = pastePlugin.props?.handleDOMEvents?.paste(
+        mockView as any,
+        mockEvent
+      );
+
+      expect(result).toBe(false);
+      expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+      expect(staleUpload).not.toHaveBeenCalled();
     });
 
     it('should return false when clipboard has no items', () => {
