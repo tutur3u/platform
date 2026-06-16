@@ -479,7 +479,8 @@ void main() {
     });
 
     test(
-      'falls back to browser OAuth when native Apple sign-in is unavailable',
+      'does not fall back to browser OAuth when native Apple sign-in is '
+      'unavailable',
       () async {
         repository = AuthRepository(
           supabaseClient: supabaseClient,
@@ -496,56 +497,37 @@ void main() {
         when(
           () => appleIdentityClient.isAvailable(),
         ).thenAnswer((_) async => false);
-        when(
-          () => oauthUrlLauncher.launchProviderSignIn(
-            authClient: goTrueClient,
-            provider: OAuthProvider.apple,
-            redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
-            queryParams: const {'prompt': 'consent'},
-          ),
-        ).thenAnswer((_) async => true);
 
         final result = await repository.signInWithApple();
 
-        expect(result.status, AuthActionStatus.externalFlowStarted);
+        expect(result.status, AuthActionStatus.failure);
+        expect(result.errorCode, AuthErrorCode.appleSignInFailed);
+        verifyNever(
+          () => oauthUrlLauncher.launchProviderSignIn(
+            authClient: goTrueClient,
+            provider: OAuthProvider.apple,
+            redirectTo: any(named: 'redirectTo'),
+            queryParams: any(named: 'queryParams'),
+            scopes: any(named: 'scopes'),
+          ),
+        );
       },
     );
 
-    test('launches Apple OAuth in the browser', () async {
-      when(
-        () => appleIdentityClient.isAvailable(),
-      ).thenAnswer((_) async => false);
-      when(
-        () => oauthUrlLauncher.launchProviderSignIn(
-          authClient: goTrueClient,
-          provider: OAuthProvider.apple,
-          redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
-          queryParams: const {'prompt': 'consent'},
-        ),
-      ).thenAnswer((_) async => true);
-
-      final result = await repository.signInWithApple();
-
-      expect(result.status, AuthActionStatus.externalFlowStarted);
-    });
-
-    test('returns an Apple launch error when OAuth cannot start', () async {
-      when(
-        () => appleIdentityClient.isAvailable(),
-      ).thenAnswer((_) async => false);
-      when(
-        () => oauthUrlLauncher.launchProviderSignIn(
-          authClient: goTrueClient,
-          provider: OAuthProvider.apple,
-          redirectTo: 'com.tuturuuu.app.mobile.dev://login-callback',
-          queryParams: const {'prompt': 'consent'},
-        ),
-      ).thenAnswer((_) async => false);
-
+    test('does not launch Apple OAuth in the browser on Android', () async {
       final result = await repository.signInWithApple();
 
       expect(result.status, AuthActionStatus.failure);
-      expect(result.errorCode, AuthErrorCode.appleBrowserLaunchFailed);
+      expect(result.errorCode, AuthErrorCode.appleSignInFailed);
+      verifyNever(
+        () => oauthUrlLauncher.launchProviderSignIn(
+          authClient: goTrueClient,
+          provider: OAuthProvider.apple,
+          redirectTo: any(named: 'redirectTo'),
+          queryParams: any(named: 'queryParams'),
+          scopes: any(named: 'scopes'),
+        ),
+      );
     });
   });
 

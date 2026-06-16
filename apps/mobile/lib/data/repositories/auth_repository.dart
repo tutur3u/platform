@@ -386,18 +386,20 @@ class AuthRepository {
   }
 
   Future<AuthActionResult> signInWithApple() async {
-    if (_shouldTryNativeAppleSignIn()) {
-      final nativeResult = await _tryNativeAppleSignIn();
-      if (nativeResult != null) {
-        return nativeResult;
-      }
+    if (!_shouldTryNativeAppleSignIn()) {
+      return const AuthActionResult.failure(
+        AuthErrorCode.appleSignInFailed,
+        errorMessage:
+            'Sign in with Apple requires native Apple authentication.',
+      );
     }
 
-    return _launchBrowserOAuthSignIn(
-      provider: OAuthProvider.apple,
-      queryParams: const {'prompt': 'consent'},
-      errorCode: AuthErrorCode.appleBrowserLaunchFailed,
-    );
+    final nativeResult = await _tryNativeAppleSignIn();
+    return nativeResult ??
+        const AuthActionResult.failure(
+          AuthErrorCode.appleSignInFailed,
+          errorMessage: 'Sign in with Apple is unavailable on this device.',
+        );
   }
 
   Future<AuthActionResult> signInWithGithub() {
