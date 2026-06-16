@@ -46,7 +46,7 @@ async function getPersonalBoard(
     '/api/v1/workspaces/personal/task-boards',
     {
       data: {
-        name: `E2E Guest Access ${Date.now()}`,
+        name: `E2E Shared Board ${Date.now()}`,
       },
       headers,
     }
@@ -83,7 +83,7 @@ async function getOrCreateBoardList(
     {
       data: {
         color: 'BLUE',
-        name: `E2E Guest Access ${Date.now()}`,
+        name: `E2E Shared List ${Date.now()}`,
         status: 'active',
       },
       headers,
