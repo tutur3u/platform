@@ -21,6 +21,11 @@ type WorkspaceProfile = {
   email: string | null;
 };
 
+type WorkspaceProfileResponse = {
+  id: string;
+  display_name: string | null;
+};
+
 const updateWorkspaceMemberProfileSchema = z
   .object({
     displayName: z.string().max(MAX_NAME_LENGTH).nullable(),
@@ -49,6 +54,15 @@ function normalizeEmail(email: string | null | undefined) {
 function normalizeDisplayName(displayName: string | null) {
   const trimmed = displayName?.trim() ?? '';
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function serializeWorkspaceProfile(
+  profile: WorkspaceProfileResponse
+): WorkspaceProfileResponse {
+  return {
+    display_name: profile.display_name,
+    id: profile.id,
+  };
 }
 
 async function findSingleProfileByEmail({
@@ -201,7 +215,7 @@ async function updateProfileDisplayName({
     .update({ display_name: displayName })
     .eq('id', profileId)
     .eq('ws_id', wsId)
-    .select('id, display_name, email')
+    .select('id, display_name')
     .single();
 
   if (error) throw error;
@@ -389,7 +403,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({
       message: 'success',
-      workspaceUser: updatedProfile,
+      workspaceUser: serializeWorkspaceProfile(updatedProfile),
     });
   } catch (error) {
     console.error('Error updating workspace member profile:', error);

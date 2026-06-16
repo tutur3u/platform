@@ -258,7 +258,6 @@ export async function updateWorkspaceMemberProfile(
     workspaceUser: {
       id: string;
       display_name: string | null;
-      email: string | null;
     };
   }>(`/api/workspaces/${encodePathSegment(workspaceId)}/members/profile`, {
     body: JSON.stringify(payload),

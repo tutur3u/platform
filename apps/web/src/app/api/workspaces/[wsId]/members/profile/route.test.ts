@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => {
   const adminProfilesLimit = vi.fn();
   const adminInsertSingle = vi.fn();
   const adminUpdateSingle = vi.fn();
+  const adminUpdateSelect = vi.fn(() => ({
+    single: adminUpdateSingle,
+  }));
 
   const adminSupabase = {
     from: vi.fn((table: string) => {
@@ -39,9 +42,7 @@ const mocks = vi.hoisted(() => {
           update: vi.fn(() => ({
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
-                select: vi.fn(() => ({
-                  single: adminUpdateSingle,
-                })),
+                select: adminUpdateSelect,
               })),
             })),
           })),
@@ -58,6 +59,7 @@ const mocks = vi.hoisted(() => {
     adminProfilesLimit,
     adminSupabase,
     adminUpdateSingle,
+    adminUpdateSelect,
     getPermissions,
   };
 });
@@ -125,13 +127,15 @@ describe('PUT /api/workspaces/[wsId]/members/profile', () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
+    const body = await response.json();
+    expect(body).toMatchObject({
       workspaceUser: {
         display_name: 'Server Alice',
-        email: 'invite@example.com',
         id: 'workspace-user-1',
       },
     });
+    expect(body.workspaceUser).not.toHaveProperty('email');
+    expect(mocks.adminUpdateSelect).toHaveBeenCalledWith('id, display_name');
   });
 
   it('rejects ambiguous matching workspace profiles for a pending email invite', async () => {
