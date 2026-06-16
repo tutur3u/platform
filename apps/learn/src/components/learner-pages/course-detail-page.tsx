@@ -8,7 +8,6 @@ import {
   type TulearnCourseDetail,
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
-import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -330,16 +329,17 @@ export function CourseDetailPage({
                           </div>
                         </div>
 
-                        <button
-                          onClick={() => {
-                            toast.success('Starting test session...');
-                          }}
+                        <Link
+                          href={
+                            studentId
+                              ? `/${wsId}/courses/${courseId}/tests/${test.id}?studentId=${studentId}`
+                              : `/${wsId}/courses/${courseId}/tests/${test.id}`
+                          }
                           className="inline-flex cursor-pointer items-center justify-center gap-1.5 border-2 border-border bg-primary px-3.5 py-1.5 font-bold text-primary-foreground text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)]"
-                          type="button"
                         >
                           <Play className="h-3.5 w-3.5" />
                           {t('courses.startTest')}
-                        </button>
+                        </Link>
                       </div>
                     </BrutalCard>
                   );
