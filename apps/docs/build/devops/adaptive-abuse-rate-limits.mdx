@@ -85,6 +85,41 @@ mailbox. Human auth route `429` responses should return `Retry-After` to the
 caller and must not be converted into `api_abuse` IP blocks by the proxy
 escalation path. Generic anonymous API route-limit hits can still escalate.
 
+## Trusted-Location Read Uplift
+
+High-density centers (many staff behind one office NAT IP) can hit the read-limit
+toast ("Bạn đang bị giới hạn tần suất. Thử lại sau 60 giây…") during normal
+browsing. Untrusted read traffic keys per `ip:<ip>` against the anonymous default
+(`60 / 240 / 1200` per minute/hour/day), so everyone behind the shared IP draws
+from one bucket. A trusted-location override keyed by CIDR scales that bucket at
+the edge (e.g. `60 -> 300/min` at `5x`) and lets trusted sessions key
+per-session. The `subject_key` must match the edge `getCidrSubjectKeyEdge` form
+(`cidr:<a.b.c>.0/24` for IPv4, `cidr:<prefix>::/64` for IPv6).
+
+1. Confirm the center's public IP via Infrastructure -> Abuse Intelligence or by
+   asking the center, then derive the `/24`.
+2. Insert a time-bound override. An operator runs this against production; the
+   platform never auto-pushes production SQL:
+
+```sql
+insert into public.abuse_trust_overrides
+  (subject_type, subject_key, tier, trust_multiplier, limit_mode, reason, expires_at)
+values
+  ('cidr', 'cidr:203.0.113.0/24', 'trusted', 5.00, 'inherit_multiplier',
+   'Trusted center office NAT — many staff, organic read traffic',
+   now() + interval '90 days');
+```
+
+3. The edge trust cache (`EDGE_TRUST_CACHE_TTL_SECONDS`, ~1h) reconciles via
+   `list_trusted_subjects_for_cache()` and the `sync-trust-cache` cron, so the
+   uplift takes effect within the TTL without a deploy. Set
+   `API_PROXY_EDGE_TRUST_ENABLED=0` as a kill switch to fall back to legacy
+   per-IP read limiting.
+
+Fix read amplification in the app first (batch per-row table fetches server-side
+so one page load costs a few reads, not dozens); the location uplift is
+defense-in-depth for genuinely dense, legitimate locations.
+
 ## Step-Up Challenges
 
 Browser mutations with medium risk should require Turnstile through the existing
