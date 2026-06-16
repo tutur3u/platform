@@ -263,11 +263,24 @@ export function applyTaskDropPreviewToCache({
   }
 
   return {
+    localMutationAt,
     previousFullTasks: snapshot.fullTasks,
     previousTasks: snapshot.tasks,
     previewSortKey: previewTasks.previewSortKey,
     repairedTaskSortKeys: previewTasks.repairedTaskSortKeys,
   };
+}
+
+export function hasTaskLocalMutationAt(
+  tasks: Task[] | undefined,
+  taskId: string,
+  localMutationAt: number
+) {
+  const task = tasks?.find((item) => item.id === taskId) as
+    | (Task & { _localMutationAt?: unknown })
+    | undefined;
+
+  return task?._localMutationAt === localMutationAt;
 }
 
 export function mergeTaskIntoBoardTaskCache(

@@ -28,6 +28,7 @@ import { getColumnReorderUpdates } from './column-reorder';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 import {
   applyTaskDropPreviewToCache,
+  hasTaskLocalMutationAt,
   mergePersonalPlacementMutationTask,
   setBoardTaskCache,
 } from './task-drag-cache';
@@ -65,6 +66,7 @@ import type {
 export {
   applyTaskDropPreviewToCache,
   getTaskDropPreviewCacheTasks,
+  hasTaskLocalMutationAt,
   mergePersonalPlacementMutationTask,
   mergeTaskIntoBoardTaskCache,
 } from './task-drag-cache';
@@ -503,6 +505,16 @@ export function useKanbanDnd({
         ) => {
           queryClient.setQueryData<Task[]>(queryKey, (currentTasks) => {
             if (!currentTasks) return previousCache;
+
+            if (
+              !hasTaskLocalMutationAt(
+                currentTasks,
+                task.id,
+                nextTask._localMutationAt
+              )
+            ) {
+              return currentTasks;
+            }
 
             if (!previousTaskValue) {
               return currentTasks.filter((item) => item.id !== task.id);
@@ -1079,17 +1091,43 @@ export function useKanbanDnd({
         if (!boardId || !optimisticDropPreview) return;
 
         if (optimisticDropPreview.previousTasks) {
-          queryClient.setQueryData(
-            ['tasks', boardId],
-            optimisticDropPreview.previousTasks
-          );
+          const currentTasks = queryClient.getQueryData<Task[]>([
+            'tasks',
+            boardId,
+          ]);
+
+          if (
+            hasTaskLocalMutationAt(
+              currentTasks,
+              activeTaskForDrop.id,
+              optimisticDropPreview.localMutationAt
+            )
+          ) {
+            queryClient.setQueryData(
+              ['tasks', boardId],
+              optimisticDropPreview.previousTasks
+            );
+          }
         }
 
         if (optimisticDropPreview.previousFullTasks) {
-          queryClient.setQueryData(
-            ['tasks-full', boardId],
-            optimisticDropPreview.previousFullTasks
-          );
+          const currentFullTasks = queryClient.getQueryData<Task[]>([
+            'tasks-full',
+            boardId,
+          ]);
+
+          if (
+            hasTaskLocalMutationAt(
+              currentFullTasks,
+              activeTaskForDrop.id,
+              optimisticDropPreview.localMutationAt
+            )
+          ) {
+            queryClient.setQueryData(
+              ['tasks-full', boardId],
+              optimisticDropPreview.previousFullTasks
+            );
+          }
         }
       };
 

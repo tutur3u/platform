@@ -1,13 +1,16 @@
+import { QueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { describe, expect, it } from 'vitest';
 import {
+  applyTaskDropPreviewToCache,
   getProjectedTaskDropOrderFromPreview,
   getTaskDropEndPreviewFromRects,
   getTaskDropPositionFromRects,
   getTaskDropPreviewCacheTasks,
   getTaskDropPreviewFromRects,
   getTaskInsertionIndex,
+  hasTaskLocalMutationAt,
   insertTaskAtDropPosition,
   mergePersonalPlacementMutationTask,
   mergeTaskIntoBoardTaskCache,
@@ -682,5 +685,65 @@ describe('task drag insertion helpers', () => {
         list_id: 'done-list',
       })
     );
+  });
+
+  it('marks optimistic previews so stale drag rollbacks can be skipped', () => {
+    const queryClient = new QueryClient();
+    const boardId = 'board-1';
+    const activeTask = createTask({
+      id: 'task-1',
+      list_id: 'source-list',
+      sort_key: 1_000_000,
+    });
+    const targetTask = createTask({
+      id: 'task-2',
+      list_id: 'target-list',
+      sort_key: 2_000_000,
+    });
+    const snapshot = {
+      fullTasks: [activeTask, targetTask],
+      tasks: [activeTask, targetTask],
+    };
+
+    queryClient.setQueryData(['tasks', boardId], snapshot.tasks);
+    queryClient.setQueryData(['tasks-full', boardId], snapshot.fullTasks);
+
+    const preview = applyTaskDropPreviewToCache({
+      activeTask,
+      boardId,
+      orderedTasks: [targetTask, activeTask],
+      queryClient,
+      snapshot,
+      targetList: createList({ id: 'target-list' }),
+      targetListId: 'target-list',
+    });
+
+    expect(preview?.localMutationAt).toEqual(expect.any(Number));
+    expect(
+      hasTaskLocalMutationAt(
+        queryClient.getQueryData<Task[]>(['tasks', boardId]),
+        activeTask.id,
+        preview?.localMutationAt ?? -1
+      )
+    ).toBe(true);
+
+    queryClient.setQueryData<Task[]>(['tasks', boardId], (currentTasks) =>
+      currentTasks?.map((task) =>
+        task.id === activeTask.id
+          ? ({
+              ...task,
+              _localMutationAt: (preview?.localMutationAt ?? 0) + 1,
+            } as Task & { _localMutationAt: number })
+          : task
+      )
+    );
+
+    expect(
+      hasTaskLocalMutationAt(
+        queryClient.getQueryData<Task[]>(['tasks', boardId]),
+        activeTask.id,
+        preview?.localMutationAt ?? -1
+      )
+    ).toBe(false);
   });
 });
