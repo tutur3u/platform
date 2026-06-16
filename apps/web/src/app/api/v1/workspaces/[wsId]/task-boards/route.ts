@@ -14,8 +14,6 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { ensureDefaultPersonalTaskBoard } from '@/lib/tasks/default-personal-task-board';
 
 const createBoardSchema = z.object({
   name: z.string().trim().min(1).max(255).optional(),
@@ -124,21 +122,6 @@ export const GET = withSessionAuth<TaskBoardRouteParams>(
       const page = searchParams.page;
       const pageSize = searchParams.pageSize;
       const status = searchParams.status;
-
-      if (memberCheck.ok) {
-        try {
-          await ensureDefaultPersonalTaskBoard({
-            sbAdmin,
-            userId: auth.user.id,
-            wsId,
-          });
-        } catch (error) {
-          serverLogger.error(
-            'Failed to ensure default personal task board:',
-            error
-          );
-        }
-      }
 
       const boardsQuery = sbAdmin
         .from('workspace_boards')

@@ -16,7 +16,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { ensureDefaultPersonalTaskBoard } from '@/lib/tasks/default-personal-task-board';
 
 const TASKS_APP_SESSION_AUTH = {
   targetApp: 'tasks',
@@ -86,21 +85,6 @@ export const GET = withSessionAuth<{ wsId: string }>(
           { error: "You don't have access to this workspace" },
           { status: 403 }
         );
-      }
-
-      if (memberCheck.ok) {
-        try {
-          await ensureDefaultPersonalTaskBoard({
-            sbAdmin,
-            userId: user.id,
-            wsId,
-          });
-        } catch (error) {
-          serverLogger.error(
-            'Failed to ensure default personal task board:',
-            error
-          );
-        }
       }
 
       // Build the main query for boards

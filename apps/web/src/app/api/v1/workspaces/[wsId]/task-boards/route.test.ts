@@ -382,6 +382,32 @@ describe('task boards route GET', () => {
     expect(boardsQueryCalls).toEqual([]);
   });
 
+  it('lists member boards without creating a default board on GET', async () => {
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/task-boards?status=all'
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'personal',
+        }),
+      }
+    );
+
+    if (!response) {
+      throw new Error('Expected GET to return a response');
+    }
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
+    expect(ensureDefaultPersonalTaskBoardMock).not.toHaveBeenCalled();
+    expect(boardsInsertMock).not.toHaveBeenCalled();
+    expect(boardsQueryCalls).toContainEqual([
+      'select',
+      ['*', { count: 'exact' }],
+    ]);
+  });
+
   it('lists only directly shared boards for workspace guests', async () => {
     workspaceMembersMaybeSingleMock.mockResolvedValueOnce({
       data: null,
@@ -484,6 +510,8 @@ describe('task boards route GET', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
+    expect(ensureDefaultPersonalTaskBoardMock).not.toHaveBeenCalled();
+    expect(boardsInsertMock).not.toHaveBeenCalled();
     expect(createClientMock).not.toHaveBeenCalled();
     expect(normalizeWorkspaceIdMock).toHaveBeenCalledWith(
       'personal',
@@ -527,6 +555,8 @@ describe('task boards route GET', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
+    expect(ensureDefaultPersonalTaskBoardMock).not.toHaveBeenCalled();
+    expect(boardsInsertMock).not.toHaveBeenCalled();
     expect(createClientMock).not.toHaveBeenCalled();
     expect(verifyAppSessionRequestMock).toHaveBeenCalledWith(
       expect.any(NextRequest),

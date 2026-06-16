@@ -147,6 +147,30 @@ describe('workspace boards-data route', () => {
     expect(mocks.ensureDefaultPersonalTaskBoard).not.toHaveBeenCalled();
   });
 
+  it('lists member board data without creating a default board on GET', async () => {
+    const boardsQuery = createQuery({
+      count: 0,
+      data: [],
+      error: null,
+    });
+    const admin = {
+      from: vi.fn((table: string) => {
+        if (table === 'workspace_boards') return boardsQuery;
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+    };
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await GET(buildRequest(), routeContext());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ data: [], count: 0 });
+    expect(mocks.ensureDefaultPersonalTaskBoard).not.toHaveBeenCalled();
+    expect(boardsQuery.select).toHaveBeenCalledWith('*', { count: 'exact' });
+  });
+
   it('keeps explicitly shared guest boards readable for non-members', async () => {
     const boardsQuery = createQuery({
       count: 1,
