@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+enum _TipTapNodeContentState { empty, content, malformed }
+
 class DecodedTipTapDescription {
   const DecodedTipTapDescription({required this.trimmed, this.document});
 
@@ -22,8 +24,9 @@ DecodedTipTapDescription decodeTipTapDescription(String? rawDescription) {
 
   try {
     final decoded = jsonDecode(trimmed);
-    if (decoded is Map<String, dynamic> && decoded['type'] == 'doc') {
-      return DecodedTipTapDescription(trimmed: trimmed, document: decoded);
+    final doc = _stringKeyedMap(decoded);
+    if (doc != null && doc['type'] == 'doc') {
+      return DecodedTipTapDescription(trimmed: trimmed, document: doc);
     }
   } on Object {
     // Fall through to plain-text representation.
@@ -43,22 +46,53 @@ String? normalizeTipTapDescriptionPayload(String raw) {
     return decoded.trimmed;
   }
 
-  if (!tipTapNodeHasContent(doc)) {
-    return null;
+  return switch (_tipTapNodeContentState(doc)) {
+    _TipTapNodeContentState.content => jsonEncode(doc),
+    _TipTapNodeContentState.empty => null,
+    _TipTapNodeContentState.malformed => decoded.trimmed,
+  };
+}
+
+Map<String, dynamic>? _stringKeyedMap(Object? value) {
+  if (value is! Map) return null;
+
+  final result = <String, dynamic>{};
+  for (final entry in value.entries) {
+    final key = entry.key;
+    if (key is String) {
+      result[key] = entry.value;
+    }
   }
 
-  return jsonEncode(doc);
+  return result;
 }
 
 bool tipTapNodeHasContent(Object? node) {
-  if (node is! Map<String, dynamic>) {
-    return false;
+  return _tipTapNodeContentState(node) == _TipTapNodeContentState.content;
+}
+
+_TipTapNodeContentState _tipTapNodeContentState(Object? node) {
+  final nodeMap = _stringKeyedMap(node);
+  if (nodeMap == null) {
+    return _TipTapNodeContentState.malformed;
   }
 
-  final type = node['type'];
+  final type = nodeMap['type'];
+  if (type is! String) {
+    return _TipTapNodeContentState.malformed;
+  }
+
   if (type == 'text') {
-    final text = (node['text'] as String?)?.trim() ?? '';
-    return text.isNotEmpty;
+    final text = nodeMap['text'];
+    if (text == null) {
+      return _TipTapNodeContentState.empty;
+    }
+    if (text is! String) {
+      return _TipTapNodeContentState.malformed;
+    }
+    return text.trim().isNotEmpty
+        ? _TipTapNodeContentState.content
+        : _TipTapNodeContentState.empty;
   }
 
   if (type == 'image' ||
@@ -67,19 +101,29 @@ bool tipTapNodeHasContent(Object? node) {
       type == 'youtube' ||
       type == 'mention' ||
       type == 'horizontalRule') {
-    return true;
+    return _TipTapNodeContentState.content;
   }
 
-  final content = node['content'];
+  final content = nodeMap['content'];
+  if (content == null) {
+    return _TipTapNodeContentState.empty;
+  }
   if (content is! List) {
-    return false;
+    return _TipTapNodeContentState.malformed;
   }
 
+  var hasContent = false;
   for (final child in content) {
-    if (tipTapNodeHasContent(child)) {
-      return true;
+    final childState = _tipTapNodeContentState(child);
+    if (childState == _TipTapNodeContentState.malformed) {
+      return _TipTapNodeContentState.malformed;
+    }
+    if (childState == _TipTapNodeContentState.content) {
+      hasContent = true;
     }
   }
 
-  return false;
+  return hasContent
+      ? _TipTapNodeContentState.content
+      : _TipTapNodeContentState.empty;
 }
