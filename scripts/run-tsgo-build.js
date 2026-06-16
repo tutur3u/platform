@@ -18,6 +18,28 @@ function readFileIfExists(filePath) {
   return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
 }
 
+function listJsonFilesRecursively(directory) {
+  if (!fs.existsSync(directory)) return [];
+
+  const jsonFiles = [];
+  const entries = fs.readdirSync(directory, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const entryPath = path.join(directory, entry.name);
+
+    if (entry.isDirectory()) {
+      jsonFiles.push(...listJsonFilesRecursively(entryPath));
+      continue;
+    }
+
+    if (entry.isFile() && entry.name.endsWith('.json')) {
+      jsonFiles.push(entryPath);
+    }
+  }
+
+  return jsonFiles.sort();
+}
+
 function findRepoRoot(cwd = process.cwd()) {
   let currentDir = cwd;
 
@@ -52,6 +74,13 @@ function computeBuildCacheKey(
   hash.update(readFileIfExists(path.join(cwd, 'package.json')));
   hash.update(readFileIfExists(path.join(cwd, 'tsconfig.json')));
   hash.update(readFileIfExists(path.join(cwd, 'tsconfig.build.json')));
+
+  for (const jsonPath of listJsonFilesRecursively(path.join(cwd, 'messages'))) {
+    hash.update(path.relative(cwd, jsonPath));
+    hash.update('\0');
+    hash.update(readFileIfExists(jsonPath));
+    hash.update('\0');
+  }
 
   return hash.digest('hex');
 }
@@ -113,6 +142,7 @@ module.exports = {
   clearBuildInfo,
   computeBuildCacheKey,
   findRepoRoot,
+  listJsonFilesRecursively,
   runTsgo,
   syncBuildInfoCache,
 };

@@ -877,7 +877,6 @@ export {
   updateInventoryWarehouse,
 } from './inventory';
 export * from './mail';
-export * from './rate-limits';
 export {
   type CreateWorkspaceMeetingStreamResponse,
   createWorkspaceMeetingRealtimeToken,
@@ -933,6 +932,7 @@ export {
   type WorkspaceUserLinkedPromotion,
   type WorkspaceUserReferralDiscount,
 } from './promotions';
+export * from './rate-limits';
 export {
   type CreateReportUploadUrlPayload,
   type CreateReportUploadUrlResponse,

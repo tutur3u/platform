@@ -85,3 +85,33 @@ test('syncBuildInfoCache invalidates build info when bun.lock changes', () => {
   assert.equal(result.cacheKeyChanged, true);
   assert.equal(fs.existsSync(buildInfoPath), false);
 });
+
+test('syncBuildInfoCache invalidates build info when package messages change', () => {
+  const repoRoot = createTempRepo();
+  const workspaceDir = path.join(repoRoot, 'apps/web');
+  const buildInfoPath = path.join(workspaceDir, 'tsconfig.tsbuildinfo');
+
+  writeFile(path.join(repoRoot, 'bun.lock'), 'lock-v1');
+  writeFile(
+    path.join(repoRoot, 'package.json'),
+    JSON.stringify({ packageManager: 'bun@1.3.14' })
+  );
+  writeFile(path.join(workspaceDir, 'package.json'), JSON.stringify({}));
+  writeFile(path.join(workspaceDir, 'tsconfig.json'), JSON.stringify({}));
+  writeFile(
+    path.join(workspaceDir, 'messages/en.json'),
+    JSON.stringify({ common: { save: 'Save' } })
+  );
+
+  syncBuildInfoCache(workspaceDir);
+  writeFile(buildInfoPath, 'fresh-build-info');
+  writeFile(
+    path.join(workspaceDir, 'messages/en.json'),
+    JSON.stringify({ common: { save: 'Save', cancel: 'Cancel' } })
+  );
+
+  const result = syncBuildInfoCache(workspaceDir);
+
+  assert.equal(result.cacheKeyChanged, true);
+  assert.equal(fs.existsSync(buildInfoPath), false);
+});
