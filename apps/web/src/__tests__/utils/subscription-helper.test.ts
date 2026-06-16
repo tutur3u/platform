@@ -1,12 +1,22 @@
 import type { Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   convertExternalIDToWorkspaceID,
   convertWorkspaceIDToExternalID,
   createFreeSubscription,
   hasActiveSubscription,
 } from '../../utils/subscription-helper';
+
+vi.mock('@/lib/infrastructure/log-drain', () => ({
+  serverLogger: {
+    debug: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+  },
+}));
 
 // Mock console methods
 const mockConsoleError = vi
@@ -410,11 +420,14 @@ describe('subscription-helper', () => {
 
       expect(result).toEqual({
         status: 'error',
-        message: 'No free tier product found',
+        message: 'Free-tier product lookup failed: No free product',
       });
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining('No FREE tier product found'),
-        { message: 'No free product' }
+      expect(serverLogger.error).toHaveBeenCalledWith(
+        'Free-tier product lookup failed',
+        expect.objectContaining({
+          message: 'No free product',
+          wsId: 'ws-123',
+        })
       );
     });
 

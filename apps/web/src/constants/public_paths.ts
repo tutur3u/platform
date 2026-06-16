@@ -30,6 +30,7 @@ export const APP_PUBLIC_PATHS = [
   '/facebook-mockup',
   '/qr-generator',
   '/documents',
+  '/ui',
   '/shared/forms',
   '/meet',
   '/meet-together',
