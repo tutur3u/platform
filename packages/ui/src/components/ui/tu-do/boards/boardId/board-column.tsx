@@ -259,9 +259,7 @@ export function BoardColumn({
       loadedExternalOptionsSignatureRef.current = externalOptionsSignature;
       const promise = loadListPage(column.id, page, externalLoadOptions);
 
-      promise.catch(() => {
-        loadedExternalOptionsSignatureRef.current = null;
-      });
+      void promise.catch(() => {});
 
       return promise;
     },
