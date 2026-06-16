@@ -14489,6 +14489,115 @@ export type Database = {
           },
         ];
       };
+      course_test_modules: {
+        Row: {
+          created_at: string;
+          module_id: string;
+          test_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          module_id: string;
+          test_id: string;
+        };
+        Update: {
+          created_at?: string;
+          module_id?: string;
+          test_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_test_modules_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_modules_test_id_fkey';
+            columns: ['test_id'];
+            isOneToOne: false;
+            referencedRelation: 'course_tests';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      course_tests: {
+        Row: {
+          course_id: string;
+          created_at: string;
+          description: string | null;
+          duration_in_minutes: number | null;
+          id: string;
+          is_published: boolean;
+          name: string;
+          start_at: string | null;
+        };
+        Insert: {
+          course_id: string;
+          created_at?: string;
+          description?: string | null;
+          duration_in_minutes?: number | null;
+          id?: string;
+          is_published?: boolean;
+          name: string;
+          start_at?: string | null;
+        };
+        Update: {
+          course_id?: string;
+          created_at?: string;
+          description?: string | null;
+          duration_in_minutes?: number | null;
+          id?: string;
+          is_published?: boolean;
+          name?: string;
+          start_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       crawled_url_next_urls: {
         Row: {
           created_at: string;
@@ -32723,6 +32832,17 @@ export type Database = {
       count_user_workspaces: { Args: { user_id: string }; Returns: number };
       create_ai_chat: {
         Args: { message: string; model: string; title: string };
+        Returns: string;
+      };
+      create_course_test_with_modules: {
+        Args: {
+          p_course_id: string;
+          p_description?: string;
+          p_duration_in_minutes?: number;
+          p_module_ids: string[];
+          p_name: string;
+          p_start_at?: string;
+        };
         Returns: string;
       };
       create_guest_lead_email: {

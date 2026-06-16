@@ -30,8 +30,18 @@ interface CourseModuleSummary {
   };
 }
 
+interface CourseTestSummary {
+  id: string;
+  name: string;
+  start_at: string | null;
+  duration_in_minutes: number | null;
+  description: string | null;
+  module_ids: string[];
+}
+
 interface CourseDetail extends CourseSummary {
   modules: CourseModuleSummary[];
+  tests: CourseTestSummary[];
 }
 
 type FlashcardJoinRow = {
@@ -279,39 +289,49 @@ export async function getLearnerCourseDetail({
 
   const moduleIdList = (modulesResult.data ?? []).map((module) => module.id);
   const moduleIds = new Set(moduleIdList);
-  const [completionsResult, flashcards, quizzes, quizSets] = await Promise.all([
-    moduleIdList.length
-      ? sbAdmin
-          .from('course_module_completion_status')
-          .select('module_id')
-          .eq('user_id', studentPlatformUserId)
-          .eq('completion_status', true)
-          .in('module_id', moduleIdList)
-      : emptyModuleIdResult(),
-    moduleIdList.length
-      ? sbAdmin
-          .from('course_module_flashcards')
-          .select('module_id')
-          .in('module_id', moduleIdList)
-      : emptyModuleIdResult(),
-    moduleIdList.length
-      ? sbAdmin
-          .from('course_module_quizzes')
-          .select('module_id')
-          .in('module_id', moduleIdList)
-      : emptyModuleIdResult(),
-    moduleIdList.length
-      ? sbAdmin
-          .from('course_module_quiz_sets')
-          .select('module_id')
-          .in('module_id', moduleIdList)
-      : emptyModuleIdResult(),
-  ]);
+  const [completionsResult, flashcards, quizzes, quizSets, testsResult] =
+    await Promise.all([
+      moduleIdList.length
+        ? sbAdmin
+            .from('course_module_completion_status')
+            .select('module_id')
+            .eq('user_id', studentPlatformUserId)
+            .eq('completion_status', true)
+            .in('module_id', moduleIdList)
+        : emptyModuleIdResult(),
+      moduleIdList.length
+        ? sbAdmin
+            .from('course_module_flashcards')
+            .select('module_id')
+            .in('module_id', moduleIdList)
+        : emptyModuleIdResult(),
+      moduleIdList.length
+        ? sbAdmin
+            .from('course_module_quizzes')
+            .select('module_id')
+            .in('module_id', moduleIdList)
+        : emptyModuleIdResult(),
+      moduleIdList.length
+        ? sbAdmin
+            .from('course_module_quiz_sets')
+            .select('module_id')
+            .in('module_id', moduleIdList)
+        : emptyModuleIdResult(),
+      sbAdmin
+        .from('course_tests')
+        .select(
+          'id, name, start_at, duration_in_minutes, description, course_test_modules(module_id)'
+        )
+        .eq('course_id', courseId)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false }),
+    ]);
 
   if (completionsResult.error) throw completionsResult.error;
   if (flashcards.error) throw flashcards.error;
   if (quizzes.error) throw quizzes.error;
   if (quizSets.error) throw quizSets.error;
+  if (testsResult.error) throw testsResult.error;
   const completedModuleIds = new Set(
     (completionsResult.data ?? []).map((row) => row.module_id)
   );
@@ -344,6 +364,20 @@ export async function getLearnerCourseDetail({
   );
 
   const completedModules = modules.filter((module) => module.completed).length;
+
+  const tests = (testsResult.data ?? []).map((t) => ({
+    id: t.id,
+    name: t.name,
+    start_at: t.start_at,
+    duration_in_minutes: t.duration_in_minutes,
+    description: t.description,
+    module_ids: (
+      (t.course_test_modules as { module_id: string }[] | undefined) ?? []
+    )
+      .map((m) => m.module_id)
+      .filter((moduleId) => moduleIds.has(moduleId)),
+  }));
+
   return {
     id: courseResult.data.id,
     name: courseResult.data.name,
@@ -354,6 +388,7 @@ export async function getLearnerCourseDetail({
       ? Math.round((completedModules / modules.length) * 100)
       : 0,
     modules,
+    tests,
   };
 }
 

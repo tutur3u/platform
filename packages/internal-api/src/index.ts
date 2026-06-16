@@ -1078,6 +1078,7 @@ export {
   createWorkspaceCourseIndicator,
   createWorkspaceCoursePost,
   createWorkspaceCourseReport,
+  createWorkspaceCourseTest,
   getTeachBootstrap,
   listWorkspaceCourseAttendance,
   listWorkspaceCourseAttendanceMonth,
@@ -1085,6 +1086,7 @@ export {
   listWorkspaceCourseMembers,
   listWorkspaceCoursePosts,
   listWorkspaceCourseReports,
+  listWorkspaceCourseTests,
   listWorkspaceUsers,
   removeWorkspaceCourseMember,
   type TeachAttendanceDaySummary,
@@ -1092,6 +1094,7 @@ export {
   type TeachAttendanceStatus,
   type TeachBootstrapResponse,
   type TeachCourseMember,
+  type TeachCourseTest,
   type TeachIndicator,
   type TeachIndicatorValue,
   type TeachPost,
@@ -1099,6 +1102,7 @@ export {
   type TeachWorkspaceUser,
   updateWorkspaceCourseAttendance,
   updateWorkspaceCourseIndicators,
+  updateWorkspaceCourseTest,
 } from './teach';
 export {
   getWorkspaceTemplate,

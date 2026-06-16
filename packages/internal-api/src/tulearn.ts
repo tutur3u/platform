@@ -125,8 +125,18 @@ export interface TulearnCourseModuleSummary {
   };
 }
 
+export interface TulearnCourseTestSummary {
+  id: string;
+  name: string;
+  start_at: string | null;
+  duration_in_minutes: number | null;
+  description: string | null;
+  module_ids: string[];
+}
+
 export interface TulearnCourseDetail extends TulearnCourseSummary {
   modules: TulearnCourseModuleSummary[];
+  tests: TulearnCourseTestSummary[];
 }
 
 export interface TulearnQuizOption {

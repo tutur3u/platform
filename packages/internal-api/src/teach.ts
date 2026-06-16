@@ -308,3 +308,76 @@ export function updateWorkspaceCourseIndicators(
     }
   );
 }
+
+export interface TeachCourseTest {
+  id: string;
+  course_id: string;
+  name: string;
+  created_at: string;
+  module_ids?: string[];
+  start_at?: string | null;
+  duration_in_minutes?: number | null;
+  description?: string | null;
+  is_published?: boolean;
+}
+
+export function listWorkspaceCourseTests(
+  workspaceId: string,
+  courseId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: TeachCourseTest[] }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests`,
+    { cache: 'no-store' }
+  );
+}
+
+export function createWorkspaceCourseTest(
+  workspaceId: string,
+  courseId: string,
+  payload: {
+    name: string;
+    moduleIds: string[];
+    startAt?: string | null;
+    durationInMinutes?: number | null;
+    description?: string | null;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export function updateWorkspaceCourseTest(
+  workspaceId: string,
+  courseId: string,
+  payload: {
+    id: string;
+    is_published?: boolean;
+    name?: string;
+    startAt?: string | null;
+    durationInMinutes?: number | null;
+    description?: string | null;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+    }
+  );
+}
