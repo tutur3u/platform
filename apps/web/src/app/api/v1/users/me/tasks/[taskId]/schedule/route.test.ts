@@ -156,6 +156,24 @@ describe('current-user task schedule route', () => {
     });
   });
 
+  it('normalizes a nullable split flag before upserting scheduling settings', async () => {
+    mockAccessibleTask();
+
+    const response = await callPatch({
+      is_splittable: null,
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.schedulingUpsert).toHaveBeenCalledWith(
+      {
+        task_id: TASK_ID,
+        user_id: USER_ID,
+        is_splittable: false,
+      },
+      { onConflict: 'task_id,user_id' }
+    );
+  });
+
   it('rejects empty scheduling updates', async () => {
     mockAccessibleTask();
 

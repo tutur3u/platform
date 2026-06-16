@@ -37,6 +37,15 @@ const schedulingSettingsSchema = z
   })
   .strict();
 
+type SchedulingSettingsInput = z.infer<typeof schedulingSettingsSchema>;
+
+function normalizeSchedulingSettingsInput(body: SchedulingSettingsInput) {
+  return {
+    ...body,
+    ...(body.is_splittable === null ? { is_splittable: false } : {}),
+  };
+}
+
 type TaskCalendarEventRow = {
   task_id: string;
   event_id: string;
@@ -340,13 +349,14 @@ export const PATCH = withSessionAuth<{ taskId: string }>(
         return NextResponse.json({ error: 'Task not found' }, { status: 404 });
       }
 
-      const body = schedulingSettingsSchema.parse(await req.json());
-      if (Object.keys(body).length === 0) {
+      const parsedBody = schedulingSettingsSchema.parse(await req.json());
+      if (Object.keys(parsedBody).length === 0) {
         return NextResponse.json(
           { error: 'No valid fields to update' },
           { status: 400 }
         );
       }
+      const body = normalizeSchedulingSettingsInput(parsedBody);
 
       const { error } = await (supabase as any)
         .from('task_user_scheduling_settings')
