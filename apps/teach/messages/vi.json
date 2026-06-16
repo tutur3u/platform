@@ -3,6 +3,7 @@
     "add_option": "Thêm lựa chọn",
     "back": "Quay lại",
     "cancel": "Hủy",
+    "close": "Đóng",
     "completed": "Hoàn thành",
     "confirm_delete_description": "Bạn có chắc chắn muốn xóa mục này không? Hành động này không thể hoàn tác.",
     "confirm_delete_title": "Xác nhận xóa",
@@ -12,6 +13,7 @@
     "loading": "Đang tải…",
     "option": "Lựa chọn",
     "retry": "Thử lại",
+    "save": "Lưu",
     "saving": "Đang lưu...",
     "success": "Thành công",
     "untitled": "Chưa đặt tên"
@@ -151,6 +153,15 @@
   },
   "teachModules": {
     "addSection": "Thêm mục",
+    "createTest": "Tạo bài kiểm tra",
+    "createTestDescription": "Tạo bài kiểm tra mới cho khóa học bằng cách chọn các bài học từ module.",
+    "testName": "Tên bài kiểm tra",
+    "testNamePlaceholder": "Ví dụ: Kiểm tra giữa kỳ",
+    "selectModules": "Chọn module",
+    "testCreated": "Đã tạo bài kiểm tra thành công",
+    "testSaveError": "Tạo bài kiểm tra thất bại",
+    "testNameRequired": "Tên bài kiểm tra không được để trống",
+    "noModulesInGroup": "Không có module nào trong nhóm",
     "aiGenerate": {
       "actions": {
         "cancel": "Hủy",

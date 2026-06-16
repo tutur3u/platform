@@ -14131,6 +14131,103 @@ export type Database = {
           },
         ];
       };
+      course_test_modules: {
+        Row: {
+          created_at: string;
+          module_id: string;
+          test_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          module_id: string;
+          test_id: string;
+        };
+        Update: {
+          created_at?: string;
+          module_id?: string;
+          test_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_test_modules_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_modules_test_id_fkey';
+            columns: ['test_id'];
+            isOneToOne: false;
+            referencedRelation: 'course_tests';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      course_tests: {
+        Row: {
+          course_id: string;
+          created_at: string;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          course_id: string;
+          created_at?: string;
+          id?: string;
+          name?: string;
+        };
+        Update: {
+          course_id?: string;
+          created_at?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       crawled_url_next_urls: {
         Row: {
           created_at: string;

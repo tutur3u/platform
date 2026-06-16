@@ -29,6 +29,7 @@ import { CourseMembersPanel } from '@/components/teach-operations/course-members
 import { AiGenerateDialog } from './ai-generate-dialog';
 import { EmptyState, LoadingSkeleton } from './module-detail-components';
 import { ModuleGroupSection } from './module-group-section';
+import { CourseTestDialog } from './course-test-dialog';
 import { ModuleStorageDialog } from './module-storage-dialog';
 import {
   type ModuleGroupWithModules,
@@ -269,6 +270,11 @@ export function ModuleDetailClient({
                   <Sparkles className="h-4 w-4" />
                   {t('teachModules.aiGenerate.title')}
                 </button>
+                <CourseTestDialog
+                  courseId={courseId}
+                  wsId={wsId}
+                  modules={displayGroups.flatMap((g) => g.modules)}
+                />
                 <ModuleStorageDialog courseId={courseId} wsId={wsId} />
                 <button
                   className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"

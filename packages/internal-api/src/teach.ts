@@ -308,3 +308,42 @@ export function updateWorkspaceCourseIndicators(
     }
   );
 }
+
+export interface TeachCourseTest {
+  id: string;
+  course_id: string;
+  name: string;
+  created_at: string;
+  module_ids?: string[];
+}
+
+export function listWorkspaceCourseTests(
+  workspaceId: string,
+  courseId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: TeachCourseTest[] }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests`,
+    { cache: 'no-store' }
+  );
+}
+
+export function createWorkspaceCourseTest(
+  workspaceId: string,
+  courseId: string,
+  payload: { name: string; moduleIds: string[] },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+

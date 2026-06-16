@@ -142,6 +142,11 @@
       "import": "./dist/tasks-scheduling.js",
       "require": "./dist/tasks-scheduling.js"
     },
+    "./teach": {
+      "types": "./dist/teach.d.ts",
+      "import": "./dist/teach.js",
+      "require": "./dist/teach.js"
+    },
     "./user-groups": {
       "types": "./dist/user-groups.d.ts",
       "import": "./dist/user-groups.js",
