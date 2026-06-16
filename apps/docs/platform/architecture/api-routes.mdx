@@ -629,8 +629,8 @@ route provides an explicit `rateLimit` option.
 The API proxy still protects request-heavy dashboard reads before route auth is
 validated. High-fanout task-board reads use a dedicated `task-board-read` proxy
 bucket so normal board loading, per-list pagination, and focused revalidation do
-not exhaust the generic anonymous read budget. The defaults are 300 requests per
-minute, 3000 per hour, and 20000 per day, and can be tuned with
+not exhaust the generic anonymous read budget. The defaults are 600 requests per
+minute, 12000 per hour, and 80000 per day, and can be tuned with
 `API_PROXY_TASK_BOARD_READ_LIMIT_MINUTE`,
 `API_PROXY_TASK_BOARD_READ_LIMIT_HOUR`, and
 `API_PROXY_TASK_BOARD_READ_LIMIT_DAY`.
@@ -646,6 +646,33 @@ day, and can be tuned with
 `API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_MINUTE`,
 `API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_HOUR`, and
 `API_PROXY_FINANCE_INVOICE_CREATE_READ_LIMIT_DAY`.
+
+### Trusted accounts and locations (read uplift)
+
+Proxy read limits are keyed per-IP and treat every caller as anonymous, because
+auth headers and cookies are forgeable at the edge — their presence alone must
+never raise a budget. To give legitimate teams (often many people behind one
+office NAT/VPN IP) higher read throughput, the proxy consults a server-written
+**trust cache** in Redis, keyed by the same subject keys as the abuse-reputation
+system (`session:<hash>`, `cidr:<network>`, `ip:<addr>`):
+
+- A genuinely trusted **session** (its key is a hash of the real auth cookie, so
+  it cannot be forged) gets its own per-session read bucket, so trusted
+  teammates behind one shared IP no longer collide.
+- A trusted **location** (office `cidr`/`ip`, learned automatically from organic
+  reputation or set explicitly via an `abuse_trust_overrides` `cidr` entry in the
+  abuse-intelligence admin API) uplifts the shared per-IP read limit for the
+  whole team.
+
+Untrusted traffic keeps the legacy per-IP limits, preserving single-IP abuse
+caps. The cache only ever raises read limits (never lowers them — restrictive
+decisions stay server-side) and fails open to neutral when Redis is unavailable.
+It is populated by the session write-through in `recordResponseAbuseSignal` and
+reconciled every 10 minutes by the
+`/api/cron/infrastructure/sync-trust-cache` cron (which also propagates admin
+trusted-location overrides). Set `API_PROXY_EDGE_TRUST_ENABLED=0` to disable the
+uplift and fall back to per-IP read limiting; tune the cache lifetime with
+`EDGE_TRUST_CACHE_TTL_SECONDS`.
 
 ```typescript
 import { Ratelimit } from '@upstash/ratelimit';

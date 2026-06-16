@@ -34776,6 +34776,13 @@ export type Database = {
           notification_type: string;
         }[];
       };
+      list_trusted_subjects_for_cache: {
+        Args: { p_min_multiplier?: number };
+        Returns: {
+          subject_key: string;
+          trust_multiplier: number;
+        }[];
+      };
       list_workspace_user_audit_bucket_counts: {
         Args: {
           p_actor_query?: string;

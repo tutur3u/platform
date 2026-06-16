@@ -66,6 +66,7 @@
     "./abuse-protection": "./src/abuse-protection/index.ts",
     "./abuse-protection/backend-rate-limit": "./src/abuse-protection/backend-rate-limit.ts",
     "./abuse-protection/edge": "./src/abuse-protection/edge.ts",
+    "./abuse-protection/edge-trust": "./src/abuse-protection/edge-trust.ts",
     "./abuse-protection/user-suspension": "./src/abuse-protection/user-suspension.ts",
     "./currencies": "./src/currencies.ts",
     "./exchange-rates": "./src/exchange-rates.ts",

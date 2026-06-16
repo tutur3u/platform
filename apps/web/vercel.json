@@ -50,6 +50,10 @@
     {
       "path": "/api/cron/infrastructure/docker-recovery-alerts",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/infrastructure/sync-trust-cache",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

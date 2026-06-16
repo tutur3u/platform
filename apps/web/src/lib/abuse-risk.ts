@@ -13,6 +13,7 @@ import {
   recordAbuseStepUpChallenge,
   resolveAbuseRiskDecision,
 } from '@tuturuuu/utils/abuse-protection';
+import { writeTrustCacheForSubjects } from '@tuturuuu/utils/abuse-protection/edge-trust';
 import { type NextRequest, NextResponse } from 'next/server';
 import type { RateLimitConfig } from './rate-limit';
 
@@ -254,4 +255,26 @@ export function recordResponseAbuseSignal({
     userId,
     workspaceId,
   });
+
+  // Best-effort write-through of ACCOUNT trust uplift to the edge cache so a
+  // trusted user's real session gets its own per-session bucket with scaled
+  // read limits at the proxy — without a per-request DB round-trip. Only the
+  // session subject is cached here (its key is a hash of the real auth cookie,
+  // so it is unforgeable and unambiguously this user's session). Location trust
+  // (cidr/ip) is reconciled separately by the sync-trust-cache cron from each
+  // location's OWN reputation and admin overrides, so one trusted user can
+  // never mark a shared office IP as trusted for everyone. Only uplift
+  // (multiplier > 1) is cached; restrictive decisions stay server-side.
+  if (decision.trustMultiplier > 1) {
+    const sessionSubjectKeys = decision.subjects
+      .filter((subject) => subject.subject_type === 'session')
+      .map((subject) => subject.subject_key);
+
+    if (sessionSubjectKeys.length > 0) {
+      void writeTrustCacheForSubjects(
+        sessionSubjectKeys,
+        decision.trustMultiplier
+      );
+    }
+  }
 }

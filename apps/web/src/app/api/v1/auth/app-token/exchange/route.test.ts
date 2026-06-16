@@ -323,6 +323,7 @@ describe('app token exchange route', () => {
       expire: vi.fn(),
       get: mocks.redisGet,
       incr: vi.fn(),
+      mget: vi.fn(),
       set: mocks.redisSet,
       ttl: vi.fn(),
     });

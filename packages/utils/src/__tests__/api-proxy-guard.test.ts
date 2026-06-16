@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   extractIp: vi.fn(),
   isBlocked: vi.fn(),
   validateEmoji: vi.fn(),
+  getTrustMultipliers: vi.fn(),
 }));
 
 vi.mock('@upstash/ratelimit', () => {
@@ -48,6 +49,11 @@ vi.mock('@upstash/redis', () => ({
 vi.mock('../abuse-protection/edge', () => ({
   extractIPFromRequest: (headers: Headers) => mocks.extractIp(headers),
   isIPBlockedEdge: (ip: string) => mocks.isBlocked(ip),
+}));
+
+vi.mock('../abuse-protection/edge-trust', () => ({
+  getCachedTrustMultipliers: (keys: string[]) =>
+    mocks.getTrustMultipliers(keys),
 }));
 
 vi.mock('../request-emoji-limit', () => ({
@@ -98,6 +104,9 @@ describe('guardApiProxyRequest', () => {
     mocks.extractIp.mockReset();
     mocks.isBlocked.mockReset();
     mocks.validateEmoji.mockReset();
+    mocks.getTrustMultipliers.mockReset();
+    // Default: no cached trust (untrusted). Tests opt in by overriding.
+    mocks.getTrustMultipliers.mockResolvedValue(new Map<string, number>());
   });
 
   afterEach(() => {
@@ -204,7 +213,7 @@ describe('guardApiProxyRequest', () => {
     mocks.isBlocked.mockResolvedValue(null);
     mocks.limit.mockResolvedValueOnce({
       success: false,
-      limit: 300,
+      limit: 600,
       remaining: 0,
       reset: Date.now() + 15_000,
     });
@@ -221,10 +230,10 @@ describe('guardApiProxyRequest', () => {
     );
 
     expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-RateLimit-Limit')).toBe('300');
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('600');
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('task-board-read');
     expect(mocks.ratelimitConfigs).toContainEqual({
-      limit: 300,
+      limit: 600,
       window: '1 m',
     });
     expect(mocks.ratelimitPrefixes).toContain(
@@ -1550,6 +1559,223 @@ describe('guardApiProxyRequest', () => {
 
     expect(response).toBe(emojiResponse);
     expect(mocks.validateEmoji).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives a trusted session its own per-session bucket with scaled read limits', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    // Trust the session subject key (account trust → per-session keying).
+    mocks.getTrustMultipliers.mockImplementation((keys: string[]) => {
+      const map = new Map<string, number>();
+      const sessionKey = keys.find((key) => key.startsWith('session:'));
+      if (sessionKey) {
+        map.set(sessionKey, 3);
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 1800,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/tasks?boardId=board-1', 'GET', {
+        cookie:
+          'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe('task-board-read');
+    // Base task-board read minute limit (600) scaled by the trust tier (3).
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 1800,
+      window: '1 m',
+    });
+    // Trusted traffic gets a tier-suffixed bucket.
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:task-board-read:anonymous:t3:get:minute'
+    );
+    // The limiter is keyed by the per-session subject key, not the shared IP.
+    const limiterId = mocks.limit.mock.calls[0]?.[0] as string;
+    expect(limiterId.startsWith('session:')).toBe(true);
+  });
+
+  it('uplifts a trusted location per-IP without per-session keying', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    // Trust the location (cidr) subject key only — no session cookie present.
+    mocks.getTrustMultipliers.mockImplementation((keys: string[]) => {
+      const map = new Map<string, number>();
+      const cidrKey = keys.find((key) => key.startsWith('cidr:'));
+      if (cidrKey) {
+        map.set(cidrKey, 2);
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 1200,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/tasks?boardId=board-1', 'GET'),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 1200,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:task-board-read:anonymous:t2:get:minute'
+    );
+    // Location trust keeps the shared per-IP bucket (whole team benefits).
+    expect(mocks.limit).toHaveBeenCalledWith('ip:1.2.3.4');
+  });
+
+  it('keeps a trusted location on per-IP keying even with an untrusted session cookie', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    // Only the cidr is trusted; the session key is absent from the cache.
+    mocks.getTrustMultipliers.mockImplementation((keys: string[]) => {
+      const map = new Map<string, number>();
+      const cidrKey = keys.find((key) => key.startsWith('cidr:'));
+      if (cidrKey) {
+        map.set(cidrKey, 2);
+      }
+      return Promise.resolve(map);
+    });
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 1200,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/tasks?boardId=board-1', 'GET', {
+        cookie:
+          'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    // An untrusted session must not escape the per-IP bucket.
+    expect(mocks.limit).toHaveBeenCalledWith('ip:1.2.3.4');
+  });
+
+  it('keeps untrusted reads on the legacy per-IP bucket without trust suffix', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    // Default mock: empty trust map (forged or simply untrusted).
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 600,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/tasks?boardId=board-1', 'GET', {
+        cookie:
+          'sb-resolved-kingfish-21146-auth-token.0=forged-value; theme=dark',
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 600,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitPrefixes).toContain(
+      'proxy:test:api:task-board-read:anonymous:get:minute'
+    );
+    expect(mocks.limit).toHaveBeenCalledWith('ip:1.2.3.4');
+  });
+
+  it('derives the session subject key the same way as server-side reputation', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    const receivedKeys: string[] = [];
+    mocks.getTrustMultipliers.mockImplementation((keys: string[]) => {
+      receivedKeys.push(...keys);
+      return Promise.resolve(new Map<string, number>());
+    });
+    mocks.limit.mockResolvedValue({
+      success: true,
+      limit: 600,
+      remaining: 599,
+      reset: Date.now() + 15_000,
+    });
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const cookieName = 'sb-resolved-kingfish-21146-auth-token.0';
+    const cookieValue = 'base64-validvalue';
+    await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/tasks?boardId=board-1', 'GET', {
+        cookie: `${cookieName}=${cookieValue}; theme=dark`,
+      }),
+      { prefixBase: 'proxy:test:api' }
+    );
+
+    const { createHash } = await import('node:crypto');
+    const expected = `session:${createHash('sha256')
+      .update(`${cookieName}:${cookieValue}`)
+      .digest('hex')
+      .slice(0, 24)}`;
+
+    expect(receivedKeys).toContain(expected);
   });
 
   it('skips text-bomb validation for whiteboard snapshots on the whiteboard save route', async () => {

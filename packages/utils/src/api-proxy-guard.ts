@@ -2,6 +2,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { extractIPFromRequest, isIPBlockedEdge } from './abuse-protection/edge';
+import { getCachedTrustMultipliers } from './abuse-protection/edge-trust';
 import { DEV_MODE, MAX_PAYLOAD_SIZE } from './constants';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
 import {
@@ -10,6 +11,45 @@ import {
 } from './upstash-rest';
 
 const isDev = process.env.NODE_ENV !== 'production';
+
+// Quantized trust tiers — the cached multiplier is floored to one of these
+// before scaling read limits, so the limiter prefix (and therefore the Redis
+// sliding-window buckets) stays bounded and stable even as a subject's exact
+// multiplier drifts.
+const TRUST_MULTIPLIER_TIERS = [1, 1.5, 2, 3, 5] as const;
+
+function isEnvFlagEnabled(name: string, defaultOn = true): boolean {
+  const raw = process.env[name];
+  if (raw == null || raw.trim() === '') {
+    return defaultOn;
+  }
+
+  return !/^(0|false|off|no)$/i.test(raw.trim());
+}
+
+/**
+ * Whether trusted accounts/locations get scaled read limits (and trusted
+ * sessions get their own per-session bucket) at the edge. Default on; set
+ * `API_PROXY_EDGE_TRUST_ENABLED=0` to disable trust uplift and fall back to
+ * legacy per-IP read limiting without a deploy.
+ */
+function edgeTrustEnabled(): boolean {
+  return isEnvFlagEnabled('API_PROXY_EDGE_TRUST_ENABLED');
+}
+
+/**
+ * Floors a raw trust multiplier to the nearest quantized tier. Never reduces
+ * below 1 — trust uplift only ever raises read limits.
+ */
+function quantizeTrustMultiplier(multiplier: number): number {
+  let tier = 1;
+  for (const candidate of TRUST_MULTIPLIER_TIERS) {
+    if (multiplier >= candidate) {
+      tier = candidate;
+    }
+  }
+  return tier;
+}
 
 type CallerClass = 'anonymous' | 'authenticated';
 
@@ -251,11 +291,11 @@ const TASK_BOARD_READ_RATE_LIMITS: RateLimitProfile = {
     createConfig(
       'minute',
       '1 m',
-      300,
+      600,
       'API_PROXY_TASK_BOARD_READ_LIMIT_MINUTE'
     ),
-    createConfig('hour', '1 h', 3000, 'API_PROXY_TASK_BOARD_READ_LIMIT_HOUR'),
-    createConfig('day', '1 d', 20_000, 'API_PROXY_TASK_BOARD_READ_LIMIT_DAY'),
+    createConfig('hour', '1 h', 12_000, 'API_PROXY_TASK_BOARD_READ_LIMIT_HOUR'),
+    createConfig('day', '1 d', 80_000, 'API_PROXY_TASK_BOARD_READ_LIMIT_DAY'),
   ],
   mutate: DEFAULT_MUTATE_RATE_LIMITS,
 };
@@ -767,8 +807,150 @@ export function hasAuthenticatedApiSession(req: NextRequest): boolean {
 }
 
 function getCallerClass(req: NextRequest): CallerClass {
+  // Intentionally always 'anonymous'. Auth headers/cookies are forgeable at the
+  // edge (we can't verify signatures cheaply here), so presence alone must never
+  // grant an elevated proxy budget — real per-user enforcement happens
+  // downstream. Higher read throughput for genuinely trusted accounts/locations
+  // is granted instead via the server-written trust cache (see resolveProxyIdentity
+  // + getCachedTrustMultiplier), which cannot be forged.
   void req;
   return 'anonymous';
+}
+
+/**
+ * Edge-safe stable subject hash. MUST stay byte-identical to
+ * `reputation.ts hashStableSubject` (sha256 hex, sliced to 24 chars) so that
+ * the edge `session:<hash>` subject key matches the DB-side key used by the
+ * trust cache.
+ */
+async function hashStableSubjectEdge(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(value)
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, 24);
+}
+
+function parseCookieHeaderEdge(
+  cookieHeader: string | null
+): Array<{ name: string; value: string }> {
+  if (!cookieHeader) {
+    return [];
+  }
+
+  return cookieHeader
+    .split(';')
+    .map((entry) => {
+      const separatorIndex = entry.indexOf('=');
+      if (separatorIndex < 0) {
+        return null;
+      }
+
+      return {
+        name: entry.slice(0, separatorIndex).trim(),
+        value: entry.slice(separatorIndex + 1).trim(),
+      };
+    })
+    .filter(
+      (entry): entry is { name: string; value: string } =>
+        !!entry?.name && !!entry.value
+    );
+}
+
+function getSessionAuthCookie(
+  req: NextRequest
+): { name: string; value: string } | null {
+  const cookies = parseCookieHeaderEdge(req.headers.get('cookie'));
+  return (
+    cookies.find(
+      (cookie) =>
+        cookie.name === 'tuturuuu_app_session' ||
+        GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN.test(cookie.name)
+    ) ?? null
+  );
+}
+
+/**
+ * Mirrors `reputation.ts getCidrSubjectKey` so the edge cidr subject key matches
+ * the DB-side trusted-location key.
+ */
+function getCidrSubjectKeyEdge(ipAddress: string | null): string | null {
+  if (!ipAddress) {
+    return null;
+  }
+
+  const ipv4Parts = ipAddress.split('.');
+  if (
+    ipv4Parts.length === 4 &&
+    ipv4Parts.every((part) => /^\d{1,3}$/.test(part))
+  ) {
+    return `cidr:${ipv4Parts.slice(0, 3).join('.')}.0/24`;
+  }
+
+  const ipv6Parts = ipAddress.split(':').filter(Boolean);
+  if (ipv6Parts.length >= 4) {
+    return `cidr:${ipv6Parts.slice(0, 4).join(':')}::/64`;
+  }
+
+  return null;
+}
+
+export type ProxyIdentity = {
+  /** `ip:<ip>` subject key, or null when the IP is unknown. */
+  ipKey: string | null;
+  /** `cidr:<network>` subject key for trusted-location lookups, or null. */
+  cidrKey: string | null;
+  /** `session:<hash>` subject key for cookie sessions, or null. Matches the
+   * DB-side session subject key so trusted sessions resolve from the cache. */
+  sessionKey: string | null;
+};
+
+/**
+ * Resolves the trust/keying subject keys for a request. Intentionally limited
+ * to session/cidr/ip — keys an attacker would have to actually possess (the
+ * real cookie value) or physically share a network with — so trust uplift and
+ * per-session keying can never be granted by a forged credential.
+ */
+async function resolveProxyIdentity(
+  req: NextRequest,
+  ip: string
+): Promise<ProxyIdentity> {
+  const normalizedIp = ip && ip !== 'unknown' ? ip : null;
+  const sessionCookie = getSessionAuthCookie(req);
+  const sessionKey = sessionCookie
+    ? `session:${await hashStableSubjectEdge(`${sessionCookie.name}:${sessionCookie.value}`)}`
+    : null;
+
+  return {
+    cidrKey: getCidrSubjectKeyEdge(normalizedIp),
+    ipKey: normalizedIp ? `ip:${normalizedIp}` : null,
+    sessionKey,
+  };
+}
+
+/**
+ * Scales the read (`get`) limits of a profile by a trust multiplier. Mutation
+ * limits are left flat — those are already trust-scaled at the DB and in the
+ * downstream session/API wrappers, so scaling them here would double-apply.
+ */
+function scaleReadLimits(
+  profile: RateLimitProfile,
+  multiplier: number
+): RateLimitProfile {
+  if (multiplier <= 1) {
+    return profile;
+  }
+
+  return {
+    ...profile,
+    get: profile.get.map((config) => ({
+      ...config,
+      limit: Math.max(config.limit, Math.floor(config.limit * multiplier)),
+    })),
+  };
 }
 
 function getEffectiveRateLimits(
@@ -792,9 +974,13 @@ function getEffectiveRateLimits(
 function getRateLimitPrefix(
   prefixBase: string,
   routePolicy: ProxyRoutePolicy,
-  callerClass: CallerClass
+  callerClass: CallerClass,
+  trustTier = 1
 ): string {
-  return `${prefixBase}:${routePolicy.key}:${callerClass}`;
+  const base = `${prefixBase}:${routePolicy.key}:${callerClass}`;
+  // Only trusted (uplifted) traffic gets a tier-suffixed bucket; untrusted
+  // traffic keeps the original prefix so its sliding windows are unaffected.
+  return trustTier > 1 ? `${base}:t${trustTier}` : base;
 }
 
 export function isTrustedProxyBypassRequest(
@@ -881,8 +1067,9 @@ export async function guardApiProxyRequest(
   ) {
     const callerClass = getCallerClass(req);
     const ip = extractIPFromRequest(req.headers);
+    const identity = await resolveProxyIdentity(req, ip);
 
-    if (ip !== 'unknown' && callerClass === 'anonymous') {
+    if (ip !== 'unknown') {
       const blockInfo = await isIPBlockedEdge(ip);
       if (blockInfo) {
         const retryAfter = Math.max(
@@ -894,14 +1081,61 @@ export async function guardApiProxyRequest(
           'X-Proxy-Block-Reason': 'ip-already-blocked',
         });
       }
+    }
 
-      const routePolicy = getRoutePolicy(req, routePolicies);
-      const isRead = req.method === 'GET' || req.method === 'HEAD';
-      const rateLimits = getEffectiveRateLimits(routePolicy, callerClass);
+    const routePolicy = getRoutePolicy(req, routePolicies);
+    const isRead = req.method === 'GET' || req.method === 'HEAD';
+
+    // Resolve trust for reads only. Account trust (session key) and location
+    // trust (cidr/ip keys) are distinguished so that:
+    //   * a genuinely trusted SESSION (cache entry keyed on the real cookie's
+    //     hash — unforgeable) gets its OWN per-session bucket, so trusted
+    //     teammates behind one NAT no longer collide; and
+    //   * a trusted LOCATION (office cidr/ip) uplifts the shared per-IP bucket
+    //     for the whole team without any per-request credential.
+    // Untrusted traffic keeps legacy per-IP keying, preserving single-IP abuse
+    // caps. A forged cookie hashes to a key with no cache entry → no uplift,
+    // no per-session escape.
+    let trustTier = 1;
+    let sessionTrusted = false;
+    if (isRead && edgeTrustEnabled()) {
+      const lookupKeys = [
+        identity.sessionKey,
+        identity.cidrKey,
+        identity.ipKey,
+      ].filter((key): key is string => key != null);
+      const multipliers = await getCachedTrustMultipliers(lookupKeys);
+
+      const sessionMultiplier = identity.sessionKey
+        ? (multipliers.get(identity.sessionKey) ?? 1)
+        : 1;
+      const locationMultiplier = Math.max(
+        identity.cidrKey ? (multipliers.get(identity.cidrKey) ?? 1) : 1,
+        identity.ipKey ? (multipliers.get(identity.ipKey) ?? 1) : 1
+      );
+
+      trustTier = quantizeTrustMultiplier(
+        Math.max(sessionMultiplier, locationMultiplier)
+      );
+      sessionTrusted =
+        !!identity.sessionKey && quantizeTrustMultiplier(sessionMultiplier) > 1;
+    }
+
+    // Trusted sessions key per-session; everyone else keys per-IP.
+    const limiterId =
+      sessionTrusted && identity.sessionKey
+        ? identity.sessionKey
+        : identity.ipKey;
+
+    if (limiterId) {
+      const baseRateLimits = getEffectiveRateLimits(routePolicy, callerClass);
+      const rateLimits = scaleReadLimits(baseRateLimits, trustTier);
+
       const limiterPrefix = getRateLimitPrefix(
         options.prefixBase,
         routePolicy,
-        callerClass
+        callerClass,
+        trustTier
       );
       const limiterCacheKey = `${limiterPrefix}:${JSON.stringify(rateLimits)}`;
       const limiters = await getRateLimiters(limiterPrefix, rateLimits);
@@ -912,7 +1146,7 @@ export async function guardApiProxyRequest(
         let result: RateLimitResult;
 
         try {
-          result = await limiter.limit(ip);
+          result = await limiter.limit(limiterId);
         } catch {
           const fallbackLimiters = replaceWithLocalRateLimiters(
             limiterCacheKey,
@@ -930,7 +1164,7 @@ export async function guardApiProxyRequest(
             continue;
           }
 
-          result = await fallbackBucket.limiter.limit(ip);
+          result = await fallbackBucket.limiter.limit(limiterId);
         }
 
         const { success, limit, remaining, reset } = result;
@@ -939,7 +1173,7 @@ export async function guardApiProxyRequest(
           const consumed = limit - remaining;
           const kind = isRead ? 'read' : 'mutate';
           console.log(
-            `[ProxyGuard] ${routePolicy.key}:${kind}:${window} ${consumed}/${limit} | IP: ${ip} | path: ${req.nextUrl.pathname}`
+            `[ProxyGuard] ${routePolicy.key}:${kind}:${window} ${consumed}/${limit} | id: ${limiterId} | path: ${req.nextUrl.pathname}`
           );
         }
 
