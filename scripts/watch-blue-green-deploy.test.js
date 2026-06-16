@@ -1404,6 +1404,72 @@ test('buildDashboardView shows blue/green runtime and the top 3 prioritized depl
   assert.equal(firstCardTop.length, firstCardHeading.length);
 });
 
+test('buildDashboardView strips terminal controls from untrusted dashboard text', () => {
+  const now = Date.parse('2026-04-18T11:30:00.000Z');
+  const maliciousSubject = 'Deploy \x1b]52;c;Y2xpcA==\x07\x1b[2Jnow';
+  const maliciousEvent =
+    'Pulled \x1b]8;;https://example.com\x07event link\x1b]8;;\x07';
+  const maliciousPin = 'Pinned \x1bPpayload\x1b\\ deployment';
+  const output = buildDashboardView(
+    {
+      deploymentPin: {
+        commitHash: 'pin123456789',
+        commitShortHash: 'pin123',
+        commitSubject: maliciousPin,
+      },
+      deployments: [
+        {
+          activeColor: 'green\x1b[2J',
+          commitShortHash: 'abc123\x1b[2J',
+          commitSubject: maliciousSubject,
+          startedAt: now - 5_000,
+          status: 'successful',
+        },
+      ],
+      events: [
+        {
+          level: 'info',
+          message: maliciousEvent,
+          time: now,
+        },
+      ],
+      intervalMs: DEFAULT_INTERVAL_MS,
+      lastResult: {
+        error: new Error('Error \x1b[2Jhidden'),
+        status: 'deploy-failed',
+      },
+      latestCommit: {
+        committedAt: now,
+        shortHash: 'abc123\x1b[2J',
+        subject: maliciousSubject,
+      },
+      lockFile: '/tmp/watch\x1b[2J.lock',
+      startedAt: now - 30_000,
+      target: {
+        branch: 'main\x1b[2J',
+        upstreamRef: 'origin/main\x1b[2J',
+      },
+    },
+    {
+      now,
+      width: 100,
+    }
+  );
+
+  assert.equal(output.includes('\x1b]'), false);
+  assert.equal(output.includes('\x1b[2J'), false);
+  assert.equal(output.includes('\x1bP'), false);
+  assert.equal(output.includes('\x07'), false);
+
+  const plainOutput = stripAnsi(output);
+  assert.match(plainOutput, /Deploy now/);
+  assert.match(plainOutput, /Pinned deployment/);
+  assert.match(plainOutput, /Pulled event link/);
+  assert.match(plainOutput, /Error hidden/);
+  assert.match(plainOutput, /main -> origin\/main/);
+  assert.match(plainOutput, /\/tmp\/watch\.lock/);
+});
+
 test('buildDashboardView surfaces the latest deploy failure details', () => {
   const now = Date.parse('2026-04-18T11:30:00.000Z');
   const plainOutput = stripAnsi(
