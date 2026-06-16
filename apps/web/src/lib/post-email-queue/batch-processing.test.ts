@@ -2,17 +2,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   const emailServiceSendMock = vi.fn();
+  const fromWorkspaceMock = vi.fn(async () => ({
+    send: emailServiceSendMock,
+  }));
   const fromWorkspaceAdminMock = vi.fn(async () => ({
     send: emailServiceSendMock,
   }));
 
   class MockEmailService {
+    static fromWorkspace = fromWorkspaceMock;
     static fromWorkspaceAdmin = fromWorkspaceAdminMock;
   }
 
   return {
     EmailService: MockEmailService,
     emailServiceSendMock,
+    fromWorkspaceMock,
     fromWorkspaceAdminMock,
   };
 });
@@ -578,6 +583,7 @@ describe('post email batch processing', () => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
     mocks.emailServiceSendMock.mockReset();
+    mocks.fromWorkspaceMock.mockClear();
     mocks.fromWorkspaceAdminMock.mockClear();
   });
 
@@ -602,7 +608,8 @@ describe('post email batch processing', () => {
       id: QUEUE_ID,
       status: 'skipped',
     });
-    expect(mocks.fromWorkspaceAdminMock).toHaveBeenCalledWith(WS_ID);
+    expect(mocks.fromWorkspaceMock).toHaveBeenCalledWith(WS_ID);
+    expect(mocks.fromWorkspaceAdminMock).not.toHaveBeenCalled();
     expect(mocks.emailServiceSendMock).not.toHaveBeenCalled();
     expect(state.queueUpdates).toContainEqual(
       expect.objectContaining({
@@ -612,6 +619,52 @@ describe('post email batch processing', () => {
           blocked_reason: 'blacklist',
           last_error: 'Blocked: blacklist',
           status: 'skipped',
+        }),
+      })
+    );
+  });
+
+  it('records rate-limited sends as failed queue rows', async () => {
+    mocks.emailServiceSendMock.mockResolvedValue({
+      error: 'Rate limit exceeded',
+      rateLimitInfo: {
+        allowed: false,
+        limitType: 'workspace_day',
+        reason: 'Workspace daily email limit reached',
+        remaining: 0,
+        retryAfter: 3600,
+      },
+      success: false,
+    });
+
+    const { sbAdmin, state } = createSbAdminMock({
+      checkRows: [
+        createCheckRow({ user_id: USER_ID, userEmail: 'user-1@example.com' }),
+      ],
+      queueRows: [],
+    });
+
+    const result = await sendPostEmailImmediately(sbAdmin as never, {
+      wsId: WS_ID,
+      groupId: GROUP_ID,
+      postId: POST_ID,
+      userId: USER_ID,
+      senderPlatformUserId: SENDER_PLATFORM_USER_ID,
+    });
+
+    expect(result).toEqual({
+      id: QUEUE_ID,
+      status: 'failed',
+    });
+    expect(mocks.fromWorkspaceMock).toHaveBeenCalledWith(WS_ID);
+    expect(mocks.fromWorkspaceAdminMock).not.toHaveBeenCalled();
+    expect(state.queueUpdates).toContainEqual(
+      expect.objectContaining({
+        ids: [QUEUE_ID],
+        patch: expect.objectContaining({
+          blocked_reason: null,
+          last_error: 'Workspace daily email limit reached',
+          status: 'failed',
         }),
       })
     );

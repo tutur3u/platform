@@ -369,7 +369,7 @@ async function prefetchBatchData(
   const sourceInfos = new Map<string, BatchSourceInfo>();
 
   for (const wsId of wsIds) {
-    emailServices.set(wsId, await EmailService.fromWorkspaceAdmin(wsId));
+    emailServices.set(wsId, await EmailService.fromWorkspace(wsId));
     const { data, error } = await sbAdmin
       .from('workspace_email_credentials')
       .select('source_name, source_email')
