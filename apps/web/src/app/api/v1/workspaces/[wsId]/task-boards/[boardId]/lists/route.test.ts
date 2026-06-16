@@ -251,11 +251,11 @@ describe('task board lists route POST', () => {
     );
   });
 
-  it('returns the backend error message instead of a generic create failure', async () => {
+  it('returns a whitelisted validation error from the list creation RPC', async () => {
     rpcMock.mockResolvedValue({
       data: null,
       error: {
-        message: 'Only one closed list is allowed per board',
+        message: 'Board not found',
       },
     });
 
@@ -286,9 +286,51 @@ describe('task board lists route POST', () => {
       throw new Error('Expected POST to return a response');
     }
 
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Board not found',
+    });
+  });
+
+  it('redacts unexpected database errors from the list creation RPC', async () => {
+    rpcMock.mockResolvedValue({
+      data: null,
+      error: {
+        code: '42P01',
+        message: 'relation "private.task_lists" does not exist',
+      },
+    });
+
+    const response = await POST(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/board-1/lists',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name: 'Backlog',
+            status: 'not_started',
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: 'board-1',
+        }),
+      }
+    );
+
+    expect(response).toBeDefined();
+    if (!response) {
+      throw new Error('Expected POST to return a response');
+    }
+
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
-      error: 'Only one closed list is allowed per board',
+      error: 'Failed to create task list',
     });
   });
 

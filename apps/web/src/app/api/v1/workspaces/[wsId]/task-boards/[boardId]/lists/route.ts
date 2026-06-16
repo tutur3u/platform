@@ -19,6 +19,11 @@ const createListSchema = z.object({
 const TASK_LIST_NAME_EXISTS_CODE = 'TASK_LIST_NAME_EXISTS';
 const TASK_LIST_NAME_EXISTS_ERROR =
   'A task list with this name already exists on this board';
+const PUBLIC_TASK_LIST_CREATE_RPC_ERRORS = new Set([
+  'Board ID is required',
+  'List name is required',
+  'Board not found',
+]);
 
 type Params = {
   boardId: string;
@@ -62,6 +67,15 @@ function taskListNameExistsResponse() {
     },
     { status: 409 }
   );
+}
+
+function getPublicTaskListCreateRpcError(error: { message?: string }) {
+  const message = error.message?.trim();
+  if (!message || !PUBLIC_TASK_LIST_CREATE_RPC_ERRORS.has(message)) {
+    return null;
+  }
+
+  return { message, status: 400 };
 }
 
 export const GET = withSessionAuth<Params>(
@@ -160,20 +174,13 @@ export const POST = withSessionAuth<Params>(
           return taskListNameExistsResponse();
         }
 
-        const message =
-          typeof error.message === 'string' && error.message.trim().length > 0
-            ? error.message
-            : 'Failed to create task list';
-        const status = [
-          'Board ID is required',
-          'List name is required',
-          'Board not found',
-        ].includes(message)
-          ? 400
-          : 500;
-
         serverLogger.error('Error creating task list via RPC:', error);
-        return NextResponse.json({ error: message }, { status });
+
+        const publicError = getPublicTaskListCreateRpcError(error);
+        return NextResponse.json(
+          { error: publicError?.message ?? 'Failed to create task list' },
+          { status: publicError?.status ?? 500 }
+        );
       }
 
       // The list RPC sometimes returns list as a single row and sometimes as an array, so createdList normalizes both shapes.
