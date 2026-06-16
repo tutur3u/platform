@@ -159,7 +159,7 @@ export function StorefrontProductDetail({
                 {formatStorefrontPrice(displayPrice, currency)}
               </span>
               {compareAtPrice ? (
-                <span className="text-lg text-muted-foreground line-through tabular-nums">
+                <span className="text-lg text-muted-foreground tabular-nums line-through">
                   {formatStorefrontPrice(compareAtPrice, currency)}
                 </span>
               ) : null}
