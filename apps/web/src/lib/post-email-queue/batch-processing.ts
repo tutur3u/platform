@@ -5,6 +5,7 @@ import type { Database } from '@tuturuuu/types/db';
 import dayjs from 'dayjs';
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   buildPostEmailAgeSkipReason,
   getPostEmailMaxAgeCutoff,
@@ -38,6 +39,10 @@ import {
 } from './utils';
 
 const PREFETCH_QUERY_CHUNK_SIZE = 200;
+
+function getErrorName(error: unknown): string {
+  return error instanceof Error ? error.name : typeof error;
+}
 
 export function buildPostEmailSubject(
   createdAt: string,
@@ -181,12 +186,12 @@ async function linkSentEmailToCheck(
     .eq('user_id', userId);
 
   if (checkUpdateError) {
-    console.warn('[PostEmailQueueBatch] Failed to link email_id to check', {
-      postId,
-      userId,
-      emailId: sentEmailId,
-      error: checkUpdateError,
-    });
+    serverLogger.warn(
+      '[PostEmailQueueBatch] Failed to link email_id to check',
+      {
+        errorName: getErrorName(checkUpdateError),
+      }
+    );
   }
 }
 
@@ -221,7 +226,7 @@ async function prefetchBatchData(
   const userIds = [...new Set(rows.map((row) => row.user_id))];
   const wsIds = [...new Set(rows.map((row) => row.ws_id))];
 
-  console.log('[PostEmailQueueBatch] Prefetching batch data', {
+  serverLogger.info('[PostEmailQueueBatch] Prefetching batch data', {
     rowCount: rows.length,
     uniquePosts: postIds.length,
     uniqueUsers: userIds.length,
@@ -378,7 +383,7 @@ async function prefetchBatchData(
     });
   }
 
-  console.log('[PostEmailQueueBatch] Prefetch complete', {
+  serverLogger.info('[PostEmailQueueBatch] Prefetch complete', {
     durationMs: Date.now() - startTime,
     postsFound: posts.size,
     checksFound: checks.size,
@@ -741,11 +746,10 @@ async function normalizeQueueError(
   row: PostEmailQueueRow,
   error: Error
 ): Promise<BatchProcessResult> {
-  console.error('[PostEmailQueueBatch] Row processing failed', {
-    rowId: row.id,
-    postId: row.post_id,
-    userId: row.user_id,
-    error,
+  serverLogger.error('[PostEmailQueueBatch] Row processing failed', {
+    attemptCount: row.attempt_count,
+    errorName: getErrorName(error),
+    rowStatus: row.status,
   });
 
   try {
@@ -756,11 +760,10 @@ async function normalizeQueueError(
       last_error: error.message || 'Unknown processing error',
     });
   } catch (markError) {
-    console.error('[PostEmailQueueBatch] Failed to persist row failure', {
-      rowId: row.id,
-      postId: row.post_id,
-      userId: row.user_id,
-      error: markError,
+    serverLogger.error('[PostEmailQueueBatch] Failed to persist row failure', {
+      attemptCount: row.attempt_count,
+      errorName: getErrorName(markError),
+      rowStatus: row.status,
     });
   }
 
@@ -797,7 +800,7 @@ export async function processPostEmailQueueBatch(
 
   if (queuedError) throw queuedError;
 
-  console.log('[PostEmailQueueBatch] Fetched queued rows', {
+  serverLogger.info('[PostEmailQueueBatch] Fetched queued rows', {
     queuedCount: (queuedData ?? []).length,
     safeLimit,
     elapsedMs: Date.now() - startTime,
@@ -818,7 +821,7 @@ export async function processPostEmailQueueBatch(
 
     if (failedError) throw failedError;
 
-    console.log('[PostEmailQueueBatch] Fetched failed rows for fill', {
+    serverLogger.info('[PostEmailQueueBatch] Fetched failed rows for fill', {
       failedCount: (failedData ?? []).length,
       remaining,
       elapsedMs: Date.now() - startTime,
@@ -831,7 +834,7 @@ export async function processPostEmailQueueBatch(
     );
   }
 
-  console.log('[PostEmailQueueBatch] Total rows to process', {
+  serverLogger.info('[PostEmailQueueBatch] Total rows to process', {
     totalRows: rows.length,
     elapsedMs: Date.now() - startTime,
   });

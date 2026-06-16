@@ -4,6 +4,7 @@ import type {
   GroupPostCheck,
   WorkspaceUser,
 } from '@tuturuuu/types/db';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   buildPostEmailAgeSkipReason,
   getPostEmailMaxAgeCutoff,
@@ -112,7 +113,7 @@ export async function fetchAllPaginatedRows<T>(
 
 function debugLog(message: string, data?: Record<string, unknown>) {
   if (!POST_EMAIL_QUEUE_DEBUG) return;
-  console.log(message, data ?? {});
+  serverLogger.debug(message, data ?? {});
 }
 
 function getRpcClient(
@@ -420,7 +421,7 @@ export async function hasPostEmailBeenSent(
     .select('id', { count: 'exact', head: true })
     .eq('post_id', postId);
   let sentQueueQuery = getQueueTable(sbAdmin)
-    .select('id')
+    .select('id', { count: 'exact', head: true })
     .eq('post_id', postId)
     .eq('status', 'sent');
 
@@ -429,13 +430,15 @@ export async function hasPostEmailBeenSent(
     sentQueueQuery = sentQueueQuery.eq('user_id', userId);
   }
 
-  const [{ count: sentEmailsCount, error: sentEmailsError }, sentQueueRows] =
-    await Promise.all([sentEmailsQuery, sentQueueQuery]);
+  const [
+    { count: sentEmailsCount, error: sentEmailsError },
+    { count: sentQueueCount, error: sentQueueError },
+  ] = await Promise.all([sentEmailsQuery, sentQueueQuery]);
 
   if (sentEmailsError) throw sentEmailsError;
-  if (sentQueueRows.error) throw sentQueueRows.error;
+  if (sentQueueError) throw sentQueueError;
 
-  return (sentEmailsCount ?? 0) > 0 || (sentQueueRows.data?.length ?? 0) > 0;
+  return (sentEmailsCount ?? 0) > 0 || (sentQueueCount ?? 0) > 0;
 }
 
 async function resolveSenderPlatformUserIds(
@@ -612,8 +615,6 @@ async function getEligibleRecipients(
 
   if (hasDiagnostics || allCheckRows.length !== withValidEmail.length) {
     debugLog('[getEligibleRecipients] Processing results', {
-      postId,
-      wsId,
       summary: {
         totalCheckRows: diagnostics.totalCheckRows,
         rowsWithUserData: diagnostics.rowsWithUserData,
@@ -627,12 +628,6 @@ async function getEligibleRecipients(
         missingEmail: diagnosticsSummary.missingEmail,
         kept: diagnostics.kept.length,
       },
-      // Sample of users skipped due to missing email
-      sampleSkippedNoEmail: diagnostics.missingEmail
-        .slice(0, 5)
-        .map((m) => m.userId),
-      sampleKept: diagnostics.kept.slice(0, 3),
-      sampleEligible: withValidEmail.slice(0, 2),
     });
   }
 

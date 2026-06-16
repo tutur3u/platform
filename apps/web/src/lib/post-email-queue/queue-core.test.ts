@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   enqueueApprovedPostEmails,
   fetchAllPaginatedRows,
+  hasPostEmailBeenSent,
   reconcileOrphanedApprovedPosts,
 } from './queue-core';
 import { POST_EMAIL_QUERY_CHUNK_SIZE } from './utils';
@@ -358,6 +359,65 @@ describe('enqueueApprovedPostEmails', () => {
       enqueued: 2,
       processedPosts: 2,
       remainingPosts: 5,
+    });
+  });
+});
+
+describe('hasPostEmailBeenSent', () => {
+  it('counts sent queue rows without materializing row IDs', async () => {
+    const selectCalls: Array<{
+      options: unknown;
+      table: string;
+      value: string;
+    }> = [];
+
+    function createCountQuery(table: string) {
+      const builder = {
+        eq() {
+          return builder;
+        },
+        select(value: string, options?: unknown) {
+          selectCalls.push({ options, table, value });
+          return builder;
+        },
+      };
+
+      Object.defineProperty(builder, 'then', {
+        value<TResult1 = unknown, TResult2 = never>(
+          onfulfilled?:
+            | ((value: {
+                count: number;
+                data: Array<{ id: string }>;
+                error: null;
+              }) => TResult1 | PromiseLike<TResult1>)
+            | null,
+          onrejected?:
+            | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+            | null
+        ) {
+          return Promise.resolve({
+            count: table === 'post_email_queue' ? 1 : 0,
+            data: [{ id: 'should-not-be-read' }],
+            error: null,
+          }).then(onfulfilled, onrejected);
+        },
+      });
+
+      return builder;
+    }
+
+    const sbAdmin = {
+      from: (table: string) => createCountQuery(table),
+    };
+
+    await expect(
+      hasPostEmailBeenSent(sbAdmin as never, POST_ID, 'user-1')
+    ).resolves.toBe(true);
+
+    expect(selectCalls).toContainEqual({
+      options: { count: 'exact', head: true },
+      table: 'post_email_queue',
+      value: 'id',
     });
   });
 });

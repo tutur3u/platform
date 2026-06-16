@@ -393,6 +393,12 @@ async function handleGET(req: NextRequest) {
     });
 
     const totalDuration = Date.now() - startTime;
+    const resultSummary = {
+      claimed: result.claimed,
+      failed: result.failed,
+      processed: result.processed,
+      timedOut: result.timedOut,
+    };
     const diagnostics = {
       phase4SkippedReason,
       queueAfter,
@@ -405,7 +411,7 @@ async function handleGET(req: NextRequest) {
       diagnostics,
       reEnqueue: reEnqueueResult,
       reconciliation,
-      ...result,
+      result: resultSummary,
     });
 
     const payload: Record<string, unknown> = {

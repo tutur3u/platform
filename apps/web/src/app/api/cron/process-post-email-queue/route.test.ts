@@ -13,11 +13,18 @@ const {
   privateRpcMock,
   reconcileOrphanedApprovedPostsMock,
   reEnqueueSkippedPostEmailsMock,
+  serverLoggerMock,
 } = vi.hoisted(() => {
   const privateRpc = vi.fn();
   const adminClient = {
     from: vi.fn(),
     schema: vi.fn((_schema?: string) => ({ rpc: privateRpc })),
+  };
+  const serverLogger = {
+    debug: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
   };
 
   return {
@@ -73,6 +80,7 @@ const {
     privateRpcMock: privateRpc,
     reconcileOrphanedApprovedPostsMock: vi.fn(),
     reEnqueueSkippedPostEmailsMock: vi.fn(),
+    serverLoggerMock: serverLogger,
   };
 });
 
@@ -89,6 +97,12 @@ vi.mock('@/lib/post-email-queue', () => ({
   processPostEmailQueueBatch: processPostEmailQueueBatchMock,
   reconcileOrphanedApprovedPosts: reconcileOrphanedApprovedPostsMock,
   reEnqueueSkippedPostEmails: reEnqueueSkippedPostEmailsMock,
+}));
+
+vi.mock('@/lib/infrastructure/log-drain', () => ({
+  serverLogger: serverLoggerMock,
+  withCronLogDrain: (_options: unknown, handler: () => Promise<Response>) =>
+    handler(),
 }));
 
 import { GET } from './route';
@@ -580,5 +594,78 @@ describe('process-post-email-queue cron route', () => {
       }
     );
     expect(processPostEmailQueueBatchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('logs queue processing summaries without row-level result IDs', async () => {
+    privateRpcMock
+      .mockResolvedValueOnce({
+        data: [makeQueueSummaryRow({ queued: 1 })],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [makeQueueSummaryRow({ queued: 1 })],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [makeQueueSummaryRow({ sent: 1 })],
+        error: null,
+      });
+    reconcileOrphanedApprovedPostsMock.mockResolvedValue({
+      checked: 1,
+      diagnostics: {
+        alreadySent: 0,
+        checked: 1,
+        coveredByExistingQueue: 1,
+        coveredBySentEmail: 0,
+        eligibleRecipients: 0,
+        existingProcessing: 0,
+        existingQueued: 0,
+        existingSkipped: 0,
+        missingCompletion: 0,
+        missingEmail: 0,
+        missingSenderPlatformUser: 0,
+        missingUserRecord: 0,
+        notApproved: 0,
+        orphaned: 0,
+        upserted: 0,
+      },
+      enqueued: 0,
+      processedPosts: 1,
+      remainingPosts: 0,
+    });
+    processPostEmailQueueBatchMock.mockResolvedValue({
+      claimed: 1,
+      failed: 0,
+      processed: 1,
+      results: [{ id: 'queue-row-sensitive-id', status: 'sent' }],
+      timedOut: false,
+    });
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/cron/process-post-email-queue', {
+        headers: {
+          Authorization: 'Bearer cron-secret',
+        },
+      })
+    );
+
+    expect(response.status).toBe(200);
+
+    const completionLog = serverLoggerMock.info.mock.calls.find(([message]) =>
+      String(message).includes('Cron job completed successfully')
+    );
+    expect(completionLog).toBeDefined();
+    expect(completionLog?.[1]).toMatchObject({
+      result: {
+        claimed: 1,
+        failed: 0,
+        processed: 1,
+        timedOut: false,
+      },
+    });
+    expect(JSON.stringify(completionLog)).not.toContain(
+      'queue-row-sensitive-id'
+    );
+    expect(JSON.stringify(completionLog?.[1])).not.toContain('"results"');
   });
 });
