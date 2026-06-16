@@ -20,7 +20,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface TestDetailClientProps {
   courseId: string;
@@ -35,6 +35,7 @@ export function TestDetailClient({
   testId,
   workspaceName,
 }: TestDetailClientProps) {
+  const locale = useLocale();
   const t = useTranslations();
 
   // Query tests
@@ -69,7 +70,9 @@ export function TestDetailClient({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : 'Failed to update test'
+        error instanceof Error
+          ? error.message
+          : t('teachModules.testUpdateError')
       );
     },
   });
@@ -197,7 +200,7 @@ export function TestDetailClient({
               </span>
               <span className="font-bold text-sm">
                 {test.start_at
-                  ? new Date(test.start_at).toLocaleString([], {
+                  ? new Date(test.start_at).toLocaleString(locale, {
                       dateStyle: 'medium',
                       timeStyle: 'short',
                     })

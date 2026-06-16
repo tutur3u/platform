@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => {
   const state = {
     selectedModuleError: null as Error | null,
     selectedModuleRows: [] as { id: string }[],
+    updatedTest: { id: ids.testId } as { id: string } | null,
+    updateError: null as Error | null,
   };
 
   const selectedModulesQuery = {
@@ -28,33 +30,32 @@ const mocks = vi.hoisted(() => {
   };
 
   const courseTestsQuery = {
-    insert: vi.fn(() => ({
-      select: vi.fn(() => ({
-        single: vi.fn(() =>
-          Promise.resolve({
-            data: { id: ids.testId },
-            error: null,
-          })
-        ),
-      })),
-    })),
-  };
-
-  const courseTestModulesQuery = {
-    insert: vi.fn(() => Promise.resolve({ error: null })),
+    eq: vi.fn(() => courseTestsQuery),
+    maybeSingle: vi.fn(() =>
+      Promise.resolve({
+        data: state.updatedTest,
+        error: state.updateError,
+      })
+    ),
+    select: vi.fn(() => courseTestsQuery),
+    update: vi.fn(() => courseTestsQuery),
   };
 
   const sbAdmin = {
     from: vi.fn((table: string) => {
       if (table === 'workspace_course_modules') return selectedModulesQuery;
       if (table === 'course_tests') return courseTestsQuery;
-      if (table === 'course_test_modules') return courseTestModulesQuery;
       throw new Error(`Unexpected table: ${table}`);
     }),
+    rpc: vi.fn(() =>
+      Promise.resolve({
+        data: ids.testId,
+        error: null,
+      })
+    ),
   };
 
   return {
-    courseTestModulesQuery,
     courseTestsQuery,
     ids,
     requireTeachWorkspaceAccess: vi.fn(),
@@ -128,6 +129,28 @@ async function postCourseTest(moduleIds: string[]) {
   );
 }
 
+async function patchCourseTest(payload: Record<string, unknown>) {
+  const { PATCH } = await import(
+    '@/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/route'
+  );
+
+  return PATCH(
+    new NextRequest(
+      `http://localhost/api/v1/workspaces/${mocks.ids.routeWorkspaceId}/teach/courses/${mocks.ids.courseId}/tests`,
+      {
+        body: JSON.stringify(payload),
+        method: 'PATCH',
+      }
+    ),
+    {
+      params: Promise.resolve({
+        courseId: mocks.ids.courseId,
+        wsId: mocks.ids.routeWorkspaceId,
+      }),
+    }
+  );
+}
+
 describe('Teach course tests route', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -137,6 +160,8 @@ describe('Teach course tests route', () => {
       { id: mocks.ids.moduleIdA },
       { id: mocks.ids.moduleIdB },
     ];
+    mocks.state.updatedTest = { id: mocks.ids.testId };
+    mocks.state.updateError = null;
     mocks.requireTeachWorkspaceAccess.mockResolvedValue({
       normalizedWsId: mocks.ids.workspaceId,
       sbAdmin: mocks.sbAdmin,
@@ -159,11 +184,10 @@ describe('Teach course tests route', () => {
     await expect(response.json()).resolves.toEqual({
       message: 'Invalid course test module selection',
     });
-    expect(mocks.courseTestsQuery.insert).not.toHaveBeenCalled();
-    expect(mocks.courseTestModulesQuery.insert).not.toHaveBeenCalled();
+    expect(mocks.sbAdmin.rpc).not.toHaveBeenCalled();
   });
 
-  it('deduplicates module ids before validation and association inserts', async () => {
+  it('deduplicates module ids before validation and atomic creation', async () => {
     const response = await postCourseTest([
       mocks.ids.moduleIdA,
       mocks.ids.moduleIdA,
@@ -172,13 +196,49 @@ describe('Teach course tests route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ id: mocks.ids.testId });
+    expect(mocks.selectedModulesQuery.eq).toHaveBeenCalledWith(
+      'group_id',
+      mocks.ids.courseId
+    );
     expect(mocks.selectedModulesQuery.in).toHaveBeenCalledWith('id', [
       mocks.ids.moduleIdA,
       mocks.ids.moduleIdB,
     ]);
-    expect(mocks.courseTestModulesQuery.insert).toHaveBeenCalledWith([
-      { module_id: mocks.ids.moduleIdA, test_id: mocks.ids.testId },
-      { module_id: mocks.ids.moduleIdB, test_id: mocks.ids.testId },
-    ]);
+    expect(mocks.sbAdmin.rpc).toHaveBeenCalledWith(
+      'create_course_test_with_modules',
+      expect.objectContaining({
+        p_course_id: mocks.ids.courseId,
+        p_module_ids: [mocks.ids.moduleIdA, mocks.ids.moduleIdB],
+        p_name: 'Midterm',
+      })
+    );
+  });
+
+  it('rejects empty PATCH updates before touching course_tests', async () => {
+    const response = await patchCourseTest({ id: mocks.ids.testId });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'No fields provided to update',
+    });
+    expect(mocks.courseTestsQuery.update).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when PATCH does not match a course test in the URL course', async () => {
+    mocks.state.updatedTest = null;
+
+    const response = await patchCourseTest({
+      id: mocks.ids.testId,
+      is_published: true,
+    });
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Course test not found',
+    });
+    expect(mocks.courseTestsQuery.eq).toHaveBeenCalledWith(
+      'course_id',
+      mocks.ids.courseId
+    );
   });
 });

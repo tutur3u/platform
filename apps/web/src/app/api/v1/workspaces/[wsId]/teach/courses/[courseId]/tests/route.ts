@@ -184,48 +184,22 @@ export const POST = withSessionAuth(
       );
     }
 
-    // Create course test
-    const { data: testData, error: testError } = await access.sbAdmin
-      .from('course_tests')
-      .insert({
-        course_id: parsedParams.data.courseId,
-        name,
-        start_at: startAt,
-        duration_in_minutes: durationInMinutes,
-        description,
-      })
-      .select('id')
-      .single();
+    const { data: testId, error: testError } = await access.sbAdmin.rpc(
+      'create_course_test_with_modules',
+      {
+        p_course_id: parsedParams.data.courseId,
+        p_description: description ?? undefined,
+        p_duration_in_minutes: durationInMinutes ?? undefined,
+        p_module_ids: uniqueModuleIds,
+        p_name: name,
+        p_start_at: startAt ?? undefined,
+      }
+    );
 
-    if (testError) {
+    if (testError || !testId) {
       serverLogger.error('Failed to create course test', { error: testError });
       return NextResponse.json(
         { message: 'Error creating course test' },
-        { status: 500 }
-      );
-    }
-
-    const testId = testData.id;
-
-    // Associate modules
-    const associations = uniqueModuleIds.map((moduleId) => ({
-      test_id: testId,
-      module_id: moduleId,
-    }));
-
-    const { error: assocError } = await access.sbAdmin
-      .from('course_test_modules')
-      .insert(associations);
-
-    if (assocError) {
-      serverLogger.error('Failed to create course test module associations', {
-        error: assocError,
-      });
-      // Cleanup created test to maintain consistency (atomic behavior fallback)
-      await access.sbAdmin.from('course_tests').delete().eq('id', testId);
-
-      return NextResponse.json(
-        { message: 'Error creating course test module associations' },
         { status: 500 }
       );
     }
@@ -308,17 +282,33 @@ export const PATCH = withSessionAuth(
       updatePayload.duration_in_minutes = durationInMinutes;
     if (description !== undefined) updatePayload.description = description;
 
-    const { error } = await access.sbAdmin
+    if (Object.keys(updatePayload).length === 0) {
+      return NextResponse.json(
+        { message: 'No fields provided to update' },
+        { status: 400 }
+      );
+    }
+
+    const { data: updatedTest, error } = await access.sbAdmin
       .from('course_tests')
       .update(updatePayload)
       .eq('id', id)
-      .eq('course_id', parsedParams.data.courseId);
+      .eq('course_id', parsedParams.data.courseId)
+      .select('id')
+      .maybeSingle();
 
     if (error) {
       serverLogger.error('Failed to update course test', { error });
       return NextResponse.json(
         { message: 'Error updating course test' },
         { status: 500 }
+      );
+    }
+
+    if (!updatedTest) {
+      return NextResponse.json(
+        { message: 'Course test not found' },
+        { status: 404 }
       );
     }
 

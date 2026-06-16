@@ -160,6 +160,7 @@
     "selectModules": "Select modules",
     "testCreated": "Test created successfully",
     "testSaveError": "Failed to create test",
+    "testUpdateError": "Failed to update test",
     "testNameRequired": "Test name is required",
     "noModulesInGroup": "No modules in this group",
     "testStartAt": "Start date & time",

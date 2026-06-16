@@ -14182,7 +14182,7 @@ export type Database = {
           duration_in_minutes?: number | null;
           id?: string;
           is_published?: boolean;
-          name?: string;
+          name: string;
           start_at?: string | null;
         };
         Update: {
@@ -32464,6 +32464,17 @@ export type Database = {
       count_user_workspaces: { Args: { user_id: string }; Returns: number };
       create_ai_chat: {
         Args: { message: string; model: string; title: string };
+        Returns: string;
+      };
+      create_course_test_with_modules: {
+        Args: {
+          p_course_id: string;
+          p_description?: string;
+          p_duration_in_minutes?: number;
+          p_module_ids: string[];
+          p_name: string;
+          p_start_at?: string;
+        };
         Returns: string;
       };
       create_guest_lead_email: {

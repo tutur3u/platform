@@ -25,7 +25,7 @@ import {
 } from '@tuturuuu/icons';
 import { listWorkspaceCourseTests } from '@tuturuuu/internal-api';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { CourseMembersPanel } from '@/components/teach-operations/course-members-panel';
 import { AiGenerateDialog } from './ai-generate-dialog';
@@ -63,6 +63,7 @@ export function ModuleDetailClient({
     renameModule,
     togglePublished,
   } = useModuleDetail(wsId, courseId);
+  const locale = useLocale();
   const t = useTranslations();
 
   const {
@@ -281,7 +282,7 @@ export function ModuleDetailClient({
                               {t('teachModules.testDetailsStartAt')}:
                             </span>
                             <span>
-                              {new Date(test.start_at).toLocaleString([], {
+                              {new Date(test.start_at).toLocaleString(locale, {
                                 dateStyle: 'short',
                                 timeStyle: 'short',
                               })}

@@ -72,6 +72,10 @@ export function CourseTestDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const parsedDuration = durationInMinutes
+      ? parseInt(durationInMinutes, 10)
+      : 0;
+
     if (!testName.trim()) {
       toast.error(t('teachModules.testNameRequired'));
       return;
@@ -84,9 +88,7 @@ export function CourseTestDialog({
       name: testName.trim(),
       moduleIds: selectedModuleIds,
       startAt: startAt ? new Date(startAt).toISOString() : null,
-      durationInMinutes: durationInMinutes
-        ? parseInt(durationInMinutes, 10)
-        : null,
+      durationInMinutes: parsedDuration > 0 ? parsedDuration : null,
       description: description.trim() || null,
     });
   };
