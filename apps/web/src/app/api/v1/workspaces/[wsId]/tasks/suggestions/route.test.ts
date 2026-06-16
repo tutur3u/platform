@@ -346,6 +346,26 @@ describe('task suggestions route', () => {
     });
   });
 
+  it('rejects invalid client timezones before generating suggestions', async () => {
+    const response = await callRoute({
+      boardId: BOARD_ID,
+      prompt: 'prepare launch checklist',
+      clientTimezone: 'Not/A_Timezone',
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Invalid payload',
+      details: {
+        fieldErrors: {
+          clientTimezone: ['Invalid client timezone'],
+        },
+      },
+    });
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+    expect(mocks.generateObject).not.toHaveBeenCalled();
+  });
+
   it('omits estimation when the board has no estimation config', async () => {
     mocks.board = {
       ...mocks.board,
