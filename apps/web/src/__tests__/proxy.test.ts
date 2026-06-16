@@ -472,6 +472,88 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
+  it('keeps workspace email rate-limit overrides inside proxy guard enforcement', async () => {
+    const guardResponse = NextResponse.json(
+      { error: 'Payload Too Large', message: 'Request body exceeds limit' },
+      { status: 413 }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
+
+    const secretsIn = vi.fn().mockResolvedValue({ count: 1, error: null });
+    const secretsEq = vi.fn().mockReturnValue({ in: secretsIn });
+    const secretsSelect = vi.fn().mockReturnValue({ eq: secretsEq });
+    const adminFrom = vi.fn((table: string) => {
+      if (table !== 'workspace_secrets') {
+        throw new Error(`Unexpected table: ${table}`);
+      }
+
+      return { select: secretsSelect };
+    });
+    mocks.createAdminClient.mockResolvedValue({
+      from: adminFrom,
+    });
+
+    const workspaceId = '00000000-0000-4000-8000-000000000123';
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/${workspaceId}/mail/send`,
+        {
+          method: 'POST',
+          body: '{}',
+          headers: {
+            'content-length': `${600 * 1024}`,
+            'content-type': 'application/json',
+            'user-agent': 'Mozilla/5.0',
+          },
+        }
+      )
+    );
+
+    expect(response).toBe(guardResponse);
+    expect(response.status).toBe(413);
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(secretsSelect).toHaveBeenCalledWith('name', {
+      count: 'exact',
+      head: true,
+    });
+    expect(secretsEq).toHaveBeenCalledWith('ws_id', workspaceId);
+    expect(secretsIn).toHaveBeenCalledWith('name', [
+      'EMAIL_RATE_LIMIT_MINUTE',
+      'EMAIL_RATE_LIMIT_HOUR',
+      'EMAIL_RATE_LIMIT_DAY',
+      'EMAIL_RATE_LIMIT_USER_MINUTE',
+      'EMAIL_RATE_LIMIT_USER_HOUR',
+      'EMAIL_RATE_LIMIT_RECIPIENT_HOUR',
+      'EMAIL_RATE_LIMIT_RECIPIENT_DAY',
+      'EMAIL_RATE_LIMIT_IP_MINUTE',
+      'EMAIL_RATE_LIMIT_IP_HOUR',
+    ]);
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(1);
+
+    const options = mocks.guardApiProxyRequest.mock.calls[0]?.[1];
+    expect(options).toEqual(
+      expect.objectContaining({
+        additionalRoutePolicies: [
+          expect.objectContaining({
+            key: 'email-rate-limit-override',
+          }),
+        ],
+        prefixBase: 'proxy:web:api',
+        trustedBypassRules: expect.any(Array),
+      })
+    );
+    expect(
+      options?.additionalRoutePolicies?.[0]?.matches(
+        new NextRequest(
+          `http://localhost/api/v1/workspaces/${workspaceId}/mail/send`,
+          { method: 'POST' }
+        )
+      )
+    ).toBe(true);
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
   it('blocks malformed authorization headers before the proxy guard', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(

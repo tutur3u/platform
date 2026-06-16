@@ -1287,6 +1287,59 @@ describe('guardApiProxyRequest', () => {
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('high-fanout');
   });
 
+  it('prepends additional route policies before default high-fanout buckets', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 30,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/mail/send', 'POST'),
+      {
+        additionalRoutePolicies: [
+          {
+            key: 'email-rate-limit-override',
+            matches: (req) =>
+              /^\/api\/v1\/workspaces\/[^/]+\/mail\/send(?:\/|$)/.test(
+                req.nextUrl.pathname
+              ),
+            rateLimits: {
+              get: [],
+              mutate: [{ duration: '1 m', limit: 30, window: 'minute' }],
+            },
+          },
+        ],
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('30');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe(
+      'email-rate-limit-override'
+    );
+    expect(mocks.ratelimitConfigs).toContainEqual({
+      limit: 30,
+      window: '1 m',
+    });
+    expect(mocks.ratelimitConfigs).not.toContainEqual({
+      limit: 2,
+      window: '1 m',
+    });
+  });
+
   it('uses relaxed buckets for task description persistence routes', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');

@@ -37,6 +37,7 @@ export type TrustedProxyBypassRule = {
 };
 
 export type GuardOptions = {
+  additionalRoutePolicies?: ProxyRoutePolicy[];
   prefixBase: string;
   routePolicies?: ProxyRoutePolicy[];
   trustedBypassRules?: TrustedProxyBypassRule[];
@@ -861,7 +862,10 @@ export async function guardApiProxyRequest(
     );
   }
 
-  const routePolicies = options.routePolicies ?? DEFAULT_ROUTE_POLICIES;
+  const routePolicies = [
+    ...(options.additionalRoutePolicies ?? []),
+    ...(options.routePolicies ?? DEFAULT_ROUTE_POLICIES),
+  ];
   const trustedBypassRules = [
     ...DEFAULT_TRUSTED_BYPASS_RULES,
     ...(options.trustedBypassRules ?? []),

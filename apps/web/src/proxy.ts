@@ -20,6 +20,8 @@ import {
   guardApiProxyRequest,
   hasSupabaseSessionCookie,
   isTrustedProxyBypassRequest,
+  type ProxyRoutePolicy,
+  type RateLimitProfile,
 } from '@tuturuuu/utils/api-proxy-guard';
 import {
   PERSONAL_WORKSPACE_SLUG,
@@ -119,6 +121,19 @@ const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
   'EMAIL_RATE_LIMIT_IP_MINUTE',
   'EMAIL_RATE_LIMIT_IP_HOUR',
 ] as const;
+const EMAIL_RATE_LIMIT_OVERRIDE_PROXY_RATE_LIMITS = {
+  get: [],
+  mutate: [
+    { window: 'minute', limit: 30, duration: '1 m' },
+    { window: 'hour', limit: 120, duration: '1 h' },
+    { window: 'day', limit: 600, duration: '1 d' },
+  ],
+} satisfies RateLimitProfile;
+const EMAIL_RATE_LIMIT_OVERRIDE_ROUTE_POLICY: ProxyRoutePolicy = {
+  key: 'email-rate-limit-override',
+  matches: (req) => EMAIL_ROUTE_WORKSPACE_PATTERN.test(req.nextUrl.pathname),
+  rateLimits: EMAIL_RATE_LIMIT_OVERRIDE_PROXY_RATE_LIMITS,
+};
 const SUSPICIOUS_QUERY_LENGTH_MAX = parsePositiveIntEnv(
   'PROXY_SUSPICIOUS_QUERY_LENGTH_MAX',
   1024
@@ -908,11 +923,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       return suspiciousAnonymousApiResponse;
     }
 
-    if (await hasWorkspaceEmailRateLimitOverrides(req.nextUrl.pathname)) {
-      return NextResponse.next();
-    }
+    const additionalRoutePolicies = (await hasWorkspaceEmailRateLimitOverrides(
+      req.nextUrl.pathname
+    ))
+      ? [EMAIL_RATE_LIMIT_OVERRIDE_ROUTE_POLICY]
+      : undefined;
 
     const guardResponse = await guardApiProxyRequest(req, {
+      additionalRoutePolicies,
       prefixBase: 'proxy:web:api',
       trustedBypassRules: [
         {
