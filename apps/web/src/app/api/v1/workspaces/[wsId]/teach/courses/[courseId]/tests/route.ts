@@ -22,7 +22,7 @@ const CreateTestSchema = z.object({
 
 export const GET = withSessionAuth(
   async (
-    request,
+    _request,
     context,
     params:
       | { wsId: string; courseId: string }
@@ -57,7 +57,9 @@ export const GET = withSessionAuth(
 
     const { data, error } = await access.sbAdmin
       .from('course_tests')
-      .select('id, course_id, name, created_at, start_at, duration_in_minutes, description, course_test_modules(module_id)')
+      .select(
+        'id, course_id, name, created_at, start_at, duration_in_minutes, description, course_test_modules(module_id)'
+      )
       .eq('course_id', parsedParams.data.courseId)
       .order('created_at', { ascending: false });
 
@@ -144,7 +146,8 @@ export const POST = withSessionAuth(
       );
     }
 
-    const { name, moduleIds, startAt, durationInMinutes, description } = parsedBody.data;
+    const { name, moduleIds, startAt, durationInMinutes, description } =
+      parsedBody.data;
 
     // Create course test
     const { data: testData, error: testError } = await access.sbAdmin

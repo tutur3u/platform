@@ -56,9 +56,7 @@ export function CourseTestDialog({
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : t('teachModules.testSaveError')
+        error instanceof Error ? error.message : t('teachModules.testSaveError')
       );
     },
   });
@@ -77,7 +75,9 @@ export function CourseTestDialog({
       name: testName.trim(),
       moduleIds: selectedModuleIds,
       startAt: startAt ? new Date(startAt).toISOString() : null,
-      durationInMinutes: durationInMinutes ? parseInt(durationInMinutes) : null,
+      durationInMinutes: durationInMinutes
+        ? parseInt(durationInMinutes, 10)
+        : null,
       description: description.trim() || null,
     });
   };
@@ -127,7 +127,7 @@ export function CourseTestDialog({
           <div className="space-y-2">
             <label
               htmlFor="test-name-input"
-              className="block font-black text-xs text-muted-foreground uppercase tracking-wider"
+              className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
             >
               {t('teachModules.testName')}
             </label>
@@ -135,8 +135,7 @@ export function CourseTestDialog({
               id="test-name-input"
               className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
               placeholder={
-                t('teachModules.testNamePlaceholder') ||
-                'e.g. Midterm Exam'
+                t('teachModules.testNamePlaceholder') || 'e.g. Midterm Exam'
               }
               value={testName}
               onChange={(e) => setTestName(e.target.value)}
@@ -148,7 +147,7 @@ export function CourseTestDialog({
             <div className="space-y-2">
               <label
                 htmlFor="test-start-at"
-                className="block font-black text-xs text-muted-foreground uppercase tracking-wider"
+                className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
               >
                 {t('teachModules.testStartAt')}
               </label>
@@ -165,7 +164,7 @@ export function CourseTestDialog({
             <div className="space-y-2">
               <label
                 htmlFor="test-duration"
-                className="block font-black text-xs text-muted-foreground uppercase tracking-wider"
+                className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
               >
                 {t('teachModules.testDuration')}
               </label>
@@ -186,14 +185,14 @@ export function CourseTestDialog({
           <div className="space-y-2">
             <label
               htmlFor="test-description-input"
-              className="block font-black text-xs text-muted-foreground uppercase tracking-wider"
+              className="block font-black text-muted-foreground text-xs uppercase tracking-wider"
             >
               {t('teachModules.testDescription')}
             </label>
             <textarea
               id="test-description-input"
               rows={3}
-              className="w-full border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary resize-none"
+              className="w-full resize-none border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
               placeholder={t('teachModules.testDescriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -202,7 +201,7 @@ export function CourseTestDialog({
           </div>
 
           <div className="space-y-2">
-            <span className="block font-black text-xs text-muted-foreground uppercase tracking-wider">
+            <span className="block font-black text-muted-foreground text-xs uppercase tracking-wider">
               {t('teachModules.selectModules')}
             </span>
 
@@ -211,7 +210,7 @@ export function CourseTestDialog({
                 {t('teachModules.noModulesInGroup')}
               </div>
             ) : (
-              <div className="max-h-[200px] overflow-y-auto border-2 border-border bg-muted/20 p-3 space-y-2.5">
+              <div className="max-h-[200px] space-y-2.5 overflow-y-auto border-2 border-border bg-muted/20 p-3">
                 {modules.map((m) => {
                   const isChecked = selectedModuleIds.includes(m.id);
                   return (
