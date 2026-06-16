@@ -32413,6 +32413,7 @@ export type Database = {
         Args: {
           p_board_id: string;
           p_color?: string;
+          p_creator_id?: string;
           p_name: string;
           p_status: Database['public']['Enums']['task_board_status'];
         };

@@ -166,6 +166,7 @@ export const POST = withSessionAuth<Params>(
           p_name: body.name,
           p_status: body.status,
           p_color: body.color,
+          p_creator_id: user.id,
         }
       );
 

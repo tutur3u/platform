@@ -177,6 +177,7 @@ describe('task board lists route POST', () => {
         rpc: rpcMock,
       },
       boardId: 'board-1',
+      user: sessionUser,
     });
   });
 
@@ -241,6 +242,7 @@ describe('task board lists route POST', () => {
         p_name: 'Not Planned',
         p_status: 'closed',
         p_color: 'PURPLE',
+        p_creator_id: 'user-1',
       }
     );
     expect(requireBoardAccessMock).toHaveBeenCalledWith(
