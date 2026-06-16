@@ -5,11 +5,13 @@ const {
   getPermissionsMock,
   hasUserGroupPostInWorkspaceMock,
   normalizeWorkspaceIdMock,
+  verifySecretMock,
 } = vi.hoisted(() => ({
   createAdminClientMock: vi.fn(),
   getPermissionsMock: vi.fn(),
   hasUserGroupPostInWorkspaceMock: vi.fn(),
   normalizeWorkspaceIdMock: vi.fn(),
+  verifySecretMock: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -19,6 +21,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: getPermissionsMock,
   normalizeWorkspaceId: normalizeWorkspaceIdMock,
+  verifySecret: verifySecretMock,
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -49,6 +52,7 @@ describe('group checks collection route', () => {
     });
     hasUserGroupPostInWorkspaceMock.mockResolvedValue(true);
     normalizeWorkspaceIdMock.mockResolvedValue(WORKSPACE_ID);
+    verifySecretMock.mockResolvedValue(true);
   });
 
   it('rejects cross-workspace check reads before querying private checks', async () => {

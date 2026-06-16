@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   normalizeWorkspaceId: vi.fn(),
   resolveAuthenticatedSessionUser: vi.fn(),
   summarizePostEmailQueue: vi.fn(),
+  verifySecret: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
@@ -32,6 +33,8 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: (
     ...args: Parameters<typeof mocks.normalizeWorkspaceId>
   ) => mocks.normalizeWorkspaceId(...args),
+  verifySecret: (...args: Parameters<typeof mocks.verifySecret>) =>
+    mocks.verifySecret(...args),
 }));
 
 vi.mock('@/lib/post-email-queue', () => ({
@@ -119,6 +122,7 @@ describe('workspace approvals API post permissions', () => {
     mocks.createClient.mockResolvedValue({});
     mocks.getPostEmailQueueRows.mockResolvedValue([]);
     mocks.normalizeWorkspaceId.mockResolvedValue('ws-1');
+    mocks.verifySecret.mockResolvedValue(true);
     mocks.summarizePostEmailQueue.mockReturnValue({
       cancelled: 0,
       failed: 0,

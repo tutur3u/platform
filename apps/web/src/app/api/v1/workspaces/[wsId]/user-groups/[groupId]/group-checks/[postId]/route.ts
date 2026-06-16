@@ -4,6 +4,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { enqueueApprovedPostEmails } from '@/lib/post-email-queue';
+import { resolvePostEmailEnqueueAccess } from '@/lib/post-email-queue/enqueue-access';
 
 interface Params {
   params: Promise<{
@@ -33,6 +34,10 @@ export async function PUT(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
+  const postEmailEnqueueAccess = await resolvePostEmailEnqueueAccess({
+    permissions,
+    wsId,
+  });
 
   // Ensure resource belongs to this workspace and group
   const { data: post, error: postErr } = await sbAdmin
@@ -105,16 +110,18 @@ export async function PUT(req: Request, { params }: Params) {
       );
     }
 
-    await enqueueApprovedPostEmails(sbAdmin, {
-      wsId,
-      postId,
-      groupId,
-      userIds: (
-        validatedData as Array<{
-          user_id: string;
-        }>
-      ).map((item) => item.user_id),
-    });
+    if (postEmailEnqueueAccess.allowed) {
+      await enqueueApprovedPostEmails(sbAdmin, {
+        wsId,
+        postId,
+        groupId,
+        userIds: (
+          validatedData as Array<{
+            user_id: string;
+          }>
+        ).map((item) => item.user_id),
+      });
+    }
 
     return NextResponse.json({ message: 'Data updated successfully' });
   } else {
@@ -151,12 +158,14 @@ export async function PUT(req: Request, { params }: Params) {
       );
     }
 
-    await enqueueApprovedPostEmails(sbAdmin, {
-      wsId,
-      postId,
-      groupId,
-      userIds: [singleData.user_id],
-    });
+    if (postEmailEnqueueAccess.allowed) {
+      await enqueueApprovedPostEmails(sbAdmin, {
+        wsId,
+        postId,
+        groupId,
+        userIds: [singleData.user_id],
+      });
+    }
 
     return NextResponse.json({ message: 'Data updated successfully' });
   }

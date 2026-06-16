@@ -18,6 +18,7 @@ import {
   hasPostEmailBeenSent,
   summarizePostEmailQueue,
 } from '@/lib/post-email-queue';
+import { resolvePostEmailEnqueueAccess } from '@/lib/post-email-queue/enqueue-access';
 
 type ApprovalStatus = Database['public']['Enums']['approval_status'];
 
@@ -403,6 +404,16 @@ export async function PUT(request: Request, { params }: Params) {
     const { containsPermission } = permissions;
     const canApproveReports = containsPermission('approve_reports');
     const canApprovePosts = containsPermission('approve_posts');
+    let postEmailEnqueueAccessPromise: ReturnType<
+      typeof resolvePostEmailEnqueueAccess
+    > | null = null;
+    const getPostEmailEnqueueAccess = () => {
+      postEmailEnqueueAccessPromise ??= resolvePostEmailEnqueueAccess({
+        permissions,
+        wsId,
+      });
+      return postEmailEnqueueAccessPromise;
+    };
 
     const body = await request.json();
     const parsed = MutationSchema.safeParse(body);
@@ -524,13 +535,15 @@ export async function PUT(request: Request, { params }: Params) {
           .eq('user_id', parsedItem.userId);
         if (error) throw error;
 
-        await enqueueApprovedPostEmails(sbAdmin, {
-          wsId,
-          postId: parsedItem.postId,
-          groupId: checkWithGroup.user_group_posts?.group_id ?? undefined,
-          senderPlatformUserId: user.id,
-          userIds: [parsedItem.userId],
-        });
+        if ((await getPostEmailEnqueueAccess()).allowed) {
+          await enqueueApprovedPostEmails(sbAdmin, {
+            wsId,
+            postId: parsedItem.postId,
+            groupId: checkWithGroup.user_group_posts?.group_id ?? undefined,
+            senderPlatformUserId: user.id,
+            userIds: [parsedItem.userId],
+          });
+        }
       }
     } else if (action === 'reject') {
       if (!itemId)
@@ -722,14 +735,16 @@ export async function PUT(request: Request, { params }: Params) {
         }
 
         if (kind === 'posts') {
-          for (const post of pendingPostGroups) {
-            await enqueueApprovedPostEmails(sbAdmin, {
-              wsId,
-              postId: post.post_id,
-              groupId: post.group_id,
-              senderPlatformUserId: user.id,
-              userIds: [post.user_id],
-            });
+          if ((await getPostEmailEnqueueAccess()).allowed) {
+            for (const post of pendingPostGroups) {
+              await enqueueApprovedPostEmails(sbAdmin, {
+                wsId,
+                postId: post.post_id,
+                groupId: post.group_id,
+                senderPlatformUserId: user.id,
+                userIds: [post.user_id],
+              });
+            }
           }
         }
       }

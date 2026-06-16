@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { enqueueApprovedPostEmails } from '@/lib/post-email-queue';
+import { resolvePostEmailEnqueueAccess } from '@/lib/post-email-queue/enqueue-access';
 import { hasUserGroupPostInWorkspace } from '@/lib/user-groups/route-helpers';
 
 interface Params {
@@ -124,6 +125,10 @@ export async function POST(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
+  const postEmailEnqueueAccess = await resolvePostEmailEnqueueAccess({
+    permissions,
+    wsId,
+  });
 
   const isArray = Array.isArray(data);
   const parse = isArray
@@ -207,12 +212,14 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  await enqueueApprovedPostEmails(sbAdmin, {
-    wsId,
-    postId,
-    groupId,
-    userIds: insertPayload.map((item) => item.user_id),
-  });
+  if (postEmailEnqueueAccess.allowed) {
+    await enqueueApprovedPostEmails(sbAdmin, {
+      wsId,
+      postId,
+      groupId,
+      userIds: insertPayload.map((item) => item.user_id),
+    });
+  }
 
   return NextResponse.json({ message: 'Data inserted successfully' });
 }
