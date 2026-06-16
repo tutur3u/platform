@@ -194,7 +194,9 @@ describe('task boards route GET', () => {
       '00000000-0000-4000-8000-000000000123'
     );
     getPermissionsMock.mockResolvedValue({
-      containsPermission: vi.fn().mockReturnValue(false),
+      containsPermission: vi.fn(
+        (permission: string) => permission === 'manage_projects'
+      ),
     });
     ensureDefaultPersonalTaskBoardMock.mockResolvedValue(null);
     getAppSessionTokenFromRequestMock.mockReturnValue(null);
@@ -345,7 +347,10 @@ describe('task boards route GET', () => {
     });
   });
 
-  it('allows board listing for workspace members without manage_projects', async () => {
+  it('rejects board listing for workspace members without manage_projects', async () => {
+    const containsPermission = vi.fn().mockReturnValue(false);
+    getPermissionsMock.mockResolvedValueOnce({ containsPermission });
+
     const response = await GET(
       new NextRequest(
         'http://localhost/api/v1/workspaces/personal/task-boards?status=all'
@@ -361,9 +366,20 @@ describe('task boards route GET', () => {
       throw new Error('Expected GET to return a response');
     }
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
-    expect(getPermissionsMock).not.toHaveBeenCalled();
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "You don't have permission to view task boards",
+    });
+    expect(getPermissionsMock).toHaveBeenCalledWith({
+      user: expect.objectContaining({
+        id: '00000000-0000-4000-8000-000000000999',
+      }),
+      wsId: '00000000-0000-4000-8000-000000000123',
+    });
+    expect(containsPermission).toHaveBeenCalledWith('manage_projects');
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+    expect(ensureDefaultPersonalTaskBoardMock).not.toHaveBeenCalled();
+    expect(boardsQueryCalls).toEqual([]);
   });
 
   it('lists only directly shared boards for workspace guests', async () => {

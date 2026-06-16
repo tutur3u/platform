@@ -74,11 +74,8 @@ async function createTaskBoardAdminClient() {
 export const GET = withSessionAuth<TaskBoardRouteParams>(
   async (req: NextRequest, auth: SessionAuthContext, { wsId: id }) => {
     try {
-      const sbAdmin = await createTaskBoardAdminClient();
       const wsId = await normalizeWorkspaceId(id, auth.supabase);
 
-      // Read access is membership-gated so board viewers can still enumerate
-      // boards for navigation and selection even without manage_projects.
       const memberCheck = await verifyWorkspaceMembershipType({
         wsId: wsId,
         userId: auth.user.id,
@@ -91,6 +88,18 @@ export const GET = withSessionAuth<TaskBoardRouteParams>(
           { status: 500 }
         );
       }
+
+      if (memberCheck.ok) {
+        const permissions = await getPermissions({ wsId, user: auth.user });
+        if (!permissions?.containsPermission('manage_projects')) {
+          return NextResponse.json(
+            { error: "You don't have permission to view task boards" },
+            { status: 403 }
+          );
+        }
+      }
+
+      const sbAdmin = await createTaskBoardAdminClient();
 
       const guestShares = memberCheck.ok
         ? []
