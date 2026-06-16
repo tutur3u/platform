@@ -11,6 +11,7 @@ import 'package:mobile/app/view/auth_session_boundary.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/router/app_router.dart';
+import 'package:mobile/core/router/deep_link_launcher.dart';
 import 'package:mobile/core/router/deep_links.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
@@ -72,7 +73,6 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
-import 'package:url_launcher/url_launcher.dart';
 
 class App extends StatefulWidget {
   const App({
@@ -302,7 +302,7 @@ class _AppState extends State<App> {
     if (deepLink == null) return;
 
     if (deepLink.openExternally) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await launchExternalMobileDeepLink(uri);
       return;
     }
 
