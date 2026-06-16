@@ -45,6 +45,15 @@ type SessionRequestBody = z.infer<typeof sessionCreateSchema>;
 
 type AdminClient = TypedSupabaseClient;
 
+type SessionTaskValidationResult =
+  | { ok: true; errorResponse?: never }
+  | { ok: false; errorResponse: NextResponse };
+
+type TimeTrackingSessionWithTaskSummary = {
+  task_id?: string | null;
+  task?: { id: string; name: string | null } | null;
+};
+
 type MissedEntryPermissionCheckResult =
   | {
       canBypass: boolean;
@@ -56,6 +65,80 @@ type MissedEntryPermissionCheckResult =
       thresholdDays?: never;
       errorResponse: NextResponse;
     };
+
+async function validateSessionTaskWorkspace({
+  sbAdmin,
+  taskId,
+  wsId,
+}: {
+  sbAdmin: AdminClient;
+  taskId: string | null | undefined;
+  wsId: string;
+}): Promise<SessionTaskValidationResult> {
+  if (!taskId) return { ok: true };
+
+  const { data: task, error } = await sbAdmin
+    .from('tasks')
+    .select('id, task_lists!inner(workspace_boards!inner(ws_id))')
+    .eq('id', taskId)
+    .maybeSingle();
+
+  if (error) {
+    return {
+      ok: false,
+      errorResponse: NextResponse.json(
+        { error: 'Failed to validate task' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  if (!task || task.task_lists?.workspace_boards?.ws_id !== wsId) {
+    return {
+      ok: false,
+      errorResponse: NextResponse.json(
+        { error: 'Task not found' },
+        { status: 404 }
+      ),
+    };
+  }
+
+  return { ok: true };
+}
+
+async function attachWorkspaceTaskSummary<
+  T extends TimeTrackingSessionWithTaskSummary,
+>({
+  sbAdmin,
+  session,
+  wsId,
+}: {
+  sbAdmin: AdminClient;
+  session: T | null;
+  wsId: string;
+}): Promise<T | null> {
+  if (!session) return null;
+
+  if (!session.task_id) {
+    return { ...session, task: null };
+  }
+
+  const { data: task, error } = await sbAdmin
+    .from('tasks')
+    .select(
+      'id, name, list:task_lists!inner(board:workspace_boards!inner(ws_id))'
+    )
+    .eq('id', session.task_id)
+    .eq('list.board.ws_id', wsId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return {
+    ...session,
+    task: task ? { id: task.id, name: task.name } : null,
+  };
+}
 
 async function checkMissedEntryPermission({
   wsId,
@@ -446,14 +529,15 @@ export const GET = withSessionAuth<{ wsId: string }>(
       }
 
       if (type === 'running') {
-        // Get current running session with lightweight category + task info.
+        // Get current running session, then resolve task info through a
+        // workspace-bound lookup so stale/cross-workspace task_id values do not
+        // leak task metadata.
         const { data, error } = await sbAdmin
           .from('time_tracking_sessions')
           .select(
             `
           *,
-          category:time_tracking_categories(id, name, color),
-          task:tasks(id, name)
+          category:time_tracking_categories(id, name, color)
         `
           )
           .eq('ws_id', normalizedWsId)
@@ -462,7 +546,12 @@ export const GET = withSessionAuth<{ wsId: string }>(
           .maybeSingle();
 
         if (error) throw error;
-        return NextResponse.json({ session: data });
+        const session = await attachWorkspaceTaskSummary({
+          sbAdmin,
+          session: data,
+          wsId: normalizedWsId,
+        });
+        return NextResponse.json({ session });
       }
 
       if (type === 'paused') {
@@ -487,14 +576,14 @@ export const GET = withSessionAuth<{ wsId: string }>(
           return NextResponse.json({ session: null });
         }
 
-        // Fetch the paused session with lightweight category + task info.
+        // Fetch the paused session, then resolve task info through the same
+        // workspace-bound lookup used by running sessions.
         const { data: session, error } = await sbAdmin
           .from('time_tracking_sessions')
           .select(
             `
           *,
-          category:time_tracking_categories(id, name, color),
-          task:tasks(id, name)
+          category:time_tracking_categories(id, name, color)
         `
           )
           .eq('id', activeBreak.session_id)
@@ -503,9 +592,14 @@ export const GET = withSessionAuth<{ wsId: string }>(
           .maybeSingle();
 
         if (error) throw error;
+        const sessionWithTask = await attachWorkspaceTaskSummary({
+          sbAdmin,
+          session,
+          wsId: normalizedWsId,
+        });
 
         return NextResponse.json({
-          session: session || null,
+          session: sessionWithTask,
           pauseTime: activeBreak.break_start,
           breakType: activeBreak.break_type,
         });
@@ -772,6 +866,16 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
       // Use service role client for secure operations
       const sbAdmin = await createAdminClient(); // This should use service role
+
+      const taskValidation = await validateSessionTaskWorkspace({
+        sbAdmin,
+        taskId: validatedBody.taskId,
+        wsId: normalizedWsId,
+      });
+
+      if (!taskValidation.ok) {
+        return taskValidation.errorResponse;
+      }
 
       const allowFutureSessions =
         (await getWorkspaceConfig(normalizedWsId, 'ALLOW_FUTURE_SESSIONS')) ===
