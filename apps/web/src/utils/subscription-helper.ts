@@ -1,5 +1,6 @@
 import type { Polar, Subscription } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 function privateSchema(supabase: TypedSupabaseClient) {
   return supabase.schema('private');
@@ -119,12 +120,33 @@ export async function createFreeSubscription(
     .limit(1)
     .maybeSingle();
 
-  if (productError || !freeProduct) {
-    console.error(
-      `No FREE tier product found for ${isPersonal ? 'personal' : 'non-personal'} workspace, cannot create free subscription:`,
-      productError
-    );
-    return { status: 'error', message: 'No free tier product found' };
+  // `workspace_subscription_products` lives in the `private` schema and is only
+  // readable by `service_role`. Distinguish a lookup/permission failure (e.g.
+  // a non-admin client, missing grant, or unset SUPABASE_SECRET_KEY) from a
+  // genuinely missing/un-seeded free product so production diagnosis is
+  // unambiguous instead of collapsing both into "no product found".
+  if (productError) {
+    serverLogger.error('Free-tier product lookup failed', {
+      code: productError.code,
+      hint: 'Ensure the read uses createAdminClient (service_role) and that the migration granting service_role on private.workspace_subscription_products is applied.',
+      message: productError.message,
+      wsId,
+    });
+    return {
+      status: 'error',
+      message: `Free-tier product lookup failed: ${productError.message}`,
+    };
+  }
+
+  if (!freeProduct) {
+    serverLogger.error('No active free-tier product configured', {
+      hint: 'Seed an active (archived=false) pricing_model=free row in private.workspace_subscription_products whose id matches a real Polar free product.',
+      wsId,
+    });
+    return {
+      status: 'error',
+      message: 'No active free-tier product configured',
+    };
   }
 
   try {
