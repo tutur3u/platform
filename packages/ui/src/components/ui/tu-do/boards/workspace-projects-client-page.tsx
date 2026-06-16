@@ -72,6 +72,15 @@ export default function WorkspaceProjectsClientPage({
   const isPermissionLoading = permissionQuery.isLoading;
 
   const resolvedWsId = workspace?.id;
+  const workspaceAccess = workspace as
+    | { access_type?: string; guest_products?: string[] }
+    | null
+    | undefined;
+  const isWorkspaceGuestTasksAccess =
+    workspaceAccess?.access_type === 'guest' &&
+    workspaceAccess.guest_products?.includes('tasks');
+  const canReadBoards =
+    canManageProjects === true || isWorkspaceGuestTasksAccess;
 
   const {
     data: boardsPayload,
@@ -85,9 +94,10 @@ export default function WorkspaceProjectsClientPage({
         page: Number.parseInt(page, 10),
         pageSize: Number.parseInt(pageSize, 10),
       }),
-    enabled: Boolean(resolvedWsId),
+    enabled: Boolean(resolvedWsId && canReadBoards),
   });
-  const isGuestBoardAccess = boardsPayload?.access_type === 'guest';
+  const isGuestBoardAccess =
+    isWorkspaceGuestTasksAccess || boardsPayload?.access_type === 'guest';
 
   useEffect(() => {
     if (
@@ -112,7 +122,7 @@ export default function WorkspaceProjectsClientPage({
     isWorkspacePending ||
     isWorkspaceUserLoading ||
     (isPermissionLoading && !isGuestBoardAccess) ||
-    isBoardsPending
+    (canReadBoards && isBoardsPending)
   ) {
     return <BoardsListSkeleton />;
   }

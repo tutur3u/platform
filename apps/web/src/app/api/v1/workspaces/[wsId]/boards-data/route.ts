@@ -8,7 +8,10 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -49,6 +52,23 @@ export const GET = withSessionAuth<{ wsId: string }>(
           { error: 'Failed to verify workspace membership' },
           { status: 500 }
         );
+      }
+
+      if (memberCheck.ok) {
+        const permissions = await getPermissions({ request: req, user, wsId });
+        if (!permissions) {
+          return NextResponse.json(
+            { error: 'Workspace not found' },
+            { status: 404 }
+          );
+        }
+
+        if (permissions.withoutPermission('manage_projects')) {
+          return NextResponse.json(
+            { error: "You don't have permission to view task boards" },
+            { status: 403 }
+          );
+        }
       }
 
       const sbAdmin = await createAdminClient();

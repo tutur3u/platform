@@ -3,7 +3,7 @@
  */
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import WorkspaceProjectsClientPage from '../workspace-projects-client-page';
@@ -95,6 +95,75 @@ describe('WorkspaceProjectsClientPage', () => {
     );
 
     expect(await screen.findByTestId('boards-view')).toBeInTheDocument();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it('does not fetch board data for members without manage_projects', async () => {
+    mocks.checkWorkspacePermission.mockResolvedValue({
+      hasPermission: false,
+    });
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <WorkspaceProjectsClientPage />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(mocks.replace).toHaveBeenCalledWith('/personal');
+    });
+    expect(mocks.getWorkspaceBoardsData).not.toHaveBeenCalled();
+  });
+
+  it('allows task-board guests to fetch their shared boards', async () => {
+    mocks.getWorkspace.mockResolvedValue({
+      access_type: 'guest',
+      guest_products: ['tasks'],
+      id: 'guest-ws',
+      personal: false,
+    });
+    mocks.checkWorkspacePermission.mockResolvedValue({
+      hasPermission: false,
+    });
+    mocks.getWorkspaceBoardsData.mockResolvedValue({
+      access_type: 'guest',
+      count: 1,
+      data: [
+        {
+          archived_at: null,
+          deleted_at: null,
+          id: 'board-1',
+          name: 'Shared Tasks',
+        },
+      ],
+    });
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <WorkspaceProjectsClientPage />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByTestId('boards-view')).toBeInTheDocument();
+    expect(mocks.getWorkspaceBoardsData).toHaveBeenCalledWith('guest-ws', {
+      page: 1,
+      pageSize: 10,
+      q: '',
+    });
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 });
