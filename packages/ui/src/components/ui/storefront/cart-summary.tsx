@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Tag, TriangleAlert } from '@tuturuuu/icons';
+import { ArrowRight, Tag, TriangleAlert, Zap } from '@tuturuuu/icons';
 import type { InventoryStorefront } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
 import type { FormEvent } from 'react';
@@ -13,7 +13,13 @@ import type {
   StorefrontCartEntry,
   StorefrontSurfaceLabels,
 } from './types';
-import { formatStorefrontPrice, storefrontSurfaceClasses } from './utils';
+import {
+  formatStorefrontPrice,
+  getStorefrontLinePrice,
+  getStorefrontVariantLabel,
+  storefrontCartLineKey,
+  storefrontSurfaceClasses,
+} from './utils';
 
 export function StorefrontCartSummary({
   buyerDefaults,
@@ -25,6 +31,7 @@ export function StorefrontCartSummary({
   isSubmitting,
   labels,
   onCheckoutSubmit,
+  onInstantCheckout,
   radius,
   storefront,
   total,
@@ -38,6 +45,7 @@ export function StorefrontCartSummary({
   isSubmitting: boolean;
   labels: StorefrontSurfaceLabels;
   onCheckoutSubmit?: (formData: FormData) => void;
+  onInstantCheckout?: () => void;
   radius: string;
   storefront: InventoryStorefront;
   total: number;
@@ -72,25 +80,38 @@ export function StorefrontCartSummary({
         {labels.reservedCopy}
       </p>
       <div className="mt-4 -mr-1 grid max-h-72 gap-2.5 overflow-y-auto pr-1">
-        {cartEntries.map(({ line, listing }) => (
-          <div className="flex items-center gap-3 text-sm" key={line.listingId}>
-            <StorefrontImagePanel
-              className={cn('size-10 shrink-0 rounded-md', radius)}
-              imageUrl={listing.imageUrl}
-              label={listing.title}
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">{listing.title}</p>
-              <p className="truncate text-muted-foreground text-xs tabular-nums">
-                {line.quantity} ×{' '}
-                {formatStorefrontPrice(listing.price, currency)}
-              </p>
+        {cartEntries.map(({ line, listing, variant }) => {
+          const unitPrice = getStorefrontLinePrice(listing, variant);
+          const variantLabel = variant
+            ? getStorefrontVariantLabel(variant)
+            : null;
+          return (
+            <div
+              className="flex items-center gap-3 text-sm"
+              key={storefrontCartLineKey(line.listingId, line.variantId)}
+            >
+              <StorefrontImagePanel
+                className={cn('size-10 shrink-0 rounded-md', radius)}
+                imageUrl={variant?.imageUrl ?? listing.imageUrl}
+                label={listing.title}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{listing.title}</p>
+                {variantLabel ? (
+                  <p className="truncate text-muted-foreground text-xs">
+                    {variantLabel}
+                  </p>
+                ) : null}
+                <p className="truncate text-muted-foreground text-xs tabular-nums">
+                  {line.quantity} × {formatStorefrontPrice(unitPrice, currency)}
+                </p>
+              </div>
+              <span className="shrink-0 whitespace-nowrap font-medium tabular-nums">
+                {formatStorefrontPrice(unitPrice * line.quantity, currency)}
+              </span>
             </div>
-            <span className="shrink-0 whitespace-nowrap font-medium tabular-nums">
-              {formatStorefrontPrice(listing.price * line.quantity, currency)}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div className="mt-4 flex items-center justify-between gap-2 border-border border-t pt-4">
         <span className="text-muted-foreground text-sm">{labels.total}</span>
@@ -166,12 +187,24 @@ export function StorefrontCartSummary({
           {labels.checkoutDisabled}
         </Button>
       ) : canOpenCheckout ? (
-        <Button asChild className={cn('mt-4 w-full', radius)}>
-          <a href={checkoutHref}>
-            {labels.checkout}
-            <ArrowRight className="size-4 shrink-0" />
-          </a>
-        </Button>
+        <div className="mt-4 grid gap-2">
+          {onInstantCheckout ? (
+            <AccentButton
+              disabled={isSubmitting}
+              onClick={onInstantCheckout}
+              radius={radius}
+            >
+              <Zap className="size-4 shrink-0" />
+              {isSubmitting ? labels.reserving : labels.instantCheckout}
+            </AccentButton>
+          ) : null}
+          <Button asChild className={cn('w-full', radius)} variant="outline">
+            <a href={checkoutHref}>
+              {labels.checkout}
+              <ArrowRight className="size-4 shrink-0" />
+            </a>
+          </Button>
+        </div>
       ) : (
         <Button className={cn('mt-4 w-full', radius)} disabled type="button">
           {labels.checkout}

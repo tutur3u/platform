@@ -1,13 +1,18 @@
-import type { InventoryStorefrontListing } from '@tuturuuu/internal-api/inventory';
+import type {
+  InventoryListingVariant,
+  InventoryStorefrontListing,
+} from '@tuturuuu/internal-api/inventory';
 
 export type StorefrontCartLine = {
   listingId: string;
+  variantId?: string | null;
   quantity: number;
 };
 
 export type StorefrontCartEntry = {
   line: StorefrontCartLine;
   listing: InventoryStorefrontListing;
+  variant?: InventoryListingVariant;
 };
 
 export type StorefrontBuyerDefaults = {
@@ -27,6 +32,7 @@ export type StorefrontSurfaceLabels = {
   available: string;
   browse: string;
   bundle: string;
+  buyNow: string;
   cart: string;
   checkout: string;
   checkoutDisabled: string;
@@ -34,6 +40,11 @@ export type StorefrontSurfaceLabels = {
   couponNote: string;
   demoBadge: string;
   emptyCart: string;
+  fromPrice: string;
+  instantCheckout: string;
+  redirectingToCheckout: string;
+  selectOptions: string;
+  viewDetails: string;
   emptyListingsDescription: string;
   emptyListingsTitle: string;
   fallbackDescription: string;
@@ -61,6 +72,7 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
   available: 'available',
   browse: 'Browse',
   bundle: 'Bundle',
+  buyNow: 'Buy now',
   cart: 'Cart',
   checkout: 'Checkout',
   checkoutDisabled: 'Checkout is disabled in preview',
@@ -68,6 +80,11 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
   couponNote: 'Have a coupon? You can apply it at checkout.',
   demoBadge: 'Demo',
   emptyCart: 'Add a listing to start checkout.',
+  fromPrice: 'From',
+  instantCheckout: 'Instant checkout',
+  redirectingToCheckout: 'Taking you to secure checkout…',
+  selectOptions: 'Select options',
+  viewDetails: 'View details',
   emptyListingsDescription:
     'Publish a listing to make this storefront ready for buyers.',
   emptyListingsTitle: 'No listings yet',

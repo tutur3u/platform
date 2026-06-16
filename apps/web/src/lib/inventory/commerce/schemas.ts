@@ -146,21 +146,78 @@ export const storefrontPayloadSchema = z.object({
 
 export const storefrontPatchSchema = storefrontPayloadSchema.partial();
 
+export const VariantStatusSchema = z.enum(['active', 'hidden', 'archived']);
+
+export const listingVariantPayloadSchema = z.object({
+  compareAtPrice: z.number().int().nonnegative().nullable().optional(),
+  id: z.guid().optional(),
+  imageUrl: z.url().nullable().optional(),
+  optionValueLabels: z.record(z.string(), z.string()).optional(),
+  price: z.number().int().nonnegative().nullable().optional(),
+  productId: z.guid(),
+  sku: z.string().trim().max(64).nullable().optional(),
+  sortOrder: z.number().int().optional(),
+  status: VariantStatusSchema.optional(),
+  title: z.string().trim().max(180).nullable().optional(),
+  unitId: z.guid(),
+  warehouseId: z.guid(),
+});
+
+const listingOptionPayloadSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  sortOrder: z.number().int().optional(),
+  values: z
+    .array(
+      z.object({
+        label: z.string().trim().min(1).max(120),
+        sortOrder: z.number().int().optional(),
+      })
+    )
+    .max(64),
+});
+
 export const storefrontListingPayloadSchema = z.object({
+  applyOptionTemplateId: z.guid().nullable().optional(),
   bundleId: z.guid().nullable().optional(),
   compareAtPrice: z.number().int().nonnegative().nullable().optional(),
   description: z.string().trim().max(2000).nullable().optional(),
   imageUrl: z.url().nullable().optional(),
   listingType: z.enum(['product', 'bundle']).optional(),
   maxPerOrder: z.number().int().min(1).max(999).optional(),
+  options: z.array(listingOptionPayloadSchema).max(8).optional(),
   price: z.number().int().nonnegative(),
   productId: z.guid().nullable().optional(),
   sortOrder: z.number().int().optional(),
   status: ListingStatusSchema.optional(),
   title: z.string().trim().min(1).max(180),
   unitId: z.guid().nullable().optional(),
+  variants: z.array(listingVariantPayloadSchema).max(200).optional(),
   warehouseId: z.guid().nullable().optional(),
 });
+
+export const optionTemplatePayloadSchema = z.object({
+  description: z.string().trim().max(1000).nullable().optional(),
+  groups: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(120),
+        sortOrder: z.number().int().optional(),
+        values: z
+          .array(
+            z.object({
+              label: z.string().trim().min(1).max(120),
+              sortOrder: z.number().int().optional(),
+              value: z.string().trim().max(120).nullable().optional(),
+            })
+          )
+          .max(64),
+      })
+    )
+    .max(8),
+  name: z.string().trim().min(1).max(160),
+});
+
+export const optionTemplatePatchSchema = optionTemplatePayloadSchema.partial();
 
 export const bundlePayloadSchema = z.object({
   components: z
@@ -200,6 +257,7 @@ export const checkoutCreatePayloadSchema = z.object({
         bundleId: z.guid().optional(),
         listingId: z.guid().optional(),
         quantity: z.number().int().min(1).max(999),
+        variantId: z.guid().optional(),
       })
     )
     .min(1),

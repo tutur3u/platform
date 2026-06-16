@@ -9,11 +9,13 @@ import type {
 import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
 import { StorefrontCartSummary } from './cart-summary';
+import { StorefrontCheckoutOverlay } from './checkout-overlay';
 import { StorefrontEmptyListings } from './empty-listings';
 import { StorefrontHeroPanel } from './hero-panel';
 import { StorefrontImagePanel } from './image-panel';
 import { StorefrontListingCard } from './listing-card';
 import { StorefrontProductDetail } from './product-detail';
+import { StorefrontProductDialog } from './product-dialog';
 import type {
   StorefrontBuyerDefaults,
   StorefrontCartLine,
@@ -24,7 +26,9 @@ import { mergeStorefrontSurfaceLabels } from './types';
 import {
   getAccentStyle,
   getSafeStorefrontHttpUrl,
+  getStorefrontLinePrice,
   getStorefrontListingLimit,
+  getStorefrontVariantLimit,
   sanitizeStorefrontAccentColor,
   storefrontRadiusClasses,
   storefrontSurfaceClasses,
@@ -38,17 +42,22 @@ export function StorefrontSurface({
   checkoutHref,
   className,
   compactLayout = false,
+  detailListingId,
   emptyAction,
   headerActions,
   isDemo: _isDemo = false,
+  isRedirecting = false,
   isSubmitting = false,
   labels: labelOverrides,
   listings,
   mode,
   notice,
+  onBuyNow,
   onCheckoutSubmit,
   onDecrement,
+  onDetailListingChange,
   onIncrement,
+  onInstantCheckout,
   selectedListingId,
   storefront,
   storefrontHref,
@@ -59,17 +68,26 @@ export function StorefrontSurface({
   checkoutHref?: string;
   className?: string;
   compactLayout?: boolean;
+  detailListingId?: string | null;
   emptyAction?: ReactNode;
   headerActions?: ReactNode;
   isDemo?: boolean;
+  isRedirecting?: boolean;
   isSubmitting?: boolean;
   labels?: Partial<StorefrontSurfaceLabels>;
   listings: InventoryStorefrontListing[];
   mode: StorefrontSurfaceMode;
   notice?: ReactNode;
+  onBuyNow?: (listingId: string, variantId?: string | null) => void;
   onCheckoutSubmit?: (formData: FormData) => void;
-  onDecrement?: (listingId: string) => void;
-  onIncrement?: (listingId: string, maxQuantity: number) => void;
+  onDecrement?: (listingId: string, variantId?: string | null) => void;
+  onDetailListingChange?: (listingId: string | null) => void;
+  onIncrement?: (
+    listingId: string,
+    maxQuantity: number,
+    variantId?: string | null
+  ) => void;
+  onInstantCheckout?: () => void;
   selectedListingId?: string;
   storefront: InventoryStorefront;
   storefrontHref?: string;
@@ -77,25 +95,33 @@ export function StorefrontSurface({
   const labels = mergeStorefrontSurfaceLabels(labelOverrides);
   const accentColor = sanitizeStorefrontAccentColor(storefront.accentColor);
   const radius = storefrontRadiusClasses[storefront.cornerStyle];
+  const resolveVariant = (
+    listing: InventoryStorefrontListing,
+    variantId?: string | null
+  ) =>
+    variantId
+      ? (listing.variants ?? []).find((variant) => variant.id === variantId)
+      : undefined;
   const cartEntries = cartLines.flatMap((line) => {
     const listing = listings.find((item) => item.id === line.listingId);
-    return listing ? [{ line, listing }] : [];
+    if (!listing) return [];
+    return [{ line, listing, variant: resolveVariant(listing, line.variantId) }];
   });
-  const checkoutEntries = cartEntries.filter(({ line, listing }) => {
-    const quantity = Math.min(
-      line.quantity,
-      getStorefrontListingLimit(listing)
-    );
-    return quantity > 0;
-  });
-  const total = checkoutEntries.reduce((sum, { line, listing }) => {
-    const quantity = Math.min(
-      line.quantity,
-      getStorefrontListingLimit(listing)
-    );
-    return sum + listing.price * quantity;
+  const lineLimit = (entry: (typeof cartEntries)[number]) =>
+    entry.variant
+      ? getStorefrontVariantLimit(entry.listing, entry.variant)
+      : getStorefrontListingLimit(entry.listing);
+  const checkoutEntries = cartEntries.filter(
+    (entry) => Math.min(entry.line.quantity, lineLimit(entry)) > 0
+  );
+  const total = checkoutEntries.reduce((sum, entry) => {
+    const quantity = Math.min(entry.line.quantity, lineLimit(entry));
+    return sum + getStorefrontLinePrice(entry.listing, entry.variant) * quantity;
   }, 0);
   const cartQuantity = cartLines.reduce((sum, line) => sum + line.quantity, 0);
+  const detailListing = detailListingId
+    ? listings.find((listing) => listing.id === detailListingId)
+    : undefined;
   const selectedListing = selectedListingId
     ? listings.find((listing) => listing.id === selectedListingId)
     : undefined;
@@ -123,6 +149,7 @@ export function StorefrontSurface({
       isSubmitting={isSubmitting}
       labels={labels}
       onCheckoutSubmit={onCheckoutSubmit}
+      onInstantCheckout={mode === 'cart' ? onInstantCheckout : undefined}
       radius={radius}
       storefront={storefront}
       total={total}
@@ -248,9 +275,12 @@ export function StorefrontSurface({
                 ) : null}
                 <StorefrontProductDetail
                   cartHref={cartHref}
+                  cartLines={cartLines}
                   currency={currency}
+                  isSubmitting={isSubmitting}
                   labels={labels}
                   listing={selectedListing}
+                  onBuyNow={onBuyNow}
                   onDecrement={onDecrement}
                   onIncrement={onIncrement}
                   quantity={
@@ -337,6 +367,11 @@ export function StorefrontSurface({
                           listing={listing}
                           onDecrement={onDecrement}
                           onIncrement={onIncrement}
+                          onOpenDetail={
+                            onDetailListingChange
+                              ? (id) => onDetailListingChange(id)
+                              : undefined
+                          }
                           quantity={line?.quantity ?? 0}
                           radius={radius}
                           showInventoryBadges={storefront.showInventoryBadges}
@@ -355,6 +390,28 @@ export function StorefrontSurface({
           {cartSummary}
         </section>
       )}
+
+      <StorefrontProductDialog
+        cartHref={cartHref}
+        cartLines={cartLines}
+        currency={currency}
+        isSubmitting={isSubmitting}
+        labels={labels}
+        listing={detailListing ?? null}
+        onBuyNow={onBuyNow}
+        onDecrement={onDecrement}
+        onIncrement={onIncrement}
+        onOpenChange={(open) => {
+          if (!open) onDetailListingChange?.(null);
+        }}
+        radius={radius}
+        showInventoryBadges={storefront.showInventoryBadges}
+        surfaceClassName={storefrontSurfaceClasses[storefront.surfaceStyle]}
+      />
+
+      {isSubmitting || isRedirecting ? (
+        <StorefrontCheckoutOverlay label={labels.redirectingToCheckout} />
+      ) : null}
     </main>
   );
 }

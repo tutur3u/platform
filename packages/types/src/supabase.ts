@@ -3189,6 +3189,7 @@ export type Database = {
           title: string;
           unit_id: string;
           unit_price: number;
+          variant_id: string | null;
           warehouse_id: string;
         };
         Insert: {
@@ -3203,6 +3204,7 @@ export type Database = {
           title: string;
           unit_id: string;
           unit_price?: number;
+          variant_id?: string | null;
           warehouse_id: string;
         };
         Update: {
@@ -3217,6 +3219,7 @@ export type Database = {
           title?: string;
           unit_id?: string;
           unit_price?: number;
+          variant_id?: string | null;
           warehouse_id?: string;
         };
         Relationships: [
@@ -3246,6 +3249,13 @@ export type Database = {
             columns: ['unit_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_checkout_lines_variant_id_fkey';
+            columns: ['variant_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listing_variants';
             referencedColumns: ['id'];
           },
           {
@@ -3515,6 +3525,136 @@ export type Database = {
           },
         ];
       };
+      inventory_listing_option_groups: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          listing_id: string;
+          name: string;
+          sort_order: number;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          listing_id: string;
+          name: string;
+          sort_order?: number;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          listing_id?: string;
+          name?: string;
+          sort_order?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_listing_option_groups_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listings';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_listing_option_values: {
+        Row: {
+          created_at: string | null;
+          group_id: string;
+          id: string;
+          label: string;
+          listing_id: string;
+          sort_order: number;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          group_id: string;
+          id?: string;
+          label: string;
+          listing_id: string;
+          sort_order?: number;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          group_id?: string;
+          id?: string;
+          label?: string;
+          listing_id?: string;
+          sort_order?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_listing_option_values_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_listing_option_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_listing_option_values_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listings';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_listing_variant_option_values: {
+        Row: {
+          group_id: string;
+          listing_id: string;
+          value_id: string;
+          variant_id: string;
+        };
+        Insert: {
+          group_id: string;
+          listing_id: string;
+          value_id: string;
+          variant_id: string;
+        };
+        Update: {
+          group_id?: string;
+          listing_id?: string;
+          value_id?: string;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_listing_variant_option_values_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_listing_option_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_listing_variant_option_values_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_listing_variant_option_values_value_id_fkey';
+            columns: ['value_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_listing_option_values';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_listing_variant_option_values_variant_id_fkey';
+            columns: ['variant_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listing_variants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_manufacturers: {
         Row: {
           created_at: string;
@@ -3535,6 +3675,109 @@ export type Database = {
           id?: string;
           name?: string;
           updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_option_template_groups: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          name: string;
+          sort_order: number;
+          template_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          template_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          template_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_option_template_groups_template_id_fkey';
+            columns: ['template_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_option_templates';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_option_template_values: {
+        Row: {
+          created_at: string | null;
+          group_id: string;
+          id: string;
+          label: string;
+          sort_order: number;
+          value: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          group_id: string;
+          id?: string;
+          label: string;
+          sort_order?: number;
+          value?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          group_id?: string;
+          id?: string;
+          label?: string;
+          sort_order?: number;
+          value?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_option_template_values_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_option_template_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_option_templates: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          metadata: Json;
+          name: string;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          metadata?: Json;
+          name: string;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          metadata?: Json;
+          name?: string;
+          updated_at?: string | null;
           ws_id?: string;
         };
         Relationships: [];
@@ -3749,6 +3992,7 @@ export type Database = {
           released_at: string | null;
           status: string;
           unit_id: string;
+          variant_id: string | null;
           warehouse_id: string;
         };
         Insert: {
@@ -3762,6 +4006,7 @@ export type Database = {
           released_at?: string | null;
           status?: string;
           unit_id: string;
+          variant_id?: string | null;
           warehouse_id: string;
         };
         Update: {
@@ -3775,6 +4020,7 @@ export type Database = {
           released_at?: string | null;
           status?: string;
           unit_id?: string;
+          variant_id?: string | null;
           warehouse_id?: string;
         };
         Relationships: [
@@ -3797,6 +4043,13 @@ export type Database = {
             columns: ['unit_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_reservations_variant_id_fkey';
+            columns: ['variant_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listing_variants';
             referencedColumns: ['id'];
           },
           {
@@ -3925,6 +4178,103 @@ export type Database = {
             columns: ['storefront_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_storefronts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_storefront_listing_variants: {
+        Row: {
+          compare_at_price: number | null;
+          created_at: string | null;
+          id: string;
+          image_url: string | null;
+          listing_id: string;
+          metadata: Json;
+          polar_environment: string | null;
+          polar_last_error: string | null;
+          polar_price_id: string | null;
+          polar_product_id: string | null;
+          polar_sync_status: string;
+          polar_synced_at: string | null;
+          price: number | null;
+          product_id: string;
+          sku: string | null;
+          sort_order: number;
+          status: string;
+          title: string | null;
+          unit_id: string;
+          updated_at: string | null;
+          warehouse_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          compare_at_price?: number | null;
+          created_at?: string | null;
+          id?: string;
+          image_url?: string | null;
+          listing_id: string;
+          metadata?: Json;
+          polar_environment?: string | null;
+          polar_last_error?: string | null;
+          polar_price_id?: string | null;
+          polar_product_id?: string | null;
+          polar_sync_status?: string;
+          polar_synced_at?: string | null;
+          price?: number | null;
+          product_id: string;
+          sku?: string | null;
+          sort_order?: number;
+          status?: string;
+          title?: string | null;
+          unit_id: string;
+          updated_at?: string | null;
+          warehouse_id: string;
+          ws_id: string;
+        };
+        Update: {
+          compare_at_price?: number | null;
+          created_at?: string | null;
+          id?: string;
+          image_url?: string | null;
+          listing_id?: string;
+          metadata?: Json;
+          polar_environment?: string | null;
+          polar_last_error?: string | null;
+          polar_price_id?: string | null;
+          polar_product_id?: string | null;
+          polar_sync_status?: string;
+          polar_synced_at?: string | null;
+          price?: number | null;
+          product_id?: string;
+          sku?: string | null;
+          sort_order?: number;
+          status?: string;
+          title?: string | null;
+          unit_id?: string;
+          updated_at?: string | null;
+          warehouse_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_storefront_listing_variants_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_listing_variants_unit_id_fkey';
+            columns: ['unit_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_listing_variants_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_warehouses';
             referencedColumns: ['id'];
           },
         ];
@@ -10783,7 +11133,9 @@ export type Database = {
       get_rate_limit_trust_decision: {
         Args: { p_api_key_id?: string; p_ip?: unknown; p_user_id?: string };
         Returns: {
+          absolute_limits: Json;
           decision_source: string;
+          limit_mode: Database['public']['Enums']['rate_limit_mode'];
           subject_key: string;
           tier: Database['public']['Enums']['abuse_risk_tier'];
           trust_multiplier: number;
@@ -12114,10 +12466,12 @@ export type Database = {
       };
       abuse_trust_overrides: {
         Row: {
+          absolute_limits: Json | null;
           created_at: string;
           created_by: string | null;
           expires_at: string | null;
           id: string;
+          limit_mode: Database['public']['Enums']['rate_limit_mode'];
           metadata: Json;
           reason: string;
           revoke_reason: string | null;
@@ -12130,10 +12484,12 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          absolute_limits?: Json | null;
           created_at?: string;
           created_by?: string | null;
           expires_at?: string | null;
           id?: string;
+          limit_mode?: Database['public']['Enums']['rate_limit_mode'];
           metadata?: Json;
           reason: string;
           revoke_reason?: string | null;
@@ -12146,10 +12502,12 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          absolute_limits?: Json | null;
           created_at?: string;
           created_by?: string | null;
           expires_at?: string | null;
           id?: string;
+          limit_mode?: Database['public']['Enums']['rate_limit_mode'];
           metadata?: Json;
           reason?: string;
           revoke_reason?: string | null;
@@ -31873,6 +32231,7 @@ export type Database = {
           p_title: string;
           p_unit_id: string;
           p_unit_price: number;
+          p_variant_id?: string;
           p_warehouse_id: string;
           p_ws_id: string;
         };
@@ -33591,7 +33950,9 @@ export type Database = {
           p_user_id?: string;
         };
         Returns: {
+          absolute_limits: Json;
           decision_source: string;
+          limit_mode: Database['public']['Enums']['rate_limit_mode'];
           subject_key: string;
           tier: Database['public']['Enums']['abuse_risk_tier'];
           trust_multiplier: number;
@@ -34779,6 +35140,8 @@ export type Database = {
       list_trusted_subjects_for_cache: {
         Args: { p_min_multiplier?: number };
         Returns: {
+          absolute_limits: Json;
+          limit_mode: Database['public']['Enums']['rate_limit_mode'];
           subject_key: string;
           trust_multiplier: number;
         }[];
@@ -35801,7 +36164,8 @@ export type Database = {
         | 'api_key'
         | 'ip'
         | 'cidr'
-        | 'user_location';
+        | 'user_location'
+        | 'workspace';
       abuse_risk_tier:
         | 'trusted'
         | 'standard'
@@ -37594,6 +37958,11 @@ export type Database = {
         | 'mail'
         | 'other';
       promotion_type: 'REGULAR' | 'REFERRAL';
+      rate_limit_mode:
+        | 'inherit_multiplier'
+        | 'absolute'
+        | 'unlimited'
+        | 'blocked';
       recording_status:
         | 'recording'
         | 'interrupted'
@@ -38523,6 +38892,7 @@ export const Constants = {
         'ip',
         'cidr',
         'user_location',
+        'workspace',
       ],
       abuse_risk_tier: [
         'trusted',
@@ -40330,6 +40700,12 @@ export const Constants = {
         'other',
       ],
       promotion_type: ['REGULAR', 'REFERRAL'],
+      rate_limit_mode: [
+        'inherit_multiplier',
+        'absolute',
+        'unlimited',
+        'blocked',
+      ],
       recording_status: [
         'recording',
         'interrupted',

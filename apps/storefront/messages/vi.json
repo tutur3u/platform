@@ -779,6 +779,7 @@
     "browse": "Xem cửa hàng",
     "bundle": "Combo",
     "bundleAvailability": "Combo",
+    "buyNow": "Mua ngay",
     "cart": "Giỏ hàng",
     "checkout": "Thanh toán",
     "checkoutDisabled": "Thanh toán bị tắt cho cửa hàng này.",
@@ -795,6 +796,8 @@
       "note": "Ghi chú đơn hàng",
       "phone": "Số điện thoại"
     },
+    "fromPrice": "Từ",
+    "instantCheckout": "Thanh toán nhanh",
     "loading": "Đang tải cửa hàng...",
     "notFound": "Không tìm thấy cửa hàng.",
     "order": "Đơn hàng",
@@ -809,10 +812,12 @@
     "product": "Sản phẩm",
     "publicStore": "Cửa hàng công khai",
     "quantity": "Số lượng",
+    "redirectingToCheckout": "Đang chuyển bạn đến trang thanh toán an toàn…",
     "reserve": "Tiếp tục với Polar",
     "reservedCopy": "Tồn kho được giữ chỗ trước khi mở thanh toán Polar.",
     "reserving": "Đang chuẩn bị thanh toán...",
     "retry": "Thử lại",
+    "selectOptions": "Chọn tùy chọn",
     "signIn": "Đăng nhập",
     "simulatedBadge": "Thanh toán mô phỏng",
     "simulatedReserve": "Mô phỏng thanh toán",
@@ -821,6 +826,7 @@
     "soldOut": "Hết hàng",
     "storefrontErrorDescription": "Bạn có thể cần đăng nhập, hoặc cửa hàng này không khả dụng.",
     "storefrontErrorTitle": "Cửa hàng không khả dụng",
-    "total": "Tổng cộng"
+    "total": "Tổng cộng",
+    "viewDetails": "Xem chi tiết"
   }
 }

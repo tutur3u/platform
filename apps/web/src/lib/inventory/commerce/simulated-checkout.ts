@@ -253,6 +253,7 @@ export function createSimulatedCheckoutResponse({
       checkoutSessionId: publicToken,
       id: `${publicToken}_${index}`,
       listingId: line.listingId ?? null,
+      variantId: line.variantId ?? null,
       productId: priced.productId,
       quantity: line.quantity,
       subtotalAmount: priced.subtotal,

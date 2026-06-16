@@ -4,6 +4,7 @@ import {
   type InventoryBundle,
   type InventoryPolarProductSyncSummary,
   type InventoryStorefrontListing,
+  type InventoryVariantStatus,
   toPolarCurrency,
 } from '@tuturuuu/internal-api/inventory';
 import type { Product } from '@tuturuuu/payment/polar';
@@ -14,9 +15,15 @@ import { resolveInventoryPolarContext } from './polar';
 
 type SupabaseErrorLike = { message?: string } | null;
 
-type SyncTable = 'inventory_storefront_listings' | 'inventory_bundles';
+type SyncTable =
+  | 'inventory_storefront_listings'
+  | 'inventory_bundles'
+  | 'inventory_storefront_listing_variants';
 
-type SyncKind = 'inventory_listing' | 'inventory_bundle';
+type SyncKind =
+  | 'inventory_listing'
+  | 'inventory_bundle'
+  | 'inventory_listing_variant';
 
 type PolarSyncRow = {
   currency: string;
@@ -340,6 +347,62 @@ export async function syncBundleToPolar(bundle: InventoryBundle) {
   });
 }
 
+export type VariantPolarSyncInput = {
+  variantId: string;
+  wsId: string;
+  storefrontId: string | null;
+  listingTitle: string;
+  variantLabel: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  priceCents: number;
+  polarProductId: string | null;
+  status: InventoryVariantStatus;
+};
+
+/**
+ * Each variant is its own buyable Polar product (name = "Listing - Variant").
+ * Mirrors syncListingToPolar but for the per-variant SKU table. Archived/hidden
+ * variants archive their Polar product instead of staying public.
+ */
+export async function syncVariantToPolar(input: VariantPolarSyncInput) {
+  const { currency, slug } = await getStorefrontContext(input.storefrontId);
+
+  if (input.status !== 'active') {
+    await archiveRowInPolar(
+      'inventory_storefront_listing_variants',
+      input.variantId,
+      input.wsId,
+      slug
+    );
+    return;
+  }
+
+  const name = input.variantLabel
+    ? `${input.listingTitle} - ${input.variantLabel}`
+    : input.listingTitle;
+
+  await pushRowToPolar(
+    'inventory_storefront_listing_variants',
+    'inventory_listing_variant',
+    {
+      currency,
+      description: input.description ?? null,
+      imageUrl: input.imageUrl ?? null,
+      name,
+      polarProductId: input.polarProductId ?? null,
+      priceCents: input.priceCents,
+      rowId: input.variantId,
+      storefrontSlug: slug,
+      wsId: input.wsId,
+    }
+  );
+}
+
+export function scheduleVariantPolarSync(input: VariantPolarSyncInput) {
+  schedulePush(() => syncVariantToPolar(input));
+}
+
 function getSyncMetadata(value: unknown): {
   kind: SyncKind;
   rowId: string;
@@ -348,11 +411,25 @@ function getSyncMetadata(value: unknown): {
   if (!value || typeof value !== 'object') return null;
   const metadata = value as Record<string, unknown>;
   const kind = metadata.kind;
-  if (kind !== 'inventory_listing' && kind !== 'inventory_bundle') return null;
+  if (
+    kind !== 'inventory_listing' &&
+    kind !== 'inventory_bundle' &&
+    kind !== 'inventory_listing_variant'
+  ) {
+    return null;
+  }
   if (typeof metadata.rowId !== 'string' || typeof metadata.wsId !== 'string') {
     return null;
   }
   return { kind, rowId: metadata.rowId, wsId: metadata.wsId };
+}
+
+function syncTableForKind(kind: SyncKind): SyncTable {
+  if (kind === 'inventory_listing') return 'inventory_storefront_listings';
+  if (kind === 'inventory_listing_variant') {
+    return 'inventory_storefront_listing_variants';
+  }
+  return 'inventory_bundles';
 }
 
 function getFixedPriceAmount(product: Product): number | null {
@@ -378,11 +455,8 @@ export async function applyPolarProductToInventory(
   const metadata = getSyncMetadata(product.metadata);
   if (!metadata) return false;
 
-  const table: SyncTable =
-    metadata.kind === 'inventory_listing'
-      ? 'inventory_storefront_listings'
-      : 'inventory_bundles';
-  const nameColumn = metadata.kind === 'inventory_listing' ? 'title' : 'name';
+  const table = syncTableForKind(metadata.kind);
+  const nameColumn = metadata.kind === 'inventory_bundle' ? 'name' : 'title';
 
   const update: Record<string, unknown> = {
     polar_last_error: null,
@@ -391,7 +465,13 @@ export async function applyPolarProductToInventory(
     polar_sync_status: 'synced',
     polar_synced_at: new Date().toISOString(),
   };
-  if (typeof product.name === 'string' && product.name.trim()) {
+  // A variant's title is the option label we own (the Polar product name is the
+  // combined "Listing - Variant" string), so never overwrite it from Polar.
+  if (
+    metadata.kind !== 'inventory_listing_variant' &&
+    typeof product.name === 'string' &&
+    product.name.trim()
+  ) {
     update[nameColumn] = product.name;
   }
   if (typeof product.description === 'string') {
@@ -488,6 +568,7 @@ async function getWorkspaceStorefrontContexts(
 export async function reconcileWorkspacePolarProducts(wsId: string): Promise<{
   bundles: number;
   listings: number;
+  variants: number;
 }> {
   const privateAdmin = await getPrivateAdmin();
   const contexts = await getWorkspaceStorefrontContexts(wsId);
@@ -511,7 +592,16 @@ export async function reconcileWorkspacePolarProducts(wsId: string): Promise<{
     }> | null;
   };
 
+  const listingContextById = new Map<
+    string,
+    { description: string | null; storefrontId: string; title: string }
+  >();
   for (const listing of listings ?? []) {
+    listingContextById.set(listing.id, {
+      description: listing.description,
+      storefrontId: listing.storefront_id,
+      title: listing.title,
+    });
     const context = contexts.get(listing.storefront_id);
     await pushRowToPolar('inventory_storefront_listings', 'inventory_listing', {
       currency: context?.currency ?? 'USD',
@@ -524,6 +614,47 @@ export async function reconcileWorkspacePolarProducts(wsId: string): Promise<{
       storefrontSlug: context?.slug ?? null,
       wsId: listing.ws_id,
     });
+  }
+
+  const { data: variants } = (await privateAdmin
+    .from('inventory_storefront_listing_variants' as never)
+    .select(
+      'id, ws_id, listing_id, title, image_url, price, polar_product_id, status'
+    )
+    .eq('ws_id', wsId)
+    .eq('status', 'active')) as {
+    data: Array<{
+      id: string;
+      image_url: string | null;
+      listing_id: string;
+      polar_product_id: string | null;
+      price: number;
+      title: string | null;
+      ws_id: string;
+    }> | null;
+  };
+
+  for (const variant of variants ?? []) {
+    const listingContext = listingContextById.get(variant.listing_id);
+    if (!listingContext) continue;
+    const context = contexts.get(listingContext.storefrontId);
+    await pushRowToPolar(
+      'inventory_storefront_listing_variants',
+      'inventory_listing_variant',
+      {
+        currency: context?.currency ?? 'USD',
+        description: listingContext.description,
+        imageUrl: variant.image_url,
+        name: variant.title
+          ? `${listingContext.title} - ${variant.title}`
+          : listingContext.title,
+        polarProductId: variant.polar_product_id,
+        priceCents: variant.price,
+        rowId: variant.id,
+        storefrontSlug: context?.slug ?? null,
+        wsId: variant.ws_id,
+      }
+    );
   }
 
   const { data: bundles } = (await privateAdmin
@@ -565,6 +696,7 @@ export async function reconcileWorkspacePolarProducts(wsId: string): Promise<{
   return {
     bundles: bundles?.length ?? 0,
     listings: listings?.length ?? 0,
+    variants: variants?.length ?? 0,
   };
 }
 

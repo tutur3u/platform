@@ -12,12 +12,15 @@ import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   getStorefrontListingLimit,
+  getStorefrontVariantLimit,
   type StorefrontBuyerDefaults,
   StorefrontSurface,
   type StorefrontSurfaceLabels,
 } from '@tuturuuu/ui/storefront';
+import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useMemo } from 'react';
+import { useQueryState } from 'nuqs';
+import { type ReactNode, useMemo, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { useCart } from './storefront-cart';
 import {
@@ -51,6 +54,8 @@ export function StorefrontClient({
 }: StorefrontClientProps) {
   const t = useTranslations('storefront');
   const cart = useCart(storeSlug);
+  const [detailListingId, setDetailListingId] = useQueryState('product');
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const shouldResolveDemoOrder =
     mode === 'order' && publicToken === DEMO_ORDER_PUBLIC_TOKEN;
   const storefrontQuery = useQuery({
@@ -86,54 +91,80 @@ export function StorefrontClient({
     () =>
       cart.cart.flatMap((line) => {
         const listing = listings.find((item) => item.id === line.listingId);
-        return listing ? [{ line, listing }] : [];
+        if (!listing) return [];
+        const variant = line.variantId
+          ? (listing.variants ?? []).find((item) => item.id === line.variantId)
+          : undefined;
+        return [{ line, listing, variant }];
       }),
     [cart.cart, listings]
   );
+  const lineLimit = (
+    listing: (typeof cartListings)[number]['listing'],
+    variant: (typeof cartListings)[number]['variant']
+  ) =>
+    variant
+      ? getStorefrontVariantLimit(listing, variant)
+      : getStorefrontListingLimit(listing);
   const checkoutListings = cartListings.filter(
-    ({ line, listing }) =>
-      Math.min(line.quantity, getStorefrontListingLimit(listing)) > 0
+    ({ line, listing, variant }) =>
+      Math.min(line.quantity, lineLimit(listing, variant)) > 0
   );
+
+  type CheckoutLineInput = {
+    listingId: string;
+    variantId?: string;
+    quantity: number;
+  };
+  type CheckoutInput = {
+    lines: CheckoutLineInput[];
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string | null;
+    note?: string | null;
+  };
+
   const checkoutMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
+    mutationFn: async (input: CheckoutInput) => {
       if (isDemoStorefront) return createDemoCheckoutResponse(storeSlug);
 
-      const customerName = String(formData.get('customerName') ?? '').trim();
-      const customerEmail = String(formData.get('customerEmail') ?? '').trim();
-      const customerPhone = String(formData.get('customerPhone') ?? '').trim();
-
       return createInventoryCheckoutSession(storeSlug, {
-        customerEmail: customerEmail || undefined,
-        customerName: customerName || undefined,
-        customerPhone: customerPhone || null,
-        lines: checkoutListings
-          .map(({ line, listing }) => ({
-            listingId: line.listingId,
-            quantity: Math.min(
-              line.quantity,
-              getStorefrontListingLimit(listing)
-            ),
-          }))
-          .filter((line) => line.quantity > 0),
-        note: String(formData.get('note') ?? '') || null,
+        customerEmail: input.customerEmail || undefined,
+        customerName: input.customerName || undefined,
+        customerPhone: input.customerPhone || null,
+        lines: input.lines.filter((line) => line.quantity > 0),
+        note: input.note ?? null,
       });
     },
-    onError: (error) =>
+    onError: (error) => {
+      setIsRedirecting(false);
       toast.error(
         error instanceof Error && error.message
           ? error.message
           : t('checkoutError')
-      ),
+      );
+    },
     onSuccess: ({ checkoutUrl }) => {
       if (!checkoutUrl) {
+        setIsRedirecting(false);
         toast.error(t('checkoutError'));
         return;
       }
 
+      // Keep the loading overlay visible across the redirect — the page is
+      // navigating away to the Polar-hosted checkout.
+      setIsRedirecting(true);
       cart.clear();
       window.location.assign(checkoutUrl);
     },
   });
+
+  const cartCheckoutLines = (): CheckoutLineInput[] =>
+    checkoutListings.map(({ line, listing, variant }) => ({
+      listingId: line.listingId,
+      quantity: Math.min(line.quantity, lineLimit(listing, variant)),
+      variantId: line.variantId ?? undefined,
+    }));
 
   if (mode === 'order') {
     const order = orderQuery.data?.order;
@@ -186,6 +217,37 @@ export function StorefrontClient({
                   {t('loading')}
                 </p>
               )}
+              {order && order.lines.length > 0 ? (
+                <div className="mt-5 rounded-xl border border-border bg-muted/10 p-4 text-left">
+                  <div className="grid gap-2">
+                    {order.lines.map((line) => (
+                      <div
+                        className="flex items-baseline justify-between gap-3 text-sm"
+                        key={line.id}
+                      >
+                        <span className="min-w-0 truncate">
+                          <span className="text-muted-foreground tabular-nums">
+                            {line.quantity}×{' '}
+                          </span>
+                          {line.title}
+                        </span>
+                        <span className="shrink-0 whitespace-nowrap font-medium tabular-nums">
+                          {formatMoneyFromMinor(
+                            line.subtotalAmount,
+                            order.currency
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between border-border border-t pt-3 text-sm">
+                    <span className="text-muted-foreground">{t('total')}</span>
+                    <span className="font-semibold tabular-nums">
+                      {formatMoneyFromMinor(order.totalAmount, order.currency)}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
               <div className="mt-5 rounded-xl border border-border border-dashed bg-muted/20 p-4 text-left">
                 <p className="text-muted-foreground text-xs uppercase tracking-wide">
                   {t('orderReference')}
@@ -234,6 +296,7 @@ export function StorefrontClient({
     available: t('available'),
     browse: t('browse'),
     bundle: t('bundle'),
+    buyNow: t('buyNow'),
     cart: t('cart'),
     checkout: t('checkout'),
     checkoutDisabled: t('checkoutDisabled'),
@@ -243,6 +306,11 @@ export function StorefrontClient({
     emptyListingsDescription: t('emptyListingsDescription'),
     emptyListingsTitle: t('emptyListingsTitle'),
     fallbackDescription: t('fallbackDescription'),
+    fromPrice: t('fromPrice'),
+    instantCheckout: t('instantCheckout'),
+    redirectingToCheckout: t('redirectingToCheckout'),
+    selectOptions: t('selectOptions'),
+    viewDetails: t('viewDetails'),
     form: {
       email: t('form.email'),
       name: t('form.name'),
@@ -278,31 +346,77 @@ export function StorefrontClient({
       cartLines={cart.cart}
       cartHref={`/${storeSlug}/cart`}
       checkoutHref={`/${storeSlug}/checkout`}
+      detailListingId={detailListingId}
       headerActions={headerActions}
       isDemo={isDemoStorefront}
+      isRedirecting={isRedirecting}
       isSubmitting={checkoutMutation.isPending}
       labels={surfaceLabels}
       listings={listings}
       mode={resolvedMode}
+      onBuyNow={(buyNowListingId, variantId) => {
+        // Instant checkout for a single product, skipping the cart entirely.
+        recordAnalyticsEvent({
+          eventType: 'checkout_started',
+          listingId: buyNowListingId,
+          metadata: { instant: true, lines: 1 },
+        });
+        checkoutMutation.mutate({
+          customerEmail: buyerDefaults?.email ?? undefined,
+          customerName: buyerDefaults?.name ?? undefined,
+          lines: [
+            { listingId: buyNowListingId, quantity: 1, variantId: variantId ?? undefined },
+          ],
+        });
+      }}
       onCheckoutSubmit={(formData) => {
         recordAnalyticsEvent({
           eventType: 'checkout_started',
           metadata: { lines: checkoutListings.length },
         });
-        checkoutMutation.mutate(formData);
+        checkoutMutation.mutate({
+          customerEmail:
+            String(formData.get('customerEmail') ?? '').trim() || undefined,
+          customerName:
+            String(formData.get('customerName') ?? '').trim() || undefined,
+          customerPhone:
+            String(formData.get('customerPhone') ?? '').trim() || null,
+          lines: cartCheckoutLines(),
+          note: String(formData.get('note') ?? '') || null,
+        });
       }}
-      onDecrement={(selectedListingId) => {
-        cart.decrement(selectedListingId);
+      onDecrement={(selectedListingId, variantId) => {
+        cart.decrement(selectedListingId, variantId);
         recordAnalyticsEvent({
           eventType: 'remove_from_cart',
           listingId: selectedListingId,
         });
       }}
-      onIncrement={(selectedListingId, maxQuantity) => {
-        cart.increment(selectedListingId, maxQuantity);
+      onDetailListingChange={(nextListingId) =>
+        setDetailListingId(nextListingId)
+      }
+      onIncrement={(selectedListingId, maxQuantity, variantId) => {
+        cart.increment(selectedListingId, maxQuantity, variantId);
         recordAnalyticsEvent({
           eventType: 'add_to_cart',
           listingId: selectedListingId,
+        });
+      }}
+      onInstantCheckout={() => {
+        // One-click checkout from the cart: submit directly when we already know
+        // the buyer, otherwise send them to the checkout form to fill details.
+        if (!buyerDefaults?.email) {
+          window.location.assign(`/${storeSlug}/checkout`);
+          return;
+        }
+        recordAnalyticsEvent({
+          eventType: 'checkout_started',
+          metadata: { instant: true, lines: checkoutListings.length },
+        });
+        checkoutMutation.mutate({
+          customerEmail: buyerDefaults.email,
+          customerName: buyerDefaults.name ?? undefined,
+          lines: cartCheckoutLines(),
         });
       }}
       selectedListingId={listingId}

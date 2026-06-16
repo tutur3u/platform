@@ -779,6 +779,7 @@
     "browse": "Browse storefront",
     "bundle": "Bundle",
     "bundleAvailability": "Bundle",
+    "buyNow": "Buy now",
     "cart": "Cart",
     "checkout": "Checkout",
     "checkoutDisabled": "Checkout is disabled for this storefront.",
@@ -795,6 +796,8 @@
       "note": "Order note",
       "phone": "Phone"
     },
+    "fromPrice": "From",
+    "instantCheckout": "Instant checkout",
     "loading": "Loading storefront...",
     "notFound": "Storefront not found.",
     "order": "Order",
@@ -809,10 +812,12 @@
     "product": "Product",
     "publicStore": "Public storefront",
     "quantity": "Quantity",
+    "redirectingToCheckout": "Taking you to secure checkout…",
     "reserve": "Continue to Polar",
     "reservedCopy": "Inventory is reserved before Polar checkout opens.",
     "reserving": "Preparing checkout...",
     "retry": "Retry",
+    "selectOptions": "Select options",
     "signIn": "Sign in",
     "simulatedBadge": "Simulated checkout",
     "simulatedReserve": "Simulate checkout",
@@ -821,6 +826,7 @@
     "soldOut": "Sold out",
     "storefrontErrorDescription": "You may need to sign in, or this storefront is unavailable.",
     "storefrontErrorTitle": "Storefront unavailable",
-    "total": "Total"
+    "total": "Total",
+    "viewDetails": "View details"
   }
 }

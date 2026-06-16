@@ -318,6 +318,8 @@ export type InventoryStorefrontListing = {
   polarSyncStatus?: InventoryPolarSyncStatus;
   polarSyncedAt?: string | null;
   polarLastError?: string | null;
+  options?: InventoryListingOptionGroup[];
+  variants?: InventoryListingVariant[];
   createdAt: string | null;
   updatedAt: string | null;
 };
@@ -327,6 +329,85 @@ export type InventoryPolarSyncStatus =
   | 'synced'
   | 'error'
   | 'disabled';
+
+export type InventoryVariantStatus = 'active' | 'hidden' | 'archived';
+
+export type InventoryListingOptionValue = {
+  id: string;
+  label: string;
+  sortOrder: number;
+};
+
+export type InventoryListingOptionGroup = {
+  id: string;
+  name: string;
+  sortOrder: number;
+  values: InventoryListingOptionValue[];
+};
+
+export type InventoryListingVariantOptionValue = {
+  groupId: string;
+  valueId: string;
+  label: string;
+};
+
+export type InventoryListingVariant = {
+  id: string;
+  sku: string | null;
+  title: string | null;
+  productId: string;
+  unitId: string;
+  warehouseId: string;
+  /** Resolved price in integer minor units (falls back to the listing price). */
+  price: number;
+  compareAtPrice: number | null;
+  imageUrl: string | null;
+  sortOrder: number;
+  status: InventoryVariantStatus;
+  availableQuantity?: number | null;
+  optionValues: InventoryListingVariantOptionValue[];
+  polarSyncStatus?: InventoryPolarSyncStatus;
+  polarSyncedAt?: string | null;
+  polarLastError?: string | null;
+};
+
+export type InventoryOptionTemplateValue = {
+  id: string;
+  label: string;
+  value: string | null;
+  sortOrder: number;
+};
+
+export type InventoryOptionTemplateGroup = {
+  id: string;
+  name: string;
+  sortOrder: number;
+  values: InventoryOptionTemplateValue[];
+};
+
+export type InventoryOptionTemplate = {
+  id: string;
+  wsId: string;
+  name: string;
+  description: string | null;
+  groups: InventoryOptionTemplateGroup[];
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type InventoryOptionTemplatePayload = {
+  name: string;
+  description?: string | null;
+  groups: Array<{
+    name: string;
+    sortOrder?: number;
+    values: Array<{
+      label: string;
+      value?: string | null;
+      sortOrder?: number;
+    }>;
+  }>;
+};
 
 export type InventoryBundleComponent = {
   id: string;
@@ -366,6 +447,7 @@ export type InventoryCheckoutLine = {
   id: string;
   listingId: string | null;
   bundleId: string | null;
+  variantId: string | null;
   productId: string;
   unitId: string;
   warehouseId: string;
@@ -913,6 +995,30 @@ export type InventoryStorefrontListingPayload = {
   status?: InventoryListingStatus;
   sortOrder?: number;
   maxPerOrder?: number;
+  /** Copy an option template's groups/values onto this listing before saving. */
+  applyOptionTemplateId?: string | null;
+  options?: Array<{
+    name: string;
+    sortOrder?: number;
+    values: Array<{ label: string; sortOrder?: number }>;
+  }>;
+  variants?: InventoryStorefrontListingVariantPayload[];
+};
+
+export type InventoryStorefrontListingVariantPayload = {
+  id?: string;
+  sku?: string | null;
+  title?: string | null;
+  productId: string;
+  unitId: string;
+  warehouseId: string;
+  price?: number | null;
+  compareAtPrice?: number | null;
+  imageUrl?: string | null;
+  sortOrder?: number;
+  status?: InventoryVariantStatus;
+  /** Maps an option group name to the selected value label for this variant. */
+  optionValueLabels?: Record<string, string>;
 };
 
 export type InventoryBundlePayload = {
@@ -940,6 +1046,7 @@ export type InventoryCheckoutCreatePayload = {
   lines: Array<{
     listingId?: string;
     bundleId?: string;
+    variantId?: string;
     quantity: number;
   }>;
 };
@@ -2205,6 +2312,68 @@ export function deleteInventoryStorefrontListing(
     workspaceInventoryPath(
       wsId,
       `/storefronts/${encodePathSegment(storefrontId)}/listings/${encodePathSegment(listingId)}`
+    ),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
+  );
+}
+
+export function listInventoryOptionTemplates(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryOptionTemplate[];
+  }>(workspaceInventoryPath(wsId, '/option-templates'), {
+    cache: 'no-store',
+  });
+}
+
+export function createInventoryOptionTemplate(
+  wsId: string,
+  payload: InventoryOptionTemplatePayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryOptionTemplate }>(
+    workspaceInventoryPath(wsId, '/option-templates'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventoryOptionTemplate(
+  wsId: string,
+  templateId: string,
+  payload: Partial<InventoryOptionTemplatePayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryOptionTemplate }>(
+    workspaceInventoryPath(
+      wsId,
+      `/option-templates/${encodePathSegment(templateId)}`
+    ),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PATCH',
+    }
+  );
+}
+
+export function deleteInventoryOptionTemplate(
+  wsId: string,
+  templateId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ ok: boolean }>(
+    workspaceInventoryPath(
+      wsId,
+      `/option-templates/${encodePathSegment(templateId)}`
     ),
     {
       headers: options?.defaultHeaders,

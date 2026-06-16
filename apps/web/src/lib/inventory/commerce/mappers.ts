@@ -166,6 +166,7 @@ export type CheckoutLineRow = {
   checkout_session_id: string;
   id: string;
   listing_id: string | null;
+  variant_id: string | null;
   product_id: string;
   quantity: number;
   subtotal_amount: number;
@@ -350,6 +351,7 @@ export function mapCheckout(
       bundleId: line.bundle_id,
       id: line.id,
       listingId: line.listing_id,
+      variantId: line.variant_id ?? null,
       productId: line.product_id,
       quantity: line.quantity,
       subtotalAmount: line.subtotal_amount,

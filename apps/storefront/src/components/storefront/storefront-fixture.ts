@@ -215,6 +215,7 @@ export const demoCheckoutSession: InventoryCheckoutSession = {
       bundleId: null,
       id: 'fixture-checkout-line-notebook',
       listingId: 'fixture-listing-notebook',
+      variantId: null,
       productId: 'fixture-product-notebook',
       quantity: 1,
       subtotalAmount: 18,

@@ -1,4 +1,5 @@
 import type {
+  InventoryListingVariant,
   InventoryStorefront,
   InventoryStorefrontListing,
 } from '@tuturuuu/internal-api/inventory';
@@ -87,6 +88,73 @@ export function getStorefrontListingLimit(listing: InventoryStorefrontListing) {
       : Number.POSITIVE_INFINITY;
 
   return Math.max(0, Math.min(listing.maxPerOrder, available));
+}
+
+/** Active, selectable variants for a listing, in display order. */
+export function getStorefrontListingVariants(
+  listing: InventoryStorefrontListing
+): InventoryListingVariant[] {
+  return (listing.variants ?? []).filter(
+    (variant) => variant.status === 'active'
+  );
+}
+
+export function listingHasVariants(listing: InventoryStorefrontListing) {
+  return getStorefrontListingVariants(listing).length > 0;
+}
+
+/** Per-order limit for a specific variant, capped by the listing's maxPerOrder. */
+export function getStorefrontVariantLimit(
+  listing: InventoryStorefrontListing,
+  variant: InventoryListingVariant
+) {
+  const available =
+    typeof variant.availableQuantity === 'number'
+      ? variant.availableQuantity
+      : Number.POSITIVE_INFINITY;
+
+  return Math.max(0, Math.min(listing.maxPerOrder, available));
+}
+
+/**
+ * Resolves the price to charge for a cart line: the variant's resolved price
+ * when a variant is selected, otherwise the listing price. Both are minor units.
+ */
+export function getStorefrontLinePrice(
+  listing: InventoryStorefrontListing,
+  variant?: InventoryListingVariant | null
+) {
+  return variant ? variant.price : listing.price;
+}
+
+/** Lowest active-variant price, for a "from {price}" label on variant listings. */
+export function getStorefrontListingFromPrice(
+  listing: InventoryStorefrontListing
+) {
+  const variants = getStorefrontListingVariants(listing);
+  if (variants.length === 0) return listing.price;
+  return variants.reduce(
+    (min, variant) => Math.min(min, variant.price),
+    Number.POSITIVE_INFINITY
+  );
+}
+
+/** Stable identity for a cart line so listing+variant combos stay distinct. */
+export function storefrontCartLineKey(
+  listingId: string,
+  variantId?: string | null
+) {
+  return `${listingId}::${variantId ?? ''}`;
+}
+
+/** Composes a human label for the selected variant from its option values. */
+export function getStorefrontVariantLabel(
+  variant: InventoryListingVariant
+): string | null {
+  if (variant.title) return variant.title;
+  const labels = variant.optionValues.map((value) => value.label);
+  if (labels.length > 0) return labels.join(' / ');
+  return variant.sku ?? null;
 }
 
 /**
