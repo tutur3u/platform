@@ -1058,29 +1058,41 @@ function getBlueGreenCacheImageTag(commitShortHash, { composeFile, env }) {
   return `${getComposeProjectName(composeFile, env)}-web-cache:${commitShortHash.trim()}`;
 }
 
+async function assertBlueGreenCachedImageExists(
+  cachedImageTag,
+  { env, runCommand: run }
+) {
+  const imageTag =
+    typeof cachedImageTag === 'string' ? cachedImageTag.trim() : '';
+
+  if (!imageTag) {
+    throw new Error('Cached recovery image tag is required.');
+  }
+
+  await runChecked('docker', ['image', 'inspect', imageTag], {
+    env,
+    runCommand: run,
+    stdio: 'pipe',
+  });
+
+  return imageTag;
+}
+
 async function retagCachedImageForService(
   cachedImageTag,
   serviceName,
   { composeFile, env, runCommand: run }
 ) {
-  if (
-    typeof cachedImageTag !== 'string' ||
-    cachedImageTag.trim().length === 0
-  ) {
-    throw new Error('Cached recovery image tag is required.');
-  }
-
+  const imageTag = await assertBlueGreenCachedImageExists(cachedImageTag, {
+    env,
+    runCommand: run,
+  });
   const serviceImageName = getComposeServiceImageName(serviceName, {
     composeFile,
     env,
   });
 
-  await runChecked('docker', ['image', 'inspect', cachedImageTag], {
-    env,
-    runCommand: run,
-    stdio: 'pipe',
-  });
-  await runChecked('docker', ['tag', cachedImageTag, serviceImageName], {
+  await runChecked('docker', ['tag', imageTag, serviceImageName], {
     env,
     runCommand: run,
   });
@@ -4149,6 +4161,7 @@ module.exports = {
   BLUE_GREEN_SUPPORT_SERVICES,
   BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
   DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
+  assertBlueGreenCachedImageExists,
   buildBlueGreenServices,
   buildNativeWebArtifacts,
   buildNativeWebRuntimeImages,

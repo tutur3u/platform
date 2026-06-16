@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const {
+  assertBlueGreenCachedImageExists,
   getBlueGreenCacheImageTag,
   getBlueGreenServiceName,
   readBlueGreenActiveColor,
@@ -1963,6 +1964,34 @@ async function cancelActiveDeploymentForWatcherRequest({
   });
 }
 
+async function hasCachedRecoveryImage({
+  cachedImageTag,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl,
+  log,
+  rootDir,
+  runCommand: run,
+}) {
+  try {
+    await assertBlueGreenCachedImageExists(cachedImageTag, {
+      env: getWatcherComposeEnv({
+        baseEnv: env,
+        envFilePath,
+        fsImpl,
+        rootDir,
+      }),
+      runCommand: run,
+    });
+    return true;
+  } catch (error) {
+    log.warn?.(
+      `Cached recovery image ${cachedImageTag} is unavailable; falling back to rollback pin: ${getErrorMessage(error)}`
+    );
+    return false;
+  }
+}
+
 function hasReportedActiveDeploymentConflict(conflict, { fsImpl, paths }) {
   const lastResult = readWatchStatus(paths, fsImpl)?.lastResult;
 
@@ -3339,12 +3368,28 @@ async function runDeploymentRevertRequestIteration(
   }
 
   const pin = createDeploymentPinFromRevertRequest(request, deployment);
-  const cachedImageTag =
+  let cachedImageTag =
     typeof deployment.imageTag === 'string' &&
     deployment.imageTag.length > 0 &&
     (request.imageTag == null || request.imageTag === deployment.imageTag)
       ? deployment.imageTag
       : null;
+
+  if (cachedImageTag) {
+    const cacheAvailable = await hasCachedRecoveryImage({
+      cachedImageTag,
+      env,
+      envFilePath,
+      fsImpl,
+      log,
+      rootDir,
+      runCommand: run,
+    });
+
+    if (!cacheAvailable) {
+      cachedImageTag = null;
+    }
+  }
 
   if (!cachedImageTag) {
     if (activeDeploymentConflict) {

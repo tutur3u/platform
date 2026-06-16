@@ -3902,6 +3902,152 @@ test('runDeploymentRevertRequestIteration cancels an active build before cached 
       false
     );
     assert.ok(calls.includes('docker buildx rm tuturuuu'));
+    assert.ok(calls.indexOf(`docker image inspect ${cachedImageTag}`) >= 0);
+    assert.ok(
+      calls.indexOf(`docker image inspect ${cachedImageTag}`) <
+        calls.indexOf(prodComposeStopKey('buildkit'))
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeploymentRevertRequestIteration defers stale cached recovery without canceling active build', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-cached-revert-stale-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const composeProjectName = path.basename(tempDir);
+  const cachedImageTag = `${composeProjectName}-web-cache:old123`;
+  const checkedAt = Date.parse('2026-06-10T10:05:00.000Z');
+  const calls = [];
+  const warnings = [];
+  const request = {
+    commitHash: 'old123456789old123456789old123456789old1',
+    commitShortHash: 'old123',
+    commitSubject: 'Known good stale cache',
+    deploymentStamp: 'deploy-old123',
+    imageTag: cachedImageTag,
+    instant: true,
+    kind: 'deployment-revert',
+    requestedAt: '2026-06-10T10:05:00.000Z',
+    requestedBy: 'user-1',
+    requestedByEmail: 'ops@platform.test',
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+    fs.writeFileSync(paths.blueGreen.stateFile, 'blue\n', 'utf8');
+    fs.writeFileSync(
+      paths.blueGreen.deploymentStampFile,
+      'deploy-current\n',
+      'utf8'
+    );
+    fs.writeFileSync(
+      paths.deploymentRevertRequestFile,
+      JSON.stringify(request, null, 2),
+      'utf8'
+    );
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: Date.parse('2026-06-10T09:00:00.000Z'),
+          activeColor: 'blue',
+          buildDurationMs: 20_000,
+          commitHash: request.commitHash,
+          commitShortHash: request.commitShortHash,
+          commitSubject: request.commitSubject,
+          deploymentStamp: request.deploymentStamp,
+          finishedAt: Date.parse('2026-06-10T09:00:00.000Z'),
+          imageTag: cachedImageTag,
+          startedAt: Date.parse('2026-06-10T08:59:40.000Z'),
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+
+    const runCommand = async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+
+      if (key === `docker image inspect ${cachedImageTag}`) {
+        return createResult('', {
+          code: 1,
+          stderr: `Error response from daemon: No such image: ${cachedImageTag}`,
+        });
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    };
+
+    const result = await runDeploymentRevertRequestIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      request,
+      {
+        activeDeploymentConflict: {
+          elapsedMs: 1000,
+          lock: {
+            command: 'bun serve:web:docker:bg',
+            commitHash: 'build123456789',
+            commitShortHash: 'build123',
+            commitSubject: 'Build in flight',
+            deploymentKind: 'promotion',
+            ownerPid: 9876,
+            startedAt: checkedAt - 1000,
+          },
+          source: 'lock',
+          status: 'building',
+        },
+        attachRuntime: async (state, history = null) => ({
+          ...state,
+          deployments: history ?? readDeploymentHistory(paths, fs),
+        }),
+        checkedAt,
+        envFilePath,
+        fsImpl: fs,
+        log: {
+          error() {},
+          info() {},
+          warn(message) {
+            warnings.push(message);
+          },
+        },
+        now: () => checkedAt,
+        paths,
+        processImpl: { pid: 4321 },
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    const history = readDeploymentHistory(paths, fs);
+
+    assert.equal(result.status, 'deployment-active');
+    assert.equal(result.latestCommit.shortHash, request.commitShortHash);
+    assert.deepEqual(calls, [`docker image inspect ${cachedImageTag}`]);
+    assert.equal(calls.includes(prodComposeStopKey('buildkit')), false);
+    assert.equal(calls.includes('docker buildx rm tuturuuu'), false);
+    assert.equal(
+      history.some((entry) => entry.status === 'canceled'),
+      false
+    );
+    assert.equal(fs.existsSync(paths.deploymentRevertRequestFile), true);
+    assert.equal(fs.existsSync(paths.deploymentPinFile), false);
+    assert.match(
+      warnings.join('\n'),
+      /Cached recovery image .* is unavailable/
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
