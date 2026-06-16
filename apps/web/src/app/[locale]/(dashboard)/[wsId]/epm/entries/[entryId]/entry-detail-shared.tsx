@@ -202,6 +202,53 @@ const EMPTY_EDITOR_CONTENT: JSONContent = {
   ],
 };
 
+function toPlainTextEditorContent(value: string): JSONContent {
+  return {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: value,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function isValidEditorNode(value: unknown): value is JSONContent {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  const node = value as Record<string, unknown>;
+
+  if (node.type !== undefined && typeof node.type !== 'string') {
+    return false;
+  }
+
+  if (node.text !== undefined && typeof node.text !== 'string') {
+    return false;
+  }
+
+  if (node.marks !== undefined && !Array.isArray(node.marks)) {
+    return false;
+  }
+
+  if (node.content === undefined) {
+    return true;
+  }
+
+  return Array.isArray(node.content) && node.content.every(isValidEditorNode);
+}
+
+function isValidEditorDocument(value: unknown): value is JSONContent {
+  return isValidEditorNode(value) && value.type === 'doc';
+}
+
 export function parseEntryDescriptionContent(
   value: string | null | undefined
 ): JSONContent | null {
@@ -210,28 +257,15 @@ export function parseEntryDescriptionContent(
   }
 
   try {
-    const parsed = JSON.parse(value) as JSONContent;
-    if (parsed && typeof parsed === 'object') {
+    const parsed = JSON.parse(value) as unknown;
+    if (isValidEditorDocument(parsed)) {
       return parsed;
     }
   } catch {
-    return {
-      type: 'doc',
-      content: [
-        {
-          type: 'paragraph',
-          content: [
-            {
-              type: 'text',
-              text: value,
-            },
-          ],
-        },
-      ],
-    };
+    return toPlainTextEditorContent(value);
   }
 
-  return null;
+  return toPlainTextEditorContent(value);
 }
 
 export function serializeEntryDescriptionContent(
