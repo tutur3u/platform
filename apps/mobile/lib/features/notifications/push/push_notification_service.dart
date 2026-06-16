@@ -67,18 +67,42 @@ class PushNotificationEvent {
 typedef PushNavigationHandler =
     Future<void> Function(PushNavigationRequest request);
 
+String? _stringFromPushData(Map<String, dynamic> data, String key) {
+  final value = data[key];
+  return value is String ? value : null;
+}
+
 PushNavigationRequest requestFromPushData(Map<String, dynamic> data) {
+  final openTarget = _stringFromPushData(data, 'openTarget') ?? 'inbox';
+  final entityId = _stringFromPushData(data, 'entityId');
+
   return PushNavigationRequest(
-    notificationId: (data['notificationId'] as String?) ?? '',
-    openTarget: (data['openTarget'] as String?) ?? 'inbox',
-    wsId: data['wsId'] as String?,
-    entityId: data['entityId'] as String?,
-    boardId: data['boardId'] as String?,
+    notificationId: _stringFromPushData(data, 'notificationId') ?? '',
+    openTarget: openTarget,
+    wsId: _stringFromPushData(data, 'wsId'),
+    entityId: entityId,
+    boardId: _stringFromPushData(data, 'boardId'),
     conversationId:
-        data['conversationId'] as String? ??
-        ((data['openTarget'] == 'chat') ? data['entityId'] as String? : null),
-    messageId: data['messageId'] as String?,
+        _stringFromPushData(data, 'conversationId') ??
+        (openTarget == 'chat' ? entityId : null),
+    messageId: _stringFromPushData(data, 'messageId'),
   );
+}
+
+PushNavigationRequest? requestFromLocalNotificationPayload(String payload) {
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(payload);
+  } on FormatException {
+    return null;
+  }
+
+  if (decoded is! Map<String, dynamic>) {
+    return null;
+  }
+
+  final request = requestFromPushData(decoded);
+  return request.hasNavigationMetadata ? request : null;
 }
 
 String? payloadFromPushRequest(PushNavigationRequest request) {
@@ -301,15 +325,9 @@ class PushNotificationService {
   }
 
   Future<void> _handleLocalNotificationPayload(String payload) async {
-    final decoded = jsonDecode(payload);
-    if (decoded is! Map<String, dynamic>) {
-      return;
-    }
+    final request = requestFromLocalNotificationPayload(payload);
+    if (request == null) return;
 
-    final request = _requestFromData(decoded);
-    if (!request.hasNavigationMetadata) {
-      return;
-    }
     _emitEvent(
       PushNotificationEvent(
         type: PushNotificationEventType.opened,
