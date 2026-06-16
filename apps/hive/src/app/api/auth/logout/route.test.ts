@@ -55,18 +55,41 @@ describe('Hive logout route', () => {
     );
   });
 
-  it('keeps JSON compatibility for programmatic logout requests', async () => {
-    const response = GET(
+  it('keeps JSON compatibility for programmatic POST logout requests', async () => {
+    const response = POST(
       new NextRequest('https://hive.tuturuuu.com/api/auth/logout', {
         headers: {
           accept: 'application/json',
           cookie: `${APP_SESSION_COOKIE_NAME}=ttr_app_session`,
         },
+        method: 'POST',
       })
     );
 
     expect(response.status).toBe(200);
     expect(response.headers.get('location')).toBeNull();
     await expect(response.json()).resolves.toEqual({ success: true });
+  });
+
+  it('rejects GET logout without clearing session cookies', async () => {
+    const response = GET(
+      new NextRequest('https://hive.tuturuuu.com/api/auth/logout', {
+        headers: {
+          accept: 'text/html',
+          cookie: [
+            `${APP_SESSION_COOKIE_NAME}=ttr_app_session`,
+            'sb-resolved-kingfish-21146-auth-token=stale',
+          ].join('; '),
+        },
+      })
+    );
+
+    expect(response.status).toBe(405);
+    expect(response.headers.get('allow')).toBe('POST');
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('set-cookie')).toBeNull();
+    await expect(response.json()).resolves.toEqual({
+      error: 'Method not allowed',
+    });
   });
 });
