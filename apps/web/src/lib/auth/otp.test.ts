@@ -68,6 +68,7 @@ const mocks = vi.hoisted(() => {
     shouldBypassSupabaseAuthCaptchaForDev: vi.fn(),
     validateEmail: vi.fn(),
     validateOtp: vi.fn(),
+    verifyTurnstileToken: vi.fn(),
   };
 });
 
@@ -87,6 +88,9 @@ vi.mock('@tuturuuu/turnstile/server', () => ({
   resolveTurnstileToken: (
     ...args: Parameters<typeof mocks.resolveTurnstileToken>
   ) => mocks.resolveTurnstileToken(...args),
+  verifyTurnstileToken: (
+    ...args: Parameters<typeof mocks.verifyTurnstileToken>
+  ) => mocks.verifyTurnstileToken(...args),
 }));
 
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
@@ -181,9 +185,11 @@ describe('otp auth service', () => {
     mocks.checkIfUserExists.mockResolvedValue('user-1');
     mocks.generateRandomPassword.mockReturnValue('random-password');
     mocks.resolveTurnstileToken.mockReturnValue({
+      captchaToken: 'captcha-token',
       captchaOptions: { captchaToken: 'captcha-token' },
       shouldBypassForDev: false,
     });
+    mocks.verifyTurnstileToken.mockResolvedValue(undefined);
     mocks.shouldBypassSupabaseAuthCaptchaForDev.mockReturnValue(false);
     mocks.createClient.mockResolvedValue(mocks.requestClient);
     mocks.createAdminClient.mockResolvedValue(mocks.adminClient);
@@ -231,6 +237,15 @@ describe('otp auth service', () => {
     });
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
     expect(mocks.adminUpdateUserById).not.toHaveBeenCalled();
+    expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.any(Object),
+      }),
+      'captcha-token'
+    );
+    expect(mocks.verifyTurnstileToken.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.requestSignInWithOtp.mock.invocationCallOrder[0]!
+    );
     expect(mocks.requestSignInWithOtp).toHaveBeenCalledWith({
       email: 'person@example.com',
       options: {
@@ -243,6 +258,33 @@ describe('otp auth service', () => {
         },
       },
     });
+  });
+
+  it('does not send OTP when server-side Turnstile verification fails', async () => {
+    const turnstileError = new Error('Turnstile verification failed');
+    mocks.verifyTurnstileToken.mockRejectedValueOnce(turnstileError);
+
+    const { sendOtp } = await import('./otp');
+
+    await expect(
+      sendOtp(
+        {
+          captchaToken: 'captcha-token',
+          client: 'web',
+          email: 'person@example.com',
+          locale: 'en',
+        },
+        {
+          client: 'web',
+          endpoint: '/api/v1/auth/otp/send',
+          headers: new Headers(),
+        }
+      )
+    ).rejects.toBe(turnstileError);
+
+    expect(mocks.requestSignInWithOtp).not.toHaveBeenCalled();
+    expect(mocks.requestSignUp).not.toHaveBeenCalled();
+    expect(mocks.recordOTPSendSuccess).not.toHaveBeenCalled();
   });
 
   it('updates user metadata after a successful OTP verification', async () => {

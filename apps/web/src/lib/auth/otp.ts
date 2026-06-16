@@ -6,6 +6,7 @@ import {
 import {
   isTurnstileError,
   resolveTurnstileToken,
+  verifyTurnstileToken,
 } from '@tuturuuu/turnstile/server';
 import {
   checkOTPSendAllowed,
@@ -230,6 +231,26 @@ function createGenericVerifyErrorResult(status = 400): OtpFailureResult {
   };
 }
 
+function readHeadersLike(headers: HeadersLike, name: string) {
+  if (headers instanceof Headers || headers instanceof Map) {
+    return headers.get(name) ?? headers.get(name.toLowerCase()) ?? null;
+  }
+
+  return headers[name] ?? headers[name.toLowerCase()] ?? null;
+}
+
+function createTurnstileRequest(context: OtpRequestContext) {
+  if (context.request) {
+    return context.request;
+  }
+
+  return {
+    headers: {
+      get: (name: string) => readHeadersLike(context.headers, name),
+    },
+  };
+}
+
 export async function getPublicOtpSettings({
   client,
   platform,
@@ -314,6 +335,13 @@ export async function sendOtp(
     token: input.captchaToken,
     requireConfiguration: true,
   });
+  if (!turnstile.shouldBypassForDev) {
+    await verifyTurnstileToken(
+      createTurnstileRequest(context),
+      turnstile.captchaToken
+    );
+  }
+
   const supabase = turnstile.shouldBypassForDev
     ? await createAdminClient()
     : await createClient(context.request);
