@@ -5,6 +5,7 @@ import 'dart:isolate';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
@@ -13,18 +14,33 @@ import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:path_provider/path_provider.dart';
 
 typedef CacheJsonDecoder<T> = T Function(Object? json);
+typedef CacheDirectoryResolver = Future<Directory> Function();
 
 class CacheStore {
-  CacheStore._();
+  CacheStore._({
+    FlutterSecureStorage? secureStorage,
+    CacheDirectoryResolver? directoryResolver,
+  }) : _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+       _directoryResolver = directoryResolver;
+
+  @visibleForTesting
+  CacheStore.forTesting({
+    required FlutterSecureStorage secureStorage,
+    required CacheDirectoryResolver directoryResolver,
+  }) : _secureStorage = secureStorage,
+       _directoryResolver = directoryResolver;
 
   static final CacheStore instance = CacheStore._();
 
   static const _resourceBoxName = 'offline_cache_v1';
   static const _mutationBoxName = 'offline_mutations_v1';
+  static const _encryptionKeyStorageKey = 'offline-cache-hive-key-v1';
   static const _nonPersistentResourceNamespaces = {
     'settings.workspaceSecrets.list',
   };
 
+  final FlutterSecureStorage _secureStorage;
+  final CacheDirectoryResolver? _directoryResolver;
   final Map<String, CachedResourceRecord> _memory = {};
   late Box<dynamic> _resourceBox;
   late Box<dynamic> _mutationBox;
@@ -35,8 +51,15 @@ class CacheStore {
     WidgetsFlutterBinding.ensureInitialized();
     final dir = await _resolveHiveDirectory();
     Hive.init(dir.path);
-    _resourceBox = await Hive.openBox<dynamic>(_resourceBoxName);
-    _mutationBox = await Hive.openBox<dynamic>(_mutationBoxName);
+    final encryptionCipher = await _resolveEncryptionCipher();
+    _resourceBox = await _openEncryptedBox(
+      _resourceBoxName,
+      encryptionCipher,
+    );
+    _mutationBox = await _openEncryptedBox(
+      _mutationBoxName,
+      encryptionCipher,
+    );
     final nonPersistentKeys = <dynamic>[];
     for (final key in _resourceBox.keys) {
       final raw = _resourceBox.get(key);
@@ -56,6 +79,11 @@ class CacheStore {
   }
 
   Future<Directory> _resolveHiveDirectory() async {
+    final directoryResolver = _directoryResolver;
+    if (directoryResolver != null) {
+      return directoryResolver();
+    }
+
     // Temp storage is a bootstrap/test fallback only. It keeps startup alive
     // when path_provider is unavailable, but the OS may clear it at any time.
     Future<Directory> fallbackDirectory() async {
@@ -112,6 +140,84 @@ class CacheStore {
     }
 
     return '_test_${identityHashCode(Isolate.current)}';
+  }
+
+  Future<HiveCipher> _resolveEncryptionCipher() async {
+    final encodedKey = await _readStoredEncryptionKey();
+    final key = _decodeEncryptionKey(encodedKey);
+    if (key != null) {
+      return HiveAesCipher(key);
+    }
+
+    final generatedKey = Hive.generateSecureKey();
+    try {
+      await _secureStorage.write(
+        key: _encryptionKeyStorageKey,
+        value: base64UrlEncode(generatedKey),
+      );
+    } on MissingPluginException {
+      if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+        rethrow;
+      }
+    }
+    return HiveAesCipher(generatedKey);
+  }
+
+  Future<String?> _readStoredEncryptionKey() async {
+    try {
+      return await _secureStorage.read(key: _encryptionKeyStorageKey);
+    } on MissingPluginException {
+      if (Platform.environment.containsKey('FLUTTER_TEST')) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  List<int>? _decodeEncryptionKey(String? encodedKey) {
+    if (encodedKey == null || encodedKey.isEmpty) {
+      return null;
+    }
+
+    try {
+      final key = base64Url.decode(encodedKey);
+      return key.length == 32 ? key : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  Future<Box<dynamic>> _openEncryptedBox(
+    String boxName,
+    HiveCipher encryptionCipher,
+  ) async {
+    try {
+      return await Hive.openBox<dynamic>(
+        boxName,
+        encryptionCipher: encryptionCipher,
+      );
+    } on Object catch (error) {
+      if (error is! HiveError) {
+        rethrow;
+      }
+      debugPrint(
+        'CacheStore: resetting unreadable legacy cache box $boxName: $error',
+      );
+      await Hive.deleteBoxFromDisk(boxName);
+      return Hive.openBox<dynamic>(
+        boxName,
+        encryptionCipher: encryptionCipher,
+      );
+    }
+  }
+
+  @visibleForTesting
+  Future<void> closeForTesting() async {
+    if (!_initialized) return;
+    await _resourceBox.close();
+    await _mutationBox.close();
+    _memory.clear();
+    _initialized = false;
   }
 
   Future<CacheReadResult<T>> read<T>({
