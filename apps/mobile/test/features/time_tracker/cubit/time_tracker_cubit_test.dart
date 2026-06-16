@@ -11,6 +11,7 @@ import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/history_anchor.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -271,6 +272,77 @@ void main() {
             userId: 'user-1',
           ),
         ).called(1);
+      },
+    );
+
+    test(
+      'bounds untrusted history anchor dates before loading history',
+      () async {
+        when(
+          () => repository.getHistorySessions(
+            any(),
+            dateFrom: any(named: 'dateFrom'),
+            dateTo: any(named: 'dateTo'),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer(
+          (_) async =>
+              const TimeTrackingSessionPage(sessions: [], hasMore: false),
+        );
+        when(
+          () => repository.getPeriodStats(
+            any(),
+            dateFrom: any(named: 'dateFrom'),
+            dateTo: any(named: 'dateTo'),
+            userId: any(named: 'userId'),
+            timezone: any(named: 'timezone'),
+          ),
+        ).thenAnswer((_) async => const TimeTrackingPeriodStats());
+
+        final boundaryDate = DateTime.tryParse('275760-09-13')!;
+        cubit.setHistoryContext(
+          viewMode: HistoryViewMode.month,
+          anchorDate: boundaryDate,
+        );
+
+        await cubit.loadHistoryInitial('ws-1', 'user-1', throwOnError: true);
+
+        expect(cubit.state.historyViewMode, HistoryViewMode.month);
+        expect(
+          cubit.state.historyAnchorDate!.year,
+          inInclusiveRange(
+            minTimeTrackerHistoryYear,
+            maxTimeTrackerHistoryYear,
+          ),
+        );
+        final captured = verify(
+          () => repository.getHistorySessions(
+            'ws-1',
+            dateFrom: captureAny(named: 'dateFrom'),
+            dateTo: captureAny(named: 'dateTo'),
+            cursor: any(named: 'cursor'),
+            limit: any(named: 'limit'),
+            userId: 'user-1',
+          ),
+        ).captured;
+        final dateFrom = captured[0] as DateTime;
+        final dateTo = captured[1] as DateTime;
+        expect(
+          dateFrom.year,
+          inInclusiveRange(
+            minTimeTrackerHistoryYear,
+            maxTimeTrackerHistoryYear,
+          ),
+        );
+        expect(
+          dateTo.year,
+          inInclusiveRange(
+            minTimeTrackerHistoryYear,
+            maxTimeTrackerHistoryYear,
+          ),
+        );
       },
     );
 

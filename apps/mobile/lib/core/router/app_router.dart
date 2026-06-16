@@ -51,6 +51,7 @@ import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart'
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/tasks_boards/view/task_boards_page.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/history_anchor.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_requests_page.dart';
 import 'package:mobile/features/time_tracker/widgets/stats_tab.dart';
@@ -153,7 +154,7 @@ DateTime? _parseHistoryDate(String? value) {
   if (value == null || value.isEmpty) return null;
   final parsed = DateTime.tryParse(value);
   if (parsed == null) return null;
-  return DateTime(parsed.year, parsed.month, parsed.day);
+  return normalizeTimeTrackerHistoryAnchorDate(parsed);
 }
 
 TaskBoardDetailView? _parseTaskBoardDetailView(String? value) {
