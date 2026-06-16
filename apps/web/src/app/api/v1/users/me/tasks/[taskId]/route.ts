@@ -69,7 +69,7 @@ export async function GET(
           board:workspace_boards(
             id,
             ws_id,
-            workspace:workspaces(personal, tier)
+            workspace:workspaces(personal)
           )
         ),
         assignees:task_assignees(
@@ -157,6 +157,17 @@ export async function GET(
         ?.map((project: TaskProjectJoinRow) => project.task_projects)
         .filter(Boolean),
     };
+    const { data: taskWorkspaceTier, error: tierError } = await sbAdmin.rpc(
+      '_resolve_workspace_tier',
+      { p_ws_id: taskWsId }
+    );
+
+    if (tierError) {
+      return NextResponse.json(
+        { error: 'Failed to resolve task workspace tier' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       task: transformedTask,
@@ -164,8 +175,7 @@ export async function GET(
       taskWsId,
       taskWorkspacePersonal: taskAny.list?.board?.workspace?.personal ?? false,
       taskWorkspaceTier:
-        (taskAny.list?.board?.workspace?.tier as WorkspaceProductTier | null) ??
-        'FREE',
+        (taskWorkspaceTier as WorkspaceProductTier | null) ?? 'FREE',
     });
   } catch (error) {
     console.error('Error fetching current user task:', error);

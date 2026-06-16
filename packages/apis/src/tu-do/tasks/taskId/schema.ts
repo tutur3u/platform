@@ -68,10 +68,17 @@ type TaskListContext = Pick<
   Database['public']['Tables']['task_lists']['Row'],
   'id' | 'name' | 'status' | 'board_id'
 > & {
-  workspace_boards: Pick<
-    Database['public']['Tables']['workspace_boards']['Row'],
-    'id' | 'ws_id' | 'name'
-  > | null;
+  workspace_boards:
+    | (Pick<
+        Database['public']['Tables']['workspace_boards']['Row'],
+        'id' | 'ws_id' | 'name'
+      > & {
+        workspace: Pick<
+          Database['public']['Tables']['workspaces']['Row'],
+          'personal'
+        > | null;
+      })
+    | null;
 };
 
 type TaskAssigneeContext = Pick<

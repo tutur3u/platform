@@ -309,6 +309,9 @@ describe('workspace board internal-api helpers', () => {
             display_number: 12,
             created_at: '2026-06-12T00:00:00.000Z',
           },
+          taskWsId: 'source-ws',
+          taskWorkspacePersonal: false,
+          taskWorkspaceTier: 'PRO',
         })
       )
       .mockResolvedValueOnce(
@@ -329,8 +332,6 @@ describe('workspace board internal-api helpers', () => {
       'task-1',
       {
         taskWsId: 'source-ws',
-        taskWorkspacePersonal: false,
-        taskWorkspaceTier: 'PRO',
       },
       {
         baseUrl: 'https://internal.example.com',

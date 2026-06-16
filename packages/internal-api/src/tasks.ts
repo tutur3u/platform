@@ -171,6 +171,9 @@ export interface CurrentUserTaskPersonalPlacementResponse {
 
 export interface WorkspaceTaskResponse {
   task: WorkspaceTaskApiTask;
+  taskWsId?: string;
+  taskWorkspacePersonal?: boolean;
+  taskWorkspaceTier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
 }
 
 export interface CurrentUserTaskDialogResponse {
@@ -1398,11 +1401,8 @@ export async function getTaskDialogHydration(
     return getCurrentUserTask(taskId, clientOptions);
   }
 
-  const { task } = await getWorkspaceTask(
-    hydrationOptions.taskWsId,
-    taskId,
-    clientOptions
-  );
+  const { task, taskWsId, taskWorkspacePersonal, taskWorkspaceTier } =
+    await getWorkspaceTask(hydrationOptions.taskWsId, taskId, clientOptions);
   const boardId = getTaskDialogBoardId(task);
   const availableLists = boardId
     ? ((
@@ -1417,9 +1417,9 @@ export async function getTaskDialogHydration(
   return {
     task,
     availableLists,
-    taskWsId: hydrationOptions.taskWsId,
-    taskWorkspacePersonal: hydrationOptions.taskWorkspacePersonal ?? false,
-    taskWorkspaceTier: hydrationOptions.taskWorkspaceTier ?? 'FREE',
+    taskWsId: taskWsId ?? hydrationOptions.taskWsId,
+    taskWorkspacePersonal: taskWorkspacePersonal ?? false,
+    taskWorkspaceTier: taskWorkspaceTier ?? 'FREE',
   };
 }
 

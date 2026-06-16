@@ -69,6 +69,9 @@ describe('task detail route CLI app-session auth', () => {
             workspace_boards: {
               id: '00000000-0000-4000-8000-000000000456',
               name: 'Tasks',
+              workspace: {
+                personal: false,
+              },
               ws_id: workspaceId,
             },
           },
@@ -91,7 +94,10 @@ describe('task detail route CLI app-session auth', () => {
       throw new Error(`Unexpected table: ${table}`);
     });
 
-    adminSupabase = { from: fromMock } as unknown as TypedSupabaseClient;
+    adminSupabase = {
+      from: fromMock,
+      rpc: vi.fn().mockResolvedValue({ data: 'PRO', error: null }),
+    } as unknown as TypedSupabaseClient;
     createAdminClientMock.mockResolvedValue(adminSupabase);
   });
 
@@ -134,6 +140,8 @@ describe('task detail route CLI app-session auth', () => {
         board_name: 'Tasks',
         list_name: 'In Progress',
       },
+      taskWorkspacePersonal: false,
+      taskWorkspaceTier: 'PRO',
     });
     expect(createClientMock).not.toHaveBeenCalled();
     expect(normalizeWorkspaceIdMock).toHaveBeenCalledWith(

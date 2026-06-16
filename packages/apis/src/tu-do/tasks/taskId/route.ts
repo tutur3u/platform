@@ -213,7 +213,10 @@ async function getWorkspaceTask(
         workspace_boards!inner (
           id,
           ws_id,
-          name
+          name,
+          workspace:workspaces (
+            personal
+          )
         )
       ),
       assignees:task_assignees(
@@ -626,7 +629,26 @@ export async function handleTaskDetailRouteGET(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ task: serializeTask(task) });
+    const workspace = task.task_lists?.workspace_boards?.workspace;
+    const { data: taskWorkspaceTier, error: tierError } = await sbAdmin.rpc(
+      '_resolve_workspace_tier',
+      { p_ws_id: wsId }
+    );
+
+    if (tierError) {
+      console.error('Error resolving task workspace tier:', tierError);
+      return NextResponse.json(
+        { error: 'Failed to resolve task workspace tier' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      task: serializeTask(task),
+      taskWsId: wsId,
+      taskWorkspacePersonal: workspace?.personal ?? false,
+      taskWorkspaceTier: taskWorkspaceTier ?? 'FREE',
+    });
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
